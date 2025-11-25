@@ -1,0 +1,19 @@
+// input_test.idyl
+use console;
+
+main() {
+    int a;
+    float b;
+    string name;
+
+    console.write("Введите имя: ");
+    name = console.get_string();
+
+    console.write("Введите целое число: ");
+    a = console.get_int();
+
+    console.write("Введите дробное число: ");
+    b = console.get_float();
+
+    console.write("Привет, ", name, "! Ваши числа: ", a, " и ", b, '\n');
+}
