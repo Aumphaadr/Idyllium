@@ -2,25 +2,22 @@
 from enum import Enum
 
 class TokenType(Enum):
-    # Ключевые слова
     USE = "use"
     MAIN = "main"
     INT = "int"
     FLOAT = "float"
     BOOL = "bool"
     CHAR = "char"
-    STRING_TYPE = "string"  # чтобы не путать с STRING_LITERAL
+    STRING_TYPE = "string"
     VOID = "void"
     IF = "if"
     ELSE = "else"
     WHILE = "while"
     FOR = "for"
     RETURN = "return"
-    FUNCTION = "function"  # для "void function draw()"
+    FUNCTION = "function"
     TRUE = "true"
     FALSE = "false"
-
-    # Символы
     LPAREN = "("
     RPAREN = ")"
     LBRACE = "{"
@@ -30,9 +27,7 @@ class TokenType(Enum):
     DOT = "."
     COMMA = ","
     SEMICOLON = ";"
-    COLON = ":"  # на будущее (например, для типов)
-
-    # Операторы
+    COLON = ":"
     ASSIGN = "="
     PLUS = "+"
     MINUS = "-"
@@ -47,23 +42,20 @@ class TokenType(Enum):
     AND = "and"
     OR = "or"
     NOT = "not"
-
-    # Литералы
     IDENTIFIER = "IDENTIFIER"
     INTEGER = "INTEGER"
     FLOAT_LITERAL = "FLOAT_LITERAL"
     STRING_LITERAL = "STRING_LITERAL"
     CHAR_LITERAL = "CHAR_LITERAL"
-
-    # Прочее
     EOF = "EOF"
 
 class Token:
-    def __init__(self, type: TokenType, lexeme: str, line: int, col: int):
+    def __init__(self, type: TokenType, lexeme: str, line: int, col: int, filename: str = "<stdin>"):
         self.type = type
         self.lexeme = lexeme
         self.line = line
         self.col = col
+        self.filename = filename
 
     def __repr__(self):
         if self.type in (TokenType.IDENTIFIER, TokenType.INTEGER,

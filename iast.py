@@ -1,20 +1,16 @@
 # iast.py
-
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import List, Optional
 
 class Expr(ABC):
-    """Базовый класс для выражений"""
     pass
 
 class Stmt(ABC):
-    """Базовый класс для операторов (statements)"""
     pass
 
-# --- Выражения ---
 class Literal(Expr):
     def __init__(self, value):
-        self.value = value  # int, float, str, bool, или символ (str длины 1)
+        self.value = value
 
 class Variable(Expr):
     def __init__(self, name: str):
@@ -28,34 +24,31 @@ class Assign(Expr):
 class Binary(Expr):
     def __init__(self, left: Expr, operator: str, right: Expr):
         self.left = left
-        self.operator = operator  # "+", "==", "and", и т.д.
+        self.operator = operator
         self.right = right
 
 class Unary(Expr):
     def __init__(self, operator: str, right: Expr):
-        self.operator = operator  # "-", "not"
+        self.operator = operator
         self.right = right
 
 class Call(Expr):
     def __init__(self, callee: Expr, arguments: List[Expr]):
-        self.callee = callee      # например, console.write
+        self.callee = callee
         self.arguments = arguments
 
 class Get(Expr):
-    """Доступ к свойству объекта: obj.property"""
     def __init__(self, object: Expr, name: str):
         self.object = object
         self.name = name
 
-# --- Операторы ---
 class VarDecl(Stmt):
     def __init__(self, type_name: str, name: str, initializer: Expr):
-        self.type_name = type_name  # "int", "string" и т.д.
+        self.type_name = type_name
         self.name = name
         self.initializer = initializer
 
 class ExprStmt(Stmt):
-    """Выражение как отдельный оператор: вызов функции, присвоение и т.д."""
     def __init__(self, expr: Expr):
         self.expr = expr
 
@@ -95,6 +88,7 @@ class UseDecl(Stmt):
         self.module_name = module_name
 
 class Program:
-    def __init__(self, imports: List[UseDecl], main_func: FunctionDecl):
+    def __init__(self, imports: List[UseDecl], global_functions: List[FunctionDecl], main_func: FunctionDecl):
         self.imports = imports
+        self.global_functions = global_functions
         self.main_func = main_func
