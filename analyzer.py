@@ -10,26 +10,29 @@ class SemanticError(Exception):
 
 class SemanticAnalyzer:
     def __init__(self):
-        # Таблица символов: имя переменной → информация о ней
-        self.variables: Dict[str, 'VarInfo'] = {}
-        self.errors: list[SemanticError] = []
+        self.variables = {}
+        self.errors = []
+        self.global_function_names = set()
+        self.user_libraries = set()
 
-    def analyze(self, program: Program):
-        # Анализ импортов (пока просто запоминаем)
+    def analyze(self, program: Program, user_libraries: set = None):
         self.modules = {imp.module_name for imp in program.imports}
-        
-        # Анализ main()
+        self.user_libraries = user_libraries or set()
+        self.global_function_names = {func.name for func in program.global_functions}
+        for func in program.global_functions:
+            self.visit_function(func)
         self.visit_function(program.main_func)
-        
         if self.errors:
-            # Бросаем первую ошибку (можно собрать все)
             raise self.errors[0]
 
     def visit_function(self, func: FunctionDecl):
-        # Начинаем новый scope (для main — глобальный)
+        saved_vars = self.variables
         self.variables = {}
+        for param in func.params:
+            self.variables[param.name] = VarInfo(param.type_name, param.name)
         for stmt in func.body.statements:
             self.visit_stmt(stmt)
+        self.variables = saved_vars
 
     def visit_stmt(self, stmt: Stmt):
         if isinstance(stmt, VarDecl):
@@ -52,31 +55,21 @@ class SemanticAnalyzer:
                 self.visit_expr(stmt.value)
 
     def visit_var_decl(self, decl: VarDecl):
-        # 1. Проверка: имя не является ключевым словом или зарезервированным
         if decl.name in {"main", "use", "if", "else", "while", "return", "console"}:
             self.errors.append(SemanticError(f"Нельзя использовать '{decl.name}' как имя переменной", None))
             return
-
-        # 2. Проверка: переменная с таким именем уже есть?
         if decl.name in self.variables:
             self.errors.append(SemanticError(f"Переменная '{decl.name}' уже объявлена", None))
             return
-
-        # 3. Определяем тип инициализатора
         init_type = self._infer_type(decl.initializer)
         if init_type is None:
-            # Ошибка уже добавлена в _infer_type
             return
-
-        # 4. Проверка совместимости типов
         if not self._is_compatible(decl.type_name, init_type):
             self.errors.append(SemanticError(
                 f"Нельзя присвоить значение типа '{init_type}' переменной типа '{decl.type_name}'",
                 None
             ))
             return
-
-        # 5. Регистрируем переменную
         self.variables[decl.name] = VarInfo(decl.type_name, decl.name)
 
     def visit_expr(self, expr: Expr) -> Optional[str]:
@@ -88,7 +81,6 @@ class SemanticAnalyzer:
                 return None
             return self.variables[expr.name].type_name
         elif isinstance(expr, Assign):
-            # Проверка: переменная существует
             if expr.name not in self.variables:
                 self.errors.append(SemanticError(f"Переменная '{expr.name}' не объявлена", None))
                 return None
@@ -103,7 +95,6 @@ class SemanticAnalyzer:
         elif isinstance(expr, Binary):
             left_type = self.visit_expr(expr.left)
             right_type = self.visit_expr(expr.right)
-            # Упрощённая проверка: для арифметики — числа, для сравнения — совместимые типы
             if expr.operator in {"+", "-", "*", "/"}:
                 if left_type not in {"int", "float"} or right_type not in {"int", "float"}:
                     self.errors.append(SemanticError("Операторы +, -, *, / требуют числовых операндов", None))
@@ -121,7 +112,6 @@ class SemanticAnalyzer:
             obj_type = self.visit_expr(expr.object)
             if obj_type == "string" and expr.name == "length":
                 return "int"
-            # Для console — обрабатываем отдельно в _check_call
             return None
         return None
 
@@ -142,75 +132,68 @@ class SemanticAnalyzer:
     def _is_compatible(self, expected: str, actual: str) -> bool:
         if expected == actual:
             return True
-        # Допустимо: int → float
         if expected == "float" and actual == "int":
             return True
-        # Символ — это строка длины 1, но в Idyllium они разные типы
-        # (можно разрешить char → string, но пока запретим для строгости)
         return False
 
     def _check_call(self, call: Call) -> Optional[str]:
-        # Обработка console.get_int(), console.get_float(), console.get_string()
         if isinstance(call.callee, Get) and isinstance(call.callee.object, Variable):
             module = call.callee.object.name
-            func_name = call.callee.name
+            method = call.callee.name
 
             if module == "console":
-                if func_name == "get_int":
+                if method == "get_int":
                     if len(call.arguments) != 0:
                         self.errors.append(SemanticError("console.get_int() не принимает аргументов", None))
                     return "int"
-                elif func_name == "get_float":
+                elif method == "get_float":
                     if len(call.arguments) != 0:
                         self.errors.append(SemanticError("console.get_float() не принимает аргументов", None))
                     return "float"
-                elif func_name == "get_string":
+                elif method == "get_string":
                     if len(call.arguments) != 0:
                         self.errors.append(SemanticError("console.get_string() не принимает аргументов", None))
                     return "string"
-                elif func_name == "write":
-                    # Проверяем аргументы (пока без типов)
+                elif method == "write":
                     for arg in call.arguments:
                         self.visit_expr(arg)
                     return "void"
+                else:
+                    self.errors.append(SemanticError(f"Неизвестный метод 'console.{method}'", None))
+                    return None
+
+            elif module in self.user_libraries:
+                for arg in call.arguments:
+                    self.visit_expr(arg)
+                return "void"
+
             else:
-                self.errors.append(SemanticError(f"Неизвестный модуль '{module}'", None))
+                self.errors.append(SemanticError(f"Неизвестный модуль '{module}' (не подключён через 'use')", None))
                 return None
 
-        # Обработка to_string, to_int, to_float
-        if isinstance(call.callee, Variable):
+        elif isinstance(call.callee, Variable):
             func_name = call.callee.name
+
             if func_name in {"to_string", "to_int", "to_float"}:
                 if len(call.arguments) != 1:
                     self.errors.append(SemanticError(f"{func_name}() требует ровно один аргумент", None))
                     return None
                 arg_type = self.visit_expr(call.arguments[0])
-                # Возвращаемый тип
-                return_type_map = {
-                    "to_string": "string",
-                    "to_int": "int",
-                    "to_float": "float"
-                }
-                return return_type_map[func_name]
-        
-        # Улучшенное сообщение об ошибке: показываем имя функции
-        if isinstance(call.callee, Variable):
-            func_name_repr = call.callee.name
-            self.errors.append(SemanticError(f"Неизвестная функция '{func_name_repr}'", None))
-        elif isinstance(call.callee, Get):
-            if isinstance(call.callee.object, Variable):
-                full_name = f"{call.callee.object.name}.{call.callee.name}"
-                self.errors.append(SemanticError(f"Неизвестная функция или метод '{full_name}'", None))
-            else:
-                # Очень редкий случай
-                self.errors.append(SemanticError("Неизвестная функция (некорректный вызов)", None))
-        else:
-            # Например, Binary или Literal как функция
-            self.errors.append(SemanticError("Некорректный вызов функции: выражение не является именем функции", None))
-        
-        return None
+                return {"to_string": "string", "to_int": "int", "to_float": "float"}[func_name]
 
-# Вспомогательный класс для хранения информации о переменной
+            elif func_name in self.global_function_names:
+                for arg in call.arguments:
+                    self.visit_expr(arg)
+                return "void"
+
+            else:
+                self.errors.append(SemanticError(f"Неизвестная функция '{func_name}'", None))
+                return None
+
+        else:
+            self.errors.append(SemanticError("Некорректный вызов функции", None))
+            return None
+
 class VarInfo:
     def __init__(self, type_name: str, name: str):
         self.type_name = type_name
