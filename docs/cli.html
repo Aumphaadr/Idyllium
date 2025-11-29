@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Idyllium: Примеры CLI</title>
+    <link rel="stylesheet" href="fonts/SalmaPro.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="shortcut icon" href="img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <div class="shell">
+        <header>
+            <div class="header_left">
+                <a href="index.html">
+                <img src="img/icon.png" alt="">
+                </a>
+                <a href="index.html">
+                    Idyllium — твой первый шаг в IT
+                </a>
+            </div>
+            <div class="header_center">
+                <a href="cli.html">Примеры CLI</a>
+                <a href="gui.html" class="inactive">Примеры GUI</a>
+                <a href="oop.html" class="inactive">Примеры ООП</a>
+            </div>
+            <div class="header_right">
+                <a href="why.html">Почему Idyllium</a>
+            </div>
+        </header>
+        <section>
+            <div class="h0">Основы программирования на Idyllium</div>
+            <div class="h2_5">Цель: обучать программированию без синтаксических ловушек</div>
+        </section>
+        <section class="flex">
+            <nav>
+                <div>
+                    <a href="#ex0">Структура программы</a>
+                    <a href="#ex1">Типы данных и переменные</a>
+                    <a href="#ex2">Консольный ввод/вывод</a>
+                    <a href="#ex3">Арифметика</a>
+                    <a href="#ex4">Явные преобразования</a>
+                    <a href="#ex5">Конкатенация</a>
+                    <a href="#ex6">Условный оператор</a>
+                    <a href="#ex7">Операторы циклов</a>
+                    <a href="#ex8">Псевдослучайные числа</a>
+                    <a href="#ex9">Статические массивы</a>
+                    <a href="#ex10">Динамические массивы</a>
+                    <a href="#ex11">Использование библиотек</a>
+                    <a href="#ex12">Процедуры и функции</a>
+                    <a href="#ex13">Работа с файлами</a>
+                </div>
+            </nav>
+            <main>
+                <div class="example" id="ex0">
+                    <h2>Структура программы</h2>
+                    <p>Каждая программа начинается с функции <code>main()</code>:</p>
+                    <pre><span class="keyword">use</span> console;
+
+<span class="function">main</span>() {
+    console.<span class="function">write</span>(<span class="string">"Hello, World!"</span>, <span class="string">'\n'</span>);
+}</pre>
+                    <p>Тип возвращаемого значения не указывается. Аргументы для <code>main</code> не требуются.</p>
+                </div>
+                <div class="example" id="ex1">
+                    <h2>Типы данных и переменные</h2>
+                    <ul>
+                        <li><code>int</code> — целое число</li>
+                        <li><code>float</code> — число с плавающей точкой</li>
+                        <li><code>char</code> — одиночный символ</li>
+                        <li><code>string</code> — строка</li>
+                        <li><code>bool</code> — логическое значение</li>
+                        <li><code>array&lt;T, N&gt;</code> — массив фиксированной длины</li>
+                        <li><code>dyn_array&lt;T&gt;</code> — динамический массив</li>
+                        <li><code>void</code> — для функций без возвращаемого значения</li>
+                    </ul>
+                    <p>Пример объявления переменных:</p>
+                    <pre><span class="function">main</span>() {
+    <span class="type">int</span> age = <span class="number">18</span>;
+    <span class="type">float</span> pi = <span class="number">3.14</span>;
+    <span class="type">char</span> letter = <span class="string">'Q'</span>;
+    <span class="type">string</span> name = <span class="string">"Alice"</span>;
+    <span class="type">bool</span> is_active = <span class="keyword">true</span>;
+}</pre>
+                </div>
+                <div class="example" id="ex2">
+                    <h2>Консольный ввод/вывод</h2>
+                    <p>Для работы с консолью используется встроенная библиотека <code>console</code>:</p>
+                    <pre><span class="keyword">use</span> console;
+
+<span class="function">main</span>() {
+    <span class="type">int</span> a;
+    <span class="type">float</span> b;
+    <span class="type">string</span> name;
+
+    console.<span class="function">write</span>(<span class="string">"Введите имя"</span>);
+    name = console.<span class="function">get_string</span>();
+
+    console.<span class="function">write</span>(<span class="string">"Введите целое число"</span>);
+    a = console.<span class="function">get_int</span>();
+
+    console.<span class="function">write</span>(<span class="string">"Введите дробное число"</span>);
+    b = console.<span class="function">get_float</span>();
+
+    console.<span class="function">write</span>(<span class="string">"Привет, "</span>, name, <span class="string">"! Ваши числа: "</span>, a, <span class="string">" и "</span>, b, <span class="string">'\n'</span>);
+}</pre>
+                    <p>В языке Idyllium чёткие типы и читаемые функции для ввода/вывода в любом желаемом типе.</p>
+                    <p>Никаких <code>Int32.TryParse()</code> и <code>int(input('Введи число: '))</code></p>
+                    <p>А ещё <code>console.write()</code> не делает перенос строки без явного вывода символа <code>'\n'</code>. Красота!</p>
+                </div>
+                <div class="example" id="ex3">
+                    <h2>Арифметика</h2>
+                    <p>Все арифметические операции в Idyllium предсказуемы и однозначно типизируемы:</p>
+                    <pre><span class="function">main</span>() {
+    <span class="type">int</span> a = <span class="number">9</span>;
+    <span class="type">int</span> b = <span class="number">4</span>;
+    <span class="type">float</span> d = <span class="number">2.5</span>;
+
+    <span class="comment">// базовые операции</span>
+    <span class="type">int</span> r1 = a + b; <span class="comment">// 13</span>
+    <span class="type">int</span> r2 = a - b; <span class="comment">// 5</span>
+    <span class="type">int</span> r3 = a * b; <span class="comment">// 36</span>
+    <span class="type">float</span> r4 = a / b; <span class="comment">// 2.25</span>
+
+    <span class="comment">// взаимодействие 'int' и 'float' всегда порождает 'float'</span>
+    <span class="type">float</span> r5 = a + d; <span class="comment">// 11.5</span>
+    <span class="type">float</span> r6 = b * d; <span class="comment">// 10.0</span>
+
+    <span class="comment">// неявное преобразование допустимо только от 'int' к 'float'</span>
+    <span class="type">float</span> f = <span class="number">3</span>; <span class="comment">// 3.0</span>
+    <span class="type">int</span> n = <span class="number">7.5</span>; <span class="comment">// TypeError</span>
+
+    <span class="comment">// для целочисленного деления используются функции 'div()' и 'mod()'</span>
+    <span class="type">int</span> quotient = <span class="function">div</span>(<span class="number">43</span>, <span class="number">2</span>); <span class="comment">// 21</span>
+    <span class="type">int</span> remainder = <span class="function">mod</span>(<span class="number">43</span>, <span class="number">2</span>); <span class="comment">// 1</span>
+}</pre>
+                    <p>Оператор <code>%</code> намеренно удалён, чтобы <code>50 % 14</code> никто не перепутал с "50 процентов от 14". С заботой о детях!</p>
+                </div>
+                <div class="example" id="ex4">
+                    <h2>Явные преобразования</h2>
+                    <p>Для преобразования данных от одного типа к другому используются функции:</p>
+                    <pre><span class="function">main</span>() {
+    <span class="comment">// преобразования чисел в строки</span>
+    <span class="type">string</span> s1 = <span class="function">to_string</span>(<span class="number">25</span>); <span class="comment">// "25"</span>
+    <span class="type">string</span> s2 = <span class="function">to_string</span>(<span class="number">4.7</span>); <span class="comment">// "4.7"</span>
+
+    <span class="comment">// преобразования строк в числа</span>
+    <span class="type">int</span> n1 = <span class="function">to_int</span>(<span class="string">"1453"</span>); <span class="comment">// 1453</span>
+    <span class="type">float</span> f1 = <span class="function">to_float</span>(<span class="string">"36.4"</span>); <span class="comment">// 36.4</span>
+
+    <span class="comment">// преобразования между числовыми типами</span>
+    <span class="type">int</span> n2 = <span class="function">to_int</span>(<span class="number">9.63</span>); <span class="comment">// 9</span>
+    <span class="type">float</span> f2 = <span class="function">to_float</span>(<span class="number">15</span>); <span class="comment">// 15.0</span>
+}</pre>
+                </div>
+                <div class="example" id="ex5">
+                    <h2>Конкатенация</h2>
+                    <p>В языке Idyllium конкатенация возможна только в случаях:</p>
+                    <ul>
+                        <li><code>string + string</code></li>
+                        <li><code>string + char</code></li>
+                        <li><code>char + string</code></li>
+                    </ul>
+                    <pre><span class="keyword">use</span> console;
+
+<span class="function">main</span>() {
+    <span class="type">string</span> greeting = <span class="string">"Hello, "</span>;
+    <span class="type">string</span> name = <span class="string">"Alice"</span>;
+    <span class="type">char</span> mark = <span class="string">'!'</span>;
+
+    <span class="type">string</span> r1 = greeting + name; <span class="comment">// 'string' + 'string'</span>
+    console.<span class="function">write</span>(r1, <span class="string">'\n'</span>); <span class="comment">// "Hello, Alice"</span>
+
+    <span class="type">string</span> r2 = r1 + mark; <span class="comment">// 'string' + 'char'</span>
+    console.<span class="function">write</span>(r2, <span class="string">'\n'</span>); <span class="comment">// "Hello, Alice!"</span>
+}</pre>
+                    <p>Все остальные типы данных не поддерживают конкатенацию без явного преобразования в строку.</p>
+                    <pre><span class="function">main</span>() {
+    <span class="comment">// конкатенация строк с числами невозможна</span>
+    <span class="type">string</span> bad = <span class="string">"Year: "</span> + <span class="number">2025</span>; <span class="comment">// TypeError: '+' is unable to 'str' and 'int'</span>
+
+    <span class="comment">// но если число преобразовать в строку...</span>
+    <span class="type">string</span> good = <span class="string">"Year: "</span> + <span class="function">to_string</span>(<span class="number">2025</span>); <span class="comment">// "Year: 2025"</span>
+}</pre>
+                </div>
+                <div class="example" id="ex6">
+                    <h2>Условный оператор</h2>
+                    <p>Реализация стандартна, как в C-подобных языках:</p>
+                    <pre><span class="keyword">use</span> console;
+
+<span class="function">main</span>() {
+    <span class="type">int</span> a = console.<span class="function">get_int</span>();
+    <span class="type">int</span> b = console.<span class="function">get_int</span>();
+
+    <span class="keyword">if</span> (a &gt; b)
+    {
+        console.<span class="function">write</span>(a, <span class="string">" больше, чем "</span>, b, <span class="string">'\n'</span>);
+    }
+    <span class="keyword">else if</span> (a == b)
+    {
+        console.<span class="function">write</span>(a, <span class="string">" равно "</span>, b, <span class="string">'\n'</span>);
+    }
+    <span class="keyword">else</span>
+    {
+        console.<span class="function">write</span>(a, <span class="string">" меньше, чем "</span>, b, <span class="string">'\n'</span>);
+    }
+}</pre>
+                </div>
+                <div class="example" id="ex7">
+                    <h2>Операторы циклов</h2>
+                    <p>Также аналогичны C-подобным языкам:</p>
+                    <pre><span class="keyword">use</span> console;
+
+<span class="function">main</span>() {
+    <span class="comment">// цикл 'for'</span>
+    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">20</span>; i = i + <span class="number">1</span>)
+    {
+        console.<span class="function">write</span>(<span class="string">"i = "</span>, i, <span class="string">'\n'</span>);
+    }
+
+    <span class="comment">// цикл 'while'</span>
+    <span class="type">int</span> q = <span class="number">1</span>;
+    <span class="keyword">while</span> (q &lt; <span class="number">500</span>)
+    {
+        console.<span class="function">write</span>(q, <span class="string">'\n'</span>);
+        q = q * <span class="number">2</span>;
+    }
+
+    <span class="comment">// цикл 'do-while'</span>
+    <span class="type">int</span> right_answer = <span class="number">71</span>;
+    <span class="type">int</span> your_answer;
+    <span class="keyword">do</span>
+    {
+        console.<span class="function">write</span>(<span class="string">"27 + 44 = "</span>);
+        your_answer = console.<span class="function">get_int</span>();
+    } <span class="keyword">while</span> (your_answer != right_answer);
+}</pre>
+                </div>
+                <div class="example" id="ex8">
+                    <h2>Псевдослучайные числа</h2>
+                    <p>Для генерации псевдослучайных чисел используется встроенная библиотека <code>random</code>:</p>
+                    <pre><span class="keyword">use</span> console;
+<span class="keyword">use</span> random;
+
+<span class="function">main</span>() {
+    <span class="type">int</span> n = random.<span class="function">create_int</span>(<span class="number">10</span>, <span class="number">99</span>); <span class="comment">// границы включены</span>
+    <span class="type">float</span> d = random.<span class="function">create_float</span>(<span class="number">2.5</span>, <span class="number">4</span>);
+
+    <span class="comment">// получение случайного элемента из строки либо массива</span>
+    <span class="type">string</span> alphabet = <span class="string">"abcdefghijklmn"</span>;
+    <span class="type">char</span> ch = random.<span class="function">choose_from</span>(alphabet);
+}</pre>
+                <p>Да, всё настолько просто! Никаких жутких колдунств вроде <code>10 + rand() % 90</code>! Это ли не прекрасно?</p>
+                </div>
+                <div class="example" id="ex9">
+                    <h2>Статические массивы</h2>
+                    <p>Реализация массивов в Idyllium выглядит следующим образом:</p>
+                    <pre><span class="keyword">use</span> console;
+<span class="keyword">use</span> random;
+
+<span class="function">main</span>() {
+    <span class="type">array</span>&lt;<span class="type">int</span>, <span class="number">5</span>&gt; small = [<span class="number">11</span>, <span class="number">22</span>, <span class="number">33</span>, <span class="number">44</span>, <span class="number">55</span>]; <span class="comment">// массив на 5 ячеек типа 'int'</span>
+    console.<span class="function">write</span>(small, <span class="string">'\n'</span>); <span class="comment">// [11, 22, 33, 44, 55]</span>
+
+    <span class="type">array</span>&lt;<span class="type">int</span>, <span class="number">50</span>&gt; big; <span class="comment">// массив на 50 ячеек типа 'int'</span>
+    
+    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">50</span>; i = i + <span class="number">1</span>)
+    {
+        big[i] = random.<span class="function">create_int</span>(<span class="number">100</span>, <span class="number">999</span>);
+        console.<span class="function">write</span>(<span class="string">"big["</span>, i, <span class="string">"]: "</span>, big[i], <span class="string">'\n'</span>);
+    }
+
+    <span class="comment">// попытка выйти за границы массива = ошибка</span>
+    console.<span class="function">write</span>(big[<span class="number">60</span>], <span class="string">'\n'</span>); <span class="comment">// IndexError: array index out of bounds</span>
+}</pre>
+                    <p>Нумерация ячеек массива начинается с нуля, как во всех нормальных языках.</p>
+                    <p>Ячейки массива строго однотипны. Положить в массив число, строку и кота — не в Idyllium, дружище.</p>
+                    <p>Да и зачем? Кто в здравом уме вообще так делает?</p>
+                </div>
+                <div class="example" id="ex10">
+                    <h2>Динамические массивы</h2>
+                    <p>Мы в Idyllium знаем, что динамические массивы логично изучать после статических.</p>
+                    <p>Поэтому мы сделали их похожими друг на друга, чтобы не переворачиваться с ног на голову при их изучении!</p>
+                    <pre><span class="keyword">use</span> console;
+
+<span class="function">main</span>() {
+    <span class="type">dyn_array</span>&lt;<span class="type">int</span>&gt; nums; <span class="comment">// динамический массив типа 'int'</span>
+
+    <span class="comment">// добавление ячеек в конец</span>
+    nums.<span class="function">add</span>(<span class="number">42</span>);
+    nums.<span class="function">add</span>(<span class="number">74</span>);
+    nums.<span class="function">add</span>(<span class="number">13</span>);
+    nums.<span class="function">add</span>(<span class="number">29</span>);
+    nums.<span class="function">add</span>(<span class="number">81</span>);
+
+    console.<span class="function">write</span>(nums, <span class="string">'\n'</span>); <span class="comment">// [42, 74, 13, 29, 81]</span>
+
+    <span class="comment">// удаление ячейки по индексу</span>
+    nums.<span class="function">remove_at</span>(<span class="number">1</span>);
+
+    console.<span class="function">write</span>(nums, <span class="string">'\n'</span>); <span class="comment">// [42, 13, 29, 81]</span>
+
+    <span class="comment">// получение количества ячеек в массиве</span>
+    <span class="type">int</span> L = nums.<span class="function">length</span>(); <span class="comment">// 4</span>
+}</pre>
+                    <p>Вы уже чувствуете, насколько стали ненужными комментарии?</p>
+                    <p>Но мы всё равно их оставим. Вдруг какому-нибудь "хлебушку" что-то будет непонятно.</p>
+                </div>
+                <div class="example" id="ex11">
+                    <h2>Использование библиотек</h2>
+                    <p>Мы знаем, что "пространство имён" — это термин, который невозможно объяснить человеку, который ни разу не создавал самописные библиотеки и не сталкивался с конфликтами имён.</p>
+                    <p>Поэтому вызов команд в Idyllium производится по схеме <code>библиотека.команда()</code>:</p>
+                    <pre><span class="keyword">use</span> console;
+<span class="keyword">use</span> math;
+<span class="keyword">use</span> time;
+
+<span class="function">main</span>() {
+    console.<span class="function">write</span>(<span class="string">"Подождите, округляю число..."</span>, <span class="string">'\n'</span>);
+
+    time.<span class="function">sleep</span>(<span class="number">2.5</span>); <span class="comment">// пауза на 2.5 секунды</span>
+    <span class="type">float</span> pi4 = math.<span class="function">round</span>(<span class="number">3.1415926535</span>, <span class="number">4</span>); <span class="comment">// округление до 4 знаков после точки</span>
+
+    console.<span class="function">write</span>(<span class="string">"Округлено: "</span>, pi4, <span class="string">'\n'</span>); <span class="comment">// Округлено: 3.1416</span>
+}</pre>
+                </div>
+                <div class="example" id="ex12">
+                    <h2>Процедуры и функции</h2>
+                    <p>Синтаксис функций аналогичен C-подобным языкам, но с небольшими изменениями:</p>
+                    <pre><span class="keyword">use</span> console;
+
+<span class="comment">// описание void-функции (процедуры)</span>
+<span class="type">void</span> <span class="keyword">function</span> <span class="function">draw_line</span>(<span class="type">int</span> L)
+{
+    <span class="type">string</span> res = <span class="string">""</span>;
+    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; L; i = i + <span class="number">1</span>)
+    {
+        res = res + <span class="string">'-'</span>;
+    }
+    console.<span class="function">write</span>(res, <span class="string">'\n'</span>);
+}
+
+<span class="function">main</span>() {
+    <span class="comment">// вызов void-функции (процедуры)</span>
+    <span class="function">draw_line</span>(<span class="number">5</span>); <span class="comment">// выведется "-----"</span>
+    <span class="function">draw_line</span>(<span class="number">10</span>); <span class="comment">// выведется "----------"</span>
+}</pre>
+                    <p>Функции с возвратом значения выглядят схожим образом:</p>
+                    <pre><span class="comment">// описание int-функции</span>
+<span class="type">int</span> <span class="keyword">function</span> <span class="function">cube</span>(<span class="type">int</span> N)
+{
+    <span class="keyword">return</span> N * N * N;
+}
+
+<span class="function">main</span>() {
+    <span class="comment">// вызов int-функции</span>
+    <span class="type">int</span> a = <span class="function">cube</span>(<span class="number">2</span>); <span class="comment">// 8</span>
+    <span class="type">int</span> b = <span class="function">cube</span>(<span class="number">5</span>); <span class="comment">// 125</span>
+    <span class="type">int</span> c = <span class="function">cube</span>(<span class="number">7</span>); <span class="comment">// 343</span>
+}</pre>
+                </div>
+                <div class="example" id="ex13">
+                    <h2>Работа с файлами</h2>
+                    <p>Запись данных в текстовый файл:</p>
+                    <pre><span class="keyword">use</span> file;
+
+<span class="function">main</span>() {
+    <span class="type">file</span> fout = file.<span class="function">open</span>(<span class="string">"output.txt"</span>, <span class="string">"write"</span>);
+    fout.<span class="function">write_line</span>(<span class="string">"Привет, мир!"</span>, <span class="string">'\n'</span>);
+    fout.<span class="function">write_line</span>(<span class="string">"Сейчас "</span>, <span class="number">2025</span>, <span class="string">" год"</span>, <span class="string">'\n'</span>);
+    fout.<span class="function">write_line</span>(<span class="string">"Файл создан с помощью Idyllium!"</span>);
+    fout.<span class="function">close</span>();
+}</pre>
+                    <p>Чтение данных из текстового файла:</p>
+                    <pre><span class="keyword">use</span> console;
+<span class="keyword">use</span> file;
+
+<span class="function">main</span>() {
+    <span class="type">file</span> fin = file.<span class="function">open</span>(<span class="string">"input.txt"</span>, <span class="string">"read"</span>);
+    <span class="keyword">while</span> (fin.<span class="function">has_next_line</span>())
+    {
+        <span class="type">string</span> one_line = fin.<span class="function">read_line</span>();
+        console.<span class="function">write</span>(one_line, <span class="string">'\n'</span>);
+    }
+    fin.<span class="function">close</span>();
+}</pre>
+                </div>
+            </main>
+        </section>
+    </div>
+    <footer>
+        <div class="h2_5">Maintaining just for lulz</div>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+</body>
+</html>
