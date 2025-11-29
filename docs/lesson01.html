@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 1: Первая программа — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 1: Первая программа</h1>
+            <p class="subtitle">Вывод данных в консоль без путаницы и магии</p>
+        </section>
+        <section class="flex">
+            <nav>
+                <div>
+                    <a href="./lesson00.html">Урок 0: Установка Idyllium</a>
+                    <a href="./lesson01.html" class="current">Урок 1: Первая программа</a>
+                    <a href="./lesson02.html">Урок 2: Переменные и типы данных</a>
+                    <a href="./lesson03.html">Урок 3: Ввод данных</a>
+                    <a href="./lesson04.html">Урок 4: Арифметика</a>
+                </div>
+            </nav>
+            <div class="examples">
+                <div class="example">
+                    <h2>Ваш первый код на Idyllium</h2>
+                    <p>Для вывода классического <code>"Hello, World!"</code> наберите следующий код:</p>
+                    <pre><span class="comment">// hello.idyl</span>
+<span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Hello, World!"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Это ваша первая программа на Idyllium!"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <p>Разберём ключевые моменты:</p>
+                    <ul>
+                        <li>Функция <code>console.write()</code> используется для вывода данных в консоль.</li>
+                        <li>Она принимает <strong>неограниченное количество аргументов</strong>, разделённых запятыми. Текст, числа, переменные — всё можно передать в один вызов.</li>
+                        <li>Каждая команда в Idyllium, как и во многих C-подобных языках, завершается <strong>точкой с запятой</strong> (<code>;</code>). Это помогает компилятору точно понимать, где заканчивается инструкция.</li>
+                    </ul>
+                </div>
+                <div class="example">
+                    <h2>Почему в конце стоит <code>'\n'</code>?</h2>
+                    <p>В отличие от <code>print()</code> в Python, функция <code>console.write()</code> <strong>не делает автоматический перенос строки</strong>. Это даёт вам полный контроль над форматом вывода.</p>
+
+                    <p>Рассмотрим пример без переноса:</p>
+                    <pre><span class="comment">// hello.idyl</span>
+<span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Hello"</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"World"</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <p>Этот код выведет всё в одну строку:</p>
+                    <div class="output">HelloWorld</div>
+
+                    <p>Чтобы получить перенос, нужно <strong>явно указать</strong> управляющую последовательность <code>'\n'</code>. Её можно добавить как отдельный аргумент или приклеить к строке — оба способа работают одинаково.</p>
+                </div>
+                <div class="example">
+                    <h2>Гибкое использование <code>'\n'</code></h2>
+                    <p>Символ перехода на новую строку можно размещать в любом месте внутри <code>console.write()</code>:</p>
+                    <pre><span class="comment">// hello.idyl</span>
+<span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Hello"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">,</span> <span class="string">"my"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">,</span> <span class="string">"Lord"</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <p>Результат выполнения:</p>
+                    <div class="output">Hello
+my
+Lord</div>
+                    <p>Как видите, <code>'\n'</code> работает именно там, где вы его разместили — не раньше и не позже.</p>
+                </div>
+                <div class="example">
+                    <h2>Вывод чисел</h2>
+                    <p>Idyllium умеет выводить не только текст, но и числа — без дополнительных преобразований:</p>
+                    <pre><span class="comment">// hello.idyl</span>
+<span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Сейчас выведем несколько чисел:\n"</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="number">11</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">,</span> <span class="number">22</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">,</span> <span class="number">33</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">,</span> <span class="number">44</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <p>Результат:</p>
+                    <div class="output">Сейчас выведем несколько чисел:
+11
+22
+33
+44</div>
+                    <p>Обратите внимание: <strong>текстовые данные</strong> всегда заключаются в кавычки (<code>"..."</code>), а <strong>числовые значения</strong> пишутся без них. Это помогает Idyllium точно отличать строку от числа — и не делать догадок за вас.</p>
+
+                    <p>Теперь вы готовы не просто писать код, а управлять тем, что видит пользователь. Добро пожаловать в Idyllium!</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson0.html" class="nav-button nav-prev">
+                            ← Урок 0: Установка Idyllium
+                        </a>
+                        <a href="./lesson2.html" class="nav-button nav-next">
+                            Урок 2: Переменные и типы данных →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>

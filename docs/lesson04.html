@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 4: Арифметика — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 4: Арифметика</h1>
+            <p class="subtitle">Предсказуемые операции без скрытых подводных камней</p>
+        </section>
+        <section class="flex">
+            <nav>
+                <div>
+                    <a href="./lesson02.html">Урок 2: Переменные и типы данных</a>
+                    <a href="./lesson03.html">Урок 3: Ввод данных</a>
+                    <a href="./lesson04.html" class="current">Урок 4: Арифметика</a>
+                    <a href="./lesson05.html">Урок 5: Управляющие последовательности</a>
+                    <a href="./lesson06.html">Урок 6: Преобразования данных</a>
+                </div>
+            </nav>
+            <div class="examples">
+                <div class="example">
+                    <h2>Базовые арифметические операции с целыми числами</h2>
+                    <p>В Idyllium сложение, вычитание и умножение целых чисел работают предсказуемо и возвращают целый результат, который можно сразу сохранить в переменную типа <code>int</code>:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">A</span> <span class="brackets">=</span> <span class="number">5</span> <span class="brackets">+</span> <span class="number">7</span><span class="brackets">;</span> <span class="comment">// в переменную 'A' присвоится 12</span>
+    <span class="typeName">int</span> <span class="object">B</span> <span class="brackets">=</span> <span class="number">8</span> <span class="brackets">-</span> <span class="number">9</span><span class="brackets">;</span> <span class="comment">// в переменную 'B' присвоится -1</span>
+    <span class="typeName">int</span> <span class="object">C</span> <span class="brackets">=</span> <span class="number">6</span> <span class="brackets">*</span> <span class="number">3</span><span class="brackets">;</span> <span class="comment">// в переменную 'C' присвоится 18</span>
+<span class="brackets">}</span></pre>
+    <p>Если бы мы захотели вывести эти значения, результат выглядел бы так:</p>
+    <div class="output">12
+-1
+18</div>
+                    <p>Все три операции — <code>+</code>, <code>-</code>, <code>*</code> — безопасны для целых чисел: они никогда не создают дробную часть, поэтому их результат всегда совместим с типом <code>int</code>.</p>
+                </div>
+                <div class="example">
+                    <h2>Деление — особый случай</h2>
+                    <p>В Idyllium оператор <code>/</code> <strong>всегда</strong> возвращает <code>float</code>, даже если делятся два целых числа:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">A</span> <span class="brackets">=</span> <span class="number">37</span><span class="brackets">;</span>
+    <span class="typeName">int</span> <span class="object">B</span> <span class="brackets">=</span> <span class="number">10</span><span class="brackets">;</span>
+
+    <span class="typeName">float</span> <span class="object">C</span> <span class="brackets">=</span> <span class="object">A</span> <span class="brackets">/</span> <span class="object">B</span><span class="brackets">;</span> <span class="comment">// всё хорошо, присвоится 3.7</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">C</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+
+    <span class="typeName">int</span> <span class="object">D</span> <span class="brackets">=</span> <span class="object">A</span> <span class="brackets">/</span> <span class="object">B</span><span class="brackets">;</span> <span class="comment">// ОШИБКА: нельзя присвоить дробное число в 'int'</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">3.7</div>
+                    <p><strong>Важное правило:</strong> если в результате математической операции <em>теоретически может получиться дробное число</em> — результат будет иметь тип <code>float</code>.</p>
+                    <p>Это означает, что даже в случае <code>10 / 5</code> (где результат — целое число 2) Idyllium всё равно вернёт <code>2.0</code> типа <code>float</code>. Так сделано ради <strong>единообразия</strong>: программа не пытается угадать, будет ли результат целым — она всегда возвращает дробное число при делении.</p>
+                </div>
+                <div class="example">
+                    <h2>Операции между целыми и дробными числами</h2>
+                    <p>Если в арифметической операции участвует хотя бы одно дробное число, результат всегда будет <code>float</code>:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">A</span> <span class="brackets">=</span> <span class="number">10</span><span class="brackets">;</span>
+    <span class="typeName">float</span> <span class="object">B</span> <span class="brackets">=</span> <span class="number">2.5</span><span class="brackets">;</span>
+
+    <span class="typeName">float</span> <span class="object">C</span> <span class="brackets">=</span> <span class="object">A</span> <span class="brackets">+</span> <span class="object">B</span><span class="brackets">;</span> <span class="comment">// 'int' + 'float' → 'float'</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">C</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+
+    <span class="typeName">float</span> <span class="object">D</span> <span class="brackets">=</span> <span class="object">A</span> <span class="brackets">-</span> <span class="object">B</span><span class="brackets">;</span> <span class="comment">// 'int' - 'float' → 'float'</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">D</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+
+    <span class="typeName">float</span> <span class="object">E</span> <span class="brackets">=</span> <span class="object">A</span> <span class="brackets">*</span> <span class="object">B</span><span class="brackets">;</span> <span class="comment">// 'int' * 'float' → 'float'</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">E</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+
+    <span class="typeName">float</span> <span class="object">F</span> <span class="brackets">=</span> <span class="object">A</span> <span class="brackets">/</span> <span class="object">B</span><span class="brackets">;</span> <span class="comment">// 'int' / 'float' → 'float'</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">F</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">12.5
+7.5
+25
+4</div>
+                    <p>Обратите внимание: даже в последнем случае (<code>10 / 2.5 = 4</code>) результат — целое число, но его тип всё равно <code>float</code> (выводится как <code>4</code>, но хранится как <code>4.0</code>). Это позволяет избежать неожиданных ошибок при последующих вычислениях.</p>
+                </div>
+                <div class="example">
+                    <h2>Целочисленное деление: функция <code>div</code></h2>
+                    <p>Если вам нужно именно <strong>целое частное</strong> от деления, используйте функцию <code>div(a, b)</code>:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">A1</span> <span class="brackets">=</span> <span class="number">38</span><span class="brackets">;</span>
+    <span class="typeName">int</span> <span class="object">A2</span> <span class="brackets">=</span> <span class="number">39</span><span class="brackets">;</span>
+    <span class="typeName">int</span> <span class="object">A3</span> <span class="brackets">=</span> <span class="number">40</span><span class="brackets">;</span>
+    <span class="typeName">int</span> <span class="object">A4</span> <span class="brackets">=</span> <span class="number">41</span><span class="brackets">;</span>
+    <span class="typeName">int</span> <span class="object">B</span> <span class="brackets">=</span> <span class="number">10</span><span class="brackets">;</span>
+
+    <span class="typeName">int</span> <span class="object">R1</span> <span class="brackets">=</span> <span class="function">div</span><span class="brackets">(</span><span class="object">A1</span><span class="brackets">,</span> <span class="object">B</span><span class="brackets">);</span> <span class="comment">// 3</span>
+    <span class="typeName">int</span> <span class="object">R2</span> <span class="brackets">=</span> <span class="function">div</span><span class="brackets">(</span><span class="object">A2</span><span class="brackets">,</span> <span class="object">B</span><span class="brackets">);</span> <span class="comment">// 3</span>
+    <span class="typeName">int</span> <span class="object">R3</span> <span class="brackets">=</span> <span class="function">div</span><span class="brackets">(</span><span class="object">A3</span><span class="brackets">,</span> <span class="object">B</span><span class="brackets">);</span> <span class="comment">// 4</span>
+    <span class="typeName">int</span> <span class="object">R4</span> <span class="brackets">=</span> <span class="function">div</span><span class="brackets">(</span><span class="object">A4</span><span class="brackets">,</span> <span class="object">B</span><span class="brackets">);</span> <span class="comment">// 4</span>
+<span class="brackets">}</span></pre>
+                    <p>Функция <code>div</code> отбрасывает дробную часть результата и возвращает <strong>только целую часть частного</strong>. Поскольку результат всегда целый, его можно безопасно сохранить в переменную типа <code>int</code>.</p>
+                </div>
+                <div class="example">
+                    <h2>Остаток от деления: функция <code>mod</code></h2>
+                    <p>Чтобы получить <strong>остаток от деления</strong>, используйте функцию <code>mod(a, b)</code>:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">A1</span> <span class="brackets">=</span> <span class="number">38</span><span class="brackets">;</span>
+    <span class="typeName">int</span> <span class="object">A2</span> <span class="brackets">=</span> <span class="number">39</span><span class="brackets">;</span>
+    <span class="typeName">int</span> <span class="object">A3</span> <span class="brackets">=</span> <span class="number">40</span><span class="brackets">;</span>
+    <span class="typeName">int</span> <span class="object">A4</span> <span class="brackets">=</span> <span class="number">41</span><span class="brackets">;</span>
+    <span class="typeName">int</span> <span class="object">B</span> <span class="brackets">=</span> <span class="number">10</span><span class="brackets">;</span>
+
+    <span class="typeName">int</span> <span class="object">R1</span> <span class="brackets">=</span> <span class="function">mod</span><span class="brackets">(</span><span class="object">A1</span><span class="brackets">,</span> <span class="object">B</span><span class="brackets">);</span> <span class="comment">// 8</span>
+    <span class="typeName">int</span> <span class="object">R2</span> <span class="brackets">=</span> <span class="function">mod</span><span class="brackets">(</span><span class="object">A2</span><span class="brackets">,</span> <span class="object">B</span><span class="brackets">);</span> <span class="comment">// 9</span>
+    <span class="typeName">int</span> <span class="object">R3</span> <span class="brackets">=</span> <span class="function">mod</span><span class="brackets">(</span><span class="object">A3</span><span class="brackets">,</span> <span class="object">B</span><span class="brackets">);</span> <span class="comment">// 0</span>
+    <span class="typeName">int</span> <span class="object">R4</span> <span class="brackets">=</span> <span class="function">mod</span><span class="brackets">(</span><span class="object">A4</span><span class="brackets">,</span> <span class="object">B</span><span class="brackets">);</span> <span class="comment">// 1</span>
+<span class="brackets">}</span></pre>
+                    <p>Функция <code>mod</code> возвращает то, что «осталось» после деления. Это особенно полезно для задач вроде определения чётности (<code>mod(x, 2) == 0</code>) или циклических вычислений.</p>
+                    <p>Обе функции — <code>div</code> и <code>mod</code> — работают <strong>только с целыми числами</strong> и возвращают <code>int</code>, что делает их идеальными для задач, где дробные результаты не нужны.</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson3.html" class="nav-button nav-prev">
+                            ← Урок 3: Ввод данных
+                        </a>
+                        <a href="./lesson5.html" class="nav-button nav-next">
+                            Урок 5: Управляющие последовательности →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>

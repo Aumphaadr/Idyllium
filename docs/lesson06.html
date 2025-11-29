@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 6: Преобразования данных — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 6: Преобразования данных</h1>
+            <p class="subtitle">Как превратить число в строку и наоборот — без магии и неожиданностей</p>
+        </section>
+        <section class="flex">
+            <nav>
+                <div>
+                    <a href="./lesson04.html">Урок 4: Арифметика</a>
+                    <a href="./lesson05.html">Урок 5: Управляющие последовательности</a>
+                    <a href="./lesson06.html" class="current">Урок 6: Преобразования данных</a>
+                    <a href="./lesson07.html">Урок 7: Математические функции</a>
+                    <a href="./lesson08.html">Урок 8: Условный оператор и тип 'bool'</a>
+                </div>
+            </nav>
+            <div class="examples">
+                <div class="example">
+                    <h2>Нельзя подменить тип</h2>
+                    <p>Как вы уже знаете, Idyllium не разрешает присваивать переменной значение, не подходящее по типу:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">string</span> <span class="object">S</span> <span class="brackets">=</span> <span class="number">241</span><span class="brackets">;</span> <span class="comment">// ОШИБКА: в переменную типа 'string' нельзя положить число</span>
+<span class="brackets">}</span></pre>
+                    <p>Это не ограничение — это защита от хаоса. Но что, если вам <em>нужно</em> преобразовать число в строку или наоборот?</p>
+                </div>
+                <div class="example">
+                    <h2>Функция <code>to_string()</code></h2>
+                    <p>Функция <code>to_string()</code> превращает число в строку:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">string</span> <span class="object">S</span> <span class="brackets">=</span> <span class="function">to_string</span><span class="brackets">(</span><span class="number">241</span><span class="brackets">);</span> <span class="comment">// всё в порядке</span>
+    <span class="comment">// to_string(241) → "241"</span>
+<span class="brackets">}</span></pre>
+                    <p>Теперь переменная <code>S</code> содержит строку <code>"241"</code>, а не число — и её можно использовать в операциях со строками.</p>
+                </div>
+                <div class="example">
+                    <h2>Что такое функция?</h2>
+                    <p>Функция — это механизм, который <strong>превращает одни данные в другие</strong>.</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">NA</span> <span class="brackets">=</span> <span class="number">20</span><span class="brackets">;</span>
+    <span class="typeName">int</span> <span class="object">NB</span> <span class="brackets">=</span> <span class="number">30</span><span class="brackets">;</span>
+
+    <span class="typeName">string</span> <span class="object">SA</span> <span class="brackets">=</span> <span class="function">to_string</span><span class="brackets">(</span><span class="object">NA</span><span class="brackets">);</span> <span class="comment">// из числа 20 порождается строка "20"</span>
+    <span class="typeName">string</span> <span class="object">SB</span> <span class="brackets">=</span> <span class="function">to_string</span><span class="brackets">(</span><span class="object">NB</span><span class="brackets">);</span> <span class="comment">// из числа 30 порождается строка "30"</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Числовая сумма: "</span><span class="brackets">,</span> <span class="object">NA</span> <span class="brackets">+</span> <span class="object">NB</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Строковая сумма: "</span><span class="brackets">,</span> <span class="object">SA</span> <span class="brackets">+</span> <span class="object">SB</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">Числовая сумма: 50
+Строковая сумма: 2030</div>
+                    <p>Обратите внимание: числовая сумма — это <code>20 + 30 = 50</code>, а строковая «сумма» — это конкатенация: <code>"20" + "30" = "2030"</code>. Функция <code>to_string()</code> даёт вам контроль над тем, как данные будут интерпретироваться.</p>
+                </div>
+                <div class="example">
+                    <h2>Обратное преобразование: <code>to_int()</code></h2>
+                    <p>Чтобы превратить строку в число, используйте <code>to_int()</code>:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">A</span> <span class="brackets">=</span> <span class="string">"345"</span><span class="brackets">;</span> <span class="comment">// НЕЛЬЗЯ</span>
+    <span class="typeName">int</span> <span class="object">B</span> <span class="brackets">=</span> <span class="function">to_int</span><span class="brackets">(</span><span class="string">"345"</span><span class="brackets">);</span> <span class="comment">// МОЖНО</span>
+<span class="brackets">}</span></pre>
+                    <p>Функция <code>to_int("345")</code> порождает число <code>345</code>, которое можно использовать в арифметике.</p>
+                </div>
+                <div class="example">
+                    <h2>Преобразование в дробное число: <code>to_float()</code></h2>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">float</span> <span class="object">A</span> <span class="brackets">=</span> <span class="string">"1.6"</span><span class="brackets">;</span> <span class="comment">// НЕЛЬЗЯ</span>
+    <span class="typeName">float</span> <span class="object">B</span> <span class="brackets">=</span> <span class="function">to_float</span><span class="brackets">(</span><span class="string">"1.6"</span><span class="brackets">);</span> <span class="comment">// МОЖНО</span>
+<span class="brackets">}</span></pre>
+                    <p>Функция <code>to_float("1.6")</code> порождает значение <code>1.6</code> типа <code>float</code>.</p>
+                </div>
+                <div class="example">
+                    <h2>Практическое применение</h2>
+                    <p>Преобразования особенно полезны, когда вы хотите динамически собирать управляющие последовательности — например, для цвета текста:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Будем красить текст!"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Варианты:"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"1) Красный"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"2) Зелёный"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"3) Жёлтый"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"4) Синий"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Выбирайте: "</span><span class="brackets">);</span>
+    <span class="typeName">int</span> <span class="object">A</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_int</span><span class="brackets">();</span>
+    <span class="typeName">int</span> <span class="object">B</span> <span class="brackets">=</span> <span class="object">A</span> <span class="brackets">+</span> <span class="number">30</span><span class="brackets">;</span>
+    
+    <span class="typeName">string</span> <span class="object">S</span> <span class="brackets">=</span> <span class="function">to_string</span><span class="brackets">(</span><span class="object">B</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"\e["</span> <span class="brackets">+</span> <span class="object">S</span> <span class="brackets">+</span> <span class="string">"m"</span><span class="brackets">,</span> <span class="string">"Покрашено!"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <p>Пример выполнения (пользователь выбрал вариант 2):</p>
+                    <div class="output">Будем красить текст!
+Варианты:
+1) Красный
+2) Зелёный
+3) Жёлтый
+4) Синий
+Выбирайте: <span class="user_input">2</span>
+<span style="color: #00aa00;">Покрашено!</span></div>
+                    <p>Без <code>to_string()</code> такой трюк был бы невозможен: нельзя склеить строку и число напрямую.</p>
+                </div>
+                <div class="example">
+                    <h2>Ошибки при преобразовании</h2>
+                    <p>Функции преобразования работают <strong>только с корректными данными</strong>:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">A</span> <span class="brackets">=</span> <span class="function">to_int</span><span class="brackets">(</span><span class="string">"570"</span><span class="brackets">);</span> <span class="comment">// можно: породится 570</span>
+    <span class="typeName">int</span> <span class="object">B</span> <span class="brackets">=</span> <span class="function">to_int</span><span class="brackets">(</span><span class="string">"ъеъ ъуъ"</span><span class="brackets">);</span> <span class="comment">// нельзя: не число</span>
+    <span class="typeName">int</span> <span class="object">C</span> <span class="brackets">=</span> <span class="function">to_int</span><span class="brackets">(</span><span class="string">"десять"</span><span class="brackets">);</span> <span class="comment">// нельзя: текст не превратится в число</span>
+<span class="brackets">}</span></pre>
+                    <p>Если в строке нет числа, <code>to_int()</code> и <code>to_float()</code> завершится с ошибкой. Это не баг — это защита от неверных допущений.</p>
+                </div>
+                <div class="example">
+                    <h2>Итог: три функции преобразования</h2>
+                    <ul>
+                        <li><code>to_string(x)</code> — порождает из любого аргумена строку;</li>
+                        <li><code>to_int(s)</code> — порождает из аргумента целое число, если это возможно;</li>
+                        <li><code>to_float(s)</code> — порождает из аргумента дробное число, если это возможно.</li>
+                    </ul>
+                    <p>Все преобразования — <strong>явные</strong>. Idyllium никогда не угадывает ваши намерения. Он требует, чтобы вы чётко сказали: «Хочу строку из числа» или «Хочу число из строки».</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson5.html" class="nav-button nav-prev">
+                            ← Урок 5: Управляющие последовательности
+                        </a>
+                        <a href="./lesson7.html" class="nav-button nav-next">
+                            Урок 7: Математические функции →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>

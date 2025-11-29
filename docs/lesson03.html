@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 3: Ввод данных — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 3: Ввод данных</h1>
+            <p class="subtitle">Программа становится живой, когда умеет слушать пользователя</p>
+        </section>
+        <section class="flex">
+            <nav>
+                <div>
+                    <a href="./lesson01.html">Урок 1: Первая программа</a>
+                    <a href="./lesson02.html">Урок 2: Переменные и типы данных</a>
+                    <a href="./lesson03.html" class="current">Урок 3: Ввод данных</a>
+                    <a href="./lesson04.html">Урок 4: Арифметика</a>
+                    <a href="./lesson05.html">Урок 5: Управляющие последовательности</a>
+                </div>
+            </nav>
+            <div class="examples">
+                <div class="example">
+                    <h2>Принцип работы любой программы</h2>
+                    <p>Любая программа, даже самая сложная, следует простому циклу:</p>
+                    <ol>
+                        <li>Пользователь <strong>вводит начальные данные</strong>;</li>
+                        <li>Программа <strong>преобразует</strong> их по заданной логике;</li>
+                        <li>Программа <strong>выводит результат</strong> пользователю.</li>
+                    </ol>
+                    <p>Без ввода — программа статична, как счёт в банке, в который никто не кладёт и не снимает деньги. С вводом — она становится инструментом, который можно использовать под любую задачу.</p>
+                </div>
+                <div class="example">
+                    <h2>Ввод целого числа</h2>
+                    <p>В Idyllium для ввода целого числа используется функция <code>console.get_int()</code>:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">A</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_int</span><span class="brackets">();</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Ваше число: "</span><span class="brackets">,</span> <span class="object">A</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <p>Пример выполнения программы:</p>
+                    <div class="output"><span class="user_input">75</span>
+Ваше число: 75</div>
+                    <p>Функция <code>console.get_int()</code> останавливает выполнение программы и ждёт, пока пользователь введёт число и нажмёт <code>Enter</code>. После этого число присваивается переменной <code>A</code> и может использоваться дальше.</p>
+                </div>
+                <div class="example">
+                    <h2>Несколько вводов: периметр треугольника</h2>
+                    <p>Рассмотрим практическую задачу:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Сейчас посчитаем периметр треугольника"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Введите первую сторону: "</span><span class="brackets">);</span>
+    <span class="typeName">int</span> <span class="object">A</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_int</span><span class="brackets">();</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Введите вторую сторону: "</span><span class="brackets">);</span>
+    <span class="typeName">int</span> <span class="object">B</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_int</span><span class="brackets">();</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Введите третью сторону: "</span><span class="brackets">);</span>
+    <span class="typeName">int</span> <span class="object">C</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_int</span><span class="brackets">();</span>
+
+    <span class="typeName">int</span> <span class="object">P</span> <span class="brackets">=</span> <span class="object">A</span> <span class="brackets">+</span> <span class="object">B</span> <span class="brackets">+</span> <span class="object">C</span><span class="brackets">;</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Периметр равен: "</span><span class="brackets">,</span> <span class="object">P</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <p>Пример выполнения:</p>
+                    <div class="output">Сейчас посчитаем периметр треугольника
+Введите первую сторону: <span class="user_input">5</span>
+Введите вторую сторону: <span class="user_input">7</span>
+Введите третью сторону: <span class="user_input">9</span>
+Периметр равен: 21</div>
+                    <p>Теперь программа универсальна: она подойдёт для любого треугольника. Пользователь не должен лезть в код — он просто взаимодействует с программой через консоль.</p>
+                </div>
+                <div class="example">
+                    <h2>Ввод разных типов данных</h2>
+                    <p>Idyllium предоставляет отдельные функции для каждого типа:</p>
+                    <ul>
+                        <li><code>console.get_int()</code> — целое число,</li>
+                        <li><code>console.get_float()</code> — дробное число,</li>
+                        <li><code>console.get_string()</code> — текст.</li>
+                    </ul>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Сколько вам лет: "</span><span class="brackets">);</span>
+    <span class="typeName">int</span> <span class="object">age</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_int</span><span class="brackets">();</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Какая у вас температура: "</span><span class="brackets">);</span>
+    <span class="typeName">float</span> <span class="object">temp</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_float</span><span class="brackets">();</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Как вас зовут: "</span><span class="brackets">);</span>
+    <span class="typeName">string</span> <span class="object">name</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_string</span><span class="brackets">();</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">name</span><span class="brackets">,</span> <span class="string">" здоров. Свободен. Следующий!"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <p>Пример выполнения:</p>
+                    <div class="output">Сколько вам лет: <span class="user_input">14</span>
+Какая у вас температура: <span class="user_input">36.6</span>
+Как вас зовут: <span class="user_input">Рома</span>
+Рома здоров. Свободен. Следующий!</div>
+                    <p>Каждая функция предназначена строго для своего типа. Попытка ввести текст там, где ожидается число, вызовет ошибку — и это хорошо: программа не будет пытаться угадать ваши намерения.</p>
+                </div>
+                <div class="example">
+                    <h2>Что, если объявить переменную, но не присвоить ей значение?</h2>
+                    <p>В Idyllium каждая переменная получает <strong>дефолтное значение</strong> при объявлении, даже если вы явно его не указали:</p>
+                    <ul>
+                        <li><code>int</code> → <code>0</code></li>
+                        <li><code>float</code> → <code>0.0</code></li>
+                        <li><code>bool</code> → <code>false</code></li>
+                        <li><code>char</code> → <code>'\0'</code> (нулевой символ)</li>
+                        <li><code>string</code> → <code>""</code> (пустая строка)</li>
+                    </ul>
+                    <p>Рассмотрим пример:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Как вас зовут: "</span><span class="brackets">);</span>
+    <span class="typeName">string</span> <span class="object">name</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_string</span><span class="brackets">();</span>
+
+    <span class="typeName">int</span> <span class="object">money</span><span class="brackets">;</span> <span class="comment">// значение не присвоено — будет 0</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">name</span><span class="brackets">,</span> <span class="string">", у вас "</span><span class="brackets">,</span> <span class="object">money</span><span class="brackets">,</span> <span class="string">" денег!"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+    <p>Пример выполнения:</p>
+    <div class="output">Как вас зовут: <span class="user_input">Пётр</span>
+Пётр, у вас 0 денег!</div>
+                    <p>Это поведение — сознательный выбор. Idyllium <strong>не допускает неинициализированных переменных</strong>, чтобы избежать «мусорных» значений и непредсказуемого поведения. При этом ученик по-прежнему обязан чётко понимать, что переменная должна быть <em>осмысленно</em> заполнена перед использованием — особенно если дефолтное значение не подходит для задачи.</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson2.html" class="nav-button nav-prev">
+                            ← Урок 2: Переменные и типы данных
+                        </a>
+                        <a href="./lesson4.html" class="nav-button nav-next">
+                            Урок 4: Арифметика →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>

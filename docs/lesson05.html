@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 5: Управляющие последовательности — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+    <style>
+        .output span.color-reset { color: inherit; }
+        .output span.color-red { color: #ff0000; }
+        .output span.color-green { color: #00aa00; }
+        .output span.color-yellow { color: #aaaa00; }
+        .output span.color-blue { color: #0000ff; }
+        .output span.color-magenta { color: #ff00ff; }
+        .output span.color-cyan { color: #00aaaa; }
+    </style>
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 5: Управляющие последовательности</h1>
+            <p class="subtitle">Как управлять форматом и внешним видом текста в консоли</p>
+        </section>
+        <section class="flex">
+            <nav>
+                <div>
+                    <a href="./lesson03.html">Урок 3: Ввод данных</a>
+                    <a href="./lesson04.html">Урок 4: Арифметика</a>
+                    <a href="./lesson05.html" class="current">Урок 5: Управляющие последовательности</a>
+                    <a href="./lesson06.html">Урок 6: Преобразования данных</a>
+                    <a href="./lesson07.html">Урок 7: Математические функции</a>
+                </div>
+            </nav>
+            <div class="examples">
+                <div class="example">
+                    <h2>Переход на новую строку: <code>'\n'</code></h2>
+                    <p>Вы уже знаете символ <code>'\n'</code> — он заставляет текст «перейти» на следующую строку:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Кот"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">,</span> <span class="string">"хочет"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">,</span> <span class="string">"кушать"</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">Кот
+хочет
+кушать</div>
+                </div>
+                <div class="example">
+                    <h2>Экранирование символов: <code>\"</code></h2>
+                    <p>Если вы хотите вставить кавычки <em>внутрь</em> строки, их нужно «экранировать» обратным слешем <code>\</code>:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Игра \"Minecraft\" была создана в 2009 году"</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">Игра "Minecraft" была создана в 2009 году</div>
+                    <p>Без обратного слеша компилятор подумал бы, что строка заканчивается на первых кавычках — и выдал бы ошибку. Символ <code>\</code> «обманывает» компилятор: он говорит: «эта кавычка — часть текста, не конец строки».</p>
+                </div>
+                <div class="example">
+                    <h2>Табуляция: <code>'\t'</code></h2>
+                    <p>Символ <code>'\t'</code> вставляет горизонтальный отступ, как если бы вы нажали клавишу <strong>Tab</strong> на клавиатуре:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"До Tab"</span><span class="brackets">,</span> <span class="string">'\t'</span><span class="brackets">,</span> <span class="string">"После Tab"</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">До Tab      После Tab</div>
+                    <p>Слово «табуляция» происходит от латинского <em>tabula</em> — «доска, таблица». Именно так раньше выравнивали колонки в таблицах. Сегодня <code>'\t'</code> — удобный способ добавить отступ без кучи пробелов.</p>
+                </div>
+                <div class="example">
+                    <h2>Цветной текст в консоли</h2>
+                    <p>Idyllium поддерживает ANSI-последовательности для цветного вывода. Чтобы изменить цвет текста, используйте управляющую последовательность вида <code>'\e[31m'</code>:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">'\e[31m'</span><span class="brackets">,</span> <span class="string">"Красный текст"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">'\e[32m'</span><span class="brackets">,</span> <span class="string">"Зелёный текст"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">'\e[33m'</span><span class="brackets">,</span> <span class="string">"Жёлтый текст"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">'\e[34m'</span><span class="brackets">,</span> <span class="string">"Синий текст"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">'\e[35m'</span><span class="brackets">,</span> <span class="string">"Малиновый текст"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">'\e[0m'</span><span class="brackets">,</span> <span class="string">"Стандартный текст"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output"><span class="color-red">Красный текст</span>
+<span class="color-green">Зелёный текст</span>
+<span class="color-yellow">Жёлтый текст</span>
+<span class="color-blue">Синий текст</span>
+<span class="color-magenta">Малиновый текст</span>
+<span class="color-reset">Стандартный текст</span></div>
+                    <p>Цвета задаются кодами от <code>'\e[30m'</code> до <code>'\e[37m'</code> (тёмные) и от <code>'\e[90m'</code> до <code>'\e[97m'</code> (светлые). А последовательность <code>'\e[0m'</code> сбрасывает все эффекты — и текст возвращается к обычному виду.</p>
+                </div>
+                <div class="example">
+                    <h2>Цвет сохраняется до конца вывода</h2>
+                    <p>Один раз задав цвет, вы не обязаны его указывать каждый раз — он будет применяться ко всем последующим строкам:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">'\e[32m'</span><span class="brackets">,</span> <span class="string">"Текст стал зелёным"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Текст всё ещё зелёный"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Пока цвет не поменять, он будет зелёным"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">'\e[34m'</span><span class="brackets">,</span> <span class="string">"А теперь текст стал синим"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"И он останется синим"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Пока не поменять на другой"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output"><span class="color-green">Текст стал зелёным</span>
+<span class="color-green">Текст всё ещё зелёный</span>
+<span class="color-green">Пока цвет не поменять, он будет зелёным</span>
+<span class="color-blue">А теперь текст стал синим</span>
+<span class="color-blue">И он останется синим</span>
+<span class="color-blue">Пока не поменять на другой</span></div>
+                    <p>Это поведение — не баг, а фича: оно позволяет легко выделять целые блоки текста одним цветом, не дублируя команды.</p>
+                </div>
+                <div class="example">
+                    <h2>Сброс цвета и эффектов</h2>
+                    <p>Чтобы вернуть текст к стандартному виду, используйте команду <code>'\e[0m'</code>:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">'\e[36m'</span><span class="brackets">,</span> <span class="string">"Цвет изменён на циановый"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">'\e[0m'</span><span class="brackets">,</span> <span class="string">"Цвет сброшен до обычного"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output"><span class="color-cyan">Цвет изменён на циановый</span>
+<span class="color-reset">Цвет сброшен до обычного</span></div>
+                    <p>Это особенно важно, если вы пишете большую программу: оставшийся цвет может «заразить» весь последующий вывод и запутать пользователя.</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson4.html" class="nav-button nav-prev">
+                            ← Урок 4: Арифметика
+                        </a>
+                        <a href="./lesson6.html" class="nav-button nav-next">
+                            Урок 6: Преобразования данных →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 8: Условный оператор и тип 'bool' — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 8: Условный оператор и тип <code>bool</code></h1>
+            <p class="subtitle">Как научить программу принимать решения</p>
+        </section>
+        <section class="flex">
+            <nav>
+                <div>
+                    <a href="./lesson06.html">Урок 6: Преобразования данных</a>
+                    <a href="./lesson07.html">Урок 7: Математические функции</a>
+                    <a href="./lesson08.html" class="current">Урок 8: Условный оператор и тип 'bool'</a>
+                    <a href="./lesson09.html">Урок 9: Инкремент и декремент</a>
+                    <a href="./lesson10.html">Урок 10: Случайные числа</a>
+                </div>
+            </nav>
+            <div class="examples">
+                <div class="example">
+                    <h2>Практическая задача: покупка йогурта</h2>
+                    <p>Представим, что вы пишете программу, которая считает, сколько денег останется после покупки:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Сколько у вас денег: "</span><span class="brackets">);</span>
+    <span class="typeName">int</span> <span class="object">money</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_int</span><span class="brackets">();</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Сколько стоит йогурт: "</span><span class="brackets">);</span>
+    <span class="typeName">int</span> <span class="object">price</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_int</span><span class="brackets">();</span>
+
+    <span class="typeName">int</span> <span class="object">new_money</span> <span class="brackets">=</span> <span class="object">money</span> <span class="brackets">-</span> <span class="object">price</span><span class="brackets">;</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"После покупки останется "</span><span class="brackets">,</span> <span class="object">new_money</span><span class="brackets">,</span> <span class="string">" денег!\n"</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <p>Пример успешной покупки:</p>
+                    <div class="output">Сколько у вас денег: <span class="user_input">100</span>
+Сколько стоит йогурт: <span class="user_input">35</span>
+После покупки останется 65 денег!
+</div>
+                    <p>Но что, если денег не хватит? Программа всё равно вычтет цену и покажет отрицательное число! Это нелогично. Нам нужно <strong>принять решение</strong>: покупать или нет.</p>
+                </div>
+                <div class="example">
+                    <h2>Условный оператор: базовая форма</h2>
+                    <p>В Idyllium для принятия решений используется условный оператор:</p>
+                    <pre><span class="keyword">if</span> <span class="brackets">(</span><span class="object">условие</span><span class="brackets">)</span> <span class="brackets">{</span>
+     <span class="comment">// действия</span>
+<span class="brackets">}</span></pre>
+                    <p>Конструкция проверяет, является ли условие истинным. Если да — выполняются команды внутри фигурных скобок.</p>
+                    <p>Слово <code>if</code> по-английски означает «если». Например:</p>
+                    <pre><span class="keyword">if</span> <span class="brackets">(</span><span class="object">N</span> <span class="brackets">&gt;</span> <span class="number">50</span><span class="brackets">)</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"ЪУЪ!"</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <p>Перевод на русский: «Если переменная N больше, чем 50, то вывести "ЪУЪ!"».</p>
+                </div>
+                <div class="example">
+                    <h2>Защита от отрицательного баланса</h2>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Сколько у вас денег: "</span><span class="brackets">);</span>
+    <span class="typeName">int</span> <span class="object">money</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_int</span><span class="brackets">();</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Сколько стоит йогурт: "</span><span class="brackets">);</span>
+    <span class="typeName">int</span> <span class="object">price</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_int</span><span class="brackets">();</span>
+
+    <span class="keyword">if</span> <span class="brackets">(</span><span class="object">money</span> <span class="brackets">&gt;</span> <span class="object">price</span><span class="brackets">)</span> <span class="brackets">{</span>
+        <span class="typeName">int</span> <span class="object">new_money</span> <span class="brackets">=</span> <span class="object">money</span> <span class="brackets">-</span> <span class="object">price</span><span class="brackets">;</span>
+        <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"После покупки останется "</span><span class="brackets">,</span> <span class="object">new_money</span><span class="brackets">,</span> <span class="string">" денег!\n"</span><span class="brackets">);</span>
+    <span class="brackets">}</span>
+<span class="brackets">}</span></pre>
+                    <p>Если денег достаточно:</p>
+                    <div class="output">Сколько у вас денег: <span class="user_input">80</span>
+Сколько стоит йогурт: <span class="user_input">25</span>
+После покупки останется 55 денег!
+</div>
+                    <p>Если денег недостаточно — программа ничего не выведет, потому что условие ложно.</p>
+                </div>
+                <div class="example">
+                    <h2>Несколько условий подряд</h2>
+                    <p>Программа может содержать сколько угодно условных операторов:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Введите число: "</span><span class="brackets">);</span>
+    <span class="typeName">int</span> <span class="object">N</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_int</span><span class="brackets">();</span>
+
+    <span class="keyword">if</span> <span class="brackets">(</span><span class="object">N</span> <span class="brackets">&gt;</span> <span class="number">0</span><span class="brackets">)</span> <span class="brackets">{</span>
+        <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Ваше число положительное!\n"</span><span class="brackets">);</span>
+    <span class="brackets">}</span>
+    <span class="keyword">if</span> <span class="brackets">(</span><span class="object">N</span> <span class="brackets">&lt;</span> <span class="number">0</span><span class="brackets">)</span> <span class="brackets">{</span>
+        <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Ваше число отрицательное!\n"</span><span class="brackets">);</span>
+    <span class="brackets">}</span>
+    <span class="keyword">if</span> <span class="brackets">(</span><span class="object">N</span> <span class="brackets">==</span> <span class="number">0</span><span class="brackets">)</span> <span class="brackets">{</span>
+        <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Ваше число равно нулю!\n"</span><span class="brackets">);</span>
+    <span class="brackets">}</span>
+<span class="brackets">}</span></pre>
+                    <p>Пример с положительным числом:</p>
+                    <div class="output">Введите число: <span class="user_input">42</span>
+Ваше число положительное!
+</div>
+                    <p>Пример с нулём:</p>
+                    <div class="output">Введите число: <span class="user_input">0</span>
+Ваше число равно нулю!
+</div>
+                </div>
+                <div class="example">
+                    <h2>Полная форма условного оператора</h2>
+                    <p>Иногда нужно выполнять одно действие, если условие истинно, и <em>другое</em> — если ложно:</p>
+                    <pre><span class="keyword">if</span> <span class="brackets">(</span><span class="object">условие</span><span class="brackets">)</span> <span class="brackets">{</span>
+    <span class="comment">// действия истинной ветки</span>
+<span class="brackets">}</span>
+<span class="keyword">else</span> <span class="brackets">{</span>
+    <span class="comment">// действия ложной ветки</span>
+<span class="brackets">}</span></pre>
+                    <p><strong>Условный оператор</strong> — это инструмент программирования, который позволяет при истинном условии выполнять одни действия, а при ложном — другие.</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Сколько у вас денег: "</span><span class="brackets">);</span>
+    <span class="typeName">int</span> <span class="object">money</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_int</span><span class="brackets">();</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Сколько стоит йогурт: "</span><span class="brackets">);</span>
+    <span class="typeName">int</span> <span class="object">price</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_int</span><span class="brackets">();</span>
+
+    <span class="keyword">if</span> <span class="brackets">(</span><span class="object">money</span> <span class="brackets">&gt;=</span> <span class="object">price</span><span class="brackets">)</span> <span class="brackets">{</span>
+        <span class="typeName">int</span> <span class="object">new_money</span> <span class="brackets">=</span> <span class="object">money</span> <span class="brackets">-</span> <span class="object">price</span><span class="brackets">;</span>
+        <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"После покупки останется "</span><span class="brackets">,</span> <span class="object">new_money</span><span class="brackets">,</span> <span class="string">" денег!\n"</span><span class="brackets">);</span>
+    <span class="brackets">}</span>
+    <span class="keyword">else</span> <span class="brackets">{</span>
+        <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Вам не хватает денег для покупки!\n"</span><span class="brackets">);</span>
+    <span class="brackets">}</span>
+<span class="brackets">}</span></pre>
+                    <p>Если денег достаточно:</p>
+                    <div class="output">Сколько у вас денег: <span class="user_input">30</span>
+Сколько стоит йогурт: <span class="user_input">25</span>
+После покупки останется 5 денег!
+</div>
+                    <p>Если денег не хватает:</p>
+                    <div class="output">Сколько у вас денег: <span class="user_input">10</span>
+Сколько стоит йогурт: <span class="user_input">25</span>
+Вам не хватает денег для покупки!
+</div>
+                </div>
+                <div class="example">
+                    <h2>Что такое условие?</h2>
+                    <p><strong>Условие</strong> — это выражение, которое является либо <strong>истинным</strong>, либо <strong>ложным</strong>.</p>
+                    <p>Примеры:</p>
+                    <ul>
+                        <li><code>10 &gt; 5</code> — истинное условие</li>
+                        <li><code>40 &lt; 13</code> — ложное условие</li>
+                    </ul>
+                    <p>В программировании существуют специальные значения:
+                        <code>true</code> — истина,
+                        <code>false</code> — ложь.</p>
+                </div>
+                <div class="example">
+                    <h2>Тип данных <code>bool</code></h2>
+                    <p>В Idyllium есть специальный тип <code>bool</code> для хранения логических значений:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">bool</span> <span class="object">A</span> <span class="brackets">=</span> <span class="keyword">true</span><span class="brackets">;</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">A</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// true</span>
+
+    <span class="typeName">bool</span> <span class="object">B</span> <span class="brackets">=</span> <span class="brackets">(</span><span class="number">14</span> <span class="brackets">&gt;</span> <span class="number">7</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">B</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// true</span>
+
+    <span class="typeName">bool</span> <span class="object">C</span> <span class="brackets">=</span> <span class="brackets">(</span><span class="number">25</span> <span class="brackets">&lt;</span> <span class="number">4</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">C</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// false</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">true
+true
+false</div>
+                </div>
+                <div class="example">
+                    <h2>Операторы сравнения</h2>
+                    <p>Существует шесть операторов, которые порождают логические значения:</p>
+                    <ul>
+                        <li><code>&lt;</code> — меньше</li>
+                        <li><code>&gt;</code> — больше</li>
+                        <li><code>==</code> — равно</li>
+                        <li><code>&gt;=</code> — не меньше (больше или равно)</li>
+                        <li><code>&lt;=</code> — не больше (меньше или равно)</li>
+                        <li><code>!=</code> — не равно</li>
+                    </ul>
+                    <p>Любой из них можно использовать в условии:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">A</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_int</span><span class="brackets">();</span>
+    <span class="keyword">if</span> <span class="brackets">(</span><span class="object">A</span> <span class="brackets">&gt;</span> <span class="number">5</span><span class="brackets">)</span> <span class="brackets">{</span>
+        <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"A больше 5"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="brackets">}</span>
+
+    <span class="typeName">int</span> <span class="object">B</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_int</span><span class="brackets">();</span>
+    <span class="keyword">if</span> <span class="brackets">(</span><span class="object">B</span> <span class="brackets">==</span> <span class="number">20</span><span class="brackets">)</span> <span class="brackets">{</span>
+        <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"B равно 20"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="brackets">}</span>
+
+    <span class="typeName">int</span> <span class="object">C</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_int</span><span class="brackets">();</span>
+    <span class="keyword">if</span> <span class="brackets">(</span><span class="object">C</span> <span class="brackets">&lt;=</span> <span class="number">11</span><span class="brackets">)</span> <span class="brackets">{</span>
+        <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"C меньше или равно 11"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="brackets">}</span>
+
+    <span class="typeName">int</span> <span class="object">D</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_int</span><span class="brackets">();</span>
+    <span class="keyword">if</span> <span class="brackets">(</span><span class="object">D</span> <span class="brackets">!=</span> <span class="object">A</span><span class="brackets">)</span> <span class="brackets">{</span>
+        <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"D не равно A"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="brackets">}</span>
+<span class="brackets">}</span></pre>
+                </div>
+                <div class="example">
+                    <h2>Оператор присваивания vs оператор сравнения</h2>
+                    <p>Важное различие:</p>
+                    <ul>
+                        <li><code>=</code> — оператор <strong>присваивания</strong>: берёт значение справа и записывает его в переменную слева;</li>
+                        <li><code>==</code> — оператор <strong>сравнения</strong>: проверяет, равны ли значения слева и справа, и возвращает <code>true</code>, если они равны.</li>
+                    </ul>
+                    <p>Пример ошибки:</p>
+                    <pre><span class="keyword">if</span> <span class="brackets">(</span><span class="object">money</span> <span class="brackets">=</span> <span class="number">100</span><span class="brackets">)</span> <span class="brackets">{</span> <span class="comment">// ОШИБКА! Это присваивание, а не сравнение</span> <span class="brackets">}</span></pre>
+                    <p>Idyllium <strong>не разрешает</strong> использовать оператор присваивания внутри условия — это всегда ошибка компиляции. Так детская опечатка не превратится в серьёзный баг.</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson7.html" class="nav-button nav-prev">
+                            ← Урок 7: Математические функции
+                        </a>
+                        <a href="./lesson9.html" class="nav-button nav-next">
+                            Урок 9: Инкремент и декремент →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>

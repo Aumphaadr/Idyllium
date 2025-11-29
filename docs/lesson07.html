@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 7: Базовые математические функции — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 7: Базовые математические функции</h1>
+            <p class="subtitle">Мощные инструменты из библиотеки <code>math</code> — без лишнего шума</p>
+        </section>
+        <section class="flex">
+            <nav>
+                <div>
+                    <a href="./lesson05.html">Урок 5: Управляющие последовательности</a>
+                    <a href="./lesson06.html">Урок 6: Преобразования данных</a>
+                    <a href="./lesson07.html" class="current">Урок 7: Математические функции</a>
+                    <a href="./lesson08.html">Урок 8: Условный оператор и тип 'bool'</a>
+                    <a href="./lesson09.html">Урок 9: Инкремент и декремент</a>
+                </div>
+            </nav>
+            <div class="examples">
+                <div class="example">
+                    <h2>Подключение библиотеки <code>math</code></h2>
+                    <p>Для использования математических функций необходимо подключить библиотеку <code>math</code>:</p>
+                    <pre><span class="keyword">use</span> <span class="object">math</span><span class="brackets">;</span></pre>
+                    <p>После этого все функции вызываются по схеме: <code>math.название(аргументы)</code>.</p>
+                </div>
+                <div class="example">
+                    <h2>Модуль числа: <code>math.abs(n)</code></h2>
+                    <p>Функция <code>math.abs(n)</code> возвращает абсолютное значение (модуль) числа — то есть его расстояние от нуля, без знака:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+<span class="keyword">use</span> <span class="object">math</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="function">math</span><span class="brackets">.</span><span class="function">abs</span><span class="brackets">(</span><span class="number">-15</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// 15</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="function">math</span><span class="brackets">.</span><span class="function">abs</span><span class="brackets">(</span><span class="number">42</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// 42</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="function">math</span><span class="brackets">.</span><span class="function">abs</span><span class="brackets">(</span><span class="number">-3.7</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// 3.7</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">15
+42
+3.7</div>
+                </div>
+                <div class="example">
+                    <h2>Округление чисел: <code>round</code>, <code>floor</code>, <code>ceil</code></h2>
+                    <p>Библиотека <code>math</code> предоставляет три функции для округления:</p>
+                    <ul>
+                        <li><code>math.round(n, z)</code> — округляет к ближайшему значению (<em>математическое округление</em>);</li>
+                        <li><code>math.floor(n, z)</code> — округляет вниз (к меньшему);</li>
+                        <li><code>math.ceil(n, z)</code> — округляет вверх (к большему).</li>
+                    </ul>
+                    <p>Если второй аргумент <code>z</code> не указан — округление выполняется до целого числа.</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+<span class="keyword">use</span> <span class="object">math</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">float</span> <span class="object">x</span> <span class="brackets">=</span> <span class="number">3.6789</span><span class="brackets">;</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Исходное число: "</span><span class="brackets">,</span> <span class="object">x</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"round(x): "</span><span class="brackets">,</span> <span class="function">math</span><span class="brackets">.</span><span class="function">round</span><span class="brackets">(</span><span class="object">x</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>       <span class="comment">// 4</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"floor(x): "</span><span class="brackets">,</span> <span class="function">math</span><span class="brackets">.</span><span class="function">floor</span><span class="brackets">(</span><span class="object">x</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>       <span class="comment">// 3</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"ceil(x): "</span><span class="brackets">,</span> <span class="function">math</span><span class="brackets">.</span><span class="function">ceil</span><span class="brackets">(</span><span class="object">x</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>        <span class="comment">// 4</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"round(x, 2): "</span><span class="brackets">,</span> <span class="function">math</span><span class="brackets">.</span><span class="function">round</span><span class="brackets">(</span><span class="object">x</span><span class="brackets">,</span> <span class="number">2</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>  <span class="comment">// 3.68</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"floor(x, 2): "</span><span class="brackets">,</span> <span class="function">math</span><span class="brackets">.</span><span class="function">floor</span><span class="brackets">(</span><span class="object">x</span><span class="brackets">,</span> <span class="number">2</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>  <span class="comment">// 3.67</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"ceil(x, 2): "</span><span class="brackets">,</span> <span class="function">math</span><span class="brackets">.</span><span class="function">ceil</span><span class="brackets">(</span><span class="object">x</span><span class="brackets">,</span> <span class="number">2</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>   <span class="comment">// 3.68</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">Исходное число: 3.6789
+round(x): 4
+floor(x): 3
+ceil(x): 4
+round(x, 2): 3.68
+floor(x, 2): 3.67
+ceil(x, 2): 3.68</div>
+                    <p>Обратите внимание: все три функции принимают необязательный второй аргумент — количество знаков после запятой.</p>
+                </div>
+                <div class="example">
+                    <h2>Возведение в степень: <code>math.pow(a, b)</code></h2>
+                    <p>Функция <code>math.pow(a, b)</code> возводит число <code>a</code> в степень <code>b</code>:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+<span class="keyword">use</span> <span class="object">math</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="function">math</span><span class="brackets">.</span><span class="function">pow</span><span class="brackets">(</span><span class="number">2</span><span class="brackets">,</span> <span class="number">8</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>    <span class="comment">// 256</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="function">math</span><span class="brackets">.</span><span class="function">pow</span><span class="brackets">(</span><span class="number">5</span><span class="brackets">,</span> <span class="number">3</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>    <span class="comment">// 125</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="function">math</span><span class="brackets">.</span><span class="function">pow</span><span class="brackets">(</span><span class="number">4</span><span class="brackets">,</span> <span class="number">-1</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// 0.25 (1/4)</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">256
+125
+0.25</div>
+                </div>
+                <div class="example">
+                    <h2>Квадратный корень: <code>math.sqrt(n)</code></h2>
+                    <p>Функция <code>math.sqrt(n)</code> вычисляет квадратный корень из неотрицательного числа:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+<span class="keyword">use</span> <span class="object">math</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="function">math</span><span class="brackets">.</span><span class="function">sqrt</span><span class="brackets">(</span><span class="number">49</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>    <span class="comment">// 7</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="function">math</span><span class="brackets">.</span><span class="function">sqrt</span><span class="brackets">(</span><span class="number">2</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>    <span class="comment">// примерно 1.4142</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="function">math</span><span class="brackets">.</span><span class="function">sqrt</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>    <span class="comment">// 0</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">7
+1.4142135623731
+0</div>
+                    <p>Попытка извлечь корень из отрицательного числа вызовет ошибку выполнения — Idyllium не работает с комплексными числами на этом уровне.</p>
+                </div>
+                <div class="example">
+                    <h2>Ограничение значения: <code>math.clamp(min, val, max)</code></h2>
+                    <p>Функция <code>math.clamp(min, val, max)</code> «зажимает» значение <code>val</code> в указанный диапазон: если <code>val</code> меньше <code>min</code> — вернёт <code>min</code>; если больше <code>max</code> — вернёт <code>max</code>; иначе — само <code>val</code>.</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+<span class="keyword">use</span> <span class="object">math</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="function">math</span><span class="brackets">.</span><span class="function">clamp</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">,</span> <span class="number">5</span><span class="brackets">,</span> <span class="number">10</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>      <span class="comment">// 5</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="function">math</span><span class="brackets">.</span><span class="function">clamp</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">,</span> <span class="number">-3</span><span class="brackets">,</span> <span class="number">10</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>     <span class="comment">// 0</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="function">math</span><span class="brackets">.</span><span class="function">clamp</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">,</span> <span class="number">15</span><span class="brackets">,</span> <span class="number">10</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>     <span class="comment">// 10</span>
+
+    <span class="comment">// Пример: ограничить уровень громкости от 0 до 100</span>
+    <span class="typeName">int</span> <span class="object">volume</span> <span class="brackets">=</span> <span class="number">115</span><span class="brackets">;</span>
+    <span class="object">volume</span> <span class="brackets">=</span> <span class="function">math</span><span class="brackets">.</span><span class="function">clamp</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">,</span> <span class="object">volume</span><span class="brackets">,</span> <span class="number">100</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Громкость: "</span><span class="brackets">,</span> <span class="object">volume</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// 100</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">5
+0
+10
+Громкость: 100</div>
+                    <p>Эта функция особенно полезна в играх, интерфейсах и сенсорных системах, где нужно ограничить значения в допустимом диапазоне.</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson6.html" class="nav-button nav-prev">
+                            ← Урок 6: Преобразования данных
+                        </a>
+                        <a href="./lesson8.html" class="nav-button nav-next">
+                            Урок 8: Условный оператор и тип 'bool' →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>

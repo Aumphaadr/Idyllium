@@ -1,36 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Почему Idyllium</title>
-    <link rel="stylesheet" href="fonts/SalmaPro.css">
-    <link rel="stylesheet" href="style.css">
-    <link rel="shortcut icon" href="img/favicon.png" type="image/x-icon">
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
 </head>
 <body>
-    <div class="shell">
-        <header>
-            <div class="header_left">
-                <a href="index.html">
-                <img src="img/icon.png" alt="">
-                </a>
-                <a href="index.html">
-                    Idyllium — твой первый шаг в IT
-                </a>
-            </div>
-            <div class="header_center">
-                <a href="cli.html">Примеры CLI</a>
-                <a href="gui.html" class="inactive">Примеры GUI</a>
-                <a href="oop.html" class="inactive">Примеры ООП</a>
-            </div>
-            <div class="header_right">
-                <a href="why.html">Почему Idyllium</a>
-            </div>
-        </header>
+    <header id="shared-header"></header>
+    <main>
         <section>
-            <div class="h0">Я выбрал Idyllium — что я получил?</div>
-            <div class="h2_5">Как минимум, изучение программирования не превратилось в забег по кругам Ада</div>
+            <h1>Я выбрал Idyllium — что я получил?</h1>
+            <p class="subtitle">Как минимум, изучение программирования не превратилось в забег по кругам Ада</p>
         </section>
         <section class="flex">
             <nav>
@@ -52,267 +35,267 @@
                     <a href="#ex14">Ошибка "=" вместо "=="</a>
                 </div>
             </nav>
-            <main>
+            <div class="examples">
                 <div class="example" id="ex0">
                     <h2>Шаблон программы</h2>
                     <p><b>C#</b> требует большого объёма шаблонного синтаксиса даже для простого вывода:</p>
-                    <pre><span class="keyword">using</span> System;
+                    <pre><span class="keyword">using</span> <span class="object">System</span><span class="brackets">;</span>
 
-<span class="keyword">class</span> Program {
-    <span class="keyword">static</span> <span class="type">void</span> <span class="function">Main</span>(<span class="type">string</span>[] args) {
-        Console.<span class="function">WriteLine</span>(<span class="string">"Hello, World!"</span>);
-    }
-}</pre>
+<span class="keyword">class</span> <span class="object">Program</span> <span class="brackets">{</span>
+    <span class="keyword">static</span> <span class="typeName">void</span> <span class="function">Main</span><span class="brackets">(</span><span class="typeName">string</span><span class="brackets">[]</span> <span class="object">args</span><span class="brackets">)</span> <span class="brackets">{</span>
+        <span class="object">Console</span><span class="brackets">.</span><span class="function">WriteLine</span><span class="brackets">(</span><span class="string">"Hello, World!"</span><span class="brackets">);</span>
+    <span class="brackets">}</span>
+<span class="brackets">}</span></pre>
                     <p>В <b>Idyllium</b> точка входа проста и читаема — это просто <code>main()</code> без аргументов и типов:</p>
-                    <pre><span class="keyword">use</span> console;
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
 
-<span class="function">main</span>() {
-    console.<span class="function">write</span>(<span class="string">"Hello, World!\n"</span>);
-}</pre>
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Hello, World!\n"</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
                 </div>
                 <div class="example" id="ex1">
                     <h2>Типы данных</h2>
                     <p><b>C++</b> предлагает несколько десятков способов объявления чисел:</p>
-                    <pre><span class="type">int</span> a = <span class="number">10</span>;
-<span class="type">long</span> b = <span class="number">123456789</span>;
-<span class="type">unsigned short</span> c = <span class="number">42</span>;
-<span class="type">float</span> f = <span class="number">3.14f</span>;
-<span class="type">double</span> d = <span class="number">2.71828</span>;
-<span class="type">char</span> ch = <span class="string">'A'</span>;</pre>
+                    <pre><span class="typeName">int</span> <span class="object">a</span> <span class="brackets">=</span> <span class="number">10</span><span class="brackets">;</span>
+<span class="typeName">long</span> <span class="object">b</span> <span class="brackets">=</span> <span class="number">123456789</span><span class="brackets">;</span>
+<span class="typeName">unsigned short</span> <span class="object">c</span> <span class="brackets">=</span> <span class="number">42</span><span class="brackets">;</span>
+<span class="typeName">float</span> <span class="object">f</span> <span class="brackets">=</span> <span class="number">3.14f</span><span class="brackets">;</span>
+<span class="typeName">double</span> <span class="object">d</span> <span class="brackets">=</span> <span class="number">2.71828</span><span class="brackets">;</span>
+<span class="typeName">char</span> <span class="object">ch</span> <span class="brackets">=</span> <span class="string">'A'</span><span class="brackets">;</span></pre>
                     <p>А в <b>Idyllium</b> всё просто и строго. Только нужные типы, без "усечённых" и "расширенных" вариантов:</p>
-                    <pre><span class="type">int</span> a = <span class="number">10</span>;
-<span class="type">float</span> b = <span class="number">3.14</span>;
-<span class="type">char</span> c = <span class="string">'A'</span>;
-<span class="type">string</span> name = <span class="string">"Alice"</span>;
-<span class="type">bool</span> flag = <span class="keyword">true</span>;</pre>
+                    <pre><span class="typeName">int</span> <span class="object">a</span> <span class="brackets">=</span> <span class="number">10</span><span class="brackets">;</span>
+<span class="typeName">float</span> <span class="object">b</span> <span class="brackets">=</span> <span class="number">3.14</span><span class="brackets">;</span>
+<span class="typeName">char</span> <span class="object">c</span> <span class="brackets">=</span> <span class="string">'A'</span><span class="brackets">;</span>
+<span class="typeName">string</span> <span class="object">name</span> <span class="brackets">=</span> <span class="string">"Alice"</span><span class="brackets">;</span>
+<span class="typeName">bool</span> <span class="object">flag</span> <span class="brackets">=</span> <span class="keyword">true</span><span class="brackets">;</span></pre>
                     <p>У C++ — сложность, перегруз. У Idyllium — чистота и логика с первого урока.</p>
                 </div>
                 <div class="example" id="ex2">
                     <h2>Ввод данных</h2>
                     <p><b>Python</b> путает детей тем, что <code>input()</code> возвращает строку, и число нужно приводить:</p>
-                    <pre>a = <span class="function">int</span>(<span class="function">input</span>(<span class="string">"Введите число: "</span>))</pre>
+                    <pre><span class="object">a</span> <span class="brackets">=</span> <span class="function">int</span><span class="brackets">(</span><span class="function">input</span><span class="brackets">(</span><span class="string">"Введите число: "</span><span class="brackets">))</span></pre>
 
                     <p><b>Java</b> заставляет писать объёмный код с объектами и сканером:</p>
-                    <pre><span class="type">Scanner</span> sc = <span class="keyword">new</span> <span class="type">Scanner</span>(System.in);
-<span class="type">int</span> a = sc.<span class="function">nextInt</span>();</pre>
+                    <pre><span class="typeName">Scanner</span> <span class="object">sc</span> <span class="brackets">=</span> <span class="keyword">new</span> <span class="typeName">Scanner</span><span class="brackets">(</span><span class="object">System</span><span class="brackets">.</span><span class="object">in</span><span class="brackets">);</span>
+<span class="typeName">int</span> <span class="object">a</span> <span class="brackets">=</span> <span class="object">sc</span><span class="brackets">.</span><span class="function">nextInt</span><span class="brackets">();</span></pre>
 
                     <p><b>Idyllium</b> использует предсказуемую, единообразную систему:</p>
-                    <pre><span class="type">int</span> a = console.<span class="function">get_int</span>();
-<span class="type">float</span> b = console.<span class="function">get_float</span>();
-<span class="type">string</span> name = console.<span class="function">get_string</span>();</pre>
+                    <pre><span class="typeName">int</span> <span class="object">a</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_int</span><span class="brackets">();</span>
+<span class="typeName">float</span> <span class="object">b</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_float</span><span class="brackets">();</span>
+<span class="typeName">string</span> <span class="object">name</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_string</span><span class="brackets">();</span></pre>
                     <p>Каждая функция <code>get_тип()</code> — понятна и объяснима.</p>
                 </div>
                 <div class="example" id="ex3">
-<h2>Арифметика</h2>
-<p><b>C++</b>: деление двух целых чисел — целочисленное, без предупреждения:</p>
-<pre><span class="type">int</span> a = <span class="number">7</span>, b = <span class="number">2</span>;
-<span class="type">float</span> x = a / b; <span class="comment">// Результат: 3, а не 3.5!</span></pre>
+                    <h2>Арифметика</h2>
+                    <p><b>C++</b>: деление двух целых чисел — целочисленное, без предупреждения:</p>
+                    <pre><span class="typeName">int</span> <span class="object">a</span> <span class="brackets">=</span> <span class="number">7</span><span class="brackets">,</span> <span class="object">b</span> <span class="brackets">=</span> <span class="number">2</span><span class="brackets">;</span>
+<span class="typeName">float</span> <span class="object">x</span> <span class="brackets">=</span> <span class="object">a</span> <span class="brackets">/</span> <span class="object">b</span><span class="brackets">;</span> <span class="comment">// Результат: 3, а не 3.5!</span></pre>
 
-<p><b>Idyllium</b>: деление через <code>/</code> всегда даёт <code>float</code>:</p>
-<pre><span class="type">int</span> a = <span class="number">7</span>;
-<span class="type">int</span> b = <span class="number">2</span>;
-<span class="type">float</span> result = a / b;  <span class="comment">// Результат: 3.5</span></pre>
+                    <p><b>Idyllium</b>: деление через <code>/</code> всегда даёт <code>float</code>:</p>
+                    <pre><span class="typeName">int</span> <span class="object">a</span> <span class="brackets">=</span> <span class="number">7</span><span class="brackets">;</span>
+<span class="typeName">int</span> <span class="object">b</span> <span class="brackets">=</span> <span class="number">2</span><span class="brackets">;</span>
+<span class="typeName">float</span> <span class="object">result</span> <span class="brackets">=</span> <span class="object">a</span> <span class="brackets">/</span> <span class="object">b</span><span class="brackets">;</span>  <span class="comment">// Результат: 3.5</span></pre>
                     <p>Idyllium также предоставляет <code>div(a, b)</code> и <code>mod(a, b)</code> для явной работы с целыми числами.</p>
                 </div>
                 <div class="example" id="ex4">
-<h2>Преобразования типов</h2>
-<p><b>C++</b> предлагает путаницу из функций и классов:</p>
-<pre><span class="type">int</span> a = <span class="type">std::</span><span class="function">stoi</span>(<span class="string">"42"</span>); <span class="comment">// "Стой", блин. Прекрасное название!</span>
-<span class="type">string</span> s = <span class="type">std::</span><span class="function">to_string</span>(<span class="number">3.14</span>);
-<span class="type">int</span> b = <span class="function">atoi</span>(s.<span class="function">c_str</span>());</pre>
-<p>Какая из них безопасна? Когда использовать <code>.c_str()</code>? Почему <code>atoi</code> не бросает ошибки?</p>
+                    <h2>Преобразования типов</h2>
+                    <p><b>C++</b> предлагает путаницу из функций и классов:</p>
+                    <pre><span class="typeName">int</span> <span class="object">a</span> <span class="brackets">=</span> <span class="object">std</span><span class="brackets">::</span><span class="function">stoi</span><span class="brackets">(</span><span class="string">"42"</span><span class="brackets">);</span> <span class="comment">// "Стой", блин. Прекрасное название!</span>
+<span class="typeName">string</span> <span class="object">s</span> <span class="brackets">=</span> <span class="object">std</span><span class="brackets">::</span><span class="function">to_string</span><span class="brackets">(</span><span class="number">3.14</span><span class="brackets">);</span>
+<span class="typeName">int</span> <span class="object">b</span> <span class="brackets">=</span> <span class="function">atoi</span><span class="brackets">(</span><span class="object">s</span><span class="brackets">.</span><span class="function">c_str</span><span class="brackets">());</span></pre>
+                    <p>Какая из них безопасна? Когда использовать <code>.c_str()</code>? Почему <code>atoi</code> не бросает ошибки?</p>
 
-<p><b>Idyllium</b> предлагает ясные и одинаковые функции:</p>
-<pre><span class="type">int</span> a = <span class="function">to_int</span>(<span class="string">"42"</span>);
-<span class="type">float</span> f = <span class="function">to_float</span>(<span class="string">"3.14"</span>);
-<span class="type">string</span> s = <span class="function">to_string</span>(<span class="number">10</span>);</pre>
+                    <p><b>Idyllium</b> предлагает ясные и одинаковые функции:</p>
+                    <pre><span class="typeName">int</span> <span class="object">a</span> <span class="brackets">=</span> <span class="function">to_int</span><span class="brackets">(</span><span class="string">"42"</span><span class="brackets">);</span>
+<span class="typeName">float</span> <span class="object">f</span> <span class="brackets">=</span> <span class="function">to_float</span><span class="brackets">(</span><span class="string">"3.14"</span><span class="brackets">);</span>
+<span class="typeName">string</span> <span class="object">s</span> <span class="brackets">=</span> <span class="function">to_string</span><span class="brackets">(</span><span class="number">10</span><span class="brackets">);</span></pre>
                     <p>Названия говорят сами за себя. Преобразования всегда явные. Ошибки — понятные.</p>
                 </div>
                 <div class="example" id="ex5">
-<h2>Конкатенация строк</h2>
-<p><b>C++</b> иногда позволяет сложить строку и число, что может вести к ошибкам и недоумению:</p>
-<pre><span class="type">std::string</span> s = <span class="string">"value = "</span> + <span class="number">2</span>; <span class="comment">// Получится "lue = ". Шта?</span></pre>
+                    <h2>Конкатенация строк</h2>
+                    <p><b>C++</b> иногда позволяет сложить строку и число, что может вести к ошибкам и недоумению:</p>
+                    <pre><span class="typeName">std::string</span> <span class="object">s</span> <span class="brackets">=</span> <span class="string">"value = "</span> <span class="brackets">+</span> <span class="number">2</span><span class="brackets">;</span> <span class="comment">// Получится "lue = ". Шта?</span></pre>
 
-<p><b>JavaScript</b> вовсе превращает всё в строку:</p>
-<pre><span class="keyword">let</span> s = <span class="string">"X = "</span> + <span class="number">42</span> + <span class="string">"!"</span>; <span class="comment">// "X = 42!"</span></pre>
+                    <p><b>JavaScript</b> вовсе превращает всё в строку:</p>
+                    <pre><span class="keyword">let</span> <span class="object">s</span> <span class="brackets">=</span> <span class="string">"X = "</span> <span class="brackets">+</span> <span class="number">42</span> <span class="brackets">+</span> <span class="string">"!"</span><span class="brackets">;</span> <span class="comment">// "X = 42!"</span></pre>
 
-<p><b>Idyllium</b> разрешает только осмысленные операции:</p>
-<pre><span class="type">string</span> s = <span class="string">"X = "</span> + <span class="function">to_string</span>(<span class="number">42</span>); <span class="comment">// Явное преобразование</span>
-<span class="type">string</span> a = <span class="string">"A"</span> + <span class="string">'!'</span>; <span class="comment">// Строка + символ — допустимо</span></pre>
+                    <p><b>Idyllium</b> разрешает только осмысленные операции:</p>
+                    <pre><span class="typeName">string</span> <span class="object">s</span> <span class="brackets">=</span> <span class="string">"X = "</span> <span class="brackets">+</span> <span class="function">to_string</span><span class="brackets">(</span><span class="number">42</span><span class="brackets">);</span> <span class="comment">// Явное преобразование</span>
+<span class="typeName">string</span> <span class="object">a</span> <span class="brackets">=</span> <span class="string">"A"</span> <span class="brackets">+</span> <span class="string">'!'</span><span class="brackets">;</span> <span class="comment">// Строка + символ — допустимо</span></pre>
                     <p>Никакой автоматической каши из типов. Только логика и контроль.</p>
                 </div>
                 <div class="example" id="ex6">
-<h2>Условный оператор</h2>
-<p><b>Python</b> использует слово <code>elif</code>, которое нельзя встретить больше нигде:</p>
-<pre><span class="keyword">if</span> x &gt; <span class="number">0</span>:
-    <span class="function">print</span>(<span class="string">"положительное"</span>)
-<span class="keyword">elif</span> x == <span class="number">0</span>:
-    <span class="function">print</span>(<span class="string">"ноль"</span>)
-<span class="keyword">else</span>:
-    <span class="function">print</span>(<span class="string">"отрицательное"</span>)</pre>
+                    <h2>Условный оператор</h2>
+                    <p><b>Python</b> использует слово <code>elif</code>, которое нельзя встретить больше нигде:</p>
+                    <pre><span class="keyword">if</span> <span class="object">x</span> <span class="brackets">&gt;</span> <span class="number">0</span><span class="brackets">:</span>
+    <span class="function">print</span><span class="brackets">(</span><span class="string">"положительное"</span><span class="brackets">)</span>
+<span class="keyword">elif</span> <span class="object">x</span> <span class="brackets">==</span> <span class="number">0</span><span class="brackets">:</span>
+    <span class="function">print</span><span class="brackets">(</span><span class="string">"ноль"</span><span class="brackets">)</span>
+<span class="keyword">else</span><span class="brackets">:</span>
+    <span class="function">print</span><span class="brackets">(</span><span class="string">"отрицательное"</span><span class="brackets">)</span></pre>
 
-<p><b>Idyllium</b> использует классический <code>else if</code> — универсальный и переносимый:</p>
-<pre><span class="keyword">if</span> (x &gt; <span class="number">0</span>)
-{
-    console.<span class="function">write</span>(<span class="string">"положительное\n"</span>);
-}
-<span class="keyword">else if</span> (x == <span class="number">0</span>)
-{
-    console.<span class="function">write</span>(<span class="string">"ноль\n"</span>);
-}
+                    <p><b>Idyllium</b> использует классический <code>else if</code> — универсальный и переносимый:</p>
+                    <pre><span class="keyword">if</span> <span class="brackets">(</span><span class="object">x</span> <span class="brackets">&gt;</span> <span class="number">0</span><span class="brackets">)</span>
+<span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"положительное\n"</span><span class="brackets">);</span>
+<span class="brackets">}</span>
+<span class="keyword">else if</span> <span class="brackets">(</span><span class="object">x</span> <span class="brackets">==</span> <span class="number">0</span><span class="brackets">)</span>
+<span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"ноль\n"</span><span class="brackets">);</span>
+<span class="brackets">}</span>
 <span class="keyword">else</span>
-{
-    console.<span class="function">write</span>(<span class="string">"отрицательное\n"</span>);
-}</pre>
+<span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"отрицательное\n"</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
                     <p>Без "питоновских" изобретений. Только проверенная логика.</p>
                 </div>
                 <div class="example" id="ex7">
-<h3>Цикл <code>for</code></h3>
-<p><b>Python</b> скрывает детали итерации в <code>range()</code>, который может работать по-разному:</p>
-<pre><span class="keyword">for</span> i <span class="keyword">in</span> <span class="function">range</span>(<span class="number">5</span>):        <span class="comment"># от 0 до 4</span>
-<span class="keyword">for</span> i <span class="keyword">in</span> <span class="function">range</span>(<span class="number">2</span>, <span class="number">5</span>):     <span class="comment"># от 2 до 4</span>
-<span class="keyword">for</span> i <span class="keyword">in</span> <span class="function">range</span>(<span class="number">10</span>, <span class="number">0</span>, <span class="number">-1</span>): <span class="comment"># обратный ход</span></pre>
+                    <h2>Цикл <code>for</code></h2>
+                    <p><b>Python</b> скрывает детали итерации в <code>range()</code>, который может работать по-разному:</p>
+                    <pre><span class="keyword">for</span> <span class="object">i</span> <span class="keyword">in</span> <span class="function">range</span><span class="brackets">(</span><span class="number">5</span><span class="brackets">):</span>        <span class="comment">// от 0 до 4</span>
+<span class="keyword">for</span> <span class="object">i</span> <span class="keyword">in</span> <span class="function">range</span><span class="brackets">(</span><span class="number">2</span><span class="brackets">,</span> <span class="number">5</span><span class="brackets">):</span>     <span class="comment">// от 2 до 4</span>
+<span class="keyword">for</span> <span class="object">i</span> <span class="keyword">in</span> <span class="function">range</span><span class="brackets">(</span><span class="number">10</span><span class="brackets">,</span> <span class="number">0</span><span class="brackets">,</span> <span class="number">-1</span><span class="brackets">):</span> <span class="comment">// обратный ход</span></pre>
 
-<p><b>Idyllium</b> показывает полную структуру цикла, как в C++:</p>
-<pre><span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">5</span>; i = i + <span class="number">1</span>) {
-    console.<span class="function">write</span>(i, <span class="string">"\n"</span>);
-}</pre>
+                    <p><b>Idyllium</b> показывает полную структуру цикла, как в C++:</p>
+                    <pre><span class="keyword">for</span> <span class="brackets">(</span><span class="typeName">int</span> <span class="object">i</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">&lt;</span> <span class="number">5</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">=</span> <span class="object">i</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">)</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">i</span><span class="brackets">,</span> <span class="string">"\n"</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
                     <p>Нет "магических" трёх аргументов и скрытых шагов — всё под контролем.</p>
                 </div>
                 <div class="example" id="ex8">
-<h2>Случайные числа</h2>
-<p><b>Python</b> требует разных функций для целых и дробных:</p>
-<pre><span class="keyword">import</span> random
-a = random.<span class="function">randint</span>(<span class="number">1</span>, <span class="number">10</span>)
-b = random.<span class="function">uniform</span>(<span class="number">0.0</span>, <span class="number">1.0</span>) <span class="comment"># почему uniform, а не randfloat?</span></pre>
+                    <h2>Случайные числа</h2>
+                    <p><b>Python</b> требует разных функций для целых и дробных:</p>
+                    <pre><span class="keyword">import</span> <span class="object">random</span>
+<span class="object">a</span> <span class="brackets">=</span> <span class="object">random</span><span class="brackets">.</span><span class="function">randint</span><span class="brackets">(</span><span class="number">1</span><span class="brackets">,</span> <span class="number">10</span><span class="brackets">)</span>
+<span class="object">b</span> <span class="brackets">=</span> <span class="object">random</span><span class="brackets">.</span><span class="function">uniform</span><span class="brackets">(</span><span class="number">0.0</span><span class="brackets">,</span> <span class="number">1.0</span><span class="brackets">)</span> <span class="comment"># почему uniform, а не randfloat?</span></pre>
 
-<p><b>C++</b> заставляет использовать <code>rand()</code>, <code>srand()</code> и <code>%</code>:</p>
-<pre><span class="type">int</span> r = <span class="function">rand</span>() % <span class="number">10</span> + <span class="number">1</span>; <span class="comment">// выглядит ужасно</span></pre>
+                    <p><b>C++</b> заставляет использовать <code>rand()</code>, <code>srand()</code> и <code>%</code>:</p>
+                    <pre><span class="typeName">int</span> <span class="object">r</span> <span class="brackets">=</span> <span class="function">rand</span><span class="brackets">()</span> <span class="brackets">%</span> <span class="number">10</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">;</span> <span class="comment">// выглядит ужасно</span></pre>
 
-<p><b>Idyllium</b> объединяет всё в стройной библиотеке <code>random</code>:</p>
-<pre><span class="keyword">use</span> random;
-<span class="type">int</span> a = random.<span class="function">create_int</span>(<span class="number">1</span>, <span class="number">10</span>);
-<span class="type">float</span> b = random.<span class="function">create_float</span>(<span class="number">0.0</span>, <span class="number">1.0</span>);
-<span class="type">char</span> c = random.<span class="function">choose_from</span>(<span class="string">"ABCD"</span>);</pre>
+                    <p><b>Idyllium</b> объединяет всё в стройной библиотеке <code>random</code>:</p>
+                    <pre><span class="keyword">use</span> <span class="object">random</span><span class="brackets">;</span>
+<span class="typeName">int</span> <span class="object">a</span> <span class="brackets">=</span> <span class="object">random</span><span class="brackets">.</span><span class="function">create_int</span><span class="brackets">(</span><span class="number">1</span><span class="brackets">,</span> <span class="number">10</span><span class="brackets">);</span>
+<span class="typeName">float</span> <span class="object">b</span> <span class="brackets">=</span> <span class="object">random</span><span class="brackets">.</span><span class="function">create_float</span><span class="brackets">(</span><span class="number">0.0</span><span class="brackets">,</span> <span class="number">1.0</span><span class="brackets">);</span>
+<span class="typeName">char</span> <span class="object">c</span> <span class="brackets">=</span> <span class="object">random</span><span class="brackets">.</span><span class="function">choose_from</span><span class="brackets">(</span><span class="string">"ABCD"</span><span class="brackets">);</span></pre>
                     <p>Одна библиотека. Чёткие функции. Всё предсказуемо.</p>
                 </div>
                 <div class="example" id="ex9">
-<h2>Массивы</h2>
-<p><b>C++</b>: массивы не проверяют выход за границы:</p>
-<pre><span class="type">int</span> arr[<span class="number">3</span>] = {<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>};
-<span class="type">int</span> x = arr[<span class="number">5</span>]; <span class="comment">// Поведение не определено, может даже не упасть</span></pre>
+                    <h2>Массивы</h2>
+                    <p><b>C++</b>: массивы не проверяют выход за границы:</p>
+                    <pre><span class="typeName">int</span> <span class="object">arr</span><span class="brackets">[</span><span class="number">3</span><span class="brackets">]</span> <span class="brackets">=</span> <span class="brackets">{</span><span class="number">1</span><span class="brackets">,</span> <span class="number">2</span><span class="brackets">,</span> <span class="number">3</span><span class="brackets">};</span>
+<span class="typeName">int</span> <span class="object">x</span> <span class="brackets">=</span> <span class="object">arr</span><span class="brackets">[</span><span class="number">5</span><span class="brackets">];</span> <span class="comment">// Поведение не определено, может даже не упасть</span></pre>
 
-<p><b>Idyllium</b>: выход за границы приводит к ошибке выполнения:</p>
-<pre><span class="type">array&lt;int, <span class="number">3</span>&gt;</span> arr;
-arr[<span class="number">0</span>] = <span class="number">1</span>;
-arr[<span class="number">1</span>] = <span class="number">2</span>;
-arr[<span class="number">2</span>] = <span class="number">3</span>;
-<span class="type">int</span> x = arr[<span class="number">5</span>]; <span class="comment">// Runtime error</span></pre>
+                    <p><b>Idyllium</b>: выход за границы приводит к ошибке выполнения:</p>
+                    <pre><span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">,</span> <span class="number">3</span><span class="brackets">&gt;</span> <span class="object">arr</span><span class="brackets">;</span>
+<span class="object">arr</span><span class="brackets">[</span><span class="number">0</span><span class="brackets">]</span> <span class="brackets">=</span> <span class="number">1</span><span class="brackets">;</span>
+<span class="object">arr</span><span class="brackets">[</span><span class="number">1</span><span class="brackets">]</span> <span class="brackets">=</span> <span class="number">2</span><span class="brackets">;</span>
+<span class="object">arr</span><span class="brackets">[</span><span class="number">2</span><span class="brackets">]</span> <span class="brackets">=</span> <span class="number">3</span><span class="brackets">;</span>
+<span class="typeName">int</span> <span class="object">x</span> <span class="brackets">=</span> <span class="object">arr</span><span class="brackets">[</span><span class="number">5</span><span class="brackets">];</span> <span class="comment">// Runtime error</span></pre>
                     <p>Безопасность важнее гибкости. Ошибки — явные, а не скрытые.</p>
                 </div>
                 <div class="example" id="ex10">
-<h2>Динамические массивы</h2>
-<p><b>C++</b>: <code>vector</code> — совсем не как обычный массив, с перегруженным синтаксисом:</p>
-<pre><span class="keyword">#include</span> <span class="string">&lt;vector&gt;</span>
-<span class="type">std::vector</span>&lt;<span class="type">int</span>&gt; v;
-v.<span class="function">push_back</span>(<span class="number">5</span>);
-v.<span class="function">erase</span>(v.<span class="function">begin</span>() + <span class="number">0</span>); <span class="comment">// Кто придумал так удалять ячейки? За что?</span></pre>
+                    <h2>Динамические массивы</h2>
+                    <p><b>C++</b>: <code>vector</code> — совсем не как обычный массив, с перегруженным синтаксисом:</p>
+                    <pre><span class="keyword">#include</span> <span class="string">&lt;vector&gt;</span>
+<span class="typeName">std::vector</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">&gt;</span> <span class="object">v</span><span class="brackets">;</span>
+<span class="object">v</span><span class="brackets">.</span><span class="function">push_back</span><span class="brackets">(</span><span class="number">5</span><span class="brackets">);</span>
+<span class="object">v</span><span class="brackets">.</span><span class="function">erase</span><span class="brackets">(</span><span class="object">v</span><span class="brackets">.</span><span class="function">begin</span><span class="brackets">()</span> <span class="brackets">+</span> <span class="number">0</span><span class="brackets">);</span> <span class="comment">// Кто придумал так удалять ячейки? За что?</span></pre>
 
-<p><b>Python</b> позволяет положить всё подряд в один список:</p>
-<pre>a = [<span class="number">5</span>, <span class="string">"рыба"</span>, <span class="keyword">True</span>, [<span class="string">"веселье"</span>, <span class="number">42</span> , <span class="string">"хаос"</span>], <span class="number">17</span>] <span class="comment"># данные валяются как попало</span></pre>
+                    <p><b>Python</b> позволяет положить всё подряд в один список:</p>
+                    <pre><span class="object">a</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">5</span><span class="brackets">,</span> <span class="string">"рыба"</span><span class="brackets">,</span> <span class="keyword">True</span><span class="brackets">,</span> <span class="brackets">[</span><span class="string">"веселье"</span><span class="brackets">,</span> <span class="number">42</span> <span class="brackets">,</span> <span class="string">"хаос"</span><span class="brackets">],</span> <span class="number">17</span><span class="brackets">]</span> <span class="comment"># данные валяются как попало</span></pre>
 
-<p><b>Idyllium</b> сохраняет типовую чистоту и читабельность:</p>
-<pre><span class="type">dyn_array&lt;int&gt;</span> t;
-t.<span class="function">add</span>(<span class="number">24</span>);
-t.<span class="function">add</span>(<span class="number">15</span>);
-t.<span class="function">add</span>(<span class="number">38</span>);
-t.<span class="function">add</span>(<span class="number">65</span>);
-t.<span class="function">add</span>(<span class="string">"ъуъ"</span>); <span class="comment">// не-не-не, с нами такое не прокатит!</span>
-t.<span class="function">remove_at</span>(<span class="number">0</span>); <span class="comment">// удалится 24</span></pre>
+                    <p><b>Idyllium</b> сохраняет типовую чистоту и читабельность:</p>
+                    <pre><span class="typeName">dyn_array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">&gt;</span> <span class="object">t</span><span class="brackets">;</span>
+<span class="object">t</span><span class="brackets">.</span><span class="function">add</span><span class="brackets">(</span><span class="number">24</span><span class="brackets">);</span>
+<span class="object">t</span><span class="brackets">.</span><span class="function">add</span><span class="brackets">(</span><span class="number">15</span><span class="brackets">);</span>
+<span class="object">t</span><span class="brackets">.</span><span class="function">add</span><span class="brackets">(</span><span class="number">38</span><span class="brackets">);</span>
+<span class="object">t</span><span class="brackets">.</span><span class="function">add</span><span class="brackets">(</span><span class="number">65</span><span class="brackets">);</span>
+<span class="object">t</span><span class="brackets">.</span><span class="function">add</span><span class="brackets">(</span><span class="string">"ъуъ"</span><span class="brackets">);</span> <span class="comment">// не-не-не, с нами такое не прокатит!</span>
+<span class="object">t</span><span class="brackets">.</span><span class="function">remove_at</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">);</span> <span class="comment">// удалится 24</span></pre>
                     <p>Чёткая типизация, понятные методы, единый стиль — без сюрпризов.</p>
                 </div>
                 <div class="example" id="ex11">
-<h2>Использование библиотек</h2>
-<p><b>C++</b> пугает детей конструкциями вроде:</p>
-<pre><span class="keyword">#include</span> <span class="string">&lt;iostream&gt;</span>
-<span class="keyword">using namespace</span> <span class="type">std</span>;
-<span class="type">std::</span><span class="function">cout</span> &lt;&lt; <span class="string">"Hello"</span> &lt;&lt; <span class="type">std::</span><span class="function">endl</span>; <span class="comment">// можно я пойду домой?</span></pre>
-<p>А что такое <code>std</code>? Что внутри <code>iostream</code>? Почему одни функции требуют <code>std::</code>, а другие — нет?</p>
+                    <h2>Использование библиотек</h2>
+                    <p><b>C++</b> пугает детей конструкциями вроде:</p>
+                    <pre><span class="keyword">#include</span> <span class="string">&lt;iostream&gt;</span>
+<span class="keyword">using namespace</span> <span class="object">std</span><span class="brackets">;</span>
+<span class="object">std</span><span class="brackets">::</span><span class="function">cout</span> <span class="brackets">&lt;&lt;</span> <span class="string">"Hello"</span> <span class="brackets">&lt;&lt;</span> <span class="object">std</span><span class="brackets">::</span><span class="function">endl</span><span class="brackets">;</span> <span class="comment">// можно я пойду домой?</span></pre>
+                    <p>А что такое <code>std</code>? Что внутри <code>iostream</code>? Почему одни функции требуют <code>std::</code>, а другие — нет?</p>
 
-<p><b>Python</b> предлагает сокращать названия, теряя читаемость:</p>
-<pre><span class="keyword">import</span> random <span class="keyword">as</span> r
-a = r.<span class="function">randint</span>(<span class="number">1</span>, <span class="number">10</span>)</pre>
+                    <p><b>Python</b> предлагает сокращать названия, теряя читаемость:</p>
+                    <pre><span class="keyword">import</span> <span class="object">random</span> <span class="keyword">as</span> <span class="object">r</span>
+<span class="object">a</span> <span class="brackets">=</span> <span class="object">r</span><span class="brackets">.</span><span class="function">randint</span><span class="brackets">(</span><span class="number">1</span><span class="brackets">,</span> <span class="number">10</span><span class="brackets">)</span></pre>
 
-<p><b>Idyllium</b> использует строгое и единообразное именование:</p>
-<pre><span class="keyword">use</span> random;
-<span class="type">int</span> x = random.<span class="function">create_int</span>(<span class="number">1</span>, <span class="number">10</span>);</pre>
+                    <p><b>Idyllium</b> использует строгое и единообразное именование:</p>
+                    <pre><span class="keyword">use</span> <span class="object">random</span><span class="brackets">;</span>
+<span class="typeName">int</span> <span class="object">x</span> <span class="brackets">=</span> <span class="object">random</span><span class="brackets">.</span><span class="function">create_int</span><span class="brackets">(</span><span class="number">1</span><span class="brackets">,</span> <span class="number">10</span><span class="brackets">);</span></pre>
                     <p>Каждая команда вызывается по схеме <code>библиотека.команда()</code> — как в хорошей архитектуре.</p>
                 </div>
                 <div class="example" id="ex12">
-<h2>Функции</h2>
-<p><b>Python</b> не различает <code>void</code>-функции и возвращающие — без аннотаций:</p>
-<pre><span class="keyword">def</span> <span class="function">show</span>(x):
-    <span class="function">print</span>(x)</pre>
-<p>Чем она отличается от:</p>
-<pre><span class="keyword">def</span> <span class="function">square</span>(x):
-    <span class="keyword">return</span> x * x</pre>
-<p>Только содержимым, но не сигнатурой. Это мешает понимать структуру программы.</p>
+                    <h2>Функции</h2>
+                    <p><b>Python</b> не различает <code>void</code>-функции и возвращающие — без аннотаций:</p>
+                    <pre><span class="keyword">def</span> <span class="function">show</span><span class="brackets">(</span><span class="object">x</span><span class="brackets">):</span>
+    <span class="function">print</span><span class="brackets">(</span><span class="object">x</span><span class="brackets">)</span></pre>
+                    <p>Чем она отличается от:</p>
+                    <pre><span class="keyword">def</span> <span class="function">square</span><span class="brackets">(</span><span class="object">x</span><span class="brackets">):</span>
+    <span class="keyword">return</span> <span class="object">x</span> <span class="brackets">*</span> <span class="object">x</span></pre>
+                    <p>Только содержимым, но не сигнатурой. Это мешает понимать структуру программы.</p>
 
-<p><b>Idyllium</b> требует указания возвращаемого типа:</p>
-<pre><span class="type">void</span> <span class="keyword">function</span> <span class="function">show</span>(<span class="type">int</span> x)
-{
-    console.<span class="function">write</span>(x, <span class="string">"\n"</span>);
-}
+                    <p><b>Idyllium</b> требует указания возвращаемого типа:</p>
+                    <pre><span class="typeName">void</span> <span class="keyword">function</span> <span class="function">show</span><span class="brackets">(</span><span class="typeName">int</span> <span class="object">x</span><span class="brackets">)</span>
+<span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">x</span><span class="brackets">,</span> <span class="string">"\n"</span><span class="brackets">);</span>
+<span class="brackets">}</span>
 
-<span class="type">int</span> <span class="keyword">function</span> <span class="function">square</span>(<span class="type">int</span> x)
-{
-    <span class="keyword">return</span> x * x;
-}</pre>
+<span class="typeName">int</span> <span class="keyword">function</span> <span class="function">square</span><span class="brackets">(</span><span class="typeName">int</span> <span class="object">x</span><span class="brackets">)</span>
+<span class="brackets">{</span>
+    <span class="keyword">return</span> <span class="object">x</span> <span class="brackets">*</span> <span class="object">x</span><span class="brackets">;</span>
+<span class="brackets">}</span></pre>
                     <p>Благодаря этому студент сразу понимает: что функция делает, и что она возвращает.</p>
                 </div>
                 <div class="example" id="ex13">
-<h2><code>int</code> в роли <code>bool</code></h2>
-<p><b>C++</b> позволяет использовать числа напрямую в условиях:</p>
-<pre><span class="type">int</span> a = <span class="number">6</span>;
-<span class="keyword">if</span> (a) {
-    <span class="type">std::</span><span class="function">cout</span> &lt;&lt; <span class="string">"Выполнится"</span>;
-}</pre>
-<p>Почему 6 — истина? Почему 0 — ложь? Почему никто не говорит, что это <code>bool</code>?</p>
+                    <h2><code>int</code> в роли <code>bool</code></h2>
+                    <p><b>C++</b> позволяет использовать числа напрямую в условиях:</p>
+                    <pre><span class="typeName">int</span> <span class="object">a</span> <span class="brackets">=</span> <span class="number">6</span><span class="brackets">;</span>
+<span class="keyword">if</span> <span class="brackets">(</span><span class="object">a</span><span class="brackets">)</span> <span class="brackets">{</span>
+    <span class="object">std</span><span class="brackets">::</span><span class="function">cout</span> <span class="brackets">&lt;&lt;</span> <span class="string">"Выполнится"</span><span class="brackets">;</span>
+<span class="brackets">}</span></pre>
+                    <p>Почему 6 — истина? Почему 0 — ложь? Почему никто не говорит, что это <code>bool</code>?</p>
 
-<p><b>Idyllium</b> запрещает использовать <code>int</code> как <code>bool</code>. Тип условия должен быть строго логическим:</p>
-<pre><span class="type">int</span> a = <span class="number">6</span>;
-<span class="keyword">if</span> (a) { <span class="comment">// Ошибка: тип int не может быть условием</span> }
+                    <p><b>Idyllium</b> запрещает использовать <code>int</code> как <code>bool</code>. Тип условия должен быть строго логическим:</p>
+                    <pre><span class="typeName">int</span> <span class="object">a</span> <span class="brackets">=</span> <span class="number">6</span><span class="brackets">;</span>
+<span class="keyword">if</span> <span class="brackets">(</span><span class="object">a</span><span class="brackets">)</span> <span class="brackets">{</span> <span class="comment">// Ошибка: тип int не может быть условием</span> <span class="brackets">}</span>
 
-<span class="keyword">if</span> (a != <span class="number">0</span>) { <span class="comment">// Явная проверка</span>
-    console.<span class="function">write</span>(<span class="string">"Выполнится\n"</span>);
-}</pre>
+<span class="keyword">if</span> <span class="brackets">(</span><span class="object">a</span> <span class="brackets">!=</span> <span class="number">0</span><span class="brackets">)</span> <span class="brackets">{</span> <span class="comment">// Явная проверка</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Выполнится\n"</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
                     <p>Idyllium не делает догадок за программиста. Всё должно быть выражено явно.</p>
                 </div>
                 <div class="example" id="ex14">
-<h2>Ошибка <code>=</code> вместо <code>==</code></h2>
-<p><b>C++</b> не остановит вас, если вы случайно напишете присваивание вместо сравнения:</p>
-<pre><span class="type">int</span> a = <span class="number">5</span>;
-<span class="keyword">if</span> (a = <span class="number">0</span>) { <span class="comment">// a присвоится 0, условие = false</span>
-    <span class="type">std::</span><span class="function">cout</span> &lt;&lt; <span class="string">"Никогда не выполнится"</span>;
-}</pre>
-<p>А если написать <code>if (a = 42)</code>? Всё выполнится, но <code>a</code> будет неожиданно изменено!</p>
+                    <h2>Ошибка <code>=</code> вместо <code>==</code></h2>
+                    <p><b>C++</b> не остановит вас, если вы случайно напишете присваивание вместо сравнения:</p>
+                    <pre><span class="typeName">int</span> <span class="object">a</span> <span class="brackets">=</span> <span class="number">5</span><span class="brackets">;</span>
+<span class="keyword">if</span> <span class="brackets">(</span><span class="object">a</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">)</span> <span class="brackets">{</span> <span class="comment">// a присвоится 0, условие = false</span>
+    <span class="object">std</span><span class="brackets">::</span><span class="function">cout</span> <span class="brackets">&lt;&lt;</span> <span class="string">"Никогда не выполнится"</span><span class="brackets">;</span>
+<span class="brackets">}</span></pre>
+                    <p>А если написать <code>if (a = 42)</code>? Всё выполнится, но <code>a</code> будет неожиданно изменено!</p>
 
-<p>А <b>Python</b> по-честному сообщает об ошибке:</p>
-<pre><span class="keyword">if</span> x = <span class="number">5</span>: <span class="comment"># SyntaxError: invalid syntax. Maybe you meant '==' instead of '='?</span></pre>
+                    <p>А <b>Python</b> по-честному сообщает об ошибке:</p>
+                    <pre><span class="keyword">if</span> <span class="object">x</span> <span class="brackets">=</span> <span class="number">5</span><span class="brackets">:</span> <span class="comment"># SyntaxError: invalid syntax. Maybe you meant '==' instead of '='?</span></pre>
 
-<p><b>Idyllium</b> тоже выдаёт ошибку: <code>=</code> — это только присваивание. В условии должно быть <code>==</code>.</p>
-<pre><span class="type">int</span> a = <span class="number">5</span>;
-<span class="keyword">if</span> (a = <span class="number">0</span>) { <span class="comment">// Ошибка компиляции: условие не может быть выражением присваивания</span> }</pre>
+                    <p><b>Idyllium</b> тоже выдаёт ошибку: <code>=</code> — это только присваивание. В условии должно быть <code>==</code>.</p>
+                    <pre><span class="typeName">int</span> <span class="object">a</span> <span class="brackets">=</span> <span class="number">5</span><span class="brackets">;</span>
+<span class="keyword">if</span> <span class="brackets">(</span><span class="object">a</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">)</span> <span class="brackets">{</span> <span class="comment">// Ошибка компиляции: условие не может быть выражением присваивания</span> <span class="brackets">}</span></pre>
 
-<p>Idyllium подсказывает: Ты хотел сравнить? Напиши <code>==</code>. Детская ошибка не станет взрослой проблемой.</p>
-</div>
-
-            </main>
+                    <p>Idyllium подсказывает: Ты хотел сравнить? Напиши <code>==</code>. Детская ошибка не станет взрослой проблемой.</p>
+                </div>
+            </div>
         </section>
-    </div>
+    </main>
     <footer>
-        <div class="h2_5">Maintaining just for lulz</div>
+        <p class="subtitle">Maintaining just for lulz</p>
         <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
     </footer>
+    <script src="./common.js" defer></script>
 </body>
 </html>
