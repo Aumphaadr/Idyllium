@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 9: Инкремент и декремент — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 9: Инкремент и декремент</h1>
+            <p class="subtitle">Как переменная может изменять саму себя — без магии</p>
+        </section>
+        <section class="flex">
+            <nav>
+                <div>
+                    <a href="./lesson07.html">Урок 7: Математические функции</a>
+                    <a href="./lesson08.html">Урок 8: Условный оператор и тип 'bool'</a>
+                    <a href="./lesson09.html" class="current">Урок 9: Инкремент и декремент</a>
+                    <a href="./lesson10.html">Урок 10: Случайные числа</a>
+                    <a href="./lesson11.html">Урок 11: Логические операции</a>
+                </div>
+            </nav>
+            <div class="examples">
+                <div class="example">
+                    <h2>Оператор присваивания: напоминание</h2>
+                    <p>Оператор <code>=</code> работает просто и честно:</p>
+                    <blockquote>
+                        «Беру значение справа от себя и кладу его в переменную слева от себя».
+                    </blockquote>
+                    <p>Пример:</p>
+                    <pre><span class="typeName">int</span> <span class="object">A</span> <span class="brackets">=</span> <span class="number">5</span><span class="brackets">;</span>
+<span class="typeName">int</span> <span class="object">D</span> <span class="brackets">=</span> <span class="object">A</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">;</span> <span class="comment">// в 'D' кладётся результат вычисления 'A + 1'</span></pre>
+                    <p>Здесь всё предсказуемо: сначала вычисляется правая часть, потом результат присваивается левой.</p>
+                </div>
+                <div class="example">
+                    <h2>Переменная изменяет саму себя</h2>
+                    <p>Теперь представим, что слева и справа — одна и та же переменная:</p>
+                    <pre><span class="typeName">int</span> <span class="object">N</span> <span class="brackets">=</span> <span class="number">10</span><span class="brackets">;</span>
+<span class="object">N</span> <span class="brackets">=</span> <span class="object">N</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">;</span> <span class="comment">// в 'N' кладётся результат 'N + 1'</span></pre>
+                    <p>Это не ошибка и не парадокс. Это — <strong>саморедактирование</strong>.</p>
+                    <p>Переменная <code>N</code> участвует в выражении в двух ролях:</p>
+                    <ul>
+                        <li><strong>справа</strong> — как источник текущего значения («я сейчас 10»);</li>
+                        <li><strong>слева</strong> — как получатель нового значения («теперь я стану 11»).</li>
+                    </ul>
+                    <p>Такая операция называется <strong>инкрементом</strong> — увеличением на единицу.</p>
+                </div>
+                <div class="example">
+                    <h2>Другие формы изменения переменной</h2>
+                    <p>Аналогично можно изменять переменную другими способами:</p>
+                    <pre><span class="typeName">int</span> <span class="object">score</span> <span class="brackets">=</span> <span class="number">100</span><span class="brackets">;</span>
+<span class="object">score</span> <span class="brackets">=</span> <span class="object">score</span> <span class="brackets">-</span> <span class="number">10</span><span class="brackets">;</span> <span class="comment">// декремент: уменьшение на 10</span>
+
+<span class="typeName">float</span> <span class="object">price</span> <span class="brackets">=</span> <span class="number">200.0</span><span class="brackets">;</span>
+<span class="object">price</span> <span class="brackets">=</span> <span class="object">price</span> <span class="brackets">/</span> <span class="number">2</span><span class="brackets">;</span> <span class="comment">// скидка 50%</span>
+
+<span class="typeName">int</span> <span class="object">counter</span> <span class="brackets">=</span> <span class="number">3</span><span class="brackets">;</span>
+<span class="object">counter</span> <span class="brackets">=</span> <span class="object">counter</span> <span class="brackets">*</span> <span class="number">2</span><span class="brackets">;</span> <span class="comment">// удвоение: 3 → 6</span></pre>
+                    <p>Во всех случаях сначала вычисляется правая часть, затем результат присваивается переменной слева — даже если это та же самая переменная.</p>
+                </div>
+                <div class="example">
+                    <h2>Изменение через функции</h2>
+                    <p>Переменную можно «редактировать» и с помощью функций:</p>
+                    <pre><span class="keyword">use</span> <span class="object">math</span><span class="brackets">;</span>
+
+<span class="typeName">int</span> <span class="object">K</span> <span class="brackets">=</span> <span class="number">-25</span><span class="brackets">;</span>
+<span class="object">K</span> <span class="brackets">=</span> <span class="function">math</span><span class="brackets">.</span><span class="function">abs</span><span class="brackets">(</span><span class="object">K</span><span class="brackets">);</span> <span class="comment">// K станет 25</span>
+
+<span class="typeName">int</span> <span class="object">volume</span> <span class="brackets">=</span> <span class="number">120</span><span class="brackets">;</span>
+<span class="object">volume</span> <span class="brackets">=</span> <span class="function">math</span><span class="brackets">.</span><span class="function">clamp</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">,</span> <span class="object">volume</span><span class="brackets">,</span> <span class="number">100</span><span class="brackets">);</span> <span class="comment">// volume станет 100</span></pre>
+                    <p>Здесь тоже действует то же правило: сначала функция вычисляет результат, потом он присваивается переменной. Переменная «переписывает» саму себя на основе своего же предыдущего значения.</p>
+                </div>
+                <div class="example">
+                    <h2>Почему в Idyllium нет <code>++</code> и <code>--</code>?</h2>
+                    <p>Во многих языках (C++, Java, JavaScript) существуют сокращения:</p>
+                    <pre><span class="object">N</span><span class="brackets">++;</span>  <span class="comment">// то же, что N = N + 1;</span>
+<span class="object">M</span><span class="brackets">--;</span>  <span class="comment">// то же, что M = M - 1;</span></pre>
+                    <p>Idyllium <strong>намеренно от них отказывается</strong>. Почему?</p>
+                    <ul>
+                        <li>Это синтаксический сахар, который не добавляет новой логики;</li>
+                        <li>Он маскирует суть операции — присваивание;</li>
+                        <li>Он порождает сложности (в чём разница между <code>++i</code> и <code>i++</code>?);</li>
+                        <li>Детям важнее понять "как работает", а не "как написать короче".</li>
+                    </ul>
+                    <p>В Idyllium всё явно: если вы хотите изменить переменную — напишите это честно: <code>N = N + 1</code>.</p>
+                </div>
+                <div class="example">
+                    <h2>Практическое применение</h2>
+                    <p>Саморедактирование переменной — основа счётчиков, накопителей и ограничителей:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">attempts</span> <span class="brackets">=</span> <span class="number">1</span><span class="brackets">;</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Попытка "</span><span class="brackets">,</span> <span class="object">attempts</span><span class="brackets">,</span> <span class="string">": введите пароль"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">attempts</span> <span class="brackets">=</span> <span class="object">attempts</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">;</span> <span class="comment">// счётчик увеличился, теперь равен 2</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Попытка "</span><span class="brackets">,</span> <span class="object">attempts</span><span class="brackets">,</span> <span class="string">": введите пароль"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">attempts</span> <span class="brackets">=</span> <span class="object">attempts</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">;</span> <span class="comment">// счётчик увеличился, теперь равен 3</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Попытка "</span><span class="brackets">,</span> <span class="object">attempts</span><span class="brackets">,</span> <span class="string">": введите пароль"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">attempts</span> <span class="brackets">=</span> <span class="object">attempts</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">;</span> <span class="comment">// счётчик увеличился, теперь равен 4</span>
+<span class="brackets">}</span></pre>
+                    <p>Такие паттерны встречаются везде — от игр до баз данных.</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson08.html" class="nav-button nav-prev">
+                            ← Урок 8: Условный оператор и тип 'bool'
+                        </a>
+                        <a href="./lesson10.html" class="nav-button nav-next">
+                            Урок 10: Случайные числа →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>
