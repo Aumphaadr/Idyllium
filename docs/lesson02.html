@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 2: Переменные и типы данных — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 2: Переменные и типы данных</h1>
+            <p class="subtitle">Храните данные так, чтобы не запутаться ни вам, ни компьютеру</p>
+        </section>
+        <section class="flex">
+            <nav>
+                <div>
+                    <a href="./lesson00.html">Урок 0: Установка Idyllium</a>
+                    <a href="./lesson01.html">Урок 1: Первая программа</a>
+                    <a href="./lesson02.html" class="current">Урок 2: Переменные и типы данных</a>
+                    <a href="./lesson03.html">Урок 3: Ввод данных</a>
+                    <a href="./lesson04.html">Урок 4: Арифметика</a>
+                </div>
+            </nav>
+            <div class="examples">
+                <div class="example">
+                    <h2>Что такое переменная?</h2>
+                    <p>Переменная — это <strong>ячейка в памяти компьютера</strong>, предназначенная для хранения данных.</p>
+                    <p>У каждой переменной обязательно есть три атрибута:</p>
+                    <ul>
+                        <li><strong>Имя</strong> — как мы обращаемся к переменной в коде (например, <code>score</code>, <code>name</code>);</li>
+                        <li><strong>Тип</strong> — какого рода данные она может хранить (число, текст и т.д.);</li>
+                        <li><strong>Значение</strong> — то, что в ней сейчас лежит.</li>
+                    </ul>
+                </div>
+                <div class="example">
+                    <h2>Создание переменных</h2>
+                    <p>Рассмотрим простейший пример:</p>
+                    <pre><span class="comment">// main.idyl</span>
+<span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">D</span> <span class="brackets">=</span> <span class="number">42</span><span class="brackets">;</span> <span class="comment">// создание переменной с именем 'D' и значением '42'</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">D</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+
+    <span class="typeName">int</span> <span class="object">Q</span> <span class="brackets">=</span> <span class="number">91</span><span class="brackets">;</span> <span class="comment">// создание переменной с именем 'Q' и значением '91'</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">Q</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <p>Результат выполнения:</p>
+                    <div class="output">42
+91</div>
+                    <p>Если передать переменную в функцию <code>console.write()</code> — она выведет именно <strong>значение</strong> этой переменной, а не её имя.</p>
+                </div>
+                <div class="example">
+                    <h2>Типы данных в Idyllium</h2>
+                    <p>Idyllium поддерживает следующие базовые типы:</p>
+                    <ul>
+                        <li><code>int</code> — целые числа (…, -2, -1, 0, 1, 2, …);</li>
+                        <li><code>float</code> — числа с плавающей точкой (3.14, -0.5, 2.0);</li>
+                        <li><code>string</code> — текст в двойных кавычках (<code>"Привет"</code>);</li>
+                        <li><code>char</code> — одиночный символ в одинарных кавычках (<code>'A'</code>, <code>'#'</code>);</li>
+                        <li><code>bool</code> — логические значения: <code>true</code> или <code>false</code>.</li>
+                    </ul>
+                    <p>Пример объявления переменных разных типов:</p>
+                    <pre><span class="comment">// main.idyl</span>
+<span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">N</span> <span class="brackets">=</span> <span class="number">42</span><span class="brackets">;</span>
+    <span class="typeName">float</span> <span class="object">F</span> <span class="brackets">=</span> <span class="number">16.3</span><span class="brackets">;</span>
+    <span class="typeName">string</span> <span class="object">S</span> <span class="brackets">=</span> <span class="string">"И вообще, я крутой!"</span><span class="brackets">;</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">N</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">F</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">S</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                </div>
+                <div class="example">
+                    <h2>Ошибки несоответствия типов</h2>
+                    <p>В Idyllium <strong>нельзя присвоить переменной значение, не подходящее по типу</strong>. Компилятор сразу сообщит об ошибке:</p>
+                    <pre><span class="comment">// main.idyl</span>
+<span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="comment">// тип 'int': только для целых чисел</span>
+    <span class="typeName">int</span> <span class="object">A</span> <span class="brackets">=</span> <span class="number">2</span><span class="brackets">;</span> <span class="comment">// можно</span>
+    <span class="typeName">int</span> <span class="object">B</span> <span class="brackets">=</span> <span class="number">1.7</span><span class="brackets">;</span> <span class="comment">// нельзя — ошибка!</span>
+
+    <span class="comment">// тип 'float': только для дробных чисел</span>
+    <span class="typeName">float</span> <span class="object">C</span> <span class="brackets">=</span> <span class="number">4.62</span><span class="brackets">;</span> <span class="comment">// можно</span>
+    <span class="typeName">float</span> <span class="object">D</span> <span class="brackets">=</span> <span class="number">5</span><span class="brackets">;</span> <span class="comment">// можно — станет 5.0</span>
+    <span class="typeName">float</span> <span class="object">E</span> <span class="brackets">=</span> <span class="string">"текст"</span><span class="brackets">;</span> <span class="comment">// нельзя — ошибка!</span>
+
+    <span class="comment">// тип 'string': только для текста в кавычках</span>
+    <span class="typeName">string</span> <span class="object">F</span> <span class="brackets">=</span> <span class="string">"ЪЕЪ или ЪУЪ?"</span><span class="brackets">;</span> <span class="comment">// можно</span>
+    <span class="typeName">string</span> <span class="object">G</span> <span class="brackets">=</span> <span class="string">"дайте 64 алмаза"</span><span class="brackets">;</span> <span class="comment">// можно</span>
+    <span class="typeName">string</span> <span class="object">H</span> <span class="brackets">=</span> <span class="number">56692</span><span class="brackets">;</span> <span class="comment">// нельзя — ошибка!</span>
+<span class="brackets">}</span></pre>
+                    <p>Это не ограничение — это защита. Компьютер не будет пытаться угадать, что вы имели в виду.</p>
+                </div>
+                <div class="example">
+                    <h2>Объявление и присваивание</h2>
+                    <p>Есть два способа работать с переменной:</p>
+                    <ul>
+                        <li><strong>Инициализация</strong> — создание с одновременным присваиванием значения;</li>
+                        <li><strong>Присваивание</strong> — изменение значения уже созданной переменной.</li>
+                    </ul>
+                    <pre><span class="comment">// main.idyl</span>
+<span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">A</span><span class="brackets">;</span> <span class="comment">// создаём переменную, но не указываем значение</span>
+    <span class="object">A</span> <span class="brackets">=</span> <span class="number">20</span><span class="brackets">;</span> <span class="comment">// присваиваем значение</span>
+
+    <span class="typeName">int</span> <span class="object">B</span> <span class="brackets">=</span> <span class="number">30</span><span class="brackets">;</span> <span class="comment">// создаём и сразу присваиваем</span>
+<span class="brackets">}</span></pre>
+                </div>
+                <div class="example">
+                    <h2>Встраивание переменных в текст</h2>
+                    <p>Функция <code>console.write()</code> не ставит пробелы автоматически между аргументами. Сравните:</p>
+                    <pre><span class="comment">// main.idyl</span>
+<span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">W</span><span class="brackets">;</span>
+    <span class="object">W</span> <span class="brackets">=</span> <span class="number">5</span><span class="brackets">;</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Кот сожрал"</span><span class="brackets">,</span> <span class="object">W</span><span class="brackets">,</span> <span class="string">"кг корма!"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <p>Результат:</p>
+                    <div class="output">Кот сожрал5кг корма!</div>
+                    <p>Число «прилипло» к словам. Чтобы этого избежать — добавьте пробелы в строки:</p>
+                    <pre><span class="comment">// main.idyl</span>
+<span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">W</span> <span class="brackets">=</span> <span class="number">5</span><span class="brackets">;</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Кот сожрал "</span><span class="brackets">,</span> <span class="object">W</span><span class="brackets">,</span> <span class="string">" кг корма!"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <p>Теперь всё читаемо:</p>
+                    <div class="output">Кот сожрал 5 кг корма!</div>
+                    <p>Это даёт вам полный контроль над форматом вывода — без сюрпризов.</p>
+                </div>
+                <div class="example">
+                    <h2>Изменение значения переменной</h2>
+                    <p>Переменная может менять своё значение в процессе работы программы:</p>
+                    <pre><span class="comment">// main.idyl</span>
+<span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">money</span> <span class="brackets">=</span> <span class="number">20000</span><span class="brackets">;</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"У вас "</span><span class="brackets">,</span> <span class="object">money</span><span class="brackets">,</span> <span class="string">" денег\n"</span><span class="brackets">);</span>
+
+    <span class="object">money</span> <span class="brackets">=</span> <span class="number">25000</span><span class="brackets">;</span>    
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"У вас "</span><span class="brackets">,</span> <span class="object">money</span><span class="brackets">,</span> <span class="string">" денег\n"</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <p>Вывод:</p>
+                    <div class="output">У вас 20000 денег
+У вас 25000 денег</div>
+                    <p>Обратите внимание: при изменении значения <strong>не нужно указывать тип повторно</strong>. Достаточно написать <code>money = 25000;</code>. Тип уже зафиксирован при объявлении.</p>
+                </div>
+                <div class="example">
+                    <h2>Порядок строк имеет значение</h2>
+                    <p>В Idyllium, как и во многих языках, <strong>переменную можно использовать только после её объявления</strong>. Попытка обратиться к переменной до того, как она создана, вызовет ошибку компиляции.</p>
+                    <pre><span class="comment">// main.idyl</span>
+<span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Алмазов: "</span><span class="brackets">,</span> <span class="object">diam</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// Ошибка: переменная 'diam' не объявлена</span>
+    <span class="typeName">int</span> <span class="object">diam</span> <span class="brackets">=</span> <span class="number">64</span><span class="brackets">;</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Алмазов: "</span><span class="brackets">,</span> <span class="object">diam</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// А теперь всё в порядке</span>
+<span class="brackets">}</span></pre>
+                    <p>Это правило помогает избежать путаницы и учит писать код в логической последовательности: сначала — что у вас есть (объявление), потом — что вы с этим делаете (использование).</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson1.html" class="nav-button nav-prev">
+                            ← Урок 1: Первая программа
+                        </a>
+                        <a href="./lesson3.html" class="nav-button nav-next">
+                            Урок 3: Ввод данных →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>
