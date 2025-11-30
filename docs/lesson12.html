@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 12: Циклы — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 12: Циклы</h1>
+            <p class="subtitle">Как заставить компьютер делать одно и то же много раз — без копипасты</p>
+        </section>
+        <section class="flex">
+            <nav>
+                <div>
+                    <a href="./lesson10.html">Урок 10: Случайные числа</a>
+                    <a href="./lesson11.html">Урок 11: Логические операции</a>
+                    <a href="./lesson12.html" class="current">Урок 12: Циклы</a>
+                    <a href="./lesson13.html">Урок 13: Массивы (статика)</a>
+                    <a href="./lesson14.html">Урок 14: Тип 'char' и строки</a>
+                </div>
+            </nav>
+            <div class="examples">
+                <div class="example">
+                    <h2>Цикл <code>while</code> — «пока»</h2>
+                    <p>Цикл <code>while</code> проверяет условие <strong>перед</strong> каждой итерацией. Если условие истинно — выполняет тело цикла. Если ложно — выходит из цикла.</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">count</span> <span class="brackets">=</span> <span class="number">1</span><span class="brackets">;</span>
+    <span class="keyword">while</span> <span class="brackets">(</span><span class="object">count</span> <span class="brackets">&lt;=</span> <span class="number">5</span><span class="brackets">)</span> <span class="brackets">{</span>
+        <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Итерация "</span><span class="brackets">,</span> <span class="object">count</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+        <span class="object">count</span> <span class="brackets">=</span> <span class="object">count</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">;</span>
+    <span class="brackets">}</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">Итерация 1
+Итерация 2
+Итерация 3
+Итерация 4
+Итерация 5</div>
+                    <p>Если условие изначально ложно — цикл не выполнится ни разу.</p>
+                </div>
+                <div class="example">
+                    <h2>Цикл <code>do-while</code> — «сделай, потом проверь»</h2>
+                    <p>Цикл <code>do-while</code> сначала выполняет тело цикла, <strong>затем</strong> проверяет условие. Это гарантирует, что тело цикла выполнится как минимум один раз.</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">guess</span><span class="brackets">;</span>
+    <span class="keyword">do</span> <span class="brackets">{</span>
+        <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Угадайте число от 1 до 10: "</span><span class="brackets">);</span>
+        <span class="object">guess</span> <span class="brackets">=</span> <span class="object">console</span><span class="brackets">.</span><span class="function">get_int</span><span class="brackets">();</span>
+    <span class="brackets">}</span> <span class="keyword">while</span> <span class="brackets">(</span><span class="object">guess</span> <span class="brackets">!=</span> <span class="number">7</span><span class="brackets">);</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Правильно! Это 7!\n"</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <p>Такой цикл идеален, когда нужно запросить данные у пользователя <strong>хотя бы один раз</strong>.</p>
+                </div>
+                <div class="example">
+                    <h2>Цикл <code>for</code> — полный контроль</h2>
+                    <p>Цикл <code>for</code> состоит из трёх частей:</p>
+                    <ol>
+                        <li><strong>Стартовое действие</strong> — выполняется один раз перед циклом (обычно объявление счётчика);</li>
+                        <li><strong>Условие продолжения</strong> — проверяется перед каждой итерацией;</li>
+                        <li><strong>Ежеитерационное действие</strong> — выполняется после каждой итерации (обычно увеличение счётчика).</li>
+                    </ol>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="keyword">for</span> <span class="brackets">(</span><span class="typeName">int</span> <span class="object">i</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">&lt;</span> <span class="number">3</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">=</span> <span class="object">i</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">)</span> <span class="brackets">{</span>
+        <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"i = "</span><span class="brackets">,</span> <span class="object">i</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="brackets">}</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">i = 0
+i = 1
+i = 2</div>
+                    <p>Эта структура делает цикл <code>for</code> идеальным для повторения действий <strong>известное количество раз</strong>.</p>
+                </div>
+                <div class="example">
+                    <h2>Зачем нужны циклы?</h2>
+                    <p>Представим, что нужно вывести «Привет!» десять раз.</p>
+                    <p>Без цикла:</p>
+                    <pre><span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Привет!\n"</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Привет!\n"</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Привет!\n"</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Привет!\n"</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Привет!\n"</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Привет!\n"</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Привет!\n"</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Привет!\n"</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Привет!\n"</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Привет!\n"</span><span class="brackets">);</span></pre>
+                    <p>С циклом:</p>
+                    <pre><span class="keyword">for</span> <span class="brackets">(</span><span class="typeName">int</span> <span class="object">i</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">&lt;</span> <span class="number">10</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">=</span> <span class="object">i</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">)</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Привет!\n"</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <p>А если нужно повторить действие <strong>тысячу</strong>, <strong>миллион</strong> или <strong>столько, сколько скажет пользователь</strong> раз?</p>
+                    <p>Без циклов — это невозможно. С циклами — тривиально.</p>
+                </div>
+                <div class="example">
+                    <h2>Оператор <code>break</code> — досрочный выход</h2>
+                    <p>Оператор <code>break</code> немедленно прерывает выполнение цикла и передаёт управление на следующую строчку <strong>после</strong> цикла.</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="keyword">for</span> <span class="brackets">(</span><span class="typeName">int</span> <span class="object">i</span> <span class="brackets">=</span> <span class="number">1</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">&lt;=</span> <span class="number">10</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">=</span> <span class="object">i</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">)</span> <span class="brackets">{</span>
+        <span class="keyword">if</span> <span class="brackets">(</span><span class="object">i</span> <span class="brackets">==</span> <span class="number">5</span><span class="brackets">)</span> <span class="brackets">{</span>
+            <span class="keyword">break</span><span class="brackets">;</span> <span class="comment">// выйти из цикла</span>
+        <span class="brackets">}</span>
+        <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">i</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="brackets">}</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Цикл завершён.\n"</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">1
+2
+3
+4
+Цикл завершён.</div>
+                    <p><code>break</code> особенно полезен, когда условие выхода становится известным <em>внутри</em> цикла.</p>
+                </div>
+                <div class="example">
+                    <h2>Оператор <code>continue</code> — пропуск итерации</h2>
+                    <p>Оператор <code>continue</code> прерывает текущую итерацию цикла и переходит к следующей (проверке условия и, при необходимости, выполнению тела).</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="keyword">for</span> <span class="brackets">(</span><span class="typeName">int</span> <span class="object">i</span> <span class="brackets">=</span> <span class="number">1</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">&lt;=</span> <span class="number">5</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">=</span> <span class="object">i</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">)</span> <span class="brackets">{</span>
+        <span class="keyword">if</span> <span class="brackets">(</span><span class="object">i</span> <span class="brackets">==</span> <span class="number">3</span><span class="brackets">)</span> <span class="brackets">{</span>
+            <span class="keyword">continue</span><span class="brackets">;</span> <span class="comment">// пропустить вывод тройки</span>
+        <span class="brackets">}</span>
+        <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">i</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="brackets">}</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">1
+2
+4
+5</div>
+                    <p>Здесь число 3 не выводится, потому что на этой итерации сработал <code>continue</code>.</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson11.html" class="nav-button nav-prev">
+                            ← Урок 11: Логические операции
+                        </a>
+                        <a href="./lesson13.html" class="nav-button nav-next">
+                            Урок 13: Массивы (статика) →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>
