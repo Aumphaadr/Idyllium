@@ -1,0 +1,14 @@
+use console;
+use random;
+
+main() {
+    random.set_seed(0);
+    console.write(random.create_int(0, 99), '\n');
+    console.write(random.create_int(0, 99), '\n');
+    console.write(random.create_int(0, 99), "\n\n");
+
+    random.set_seed(400); // сменили сид
+    console.write(random.create_int(0, 99), '\n');
+    console.write(random.create_int(0, 99), '\n');
+    console.write(random.create_int(0, 99), '\n');
+}

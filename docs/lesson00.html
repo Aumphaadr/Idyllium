@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 0: Установка Idyllium — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+    <style>
+        div.lesson-nav {
+            justify-content: flex-end;
+        }
+    </style>
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 0: Установка Idyllium</h1>
+            <p class="subtitle">Как подготовить среду для написания и запуска программ на Idyllium</p>
+        </section>
+        <section class="flex">
+            <nav>
+                <div>
+                    <a href="./lesson00.html" class="current">Урок 0: Установка Idyllium</a>
+                    <a href="./lesson01.html">Урок 1: Первая программа</a>
+                    <a href="./lesson02.html">Урок 2: Переменные и типы данных</a>
+                    <a href="./lesson03.html">Урок 3: Ввод данных</a>
+                </div>
+            </nav>
+            <div class="examples">
+                <div class="example">
+                    <h2>Шаг 1: Скачайте расширение</h2>
+                    <p>Перейдите на страницу релизов Idyllium и скачайте последнюю версию расширения в формате <code>.vsix</code>:</p>
+                    <p><a href="https://github.com/Aumphaadr/Idyllium/releases" target="_blank" rel="noopener">Скачать с GitHub Releases</a></p>
+                    <p>Файл будет называться примерно так: <code>Idyllium-X.X.X.vsix</code>.</p>
+                </div>
+                <div class="example">
+                    <h2>Шаг 2: Откройте Visual Studio Code</h2>
+                    <p>Запустите редактор <strong>Visual Studio Code</strong>. Если у вас его ещё нет — <a href="https://code.visualstudio.com/" target="_blank" rel="noopener">установите с официального сайта</a>.</p>
+                </div>
+                <div class="example">
+                    <h2>Шаг 3: Откройте меню расширений</h2>
+                    <p>В левом боковом меню нажмите иконку <strong>«Extensions»</strong> (русская локализация: «Расширения»).<br>
+                    Либо используйте горячие клавиши: <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd> (на Windows/Linux) или <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd> (на macOS).</p>
+                </div>
+                <div class="example">
+                    <h2>Шаг 4: Установите из файла VSIX</h2>
+                    <p>В левом верхнем углу панели расширений найдите кнопку с тремя точками <span style="font-size: 1.2em;">⋯</span>. При наведении на неё появится подсказка: <strong>«Views and More Actions»</strong>.</p>
+                    <p>Нажмите на неё и в выпадающем меню выберите пункт:</p>
+                    <p><strong>«Install from VSIX…»</strong> («Установить из VSIX…»)</p>
+                </div>
+                <div class="example">
+                    <h2>Шаг 5: Выберите скачанный файл</h2>
+                    <p>В открывшемся окне проводника найдите и выберите скачанный файл <code>Idyllium.vsix</code>.</p>
+                    <p>Visual Studio Code автоматически установит расширение.</p>
+                </div>
+                <div class="example">
+                    <h2>Шаг 6: Перезапустите редактор (если потребуется)</h2>
+                    <p>В некоторых случаях VS Code предложит перезапустить редактор для завершения установки. Сделайте это.</p>
+                    <p>После перезапуска расширение Idyllium будет полностью готово к работе.</p>
+                </div>
+                <div class="example">
+                    <h2>Шаг 7: Проверьте работоспособность</h2>
+                    <ol>
+                        <li>Создайте новую папку на компьютере (например, <code>idyllium-test</code>).</li>
+                        <li>Откройте эту папку в Visual Studio Code (<strong>File → Open Folder</strong>).</li>
+                        <li>Создайте в ней новый файл с расширением <code>.idyl</code>, например: <code>test.idyl</code>.</li>
+                        <li>Введите в него следующий код:</li>
+                    </ol>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Hello, World!"</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <ol start="5">
+                        <li>Нажмите <strong>Run Idyllium File</strong>.</li>
+                        <li>Если всё сделано правильно — внизу появится терминал с надписью:</li>
+                    </ol>
+                    <div class="output">Hello, World!</div>
+                    <p>Поздравляем! Вы успешно установили и проверили Idyllium.</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson01.html" class="nav-button nav-next">
+                            Урок 1: Первая программа →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>
