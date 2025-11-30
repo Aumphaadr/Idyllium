@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Основы программирования на Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+    <style>
+        div.example {
+            padding: 0.5em 1em 1em 1em;
+        }
+        button {
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Основы программирования на Idyllium</h1>
+            <p class="subtitle">Изучите язык от "Hello, World!" до работы с файлами и библиотеками — без лишнего шума и с предсказуемой логикой</p>
+        </section>
+        <section class="flex">
+            <nav>
+                <div>
+                    <h3 class="nav_h">Категории</h3>
+                    <a href="#basics" class="current">Основы Idyllium</a>
+                    <a href="#gui">Приложения с GUI</a>
+                    <a href="#oop">ООП в Idyllium</a>
+                    <a href="#projects">Проекты</a>
+                    <!-- Можно добавить другие категории позже -->
+                </div>
+            </nav>
+            <div class="examples">
+                <!-- Урок 0 -->
+                <div class="example">
+                    <h2>Урок 0: Установка Idyllium</h2>
+                    <p>Настройте среду разработки: установите расширение для VS Code и запустите свою первую программу.</p>
+                    <a href="./lesson0.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 1 -->
+                <div class="example">
+                    <h2>Урок 1: Первая программа</h2>
+                    <p>Напишите классический "Hello, World!" и изучите базовый синтаксис вывода данных в консоль.</p>
+                    <a href="./lesson1.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 2 -->
+                <div class="example">
+                    <h2>Урок 2: Переменные и типы данных</h2>
+                    <p>Познакомьтесь с основными типами: целые числа, дробные числа и строки. Научитесь объявлять переменные и присваивать им значения.</p>
+                    <a href="./lesson2.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 3 -->
+                <div class="example">
+                    <h2>Урок 3: Ввод данных</h2>
+                    <p>Научитесь получать данные от пользователя с помощью функций <code>console.get_int()</code>, <code>get_float()</code> и <code>get_string()</code>.</p>
+                    <a href="./lesson3.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 4 -->
+                <div class="example">
+                    <h2>Урок 4: Арифметика</h2>
+                    <p>Освойте операции сложения, вычитания, умножения и деления. Поймите, почему результат деления всегда <code>float</code>, и как использовать <code>div()</code> и <code>mod()</code>.</p>
+                    <a href="./lesson4.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 5 -->
+                <div class="example">
+                    <h2>Урок 5: Управляющие последовательности</h2>
+                    <p>Управляйте форматом вывода: переходите на новую строку с <code>'\n'</code>, используйте табуляцию <code>'\t'</code> и окрашивайте текст с помощью ANSI-последовательностей.</p>
+                    <a href="./lesson5.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 6 -->
+                <div class="example">
+                    <h2>Урок 6: Преобразования данных</h2>
+                    <p>Научитесь преобразовывать числа в строки и обратно с помощью функций <code>to_int()</code>, <code>to_float()</code> и <code>to_string()</code>.</p>
+                    <a href="./lesson6.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 7 -->
+                <div class="example">
+                    <h2>Урок 7: Базовые математические функции</h2>
+                    <p>Используйте библиотеку <code>math</code>: округляйте числа, вычисляйте модуль, степень и корень, ограничивайте значения с помощью <code>clamp()</code>.</p>
+                    <a href="./lesson7.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 8 -->
+                <div class="example">
+                    <h2>Урок 8: Условный оператор и тип 'bool'</h2>
+                    <p>Научитесь принимать решения в программе с помощью <code>if</code> и <code>else</code>. Поймите, что такое логическое значение и как его получить.</p>
+                    <a href="./lesson8.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 9 -->
+                <div class="example">
+                    <h2>Урок 9: Инкремент и декремент</h2>
+                    <p>Изменяйте значение переменной самой собой: увеличивайте, уменьшайте, умножайте или применяйте функции — всё это через простое присваивание.</p>
+                    <a href="./lesson9.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 10 -->
+                <div class="example">
+                    <h2>Урок 10: Случайные числа</h2>
+                    <p>Генерируйте случайные целые и дробные числа, выбирайте символы из строки и задавайте сид для воспроизводимости.</p>
+                    <a href="./lesson10.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 11 -->
+                <div class="example">
+                    <h2>Урок 11: Логические операции</h2>
+                    <p>Комбинируйте условия с помощью <code>and</code>, <code>or</code> и <code>xor</code>. Используйте <code>not()</code> для инверсии логических значений.</p>
+                    <a href="./lesson11.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 12 -->
+                <div class="example">
+                    <h2>Урок 12: Циклы</h2>
+                    <p>Повторяйте действия с помощью <code>while</code>, <code>for</code> и <code>do-while</code>. Управляйте выполнением циклов с помощью <code>break</code> и <code>continue</code>.</p>
+                    <a href="./lesson12.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 13 -->
+                <div class="example">
+                    <h2>Урок 13: Массивы (статика)</h2>
+                    <p>Создавайте массивы фиксированной длины, обращайтесь к их элементам по индексу и не выходите за границы — Idyllium вас об этом предупредит.</p>
+                    <a href="./lesson13.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 14 -->
+                <div class="example">
+                    <h2>Урок 14: Тип 'char' и строки</h2>
+                    <p>Работайте со строками как с последовательностями символов. Изучите конкатенацию, посимвольный перебор и методы строк.</p>
+                    <a href="./lesson14.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 15 -->
+                <div class="example">
+                    <h2>Урок 15: Динамические массивы</h2>
+                    <p>Создавайте массивы, которые могут менять размер: добавляйте и удаляйте элементы, узнавайте их количество.</p>
+                    <a href="./lesson15.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 16 -->
+                <div class="example">
+                    <h2>Урок 16: Функции для работы с массивами</h2>
+                    <p>Находите максимум, минимум, среднее и сумму элементов массива с помощью встроенных функций.</p>
+                    <a href="./lesson16.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 17 -->
+                <div class="example">
+                    <h2>Урок 17: Методы массивов</h2>
+                    <p>Используйте методы <code>contains</code>, <code>index</code>, <code>reverse</code> и <code>sort</code> для работы с содержимым массивов.</p>
+                    <a href="./lesson17.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 18 -->
+                <div class="example">
+                    <h2>Урок 18: Методы строк</h2>
+                    <p>Преобразовывайте строки: меняйте регистр, проверяйте наличие подстрок, разбивайте строки на части.</p>
+                    <a href="./lesson18.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 19 -->
+                <div class="example">
+                    <h2>Урок 19: Библиотека 'time'</h2>
+                    <p>Работайте со временем: приостанавливайте программу, получайте текущую дату и время, извлекайте отдельные компоненты даты.</p>
+                    <a href="./lesson19.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 20 -->
+                <div class="example">
+                    <h2>Урок 20: Библиотека 'types'</h2>
+                    <p>Изучите специализированные типы данных: <code>int8</code>, <code>int16</code>, <code>uint32</code> и другие. Конвертируйте числа в двоичную форму и обратно.</p>
+                    <a href="./lesson20.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 21 -->
+                <div class="example">
+                    <h2>Урок 21: Создание собственных функций</h2>
+                    <p>Пишите свои функции: процедуры (void) и функции, возвращающие результат. Учитесь передавать аргументы и возвращать значения.</p>
+                    <a href="./lesson21.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 22 -->
+                <div class="example">
+                    <h2>Урок 22: Создание собственных библиотек</h2>
+                    <p>Объединяйте функции в библиотеки и подключайте их в других программах. Организуйте код логически и повторно используйте его.</p>
+                    <a href="./lesson22.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 23 -->
+                <div class="example">
+                    <h2>Урок 23: Работа с файлами</h2>
+                    <p>Записывайте данные в файлы и читайте их обратно. Используйте типы <code>ostream</code> и <code>istream</code> для управления потоками ввода/вывода.</p>
+                    <a href="./lesson23.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 24 -->
+                <div class="example">
+                    <h2>Урок 24: Продвинутые математические функции</h2>
+                    <p>Используйте тригонометрию (<code>sin</code>, <code>cos</code>, <code>tan</code>), логарифмы и константы <code>math.pi</code> и <code>math.e</code> для сложных вычислений.</p>
+                    <a href="./lesson24.html"><button>Открыть</button></a>
+                </div>
+
+                <!-- Урок 25 -->
+                <div class="example">
+                    <h2>Урок 25: Подведение итогов</h2>
+                    <p>Подведите итоги: вспомните, что вы узнали, и примените знания в реальных проектах. Готовьтесь к следующему уровню — ООП и GUI.</p>
+                    <a href="./lesson25.html"><button>Открыть</button></a>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 10: Случайные числа — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 10: Случайные числа</h1>
+            <p class="subtitle">Как добавить в программу элемент неожиданности</p>
+        </section>
+        <section class="flex">
+            <nav>
+                <div>
+                    <a href="./lesson08.html">Урок 8: Условный оператор и тип 'bool'</a>
+                    <a href="./lesson09.html">Урок 9: Инкремент и декремент</a>
+                    <a href="./lesson10.html" class="current">Урок 10: Случайные числа</a>
+                    <a href="./lesson11.html">Урок 11: Логические операции</a>
+                    <a href="./lesson12.html">Урок 12: Циклы</a>
+                </div>
+            </nav>
+            <div class="examples">
+                <div class="example">
+                    <h2>Подключение библиотеки <code>random</code></h2>
+                    <p>Для работы со случайными числами необходимо подключить библиотеку <code>random</code>:</p>
+                    <pre><span class="keyword">use</span> <span class="object">random</span><span class="brackets">;</span></pre>
+                    <p>После этого все функции из этой библиотеки вызываются по схеме: <code>random.название(аргументы)</code>.</p>
+                </div>
+                <div class="example">
+                    <h2>Случайное целое число: <code>random.create_int()</code></h2>
+                    <p>Функция <code>random.create_int(min, max)</code> возвращает случайное целое число в диапазоне <strong>от <code>min</code> до <code>max</code> включительно</strong>:</p>
+                    <pre><span class="typeName">int</span> <span class="object">R</span> <span class="brackets">=</span> <span class="object">random</span><span class="brackets">.</span><span class="function">create_int</span><span class="brackets">(</span><span class="number">1</span><span class="brackets">,</span> <span class="number">20</span><span class="brackets">);</span> <span class="comment">// число от 1 до 20</span></pre>
+                    <p>Пример использования:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+<span class="keyword">use</span> <span class="object">random</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">A</span> <span class="brackets">=</span> <span class="object">random</span><span class="brackets">.</span><span class="function">create_int</span><span class="brackets">(</span><span class="number">10</span><span class="brackets">,</span> <span class="number">99</span><span class="brackets">);</span>
+    <span class="typeName">int</span> <span class="object">B</span> <span class="brackets">=</span> <span class="object">random</span><span class="brackets">.</span><span class="function">create_int</span><span class="brackets">(</span><span class="number">10</span><span class="brackets">,</span> <span class="number">99</span><span class="brackets">);</span>
+    <span class="typeName">int</span> <span class="object">C</span> <span class="brackets">=</span> <span class="object">random</span><span class="brackets">.</span><span class="function">create_int</span><span class="brackets">(</span><span class="number">10</span><span class="brackets">,</span> <span class="number">99</span><span class="brackets">);</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">A</span><span class="brackets">,</span> <span class="string">" "</span><span class="brackets">,</span> <span class="object">B</span><span class="brackets">,</span> <span class="string">" "</span><span class="brackets">,</span> <span class="object">C</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">42 78 15</div>
+                    <p>Каждый запуск программы будет давать новую тройку чисел.</p>
+                </div>
+                <div class="example">
+                    <h2>Случайное дробное число: <code>random.create_float()</code></h2>
+                    <p>Функция <code>random.create_float(min, max)</code> генерирует случайное число типа <code>float</code> в диапазоне от <code>min</code> до <code>max</code> включительно:</p>
+                    <pre><span class="typeName">float</span> <span class="object">Q</span> <span class="brackets">=</span> <span class="object">random</span><span class="brackets">.</span><span class="function">create_float</span><span class="brackets">(</span><span class="number">1</span><span class="brackets">,</span> <span class="number">4</span><span class="brackets">);</span> <span class="comment">// число от 1.0 до 4.0</span></pre>
+                    <p>Пример:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+<span class="keyword">use</span> <span class="object">random</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">float</span> <span class="object">F</span> <span class="brackets">=</span> <span class="object">random</span><span class="brackets">.</span><span class="function">create_float</span><span class="brackets">(</span><span class="number">2</span><span class="brackets">,</span> <span class="number">3</span><span class="brackets">);</span>
+    <span class="typeName">float</span> <span class="object">G</span> <span class="brackets">=</span> <span class="object">random</span><span class="brackets">.</span><span class="function">create_float</span><span class="brackets">(</span><span class="number">2</span><span class="brackets">,</span> <span class="number">3</span><span class="brackets">);</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"F = "</span><span class="brackets">,</span> <span class="object">F</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"G = "</span><span class="brackets">,</span> <span class="object">G</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">F = 2.8374629104857392
+G = 2.1295837461029384</div>
+                    <p>Как и в Python или JavaScript, числа генерируются с высокой точностью — до 15–16 знаков после точки.</p>
+                </div>
+                <div class="example">
+                    <h2>Округление случайного числа</h2>
+                    <p>Если знаков после точки слишком много, можно округлить число с помощью функций из библиотеки <code>math</code>:</p>
+                    <pre><span class="typeName">float</span> <span class="object">raw</span> <span class="brackets">=</span> <span class="object">random</span><span class="brackets">.</span><span class="function">create_float</span><span class="brackets">(</span><span class="number">7</span><span class="brackets">,</span> <span class="number">8</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Сырое случайное число: "</span><span class="brackets">,</span> <span class="object">raw</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+
+<span class="typeName">float</span> <span class="object">res</span> <span class="brackets">=</span> <span class="object">math</span><span class="brackets">.</span><span class="function">floor</span><span class="brackets">(</span><span class="object">raw</span><span class="brackets">,</span> <span class="number">3</span><span class="brackets">);</span> <span class="comment">// округляем</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Округлено до 3 знаков: "</span><span class="brackets">,</span> <span class="object">res</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span></pre>
+                    <div class="output">Сырое случайное число: 7.938472635192847
+Округлено до 3 знаков: 7.938</div>
+                </div>
+                <div class="example">
+                    <h2>Случайный символ из строки</h2>
+                    <p>Функция <code>random.choose_from()</code> выбирает случайный символ из строки:</p>
+                    <pre><span class="typeName">string</span> <span class="object">S</span> <span class="brackets">=</span> <span class="string">"ABCDEF"</span><span class="brackets">;</span>
+<span class="typeName">char</span> <span class="object">some</span> <span class="brackets">=</span> <span class="object">random</span><span class="brackets">.</span><span class="function">choose_from</span><span class="brackets">(</span><span class="object">S</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Случайный символ из S: "</span><span class="brackets">,</span> <span class="object">some</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span></pre>
+                    <div class="output">Случайный символ из S: D</div>
+                    <p>Эта функция также работает с массивами — об этом мы поговорим позже, когда изучим массивы подробнее.</p>
+                </div>
+                <div class="example">
+                    <h2>Псевдослучайность и сиды</h2>
+                    <p>Компьютер не умеет генерировать по-настоящему случайные числа — только <strong>псевдослучайные</strong>. Это такие числа, которые выглядят случайными, но на самом деле полностью определяются начальным значением, называемым <strong>сидом</strong> (англ. <em>seed</em>).</p>
+                    <p>Если задать один и тот же сид, последовательность будет повторяться:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+<span class="keyword">use</span> <span class="object">random</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">random</span><span class="brackets">.</span><span class="function">set_seed</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">random</span><span class="brackets">.</span><span class="function">create_int</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">,</span> <span class="number">99</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">random</span><span class="brackets">.</span><span class="function">create_int</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">,</span> <span class="number">99</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">random</span><span class="brackets">.</span><span class="function">create_int</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">,</span> <span class="number">99</span><span class="brackets">),</span> <span class="string">"\n\n"</span><span class="brackets">);</span>
+
+    <span class="object">random</span><span class="brackets">.</span><span class="function">set_seed</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">random</span><span class="brackets">.</span><span class="function">create_int</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">,</span> <span class="number">99</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">random</span><span class="brackets">.</span><span class="function">create_int</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">,</span> <span class="number">99</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">random</span><span class="brackets">.</span><span class="function">create_int</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">,</span> <span class="number">99</span><span class="brackets">),</span> <span class="string">"\n\n"</span><span class="brackets">);</span>
+
+    <span class="object">random</span><span class="brackets">.</span><span class="function">set_seed</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">random</span><span class="brackets">.</span><span class="function">create_int</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">,</span> <span class="number">99</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">random</span><span class="brackets">.</span><span class="function">create_int</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">,</span> <span class="number">99</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">random</span><span class="brackets">.</span><span class="function">create_int</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">,</span> <span class="number">99</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">83
+86
+77
+
+83
+86
+77
+
+83
+86
+77
+</div>
+                    <p>Как видите, при сиде <code>0</code> всегда генерируется одна и та же последовательность. Это полезно для отладки и воспроизводимых экспериментов</p>
+                    <p>Например, в Minecraft есть известный эксплойт RANDAR, основанный на предсказуемости генератора мира — и он работает именно потому, что мир строится на основе сида.</p>
+                </div>
+                <div class="example">
+                    <h2>Смена сида — смена последовательности</h2>
+                    <p>В Idyllium сид генератора псевдослучайных чисел задаётся функцией <code>random.set_seed()</code>:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+<span class="keyword">use</span> <span class="object">random</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">random</span><span class="brackets">.</span><span class="function">set_seed</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">random</span><span class="brackets">.</span><span class="function">create_int</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">,</span> <span class="number">99</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">random</span><span class="brackets">.</span><span class="function">create_int</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">,</span> <span class="number">99</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">random</span><span class="brackets">.</span><span class="function">create_int</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">,</span> <span class="number">99</span><span class="brackets">),</span> <span class="string">"\n\n"</span><span class="brackets">);</span>
+
+    <span class="object">random</span><span class="brackets">.</span><span class="function">set_seed</span><span class="brackets">(</span><span class="number">400</span><span class="brackets">);</span> <span class="comment">// сменили сид</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">random</span><span class="brackets">.</span><span class="function">create_int</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">,</span> <span class="number">99</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">random</span><span class="brackets">.</span><span class="function">create_int</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">,</span> <span class="number">99</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">random</span><span class="brackets">.</span><span class="function">create_int</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">,</span> <span class="number">99</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">83
+86
+77
+
+95
+11
+22
+</div>
+                    <p>Сид <code>0</code> → последовательность 83, 86, 77...</p>
+                    <p>Сид <code>400</code> → новая последовательность: 95, 11, 22...</p>
+                </div>
+                <div class="example">
+                    <h2>Важное предупреждение</h2>
+                    <p>Библиотека <code>random</code> в Idyllium предназначена для разработки <strong>игр, симуляций и учебных проектов</strong>. Она не подходит для задач, где важна криптографическая надёжность — например, генерация паролей, токенов безопасности или алгоритмов шифрования.</p>
+                    <p>Для криптографической надёжности используются специализированные генераторы, основанные на физических источниках случайности: к таким относятся шумы из атмосферы, радиоактивный распад, тепловые явления и др.</p>
+                    <p>Но для броска кубика, случайного выбора карты или генерации макета лабиринта — возможностей библиотеки <code>random</code> в Idyllium будет достаточно.</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson09.html" class="nav-button nav-prev">
+                            ← Урок 9: Инкремент и декремент
+                        </a>
+                        <a href="./lesson11.html" class="nav-button nav-next">
+                            Урок 11: Логические операции →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>
