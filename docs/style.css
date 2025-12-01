@@ -96,7 +96,7 @@ section.flex {
     flex-direction: row;
     gap: 20px;
     padding: 0 30px;
-    max-width: 1400px;
+    max-width: 1600px;
     margin: 30px auto;
 }
 
@@ -217,7 +217,6 @@ code {
 
 pre {
     display: block;
-    max-width: 1000px;
     background-color: #1e1e1e;
     color: #d4d4d4;
     padding: 1em;
