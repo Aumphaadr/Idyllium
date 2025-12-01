@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 16: Функции для работы с массивами — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 16: Функции для работы с массивами</h1>
+            <p class="subtitle"><code>max</code>, <code>min</code>, <code>sum</code>, <code>avg</code> — анализ числовых данных без циклов</p>
+        </section>
+        <section class="flex">
+            <div id="lessons-nav-placeholder"></div>
+            <div class="examples">
+                <div class="example">
+                    <h2>Что это за функции?</h2>
+                    <p>В Idyllium есть готовые функции для быстрого анализа числовых массивов:</p>
+                    <ul>
+                        <li><code>max(arr)</code> — возвращает наибольшее значение в массиве;</li>
+                        <li><code>min(arr)</code> — возвращает наименьшее значение;</li>
+                        <li><code>sum(arr)</code> — возвращает сумму всех элементов;</li>
+                        <li><code>avg(arr)</code> — возвращает среднее арифметическое.</li>
+                    </ul>
+                    <p>Эти функции работают <strong>и со статическими</strong> (<code>array</code>), <strong>и с динамическими</strong> (<code>dyn_array</code>) массивами.</p>
+                </div>
+                <div class="example">
+                    <h2>Общий синтаксис</h2>
+                    <p>Функции принимают массив в качестве аргумента и возвращают результат:</p>
+                    <pre><span class="typeName">dyn_array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">&gt;</span> <span class="object">my_array</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">29</span><span class="brackets">,</span> <span class="number">84</span><span class="brackets">,</span> <span class="number">16</span><span class="brackets">,</span> <span class="number">35</span><span class="brackets">,</span> <span class="number">43</span><span class="brackets">,</span> <span class="number">60</span><span class="brackets">,</span> <span class="number">17</span><span class="brackets">];</span>
+
+<span class="typeName">int</span> <span class="object">maximum</span> <span class="brackets">=</span> <span class="function">max</span><span class="brackets">(</span><span class="object">my_array</span><span class="brackets">);</span>
+<span class="typeName">int</span> <span class="object">summa</span> <span class="brackets">=</span> <span class="function">sum</span><span class="brackets">(</span><span class="object">my_array</span><span class="brackets">);</span></pre>
+                    <p>Всё, что нужно — передать имя массива. Никаких циклов, индексов и промежуточных переменных.</p>
+                </div>
+                <div class="example">
+                    <h2>Типы данных и совместимость</h2>
+                    <p>Функции работают <strong>только с числовыми массивами</strong> — <code>int</code> или <code>float</code>. Попытка передать строковый или логический массив вызовет ошибку:</p>
+                    <pre><span class="comment">// Работает:</span>
+<span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">,</span> <span class="number">4</span><span class="brackets">&gt;</span> <span class="object">nums</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">10</span><span class="brackets">,</span> <span class="number">5</span><span class="brackets">,</span> <span class="number">8</span><span class="brackets">,</span> <span class="number">12</span><span class="brackets">];</span>
+<span class="typeName">int</span> <span class="object">m</span> <span class="brackets">=</span> <span class="function">max</span><span class="brackets">(</span><span class="object">nums</span><span class="brackets">);</span> <span class="comment">// OK</span>
+
+<span class="comment">// Не работает:</span>
+<span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">string</span><span class="brackets">,</span> <span class="number">2</span><span class="brackets">&gt;</span> <span class="object">words</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="string">"кот"</span><span class="brackets">,</span> <span class="string">"собака"</span><span class="brackets">];</span>
+<span class="typeName">string</span> <span class="object">w</span> <span class="brackets">=</span> <span class="function">max</span><span class="brackets">(</span><span class="object">words</span><span class="brackets">);</span> <span class="comment">// Ошибка: max() не работает со строками</span></pre>
+                </div>
+                <div class="example">
+                    <h2>Тип возвращаемого значения</h2>
+                    <p>Функции <code>max()</code>, <code>min()</code> и <code>sum()</code> возвращают значение того же типа, что и ячейки массива:</p>
+                    <pre><span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">,</span> <span class="number">3</span><span class="brackets">&gt;</span> <span class="object">A</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">1</span><span class="brackets">,</span> <span class="number">2</span><span class="brackets">,</span> <span class="number">3</span><span class="brackets">];</span>
+<span class="typeName">int</span> <span class="object">s1</span> <span class="brackets">=</span> <span class="function">sum</span><span class="brackets">(</span><span class="object">A</span><span class="brackets">);</span>    <span class="comment">// 6 (int)</span>
+<span class="typeName">int</span> <span class="object">mx1</span> <span class="brackets">=</span> <span class="function">max</span><span class="brackets">(</span><span class="object">A</span><span class="brackets">);</span>   <span class="comment">// 3 (int)</span>
+
+<span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">float</span><span class="brackets">,</span> <span class="number">3</span><span class="brackets">&gt;</span> <span class="object">B</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">1.5</span><span class="brackets">,</span> <span class="number">2.0</span><span class="brackets">,</span> <span class="number">3.5</span><span class="brackets">];</span>
+<span class="typeName">float</span> <span class="object">s2</span> <span class="brackets">=</span> <span class="function">sum</span><span class="brackets">(</span><span class="object">B</span><span class="brackets">);</span>  <span class="comment">// 7.0 (float)</span>
+<span class="typeName">float</span> <span class="object">mx2</span> <span class="brackets">=</span> <span class="function">max</span><span class="brackets">(</span><span class="object">B</span><span class="brackets">);</span> <span class="comment">// 3.5 (float)</span></pre>
+                </div>
+                <div class="example">
+                    <h2>Особенность функции <code>avg()</code></h2>
+                    <p>Среднее арифметическое вычисляется как <code>sum(arr) / arr.length()</code>. Поскольку в Idyllium деление всегда даёт <code>float</code>, функция <code>avg()</code> <strong>всегда возвращает <code>float</code></strong>, даже если массив состоит из целых чисел:</p>
+                    <pre><span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">,</span> <span class="number">4</span><span class="brackets">&gt;</span> <span class="object">C</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">10</span><span class="brackets">,</span> <span class="number">20</span><span class="brackets">,</span> <span class="number">30</span><span class="brackets">,</span> <span class="number">40</span><span class="brackets">];</span>
+<span class="typeName">float</span> <span class="object">a</span> <span class="brackets">=</span> <span class="function">avg</span><span class="brackets">(</span><span class="object">C</span><span class="brackets">);</span> <span class="comment">// 25.0 (float), а не 25 (int)</span>
+
+<span class="comment">// Аналог вручную:</span>
+<span class="typeName">float</span> <span class="object">manual_avg</span> <span class="brackets">=</span> <span class="function">sum</span><span class="brackets">(</span><span class="object">C</span><span class="brackets">)</span> <span class="brackets">/</span> <span class="object">C</span><span class="brackets">.</span><span class="function">length</span><span class="brackets">();</span> <span class="comment">// то же самое</span></pre>
+                    <p>Это сделано для точности: среднее может быть дробным, даже если все исходные числа — целые.</p>
+                </div>
+                <div class="example">
+                    <h2>Примеры использования</h2>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">dyn_array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">&gt;</span> <span class="object">scores</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">85</span><span class="brackets">,</span> <span class="number">92</span><span class="brackets">,</span> <span class="number">78</span><span class="brackets">,</span> <span class="number">96</span><span class="brackets">,</span> <span class="number">88</span><span class="brackets">];</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Максимум: "</span><span class="brackets">,</span> <span class="function">max</span><span class="brackets">(</span><span class="object">scores</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Минимум: "</span><span class="brackets">,</span> <span class="function">min</span><span class="brackets">(</span><span class="object">scores</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Сумма: "</span><span class="brackets">,</span> <span class="function">sum</span><span class="brackets">(</span><span class="object">scores</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Среднее: "</span><span class="brackets">,</span> <span class="function">avg</span><span class="brackets">(</span><span class="object">scores</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">Максимум: 96
+Минимум: 78
+Сумма: 439
+Среднее: 87.8</div>
+                </div>
+                <div class="example">
+                    <h2>Почему это удобно?</h2>
+                    <p>Без этих функций пришлось бы писать циклы вручную:</p>
+                    <pre><span class="typeName">int</span> <span class="object">total</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span>
+<span class="keyword">for</span> <span class="brackets">(</span><span class="typeName">int</span> <span class="object">i</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">&lt;</span> <span class="object">arr</span><span class="brackets">.</span><span class="function">length</span><span class="brackets">();</span> <span class="object">i</span> <span class="brackets">=</span> <span class="object">i</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">)</span> <span class="brackets">{</span>
+    <span class="object">total</span> <span class="brackets">=</span> <span class="object">total</span> <span class="brackets">+</span> <span class="object">arr</span><span class="brackets">[</span><span class="object">i</span><span class="brackets">];</span>
+<span class="brackets">}</span></pre>
+                    <p>А с функцией — достаточно одной строчки: <code>sum(arr)</code>.</p>
+                    <p>Это делает код короче, чище и менее подверженным ошибкам.</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson15.html" class="nav-button nav-prev">
+                            ← Урок 15: Динамические массивы
+                        </a>
+                        <a href="./lesson17.html" class="nav-button nav-next">
+                            Урок 17: Методы массивов →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>

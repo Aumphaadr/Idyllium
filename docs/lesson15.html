@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 15: Динамические массивы — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 15: Динамические массивы</h1>
+            <p class="subtitle">Массив, который сам подстраивается под ваши данные</p>
+        </section>
+        <section class="flex">
+            <div id="lessons-nav-placeholder"></div>
+            <div class="examples">
+                <div class="example">
+                    <h2>Повторение: статические массивы</h2>
+                    <p>Статический массив имеет фиксированное количество ячеек:</p>
+                    <pre><span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">string</span><span class="brackets">,</span> <span class="number">3</span><span class="brackets">&gt;</span> <span class="object">pets</span><span class="brackets">;</span>
+<span class="object">pets</span><span class="brackets">[</span><span class="number">0</span><span class="brackets">]</span> <span class="brackets">=</span> <span class="string">"Кошка"</span><span class="brackets">;</span>
+<span class="object">pets</span><span class="brackets">[</span><span class="number">1</span><span class="brackets">]</span> <span class="brackets">=</span> <span class="string">"Собака"</span><span class="brackets">;</span>
+<span class="object">pets</span><span class="brackets">[</span><span class="number">2</span><span class="brackets">]</span> <span class="brackets">=</span> <span class="string">"Черепаха"</span><span class="brackets">;</span>
+<span class="comment">// pets[3] = "Хомяк"; // Ошибка: нет 3-й ячейки</span>
+<span class="comment">// pets[4] = "Рыбка"; // Ошибка: нет 4-й ячейки</span></pre>
+                    <p>Заранее указать достаточное количество ячеек — невозможно, если размер данных неизвестен.</p>
+                </div>
+                <div class="example">
+                    <h2>Проблема: если нужный размер неизвестен заранее</h2>
+                    <p>Что делать, если количество данных неизвестно? Создать массив на 5000 ячеек, чтобы «точно хватило»?</p>
+                    <p>Это плохое решение:</p>
+                    <ul>
+                        <li>Кому-то понадобится ещё больше — и программу придётся переписывать.</li>
+                        <li>Кому-то хватит и 100 ячеек — но тогда 4900 ячеек будут пустовать, тратя оперативную память без пользы.</li>
+                    </ul>
+                    <p>Вывод: нужен массив, у которого количество ячеек можно изменять <strong>во время выполнения программы</strong>.</p>
+                </div>
+                <div class="example">
+                    <h2>Динамический массив</h2>
+                    <p>В Idyllium такой массив существует — он называется <code>dyn_array</code> (от англ. <em>dynamic array</em>):</p>
+                    <pre><span class="typeName">dyn_array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">&gt;</span> <span class="object">nums</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">11</span><span class="brackets">,</span> <span class="number">22</span><span class="brackets">,</span> <span class="number">33</span><span class="brackets">];</span></pre>
+                    <p>Разберём:</p>
+                    <ul>
+                        <li><code>dyn_array</code> — тип «динамический массив»;</li>
+                        <li><code>&lt;int&gt;</code> — тип данных в ячейках;</li>
+                        <li><code>nums</code> — имя массива;</li>
+                        <li><code>[11, 22, 33]</code> — начальные ячейки (можно и без них).</li>
+                    </ul>
+                    <p>В отличие от <code>array</code>, длина такого массива не фиксирована.</p>
+                </div>
+                <div class="example">
+                    <h2>Добавление ячеек: метод <code>add()</code></h2>
+                    <pre><span class="comment">// создаём массив с тремя ячейками</span>
+<span class="typeName">dyn_array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">&gt;</span> <span class="object">nums</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">11</span><span class="brackets">,</span> <span class="number">22</span><span class="brackets">,</span> <span class="number">33</span><span class="brackets">];</span>
+
+<span class="object">nums</span><span class="brackets">.</span><span class="function">add</span><span class="brackets">(</span><span class="number">44</span><span class="brackets">);</span> <span class="comment">// добавляем 44 в конец</span>
+<span class="object">nums</span><span class="brackets">.</span><span class="function">add</span><span class="brackets">(</span><span class="number">55</span><span class="brackets">);</span> <span class="comment">// добавляем 55 в конец</span>
+<span class="object">nums</span><span class="brackets">.</span><span class="function">add</span><span class="brackets">(</span><span class="number">66</span><span class="brackets">);</span> <span class="comment">// добавляем 66 в конец</span>
+
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">nums</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span></pre>
+                    <div class="output">[11, 22, 33, 44, 55, 66]</div>
+                    <p>Метод <code>add(значение)</code> добавляет новую ячейку в конец массива с указанным значением.</p>
+                </div>
+                <div class="example">
+                    <h2>Удаление ячейки: метод <code>remove_at()</code></h2>
+                    <pre><span class="typeName">dyn_array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">&gt;</span> <span class="object">nums</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">11</span><span class="brackets">,</span> <span class="number">22</span><span class="brackets">,</span> <span class="number">33</span><span class="brackets">,</span> <span class="number">44</span><span class="brackets">,</span> <span class="number">55</span><span class="brackets">,</span> <span class="number">66</span><span class="brackets">,</span> <span class="number">77</span><span class="brackets">,</span> <span class="number">88</span><span class="brackets">];</span>
+
+<span class="object">nums</span><span class="brackets">.</span><span class="function">remove_at</span><span class="brackets">(</span><span class="number">2</span><span class="brackets">);</span> <span class="comment">// удаляем ячейку с индексом 2 (значение 33)</span>
+
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">nums</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span></pre>
+                    <div class="output">[11, 22, 44, 55, 66, 77, 88]</div>
+                    <p>Ячейка с индексом 2 удаляется, а все последующие сдвигаются на одну позицию влево.</p>
+                </div>
+                <div class="example">
+                    <h2>Текущая длина: метод <code>length()</code></h2>
+                    <pre><span class="typeName">dyn_array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">&gt;</span> <span class="object">nums</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">11</span><span class="brackets">,</span> <span class="number">22</span><span class="brackets">,</span> <span class="number">33</span><span class="brackets">,</span> <span class="number">44</span><span class="brackets">,</span> <span class="number">55</span><span class="brackets">];</span>
+<span class="typeName">int</span> <span class="object">L1</span> <span class="brackets">=</span> <span class="object">nums</span><span class="brackets">.</span><span class="function">length</span><span class="brackets">();</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"В массиве сейчас "</span><span class="brackets">,</span> <span class="object">L1</span><span class="brackets">,</span> <span class="string">" ячеек\n"</span><span class="brackets">);</span>
+
+<span class="object">nums</span><span class="brackets">.</span><span class="function">add</span><span class="brackets">(</span><span class="number">66</span><span class="brackets">);</span>
+<span class="typeName">int</span> <span class="object">L2</span> <span class="brackets">=</span> <span class="object">nums</span><span class="brackets">.</span><span class="function">length</span><span class="brackets">();</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"А теперь "</span><span class="brackets">,</span> <span class="object">L2</span><span class="brackets">,</span> <span class="string">" ячеек\n"</span><span class="brackets">);</span></pre>
+                    <div class="output">В массиве сейчас 5 ячеек
+А теперь 6 ячеек</div>
+                </div>
+                <div class="example">
+                    <h2>Перебор динамического массива</h2>
+                    <p>Как и статический, динамический массив можно перебирать циклом — при этом число итераций определяется его текущей длиной:</p>
+                    <pre><span class="typeName">dyn_array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">&gt;</span> <span class="object">nums</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">81</span><span class="brackets">,</span> <span class="number">45</span><span class="brackets">,</span> <span class="number">33</span><span class="brackets">,</span> <span class="number">27</span><span class="brackets">,</span> <span class="number">90</span><span class="brackets">,</span> <span class="number">64</span><span class="brackets">];</span>
+<span class="object">nums</span><span class="brackets">.</span><span class="function">add</span><span class="brackets">(</span><span class="number">333</span><span class="brackets">);</span>
+<span class="object">nums</span><span class="brackets">.</span><span class="function">add</span><span class="brackets">(</span><span class="number">444</span><span class="brackets">);</span>
+
+<span class="keyword">for</span> <span class="brackets">(</span><span class="typeName">int</span> <span class="object">i</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">&lt;</span> <span class="object">nums</span><span class="brackets">.</span><span class="function">length</span><span class="brackets">();</span> <span class="object">i</span> <span class="brackets">=</span> <span class="object">i</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">)</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">nums</span><span class="brackets">[</span><span class="object">i</span><span class="brackets">],</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">81
+45
+33
+27
+90
+64
+333
+444</div>
+                    <p>Цикл адаптируется автоматически — сколько ячеек, столько и итераций.</p>
+                </div>
+                <div class="example">
+                    <h2>Изменение размера: метод <code>resize()</code></h2>
+                    <p>Метод <code>resize(N)</code> устанавливает новую длину массива — <code>N</code> ячеек:</p>
+                    <pre><span class="typeName">dyn_array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">&gt;</span> <span class="object">A</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">24</span><span class="brackets">,</span> <span class="number">91</span><span class="brackets">,</span> <span class="number">63</span><span class="brackets">,</span> <span class="number">50</span><span class="brackets">,</span> <span class="number">78</span><span class="brackets">];</span>
+<span class="object">A</span><span class="brackets">.</span><span class="function">resize</span><span class="brackets">(</span><span class="number">10</span><span class="brackets">);</span> <span class="comment">// увеличение до 10 ячеек</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"A = "</span><span class="brackets">,</span> <span class="object">A</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+
+<span class="typeName">dyn_array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">&gt;</span> <span class="object">B</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">81</span><span class="brackets">,</span> <span class="number">45</span><span class="brackets">,</span> <span class="number">33</span><span class="brackets">,</span> <span class="number">27</span><span class="brackets">,</span> <span class="number">90</span><span class="brackets">,</span> <span class="number">64</span><span class="brackets">,</span> <span class="number">15</span><span class="brackets">,</span> <span class="number">83</span><span class="brackets">];</span>
+<span class="object">B</span><span class="brackets">.</span><span class="function">resize</span><span class="brackets">(</span><span class="number">5</span><span class="brackets">);</span> <span class="comment">// уменьшение до 5 ячеек</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"B = "</span><span class="brackets">,</span> <span class="object">B</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span></pre>
+                    <div class="output">A = [24, 91, 63, 50, 78, 0, 0, 0, 0, 0]
+B = [81, 45, 33, 27, 90]</div>
+                    <p>Если <code>resize()</code> увеличивает массив — новые ячейки заполняются дефолтными значениями (для <code>int</code> — это <code>0</code>).</p>
+                    <p>Если <code>resize()</code> уменьшает массив — лишние ячейки безвозвратно удаляются.</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson14.html" class="nav-button nav-prev">
+                            ← Урок 14: Тип 'char' и строки
+                        </a>
+                        <a href="./lesson16.html" class="nav-button nav-next">
+                            Урок 16: Встроенные функции для работы с массивами →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>

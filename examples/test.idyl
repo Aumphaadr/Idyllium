@@ -12,3 +12,115 @@ main() {
     console.write(random.create_int(0, 99), '\n');
     console.write(random.create_int(0, 99), '\n');
 }
+
+int a = 29;
+int b = 84;
+int c = 16;
+int d = 35;
+int e = 43;
+int f = 60;
+int g = 17;
+
+console.write(a);
+console.write(b);
+console.write(c);
+console.write(d);
+console.write(e);
+console.write(f);
+console.write(g);
+
+array<int, 6> K = [81, 45, 33, 27, 90, 64];
+
+console.write(K[0]); // выведется 81
+console.write(K[1]); // выведется 45
+console.write(K[2]); // выведется 33
+console.write(K[3]); // выведется 27
+console.write(K[4]); // выведется 90
+console.write(K[5]); // выведется 64
+
+console.write(K[6]); // выведется ошибка: у массива нет 6-й ячейки
+
+array<int, 5> P = [24, 91, 63, 50, 78]; // создать массив с указанными значениями
+array<float, 8> K; // создать массив с дефолтными значениями (0.0 для 'float')
+
+P[0] = 25; // отредактировать ячейку массива
+int A = P[1]; // положить значение из ячейки массива
+
+for (int i = 0; i < 8; i = i + 1) {
+    K[i] = random.create_float(-3, 3); // заполнить каждую ячейку
+}
+
+for (int i = 0; i < 5; i = i + 1) {
+    console.write(P[i]); // вывести каждую ячейку
+}
+
+array<int, 5> P = [24, 91, 63, 50, 78];
+if (P > 50) {}
+
+// переменная типа 'char' может хранить один символ
+char c = '#';
+
+// переменная типа 'string' может хранить много символов
+string s = "Access granted!";
+
+// переменная типа 'int' может хранить одно число
+int a = 792;
+
+// массив типа 'int' может хранить несколько чисел
+array<int, 5> b = [405, 163, 399, 785, 241];
+
+string Q = "Страус";
+int L = Q.length(); // вычисляем длину строки 'Q'
+console.write("Птица: ", Q, ", длина: ", L, "символов\n");
+
+string R = "Фламинго";
+int N = R.length(); // вычисляем длину строки 'R'
+console.write("Птица: ", R, ", длина: ", N, "символов\n");
+
+string T = "Журавль";
+
+for (int i = 0; i < T.length(); i = i + 1) {
+    console.write(T[i], '\n'); // выводим каждый символ отдельно
+}
+
+string noun = "пицца";
+string adj = "вкусная";
+
+string res1 = noun + ' ' + adj; // "пицца вкусная"
+string res2 = adj + ' ' + nout; // "вкусная пицца"
+
+array<string, 3> pets;
+pets[0] = "Кошка";
+pets[1] = "Собака";
+pets[2] = "Черепаха";
+// pets[3] = "Хомяк"; // не получится, в массиве всего 3 ячейки
+// pets[4] = "Рыбка"; // не получится, в массиве всего 3 ячейки
+
+// создание с тремя ячейками
+dyn_array<int> nums = [81, 45, 33, 27, 90, 64];
+nums.add(333);
+nums.add(444);
+
+for (int i = 0; i < nums.length(); i = i + 1) {
+    console.write(nums[i], '\n');
+}
+
+int L1 = nums.length();
+console.write("В массиве сейчас ", L1, " ячеек\n");
+
+nums.add(66);
+int L2 = nums.length();
+console.write("А теперь ", L2, " ячеек\n");
+
+nums.remove_at(2); // удаляем ячейку с индексом 2
+
+console.write(nums, '\n');
+
+
+dyn_array<int> A = [24, 91, 63, 50, 78];
+A.resize(10);
+console.write("A = ", A, '\n');
+
+dyn_array<int> B = [81, 45, 33, 27, 90, 64, 15, 83];
+B.resize(5);
+console.write("B = ", B, '\n');

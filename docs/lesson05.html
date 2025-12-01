@@ -63,15 +63,15 @@
                 </div>
                 <div class="example">
                     <h2>Цветной текст в консоли</h2>
-                    <p>Idyllium поддерживает ANSI-последовательности для цветного вывода. Чтобы изменить цвет текста, используйте управляющую последовательность вида <code>'\e[31m'</code>:</p>
+                    <p>Idyllium поддерживает ANSI-последовательности для цветного вывода. Чтобы изменить цвет текста, используйте управляющую последовательность вида <code>"\e[31m"</code>:</p>
                     <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
 
 <span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
-    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">'\e[31m'</span><span class="brackets">,</span> <span class="string">"Красный текст"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
-    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">'\e[32m'</span><span class="brackets">,</span> <span class="string">"Зелёный текст"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
-    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">'\e[33m'</span><span class="brackets">,</span> <span class="string">"Жёлтый текст"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
-    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">'\e[34m'</span><span class="brackets">,</span> <span class="string">"Синий текст"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
-    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">'\e[35m'</span><span class="brackets">,</span> <span class="string">"Малиновый текст"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"\e[31m"</span><span class="brackets">,</span> <span class="string">"Красный текст"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"\e[32m"</span><span class="brackets">,</span> <span class="string">"Зелёный текст"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"\e[33m"</span><span class="brackets">,</span> <span class="string">"Жёлтый текст"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"\e[34m"</span><span class="brackets">,</span> <span class="string">"Синий текст"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"\e[35m"</span><span class="brackets">,</span> <span class="string">"Малиновый текст"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
     
     <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">'\e[0m'</span><span class="brackets">,</span> <span class="string">"Стандартный текст"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
 <span class="brackets">}</span></pre>
@@ -81,7 +81,7 @@
 <span class="color-blue">Синий текст</span>
 <span class="color-magenta">Малиновый текст</span>
 <span class="color-reset">Стандартный текст</span></div>
-                    <p>Цвета задаются кодами от <code>'\e[30m'</code> до <code>'\e[37m'</code> (тёмные) и от <code>'\e[90m'</code> до <code>'\e[97m'</code> (светлые). А последовательность <code>'\e[0m'</code> сбрасывает все эффекты — и текст возвращается к обычному виду.</p>
+                    <p>Цвета задаются кодами от <code>"\e[30m"</code> до <code>"\e[37m"</code> (тёмные) и от <code>"\e[90m"</code> до <code>"\e[97m"</code> (светлые). А последовательность <code>"\e[0m"</code> сбрасывает все эффекты — и текст возвращается к обычному виду.</p>
                 </div>
                 <div class="example">
                     <h2>Цвет сохраняется до конца вывода</h2>
@@ -89,30 +89,30 @@
                     <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
 
 <span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
-    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">'\e[32m'</span><span class="brackets">,</span> <span class="string">"Текст стал зелёным"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"\e[32m"</span><span class="brackets">,</span> <span class="string">"Текст стал зелёным"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
     <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Текст всё ещё зелёный"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
     <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Пока цвет не поменять, он будет зелёным"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
 
-    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">'\e[34m'</span><span class="brackets">,</span> <span class="string">"А теперь текст стал синим"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
-    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"И он останется синим"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"\e[31m"</span><span class="brackets">,</span> <span class="string">"А теперь текст стал красным"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"И он останется красным"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
     <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Пока не поменять на другой"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
 <span class="brackets">}</span></pre>
                     <div class="output"><span class="color-green">Текст стал зелёным</span>
 <span class="color-green">Текст всё ещё зелёный</span>
 <span class="color-green">Пока цвет не поменять, он будет зелёным</span>
-<span class="color-blue">А теперь текст стал синим</span>
-<span class="color-blue">И он останется синим</span>
-<span class="color-blue">Пока не поменять на другой</span></div>
+<span class="color-red">А теперь текст стал красным</span>
+<span class="color-red">И он останется красным</span>
+<span class="color-red">Пока не поменять на другой</span></div>
                     <p>Это поведение — не баг, а фича: оно позволяет легко выделять целые блоки текста одним цветом, не дублируя команды.</p>
                 </div>
                 <div class="example">
                     <h2>Сброс цвета и эффектов</h2>
-                    <p>Чтобы вернуть текст к стандартному виду, используйте команду <code>'\e[0m'</code>:</p>
+                    <p>Чтобы вернуть текст к стандартному виду, используйте команду <code>"\e[0m"</code>:</p>
                     <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
 
 <span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
-    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">'\e[36m'</span><span class="brackets">,</span> <span class="string">"Цвет изменён на циановый"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
-    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">'\e[0m'</span><span class="brackets">,</span> <span class="string">"Цвет сброшен до обычного"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"\e[36m"</span><span class="brackets">,</span> <span class="string">"Цвет изменён на циановый"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"\e[0m"</span><span class="brackets">,</span> <span class="string">"Цвет сброшен до обычного"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
 <span class="brackets">}</span></pre>
                     <div class="output"><span class="color-cyan">Цвет изменён на циановый</span>
 <span class="color-reset">Цвет сброшен до обычного</span></div>

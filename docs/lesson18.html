@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 18: Методы строк — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 18: Методы строк</h1>
+            <p class="subtitle">Анализ, изменение и разбор текста — без регулярных выражений и путаницы</p>
+        </section>
+        <section class="flex">
+            <div id="lessons-nav-placeholder"></div>
+            <div class="examples">
+                <div class="example">
+                    <h2>Методы, возвращающие <code>bool</code></h2>
+                    <p>Эти методы отвечают на вопрос «да или нет».</p>
+                </div>
+                <div class="example">
+                    <h3><code>.contains(c)</code></h3>
+                    <p>Проверяет, есть ли подстрока или символ в строке:</p>
+                    <pre><span class="typeName">string</span> <span class="object">s</span> <span class="brackets">=</span> <span class="string">"Hello, World!"</span><span class="brackets">;</span>
+<span class="typeName">bool</span> <span class="object">has_o</span> <span class="brackets">=</span> <span class="object">s</span><span class="brackets">.</span><span class="function">contains</span><span class="brackets">(</span><span class="string">'o'</span><span class="brackets">);</span>      <span class="comment">// true</span>
+<span class="typeName">bool</span> <span class="object">has_abc</span> <span class="brackets">=</span> <span class="object">s</span><span class="brackets">.</span><span class="function">contains</span><span class="brackets">(</span><span class="string">"abc"</span><span class="brackets">);</span>   <span class="comment">// false</span></pre>
+                </div>
+                <div class="example">
+                    <h3><code>.is_int()</code> и <code>.is_float()</code></h3>
+                    <p>Проверяют, можно ли строку безопасно преобразовать в число:</p>
+                    <pre><span class="typeName">string</span> <span class="object">a</span> <span class="brackets">=</span> <span class="string">"123"</span><span class="brackets">;</span>
+<span class="typeName">string</span> <span class="object">b</span> <span class="brackets">=</span> <span class="string">"12.5"</span><span class="brackets">;</span>
+<span class="typeName">string</span> <span class="object">c</span> <span class="brackets">=</span> <span class="string">"abc"</span><span class="brackets">;</span>
+
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">a</span><span class="brackets">.</span><span class="function">is_int</span><span class="brackets">(),</span> <span class="string">'\n'</span><span class="brackets">);</span>     <span class="comment">// true</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">b</span><span class="brackets">.</span><span class="function">is_float</span><span class="brackets">(),</span> <span class="string">'\n'</span><span class="brackets">);</span>  <span class="comment">// true</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">c</span><span class="brackets">.</span><span class="function">is_int</span><span class="brackets">(),</span> <span class="string">'\n'</span><span class="brackets">);</span>     <span class="comment">// false</span></pre>
+                </div>
+                <div class="example">
+                    <h2>Методы, возвращающие <code>int</code></h2>
+                    <p>Эти методы работают с позициями и количеством.</p>
+                </div>
+                <div class="example">
+                    <h3><code>.find(c)</code></h3>
+                    <p>Возвращает индекс первого вхождения символа или подстроки, или <code>-1</code>, если не найдено:</p>
+                    <pre><span class="typeName">string</span> <span class="object">t</span> <span class="brackets">=</span> <span class="string">"Кот и собака"</span><span class="brackets">;</span>
+<span class="typeName">int</span> <span class="object">idx1</span> <span class="brackets">=</span> <span class="object">t</span><span class="brackets">.</span><span class="function">find</span><span class="brackets">(</span><span class="string">'о'</span><span class="brackets">);</span>      <span class="comment">// 1</span>
+<span class="typeName">int</span> <span class="object">idx2</span> <span class="brackets">=</span> <span class="object">t</span><span class="brackets">.</span><span class="function">find</span><span class="brackets">(</span><span class="string">"собака"</span><span class="brackets">);</span> <span class="comment">// 6</span>
+<span class="typeName">int</span> <span class="object">idx3</span> <span class="brackets">=</span> <span class="object">t</span><span class="brackets">.</span><span class="function">find</span><span class="brackets">(</span><span class="string">"рыба"</span><span class="brackets">);</span>   <span class="comment">// -1</span></pre>
+                </div>
+                <div class="example">
+                    <h3><code>.count(c)</code></h3>
+                    <p>Считает, сколько раз встречается символ или подстрока:</p>
+                    <pre><span class="typeName">string</span> <span class="object">u</span> <span class="brackets">=</span> <span class="string">"абракадабра"</span><span class="brackets">;</span>
+<span class="typeName">int</span> <span class="object">a_count</span> <span class="brackets">=</span> <span class="object">u</span><span class="brackets">.</span><span class="function">count</span><span class="brackets">(</span><span class="string">'а'</span><span class="brackets">);</span> <span class="comment">// 5</span>
+<span class="typeName">int</span> <span class="object">abra_count</span> <span class="brackets">=</span> <span class="object">u</span><span class="brackets">.</span><span class="function">count</span><span class="brackets">(</span><span class="string">"абра"</span><span class="brackets">);</span> <span class="comment">// 2</span></pre>
+                </div>
+                <div class="example">
+                    <h2>Методы, возвращающие <code>string</code></h2>
+                    <p>Эти методы создают новую строку на основе исходной.</p>
+                </div>
+                <div class="example">
+                    <h3><code>.toUpperCase()</code> и <code>.toLowerCase()</code></h3>
+                    <pre><span class="typeName">string</span> <span class="object">v</span> <span class="brackets">=</span> <span class="string">"Привет, Мир!"</span><span class="brackets">;</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">v</span><span class="brackets">.</span><span class="function">toUpperCase</span><span class="brackets">(),</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// ПРИВЕТ, МИР!</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">v</span><span class="brackets">.</span><span class="function">toLowerCase</span><span class="brackets">(),</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// привет, мир!</span></pre>
+                </div>
+                <div class="example">
+                    <h3><code>.substring(start, end)</code></h3>
+                    <p>Возвращает часть строки от индекса <code>start</code> до <code>end</code> <strong>включительно</strong>:</p>
+                    <pre><span class="typeName">string</span> <span class="object">w</span> <span class="brackets">=</span> <span class="string">"Программирование"</span><span class="brackets">;</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">w</span><span class="brackets">.</span><span class="function">substring</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">,</span> <span class="number">3</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// "Про"</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">w</span><span class="brackets">.</span><span class="function">substring</span><span class="brackets">(</span><span class="number">5</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>      <span class="comment">// "аммирование" (до конца)</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">w</span><span class="brackets">.</span><span class="function">substring</span><span class="brackets">(</span><span class="number">-1</span><span class="brackets">,</span> <span class="number">3</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// "Про" (отрицательный start → 0)</span></pre>
+                </div>
+                <div class="example">
+                    <h3><code>.replace(old, new)</code></h3>
+                    <p>Заменяет все вхождения подстроки <code>old</code> на <code>new</code>:</p>
+                    <pre><span class="typeName">string</span> <span class="object">x</span> <span class="brackets">=</span> <span class="string">"Кот и кот и ещё кот"</span><span class="brackets">;</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">x</span><span class="brackets">.</span><span class="function">replace</span><span class="brackets">(</span><span class="string">"кот"</span><span class="brackets">,</span> <span class="string">"пёс"</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span></pre>
+                    <div class="output">Кот и пёс и ещё пёс</div>
+                    <p>Обратите внимание: первый <code>"Кот"</code> не был заменён из-за того, что функция является регистрозависимой.</p>
+                </div>
+                <div class="example">
+                    <h2>Метод, возвращающий массив</h2>
+                </div>
+                <div class="example">
+                    <h3><code>.split(c)</code></h3>
+                    <p>Разбивает строку по разделителю и возвращает динамический массив строк:</p>
+                    <pre><span class="typeName">string</span> <span class="object">data</span> <span class="brackets">=</span> <span class="string">"яблоко,банан,апельсин"</span><span class="brackets">;</span>
+<span class="typeName">dyn_array</span><span class="brackets">&lt;</span><span class="typeName">string</span><span class="brackets">&gt;</span> <span class="object">fruits</span> <span class="brackets">=</span> <span class="object">data</span><span class="brackets">.</span><span class="function">split</span><span class="brackets">(</span><span class="string">","</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">fruits</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span></pre>
+                    <div class="output">["яблоко", "банан", "апельсин"]</div>
+                    <p>Метод особенно полезен при обработке CSV-подобных данных.</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson17.html" class="nav-button nav-prev">
+                            ← Урок 17: Методы массивов
+                        </a>
+                        <a href="./lesson19.html" class="nav-button nav-next">
+                            Урок 19: Библиотека 'time' →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>
