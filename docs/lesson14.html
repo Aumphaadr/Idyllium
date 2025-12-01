@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 14: Тип 'char' и строки — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 14: Тип <code>char</code> и строки</h1>
+            <p class="subtitle">Как устроены строки изнутри и как с ними работать посимвольно</p>
+        </section>
+        <section class="flex">
+            <div id="lessons-nav-placeholder"></div>
+            <div class="examples">
+                <div class="example">
+                    <h2>Типы <code>char</code> и <code>string</code></h2>
+                    <p>В Idyllium существует два текстовых типа:</p>
+                    <pre><span class="comment">// Переменная типа 'char' может хранить один символ</span>
+<span class="typeName">char</span> <span class="object">c</span> <span class="brackets">=</span> <span class="string">'#'</span><span class="brackets">;</span>
+
+<span class="comment">// Переменная типа 'string' может хранить много символов</span>
+<span class="typeName">string</span> <span class="object">s</span> <span class="brackets">=</span> <span class="string">"Доступ разрешён!"</span><span class="brackets">;</span></pre>
+                    <p>Обратите внимание:</p>
+                    <ul>
+                        <li>Одиночный символ обрамляется <strong>одинарными</strong> кавычками <code>' '</code>;</li>
+                        <li>Строка — <strong>двойными</strong> кавычками <code>" "</code>.</li>
+                    </ul>
+                </div>
+                <div class="example">
+                    <h2>Строка — это массив символов</h2>
+                    <p>Это очень похоже на отношение «переменная ↔ массив» для чисел:</p>
+                    <pre><span class="comment">// Переменная 'int' хранит одно число</span>
+<span class="typeName">int</span> <span class="object">n</span> <span class="brackets">=</span> <span class="number">792</span><span class="brackets">;</span>
+
+<span class="comment">// Массив 'int' хранит несколько чисел</span>
+<span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">,</span> <span class="number">5</span><span class="brackets">&gt;</span> <span class="object">m</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">405</span><span class="brackets">,</span> <span class="number">163</span><span class="brackets">,</span> <span class="number">399</span><span class="brackets">,</span> <span class="number">785</span><span class="brackets">,</span> <span class="number">241</span><span class="brackets">];</span></pre>
+                    <p>Точно так же:</p>
+                    <ul>
+                        <li><code>char</code> — один символ,</li>
+                        <li><code>string</code> — набор символов, то есть <strong>массив типа <code>char</code></strong>.</li>
+                    </ul>
+                    <p>Это означает: к отдельным символам строки можно обращаться по индексу, как к ячейкам массива.</p>
+                </div>
+                <div class="example">
+                    <h2>Доступ к символам строки</h2>
+                    <p>Как и у массива, у строки можно получить любой символ по его индексу:</p>
+                    <pre><span class="typeName">string</span> <span class="object">p</span> <span class="brackets">=</span> <span class="string">"Гусь"</span><span class="brackets">;</span>
+
+<span class="typeName">char</span> <span class="object">a</span> <span class="brackets">=</span> <span class="object">p</span><span class="brackets">[</span><span class="number">0</span><span class="brackets">];</span> <span class="comment">// 'Г'</span>
+<span class="typeName">char</span> <span class="object">b</span> <span class="brackets">=</span> <span class="object">p</span><span class="brackets">[</span><span class="number">1</span><span class="brackets">];</span> <span class="comment">// 'у'</span>
+<span class="typeName">char</span> <span class="object">c</span> <span class="brackets">=</span> <span class="object">p</span><span class="brackets">[</span><span class="number">2</span><span class="brackets">];</span> <span class="comment">// 'с'</span>
+<span class="typeName">char</span> <span class="object">d</span> <span class="brackets">=</span> <span class="object">p</span><span class="brackets">[</span><span class="number">3</span><span class="brackets">];</span> <span class="comment">// 'ь'</span>
+<span class="typeName">char</span> <span class="object">e</span> <span class="brackets">=</span> <span class="object">p</span><span class="brackets">[</span><span class="number">4</span><span class="brackets">];</span> <span class="comment">// ОШИБКА: строки длиной 4 → индексы 0–3</span></pre>
+                    <p>Строка ведёт себя как массив: индексация с нуля, выход за границы — ошибка.</p>
+                </div>
+                <div class="example">
+                    <h2>Посимвольный перебор</h2>
+                    <p>Можно вывести каждый символ строки по отдельности:</p>
+                    <pre><span class="typeName">string</span> <span class="object">p</span> <span class="brackets">=</span> <span class="string">"Пингвин"</span><span class="brackets">;</span>
+
+<span class="keyword">for</span> <span class="brackets">(</span><span class="typeName">int</span> <span class="object">i</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">&lt;</span> <span class="number">7</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">=</span> <span class="object">i</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">)</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">p</span><span class="brackets">[</span><span class="object">i</span><span class="brackets">],</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">П
+и
+н
+г
+в
+и
+н</div>
+                </div>
+                <div class="example">
+                    <h2>Длина строки: метод <code>length()</code></h2>
+                    <p>Если длина строки заранее неизвестна, используйте метод <code>length()</code>:</p>
+                    <pre><span class="typeName">string</span> <span class="object">Q</span> <span class="brackets">=</span> <span class="string">"Страус"</span><span class="brackets">;</span>
+<span class="typeName">int</span> <span class="object">L</span> <span class="brackets">=</span> <span class="object">Q</span><span class="brackets">.</span><span class="function">length</span><span class="brackets">();</span> <span class="comment">// 6</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Птица: "</span><span class="brackets">,</span> <span class="object">Q</span><span class="brackets">,</span> <span class="string">", длина: "</span><span class="brackets">,</span> <span class="object">L</span><span class="brackets">,</span> <span class="string">" символов\n"</span><span class="brackets">);</span>
+
+<span class="typeName">string</span> <span class="object">R</span> <span class="brackets">=</span> <span class="string">"Фламинго"</span><span class="brackets">;</span>
+<span class="typeName">int</span> <span class="object">N</span> <span class="brackets">=</span> <span class="object">R</span><span class="brackets">.</span><span class="function">length</span><span class="brackets">();</span> <span class="comment">// 8</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Птица: "</span><span class="brackets">,</span> <span class="object">R</span><span class="brackets">,</span> <span class="string">", длина: "</span><span class="brackets">,</span> <span class="object">N</span><span class="brackets">,</span> <span class="string">" символов\n"</span><span class="brackets">);</span></pre>
+                    <div class="output">Птица: Страус, длина: 6 символов
+Птица: Фламинго, длина: 8 символов</div>
+                </div>
+                <div class="example">
+                    <h2>Цикл с неизвестной длиной строки</h2>
+                    <p>Метод <code>length()</code> возвращает число — значит, его можно подставить в цикл:</p>
+                    <pre><span class="typeName">string</span> <span class="object">T</span> <span class="brackets">=</span> <span class="string">"Журавль"</span><span class="brackets">;</span>
+
+<span class="keyword">for</span> <span class="brackets">(</span><span class="typeName">int</span> <span class="object">i</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">&lt;</span> <span class="object">T</span><span class="brackets">.</span><span class="function">length</span><span class="brackets">();</span> <span class="object">i</span> <span class="brackets">=</span> <span class="object">i</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">)</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">T</span><span class="brackets">[</span><span class="object">i</span><span class="brackets">],</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">Ж
+у
+р
+а
+в
+л
+ь</div>
+                    <p>Такой цикл работает с любой строкой — независимо от её длины.</p>
+                </div>
+                <div class="example">
+                    <h2>Конкатенация строк и символов</h2>
+                    <p>Строки и символы можно соединять с помощью оператора <code>+</code>:</p>
+                    <pre><span class="typeName">string</span> <span class="object">noun</span> <span class="brackets">=</span> <span class="string">"пицца"</span><span class="brackets">;</span>
+<span class="typeName">string</span> <span class="object">adj</span> <span class="brackets">=</span> <span class="string">"вкусная"</span><span class="brackets">;</span>
+<span class="typeName">char</span> <span class="object">space</span> <span class="brackets">=</span> <span class="string">' '</span><span class="brackets">;</span>
+<span class="typeName">char</span> <span class="object">mark</span> <span class="brackets">=</span> <span class="string">'!'</span><span class="brackets">;</span>
+
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">noun</span> <span class="brackets">+</span> <span class="object">adj</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">noun</span> <span class="brackets">+</span> <span class="object">space</span> <span class="brackets">+</span> <span class="object">adj</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">noun</span> <span class="brackets">+</span> <span class="object">space</span> <span class="brackets">+</span> <span class="object">adj</span> <span class="brackets">+</span> <span class="object">mark</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span></pre>
+                    <div class="output">пиццавкусная
+пицца вкусная
+пицца вкусная!</div>
+                    <p>В отличие от чисел, от перемены мест слагаемых — сумма меняется:</p>
+                    <pre><span class="typeName">string</span> <span class="object">res1</span> <span class="brackets">=</span> <span class="object">noun</span> <span class="brackets">+</span> <span class="string">' '</span> <span class="brackets">+</span> <span class="object">adj</span><span class="brackets">;</span> <span class="comment">// "пицца вкусная"</span>
+<span class="typeName">string</span> <span class="object">res2</span> <span class="brackets">=</span> <span class="object">adj</span> <span class="brackets">+</span> <span class="string">' '</span> <span class="brackets">+</span> <span class="object">noun</span><span class="brackets">;</span> <span class="comment">// "вкусная пицца"</span></pre>
+                </div>
+                <div class="example">
+                    <h2>Экранированные символы</h2>
+                    <p>Почему символ <code>'\n'</code> записан в <strong>одинарных</strong> кавычках, хотя выглядит как два символа?</p>
+                    <p>Потому что <code>\</code> здесь не является отдельным символом — он экранирует букву <code>n</code>, превращая её в управляющий символ «новая строка».</p>
+                    <p>То же касается:</p>
+                    <ul>
+                        <li><code>'\t'</code> — символ табуляции;</li>
+                        <li><code>'\''</code> — одинарная кавычка внутри <code>char</code>;</li>
+                        <li><code>'\"'</code> — двойная кавычка внутри <code>string</code>.</li>
+                    </ul>
+                    <p>Экранирование позволяет вставлять в строку или символ управляющие последовательности и знаки пунктуации без путаницы.</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson13.html" class="nav-button nav-prev">
+                            ← Урок 13: Массивы фиксированной длины
+                        </a>
+                        <a href="./lesson15.html" class="nav-button nav-next">
+                            Урок 15: Динамические массивы →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 21: Создание собственных функций — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 21: Создание собственных функций</h1>
+            <p class="subtitle">Как превратить повторяющиеся действия в переиспользуемые блоки кода</p>
+        </section>
+        <section class="flex">
+            <div id="lessons-nav-placeholder"></div>
+            <div class="examples">
+                <div class="example">
+                    <h2>Функции — уже знакомые нам инструменты</h2>
+                    <p>Ранее мы уже многократно использовали функции:</p>
+                    <pre><span class="typeName">int</span> <span class="object">A</span> <span class="brackets">=</span> <span class="object">math</span><span class="brackets">.</span><span class="function">round</span><span class="brackets">(</span><span class="number">15.9</span><span class="brackets">);</span> <span class="comment">// 16</span>
+<span class="typeName">float</span> <span class="object">B</span> <span class="brackets">=</span> <span class="object">math</span><span class="brackets">.</span><span class="function">sqrt</span><span class="brackets">(</span><span class="number">49</span><span class="brackets">);</span> <span class="comment">// 7.0</span>
+<span class="typeName">string</span> <span class="object">C</span> <span class="brackets">=</span> <span class="function">to_string</span><span class="brackets">(</span><span class="number">287</span><span class="brackets">);</span> <span class="comment">// "287"</span>
+<span class="typeName">bool</span> <span class="object">D</span> <span class="brackets">=</span> <span class="object">C</span><span class="brackets">.</span><span class="function">contains</span><span class="brackets">(</span><span class="string">'5'</span><span class="brackets">);</span> <span class="comment">// false</span></pre>
+                    <p>Во всех случаях функция <strong>превращает входные данные в выходные</strong>.</p>
+                </div>
+                <div class="example">
+                    <h2>Вход и выход — основа функции</h2>
+                    <ul>
+                        <li><strong>Входные данные (аргументы)</strong> — то, что мы передаём функции при вызове;</li>
+                        <li><strong>Выходные данные (результат)</strong> — то, что функция возвращает после выполнения.</li>
+                    </ul>
+                    <p>По сути, функция — это механизм для превращения одних данных в другие.</p>
+                </div>
+                <div class="example">
+                    <h2>Синтаксис объявления функции</h2>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="comment">// описание функции: что она делает</span>
+<span class="typeName">int</span> <span class="keyword">function</span> <span class="function">имя_функции</span><span class="brackets">(</span><span class="typeName">int</span> <span class="object">входные_данные</span><span class="brackets">)</span> <span class="brackets">{</span>
+    <span class="comment">// действия</span>
+    <span class="keyword">return</span> <span class="object">выходные_данные</span><span class="brackets">;</span>
+<span class="brackets">}</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">A</span> <span class="brackets">=</span> <span class="function">имя_функции</span><span class="brackets">(</span><span class="number">42</span><span class="brackets">);</span> <span class="comment">// вызов: заставляем функцию работать</span>
+    <span class="typeName">int</span> <span class="object">B</span> <span class="brackets">=</span> <span class="function">имя_функции</span><span class="brackets">(</span><span class="number">-17</span><span class="brackets">);</span> <span class="comment">// вызов: заставляем работать ещё раз</span>
+    <span class="typeName">int</span> <span class="object">C</span> <span class="brackets">=</span> <span class="function">имя_функции</span><span class="brackets">(</span><span class="number">51</span><span class="brackets">);</span> <span class="comment">// и ещё раз</span>
+
+    <span class="comment">// и так можно вызывать функцию сколько угодно</span>
+<span class="brackets">}</span></pre>
+                    <p><strong>Функция</strong> — это блок кода, который один раз описывается, а затем может многократно использоваться.</p>
+                </div>
+                <div class="example">
+                    <h2>Функция как сущность</h2>
+                    <p>У функции есть:</p>
+                    <ul>
+                        <li><strong>тип</strong> — что она возвращает (<code>int</code>, <code>float</code>, и т.д.);</li>
+                        <li><strong>название</strong> — по которому к ней обращаются;</li>
+                        <li><strong>набор действий</strong> — что она делает, когда её вызывают.</li>
+                    </ul>
+                    <p>Это похоже на переменную (у неё тоже есть тип, имя и содержимое), но вместо данных — действия.</p>
+                </div>
+                <div class="example">
+                    <h2>Пример: создание собственной функции <code>modul_chisla()</code></h2>
+                    <p>Воссоздадим поведение <code>math.abs()</code>, но своими руками:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="comment">// описание функции</span>
+<span class="typeName">int</span> <span class="keyword">function</span> <span class="function">modul_chisla</span><span class="brackets">(</span><span class="typeName">int</span> <span class="object">chislo</span><span class="brackets">)</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">res</span> <span class="brackets">=</span> <span class="object">chislo</span><span class="brackets">;</span>
+    <span class="keyword">if</span> <span class="brackets">(</span><span class="object">chislo</span> <span class="brackets">&lt;</span> <span class="number">0</span><span class="brackets">)</span> <span class="brackets">{</span>
+        <span class="object">res</span> <span class="brackets">=</span> <span class="brackets">-</span><span class="object">chislo</span><span class="brackets">;</span>
+    <span class="brackets">}</span>
+    <span class="keyword">return</span> <span class="object">res</span><span class="brackets">;</span>
+<span class="brackets">}</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">A</span> <span class="brackets">=</span> <span class="function">modul_chisla</span><span class="brackets">(</span><span class="number">-23</span><span class="brackets">);</span> <span class="comment">// функция приняла -23 и породила 23</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">A</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+
+    <span class="typeName">int</span> <span class="object">B</span> <span class="brackets">=</span> <span class="function">modul_chisla</span><span class="brackets">(</span><span class="number">-40</span><span class="brackets">);</span> <span class="comment">// функция приняла -40 и породила 40</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">B</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">23
+40</div>
+                    <p>Мы сами решили, что делает эта функция, и теперь можем использовать её где угодно.</p>
+                </div>
+                <div class="example">
+                    <h2>Функция с массивами: <code>mul_all()</code></h2>
+                    <p>Создадим функцию, которой ещё не было — она вычисляет произведение всех чисел в динамическом массиве:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="comment">// описание функции</span>
+<span class="typeName">int</span> <span class="keyword">function</span> <span class="function">mul_all</span><span class="brackets">(</span><span class="typeName">dyn_array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">&gt;</span> <span class="object">some_arr</span><span class="brackets">)</span> <span class="brackets">{</span>
+    <span class="typeName">int</span> <span class="object">res</span> <span class="brackets">=</span> <span class="number">1</span><span class="brackets">;</span>
+    <span class="keyword">for</span> <span class="brackets">(</span><span class="typeName">int</span> <span class="object">i</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">&lt;</span> <span class="object">some_arr</span><span class="brackets">.</span><span class="function">length</span><span class="brackets">();</span> <span class="object">i</span> <span class="brackets">=</span> <span class="object">i</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">)</span> <span class="brackets">{</span>
+        <span class="object">res</span> <span class="brackets">=</span> <span class="object">res</span> <span class="brackets">*</span> <span class="object">some_arr</span><span class="brackets">[</span><span class="object">i</span><span class="brackets">];</span>
+    <span class="brackets">}</span>
+    <span class="keyword">return</span> <span class="object">res</span><span class="brackets">;</span>
+<span class="brackets">}</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">dyn_array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">&gt;</span> <span class="object">arr1</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">2</span><span class="brackets">,</span> <span class="number">3</span><span class="brackets">,</span> <span class="number">4</span><span class="brackets">,</span> <span class="number">5</span><span class="brackets">,</span> <span class="number">6</span><span class="brackets">];</span>
+    <span class="typeName">dyn_array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">&gt;</span> <span class="object">arr2</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">11</span><span class="brackets">,</span> <span class="number">12</span><span class="brackets">,</span> <span class="number">13</span><span class="brackets">,</span> <span class="number">14</span><span class="brackets">];</span>
+
+    <span class="typeName">int</span> <span class="object">r1</span> <span class="brackets">=</span> <span class="function">mul_all</span><span class="brackets">(</span><span class="object">arr1</span><span class="brackets">);</span> <span class="comment">// функция приняла 'arr1' и породила 720</span>
+    <span class="typeName">int</span> <span class="object">r2</span> <span class="brackets">=</span> <span class="function">mul_all</span><span class="brackets">(</span><span class="object">arr2</span><span class="brackets">);</span> <span class="comment">// функция приняла 'arr2' и породила 24024</span>
+
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">r1</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">r2</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">720
+24024</div>
+                    <p>Обратите внимание: в теле <code>main()</code> переменная <code>some_arr</code> не объявлена. Она существует <strong>только внутри функции</strong> и заменяется на реальный аргумент при вызове.</p>
+                    <p>Это ключевой принцип: описание функции использует <strong>временные имена</strong>, а вызов — <strong>реальные данные</strong>, подходящие по типу.</p>
+                </div>
+                <div class="example">
+                    <h2>void-функции: когда не нужно возвращать значение</h2>
+                    <p>Слово <code>void</code> переводится как «пустота». Функция типа <code>void</code> <strong>ничего не возвращает</strong>, а значит, не требует оператора <code>return</code>.</p>
+                    <p>Такие функции полезны, когда нужно выполнить действие (например, вывести данные), но не получить результат.</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="comment">// описание void-функции</span>
+<span class="typeName">void</span> <span class="keyword">function</span> <span class="function">draw_line</span><span class="brackets">(</span><span class="typeName">int</span> <span class="object">L</span><span class="brackets">)</span> <span class="brackets">{</span>
+    <span class="typeName">string</span> <span class="object">res</span> <span class="brackets">=</span> <span class="string">""</span><span class="brackets">;</span>
+    <span class="keyword">for</span> <span class="brackets">(</span><span class="typeName">int</span> <span class="object">i</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">&lt;</span> <span class="object">L</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">=</span> <span class="object">i</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">)</span> <span class="brackets">{</span>
+        <span class="object">res</span> <span class="brackets">=</span> <span class="object">res</span> <span class="brackets">+</span> <span class="string">'-'</span><span class="brackets">;</span>
+    <span class="brackets">}</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">res</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="comment">// вызовы void-функции</span>
+    <span class="function">draw_line</span><span class="brackets">(</span><span class="number">5</span><span class="brackets">);</span>  <span class="comment">// приняла 5, вывела "-----", ничего не породила</span>
+    <span class="function">draw_line</span><span class="brackets">(</span><span class="number">12</span><span class="brackets">);</span> <span class="comment">// приняла 12, вывела "------------", ничего не породила</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">-----
+------------
+</div>
+                    <p>void-функции — это «действия без хранимого результата», но они тоже делают ваш код чище и избавляют от копипасты.</p>
+                </div>
+                <div class="example">
+                    <h2>Ключевое отличие</h2>
+                    <ul>
+                        <li>Функции с типом (<code>int</code>, <code>float</code>, и т.д.) <strong>возвращают значение</strong> и обычно присваиваются переменной:
+                            <pre><span class="typeName">int</span> <span class="object">A</span> <span class="brackets">=</span> <span class="function">modul_chisla</span><span class="brackets">(</span><span class="number">-37</span><span class="brackets">);</span></pre>
+                        </li>
+                        <li>Функции типа <code>void</code> <strong>ничего не возвращают</strong> и вызываются как отдельная команда:
+                            <pre><span class="function">draw_line</span><span class="brackets">(</span><span class="number">12</span><span class="brackets">);</span></pre>
+                        </li>
+                    </ul>
+                    <p>Это не просто синтаксис — это отражение смысла: делаете ли вы вычисления или производите побочный эффект (вывод, рисование и т.д.).</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson20.html" class="nav-button nav-prev">
+                            ← Урок 20: Библиотека 'types'
+                        </a>
+                        <a href="./lesson22.html" class="nav-button nav-next">
+                            Урок 22: Создание собственных библиотек →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>

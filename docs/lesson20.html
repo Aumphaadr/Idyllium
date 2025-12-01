@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 20: Библиотека 'types' — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+    <style>
+        .bit-group {
+            display: inline-block;
+            margin: 0 2px;
+            font-family: monospace;
+        }
+        .bit-sign { color: #ff4444; }
+        .bit-exponent { color: #44aa44; }
+        .bit-mantissa { color: #4444ff; }
+        td, th {
+            border: 1px solid rgb(172, 152, 197);
+            padding: 0.3em;
+        }
+        table {
+            border-collapse: collapse;
+        }
+    </style>
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 20: Библиотека <code>types</code></h1>
+            <p class="subtitle">Как устроены числа «под капотом» — узнаем, чтобы не пугаться C++ и Java</p>
+        </section>
+        <section class="flex">
+            <div id="lessons-nav-placeholder"></div>
+            <div class="examples">
+                <div class="example">
+                    <h2>Зачем вообще нужна библиотека <code>types</code>?</h2>
+                    <p>Idyllium стремится к логичности и безопасности. Но реальные языки — C++, Java, Rust — не всегда щадят новичков, а при работе с данными иногда дают неочевидные результаты.</p>
+                    <p>Чтобы подготовиться к ним, Idyllium предлагает библиотеку <code>types</code>, которая показывает, как работают числа на машинном уровне "нулей и единиц".</p>
+                    <p>Это не для повседневного использования — это для <strong>понимания</strong>.</p>
+                </div>
+                <div class="example">
+                    <h2>Переполнение: пример с <code>uint8</code></h2>
+                    <p>Например, тип <code>types.uint8</code> занимает 8 бит и может хранить значения от <code>0</code> до <code>255</code>.</p>
+                    <p>Но что будет, если присвоить более крупное значение?</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+<span class="keyword">use</span> <span class="object">types</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">types</span><span class="brackets">.</span><span class="typeName">uint8</span> <span class="object">N</span> <span class="brackets">=</span> <span class="number">252</span><span class="brackets">;</span>
+    <span class="object">N</span> <span class="brackets">=</span> <span class="object">N</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">;</span> <span class="comment">// 253</span>
+    <span class="object">N</span> <span class="brackets">=</span> <span class="object">N</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">;</span> <span class="comment">// 254</span>
+    <span class="object">N</span> <span class="brackets">=</span> <span class="object">N</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">;</span> <span class="comment">// 255</span>
+    <span class="object">N</span> <span class="brackets">=</span> <span class="object">N</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">;</span> <span class="comment">// 0 ← переполнение!</span>
+    <span class="object">N</span> <span class="brackets">=</span> <span class="object">N</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">;</span> <span class="comment">// 1</span>
+<span class="brackets">}</span></pre>
+                    <p>Такое поведение — не баг Idyllium, а демонстрация того, как работают целочисленные типы в C++ и других системных языках.</p>
+                </div>
+                <div class="example">
+                    <h2>Целочисленные типы в <code>types</code></h2>
+                    <p>В библиотеке <code>types</code> доступны знаковые и беззнаковые целочисленные типы.</p>
+
+                    <h3>Знаковые типы (<code>int</code>)</h3>
+                    <table>
+                        <thead>
+                            <tr><th>Тип</th><th>Размер</th><th>Минимум</th><th>Максимум</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>int8</code></td><td>8 бит</td><td>−128</td><td>127</td></tr>
+                            <tr><td><code>int16</code></td><td>16 бит</td><td>−32 768</td><td>32 767</td></tr>
+                            <tr><td><code>int32</code></td><td>32 бита</td><td>−2 147 483 648</td><td>2 147 483 647</td></tr>
+                            <tr><td><code>int64</code></td><td>64 бита</td><td>−9 223 372 036 854 775 808</td><td>9 223 372 036 854 775 807</td></tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Беззнаковые типы (<code>uint</code>)</h3>
+                    <table>
+                        <thead>
+                            <tr><th>Тип</th><th>Размер</th><th>Минимум</th><th>Максимум</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><code>uint8</code></td><td>8 бит</td><td>0</td><td>255</td></tr>
+                            <tr><td><code>uint16</code></td><td>16 бит</td><td>0</td><td>65 535</td></tr>
+                            <tr><td><code>uint32</code></td><td>32 бита</td><td>0</td><td>4 294 967 295</td></tr>
+                            <tr><td><code>uint64</code></td><td>64 бита</td><td>0</td><td>18 446 744 073 709 551 615</td></tr>
+                        </tbody>
+                    </table>
+                    <p>Буква <code>u</code> — от англ. <em>unsigned</em> («беззнаковый»).</p>
+
+                    <p>Если значение не помещается в диапазон — оно «оборачивается» по правилам модульной арифметики:</p>
+                    <pre><span class="object">types</span><span class="brackets">.</span><span class="typeName">int16</span> <span class="object">A</span> <span class="brackets">=</span> <span class="number">30000</span><span class="brackets">;</span> <span class="comment">// 30000</span>
+<span class="object">types</span><span class="brackets">.</span><span class="typeName">int16</span> <span class="object">B</span> <span class="brackets">=</span> <span class="number">40000</span><span class="brackets">;</span> <span class="comment">// -25536 (40000 - 65536)</span>
+
+<span class="object">types</span><span class="brackets">.</span><span class="typeName">int32</span> <span class="object">C</span> <span class="brackets">=</span> <span class="number">40000</span><span class="brackets">;</span> <span class="comment">// 40000</span>
+<span class="object">types</span><span class="brackets">.</span><span class="typeName">int32</span> <span class="object">D</span> <span class="brackets">=</span> <span class="number">3000000000</span><span class="brackets">;</span> <span class="comment">// -1294967296</span>
+
+<span class="object">types</span><span class="brackets">.</span><span class="typeName">uint16</span> <span class="object">E</span> <span class="brackets">=</span> <span class="number">50000</span><span class="brackets">;</span> <span class="comment">// 50000</span>
+<span class="object">types</span><span class="brackets">.</span><span class="typeName">uint16</span> <span class="object">F</span> <span class="brackets">=</span> <span class="number">-1000</span><span class="brackets">;</span> <span class="comment">// 64536 (65536 - 1000)</span></pre>
+                    <p>Такое поведение идентично тому, что происходит в C++ и других низкоуровневых языках.</p>
+                </div>
+                <div class="example">
+                    <h2>Двоичное представление: метод <code>.to_bin()</code></h2>
+                    <p>Любой тип из <code>types</code> умеет превращаться в строку из нулей и единиц:</p>
+                    <pre><span class="object">types</span><span class="brackets">.</span><span class="typeName">uint8</span> <span class="object">A</span> <span class="brackets">=</span> <span class="number">75</span><span class="brackets">;</span>
+<span class="typeName">string</span> <span class="object">S</span> <span class="brackets">=</span> <span class="object">A</span><span class="brackets">.</span><span class="function">to_bin</span><span class="brackets">();</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">S</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span></pre>
+                    <div class="output">01001011</div>
+
+                    <p>Чтобы понять, как десятичные числа превращаются в двоичные, взгляните на результат работы программы:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+<span class="keyword">use</span> <span class="object">types</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="keyword">for</span> <span class="brackets">(</span><span class="object">types</span><span class="brackets">.</span><span class="typeName">uint8</span> <span class="object">N</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span> <span class="object">N</span> <span class="brackets">&lt;</span> <span class="number">10</span><span class="brackets">;</span> <span class="object">N</span> <span class="brackets">=</span> <span class="object">N</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">)</span> <span class="brackets">{</span>
+        <span class="typeName">string</span> <span class="object">S</span> <span class="brackets">=</span> <span class="object">N</span><span class="brackets">.</span><span class="function">to_bin</span><span class="brackets">();</span>
+        <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Десятичное: "</span><span class="brackets">,</span> <span class="object">N</span><span class="brackets">,</span> <span class="string">" = двоичное "</span><span class="brackets">,</span> <span class="object">S</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="brackets">}</span>
+<span class="brackets">}</span></pre>
+    <div class="output">Десятичное: 0 = двоичное 00000000
+Десятичное: 1 = двоичное 00000001
+Десятичное: 2 = двоичное 00000010
+Десятичное: 3 = двоичное 00000011
+Десятичное: 4 = двоичное 00000100
+Десятичное: 5 = двоичное 00000101
+Десятичное: 6 = двоичное 00000110
+Десятичное: 7 = двоичное 00000111
+Десятичное: 8 = двоичное 00001000
+Десятичное: 9 = двоичное 00001001</div>
+                </div>
+                <div class="example">
+                    <h2>Знаковые vs беззнаковые: один и тот же битовый шаблон</h2>
+                    <p>Из 8 бит можно составить 256 комбинаций.</p>
+                    <p>Беззнаковый тип использует их все для неотрицательных чисел.</p>
+                    <p>Знаковый — делит пополам: половина для положительных, половина для отрицательных.</p>
+                    <p>Поэтому число <code>-35</code> в <code>int8</code> и число <code>221</code> в <code>uint8</code> имеют одинаковое двоичное представление:</p>
+                    <pre><span class="object">types</span><span class="brackets">.</span><span class="typeName">int8</span> <span class="object">x</span> <span class="brackets">=</span> <span class="number">-35</span><span class="brackets">;</span>
+<span class="object">types</span><span class="brackets">.</span><span class="typeName">uint8</span> <span class="object">y</span> <span class="brackets">=</span> <span class="number">221</span><span class="brackets">;</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">x</span><span class="brackets">.</span><span class="function">to_bin</span><span class="brackets">(),</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// 11011101</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">y</span><span class="brackets">.</span><span class="function">to_bin</span><span class="brackets">(),</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// 11011101</span></pre>
+                    <div class="output">11011101
+11011101</div>
+                </div>
+                <div class="example">
+                    <h2>Создание из двоичной строки: <code>types.from_bin&lt;T&gt;(s)</code></h2>
+                    <p>Можно восстановить число из битовой строки — и результат будет зависеть от указанного типа:</p>
+                    <pre><span class="typeName">string</span> <span class="object">B</span> <span class="brackets">=</span> <span class="string">"10100011"</span><span class="brackets">;</span>
+<span class="object">types</span><span class="brackets">.</span><span class="typeName">uint8</span> <span class="object">k</span> <span class="brackets">=</span> <span class="object">types</span><span class="brackets">.</span><span class="function">from_bin</span><span class="brackets">&lt;</span><span class="typeName">uint8</span><span class="brackets">&gt;(</span><span class="object">B</span><span class="brackets">);</span>
+<span class="object">types</span><span class="brackets">.</span><span class="typeName">int8</span> <span class="object">p</span> <span class="brackets">=</span> <span class="object">types</span><span class="brackets">.</span><span class="function">from_bin</span><span class="brackets">&lt;</span><span class="typeName">int8</span><span class="brackets">&gt;(</span><span class="object">B</span><span class="brackets">);</span>
+
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">k</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// 163</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">p</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// -93</span></pre>
+    <div class="output">163
+-93</div>
+                    <p>Один и тот же битовый шаблон — разные числа в зависимости от интерпретации.</p>
+                </div>
+                <div class="example">
+                    <h2>Дробные типы: <code>float32</code> и <code>float64</code></h2>
+                    <p>В <code>types</code> также есть типы с плавающей точкой:</p>
+                    <ul>
+                        <li><code>float32</code> — 32 бита (одинарная точность);</li>
+                        <li><code>float64</code> — 64 бита (двойная точность).</li>
+                    </ul>
+                    <p>В <code>float32</code> биты распределены так: <span class="bit-group bit-sign">1 бит знака</span> + <span class="bit-group bit-exponent">8 бит порядка</span> + <span class="bit-group bit-mantissa">23 бита мантиссы</span></p>
+                    <pre><span class="object">types</span><span class="brackets">.</span><span class="typeName">float32</span> <span class="object">f</span> <span class="brackets">=</span> <span class="number">-12.5</span><span class="brackets">;</span>
+<span class="typeName">string</span> <span class="object">bits</span> <span class="brackets">=</span> <span class="object">f</span><span class="brackets">.</span><span class="function">to_bin</span><span class="brackets">();</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">bits</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span></pre>
+                    <div class="output">11000001010010000000000000000000</div>
+                    <p>Разберём:
+                        <span class="bit-group bit-sign">1</span>
+                        <span class="bit-group bit-exponent">10000010</span>
+                        <span class="bit-group bit-mantissa">10010000000000000000000</span>
+                    </p>
+                    <p>Знак <code>1</code> → отрицательное число.<br>
+                    Порядок <code>10000010</code> = 130 → экспонента = 130 − 127 = 3.<br>
+                    Мантисса <code>1.1001</code> → 1.5625.<br>
+                    Итого: <code>−1.5625 × 2³ = −12.5</code>.</p>
+                    <p>Это упрощённый взгляд — но он даёт ощущение, как работают дробные числа «под капотом».</p>
+                </div>
+                <div class="example">
+                    <h2>Итог</h2>
+                    <p>Библиотека <code>types</code> — не для написания игр, а для понимания основ:</p>
+                    <ul>
+                        <li>Почему числа «переполняются»;</li>
+                        <li>Как устроена память;</li>
+                        <li>Почему одни и те же байты могут означать разные числа;</li>
+                        <li>Как представляются дробные числа в компьютере.</li>
+                    </ul>
+                    <p>Это знание делает вас не просто программистом, а <strong>инженером</strong>.</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson19.html" class="nav-button nav-prev">
+                            ← Урок 19: Библиотека 'time'
+                        </a>
+                        <a href="./lesson21.html" class="nav-button nav-next">
+                            Урок 21: Создание собственных функций →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>

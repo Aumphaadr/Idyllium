@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 19: Библиотека 'time' — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 19: Библиотека <code>time</code></h1>
+            <p class="subtitle">Работа со временем: от пауз до точных временных меток</p>
+        </section>
+        <section class="flex">
+            <div id="lessons-nav-placeholder"></div>
+            <div class="examples">
+                <div class="example">
+                    <h2>Пауза в программе: <code>time.sleep(s)</code></h2>
+                    <p>Функция <code>time.sleep(s)</code> приостанавливает выполнение программы на указанное количество секунд:</p>
+                    <pre><span class="keyword">use</span> <span class="object">time</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">time</span><span class="brackets">.</span><span class="function">sleep</span><span class="brackets">(</span><span class="number">1.5</span><span class="brackets">);</span> <span class="comment">// пауза на 1.5 секунды</span>
+    <span class="object">time</span><span class="brackets">.</span><span class="function">sleep</span><span class="brackets">(</span><span class="number">3</span><span class="brackets">);</span>   <span class="comment">// пауза на 3 секунды</span>
+<span class="brackets">}</span></pre>
+                    <p>Аргумент может быть целым или дробным — как удобно.</p>
+                </div>
+                <div class="example">
+                    <h2>Текущая временная метка: <code>time.now()</code></h2>
+                    <p>Функция <code>time.now()</code> возвращает значение специального типа <code>time.stamp</code> — это полная временная метка:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+<span class="keyword">use</span> <span class="object">time</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">time</span><span class="brackets">.</span><span class="typeName">stamp</span> <span class="object">N</span> <span class="brackets">=</span> <span class="object">time</span><span class="brackets">.</span><span class="function">now</span><span class="brackets">();</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">N</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">2025-11-29 18:55:36</div>
+                    <p>Формат вывода — «год-месяц-день час:минута:секунда».</p>
+                </div>
+                <div class="example">
+                    <h2>Извлечение частей даты и времени</h2>
+                    <p>У объекта типа <code>time.stamp</code> есть методы для получения отдельных компонентов:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+<span class="keyword">use</span> <span class="object">time</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">time</span><span class="brackets">.</span><span class="typeName">stamp</span> <span class="object">t</span> <span class="brackets">=</span> <span class="object">time</span><span class="brackets">.</span><span class="function">now</span><span class="brackets">();</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Год: "</span><span class="brackets">,</span> <span class="object">t</span><span class="brackets">.</span><span class="function">year</span><span class="brackets">(),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Месяц: "</span><span class="brackets">,</span> <span class="object">t</span><span class="brackets">.</span><span class="function">month</span><span class="brackets">(),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"День: "</span><span class="brackets">,</span> <span class="object">t</span><span class="brackets">.</span><span class="function">day</span><span class="brackets">(),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Час: "</span><span class="brackets">,</span> <span class="object">t</span><span class="brackets">.</span><span class="function">hour</span><span class="brackets">(),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Минута: "</span><span class="brackets">,</span> <span class="object">t</span><span class="brackets">.</span><span class="function">minute</span><span class="brackets">(),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Секунда: "</span><span class="brackets">,</span> <span class="object">t</span><span class="brackets">.</span><span class="function">second</span><span class="brackets">(),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"День недели: "</span><span class="brackets">,</span> <span class="object">t</span><span class="brackets">.</span><span class="function">week_day</span><span class="brackets">(),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">Год: 2025
+Месяц: 11
+День: 29
+Час: 18
+Минута: 55
+Секунда: 36
+День недели: 6</div>
+                    <p>День недели возвращается как число от <code>0</code> (воскресенье) до <code>6</code> (суббота).</p>
+                </div>
+                <div class="example">
+                    <h2>UNIX-время: <code>.unix()</code></h2>
+                    <p>Метод <code>.unix()</code> возвращает количество секунд, прошедших с начала эпохи UNIX (<code>1970-01-01 00:00:00 UTC</code>):</p>
+                    <pre><span class="object">time</span><span class="brackets">.</span><span class="typeName">stamp</span> <span class="object">t</span> <span class="brackets">=</span> <span class="object">time</span><span class="brackets">.</span><span class="function">now</span><span class="brackets">();</span>
+<span class="typeName">int</span> <span class="object">ts</span> <span class="brackets">=</span> <span class="object">t</span><span class="brackets">.</span><span class="function">unix</span><span class="brackets">();</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"UNIX-время: "</span><span class="brackets">,</span> <span class="object">ts</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span></pre>
+                    <div class="output">UNIX-время: 1769734536</div>
+                    <p>Это число часто используется в системах для хранения и передачи времени.</p>
+                </div>
+                <div class="example">
+                    <h2>Создание метки из UNIX-времени: <code>time.from_unix(n)</code></h2>
+                    <p>Если у вас есть UNIX-время, вы можете создать из него полноценную метку:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+<span class="keyword">use</span> <span class="object">time</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">time</span><span class="brackets">.</span><span class="typeName">stamp</span> <span class="object">birth</span> <span class="brackets">=</span> <span class="object">time</span><span class="brackets">.</span><span class="function">from_unix</span><span class="brackets">(</span><span class="number">946684800</span><span class="brackets">);</span> <span class="comment">// 2000-01-01 00:00:00</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Дата: "</span><span class="brackets">,</span> <span class="object">birth</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Год: "</span><span class="brackets">,</span> <span class="object">birth</span><span class="brackets">.</span><span class="function">year</span><span class="brackets">(),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">Дата: 2000-01-01 00:00:00
+Год: 2000</div>
+                    <p>Это позволяет работать с историческими или будущими датами без ручного парсинга строк.</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson18.html" class="nav-button nav-prev">
+                            ← Урок 18: Методы строк
+                        </a>
+                        <a href="./lesson20.html" class="nav-button nav-next">
+                            Урок 20: Библиотека 'types' →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 13: Массивы фиксированной длины — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 13: Массивы фиксированной длины</h1>
+            <p class="subtitle">Как хранить много однотипных данных без сотни переменных</p>
+        </section>
+        <section class="flex">
+            <div id="lessons-nav-placeholder"></div>
+            <div class="examples">
+                <div class="example">
+                    <h2>Проблема: много однотипных данных</h2>
+                    <p>Представим, что у вас есть семь чисел, и их нужно вывести:</p>
+                    <pre><span class="typeName">int</span> <span class="object">a</span> <span class="brackets">=</span> <span class="number">29</span><span class="brackets">;</span>
+<span class="typeName">int</span> <span class="object">b</span> <span class="brackets">=</span> <span class="number">84</span><span class="brackets">;</span>
+<span class="typeName">int</span> <span class="object">c</span> <span class="brackets">=</span> <span class="number">16</span><span class="brackets">;</span>
+<span class="typeName">int</span> <span class="object">d</span> <span class="brackets">=</span> <span class="number">35</span><span class="brackets">;</span>
+<span class="typeName">int</span> <span class="object">e</span> <span class="brackets">=</span> <span class="number">43</span><span class="brackets">;</span>
+<span class="typeName">int</span> <span class="object">f</span> <span class="brackets">=</span> <span class="number">60</span><span class="brackets">;</span>
+<span class="typeName">int</span> <span class="object">g</span> <span class="brackets">=</span> <span class="number">17</span><span class="brackets">;</span>
+
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">a</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">b</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">c</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">d</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">e</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">f</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">g</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span></pre>
+                    <p>Этот код громоздкий, неудобный и не масштабируется. Если чисел будет 100 — никто не будет писать 100 переменных.</p>
+                </div>
+                <div class="example">
+                    <h2>Что такое массив?</h2>
+                    <p><strong>Массив</strong> — это набор ячеек памяти компьютера, предназначенных для хранения данных.</p>
+                    <p>Напомним: <strong>переменная</strong> — это ячейка памяти компьютера, предназначенная для хранения данных.</p>
+                    <p>Разница в масштабе: переменная хранит одно значение, а массив — много значений (по одному в каждой ячейке).</p>
+                </div>
+                <div class="example">
+                    <h2>Создание массива</h2>
+                    <p>В Idyllium массив объявляется следующим образом:</p>
+                    <pre><span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">,</span> <span class="number">7</span><span class="brackets">&gt;</span> <span class="object">nums</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">29</span><span class="brackets">,</span> <span class="number">84</span><span class="brackets">,</span> <span class="number">16</span><span class="brackets">,</span> <span class="number">35</span><span class="brackets">,</span> <span class="number">43</span><span class="brackets">,</span> <span class="number">60</span><span class="brackets">,</span> <span class="number">17</span><span class="brackets">];</span></pre>
+                    <p>Разберём:</p>
+                    <ul>
+                        <li><code>array</code> — ключевое слово, обозначающее «статический массив»;</li>
+                        <li><code>&lt;int, 7&gt;</code> — в угловых скобках указывается тип данных в ячейках (<code>int</code>) и количество ячеек (<code>7</code>);</li>
+                        <li><code>nums</code> — имя массива;</li>
+                        <li><code>[29, 84, ..., 17]</code> — начальные значения (можно не указывать — тогда все ячейки будут заполнены дефолтными значениями).</li>
+                    </ul>
+                    <p>Длина массива фиксирована и не может быть изменена после объявления.</p>
+                </div>
+                <div class="example">
+                    <h2>Сходство с переменной</h2>
+                    <p>Синтаксис создания массива напоминает создание переменной:</p>
+                    <pre><span class="comment">// Переменная:</span>
+<span class="typeName">int</span> <span class="object">N</span> <span class="brackets">=</span> <span class="number">65</span><span class="brackets">;</span>
+
+<span class="comment">// Массив на 7 ячеек:</span>
+<span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">,</span> <span class="number">7</span><span class="brackets">&gt;</span> <span class="object">nums</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">29</span><span class="brackets">,</span> <span class="number">84</span><span class="brackets">,</span> <span class="number">16</span><span class="brackets">,</span> <span class="number">35</span><span class="brackets">,</span> <span class="number">43</span><span class="brackets">,</span> <span class="number">60</span><span class="brackets">,</span> <span class="number">17</span><span class="brackets">];</span></pre>
+                    <p>В обоих случаях есть:</p>
+                    <ul>
+                        <li><strong>Тип</strong> — <code>int</code> vs <code>array&lt;int, 7&gt;</code>;</li>
+                        <li><strong>Имя</strong> — <code>N</code> vs <code>nums</code>;</li>
+                        <li><strong>Значение</strong> — <code>65</code> vs <code>[29, 84, 16, 35, 43, 60, 17]</code>.</li>
+                    </ul>
+                    <p>Массив — это расширенная форма переменной.</p>
+                </div>
+                <div class="example">
+                    <h2>Сравнение с переменной: создание, редактирование, вывод</h2>
+                    <pre><span class="typeName">int</span> <span class="object">A</span><span class="brackets">;</span> <span class="comment">// создание переменной, значение = 0</span>
+<span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">,</span> <span class="number">50</span><span class="brackets">&gt;</span> <span class="object">B</span><span class="brackets">;</span> <span class="comment">// создание массива из 50 нулей</span>
+
+<span class="typeName">int</span> <span class="object">N</span> <span class="brackets">=</span> <span class="number">38</span><span class="brackets">;</span> <span class="comment">// создание с указанием значения</span>
+<span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">,</span> <span class="number">4</span><span class="brackets">&gt;</span> <span class="object">P</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">29</span><span class="brackets">,</span> <span class="number">84</span><span class="brackets">,</span> <span class="number">16</span><span class="brackets">,</span> <span class="number">35</span><span class="brackets">];</span>
+
+<span class="object">N</span> <span class="brackets">=</span> <span class="number">51</span><span class="brackets">;</span> <span class="comment">// редактирование переменной</span>
+<span class="object">P</span><span class="brackets">[</span><span class="number">0</span><span class="brackets">]</span> <span class="brackets">=</span> <span class="number">72</span><span class="brackets">;</span> <span class="comment">// редактирование ячейки массива</span>
+
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">N</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// вывод переменной</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">P</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// вывод всего массива</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">P</span><span class="brackets">[</span><span class="number">2</span><span class="brackets">],</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// вывод второй ячейки</span></pre>
+                    <div class="output">51
+[29, 84, 16, 35]
+16</div>
+                </div>
+                <div class="example">
+                    <h2>Нумерация ячеек</h2>
+                    <p>Ячейки массива нумеруются <strong>с нуля</strong>, как во всех современных языках программирования:</p>
+                    <pre><span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">,</span> <span class="number">6</span><span class="brackets">&gt;</span> <span class="object">K</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">81</span><span class="brackets">,</span> <span class="number">45</span><span class="brackets">,</span> <span class="number">33</span><span class="brackets">,</span> <span class="number">27</span><span class="brackets">,</span> <span class="number">90</span><span class="brackets">,</span> <span class="number">64</span><span class="brackets">];</span>
+
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">K</span><span class="brackets">[</span><span class="number">0</span><span class="brackets">]);</span> <span class="comment">// 81</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">K</span><span class="brackets">[</span><span class="number">1</span><span class="brackets">]);</span> <span class="comment">// 45</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">K</span><span class="brackets">[</span><span class="number">2</span><span class="brackets">]);</span> <span class="comment">// 33</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">K</span><span class="brackets">[</span><span class="number">3</span><span class="brackets">]);</span> <span class="comment">// 27</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">K</span><span class="brackets">[</span><span class="number">4</span><span class="brackets">]);</span> <span class="comment">// 90</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">K</span><span class="brackets">[</span><span class="number">5</span><span class="brackets">]);</span> <span class="comment">// 64</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">K</span><span class="brackets">[</span><span class="number">6</span><span class="brackets">]);</span> <span class="comment">// ОШИБКА: нет шестой ячейки</span></pre>
+                    <p>Если в массиве 6 ячеек — они пронумерованы от <code>0</code> до <code>5</code>. Попытка обратиться к ячейке <code>6</code> вызовет ошибку выполнения.</p>
+                </div>
+                <div class="example">
+                    <h2>Преимущество: перебор циклом</h2>
+                    <p>С переменными пришлось бы писать:</p>
+                    <pre><span class="typeName">int</span> <span class="object">a</span> <span class="brackets">=</span> <span class="number">29</span><span class="brackets">;</span>
+<span class="typeName">int</span> <span class="object">b</span> <span class="brackets">=</span> <span class="number">84</span><span class="brackets">;</span>
+<span class="typeName">int</span> <span class="object">c</span> <span class="brackets">=</span> <span class="number">16</span><span class="brackets">;</span>
+<span class="typeName">int</span> <span class="object">d</span> <span class="brackets">=</span> <span class="number">35</span><span class="brackets">;</span>
+<span class="typeName">int</span> <span class="object">e</span> <span class="brackets">=</span> <span class="number">43</span><span class="brackets">;</span>
+<span class="typeName">int</span> <span class="object">f</span> <span class="brackets">=</span> <span class="number">60</span><span class="brackets">;</span>
+<span class="typeName">int</span> <span class="object">g</span> <span class="brackets">=</span> <span class="number">17</span><span class="brackets">;</span>
+
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">a</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">b</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">c</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">d</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">e</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">f</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">g</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span></pre>
+                    <p>С массивом — гораздо короче и легко масштабируется:</p>
+                    <pre><span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">,</span> <span class="number">7</span><span class="brackets">&gt;</span> <span class="object">nums</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">29</span><span class="brackets">,</span> <span class="number">84</span><span class="brackets">,</span> <span class="number">16</span><span class="brackets">,</span> <span class="number">35</span><span class="brackets">,</span> <span class="number">43</span><span class="brackets">,</span> <span class="number">60</span><span class="brackets">,</span> <span class="number">17</span><span class="brackets">];</span>
+<span class="keyword">for</span> <span class="brackets">(</span><span class="typeName">int</span> <span class="object">i</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">&lt;</span> <span class="number">7</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">=</span> <span class="object">i</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">)</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">nums</span><span class="brackets">[</span><span class="object">i</span><span class="brackets">],</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <p>Если чисел будет 1000 — достаточно изменить лишь число в условии цикла.</p>
+                </div>
+                <div class="example">
+                    <h2>Массивы других типов</h2>
+                    <p>Массивы не ограничены типом <code>int</code>. Можно создавать массивы любых типов:</p>
+                    <pre><span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">float</span><span class="brackets">,</span> <span class="number">5</span><span class="brackets">&gt;</span> <span class="object">fnums</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">3.6</span><span class="brackets">,</span> <span class="number">2.14</span><span class="brackets">,</span> <span class="number">7.0</span><span class="brackets">,</span> <span class="number">-5.91</span><span class="brackets">,</span> <span class="number">8.33</span><span class="brackets">];</span>
+<span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">string</span><span class="brackets">,</span> <span class="number">3</span><span class="brackets">&gt;</span> <span class="object">tools</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="string">"Кирка"</span><span class="brackets">,</span> <span class="string">"Топор"</span><span class="brackets">,</span> <span class="string">"Удочка"</span><span class="brackets">];</span>
+<span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">bool</span><span class="brackets">,</span> <span class="number">4</span><span class="brackets">&gt;</span> <span class="object">check</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="keyword">true</span><span class="brackets">,</span> <span class="keyword">true</span><span class="brackets">,</span> <span class="keyword">false</span><span class="brackets">,</span> <span class="keyword">true</span><span class="brackets">];</span></pre>
+                </div>
+                <div class="example">
+                    <h2>Итог: что нужно знать о массивах</h2>
+                    <pre><span class="comment">// Создание с указанными значениями</span>
+<span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">,</span> <span class="number">5</span><span class="brackets">&gt;</span> <span class="object">P</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">24</span><span class="brackets">,</span> <span class="number">91</span><span class="brackets">,</span> <span class="number">63</span><span class="brackets">,</span> <span class="number">50</span><span class="brackets">,</span> <span class="number">78</span><span class="brackets">];</span>
+
+<span class="comment">// Создание с дефолтными значениями (0.0 для float)</span>
+<span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">float</span><span class="brackets">,</span> <span class="number">8</span><span class="brackets">&gt;</span> <span class="object">K</span><span class="brackets">;</span>
+
+<span class="comment">// Редактирование ячейки</span>
+<span class="object">P</span><span class="brackets">[</span><span class="number">0</span><span class="brackets">]</span> <span class="brackets">=</span> <span class="number">25</span><span class="brackets">;</span>
+
+<span class="comment">// Чтение значения из ячейки</span>
+<span class="typeName">int</span> <span class="object">A</span> <span class="brackets">=</span> <span class="object">P</span><span class="brackets">[</span><span class="number">1</span><span class="brackets">];</span>
+
+<span class="comment">// Заполнение циклом</span>
+<span class="keyword">for</span> <span class="brackets">(</span><span class="typeName">int</span> <span class="object">i</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">&lt;</span> <span class="number">8</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">=</span> <span class="object">i</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">)</span> <span class="brackets">{</span>
+    <span class="object">K</span><span class="brackets">[</span><span class="object">i</span><span class="brackets">]</span> <span class="brackets">=</span> <span class="object">random</span><span class="brackets">.</span><span class="function">create_float</span><span class="brackets">(</span><span class="number">-3</span><span class="brackets">,</span> <span class="number">3</span><span class="brackets">);</span>
+<span class="brackets">}</span>
+
+<span class="comment">// Вывод циклом</span>
+<span class="keyword">for</span> <span class="brackets">(</span><span class="typeName">int</span> <span class="object">i</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">&lt;</span> <span class="number">5</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">=</span> <span class="object">i</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">)</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">P</span><span class="brackets">[</span><span class="object">i</span><span class="brackets">]);</span>
+<span class="brackets">}</span></pre>
+                </div>
+                <div class="example">
+                    <h2>Бонус: типичные ошибки</h2>
+                    <p>Операции, которые работают с переменной, <strong>не работают со всем массивом сразу</strong>:</p>
+                    <pre><span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">,</span> <span class="number">5</span><span class="brackets">&gt;</span> <span class="object">P</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">78</span><span class="brackets">,</span> <span class="number">91</span><span class="brackets">,</span> <span class="number">63</span><span class="brackets">,</span> <span class="number">50</span><span class="brackets">,</span> <span class="number">24</span><span class="brackets">];</span>
+<span class="keyword">if</span> <span class="brackets">(</span><span class="object">P</span> <span class="brackets">&gt;</span> <span class="number">50</span><span class="brackets">)</span> <span class="brackets">{</span> <span class="comment">// ОШИБКА: нельзя сравнивать массив с числом</span> <span class="brackets">}</span>
+<span class="keyword">if</span> <span class="brackets">(</span><span class="object">P</span><span class="brackets">[</span><span class="number">0</span><span class="brackets">]</span> <span class="brackets">&gt;</span> <span class="number">50</span><span class="brackets">)</span> <span class="brackets">{</span> <span class="comment">// OK: сравниваем ячейку (78 &gt; 50)</span> <span class="brackets">}</span>
+
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">P</span> <span class="brackets">+</span> <span class="number">4</span><span class="brackets">);</span> <span class="comment">// ОШИБКА: нельзя складывать массив и число</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">P</span><span class="brackets">[</span><span class="number">1</span><span class="brackets">]</span> <span class="brackets">+</span> <span class="number">4</span><span class="brackets">);</span> <span class="comment">// OK: выведется 95</span></pre>
+                    <p>Массив — это контейнер. Работать с данными нужно поэлементно — через перебор ячеек.</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson12.html" class="nav-button nav-prev">
+                            ← Урок 12: Циклы
+                        </a>
+                        <a href="./lesson14.html" class="nav-button nav-next">
+                            Урок 14: Тип 'char' и строки →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>

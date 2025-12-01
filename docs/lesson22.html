@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 22: Создание собственных библиотек — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 22: Создание собственных библиотек</h1>
+            <p class="subtitle">Как разбить программу на несколько файлов, чтобы не запутаться в коде</p>
+        </section>
+        <section class="flex">
+            <div id="lessons-nav-placeholder"></div>
+            <div class="examples">
+                <div class="example">
+                    <h2>Зачем нужны библиотеки?</h2>
+                    <p>Когда программа становится больше — в ней появляются десятки, а то и сотни функций. Держать всё в одном файле — как хранить весь гардероб в одной куче на полу: можно, но неудобно и неразумно.</p>
+                    <p>Библиотеки позволяют <strong>разбить код на логические части</strong> и использовать их по мере необходимости.</p>
+                </div>
+                <div class="example">
+                    <h2>Принцип работы</h2>
+                    <p>В Idyllium проект может состоять из:</p>
+                    <ul>
+                        <li><strong>Главного файла</strong> — с функцией <code>main()</code>, откуда начинается выполнение;</li>
+                        <li><strong>Вспомогательных файлов</strong> — с функциями, которые можно переиспользовать.</li>
+                    </ul>
+                    <p>Каждый вспомогательный файл — это <strong>собственная библиотека</strong>.</p>
+                </div>
+                <div class="example">
+                    <h2>Пример: отделение логики вывода от основной программы</h2>
+                    <p><strong>Файл <code>draw.idyl</code></strong> — содержит только функции для рисования линий:</p>
+                    <pre><span class="comment">// draw.idyl — это наша собственная библиотека</span>
+<span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="comment">// Функция, которая выводит линию из '-' заданной длины</span>
+<span class="typeName">void</span> <span class="keyword">function</span> <span class="function">line</span><span class="brackets">(</span><span class="typeName">int</span> <span class="object">L</span><span class="brackets">)</span>
+<span class="brackets">{</span>
+    <span class="typeName">string</span> <span class="object">res</span> <span class="brackets">=</span> <span class="string">""</span><span class="brackets">;</span>
+    <span class="keyword">for</span> <span class="brackets">(</span><span class="typeName">int</span> <span class="object">i</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">&lt;</span> <span class="object">L</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">=</span> <span class="object">i</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">)</span>
+    <span class="brackets">{</span>
+        <span class="object">res</span> <span class="brackets">=</span> <span class="object">res</span> <span class="brackets">+</span> <span class="string">'-'</span><span class="brackets">;</span>
+    <span class="brackets">}</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">res</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+
+                    <p><strong>Файл <code>main.idyl</code></strong> — использует эту библиотеку:</p>
+                    <pre><span class="comment">// main.idyl — главный файл проекта</span>
+<span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+<span class="keyword">use</span> <span class="object">draw</span><span class="brackets">;</span> <span class="comment">// подключаем нашу библиотеку (без .idyl)</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="comment">// Вызываем функцию из системной библиотеки 'time'</span>
+    <span class="comment">// time.sleep(1);</span>
+
+    <span class="comment">// Вызываем функцию из нашей собственной библиотеки 'draw'</span>
+    <span class="object">draw</span><span class="brackets">.</span><span class="function">line</span><span class="brackets">(</span><span class="number">10</span><span class="brackets">);</span> <span class="comment">// выведет "----------"</span>
+<span class="brackets">}</span></pre>
+                    <p>Теперь логика рисования отделена от основной программы — и её можно использовать в других проектах!</p>
+                </div>
+                <div class="example">
+                    <h2>Как подключать собственные библиотеки?</h2>
+                    <p>Синтаксис прост:</p>
+                    <pre><span class="keyword">use</span> <span class="object">имя_файла_без_расширения</span><span class="brackets">;</span></pre>
+                    <p>Если вы создали файл <code>math_tools.idyl</code>, то подключать его нужно так:</p>
+                    <pre><span class="keyword">use</span> <span class="object">math_tools</span><span class="brackets">;</span></pre>
+                    <p>Idyllium автоматически найдёт файл с расширением <code>.idyl</code> и загрузит оттуда все функции.</p>
+                </div>
+                <div class="example">
+                    <h2>Где должны лежать файлы?</h2>
+                    <p>Файлы проекта должны находиться в одной папке:</p>
+                    <ul>
+                        <li>✅ <code>Projects/main.idyl</code> и <code>Projects/draw.idyl</code> — <strong>работает</strong>;</li>
+                        <li>❌ <code>Projects/main.idyl</code> и <code>Downloads/draw.idyl</code> — <strong>не работает</strong>.</li>
+                    </ul>
+                    <p>Иными словами: <strong>главный файл может подключить только те библиотеки, которые лежат рядом с ним</strong> или являются системными (вроде <code>console</code>, <code>math</code>, <code>random</code>).</p>
+                    <p>Это правило защищает от хаоса в файловой системе и делает проекты самодостаточными: весь код — в одной папке, нет скрытых зависимостей.</p>
+                </div>
+                <div class="example">
+                    <h2>Преимущества разбиения на библиотеки</h2>
+                    <ul>
+                        <li><strong>Читаемость</strong> — в <code>main.idyl</code> остаётся только логика программы, а вспомогательные функции — в отдельных файлах;</li>
+                        <li><strong>Повторное использование</strong> — библиотеку <code>draw.idyl</code> можно скопировать в другой проект и сразу использовать;</li>
+                        <li><strong>Командная работа</strong> — один человек пишет рисовалку, другой — логику игры, и они не мешают друг другу;</li>
+                        <li><strong>Отладка</strong> — если что-то сломалось в <code>draw.line()</code>, вы знаете, где искать — не во всём проекте, а в одном файле.</li>
+                    </ul>
+                </div>
+                <div class="example">
+                    <h2>И напоследок: системные vs собственные библиотеки</h2>
+                    <p>Синтаксис одинаков — разница только в происхождении:</p>
+                    <pre><span class="comment">// Системная библиотека — встроена в Idyllium</span>
+<span class="object">time</span><span class="brackets">.</span><span class="function">sleep</span><span class="brackets">(</span><span class="number">2</span><span class="brackets">);</span>
+
+<span class="comment">// Собственная библиотека — написана вами, лежит рядом</span>
+<span class="object">draw</span><span class="brackets">.</span><span class="function">line</span><span class="brackets">(</span><span class="number">10</span><span class="brackets">);</span></pre>
+                    <p>Для Idyllium — это одно и то же. А для вас — это инструмент управления сложностью.</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson21.html" class="nav-button nav-prev">
+                            ← Урок 21: Создание собственных функций
+                        </a>
+                        <a href="./lesson23.html" class="nav-button nav-next">
+                            Урок 23: Работа с файлами →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>

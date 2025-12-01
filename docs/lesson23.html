@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 17: Методы массивов — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 17: Методы массивов</h1>
+            <p class="subtitle">Поиск, сортировка, модификация — всё под рукой</p>
+        </section>
+        <section class="flex">
+            <div id="lessons-nav-placeholder"></div>
+            <div class="examples">
+                <div class="example">
+                    <h2>Неизменяющие методы</h2>
+                    <p>Эти методы не меняют содержимое массива. Они работают с <code>array</code> и <code>dyn_array</code> одинаково.</p>
+                </div>
+                <div class="example">
+                    <h3><code>.contains(val)</code></h3>
+                    <p>Проверяет, есть ли значение <code>val</code> в массиве:</p>
+                    <pre><span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">,</span> <span class="number">5</span><span class="brackets">&gt;</span> <span class="object">A</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">11</span><span class="brackets">,</span> <span class="number">22</span><span class="brackets">,</span> <span class="number">33</span><span class="brackets">,</span> <span class="number">44</span><span class="brackets">,</span> <span class="number">55</span><span class="brackets">];</span>
+<span class="typeName">bool</span> <span class="object">has33</span> <span class="brackets">=</span> <span class="object">A</span><span class="brackets">.</span><span class="function">contains</span><span class="brackets">(</span><span class="number">33</span><span class="brackets">);</span> <span class="comment">// true</span>
+<span class="typeName">bool</span> <span class="object">has99</span> <span class="brackets">=</span> <span class="object">A</span><span class="brackets">.</span><span class="function">contains</span><span class="brackets">(</span><span class="number">99</span><span class="brackets">);</span> <span class="comment">// false</span></pre>
+                </div>
+                <div class="example">
+                    <h3><code>.find(val)</code></h3>
+                    <p>Возвращает индекс первого вхождения <code>val</code> или <code>-1</code>, если не найдено:</p>
+                    <pre><span class="typeName">dyn_array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">&gt;</span> <span class="object">B</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">10</span><span class="brackets">,</span> <span class="number">20</span><span class="brackets">,</span> <span class="number">30</span><span class="brackets">,</span> <span class="number">20</span><span class="brackets">];</span>
+<span class="typeName">int</span> <span class="object">idx1</span> <span class="brackets">=</span> <span class="object">B</span><span class="brackets">.</span><span class="function">find</span><span class="brackets">(</span><span class="number">20</span><span class="brackets">);</span> <span class="comment">// 1</span>
+<span class="typeName">int</span> <span class="object">idx2</span> <span class="brackets">=</span> <span class="object">B</span><span class="brackets">.</span><span class="function">find</span><span class="brackets">(</span><span class="number">50</span><span class="brackets">);</span> <span class="comment">// -1</span></pre>
+                </div>
+                <div class="example">
+                    <h3><code>.count(val)</code></h3>
+                    <p>Считает, сколько раз <code>val</code> встречается в массиве:</p>
+                    <pre><span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">,</span> <span class="number">6</span><span class="brackets">&gt;</span> <span class="object">C</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">5</span><span class="brackets">,</span> <span class="number">7</span><span class="brackets">,</span> <span class="number">5</span><span class="brackets">,</span> <span class="number">8</span><span class="brackets">,</span> <span class="number">5</span><span class="brackets">,</span> <span class="number">9</span><span class="brackets">];</span>
+<span class="typeName">int</span> <span class="object">fives</span> <span class="brackets">=</span> <span class="object">C</span><span class="brackets">.</span><span class="function">count</span><span class="brackets">(</span><span class="number">5</span><span class="brackets">);</span> <span class="comment">// 3</span></pre>
+                </div>
+                <div class="example">
+                    <h2>Изменяющие методы (для всех массивов)</h2>
+                    <p>Эти методы меняют порядок элементов, но не количество ячеек.</p>
+                </div>
+                <div class="example">
+                    <h3><code>.reverse()</code></h3>
+                    <p>Разворачивает массив «задом наперёд»:</p>
+                    <pre><span class="typeName">dyn_array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">&gt;</span> <span class="object">D</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">1</span><span class="brackets">,</span> <span class="number">2</span><span class="brackets">,</span> <span class="number">3</span><span class="brackets">,</span> <span class="number">4</span><span class="brackets">];</span>
+<span class="object">D</span><span class="brackets">.</span><span class="function">reverse</span><span class="brackets">();</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">D</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span></pre>
+                    <div class="output">[4, 3, 2, 1]</div>
+                </div>
+                <div class="example">
+                    <h3><code>.sort()</code></h3>
+                    <p>Сортирует числовой массив по возрастанию:</p>
+                    <pre><span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">,</span> <span class="number">5</span><span class="brackets">&gt;</span> <span class="object">E</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">9</span><span class="brackets">,</span> <span class="number">3</span><span class="brackets">,</span> <span class="number">7</span><span class="brackets">,</span> <span class="number">1</span><span class="brackets">,</span> <span class="number">5</span><span class="brackets">];</span>
+<span class="object">E</span><span class="brackets">.</span><span class="function">sort</span><span class="brackets">();</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">E</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span></pre>
+                    <div class="output">[1, 3, 5, 7, 9]</div>
+                    <p>Чтобы отсортировать по убыванию — сначала <code>.sort()</code>, потом <code>.reverse()</code>.</p>
+                </div>
+                <div class="example">
+                    <h2>Изменяющие методы (только для динамических массивов)</h2>
+                    <p>Эти методы меняют количество ячеек, поэтому работают только с <code>dyn_array</code>.</p>
+                </div>
+                <div class="example">
+                    <h3><code>.insert(i, val)</code></h3>
+                    <p>Вставляет значение <code>val</code> на позицию <code>i</code> (остальные сдвигаются вправо):</p>
+                    <pre><span class="typeName">dyn_array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">&gt;</span> <span class="object">F</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">10</span><span class="brackets">,</span> <span class="number">20</span><span class="brackets">,</span> <span class="number">30</span><span class="brackets">];</span>
+<span class="object">F</span><span class="brackets">.</span><span class="function">insert</span><span class="brackets">(</span><span class="number">1</span><span class="brackets">,</span> <span class="number">15</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">F</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span></pre>
+                    <div class="output">[10, 15, 20, 30]</div>
+                </div>
+                <div class="example">
+                    <h3><code>.join(arr)</code></h3>
+                    <p>Добавляет в конец все элементы другого массива:</p>
+                    <pre><span class="typeName">dyn_array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">&gt;</span> <span class="object">G</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">1</span><span class="brackets">,</span> <span class="number">2</span><span class="brackets">];</span>
+<span class="typeName">dyn_array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">&gt;</span> <span class="object">H</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">3</span><span class="brackets">,</span> <span class="number">4</span><span class="brackets">];</span>
+<span class="object">G</span><span class="brackets">.</span><span class="function">join</span><span class="brackets">(</span><span class="object">H</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">G</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span></pre>
+                    <div class="output">[1, 2, 3, 4]</div>
+                </div>
+                <div class="example">
+                    <h3><code>.clear()</code></h3>
+                    <p>Удаляет все ячейки — массив становится пустым:</p>
+                    <pre><span class="typeName">dyn_array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">&gt;</span> <span class="object">I</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">5</span><span class="brackets">,</span> <span class="number">6</span><span class="brackets">,</span> <span class="number">7</span><span class="brackets">];</span>
+<span class="object">I</span><span class="brackets">.</span><span class="function">clear</span><span class="brackets">();</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Длина: "</span><span class="brackets">,</span> <span class="object">I</span><span class="brackets">.</span><span class="function">length</span><span class="brackets">(),</span> <span class="string">'\n'</span><span class="brackets">);</span></pre>
+                    <div class="output">Длина: 0</div>
+                </div>
+                <div class="example">
+                    <h3><code>.pop()</code></h3>
+                    <p>Удаляет последнюю ячейку и возвращает её значение:</p>
+                    <pre><span class="typeName">dyn_array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">&gt;</span> <span class="object">J</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">8</span><span class="brackets">,</span> <span class="number">9</span><span class="brackets">,</span> <span class="number">10</span><span class="brackets">];</span>
+<span class="typeName">int</span> <span class="object">last</span> <span class="brackets">=</span> <span class="object">J</span><span class="brackets">.</span><span class="function">pop</span><span class="brackets">();</span> <span class="comment">// last = 10</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Удалено: "</span><span class="brackets">,</span> <span class="object">last</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Теперь: "</span><span class="brackets">,</span> <span class="object">J</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span></pre>
+                    <div class="output">Удалено: 10
+Теперь: [8, 9]</div>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson16.html" class="nav-button nav-prev">
+                            ← Урок 16: Функции для работы с массивами
+                        </a>
+                        <a href="./lesson18.html" class="nav-button nav-next">
+                            Урок 18: Методы строк →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>

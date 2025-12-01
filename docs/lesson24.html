@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 24: Продвинутые функции библиотеки 'math' — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 24: Продвинутые возможности библиотеки <code>math</code></h1>
+            <p class="subtitle">Тригонометрия, логарифмы и математические константы — мощь науки в доступной форме</p>
+        </section>
+        <section class="flex">
+            <div id="lessons-nav-placeholder"></div>
+            <div class="examples">
+                <div class="example">
+                    <h2>Математические константы</h2>
+                    <p>Библиотека <code>math</code> предоставляет две важнейшие константы:</p>
+                    <ul>
+                        <li><code>math.pi</code> — число π ≈ 3.141592653589793</li>
+                        <li><code>math.e</code> — число Эйлера e ≈ 2.718281828459045</li>
+                    </ul>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+<span class="keyword">use</span> <span class="object">math</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"π = "</span><span class="brackets">,</span> <span class="object">math</span><span class="brackets">.</span><span class="object">pi</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"e = "</span><span class="brackets">,</span> <span class="object">math</span><span class="brackets">.</span><span class="object">e</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">π = 3.141592653589793
+e = 2.718281828459045</div>
+                </div>
+                <div class="example">
+                    <h2>Тригонометрические функции</h2>
+                    <p>Все тригонометрические функции работают в <strong>радианах</strong>:</p>
+                    <ul>
+                        <li><code>math.sin(x)</code> — синус угла <code>x</code></li>
+                        <li><code>math.cos(x)</code> — косинус</li>
+                        <li><code>math.tan(x)</code> — тангенс</li>
+                    </ul>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+<span class="keyword">use</span> <span class="object">math</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">float</span> <span class="object">angle</span> <span class="brackets">=</span> <span class="object">math</span><span class="brackets">.</span><span class="object">pi</span> <span class="brackets">/</span> <span class="number">2</span><span class="brackets">;</span> <span class="comment">// 90° в радианах</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"sin(90°) = "</span><span class="brackets">,</span> <span class="object">math</span><span class="brackets">.</span><span class="function">sin</span><span class="brackets">(</span><span class="object">angle</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"cos(60°) = "</span><span class="brackets">,</span> <span class="object">math</span><span class="brackets">.</span><span class="function">cos</span><span class="brackets">(</span><span class="object">math</span><span class="brackets">.</span><span class="object">pi</span> <span class="brackets">/</span> <span class="number">3</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">sin(90°) = 1
+cos(60°) = 0.5000000000000001</div>
+                    <p>Значения могут немного отличаться от идеальных из-за особенностей представления дробных чисел в компьютере — это нормально.</p>
+                </div>
+                <div class="example">
+                    <h2>Обратные тригонометрические функции</h2>
+                    <p>Эти функции возвращают угол (в радианах) по заданному значению:</p>
+                    <ul>
+                        <li><code>math.asin(x)</code> — арксинус (область: −1 ≤ x ≤ 1)</li>
+                        <li><code>math.acos(x)</code> — арккосинус</li>
+                        <li><code>math.atan(x)</code> — арктангенс</li>
+                    </ul>
+                    <pre><span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"arcsin(1) = "</span><span class="brackets">,</span> <span class="object">math</span><span class="brackets">.</span><span class="function">asin</span><span class="brackets">(</span><span class="number">1</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// π/2</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"arccos(0) = "</span><span class="brackets">,</span> <span class="object">math</span><span class="brackets">.</span><span class="function">acos</span><span class="brackets">(</span><span class="number">0</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// π/2</span></pre>
+                    <div class="output">arcsin(1) = 1.5707963267948966
+arccos(0) = 1.5707963267948966</div>
+                </div>
+                <div class="example">
+                    <h2>Перевод между градусами и радианами</h2>
+                    <p>Если вы работаете с градусами, используйте вспомогательные функции:</p>
+                    <ul>
+                        <li><code>math.to_radians(deg)</code> — переводит градусы в радианы;</li>
+                        <li><code>math.to_degrees(rad)</code> — переводит радианы в градусы.</li>
+                    </ul>
+                    <pre><span class="typeName">float</span> <span class="object">deg</span> <span class="brackets">=</span> <span class="number">180</span><span class="brackets">;</span>
+<span class="typeName">float</span> <span class="object">rad</span> <span class="brackets">=</span> <span class="object">math</span><span class="brackets">.</span><span class="function">to_radians</span><span class="brackets">(</span><span class="object">deg</span><span class="brackets">);</span> <span class="comment">// π</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">deg</span><span class="brackets">,</span> <span class="string">"° = "</span><span class="brackets">,</span> <span class="object">rad</span><span class="brackets">,</span> <span class="string">" рад\n"</span><span class="brackets">);</span>
+
+<span class="typeName">float</span> <span class="object">back</span> <span class="brackets">=</span> <span class="object">math</span><span class="brackets">.</span><span class="function">to_degrees</span><span class="brackets">(</span><span class="object">math</span><span class="brackets">.</span><span class="object">pi</span><span class="brackets">);</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"π рад = "</span><span class="brackets">,</span> <span class="object">back</span><span class="brackets">,</span> <span class="string">"°\n"</span><span class="brackets">);</span></pre>
+                    <div class="output">180° = 3.141592653589793 рад
+π рад = 180°</div>
+                </div>
+                <div class="example">
+                    <h2>Логарифмы</h2>
+                    <p>Доступны следующие логарифмические функции:</p>
+                    <ul>
+                        <li><code>math.log(x)</code> — натуральный логарифм (по основанию <code>e</code>);</li>
+                        <li><code>math.log10(x)</code> — десятичный логарифм (по основанию 10).</li>
+                    </ul>
+                    <pre><span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"ln(e) = "</span><span class="brackets">,</span> <span class="object">math</span><span class="brackets">.</span><span class="function">log</span><span class="brackets">(</span><span class="object">math</span><span class="brackets">.</span><span class="object">e</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// 1</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"log₁₀(1000) = "</span><span class="brackets">,</span> <span class="object">math</span><span class="brackets">.</span><span class="function">log10</span><span class="brackets">(</span><span class="number">1000</span><span class="brackets">),</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// 3</span></pre>
+                    <div class="output">ln(e) = 1
+log₁₀(1000) = 3</div>
+                    <p>Логарифмы определены только для положительных чисел. Попытка вычислить <code>log(-5)</code> вызовет ошибку выполнения.</p>
+                </div>
+                <div class="example">
+                    <h2>Практическое применение: расчёт траектории</h2>
+                    <p>Пример: вычисление расстояния полёта снаряда под углом:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+<span class="keyword">use</span> <span class="object">math</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="typeName">float</span> <span class="object">v0</span> <span class="brackets">=</span> <span class="number">50.0</span><span class="brackets">;</span> <span class="comment">// начальная скорость, м/с</span>
+    <span class="typeName">float</span> <span class="object">deg</span> <span class="brackets">=</span> <span class="number">45.0</span><span class="brackets">;</span> <span class="comment">// угол в градусах</span>
+    <span class="typeName">float</span> <span class="object">rad</span> <span class="brackets">=</span> <span class="object">math</span><span class="brackets">.</span><span class="function">to_radians</span><span class="brackets">(</span><span class="object">deg</span><span class="brackets">);</span>
+    <span class="typeName">float</span> <span class="object">g</span> <span class="brackets">=</span> <span class="number">9.81</span><span class="brackets">;</span> <span class="comment">// ускорение свободного падения</span>
+
+    <span class="comment">// Формула: L = v₀² · sin(2α) / g</span>
+    <span class="typeName">float</span> <span class="object">L</span> <span class="brackets">=</span> <span class="brackets">(</span><span class="object">v0</span> <span class="brackets">*</span> <span class="object">v0</span> <span class="brackets">*</span> <span class="object">math</span><span class="brackets">.</span><span class="function">sin</span><span class="brackets">(</span><span class="number">2.0</span> <span class="brackets">*</span> <span class="object">rad</span><span class="brackets">))</span> <span class="brackets">/</span> <span class="object">g</span><span class="brackets">;</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Дальность полёта при 45°: "</span><span class="brackets">,</span> <span class="object">L</span><span class="brackets">,</span> <span class="string">" м\n"</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">Дальность полёта при 45°: 254.841997961264 м</div>
+                    <p>Такие задачи встречаются в физике, играх и симуляторах — и теперь они доступны даже начинающим.</p>
+                </div>
+                <div class="example">
+                    <h2>Важно помнить</h2>
+                    <ul>
+                        <li>Все тригонометрические функции работают в <strong>радианах</strong> — не в градусах!</li>
+                        <li>Обратные функции возвращают результат в радианах.</li>
+                        <li>Логарифмы и корни из отрицательных чисел невозможны в рамках вещественных чисел — Idyllium сообщит об ошибке.</li>
+                        <li>Результаты могут содержать небольшие погрешности из-за особенностей представления <code>float</code>.</li>
+                    </ul>
+                    <p>Эти функции — не для калькулятора, а для <strong>моделирования реального мира</strong>.</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson22.html" class="nav-button nav-prev">
+                            ← Урок 22: Создание собственных библиотек
+                        </a>
+                        <a href="./lesson23.html" class="nav-button nav-next">
+                            Урок 23: Работа с файлами →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>
