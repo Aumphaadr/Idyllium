@@ -17,4 +17,28 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
     `;
   }
+
+  function highlightCurrentLesson() {
+    const currentPath = window.location.pathname.split('/').pop();
+    const navLinks = document.querySelectorAll('#lessons-nav-placeholder a');
+    navLinks.forEach(link => {
+      if (link.getAttribute('href') === currentPath) {
+        link.classList.add('current');
+      }
+    });
+  }
+
+  // Загрузка навигации
+  fetch('./lessons-nav.html')
+    .then(response => response.text())
+    .then(html => {
+      const placeholder = document.getElementById('lessons-nav-placeholder');
+      if (placeholder) {
+        placeholder.innerHTML = html;
+        highlightCurrentLesson();
+      }
+    })
+    .catch(err => {
+      console.error('Не удалось загрузить меню уроков:', err);
+    });
 });
