@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 25: Двумерные массивы — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+    <style>
+        div.lesson-nav {
+            justify-content: flex-start;
+        }
+    </style>
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 25: Двумерные массивы</h1>
+            <p class="subtitle">Матрицы, таблицы и игры на клетчатом поле — всё это начинается с двумерного массива</p>
+        </section>
+        <section class="flex">
+            <div id="lessons-nav-placeholder"></div>
+            <div class="examples">
+                <div class="example">
+                    <h2>Что такое двумерный массив?</h2>
+                    <p>Обычный массив — это набор значений в одну линию (одно измерение).</p>
+                    <p>Двумерный массив — это <strong>таблица</strong> (два измерения: строки и столбцы).</p>
+                    <p>В Idyllium двумерный массив объявляется как «массив массивов»:</p>
+                    <pre><span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">,</span> <span class="number">6</span><span class="brackets">&gt;,</span> <span class="number">4</span><span class="brackets">&gt;</span> <span class="object">mx</span> <span class="brackets">=</span> <span class="brackets">[</span>
+    <span class="brackets">[</span><span class="number">26</span><span class="brackets">,</span> <span class="number">41</span><span class="brackets">,</span> <span class="number">73</span><span class="brackets">,</span> <span class="number">19</span><span class="brackets">,</span> <span class="number">87</span><span class="brackets">,</span> <span class="number">52</span><span class="brackets">],</span>
+    <span class="brackets">[</span><span class="number">65</span><span class="brackets">,</span> <span class="number">20</span><span class="brackets">,</span> <span class="number">42</span><span class="brackets">,</span> <span class="number">67</span><span class="brackets">,</span> <span class="number">18</span><span class="brackets">,</span> <span class="number">38</span><span class="brackets">],</span>
+    <span class="brackets">[</span><span class="number">74</span><span class="brackets">,</span> <span class="number">55</span><span class="brackets">,</span> <span class="number">93</span><span class="brackets">,</span> <span class="number">10</span><span class="brackets">,</span> <span class="number">24</span><span class="brackets">,</span> <span class="number">89</span><span class="brackets">],</span>
+    <span class="brackets">[</span><span class="number">12</span><span class="brackets">,</span> <span class="number">53</span><span class="brackets">,</span> <span class="number">40</span><span class="brackets">,</span> <span class="number">63</span><span class="brackets">,</span> <span class="number">94</span><span class="brackets">,</span> <span class="number">76</span><span class="brackets">]</span>
+<span class="brackets">];</span></pre>
+                    <p>Разберём тип <code>array&lt;array&lt;int, 6&gt;, 4&gt;</code>:</p>
+                    <ul>
+                        <li>внутренний <code>array&lt;int, 6&gt;</code> — строка из 6 целых чисел;</li>
+                        <li>внешний <code>array&lt;внутренний, 4&gt;</code> — 4 таких строки.</li>
+                    </ul>
+                    <p>Получается таблица размером 4 строки × 6 столбцов.</p>
+                </div>
+                <div class="example">
+                    <h2>Доступ к элементу</h2>
+                    <p>Чтобы получить значение из ячейки, нужно указать <strong>номер строки</strong> и <strong>номер столбца</strong>:</p>
+                    <pre><span class="typeName">int</span> <span class="object">a</span> <span class="brackets">=</span> <span class="object">mx</span><span class="brackets">[</span><span class="number">0</span><span class="brackets">][</span><span class="number">0</span><span class="brackets">];</span> <span class="comment">// 26 — первая строка, первый столбец</span>
+<span class="typeName">int</span> <span class="object">b</span> <span class="brackets">=</span> <span class="object">mx</span><span class="brackets">[</span><span class="number">1</span><span class="brackets">][</span><span class="number">3</span><span class="brackets">];</span> <span class="comment">// 67 — вторая строка, четвёртый столбец</span>
+<span class="typeName">int</span> <span class="object">c</span> <span class="brackets">=</span> <span class="object">mx</span><span class="brackets">[</span><span class="number">3</span><span class="brackets">][</span><span class="number">5</span><span class="brackets">];</span> <span class="comment">// 76 — последняя ячейка</span></pre>
+                    <p>Индексы, как всегда, начинаются с нуля.</p>
+                </div>
+                <div class="example">
+                    <h2>Вывод двумерного массива</h2>
+                    <p>Чтобы вывести всю таблицу, используем вложенные циклы:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="comment">// объявление (как выше)</span>
+    <span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">,</span> <span class="number">6</span><span class="brackets">&gt;,</span> <span class="number">4</span><span class="brackets">&gt;</span> <span class="object">mx</span> <span class="brackets">=</span> <span class="brackets">[</span> <span class="comment">/* ... */</span> <span class="brackets">];</span>
+
+    <span class="keyword">for</span> <span class="brackets">(</span><span class="typeName">int</span> <span class="object">row</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span> <span class="object">row</span> <span class="brackets">&lt;</span> <span class="number">4</span><span class="brackets">;</span> <span class="object">row</span> <span class="brackets">=</span> <span class="object">row</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">)</span> <span class="brackets">{</span>
+        <span class="keyword">for</span> <span class="brackets">(</span><span class="typeName">int</span> <span class="object">col</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span> <span class="object">col</span> <span class="brackets">&lt;</span> <span class="number">6</span><span class="brackets">;</span> <span class="object">col</span> <span class="brackets">=</span> <span class="object">col</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">)</span> <span class="brackets">{</span>
+            <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">mx</span><span class="brackets">[</span><span class="object">row</span><span class="brackets">][</span><span class="object">col</span><span class="brackets">],</span> <span class="string">" "</span><span class="brackets">);</span>
+        <span class="brackets">}</span>
+        <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="brackets">}</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">26 41 73 19 87 52 
+65 20 42 67 18 38 
+74 55 93 10 24 89 
+12 53 40 63 94 76 </div>
+                </div>
+                <div class="example">
+                    <h2>Практическое применение</h2>
+                    <p>Двумерные массивы используются везде, где есть <strong>сетка</strong> или <strong>таблица</strong>:</p>
+                    <ul>
+                        <li>Игровые поля — шахматы, «Морской бой», «Сапёр»;</li>
+                        <li>Таблицы учёта — оценки, продажи, учёт товаров;</li>
+                        <li>Пиксельные изображения — каждая ячейка хранит цвет;</li>
+                        <li>Матричные вычисления — в физике, графике, ИИ.</li>
+                    </ul>
+                    <p>Вот как можно найти сумму всех элементов:</p>
+                    <pre><span class="typeName">int</span> <span class="object">total</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span>
+<span class="keyword">for</span> <span class="brackets">(</span><span class="typeName">int</span> <span class="object">r</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span> <span class="object">r</span> <span class="brackets">&lt;</span> <span class="number">4</span><span class="brackets">;</span> <span class="object">r</span> <span class="brackets">=</span> <span class="object">r</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">)</span> <span class="brackets">{</span>
+    <span class="keyword">for</span> <span class="brackets">(</span><span class="typeName">int</span> <span class="object">c</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span> <span class="object">c</span> <span class="brackets">&lt;</span> <span class="number">6</span><span class="brackets">;</span> <span class="object">c</span> <span class="brackets">=</span> <span class="object">c</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">)</span> <span class="brackets">{</span>
+        <span class="object">total</span> <span class="brackets">=</span> <span class="object">total</span> <span class="brackets">+</span> <span class="object">mx</span><span class="brackets">[</span><span class="object">r</span><span class="brackets">][</span><span class="object">c</span><span class="brackets">];</span>
+    <span class="brackets">}</span>
+<span class="brackets">}</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Сумма: "</span><span class="brackets">,</span> <span class="object">total</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// Сумма: 1424</span></pre>
+                </div>
+                <div class="example">
+                    <h2>Можно ли сделать трёхмерный?</h2>
+                    <p>Да! Теоретически можно пойти и дальше:</p>
+                    <pre><span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">int</span><span class="brackets">,</span> <span class="number">5</span><span class="brackets">&gt;,</span> <span class="number">5</span><span class="brackets">&gt;,</span> <span class="number">5</span><span class="brackets">&gt;</span> <span class="object">cube</span><span class="brackets">;</span></pre>
+                    <p>Это уже куб из 5×5×5 ячеек. Но такие структуры редко нужны в школьных проектах — остановимся на двумерных.</p>
+                </div>
+                <div class="example">
+                    <h2>Заключение</h2>
+                    <p>Двумерные массивы — это естественное расширение одномерных. Если вы понимаете циклы и обычные массивы, вы уже готовы к работе с таблицами.</p>
+                    <p>Не бойтесь экспериментировать: попробуйте написать мини-«Морской бой» или калькулятор для табличных данных!</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./024_math.html" class="nav-button nav-prev">
+                            ← Урок 24: Продвинутые возможности 'math'
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>
