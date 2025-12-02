@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GUI Урок 1: Создание интерфейса — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+    <style>
+        div.lesson-nav {
+            justify-content: flex-end;
+        }
+    </style>
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>GUI Урок 1: Создание интерфейса</h1>
+            <p class="subtitle">Как собрать окно с кнопками, надписями и другими элементами управления</p>
+        </section>
+        <section class="flex">
+            <div id="lessons-nav-placeholder"></div>
+            <div class="examples">
+                <div class="example">
+                    <h2>Подключение библиотеки <code>gui</code></h2>
+                    <p>Для создания графического интерфейса нужно подключить библиотеку <code>gui</code>:</p>
+                    <pre><span class="keyword">use</span> <span class="object">gui</span><span class="brackets">;</span></pre>
+                </div>
+                <div class="example">
+                    <h2>Создание окна</h2>
+                    <p>Любое GUI-приложение начинается с окна:</p>
+                    <pre><span class="object">gui</span><span class="brackets">.</span><span class="className">window</span> <span class="object">win</span><span class="brackets">;</span>
+<span class="object">win</span><span class="brackets">.</span><span class="object">title</span> <span class="brackets">=</span> <span class="string">"Моё первое окно"</span><span class="brackets">;</span>
+<span class="object">win</span><span class="brackets">.</span><span class="object">size</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">300</span><span class="brackets">,</span> <span class="number">200</span><span class="brackets">];</span> <span class="comment">// ширина, высота</span></pre>
+                    <p>Свойства окна:</p>
+                    <ul>
+                        <li><code>title</code> — заголовок окна;</li>
+                        <li><code>size</code> — размер в пикселях: <code>[ширина, высота]</code>.</li>
+                    </ul>
+                </div>
+                <div class="example">
+                    <h2>Виджеты: элементы интерфейса</h2>
+                    <p>Idyllium предоставляет следующие базовые виджеты:</p>
+                    <ul>
+                        <li><code>gui.label</code> — надпись (только для чтения);</li>
+                        <li><code>gui.button</code> — кнопка;</li>
+                        <li><code>gui.text_box</code> — поле ввода текста;</li>
+                        <li><code>gui.spin_box</code> — числовое поле со стрелками;</li>
+                        <li><code>gui.check_box</code> — флажок (галочка);</li>
+                        <li><code>gui.progress_bar</code> — индикатор прогресса.</li>
+                    </ul>
+                </div>
+                <div class="example">
+                    <h2>Настройка виджетов</h2>
+                    <p>Каждый виджет имеет общие свойства:</p>
+                    <ul>
+                        <li><code>position</code> — позиция в окне: <code>[x, y]</code> (в пикселях от левого верхнего угла);</li>
+                        <li><code>size</code> — размер: <code>[ширина, высота]</code>.</li>
+                    </ul>
+                    <p>И специфические:</p>
+                    <pre><span class="comment">// Надпись</span>
+<span class="object">gui</span><span class="brackets">.</span><span class="className">label</span> <span class="object">lbl</span><span class="brackets">;</span>
+<span class="object">lbl</span><span class="brackets">.</span><span class="object">text</span> <span class="brackets">=</span> <span class="string">"Привет!"</span><span class="brackets">;</span>
+<span class="object">lbl</span><span class="brackets">.</span><span class="object">position</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">20</span><span class="brackets">,</span> <span class="number">20</span><span class="brackets">];</span>
+<span class="object">lbl</span><span class="brackets">.</span><span class="object">size</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">100</span><span class="brackets">,</span> <span class="number">30</span><span class="brackets">];</span>
+
+<span class="comment">// Кнопка</span>
+<span class="object">gui</span><span class="brackets">.</span><span class="className">button</span> <span class="object">btn</span><span class="brackets">;</span>
+<span class="object">btn</span><span class="brackets">.</span><span class="object">text</span> <span class="brackets">=</span> <span class="string">"Нажми меня"</span><span class="brackets">;</span>
+<span class="object">btn</span><span class="brackets">.</span><span class="object">position</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">20</span><span class="brackets">,</span> <span class="number">60</span><span class="brackets">];</span>
+<span class="object">btn</span><span class="brackets">.</span><span class="object">size</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">120</span><span class="brackets">,</span> <span class="number">40</span><span class="brackets">];</span>
+
+<span class="comment">// Числовое поле</span>
+<span class="object">gui</span><span class="brackets">.</span><span class="className">spin_box</span> <span class="object">spin</span><span class="brackets">;</span>
+<span class="object">spin</span><span class="brackets">.</span><span class="object">min</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span>
+<span class="object">spin</span><span class="brackets">.</span><span class="object">max</span> <span class="brackets">=</span> <span class="number">100</span><span class="brackets">;</span>
+<span class="object">spin</span><span class="brackets">.</span><span class="object">value</span> <span class="brackets">=</span> <span class="number">50</span><span class="brackets">;</span>
+<span class="object">spin</span><span class="brackets">.</span><span class="object">position</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">20</span><span class="brackets">,</span> <span class="number">110</span><span class="brackets">];</span>
+<span class="object">spin</span><span class="brackets">.</span><span class="object">size</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">80</span><span class="brackets">,</span> <span class="number">30</span><span class="brackets">];</span>
+
+<span class="comment">// Флажок</span>
+<span class="object">gui</span><span class="brackets">.</span><span class="className">check_box</span> <span class="object">chk</span><span class="brackets">;</span>
+<span class="object">chk</span><span class="brackets">.</span><span class="object">text</span> <span class="brackets">=</span> <span class="string">"Включить"</span><span class="brackets">;</span>
+<span class="object">chk</span><span class="brackets">.</span><span class="object">checked</span> <span class="brackets">=</span> <span class="keyword">true</span><span class="brackets">;</span>
+<span class="object">chk</span><span class="brackets">.</span><span class="object">position</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">20</span><span class="brackets">,</span> <span class="number">150</span><span class="brackets">];</span>
+<span class="object">chk</span><span class="brackets">.</span><span class="object">size</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">100</span><span class="brackets">,</span> <span class="number">30</span><span class="brackets">];</span>
+
+<span class="comment">// Индикатор прогресса</span>
+<span class="object">gui</span><span class="brackets">.</span><span class="className">progress_bar</span> <span class="object">pb</span><span class="brackets">;</span>
+<span class="object">pb</span><span class="brackets">.</span><span class="object">min</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span>
+<span class="object">pb</span><span class="brackets">.</span><span class="object">max</span> <span class="brackets">=</span> <span class="number">100</span><span class="brackets">;</span>
+<span class="object">pb</span><span class="brackets">.</span><span class="object">value</span> <span class="brackets">=</span> <span class="number">75</span><span class="brackets">;</span>
+<span class="object">pb</span><span class="brackets">.</span><span class="object">position</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">20</span><span class="brackets">,</span> <span class="number">190</span><span class="brackets">];</span>
+<span class="object">pb</span><span class="brackets">.</span><span class="object">size</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">200</span><span class="brackets">,</span> <span class="number">20</span><span class="brackets">];</span></pre>
+                </div>
+                <div class="example">
+                    <h2>Добавление виджетов в окно</h2>
+                    <p>Чтобы виджет появился в окне, его нужно добавить с помощью метода <code>add_child()</code>:</p>
+                    <pre><span class="object">win</span><span class="brackets">.</span><span class="function">add_child</span><span class="brackets">(</span><span class="object">lbl</span><span class="brawks">);</span>
+<span class="object">win</span><span class="brackets">.</span><span class="function">add_child</span><span class="brackets">(</span><span class="object">btn</span><span class="brackets">);</span>
+<span class="object">win</span><span class="brackets">.</span><span class="function">add_child</span><span class="brackets">(</span><span class="object">spin</span><span class="brackets">);</span>
+<span class="object">win</span><span class="brackets">.</span><span class="function">add_child</span><span class="brackets">(</span><span class="object">chk</span><span class="brackets">);</span>
+<span class="object">win</span><span class="brackets">.</span><span class="function">add_child</span><span class="brackets">(</span><span class="object">pb</span><span class="brackets">);</span></pre>
+                    <p>Если не вызвать <code>add_child()</code> — виджет не отобразится, даже если он создан и настроен.</p>
+                </div>
+                <div class="example">
+                    <h2>Показ окна</h2>
+                    <p>После настройки всех элементов нужно:</p>
+                    <ol>
+                        <li>Показать окно: <code>win.show();</code></li>
+                        <li>Запустить цикл обработки событий: <code>gui.run();</code></li>
+                    </ol>
+                    <pre><span class="object">win</span><span class="brackets">.</span><span class="function">show</span><span class="brackets">();</span>
+<span class="object">gui</span><span class="brackets">.</span><span class="function">run</span><span class="brackets">();</span> <span class="comment">// блокирующий вызов</span></pre>
+                    <p>Без <code>gui.run()</code> окно мгновенно закроется.</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./002_events.html" class="nav-button nav-next">
+                            GUI Урок 2: Обработчики событий →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GUI Урок 2: Обработчики событий — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>GUI Урок 2: Обработчики событий</h1>
+            <p class="subtitle">Как реагировать на действия пользователя: клики, ввод, переключения</p>
+        </section>
+        <section class="flex">
+            <div id="lessons-nav-placeholder"></div>
+            <div class="examples">
+                <div class="example">
+                    <h2>Что такое обработчик события?</h2>
+                    <p>Обработчик — это функция, которая вызывается, когда пользователь взаимодействует с элементом интерфейса (например, нажимает кнопку).</p>
+                    <p>В Idyllium обработчики привязываются к свойству <code>on_click</code> (для кнопок и других кликабельных элементов).</p>
+                </div>
+                <div class="example">
+                    <h2>Пример 1: Вывод в консоль при нажатии</h2>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+<span class="keyword">use</span> <span class="object">gui</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">gui</span><span class="brackets">.</span><span class="className">window</span> <span class="object">win</span><span class="brackets">;</span>
+    <span class="object">win</span><span class="brackets">.</span><span class="object">title</span> <span class="brackets">=</span> <span class="string">"Кликер"</span><span class="brackets">;</span>
+    <span class="object">win</span><span class="brackets">.</span><span class="object">size</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">200</span><span class="brackets">,</span> <span class="number">100</span><span class="brackets">];</span>
+
+    <span class="object">gui</span><span class="brackets">.</span><span class="className">button</span> <span class="object">btn</span><span class="brackets">;</span>
+    <span class="object">btn</span><span class="brackets">.</span><span class="object">text</span> <span class="brackets">=</span> <span class="string">"Нажми"</span><span class="brackets">;</span>
+    <span class="object">btn</span><span class="brackets">.</span><span class="object">position</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">50</span><span class="brackets">,</span> <span class="number">30</span><span class="brackets">];</span>
+    <span class="object">btn</span><span class="brackets">.</span><span class="object">size</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">100</span><span class="brackets">,</span> <span class="number">40</span><span class="brackets">];</span>
+
+    <span class="typeName">void</span> <span class="keyword">function</span> <span class="function">on_click</span><span class="brackets">()</span> <span class="brackets">{</span>
+        <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"Кнопка нажата!\n"</span><span class="brackets">);</span>
+    <span class="brackets">}</span>
+    <span class="object">btn</span><span class="brackets">.</span><span class="object">on_click</span> <span class="brackets">=</span> <span class="object">on_click</span><span class="brackets">;</span>
+
+    <span class="object">win</span><span class="brackets">.</span><span class="function">add_child</span><span class="brackets">(</span><span class="object">btn</span><span class="brackets">);</span>
+    <span class="object">win</span><span class="brackets">.</span><span class="function">show</span><span class="brackets">();</span>
+    <span class="object">gui</span><span class="brackets">.</span><span class="function">run</span><span class="brackets">();</span>
+<span class="brackets">}</span></pre>
+                    <p>При каждом нажатии в терминал будет выводиться сообщение.</p>
+                    <img src="./img/gui_002_01.png" alt="Окно с кнопкой 'Нажми'. В консоли: 'Кнопка нажата!'">
+                </div>
+                <div class="example">
+                    <h2>Пример 2: Кнопка меняет свой текст</h2>
+                    <pre><span class="keyword">use</span> <span class="object">gui</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">gui</span><span class="brackets">.</span><span class="className">window</span> <span class="object">win</span><span class="brackets">;</span>
+    <span class="object">win</span><span class="brackets">.</span><span class="object">size</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">200</span><span class="brackets">,</span> <span class="number">100</span><span class="brackets">];</span>
+
+    <span class="object">gui</span><span class="brackets">.</span><span class="className">button</span> <span class="object">btn</span><span class="brackets">;</span>
+    <span class="object">btn</span><span class="brackets">.</span><span class="object">text</span> <span class="brackets">=</span> <span class="string">"Нажми меня"</span><span class="brackets">;</span>
+    <span class="object">btn</span><span class="brackets">.</span><span class="object">position</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">20</span><span class="brackets">,</span> <span class="number">30</span><span class="brackets">];</span>
+    <span class="object">btn</span><span class="brackets">.</span><span class="object">size</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">160</span><span class="brackets">,</span> <span class="number">40</span><span class="brackets">];</span>
+
+    <span class="typeName">void</span> <span class="keyword">function</span> <span class="function">on_click</span><span class="brackets">()</span> <span class="brackets">{</span>
+        <span class="object">btn</span><span class="brackets">.</span><span class="object">text</span> <span class="brackets">=</span> <span class="string">"Спасибо!"</span><span class="brackets">;</span>
+    <span class="brackets">}</span>
+    <span class="object">btn</span><span class="brackets">.</span><span class="object">on_click</span> <span class="brackets">=</span> <span class="object">on_click</span><span class="brackets">;</span>
+
+    <span class="object">win</span><span class="brackets">.</span><span class="function">add_child</span><span class="brackets">(</span><span class="object">btn</span><span class="brackets">);</span>
+    <span class="object">win</span><span class="brackets">.</span><span class="function">show</span><span class="brackets">();</span>
+    <span class="object">gui</span><span class="brackets">.</span><span class="function">run</span><span class="brackets">();</span>
+<span class="brackets">}</span></pre>
+                    <img src="./img/gui_002_02.png" alt="Окно до нажатия: кнопка 'Нажми меня'. После нажатия: кнопка 'Спасибо!'">
+                </div>
+                <div class="example">
+                    <h2>Пример 3: Кнопка увеличивает число на надписи</h2>
+                    <pre><span class="keyword">use</span> <span class="object">gui</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">gui</span><span class="brackets">.</span><span class="className">window</span> <span class="object">win</span><span class="brackets">;</span>
+    <span class="object">win</span><span class="brackets">.</span><span class="object">size</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">200</span><span class="brackets">,</span> <span class="number">120</span><span class="brackets">];</span>
+
+    <span class="object">gui</span><span class="brackets">.</span><span class="className">label</span> <span class="object">lbl</span><span class="brackets">;</span>
+    <span class="object">lbl</span><span class="brackets">.</span><span class="object">text</span> <span class="brackets">=</span> <span class="string">"0"</span><span class="brackets">;</span>
+    <span class="object">lbl</span><span class="brackets">.</span><span class="object">position</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">80</span><span class="brackets">,</span> <span class="number">20</span><span class="brackets">];</span>
+    <span class="object">lbl</span><span class="brackets">.</span><span class="object">size</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">40</span><span class="brackets">,</span> <span class="number">30</span><span class="brackets">];</span>
+
+    <span class="object">gui</span><span class="brackets">.</span><span class="className">button</span> <span class="object">btn</span><span class="brackets">;</span>
+    <span class="object">btn</span><span class="brackets">.</span><span class="object">text</span> <span class="brackets">=</span> <span class="string">"+"</span><span class="brackets">;</span>
+    <span class="object">btn</span><span class="brackets">.</span><span class="object">position</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">75</span><span class="brackets">,</span> <span class="number">60</span><span class="brackets">];</span>
+    <span class="object">btn</span><span class="brackets">.</span><span class="object">size</span> <span class="brackets">=</span> <span class="brackets">[</span><span class="number">50</span><span class="brackets">,</span> <span class="number">30</span><span class="brackets">];</span>
+
+    <span class="typeName">void</span> <span class="keyword">function</span> <span class="function">on_click</span><span class="brackets">()</span> <span class="brackets">{</span>
+        <span class="typeName">int</span> <span class="object">num</span> <span class="brackets">=</span> <span class="function">to_int</span><span class="brackets">(</span><span class="object">lbl</span><span class="brackets">.</span><span class="object">text</span><span class="brackets">);</span>
+        <span class="object">num</span> <span class="brackets">=</span> <span class="object">num</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">;</span>
+        <span class="object">lbl</span><span class="brackets">.</span><span class="object">text</span> <span class="brackets">=</span> <span class="function">to_string</span><span class="brackets">(</span><span class="object">num</span><span class="brackets">);</span>
+    <span class="brackets">}</span>
+    <span class="object">btn</span><span class="brackets">.</span><span class="object">on_click</span> <span class="brackets">=</span> <span class="object">on_click</span><span class="brackets">;</span>
+
+    <span class="object">win</span><span class="brackets">.</span><span class="function">add_child</span><span class="brackets">(</span><span class="object">lbl</span><span class="brackets">);</span>
+    <span class="object">win</span><span class="brackets">.</span><span class="function">add_child</span><span class="brackets">(</span><span class="object">btn</span><span class="brackets">);</span>
+    <span class="object">win</span><span class="brackets">.</span><span class="function">show</span><span class="brackets">();</span>
+    <span class="object">gui</span><span class="brackets">.</span><span class="function">run</span><span class="brackets">();</span>
+<span class="brackets">}</span></pre>
+                    <img src="./img/gui_002_03.png" alt="Окно с надписью '3' и кнопкой '+'. При нажатии число увеличивается.">
+                </div>
+                <div class="example">
+                    <h2>Важно: обработчик — это обычная функция</h2>
+                    <p>Функция-обработчик:</p>
+                    <ul>
+                        <li>должна быть типа <code>void</code>;</li>
+                        <li>не принимает аргументов;</li>
+                        <li>может читать и менять свойства любых виджетов, созданных в <code>main()</code>.</li>
+                    </ul>
+                    <p>Это делает логику поведения интерфейса прозрачной и предсказуемой.</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./001_gui_start.html" class="nav-button nav-prev">
+                            ← GUI Урок 1: Создание интерфейса
+                        </a>
+                        <span class="nav-button nav-next inactive">Нет следующего урока</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>

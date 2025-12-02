@@ -136,8 +136,8 @@
                     </ol>
                 </div>
                 <div class="example">
-                    <h2>Очистка строки: метод <code>.simplify()</code></h2>
-                    <p>Метод <code>.simplify()</code> удаляет управляющие символы (вроде <code>'\n'</code>, <code>'\t'</code>) из строки:</p>
+                    <h2>Очистка строки: метод <code>.trim()</code></h2>
+                    <p>Метод <code>.trim()</code> удаляет управляющие символы (вроде <code>'\n'</code>, <code>'\t'</code>) из строки:</p>
                     <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
 
 <span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
@@ -145,7 +145,7 @@
     <span class="typeName">array</span><span class="brackets">&lt;</span><span class="typeName">string</span><span class="brackets">,</span> <span class="number">3</span><span class="brackets">&gt;</span> <span class="object">clean</span><span class="brackets">;</span>
 
     <span class="keyword">for</span> <span class="brackets">(</span><span class="typeName">int</span> <span class="object">i</span> <span class="brackets">=</span> <span class="number">0</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">&lt;</span> <span class="number">3</span><span class="brackets">;</span> <span class="object">i</span> <span class="brackets">=</span> <span class="object">i</span> <span class="brackets">+</span> <span class="number">1</span><span class="brackets">)</span> <span class="brackets">{</span>
-        <span class="object">clean</span><span class="brackets">[</span><span class="object">i</span><span class="brackets">]</span> <span class="brackets">=</span> <span class="object">raw</span><span class="brackets">[</span><span class="object">i</span><span class="brackets">].</span><span class="function">simplify</span><span class="brackets">();</span>
+        <span class="object">clean</span><span class="brackets">[</span><span class="object">i</span><span class="brackets">]</span> <span class="brackets">=</span> <span class="object">raw</span><span class="brackets">[</span><span class="object">i</span><span class="brackets">].</span><span class="function">trim</span><span class="brackets">();</span>
     <span class="brackets">}</span>
 
     <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">clean</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
@@ -175,7 +175,7 @@
     <span class="comment">// 2. Пока в файле есть строки — читаем их</span>
     <span class="keyword">while</span> <span class="brackets">(</span><span class="object">fin</span><span class="brackets">.</span><span class="function">has_next_line</span><span class="brackets">())</span> <span class="brackets">{</span>
         <span class="typeName">string</span> <span class="object">one_line</span> <span class="brackets">=</span> <span class="object">fin</span><span class="brackets">.</span><span class="function">read_line</span><span class="brackets">();</span>
-        <span class="typeName">string</span> <span class="object">fixed_line</span> <span class="brackets">=</span> <span class="object">one_line</span><span class="brackets">.</span><span class="function">simplify</span><span class="brackets">();</span>
+        <span class="typeName">string</span> <span class="object">fixed_line</span> <span class="brackets">=</span> <span class="object">one_line</span><span class="brackets">.</span><span class="function">trim</span><span class="brackets">();</span>
         <span class="object">lines</span><span class="brackets">.</span><span class="function">add</span><span class="brackets">(</span><span class="object">fixed_line</span><span class="brackets">);</span>
     <span class="brackets">}</span>
 
