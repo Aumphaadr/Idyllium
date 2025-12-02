@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 23: Работа с файлами — Idyllium</title>
+    <link rel="stylesheet" href="./fonts/fonts.css">
+    <link rel="stylesheet" href="./style.css">
+    <style>
+        .file {
+            background-color: #f5f5f5;
+            border: 1px solid #ccc;
+            padding: 1em;
+            border-radius: 0.5em;
+            font-family: 'Source Code Pro', monospace;
+            white-space: pre;
+            margin: 1em 0;
+            color: #333;
+        }
+    </style>
+    <link rel="shortcut icon" href="./img/favicon.png" type="image/x-icon">
+</head>
+<body>
+    <header id="shared-header"></header>
+    <main>
+        <section>
+            <h1>Урок 23: Работа с файлами</h1>
+            <p class="subtitle">Как сохранять данные между запусками программы и читать внешние тексты</p>
+        </section>
+        <section class="flex">
+            <div id="lessons-nav-placeholder"></div>
+            <div class="examples">
+                <div class="example">
+                    <h2>Зачем нужны файлы?</h2>
+                    <p>До сих пор все наши программы работали только с данными, введёнными вручную или сгенерированными на лету. Но реальные программы часто:</p>
+                    <ul>
+                        <li>сохраняют результаты (например, очки в игре);</li>
+                        <li>читают внешние данные (например, список слов для викторины);</li>
+                        <li>обмениваются информацией с другими программами.</li>
+                    </ul>
+                    <p>Для этого нужен <strong>файл</strong> — постоянное хранилище на диске.</p>
+                </div>
+                <div class="example">
+                    <h2>Библиотека <code>file</code></h2>
+                    <p>В Idyllium вся работа с файлами сосредоточена в библиотеке <code>file</code>. Она предоставляет функции и типы для записи и чтения.</p>
+                    <p>Основные типы:</p>
+                    <ul>
+                        <li><code>file.ostream</code> — поток для <strong>записи</strong> в файл;</li>
+                        <li><code>file.istream</code> — поток для <strong>чтения</strong> из файла.</li>
+                    </ul>
+                </div>
+                <div class="example">
+                    <h2>Запись данных в файл</h2>
+                    <p>Чтобы записать данные в файл, нужно:</p>
+                    <ol>
+                        <li>Открыть файл в режиме <code>"write"</code>;</li>
+                        <li>Записать нужные строки;</li>
+                        <li>Закрыть файл с помощью <code>.close()</code>.</li>
+                    </ol>
+                    <pre><span class="keyword">use</span> <span class="object">file</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">file</span><span class="brackets">.</span><span class="className">ostream</span> <span class="object">fout</span> <span class="brackets">=</span> <span class="object">file</span><span class="brackets">.</span><span class="function">open</span><span class="brackets">(</span><span class="string">"output.txt"</span><span class="brackets">,</span> <span class="string">"write"</span><span class="brackets">);</span>
+    <span class="object">fout</span><span class="brackets">.</span><span class="function">write_line</span><span class="brackets">(</span><span class="string">"Привет, мир!"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">fout</span><span class="brackets">.</span><span class="function">write_line</span><span class="brackets">(</span><span class="string">"Сейчас "</span><span class="brackets">,</span> <span class="number">2025</span><span class="brackets">,</span> <span class="string">" год"</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">fout</span><span class="brackets">.</span><span class="function">write_line</span><span class="brackets">(</span><span class="string">"Файл создан с помощью Idyllium!"</span><span class="brackets">);</span>
+    <span class="object">fout</span><span class="brackets">.</span><span class="function">close</span><span class="brackets">();</span>
+<span class="brackets">}</span></pre>
+                    <p>После выполнения программы в той же папке появится файл <code>output.txt</code> со следующим содержимым:</p>
+                    <div class="file">Привет, мир!
+Сейчас 2025 год
+Файл создан с помощью Idyllium!</div>
+                    <p>Функция <code>write_line()</code> работает так же, как <code>console.write()</code> — принимает любое количество аргументов и объединяет их в строку.</p>
+                </div>
+                <div class="example">
+                    <h2>Чтение данных из файла</h2>
+                    <p>Чтобы прочитать файл, нужно:</p>
+                    <ol>
+                        <li>Открыть файл в режиме <code>"read"</code>;</li>
+                        <li>Пока есть строки — читать их по одной;</li>
+                        <li>Закрыть файл.</li>
+                    </ol>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+<span class="keyword">use</span> <span class="object">file</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">file</span><span class="brackets">.</span><span class="className">istream</span> <span class="object">fin</span> <span class="brackets">=</span> <span class="object">file</span><span class="brackets">.</span><span class="function">open</span><span class="brackets">(</span><span class="string">"input.txt"</span><span class="brackets">,</span> <span class="string">"read"</span><span class="brackets">);</span>
+    <span class="keyword">while</span> <span class="brackets">(</span><span class="object">fin</span><span class="brackets">.</span><span class="function">has_next_line</span><span class="brackets">())</span>
+    <span class="brackets">{</span>
+        <span class="typeName">string</span> <span class="object">one_line</span> <span class="brackets">=</span> <span class="object">fin</span><span class="brackets">.</span><span class="function">read_line</span><span class="brackets">();</span>
+        <span class="typeName">string</span> <span class="object">fixed_line</span> <span class="brackets">=</span> <span class="object">one_line</span><span class="brackets">.</span><span class="function">simplify</span><span class="brackets">();</span> <span class="comment">// удаляет '\n' и другие управляющие символы</span>
+        <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">fixed_line</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="brackets">}</span>
+    <span class="object">fin</span><span class="brackets">.</span><span class="function">close</span><span class="brackets">();</span>
+<span class="brackets">}</span></pre>
+                    <p>Допустим, у нас есть файл <code>input.txt</code>:</p>
+                    <div class="file">Яблоко
+Банан
+Апельсин
+</div>
+                    <p>Программа выведет в консоль:</p>
+                    <div class="output">Яблоко
+Банан
+Апельсин</div>
+                    <p>Метод <code>.simplify()</code> удаляет символы перевода строки и других управляющих последовательностей, оставляя «чистый» текст.</p>
+                </div>
+                <div class="example">
+                    <h2>Важные правила</h2>
+                    <ul>
+                        <li>Файл открывается с указанием режима: <code>"write"</code> или <code>"read"</code>;</li>
+                        <li>После работы файл <strong>обязательно нужно закрывать</strong> с помощью <code>.close()</code> — иначе данные могут не сохраниться или повредиться;</li>
+                        <li>Если попытаться открыть несуществующий файл в режиме <code>"read"</code> — программа выдаст ошибку;</li>
+                        <li>Если открыть существующий файл в режиме <code>"write"</code> — его предыдущее содержимое будет <strong>полностью стёрто</strong>.</li>
+                    </ul>
+                    <p>Это не ограничения — это защита от случайных потерь данных.</p>
+                </div>
+                <div class="example">
+                    <h2>Практическое применение</h2>
+                    <p>Файлы позволяют:</p>
+                    <ul>
+                        <li>Сохранять настройки игры между сессиями;</li>
+                        <li>Загружать словари, базы данных, уровни;</li>
+                        <li>Экспортировать результаты работы программы в удобном формате (например, CSV);</li>
+                        <li>Обеспечивать переносимость данных — файл можно отправить другу или открыть в текстовом редакторе.</li>
+                    </ul>
+                    <p>Теперь ваши программы — не просто временные скрипты, а полноценные инструменты.</p>
+                </div>
+                <div class="example">
+                    <div class="lesson-nav">
+                        <a href="./lesson22.html" class="nav-button nav-prev">
+                            ← Урок 22: Создание собственных библиотек
+                        </a>
+                        <a href="./lesson24.html" class="nav-button nav-next">
+                            Урок 24: Продвинутые возможности 'math' →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p class="subtitle">Maintaining just for lulz</p>
+        <div style="text-align: center;"><span class="copyright">©</span>2025-∞</div>
+    </footer>
+    <script src="./common.js" defer></script>
+</body>
+</html>
