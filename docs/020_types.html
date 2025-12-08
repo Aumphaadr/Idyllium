@@ -156,18 +156,64 @@
                     <p>Один и тот же битовый шаблон — разные числа в зависимости от интерпретации.</p>
                 </div>
                 <div class="example">
+                    <h2>Шестнадцатеричное представление: метод <code>.to_hex()</code></h2>
+                    <p>Кроме двоичного, любой целочисленный тип из <code>types</code> может быть представлен в шестнадцатеричной системе с помощью метода <code>.to_hex()</code>:</p>
+                    <pre><span class="object">types</span><span class="brackets">.</span><span class="typeName">uint8</span> <span class="object">A</span> <span class="brackets">=</span> <span class="number">255</span><span class="brackets">;</span>
+<span class="typeName">string</span> <span class="object">hex_str</span> <span class="brackets">=</span> <span class="object">A</span><span class="brackets">.</span><span class="function">to_hex</span><span class="brackets">();</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">hex_str</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span></pre>
+                    <div class="output">ff</div>
+                    <p>Шестнадцатеричная система удобна для компактного отображения байтов: два символа — один байт.</p>
+                </div>
+                <div class="example">
+                    <h2>Создание из шестнадцатеричной строки: <code>types.from_hex&lt;T&gt;(s)</code></h2>
+                    <p>Аналогично двоичному, можно восстановить число из шестнадцатеричной строки:</p>
+                    <pre><span class="typeName">string</span> <span class="object">hex</span> <span class="brackets">=</span> <span class="string">"A3"</span><span class="brackets">;</span>
+<span class="object">types</span><span class="brackets">.</span><span class="typeName">uint8</span> <span class="object">u</span> <span class="brackets">=</span> <span class="object">types</span><span class="brackets">.</span><span class="function">from_hex</span><span class="brackets">&lt;</span><span class="typeName">uint8</span><span class="brackets">&gt;(</span><span class="object">hex</span><span class="brackets">);</span>
+<span class="object">types</span><span class="brackets">.</span><span class="typeName">int8</span> <span class="object">s</span> <span class="brackets">=</span> <span class="object">types</span><span class="brackets">.</span><span class="function">from_hex</span><span class="brackets">&lt;</span><span class="typeName">int8</span><span class="brackets">&gt;(</span><span class="object">hex</span><span class="brackets">);</span>
+
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">u</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// 163</span>
+<span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">s</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span> <span class="comment">// -93</span></pre>
+    <div class="output">163
+-93</div>
+                    <p>Как и в случае с двоичным представлением, один и тот же шестнадцатеричный шаблон может интерпретироваться по-разному в зависимости от типа.</p>
+                    <p>Это особенно полезно при работе с цветами, байтовыми протоколами и отладкой на низком уровне.</p>
+                </div>
+                <div class="example">
                     <h2>Дробные типы: <code>float32</code> и <code>float64</code></h2>
                     <p>В <code>types</code> также есть типы с плавающей точкой:</p>
                     <ul>
                         <li><code>float32</code> — 32 бита (одинарная точность);</li>
                         <li><code>float64</code> — 64 бита (двойная точность).</li>
                     </ul>
-                    <p>В <code>float32</code> биты распределены так: <span class="bit-group bit-sign">1 бит знака</span> + <span class="bit-group bit-exponent">8 бит порядка</span> + <span class="bit-group bit-mantissa">23 бита мантиссы</span></p>
+                    <p>Оба типа хранят приближённые значения — но <code>float64</code> точнее. Пример:</p>
+                    <pre><span class="keyword">use</span> <span class="object">console</span><span class="brackets">;</span>
+<span class="keyword">use</span> <span class="object">types</span><span class="brackets">;</span>
+
+<span class="function">main</span><span class="brackets">()</span> <span class="brackets">{</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">set_precision</span><span class="brackets">(</span><span class="number">25</span><span class="brackets">);</span>
+    <span class="object">types</span><span class="brackets">.</span><span class="typeName">float32</span> <span class="object">A</span> <span class="brackets">=</span> <span class="number">0.1</span> <span class="brackets">+</span> <span class="number">0.2</span><span class="brackets">;</span>
+    <span class="object">types</span><span class="brackets">.</span><span class="typeName">float64</span> <span class="object">B</span> <span class="brackets">=</span> <span class="number">0.1</span> <span class="brackets">+</span> <span class="number">0.2</span><span class="brackets">;</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"0.3 в типе float32: "</span><span class="brackets">,</span> <span class="object">A</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+    <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="string">"0.3 в типе float64: "</span><span class="brackets">,</span> <span class="object">B</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span>
+<span class="brackets">}</span></pre>
+                    <div class="output">0.3 в типе float32: 0.300000011920928955078125
+0.3 в типе float64: 0.300000000000000044408921</div>
+                    <p>Ни один из типов не хранит <code>0.3</code> точно — это фундаментальное ограничение двоичной арифметики. Но <code>float64</code> ошибается на много порядков меньше.</p>
+                </div>
+                <div class="example">
+                    <h2>Двоичное представление <code>float32</code></h2>
+                    <p>В типе <code>float32</code> 32 бита распределены так:</p>
+                    <ul>
+                        <li><span class="bit-group bit-sign">1 бит</span> — знак (<code>0</code> = положительное, <code>1</code> = отрицательное);</li>
+                        <li><span class="bit-group bit-exponent">8 бит</span> — порядок (экспонента);</li>
+                        <li><span class="bit-group bit-mantissa">23 бита</span> — мантисса (значащие цифры).</li>
+                    </ul>
+                    <p>Пример с числом <code>-12.5</code>:</p>
                     <pre><span class="object">types</span><span class="brackets">.</span><span class="typeName">float32</span> <span class="object">f</span> <span class="brackets">=</span> <span class="number">-12.5</span><span class="brackets">;</span>
 <span class="typeName">string</span> <span class="object">bits</span> <span class="brackets">=</span> <span class="object">f</span><span class="brackets">.</span><span class="function">to_bin</span><span class="brackets">();</span>
 <span class="object">console</span><span class="brackets">.</span><span class="function">write</span><span class="brackets">(</span><span class="object">bits</span><span class="brackets">,</span> <span class="string">'\n'</span><span class="brackets">);</span></pre>
                     <div class="output">11000001010010000000000000000000</div>
-                    <p>Разберём:
+                    <p>Разберём по частям:
                         <span class="bit-group bit-sign">1</span>
                         <span class="bit-group bit-exponent">10000010</span>
                         <span class="bit-group bit-mantissa">10010000000000000000000</span>
@@ -176,7 +222,7 @@
                     Порядок <code>10000010</code> = 130 → экспонента = 130 − 127 = 3.<br>
                     Мантисса <code>1.1001</code> → 1.5625.<br>
                     Итого: <code>−1.5625 × 2³ = −12.5</code>.</p>
-                    <p>Это упрощённый взгляд — но он даёт ощущение, как работают дробные числа «под капотом».</p>
+                    <p>Это упрощённая модель стандарта IEEE 754 — именно так большинство языков хранят дробные числа «под капотом».</p>
                 </div>
                 <div class="example">
                     <h2>Итог</h2>
