@@ -1,6 +1,0 @@
-// hello.idyl
-use console;
-
-main() {
-    console.write("Hello, World!", '\n');
-}
