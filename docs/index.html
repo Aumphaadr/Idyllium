@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Idyllium IDE</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div id="app">
+    <header id="header">
+        <div class="header-left">
+            <div class="logo">
+                IDYLLIUM
+                <span class="idyllium-version">v</span>
+            </div>
+            <button id="btn-docs" class="btn btn-secondary" title="Документация">📖 Документация</button>
+        </div>
+        <div class="header-right">
+            <button id="btn-save" class="btn btn-secondary" title="Сохранить (Ctrl+S)">💾 Сохранить</button>
+            <button id="btn-run" class="btn btn-run" title="Запустить (Ctrl+Enter)">▶ Запустить</button>
+            <button id="btn-stop" class="btn btn-stop" disabled>⏹ Остановить</button>
+        </div>
+    </header>
+
+    <div id="main">
+        <aside id="sidebar">
+            <div id="file-tree"></div>
+            <button id="btn-collapse-sidebar" class="sidebar-collapse-btn" title="Свернуть">◀</button>
+        </aside>
+        <button id="btn-expand-sidebar" title="Развернуть">▶</button>
+        
+        <div id="resizer-sidebar" class="resizer resizer-horizontal"></div>
+
+        <main id="editor-panel">
+            <div id="tabs-container"></div>
+            <div id="editor-container"></div>
+        </main>
+
+        <div id="resizer-output" class="resizer resizer-horizontal"></div>
+
+        <aside id="output-panel">
+            <div id="output-header">
+                <span class="output-title">Вывод</span>
+                <button id="btn-clear-output" class="output-btn" title="Очистить">🗑</button>
+            </div>
+            
+            <div id="gui-panel" style="display: none;">
+                <div id="gui-header">
+                    <span class="gui-title">GUI</span>
+                    <button id="btn-close-gui" class="gui-close-btn" title="Закрыть GUI">×</button>
+                </div>
+                <div id="gui-output"></div>
+            </div>
+            
+            <div id="resizer-gui-terminal" class="resizer resizer-vertical" style="display: none;"></div>
+            
+            <div id="terminal-body"></div>
+        </aside>
+    </div>
+</div>
+
+<script src="jszip.min.js"></script>
+<script src="bundle.js"></script>
+<script src="version.js" defer></script>
+<script>
+    IdylliumIDE.init();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 23: Работа с файлами — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+  <style>
+    .file {
+      background-color: #f8f8f8;
+      border: 1px solid #ccc;
+      padding: 1em;
+      border-radius: 0.5em;
+      font-family: 'Source Code Pro', monospace;
+      white-space: pre;
+      margin: 1em 0;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Урок 23</div>
+      <h1>Работа с файлами</h1>
+      <p class="docs-subtitle">Как сохранить результаты программы и читать внешние данные</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Зачем нужны файлы?</h2>
+      <p>До сих пор всё, что делала ваша программа, исчезало после её завершения. Чтобы сохранить данные надолго — их нужно записать в файл.</p>
+      <p>Файлы позволяют:</p>
+      <ul>
+        <li>Сохранять результаты работы (например, таблицу рекордов);</li>
+        <li>Загружать настройки или уровень игры;</li>
+        <li>Обмениваться данными между программами.</li>
+      </ul>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Библиотека <code>file</code></h2>
+      <p>Для работы с файлами в Idyllium используется встроенная библиотека <code>file</code>:</p>
+      <idyl-code-block>use file;</idyl-code-block>
+      <p>Она предоставляет два типа потоков:</p>
+      <ul>
+        <li><code>file.ostream</code> — для записи в файл (output stream);</li>
+        <li><code>file.istream</code> — для чтения из файла (input stream).</li>
+      </ul>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Открытие файла для записи</h2>
+      <p>Чтобы записывать данные в файл, нужно сначала открыть его функцией <code>file.open()</code>:</p>
+      <idyl-code-block>file.ostream fout = file.open("output.txt", "write");</idyl-code-block>
+      <p>Разберём:</p>
+      <ul>
+        <li><code>file.ostream</code> — тип объекта «поток вывода в файл»;</li>
+        <li><code>fout</code> — имя этого объекта (можно любое);</li>
+        <li><code>file.open()</code> — функция для открытия файла;</li>
+        <li><code>"output.txt"</code> — имя файла (создастся, если не существует);</li>
+        <li><code>"write"</code> — режим открытия: запись.</li>
+      </ul>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Запись данных: выполнение</h2>
+      <p>После открытия файла можно записывать в него строки с помощью метода <code>write_line()</code>:</p>
+      <idyl-code-block>fout.write_line("Привет, мир!", '\n');
+fout.write_line("Сейчас ", 2025, " год", '\n');
+fout.write_line("Файл создан с помощью Idyllium!");</idyl-code-block>
+      <p>Метод <code>write_line()</code> работает точно так же, как <code>console.write()</code> — принимает любое количество аргументов и собирает из них строку.</p>
+      <p>Перенос строки нужно указывать вручную (через <code>'\n'</code>), как и в консоли.</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Завершение записи</h2>
+      <p>После завершения записи обязательно нужно закрыть файл:</p>
+      <idyl-code-block>fout.close();</idyl-code-block>
+      <p>Это гарантирует, что все данные будут записаны на диск и файл не останется «зависшим».</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Запись данных: полный пример</h2>
+      <idyl-code-block>use file;
+
+main() {
+    file.ostream fout = file.open("output.txt", "write");
+    fout.write_line("Привет, мир!", '\n');
+    fout.write_line("Сейчас ", 2025, " год", '\n');
+    fout.write_line("Файл создан с помощью Idyllium!");
+    fout.close();
+}</idyl-code-block>
+      <p>При выполнении данной программы появится файл <code>output.txt</code> со следующим содержимым:</p>
+      <div class="file">Привет, мир!
+Сейчас 2025 год
+Файл создан с помощью Idyllium!</div>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>Открытие файла для чтения</h2>
+      <p>Чтобы прочитать файл, его нужно открыть в режиме <code>"read"</code>:</p>
+      <idyl-code-block>file.istream fin = file.open("input.txt", "read");</idyl-code-block>
+      <p>Здесь:</p>
+      <ul>
+        <li><code>file.istream</code> — тип «поток ввода из файла»;</li>
+        <li><code>fin</code> — имя объекта;</li>
+        <li><code>file.open()</code> — функция для открытия файла;</li>
+        <li><code>"input.txt"</code> — имя существующего файла;</li>
+        <li><code>"read"</code> — режим: чтение.</li>
+      </ul>
+      <p>Если файла не существует — программа выдаст ошибку.</p>
+    </div>
+
+    <!-- Section 8 -->
+    <div class="docs-section">
+      <h2>Чтение файла построчно</h2>
+      <p>Возьмём файл с тремя строками:</p>
+      <div class="file">Кирка
+Топор
+Меч</div>
+      <p>Прочитаем его вручную:</p>
+      <idyl-code-block>use console;
+use file;
+
+main() {
+    file.istream fin = file.open("input.txt", "read");
+    string line1 = fin.read_line(); // "Кирка\n"
+    string line2 = fin.read_line(); // "Топор\n"
+    string line3 = fin.read_line(); // "Меч"
+    fin.close();
+
+    array&lt;string, 3&gt; t = [line1, line2, line3];
+    console.write(t, '\n');
+}</idyl-code-block>
+      <idyl-output-block>["Кирка\n", "Топор\n", "Меч"]</idyl-output-block>
+      <p>Здесь возникают две проблемы:</p>
+      <ol>
+        <li>Строки содержат символ <code>'\n'</code> (кроме последней);</li>
+        <li>Нельзя так читать файл, если количество строк заранее неизвестно.</li>
+      </ol>
+    </div>
+
+    <!-- Section 9 -->
+    <div class="docs-section">
+      <h2>Очистка строки: метод <code>.trim()</code></h2>
+      <p>Метод <code>.trim()</code> удаляет управляющие символы (вроде <code>'\n'</code>, <code>'\t'</code>) из строки:</p>
+      <idyl-code-block>use console;
+
+main() {
+    array&lt;string, 3&gt; raw = ["Кирка\n", "Топор\n", "Меч"];
+    array&lt;string, 3&gt; clean;
+
+    for (int i = 0; i < 3; i = i + 1) {
+        clean[i] = raw[i].trim();
+    }
+
+    console.write(clean, '\n');
+}</idyl-code-block>
+      <idyl-output-block>["Кирка", "Топор", "Меч"]</idyl-output-block>
+      <p>Теперь строки «чистые» и готовы к использованию.</p>
+    </div>
+
+    <!-- Section 10 -->
+    <div class="docs-section">
+      <h2>Чтение файла неизвестной длины</h2>
+      <p>Метод <code>.has_next_line()</code> у объектов типа <code>istream</code> возвращает <code>true</code>, если в файле ещё есть строки:</p>
+      <idyl-code-block>while (fin.has_next_line()) {
+    string one_line = fin.read_line();
+}</idyl-code-block>
+      <p>Такой цикл прочитает файл целиком — независимо от количества строк.</p>
+    </div>
+
+    <!-- Section 11 -->
+    <div class="docs-section">
+      <h2>Полный пример: чтение и очистка файла</h2>
+      <idyl-code-block>use console;
+use file;
+
+main() {
+    dyn_array&lt;string&gt; lines;
+
+    // 1. Открываем файл "input.txt" для чтения
+    file.istream fin = file.open("input.txt", "read");
+
+    // 2. Пока в файле есть строки — читаем их
+    while (fin.has_next_line()) {
+        string one_line = fin.read_line();
+        string fixed_line = one_line.trim();
+        lines.add(fixed_line);
+    }
+
+    // 3. Обязательно закрываем файл
+    fin.close();
+
+    console.write(lines, '\n');
+}</idyl-code-block>
+      <p>При входном файле:</p>
+      <div class="file">Кирка
+Топор
+Меч</div>
+      <p>Программа выведет:</p>
+      <idyl-output-block>["Кирка", "Топор", "Меч"]</idyl-output-block>
+      <p>Теперь вы можете читать любые текстовые файлы — сколько бы в них ни было строк.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="022_libs.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 22: Создание собственных библиотек</strong>
+      </a>
+      <a class="docs-nav-btn next" href="024_math.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 24: Продвинутые возможности 'math'</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

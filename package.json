@@ -1,0 +1,27 @@
+{
+    "name": "idyllium",
+    "version": "0.2.0",
+    "description": "Idyllium — educational programming language",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "build:web": "node build-web.js",
+        "build:all": "tsc && node build-web.js",
+        "test": "node dist/test.js",
+        "deploy": "npm run build:all && echo 'Ready! Commit and push docs/ folder.'",
+        "dev": "tsc --watch",
+        "serve": "npx http-server web -p 8080 -o"
+    },
+    "keywords": [
+        "education",
+        "programming-language",
+        "compiler"
+    ],
+    "license": "MIT",
+    "devDependencies": {
+        "@types/node": "^25.5.2",
+        "esbuild": "^0.28.0",
+        "typescript": "^5.4.0"
+    }
+}

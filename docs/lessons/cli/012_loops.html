@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 12: Циклы — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Урок 12</div>
+      <h1>Циклы</h1>
+      <p class="docs-subtitle">Как заставить компьютер делать одно и то же много раз — без копипасты</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Цикл <code>while</code> — «пока»</h2>
+      <p>Цикл <code>while</code> проверяет условие <strong>перед</strong> каждой итерацией. Если условие истинно — выполняет тело цикла. Если ложно — выходит из цикла.</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    int count = 1;
+    while (count <= 5) {
+        console.write("Итерация ", count, '\n');
+        count = count + 1;
+    }
+}</idyl-code-block>
+
+      <idyl-output-block>Итерация 1
+Итерация 2
+Итерация 3
+Итерация 4
+Итерация 5</idyl-output-block>
+
+      <p>Если условие изначально ложно — цикл не выполнится ни разу.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Цикл <code>do-while</code> — «сделай, потом проверь»</h2>
+      <p>Цикл <code>do-while</code> сначала выполняет тело цикла, <strong>затем</strong> проверяет условие. Это гарантирует, что тело цикла выполнится как минимум один раз.</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    int guess;
+    do {
+        console.write("Угадайте число от 1 до 10: ");
+        guess = console.get_int();
+    } while (guess != 7);
+
+    console.write("Правильно! Это 7!\n");
+}</idyl-code-block>
+
+      <p>Такой цикл идеален, когда нужно запросить данные у пользователя <strong>хотя бы один раз</strong>.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Цикл <code>for</code> — полный контроль</h2>
+      <p>Цикл <code>for</code> состоит из трёх частей:</p>
+      <ol>
+        <li><strong>Стартовое действие</strong> — выполняется один раз перед циклом (обычно объявление счётчика);</li>
+        <li><strong>Условие продолжения</strong> — проверяется перед каждой итерацией;</li>
+        <li><strong>Ежеитерационное действие</strong> — выполняется после каждой итерации (обычно увеличение счётчика).</li>
+      </ol>
+
+      <idyl-code-block>use console;
+
+main() {
+    for (int i = 0; i < 3; i = i + 1) {
+        console.write("i = ", i, '\n');
+    }
+}</idyl-code-block>
+
+      <idyl-output-block>i = 0
+i = 1
+i = 2</idyl-output-block>
+
+      <p>Эта структура делает цикл <code>for</code> идеальным для повторения действий <strong>известное количество раз</strong>.</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Зачем нужны циклы?</h2>
+      <p>Представим, что нужно вывести «Привет!» десять раз.</p>
+      <p>Без цикла:</p>
+
+      <idyl-code-block>console.write("Привет!\n");
+console.write("Привет!\n");
+console.write("Привет!\n");
+console.write("Привет!\n");
+console.write("Привет!\n");
+console.write("Привет!\n");
+console.write("Привет!\n");
+console.write("Привет!\n");
+console.write("Привет!\n");
+console.write("Привет!\n");</idyl-code-block>
+
+      <p>С циклом:</p>
+
+      <idyl-code-block>for (int i = 0; i < 10; i = i + 1) {
+    console.write("Привет!\n");
+}</idyl-code-block>
+
+      <p>А если нужно повторить действие <strong>тысячу</strong>, <strong>миллион</strong> или <strong>столько, сколько скажет пользователь</strong> раз?</p>
+      <p>Без циклов — это невозможно. С циклами — тривиально.</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Оператор <code>break</code> — досрочный выход</h2>
+      <p>Оператор <code>break</code> немедленно прерывает выполнение цикла и передаёт управление на следующую строчку <strong>после</strong> цикла.</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    for (int i = 1; i <= 10; i = i + 1) {
+        if (i == 5) {
+            break; // выйти из цикла
+        }
+        console.write(i, '\n');
+    }
+    console.write("Цикл завершён.\n");
+}</idyl-code-block>
+
+      <idyl-output-block>1
+2
+3
+4
+Цикл завершён.</idyl-output-block>
+
+      <p><code>break</code> особенно полезен, когда условие выхода становится известным внутри цикла.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Оператор <code>continue</code> — пропуск итерации</h2>
+      <p>Оператор <code>continue</code> прерывает текущую итерацию цикла и переходит к следующей (проверке условия и, при необходимости, выполнению тела).</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    for (int i = 1; i <= 5; i = i + 1) {
+        if (i == 3) {
+            continue; // пропустить вывод тройки
+        }
+        console.write(i, '\n');
+    }
+}</idyl-code-block>
+
+      <idyl-output-block>1
+2
+4
+5</idyl-output-block>
+
+      <p>Здесь число 3 не выводится, потому что на этой итерации сработал <code>continue</code>.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="011_bool.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 11: Логические операции</strong>
+      </a>
+      <a class="docs-nav-btn next" href="013_array.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 13: Массивы (статика)</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+{
+  "sections": [
+    {
+      "id": "console",
+      "title": "📟 Консольное программирование",
+      "icon": "terminal",
+      "lessons": [
+        { "id": "000", "file": "000_setup.html",       "title": "Установка Idyllium" },
+        { "id": "001", "file": "001_hello.html",        "title": "Первая программа" },
+        { "id": "002", "file": "002_variables.html",    "title": "Переменные и типы данных" },
+        { "id": "003", "file": "003_input.html",        "title": "Ввод данных" },
+        { "id": "004", "file": "004_arithmetics.html",  "title": "Арифметика" },
+        { "id": "005", "file": "005_colors.html",       "title": "Улучшенный вывод текста" },
+        { "id": "006", "file": "006_transforms.html",   "title": "Преобразования данных" },
+        { "id": "007", "file": "007_math.html",         "title": "Базовые математические функции" },
+        { "id": "008", "file": "008_if.html",           "title": "Условный оператор и тип bool" },
+        { "id": "009", "file": "009_increment.html",    "title": "Инкремент и декремент" },
+        { "id": "010", "file": "010_random.html",       "title": "Случайные числа" },
+        { "id": "011", "file": "011_bool.html",         "title": "Логические операции" },
+        { "id": "012", "file": "012_loops.html",        "title": "Циклы" },
+        { "id": "013", "file": "013_array.html",        "title": "Массивы" },
+        { "id": "014", "file": "014_char.html",         "title": "Тип char как элемент строки" },
+        { "id": "015", "file": "015_dyn_array.html",    "title": "Динамические массивы" },
+        { "id": "016", "file": "016_arr_functions.html","title": "Функции для работы с массивами" },
+        { "id": "017", "file": "017_arr_methods.html",  "title": "Методы массивов" },
+        { "id": "018", "file": "018_string_methods.html","title": "Методы строк" },
+        { "id": "019", "file": "019_time.html",         "title": "Библиотека time" },
+        { "id": "020", "file": "020_types.html",        "title": "Библиотека types" },
+        { "id": "021", "file": "021_functions.html",    "title": "Создание собственных функций" },
+        { "id": "022", "file": "022_libs.html",         "title": "Создание собственных библиотек" },
+        { "id": "023", "file": "023_files.html",        "title": "Работа с файлами" },
+        { "id": "024", "file": "024_math.html",         "title": "Продвинутые инструменты math" },
+        { "id": "025", "file": "025_matrix.html",       "title": "Двумерные массивы" }
+      ]
+    },
+    {
+      "id": "widgets",
+      "title": "🖼️ Графические виджеты",
+      "icon": "window",
+      "lessons": [
+        { "id": "000", "file": "widgets/000_window.html", "title": "Создание окна" },
+        { "id": "001", "file": "widgets/001_button.html", "title": "Кнопки и события" }
+      ]
+    },
+    {
+      "id": "oop",
+      "title": "🏗️ Объектно-ориентированное программирование",
+      "icon": "class",
+      "lessons": [
+        { "id": "000", "file": "oop/000_classes.html", "title": "Классы и объекты" }
+      ]
+    },
+    {
+      "id": "examples",
+      "title": "💡 Примеры задач",
+      "icon": "code",
+      "lessons": [
+        { "id": "000", "file": "examples/000_calc.html", "title": "Калькулятор" }
+      ]
+    }
+  ]
+}

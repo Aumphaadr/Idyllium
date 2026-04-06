@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 15: Динамические массивы — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Урок 15</div>
+      <h1>Динамические массивы</h1>
+      <p class="docs-subtitle">Массив, который сам подстраивается под ваши данные</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Повторение: статические массивы</h2>
+      <p>Статический массив имеет фиксированное количество ячеек:</p>
+
+      <idyl-code-block>array<string, 3> pets;
+pets[0] = "Кошка";
+pets[1] = "Собака";
+pets[2] = "Черепаха";
+// pets[3] = "Хомяк"; // Ошибка: нет 3-й ячейки
+// pets[4] = "Рыбка"; // Ошибка: нет 4-й ячейки</idyl-code-block>
+
+      <p>Заранее указать достаточное количество ячеек — невозможно, если размер данных неизвестен.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Проблема: если нужный размер неизвестен заранее</h2>
+      <p>Что делать, если количество данных неизвестно? Создать массив на 5000 ячеек, чтобы «точно хватило»?</p>
+      <p>Это плохое решение:</p>
+      <ul>
+        <li>Кому-то понадобится ещё больше — и программу придётся переписывать.</li>
+        <li>Кому-то хватит и 100 ячеек — но тогда 4900 ячеек будут пустовать, тратя оперативную память без пользы.</li>
+      </ul>
+      <p>Вывод: нужен массив, у которого количество ячеек можно изменять <strong>во время выполнения программы</strong>.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Динамический массив</h2>
+      <p>В Idyllium такой массив существует — он называется <code>dyn_array</code> (от англ. <em>dynamic array</em>):</p>
+
+      <idyl-code-block>dyn_array<int> nums = [11, 22, 33];</idyl-code-block>
+
+      <p>Разберём:</p>
+      <ul>
+        <li><code>dyn_array</code> — тип «динамический массив»;</li>
+        <li><code>&lt;int&gt;</code> — тип данных в ячейках;</li>
+        <li><code>nums</code> — имя массива;</li>
+        <li><code>[11, 22, 33]</code> — начальные ячейки (можно и без них).</li>
+      </ul>
+      <p>В отличие от <code>array</code>, длина такого массива не фиксирована.</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Добавление ячеек: метод <code>add()</code></h2>
+
+      <idyl-code-block>// создаём массив с тремя ячейками
+dyn_array<int> nums = [11, 22, 33];
+
+nums.add(44); // добавляем 44 в конец
+nums.add(55); // добавляем 55 в конец
+nums.add(66); // добавляем 66 в конец
+
+console.write(nums, '\n');</idyl-code-block>
+
+      <idyl-output-block>[11, 22, 33, 44, 55, 66]</idyl-output-block>
+
+      <p>Метод <code>add(значение)</code> добавляет новую ячейку в конец массива с указанным значением.</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Удаление ячейки: метод <code>remove_at()</code></h2>
+
+      <idyl-code-block>dyn_array<int> nums = [11, 22, 33, 44, 55, 66, 77, 88];
+
+nums.remove_at(2); // удаляем ячейку с индексом 2 (значение 33)
+
+console.write(nums, '\n');</idyl-code-block>
+
+      <idyl-output-block>[11, 22, 44, 55, 66, 77, 88]</idyl-output-block>
+
+      <p>Ячейка с индексом 2 удаляется, а все последующие сдвигаются на одну позицию влево.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Текущая длина: метод <code>length()</code></h2>
+
+      <idyl-code-block>dyn_array<int> nums = [11, 22, 33, 44, 55];
+int L1 = nums.length();
+console.write("В массиве сейчас ", L1, " ячеек\n");
+
+nums.add(66);
+int L2 = nums.length();
+console.write("А теперь ", L2, " ячеек\n");</idyl-code-block>
+
+      <idyl-output-block>В массиве сейчас 5 ячеек
+А теперь 6 ячеек</idyl-output-block>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>Перебор динамического массива</h2>
+      <p>Как и статический, динамический массив можно перебирать циклом — при этом число итераций определяется его текущей длиной:</p>
+
+      <idyl-code-block>dyn_array<int> nums = [81, 45, 33, 27, 90, 64];
+nums.add(333);
+nums.add(444);
+
+for (int i = 0; i < nums.length(); i = i + 1) {
+    console.write(nums[i], '\n');
+}</idyl-code-block>
+
+      <idyl-output-block>81
+45
+33
+27
+90
+64
+333
+444</idyl-output-block>
+
+      <p>Цикл адаптируется автоматически — сколько ячеек, столько и итераций.</p>
+    </div>
+
+    <!-- Section 8 -->
+    <div class="docs-section">
+      <h2>Изменение размера: метод <code>resize()</code></h2>
+      <p>Метод <code>resize(N)</code> устанавливает новую длину массива — <code>N</code> ячеек:</p>
+
+      <idyl-code-block>dyn_array<int> A = [24, 91, 63, 50, 78];
+A.resize(10); // увеличение до 10 ячеек
+console.write("A = ", A, '\n');
+
+dyn_array<int> B = [81, 45, 33, 27, 90, 64, 15, 83];
+B.resize(5); // уменьшение до 5 ячеек
+console.write("B = ", B, '\n');</idyl-code-block>
+
+      <idyl-output-block>A = [24, 91, 63, 50, 78, 0, 0, 0, 0, 0]
+B = [81, 45, 33, 27, 90]</idyl-output-block>
+
+      <p>Если <code>resize()</code> увеличивает массив — новые ячейки заполняются дефолтными значениями (для <code>int</code> — это <code>0</code>).</p>
+      <p>Если <code>resize()</code> уменьшает массив — лишние ячейки безвозвратно удаляются.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="014_char.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 14: Тип 'char' и строки</strong>
+      </a>
+      <a class="docs-nav-btn next" href="016_arr_functions.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 16: Встроенные функции для работы с массивами</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

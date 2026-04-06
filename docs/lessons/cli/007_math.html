@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 7: Базовые математические функции — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Урок 7</div>
+      <h1>Базовые математические функции</h1>
+      <p class="docs-subtitle">Мощные инструменты из библиотеки <code>math</code> — без лишнего шума</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Подключение библиотеки <code>math</code></h2>
+      <p>Для использования математических функций необходимо подключить библиотеку <code>math</code>:</p>
+
+      <idyl-code-block>use math;</idyl-code-block>
+
+      <p>После этого все функции вызываются по схеме: <code>math.название(аргументы)</code>.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Модуль числа: <code>math.abs(n)</code></h2>
+      <p>Функция <code>math.abs(n)</code> возвращает абсолютное значение (модуль) числа — то есть его расстояние от нуля, без знака:</p>
+
+      <idyl-code-block>use console;
+use math;
+
+main() {
+    console.write(math.abs(-15), '\n'); // 15
+    console.write(math.abs(42), '\n');  // 42
+    console.write(math.abs(-3.7), '\n'); // 3.7
+}</idyl-code-block>
+
+      <idyl-output-block>15
+42
+3.7</idyl-output-block>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Округление чисел: <code>round</code>, <code>floor</code>, <code>ceil</code></h2>
+      <p>Библиотека <code>math</code> предоставляет три функции для округления:</p>
+      <ul>
+        <li><code>math.round(n, z)</code> — округляет к ближайшему значению (<em>математическое округление</em>);</li>
+        <li><code>math.floor(n, z)</code> — округляет вниз (к меньшему);</li>
+        <li><code>math.ceil(n, z)</code> — округляет вверх (к большему).</li>
+      </ul>
+      <p>Если второй аргумент <code>z</code> не указан — округление выполняется до целого числа.</p>
+
+      <idyl-code-block>use console;
+use math;
+
+main() {
+    float x = 3.6789;
+
+    console.write("Исходное число: ", x, '\n');
+
+    console.write("round(x): ", math.round(x), '\n');       // 4
+    console.write("floor(x): ", math.floor(x), '\n');       // 3
+    console.write("ceil(x): ", math.ceil(x), '\n');         // 4
+
+    console.write("round(x, 2): ", math.round(x, 2), '\n'); // 3.68
+    console.write("floor(x, 2): ", math.floor(x, 2), '\n'); // 3.67
+    console.write("ceil(x, 2): ", math.ceil(x, 2), '\n');   // 3.68
+}</idyl-code-block>
+
+      <idyl-output-block>Исходное число: 3.6789
+round(x): 4
+floor(x): 3
+ceil(x): 4
+round(x, 2): 3.68
+floor(x, 2): 3.67
+ceil(x, 2): 3.68</idyl-output-block>
+
+      <p>Обратите внимание: все три функции принимают необязательный второй аргумент — количество знаков после запятой.</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Возведение в степень: <code>math.pow(a, b)</code></h2>
+      <p>Функция <code>math.pow(a, b)</code> возводит число <code>a</code> в степень <code>b</code>:</p>
+
+      <idyl-code-block>use console;
+use math;
+
+main() {
+    console.write(math.pow(2, 8), '\n');   // 256
+    console.write(math.pow(5, 3), '\n');   // 125
+    console.write(math.pow(4, -1), '\n');  // 0.25 (1/4)
+}</idyl-code-block>
+
+      <idyl-output-block>256
+125
+0.25</idyl-output-block>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Квадратный корень: <code>math.sqrt(n)</code></h2>
+      <p>Функция <code>math.sqrt(n)</code> вычисляет квадратный корень из неотрицательного числа:</p>
+
+      <idyl-code-block>use console;
+use math;
+
+main() {
+    console.write(math.sqrt(49), '\n');    // 7
+    console.write(math.sqrt(2), '\n');     // примерно 1.4142
+    console.write(math.sqrt(0), '\n');     // 0
+}</idyl-code-block>
+
+      <idyl-output-block>7
+1.4142135623731
+0</idyl-output-block>
+
+      <p>Попытка извлечь корень из отрицательного числа вызовет ошибку выполнения — Idyllium не работает с комплексными числами на этом уровне.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Ограничение значения: <code>math.clamp(min, val, max)</code></h2>
+      <p>Функция <code>math.clamp(min, val, max)</code> «зажимает» значение <code>val</code> в указанный диапазон: если <code>val</code> меньше <code>min</code> — вернёт <code>min</code>; если больше <code>max</code> — вернёт <code>max</code>; иначе — само <code>val</code>.</p>
+
+      <idyl-code-block>use console;
+use math;
+
+main() {
+    console.write(math.clamp(0, 5, 10), '\n');      // 5
+    console.write(math.clamp(0, -3, 10), '\n');     // 0
+    console.write(math.clamp(0, 15, 10), '\n');     // 10
+
+    // Пример: ограничить уровень громкости от 0 до 100
+    int volume = 115;
+    volume = math.clamp(0, volume, 100);
+    console.write("Громкость: ", volume, '\n'); // 100
+}</idyl-code-block>
+
+      <idyl-output-block>5
+0
+10
+Громкость: 100</idyl-output-block>
+
+      <p>Эта функция особенно полезна в играх, интерфейсах и сенсорных системах, где нужно ограничить значения в допустимом диапазоне.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="006_transforms.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 6: Преобразования данных</strong>
+      </a>
+      <a class="docs-nav-btn next" href="008_if.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 8: Условный оператор и тип 'bool'</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

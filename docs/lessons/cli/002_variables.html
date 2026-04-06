@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 2: Переменные и типы данных — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Урок 2</div>
+      <h1>Переменные и типы данных</h1>
+      <p class="docs-subtitle">Храните данные так, чтобы не запутаться ни вам, ни компьютеру</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Что такое переменная?</h2>
+      <p>Переменная — это <strong>ячейка в памяти компьютера</strong>, предназначенная для хранения данных.</p>
+      <p>У каждой переменной обязательно есть три атрибута:</p>
+      <ul>
+        <li><strong>Имя</strong> — как мы обращаемся к переменной в коде (например, <code>score</code>, <code>name</code>);</li>
+        <li><strong>Тип</strong> — какого рода данные она может хранить (число, текст и т.д.);</li>
+        <li><strong>Значение</strong> — то, что в ней сейчас лежит.</li>
+      </ul>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Создание переменных</h2>
+      <p>Рассмотрим простейший пример:</p>
+
+      <idyl-code-block>// main.idyl
+use console;
+
+main() {
+    int D = 42; // создание переменной с именем 'D' и значением '42'
+    console.write(D, '\n');
+
+    int Q = 91; // создание переменной с именем 'Q' и значением '91'
+    console.write(Q, '\n');
+}</idyl-code-block>
+
+      <p>Результат выполнения:</p>
+
+      <idyl-output-block>42
+91</idyl-output-block>
+
+      <p>Если передать переменную в функцию <code>console.write()</code> — она выведет именно <strong>значение</strong> этой переменной, а не её имя.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Типы данных в Idyllium</h2>
+      <p>Idyllium поддерживает следующие базовые типы:</p>
+      <ul>
+        <li><code>int</code> — целые числа (…, -2, -1, 0, 1, 2, …);</li>
+        <li><code>float</code> — числа с плавающей точкой (3.14, -0.5, 2.0);</li>
+        <li><code>string</code> — текст в двойных кавычках (<code>"Привет"</code>);</li>
+        <li><code>char</code> — одиночный символ в одинарных кавычках (<code>'A'</code>, <code>'#'</code>);</li>
+        <li><code>bool</code> — логические значения: <code>true</code> или <code>false</code>.</li>
+      </ul>
+      <p>Пример объявления переменных разных типов:</p>
+
+      <idyl-code-block>// main.idyl
+use console;
+
+main() {
+    int N = 42;
+    float F = 16.3;
+    string S = "И вообще, я крутой!";
+
+    console.write(N, '\n');
+    console.write(F, '\n');
+    console.write(S, '\n');
+}</idyl-code-block>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Ошибки несоответствия типов</h2>
+      <p>В Idyllium <strong>нельзя присвоить переменной значение, не подходящее по типу</strong>. Компилятор сразу сообщит об ошибке:</p>
+
+      <idyl-code-block>// main.idyl
+use console;
+
+main() {
+    // тип 'int': только для целых чисел
+    int A = 2; // можно
+    int B = 1.7; // нельзя — ошибка!
+
+    // тип 'float': только для дробных чисел
+    float C = 4.62; // можно
+    float D = 5; // можно — станет 5.0
+    float E = "текст"; // нельзя — ошибка!
+
+    // тип 'string': только для текста в кавычках
+    string F = "ЪЕЪ или ЪУЪ?"; // можно
+    string G = "дайте 64 алмаза"; // можно
+    string H = 56692; // нельзя — ошибка!
+}</idyl-code-block>
+
+      <p>Это не ограничение — это защита. Компьютер не будет пытаться угадать, что вы имели в виду.</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Объявление и присваивание</h2>
+      <p>Есть два способа работать с переменной:</p>
+      <ul>
+        <li><strong>Инициализация</strong> — создание с одновременным присваиванием значения;</li>
+        <li><strong>Присваивание</strong> — изменение значения уже созданной переменной.</li>
+      </ul>
+
+      <idyl-code-block>// main.idyl
+use console;
+
+main() {
+    int A; // создаём переменную, но не указываем значение
+    A = 20; // присваиваем значение
+
+    int B = 30; // создаём и сразу присваиваем
+}</idyl-code-block>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Встраивание переменных в текст</h2>
+      <p>Функция <code>console.write()</code> не ставит пробелы автоматически между аргументами. Сравните:</p>
+
+      <idyl-code-block>// main.idyl
+use console;
+
+main() {
+    int W;
+    W = 5;
+    console.write("Кот сожрал", W, "кг корма!", '\n');
+}</idyl-code-block>
+
+      <p>Результат:</p>
+
+      <idyl-output-block>Кот сожрал5кг корма!</idyl-output-block>
+
+      <p>Число «прилипло» к словам. Чтобы этого избежать — добавьте пробелы в строки:</p>
+
+      <idyl-code-block>// main.idyl
+use console;
+
+main() {
+    int W = 5;
+    console.write("Кот сожрал ", W, " кг корма!", '\n');
+}</idyl-code-block>
+
+      <p>Теперь всё читаемо:</p>
+
+      <idyl-output-block>Кот сожрал 5 кг корма!</idyl-output-block>
+
+      <p>Это даёт вам полный контроль над форматом вывода — без сюрпризов.</p>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>Изменение значения переменной</h2>
+      <p>Переменная может менять своё значение в процессе работы программы:</p>
+
+      <idyl-code-block>// main.idyl
+use console;
+
+main() {
+    int money = 20000;
+    console.write("У вас ", money, " денег\n");
+
+    money = 25000;    
+    console.write("У вас ", money, " денег\n");
+}</idyl-code-block>
+
+      <p>Вывод:</p>
+
+      <idyl-output-block>У вас 20000 денег
+У вас 25000 денег</idyl-output-block>
+
+      <p>Обратите внимание: при изменении значения <strong>не нужно указывать тип повторно</strong>. Достаточно написать <code>money = 25000;</code>. Тип уже зафиксирован при объявлении.</p>
+    </div>
+
+    <!-- Section 8 -->
+    <div class="docs-section">
+      <h2>Порядок строк имеет значение</h2>
+      <p>В Idyllium, как и во многих языках, <strong>переменную можно использовать только после её объявления</strong>. Попытка обратиться к переменной до того, как она создана, вызовет ошибку компиляции.</p>
+
+      <idyl-code-block>// main.idyl
+use console;
+
+main() {
+    console.write("Алмазов: ", diam, '\n'); // Ошибка: переменная 'diam' не объявлена
+    int diam = 64;
+    console.write("Алмазов: ", diam, '\n'); // А теперь всё в порядке
+}</idyl-code-block>
+
+      <p>Это правило помогает избежать путаницы и учит писать код в логической последовательности: сначала — что у вас есть (объявление), потом — что вы с этим делаете (использование).</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="001_hello.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 1: Первая программа</strong>
+      </a>
+      <a class="docs-nav-btn next" href="003_input.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 3: Ввод данных</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 21: Создание собственных функций — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Урок 21</div>
+      <h1>Создание собственных функций</h1>
+      <p class="docs-subtitle">Как превратить повторяющиеся действия в переиспользуемые блоки кода</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Функции — уже знакомые нам инструменты</h2>
+      <p>Ранее мы уже многократно использовали функции:</p>
+      <idyl-code-block>int A = math.round(15.9); // 16
+float B = math.sqrt(49); // 7.0
+string C = to_string(287); // "287"
+bool D = C.contains('5'); // false</idyl-code-block>
+      <p>Во всех случаях функция <strong>превращает входные данные в выходные</strong>.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Вход и выход — основа функции</h2>
+      <ul>
+        <li><strong>Входные данные (аргументы)</strong> — то, что мы передаём функции при вызове;</li>
+        <li><strong>Выходные данные (результат)</strong> — то, что функция возвращает после выполнения.</li>
+      </ul>
+      <p>По сути, функция — это механизм для превращения одних данных в другие.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Синтаксис объявления функции</h2>
+      <idyl-code-block>use console;
+
+// описание функции: что она делает
+int function имя_функции(int входные_данные) {
+    // действия
+    return выходные_данные;
+}
+
+main() {
+    int A = имя_функции(42); // вызов: заставляем функцию работать
+    int B = имя_функции(-17); // вызов: заставляем работать ещё раз
+    int C = имя_функции(51); // и ещё раз
+
+    // и так можно вызывать функцию сколько угодно
+}</idyl-code-block>
+      <p><strong>Функция</strong> — это блок кода, который один раз описывается, а затем может многократно использоваться.</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Функция как сущность</h2>
+      <p>У функции есть:</p>
+      <ul>
+        <li><strong>тип</strong> — что она возвращает (<code>int</code>, <code>float</code>, и т.д.);</li>
+        <li><strong>название</strong> — по которому к ней обращаются;</li>
+        <li><strong>набор действий</strong> — что она делает, когда её вызывают.</li>
+      </ul>
+      <p>Это похоже на переменную (у неё тоже есть тип, имя и содержимое), но вместо данных — действия.</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Пример: создание собственной функции <code>modul_chisla()</code></h2>
+      <p>Воссоздадим поведение <code>math.abs()</code>, но своими руками:</p>
+      <idyl-code-block>use console;
+
+// описание функции
+int function modul_chisla(int chislo) {
+    int res = chislo;
+    if (chislo < 0) {
+        res = -chislo;
+    }
+    return res;
+}
+
+main() {
+    int A = modul_chisla(-23); // функция приняла -23 и породила 23
+    console.write(A, '\n');
+
+    int B = modul_chisla(-40); // функция приняла -40 и породила 40
+    console.write(B, '\n');
+}</idyl-code-block>
+      <idyl-output-block>23
+40</idyl-output-block>
+      <p>Мы сами решили, что делает эта функция, и теперь можем использовать её где угодно.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Функция с массивами: <code>mul_all()</code></h2>
+      <p>Создадим функцию, которой ещё не было — она вычисляет произведение всех чисел в динамическом массиве:</p>
+      <idyl-code-block>use console;
+
+// описание функции
+int function mul_all(dyn_array&lt;int&gt; some_arr) {
+    int res = 1;
+    for (int i = 0; i < some_arr.length(); i = i + 1) {
+        res = res * some_arr[i];
+    }
+    return res;
+}
+
+main() {
+    dyn_array&lt;int&gt; arr1 = [2, 3, 4, 5, 6];
+    dyn_array&lt;int&gt; arr2 = [11, 12, 13, 14];
+
+    int r1 = mul_all(arr1); // функция приняла 'arr1' и породила 720
+    int r2 = mul_all(arr2); // функция приняла 'arr2' и породила 24024
+
+    console.write(r1, '\n');
+    console.write(r2, '\n');
+}</idyl-code-block>
+      <idyl-output-block>720
+24024</idyl-output-block>
+      <p>Обратите внимание: в теле <code>main()</code> переменная <code>some_arr</code> не объявлена. Она существует <strong>только внутри функции</strong> и заменяется на реальный аргумент при вызове.</p>
+      <p>Это ключевой принцип: описание функции использует <strong>временные имена</strong>, а вызов — <strong>реальные данные</strong>, подходящие по типу.</p>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>void-функции: когда не нужно возвращать значение</h2>
+      <p>Слово <code>void</code> переводится как «пустота». Функция типа <code>void</code> <strong>ничего не возвращает</strong>, а значит, не требует оператора <code>return</code>.</p>
+      <p>Такие функции полезны, когда нужно выполнить действие (например, вывести данные), но не получить результат.</p>
+      <idyl-code-block>use console;
+
+// описание void-функции
+void function draw_line(int L) {
+    string res = "";
+    for (int i = 0; i < L; i = i + 1) {
+        res = res + '-';
+    }
+    console.write(res, '\n');
+}
+
+main() {
+    // вызовы void-функции
+    draw_line(5);  // приняла 5, вывела "-----", ничего не породила
+    draw_line(12); // приняла 12, вывела "------------", ничего не породила
+}</idyl-code-block>
+      <idyl-output-block>-----
+------------
+</idyl-output-block>
+      <p>void-функции — это «действия без хранимого результата», но они тоже делают ваш код чище и избавляют от копипасты.</p>
+    </div>
+
+    <!-- Section 8 -->
+    <div class="docs-section">
+      <h2>Ключевое отличие</h2>
+      <ul>
+        <li>Функции с типом (<code>int</code>, <code>float</code>, и т.д.) <strong>возвращают значение</strong> и обычно присваиваются переменной:
+          <idyl-code-block>int A = modul_chisla(-37);</idyl-code-block>
+        </li>
+        <li>Функции типа <code>void</code> <strong>ничего не возвращают</strong> и вызываются как отдельная команда:
+          <idyl-code-block>draw_line(12);</idyl-code-block>
+        </li>
+      </ul>
+      <p>Это не просто синтаксис — это отражение смысла: делаете ли вы вычисления или производите побочный эффект (вывод, рисование и т.д.).</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="020_types.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 20: Библиотека 'types'</strong>
+      </a>
+      <a class="docs-nav-btn next" href="022_libs.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 22: Создание собственных библиотек</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

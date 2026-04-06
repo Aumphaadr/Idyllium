@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 24: Продвинутые функции библиотеки 'math' — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Урок 24</div>
+      <h1>Продвинутые возможности библиотеки <code>math</code></h1>
+      <p class="docs-subtitle">Тригонометрия, логарифмы и математические константы — мощь науки в доступной форме</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Математические константы</h2>
+      <p>Библиотека <code>math</code> предоставляет две важнейшие константы:</p>
+      <ul>
+        <li><code>math.pi</code> — число π ≈ 3.141592653589793</li>
+        <li><code>math.e</code> — число Эйлера e ≈ 2.718281828459045</li>
+      </ul>
+      <idyl-code-block>use console;
+use math;
+
+main() {
+    console.write("π = ", math.pi, '\n');
+    console.write("e = ", math.e, '\n');
+}</idyl-code-block>
+      <idyl-output-block>π = 3.141592653589793
+e = 2.718281828459045</idyl-output-block>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Тригонометрические функции</h2>
+      <p>Все тригонометрические функции работают в <strong>радианах</strong>:</p>
+      <ul>
+        <li><code>math.sin(x)</code> — синус угла <code>x</code></li>
+        <li><code>math.cos(x)</code> — косинус</li>
+        <li><code>math.tan(x)</code> — тангенс</li>
+      </ul>
+      <idyl-code-block>use console;
+use math;
+
+main() {
+    float angle = math.pi / 2; // 90° в радианах
+    console.write("sin(90°) = ", math.sin(angle), '\n');
+    console.write("cos(60°) = ", math.cos(math.pi / 3), '\n');
+}</idyl-code-block>
+      <idyl-output-block>sin(90°) = 1
+cos(60°) = 0.5000000000000001</idyl-output-block>
+      <p>Значения могут немного отличаться от идеальных из-за особенностей представления дробных чисел в компьютере — это нормально.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Обратные тригонометрические функции</h2>
+      <p>Эти функции возвращают угол (в радианах) по заданному значению:</p>
+      <ul>
+        <li><code>math.asin(x)</code> — арксинус (область: −1 ≤ x ≤ 1)</li>
+        <li><code>math.acos(x)</code> — арккосинус</li>
+        <li><code>math.atan(x)</code> — арктангенс</li>
+      </ul>
+      <idyl-code-block>console.write("arcsin(1) = ", math.asin(1), '\n'); // π/2
+console.write("arccos(0) = ", math.acos(0), '\n'); // π/2</idyl-code-block>
+      <idyl-output-block>arcsin(1) = 1.5707963267948966
+arccos(0) = 1.5707963267948966</idyl-output-block>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Перевод между градусами и радианами</h2>
+      <p>Если вы работаете с градусами, используйте вспомогательные функции:</p>
+      <ul>
+        <li><code>math.to_radians(deg)</code> — переводит градусы в радианы;</li>
+        <li><code>math.to_degrees(rad)</code> — переводит радианы в градусы.</li>
+      </ul>
+      <idyl-code-block>float deg = 180;
+float rad = math.to_radians(deg); // π
+console.write(deg, "° = ", rad, " рад\n");
+
+float back = math.to_degrees(math.pi);
+console.write("π рад = ", back, "°\n");</idyl-code-block>
+      <idyl-output-block>180° = 3.141592653589793 рад
+π рад = 180°</idyl-output-block>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Логарифмы</h2>
+      <p>Доступны следующие логарифмические функции:</p>
+      <ul>
+        <li><code>math.log(x)</code> — натуральный логарифм (по основанию <code>e</code>);</li>
+        <li><code>math.log10(x)</code> — десятичный логарифм (по основанию 10).</li>
+      </ul>
+      <idyl-code-block>console.write("ln(e) = ", math.log(math.e), '\n'); // 1
+console.write("log₁₀(1000) = ", math.log10(1000), '\n'); // 3</idyl-code-block>
+      <idyl-output-block>ln(e) = 1
+log₁₀(1000) = 3</idyl-output-block>
+      <p>Логарифмы определены только для положительных чисел. Попытка вычислить <code>log(-5)</code> вызовет ошибку выполнения.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Практическое применение: расчёт траектории</h2>
+      <p>Пример: вычисление расстояния полёта снаряда под углом:</p>
+      <idyl-code-block>use console;
+use math;
+
+main() {
+    float v0 = 50.0; // начальная скорость, м/с
+    float deg = 45.0; // угол в градусах
+    float rad = math.to_radians(deg);
+    float g = 9.81; // ускорение свободного падения
+
+    // Формула: L = v₀² · sin(2α) / g
+    float L = (v0 * v0 * math.sin(2.0 * rad)) / g;
+    console.write("Дальность полёта при 45°: ", L, " м\n");
+}</idyl-code-block>
+      <idyl-output-block>Дальность полёта при 45°: 254.841997961264 м</idyl-output-block>
+      <p>Такие задачи встречаются в физике, играх и симуляторах — и теперь они доступны даже начинающим.</p>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>Важно помнить</h2>
+      <ul>
+        <li>Все тригонометрические функции работают в <strong>радианах</strong> — не в градусах!</li>
+        <li>Обратные функции возвращают результат в радианах.</li>
+        <li>Логарифмы и корни из отрицательных чисел невозможны в рамках вещественных чисел — Idyllium сообщит об ошибке.</li>
+        <li>Результаты могут содержать небольшие погрешности из-за особенностей представления <code>float</code>.</li>
+      </ul>
+      <p>Эти функции — не для калькулятора, а для <strong>моделирования реального мира</strong>.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="023_files.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 23: Работа с файлами</strong>
+      </a>
+      <a class="docs-nav-btn next" href="025_matrix.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 25: Двумерные массивы</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

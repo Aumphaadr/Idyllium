@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 22: Создание собственных библиотек — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Урок 22</div>
+      <h1>Создание собственных библиотек</h1>
+      <p class="docs-subtitle">Как разбить программу на несколько файлов, чтобы не запутаться в коде</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Зачем нужны библиотеки?</h2>
+      <p>Когда программа становится больше — в ней появляются десятки, а то и сотни функций. Держать всё в одном файле — как хранить весь гардероб в одной куче на полу: можно, но неудобно и неразумно.</p>
+      <p>Библиотеки позволяют <strong>разбить код на логические части</strong> и использовать их по мере необходимости.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Принцип работы</h2>
+      <p>В Idyllium проект может состоять из:</p>
+      <ul>
+        <li><strong>Главного файла</strong> — с функцией <code>main()</code>, откуда начинается выполнение;</li>
+        <li><strong>Вспомогательных файлов</strong> — с функциями, которые можно переиспользовать.</li>
+      </ul>
+      <p>Каждый вспомогательный файл — это <strong>собственная библиотека</strong>.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Пример: отделение логики вывода от основной программы</h2>
+      <p><strong>Файл <code>draw.idyl</code></strong> — содержит только функции для рисования линий:</p>
+      <idyl-code-block>// draw.idyl — это наша собственная библиотека
+use console;
+
+// Функция, которая выводит линию из '-' заданной длины
+void function line(int L)
+{
+    string res = "";
+    for (int i = 0; i < L; i = i + 1)
+    {
+        res = res + '-';
+    }
+    console.write(res, '\n');
+}</idyl-code-block>
+
+      <p><strong>Файл <code>main.idyl</code></strong> — использует эту библиотеку:</p>
+      <idyl-code-block>// main.idyl — главный файл проекта
+use console;
+use draw; // подключаем нашу библиотеку (без .idyl)
+
+main() {
+    // Вызываем функцию из системной библиотеки 'time'
+    // time.sleep(1);
+
+    // Вызываем функцию из нашей собственной библиотеки 'draw'
+    draw.line(10); // выведет "----------"
+}</idyl-code-block>
+      <p>Теперь логика рисования отделена от основной программы — и её можно использовать в других проектах!</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Как подключать собственные библиотеки?</h2>
+      <p>Синтаксис прост:</p>
+      <idyl-code-block>use имя_файла_без_расширения;</idyl-code-block>
+      <p>Если вы создали файл <code>math_tools.idyl</code>, то подключать его нужно так:</p>
+      <idyl-code-block>use math_tools;</idyl-code-block>
+      <p>Idyllium автоматически найдёт файл с расширением <code>.idyl</code> и загрузит оттуда все функции.</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Где должны лежать файлы?</h2>
+      <p>Файлы проекта должны находиться в одной папке:</p>
+      <ul>
+        <li>✅ <code>Projects/main.idyl</code> и <code>Projects/draw.idyl</code> — <strong>работает</strong>;</li>
+        <li>❌ <code>Projects/main.idyl</code> и <code>Downloads/draw.idyl</code> — <strong>не работает</strong>.</li>
+      </ul>
+      <p>Иными словами: <strong>главный файл может подключить только те библиотеки, которые лежат рядом с ним</strong> или являются системными (вроде <code>console</code>, <code>math</code>, <code>random</code>).</p>
+      <p>Это правило защищает от хаоса в файловой системе и делает проекты самодостаточными: весь код — в одной папке, нет скрытых зависимостей.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Преимущества разбиения на библиотеки</h2>
+      <ul>
+        <li><strong>Читаемость</strong> — в <code>main.idyl</code> остаётся только логика программы, а вспомогательные функции — в отдельных файлах;</li>
+        <li><strong>Повторное использование</strong> — библиотеку <code>draw.idyl</code> можно скопировать в другой проект и сразу использовать;</li>
+        <li><strong>Командная работа</strong> — один человек пишет рисовалку, другой — логику игры, и они не мешают друг другу;</li>
+        <li><strong>Отладка</strong> — если что-то сломалось в <code>draw.line()</code>, вы знаете, где искать — не во всём проекте, а в одном файле.</li>
+      </ul>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>И напоследок: системные vs собственные библиотеки</h2>
+      <p>Синтаксис одинаков — разница только в происхождении:</p>
+      <idyl-code-block>// Системная библиотека — встроена в Idyllium
+time.sleep(2);
+
+// Собственная библиотека — написана вами, лежит рядом
+draw.line(10);</idyl-code-block>
+      <p>Для Idyllium — это одно и то же. А для вас — это инструмент управления сложностью.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="021_functions.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 21: Создание собственных функций</strong>
+      </a>
+      <a class="docs-nav-btn next" href="023_files.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 23: Работа с файлами</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

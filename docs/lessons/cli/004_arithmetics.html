@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 4: Арифметика — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Урок 4</div>
+      <h1>Арифметика</h1>
+      <p class="docs-subtitle">Предсказуемые операции без скрытых подводных камней</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Базовые арифметические операции с целыми числами</h2>
+      <p>В Idyllium сложение, вычитание и умножение целых чисел работают предсказуемо и возвращают целый результат, который можно сразу сохранить в переменную типа <code>int</code>:</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    int A = 5 + 7; // в переменную 'A' присвоится 12
+    int B = 8 - 9; // в переменную 'B' присвоится -1
+    int C = 6 * 3; // в переменную 'C' присвоится 18
+}</idyl-code-block>
+
+      <p>Если бы мы захотели вывести эти значения, результат выглядел бы так:</p>
+
+      <idyl-output-block>12
+-1
+18</idyl-output-block>
+
+      <p>Все три операции — <code>+</code>, <code>-</code>, <code>*</code> — безопасны для целых чисел: они никогда не создают дробную часть, поэтому их результат всегда совместим с типом <code>int</code>.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Деление — особый случай</h2>
+      <p>В Idyllium оператор <code>/</code> <strong>всегда</strong> возвращает <code>float</code>, даже если делятся два целых числа:</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    int A = 37;
+    int B = 10;
+
+    float C = A / B; // всё хорошо, присвоится 3.7
+    console.write(C, '\n');
+
+    int D = A / B; // ОШИБКА: нельзя присвоить дробное число в 'int'
+}</idyl-code-block>
+
+      <idyl-output-block>3.7</idyl-output-block>
+
+      <p><strong>Важное правило:</strong> если в результате математической операции <em>теоретически может получиться дробное число</em> — результат будет иметь тип <code>float</code>.</p>
+      <p>Это означает, что даже в случае <code>10 / 5</code> (где результат — целое число 2) Idyllium всё равно вернёт <code>2.0</code> типа <code>float</code>. Так сделано ради <strong>единообразия</strong>: программа не пытается угадать, будет ли результат целым — она всегда возвращает дробное число при делении.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Операции между целыми и дробными числами</h2>
+      <p>Если в арифметической операции участвует хотя бы одно дробное число, результат всегда будет <code>float</code>:</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    int A = 10;
+    float B = 2.5;
+
+    float C = A + B; // 'int' + 'float' → 'float'
+    console.write(C, '\n');
+
+    float D = A - B; // 'int' - 'float' → 'float'
+    console.write(D, '\n');
+
+    float E = A * B; // 'int' * 'float' → 'float'
+    console.write(E, '\n');
+
+    float F = A / B; // 'int' / 'float' → 'float'
+    console.write(F, '\n');
+}</idyl-code-block>
+
+      <idyl-output-block>12.5
+7.5
+25
+4</idyl-output-block>
+
+      <p>Обратите внимание: даже в последнем случае (<code>10 / 2.5 = 4</code>) результат — целое число, но его тип всё равно <code>float</code> (выводится как <code>4</code>, но хранится как <code>4.0</code>). Это позволяет избежать неожиданных ошибок при последующих вычислениях.</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Целочисленное деление: функция <code>div</code></h2>
+      <p>Если вам нужно именно <strong>целое частное</strong> от деления, используйте функцию <code>div(a, b)</code>:</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    int A1 = 38;
+    int A2 = 39;
+    int A3 = 40;
+    int A4 = 41;
+    int B = 10;
+
+    int R1 = div(A1, B); // 3
+    int R2 = div(A2, B); // 3
+    int R3 = div(A3, B); // 4
+    int R4 = div(A4, B); // 4
+}</idyl-code-block>
+
+      <p>Функция <code>div</code> отбрасывает дробную часть результата и возвращает <strong>только целую часть частного</strong>. Поскольку результат всегда целый, его можно безопасно сохранить в переменную типа <code>int</code>.</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Остаток от деления: функция <code>mod</code></h2>
+      <p>Чтобы получить <strong>остаток от деления</strong>, используйте функцию <code>mod(a, b)</code>:</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    int A1 = 38;
+    int A2 = 39;
+    int A3 = 40;
+    int A4 = 41;
+    int B = 10;
+
+    int R1 = mod(A1, B); // 8
+    int R2 = mod(A2, B); // 9
+    int R3 = mod(A3, B); // 0
+    int R4 = mod(A4, B); // 1
+}</idyl-code-block>
+
+      <p>Функция <code>mod</code> возвращает то, что «осталось» после деления. Это особенно полезно для задач вроде определения чётности (<code>mod(x, 2) == 0</code>) или циклических вычислений.</p>
+      <p>Обе функции — <code>div</code> и <code>mod</code> — работают <strong>только с целыми числами</strong> и возвращают <code>int</code>, что делает их идеальными для задач, где дробные результаты не нужны.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="003_input.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 3: Ввод данных</strong>
+      </a>
+      <a class="docs-nav-btn next" href="005_colors.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 5: Управляющие последовательности</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

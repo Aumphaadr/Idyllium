@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 13: Массивы фиксированной длины — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Урок 13</div>
+      <h1>Массивы фиксированной длины</h1>
+      <p class="docs-subtitle">Как хранить много однотипных данных без сотни переменных</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Проблема: много однотипных данных</h2>
+      <p>Представим, что у вас есть семь чисел, и их нужно вывести:</p>
+
+      <idyl-code-block>int a = 29;
+int b = 84;
+int c = 16;
+int d = 35;
+int e = 43;
+int f = 60;
+int g = 17;
+
+console.write(a, '\n');
+console.write(b, '\n');
+console.write(c, '\n');
+console.write(d, '\n');
+console.write(e, '\n');
+console.write(f, '\n');
+console.write(g, '\n');</idyl-code-block>
+
+      <p>Этот код громоздкий, неудобный и не масштабируется. Если чисел будет 100 — никто не будет писать 100 переменных.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Что такое массив?</h2>
+      <p><strong>Массив</strong> — это набор ячеек памяти компьютера, предназначенных для хранения данных.</p>
+      <p>Напомним: <strong>переменная</strong> — это ячейка памяти компьютера, предназначенная для хранения данных.</p>
+      <p>Разница в масштабе: переменная хранит одно значение, а массив — много значений (по одному в каждой ячейке).</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Создание массива</h2>
+      <p>В Idyllium массив объявляется следующим образом:</p>
+
+      <idyl-code-block>array<int, 7> nums = [29, 84, 16, 35, 43, 60, 17];</idyl-code-block>
+
+      <p>Разберём:</p>
+      <ul>
+        <li><code>array</code> — ключевое слово, обозначающее «статический массив»;</li>
+        <li><code>&lt;int, 7&gt;</code> — в угловых скобках указывается тип данных в ячейках (<code>int</code>) и количество ячеек (<code>7</code>);</li>
+        <li><code>nums</code> — имя массива;</li>
+        <li><code>[29, 84, ..., 17]</code> — начальные значения (можно не указывать — тогда все ячейки будут заполнены дефолтными значениями).</li>
+      </ul>
+      <p>Длина массива фиксирована и не может быть изменена после объявления.</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Сходство с переменной</h2>
+      <p>Синтаксис создания массива напоминает создание переменной:</p>
+
+      <idyl-code-block>// Переменная:
+int N = 65;
+
+// Массив на 7 ячеек:
+array<int, 7> nums = [29, 84, 16, 35, 43, 60, 17];</idyl-code-block>
+
+      <p>В обоих случаях есть:</p>
+      <ul>
+        <li><strong>Тип</strong> — <code>int</code> vs <code>array&lt;int, 7&gt;</code>;</li>
+        <li><strong>Имя</strong> — <code>N</code> vs <code>nums</code>;</li>
+        <li><strong>Значение</strong> — <code>65</code> vs <code>[29, 84, 16, 35, 43, 60, 17]</code>.</li>
+      </ul>
+      <p>Массив — это расширенная форма переменной.</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Сравнение с переменной: создание, редактирование, вывод</h2>
+
+      <idyl-code-block>int A; // создание переменной, значение = 0
+array<int, 50> B; // создание массива из 50 нулей
+
+int N = 38; // создание с указанием значения
+array<int, 4> P = [29, 84, 16, 35];
+
+N = 51; // редактирование переменной
+P[0] = 72; // редактирование ячейки массива
+
+console.write(N, '\n'); // вывод переменной
+console.write(P, '\n'); // вывод всего массива
+console.write(P[2], '\n'); // вывод второй ячейки</idyl-code-block>
+
+      <idyl-output-block>51
+[29, 84, 16, 35]
+16</idyl-output-block>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Нумерация ячеек</h2>
+      <p>Ячейки массива нумеруются <strong>с нуля</strong>, как во всех современных языках программирования:</p>
+
+      <idyl-code-block>array<int, 6> K = [81, 45, 33, 27, 90, 64];
+
+console.write(K[0]); // 81
+console.write(K[1]); // 45
+console.write(K[2]); // 33
+console.write(K[3]); // 27
+console.write(K[4]); // 90
+console.write(K[5]); // 64
+console.write(K[6]); // ОШИБКА: нет шестой ячейки</idyl-code-block>
+
+      <p>Если в массиве 6 ячеек — они пронумерованы от <code>0</code> до <code>5</code>. Попытка обратиться к ячейке <code>6</code> вызовет ошибку выполнения.</p>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>Преимущество: перебор циклом</h2>
+      <p>С переменными пришлось бы писать:</p>
+
+      <idyl-code-block>int a = 29;
+int b = 84;
+int c = 16;
+int d = 35;
+int e = 43;
+int f = 60;
+int g = 17;
+
+console.write(a, '\n');
+console.write(b, '\n');
+console.write(c, '\n');
+console.write(d, '\n');
+console.write(e, '\n');
+console.write(f, '\n');
+console.write(g, '\n');</idyl-code-block>
+
+      <p>С массивом — гораздо короче и легко масштабируется:</p>
+
+      <idyl-code-block>array<int, 7> nums = [29, 84, 16, 35, 43, 60, 17];
+for (int i = 0; i < 7; i = i + 1) {
+    console.write(nums[i], '\n');
+}</idyl-code-block>
+
+      <p>Если чисел будет 1000 — достаточно изменить лишь число в условии цикла.</p>
+    </div>
+
+    <!-- Section 8 -->
+    <div class="docs-section">
+      <h2>Массивы других типов</h2>
+      <p>Массивы не ограничены типом <code>int</code>. Можно создавать массивы любых типов:</p>
+
+      <idyl-code-block>array<float, 5> fnums = [3.6, 2.14, 7.0, -5.91, 8.33];
+array<string, 3> tools = ["Кирка", "Топор", "Удочка"];
+array<bool, 4> check = [true, true, false, true];</idyl-code-block>
+    </div>
+
+    <!-- Section 9 -->
+    <div class="docs-section">
+      <h2>Итог: что нужно знать о массивах</h2>
+
+      <idyl-code-block>// Создание с указанными значениями
+array<int, 5> P = [24, 91, 63, 50, 78];
+
+// Создание с дефолтными значениями (0.0 для float)
+array<float, 8> K;
+
+// Редактирование ячейки
+P[0] = 25;
+
+// Чтение значения из ячейки
+int A = P[1];
+
+// Заполнение циклом
+for (int i = 0; i < 8; i = i + 1) {
+    K[i] = random.create_float(-3, 3);
+}
+
+// Вывод циклом
+for (int i = 0; i < 5; i = i + 1) {
+    console.write(P[i]);
+}</idyl-code-block>
+    </div>
+
+    <!-- Section 10 -->
+    <div class="docs-section">
+      <h2>Бонус: типичные ошибки</h2>
+      <p>Операции, которые работают с переменной, <strong>не работают со всем массивом сразу</strong>:</p>
+
+      <idyl-code-block>array<int, 5> P = [78, 91, 63, 50, 24];
+if (P > 50) { // ОШИБКА: нельзя сравнивать массив с числом }
+if (P[0] > 50) { // OK: сравниваем ячейку (78 > 50) }
+
+console.write(P + 4); // ОШИБКА: нельзя складывать массив и число
+console.write(P[1] + 4); // OK: выведется 95</idyl-code-block>
+
+      <p>Массив — это контейнер. Работать с данными нужно поэлементно — через перебор ячеек.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="012_loops.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 12: Циклы</strong>
+      </a>
+      <a class="docs-nav-btn next" href="014_char.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 14: Тип 'char' и строки</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>
