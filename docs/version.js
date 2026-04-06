@@ -4,22 +4,11 @@
     try {
         const scripts = document.getElementsByTagName('script');
         const currentScript = scripts[scripts.length - 1];
-        let basePath = '';
+        const scriptUrl = currentScript.src;
         
-        if (currentScript && currentScript.src) {
-            const scriptUrl = currentScript.src;
-            const lastSlash = scriptUrl.lastIndexOf('/');
-            if (lastSlash !== -1) {
-                basePath = scriptUrl.substring(0, lastSlash + 1);
-            }
-        }
-        
-        if (!basePath || !basePath.includes('/docs/')) {
-            basePath = window.location.pathname.includes('/docs/') ? './' : '../';
-        }
-        
-        const versionUrl = basePath + 'version.json';
-        console.log('Loading version from:', versionUrl);
+        const scriptDir = scriptUrl.substring(0, scriptUrl.lastIndexOf('/') + 1);
+
+        const versionUrl = scriptDir + 'version.json';
         
         const response = await fetch(versionUrl);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
