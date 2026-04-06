@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 5: Улучшенный вывод текста — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Урок 5</div>
+      <h1>Улучшенный вывод текста</h1>
+      <p class="docs-subtitle">Как управлять форматом и внешним видом текста в консоли</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Переход на новую строку: <code>'\n'</code></h2>
+      <p>Вы уже знаете символ <code>'\n'</code> — он заставляет текст «перейти» на следующую строку:</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    console.write("Кот", '\n', "хочет", '\n', "кушать");
+}</idyl-code-block>
+
+      <idyl-output-block>Кот
+хочет
+кушать</idyl-output-block>
+    </div>
+
+    <!-- Section 2 — console.writeln -->
+    <div class="docs-section">
+      <h2>Упрощённый вывод строк: <code>console.writeln()</code></h2>
+      <p>Функция <code>console.writeln()</code> — это удобная обёртка над <code>console.write()</code>, которая <strong>автоматически добавляет символ перевода строки <code>'\n'</code> в конец</strong>. Не нужно каждый раз вручную писать <code>'\n'</code> — writeln сделает это за вас.</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    console.writeln("Первая строка");
+    console.writeln("Вторая строка");
+    console.writeln("Третья строка");
+}</idyl-code-block>
+
+      <idyl-output-block>Первая строка
+Вторая строка
+Третья строка</idyl-output-block>
+
+      <p>Как видите, результат точно такой же, как если бы вы написали:</p>
+
+      <idyl-code-block>console.write("Первая строка", '\n');
+console.write("Вторая строка", '\n');
+console.write("Третья строка", '\n');</idyl-code-block>
+
+      <p>Функция <code>writeln()</code> особенно полезна, когда:</p>
+      <ul>
+        <li>Вы выводите много строк подряд — код становится чище и короче;</li>
+        <li>Вы пишете программу для начинающих — не нужно объяснять, что такое <code>'\n'</code> с первого урока;</li>
+        <li>Вы формируете отладочный вывод — каждая запись автоматически начинается с новой строки.</li>
+      </ul>
+      <p>При этом функция <code>write()</code> остаётся полезной, когда нужно вывести несколько значений <strong>в одну строку</strong>. Выбирайте ту функцию, которая лучше подходит для конкретной задачи.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Экранирование символов: <code>\"</code></h2>
+      <p>Если вы хотите вставить кавычки <em>внутрь</em> строки, их нужно «экранировать» обратным слешем <code>\</code>:</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    console.writeln("Игра \"Minecraft\" была создана в 2009 году");
+}</idyl-code-block>
+
+      <idyl-output-block>Игра "Minecraft" была создана в 2009 году</idyl-output-block>
+
+      <p>Без обратного слеша компилятор подумал бы, что строка заканчивается на первых кавычках — и выдал бы ошибку. Символ <code>\</code> «обманывает» компилятор: он говорит: «эта кавычка — часть текста, не конец строки».</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Табуляция: <code>'\t'</code></h2>
+      <p>Символ <code>'\t'</code> вставляет горизонтальный отступ, как если бы вы нажали клавишу <strong>Tab</strong> на клавиатуре:</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    console.writeln("До Tab", '\t', "После Tab");
+}</idyl-code-block>
+
+      <idyl-output-block>До Tab      После Tab</idyl-output-block>
+
+      <p>Слово «табуляция» происходит от латинского <em>tabula</em> — «доска, таблица». Именно так раньше выравнивали колонки в таблицах. Сегодня <code>'\t'</code> — удобный способ добавить отступ без кучи пробелов.</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Цветной текст в консоли</h2>
+      <p>Idyllium поддерживает ANSI-последовательности для цветного вывода. Чтобы изменить цвет текста, используйте управляющую последовательность вида <code>"\e[31m"</code>:</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    console.writeln("\e[31m", "Красный текст");
+    console.writeln("\e[32m", "Зелёный текст");
+    console.writeln("\e[33m", "Жёлтый текст");
+    console.writeln("\e[34m", "Синий текст");
+    console.writeln("\e[35m", "Малиновый текст");
+    
+    console.writeln('\e[0m', "Стандартный текст");
+}</idyl-code-block>
+
+      <idyl-output-block><span class="color-red">Красный текст</span>
+<span class="color-green">Зелёный текст</span>
+<span class="color-yellow">Жёлтый текст</span>
+<span class="color-blue">Синий текст</span>
+<span class="color-magenta">Малиновый текст</span>
+<span class="color-reset">Стандартный текст</span></idyl-output-block>
+
+      <p>Цвета задаются кодами от <code>"\e[30m"</code> до <code>"\e[37m"</code> (тёмные) и от <code>"\e[90m"</code> до <code>"\e[97m"</code> (светлые). А последовательность <code>"\e[0m"</code> сбрасывает все эффекты — и текст возвращается к обычному виду.</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Цвет сохраняется до конца вывода</h2>
+      <p>Один раз задав цвет, вы не обязаны его указывать каждый раз — он будет применяться ко всем последующим строкам:</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    console.writeln("\e[32m", "Текст стал зелёным");
+    console.writeln("Текст всё ещё зелёный");
+    console.writeln("Пока цвет не поменять, он будет зелёным");
+
+    console.writeln("\e[31m", "А теперь текст стал красным");
+    console.writeln("И он останется красным");
+    console.writeln("Пока не поменять на другой");
+}</idyl-code-block>
+
+      <idyl-output-block><span class="color-green">Текст стал зелёным</span>
+<span class="color-green">Текст всё ещё зелёный</span>
+<span class="color-green">Пока цвет не поменять, он будет зелёным</span>
+<span class="color-red">А теперь текст стал красным</span>
+<span class="color-red">И он останется красным</span>
+<span class="color-red">Пока не поменять на другой</span></idyl-output-block>
+
+      <p>Это поведение — не баг, а фича: оно позволяет легко выделять целые блоки текста одним цветом, не дублируя команды.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Сброс цвета и эффектов</h2>
+      <p>Чтобы вернуть текст к стандартному виду, используйте команду <code>"\e[0m"</code>:</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    console.writeln("\e[36m", "Цвет изменён на циановый");
+    console.writeln("\e[0m", "Цвет сброшен до обычного");
+}</idyl-code-block>
+
+      <idyl-output-block><span class="color-cyan">Цвет изменён на циановый</span>
+<span class="color-reset">Цвет сброшен до обычного</span></idyl-output-block>
+
+      <p>Это особенно важно, если вы пишете большую программу: оставшийся цвет может «заразить» весь последующий вывод и запутать пользователя.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="004_arithmetics.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 4: Арифметика</strong>
+      </a>
+      <a class="docs-nav-btn next" href="006_transforms.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 6: Преобразования данных</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 8: Условный оператор и тип 'bool' — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Урок 8</div>
+      <h1>Условный оператор и тип <code>bool</code></h1>
+      <p class="docs-subtitle">Как научить программу принимать решения</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Практическая задача: покупка йогурта</h2>
+      <p>Представим, что вы пишете программу, которая считает, сколько денег останется после покупки:</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    console.write("Сколько у вас денег: ");
+    int money = console.get_int();
+
+    console.write("Сколько стоит йогурт: ");
+    int price = console.get_int();
+
+    int new_money = money - price;
+    console.write("После покупки останется ", new_money, " денег!\n");
+}</idyl-code-block>
+
+      <p>Пример успешной покупки:</p>
+
+      <idyl-output-block>Сколько у вас денег: <span class="user_input">100</span>
+Сколько стоит йогурт: <span class="user_input">35</span>
+После покупки останется 65 денег!</idyl-output-block>
+
+      <p>Но что, если денег не хватит? Программа всё равно вычтет цену и покажет отрицательное число! Это нелогично. Нам нужно <strong>принять решение</strong>: покупать или нет.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Условный оператор: базовая форма</h2>
+      <p>В Idyllium для принятия решений используется условный оператор:</p>
+
+      <idyl-code-block>if (условие) {
+    // действия
+}</idyl-code-block>
+
+      <p>Конструкция проверяет, является ли условие истинным. Если да — выполняются команды внутри фигурных скобок.</p>
+      <p>Слово <code>if</code> по-английски означает «если». Например:</p>
+
+      <idyl-code-block>if (N > 50) {
+    console.write("ЪУЪ!");
+}</idyl-code-block>
+
+      <p>Перевод на русский: «Если переменная N больше, чем 50, то вывести "ЪУЪ!"».</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Защита от отрицательного баланса</h2>
+
+      <idyl-code-block>use console;
+
+main() {
+    console.write("Сколько у вас денег: ");
+    int money = console.get_int();
+
+    console.write("Сколько стоит йогурт: ");
+    int price = console.get_int();
+
+    if (money > price) {
+        int new_money = money - price;
+        console.write("После покупки останется ", new_money, " денег!\n");
+    }
+}</idyl-code-block>
+
+      <p>Если денег достаточно:</p>
+
+      <idyl-output-block>Сколько у вас денег: <span class="user_input">80</span>
+Сколько стоит йогурт: <span class="user_input">25</span>
+После покупки останется 55 денег!</idyl-output-block>
+
+      <p>Если денег недостаточно — программа ничего не выведет, потому что условие ложно.</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Несколько условий подряд</h2>
+      <p>Программа может содержать сколько угодно условных операторов:</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    console.write("Введите число: ");
+    int N = console.get_int();
+
+    if (N > 0) {
+        console.write("Ваше число положительное!\n");
+    }
+    if (N < 0) {
+        console.write("Ваше число отрицательное!\n");
+    }
+    if (N == 0) {
+        console.write("Ваше число равно нулю!\n");
+    }
+}</idyl-code-block>
+
+      <p>Пример с положительным числом:</p>
+
+      <idyl-output-block>Введите число: <span class="user_input">42</span>
+Ваше число положительное!</idyl-output-block>
+
+      <p>Пример с нулём:</p>
+
+      <idyl-output-block>Введите число: <span class="user_input">0</span>
+Ваше число равно нулю!</idyl-output-block>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Полная форма условного оператора</h2>
+      <p>Иногда нужно выполнять одно действие, если условие истинно, и <em>другое</em> — если ложно:</p>
+
+      <idyl-code-block>if (условие) {
+    // действия истинной ветки
+}
+else {
+    // действия ложной ветки
+}</idyl-code-block>
+
+      <p><strong>Условный оператор</strong> — это инструмент программирования, который позволяет при истинном условии выполнять одни действия, а при ложном — другие.</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    console.write("Сколько у вас денег: ");
+    int money = console.get_int();
+
+    console.write("Сколько стоит йогурт: ");
+    int price = console.get_int();
+
+    if (money >= price) {
+        int new_money = money - price;
+        console.write("После покупки останется ", new_money, " денег!\n");
+    }
+    else {
+        console.write("Вам не хватает денег для покупки!\n");
+    }
+}</idyl-code-block>
+
+      <p>Если денег достаточно:</p>
+
+      <idyl-output-block>Сколько у вас денег: <span class="user_input">30</span>
+Сколько стоит йогурт: <span class="user_input">25</span>
+После покупки останется 5 денег!</idyl-output-block>
+
+      <p>Если денег не хватает:</p>
+
+      <idyl-output-block>Сколько у вас денег: <span class="user_input">10</span>
+Сколько стоит йогурт: <span class="user_input">25</span>
+Вам не хватает денег для покупки!</idyl-output-block>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Что такое условие?</h2>
+      <p><strong>Условие</strong> — это выражение, которое является либо <strong>истинным</strong>, либо <strong>ложным</strong>.</p>
+      <p>Примеры:</p>
+      <ul>
+        <li><code>10 &gt; 5</code> — истинное условие</li>
+        <li><code>40 &lt; 13</code> — ложное условие</li>
+      </ul>
+      <p>В программировании существуют специальные значения:
+        <code>true</code> — истина,
+        <code>false</code> — ложь.</p>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>Тип данных <code>bool</code></h2>
+      <p>В Idyllium есть специальный тип <code>bool</code> для хранения логических значений:</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    bool A = true;
+    console.write(A, '\n'); // true
+
+    bool B = (14 > 7);
+    console.write(B, '\n'); // true
+
+    bool C = (25 < 4);
+    console.write(C, '\n'); // false
+}</idyl-code-block>
+
+      <idyl-output-block>true
+true
+false</idyl-output-block>
+    </div>
+
+    <!-- Section 8 -->
+    <div class="docs-section">
+      <h2>Операторы сравнения</h2>
+      <p>Существует шесть операторов, которые порождают логические значения:</p>
+      <ul>
+        <li><code>&lt;</code> — меньше</li>
+        <li><code>&gt;</code> — больше</li>
+        <li><code>==</code> — равно</li>
+        <li><code>&gt;=</code> — не меньше (больше или равно)</li>
+        <li><code>&lt;=</code> — не больше (меньше или равно)</li>
+        <li><code>!=</code> — не равно</li>
+      </ul>
+      <p>Любой из них можно использовать в условии:</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    int A = console.get_int();
+    if (A > 5) {
+        console.write("A больше 5", '\n');
+    }
+
+    int B = console.get_int();
+    if (B == 20) {
+        console.write("B равно 20", '\n');
+    }
+
+    int C = console.get_int();
+    if (C <= 11) {
+        console.write("C меньше или равно 11", '\n');
+    }
+
+    int D = console.get_int();
+    if (D != A) {
+        console.write("D не равно A", '\n');
+    }
+}</idyl-code-block>
+    </div>
+
+    <!-- Section 9 -->
+    <div class="docs-section">
+      <h2>Оператор присваивания vs оператор сравнения</h2>
+      <p>Важное различие:</p>
+      <ul>
+        <li><code>=</code> — оператор <strong>присваивания</strong>: берёт значение справа и записывает его в переменную слева;</li>
+        <li><code>==</code> — оператор <strong>сравнения</strong>: проверяет, равны ли значения слева и справа, и возвращает <code>true</code>, если они равны.</li>
+      </ul>
+      <p>Пример ошибки:</p>
+
+      <idyl-code-block>if (money = 100) { // ОШИБКА! Это присваивание, а не сравнение }</idyl-code-block>
+
+      <p>Idyllium <strong>не разрешает</strong> использовать оператор присваивания внутри условия — это всегда ошибка компиляции. Так детская опечатка не превратится в серьёзный баг.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="007_math.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 7: Базовые математические функции</strong>
+      </a>
+      <a class="docs-nav-btn next" href="009_increment.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 9: Инкремент и декремент</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

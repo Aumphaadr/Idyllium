@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 14: Тип 'char' и строки — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Урок 14</div>
+      <h1>Тип <code>char</code> и строки</h1>
+      <p class="docs-subtitle">Как устроены строки изнутри и как с ними работать посимвольно</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Типы <code>char</code> и <code>string</code></h2>
+      <p>В Idyllium существует два текстовых типа:</p>
+
+      <idyl-code-block>// Переменная типа 'char' может хранить один символ
+char c = '#';
+
+// Переменная типа 'string' может хранить много символов
+string s = "Доступ разрешён!";</idyl-code-block>
+
+      <p>Обратите внимание:</p>
+      <ul>
+        <li>Одиночный символ обрамляется <strong>одинарными</strong> кавычками <code>' '</code>;</li>
+        <li>Строка — <strong>двойными</strong> кавычками <code>" "</code>.</li>
+      </ul>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Строка — это массив символов</h2>
+      <p>Это очень похоже на отношение «переменная ↔ массив» для чисел:</p>
+
+      <idyl-code-block>// Переменная 'int' хранит одно число
+int n = 792;
+
+// Массив 'int' хранит несколько чисел
+array<int, 5> m = [405, 163, 399, 785, 241];</idyl-code-block>
+
+      <p>Точно так же:</p>
+      <ul>
+        <li><code>char</code> — один символ,</li>
+        <li><code>string</code> — набор символов, то есть <strong>массив типа <code>char</code></strong>.</li>
+      </ul>
+      <p>Это означает: к отдельным символам строки можно обращаться по индексу, как к ячейкам массива.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Доступ к символам строки</h2>
+      <p>Как и у массива, у строки можно получить любой символ по его индексу:</p>
+
+      <idyl-code-block>string p = "Гусь";
+
+char a = p[0]; // 'Г'
+char b = p[1]; // 'у'
+char c = p[2]; // 'с'
+char d = p[3]; // 'ь'
+char e = p[4]; // ОШИБКА: строки длиной 4 → индексы 0–3</idyl-code-block>
+
+      <p>Строка ведёт себя как массив: индексация с нуля, выход за границы — ошибка.</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Посимвольный перебор</h2>
+      <p>Можно вывести каждый символ строки по отдельности:</p>
+
+      <idyl-code-block>string p = "Пингвин";
+
+for (int i = 0; i < 7; i = i + 1) {
+    console.write(p[i], '\n');
+}</idyl-code-block>
+
+      <idyl-output-block>П
+и
+н
+г
+в
+и
+н</idyl-output-block>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Длина строки: метод <code>length()</code></h2>
+      <p>Если длина строки заранее неизвестна, используйте метод <code>length()</code>:</p>
+
+      <idyl-code-block>string Q = "Страус";
+int L = Q.length(); // 6
+console.write("Птица: ", Q, ", длина: ", L, " символов\n");
+
+string R = "Фламинго";
+int N = R.length(); // 8
+console.write("Птица: ", R, ", длина: ", N, " символов\n");</idyl-code-block>
+
+      <idyl-output-block>Птица: Страус, длина: 6 символов
+Птица: Фламинго, длина: 8 символов</idyl-output-block>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Цикл с неизвестной длиной строки</h2>
+      <p>Метод <code>length()</code> возвращает число — значит, его можно подставить в цикл:</p>
+
+      <idyl-code-block>string T = "Журавль";
+
+for (int i = 0; i < T.length(); i = i + 1) {
+    console.write(T[i], '\n');
+}</idyl-code-block>
+
+      <idyl-output-block>Ж
+у
+р
+а
+в
+л
+ь</idyl-output-block>
+
+      <p>Такой цикл работает с любой строкой — независимо от её длины.</p>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>Конкатенация строк и символов</h2>
+      <p>Строки и символы можно соединять с помощью оператора <code>+</code>:</p>
+
+      <idyl-code-block>string noun = "пицца";
+string adj = "вкусная";
+char space = ' ';
+char mark = '!';
+
+console.write(noun + adj, '\n');
+console.write(noun + space + adj, '\n');
+console.write(noun + space + adj + mark, '\n');</idyl-code-block>
+
+      <idyl-output-block>пиццавкусная
+пицца вкусная
+пицца вкусная!</idyl-output-block>
+
+      <p>В отличие от чисел, от перемены мест слагаемых — сумма меняется:</p>
+
+      <idyl-code-block>string res1 = noun + ' ' + adj; // "пицца вкусная"
+string res2 = adj + ' ' + noun; // "вкусная пицца"</idyl-code-block>
+    </div>
+
+    <!-- Section 8 -->
+    <div class="docs-section">
+      <h2>Экранированные символы</h2>
+      <p>Почему символ <code>'\n'</code> записан в <strong>одинарных</strong> кавычках, хотя выглядит как два символа?</p>
+      <p>Потому что <code>\</code> здесь не является отдельным символом — он экранирует букву <code>n</code>, превращая её в управляющий символ «новая строка».</p>
+      <p>То же касается:</p>
+      <ul>
+        <li><code>'\t'</code> — символ табуляции;</li>
+        <li><code>'\''</code> — одинарная кавычка внутри <code>char</code>;</li>
+        <li><code>'\"'</code> — двойная кавычка внутри <code>string</code>.</li>
+      </ul>
+      <p>Экранирование позволяет вставлять в строку или символ управляющие последовательности и знаки пунктуации без путаницы.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="013_array.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 13: Массивы фиксированной длины</strong>
+      </a>
+      <a class="docs-nav-btn next" href="015_dyn_array.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 15: Динамические массивы</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 18: Методы строк — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Урок 18</div>
+      <h1>Методы строк</h1>
+      <p class="docs-subtitle">Анализ, изменение и разбор текста — без регулярных выражений и путаницы</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Методы, возвращающие <code>bool</code></h2>
+      <p>Эти методы отвечают на вопрос «да или нет».</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h3><code>.contains(c)</code></h3>
+      <p>Проверяет, есть ли подстрока или символ в строке:</p>
+
+      <idyl-code-block>string s = "Hello, World!";
+bool has_o = s.contains('o');      // true
+bool has_abc = s.contains("abc");   // false</idyl-code-block>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h3><code>.is_int()</code> и <code>.is_float()</code></h3>
+      <p>Проверяют, можно ли строку безопасно преобразовать в число:</p>
+
+      <idyl-code-block>string a = "123";
+string b = "12.5";
+string c = "abc";
+
+console.write(a.is_int(), '\n');     // true
+console.write(b.is_float(), '\n');  // true
+console.write(c.is_int(), '\n');     // false</idyl-code-block>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Методы, возвращающие <code>int</code></h2>
+      <p>Эти методы работают с позициями и количеством.</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h3><code>.find(c)</code></h3>
+      <p>Возвращает индекс первого вхождения символа или подстроки, или <code>-1</code>, если не найдено:</p>
+
+      <idyl-code-block>string t = "Кот и собака";
+int idx1 = t.find('о');      // 1
+int idx2 = t.find("собака"); // 6
+int idx3 = t.find("рыба");   // -1</idyl-code-block>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h3><code>.count(c)</code></h3>
+      <p>Считает, сколько раз встречается символ или подстрока:</p>
+
+      <idyl-code-block>string u = "абракадабра";
+int a_count = u.count('а'); // 5
+int abra_count = u.count("абра"); // 2</idyl-code-block>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>Методы, возвращающие <code>string</code></h2>
+      <p>Эти методы создают новую строку на основе исходной.</p>
+    </div>
+
+    <!-- Section 8 -->
+    <div class="docs-section">
+      <h3><code>.to_upper()</code> и <code>.to_lower()</code></h3>
+      <p>Преобразуют все символы строки в верхний или нижний регистр:</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    string a = "aBcDeFgHiJk";
+    
+    console.writeln(a.to_upper()); // ABCDEFGHIJK
+    console.writeln(a.to_lower()); // abcdefghijk
+}</idyl-code-block>
+
+      <idyl-output-block>ABCDEFGHIJK
+abcdefghijk</idyl-output-block>
+    </div>
+
+    <!-- Section 9 -->
+    <div class="docs-section">
+      <h3><code>.substring(start, count)</code></h3>
+      <p>Возвращает часть строки, начиная с индекса <code>start</code> и длиной <code>count</code> символов:</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    string a = "aBcDeFgHiJk";
+    
+    console.writeln(a.substring(1, 3)); // BcD
+    console.writeln(a.substring(3, 2)); // De
+    console.writeln(a.substring(5, 5)); // FgHiJ
+}</idyl-code-block>
+
+      <idyl-output-block>BcD
+De
+FgHiJ</idyl-output-block>
+
+      <p><strong>Важно:</strong> второй аргумент — это <strong>количество символов</strong>, а не конечный индекс. Если <code>count</code> больше длины строки от <code>start</code>, метод вернёт символы до конца строки.</p>
+    </div>
+
+    <!-- Section 10 -->
+    <div class="docs-section">
+      <h3><code>.replace(old, new)</code></h3>
+      <p>Заменяет все вхождения подстроки <code>old</code> на <code>new</code>:</p>
+
+      <idyl-code-block>string x = "Кот и кот и ещё кот";
+console.write(x.replace("кот", "пёс"), '\n');</idyl-code-block>
+
+      <idyl-output-block>Кот и пёс и ещё пёс</idyl-output-block>
+
+      <p>Обратите внимание: первый <code>"Кот"</code> не был заменён из-за того, что функция является регистрозависимой.</p>
+    </div>
+
+    <!-- Section 11 -->
+    <div class="docs-section">
+      <h2>Метод, возвращающий массив</h2>
+    </div>
+
+    <!-- Section 12 -->
+    <div class="docs-section">
+      <h3><code>.split(c)</code></h3>
+      <p>Разбивает строку по разделителю и возвращает динамический массив строк:</p>
+
+      <idyl-code-block>string data = "яблоко,банан,апельсин";
+dyn_array<string> fruits = data.split(",");
+console.write(fruits, '\n');</idyl-code-block>
+
+      <idyl-output-block>["яблоко", "банан", "апельсин"]</idyl-output-block>
+
+      <p>Метод особенно полезен при обработке CSV-подобных данных.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="017_arr_methods.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 17: Методы массивов</strong>
+      </a>
+      <a class="docs-nav-btn next" href="019_time.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 19: Библиотека 'time'</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

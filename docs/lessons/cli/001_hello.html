@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 1: Первая программа — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Урок 1</div>
+      <h1>Первая программа</h1>
+      <p class="docs-subtitle">Вывод данных в консоль — без путаницы и магии</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Ваш первый код на Idyllium</h2>
+      <p>Для вывода классического <code>"Hello, World!"</code> наберите следующий код:</p>
+
+      <idyl-code-block>// hello.idyl
+use console;
+
+main() {
+    console.write("Hello, World!", '\n');
+    console.write("Это ваша первая программа на Idyllium!", '\n');
+}</idyl-code-block>
+
+      <p>Разберём ключевые моменты:</p>
+      <ul>
+        <li>
+          Функция <code>console.write()</code> используется для вывода данных в консоль.
+        </li>
+        <li>
+          Она принимает <strong>неограниченное количество аргументов</strong>, разделённых
+          запятыми. Текст, числа, переменные — всё можно передать в один вызов.
+        </li>
+        <li>
+          Каждая команда в Idyllium завершается <strong>точкой с запятой</strong>
+          (<code>;</code>). Это помогает компилятору точно понимать, где заканчивается
+          инструкция.
+        </li>
+      </ul>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Почему в конце стоит <code>'\n'</code>?</h2>
+      <p>
+        В отличие от <code>print()</code> в Python, функция <code>console.write()</code>
+        <strong>не делает автоматический перенос строки</strong>. Это даёт вам полный
+        контроль над форматом вывода.
+      </p>
+      <p>Рассмотрим пример без переноса:</p>
+
+      <idyl-code-block>// hello.idyl
+use console;
+
+main() {
+    console.write("Hello");
+    console.write("World");
+}</idyl-code-block>
+
+      <p>Этот код выведет всё в одну строку:</p>
+
+      <idyl-output-block>HelloWorld</idyl-output-block>
+
+      <p>
+        Чтобы получить перенос, нужно <strong>явно указать</strong> управляющую
+        последовательность <code>'\n'</code>. Её можно добавить как отдельный аргумент
+        или приклеить к строке — оба способа работают одинаково.
+      </p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Гибкое использование <code>'\n'</code></h2>
+      <p>
+        Символ перехода на новую строку можно размещать в любом месте внутри
+        <code>console.write()</code>:
+      </p>
+
+      <idyl-code-block>// hello.idyl
+use console;
+
+main() {
+    console.write("Hello", '\n', "my", '\n', "Lord");
+}</idyl-code-block>
+
+      <p>Результат выполнения:</p>
+
+      <idyl-output-block>Hello
+my
+Lord</idyl-output-block>
+
+      <p>
+        Как видите, <code>'\n'</code> работает именно там, где вы его разместили —
+        не раньше и не позже.
+      </p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Вывод чисел</h2>
+      <p>
+        Idyllium умеет выводить не только текст, но и числа — без дополнительных
+        преобразований:
+      </p>
+
+      <idyl-code-block>// hello.idyl
+use console;
+
+main() {
+    console.write("Сейчас выведем несколько чисел:\n");
+    console.write(11, '\n', 22, '\n', 33, '\n', 44);
+}</idyl-code-block>
+
+      <p>Результат:</p>
+
+      <idyl-output-block>Сейчас выведем несколько чисел:
+11
+22
+33
+44</idyl-output-block>
+
+      <p>
+        Обратите внимание: <strong>текстовые данные</strong> всегда заключаются в кавычки
+        (<code>"..."</code>), а <strong>числовые значения</strong> пишутся без них. Это
+        помогает Idyllium точно отличать строку от числа.
+      </p>
+      <p>
+        Теперь вы готовы не просто писать код, а управлять тем, что видит пользователь.
+        Добро пожаловать в Idyllium!
+      </p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="000_setup.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 0: Установка Idyllium</strong>
+      </a>
+      <a class="docs-nav-btn next" href="002_variables.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 2: Переменные и типы данных</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

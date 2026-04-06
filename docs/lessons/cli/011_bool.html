@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 11: Логические операции — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Урок 11</div>
+      <h1>Логические операции</h1>
+      <p class="docs-subtitle">Как комбинировать условия, не путаясь в приоритетах</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Операции — это преобразования</h2>
+      <p>Начнём с того, что <strong>все операции — это правила преобразования</strong>. Например, арифметические операторы берут числа и делают из них новое число:</p>
+
+      <idyl-code-block>15 + 17 // '+' берёт 15 и 17 → порождает 32
+44 - 16 // '-' берёт 44 и 16 → порождает 28
+11 * 13 // '*' берёт 11 и 13 → порождает 143</idyl-code-block>
+
+      <p>А теперь — операторы сравнения. Они тоже берут числа, но <strong>порождают не число, а логическое значение</strong>:</p>
+
+      <idyl-code-block>27 > 15  // '>' берёт 27 и 15 → порождает true
+43 < 12  // '<' берёт 43 и 12 → порождает false
+61 == 61 // '==' берёт 61 и 61 → порождает true</idyl-code-block>
+
+      <p>Результат операций сравнения — значение типа <code>bool</code>.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Логические операции</h2>
+      <p>Если операторы сравнения порождают <code>bool</code>, то логические операторы <strong>работают с уже готовыми логическими значениями</strong>:</p>
+
+      <idyl-code-block>true and false  // → false
+false or true   // → true
+true xor true   // → false</idyl-code-block>
+
+      <p>Правила просты:</p>
+      <ul>
+        <li><code>and</code> («И») — <code>true</code> только если <strong>с обеих сторон</strong> <code>true</code>;</li>
+        <li><code>or</code> («ИЛИ») — <code>true</code>, если <strong>хотя бы с одной стороны</strong> <code>true</code>;</li>
+        <li><code>xor</code> («исключающее ИЛИ») — <code>true</code>, если <strong>только с одной стороны</strong> <code>true</code>.</li>
+      </ul>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Практическое применение: условия с 'and'</h2>
+
+      <idyl-code-block>if (A > 100) and (B > 100) {
+    console.write("Обе переменные больше 100!\n");
+}</idyl-code-block>
+
+      <p>Перевод: «Если <code>A</code> больше 100 <strong>и</strong> <code>B</code> больше 100 — сообщить об этом».</p>
+      <p>Если хотя бы одно условие ложно — сообщение не появится.</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Условия с 'or'</h2>
+
+      <idyl-code-block>if (A > 100) or (B > 100) {
+    console.write("Хотя бы одна переменная больше 100!\n");
+}</idyl-code-block>
+
+      <p>Перевод: «Если <code>A</code> больше 100 <strong>или</strong> <code>B</code> больше 100 (или обе больше 100) — сообщить об этом».</p>
+      <p>Сообщение не появится только тогда, когда оба условия ложны.</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Условия с 'xor'</h2>
+
+      <idyl-code-block>if (A > 100) xor (B > 100) {
+    console.write("Только одна из переменных больше 100!\n");
+}</idyl-code-block>
+
+      <p>Перевод: «Если <code>A</code> больше 100 <strong>или</strong> <code>B</code> больше 100, но не оба — сообщить об этом».</p>
+      <p>Это как по-русски: «Либо одно, либо другое. Но не всё сразу».</p>
+      <p>Если обе переменные больше 100 — <code>xor</code> вернёт <code>false</code>, и сообщение не появится.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Операция 'not()' — инверсия</h2>
+      <p>В Idyllium операция «НЕ» реализована как <strong>функция</strong> — <code>not(выражение)</code>:</p>
+
+      <idyl-code-block>bool A = true;
+bool B = not(A); // false
+bool C = not(B); // true</idyl-code-block>
+
+      <p>Это <strong>намеренное решение</strong>: скобки чётко показывают, что именно инвертируется. Никакой двусмысленности, как в других языках.</p>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>Аналогия с математикой</h2>
+      <p>Функция <code>not()</code> работает как унарный минус в арифметике:</p>
+
+      <idyl-code-block>int X = 5;
+int Y = -X; // -5
+int Z = -Y; // снова 5</idyl-code-block>
+
+      <p>Точно так же:</p>
+
+      <idyl-code-block>bool P = true;
+bool Q = not(P); // false
+bool R = not(Q); // снова true</idyl-code-block>
+
+      <p><code>not()</code> <strong>переключает</strong> значение: <code>true</code> ↔ <code>false</code>, как минус переключает знак числа.</p>
+    </div>
+
+    <!-- Section 8 -->
+    <div class="docs-section">
+      <h2>Почему 'not' — функция, а не оператор?</h2>
+      <p>В том же Python можно написать:</p>
+
+      <idyl-code-block>A = int(input())
+if not A > 5: # Что здесь первично: сравнение или инверсия?</idyl-code-block>
+
+      <p>И даже опытные программисты не всегда сразу вспомнят приоритеты.</p>
+      <p>В Idyllium этого не бывает:</p>
+
+      <idyl-code-block>int A = console.get_int();
+if not(A > 5) {
+    console.write("A не больше 5", "\n");
+}</idyl-code-block>
+
+      <p>Скобки — это не формальность. Это <strong>гарантия ясности</strong>. Idyllium не заставляет вас запоминать таблицы приоритетов — он заставляет чётко выражать мысли.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="010_random.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 10: Случайные числа</strong>
+      </a>
+      <a class="docs-nav-btn next" href="012_loops.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 12: Циклы</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 10: Случайные числа — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Урок 10</div>
+      <h1>Случайные числа</h1>
+      <p class="docs-subtitle">Как добавить в программу элемент неожиданности</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Подключение библиотеки <code>random</code></h2>
+      <p>Для работы со случайными числами необходимо подключить библиотеку <code>random</code>:</p>
+
+      <idyl-code-block>use random;</idyl-code-block>
+
+      <p>После этого все функции из этой библиотеки вызываются по схеме: <code>random.название(аргументы)</code>.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Случайное целое число: <code>random.create_int()</code></h2>
+      <p>Функция <code>random.create_int(min, max)</code> возвращает случайное целое число в диапазоне <strong>от <code>min</code> до <code>max</code> включительно</strong>:</p>
+
+      <idyl-code-block>int R = random.create_int(1, 20); // число от 1 до 20</idyl-code-block>
+
+      <p>Пример использования:</p>
+
+      <idyl-code-block>use console;
+use random;
+
+main() {
+    int A = random.create_int(10, 99);
+    int B = random.create_int(10, 99);
+    int C = random.create_int(10, 99);
+
+    console.write(A, " ", B, " ", C, '\n');
+}</idyl-code-block>
+
+      <idyl-output-block>42 78 15</idyl-output-block>
+
+      <p>Каждый запуск программы будет давать новую тройку чисел.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Случайное дробное число: <code>random.create_float()</code></h2>
+      <p>Функция <code>random.create_float(min, max)</code> генерирует случайное число типа <code>float</code> в диапазоне от <code>min</code> до <code>max</code> включительно:</p>
+
+      <idyl-code-block>float Q = random.create_float(1, 4); // число от 1.0 до 4.0</idyl-code-block>
+
+      <p>Пример:</p>
+
+      <idyl-code-block>use console;
+use random;
+
+main() {
+    float F = random.create_float(2, 3);
+    float G = random.create_float(2, 3);
+
+    console.write("F = ", F, '\n');
+    console.write("G = ", G, '\n');
+}</idyl-code-block>
+
+      <idyl-output-block>F = 2.8374629104857392
+G = 2.1295837461029384</idyl-output-block>
+
+      <p>Как и в Python или JavaScript, числа генерируются с высокой точностью — до 15–16 знаков после точки.</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Округление случайного числа</h2>
+      <p>Если знаков после точки слишком много, можно округлить число с помощью функций из библиотеки <code>math</code>:</p>
+
+      <idyl-code-block>float raw = random.create_float(7, 8);
+console.write("Сырое случайное число: ", raw, '\n');
+
+float res = math.floor(raw, 3); // округляем
+console.write("Округлено до 3 знаков: ", res, '\n');</idyl-code-block>
+
+      <idyl-output-block>Сырое случайное число: 7.938472635192847
+Округлено до 3 знаков: 7.938</idyl-output-block>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Случайный символ из строки</h2>
+      <p>Функция <code>random.choose_from()</code> выбирает случайный символ из строки:</p>
+
+      <idyl-code-block>string S = "ABCDEF";
+char some = random.choose_from(S);
+console.write("Случайный символ из S: ", some, '\n');</idyl-code-block>
+
+      <idyl-output-block>Случайный символ из S: D</idyl-output-block>
+
+      <p>Эта функция также работает с массивами — об этом мы поговорим позже, когда изучим массивы подробнее.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Псевдослучайность и сиды</h2>
+      <p>Компьютер не умеет генерировать по-настоящему случайные числа — только <strong>псевдослучайные</strong>. Это такие числа, которые выглядят случайными, но на самом деле полностью определяются начальным значением, называемым <strong>сидом</strong> (англ. <em>seed</em>).</p>
+      <p>Если задать один и тот же сид, последовательность будет повторяться:</p>
+
+      <idyl-code-block>use console;
+use random;
+
+main() {
+    random.set_seed(0);
+    console.write(random.create_int(0, 99), '\n');
+    console.write(random.create_int(0, 99), '\n');
+    console.write(random.create_int(0, 99), "\n\n");
+
+    random.set_seed(0);
+    console.write(random.create_int(0, 99), '\n');
+    console.write(random.create_int(0, 99), '\n');
+    console.write(random.create_int(0, 99), "\n\n");
+
+    random.set_seed(0);
+    console.write(random.create_int(0, 99), '\n');
+    console.write(random.create_int(0, 99), '\n');
+    console.write(random.create_int(0, 99), '\n');
+}</idyl-code-block>
+
+      <idyl-output-block>83
+86
+77
+
+83
+86
+77
+
+83
+86
+77</idyl-output-block>
+
+      <p>Как видите, при сиде <code>0</code> всегда генерируется одна и та же последовательность. Это полезно для отладки и воспроизводимых экспериментов</p>
+      <p>Например, в Minecraft есть известный эксплойт RANDAR, основанный на предсказуемости генератора мира — и он работает именно потому, что мир строится на основе сида.</p>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>Смена сида — смена последовательности</h2>
+      <p>В Idyllium сид генератора псевдослучайных чисел задаётся функцией <code>random.set_seed()</code>:</p>
+
+      <idyl-code-block>use console;
+use random;
+
+main() {
+    random.set_seed(0);
+    console.write(random.create_int(0, 99), '\n');
+    console.write(random.create_int(0, 99), '\n');
+    console.write(random.create_int(0, 99), "\n\n");
+
+    random.set_seed(400); // сменили сид
+    console.write(random.create_int(0, 99), '\n');
+    console.write(random.create_int(0, 99), '\n');
+    console.write(random.create_int(0, 99), '\n');
+}</idyl-code-block>
+
+      <idyl-output-block>83
+86
+77
+
+95
+11
+22</idyl-output-block>
+
+      <p>Сид <code>0</code> → последовательность 83, 86, 77...</p>
+      <p>Сид <code>400</code> → новая последовательность: 95, 11, 22...</p>
+    </div>
+
+    <!-- Section 8 -->
+    <div class="docs-section">
+      <h2>Важное предупреждение</h2>
+      <p>Библиотека <code>random</code> в Idyllium предназначена для разработки <strong>игр, симуляций и учебных проектов</strong>. Она не подходит для задач, где важна криптографическая надёжность — например, генерация паролей, токенов безопасности или алгоритмов шифрования.</p>
+      <p>Для криптографической надёжности используются специализированные генераторы, основанные на физических источниках случайности: к таким относятся шумы из атмосферы, радиоактивный распад, тепловые явления и др.</p>
+      <p>Но для броска кубика, случайного выбора карты или генерации макета лабиринта — возможностей библиотеки <code>random</code> в Idyllium будет достаточно.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="009_increment.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 9: Инкремент и декремент</strong>
+      </a>
+      <a class="docs-nav-btn next" href="011_bool.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 11: Логические операции</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

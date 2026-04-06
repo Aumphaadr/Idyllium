@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 16: Функции для работы с массивами — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Урок 16</div>
+      <h1>Функции для работы с массивами</h1>
+      <p class="docs-subtitle"><code>max</code>, <code>min</code>, <code>sum</code>, <code>avg</code> — анализ числовых данных без циклов</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Что это за функции?</h2>
+      <p>В Idyllium есть готовые функции для быстрого анализа числовых массивов:</p>
+      <ul>
+        <li><code>max(arr)</code> — возвращает наибольшее значение в массиве;</li>
+        <li><code>min(arr)</code> — возвращает наименьшее значение;</li>
+        <li><code>sum(arr)</code> — возвращает сумму всех элементов;</li>
+        <li><code>avg(arr)</code> — возвращает среднее арифметическое.</li>
+      </ul>
+      <p>Эти функции работают <strong>и со статическими</strong> (<code>array</code>), <strong>и с динамическими</strong> (<code>dyn_array</code>) массивами.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Общий синтаксис</h2>
+      <p>Функции принимают массив в качестве аргумента и возвращают результат:</p>
+
+      <idyl-code-block>dyn_array<int> my_array = [29, 84, 16, 35, 43, 60, 17];
+
+int maximum = max(my_array);
+int summa = sum(my_array);</idyl-code-block>
+
+      <p>Всё, что нужно — передать имя массива. Никаких циклов, индексов и промежуточных переменных.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Типы данных и совместимость</h2>
+      <p>Функции работают <strong>только с числовыми массивами</strong> — <code>int</code> или <code>float</code>. Попытка передать строковый или логический массив вызовет ошибку:</p>
+
+      <idyl-code-block>// Работает:
+array<int, 4> nums = [10, 5, 8, 12];
+int m = max(nums); // OK
+
+// Не работает:
+array<string, 2> words = ["кот", "собака"];
+string w = max(words); // Ошибка: max() не работает со строками</idyl-code-block>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Тип возвращаемого значения</h2>
+      <p>Функции <code>max()</code>, <code>min()</code> и <code>sum()</code> возвращают значение того же типа, что и ячейки массива:</p>
+
+      <idyl-code-block>array<int, 3> A = [1, 2, 3];
+int s1 = sum(A);    // 6 (int)
+int mx1 = max(A);   // 3 (int)
+
+array<float, 3> B = [1.5, 2.0, 3.5];
+float s2 = sum(B);  // 7.0 (float)
+float mx2 = max(B); // 3.5 (float)</idyl-code-block>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Особенность функции <code>avg()</code></h2>
+      <p>Среднее арифметическое вычисляется как <code>sum(arr) / arr.length()</code>. Поскольку в Idyllium деление всегда даёт <code>float</code>, функция <code>avg()</code> <strong>всегда возвращает <code>float</code></strong>, даже если массив состоит из целых чисел:</p>
+
+      <idyl-code-block>array<int, 4> C = [10, 20, 30, 40];
+float a = avg(C); // 25.0 (float), а не 25 (int)
+
+// Аналог вручную:
+float manual_avg = sum(C) / C.length(); // то же самое</idyl-code-block>
+
+      <p>Это сделано для точности: среднее может быть дробным, даже если все исходные числа — целые.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Примеры использования</h2>
+
+      <idyl-code-block>use console;
+
+main() {
+    dyn_array<int> scores = [85, 92, 78, 96, 88];
+
+    console.write("Максимум: ", max(scores), '\n');
+    console.write("Минимум: ", min(scores), '\n');
+    console.write("Сумма: ", sum(scores), '\n');
+    console.write("Среднее: ", avg(scores), '\n');
+}</idyl-code-block>
+
+      <idyl-output-block>Максимум: 96
+Минимум: 78
+Сумма: 439
+Среднее: 87.8</idyl-output-block>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>Почему это удобно?</h2>
+      <p>Без этих функций пришлось бы писать циклы вручную:</p>
+
+      <idyl-code-block>int total = 0;
+for (int i = 0; i < arr.length(); i = i + 1) {
+    total = total + arr[i];
+}</idyl-code-block>
+
+      <p>А с функцией — достаточно одной строчки: <code>sum(arr)</code>.</p>
+      <p>Это делает код короче, чище и менее подверженным ошибкам.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="015_dyn_array.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 15: Динамические массивы</strong>
+      </a>
+      <a class="docs-nav-btn next" href="017_arr_methods.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 17: Методы массивов</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

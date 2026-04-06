@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 9: Инкремент и декремент — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Урок 9</div>
+      <h1>Инкремент и декремент</h1>
+      <p class="docs-subtitle">Как переменная может изменять саму себя — без магии</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Оператор присваивания: напоминание</h2>
+      <p>Оператор <code>=</code> работает просто и честно:</p>
+      <blockquote>
+        «Беру значение справа от себя и кладу его в переменную слева от себя».
+      </blockquote>
+      <p>Пример:</p>
+
+      <idyl-code-block>int A = 5;
+int D = A + 1; // в 'D' кладётся результат вычисления 'A + 1'</idyl-code-block>
+
+      <p>Здесь всё предсказуемо: сначала вычисляется правая часть, потом результат присваивается левой.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Переменная изменяет саму себя</h2>
+      <p>Теперь представим, что слева и справа — одна и та же переменная:</p>
+
+      <idyl-code-block>int N = 10;
+N = N + 1; // в 'N' кладётся результат 'N + 1'</idyl-code-block>
+
+      <p>Это не ошибка и не парадокс. Это — <strong>саморедактирование</strong>.</p>
+      <p>Переменная <code>N</code> участвует в выражении в двух ролях:</p>
+      <ul>
+        <li><strong>справа</strong> — как источник текущего значения («я сейчас 10»);</li>
+        <li><strong>слева</strong> — как получатель нового значения («теперь я стану 11»).</li>
+      </ul>
+      <p>Такая операция называется <strong>инкрементом</strong> — увеличением на единицу.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Другие формы изменения переменной</h2>
+      <p>Аналогично можно изменять переменную другими способами:</p>
+
+      <idyl-code-block>int score = 100;
+score = score - 10; // декремент: уменьшение на 10
+
+float price = 200.0;
+price = price / 2; // скидка 50%
+
+int counter = 3;
+counter = counter * 2; // удвоение: 3 → 6</idyl-code-block>
+
+      <p>Во всех случаях сначала вычисляется правая часть, затем результат присваивается переменной слева — даже если это та же самая переменная.</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Изменение через функции</h2>
+      <p>Переменную можно «редактировать» и с помощью функций:</p>
+
+      <idyl-code-block>use math;
+
+int K = -25;
+K = math.abs(K); // K станет 25
+
+int volume = 120;
+volume = math.clamp(0, volume, 100); // volume станет 100</idyl-code-block>
+
+      <p>Здесь тоже действует то же правило: сначала функция вычисляет результат, потом он присваивается переменной. Переменная «переписывает» саму себя на основе своего же предыдущего значения.</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Почему в Idyllium нет <code>++</code> и <code>--</code>?</h2>
+      <p>Во многих языках (C++, Java, JavaScript) существуют сокращения:</p>
+
+      <idyl-code-block>N++;  // то же, что N = N + 1;
+M--;  // то же, что M = M - 1;</idyl-code-block>
+
+      <p>Idyllium <strong>намеренно от них отказывается</strong>. Почему?</p>
+      <ul>
+        <li>Это синтаксический сахар, который не добавляет новой логики;</li>
+        <li>Он маскирует суть операции — присваивание;</li>
+        <li>Он порождает сложности (в чём разница между <code>++i</code> и <code>i++</code>?);</li>
+        <li>Детям важнее понять "как работает", а не "как написать короче".</li>
+      </ul>
+      <p>В Idyllium всё явно: если вы хотите изменить переменную — напишите это честно: <code>N = N + 1</code>.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Практическое применение</h2>
+      <p>Саморедактирование переменной — основа счётчиков, накопителей и ограничителей:</p>
+
+      <idyl-code-block>use console;
+
+main() {
+    int attempts = 1;
+
+    console.write("Попытка ", attempts, ": введите пароль", '\n');
+    attempts = attempts + 1; // счётчик увеличился, теперь равен 2
+
+    console.write("Попытка ", attempts, ": введите пароль", '\n');
+    attempts = attempts + 1; // счётчик увеличился, теперь равен 3
+
+    console.write("Попытка ", attempts, ": введите пароль", '\n');
+    attempts = attempts + 1; // счётчик увеличился, теперь равен 4
+}</idyl-code-block>
+
+      <p>Такие паттерны встречаются везде — от игр до баз данных.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="008_if.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 8: Условный оператор и тип 'bool'</strong>
+      </a>
+      <a class="docs-nav-btn next" href="010_random.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 10: Случайные числа</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>
