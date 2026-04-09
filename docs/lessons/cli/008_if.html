@@ -57,7 +57,8 @@
       <h2>Практическая задача: покупка йогурта</h2>
       <p>Представим, что вы пишете программу, которая считает, сколько денег останется после покупки:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     console.write("Сколько у вас денег: ");
@@ -67,8 +68,9 @@ main() {
     int price = console.get_int();
 
     int new_money = money - price;
-    console.write("После покупки останется ", new_money, " денег!\n");
-}</idyl-code-block>
+    console.writeln("После покупки останется ", new_money, " денег!");
+}
+</script></idyl-code-block>
 
       <p>Пример успешной покупки:</p>
 
@@ -84,16 +86,20 @@ main() {
       <h2>Условный оператор: базовая форма</h2>
       <p>В Idyllium для принятия решений используется условный оператор:</p>
 
-      <idyl-code-block>if (условие) {
+      <idyl-code-block><script type="text/plain">
+if (условие) {
     // действия
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Конструкция проверяет, является ли условие истинным. Если да — выполняются команды внутри фигурных скобок.</p>
       <p>Слово <code>if</code> по-английски означает «если». Например:</p>
 
-      <idyl-code-block>if (N > 50) {
+      <idyl-code-block><script type="text/plain">
+if (N > 50) {
     console.write("ЪУЪ!");
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Перевод на русский: «Если переменная N больше, чем 50, то вывести "ЪУЪ!"».</p>
     </div>
@@ -102,7 +108,8 @@ main() {
     <div class="docs-section">
       <h2>Защита от отрицательного баланса</h2>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     console.write("Сколько у вас денег: ");
@@ -113,9 +120,10 @@ main() {
 
     if (money > price) {
         int new_money = money - price;
-        console.write("После покупки останется ", new_money, " денег!\n");
+        console.writeln("После покупки останется ", new_money, " денег!");
     }
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Если денег достаточно:</p>
 
@@ -131,22 +139,24 @@ main() {
       <h2>Несколько условий подряд</h2>
       <p>Программа может содержать сколько угодно условных операторов:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     console.write("Введите число: ");
     int N = console.get_int();
 
     if (N > 0) {
-        console.write("Ваше число положительное!\n");
+        console.writeln("Ваше число положительное!");
     }
     if (N < 0) {
-        console.write("Ваше число отрицательное!\n");
+        console.writeln("Ваше число отрицательное!");
     }
     if (N == 0) {
-        console.write("Ваше число равно нулю!\n");
+        console.writeln("Ваше число равно нулю!");
     }
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Пример с положительным числом:</p>
 
@@ -164,16 +174,19 @@ main() {
       <h2>Полная форма условного оператора</h2>
       <p>Иногда нужно выполнять одно действие, если условие истинно, и <em>другое</em> — если ложно:</p>
 
-      <idyl-code-block>if (условие) {
+      <idyl-code-block><script type="text/plain">
+if (условие) {
     // действия истинной ветки
 }
 else {
     // действия ложной ветки
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p><strong>Условный оператор</strong> — это инструмент программирования, который позволяет при истинном условии выполнять одни действия, а при ложном — другие.</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     console.write("Сколько у вас денег: ");
@@ -184,12 +197,13 @@ main() {
 
     if (money >= price) {
         int new_money = money - price;
-        console.write("После покупки останется ", new_money, " денег!\n");
+        console.writeln("После покупки останется ", new_money, " денег!");
     }
     else {
-        console.write("Вам не хватает денег для покупки!\n");
+        console.writeln("Вам не хватает денег для покупки!");
     }
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Если денег достаточно:</p>
 
@@ -223,18 +237,20 @@ main() {
       <h2>Тип данных <code>bool</code></h2>
       <p>В Idyllium есть специальный тип <code>bool</code> для хранения логических значений:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     bool A = true;
-    console.write(A, '\n'); // true
+    console.writeln(A); // true
 
     bool B = (14 > 7);
-    console.write(B, '\n'); // true
+    console.writeln(B); // true
 
     bool C = (25 < 4);
-    console.write(C, '\n'); // false
-}</idyl-code-block>
+    console.writeln(C); // false
+}
+</script></idyl-code-block>
 
       <idyl-output-block>true
 true
@@ -255,29 +271,31 @@ false</idyl-output-block>
       </ul>
       <p>Любой из них можно использовать в условии:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     int A = console.get_int();
     if (A > 5) {
-        console.write("A больше 5", '\n');
+        console.writeln("A больше 5");
     }
 
     int B = console.get_int();
     if (B == 20) {
-        console.write("B равно 20", '\n');
+        console.writeln("B равно 20");
     }
 
     int C = console.get_int();
     if (C <= 11) {
-        console.write("C меньше или равно 11", '\n');
+        console.writeln("C меньше или равно 11");
     }
 
     int D = console.get_int();
     if (D != A) {
-        console.write("D не равно A", '\n');
+        console.writeln("D не равно A");
     }
-}</idyl-code-block>
+}
+</script></idyl-code-block>
     </div>
 
     <!-- Section 9 -->
@@ -290,7 +308,9 @@ main() {
       </ul>
       <p>Пример ошибки:</p>
 
-      <idyl-code-block>if (money = 100) { // ОШИБКА! Это присваивание, а не сравнение }</idyl-code-block>
+      <idyl-code-block><script type="text/plain">
+if (money = 100) { // ОШИБКА! Это присваивание, а не сравнение }
+</script></idyl-code-block>
 
       <p>Idyllium <strong>не разрешает</strong> использовать оператор присваивания внутри условия — это всегда ошибка компиляции. Так детская опечатка не превратится в серьёзный баг.</p>
     </div>

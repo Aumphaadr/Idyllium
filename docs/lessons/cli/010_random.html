@@ -57,7 +57,9 @@
       <h2>Подключение библиотеки <code>random</code></h2>
       <p>Для работы со случайными числами необходимо подключить библиотеку <code>random</code>:</p>
 
-      <idyl-code-block>use random;</idyl-code-block>
+      <idyl-code-block><script type="text/plain">
+use random;
+</script></idyl-code-block>
 
       <p>После этого все функции из этой библиотеки вызываются по схеме: <code>random.название(аргументы)</code>.</p>
     </div>
@@ -67,11 +69,14 @@
       <h2>Случайное целое число: <code>random.create_int()</code></h2>
       <p>Функция <code>random.create_int(min, max)</code> возвращает случайное целое число в диапазоне <strong>от <code>min</code> до <code>max</code> включительно</strong>:</p>
 
-      <idyl-code-block>int R = random.create_int(1, 20); // число от 1 до 20</idyl-code-block>
+      <idyl-code-block><script type="text/plain">
+int R = random.create_int(1, 20); // число от 1 до 20
+</script></idyl-code-block>
 
       <p>Пример использования:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 use random;
 
 main() {
@@ -79,8 +84,9 @@ main() {
     int B = random.create_int(10, 99);
     int C = random.create_int(10, 99);
 
-    console.write(A, " ", B, " ", C, '\n');
-}</idyl-code-block>
+    console.writeln(A, " ", B, " ", C);
+}
+</script></idyl-code-block>
 
       <idyl-output-block>42 78 15</idyl-output-block>
 
@@ -92,20 +98,24 @@ main() {
       <h2>Случайное дробное число: <code>random.create_float()</code></h2>
       <p>Функция <code>random.create_float(min, max)</code> генерирует случайное число типа <code>float</code> в диапазоне от <code>min</code> до <code>max</code> включительно:</p>
 
-      <idyl-code-block>float Q = random.create_float(1, 4); // число от 1.0 до 4.0</idyl-code-block>
+      <idyl-code-block><script type="text/plain">
+float Q = random.create_float(1, 4); // число от 1.0 до 4.0
+</script></idyl-code-block>
 
       <p>Пример:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 use random;
 
 main() {
     float F = random.create_float(2, 3);
     float G = random.create_float(2, 3);
 
-    console.write("F = ", F, '\n');
-    console.write("G = ", G, '\n');
-}</idyl-code-block>
+    console.writeln("F = ", F);
+    console.writeln("G = ", G);
+}
+</script></idyl-code-block>
 
       <idyl-output-block>F = 2.8374629104857392
 G = 2.1295837461029384</idyl-output-block>
@@ -118,11 +128,13 @@ G = 2.1295837461029384</idyl-output-block>
       <h2>Округление случайного числа</h2>
       <p>Если знаков после точки слишком много, можно округлить число с помощью функций из библиотеки <code>math</code>:</p>
 
-      <idyl-code-block>float raw = random.create_float(7, 8);
-console.write("Сырое случайное число: ", raw, '\n');
+      <idyl-code-block><script type="text/plain">
+float raw = random.create_float(7, 8);
+console.writeln("Сырое случайное число: ", raw);
 
 float res = math.floor(raw, 3); // округляем
-console.write("Округлено до 3 знаков: ", res, '\n');</idyl-code-block>
+console.writeln("Округлено до 3 знаков: ", res);
+</script></idyl-code-block>
 
       <idyl-output-block>Сырое случайное число: 7.938472635192847
 Округлено до 3 знаков: 7.938</idyl-output-block>
@@ -133,9 +145,11 @@ console.write("Округлено до 3 знаков: ", res, '\n');</idyl-code
       <h2>Случайный символ из строки</h2>
       <p>Функция <code>random.choose_from()</code> выбирает случайный символ из строки:</p>
 
-      <idyl-code-block>string S = "ABCDEF";
+      <idyl-code-block><script type="text/plain">
+string S = "ABCDEF";
 char some = random.choose_from(S);
-console.write("Случайный символ из S: ", some, '\n');</idyl-code-block>
+console.writeln("Случайный символ из S: ", some);
+</script></idyl-code-block>
 
       <idyl-output-block>Случайный символ из S: D</idyl-output-block>
 
@@ -148,25 +162,27 @@ console.write("Случайный символ из S: ", some, '\n');</idyl-cod
       <p>Компьютер не умеет генерировать по-настоящему случайные числа — только <strong>псевдослучайные</strong>. Это такие числа, которые выглядят случайными, но на самом деле полностью определяются начальным значением, называемым <strong>сидом</strong> (англ. <em>seed</em>).</p>
       <p>Если задать один и тот же сид, последовательность будет повторяться:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 use random;
 
 main() {
     random.set_seed(0);
-    console.write(random.create_int(0, 99), '\n');
-    console.write(random.create_int(0, 99), '\n');
-    console.write(random.create_int(0, 99), "\n\n");
+    console.writeln(random.create_int(0, 99));
+    console.writeln(random.create_int(0, 99));
+    console.writeln(random.create_int(0, 99), "\n");
 
     random.set_seed(0);
-    console.write(random.create_int(0, 99), '\n');
-    console.write(random.create_int(0, 99), '\n');
-    console.write(random.create_int(0, 99), "\n\n");
+    console.writeln(random.create_int(0, 99));
+    console.writeln(random.create_int(0, 99));
+    console.writeln(random.create_int(0, 99), "\n");
 
     random.set_seed(0);
-    console.write(random.create_int(0, 99), '\n');
-    console.write(random.create_int(0, 99), '\n');
-    console.write(random.create_int(0, 99), '\n');
-}</idyl-code-block>
+    console.writeln(random.create_int(0, 99));
+    console.writeln(random.create_int(0, 99));
+    console.writeln(random.create_int(0, 99));
+}
+</script></idyl-code-block>
 
       <idyl-output-block>83
 86
@@ -189,20 +205,22 @@ main() {
       <h2>Смена сида — смена последовательности</h2>
       <p>В Idyllium сид генератора псевдослучайных чисел задаётся функцией <code>random.set_seed()</code>:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 use random;
 
 main() {
     random.set_seed(0);
-    console.write(random.create_int(0, 99), '\n');
-    console.write(random.create_int(0, 99), '\n');
-    console.write(random.create_int(0, 99), "\n\n");
+    console.writeln(random.create_int(0, 99));
+    console.writeln(random.create_int(0, 99));
+    console.writeln(random.create_int(0, 99), "\n");
 
     random.set_seed(400); // сменили сид
-    console.write(random.create_int(0, 99), '\n');
-    console.write(random.create_int(0, 99), '\n');
-    console.write(random.create_int(0, 99), '\n');
-}</idyl-code-block>
+    console.writeln(random.create_int(0, 99));
+    console.writeln(random.create_int(0, 99));
+    console.writeln(random.create_int(0, 99));
+}
+</script></idyl-code-block>
 
       <idyl-output-block>83
 86

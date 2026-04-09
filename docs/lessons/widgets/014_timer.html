@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 14: Объект Timer — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <link rel="stylesheet" href="gui.css">
+  <script src="../components.js" defer></script>
+  <style>
+    .interactive-demo {
+      background: rgba(137, 180, 250, 0.05);
+      border-radius: 12px;
+      padding: 1em;
+      margin: 1.5em 0;
+    }
+    .interactive-demo .coord-note {
+      margin-top: 1em;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Графические виджеты</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Виджеты • Урок 14</div>
+      <h1>Объект Timer</h1>
+      <p class="docs-subtitle">Выполнение кода через равные промежутки времени</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Что такое Timer?</h2>
+      <p><code>gui.Timer</code> — это объект, который позволяет вызывать функцию автоматически через равные промежутки времени, без участия пользователя.</p>
+      <p>Где он применяется:</p>
+      <ul>
+        <li>⏱️ Секундомеры и таймеры обратного отсчёта</li>
+        <li>🎮 Анимация и движение объектов в игре</li>
+        <li>📊 Автообновление данных (курсы валют, погода)</li>
+        <li>⏰ Напоминания и отложенные действия</li>
+      </ul>
+
+      <p>Простейший пример: таймер каждую секунду выводит случайное число на лейбл:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+use random;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 150;
+    win.title = "Случайные числа";
+
+    gui.Label label;
+    label.x = 50;
+    label.y = 50;
+    label.font_size = 24;
+    label.text = "0";
+
+    gui.Timer timer;
+    timer.interval = 1000;  // 1 секунда
+
+    timer.on_tick = void function() {
+        int r = random.create_int(1, 100);
+        label.text = to_string(r);
+    };
+
+    timer.start();
+
+    win.add_child(label);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 120px; position: relative;">
+            <div style="position: absolute; left: 50px; top: 50px; font-size: 24px; color: #cdd6f4;" id="randomNumberLabel">0</div>
+          </div>
+        </div>
+        <div class="coord-note">
+          ⏰ Каждую секунду число на лейбле меняется. Таймер работает без кнопок.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Свойства таймера</h2>
+      <p>У таймера есть два основных свойства:</p>
+      <ul>
+        <li><code>interval</code> — интервал срабатывания в <strong>миллисекундах</strong> (1 секунда = 1000 мс)</li>
+        <li><code>running</code> — запущен ли таймер в данный момент (только для чтения)</li>
+      </ul>
+
+      <idyl-code-block><script type="text/plain">
+gui.Timer timer;
+timer.interval = 500;  // 0.5 секунды
+timer.interval = 2000; // 2 секунды
+timer.interval = 100;  // 0.1 секунды
+</script></idyl-code-block>
+
+      <p>Интервал можно менять в любой момент, даже когда таймер уже запущен.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Событие <code>on_tick</code></h2>
+      <p>Главное событие таймера — <code>on_tick</code>. Функция, присвоенная этому свойству, будет вызываться каждый раз, когда проходит указанный интервал:</p>
+
+      <idyl-code-block><script type="text/plain">
+timer.on_tick = void function() {
+    // код, который выполняется каждые N миллисекунд
+};
+</script></idyl-code-block>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Методы таймера</h2>
+      <p>Таймер имеет три метода для управления:</p>
+      <ul>
+        <li><code>start()</code> — запускает таймер (если он ещё не запущен)</li>
+        <li><code>stop()</code> — останавливает таймер</li>
+        <li><code>restart()</code> — останавливает и запускает заново (полезно при изменении интервала)</li>
+      </ul>
+
+      <p>Пример с кнопками запуска и остановки — секундомер:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 200;
+    win.title = "Секундомер";
+    
+    gui.Label time_label;
+    time_label.text = "0";
+    time_label.font_size = 48;
+    time_label.x = 100;
+    time_label.y = 30;
+    
+    gui.Button start_btn;
+    start_btn.text = "Старт";
+    start_btn.x = 30;
+    start_btn.y = 120;
+    
+    gui.Button stop_btn;
+    stop_btn.text = "Стоп";
+    stop_btn.x = 160;
+    stop_btn.y = 120;
+    
+    gui.Timer timer;
+    timer.interval = 1000;
+    
+    int seconds = 0;
+    
+    timer.on_tick = void function() {
+        seconds += 1;
+        time_label.text = to_string(seconds);
+    };
+    
+    start_btn.on_click = void function(gui.Button sender) {
+        timer.start();
+    };
+    
+    stop_btn.on_click = void function(gui.Button sender) {
+        timer.stop();
+    };
+    
+    win.add_child(time_label);
+    win.add_child(start_btn);
+    win.add_child(stop_btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 180px; position: relative;">
+            <div style="position: absolute; left: 100px; top: 30px; font-size: 48px; color: #cdd6f4;" id="stopwatchLabel">0</div>
+            <button class="idyl-button" style="position: absolute; left: 30px; top: 120px;" id="startTimerBtn">Старт</button>
+            <button class="idyl-button" style="position: absolute; left: 160px; top: 120px;" id="stopTimerBtn">Стоп</button>
+          </div>
+        </div>
+        <div class="coord-note">
+          ⏱️ Нажмите «Старт» — счётчик начнёт увеличиваться каждую секунду. «Стоп» — остановит.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Однократное срабатывание с задержкой</h2>
+      <p>Таймер можно использовать для выполнения действия один раз через заданную задержку — для этого нужно остановить его после первого срабатывания:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 150;
+    win.title = "Отложенное действие";
+
+    gui.Button btn;
+    btn.text = "Нажми меня";
+    btn.x = 50;
+    btn.y = 50;
+    btn.width = 200;
+
+    gui.Timer timer;
+    timer.interval = 3000;  // 3 секунды
+
+    timer.on_tick = void function() {
+        btn.visible = false;
+        timer.stop();  // останавливаем, чтобы не срабатывало снова
+    };
+
+    btn.on_click = void function(gui.Button sender) {
+        timer.start();
+    };
+
+    win.add_child(btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 120px; position: relative;">
+            <button class="idyl-button" style="position: absolute; left: 50px; top: 50px; width: 200px;" id="delayedHideBtn">Нажми меня</button>
+          </div>
+        </div>
+        <div class="coord-note">
+          ⏰ Нажмите на кнопку — через 3 секунды она исчезнет. Таймер сработает только один раз.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Важное замечание</h2>
+      <p><strong>Timer не является виджетом</strong>. Он не отображается на экране и <strong>не требует вызова <code>win.add_child()</code></strong>. Его достаточно просто создать и настроить:</p>
+
+      <idyl-code-block><script type="text/plain">
+gui.Timer timer;  // не нужен add_child()
+timer.interval = 1000;
+timer.on_tick = void function() { ... };
+timer.start();
+</script></idyl-code-block>
+
+      <p>Таймер живёт независимо от окон и продолжает работать, даже если все окна закрыты (пока работает программа).</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="013_sender.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 13: Отправители (sender)</strong>
+      </a>
+      <a class="docs-nav-btn next" href="015_modal.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 15: Модальные окна</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+<script>
+  // Интерактив для демо-примеров
+  document.addEventListener('DOMContentLoaded', () => {
+    // Пример 1: случайные числа
+    let randomInterval = null;
+    const randomLabel = document.getElementById('randomNumberLabel');
+    if (randomLabel) {
+      randomInterval = window.setInterval(() => {
+        const r = Math.floor(Math.random() * 100) + 1;
+        randomLabel.textContent = r.toString();
+      }, 1000);
+    }
+
+    // Пример 4: секундомер
+    let stopwatchInterval = null;
+    let seconds = 0;
+    const stopwatchLabel = document.getElementById('stopwatchLabel');
+    const startTimerBtn = document.getElementById('startTimerBtn');
+    const stopTimerBtn = document.getElementById('stopTimerBtn');
+    
+    if (stopwatchLabel && startTimerBtn && stopTimerBtn) {
+      startTimerBtn.addEventListener('click', () => {
+        if (stopwatchInterval) return;
+        stopwatchInterval = window.setInterval(() => {
+          seconds++;
+          stopwatchLabel.textContent = seconds.toString();
+        }, 1000);
+      });
+      stopTimerBtn.addEventListener('click', () => {
+        if (stopwatchInterval) {
+          window.clearInterval(stopwatchInterval);
+          stopwatchInterval = null;
+        }
+      });
+    }
+
+    // Пример 5: отложенное скрытие кнопки
+    const delayedHideBtn = document.getElementById('delayedHideBtn');
+    if (delayedHideBtn) {
+      delayedHideBtn.addEventListener('click', () => {
+        setTimeout(() => {
+          delayedHideBtn.style.display = 'none';
+        }, 3000);
+      });
+    }
+
+    // Очистка интервалов при выгрузке страницы (для демо)
+    window.addEventListener('beforeunload', () => {
+      if (randomInterval) window.clearInterval(randomInterval);
+      if (stopwatchInterval) window.clearInterval(stopwatchInterval);
+    });
+  });
+</script>
+</body>
+</html>

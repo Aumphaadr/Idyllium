@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 8: Виджет RadioButton — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <link rel="stylesheet" href="gui.css">
+  <script src="../components.js" defer></script>
+  <style>
+    .interactive-demo {
+      background: rgba(137, 180, 250, 0.05);
+      border-radius: 12px;
+      padding: 1em;
+      margin: 1.5em 0;
+    }
+    .interactive-demo .coord-note {
+      margin-top: 1em;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Графические виджеты</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Виджеты • Урок 8</div>
+      <h1>Виджет RadioButton</h1>
+      <p class="docs-subtitle">Переключатель для выбора одного варианта из группы</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Что такое RadioButton?</h2>
+      <p><code>gui.RadioButton</code> — это переключатель, который может быть либо выбран, либо нет. Главное отличие от CheckBox: радио-кнопки объединяются в группы, где <strong>только одна кнопка может быть выбрана в каждый момент времени</strong>.</p>
+      <p>Где он встречается:</p>
+      <ul>
+        <li>🎮 Выбор уровня сложности в игре (Лёгкий / Средний / Сложный)</li>
+        <li>💳 Выбор способа оплаты (Карта / Наличные / Перевод)</li>
+        <li>🌍 Выбор языка интерфейса</li>
+        <li>⚙️ Настройки — «Вкл» / «Выкл» (когда вариантов 2–5)</li>
+      </ul>
+
+      <p>Вот пример трёх радио-кнопок:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 250;
+    win.height = 150;
+    win.title = "RadioButton";
+
+    gui.RadioButton rb1;
+    rb1.x = 20;
+    rb1.y = 20;
+    rb1.text = "Вариант 1";
+
+    gui.RadioButton rb2;
+    rb2.x = 20;
+    rb2.y = 50;
+    rb2.text = "Вариант 2";
+
+    gui.RadioButton rb3;
+    rb3.x = 20;
+    rb3.y = 80;
+    rb3.text = "Вариант 3";
+
+    win.add_child(rb1);
+    win.add_child(rb2);
+    win.add_child(rb3);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 130px; position: relative;">
+            <label class="idyl-radio-wrapper" style="position: absolute; left: 20px; top: 20px;">
+              <input type="radio" name="demoGroup" class="idyl-radio">
+              <span class="idyl-radio-label">Вариант 1</span>
+            </label>
+            <label class="idyl-radio-wrapper" style="position: absolute; left: 20px; top: 50px;">
+              <input type="radio" name="demoGroup" class="idyl-radio">
+              <span class="idyl-radio-label">Вариант 2</span>
+            </label>
+            <label class="idyl-radio-wrapper" style="position: absolute; left: 20px; top: 80px;">
+              <input type="radio" name="demoGroup" class="idyl-radio">
+              <span class="idyl-radio-label">Вариант 3</span>
+            </label>
+          </div>
+        </div>
+        <div class="coord-note">
+          🔘 Выберите один из вариантов — остальные сбросятся автоматически.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Свойства <code>text</code> и <code>is_selected</code></h2>
+      <p>RadioButton имеет два основных свойства:</p>
+      <ul>
+        <li><code>text</code> — текст рядом с переключателем (<code>string</code>)</li>
+        <li><code>is_selected</code> — выбран ли переключатель (<code>bool</code>)</li>
+      </ul>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 180;
+    win.title = "Выбор сложности";
+
+    gui.RadioButton easy;
+    easy.x = 20;
+    easy.y = 20;
+    easy.text = "Лёгкий";
+    easy.is_selected = true;
+
+    gui.RadioButton medium;
+    medium.x = 20;
+    medium.y = 50;
+    medium.text = "Средний";
+
+    gui.RadioButton hard;
+    hard.x = 20;
+    hard.y = 80;
+    hard.text = "Сложный";
+
+    gui.Button btn;
+    btn.text = "Подтвердить";
+    btn.x = 20;
+    btn.y = 120;
+    btn.width = 150;
+
+    gui.Label label;
+    label.x = 20;
+    label.y = 155;
+    label.text = "";
+
+    btn.on_click = void function() {
+        if (easy.is_selected) label.text = "Выбрано: Лёгкий";
+        if (medium.is_selected) label.text = "Выбрано: Средний";
+        if (hard.is_selected) label.text = "Выбрано: Сложный";
+    };
+
+    win.add_child(easy);
+    win.add_child(medium);
+    win.add_child(hard);
+    win.add_child(btn);
+    win.add_child(label);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 180px; position: relative;">
+            <label class="idyl-radio-wrapper" style="position: absolute; left: 20px; top: 20px;">
+              <input type="radio" name="difficultyGroup" class="idyl-radio" id="easyRb" checked>
+              <span class="idyl-radio-label">Лёгкий</span>
+            </label>
+            <label class="idyl-radio-wrapper" style="position: absolute; left: 20px; top: 50px;">
+              <input type="radio" name="difficultyGroup" class="idyl-radio" id="mediumRb">
+              <span class="idyl-radio-label">Средний</span>
+            </label>
+            <label class="idyl-radio-wrapper" style="position: absolute; left: 20px; top: 80px;">
+              <input type="radio" name="difficultyGroup" class="idyl-radio" id="hardRb">
+              <span class="idyl-radio-label">Сложный</span>
+            </label>
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 120px; width: 150px;" id="confirmBtn">Подтвердить</button>
+            <div style="position: absolute; left: 20px; top: 155px; color: #cdd6f4;" id="difficultyLabel"></div>
+          </div>
+        </div>
+        <div class="coord-note">
+          🎮 Выберите уровень сложности, нажмите кнопку — программа покажет ваш выбор.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Группировка: свойство <code>group</code></h2>
+      <p>По умолчанию все RadioButton в одном окне (или одном контейнере) считаются одной группой. Но с помощью свойства <code>group</code> можно создавать независимые группы переключателей:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 200;
+    win.title = "Группировка";
+
+    gui.RadioButton rb1;
+    rb1.x = 20;
+    rb1.y = 20;
+    rb1.text = "Группа A - 1";
+    rb1.group = "A";
+    rb1.is_selected = true;
+
+    gui.RadioButton rb2;
+    rb2.x = 20;
+    rb2.y = 50;
+    rb2.text = "Группа A - 2";
+    rb2.group = "A";
+
+    gui.RadioButton rb3;
+    rb3.x = 20;
+    rb3.y = 100;
+    rb3.text = "Группа B - 1";
+    rb3.group = "B";
+    rb3.is_selected = true;
+
+    gui.RadioButton rb4;
+    rb4.x = 20;
+    rb4.y = 130;
+    rb4.text = "Группа B - 2";
+    rb4.group = "B";
+
+    win.add_child(rb1);
+    win.add_child(rb2);
+    win.add_child(rb3);
+    win.add_child(rb4);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 180px; position: relative;">
+            <label class="idyl-radio-wrapper" style="position: absolute; left: 20px; top: 20px;">
+              <input type="radio" name="groupA" class="idyl-radio" id="groupA1" checked>
+              <span class="idyl-radio-label">Группа A - 1</span>
+            </label>
+            <label class="idyl-radio-wrapper" style="position: absolute; left: 20px; top: 50px;">
+              <input type="radio" name="groupA" class="idyl-radio" id="groupA2">
+              <span class="idyl-radio-label">Группа A - 2</span>
+            </label>
+            <label class="idyl-radio-wrapper" style="position: absolute; left: 20px; top: 100px;">
+              <input type="radio" name="groupB" class="idyl-radio" id="groupB1" checked>
+              <span class="idyl-radio-label">Группа B - 1</span>
+            </label>
+            <label class="idyl-radio-wrapper" style="position: absolute; left: 20px; top: 130px;">
+              <input type="radio" name="groupB" class="idyl-radio" id="groupB2">
+              <span class="idyl-radio-label">Группа B - 2</span>
+            </label>
+          </div>
+        </div>
+        <div class="coord-note">
+          🔘 Две независимые группы: выбор в группе A не влияет на группу B.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Событие <code>on_change</code></h2>
+      <p>Событие <code>on_change</code> срабатывает каждый раз, когда пользователь меняет состояние переключателя:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 200;
+    win.title = "Выбор цвета";
+
+    gui.Label title;
+    title.text = "Любимый цвет:";
+    title.x = 20;
+    title.y = 15;
+
+    gui.RadioButton rb1;
+    rb1.x = 20;
+    rb1.y = 45;
+    rb1.text = "Красный";
+    rb1.group = "colors";
+    rb1.is_selected = true;
+
+    gui.RadioButton rb2;
+    rb2.x = 20;
+    rb2.y = 75;
+    rb2.text = "Зелёный";
+    rb2.group = "colors";
+
+    gui.RadioButton rb3;
+    rb3.x = 20;
+    rb3.y = 105;
+    rb3.text = "Синий";
+    rb3.group = "colors";
+
+    gui.Label result;
+    result.x = 20;
+    result.y = 150;
+    result.text = "Выбрано: Красный";
+
+    rb1.on_change = void function() {
+        result.text = "Выбрано: Красный";
+    };
+    rb2.on_change = void function() {
+        result.text = "Выбрано: Зелёный";
+    };
+    rb3.on_change = void function() {
+        result.text = "Выбрано: Синий";
+    };
+
+    win.add_child(title);
+    win.add_child(rb1);
+    win.add_child(rb2);
+    win.add_child(rb3);
+    win.add_child(result);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 200px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 15px; color: #cdd6f4;">Любимый цвет:</div>
+            <label class="idyl-radio-wrapper" style="position: absolute; left: 20px; top: 45px;">
+              <input type="radio" name="colorGroup" class="idyl-radio" id="redRb" checked>
+              <span class="idyl-radio-label">Красный</span>
+            </label>
+            <label class="idyl-radio-wrapper" style="position: absolute; left: 20px; top: 75px;">
+              <input type="radio" name="colorGroup" class="idyl-radio" id="greenRb">
+              <span class="idyl-radio-label">Зелёный</span>
+            </label>
+            <label class="idyl-radio-wrapper" style="position: absolute; left: 20px; top: 105px;">
+              <input type="radio" name="colorGroup" class="idyl-radio" id="blueRb">
+              <span class="idyl-radio-label">Синий</span>
+            </label>
+            <div style="position: absolute; left: 20px; top: 150px; color: #cdd6f4;" id="colorResult">Выбрано: Красный</div>
+          </div>
+        </div>
+        <div class="coord-note">
+          🔄 Переключайтесь между цветами — результат обновляется мгновенно через <code>on_change</code>.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>RadioButton vs CheckBox</h2>
+      <ul>
+        <li><strong>RadioButton</strong> — выбирается <strong>один</strong> вариант из группы. Используется для взаимоисключающих опций.</li>
+        <li><strong>CheckBox</strong> — каждый флажок независим. Используется для опций, которые можно включать и выключать по отдельности.</li>
+      </ul>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="007_checkbox.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 7: Виджет CheckBox</strong>
+      </a>
+      <a class="docs-nav-btn next" href="009_frame.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 9: Виджет Frame</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+<script>
+  // Интерактив для демо-примеров
+  document.addEventListener('DOMContentLoaded', () => {
+    // Пример 2: выбор сложности
+    const easyRb = document.getElementById('easyRb');
+    const mediumRb = document.getElementById('mediumRb');
+    const hardRb = document.getElementById('hardRb');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const difficultyLabel = document.getElementById('difficultyLabel');
+    if (easyRb && mediumRb && hardRb && confirmBtn && difficultyLabel) {
+      confirmBtn.addEventListener('click', () => {
+        if (easyRb.checked) difficultyLabel.textContent = 'Выбрано: Лёгкий';
+        else if (mediumRb.checked) difficultyLabel.textContent = 'Выбрано: Средний';
+        else if (hardRb.checked) difficultyLabel.textContent = 'Выбрано: Сложный';
+        else difficultyLabel.textContent = 'Ничего не выбрано';
+      });
+    }
+
+    // Пример 4: выбор цвета
+    const redRb = document.getElementById('redRb');
+    const greenRb = document.getElementById('greenRb');
+    const blueRb = document.getElementById('blueRb');
+    const colorResult = document.getElementById('colorResult');
+    if (redRb && greenRb && blueRb && colorResult) {
+      redRb.addEventListener('change', () => {
+        if (redRb.checked) colorResult.textContent = 'Выбрано: Красный';
+      });
+      greenRb.addEventListener('change', () => {
+        if (greenRb.checked) colorResult.textContent = 'Выбрано: Зелёный';
+      });
+      blueRb.addEventListener('change', () => {
+        if (blueRb.checked) colorResult.textContent = 'Выбрано: Синий';
+      });
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 13: Отправители (sender) — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <link rel="stylesheet" href="gui.css">
+  <script src="../components.js" defer></script>
+  <style>
+    .interactive-demo {
+      background: rgba(137, 180, 250, 0.05);
+      border-radius: 12px;
+      padding: 1em;
+      margin: 1.5em 0;
+    }
+    .interactive-demo .coord-note {
+      margin-top: 1em;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Графические виджеты</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Виджеты • Урок 13</div>
+      <h1>Отправители (sender)</h1>
+      <p class="docs-subtitle">Как узнать, какой виджет вызвал обработчик</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Проблема: одинаковые обработчики</h2>
+      <p>Представьте, что у нас есть 5 кнопок, и мы хотим, чтобы каждая из них прятала <strong>все</strong> кнопки. Это легко сделать с помощью массива и одного обработчика:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 250;
+    win.title = "Скрыть все";
+
+    array<gui.Button, 5> btns;
+
+    for (int i = 0; i < 5; i = i + 1) {
+        btns[i].x = 20;
+        btns[i].y = 20 + i * 35;
+        btns[i].width = 120;
+        btns[i].text = "Кнопка " + to_string(i);
+        btns[i].on_click = void function() {
+            for (int j = 0; j < 5; j = j + 1) {
+                btns[j].visible = false;
+            }
+        };
+        win.add_child(btns[i]);
+    }
+
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 210px; position: relative;" id="hideAllDemo">
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 20px; width: 120px;">Кнопка 0</button>
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 55px; width: 120px;">Кнопка 1</button>
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 90px; width: 120px;">Кнопка 2</button>
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 125px; width: 120px;">Кнопка 3</button>
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 160px; width: 120px;">Кнопка 4</button>
+          </div>
+        </div>
+        <div class="coord-note">
+          🔘 Нажмите на любую кнопку — скроются все пять. Обработчик один, но он не знает, какая кнопка его вызвала.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Решение: параметр <code>sender</code></h2>
+      <p>А что, если мы хотим, чтобы кнопка прятала <strong>только себя</strong>? Или чтобы обработчик знал, какая именно кнопка была нажата?</p>
+      <p>Для этого в обработчик можно передать параметр <code>sender</code> — ссылку на виджет, который вызвал событие:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 250;
+    win.title = "Кто нажал?";
+
+    array<gui.Button, 5> btns;
+    gui.Label result;
+    result.x = 20;
+    result.y = 200;
+    result.text = "Нажми на любую кнопку";
+
+    for (int i = 0; i < 5; i = i + 1) {
+        btns[i].x = 20;
+        btns[i].y = 20 + i * 30;
+        btns[i].width = 150;
+        btns[i].text = "Кнопка " + to_string(i);
+        
+        // Обработчик с параметром sender
+        btns[i].on_click = void function(gui.Button sender) {
+            result.text = "Нажата кнопка " + sender.text;
+        };
+        
+        win.add_child(btns[i]);
+    }
+
+    win.add_child(result);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 230px; position: relative;">
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 20px; width: 150px;" id="senderBtn0">Кнопка 0</button>
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 50px; width: 150px;" id="senderBtn1">Кнопка 1</button>
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 80px; width: 150px;" id="senderBtn2">Кнопка 2</button>
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 110px; width: 150px;" id="senderBtn3">Кнопка 3</button>
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 140px; width: 150px;" id="senderBtn4">Кнопка 4</button>
+            <div style="position: absolute; left: 20px; top: 190px; color: #cdd6f4;" id="senderResult">Нажми на любую кнопку</div>
+          </div>
+        </div>
+        <div class="coord-note">
+          🎯 Теперь обработчик знает, какая кнопка его вызвала, и выводит её текст.
+        </div>
+      </div>
+
+      <p>Параметр <code>sender</code> имеет тип того виджета, который вызывает событие. В данном случае — <code>gui.Button</code>. Через <code>sender</code> можно читать и изменять свойства вызвавшего виджета.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Sender для других виджетов</h2>
+      <p>Параметр <code>sender</code> доступен не только для кнопок, но и для любых виджетов, поддерживающих события: <code>LineEdit</code>, <code>SpinBox</code>, <code>Slider</code>, <code>CheckBox</code>, <code>ComboBox</code> и других.</p>
+
+      <p>Пример: три поля ввода <code>LineEdit</code> с одинаковым обработчиком. При изменении текста в любом поле — лейбл показывает, какое именно поле было изменено:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 220;
+    win.title = "Sender в LineEdit";
+
+    array<gui.LineEdit, 3> inputs;
+    gui.Label result;
+    result.x = 20;
+    result.y = 160;
+    result.text = "Измени текст в любом поле";
+
+    // Создаём три поля ввода
+    for (int i = 0; i < 3; i = i + 1) {
+        inputs[i].x = 20;
+        inputs[i].y = 20 + i * 40;
+        inputs[i].width = 250;
+        inputs[i].placeholder = "Поле " + to_string(i);
+
+        // Общий обработчик с sender
+        inputs[i].on_change = void function(gui.LineEdit sender) {
+            result.text = "Изменено поле: " + sender.placeholder;
+        };
+
+        win.add_child(inputs[i]);
+    }
+
+    win.add_child(result);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 210px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px;">
+              <input type="text" class="idyl-lineedit" style="width: 250px;" placeholder="Поле 0" id="senderInput0">
+            </div>
+            <div style="position: absolute; left: 20px; top: 60px;">
+              <input type="text" class="idyl-lineedit" style="width: 250px;" placeholder="Поле 1" id="senderInput1">
+            </div>
+            <div style="position: absolute; left: 20px; top: 100px;">
+              <input type="text" class="idyl-lineedit" style="width: 250px;" placeholder="Поле 2" id="senderInput2">
+            </div>
+            <div style="position: absolute; left: 20px; top: 160px; color: #cdd6f4;" id="senderLineEditResult">Измени текст в любом поле</div>
+          </div>
+        </div>
+        <div class="coord-note">
+          ✏️ Начните печатать в любом поле — обработчик определит, какое именно поле вызвало событие, и покажет это.
+        </div>
+      </div>
+
+      <p>Тип параметра <code>sender</code> должен соответствовать типу виджета, для которого пишется обработчик:</p>
+      <ul>
+        <li>Для кнопки: <code>void function(gui.Button sender)</code></li>
+        <li>Для поля ввода: <code>void function(gui.LineEdit sender)</code></li>
+        <li>Для слайдера: <code>void function(gui.Slider sender)</code></li>
+        <li>Для чекбокса: <code>void function(gui.CheckBox sender)</code></li>
+      </ul>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="012_arrays.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 12: Массивы виджетов</strong>
+      </a>
+      <a class="docs-nav-btn next" href="014_timer.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 14: Объект Timer</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+<script>
+  // Интерактив для демо-примеров
+  document.addEventListener('DOMContentLoaded', () => {
+    // Пример 1: скрытие всех кнопок
+    const hideAllDemo = document.getElementById('hideAllDemo');
+    if (hideAllDemo) {
+      const btns = hideAllDemo.querySelectorAll('.idyl-button');
+      btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          btns.forEach(b => b.style.display = 'none');
+        });
+      });
+    }
+
+    // Пример 2: sender для кнопок
+    const senderResult = document.getElementById('senderResult');
+    for (let i = 0; i <= 4; i++) {
+      const btn = document.getElementById('senderBtn' + i);
+      if (btn && senderResult) {
+        btn.addEventListener('click', () => {
+          senderResult.textContent = 'Нажата кнопка ' + btn.textContent;
+        });
+      }
+    }
+
+    // Пример 3: sender для LineEdit
+    const senderLineEditResult = document.getElementById('senderLineEditResult');
+    for (let i = 0; i <= 2; i++) {
+      const input = document.getElementById('senderInput' + i);
+      if (input && senderLineEditResult) {
+        input.addEventListener('input', () => {
+          senderLineEditResult.textContent = 'Изменено поле: ' + input.placeholder;
+        });
+      }
+    }
+  });
+</script>
+</body>
+</html>

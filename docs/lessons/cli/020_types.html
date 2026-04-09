@@ -83,7 +83,8 @@
       <p>Например, тип <code>types.uint8</code> занимает 8 бит и может хранить значения от <code>0</code> до <code>255</code>.</p>
       <p>Но что будет, если присвоить более крупное значение?</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 use types;
 
 main() {
@@ -93,7 +94,8 @@ main() {
     N = N + 1; // 255
     N = N + 1; // 0 ← переполнение!
     N = N + 1; // 1
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Такое поведение — не баг Idyllium, а демонстрация того, как работают целочисленные типы в C++ и других системных языках.</p>
     </div>
@@ -132,14 +134,16 @@ main() {
 
       <p>Если значение не помещается в диапазон — оно «оборачивается» по правилам модульной арифметики:</p>
 
-      <idyl-code-block>types.int16 A = 30000; // 30000
+      <idyl-code-block><script type="text/plain">
+types.int16 A = 30000; // 30000
 types.int16 B = 40000; // -25536 (40000 - 65536)
 
 types.int32 C = 40000; // 40000
 types.int32 D = 3000000000; // -1294967296
 
 types.uint16 E = 50000; // 50000
-types.uint16 F = -1000; // 64536 (65536 - 1000)</idyl-code-block>
+types.uint16 F = -1000; // 64536 (65536 - 1000)
+</script></idyl-code-block>
 
       <p>Такое поведение идентично тому, что происходит в C++ и других низкоуровневых языках.</p>
     </div>
@@ -149,23 +153,27 @@ types.uint16 F = -1000; // 64536 (65536 - 1000)</idyl-code-block>
       <h2>Двоичное представление: метод <code>.to_bin()</code></h2>
       <p>Любой тип из <code>types</code> умеет превращаться в строку из нулей и единиц:</p>
 
-      <idyl-code-block>types.uint8 A = 75;
+      <idyl-code-block><script type="text/plain">
+types.uint8 A = 75;
 string S = A.to_bin();
-console.write(S, '\n');</idyl-code-block>
+console.writeln(S);
+</script></idyl-code-block>
 
       <idyl-output-block>01001011</idyl-output-block>
 
       <p>Чтобы понять, как десятичные числа превращаются в двоичные, взгляните на результат работы программы:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 use types;
 
 main() {
     for (types.uint8 N = 0; N < 10; N = N + 1) {
         string S = N.to_bin();
-        console.write("Десятичное: ", N, " = двоичное ", S, '\n');
+        console.writeln("Десятичное: ", N, " = двоичное ", S);
     }
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <idyl-output-block>Десятичное: 0 = двоичное 00000000
 Десятичное: 1 = двоичное 00000001
@@ -187,10 +195,12 @@ main() {
       <p>Знаковый — делит пополам: половина для положительных, половина для отрицательных.</p>
       <p>Поэтому число <code>-35</code> в <code>int8</code> и число <code>221</code> в <code>uint8</code> имеют одинаковое двоичное представление:</p>
 
-      <idyl-code-block>types.int8 x = -35;
+      <idyl-code-block><script type="text/plain">
+types.int8 x = -35;
 types.uint8 y = 221;
-console.write(x.to_bin(), '\n'); // 11011101
-console.write(y.to_bin(), '\n'); // 11011101</idyl-code-block>
+console.writeln(x.to_bin()); // 11011101
+console.writeln(y.to_bin()); // 11011101
+</script></idyl-code-block>
 
       <idyl-output-block>11011101
 11011101</idyl-output-block>
@@ -198,15 +208,17 @@ console.write(y.to_bin(), '\n'); // 11011101</idyl-code-block>
 
     <!-- Section 6 -->
     <div class="docs-section">
-      <h2>Создание из двоичной строки: <code>types.from_bin&lt;T&gt;(s)</code></h2>
+      <h2>Создание из двоичной строки: <code>types.from_bin(s, type)</code></h2>
       <p>Можно восстановить число из битовой строки — и результат будет зависеть от указанного типа:</p>
 
-      <idyl-code-block>string B = "10100011";
-types.uint8 k = types.from_bin<uint8>(B);
-types.int8 p = types.from_bin<int8>(B);
+      <idyl-code-block><script type="text/plain">
+string B = "10100011";
+types.uint8 k = types.from_bin(B, "uint8");
+types.int8 p = types.from_bin(B, "int8");
 
-console.write(k, '\n'); // 163
-console.write(p, '\n'); // -93</idyl-code-block>
+console.writeln(k); // 163
+console.writeln(p); // -93
+</script></idyl-code-block>
 
       <idyl-output-block>163
 -93</idyl-output-block>
@@ -219,9 +231,11 @@ console.write(p, '\n'); // -93</idyl-code-block>
       <h2>Шестнадцатеричное представление: метод <code>.to_hex()</code></h2>
       <p>Кроме двоичного, любой целочисленный тип из <code>types</code> может быть представлен в шестнадцатеричной системе с помощью метода <code>.to_hex()</code>:</p>
 
-      <idyl-code-block>types.uint8 A = 255;
+      <idyl-code-block><script type="text/plain">
+types.uint8 A = 255;
 string hex_str = A.to_hex();
-console.write(hex_str, '\n');</idyl-code-block>
+console.writeln(hex_str);
+</script></idyl-code-block>
 
       <idyl-output-block>ff</idyl-output-block>
 
@@ -230,15 +244,17 @@ console.write(hex_str, '\n');</idyl-code-block>
 
     <!-- Section 8 -->
     <div class="docs-section">
-      <h2>Создание из шестнадцатеричной строки: <code>types.from_hex&lt;T&gt;(s)</code></h2>
+      <h2>Создание из шестнадцатеричной строки: <code>types.from_hex(s, type)</code></h2>
       <p>Аналогично двоичному, можно восстановить число из шестнадцатеричной строки:</p>
 
-      <idyl-code-block>string hex = "A3";
-types.uint8 u = types.from_hex<uint8>(hex);
-types.int8 s = types.from_hex<int8>(hex);
+      <idyl-code-block><script type="text/plain">
+string H = "A3";
+types.uint8 u = types.from_hex(H, "uint8");
+types.int8 s = types.from_hex(H, "int8");
 
-console.write(u, '\n'); // 163
-console.write(s, '\n'); // -93</idyl-code-block>
+console.writeln(u); // 163
+console.writeln(s); // -93
+</script></idyl-code-block>
 
       <idyl-output-block>163
 -93</idyl-output-block>
@@ -257,16 +273,18 @@ console.write(s, '\n'); // -93</idyl-code-block>
       </ul>
       <p>Оба типа хранят приближённые значения — но <code>float64</code> точнее. Пример:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 use types;
 
 main() {
     console.set_precision(25);
     types.float32 A = 0.1 + 0.2;
     types.float64 B = 0.1 + 0.2;
-    console.write("0.3 в типе float32: ", A, '\n');
-    console.write("0.3 в типе float64: ", B, '\n');
-}</idyl-code-block>
+    console.writeln("0.3 в типе float32: ", A);
+    console.writeln("0.3 в типе float64: ", B);
+}
+</script></idyl-code-block>
 
       <idyl-output-block>0.3 в типе float32: 0.300000011920928955078125
 0.3 в типе float64: 0.300000000000000044408921</idyl-output-block>
@@ -285,9 +303,11 @@ main() {
       </ul>
       <p>Пример с числом <code>-12.5</code>:</p>
 
-      <idyl-code-block>types.float32 f = -12.5;
+      <idyl-code-block><script type="text/plain">
+types.float32 f = -12.5;
 string bits = f.to_bin();
-console.write(bits, '\n');</idyl-code-block>
+console.writeln(bits);
+</script></idyl-code-block>
 
       <idyl-output-block>11000001010010000000000000000000</idyl-output-block>
 

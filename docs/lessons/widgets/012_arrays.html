@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 12: Массивы виджетов — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <link rel="stylesheet" href="gui.css">
+  <script src="../components.js" defer></script>
+  <style>
+    .interactive-demo {
+      background: rgba(137, 180, 250, 0.05);
+      border-radius: 12px;
+      padding: 1em;
+      margin: 1.5em 0;
+    }
+    .interactive-demo .coord-note {
+      margin-top: 1em;
+    }
+    .widget-row {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Графические виджеты</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Виджеты • Урок 12</div>
+      <h1>Массивы виджетов</h1>
+      <p class="docs-subtitle">Как управлять группой однотипных элементов интерфейса</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Напоминание: что такое массив?</h2>
+      <p>Массив — это набор переменных одного типа, объединённых общим именем. Доступ к элементам происходит по индексу (начиная с 0).</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    array<int, 7> numbers = [10, 20, 30, 40, 50, 60, 70];
+
+    for (int i = 0; i < numbers.length(); i = i + 1) {
+        console.writeln("numbers[", i, "] = ", numbers[i]);
+    }
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>numbers[0] = 10
+numbers[1] = 20
+numbers[2] = 30
+numbers[3] = 40
+numbers[4] = 50
+numbers[5] = 60
+numbers[6] = 70</idyl-output-block>
+
+      <p>Массивы могут хранить любые типы данных: целые числа, дробные числа, строки и даже <strong>виджеты</strong>!</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Массив из лейблов</h2>
+      <p>Создадим 7 лейблов и будем управлять ими через массив. Одна кнопка — меняем текст сразу на всех лейблах:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 200;
+    win.height = 280;
+    win.title = "Массив лейблов";
+
+    array<gui.Label, 7> labels;
+
+    for (int i = 0; i < 7; i = i + 1) {
+        labels[i].x = 20;
+        labels[i].y = 20 + i * 30;
+        labels[i].text = "Лейбл " + to_string(i);
+        win.add_child(labels[i]);
+    }
+
+    gui.Button btn;
+    btn.text = "Сменить текст";
+    btn.x = 20;
+    btn.y = 230;
+    btn.width = 150;
+
+    btn.on_click = void function() {
+        for (int i = 0; i < 7; i = i + 1) {
+            labels[i].text = "Новый текст " + to_string(i);
+        }
+    };
+
+    win.add_child(btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 270px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px; color: #cdd6f4;" id="label0">Лейбл 0</div>
+            <div style="position: absolute; left: 20px; top: 50px; color: #cdd6f4;" id="label1">Лейбл 1</div>
+            <div style="position: absolute; left: 20px; top: 80px; color: #cdd6f4;" id="label2">Лейбл 2</div>
+            <div style="position: absolute; left: 20px; top: 110px; color: #cdd6f4;" id="label3">Лейбл 3</div>
+            <div style="position: absolute; left: 20px; top: 140px; color: #cdd6f4;" id="label4">Лейбл 4</div>
+            <div style="position: absolute; left: 20px; top: 170px; color: #cdd6f4;" id="label5">Лейбл 5</div>
+            <div style="position: absolute; left: 20px; top: 200px; color: #cdd6f4;" id="label6">Лейбл 6</div>
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 230px; width: 150px;" id="changeLabelsBtn">Сменить текст</button>
+          </div>
+        </div>
+        <div class="coord-note">
+          🏷️ Нажмите на кнопку — все 7 лейблов изменят свой текст одновременно.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Динамический массив полей ввода</h2>
+      <p>Используем <code>dyn_array</code> для создания массива, размер которого можно задать во время выполнения:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 250;
+    win.title = "Динамические поля";
+
+    dyn_array<gui.LineEdit> inputs;
+
+    // Создаём 5 полей ввода
+    for (int i = 0; i < 5; i = i + 1) {
+        gui.LineEdit ed;
+        ed.x = 20;
+        ed.y = 20 + i * 35;
+        ed.width = 260;
+        ed.placeholder = "Поле " + to_string(i);
+        inputs.add(ed);
+        win.add_child(ed);
+    }
+
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 210px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px;"><input type="text" class="idyl-lineedit" style="width: 260px;" placeholder="Поле 0"></div>
+            <div style="position: absolute; left: 20px; top: 55px;"><input type="text" class="idyl-lineedit" style="width: 260px;" placeholder="Поле 1"></div>
+            <div style="position: absolute; left: 20px; top: 90px;"><input type="text" class="idyl-lineedit" style="width: 260px;" placeholder="Поле 2"></div>
+            <div style="position: absolute; left: 20px; top: 125px;"><input type="text" class="idyl-lineedit" style="width: 260px;" placeholder="Поле 3"></div>
+            <div style="position: absolute; left: 20px; top: 160px;"><input type="text" class="idyl-lineedit" style="width: 260px;" placeholder="Поле 4"></div>
+          </div>
+        </div>
+        <div class="coord-note">
+          📝 Пять полей ввода, созданных через цикл и добавленных в динамический массив.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Добавление виджетов во время работы</h2>
+      <p>Динамический массив позволяет добавлять новые виджеты прямо во время выполнения программы:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 300;
+    win.title = "Добавление слайдеров";
+
+    dyn_array<gui.Slider> sliders;
+
+    gui.Button addBtn;
+    addBtn.text = "Добавить слайдер";
+    addBtn.x = 20;
+    addBtn.y = 20;
+    addBtn.width = 150;
+
+    addBtn.on_click = void function() {
+        int count = sliders.length();
+        gui.Slider s;
+        s.x = 20;
+        s.y = 70 + count * 35;
+        s.width = 310;
+        s.min = 0;
+        s.max = 100;
+        s.value = 50;
+        sliders.add(s);
+        win.add_child(s);
+    };
+
+    win.add_child(addBtn);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 280px; position: relative;">
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 20px; width: 150px;" id="addSliderBtn">Добавить слайдер</button>
+            <div id="slidersContainer"></div>
+          </div>
+        </div>
+        <div class="coord-note">
+          ➕ Нажимайте кнопку — новые слайдеры будут появляться один под другим.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Удаление виджетов из массива</h2>
+      <p>При удалении элемента из динамического массива виджет остаётся на экране, но перестаёт быть доступным через массив. Нужно также скрыть его из окна:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+use random;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 300;
+    win.title = "Удаление прогрессбаров";
+
+    dyn_array<gui.ProgressBar> bars;
+
+    // Создаём 5 прогрессбаров со случайными значениями
+    for (int i = 0; i < 5; i = i + 1) {
+        gui.ProgressBar pb;
+        pb.x = 20;
+        pb.y = 30 + i * 40;
+        pb.width = 310;
+        pb.value = random.create_int(0, 100);
+        bars.add(pb);
+        win.add_child(pb);
+    }
+
+    gui.Button removeBtn;
+    removeBtn.text = "Удалить первый";
+    removeBtn.x = 20;
+    removeBtn.y = 240;
+    removeBtn.width = 150;
+
+    removeBtn.on_click = void function() {
+        if (bars.length() > 0) {
+            bars[0].visible = false;  // удаляем с экрана
+            bars.remove_at(0);        // удаляем из массива
+        }
+    };
+
+    win.add_child(removeBtn);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 270px; position: relative;" id="progressBarsContainer">
+            <div style="position: absolute; left: 20px; top: 30px; width: 310px;" id="pb0">
+              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
+                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 73%; border-radius: 4px;"></div>
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">73%</div>
+              </div>
+            </div>
+            <div style="position: absolute; left: 20px; top: 70px; width: 310px;" id="pb1">
+              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
+                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 24%; border-radius: 4px;"></div>
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">24%</div>
+              </div>
+            </div>
+            <div style="position: absolute; left: 20px; top: 110px; width: 310px;" id="pb2">
+              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
+                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 91%; border-radius: 4px;"></div>
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">91%</div>
+              </div>
+            </div>
+            <div style="position: absolute; left: 20px; top: 150px; width: 310px;" id="pb3">
+              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
+                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 45%; border-radius: 4px;"></div>
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">45%</div>
+              </div>
+            </div>
+            <div style="position: absolute; left: 20px; top: 190px; width: 310px;" id="pb4">
+              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
+                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 67%; border-radius: 4px;"></div>
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">67%</div>
+              </div>
+            </div>
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 240px; width: 150px;" id="removeProgressBtn">Удалить первый</button>
+          </div>
+        </div>
+        <div class="coord-note">
+          🗑️ Каждое нажатие удаляет верхний прогрессбар. Остальные сдвигаются в массиве, но не меняют свои координаты на экране.
+        </div>
+      </div>
+
+      <div class="tip-box" style="margin-top: 1em;">
+        <strong>💡 Важно:</strong> При удалении виджета из массива нужно также скрыть его через <code>visible = false</code>, чтобы убрать его с экрана. Иначе он останется видимым, но перестанет быть доступным через массив.
+      </div>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="011_visibility.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 11: Видимость виджетов</strong>
+      </a>
+      <a class="docs-nav-btn next" href="013_sender.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 13: Отправители</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+<script>
+  // Интерактив для демо-примеров
+  document.addEventListener('DOMContentLoaded', () => {
+    // Пример 2: массив лейблов
+    const changeLabelsBtn = document.getElementById('changeLabelsBtn');
+    if (changeLabelsBtn) {
+      changeLabelsBtn.addEventListener('click', () => {
+        for (let i = 0; i <= 6; i++) {
+          const label = document.getElementById('label' + i);
+          if (label) label.textContent = 'Новый текст ' + i;
+        }
+      });
+    }
+
+    // Пример 4: добавление слайдеров
+    let sliderCount = 0;
+    const addSliderBtn = document.getElementById('addSliderBtn');
+    const slidersContainer = document.getElementById('slidersContainer');
+    if (addSliderBtn && slidersContainer) {
+      addSliderBtn.addEventListener('click', () => {
+        const sliderDiv = document.createElement('div');
+        sliderDiv.style.position = 'absolute';
+        sliderDiv.style.left = '20px';
+        sliderDiv.style.top = (70 + sliderCount * 35) + 'px';
+        sliderDiv.style.width = '310px';
+        sliderDiv.innerHTML = '<input type="range" class="idyl-slider" style="width: 100%;" value="50" min="0" max="100">';
+        slidersContainer.appendChild(sliderDiv);
+        sliderCount++;
+      });
+    }
+
+    // Пример 5: удаление прогрессбаров
+    let removeIndex = 0;
+    const removeProgressBtn = document.getElementById('removeProgressBtn');
+    if (removeProgressBtn) {
+      removeProgressBtn.addEventListener('click', () => {
+        const pb = document.getElementById('pb' + removeIndex);
+        if (pb) {
+          pb.style.display = 'none';
+          removeIndex++;
+        }
+      });
+    }
+  });
+</script>
+</body>
+</html>

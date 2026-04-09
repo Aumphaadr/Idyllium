@@ -326,12 +326,22 @@ export class CodeGenerator {
                     case 'void':   return 'undefined';
                 }
                 break;
-            case 'ArrayType':
-                return `$rt.IdylArray.filled(${type.size}, ${this.defaultValue(type.elementType)}, true)`;
+                
+            case 'ArrayType': {
+                if (this.needsFactory(type.elementType)) {
+                    const factory = this.defaultValueFactory(type.elementType);
+                    return `$rt.IdylArray.generate(${type.size}, ${factory}, true)`;
+                }
+                const elemDefault = this.defaultValue(type.elementType);
+                return `$rt.IdylArray.filled(${type.size}, ${elemDefault}, true)`;
+            }
+    
             case 'DynArrayType':
                 return `$rt.IdylArray.empty(false)`;
+                
             case 'ClassType':
                 return `new ${safeName(type.name)}()`;
+                
             case 'QualifiedType':
                 if (type.qualifier === 'gui' || type.qualifier === 'xanadu') {
                     return `new $rt.gui.${type.name}()`;
@@ -341,9 +351,58 @@ export class CodeGenerator {
                         return `$rt.types.${type.name}(0)`;
                     }
                 }
+                if (this.info.userModules.has(type.qualifier)) {
+                    return `new ${safeName(type.qualifier)}.${safeName(type.name)}()`;
+                }
                 return 'null';
         }
         return 'undefined';
+    }
+
+    private needsFactory(type: TypeNode): boolean {
+        switch (type.kind) {
+            case 'ClassType':
+                return true;
+            case 'QualifiedType':
+                if (type.qualifier === 'gui' || type.qualifier === 'xanadu') return true;
+                if (this.info.userModules.has(type.qualifier)) return true;
+                return false;
+            case 'ArrayType':
+            case 'DynArrayType':
+                return true;
+            default:
+                return false;
+        }
+    }
+    
+    private defaultValueFactory(type: TypeNode): string {
+        switch (type.kind) {
+            case 'ClassType':
+                return `() => new ${safeName(type.name)}()`;
+            case 'QualifiedType':
+                if (type.qualifier === 'gui' || type.qualifier === 'xanadu') {
+                    return `() => new $rt.gui.${type.name}()`;
+                }
+                if (type.qualifier === 'types') {
+                    if (FIXED_INT_TYPES.has(type.name) || FIXED_FLOAT_TYPES.has(type.name)) {
+                        return `() => $rt.types.${type.name}(0)`;
+                    }
+                }
+                if (this.info.userModules.has(type.qualifier)) {
+                    return `() => new ${safeName(type.qualifier)}.${safeName(type.name)}()`;
+                }
+                return `() => null`;
+            case 'ArrayType':
+                if (this.needsFactory(type.elementType)) {
+                    const innerFactory = this.defaultValueFactory(type.elementType);
+                    return `() => $rt.IdylArray.generate(${type.size}, ${innerFactory}, true)`;
+                }
+                return `() => $rt.IdylArray.filled(${type.size}, ${this.defaultValue(type.elementType)}, true)`;
+            case 'DynArrayType':
+                return `() => $rt.IdylArray.empty(false)`;
+            default:
+                return `() => ${this.defaultValue(type)}`;
+        }
     }
 
     private genFunctionDecl(decl: FunctionDecl): void {
@@ -527,11 +586,16 @@ export class CodeGenerator {
     
         if (decl.initializer !== null) {
             const value = this.genExpr(decl.initializer);
+            const initType = this.typeOf(decl.initializer);
     
             if (decl.varType.kind === 'ArrayType') {
                 this.emit(`let ${name} = $rt.IdylArray.from(${value}, ${decl.varType.size}, true);`);
             } else if (decl.varType.kind === 'DynArrayType') {
-                this.emit(`let ${name} = $rt.IdylArray.from(${value}, -1, false);`);
+                if (this.isArrayReturningExpression(decl.initializer)) {
+                    this.emit(`let ${name} = ${value};`);
+                } else {
+                    this.emit(`let ${name} = $rt.IdylArray.from(${value}, -1, false);`);
+                }
             } else {
                 this.emit(`let ${name} = ${value};`);
             }
@@ -550,6 +614,27 @@ export class CodeGenerator {
             const val = this.defaultValue(decl.varType);
             this.emit(`let ${name} = ${val};`);
         }
+    }
+    
+    private isArrayReturningExpression(expr: Expression): boolean {
+        if (expr.kind === 'MethodCall') {
+            const objType = this.typeOf(expr.object);
+            if (objType.tag === 'string') {
+                if (expr.method === 'split') {
+                    return true;
+                }
+            }
+
+            if (isArrayLike(objType)) {
+                return false;
+            }
+        }
+        
+        if (expr.kind === 'FunctionCall') {
+            return false;
+        }
+        
+        return false;
     }
 
     private genMultiVarDecl(decl: MultiVariableDecl): void {
@@ -573,7 +658,7 @@ export class CodeGenerator {
                     }
                     continue;
                 }
-
+    
                 if (this.info.userModules.has(qt.qualifier)) {
                     if (d.constructorArgs !== null) {
                         const paramNames = this.methodParams.get(
@@ -595,14 +680,18 @@ export class CodeGenerator {
                 if (decl.varType.kind === 'ArrayType') {
                     this.emit(`let ${name} = $rt.IdylArray.from(${value}, ${decl.varType.size}, true);`);
                 } else if (decl.varType.kind === 'DynArrayType') {
-                    this.emit(`let ${name} = $rt.IdylArray.from(${value}, -1, false);`);
+                    if (this.isArrayReturningExpression(d.initializer)) {
+                        this.emit(`let ${name} = ${value};`);
+                    } else {
+                        this.emit(`let ${name} = $rt.IdylArray.from(${value}, -1, false);`);
+                    }
                 } else {
                     this.emit(`let ${name} = ${value};`);
                 }
             } else if (d.constructorArgs !== null) {
                 const typeName = decl.varType.kind === 'ClassType'
                     ? safeName(decl.varType.name) : 'Object';
-
+    
                 const paramNames = this.methodParams.get(
                     `${decl.varType.kind === 'ClassType' ? decl.varType.name : ''}.__constructor__`
                 ) || [];
@@ -728,16 +817,48 @@ export class CodeGenerator {
 
     private genFor(stmt: ForStmt): void {
         const initName = safeName(stmt.init.name);
-        const initVal = stmt.init.initializer !== null
-            ? this.genExpr(stmt.init.initializer) : '0';
-
+        
+        let initVal: string;
+        
+        if (stmt.init.varType.kind === 'QualifiedType') {
+            const qt = stmt.init.varType;
+            if (qt.qualifier === 'types' && 
+                (FIXED_INT_TYPES.has(qt.name) || FIXED_FLOAT_TYPES.has(qt.name))) {
+                const rawVal = stmt.init.initializer !== null
+                    ? this.genExpr(stmt.init.initializer) : '0';
+                initVal = `$rt.types.${qt.name}(${rawVal})`;
+            } else {
+                initVal = stmt.init.initializer !== null
+                    ? this.genExpr(stmt.init.initializer) : '0';
+            }
+        } else {
+            initVal = stmt.init.initializer !== null
+                ? this.genExpr(stmt.init.initializer) : '0';
+        }
+    
         const cond = this.genExpr(stmt.condition);
-
-        const updTarget = this.genAssignTarget(stmt.update.target);
-        const updValue = this.genExpr(stmt.update.value);
-        const updOp = stmt.update.operator;
-
-        this.emit(`for (let ${initName} = ${initVal}; ${cond}; ${updTarget} ${updOp} ${updValue}) {`);
+    
+        const updateTargetType = this.typeOf(stmt.update.target);
+        let updateExpr: string;
+        
+        if (isFixedType(updateTargetType)) {
+            const target = this.genAssignTarget(stmt.update.target);
+            const value = this.genExpr(stmt.update.value);
+            
+            if (stmt.update.operator === '=') {
+                updateExpr = `${target}.set(${value})`;
+            } else {
+                const op = stmt.update.operator[0];
+                updateExpr = `${target}.set(${target}.get() ${op} ${value})`;
+            }
+        } else {
+            const updTarget = this.genAssignTarget(stmt.update.target);
+            const updValue = this.genExpr(stmt.update.value);
+            const updOp = stmt.update.operator;
+            updateExpr = `${updTarget} ${updOp} ${updValue}`;
+        }
+    
+        this.emit(`for (let ${initName} = ${initVal}; ${cond}; ${updateExpr}) {`);
         this.indent();
         this.genBlockBody(stmt.body);
         this.dedent();
@@ -1083,6 +1204,15 @@ export class CodeGenerator {
                         return `$rt.encoding.listEncodings()`;
                 }
                 break;
+
+            case 'types':
+                switch (func) {
+                    case 'from_bin':
+                        return `$rt.types.fromBin(${args})`;
+                    case 'from_hex':
+                        return `$rt.types.fromHex(${args})`;
+                }
+                break;
         }
 
         if (this.info.userModules.has(lib)) {
@@ -1203,15 +1333,19 @@ export class CodeGenerator {
         const obj = this.genExpr(expr.object);
         const idx = this.genExpr(expr.index);
         const objType = this.typeOf(expr.object);
-
+    
         if (isArrayLike(objType)) {
             return `${obj}.get(${idx}, ${$loc(expr.loc)})`;
         }
-
+    
         if (objType.tag === 'string') {
             return `$rt.strCharAt(${obj}, ${idx}, ${$loc(expr.loc)})`;
         }
-
+    
+        if (expr.object.kind === 'PropertyAccess' || expr.object.kind === 'Identifier') {
+            return `${obj}.get(${idx}, ${$loc(expr.loc)})`;
+        }
+    
         return `${obj}[${idx}]`;
     }
 

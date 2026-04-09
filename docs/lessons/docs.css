@@ -430,6 +430,7 @@ idyl-sidebar {
 /* ─── Inline code ────────────────────────────────────────────────────────── */
 
 code:not(.idyl-code) {
+  display: inline-block;
   font-family: var(--font-mono);
   font-size: 0.88em;
   color: var(--hl-string);

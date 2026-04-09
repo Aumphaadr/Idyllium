@@ -57,12 +57,14 @@
       <h2>Повторение: статические массивы</h2>
       <p>Статический массив имеет фиксированное количество ячеек:</p>
 
-      <idyl-code-block>array<string, 3> pets;
+      <idyl-code-block><script type="text/plain">
+array<string, 3> pets;
 pets[0] = "Кошка";
 pets[1] = "Собака";
 pets[2] = "Черепаха";
 // pets[3] = "Хомяк"; // Ошибка: нет 3-й ячейки
-// pets[4] = "Рыбка"; // Ошибка: нет 4-й ячейки</idyl-code-block>
+// pets[4] = "Рыбка"; // Ошибка: нет 4-й ячейки
+</script></idyl-code-block>
 
       <p>Заранее указать достаточное количество ячеек — невозможно, если размер данных неизвестен.</p>
     </div>
@@ -84,7 +86,9 @@ pets[2] = "Черепаха";
       <h2>Динамический массив</h2>
       <p>В Idyllium такой массив существует — он называется <code>dyn_array</code> (от англ. <em>dynamic array</em>):</p>
 
-      <idyl-code-block>dyn_array<int> nums = [11, 22, 33];</idyl-code-block>
+      <idyl-code-block><script type="text/plain">
+dyn_array<int> nums = [11, 22, 33];
+</script></idyl-code-block>
 
       <p>Разберём:</p>
       <ul>
@@ -100,29 +104,52 @@ pets[2] = "Черепаха";
     <div class="docs-section">
       <h2>Добавление ячеек: метод <code>add()</code></h2>
 
-      <idyl-code-block>// создаём массив с тремя ячейками
+      <idyl-code-block><script type="text/plain">
+// создаём массив с тремя ячейками
 dyn_array<int> nums = [11, 22, 33];
 
 nums.add(44); // добавляем 44 в конец
 nums.add(55); // добавляем 55 в конец
 nums.add(66); // добавляем 66 в конец
 
-console.write(nums, '\n');</idyl-code-block>
+console.writeln(nums);
+</script></idyl-code-block>
 
       <idyl-output-block>[11, 22, 33, 44, 55, 66]</idyl-output-block>
 
       <p>Метод <code>add(значение)</code> добавляет новую ячейку в конец массива с указанным значением.</p>
     </div>
 
+    <!-- Section 4.5 — Arrays of any type -->
+    <div class="docs-section">
+      <h2>Динамические массивы с любыми типами</h2>
+      <p><code>dyn_array</code> работает не только с числами, но и со строками, символами и даже логическими значениями.</p>
+
+      <idyl-code-block><script type="text/plain">
+dyn_array<string> items = ["Верстак", "Кирка", "Меч"];
+console.writeln("Было: ", items);
+
+items.add("Уголь");
+console.writeln("Стало: ", items);
+</script></idyl-code-block>
+
+      <idyl-output-block>Было: [Верстак, Кирка, Меч]
+Стало: [Верстак, Кирка, Меч, Уголь]</idyl-output-block>
+
+      <p>Как видите, принцип работы одинаков для любого типа данных — просто укажите нужный тип в угловых скобках: <code>dyn_array&lt;string&gt;</code>, <code>dyn_array&lt;float&gt;</code>, <code>dyn_array&lt;char&gt;</code> или даже <code>dyn_array&lt;bool&gt;</code>.</p>
+    </div>
+
     <!-- Section 5 -->
     <div class="docs-section">
       <h2>Удаление ячейки: метод <code>remove_at()</code></h2>
 
-      <idyl-code-block>dyn_array<int> nums = [11, 22, 33, 44, 55, 66, 77, 88];
+      <idyl-code-block><script type="text/plain">
+dyn_array<int> nums = [11, 22, 33, 44, 55, 66, 77, 88];
 
 nums.remove_at(2); // удаляем ячейку с индексом 2 (значение 33)
 
-console.write(nums, '\n');</idyl-code-block>
+console.writeln(nums);
+</script></idyl-code-block>
 
       <idyl-output-block>[11, 22, 44, 55, 66, 77, 88]</idyl-output-block>
 
@@ -133,13 +160,15 @@ console.write(nums, '\n');</idyl-code-block>
     <div class="docs-section">
       <h2>Текущая длина: метод <code>length()</code></h2>
 
-      <idyl-code-block>dyn_array<int> nums = [11, 22, 33, 44, 55];
+      <idyl-code-block><script type="text/plain">
+dyn_array<int> nums = [11, 22, 33, 44, 55];
 int L1 = nums.length();
-console.write("В массиве сейчас ", L1, " ячеек\n");
+console.writeln("В массиве сейчас ", L1, " ячеек");
 
 nums.add(66);
 int L2 = nums.length();
-console.write("А теперь ", L2, " ячеек\n");</idyl-code-block>
+console.writeln("А теперь ", L2, " ячеек");
+</script></idyl-code-block>
 
       <idyl-output-block>В массиве сейчас 5 ячеек
 А теперь 6 ячеек</idyl-output-block>
@@ -150,13 +179,15 @@ console.write("А теперь ", L2, " ячеек\n");</idyl-code-block>
       <h2>Перебор динамического массива</h2>
       <p>Как и статический, динамический массив можно перебирать циклом — при этом число итераций определяется его текущей длиной:</p>
 
-      <idyl-code-block>dyn_array<int> nums = [81, 45, 33, 27, 90, 64];
+      <idyl-code-block><script type="text/plain">
+dyn_array<int> nums = [81, 45, 33, 27, 90, 64];
 nums.add(333);
 nums.add(444);
 
 for (int i = 0; i < nums.length(); i = i + 1) {
-    console.write(nums[i], '\n');
-}</idyl-code-block>
+    console.writeln(nums[i]);
+}
+</script></idyl-code-block>
 
       <idyl-output-block>81
 45
@@ -175,13 +206,15 @@ for (int i = 0; i < nums.length(); i = i + 1) {
       <h2>Изменение размера: метод <code>resize()</code></h2>
       <p>Метод <code>resize(N)</code> устанавливает новую длину массива — <code>N</code> ячеек:</p>
 
-      <idyl-code-block>dyn_array<int> A = [24, 91, 63, 50, 78];
+      <idyl-code-block><script type="text/plain">
+dyn_array<int> A = [24, 91, 63, 50, 78];
 A.resize(10); // увеличение до 10 ячеек
-console.write("A = ", A, '\n');
+console.writeln("A = ", A);
 
 dyn_array<int> B = [81, 45, 33, 27, 90, 64, 15, 83];
 B.resize(5); // уменьшение до 5 ячеек
-console.write("B = ", B, '\n');</idyl-code-block>
+console.writeln("B = ", B);
+</script></idyl-code-block>
 
       <idyl-output-block>A = [24, 91, 63, 50, 78, 0, 0, 0, 0, 0]
 B = [81, 45, 33, 27, 90]</idyl-output-block>

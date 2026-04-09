@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Урок 23: Работа с файлами — Idyllium</title>
+  <title>Урок 24: Работа с файлами — Idyllium</title>
   <link rel="icon" type="image/png" href="../../favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="../../fonts/fonts.css">
@@ -11,14 +11,14 @@
   <script src="../components.js" defer></script>
   <style>
     .file {
-      background-color: #f8f8f8;
-      border: 1px solid #ccc;
+      background-color: #b5bdd3;
+      border: 1px solid #8290b6;
       padding: 1em;
       border-radius: 0.5em;
       font-family: 'Source Code Pro', monospace;
       white-space: pre;
       margin: 1em 0;
-      color: #333;
+      color: #0a0d14;
     }
   </style>
 </head>
@@ -59,7 +59,7 @@
         </svg>
         На главную
       </a>
-      <div class="docs-lesson-tag">Урок 23</div>
+      <div class="docs-lesson-tag">Урок 24</div>
       <h1>Работа с файлами</h1>
       <p class="docs-subtitle">Как сохранить результаты программы и читать внешние данные</p>
     </div>
@@ -80,7 +80,9 @@
     <div class="docs-section">
       <h2>Библиотека <code>file</code></h2>
       <p>Для работы с файлами в Idyllium используется встроенная библиотека <code>file</code>:</p>
-      <idyl-code-block>use file;</idyl-code-block>
+      <idyl-code-block><script type="text/plain">
+use file;
+</script></idyl-code-block>
       <p>Она предоставляет два типа потоков:</p>
       <ul>
         <li><code>file.ostream</code> — для записи в файл (output stream);</li>
@@ -92,7 +94,9 @@
     <div class="docs-section">
       <h2>Открытие файла для записи</h2>
       <p>Чтобы записывать данные в файл, нужно сначала открыть его функцией <code>file.open()</code>:</p>
-      <idyl-code-block>file.ostream fout = file.open("output.txt", "write");</idyl-code-block>
+      <idyl-code-block><script type="text/plain">
+file.ostream fout = file.open("output.txt", "write");
+</script></idyl-code-block>
       <p>Разберём:</p>
       <ul>
         <li><code>file.ostream</code> — тип объекта «поток вывода в файл»;</li>
@@ -107,9 +111,11 @@
     <div class="docs-section">
       <h2>Запись данных: выполнение</h2>
       <p>После открытия файла можно записывать в него строки с помощью метода <code>write_line()</code>:</p>
-      <idyl-code-block>fout.write_line("Привет, мир!", '\n');
+      <idyl-code-block><script type="text/plain">
+fout.write_line("Привет, мир!", '\n');
 fout.write_line("Сейчас ", 2025, " год", '\n');
-fout.write_line("Файл создан с помощью Idyllium!");</idyl-code-block>
+fout.write_line("Файл создан с помощью Idyllium!");
+</script></idyl-code-block>
       <p>Метод <code>write_line()</code> работает точно так же, как <code>console.write()</code> — принимает любое количество аргументов и собирает из них строку.</p>
       <p>Перенос строки нужно указывать вручную (через <code>'\n'</code>), как и в консоли.</p>
     </div>
@@ -118,14 +124,17 @@ fout.write_line("Файл создан с помощью Idyllium!");</idyl-code
     <div class="docs-section">
       <h2>Завершение записи</h2>
       <p>После завершения записи обязательно нужно закрыть файл:</p>
-      <idyl-code-block>fout.close();</idyl-code-block>
+      <idyl-code-block><script type="text/plain">
+fout.close();
+</script></idyl-code-block>
       <p>Это гарантирует, что все данные будут записаны на диск и файл не останется «зависшим».</p>
     </div>
 
     <!-- Section 6 -->
     <div class="docs-section">
       <h2>Запись данных: полный пример</h2>
-      <idyl-code-block>use file;
+      <idyl-code-block><script type="text/plain">
+use file;
 
 main() {
     file.ostream fout = file.open("output.txt", "write");
@@ -133,7 +142,8 @@ main() {
     fout.write_line("Сейчас ", 2025, " год", '\n');
     fout.write_line("Файл создан с помощью Idyllium!");
     fout.close();
-}</idyl-code-block>
+}
+</script></idyl-code-block>
       <p>При выполнении данной программы появится файл <code>output.txt</code> со следующим содержимым:</p>
       <div class="file">Привет, мир!
 Сейчас 2025 год
@@ -144,7 +154,9 @@ main() {
     <div class="docs-section">
       <h2>Открытие файла для чтения</h2>
       <p>Чтобы прочитать файл, его нужно открыть в режиме <code>"read"</code>:</p>
-      <idyl-code-block>file.istream fin = file.open("input.txt", "read");</idyl-code-block>
+      <idyl-code-block><script type="text/plain">
+file.istream fin = file.open("input.txt", "read");
+</script></idyl-code-block>
       <p>Здесь:</p>
       <ul>
         <li><code>file.istream</code> — тип «поток ввода из файла»;</li>
@@ -164,7 +176,8 @@ main() {
 Топор
 Меч</div>
       <p>Прочитаем его вручную:</p>
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 use file;
 
 main() {
@@ -174,9 +187,10 @@ main() {
     string line3 = fin.read_line(); // "Меч"
     fin.close();
 
-    array&lt;string, 3&gt; t = [line1, line2, line3];
-    console.write(t, '\n');
-}</idyl-code-block>
+    array<string, 3> t = [line1, line2, line3];
+    console.writeln(t);
+}
+</script></idyl-code-block>
       <idyl-output-block>["Кирка\n", "Топор\n", "Меч"]</idyl-output-block>
       <p>Здесь возникают две проблемы:</p>
       <ol>
@@ -189,18 +203,20 @@ main() {
     <div class="docs-section">
       <h2>Очистка строки: метод <code>.trim()</code></h2>
       <p>Метод <code>.trim()</code> удаляет управляющие символы (вроде <code>'\n'</code>, <code>'\t'</code>) из строки:</p>
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
-    array&lt;string, 3&gt; raw = ["Кирка\n", "Топор\n", "Меч"];
-    array&lt;string, 3&gt; clean;
+    array<string, 3> raw = ["Кирка\n", "Топор\n", "Меч"];
+    array<string, 3> clean;
 
     for (int i = 0; i < 3; i = i + 1) {
         clean[i] = raw[i].trim();
     }
 
-    console.write(clean, '\n');
-}</idyl-code-block>
+    console.writeln(clean);
+}
+</script></idyl-code-block>
       <idyl-output-block>["Кирка", "Топор", "Меч"]</idyl-output-block>
       <p>Теперь строки «чистые» и готовы к использованию.</p>
     </div>
@@ -209,20 +225,23 @@ main() {
     <div class="docs-section">
       <h2>Чтение файла неизвестной длины</h2>
       <p>Метод <code>.has_next_line()</code> у объектов типа <code>istream</code> возвращает <code>true</code>, если в файле ещё есть строки:</p>
-      <idyl-code-block>while (fin.has_next_line()) {
+      <idyl-code-block><script type="text/plain">
+while (fin.has_next_line()) {
     string one_line = fin.read_line();
-}</idyl-code-block>
+}
+</script></idyl-code-block>
       <p>Такой цикл прочитает файл целиком — независимо от количества строк.</p>
     </div>
 
     <!-- Section 11 -->
     <div class="docs-section">
       <h2>Полный пример: чтение и очистка файла</h2>
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 use file;
 
 main() {
-    dyn_array&lt;string&gt; lines;
+    dyn_array<string> lines;
 
     // 1. Открываем файл "input.txt" для чтения
     file.istream fin = file.open("input.txt", "read");
@@ -237,8 +256,9 @@ main() {
     // 3. Обязательно закрываем файл
     fin.close();
 
-    console.write(lines, '\n');
-}</idyl-code-block>
+    console.writeln(lines);
+}
+</script></idyl-code-block>
       <p>При входном файле:</p>
       <div class="file">Кирка
 Топор
@@ -250,13 +270,13 @@ main() {
 
     <!-- Lesson navigation -->
     <nav class="docs-lesson-nav">
-      <a class="docs-nav-btn prev" href="022_libs.html">
+      <a class="docs-nav-btn prev" href="023_libs.html">
         <span>← Предыдущий урок</span>
-        <strong>Урок 22: Создание собственных библиотек</strong>
+        <strong>Урок 23: Создание собственных библиотек</strong>
       </a>
-      <a class="docs-nav-btn next" href="024_math.html">
+      <a class="docs-nav-btn next" href="025_math.html">
         <span>Следующий урок →</span>
-        <strong>Урок 24: Продвинутые возможности 'math'</strong>
+        <strong>Урок 25: Продвинутые возможности 'math'</strong>
       </a>
     </nav>
 

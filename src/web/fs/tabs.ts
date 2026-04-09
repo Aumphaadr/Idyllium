@@ -14,14 +14,19 @@ export interface TabsCallbacks {
 }
 
 export class Tabs {
-    private container: HTMLElement;
+    private wrapper: HTMLElement;
     private tabs: Tab[] = [];
     private activeTab: string | null = null;
     private callbacks: TabsCallbacks;
 
     constructor(container: HTMLElement, callbacks: TabsCallbacks) {
-        this.container = container;
-        this.container.className = 'tabs-container';
+        let wrapper = container.querySelector('.tabs-wrapper') as HTMLElement;
+        if (!wrapper) {
+            wrapper = document.createElement('div');
+            wrapper.className = 'tabs-wrapper';
+            container.insertBefore(wrapper, container.firstChild);
+        }
+        this.wrapper = wrapper;
         this.callbacks = callbacks;
         this.render();
     }
@@ -142,22 +147,20 @@ export class Tabs {
     }
 
     private render(): void {
-        this.container.innerHTML = '';
+        this.wrapper.innerHTML = '';
 
         if (this.tabs.length === 0) {
-            this.container.innerHTML = '<div class="tabs-empty">Нет открытых файлов</div>';
+            const empty = document.createElement('div');
+            empty.className = 'tabs-empty';
+            empty.textContent = 'Нет открытых файлов';
+            this.wrapper.appendChild(empty);
             return;
         }
 
-        const tabsWrapper = document.createElement('div');
-        tabsWrapper.className = 'tabs-wrapper';
-
         for (const tab of this.tabs) {
             const tabEl = this.createTabElement(tab);
-            tabsWrapper.appendChild(tabEl);
+            this.wrapper.appendChild(tabEl);
         }
-
-        this.container.appendChild(tabsWrapper);
     }
 
     private createTabElement(tab: Tab): HTMLElement {

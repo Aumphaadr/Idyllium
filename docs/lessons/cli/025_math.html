@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Урок 24: Продвинутые функции библиотеки 'math' — Idyllium</title>
+  <title>Урок 25: Продвинутые функции библиотеки 'math' — Idyllium</title>
   <link rel="icon" type="image/png" href="../../favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="../../fonts/fonts.css">
@@ -47,7 +47,7 @@
         </svg>
         На главную
       </a>
-      <div class="docs-lesson-tag">Урок 24</div>
+      <div class="docs-lesson-tag">Урок 25</div>
       <h1>Продвинутые возможности библиотеки <code>math</code></h1>
       <p class="docs-subtitle">Тригонометрия, логарифмы и математические константы — мощь науки в доступной форме</p>
     </div>
@@ -60,13 +60,15 @@
         <li><code>math.pi</code> — число π ≈ 3.141592653589793</li>
         <li><code>math.e</code> — число Эйлера e ≈ 2.718281828459045</li>
       </ul>
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 use math;
 
 main() {
-    console.write("π = ", math.pi, '\n');
-    console.write("e = ", math.e, '\n');
-}</idyl-code-block>
+    console.writeln("π = ", math.pi);
+    console.writeln("e = ", math.e);
+}
+</script></idyl-code-block>
       <idyl-output-block>π = 3.141592653589793
 e = 2.718281828459045</idyl-output-block>
     </div>
@@ -80,14 +82,16 @@ e = 2.718281828459045</idyl-output-block>
         <li><code>math.cos(x)</code> — косинус</li>
         <li><code>math.tan(x)</code> — тангенс</li>
       </ul>
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 use math;
 
 main() {
     float angle = math.pi / 2; // 90° в радианах
-    console.write("sin(90°) = ", math.sin(angle), '\n');
-    console.write("cos(60°) = ", math.cos(math.pi / 3), '\n');
-}</idyl-code-block>
+    console.writeln("sin(90°) = ", math.sin(angle));
+    console.writeln("cos(60°) = ", math.cos(math.pi / 3));
+}
+</script></idyl-code-block>
       <idyl-output-block>sin(90°) = 1
 cos(60°) = 0.5000000000000001</idyl-output-block>
       <p>Значения могут немного отличаться от идеальных из-за особенностей представления дробных чисел в компьютере — это нормально.</p>
@@ -102,8 +106,10 @@ cos(60°) = 0.5000000000000001</idyl-output-block>
         <li><code>math.acos(x)</code> — арккосинус</li>
         <li><code>math.atan(x)</code> — арктангенс</li>
       </ul>
-      <idyl-code-block>console.write("arcsin(1) = ", math.asin(1), '\n'); // π/2
-console.write("arccos(0) = ", math.acos(0), '\n'); // π/2</idyl-code-block>
+      <idyl-code-block><script type="text/plain">
+console.writeln("arcsin(1) = ", math.asin(1)); // π/2
+console.writeln("arccos(0) = ", math.acos(0)); // π/2
+</script></idyl-code-block>
       <idyl-output-block>arcsin(1) = 1.5707963267948966
 arccos(0) = 1.5707963267948966</idyl-output-block>
     </div>
@@ -116,12 +122,14 @@ arccos(0) = 1.5707963267948966</idyl-output-block>
         <li><code>math.to_radians(deg)</code> — переводит градусы в радианы;</li>
         <li><code>math.to_degrees(rad)</code> — переводит радианы в градусы.</li>
       </ul>
-      <idyl-code-block>float deg = 180;
+      <idyl-code-block><script type="text/plain">
+float deg = 180;
 float rad = math.to_radians(deg); // π
-console.write(deg, "° = ", rad, " рад\n");
+console.writeln(deg, "° = ", rad, " рад");
 
 float back = math.to_degrees(math.pi);
-console.write("π рад = ", back, "°\n");</idyl-code-block>
+console.writeln("π рад = ", back, "°");
+</script></idyl-code-block>
       <idyl-output-block>180° = 3.141592653589793 рад
 π рад = 180°</idyl-output-block>
     </div>
@@ -134,8 +142,10 @@ console.write("π рад = ", back, "°\n");</idyl-code-block>
         <li><code>math.log(x)</code> — натуральный логарифм (по основанию <code>e</code>);</li>
         <li><code>math.log10(x)</code> — десятичный логарифм (по основанию 10).</li>
       </ul>
-      <idyl-code-block>console.write("ln(e) = ", math.log(math.e), '\n'); // 1
-console.write("log₁₀(1000) = ", math.log10(1000), '\n'); // 3</idyl-code-block>
+      <idyl-code-block><script type="text/plain">
+console.writeln("ln(e) = ", math.log(math.e)); // 1
+console.writeln("log₁₀(1000) = ", math.log10(1000)); // 3
+</script></idyl-code-block>
       <idyl-output-block>ln(e) = 1
 log₁₀(1000) = 3</idyl-output-block>
       <p>Логарифмы определены только для положительных чисел. Попытка вычислить <code>log(-5)</code> вызовет ошибку выполнения.</p>
@@ -145,7 +155,8 @@ log₁₀(1000) = 3</idyl-output-block>
     <div class="docs-section">
       <h2>Практическое применение: расчёт траектории</h2>
       <p>Пример: вычисление расстояния полёта снаряда под углом:</p>
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 use math;
 
 main() {
@@ -156,8 +167,9 @@ main() {
 
     // Формула: L = v₀² · sin(2α) / g
     float L = (v0 * v0 * math.sin(2.0 * rad)) / g;
-    console.write("Дальность полёта при 45°: ", L, " м\n");
-}</idyl-code-block>
+    console.writeln("Дальность полёта при 45°: ", L, " м");
+}
+</script></idyl-code-block>
       <idyl-output-block>Дальность полёта при 45°: 254.841997961264 м</idyl-output-block>
       <p>Такие задачи встречаются в физике, играх и симуляторах — и теперь они доступны даже начинающим.</p>
     </div>
@@ -176,13 +188,13 @@ main() {
 
     <!-- Lesson navigation -->
     <nav class="docs-lesson-nav">
-      <a class="docs-nav-btn prev" href="023_files.html">
+      <a class="docs-nav-btn prev" href="024_files.html">
         <span>← Предыдущий урок</span>
-        <strong>Урок 23: Работа с файлами</strong>
+        <strong>Урок 24: Работа с файлами</strong>
       </a>
-      <a class="docs-nav-btn next" href="025_matrix.html">
+      <a class="docs-nav-btn next" href="026_matrix.html">
         <span>Следующий урок →</span>
-        <strong>Урок 25: Двумерные массивы</strong>
+        <strong>Урок 26: Двумерные массивы</strong>
       </a>
     </nav>
 

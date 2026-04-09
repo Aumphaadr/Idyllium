@@ -104,18 +104,40 @@ export function init(): void {
         if (guiResizer) guiResizer.style.display = 'none';
     });
 
+    const formatBtn = document.getElementById('btn-format');
+    if (formatBtn) {
+        formatBtn.addEventListener('click', () => {
+            if (editor) {
+                editor.formatCode();
+                terminal?.printSystem('✨ Код отформатирован\n', 'success');
+            }
+        });
+    }
+
     document.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'i') {
+            e.preventDefault();
+            if (editor) {
+                editor.formatCode();
+                terminal?.printSystem('✨ Код отформатирован\n', 'success');
+            }
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
             e.preventDefault();
             e.stopPropagation();
-            handleRun();
+            e.stopImmediatePropagation();
+            handleSave();
             return;
         }
         
-        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
             e.preventDefault();
             e.stopPropagation();
-            handleSave();
+            e.stopImmediatePropagation();
+            handleRun();
             return;
         }
     }, { capture: true });
@@ -307,6 +329,12 @@ async function handleRun(): Promise<void> {
             console: terminal,
             fs: runtimeFS,
         }, 'main.idyl');
+
+        if (result.compilation.success && result.compilation.jsCode) {
+            console.log('=== Generated JS Code ===');
+            console.log(result.compilation.jsCode);
+            console.log('=========================');
+        }
 
         compilingMsg.remove();
 

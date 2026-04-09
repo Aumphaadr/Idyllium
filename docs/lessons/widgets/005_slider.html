@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 5: Виджет Slider — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <link rel="stylesheet" href="gui.css">
+  <script src="../components.js" defer></script>
+  <style>
+    .interactive-demo {
+      background: rgba(137, 180, 250, 0.05);
+      border-radius: 12px;
+      padding: 1em;
+      margin: 1.5em 0;
+    }
+    .interactive-demo .coord-note {
+      margin-top: 1em;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Графические виджеты</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Виджеты • Урок 5</div>
+      <h1>Виджет Slider</h1>
+      <p class="docs-subtitle">Ползунок для выбора значения из диапазона</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Что такое Slider?</h2>
+      <p><code>gui.Slider</code> — это ползунок, который позволяет выбирать значение из непрерывного диапазона, перемещая ручку влево-вправо.</p>
+      <p>Где он встречается:</p>
+      <ul>
+        <li>🎚️ Регулятор громкости в плеере</li>
+        <li>🎨 Ползунок яркости/контрастности в фоторедакторах</li>
+        <li>🎮 Настройка чувствительности мыши</li>
+        <li>💰 Фильтр цен в интернет-магазине (от 1000 до 10000)</li>
+      </ul>
+
+      <p>Вот простейший Slider со значением 50:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 100;
+    win.title = "Slider";
+
+    gui.Slider slider;
+    slider.x = 20;
+    slider.y = 30;
+    slider.width = 260;
+    slider.value = 50;
+
+    win.add_child(slider);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 100px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 30px; width: 260px;">
+              <input type="range" class="idyl-slider" style="width: 100%;" value="50" min="0" max="100">
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          🎚️ Ползунок посередине — значение 50. Попробуйте подвигать.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Основные свойства Slider</h2>
+      <p>Как и SpinBox, Slider имеет свойства для настройки диапазона:</p>
+      <ul>
+        <li><code>value</code> — текущее значение (<code>int</code>)</li>
+        <li><code>min</code> — минимальное значение (по умолчанию 0)</li>
+        <li><code>max</code> — максимальное значение (по умолчанию 100)</li>
+        <li><code>step</code> — шаг изменения при перемещении</li>
+      </ul>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 150;
+    win.title = "Настройки Slider";
+
+    gui.Slider slider;
+    slider.x = 20;
+    slider.y = 30;
+    slider.width = 260;
+    slider.min = 0;
+    slider.max = 200;
+    slider.value = 100;
+    slider.step = 20;
+
+    win.add_child(slider);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 100px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 30px; width: 260px;">
+              <input type="range" class="idyl-slider" style="width: 100%;" value="100" min="0" max="200" step="20">
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          🎯 Диапазон 0–200, шаг 20. Ползунок делает более резкие прыжки.<br>
+          Ему становятся доступны значения: [0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200].
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Событие <code>on_change</code></h2>
+      <p>Как и у SpinBox, у Slider есть событие <code>on_change</code>, которое срабатывает при каждом изменении значения:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 150;
+    win.title = "Отображение значения";
+
+    gui.Slider slider;
+    slider.x = 20;
+    slider.y = 20;
+    slider.width = 260;
+    slider.min = 0;
+    slider.max = 100;
+    slider.value = 50;
+
+    gui.Label label;
+    label.x = 20;
+    label.y = 70;
+    label.text = "Текущее значение: 50";
+
+    slider.on_change = void function() {
+        label.text = "Текущее значение: " + to_string(slider.value);
+    };
+
+    win.add_child(slider);
+    win.add_child(label);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 120px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px; width: 260px;">
+              <input type="range" class="idyl-slider" style="width: 100%;" value="50" min="0" max="100" id="sliderDemo">
+            </div>
+            <div style="position: absolute; left: 20px; top: 70px; color: #cdd6f4;" id="sliderLabelDemo">Текущее значение: 50</div>
+          </div>
+        </div>
+        <div class="coord-note">
+          📊 Двигайте ползунок — значение отображается на лейбле в реальном времени.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Slider vs SpinBox</h2>
+      <p>В чём разница и что выбрать?</p>
+      <ul>
+        <li><strong>Slider</strong> — быстрый, наглядный, но не точный. Хорош для грубой настройки (громкость, яркость).</li>
+        <li><strong>SpinBox</strong> — точный, но требует больше кликов. Хорош, когда важна точность (количество игроков, размер массива).</li>
+      </ul>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="004_spinbox.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 4: Виджеты SpinBox и FloatSpinBox</strong>
+      </a>
+      <a class="docs-nav-btn next" href="006_lineedit.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 6: Виджет LineEdit</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+<script>
+  // Интерактив для демо-примеров
+  document.addEventListener('DOMContentLoaded', () => {
+    // Пример 3: отображение значения
+    const sliderDemo = document.getElementById('sliderDemo');
+    const sliderLabelDemo = document.getElementById('sliderLabelDemo');
+    if (sliderDemo && sliderLabelDemo) {
+      sliderDemo.addEventListener('input', () => {
+        sliderLabelDemo.textContent = 'Текущее значение: ' + sliderDemo.value;
+      });
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 7: Виджет CheckBox — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <link rel="stylesheet" href="gui.css">
+  <script src="../components.js" defer></script>
+  <style>
+    .interactive-demo {
+      background: rgba(137, 180, 250, 0.05);
+      border-radius: 12px;
+      padding: 1em;
+      margin: 1.5em 0;
+    }
+    .interactive-demo .coord-note {
+      margin-top: 1em;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Графические виджеты</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Виджеты • Урок 7</div>
+      <h1>Виджет CheckBox</h1>
+      <p class="docs-subtitle">Флажок для выбора опции «вкл/выкл»</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Что такое CheckBox?</h2>
+      <p><code>gui.CheckBox</code> — это виджет-флажок, который может находиться в двух состояниях: <strong>включён</strong> (галочка есть) или <strong>выключен</strong> (галочки нет).</p>
+      <p>Где он встречается:</p>
+      <ul>
+        <li>⚙️ Настройки — «Запомнить меня», «Принимаю условия»</li>
+        <li>🎮 В играх — «Отключить музыку», «Включить субтитры»</li>
+        <li>📋 Списки задач — отметить выполненное дело</li>
+        <li>🛒 Интернет-магазин — сравнить товары</li>
+      </ul>
+
+      <p>Вот простейший CheckBox:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 250;
+    win.height = 100;
+    win.title = "CheckBox";
+
+    gui.CheckBox cb;
+    cb.x = 20;
+    cb.y = 30;
+    cb.text = "Я согласен";
+
+    win.add_child(cb);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 100px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 30px;">
+              <label class="idyl-checkbox-wrapper">
+                <input type="checkbox" class="idyl-checkbox">
+                <span class="idyl-checkbox-label">Я согласен</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          ✅ Обычный флажок с текстом. Попробуйте поставить/снять галочку.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Свойства <code>text</code> и <code>is_checked</code></h2>
+      <p>У CheckBox есть два основных свойства:</p>
+      <ul>
+        <li><code>text</code> — текст, отображаемый рядом с флажком (<code>string</code>)</li>
+        <li><code>is_checked</code> — состояние флажка (<code>bool</code>)</li>
+      </ul>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 150;
+    win.title = "Состояние CheckBox";
+
+    gui.CheckBox cb;
+    cb.x = 20;
+    cb.y = 20;
+    cb.text = "Включить режим";
+
+    gui.Button btn;
+    btn.text = "Показать состояние";
+    btn.x = 20;
+    btn.y = 70;
+    btn.width = 180;
+
+    gui.Label label;
+    label.x = 20;
+    label.y = 110;
+    label.text = "";
+
+    btn.on_click = void function() {
+        if (cb.is_checked) {
+            label.text = "Режим ВКЛЮЧЁН";
+        } else {
+            label.text = "Режим ВЫКЛЮЧЁН";
+        }
+    };
+
+    win.add_child(cb);
+    win.add_child(btn);
+    win.add_child(label);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 150px; position: relative;">
+            <label class="idyl-checkbox-wrapper" style="position: absolute; left: 20px; top: 20px;">
+              <input type="checkbox" class="idyl-checkbox" id="stateCheckbox">
+              <span class="idyl-checkbox-label">Включить режим</span>
+            </label>
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 70px; width: 180px;" id="stateBtn">Показать состояние</button>
+            <div style="position: absolute; left: 20px; top: 110px; color: #cdd6f4;" id="stateLabel"></div>
+          </div>
+        </div>
+        <div class="coord-note">
+          📋 Кнопка читает состояние <code>is_checked</code> и выводит результат на лейбл.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Событие <code>on_change</code></h2>
+      <p>Событие <code>on_change</code> срабатывает каждый раз, когда пользователь меняет состояние флажка:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 150;
+    win.title = "Реакция на изменение";
+
+    gui.CheckBox cb;
+    cb.x = 20;
+    cb.y = 20;
+    cb.text = "Согласен на получение рассылки";
+
+    gui.Label label;
+    label.x = 20;
+    label.y = 70;
+    label.text = "Вы не согласны на рассылку";
+
+    cb.on_change = void function() {
+        if (cb.is_checked) {
+            label.text = "Спасибо! Будем присылать новости";
+        } else {
+            label.text = "Вы не согласны на рассылку";
+        }
+    };
+
+    win.add_child(cb);
+    win.add_child(label);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 130px; position: relative;">
+            <label class="idyl-checkbox-wrapper" style="position: absolute; left: 20px; top: 20px;">
+              <input type="checkbox" class="idyl-checkbox" id="changeCheckbox">
+              <span class="idyl-checkbox-label">Согласен на получение рассылки</span>
+            </label>
+            <div style="position: absolute; left: 20px; top: 70px; color: #cdd6f4;" id="changeLabel">Вы не согласны на рассылку</div>
+          </div>
+        </div>
+        <div class="coord-note">
+          🔄 Текст под флажком меняется мгновенно при каждом переключении.
+        </div>
+      </div>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="006_lineedit.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 6: Виджет LineEdit</strong>
+      </a>
+      <a class="docs-nav-btn next" href="008_radiobutton.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 8: Виджет RadioButton</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+<script>
+  // Интерактив для демо-примеров
+  document.addEventListener('DOMContentLoaded', () => {
+    // Пример 2: состояние CheckBox
+    const stateCheckbox = document.getElementById('stateCheckbox');
+    const stateBtn = document.getElementById('stateBtn');
+    const stateLabel = document.getElementById('stateLabel');
+    if (stateCheckbox && stateBtn && stateLabel) {
+      stateBtn.addEventListener('click', () => {
+        if (stateCheckbox.checked) {
+          stateLabel.textContent = 'Режим ВКЛЮЧЁН';
+        } else {
+          stateLabel.textContent = 'Режим ВЫКЛЮЧЁН';
+        }
+      });
+    }
+
+    // Пример 3: on_change
+    const changeCheckbox = document.getElementById('changeCheckbox');
+    const changeLabel = document.getElementById('changeLabel');
+    if (changeCheckbox && changeLabel) {
+      changeCheckbox.addEventListener('change', () => {
+        if (changeCheckbox.checked) {
+          changeLabel.textContent = 'Спасибо! Будем присылать новости';
+        } else {
+          changeLabel.textContent = 'Вы не согласны на рассылку';
+        }
+      });
+    }
+  });
+</script>
+</body>
+</html>

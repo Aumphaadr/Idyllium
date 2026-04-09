@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Урок 25: Двумерные массивы — Idyllium</title>
+  <title>Урок 26: Двумерные массивы — Idyllium</title>
   <link rel="icon" type="image/png" href="../../favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="../../fonts/fonts.css">
@@ -47,7 +47,7 @@
         </svg>
         На главную
       </a>
-      <div class="docs-lesson-tag">Урок 25</div>
+      <div class="docs-lesson-tag">Урок 26</div>
       <h1>Двумерные массивы</h1>
       <p class="docs-subtitle">Матрицы, таблицы и игры на клетчатом поле — всё это начинается с двумерного массива</p>
     </div>
@@ -58,12 +58,14 @@
       <p>Обычный массив — это набор значений в одну линию (одно измерение).</p>
       <p>Двумерный массив — это <strong>таблица</strong> (два измерения: строки и столбцы).</p>
       <p>В Idyllium двумерный массив объявляется как «массив массивов»:</p>
-      <idyl-code-block>array&lt;array&lt;int, 6&gt;, 4&gt; mx = [
+      <idyl-code-block><script type="text/plain">
+array<array<int, 6>, 4> mx = [
     [26, 41, 73, 19, 87, 52],
     [65, 20, 42, 67, 18, 38],
     [74, 55, 93, 10, 24, 89],
     [12, 53, 40, 63, 94, 76]
-];</idyl-code-block>
+];
+</script></idyl-code-block>
       <p>Разберём тип <code>array&lt;array&lt;int, 6&gt;, 4&gt;</code>:</p>
       <ul>
         <li>внутренний <code>array&lt;int, 6&gt;</code> — строка из 6 целых чисел;</li>
@@ -76,9 +78,11 @@
     <div class="docs-section">
       <h2>Доступ к элементу</h2>
       <p>Чтобы получить значение из ячейки, нужно указать <strong>номер строки</strong> и <strong>номер столбца</strong>:</p>
-      <idyl-code-block>int a = mx[0][0]; // 26 — первая строка, первый столбец
+      <idyl-code-block><script type="text/plain">
+int a = mx[0][0]; // 26 — первая строка, первый столбец
 int b = mx[1][3]; // 67 — вторая строка, четвёртый столбец
-int c = mx[3][5]; // 76 — последняя ячейка</idyl-code-block>
+int c = mx[3][5]; // 76 — последняя ячейка
+</script></idyl-code-block>
       <p>Индексы, как всегда, начинаются с нуля.</p>
     </div>
 
@@ -86,11 +90,12 @@ int c = mx[3][5]; // 76 — последняя ячейка</idyl-code-block>
     <div class="docs-section">
       <h2>Вывод двумерного массива</h2>
       <p>Чтобы вывести всю таблицу, используем вложенные циклы:</p>
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     // объявление (как выше)
-    array&lt;array&lt;int, 6&gt;, 4&gt; mx = [ /* ... */ ];
+    array<array<int, 6>, 4> mx = [ /* ... */ ];
 
     for (int row = 0; row < 4; row = row + 1) {
         for (int col = 0; col < 6; col = col + 1) {
@@ -98,7 +103,8 @@ main() {
         }
         console.write('\n');
     }
-}</idyl-code-block>
+}
+</script></idyl-code-block>
       <idyl-output-block>26 41 73 19 87 52 
 65 20 42 67 18 38 
 74 55 93 10 24 89 
@@ -116,20 +122,24 @@ main() {
         <li>Матричные вычисления — в физике, графике, ИИ.</li>
       </ul>
       <p>Вот как можно найти сумму всех элементов:</p>
-      <idyl-code-block>int total = 0;
+      <idyl-code-block><script type="text/plain">
+int total = 0;
 for (int r = 0; r < 4; r = r + 1) {
     for (int c = 0; c < 6; c = c + 1) {
         total = total + mx[r][c];
     }
 }
-console.write("Сумма: ", total, '\n'); // Сумма: 1424</idyl-code-block>
+console.writeln("Сумма: ", total); // Сумма: 1424
+</script></idyl-code-block>
     </div>
 
     <!-- Section 5 -->
     <div class="docs-section">
       <h2>Можно ли сделать трёхмерный?</h2>
       <p>Да! Теоретически можно пойти и дальше:</p>
-      <idyl-code-block>array&lt;array&lt;array&lt;int, 5&gt;, 5&gt;, 5&gt; cube;</idyl-code-block>
+      <idyl-code-block><script type="text/plain">
+array<array<array<int, 5>, 5>, 5> cube;
+</script></idyl-code-block>
       <p>Это уже куб из 5×5×5 ячеек. Но такие структуры редко нужны в школьных проектах — остановимся на двумерных.</p>
     </div>
 
@@ -142,11 +152,14 @@ console.write("Сумма: ", total, '\n'); // Сумма: 1424</idyl-code-block
 
     <!-- Lesson navigation -->
     <nav class="docs-lesson-nav">
-      <a class="docs-nav-btn prev" href="024_math.html">
+      <a class="docs-nav-btn prev" href="025_math.html">
         <span>← Предыдущий урок</span>
-        <strong>Урок 24: Продвинутые возможности 'math'</strong>
+        <strong>Урок 25: Продвинутые возможности 'math'</strong>
       </a>
-      <!-- Next lesson button is commented as there's no link in the original -->
+      <a class="docs-nav-btn next" href="027_errors.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 27: Типичные ошибки</strong>
+      </a>
     </nav>
 
   </main>

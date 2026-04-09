@@ -81,6 +81,7 @@ export class Editor {
         this.textarea.addEventListener('input', () => this.onInput());
         this.textarea.addEventListener('scroll', () => this.syncScroll());
         this.textarea.addEventListener('keydown', (e) => this.onKeyDown(e));
+        this.textarea.addEventListener('paste', (e) => this.handlePaste(e));
 
         this.textarea.addEventListener('keyup', (e) => {
             if (['ArrowLeft', 'ArrowRight', 'Home', 'End', 
@@ -112,13 +113,6 @@ export class Editor {
         this.textarea.addEventListener('click', () => {
             this.checkAutocompleteContext();
         });
-        
-        this.textarea.addEventListener('keyup', (e) => {
-            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 
-                 'Home', 'End', 'PageUp', 'PageDown', 'Escape'].includes(e.key)) {
-                this.checkAutocompleteContext();
-            }
-        });
 
         const initial = options.initialValue ?? '';
         this.textarea.value = initial;
@@ -126,6 +120,46 @@ export class Editor {
         this.pushUndo();
         this.updateHighlight();
         this.updateLineNumbers();
+    }
+
+    private getCurrentLineIndent(pos: number): string {
+        const value = this.textarea.value;
+        let lineStart = pos;
+        while (lineStart > 0 && value[lineStart - 1] !== '\n') {
+            lineStart--;
+        }
+        
+        let indent = '';
+        let i = lineStart;
+        while (i < value.length && (value[i] === ' ' || value[i] === '\t')) {
+            indent += value[i];
+            i++;
+        }
+        return indent;
+    }
+
+    private handlePaste(e: ClipboardEvent): void {
+        e.preventDefault();
+        
+        const pastedText = e.clipboardData?.getData('text/plain') || '';
+        if (!pastedText) return;
+        
+        const start = this.textarea.selectionStart;
+        const end = this.textarea.selectionEnd;
+        const value = this.textarea.value;
+        
+        const newValue = value.substring(0, start) + pastedText + value.substring(end);
+        this.textarea.value = newValue;
+        
+        this.textarea.selectionStart = this.textarea.selectionEnd = start + pastedText.length;
+        
+        this.updateHighlight();
+        this.updateLineNumbers();
+        this.pushUndo();
+        
+        setTimeout(() => {
+            this.formatCode();
+        }, 10);
     }
 
     private checkAutocompleteContext(): void {
@@ -185,6 +219,86 @@ export class Editor {
         this.lineNumbers.querySelectorAll('.line-error').forEach(el => {
             el.classList.remove('line-error');
         });
+    }
+
+    formatCode(): void {
+        const code = this.getValue();
+        const formatted = this.formatIdylliumCode(code);
+        
+        if (formatted !== code) {
+            const cursorPos = this.textarea.selectionStart;
+            this.setValue(formatted);
+            
+            const newCursorPos = Math.min(cursorPos, formatted.length);
+            this.textarea.selectionStart = this.textarea.selectionEnd = newCursorPos;
+            
+            this.updateHighlight();
+            this.updateLineNumbers();
+            this.pushUndo();
+        }
+    }
+    
+    private formatIdylliumCode(code: string): string {
+        const lines = code.split('\n');
+        const formattedLines: string[] = [];
+        let indentLevel = 0;
+        const indentStr = ' '.repeat(this.tabSize);
+        
+        const shouldIncreaseIndent = (line: string): boolean => {
+            const trimmed = line.trim();
+            if (trimmed.endsWith('{')) return true;
+            if (trimmed.startsWith('if ') && trimmed.endsWith('{')) return true;
+            if (trimmed.startsWith('else') && trimmed.endsWith('{')) return true;
+            if (trimmed.startsWith('for ') && trimmed.endsWith('{')) return true;
+            if (trimmed.startsWith('while ') && trimmed.endsWith('{')) return true;
+            if (trimmed.startsWith('function ') && trimmed.endsWith('{')) return true;
+            if (trimmed.startsWith('class ') && trimmed.endsWith('{')) return true;
+            return false;
+        };
+        
+        const shouldDecreaseIndent = (line: string): boolean => {
+            const trimmed = line.trim();
+            if (trimmed === '}') return true;
+            if (trimmed.startsWith('}') && !trimmed.startsWith('} else')) return true;
+            return false;
+        };
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const trimmed = line.trim();
+            
+            if (trimmed === '') {
+                formattedLines.push('');
+                continue;
+            }
+            
+            if (trimmed.startsWith('//') || trimmed.startsWith('/*')) {
+                formattedLines.push(indentStr.repeat(indentLevel) + trimmed);
+                continue;
+            }
+            
+            let currentIndent = indentLevel;
+            
+            if (shouldDecreaseIndent(line)) {
+                currentIndent = Math.max(0, indentLevel - 1);
+            }
+            
+            let formattedLine = indentStr.repeat(currentIndent) + trimmed;
+            
+            if (trimmed === '} else {') {
+                formattedLine = indentStr.repeat(Math.max(0, indentLevel - 1)) + '} else {';
+            }
+            
+            formattedLines.push(formattedLine);
+            
+            if (shouldIncreaseIndent(line)) {
+                indentLevel++;
+            } else if (shouldDecreaseIndent(line) && trimmed !== '} else {') {
+                indentLevel = Math.max(0, indentLevel - 1);
+            }
+        }
+        
+        return formattedLines.map(line => line.replace(/\s+$/, '')).join('\n');
     }
 
     private applyStyles(): void {
@@ -315,25 +429,14 @@ export class Editor {
     private insertCompletion(item: CompletionItem): void {
         const now = Date.now();
         if (this.suppressAutocomplete || (now - this.lastInsertTime) < 500) {
-            console.log('insertCompletion: blocked (too soon)');
             return;
         }
         this.lastInsertTime = now;
         this.suppressAutocomplete = true;
         
-        console.log('=== insertCompletion ===');
-        console.log('item.label:', item.label);
-        console.log('item.insertText:', item.insertText);
-        console.log('item.needsSemicolon:', item.needsSemicolon);
-        
         const value = this.textarea.value;
         const pos = this.textarea.selectionStart;
         const ctx = parseCompletionContext(value, pos);
-        
-        console.log('value:', value);
-        console.log('pos:', pos);
-        console.log('ctx.currentWord:', ctx.currentWord);
-        console.log('ctx.afterDot:', ctx.afterDot);
     
         let wordStart = pos;
         while (wordStart > 0 && /[a-zA-Z0-9_]/.test(value[wordStart - 1])) {
@@ -421,7 +524,6 @@ export class Editor {
         
         setTimeout(() => {
             this.suppressAutocomplete = false;
-            console.log('Autocomplete re-enabled');
         }, 500);
         
         this.textarea.focus();
@@ -474,7 +576,6 @@ export class Editor {
                 e.stopPropagation();
                 
                 if (this.suppressAutocomplete) {
-                    console.log('onKeyDown: suppressed, skipping');
                     return;
                 }
                 
@@ -501,8 +602,41 @@ export class Editor {
         if (e.key === 'Tab' && !this.autocomplete.isVisible()) {
             e.preventDefault();
             const spaces = ' '.repeat(this.tabSize);
-            this.textarea.value = value.substring(0, start) + spaces + value.substring(end);
-            this.textarea.selectionStart = this.textarea.selectionEnd = start + this.tabSize;
+            
+            if (hasSelection) {
+                const selectedText = value.substring(start, end);
+                const lines = selectedText.split('\n');
+                
+                if (e.shiftKey) {
+                    const unindentedLines = lines.map(line => {
+                        let removed = 0;
+                        let i = 0;
+                        while (i < line.length && removed < this.tabSize && (line[i] === ' ' || line[i] === '\t')) {
+                            if (line[i] === '\t') {
+                                removed = this.tabSize;
+                            } else {
+                                removed++;
+                            }
+                            i++;
+                        }
+                        return line.substring(i);
+                    });
+                    const newText = unindentedLines.join('\n');
+                    this.textarea.value = value.substring(0, start) + newText + value.substring(end);
+                    this.textarea.selectionStart = start;
+                    this.textarea.selectionEnd = start + newText.length;
+                } else {
+                    const indentedLines = lines.map(line => spaces + line);
+                    const newText = indentedLines.join('\n');
+                    this.textarea.value = value.substring(0, start) + newText + value.substring(end);
+                    this.textarea.selectionStart = start;
+                    this.textarea.selectionEnd = start + newText.length;
+                }
+            } else {
+                this.textarea.value = value.substring(0, start) + spaces + value.substring(end);
+                this.textarea.selectionStart = this.textarea.selectionEnd = start + this.tabSize;
+            }
+            
             this.onInput();
             return;
         }

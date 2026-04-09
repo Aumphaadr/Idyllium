@@ -53,6 +53,14 @@ export class IdylArray<T> {
         return new IdylArray<T>(data, fixed);
     }
 
+    static generate<T>(size: number, factory: () => T, fixed: boolean): IdylArray<T> {
+        const data: T[] = [];
+        for (let i = 0; i < size; i++) {
+            data.push(factory());
+        }
+        return new IdylArray<T>(data, fixed);
+    }
+
     static empty<T>(fixed: boolean): IdylArray<T> {
         return new IdylArray<T>([], fixed);
     }

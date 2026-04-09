@@ -63,9 +63,11 @@
       <h3><code>.contains(c)</code></h3>
       <p>Проверяет, есть ли подстрока или символ в строке:</p>
 
-      <idyl-code-block>string s = "Hello, World!";
+      <idyl-code-block><script type="text/plain">
+string s = "Hello, World!";
 bool has_o = s.contains('o');      // true
-bool has_abc = s.contains("abc");   // false</idyl-code-block>
+bool has_abc = s.contains("abc");   // false
+</script></idyl-code-block>
     </div>
 
     <!-- Section 3 -->
@@ -73,13 +75,15 @@ bool has_abc = s.contains("abc");   // false</idyl-code-block>
       <h3><code>.is_int()</code> и <code>.is_float()</code></h3>
       <p>Проверяют, можно ли строку безопасно преобразовать в число:</p>
 
-      <idyl-code-block>string a = "123";
+      <idyl-code-block><script type="text/plain">
+string a = "123";
 string b = "12.5";
 string c = "abc";
 
-console.write(a.is_int(), '\n');     // true
-console.write(b.is_float(), '\n');  // true
-console.write(c.is_int(), '\n');     // false</idyl-code-block>
+console.writeln(a.is_int());     // true
+console.writeln(b.is_float());  // true
+console.writeln(c.is_int());     // false
+</script></idyl-code-block>
     </div>
 
     <!-- Section 4 -->
@@ -93,10 +97,12 @@ console.write(c.is_int(), '\n');     // false</idyl-code-block>
       <h3><code>.find(c)</code></h3>
       <p>Возвращает индекс первого вхождения символа или подстроки, или <code>-1</code>, если не найдено:</p>
 
-      <idyl-code-block>string t = "Кот и собака";
+      <idyl-code-block><script type="text/plain">
+string t = "Кот и собака";
 int idx1 = t.find('о');      // 1
 int idx2 = t.find("собака"); // 6
-int idx3 = t.find("рыба");   // -1</idyl-code-block>
+int idx3 = t.find("рыба");   // -1
+</script></idyl-code-block>
     </div>
 
     <!-- Section 6 -->
@@ -104,9 +110,11 @@ int idx3 = t.find("рыба");   // -1</idyl-code-block>
       <h3><code>.count(c)</code></h3>
       <p>Считает, сколько раз встречается символ или подстрока:</p>
 
-      <idyl-code-block>string u = "абракадабра";
+      <idyl-code-block><script type="text/plain">
+string u = "абракадабра";
 int a_count = u.count('а'); // 5
-int abra_count = u.count("абра"); // 2</idyl-code-block>
+int abra_count = u.count("абра"); // 2
+</script></idyl-code-block>
     </div>
 
     <!-- Section 7 -->
@@ -120,17 +128,19 @@ int abra_count = u.count("абра"); // 2</idyl-code-block>
       <h3><code>.to_upper()</code> и <code>.to_lower()</code></h3>
       <p>Преобразуют все символы строки в верхний или нижний регистр:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
-    string a = "aBcDeFgHiJk";
+    string a = "Привет";
     
-    console.writeln(a.to_upper()); // ABCDEFGHIJK
-    console.writeln(a.to_lower()); // abcdefghijk
-}</idyl-code-block>
+    console.writeln(a.to_upper()); // ПРИВЕТ
+    console.writeln(a.to_lower()); // привет
+}
+</script></idyl-code-block>
 
-      <idyl-output-block>ABCDEFGHIJK
-abcdefghijk</idyl-output-block>
+      <idyl-output-block>ПРИВЕТ
+привет</idyl-output-block>
     </div>
 
     <!-- Section 9 -->
@@ -138,7 +148,8 @@ abcdefghijk</idyl-output-block>
       <h3><code>.substring(start, count)</code></h3>
       <p>Возвращает часть строки, начиная с индекса <code>start</code> и длиной <code>count</code> символов:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     string a = "aBcDeFgHiJk";
@@ -146,7 +157,8 @@ main() {
     console.writeln(a.substring(1, 3)); // BcD
     console.writeln(a.substring(3, 2)); // De
     console.writeln(a.substring(5, 5)); // FgHiJ
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <idyl-output-block>BcD
 De
@@ -160,10 +172,15 @@ FgHiJ</idyl-output-block>
       <h3><code>.replace(old, new)</code></h3>
       <p>Заменяет все вхождения подстроки <code>old</code> на <code>new</code>:</p>
 
-      <idyl-code-block>string x = "Кот и кот и ещё кот";
-console.write(x.replace("кот", "пёс"), '\n');</idyl-code-block>
+      <idyl-code-block><script type="text/plain">
+string x = "Кот и кот и ещё кот";
+string y = x.replace("кот", "пёс");
+console.writeln(x);
+console.writeln(y);
+</script></idyl-code-block>
 
-      <idyl-output-block>Кот и пёс и ещё пёс</idyl-output-block>
+      <idyl-output-block>Кот и кот и ещё кот
+Кот и пёс и ещё пёс</idyl-output-block>
 
       <p>Обратите внимание: первый <code>"Кот"</code> не был заменён из-за того, что функция является регистрозависимой.</p>
     </div>
@@ -178,9 +195,11 @@ console.write(x.replace("кот", "пёс"), '\n');</idyl-code-block>
       <h3><code>.split(c)</code></h3>
       <p>Разбивает строку по разделителю и возвращает динамический массив строк:</p>
 
-      <idyl-code-block>string data = "яблоко,банан,апельсин";
+      <idyl-code-block><script type="text/plain">
+string data = "яблоко,банан,апельсин";
 dyn_array<string> fruits = data.split(",");
-console.write(fruits, '\n');</idyl-code-block>
+console.writeln(fruits);
+</script></idyl-code-block>
 
       <idyl-output-block>["яблоко", "банан", "апельсин"]</idyl-output-block>
 

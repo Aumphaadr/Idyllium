@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 15: Модальные окна — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <link rel="stylesheet" href="gui.css">
+  <script src="../components.js" defer></script>
+  <style>
+    .interactive-demo {
+      background: rgba(137, 180, 250, 0.05);
+      border-radius: 12px;
+      padding: 1em;
+      margin: 1.5em 0;
+    }
+    .interactive-demo .coord-note {
+      margin-top: 1em;
+    }
+    .modal-demo-container {
+      position: relative;
+      min-height: 220px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Графические виджеты</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Виджеты • Урок 15</div>
+      <h1>Модальные окна</h1>
+      <p class="docs-subtitle">Диалоги для уведомлений, подтверждений и ввода данных</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Что такое Modal?</h2>
+      <p><code>gui.Modal</code> — это всплывающее диалоговое окно, которое блокирует взаимодействие с основным окном до тех пор, пока пользователь не закроет его.</p>
+      <p>Где они встречаются:</p>
+      <ul>
+        <li>📢 Информационные сообщения («Файл сохранён»)</li>
+        <li>⚠️ Подтверждение действия («Вы уверены, что хотите удалить?»)</li>
+        <li>✏️ Запрос текстового ввода («Введите ваше имя»)</li>
+        <li>🚨 Предупреждения об ошибках</li>
+      </ul>
+
+      <p>Модальные окна не нужно добавлять через <code>add_child()</code> — они создаются и показываются динамически.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Alert — простое уведомление</h2>
+      <p><code>show_alert()</code> — показывает модальное окно только с информационным сообщением и одной кнопкой «ОК»:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 150;
+    win.title = "Alert";
+
+    gui.Button btn;
+    btn.text = "Показать уведомление";
+    btn.x = 30;
+    btn.y = 50;
+    btn.width = 240;
+
+    btn.on_click = void function(gui.Button sender) {
+        gui.Modal m;
+        m.title = "Уведомление";
+        m.message = "Это простое информационное сообщение.";
+        m.confirm_text = "Понятно";
+        m.show_alert();
+    };
+
+    win.add_child(btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 120px; position: relative;">
+            <button class="idyl-button" style="position: absolute; left: 30px; top: 50px; width: 240px;" id="alertDemoBtn">Показать уведомление</button>
+          </div>
+        </div>
+        <div class="coord-note">
+          📢 Нажмите на кнопку — появится модальное окно с сообщением и кнопкой «Понятно».
+        </div>
+      </div>
+
+      <p>Свойства Alert:</p>
+      <ul>
+        <li><code>title</code> — заголовок окна</li>
+        <li><code>message</code> — текст сообщения</li>
+        <li><code>confirm_text</code> — текст на кнопке (по умолчанию «OK»)</li>
+      </ul>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Confirm — подтверждение действия</h2>
+      <p><code>show_confirm()</code> — показывает модальное окно с двумя кнопками (например, «Да» и «Нет»). Результат выбора можно обработать через события <code>on_confirm</code> и <code>on_cancel</code>:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 180;
+    win.title = "Confirm";
+
+    gui.Label result;
+    result.x = 30;
+    result.y = 30;
+    result.text = "Результат: ?";
+
+    gui.Button btn;
+    btn.text = "Спросить подтверждение";
+    btn.x = 30;
+    btn.y = 80;
+    btn.width = 200;
+
+    btn.on_click = void function(gui.Button sender) {
+        gui.Modal m;
+        m.title = "Подтверждение";
+        m.message = "Вы уверены, что хотите продолжить?";
+        m.confirm_text = "Да";
+        m.cancel_text = "Нет";
+        
+        m.on_confirm = void function(gui.Modal modal) {
+            result.text = "Результат: Да";
+        };
+        
+        m.on_cancel = void function(gui.Modal modal) {
+            result.text = "Результат: Нет";
+        };
+        
+        m.show_confirm();
+    };
+
+    win.add_child(result);
+    win.add_child(btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 150px; position: relative;">
+            <div style="position: absolute; left: 30px; top: 30px; color: #cdd6f4;" id="confirmResult">Результат: ?</div>
+            <button class="idyl-button" style="position: absolute; left: 30px; top: 80px; width: 200px;" id="confirmDemoBtn">Спросить подтверждение</button>
+          </div>
+        </div>
+        <div class="coord-note">
+          ❓ Нажмите на кнопку — появится диалог с выбором «Да» или «Нет». Результат отобразится на лейбле.
+        </div>
+      </div>
+
+      <p>Свойства Confirm:</p>
+      <ul>
+        <li><code>title</code> — заголовок</li>
+        <li><code>message</code> — текст вопроса</li>
+        <li><code>confirm_text</code> — текст на кнопке подтверждения</li>
+        <li><code>cancel_text</code> — текст на кнопке отмены</li>
+        <li><code>on_confirm</code> — обработчик нажатия на кнопку подтверждения</li>
+        <li><code>on_cancel</code> — обработчик нажатия на кнопку отмены</li>
+      </ul>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Input — ввод текста</h2>
+      <p><code>show_input()</code> — показывает модальное окно с полем для ввода текста. Введённое значение можно получить через метод <code>get_input_value()</code>:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 180;
+    win.title = "Input";
+
+    gui.Label result;
+    result.x = 30;
+    result.y = 30;
+    result.text = "Введено: ?";
+
+    gui.Button btn;
+    btn.text = "Спросить имя";
+    btn.x = 30;
+    btn.y = 80;
+    btn.width = 200;
+
+    btn.on_click = void function(gui.Button sender) {
+        gui.Modal m;
+        m.title = "Введите имя";
+        m.message = "Как вас зовут?";
+        m.confirm_text = "Сохранить";
+        m.cancel_text = "Отмена";
+        
+        m.on_confirm = void function(gui.Modal modal) {
+            string name = modal.get_input_value();
+            if (name == "") {
+                result.text = "Вы не ввели имя!";
+            } else {
+                result.text = "Привет, " + name + "!";
+            }
+        };
+        
+        m.show_input();
+    };
+
+    win.add_child(result);
+    win.add_child(btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 150px; position: relative;">
+            <div style="position: absolute; left: 30px; top: 30px; color: #cdd6f4;" id="inputResult">Введено: ?</div>
+            <button class="idyl-button" style="position: absolute; left: 30px; top: 80px; width: 200px;" id="inputDemoBtn">Спросить имя</button>
+          </div>
+        </div>
+        <div class="coord-note">
+          ✏️ Введите имя в появившемся диалоге — оно отобразится на лейбле.
+        </div>
+      </div>
+
+      <p>Свойства Input:</p>
+      <ul>
+        <li><code>title</code> — заголовок</li>
+        <li><code>message</code> — текст над полем ввода</li>
+        <li><code>confirm_text</code> — текст на кнопке подтверждения</li>
+        <li><code>cancel_text</code> — текст на кнопке отмены</li>
+        <li><code>on_confirm</code> — обработчик нажатия на кнопку подтверждения</li>
+        <li><code>on_cancel</code> — обработчик нажатия на кнопку отмены (опционально)</li>
+        <li><code>get_input_value()</code> — метод для получения введённого текста</li>
+      </ul>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Полный пример</h2>
+      <p>Собираем всё вместе: три кнопки для разных типов диалогов и один лейбл для отображения результата:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+use console;
+
+main() {
+    gui.Window win;
+    win.title = "Демо модальных окон";
+    win.width = 400;
+    win.height = 250;
+    
+    gui.Button alert_btn;
+    alert_btn.text = "Показать Alert";
+    alert_btn.x = 30;
+    alert_btn.y = 30;
+    
+    gui.Button confirm_btn;
+    confirm_btn.text = "Показать Confirm";
+    confirm_btn.x = 30;
+    confirm_btn.y = 80;
+    
+    gui.Button input_btn;
+    input_btn.text = "Показать Input";
+    input_btn.x = 30;
+    input_btn.y = 130;
+    
+    gui.Label result_label;
+    result_label.text = "";
+    result_label.x = 200;
+    result_label.y = 80;
+    
+    // Alert — просто сообщение
+    alert_btn.on_click = void function(gui.Button sender) {
+        gui.Modal m;
+        m.title = "Уведомление";
+        m.message = "Это простое информационное сообщение.";
+        m.confirm_text = "Понятно";
+        m.show_alert();
+    };
+    
+    // Confirm — да/нет
+    confirm_btn.on_click = void function(gui.Button sender) {
+        gui.Modal m;
+        m.title = "Подтверждение";
+        m.message = "Вы уверены, что хотите продолжить?";
+        m.confirm_text = "Да";
+        m.cancel_text = "Нет";
+        
+        m.on_confirm = void function(gui.Modal modal) {
+            result_label.text = "Вы нажали: Да";
+        };
+        
+        m.on_cancel = void function(gui.Modal modal) {
+            result_label.text = "Вы нажали: Нет";
+        };
+        
+        m.show_confirm();
+    };
+    
+    // Input — ввод текста
+    input_btn.on_click = void function(gui.Button sender) {
+        gui.Modal m;
+        m.title = "Введите имя";
+        m.message = "Как вас зовут?";
+        m.confirm_text = "Сохранить";
+        m.cancel_text = "Отмена";
+        
+        m.on_confirm = void function(gui.Modal modal) {
+            string name = modal.get_input_value();
+            result_label.text = "Привет, " + name + "!";
+        };
+        
+        m.show_input();
+    };
+    
+    win.add_child(alert_btn);
+    win.add_child(confirm_btn);
+    win.add_child(input_btn);
+    win.add_child(result_label);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 220px; position: relative;">
+            <button class="idyl-button" style="position: absolute; left: 30px; top: 30px;" id="fullAlertBtn">Показать Alert</button>
+            <button class="idyl-button" style="position: absolute; left: 30px; top: 80px;" id="fullConfirmBtn">Показать Confirm</button>
+            <button class="idyl-button" style="position: absolute; left: 30px; top: 130px;" id="fullInputBtn">Показать Input</button>
+            <div style="position: absolute; left: 200px; top: 80px; color: #cdd6f4;" id="fullResultLabel"></div>
+          </div>
+        </div>
+        <div class="coord-note">
+          🎯 Полноценный пример: Alert (информация), Confirm (подтверждение), Input (ввод текста).
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Важное замечание</h2>
+      <p><strong>Modal не является виджетом</strong> в том смысле, что его не нужно добавлять через <code>win.add_child()</code>. Он создаётся и показывается динамически, а после закрытия уничтожается.</p>
+      <p>Каждый раз при вызове <code>show_alert()</code>, <code>show_confirm()</code> или <code>show_input()</code> создаётся <strong>новое</strong> модальное окно. Его можно настроить через свойства и обработчики перед показом.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="014_timer.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 14: Объект Timer</strong>
+      </a>
+      <a class="docs-nav-btn next" href="016_errors.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 16: Типичные ошибки</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+<script>
+  // Интерактив для демо-примеров
+  document.addEventListener('DOMContentLoaded', () => {
+    // Пример 2: Alert
+    const alertDemoBtn = document.getElementById('alertDemoBtn');
+    if (alertDemoBtn) {
+      alertDemoBtn.addEventListener('click', () => {
+        alert('Уведомление\n\nЭто простое информационное сообщение.');
+      });
+    }
+
+    // Пример 3: Confirm
+    const confirmDemoBtn = document.getElementById('confirmDemoBtn');
+    const confirmResult = document.getElementById('confirmResult');
+    if (confirmDemoBtn && confirmResult) {
+      confirmDemoBtn.addEventListener('click', () => {
+        const result = confirm('Вы уверены, что хотите продолжить?');
+        confirmResult.textContent = 'Результат: ' + (result ? 'Да' : 'Нет');
+      });
+    }
+
+    // Пример 4: Input
+    const inputDemoBtn = document.getElementById('inputDemoBtn');
+    const inputResult = document.getElementById('inputResult');
+    if (inputDemoBtn && inputResult) {
+      inputDemoBtn.addEventListener('click', () => {
+        const name = prompt('Как вас зовут?');
+        if (name === null || name === '') {
+          inputResult.textContent = 'Вы не ввели имя!';
+        } else {
+          inputResult.textContent = 'Привет, ' + name + '!';
+        }
+      });
+    }
+
+    // Пример 5: полный пример
+    const fullAlertBtn = document.getElementById('fullAlertBtn');
+    const fullConfirmBtn = document.getElementById('fullConfirmBtn');
+    const fullInputBtn = document.getElementById('fullInputBtn');
+    const fullResultLabel = document.getElementById('fullResultLabel');
+
+    if (fullAlertBtn) {
+      fullAlertBtn.addEventListener('click', () => {
+        alert('Уведомление\n\nЭто простое информационное сообщение.');
+      });
+    }
+
+    if (fullConfirmBtn && fullResultLabel) {
+      fullConfirmBtn.addEventListener('click', () => {
+        const result = confirm('Вы уверены, что хотите продолжить?');
+        fullResultLabel.textContent = 'Вы нажали: ' + (result ? 'Да' : 'Нет');
+      });
+    }
+
+    if (fullInputBtn && fullResultLabel) {
+      fullInputBtn.addEventListener('click', () => {
+        const name = prompt('Как вас зовут?');
+        if (name === null || name === '') {
+          fullResultLabel.textContent = 'Привет, !';
+        } else {
+          fullResultLabel.textContent = 'Привет, ' + name + '!';
+        }
+      });
+    }
+  });
+</script>
+</body>
+</html>
