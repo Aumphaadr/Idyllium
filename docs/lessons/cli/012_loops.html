@@ -57,15 +57,17 @@
       <h2>Цикл <code>while</code> — «пока»</h2>
       <p>Цикл <code>while</code> проверяет условие <strong>перед</strong> каждой итерацией. Если условие истинно — выполняет тело цикла. Если ложно — выходит из цикла.</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     int count = 1;
     while (count <= 5) {
-        console.write("Итерация ", count, '\n');
+        console.writeln("Итерация ", count);
         count = count + 1;
     }
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <idyl-output-block>Итерация 1
 Итерация 2
@@ -81,7 +83,8 @@ main() {
       <h2>Цикл <code>do-while</code> — «сделай, потом проверь»</h2>
       <p>Цикл <code>do-while</code> сначала выполняет тело цикла, <strong>затем</strong> проверяет условие. Это гарантирует, что тело цикла выполнится как минимум один раз.</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     int guess;
@@ -90,8 +93,9 @@ main() {
         guess = console.get_int();
     } while (guess != 7);
 
-    console.write("Правильно! Это 7!\n");
-}</idyl-code-block>
+    console.writeln("Правильно! Это 7!");
+}
+</script></idyl-code-block>
 
       <p>Такой цикл идеален, когда нужно запросить данные у пользователя <strong>хотя бы один раз</strong>.</p>
     </div>
@@ -106,13 +110,15 @@ main() {
         <li><strong>Ежеитерационное действие</strong> — выполняется после каждой итерации (обычно увеличение счётчика).</li>
       </ol>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     for (int i = 0; i < 3; i = i + 1) {
-        console.write("i = ", i, '\n');
+        console.writeln("i = ", i);
     }
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <idyl-output-block>i = 0
 i = 1
@@ -127,22 +133,26 @@ i = 2</idyl-output-block>
       <p>Представим, что нужно вывести «Привет!» десять раз.</p>
       <p>Без цикла:</p>
 
-      <idyl-code-block>console.write("Привет!\n");
-console.write("Привет!\n");
-console.write("Привет!\n");
-console.write("Привет!\n");
-console.write("Привет!\n");
-console.write("Привет!\n");
-console.write("Привет!\n");
-console.write("Привет!\n");
-console.write("Привет!\n");
-console.write("Привет!\n");</idyl-code-block>
+      <idyl-code-block><script type="text/plain">
+console.writeln("Привет!");
+console.writeln("Привет!");
+console.writeln("Привет!");
+console.writeln("Привет!");
+console.writeln("Привет!");
+console.writeln("Привет!");
+console.writeln("Привет!");
+console.writeln("Привет!");
+console.writeln("Привет!");
+console.writeln("Привет!");
+</script></idyl-code-block>
 
       <p>С циклом:</p>
 
-      <idyl-code-block>for (int i = 0; i < 10; i = i + 1) {
-    console.write("Привет!\n");
-}</idyl-code-block>
+      <idyl-code-block><script type="text/plain">
+for (int i = 0; i < 10; i = i + 1) {
+    console.writeln("Привет!");
+}
+</script></idyl-code-block>
 
       <p>А если нужно повторить действие <strong>тысячу</strong>, <strong>миллион</strong> или <strong>столько, сколько скажет пользователь</strong> раз?</p>
       <p>Без циклов — это невозможно. С циклами — тривиально.</p>
@@ -153,17 +163,19 @@ console.write("Привет!\n");</idyl-code-block>
       <h2>Оператор <code>break</code> — досрочный выход</h2>
       <p>Оператор <code>break</code> немедленно прерывает выполнение цикла и передаёт управление на следующую строчку <strong>после</strong> цикла.</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     for (int i = 1; i <= 10; i = i + 1) {
         if (i == 5) {
             break; // выйти из цикла
         }
-        console.write(i, '\n');
+        console.writeln(i);
     }
-    console.write("Цикл завершён.\n");
-}</idyl-code-block>
+    console.writeln("Цикл завершён.");
+}
+</script></idyl-code-block>
 
       <idyl-output-block>1
 2
@@ -179,16 +191,18 @@ main() {
       <h2>Оператор <code>continue</code> — пропуск итерации</h2>
       <p>Оператор <code>continue</code> прерывает текущую итерацию цикла и переходит к следующей (проверке условия и, при необходимости, выполнению тела).</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     for (int i = 1; i <= 5; i = i + 1) {
         if (i == 3) {
             continue; // пропустить вывод тройки
         }
-        console.write(i, '\n');
+        console.writeln(i);
     }
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <idyl-output-block>1
 2

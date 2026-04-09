@@ -57,12 +57,14 @@
       <h2>Пауза в программе: <code>time.sleep(s)</code></h2>
       <p>Функция <code>time.sleep(s)</code> приостанавливает выполнение программы на указанное количество секунд:</p>
 
-      <idyl-code-block>use time;
+      <idyl-code-block><script type="text/plain">
+use time;
 
 main() {
     time.sleep(1.5); // пауза на 1.5 секунды
     time.sleep(3);   // пауза на 3 секунды
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Аргумент может быть целым или дробным — как удобно.</p>
     </div>
@@ -72,13 +74,15 @@ main() {
       <h2>Текущая временная метка: <code>time.now()</code></h2>
       <p>Функция <code>time.now()</code> возвращает значение специального типа <code>time.stamp</code> — это полная временная метка:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 use time;
 
 main() {
     time.stamp N = time.now();
-    console.write(N, '\n');
-}</idyl-code-block>
+    console.writeln(N);
+}
+</script></idyl-code-block>
 
       <idyl-output-block>2025-11-29 18:55:36</idyl-output-block>
 
@@ -90,19 +94,21 @@ main() {
       <h2>Извлечение частей даты и времени</h2>
       <p>У объекта типа <code>time.stamp</code> есть методы для получения отдельных компонентов:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 use time;
 
 main() {
     time.stamp t = time.now();
-    console.write("Год: ", t.year(), '\n');
-    console.write("Месяц: ", t.month(), '\n');
-    console.write("День: ", t.day(), '\n');
-    console.write("Час: ", t.hour(), '\n');
-    console.write("Минута: ", t.minute(), '\n');
-    console.write("Секунда: ", t.second(), '\n');
-    console.write("День недели: ", t.week_day(), '\n');
-}</idyl-code-block>
+    console.writeln("Год: ", t.year());
+    console.writeln("Месяц: ", t.month());
+    console.writeln("День: ", t.day());
+    console.writeln("Час: ", t.hour());
+    console.writeln("Минута: ", t.minute());
+    console.writeln("Секунда: ", t.second());
+    console.writeln("День недели: ", t.week_day());
+}
+</script></idyl-code-block>
 
       <idyl-output-block>Год: 2025
 Месяц: 11
@@ -120,9 +126,11 @@ main() {
       <h2>UNIX-время: <code>.unix()</code></h2>
       <p>Метод <code>.unix()</code> возвращает количество секунд, прошедших с начала эпохи UNIX (<code>1970-01-01 00:00:00 UTC</code>):</p>
 
-      <idyl-code-block>time.stamp t = time.now();
+      <idyl-code-block><script type="text/plain">
+time.stamp t = time.now();
 int ts = t.unix();
-console.write("UNIX-время: ", ts, '\n');</idyl-code-block>
+console.writeln("UNIX-время: ", ts);
+</script></idyl-code-block>
 
       <idyl-output-block>UNIX-время: 1769734536</idyl-output-block>
 
@@ -134,14 +142,16 @@ console.write("UNIX-время: ", ts, '\n');</idyl-code-block>
       <h2>Создание метки из UNIX-времени: <code>time.from_unix(n)</code></h2>
       <p>Если у вас есть UNIX-время, вы можете создать из него полноценную метку:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 use time;
 
 main() {
     time.stamp birth = time.from_unix(946684800); // 2000-01-01 00:00:00
-    console.write("Дата: ", birth, '\n');
-    console.write("Год: ", birth.year(), '\n');
-}</idyl-code-block>
+    console.writeln("Дата: ", birth);
+    console.writeln("Год: ", birth.year());
+}
+</script></idyl-code-block>
 
       <idyl-output-block>Дата: 2000-01-01 00:00:00
 Год: 2000</idyl-output-block>

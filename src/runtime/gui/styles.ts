@@ -153,6 +153,7 @@ export const GUI_STYLES = `
     border-radius: 6px;
     overflow: hidden;
     height: 24px;
+    position: relative;
 }
 
 .idyl-progressbar-fill {
@@ -160,6 +161,43 @@ export const GUI_STYLES = `
     background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%);
     transition: width 0.3s ease;
     border-radius: 4px;
+}
+
+.idyl-progressbar-label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #cdd6f4;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+}
+
+.idyl-radio-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.idyl-radio {
+    width: 18px;
+    height: 18px;
+    accent-color: #89b4fa;
+    cursor: pointer;
+}
+
+.idyl-radio-label {
+    color: #cdd6f4;
+    font-size: 14px;
+    cursor: pointer;
+    user-select: none;
 }
 
 .idyl-textedit-wrapper {
@@ -276,6 +314,124 @@ export const GUI_STYLES = `
 
 .idyl-frame-content {
     position: relative;
+}
+
+.idyl-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    backdrop-filter: blur(2px);
+}
+
+.idyl-modal {
+    background: #2a2a3e;
+    border: 1px solid #45475a;
+    border-radius: 12px;
+    padding: 24px;
+    min-width: 320px;
+    max-width: 480px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    animation: idyl-modal-appear 0.15s ease-out;
+}
+
+@keyframes idyl-modal-appear {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.idyl-modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #cdd6f4;
+    margin-bottom: 12px;
+}
+
+.idyl-modal-message {
+    font-size: 14px;
+    color: #a6adc8;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.idyl-modal-input-wrapper {
+    margin-bottom: 20px;
+}
+
+.idyl-modal-input {
+    width: 100%;
+    padding: 10px 14px;
+    background: #1e1e2e;
+    border: 1px solid #45475a;
+    border-radius: 8px;
+    color: #cdd6f4;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    box-sizing: border-box;
+}
+
+.idyl-modal-input:focus {
+    border-color: #89b4fa;
+    box-shadow: 0 0 0 3px rgba(137, 180, 250, 0.15);
+}
+
+.idyl-modal-input::placeholder {
+    color: #6c7086;
+}
+
+.idyl-modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.idyl-modal-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.idyl-modal-btn-cancel {
+    background: #313244;
+    color: #a6adc8;
+}
+
+.idyl-modal-btn-cancel:hover {
+    background: #45475a;
+    color: #cdd6f4;
+}
+
+.idyl-modal-btn-confirm {
+    background: linear-gradient(135deg, #89b4fa 0%, #74c7ec 100%);
+    color: #1e1e2e;
+}
+
+.idyl-modal-btn-confirm:hover {
+    background: linear-gradient(135deg, #9fc5ff 0%, #89d4f5 100%);
+    transform: translateY(-1px);
+}
+
+.idyl-modal-btn:focus {
+    outline: 2px solid #89b4fa;
+    outline-offset: 2px;
 }
 
 `;

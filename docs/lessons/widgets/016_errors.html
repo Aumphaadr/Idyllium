@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 16: Типичные ошибки при работе с виджетами — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <link rel="stylesheet" href="gui.css">
+  <script src="../components.js" defer></script>
+  <style>
+    .error-message {
+      background: rgba(243, 139, 168, 0.15);
+      border-left: 3px solid #f38ba8;
+      padding: 0.75em 1em;
+      font-family: 'Source Code Pro', monospace;
+      font-size: 0.85em;
+      color: #f38ba8;
+      margin: 0.5em 0 1em 0;
+      border-radius: 0 6px 6px 0;
+    }
+    .warning-message {
+      background: rgba(249, 226, 175, 0.15);
+      border-left: 3px solid #f9e2af;
+      padding: 0.75em 1em;
+      font-family: 'Source Code Pro', monospace;
+      font-size: 0.85em;
+      color: #f9e2af;
+      margin: 0.5em 0 1em 0;
+      border-radius: 0 6px 6px 0;
+    }
+    .tip-box {
+      background: rgba(137, 180, 250, 0.1);
+      border: 1px solid rgba(137, 180, 250, 0.3);
+      border-radius: 8px;
+      padding: 1em 1.25em;
+      margin: 1.5em 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Графические виджеты</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Виджеты • Урок 16</div>
+      <h1>Типичные ошибки при работе с виджетами</h1>
+      <p class="docs-subtitle">Как не попасть в ловушки и понять сообщения компилятора</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Забыли <code>win.add_child()</code></h2>
+      <p>Самый частый промах — создать виджет, но не добавить его в окно или контейнер. Виджет существует, но его не видно.</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    gui.Button btn;
+    btn.text = "Я невидимка";
+    btn.x = 20;
+    btn.y = 20;
+    // win.add_child(btn); ← забыли!
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="error-message">
+        Код компилируется, окно появляется, но кнопки нет. Она создана, но не добавлена в окно.
+      </div>
+
+      <p>Исправление: всегда добавляйте виджеты в окно или контейнер через <code>win.add_child(виджет)</code> или <code>frame.add_child(виджет)</code>.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Неправильный порядок добавления — перекрытие</h2>
+      <p>Виджеты отрисовываются в порядке вызова <code>add_child()</code>. Первый добавленный — снизу, последний — сверху.</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 150;
+
+    gui.Label label;
+    label.text = "Длинный текст длинный текст длинный текст";
+    label.x = 20;
+    label.y = 20;
+
+    gui.Button btn;
+    btn.x = 30;
+    btn.y = 20;
+    btn.text = "Кнопка";
+
+    win.add_child(label);  // label будет снизу
+    win.add_child(btn);    // btn — сверху (перекрывает label)
+
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="error-message">
+        Кнопка перекрывает лейбл, потому что добавлена позже. Текст лейбла частично нечитаем.
+      </div>
+
+      <p>Исправление: планируйте порядок добавления или используйте координаты, чтобы виджеты не пересекались.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Неверный тип в <code>sender</code></h2>
+      <p>При использовании параметра <code>sender</code> тип должен точно соответствовать типу виджета, который вызывает событие.</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    gui.Button btn;
+    
+    // ОШИБКА: sender должен быть gui.Button, а не gui.Label
+    btn.on_click = void function(gui.Label sender) {
+        sender.text = "Нажато";
+    };
+    
+    win.add_child(btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="error-message">
+        main.idyl:8: error: parameter type 'gui.Label' does not match event type 'gui.Button'
+      </div>
+
+      <p>Исправление: всегда указывайте правильный тип виджета в параметре <code>sender</code>.</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Присваивание числа свойству <code>text</code> у Label или Button</h2>
+      <p>Свойство <code>text</code> у лейблов и кнопок ожидает строку (<code>string</code>). Число нужно преобразовывать через <code>to_string()</code>.</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    gui.Label label;
+    label.text = 42;  // ОШИБКА!
+}
+</script></idyl-code-block>
+
+      <div class="error-message">
+        main.idyl:6: error: cannot assign 'int' to 'string' property 'text'
+      </div>
+
+      <p>Исправление: <code>label.text = to_string(42);</code></p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Обращение к виджету до его создания</h2>
+      <p>Переменная виджета должна быть объявлена до того, как вы пытаетесь её использовать в обработчике.</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    
+    btn.on_click = void function() {  // ОШИБКА: btn ещё не объявлена
+        console.writeln("Нажато");
+    };
+    
+    gui.Button btn;
+    win.add_child(btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="error-message">
+        main.idyl:6: error: 'btn' was not declared in this scope
+      </div>
+
+      <p>Исправление: объявляйте виджет до его использования в обработчиках.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Timer: забыли вызвать <code>start()</code></h2>
+      <p>Таймер не запускается автоматически после создания. Нужно явно вызвать <code>start()</code>.</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    gui.Label label;
+    label.text = "Жду...";
+    
+    gui.Timer timer;
+    timer.interval = 1000;
+    timer.on_tick = void function() {
+        label.text = "Прошла секунда";
+    };
+    // timer.start(); ← забыли!
+    
+    win.add_child(label);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="error-message">
+        Код компилируется, таймер создан, но функция не вызывается. Текст на лейбле не меняется.
+      </div>
+
+      <p>Исправление: не забывайте вызывать <code>timer.start()</code>.</p>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>Modal: попытка добавить через <code>add_child()</code></h2>
+      <p>Модальные окна не являются виджетами в привычном смысле. Их не нужно добавлять в окно через <code>add_child()</code>.</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    gui.Modal m;
+    win.add_child(m);  // ОШИБКА!
+    m.show_alert();
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="error-message">
+        main.idyl:6: error: cannot add 'gui.Modal' to window (Modal is not a widget)
+      </div>
+
+      <p>Исправление: модальные окна создаются и показываются динамически, без <code>add_child()</code>.</p>
+    </div>
+
+    <!-- Section 8 -->
+    <div class="docs-section">
+      <h2>Выход за границы массива виджетов</h2>
+      <p>При работе с массивами виджетов легко выйти за пределы, если индекс больше <code>length() - 1</code>.</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    array<gui.Button, 3> btns;
+    
+    for (int i = 0; i < 3; i = i + 1) {
+        btns[i].x = 20;
+        btns[i].y = 20 + i * 40;
+        btns[i].text = "Кнопка " + to_string(i);
+        win.add_child(btns[i]);
+    }
+    
+    btns[5].text = "Ошибка";  // индекс 5 не существует
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="error-message">
+        runtime error: array index 5 out of bounds (size 3, valid indices 0-2)
+      </div>
+
+      <p>Исправление: всегда проверяйте, что индекс в пределах <code>0 .. length()-1</code>.</p>
+    </div>
+
+    <!-- Section 9 -->
+    <div class="docs-section">
+      <h2>Свойства, которых нет у виджета</h2>
+      <p>У каждого виджета свой набор свойств. Не все виджеты имеют <code>placeholder</code> или <code>font_size</code>.</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    gui.Button btn;
+    btn.placeholder = "Кнопка";  // ОШИБКА: у Button нет placeholder
+    btn.font_size = 20;          // ОШИБКА: у Button нет font_size
+}
+</script></idyl-code-block>
+
+      <div class="error-message">
+        main.idyl:6: error: 'gui.Button' has no property 'placeholder'<br>
+        main.idyl:7: error: 'gui.Button' has no property 'font_size'
+      </div>
+
+      <p>Исправление: сверяйтесь со спецификацией виджета. У кнопки есть <code>text</code>, <code>enabled</code>, <code>on_click</code>, но нет <code>placeholder</code> или <code>font_size</code>.</p>
+    </div>
+
+    <!-- Section 10 -->
+    <div class="docs-section">
+      <h2>Как читать сообщения об ошибках</h2>
+      <p>Сообщения компилятора для GUI-виджетов такие же, как для консольного кода:</p>
+      <ul>
+        <li><code>file.idyl:строка: error: ...</code> — ошибка компиляции</li>
+        <li><code>file.idyl:строка: runtime error: ...</code> — ошибка выполнения</li>
+      </ul>
+
+      <div class="tip-box">
+        <strong>💡 Совет:</strong> Начинайте исправлять ошибки с первой — часто исправление одной ошибки убирает несколько последующих. Если виджет не отображается — проверьте, добавили ли вы его через <code>add_child()</code>.
+      </div>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="015_modal.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 15: Модальные окна</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

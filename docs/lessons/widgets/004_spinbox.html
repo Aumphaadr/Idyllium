@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 4: Виджеты SpinBox и FloatSpinBox — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <link rel="stylesheet" href="gui.css">
+  <script src="../components.js" defer></script>
+  <style>
+    .interactive-demo {
+      background: rgba(137, 180, 250, 0.05);
+      border-radius: 12px;
+      padding: 1em;
+      margin: 1.5em 0;
+    }
+    .interactive-demo .coord-note {
+      margin-top: 1em;
+    }
+    .spinbox-row {
+      margin: 1em 0;
+      display: flex;
+      align-items: center;
+      gap: 1em;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Графические виджеты</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Виджеты • Урок 4</div>
+      <h1>Виджеты SpinBox и FloatSpinBox</h1>
+      <p class="docs-subtitle">Числовые поля с кнопками увеличения и уменьшения</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Что такое SpinBox?</h2>
+      <p><code>gui.SpinBox</code> — это поле для ввода целых чисел со встроенными кнопками ▲ и ▼ для увеличения/уменьшения значения. <code>gui.FloatSpinBox</code> — то же самое, но для дробных чисел.</p>
+      <p>Где они встречаются в реальной жизни:</p>
+      <ul>
+        <li>🎮 Выбор количества игроков в лобби</li>
+        <li>⚙️ Настройка чувствительности мыши (0–100)</li>
+        <li>🎨 Выбор размера кисти в графическом редакторе</li>
+        <li>⏰ Установка таймера (минуты и секунды)</li>
+      </ul>
+
+      <p>Вот как выглядит простейший SpinBox со значением 5:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 200;
+    win.height = 100;
+    win.title = "SpinBox";
+
+    gui.SpinBox spin;
+    spin.x = 20;
+    spin.y = 20;
+    spin.width = 100;
+    spin.value = 5;
+
+    win.add_child(spin);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 100px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px;">
+              <input type="number" class="idyl-spinbox" style="width: 100px;" value="5">
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          🔢 SpinBox для целых чисел. Попробуйте покрутить стрелки или ввести число вручную.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Основные свойства SpinBox</h2>
+      <p>SpinBox имеет несколько важных свойств для управления диапазоном и поведением:</p>
+      <ul>
+        <li><code>value</code> — текущее значение (<code>int</code>)</li>
+        <li><code>min</code> — минимальное допустимое значение</li>
+        <li><code>max</code> — максимальное допустимое значение</li>
+        <li><code>step</code> — шаг изменения при нажатии на стрелки</li>
+      </ul>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 150;
+    win.title = "Настройки SpinBox";
+
+    gui.SpinBox spin;
+    spin.x = 20;
+    spin.y = 20;
+    spin.width = 120;
+    spin.value = 50;
+    spin.min = 0;
+    spin.max = 100;
+    spin.step = 5;
+
+    win.add_child(spin);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 100px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px;">
+              <input type="number" class="idyl-spinbox" style="width: 120px;" value="50" min="0" max="100" step="5">
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          🎯 <code>min=0</code>, <code>max=100</code>, <code>step=5</code> — значение меняется на 5 при каждом нажатии.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>FloatSpinBox — для дробных чисел</h2>
+      <p><code>gui.FloatSpinBox</code> работает так же, как SpinBox, но хранит дробные числа (<code>float</code>):</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 150;
+    win.title = "FloatSpinBox";
+
+    gui.FloatSpinBox spin;
+    spin.x = 20;
+    spin.y = 20;
+    spin.width = 140;
+    spin.value = 0.5;
+    spin.min = 0.0;
+    spin.max = 1.0;
+    spin.step = 0.1;
+
+    win.add_child(spin);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 100px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px;">
+              <input type="number" class="idyl-spinbox" style="width: 140px;" value="0.5" min="0.0" max="1.0" step="0.1">
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          🔢 FloatSpinBox для дробных чисел. Шаг 0.1, диапазон от 0.0 до 1.0.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Событие <code>on_change</code></h2>
+      <p>Когда пользователь меняет значение (через стрелки, клавиатуру или прямой ввод), срабатывает событие <code>on_change</code>. Это позволяет реагировать на изменения в реальном времени:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 150;
+    win.title = "Реакция на изменение";
+
+    gui.SpinBox spin;
+    spin.x = 20;
+    spin.y = 20;
+    spin.width = 100;
+    spin.value = 50;
+    spin.min = 0;
+    spin.max = 100;
+
+    gui.Label label;
+    label.x = 140;
+    label.y = 25;
+    label.text = "Текущее: 50";
+
+    spin.on_change = void function() {
+        label.text = "Текущее: " + to_string(spin.value);
+    };
+
+    win.add_child(spin);
+    win.add_child(label);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 100px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px;">
+              <input type="number" class="idyl-spinbox" style="width: 100px;" value="50" min="0" max="100" id="changeSpin">
+            </div>
+            <div style="position: absolute; left: 140px; top: 25px; color: #cdd6f4;" id="changeLabel">Текущее: 50</div>
+          </div>
+        </div>
+        <div class="coord-note">
+          📢 Меняйте значение — текст рядом обновляется автоматически через <code>on_change</code>.
+        </div>
+      </div>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="003_progressbar.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 3: Виджет ProgressBar</strong>
+      </a>
+      <a class="docs-nav-btn next" href="005_slider.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 5: Виджет Slider</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+<script>
+  // Интерактив для демо-примеров
+  document.addEventListener('DOMContentLoaded', () => {
+    // Пример 4: on_change с лейблом
+    const changeSpin = document.getElementById('changeSpin');
+    const changeLabel = document.getElementById('changeLabel');
+    if (changeSpin && changeLabel) {
+      changeSpin.addEventListener('input', () => {
+        const val = changeSpin.value;
+        changeLabel.textContent = 'Текущее: ' + val;
+      });
+    }
+  });
+</script>
+</body>
+</html>

@@ -57,13 +57,15 @@
       <h2>Ваш первый код на Idyllium</h2>
       <p>Для вывода классического <code>"Hello, World!"</code> наберите следующий код:</p>
 
-      <idyl-code-block>// hello.idyl
+      <idyl-code-block><script type="text/plain">
+// hello.idyl
 use console;
 
 main() {
     console.write("Hello, World!", '\n');
     console.write("Это ваша первая программа на Idyllium!", '\n');
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Разберём ключевые моменты:</p>
       <ul>
@@ -92,13 +94,15 @@ main() {
       </p>
       <p>Рассмотрим пример без переноса:</p>
 
-      <idyl-code-block>// hello.idyl
+      <idyl-code-block><script type="text/plain">
+// hello.idyl
 use console;
 
 main() {
     console.write("Hello");
     console.write("World");
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Этот код выведет всё в одну строку:</p>
 
@@ -119,12 +123,14 @@ main() {
         <code>console.write()</code>:
       </p>
 
-      <idyl-code-block>// hello.idyl
+      <idyl-code-block><script type="text/plain">
+// hello.idyl
 use console;
 
 main() {
     console.write("Hello", '\n', "my", '\n', "Lord");
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Результат выполнения:</p>
 
@@ -146,13 +152,15 @@ Lord</idyl-output-block>
         преобразований:
       </p>
 
-      <idyl-code-block>// hello.idyl
+      <idyl-code-block><script type="text/plain">
+// hello.idyl
 use console;
 
 main() {
     console.write("Сейчас выведем несколько чисел:\n");
     console.write(11, '\n', 22, '\n', 33, '\n', 44);
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Результат:</p>
 

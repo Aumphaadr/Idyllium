@@ -57,13 +57,15 @@
       <h2>Базовые арифметические операции с целыми числами</h2>
       <p>В Idyllium сложение, вычитание и умножение целых чисел работают предсказуемо и возвращают целый результат, который можно сразу сохранить в переменную типа <code>int</code>:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     int A = 5 + 7; // в переменную 'A' присвоится 12
     int B = 8 - 9; // в переменную 'B' присвоится -1
     int C = 6 * 3; // в переменную 'C' присвоится 18
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Если бы мы захотели вывести эти значения, результат выглядел бы так:</p>
 
@@ -79,7 +81,8 @@ main() {
       <h2>Деление — особый случай</h2>
       <p>В Idyllium оператор <code>/</code> <strong>всегда</strong> возвращает <code>float</code>, даже если делятся два целых числа:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     int A = 37;
@@ -89,7 +92,8 @@ main() {
     console.write(C, '\n');
 
     int D = A / B; // ОШИБКА: нельзя присвоить дробное число в 'int'
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <idyl-output-block>3.7</idyl-output-block>
 
@@ -102,7 +106,8 @@ main() {
       <h2>Операции между целыми и дробными числами</h2>
       <p>Если в арифметической операции участвует хотя бы одно дробное число, результат всегда будет <code>float</code>:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     int A = 10;
@@ -119,7 +124,8 @@ main() {
 
     float F = A / B; // 'int' / 'float' → 'float'
     console.write(F, '\n');
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <idyl-output-block>12.5
 7.5
@@ -134,7 +140,8 @@ main() {
       <h2>Целочисленное деление: функция <code>div</code></h2>
       <p>Если вам нужно именно <strong>целое частное</strong> от деления, используйте функцию <code>div(a, b)</code>:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     int A1 = 38;
@@ -147,7 +154,8 @@ main() {
     int R2 = div(A2, B); // 3
     int R3 = div(A3, B); // 4
     int R4 = div(A4, B); // 4
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Функция <code>div</code> отбрасывает дробную часть результата и возвращает <strong>только целую часть частного</strong>. Поскольку результат всегда целый, его можно безопасно сохранить в переменную типа <code>int</code>.</p>
     </div>
@@ -157,7 +165,8 @@ main() {
       <h2>Остаток от деления: функция <code>mod</code></h2>
       <p>Чтобы получить <strong>остаток от деления</strong>, используйте функцию <code>mod(a, b)</code>:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     int A1 = 38;
@@ -170,7 +179,8 @@ main() {
     int R2 = mod(A2, B); // 9
     int R3 = mod(A3, B); // 0
     int R4 = mod(A4, B); // 1
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Функция <code>mod</code> возвращает то, что «осталось» после деления. Это особенно полезно для задач вроде определения чётности (<code>mod(x, 2) == 0</code>) или циклических вычислений.</p>
       <p>Обе функции — <code>div</code> и <code>mod</code> — работают <strong>только с целыми числами</strong> и возвращают <code>int</code>, что делает их идеальными для задач, где дробные результаты не нужны.</p>

@@ -35,7 +35,10 @@ const QUALIFIED_TYPES = new Set([
     'istream', 'ostream', 'stream', 'stamp',
     'Window', 'Button', 'Label', 'SpinBox', 'FloatSpinBox',
     'LineEdit', 'CheckBox', 'ProgressBar', 'TextEdit',
-    'ComboBox', 'Slider', 'Frame',
+    'ComboBox', 'Slider', 'Frame', 'Timer', 'Modal',
+    'int8', 'int16', 'int32', 'int64',
+    'uint8', 'uint16', 'uint32', 'uint64',
+    'float32', 'float64',
 ]);
 
 function extractClassNames(source: string): Set<string> {

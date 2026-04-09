@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Установка Idyllium — спойлер: не нужна</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+  <style>
+    .setup-gif-placeholder {
+      background: linear-gradient(135deg, #1e1e2e 0%, #181825 100%);
+      border-radius: 16px;
+      padding: 2em;
+      text-align: center;
+      margin: 1.5em 0;
+      border: 1px solid var(--border);
+    }
+    .setup-gif-placeholder span {
+      font-size: 64px;
+      display: block;
+      margin-bottom: 0.5em;
+    }
+    .big-button {
+      display: inline-block;
+      background: linear-gradient(135deg, #89b4fa 0%, #74c7ec 100%);
+      color: #1e1e2e;
+      font-size: 1.5rem;
+      font-weight: 700;
+      padding: 0.75em 2em;
+      border-radius: 60px;
+      text-decoration: none;
+      margin: 1.5em 0;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    .big-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(137, 180, 250, 0.3);
+    }
+    .big-button:active {
+      transform: translateY(0);
+    }
+    .future-box {
+      background: rgba(166, 227, 161, 0.08);
+      border: 1px dashed #a6e3a1;
+      border-radius: 12px;
+      padding: 1.25em;
+      margin: 2em 0;
+    }
+    .future-box .emoji {
+      font-size: 2rem;
+      margin-right: 0.5em;
+    }
+    .strikethrough {
+      text-decoration: line-through;
+      opacity: 0.7;
+    }
+    .disclaimer {
+      font-size: 0.85em;
+      color: var(--text-dim);
+      text-align: center;
+      margin-top: 3em;
+      padding-top: 1.5em;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Установка</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html" target="_blank">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Урок 0</div>
+      <h1>Установка Idyllium</h1>
+      <p class="docs-subtitle">Спойлер: она вам не понадобится</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>🥚 А теперь — правда</h2>
+      <p>Idyllium <strong>не требует установки</strong>. Вообще никакой. Никаких <code>npm install</code>, никаких <code>pip install</code>, никаких «скачайте 500 МБ рантайма».</p>
+      <p>Всё, что нужно для программирования на Idyllium, уже работает прямо в вашем браузере.</p>
+
+      <div class="setup-gif-placeholder">
+        <span>🎉</span>
+        <p style="margin: 0; color: var(--text-secondary);">Вот так выглядит процесс установки:</p>
+        <p style="margin: 0; font-size: 2rem; opacity: 0.7;">пустота</p>
+        <p style="margin: 0.5em 0 0 0; font-size: 0.85rem; color: var(--text-dim);">(потому что его нет)</p>
+      </div>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>🚀 Как начать программировать?</h2>
+      <p>Достаточно одного действия (ладно-ладно, трёх):</p>
+      <ol>
+        <li>Посмотреть в <strong>правый верхний угол</strong> этой страницы.</li>
+        <li>Найти кнопку <strong>«Открыть IDE»</strong>.</li>
+        <li>Нажать на неё.</li>
+      </ol>
+      <p>Всё. Перед вами откроется полноценная среда разработки с редактором, терминалом, файловым менеджером и поддержкой всех библиотек Idyllium.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>🔗 Для особо слепых и нетерпеливых</h2>
+      <p>Если вы не нашли кнопку «Открыть IDE» (или вам просто лень искать), вот она — крупная, яркая, нажимабельная:</p>
+
+      <div style="text-align: center;">
+        <a href="https://aumphaadr.github.io/Idyllium/" target="_blank" class="big-button">
+          ✨ ОТКРЫТЬ IDE ✨
+        </a>
+      </div>
+
+      <p style="text-align: center; font-size: 0.9rem; color: var(--text-dim);">
+        (откроется в новой вкладке, можете не бояться)
+      </p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>💭 А что насчёт «настоящей» установки?</h2>
+      
+      <div class="future-box">
+        <div style="display: flex; align-items: center;">
+          <span class="emoji">🧙‍♂️</span>
+          <span>Когда-нибудь <span class="strikethrough">автор этого чуда</span> великий и ужасный создатель сподобится написать расширение для <strong>VS Code</strong>.</span>
+        </div>
+        <p style="margin-top: 0.75em; margin-bottom: 0; padding-left: 2.5rem;">
+          Тогда Idyllium можно будет <strong>установить на ПК</strong> и запускать из командной строки, как все нормальные языки.
+        </p>
+      </div>
+
+      <div class="future-box" style="border-color: var(--yellow);">
+        <div style="display: flex; align-items: center;">
+          <span class="emoji">🤷</span>
+          <span>Но это <strong>не точно</strong>.</span>
+        </div>
+        <p style="margin-top: 0.5em; margin-bottom: 0; padding-left: 2.5rem; font-size: 0.85rem;">
+          Автор может отвлечься на дошик, котиков или внезапное желание переписать всё на Rust. Или наоборот — на TypeScript. Или на Python. Кто ж его знает.
+        </p>
+      </div>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>🎯 Итог</h2>
+      <ul>
+        <li>Ничего качать не надо.</li>
+        <li>Ничего устанавливать не надо.</li>
+        <li>Никаких зависимостей, компиляторов и прочей боли.</li>
+        <li>Просто <strong>открываете IDE</strong> — и пишете код.</li>
+      </ul>
+      <p>Idyllium живёт в браузере. Как паук. Или как тот самый файл, который вы забыли сохранить. Но без паутины и с подсветкой синтаксиса.</p>
+    </div>
+
+    <div class="disclaimer">
+      ⚠️ Техническое примечание: Idyllium — это интерпретируемый язык с компиляцией в JavaScript на лету.<br>
+      Вся магия происходит прямо в вашем браузере. Ни один компьютер не пострадал во время выполнения кода.
+    </div>
+
+    <!-- Lesson navigation (нет навигации — это нулевой урок) -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn next" href="001_hello.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 1: Hello, World!</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

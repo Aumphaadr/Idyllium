@@ -288,6 +288,7 @@ export class Analyzer {
         for (const decl of sortedClasses) {
             const classInfo = this.buildModuleClassInfo(decl, moduleName);
             classes.set(decl.name, classInfo);
+            this.classRegistry.set(`${moduleName}.${decl.name}`, classInfo);
         }
     
         return {
@@ -361,9 +362,10 @@ export class Analyzer {
         for (const member of decl.members) {
             switch (member.kind) {
                 case 'ClassField': {
+                    const fieldType = this.resolveTypeInModuleContext(member.fieldType, moduleName);
                     fields.set(member.name, {
                         name: member.name,
-                        type: this.resolveType(member.fieldType),
+                        type: fieldType,
                         access: member.access,
                     });
                     break;
@@ -385,7 +387,7 @@ export class Analyzer {
                 case 'ClassConstructor': {
                     const params: FunctionParam[] = member.params.map(p => ({
                         name: p.name,
-                        type: this.resolveType(p.paramType),
+                        type: this.resolveTypeInModuleContext(p.paramType, moduleName),
                         hasDefault: p.defaultValue !== null,
                     }));
                     constructors.push({ params, access: member.access });
@@ -408,6 +410,67 @@ export class Analyzer {
             hasDestructor,
             loc: decl.loc,
         };
+    }
+    
+    private resolveTypeInModuleContext(node: TypeNode, moduleName: string): ResolvedType {
+        switch (node.kind) {
+            case 'PrimitiveType':
+                switch (node.name) {
+                    case 'int':    return INT_TYPE;
+                    case 'float':  return FLOAT_TYPE;
+                    case 'string': return STRING_TYPE;
+                    case 'char':   return CHAR_TYPE;
+                    case 'bool':   return BOOL_TYPE;
+                    case 'void':   return VOID_TYPE;
+                }
+                break;
+    
+            case 'ArrayType': {
+                const elem = this.resolveTypeInModuleContext(node.elementType, moduleName);
+                return makeArrayType(elem, node.size);
+            }
+    
+            case 'DynArrayType': {
+                const elem = this.resolveTypeInModuleContext(node.elementType, moduleName);
+                return makeDynArrayType(elem);
+            }
+    
+            case 'ClassType': {
+                const currentModule = this.userModules.get(moduleName);
+                if (currentModule?.classes.has(node.name)) {
+                    return makeQualifiedType(moduleName, node.name);
+                }
+                if (this.classRegistry.has(node.name)) {
+                    return makeClassType(node.name);
+                }
+                return ERROR_TYPE;
+            }
+    
+            case 'QualifiedType': {
+                if (node.qualifier === 'gui' || node.qualifier === 'xanadu') {
+                    if (isGuiWidget(node.name)) {
+                        return makeQualifiedType(node.qualifier, node.name);
+                    }
+                    return ERROR_TYPE;
+                }
+    
+                if (node.qualifier === 'types') {
+                    if (FIXED_INT_TYPES.has(node.name) || FIXED_FLOAT_TYPES.has(node.name)) {
+                        return makeQualifiedType(node.qualifier, node.name);
+                    }
+                    return ERROR_TYPE;
+                }
+    
+                const userModule = this.userModules.get(node.qualifier);
+                if (userModule?.classes.has(node.name)) {
+                    return makeQualifiedType(node.qualifier, node.name);
+                }
+    
+                return makeQualifiedType(node.qualifier, node.name);
+            }
+        }
+    
+        return ERROR_TYPE;
     }
 
     private resolveType(node: TypeNode): ResolvedType {
@@ -460,6 +523,15 @@ export class Analyzer {
                         return makeQualifiedType(node.qualifier, node.name);
                     }
                     this.error(node.loc, `unknown type 'types.${node.name}'`);
+                    return ERROR_TYPE;
+                }
+            
+                if (this.userModules.has(node.qualifier)) {
+                    const userModule = this.userModules.get(node.qualifier)!;
+                    if (userModule.classes.has(node.name)) {
+                        return makeQualifiedType(node.qualifier, node.name);
+                    }
+                    this.error(node.loc, `class '${node.name}' not found in module '${node.qualifier}'`);
                     return ERROR_TYPE;
                 }
             
@@ -1381,19 +1453,19 @@ export class Analyzer {
     private inferIndexAccess(expr: IndexAccessExpr): ResolvedType {
         const objType = this.inferType(expr.object);
         const indexType = this.inferType(expr.index);
-
+    
         if (isError(objType)) return ERROR_TYPE;
-
+    
         if (!isError(indexType) && indexType.tag !== 'int') {
             this.error(expr.index.loc,
                 `index must be 'int', found '${typeToString(indexType)}'`);
         }
-
+    
         const elemType = getElementType(objType);
         if (elemType !== null) return elemType;
-
+    
         if (objType.tag === 'string') return CHAR_TYPE;
-
+    
         this.error(expr.loc,
             `type '${typeToString(objType)}' is not indexable`);
         return ERROR_TYPE;
@@ -1535,6 +1607,7 @@ export class Analyzer {
             case 'time':    return this.resolveTimeCall(funcName, args, argTypes, loc);
             case 'file':    return this.resolveFileCall(funcName, args, argTypes, loc);
             case 'encoding': return this.resolveEncodingCall(funcName, args, argTypes, loc);
+            case 'types':   return this.resolveTypesCall(funcName, args, argTypes, loc);
         }
 
         const userModule = this.userModules.get(libName);
@@ -1806,6 +1879,40 @@ export class Analyzer {
     
             default:
                 this.error(loc, `'encoding' has no function '${func}'`);
+                return ERROR_TYPE;
+        }
+    }
+
+    private resolveTypesCall(
+        func: string, args: Argument[], argTypes: ResolvedType[], loc: SourceLocation,
+    ): ResolvedType {
+        switch (func) {
+            case 'from_bin':
+            case 'from_hex': {
+                this.expectArgCount(`types.${func}`, args, 2, loc);
+                
+                if (argTypes.length >= 1 && argTypes[0].tag !== 'string' && !isError(argTypes[0])) {
+                    this.error(loc, `'types.${func}' first argument must be a string`);
+                }
+                
+                if (argTypes.length >= 2 && argTypes[1].tag !== 'string' && !isError(argTypes[1])) {
+                    this.error(loc, `'types.${func}' second argument must be a string (type name)`);
+                }
+                
+                if (args.length >= 2 && args[1].value.kind === 'StringLiteral') {
+                    const typeName = args[1].value.value;
+                    if (!FIXED_INT_TYPES.has(typeName) && !FIXED_FLOAT_TYPES.has(typeName)) {
+                        this.error(loc, 
+                            `'types.${func}' unknown type '${typeName}'. Valid types: int8, int16, int32, int64, uint8, uint16, uint32, uint64, float32, float64`);
+                    }
+                    return makeQualifiedType('types', typeName);
+                }
+                
+                return INT_TYPE;
+            }
+            
+            default:
+                this.error(loc, `'types' has no function '${func}'`);
                 return ERROR_TYPE;
         }
     }

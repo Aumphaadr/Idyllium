@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 21: Библиотека 'encoding' — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Урок 21</div>
+      <h1>Библиотека <code>encoding</code></h1>
+      <p class="docs-subtitle">Как работать с кодировками текста — превращать символы в числа и обратно</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Подключение библиотеки</h2>
+      <p>Для работы с кодировками необходимо подключить библиотеку <code>encoding</code>:</p>
+      <idyl-code-block><script type="text/plain">
+use encoding;
+</script></idyl-code-block>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Зачем нужны кодировки?</h2>
+      <p>Компьютер не понимает буквы — он работает только с числами. Каждому символу соответствует числовой код, но какой именно — зависит от кодировки.</p>
+      <p>Например, буква «А» (русская заглавная) имеет:</p>
+      <ul>
+        <li>код 192 в кодировке Windows-1251;</li>
+        <li>код 225 в кодировке KOI8-R;</li>
+        <li>код 1040 в кодировке UTF-8.</li>
+      </ul>
+      <p>Один и тот же символ — три разных числа. Именно поэтому текст, открытый в неправильной кодировке, превращается в «кракозябры».</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Поддерживаемые кодировки</h2>
+      <p>Idyllium поддерживает шесть кодировок:</p>
+      <ul>
+        <li><code>utf-8</code> — самая распространённая кодировка в интернете, поддерживает все символы Unicode;</li>
+        <li><code>utf-16</code> — кодировка, используемая в Windows и Java;</li>
+        <li><code>ascii</code> — базовая 7-битная кодировка (только латиница, цифры и знаки препинания, коды 0–127);</li>
+        <li><code>windows-1251</code> — кодировка для кириллицы, популярная в старых Windows-программах;</li>
+        <li><code>koi8-r</code> — ещё одна кириллическая кодировка, популярная в Unix-системах 1990-х;</li>
+        <li><code>iso-8859-5</code> — стандартная кодировка ISO для кириллицы.</li>
+      </ul>
+      <p>Получить полный список поддерживаемых кодировок можно программно:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use encoding;
+
+main() {
+    dyn_array<string> encodings = encoding.list_encodings();
+    for (int i = 0; i < encodings.length(); i += 1) {
+        console.writeln(encodings[i]);
+    }
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>utf-8
+utf-16
+ascii
+windows-1251
+iso-8859-5
+koi8-r</idyl-output-block>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Код символа: <code>encoding.char_to_int()</code></h2>
+      <p>Функция <code>encoding.char_to_int(символ, кодировка)</code> возвращает числовой код символа в указанной кодировке:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use encoding;
+
+main() {
+    char ch = 'A';
+    int code_utf8 = encoding.char_to_int(ch, "utf-8");
+    int code_ascii = encoding.char_to_int(ch, "ascii");
+    console.writeln("Символ '", ch, "' в UTF-8: ", code_utf8);
+    console.writeln("Символ '", ch, "' в ASCII: ", code_ascii);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Символ 'A' в UTF-8: 65
+Символ 'A' в ASCII: 65</idyl-output-block>
+
+      <p>Латинская буква 'A' имеет одинаковый код во всех кодировках — это наследие ASCII. А вот кириллица отличается:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use encoding;
+
+main() {
+    char ch = 'Я';
+    int code_win = encoding.char_to_int(ch, "windows-1251");
+    int code_koi = encoding.char_to_int(ch, "koi8-r");
+    int code_utf = encoding.char_to_int(ch, "utf-8");
+    console.writeln("'Я' в Windows-1251: ", code_win);
+    console.writeln("'Я' в KOI8-R: ", code_koi);
+    console.writeln("'Я' в UTF-8: ", code_utf);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>'Я' в Windows-1251: 223
+'Я' в KOI8-R: 241
+'Я' в UTF-8: 1071</idyl-output-block>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Символ по коду: <code>encoding.int_to_char()</code></h2>
+      <p>Обратная операция — <code>encoding.int_to_char(код, кодировка)</code> — возвращает символ по его числовому коду:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use encoding;
+
+main() {
+    char a = encoding.int_to_char(65, "ascii");
+    char b = encoding.int_to_char(192, "windows-1251");
+    console.writeln("Код 65 в ASCII: ", a);
+    console.writeln("Код 192 в Windows-1251: ", b);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Код 65 в ASCII: A
+Код 192 в Windows-1251: А</idyl-output-block>
+
+      <p>Обратите внимание: код 192 в ASCII и Windows-1251 — это разные символы. Кодировка определяет интерпретацию.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Кодирование строки: <code>encoding.encode()</code></h2>
+      <p>Функция <code>encoding.encode(текст, кодировка)</code> превращает строку в массив числовых кодов:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use encoding;
+
+main() {
+    string word = "Hi";
+    dyn_array<int> codes = encoding.encode(word, "ascii");
+    console.writeln(codes);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>[72, 105]</idyl-output-block>
+
+      <p>Буква 'H' — код 72, буква 'i' — код 105.</p>
+      <p>Более интересный пример с кириллицей:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use encoding;
+
+main() {
+    string word = "Ёж";
+    dyn_array<int> win = encoding.encode(word, "windows-1251");
+    dyn_array<int> koi = encoding.encode(word, "koi8-r");
+    console.writeln("Windows-1251: ", win);
+    console.writeln("KOI8-R: ", koi);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Windows-1251: [168, 230]
+KOI8-R: [179, 214]</idyl-output-block>
+
+      <p>Одно и то же слово — совершенно разные числа в разных кодировках.</p>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>Декодирование: <code>encoding.decode()</code></h2>
+      <p>Функция <code>encoding.decode(массив_кодов, кодировка)</code> собирает строку из массива числовых кодов:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use encoding;
+
+main() {
+    dyn_array<int> codes = [72, 101, 108, 108, 111];
+    string text = encoding.decode(codes, "ascii");
+    console.writeln(text);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Hello</idyl-output-block>
+
+      <p>Кодировка + декодировка = круговое преобразование:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use encoding;
+
+main() {
+    string original = "Привет";
+    dyn_array<int> encoded = encoding.encode(original, "windows-1251");
+    string decoded = encoding.decode(encoded, "windows-1251");
+    console.writeln("Исходник: ", original);
+    console.writeln("Коды: ", encoded);
+    console.writeln("Обратно: ", decoded);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Исходник: Привет
+Коды: [207, 240, 232, 226, 229, 242]
+Обратно: Привет</idyl-output-block>
+    </div>
+
+    <!-- Section 8 -->
+    <div class="docs-section">
+      <h2>Ошибки при работе с кодировками</h2>
+      <p>Не все символы представимы во всех кодировках. ASCII, например, поддерживает только коды 0–127:</p>
+
+      <idyl-code-block><script type="text/plain">
+char ch = 'Ю';
+int code = encoding.char_to_int(ch, "ascii");
+// Ошибка: character 'Ю' is not valid ASCII
+</script></idyl-code-block>
+
+      <p>Аналогично, некоторые экзотические символы не входят в Windows-1251 или KOI8-R. UTF-8 — самая универсальная кодировка, она поддерживает все символы Unicode.</p>
+      <p>Если указать несуществующую кодировку, программа тоже завершится с ошибкой:</p>
+
+      <idyl-code-block><script type="text/plain">
+encoding.char_to_int('A', "cp866");
+// Ошибка: unknown encoding 'cp866'
+</script></idyl-code-block>
+    </div>
+
+    <!-- Section 9 -->
+    <div class="docs-section">
+      <h2>Практическое применение: шифр Цезаря</h2>
+      <p>Кодировки позволяют реализовать простые алгоритмы шифрования. Вот пример шифра Цезаря для латиницы:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use encoding;
+
+main() {
+    string message = "Hello World";
+    int shift = 3;
+    string result = "";
+
+    for (int i = 0; i < message.length(); i += 1) {
+        int code = encoding.char_to_int(message[i], "ascii");
+        if (code >= 65 and code <= 90) {
+            code = mod(code - 65 + shift, 26) + 65;
+        }
+        if (code >= 97 and code <= 122) {
+            code = mod(code - 97 + shift, 26) + 97;
+        }
+        result = result + encoding.int_to_char(code, "ascii");
+    }
+
+    console.writeln("Исходное: ", message);
+    console.writeln("Зашифрованное: ", result);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Исходное: Hello World
+Зашифрованное: Khoor Zruog</idyl-output-block>
+    </div>
+
+    <!-- Section 10 -->
+    <div class="docs-section">
+      <h2>Итог</h2>
+      <ul>
+        <li><code>encoding.char_to_int(символ, кодировка)</code> — числовой код символа;</li>
+        <li><code>encoding.int_to_char(код, кодировка)</code> — символ по числовому коду;</li>
+        <li><code>encoding.encode(строка, кодировка)</code> — строка → массив кодов;</li>
+        <li><code>encoding.decode(массив, кодировка)</code> — массив кодов → строка;</li>
+        <li><code>encoding.list_encodings()</code> — список поддерживаемых кодировок.</li>
+      </ul>
+      <p>Библиотека <code>encoding</code> — это мост между миром текста и миром чисел. Понимание кодировок помогает разобраться, почему «кракозябры» существуют и как с ними бороться.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="020_types.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 20: Библиотека 'types'</strong>
+      </a>
+      <a class="docs-nav-btn next" href="022_functions.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 22: Создание собственных функций</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

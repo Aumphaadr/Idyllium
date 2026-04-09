@@ -57,15 +57,19 @@
       <h2>Операции — это преобразования</h2>
       <p>Начнём с того, что <strong>все операции — это правила преобразования</strong>. Например, арифметические операторы берут числа и делают из них новое число:</p>
 
-      <idyl-code-block>15 + 17 // '+' берёт 15 и 17 → порождает 32
+      <idyl-code-block><script type="text/plain">
+15 + 17 // '+' берёт 15 и 17 → порождает 32
 44 - 16 // '-' берёт 44 и 16 → порождает 28
-11 * 13 // '*' берёт 11 и 13 → порождает 143</idyl-code-block>
+11 * 13 // '*' берёт 11 и 13 → порождает 143
+</script></idyl-code-block>
 
       <p>А теперь — операторы сравнения. Они тоже берут числа, но <strong>порождают не число, а логическое значение</strong>:</p>
 
-      <idyl-code-block>27 > 15  // '>' берёт 27 и 15 → порождает true
+      <idyl-code-block><script type="text/plain">
+27 > 15  // '>' берёт 27 и 15 → порождает true
 43 < 12  // '<' берёт 43 и 12 → порождает false
-61 == 61 // '==' берёт 61 и 61 → порождает true</idyl-code-block>
+61 == 61 // '==' берёт 61 и 61 → порождает true
+</script></idyl-code-block>
 
       <p>Результат операций сравнения — значение типа <code>bool</code>.</p>
     </div>
@@ -75,9 +79,11 @@
       <h2>Логические операции</h2>
       <p>Если операторы сравнения порождают <code>bool</code>, то логические операторы <strong>работают с уже готовыми логическими значениями</strong>:</p>
 
-      <idyl-code-block>true and false  // → false
+      <idyl-code-block><script type="text/plain">
+true and false  // → false
 false or true   // → true
-true xor true   // → false</idyl-code-block>
+true xor true   // → false
+</script></idyl-code-block>
 
       <p>Правила просты:</p>
       <ul>
@@ -91,9 +97,11 @@ true xor true   // → false</idyl-code-block>
     <div class="docs-section">
       <h2>Практическое применение: условия с 'and'</h2>
 
-      <idyl-code-block>if (A > 100) and (B > 100) {
-    console.write("Обе переменные больше 100!\n");
-}</idyl-code-block>
+      <idyl-code-block><script type="text/plain">
+if ((A > 100) and (B > 100)) {
+    console.writeln("Обе переменные больше 100!");
+}
+</script></idyl-code-block>
 
       <p>Перевод: «Если <code>A</code> больше 100 <strong>и</strong> <code>B</code> больше 100 — сообщить об этом».</p>
       <p>Если хотя бы одно условие ложно — сообщение не появится.</p>
@@ -103,9 +111,11 @@ true xor true   // → false</idyl-code-block>
     <div class="docs-section">
       <h2>Условия с 'or'</h2>
 
-      <idyl-code-block>if (A > 100) or (B > 100) {
-    console.write("Хотя бы одна переменная больше 100!\n");
-}</idyl-code-block>
+      <idyl-code-block><script type="text/plain">
+if ((A > 100) or (B > 100)) {
+    console.writeln("Хотя бы одна переменная больше 100!");
+}
+</script></idyl-code-block>
 
       <p>Перевод: «Если <code>A</code> больше 100 <strong>или</strong> <code>B</code> больше 100 (или обе больше 100) — сообщить об этом».</p>
       <p>Сообщение не появится только тогда, когда оба условия ложны.</p>
@@ -115,9 +125,11 @@ true xor true   // → false</idyl-code-block>
     <div class="docs-section">
       <h2>Условия с 'xor'</h2>
 
-      <idyl-code-block>if (A > 100) xor (B > 100) {
-    console.write("Только одна из переменных больше 100!\n");
-}</idyl-code-block>
+      <idyl-code-block><script type="text/plain">
+if ((A > 100) xor (B > 100)) {
+    console.writeln("Только одна из переменных больше 100!");
+}
+</script></idyl-code-block>
 
       <p>Перевод: «Если <code>A</code> больше 100 <strong>или</strong> <code>B</code> больше 100, но не оба — сообщить об этом».</p>
       <p>Это как по-русски: «Либо одно, либо другое. Но не всё сразу».</p>
@@ -129,9 +141,11 @@ true xor true   // → false</idyl-code-block>
       <h2>Операция 'not()' — инверсия</h2>
       <p>В Idyllium операция «НЕ» реализована как <strong>функция</strong> — <code>not(выражение)</code>:</p>
 
-      <idyl-code-block>bool A = true;
+      <idyl-code-block><script type="text/plain">
+bool A = true;
 bool B = not(A); // false
-bool C = not(B); // true</idyl-code-block>
+bool C = not(B); // true
+</script></idyl-code-block>
 
       <p>Это <strong>намеренное решение</strong>: скобки чётко показывают, что именно инвертируется. Никакой двусмысленности, как в других языках.</p>
     </div>
@@ -141,15 +155,19 @@ bool C = not(B); // true</idyl-code-block>
       <h2>Аналогия с математикой</h2>
       <p>Функция <code>not()</code> работает как унарный минус в арифметике:</p>
 
-      <idyl-code-block>int X = 5;
+      <idyl-code-block><script type="text/plain">
+int X = 5;
 int Y = -X; // -5
-int Z = -Y; // снова 5</idyl-code-block>
+int Z = -Y; // снова 5
+</script></idyl-code-block>
 
       <p>Точно так же:</p>
 
-      <idyl-code-block>bool P = true;
+      <idyl-code-block><script type="text/plain">
+bool P = true;
 bool Q = not(P); // false
-bool R = not(Q); // снова true</idyl-code-block>
+bool R = not(Q); // снова true
+</script></idyl-code-block>
 
       <p><code>not()</code> <strong>переключает</strong> значение: <code>true</code> ↔ <code>false</code>, как минус переключает знак числа.</p>
     </div>
@@ -159,16 +177,20 @@ bool R = not(Q); // снова true</idyl-code-block>
       <h2>Почему 'not' — функция, а не оператор?</h2>
       <p>В том же Python можно написать:</p>
 
-      <idyl-code-block>A = int(input())
-if not A > 5: # Что здесь первично: сравнение или инверсия?</idyl-code-block>
+      <idyl-code-block><script type="text/plain">
+A = int(input())
+if not A > 5: # Что здесь первично: сравнение или инверсия?
+</script></idyl-code-block>
 
       <p>И даже опытные программисты не всегда сразу вспомнят приоритеты.</p>
       <p>В Idyllium этого не бывает:</p>
 
-      <idyl-code-block>int A = console.get_int();
-if not(A > 5) {
-    console.write("A не больше 5", "\n");
-}</idyl-code-block>
+      <idyl-code-block><script type="text/plain">
+int A = console.get_int();
+if (not(A > 5)) {
+    console.writeln("A не больше 5");
+}
+</script></idyl-code-block>
 
       <p>Скобки — это не формальность. Это <strong>гарантия ясности</strong>. Idyllium не заставляет вас запоминать таблицы приоритетов — он заставляет чётко выражать мысли.</p>
     </div>

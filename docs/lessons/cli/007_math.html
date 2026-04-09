@@ -57,7 +57,9 @@
       <h2>Подключение библиотеки <code>math</code></h2>
       <p>Для использования математических функций необходимо подключить библиотеку <code>math</code>:</p>
 
-      <idyl-code-block>use math;</idyl-code-block>
+      <idyl-code-block><script type="text/plain">
+use math;
+</script></idyl-code-block>
 
       <p>После этого все функции вызываются по схеме: <code>math.название(аргументы)</code>.</p>
     </div>
@@ -67,14 +69,16 @@
       <h2>Модуль числа: <code>math.abs(n)</code></h2>
       <p>Функция <code>math.abs(n)</code> возвращает абсолютное значение (модуль) числа — то есть его расстояние от нуля, без знака:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 use math;
 
 main() {
-    console.write(math.abs(-15), '\n'); // 15
-    console.write(math.abs(42), '\n');  // 42
-    console.write(math.abs(-3.7), '\n'); // 3.7
-}</idyl-code-block>
+    console.writeln(math.abs(-15)); // 15
+    console.writeln(math.abs(42));  // 42
+    console.writeln(math.abs(-3.7)); // 3.7
+}
+</script></idyl-code-block>
 
       <idyl-output-block>15
 42
@@ -92,22 +96,24 @@ main() {
       </ul>
       <p>Если второй аргумент <code>z</code> не указан — округление выполняется до целого числа.</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 use math;
 
 main() {
     float x = 3.6789;
 
-    console.write("Исходное число: ", x, '\n');
+    console.writeln("Исходное число: ", x);
 
-    console.write("round(x): ", math.round(x), '\n');       // 4
-    console.write("floor(x): ", math.floor(x), '\n');       // 3
-    console.write("ceil(x): ", math.ceil(x), '\n');         // 4
+    console.writeln("round(x): ", math.round(x));       // 4
+    console.writeln("floor(x): ", math.floor(x));       // 3
+    console.writeln("ceil(x): ", math.ceil(x));         // 4
 
-    console.write("round(x, 2): ", math.round(x, 2), '\n'); // 3.68
-    console.write("floor(x, 2): ", math.floor(x, 2), '\n'); // 3.67
-    console.write("ceil(x, 2): ", math.ceil(x, 2), '\n');   // 3.68
-}</idyl-code-block>
+    console.writeln("round(x, 2): ", math.round(x, 2)); // 3.68
+    console.writeln("floor(x, 2): ", math.floor(x, 2)); // 3.67
+    console.writeln("ceil(x, 2): ", math.ceil(x, 2));   // 3.68
+}
+</script></idyl-code-block>
 
       <idyl-output-block>Исходное число: 3.6789
 round(x): 4
@@ -125,14 +131,16 @@ ceil(x, 2): 3.68</idyl-output-block>
       <h2>Возведение в степень: <code>math.pow(a, b)</code></h2>
       <p>Функция <code>math.pow(a, b)</code> возводит число <code>a</code> в степень <code>b</code>:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 use math;
 
 main() {
-    console.write(math.pow(2, 8), '\n');   // 256
-    console.write(math.pow(5, 3), '\n');   // 125
-    console.write(math.pow(4, -1), '\n');  // 0.25 (1/4)
-}</idyl-code-block>
+    console.writeln(math.pow(2, 8));   // 256
+    console.writeln(math.pow(5, 3));   // 125
+    console.writeln(math.pow(4, -1));  // 0.25 (1/4)
+}
+</script></idyl-code-block>
 
       <idyl-output-block>256
 125
@@ -144,14 +152,16 @@ main() {
       <h2>Квадратный корень: <code>math.sqrt(n)</code></h2>
       <p>Функция <code>math.sqrt(n)</code> вычисляет квадратный корень из неотрицательного числа:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 use math;
 
 main() {
-    console.write(math.sqrt(49), '\n');    // 7
-    console.write(math.sqrt(2), '\n');     // примерно 1.4142
-    console.write(math.sqrt(0), '\n');     // 0
-}</idyl-code-block>
+    console.writeln(math.sqrt(49));    // 7
+    console.writeln(math.sqrt(2));     // примерно 1.4142
+    console.writeln(math.sqrt(0));     // 0
+}
+</script></idyl-code-block>
 
       <idyl-output-block>7
 1.4142135623731
@@ -165,19 +175,21 @@ main() {
       <h2>Ограничение значения: <code>math.clamp(min, val, max)</code></h2>
       <p>Функция <code>math.clamp(min, val, max)</code> «зажимает» значение <code>val</code> в указанный диапазон: если <code>val</code> меньше <code>min</code> — вернёт <code>min</code>; если больше <code>max</code> — вернёт <code>max</code>; иначе — само <code>val</code>.</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 use math;
 
 main() {
-    console.write(math.clamp(0, 5, 10), '\n');      // 5
-    console.write(math.clamp(0, -3, 10), '\n');     // 0
-    console.write(math.clamp(0, 15, 10), '\n');     // 10
+    console.writeln(math.clamp(0, 5, 10));      // 5
+    console.writeln(math.clamp(0, -3, 10));     // 0
+    console.writeln(math.clamp(0, 15, 10));     // 10
 
     // Пример: ограничить уровень громкости от 0 до 100
     int volume = 115;
     volume = math.clamp(0, volume, 100);
-    console.write("Громкость: ", volume, '\n'); // 100
-}</idyl-code-block>
+    console.writeln("Громкость: ", volume); // 100
+}
+</script></idyl-code-block>
 
       <idyl-output-block>5
 0

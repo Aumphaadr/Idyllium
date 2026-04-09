@@ -90,9 +90,12 @@ export const GUI_WIDGETS: Record<string, WidgetDescriptor> = {
     LineEdit: {
         properties: [
             ...COMMON_PROPERTIES,
-            { name: 'text',        type: 'string' },
+            { name: 'text', type: 'string' },
             { name: 'placeholder', type: 'string' },
-            { name: 'on_change',   type: 'function' },
+            { name: 'echo_mode', type: 'string' },
+            { name: 'font_size', type: 'int' },
+            { name: 'enabled', type: 'bool' },
+            { name: 'on_change', type: 'function' },
         ],
         methods: [...COMMON_METHODS],
     },
@@ -105,6 +108,19 @@ export const GUI_WIDGETS: Record<string, WidgetDescriptor> = {
             { name: 'on_change',  type: 'function' },
         ],
         methods: [...COMMON_METHODS],
+    },
+
+    RadioButton: {
+        properties: [
+            ...COMMON_PROPERTIES,
+            { name: 'text', type: 'string' },
+            { name: 'is_selected', type: 'bool' },
+            { name: 'group', type: 'string' },
+            { name: 'on_change', type: 'function' },
+        ],
+        methods: [...COMMON_METHODS,
+            { name: 'new_group', params: [], returnType: 'void' },
+        ],
     },
 
     ProgressBar: {
@@ -160,6 +176,39 @@ export const GUI_WIDGETS: Record<string, WidgetDescriptor> = {
         methods: [
             ...COMMON_METHODS,
             { name: 'add_child', params: [{ name: 'widget', type: 'Widget' }], returnType: 'void' },
+        ],
+    },
+
+    Timer: {
+        properties: [
+            { name: 'interval', type: 'int' },
+            { name: 'running', type: 'bool', readonly: true },
+            { name: 'on_tick', type: 'function' },
+        ],
+        methods: [
+            { name: 'start', params: [], returnType: 'void' },
+            { name: 'stop', params: [], returnType: 'void' },
+            { name: 'restart', params: [], returnType: 'void' },
+        ],
+    },
+    
+    Modal: {
+        properties: [
+            ...COMMON_PROPERTIES,
+            { name: 'title', type: 'string' },
+            { name: 'message', type: 'string' },
+            { name: 'confirm_text', type: 'string' },
+            { name: 'cancel_text', type: 'string' },
+            { name: 'on_confirm', type: 'function' },
+            { name: 'on_cancel', type: 'function' },
+        ],
+        methods: [
+            ...COMMON_METHODS,
+            { name: 'show_confirm', params: [], returnType: 'void' },
+            { name: 'show_input', params: [], returnType: 'void' },
+            { name: 'show_alert', params: [], returnType: 'void' },
+            { name: 'get_input_value', params: [], returnType: 'string' },
+            { name: 'close', params: [], returnType: 'void' },
         ],
     },
 };

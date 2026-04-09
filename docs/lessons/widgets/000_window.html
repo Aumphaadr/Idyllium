@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 0: Первое графическое приложение — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <link rel="stylesheet" href="gui.css">
+  <script src="../components.js" defer></script>
+  <style>
+    .demo-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 2em;
+    }
+    .demo-group {
+      background: rgba(137, 180, 250, 0.05);
+      border-radius: 8px;
+      padding: 1em;
+    }
+    .demo-group h3 {
+      margin-top: 0;
+      margin-bottom: 1em;
+      color: var(--accent);
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Графические виджеты</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Виджеты • Урок 0</div>
+      <h1>Первое графическое приложение</h1>
+      <p class="docs-subtitle">Создаём окно, добавляем кнопки и знакомимся с координатами</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Подключение библиотеки <code>gui</code></h2>
+      <p>Для работы с графическим интерфейсом необходимо подключить библиотеку <code>gui</code>:</p>
+      <idyl-code-block><script type="text/plain">
+use gui;
+</script></idyl-code-block>
+      <p>Библиотека <code>gui</code> предоставляет все виджеты: окна, кнопки, текстовые метки, поля ввода и многое другое.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Создание окна</h2>
+      <p>Создать окно так же просто, как создать переменную <code>int</code>:</p>
+
+      <div class="demo-group">
+        <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;  // создаём окно
+    win.show();      // показываем его
+}
+</script></idyl-code-block>
+
+        <div class="gui-demo-container" style="margin-top: 1em;">
+          <div class="gui-demo-window">
+            <div class="demo-content" style="min-height: 200px; display: flex; align-items: center; justify-content: center; color: var(--text-dim);">
+              🪟 Пустое окно (без виджетов)
+            </div>
+          </div>
+          <div class="coord-note">
+            💡 Программа создала окно и показала его. Пока внутри ничего нет.
+          </div>
+        </div>
+      </div>
+
+      <p>Разберём код:</p>
+      <ul>
+        <li><code>gui.Window</code> — это <strong>тип данных</strong> «окно». Аналогично <code>int</code> или <code>string</code>.</li>
+        <li><code>win</code> — это <strong>имя переменной</strong>. Вы можете назвать окно как угодно: <code>mainWindow</code>, <code>root</code>, <code>w</code>.</li>
+        <li><code>win.show()</code> — команда, которая <strong>показывает окно</strong> на экране. Без неё окно будет создано, но пользователь его не увидит.</li>
+      </ul>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Настройка окна: размеры и заголовок</h2>
+      <p>У окна можно менять свойства — ширину, высоту и текст в заголовке:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 500;        // ширина в пикселях
+    win.height = 400;       // высота в пикселях
+    win.title = "Моё первое окно";
+    win.show();
+}
+</script></idyl-code-block>
+
+      <p>Свойства <code>width</code> и <code>height</code> задаются в пикселях. Свойство <code>title</code> — строка, которая отображается в заголовке окна.</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Добавляем кнопку</h2>
+      <p>Кнопка создаётся так же, как окно — через объявление переменной типа <code>gui.Button</code>:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 400;
+    win.height = 300;
+    win.title = "Окно с кнопкой";
+
+    gui.Button btn;         // создаём кнопку
+    btn.text = "Нажми меня";
+    btn.width = 120;
+    btn.height = 40;
+
+    win.add_child(btn);     // добавляем кнопку на окно
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="gui-demo-container" style="margin-top: 1em;">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 250px; position: relative;">
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 20px; width: 120px; height: 40px;">
+              Нажми меня
+            </button>
+            <div style="position: absolute; bottom: 8px; left: 8px; font-size: 12px; color: var(--text-dim);">
+              (кнопка неактивна — это только демонстрация)
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          💡 Кнопка появилась в левом верхнем углу, потому что мы не задали координаты.
+        </div>
+      </div>
+
+      <p>Ключевой момент — <strong><code>win.add_child(btn)</code></strong>. Без этой команды кнопка будет создана, но <strong>не появится на окне</strong>. Метод <code>add_child()</code> добавляет виджет внутрь окна.</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Координаты виджетов</h2>
+      <p>Каждый виджет имеет координаты <code>x</code> и <code>y</code>, которые определяют его положение внутри окна. Начало координат <code>(0, 0)</code> — <strong>левый верхний угол</strong> окна.</p>
+
+      <h3>Разные X, одинаковый Y</h3>
+      <idyl-code-block><script type="text/plain">
+gui.Button btn1;
+btn1.text = "x: 20, y: 50";
+btn1.x = 20;
+btn1.y = 50;
+
+gui.Button btn2;
+btn2.text = "x: 200, y: 50";
+btn2.x = 200;
+btn2.y = 50;
+
+win.add_child(btn1);
+win.add_child(btn2);
+</script></idyl-code-block>
+
+      <div class="gui-demo-container">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 120px; position: relative;">
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 50px;">x: 20, y: 50</button>
+            <button class="idyl-button" style="position: absolute; left: 200px; top: 50px;">x: 200, y: 50</button>
+          </div>
+        </div>
+        <div class="coord-note">
+          📍 <code>x=20</code> и <code>x=200</code> — кнопки на разном расстоянии от левого края, но на одной высоте (<code>y=50</code>).
+        </div>
+      </div>
+
+      <h3>Одинаковый X, разные Y</h3>
+      <idyl-code-block><script type="text/plain">
+gui.Button btn_up;
+btn_up.text = "x: 50, y: 30";
+btn_up.x = 50;
+btn_up.y = 30;
+
+gui.Button btn_down;
+btn_down.text = "x: 50, y: 100";
+btn_down.x = 50;
+btn_down.y = 100;
+
+win.add_child(btn_up);
+win.add_child(btn_down);
+</script></idyl-code-block>
+
+      <div class="gui-demo-container">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 170px; position: relative;">
+            <button class="idyl-button" style="position: absolute; left: 50px; top: 30px;">x: 50, y: 30</button>
+            <button class="idyl-button" style="position: absolute; left: 50px; top: 100px;">x: 50, y: 100</button>
+          </div>
+        </div>
+        <div class="coord-note">
+          📍 <code>y=30</code> и <code>y=100</code> — кнопки на разной высоте, но на одинаковом расстоянии от левого края (<code>x=50</code>).
+        </div>
+      </div>
+
+      <h3>Начало координат — левый верхний угол</h3>
+      <idyl-code-block><script type="text/plain">
+gui.Button corner_btn;
+corner_btn.text = "Угол";
+corner_btn.x = 0;
+corner_btn.y = 0;
+
+win.add_child(corner_btn);
+</script></idyl-code-block>
+
+      <div class="gui-demo-container">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 100px; position: relative;">
+            <button class="idyl-button" style="position: absolute; left: 0; top: 0; margin: 0;">Угол</button>
+          </div>
+        </div>
+        <div class="coord-note">
+          📍 Координаты <code>(0, 0)</code> — виджет прижат к левому верхнему углу окна.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Другие виджеты</h2>
+      <p>В библиотеке <code>gui</code> есть много готовых виджетов. Вот несколько примеров:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 500;
+    win.height = 400;
+    win.title = "Коллекция виджетов";
+
+    // Текстовая метка
+    gui.Label label;
+    label.text = "Это текстовая метка";
+    label.x = 20;
+    label.y = 20;
+
+    // Поле для ввода чисел
+    gui.SpinBox spin;
+    spin.x = 20;
+    spin.y = 70;
+    spin.width = 100;
+    spin.value = 5;
+    spin.min = 0;
+    spin.max = 100;
+
+    // Выпадающий список
+    gui.ComboBox combo;
+    combo.x = 20;
+    combo.y = 130;
+    combo.width = 150;
+    combo.add_item("Колдун");
+    combo.add_item("Жрец");
+    combo.add_item("Лекарь");
+    combo.selected_index = 0;
+
+    win.add_child(label);
+    win.add_child(spin);
+    win.add_child(combo);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="gui-demo-container">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 220px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px; color: #cdd6f4;">Это текстовая метка</div>
+            <div style="position: absolute; left: 20px; top: 70px;">
+              <input type="number" class="idyl-spinbox" style="width: 100px;" value="5" min="0" max="100">
+            </div>
+            <div style="position: absolute; left: 20px; top: 130px;">
+              <select class="idyl-combobox" style="width: 150px;">
+                <option>Колдун</option>
+                <option>Жрец</option>
+                <option>Лекарь</option>
+              </select>
+            </div>
+            <div style="position: absolute; bottom: 8px; left: 8px; font-size: 12px; color: var(--text-dim);">
+              (интерактивно — можно покрутить SpinBox и выбрать пункт в ComboBox)
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          🎮 <strong>Label</strong> — текстовая метка, <strong>SpinBox</strong> — поле для ввода чисел, <strong>ComboBox</strong> — выпадающий список.
+        </div>
+      </div>
+
+      <p>Попробуйте покрутить значение в <code>SpinBox</code> и выбрать другой пункт в <code>ComboBox</code> — виджеты интерактивны!</p>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>Что дальше?</h2>
+      <p>В следующем уроке мы научимся <strong>обрабатывать события</strong> — делать так, чтобы кнопки реагировали на нажатия, а поля ввода — на изменение значений.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn next" href="001_button.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 1: Кнопки и события</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

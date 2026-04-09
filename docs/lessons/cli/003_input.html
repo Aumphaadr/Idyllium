@@ -69,12 +69,14 @@
       <h2>Ввод целого числа</h2>
       <p>В Idyllium для ввода целого числа используется функция <code>console.get_int()</code>:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     int A = console.get_int();
     console.write("Ваше число: ", A, '\n');
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Пример выполнения программы:</p>
 
@@ -89,7 +91,8 @@ main() {
       <h2>Несколько вводов: периметр треугольника</h2>
       <p>Рассмотрим практическую задачу:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     console.write("Сейчас посчитаем периметр треугольника", '\n');
@@ -105,7 +108,8 @@ main() {
 
     int P = A + B + C;
     console.write("Периметр равен: ", P, '\n');
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Пример выполнения:</p>
 
@@ -128,7 +132,8 @@ main() {
         <li><code>console.get_string()</code> — текст.</li>
       </ul>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     console.write("Сколько вам лет: ");
@@ -141,7 +146,8 @@ main() {
     string name = console.get_string();
 
     console.write(name, " здоров. Свободен. Следующий!", '\n');
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Пример выполнения:</p>
 
@@ -166,7 +172,8 @@ main() {
       </ul>
       <p>Рассмотрим пример:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     console.write("Как вас зовут: ");
@@ -175,7 +182,8 @@ main() {
     int money; // значение не присвоено — будет 0
 
     console.write(name, ", у вас ", money, " денег!", '\n');
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Пример выполнения:</p>
 

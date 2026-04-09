@@ -57,11 +57,13 @@
       <h2>Переход на новую строку: <code>'\n'</code></h2>
       <p>Вы уже знаете символ <code>'\n'</code> — он заставляет текст «перейти» на следующую строку:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     console.write("Кот", '\n', "хочет", '\n', "кушать");
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <idyl-output-block>Кот
 хочет
@@ -73,13 +75,15 @@ main() {
       <h2>Упрощённый вывод строк: <code>console.writeln()</code></h2>
       <p>Функция <code>console.writeln()</code> — это удобная обёртка над <code>console.write()</code>, которая <strong>автоматически добавляет символ перевода строки <code>'\n'</code> в конец</strong>. Не нужно каждый раз вручную писать <code>'\n'</code> — writeln сделает это за вас.</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     console.writeln("Первая строка");
     console.writeln("Вторая строка");
     console.writeln("Третья строка");
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <idyl-output-block>Первая строка
 Вторая строка
@@ -87,9 +91,11 @@ main() {
 
       <p>Как видите, результат точно такой же, как если бы вы написали:</p>
 
-      <idyl-code-block>console.write("Первая строка", '\n');
+      <idyl-code-block><script type="text/plain">
+console.write("Первая строка", '\n');
 console.write("Вторая строка", '\n');
-console.write("Третья строка", '\n');</idyl-code-block>
+console.write("Третья строка", '\n');
+</script></idyl-code-block>
 
       <p>Функция <code>writeln()</code> особенно полезна, когда:</p>
       <ul>
@@ -105,11 +111,13 @@ console.write("Третья строка", '\n');</idyl-code-block>
       <h2>Экранирование символов: <code>\"</code></h2>
       <p>Если вы хотите вставить кавычки <em>внутрь</em> строки, их нужно «экранировать» обратным слешем <code>\</code>:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     console.writeln("Игра \"Minecraft\" была создана в 2009 году");
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <idyl-output-block>Игра "Minecraft" была создана в 2009 году</idyl-output-block>
 
@@ -121,11 +129,13 @@ main() {
       <h2>Табуляция: <code>'\t'</code></h2>
       <p>Символ <code>'\t'</code> вставляет горизонтальный отступ, как если бы вы нажали клавишу <strong>Tab</strong> на клавиатуре:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     console.writeln("До Tab", '\t', "После Tab");
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <idyl-output-block>До Tab      После Tab</idyl-output-block>
 
@@ -137,7 +147,8 @@ main() {
       <h2>Цветной текст в консоли</h2>
       <p>Idyllium поддерживает ANSI-последовательности для цветного вывода. Чтобы изменить цвет текста, используйте управляющую последовательность вида <code>"\e[31m"</code>:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     console.writeln("\e[31m", "Красный текст");
@@ -147,7 +158,8 @@ main() {
     console.writeln("\e[35m", "Малиновый текст");
     
     console.writeln('\e[0m', "Стандартный текст");
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <idyl-output-block><span class="color-red">Красный текст</span>
 <span class="color-green">Зелёный текст</span>
@@ -164,7 +176,8 @@ main() {
       <h2>Цвет сохраняется до конца вывода</h2>
       <p>Один раз задав цвет, вы не обязаны его указывать каждый раз — он будет применяться ко всем последующим строкам:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     console.writeln("\e[32m", "Текст стал зелёным");
@@ -174,7 +187,8 @@ main() {
     console.writeln("\e[31m", "А теперь текст стал красным");
     console.writeln("И он останется красным");
     console.writeln("Пока не поменять на другой");
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <idyl-output-block><span class="color-green">Текст стал зелёным</span>
 <span class="color-green">Текст всё ещё зелёный</span>
@@ -191,12 +205,14 @@ main() {
       <h2>Сброс цвета и эффектов</h2>
       <p>Чтобы вернуть текст к стандартному виду, используйте команду <code>"\e[0m"</code>:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     console.writeln("\e[36m", "Цвет изменён на циановый");
     console.writeln("\e[0m", "Цвет сброшен до обычного");
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <idyl-output-block><span class="color-cyan">Цвет изменён на циановый</span>
 <span class="color-reset">Цвет сброшен до обычного</span></idyl-output-block>

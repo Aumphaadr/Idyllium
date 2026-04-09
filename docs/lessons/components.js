@@ -1,11 +1,4 @@
-/**
- * Idyllium Documentation — Web Components
- * IdylCodeBlock  : <pre> with syntax highlighting + copy button
- * IdylSidebar    : collapsible lesson navigation, populated from lessons.json
- * IdylOutputBlock: styled terminal-output block
- */
-
-/* ─── Syntax highlighter (mirrors IDE's highlighter) ─────────────────────── */
+// docs/lessons/components.js
 
 const KEYWORDS = new Set([
   'use', 'if', 'else', 'while', 'do', 'for', 'break', 'continue', 'return',
@@ -25,7 +18,10 @@ const QUALIFIED_TYPES = new Set([
   'istream', 'ostream', 'stream', 'stamp',
   'Window', 'Button', 'Label', 'SpinBox', 'FloatSpinBox',
   'LineEdit', 'CheckBox', 'ProgressBar', 'TextEdit',
-  'ComboBox', 'Slider', 'Frame',
+  'ComboBox', 'Slider', 'Frame', 'Timer', 'Modal',
+  'int8', 'int16', 'int32', 'int64',
+  'uint8', 'uint16', 'uint32', 'uint64',
+  'float32', 'float64',
 ]);
 
 function isDigit(ch) { return ch >= '0' && ch <= '9'; }
@@ -246,54 +242,54 @@ function highlightIdyllium(code) {
 /* ─── <idyl-code-block> ──────────────────────────────────────────────────── */
 
 class IdylCodeBlock extends HTMLElement {
-connectedCallback() {
-  const raw = this.textContent ?? '';
-  const code = raw.replace(/^\n/, '').replace(/\n\s*$/, '');
+  connectedCallback() {
+    const raw = this.textContent ?? '';
+    const code = raw.replace(/^\n/, '').replace(/\n\s*$/, '');
 
-  const pre = document.createElement('pre');
-  pre.className = 'idyl-pre';
+    const pre = document.createElement('pre');
+    pre.className = 'idyl-pre';
 
-  const highlighted = highlightIdyllium(code);
-  pre.innerHTML = `<code class="idyl-code">${highlighted}</code>`;
+    const highlighted = highlightIdyllium(code);
+    pre.innerHTML = `<code class="idyl-code">${highlighted}</code>`;
 
-  // Copy button
-  const btn = document.createElement('button');
-  btn.className = 'idyl-copy-btn';
-  btn.title = 'Скопировать';
-  btn.innerHTML = `
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="5" y="5" width="9" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
-      <path d="M3 11H2.5A1.5 1.5 0 0 1 1 9.5V2.5A1.5 1.5 0 0 1 2.5 1h7A1.5 1.5 0 0 1 11 2.5V3"
-            stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-    </svg>`;
-
-  btn.addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(code);
-      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M2.5 8.5 L6 12 L13.5 4" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    // Copy button
+    const btn = document.createElement('button');
+    btn.className = 'idyl-copy-btn';
+    btn.title = 'Скопировать';
+    btn.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="5" y="5" width="9" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M3 11H2.5A1.5 1.5 0 0 1 1 9.5V2.5A1.5 1.5 0 0 1 2.5 1h7A1.5 1.5 0 0 1 11 2.5V3"
+              stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
       </svg>`;
-      btn.style.opacity = '1';
-      setTimeout(() => {
+
+    btn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(code);
         btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="5" y="5" width="9" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M3 11H2.5A1.5 1.5 0 0 1 1 9.5V2.5A1.5 1.5 0 0 1 2.5 1h7A1.5 1.5 0 0 1 11 2.5V3"
-                stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M2.5 8.5 L6 12 L13.5 4" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>`;
-      }, 1800);
-    } catch {
-      btn.textContent = '✗';
-    }
-  });
+        btn.style.opacity = '1';
+        setTimeout(() => {
+          btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="5" y="5" width="9" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M3 11H2.5A1.5 1.5 0 0 1 1 9.5V2.5A1.5 1.5 0 0 1 2.5 1h7A1.5 1.5 0 0 1 11 2.5V3"
+                  stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>`;
+        }, 1800);
+      } catch {
+        btn.textContent = '✗';
+      }
+    });
 
-  const wrapper = document.createElement('div');
-  wrapper.className = 'idyl-code-wrapper';
-  wrapper.appendChild(pre);
-  wrapper.appendChild(btn);
+    const wrapper = document.createElement('div');
+    wrapper.className = 'idyl-code-wrapper';
+    wrapper.appendChild(pre);
+    wrapper.appendChild(btn);
 
-  this.innerHTML = '';
-  this.appendChild(wrapper);
-}
+    this.innerHTML = '';
+    this.appendChild(wrapper);
+  }
 }
 
 customElements.define('idyl-code-block', IdylCodeBlock);
@@ -325,12 +321,13 @@ class IdylSidebar extends HTMLElement {
     const nav = this.querySelector('#idyl-nav');
     const toggle = this.querySelector('#idyl-nav-toggle');
     const list = this.querySelector('#idyl-nav-list');
+    
+    // Автоматическое определение базового пути
+    const basePath = this.getBasePath();
+    
     const currentFile = window.location.pathname.split('/').pop();
-    const currentDir = window.location.pathname.includes('/widgets/') ? 'widgets' :
-                       window.location.pathname.includes('/oop/') ? 'oop' :
-                       window.location.pathname.includes('/examples/') ? 'examples' : 'console';
 
-    // Восстанавливаем состояние свёрнутых секций
+    // Восстанавливаем состояние
     try {
       const saved = sessionStorage.getItem('idyl-open-sections');
       if (saved) {
@@ -356,14 +353,13 @@ class IdylSidebar extends HTMLElement {
       const data = await resp.json();
       const sections = data.sections;
 
-      // Автоматически открываем секцию текущего урока
+      // Открываем секцию с текущим уроком
       for (let i = 0; i < sections.length; i++) {
         const section = sections[i];
         const hasCurrent = section.lessons.some(lesson => lesson.file === currentFile);
         if (hasCurrent) openSections.add(section.id);
       }
 
-      // Если ничего не открыто — открываем первую секцию
       if (openSections.size === 0 && sections.length > 0) {
         openSections.add(sections[0].id);
       }
@@ -387,9 +383,11 @@ class IdylSidebar extends HTMLElement {
             <div class="idyl-lessons ${isOpen ? '' : 'collapsed'}">
               ${section.lessons.map(lesson => {
                 const isCurrent = lesson.file === currentFile;
+                // Ключевой момент: используем basePath для формирования правильной ссылки
+                const href = basePath === '.' ? lesson.file : `${basePath}/${lesson.file}`;
                 return `
                   <a class="idyl-nav-item${isCurrent ? ' current' : ''}"
-                     href="./${lesson.file}">
+                     href="${href}">
                     <span class="idyl-nav-num">${lesson.id}</span>
                     <span class="idyl-nav-label">${lesson.title}</span>
                   </a>
@@ -400,16 +398,9 @@ class IdylSidebar extends HTMLElement {
         `;
       }).join('');
       
-      // Вешаем обработчик клика на ВЕСЬ хедер секции
+      // Обработчики кликов
       document.querySelectorAll('.idyl-section-header').forEach(header => {
         header.addEventListener('click', (e) => {
-          // Если кликнули именно по кнопке-уголку — не даём событию всплыть,
-          // чтобы не было двойного срабатывания, но сам клик обработается
-          if (e.target.closest('.idyl-section-toggle')) {
-            // Всё равно обработаем, но без остановки всплытия
-            // Просто позволим сработать обработчику на header
-          }
-          
           const sectionId = header.dataset.section;
           const sectionDiv = header.closest('.idyl-section');
           const lessonsDiv = sectionDiv.querySelector('.idyl-lessons');
@@ -435,6 +426,14 @@ class IdylSidebar extends HTMLElement {
       console.error(e);
       list.innerHTML = `<div class="idyl-nav-error">❌ Не удалось загрузить навигацию</div>`;
     }
+  }
+
+  getBasePath() {
+    const path = window.location.pathname;
+    if (/\/lessons\/(cli|widgets|oop|examples)\//.test(path)) {
+      return '..';
+    }
+    return '.';
   }
 }
 

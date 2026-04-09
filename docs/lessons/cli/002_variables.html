@@ -69,7 +69,8 @@
       <h2>Создание переменных</h2>
       <p>Рассмотрим простейший пример:</p>
 
-      <idyl-code-block>// main.idyl
+      <idyl-code-block><script type="text/plain">
+// main.idyl
 use console;
 
 main() {
@@ -78,7 +79,8 @@ main() {
 
     int Q = 91; // создание переменной с именем 'Q' и значением '91'
     console.write(Q, '\n');
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Результат выполнения:</p>
 
@@ -101,7 +103,8 @@ main() {
       </ul>
       <p>Пример объявления переменных разных типов:</p>
 
-      <idyl-code-block>// main.idyl
+      <idyl-code-block><script type="text/plain">
+// main.idyl
 use console;
 
 main() {
@@ -112,7 +115,8 @@ main() {
     console.write(N, '\n');
     console.write(F, '\n');
     console.write(S, '\n');
-}</idyl-code-block>
+}
+</script></idyl-code-block>
     </div>
 
     <!-- Section 4 -->
@@ -120,7 +124,8 @@ main() {
       <h2>Ошибки несоответствия типов</h2>
       <p>В Idyllium <strong>нельзя присвоить переменной значение, не подходящее по типу</strong>. Компилятор сразу сообщит об ошибке:</p>
 
-      <idyl-code-block>// main.idyl
+      <idyl-code-block><script type="text/plain">
+// main.idyl
 use console;
 
 main() {
@@ -137,7 +142,8 @@ main() {
     string F = "ЪЕЪ или ЪУЪ?"; // можно
     string G = "дайте 64 алмаза"; // можно
     string H = 56692; // нельзя — ошибка!
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Это не ограничение — это защита. Компьютер не будет пытаться угадать, что вы имели в виду.</p>
     </div>
@@ -151,7 +157,8 @@ main() {
         <li><strong>Присваивание</strong> — изменение значения уже созданной переменной.</li>
       </ul>
 
-      <idyl-code-block>// main.idyl
+      <idyl-code-block><script type="text/plain">
+// main.idyl
 use console;
 
 main() {
@@ -159,7 +166,8 @@ main() {
     A = 20; // присваиваем значение
 
     int B = 30; // создаём и сразу присваиваем
-}</idyl-code-block>
+}
+</script></idyl-code-block>
     </div>
 
     <!-- Section 6 -->
@@ -167,14 +175,16 @@ main() {
       <h2>Встраивание переменных в текст</h2>
       <p>Функция <code>console.write()</code> не ставит пробелы автоматически между аргументами. Сравните:</p>
 
-      <idyl-code-block>// main.idyl
+      <idyl-code-block><script type="text/plain">
+// main.idyl
 use console;
 
 main() {
     int W;
     W = 5;
     console.write("Кот сожрал", W, "кг корма!", '\n');
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Результат:</p>
 
@@ -182,13 +192,15 @@ main() {
 
       <p>Число «прилипло» к словам. Чтобы этого избежать — добавьте пробелы в строки:</p>
 
-      <idyl-code-block>// main.idyl
+      <idyl-code-block><script type="text/plain">
+// main.idyl
 use console;
 
 main() {
     int W = 5;
     console.write("Кот сожрал ", W, " кг корма!", '\n');
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Теперь всё читаемо:</p>
 
@@ -202,7 +214,8 @@ main() {
       <h2>Изменение значения переменной</h2>
       <p>Переменная может менять своё значение в процессе работы программы:</p>
 
-      <idyl-code-block>// main.idyl
+      <idyl-code-block><script type="text/plain">
+// main.idyl
 use console;
 
 main() {
@@ -211,7 +224,8 @@ main() {
 
     money = 25000;    
     console.write("У вас ", money, " денег\n");
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Вывод:</p>
 
@@ -226,14 +240,16 @@ main() {
       <h2>Порядок строк имеет значение</h2>
       <p>В Idyllium, как и во многих языках, <strong>переменную можно использовать только после её объявления</strong>. Попытка обратиться к переменной до того, как она создана, вызовет ошибку компиляции.</p>
 
-      <idyl-code-block>// main.idyl
+      <idyl-code-block><script type="text/plain">
+// main.idyl
 use console;
 
 main() {
     console.write("Алмазов: ", diam, '\n'); // Ошибка: переменная 'diam' не объявлена
     int diam = 64;
     console.write("Алмазов: ", diam, '\n'); // А теперь всё в порядке
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Это правило помогает избежать путаницы и учит писать код в логической последовательности: сначала — что у вас есть (объявление), потом — что вы с этим делаете (использование).</p>
     </div>

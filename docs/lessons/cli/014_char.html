@@ -57,11 +57,13 @@
       <h2>Типы <code>char</code> и <code>string</code></h2>
       <p>В Idyllium существует два текстовых типа:</p>
 
-      <idyl-code-block>// Переменная типа 'char' может хранить один символ
+      <idyl-code-block><script type="text/plain">
+// Переменная типа 'char' может хранить один символ
 char c = '#';
 
 // Переменная типа 'string' может хранить много символов
-string s = "Доступ разрешён!";</idyl-code-block>
+string s = "Доступ разрешён!";
+</script></idyl-code-block>
 
       <p>Обратите внимание:</p>
       <ul>
@@ -75,11 +77,13 @@ string s = "Доступ разрешён!";</idyl-code-block>
       <h2>Строка — это массив символов</h2>
       <p>Это очень похоже на отношение «переменная ↔ массив» для чисел:</p>
 
-      <idyl-code-block>// Переменная 'int' хранит одно число
+      <idyl-code-block><script type="text/plain">
+// Переменная 'int' хранит одно число
 int n = 792;
 
 // Массив 'int' хранит несколько чисел
-array<int, 5> m = [405, 163, 399, 785, 241];</idyl-code-block>
+array<int, 5> m = [405, 163, 399, 785, 241];
+</script></idyl-code-block>
 
       <p>Точно так же:</p>
       <ul>
@@ -94,13 +98,15 @@ array<int, 5> m = [405, 163, 399, 785, 241];</idyl-code-block>
       <h2>Доступ к символам строки</h2>
       <p>Как и у массива, у строки можно получить любой символ по его индексу:</p>
 
-      <idyl-code-block>string p = "Гусь";
+      <idyl-code-block><script type="text/plain">
+string p = "Гусь";
 
 char a = p[0]; // 'Г'
 char b = p[1]; // 'у'
 char c = p[2]; // 'с'
 char d = p[3]; // 'ь'
-char e = p[4]; // ОШИБКА: строки длиной 4 → индексы 0–3</idyl-code-block>
+char e = p[4]; // ОШИБКА: строки длиной 4 → индексы 0–3
+</script></idyl-code-block>
 
       <p>Строка ведёт себя как массив: индексация с нуля, выход за границы — ошибка.</p>
     </div>
@@ -110,11 +116,13 @@ char e = p[4]; // ОШИБКА: строки длиной 4 → индексы 0
       <h2>Посимвольный перебор</h2>
       <p>Можно вывести каждый символ строки по отдельности:</p>
 
-      <idyl-code-block>string p = "Пингвин";
+      <idyl-code-block><script type="text/plain">
+string p = "Пингвин";
 
 for (int i = 0; i < 7; i = i + 1) {
-    console.write(p[i], '\n');
-}</idyl-code-block>
+    console.writeln(p[i]);
+}
+</script></idyl-code-block>
 
       <idyl-output-block>П
 и
@@ -130,13 +138,15 @@ for (int i = 0; i < 7; i = i + 1) {
       <h2>Длина строки: метод <code>length()</code></h2>
       <p>Если длина строки заранее неизвестна, используйте метод <code>length()</code>:</p>
 
-      <idyl-code-block>string Q = "Страус";
+      <idyl-code-block><script type="text/plain">
+string Q = "Страус";
 int L = Q.length(); // 6
-console.write("Птица: ", Q, ", длина: ", L, " символов\n");
+console.writeln("Птица: ", Q, ", длина: ", L, " символов");
 
 string R = "Фламинго";
 int N = R.length(); // 8
-console.write("Птица: ", R, ", длина: ", N, " символов\n");</idyl-code-block>
+console.writeln("Птица: ", R, ", длина: ", N, " символов");
+</script></idyl-code-block>
 
       <idyl-output-block>Птица: Страус, длина: 6 символов
 Птица: Фламинго, длина: 8 символов</idyl-output-block>
@@ -147,11 +157,13 @@ console.write("Птица: ", R, ", длина: ", N, " символов\n");</i
       <h2>Цикл с неизвестной длиной строки</h2>
       <p>Метод <code>length()</code> возвращает число — значит, его можно подставить в цикл:</p>
 
-      <idyl-code-block>string T = "Журавль";
+      <idyl-code-block><script type="text/plain">
+string T = "Журавль";
 
 for (int i = 0; i < T.length(); i = i + 1) {
-    console.write(T[i], '\n');
-}</idyl-code-block>
+    console.writeln(T[i]);
+}
+</script></idyl-code-block>
 
       <idyl-output-block>Ж
 у
@@ -169,14 +181,16 @@ for (int i = 0; i < T.length(); i = i + 1) {
       <h2>Конкатенация строк и символов</h2>
       <p>Строки и символы можно соединять с помощью оператора <code>+</code>:</p>
 
-      <idyl-code-block>string noun = "пицца";
+      <idyl-code-block><script type="text/plain">
+string noun = "пицца";
 string adj = "вкусная";
 char space = ' ';
 char mark = '!';
 
-console.write(noun + adj, '\n');
-console.write(noun + space + adj, '\n');
-console.write(noun + space + adj + mark, '\n');</idyl-code-block>
+console.writeln(noun + adj);
+console.writeln(noun + space + adj);
+console.writeln(noun + space + adj + mark);
+</script></idyl-code-block>
 
       <idyl-output-block>пиццавкусная
 пицца вкусная
@@ -184,8 +198,10 @@ console.write(noun + space + adj + mark, '\n');</idyl-code-block>
 
       <p>В отличие от чисел, от перемены мест слагаемых — сумма меняется:</p>
 
-      <idyl-code-block>string res1 = noun + ' ' + adj; // "пицца вкусная"
-string res2 = adj + ' ' + noun; // "вкусная пицца"</idyl-code-block>
+      <idyl-code-block><script type="text/plain">
+string res1 = noun + ' ' + adj; // "пицца вкусная"
+string res2 = adj + ' ' + noun; // "вкусная пицца"
+</script></idyl-code-block>
     </div>
 
     <!-- Section 8 -->

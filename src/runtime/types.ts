@@ -251,6 +251,45 @@ export class FixedFloat {
     }
 }
 
+function fromBin(binStr: string, typeName: string): FixedInt | FixedFloat {
+    const cleaned = binStr.trim().replace(/^0b/i, '');
+    const value = parseInt(cleaned, 2);
+    
+    if (isNaN(value)) {
+        throw new Error(`Invalid binary string: "${binStr}"`);
+    }
+    
+    return createFixedFromValue(value, typeName);
+}
+
+function fromHex(hexStr: string, typeName: string): FixedInt | FixedFloat {
+    const cleaned = hexStr.trim().replace(/^0x/i, '');
+    const value = parseInt(cleaned, 16);
+    
+    if (isNaN(value)) {
+        throw new Error(`Invalid hexadecimal string: "${hexStr}"`);
+    }
+    
+    return createFixedFromValue(value, typeName);
+}
+
+function createFixedFromValue(value: number, typeName: string): FixedInt | FixedFloat {
+    switch (typeName) {
+        case 'int8':    return new FixedInt(8, true, value);
+        case 'int16':   return new FixedInt(16, true, value);
+        case 'int32':   return new FixedInt(32, true, value);
+        case 'int64':   return new FixedInt(64, true, value);
+        case 'uint8':   return new FixedInt(8, false, value);
+        case 'uint16':  return new FixedInt(16, false, value);
+        case 'uint32':  return new FixedInt(32, false, value);
+        case 'uint64':  return new FixedInt(64, false, value);
+        case 'float32': return new FixedFloat(32, value);
+        case 'float64': return new FixedFloat(64, value);
+        default:
+            throw new Error(`Unknown type: "${typeName}"`);
+    }
+}
+
 export const typesFactory = {
     int8:    (v: number = 0) => new FixedInt(8, true, v),
     int16:   (v: number = 0) => new FixedInt(16, true, v),
@@ -262,4 +301,6 @@ export const typesFactory = {
     uint64:  (v: number = 0) => new FixedInt(64, false, v),
     float32: (v: number = 0) => new FixedFloat(32, v),
     float64: (v: number = 0) => new FixedFloat(64, v),
+    fromBin,
+    fromHex,
 };

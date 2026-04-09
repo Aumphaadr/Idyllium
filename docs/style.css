@@ -483,7 +483,59 @@ html, body {
 }
 
 #tabs-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    height: 36px;
     flex-shrink: 0;
+    overflow: hidden;
+}
+
+.tabs-wrapper {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex: 1;
+}
+
+.tabs-wrapper::-webkit-scrollbar {
+    height: 3px;
+}
+
+.tabs-empty {
+    padding: 0 16px;
+    color: var(--text-dim);
+    font-size: 12px;
+    font-style: italic;
+}
+
+.format-btn {
+    background: transparent;
+    border: none;
+    border-left: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0 16px;
+    height: 100%;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.format-btn:hover {
+    background: rgba(137, 180, 250, 0.15);
+    color: var(--accent);
+}
+
+.format-btn:active {
+    transform: scale(0.95);
 }
 
 #editor-container {
@@ -1010,6 +1062,8 @@ html, body {
 #gui-output::-webkit-scrollbar-thumb:hover {
     background: var(--scrollbar-thumb-hover);
 }
+
+
 
 /* ═══ Responsive ═══════════════════════════════════════════════════════════ */
 

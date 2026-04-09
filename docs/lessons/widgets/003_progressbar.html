@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 3: Виджет ProgressBar — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <link rel="stylesheet" href="gui.css">
+  <script src="../components.js" defer></script>
+  <style>
+    .interactive-demo {
+      background: rgba(137, 180, 250, 0.05);
+      border-radius: 12px;
+      padding: 1em;
+      margin: 1.5em 0;
+    }
+    .interactive-demo .coord-note {
+      margin-top: 1em;
+    }
+    .progress-row {
+      margin: 1em 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Графические виджеты</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Виджеты • Урок 3</div>
+      <h1>Виджет ProgressBar</h1>
+      <p class="docs-subtitle">Полоска прогресса — показываем, сколько осталось ждать</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Что такое ProgressBar?</h2>
+      <p><code>gui.ProgressBar</code> — это заполняемая полоска, которая наглядно показывает прогресс выполнения какого-либо процесса.</p>
+      <p>Вы наверняка видели такие в реальной жизни:</p>
+      <ul>
+        <li>📥 Загрузка файла в браузере — полоска заполняется от 0% до 100%</li>
+        <li>🎮 Шкала здоровья персонажа в игре</li>
+        <li>💾 Установка программы — «Осталось 3 секунды...»</li>
+        <li>⏳ Таймер обратного отсчёта в виде заполняющейся полоски</li>
+      </ul>
+
+      <p>Вот как выглядит простейший прогрессбар, заполненный на 24%:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 100;
+    win.title = "Прогресс";
+
+    gui.ProgressBar pb;
+    pb.x = 20;
+    pb.y = 20;
+    pb.width = 260;
+    pb.value = 24;  // 24%
+
+    win.add_child(pb);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 100px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px; width: 260px;">
+              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
+                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); transition: width 0.3s ease; border-radius: 4px; width: 24%;"></div>
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); pointer-events: none;">
+                  24%
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          📊 ProgressBar наглядно показывает процент выполнения. Здесь — 24%.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Стандартные свойства виджетов</h2>
+      <p>Как и все виджеты в Idyllium, <code>ProgressBar</code> имеет стандартный набор свойств для позиционирования:</p>
+      <ul>
+        <li><code>x</code> — расстояние от левого края окна (в пикселях)</li>
+        <li><code>y</code> — расстояние от верхнего края окна (в пикселях)</li>
+        <li><code>width</code> — ширина виджета</li>
+        <li><code>height</code> — высота виджета</li>
+      </ul>
+
+      <idyl-code-block><script type="text/plain">
+gui.ProgressBar pb;
+pb.x = 20;       // отступ слева 20 пикселей
+pb.y = 30;       // отступ сверху 30 пикселей
+pb.width = 200;  // ширина 200 пикселей
+pb.height = 30;  // высота 30 пикселей
+</script></idyl-code-block>
+
+      <p>Эти свойства есть у <strong>каждого</strong> виджета — от кнопки до выпадающего списка.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Свойство <code>value</code> — уровень заполнения</h2>
+      <p>Главное свойство прогрессбара — <code>value</code>. Оно имеет тип <code>int</code> и задаёт заполнение в процентах (от 0 до 100).</p>
+
+      <p>Три прогрессбара с разными значениями:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 200;
+    win.title = "Разные значения";
+
+    // Пустой прогрессбар
+    gui.ProgressBar empty;
+    empty.x = 20;
+    empty.y = 20;
+    empty.width = 260;
+    empty.value = 0;
+
+    // Наполовину полный
+    gui.ProgressBar half;
+    half.x = 20;
+    half.y = 70;
+    half.width = 260;
+    half.value = 50;
+
+    // Полностью полный
+    gui.ProgressBar full;
+    full.x = 20;
+    full.y = 120;
+    full.width = 260;
+    full.value = 100;
+
+    win.add_child(empty);
+    win.add_child(half);
+    win.add_child(full);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 180px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px; width: 260px;">
+              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
+                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 0%; border-radius: 4px;"></div>
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">0%</div>
+              </div>
+            </div>
+            <div style="position: absolute; left: 20px; top: 70px; width: 260px;">
+              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
+                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 50%; border-radius: 4px;"></div>
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">50%</div>
+              </div>
+            </div>
+            <div style="position: absolute; left: 20px; top: 120px; width: 260px;">
+              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
+                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 100%; border-radius: 4px;"></div>
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">100%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          📊 <code>value = 0</code> — пусто, <code>value = 50</code> — половина, <code>value = 100</code> — полностью заполнено.
+        </div>
+      </div>
+
+      <p>Обратите внимание: процент заполнения отображается прямо на полоске — дополнительный лейбл не нужен.</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Динамическое изменение значения</h2>
+      <p>Как и любые другие свойства, <code>value</code> можно менять во время работы программы. Вот пример, где кнопка устанавливает прогрессбару случайное значение:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+use random;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 150;
+    win.title = "Случайный прогресс";
+
+    gui.ProgressBar pb;
+    pb.x = 20;
+    pb.y = 20;
+    pb.width = 310;
+    pb.value = 0;
+
+    gui.Button btn;
+    btn.text = "Случайное значение";
+    btn.x = 20;
+    btn.y = 80;
+    btn.width = 150;
+
+    btn.on_click = void function() {
+        int r = random.create_int(0, 100);
+        pb.value = r;
+    };
+
+    win.add_child(pb);
+    win.add_child(btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 150px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px; width: 310px;" id="randomProgressContainer">
+              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
+                <div id="randomProgressFill" style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 0%; border-radius: 4px;"></div>
+                <div id="randomProgressLabel" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">0%</div>
+              </div>
+            </div>
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 80px; width: 150px;" id="randomProgressBtn">Случайное значение</button>
+          </div>
+        </div>
+        <div class="coord-note">
+          🎲 Каждое нажатие кнопки генерирует случайное число от 0 до 100 и обновляет прогрессбар.
+        </div>
+      </div>
+
+      <p>Этот механизм можно использовать для:</p>
+      <ul>
+        <li>Отображения прогресса загрузки файлов</li>
+        <li>Индикации здоровья персонажа в игре</li>
+        <li>Визуализации таймера или обратного отсчёта</li>
+        <li>Любого другого процесса, где нужно показать, «сколько осталось»</li>
+      </ul>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="002_label.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 2: Виджет Label</strong>
+      </a>
+      <a class="docs-nav-btn next" href="004_spinbox.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 4: Виджеты SpinBox и FloatSpinBox</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+<script>
+  // Интерактив для демо-примеров
+  document.addEventListener('DOMContentLoaded', () => {
+    // Пример 4: случайный прогресс
+    const randomBtn = document.getElementById('randomProgressBtn');
+    const progressFill = document.getElementById('randomProgressFill');
+    const progressLabel = document.getElementById('randomProgressLabel');
+    
+    if (randomBtn && progressFill && progressLabel) {
+      randomBtn.addEventListener('click', () => {
+        const r = Math.floor(Math.random() * 101);
+        progressFill.style.width = r + '%';
+        progressLabel.textContent = r + '%';
+      });
+    }
+  });
+</script>
+</body>
+</html>

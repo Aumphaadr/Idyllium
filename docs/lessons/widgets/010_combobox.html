@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 10: Виджет ComboBox — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <link rel="stylesheet" href="gui.css">
+  <script src="../components.js" defer></script>
+  <style>
+    .interactive-demo {
+      background: rgba(137, 180, 250, 0.05);
+      border-radius: 12px;
+      padding: 1em;
+      margin: 1.5em 0;
+    }
+    .interactive-demo .coord-note {
+      margin-top: 1em;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Графические виджеты</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Виджеты • Урок 10</div>
+      <h1>Виджет ComboBox</h1>
+      <p class="docs-subtitle">Выпадающий список для выбора одного варианта из нескольких</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Что такое ComboBox?</h2>
+      <p><code>gui.ComboBox</code> — это выпадающий список, который позволяет пользователю выбрать один вариант из заранее заданного набора.</p>
+      <p>Где он встречается:</p>
+      <ul>
+        <li>🌍 Выбор страны или города в форме регистрации</li>
+        <li>🎮 Выбор уровня сложности в игре</li>
+        <li>📅 Выбор месяца или года в календаре</li>
+        <li>⚙️ Выбор языка интерфейса в настройках</li>
+      </ul>
+
+      <p>Вот простейший ComboBox с несколькими пунктами:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 250;
+    win.height = 100;
+    win.title = "ComboBox";
+
+    gui.ComboBox combo;
+    combo.x = 20;
+    combo.y = 30;
+    combo.width = 200;
+    combo.add_item("Пункт 1");
+    combo.add_item("Пункт 2");
+    combo.add_item("Пункт 3");
+    combo.selected_index = 0;
+
+    win.add_child(combo);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 100px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 30px;">
+              <select class="idyl-combobox" style="width: 200px;">
+                <option>Пункт 1</option>
+                <option>Пункт 2</option>
+                <option>Пункт 3</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          📋 Выпадающий список с тремя пунктами. Нажмите, чтобы раскрыть.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Добавление пунктов: метод <code>add_item()</code></h2>
+      <p>Пункты в список добавляются методом <code>add_item(текст)</code>. Каждый вызов добавляет новый пункт в конец списка.</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    gui.ComboBox combo;
+    combo.add_item("Красный");
+    combo.add_item("Зелёный");
+    combo.add_item("Синий");
+}
+</script></idyl-code-block>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Очистка списка: метод <code>clear_items()</code></h2>
+      <p>Метод <code>clear_items()</code> удаляет все пункты из списка:</p>
+
+      <idyl-code-block><script type="text/plain">
+combo.clear_items();  // список стал пустым
+</script></idyl-code-block>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Свойства <code>selected_index</code> и <code>selected_text</code></h2>
+      <p>ComboBox предоставляет два способа узнать, что выбрал пользователь:</p>
+      <ul>
+        <li><code>selected_index</code> — номер выбранного пункта (<code>int</code>, нумерация с 0)</li>
+        <li><code>selected_text</code> — текст выбранного пункта (<code>string</code>)</li>
+      </ul>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 150;
+    win.title = "Выбор цвета";
+
+    gui.ComboBox combo;
+    combo.x = 20;
+    combo.y = 20;
+    combo.width = 200;
+    combo.add_item("Красный");
+    combo.add_item("Зелёный");
+    combo.add_item("Синий");
+    combo.selected_index = 0;
+
+    gui.Button btn;
+    btn.text = "Показать выбор";
+    btn.x = 20;
+    btn.y = 70;
+    btn.width = 150;
+
+    gui.Label label;
+    label.x = 20;
+    label.y = 110;
+    label.text = "";
+
+    btn.on_click = void function() {
+        string msg = "Вы выбрали: " + combo.selected_text;
+        label.text = msg;
+    };
+
+    win.add_child(combo);
+    win.add_child(btn);
+    win.add_child(label);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 150px; position: relative;">
+            <select class="idyl-combobox" style="position: absolute; left: 20px; top: 20px; width: 200px;" id="demoCombo">
+              <option>Красный</option>
+              <option>Зелёный</option>
+              <option>Синий</option>
+            </select>
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 70px; width: 150px;" id="showChoiceBtn">Показать выбор</button>
+            <div style="position: absolute; left: 20px; top: 110px; color: #cdd6f4;" id="choiceLabel"></div>
+          </div>
+        </div>
+        <div class="coord-note">
+          🎨 Выберите цвет из списка, нажмите кнопку — программа покажет ваш выбор.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Событие <code>on_change</code></h2>
+      <p>Событие <code>on_change</code> срабатывает каждый раз, когда пользователь выбирает новый пункт в списке:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 120;
+    win.title = "Мгновенная реакция";
+
+    gui.ComboBox combo;
+    combo.x = 20;
+    combo.y = 20;
+    combo.width = 200;
+    combo.add_item("Красный");
+    combo.add_item("Зелёный");
+    combo.add_item("Синий");
+
+    gui.Label label;
+    label.x = 20;
+    label.y = 70;
+    label.text = "Выберите цвет";
+
+    combo.on_change = void function() {
+        label.text = "Вы выбрали: " + combo.selected_text;
+    };
+
+    win.add_child(combo);
+    win.add_child(label);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 120px; position: relative;">
+            <select class="idyl-combobox" style="position: absolute; left: 20px; top: 20px; width: 200px;" id="changeCombo">
+              <option>Красный</option>
+              <option>Зелёный</option>
+              <option>Синий</option>
+            </select>
+            <div style="position: absolute; left: 20px; top: 70px; color: #cdd6f4;" id="changeLabel">Выберите цвет</div>
+          </div>
+        </div>
+        <div class="coord-note">
+          🔄 Меняйте выбранный пункт — лейбл обновляется мгновенно.
+        </div>
+      </div>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="009_frame.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 9: Виджет Frame</strong>
+      </a>
+      <a class="docs-nav-btn next" href="011_visibility.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 11: Отображение виджетов</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+<script>
+  // Интерактив для демо-примеров
+  document.addEventListener('DOMContentLoaded', () => {
+    // Пример 4: выбор из списка
+    const demoCombo = document.getElementById('demoCombo');
+    const showChoiceBtn = document.getElementById('showChoiceBtn');
+    const choiceLabel = document.getElementById('choiceLabel');
+    if (demoCombo && showChoiceBtn && choiceLabel) {
+      showChoiceBtn.addEventListener('click', () => {
+        choiceLabel.textContent = 'Вы выбрали: ' + demoCombo.value;
+      });
+    }
+
+    // Пример 5: on_change
+    const changeCombo = document.getElementById('changeCombo');
+    const changeLabel = document.getElementById('changeLabel');
+    if (changeCombo && changeLabel) {
+      changeCombo.addEventListener('change', () => {
+        changeLabel.textContent = 'Вы выбрали: ' + changeCombo.value;
+      });
+    }
+  });
+</script>
+</body>
+</html>

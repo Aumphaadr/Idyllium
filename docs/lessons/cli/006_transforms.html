@@ -57,11 +57,13 @@
       <h2>Нельзя подменить тип</h2>
       <p>Как вы уже знаете, Idyllium не разрешает присваивать переменной значение, не подходящее по типу:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     string S = 241; // ОШИБКА: в переменную типа 'string' нельзя положить число
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Это не ограничение — это защита от хаоса. Но что, если вам <em>нужно</em> преобразовать число в строку или наоборот?</p>
     </div>
@@ -71,12 +73,14 @@ main() {
       <h2>Функция <code>to_string()</code></h2>
       <p>Функция <code>to_string()</code> превращает число в строку:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     string S = to_string(241); // всё в порядке
     // to_string(241) → "241"
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Теперь переменная <code>S</code> содержит строку <code>"241"</code>, а не число — и её можно использовать в операциях со строками.</p>
     </div>
@@ -86,7 +90,8 @@ main() {
       <h2>Что такое функция?</h2>
       <p>Функция — это механизм, который <strong>превращает одни данные в другие</strong>.</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     int NA = 20;
@@ -95,9 +100,10 @@ main() {
     string SA = to_string(NA); // из числа 20 порождается строка "20"
     string SB = to_string(NB); // из числа 30 порождается строка "30"
 
-    console.write("Числовая сумма: ", NA + NB, '\n');
-    console.write("Строковая сумма: ", SA + SB, '\n');
-}</idyl-code-block>
+    console.writeln("Числовая сумма: ", NA + NB);
+    console.writeln("Строковая сумма: ", SA + SB);
+}
+</script></idyl-code-block>
 
       <idyl-output-block>Числовая сумма: 50
 Строковая сумма: 2030</idyl-output-block>
@@ -110,12 +116,14 @@ main() {
       <h2>Обратное преобразование: <code>to_int()</code></h2>
       <p>Чтобы превратить строку в число, используйте <code>to_int()</code>:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     int A = "345"; // НЕЛЬЗЯ
     int B = to_int("345"); // МОЖНО
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Функция <code>to_int("345")</code> порождает число <code>345</code>, которое можно использовать в арифметике.</p>
     </div>
@@ -124,12 +132,14 @@ main() {
     <div class="docs-section">
       <h2>Преобразование в дробное число: <code>to_float()</code></h2>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     float A = "1.6"; // НЕЛЬЗЯ
     float B = to_float("1.6"); // МОЖНО
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Функция <code>to_float("1.6")</code> порождает значение <code>1.6</code> типа <code>float</code>.</p>
     </div>
@@ -139,23 +149,25 @@ main() {
       <h2>Практическое применение</h2>
       <p>Преобразования особенно полезны, когда вы хотите динамически собирать управляющие последовательности — например, для цвета текста:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
-    console.write("Будем красить текст!", '\n');
-    console.write("Варианты:", '\n');
-    console.write("1) Красный", '\n');
-    console.write("2) Зелёный", '\n');
-    console.write("3) Жёлтый", '\n');
-    console.write("4) Синий", '\n');
+    console.writeln("Будем красить текст!");
+    console.writeln("Варианты:");
+    console.writeln("1) Красный");
+    console.writeln("2) Зелёный");
+    console.writeln("3) Жёлтый");
+    console.writeln("4) Синий");
 
     console.write("Выбирайте: ");
     int A = console.get_int();
     int B = A + 30;
     
     string S = to_string(B);
-    console.write("\e[" + S + "m", "Покрашено!", '\n');
-}</idyl-code-block>
+    console.writeln("\e[" + S + "m", "Покрашено!");
+}
+</script></idyl-code-block>
 
       <p>Пример выполнения (пользователь выбрал вариант 2):</p>
 
@@ -176,13 +188,15 @@ main() {
       <h2>Ошибки при преобразовании</h2>
       <p>Функции преобразования работают <strong>только с корректными данными</strong>:</p>
 
-      <idyl-code-block>use console;
+      <idyl-code-block><script type="text/plain">
+use console;
 
 main() {
     int A = to_int("570"); // можно: породится 570
     int B = to_int("ъеъ ъуъ"); // нельзя: не число
     int C = to_int("десять"); // нельзя: текст не превратится в число
-}</idyl-code-block>
+}
+</script></idyl-code-block>
 
       <p>Если в строке нет числа, <code>to_int()</code> и <code>to_float()</code> завершится с ошибкой. Это не баг — это защита от неверных допущений.</p>
     </div>

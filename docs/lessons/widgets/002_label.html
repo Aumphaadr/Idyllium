@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 2: Виджет Label — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <link rel="stylesheet" href="gui.css">
+  <script src="../components.js" defer></script>
+  <style>
+    .interactive-demo {
+      background: rgba(137, 180, 250, 0.05);
+      border-radius: 12px;
+      padding: 1em;
+      margin: 1.5em 0;
+    }
+    .interactive-demo .coord-note {
+      margin-top: 1em;
+    }
+    .overlap-demo {
+      position: relative;
+      background: #2a2a3e;
+      border-radius: 8px;
+      padding: 16px;
+      min-height: 150px;
+      margin: 1em 0;
+    }
+    .error-example {
+      margin: 1.5em 0;
+    }
+    .error-message {
+      background: rgba(243, 139, 168, 0.15);
+      border-left: 3px solid #f38ba8;
+      padding: 0.75em 1em;
+      font-family: 'Source Code Pro', monospace;
+      font-size: 0.85em;
+      color: #f38ba8;
+      margin: 0.5em 0 1em 0;
+      border-radius: 0 6px 6px 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Графические виджеты</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Виджеты • Урок 2</div>
+      <h1>Виджет Label</h1>
+      <p class="docs-subtitle">Текстовая метка: координаты, размер шрифта, цвет и динамическое изменение</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Координаты лейблов</h2>
+      <p>Как и любой другой виджет, <code>gui.Label</code> имеет координаты <code>x</code> и <code>y</code>, которые определяют его положение внутри окна:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 400;
+    win.height = 200;
+    win.title = "Координаты лейблов";
+
+    gui.Label label1;
+    label1.text = "Я слева";
+    label1.x = 20;
+    label1.y = 30;
+
+    gui.Label label2;
+    label2.text = "Я справа";
+    label2.x = 200;
+    label2.y = 30;
+
+    win.add_child(label1);
+    win.add_child(label2);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 120px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 30px; color: #cdd6f4;">Я слева</div>
+            <div style="position: absolute; left: 200px; top: 30px; color: #cdd6f4;">Я справа</div>
+          </div>
+        </div>
+        <div class="coord-note">
+          📍 Лейблы на разной высоте? Нет — <code>y=30</code> у обоих. Разное расстояние от левого края — <code>x=20</code> и <code>x=200</code>.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Размер шрифта</h2>
+      <p>Свойство <code>font_size</code> позволяет задать размер текста в пикселях:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 400;
+    win.height = 200;
+    win.title = "Размер шрифта";
+
+    gui.Label small;
+    small.text = "Маленький текст";
+    small.x = 20;
+    small.y = 30;
+    small.font_size = 12;
+
+    gui.Label big;
+    big.text = "Большой текст";
+    big.x = 20;
+    big.y = 80;
+    big.font_size = 24;
+
+    win.add_child(small);
+    win.add_child(big);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 150px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 30px; color: #cdd6f4; font-size: 12px;">Маленький текст</div>
+            <div style="position: absolute; left: 20px; top: 80px; color: #cdd6f4; font-size: 24px;">Большой текст</div>
+          </div>
+        </div>
+        <div class="coord-note">
+          🔤 Размер шрифта влияет только на отображение, но не на координаты виджета.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Динамическое изменение текста</h2>
+      <p>Свойство <code>text</code> можно менять прямо во время работы программы — например, по нажатию кнопки:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 150;
+    win.title = "Динамический текст";
+
+    gui.Label label;
+    label.text = "Нажми на кнопку";
+    label.x = 50;
+    label.y = 30;
+
+    gui.Button btn;
+    btn.text = "Сменить текст";
+    btn.x = 50;
+    btn.y = 80;
+
+    btn.on_click = void function() {
+        label.text = "Текст изменён!";
+    };
+
+    win.add_child(label);
+    win.add_child(btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 150px; position: relative;">
+            <div style="position: absolute; left: 50px; top: 30px; color: #cdd6f4;" id="dynamicLabel">Нажми на кнопку</div>
+            <button class="idyl-button" style="position: absolute; left: 50px; top: 80px;" id="changeTextBtn">Сменить текст</button>
+          </div>
+        </div>
+        <div class="coord-note">
+          🖱️ Нажмите на кнопку — текст лейбла изменится прямо на ваших глазах.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>А если попробовать число?</h2>
+      <p>Свойство <code>text</code> ожидает строку (<code>string</code>). Попытка присвоить число приведёт к ошибке компиляции:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+use random;
+
+main() {
+    gui.Window win;
+    gui.Label label;
+    label.text = random.create_int(1, 6);  // ОШИБКА!
+}
+</script></idyl-code-block>
+
+      <div class="error-message" style="margin: 1em 0;">
+        main.idyl:7: cannot assign 'int' to 'string'
+      </div>
+
+      <p>Чтобы вывести число на лейбл, его нужно <strong>преобразовать в строку</strong> с помощью <code>to_string()</code>:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+use random;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 150;
+    win.title = "Случайное число";
+
+    gui.Label label;
+    label.text = "Нажми на кнопку";
+    label.x = 50;
+    label.y = 30;
+
+    gui.Button btn;
+    btn.text = "Бросить кубик";
+    btn.x = 50;
+    btn.y = 80;
+
+    btn.on_click = void function() {
+        int r = random.create_int(1, 6);
+        label.text = "Выпало: " + to_string(r);
+    };
+
+    win.add_child(label);
+    win.add_child(btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 150px; position: relative;">
+            <div style="position: absolute; left: 50px; top: 30px; color: #cdd6f4;" id="randomLabel">Нажми на кнопку</div>
+            <button class="idyl-button" style="position: absolute; left: 50px; top: 80px;" id="rollDiceBtn">Бросить кубик</button>
+          </div>
+        </div>
+        <div class="coord-note">
+          🎲 <code>to_string(r)</code> превращает число в строку, и лейбл счастлив.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Цвет текста</h2>
+      <p>Свойство <code>color</code> позволяет задать цвет текста в формате <strong>шестнадцатеричного кода</strong> (HEX). Например, <code>"#FF0000"</code> — красный, <code>"#00FF00"</code> — зелёный, <code>"#0000FF"</code> — синий.</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 180;
+    win.title = "Цветные лейблы";
+
+    gui.Label red;
+    red.text = "Красный текст";
+    red.x = 50;
+    red.y = 30;
+    red.color = "#FF0000";
+
+    gui.Label green;
+    green.text = "Зелёный текст";
+    green.x = 50;
+    green.y = 70;
+    green.color = "#00FF00";
+
+    gui.Label blue;
+    blue.text = "Синий текст";
+    blue.x = 50;
+    blue.y = 110;
+    blue.color = "#0000FF";
+
+    win.add_child(red);
+    win.add_child(green);
+    win.add_child(blue);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 160px; position: relative;">
+            <div style="position: absolute; left: 50px; top: 30px; color: #FF0000;">Красный текст</div>
+            <div style="position: absolute; left: 50px; top: 70px; color: #00FF00;">Зелёный текст</div>
+            <div style="position: absolute; left: 50px; top: 110px; color: #0000FF;">Синий текст</div>
+          </div>
+        </div>
+        <div class="coord-note">
+          🎨 Цвет задаётся в формате <code>"#RRGGBB"</code>, где RR — красный, GG — зелёный, BB — синий (00–FF).
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Взаимное перекрытие виджетов</h2>
+      <p>Виджеты <strong>не умеют автоматически двигаться</strong>, когда другим виджетам не хватает места. Если координаты пересекаются — они будут накладываться друг на друга:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 400;
+    win.height = 200;
+
+    gui.Label label;
+    label.x = 20;
+    label.y = 20;
+    label.text = "Широкая электрификация южных губерний";
+
+    gui.Button btn;
+    btn.x = 50;
+    btn.y = 20;
+    btn.text = "Нажми меня";
+
+    win.add_child(label);
+    win.add_child(btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="overlap-demo">
+        <div style="position: absolute; left: 20px; top: 20px; color: #cdd6f4; background: rgba(0,0,0,0.3);">
+          Широкая электрификация южных губерний
+        </div>
+        <button style="position: absolute; left: 50px; top: 20px; padding: 8px 20px; background: linear-gradient(135deg, #4a90d9 0%, #357abd 100%); color: white; border: none; border-radius: 6px; cursor: pointer;">
+          Нажми меня
+        </button>
+        <div style="position: relative; min-height: 100px;"></div>
+      </div>
+
+      <p>В этом примере кнопка оказалась <strong>поверх</strong> лейбла, потому что была добавлена позже. Порядок добавления потомков (<code>add_child</code>) определяет, кто будет выше:</p>
+
+      <ul>
+        <li><strong>Первый добавленный</strong> — отрисовывается первым (оказывается <strong>снизу</strong>).</li>
+        <li><strong>Последний добавленный</strong> — отрисовывается последним (оказывается <strong>сверху</strong>).</li>
+      </ul>
+
+      <idyl-code-block><script type="text/plain">
+// Кнопка поверх лейбла
+win.add_child(label);
+win.add_child(btn);  // btn выше
+
+// Лейбл поверх кнопки
+win.add_child(btn);
+win.add_child(label);  // label выше
+</script></idyl-code-block>
+
+      <div class="tip-box" style="margin-top: 1em;">
+        <strong>💡 Вывод:</strong> Всегда планируйте размещение виджетов так, чтобы они <strong>не залезали друг на друга</strong>. Проверяйте координаты и размеры. Если виджеты должны перекрываться — управляйте порядком с помощью <code>add_child</code>.
+      </div>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="001_button.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 1: Кнопки и события</strong>
+      </a>
+      <a class="docs-nav-btn next" href="003_progressbar.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 3: Виджет ProgressBar</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+<script>
+  // Интерактив для демо-примеров
+  document.addEventListener('DOMContentLoaded', () => {
+    // Пример 3: динамическое изменение текста
+    const changeTextBtn = document.getElementById('changeTextBtn');
+    const dynamicLabel = document.getElementById('dynamicLabel');
+    if (changeTextBtn && dynamicLabel) {
+      changeTextBtn.addEventListener('click', () => {
+        dynamicLabel.textContent = 'Текст изменён!';
+      });
+    }
+
+    // Пример 4: случайное число
+    const rollDiceBtn = document.getElementById('rollDiceBtn');
+    const randomLabel = document.getElementById('randomLabel');
+    if (rollDiceBtn && randomLabel) {
+      rollDiceBtn.addEventListener('click', () => {
+        const r = Math.floor(Math.random() * 6) + 1;
+        randomLabel.textContent = 'Выпало: ' + r;
+      });
+    }
+  });
+</script>
+</body>
+</html>

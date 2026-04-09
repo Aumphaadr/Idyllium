@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 6: Виджеты LineEdit и TextEdit — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <link rel="stylesheet" href="gui.css">
+  <script src="../components.js" defer></script>
+  <style>
+    .interactive-demo {
+      background: rgba(137, 180, 250, 0.05);
+      border-radius: 12px;
+      padding: 1em;
+      margin: 1.5em 0;
+    }
+    .interactive-demo .coord-note {
+      margin-top: 1em;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Графические виджеты</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Виджеты • Урок 6</div>
+      <h1>Виджеты LineEdit и TextEdit</h1>
+      <p class="docs-subtitle">Однострочное и многострочное текстовые поля</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Что такое LineEdit?</h2>
+      <p><code>gui.LineEdit</code> — это однострочное текстовое поле, куда пользователь может вводить данные с клавиатуры.</p>
+      <p>Где он встречается:</p>
+      <ul>
+        <li>🔐 Формы входа (логин, пароль)</li>
+        <li>🔍 Поле поиска</li>
+        <li>📝 Ввод имени персонажа в игре</li>
+        <li>🏷️ Редактирование названия файла</li>
+      </ul>
+
+      <p>Вот простейший LineEdit:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 100;
+    win.title = "LineEdit";
+
+    gui.LineEdit input;
+    input.x = 20;
+    input.y = 30;
+    input.width = 260;
+
+    win.add_child(input);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 100px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 30px;">
+              <input type="text" class="idyl-lineedit" style="width: 260px;" placeholder="">
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          ✏️ Пустое текстовое поле. Попробуйте что-нибудь написать.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Свойство <code>text</code> — получение введённого текста</h2>
+      <p>Чтобы прочитать то, что ввёл пользователь, используется свойство <code>text</code> (тип <code>string</code>):</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+use console;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 150;
+    win.title = "Приветствие";
+
+    gui.LineEdit input;
+    input.x = 20;
+    input.y = 20;
+    input.width = 310;
+
+    gui.Button btn;
+    btn.text = "Поздороваться";
+    btn.x = 20;
+    btn.y = 70;
+    btn.width = 150;
+
+    gui.Label label;
+    label.x = 20;
+    label.y = 110;
+    label.text = "";
+
+    btn.on_click = void function() {
+        string name = input.text;
+        if (name == "") {
+            label.text = "Вы не ввели имя!";
+        } else {
+            label.text = "Привет, " + name + "!";
+        }
+    };
+
+    win.add_child(input);
+    win.add_child(btn);
+    win.add_child(label);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 150px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px;">
+              <input type="text" class="idyl-lineedit" style="width: 310px;" id="nameInput">
+            </div>
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 70px; width: 150px;" id="greetBtn">Поздороваться</button>
+            <div style="position: absolute; left: 20px; top: 110px; color: #cdd6f4;" id="greetLabel"></div>
+          </div>
+        </div>
+        <div class="coord-note">
+          💬 Введите имя, нажмите кнопку — текст появится на лейбле.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Событие <code>on_change</code></h2>
+      <p>Событие <code>on_change</code> срабатывает при каждом изменении текста в поле (при вводе, удалении, вставке):</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 120;
+    win.title = "Счётчик символов";
+
+    gui.LineEdit input;
+    input.x = 20;
+    input.y = 20;
+    input.width = 310;
+
+    gui.Label label;
+    label.x = 20;
+    label.y = 70;
+    label.text = "Символов: 0";
+
+    input.on_change = void function() {
+        int len = input.text.length();
+        label.text = "Символов: " + to_string(len);
+    };
+
+    win.add_child(input);
+    win.add_child(label);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 120px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px;">
+              <input type="text" class="idyl-lineedit" style="width: 310px;" id="counterInput">
+            </div>
+            <div style="position: absolute; left: 20px; top: 70px; color: #cdd6f4;" id="counterLabel">Символов: 0</div>
+          </div>
+        </div>
+        <div class="coord-note">
+          🔢 Счётчик обновляется при каждом нажатии клавиши.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Свойства <code>font_size</code> и <code>placeholder</code></h2>
+      <p>LineEdit поддерживает настройку внешнего вида:</p>
+      <ul>
+        <li><code>font_size</code> — размер шрифта в пикселях</li>
+        <li><code>placeholder</code> — подсказка, которая отображается, пока поле пустое</li>
+      </ul>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 150;
+    win.title = "Настройки LineEdit";
+
+    gui.LineEdit input;
+    input.x = 20;
+    input.y = 20;
+    input.width = 310;
+    input.font_size = 16;
+    input.placeholder = "Введите текст здесь...";
+
+    win.add_child(input);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 100px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px;">
+              <input type="text" class="idyl-lineedit" style="width: 310px; font-size: 16px;" placeholder="Введите текст здесь...">
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          🎨 Шрифт увеличен до 16 пикселей, видна серая подсказка-плейсхолдер.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Свойство <code>echo_mode</code> — режим отображения</h2>
+      <p>Свойство <code>echo_mode</code> определяет, как отображается вводимый текст. Доступны три режима:</p>
+      <ul>
+        <li><code>"normal"</code> — обычный режим (текст виден полностью)</li>
+        <li><code>"password"</code> — символы заменяются на звёздочки (● или *), но ввод сохраняется</li>
+        <li><code>"no_echo"</code> — вводимые символы не отображаются совсем (поле остаётся пустым)</li>
+      </ul>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+use console;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 250;
+    win.title = "Режимы ввода";
+
+    gui.Label normal_label;
+    normal_label.text = "Обычный режим:";
+    normal_label.x = 20;
+    normal_label.y = 20;
+
+    gui.LineEdit normal_input;
+    normal_input.x = 20;
+    normal_input.y = 45;
+    normal_input.width = 310;
+    normal_input.echo_mode = "normal";
+    normal_input.placeholder = "Видно, что пишу";
+
+    gui.Label pass_label;
+    pass_label.text = "Режим password:";
+    pass_label.x = 20;
+    pass_label.y = 95;
+
+    gui.LineEdit pass_input;
+    pass_input.x = 20;
+    pass_input.y = 120;
+    pass_input.width = 310;
+    pass_input.echo_mode = "password";
+    pass_input.placeholder = "Звёздочки";
+
+    gui.Label noecho_label;
+    noecho_label.text = "Режим no_echo:";
+    noecho_label.x = 20;
+    noecho_label.y = 170;
+
+    gui.LineEdit noecho_input;
+    noecho_input.x = 20;
+    noecho_input.y = 195;
+    noecho_input.width = 310;
+    noecho_input.echo_mode = "no_echo";
+    noecho_input.placeholder = "Ничего не видно";
+
+    win.add_child(normal_label);
+    win.add_child(normal_input);
+    win.add_child(pass_label);
+    win.add_child(pass_input);
+    win.add_child(noecho_label);
+    win.add_child(noecho_input);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 250px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px; color: #cdd6f4;">Обычный режим:</div>
+            <div style="position: absolute; left: 20px; top: 45px;">
+              <input type="text" class="idyl-lineedit" style="width: 310px;" placeholder="Видно, что пишу">
+            </div>
+            <div style="position: absolute; left: 20px; top: 95px; color: #cdd6f4;">Режим password:</div>
+            <div style="position: absolute; left: 20px; top: 120px;">
+              <input type="password" class="idyl-lineedit" style="width: 310px;" placeholder="Звёздочки">
+            </div>
+            <div style="position: absolute; left: 20px; top: 170px; color: #cdd6f4;">Режим no_echo:</div>
+            <div style="position: absolute; left: 20px; top: 195px;">
+              <input type="text" class="idyl-lineedit" style="width: 310px;" placeholder="Ничего не видно" id="noechoDemo">
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          🔐 <code>"normal"</code> — всё видно, <code>"password"</code> — звёздочки, <code>"no_echo"</code> — ввод не отображается (но программа его видит!).
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Виджет TextEdit — многострочное поле</h2>
+      <p><code>gui.TextEdit</code> — это многострочное текстовое поле. Оно работает так же, как <code>LineEdit</code>, но позволяет вводить текст с переносами строк.</p>
+      <p>Где он встречается:</p>
+      <ul>
+        <li>📝 Редактор заметок</li>
+        <li>💬 Поле ввода комментария или отзыва</li>
+        <li>📄 Редактирование файлов конфигурации</li>
+        <li>✍️ Написание писем или сообщений</li>
+      </ul>
+
+      <p>Вот простейший TextEdit:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 200;
+    win.title = "TextEdit";
+
+    gui.TextEdit textarea;
+    textarea.x = 20;
+    textarea.y = 20;
+    textarea.width = 310;
+    textarea.height = 130;
+    textarea.placeholder = "Введите многострочный текст...";
+
+    win.add_child(textarea);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 180px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px;">
+              <textarea class="idyl-textedit" style="width: 310px; height: 130px;" placeholder="Введите многострочный текст..."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          📝 Многострочное поле. Нажмите Enter — появится новая строка.
+        </div>
+      </div>
+
+      <p>У TextEdit те же свойства, что и у LineEdit:</p>
+      <ul>
+        <li><code>text</code> — получение/установка текста</li>
+        <li><code>placeholder</code> — подсказка (отображается, пока поле пустое)</li>
+        <li><code>font_size</code> — размер шрифта</li>
+        <li><code>on_change</code> — событие при изменении текста</li>
+      </ul>
+
+      <p>Пример с кнопкой, которая читает текст из TextEdit:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+use console;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 220;
+    win.title = "Чтение из TextEdit";
+
+    gui.TextEdit textarea;
+    textarea.x = 20;
+    textarea.y = 20;
+    textarea.width = 310;
+    textarea.height = 100;
+    textarea.placeholder = "Напишите что-нибудь...";
+
+    gui.Button btn;
+    btn.text = "Показать текст";
+    btn.x = 20;
+    btn.y = 140;
+    btn.width = 150;
+
+    gui.Label label;
+    label.x = 20;
+    label.y = 180;
+    label.text = "";
+
+    btn.on_click = void function() {
+        string content = textarea.text;
+        if (content == "") {
+            label.text = "Поле пустое!";
+        } else {
+            label.text = "Длина текста: " + to_string(content.length());
+        }
+    };
+
+    win.add_child(textarea);
+    win.add_child(btn);
+    win.add_child(label);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 220px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px;">
+              <textarea class="idyl-textedit" style="width: 310px; height: 100px;" placeholder="Напишите что-нибудь..." id="demoTextEdit"></textarea>
+            </div>
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 140px; width: 150px;" id="readTextBtn">Показать текст</button>
+            <div style="position: absolute; left: 20px; top: 180px; color: #cdd6f4;" id="textEditResult"></div>
+          </div>
+        </div>
+        <div class="coord-note">
+          📋 Напишите несколько строк в поле, нажмите кнопку — программа покажет длину текста.
+        </div>
+      </div>
+
+      <div class="tip-box" style="margin-top: 1em;">
+        <strong>💡 Важно:</strong> TextEdit поддерживает перенос строк. Свойство <code>text</code> будет содержать символы <code>\n</code> там, где пользователь нажал Enter.
+      </div>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="005_slider.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 5: Виджет Slider</strong>
+      </a>
+      <a class="docs-nav-btn next" href="007_checkbox.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 7: Виджет CheckBox</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+<script>
+  // Интерактив для демо-примеров
+  document.addEventListener('DOMContentLoaded', () => {
+    // Пример 2: приветствие
+    const nameInput = document.getElementById('nameInput');
+    const greetBtn = document.getElementById('greetBtn');
+    const greetLabel = document.getElementById('greetLabel');
+    if (nameInput && greetBtn && greetLabel) {
+      greetBtn.addEventListener('click', () => {
+        const name = nameInput.value;
+        if (name === '') {
+          greetLabel.textContent = 'Вы не ввели имя!';
+        } else {
+          greetLabel.textContent = 'Привет, ' + name + '!';
+        }
+      });
+    }
+
+    // Пример 3: счётчик символов
+    const counterInput = document.getElementById('counterInput');
+    const counterLabel = document.getElementById('counterLabel');
+    if (counterInput && counterLabel) {
+      counterInput.addEventListener('input', () => {
+        const len = counterInput.value.length;
+        counterLabel.textContent = 'Символов: ' + len;
+      });
+    }
+
+    // Пример 5: no_echo — ввод не отображается
+    const noechoDemo = document.getElementById('noechoDemo');
+    if (noechoDemo) {
+      noechoDemo.addEventListener('input', function() {
+        const realValue = this.value;
+        this.dataset.realValue = realValue;
+        if (this.value !== '') {
+          this.value = '';
+        }
+      });
+    }
+
+    // Пример 6: TextEdit
+    const demoTextEdit = document.getElementById('demoTextEdit');
+    const readTextBtn = document.getElementById('readTextBtn');
+    const textEditResult = document.getElementById('textEditResult');
+    if (demoTextEdit && readTextBtn && textEditResult) {
+      readTextBtn.addEventListener('click', () => {
+        const content = demoTextEdit.value;
+        if (content === '') {
+          textEditResult.textContent = 'Поле пустое!';
+        } else {
+          textEditResult.textContent = 'Длина текста: ' + content.length;
+        }
+      });
+    }
+  });
+</script>
+</body>
+</html>

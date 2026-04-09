@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 1: Кнопки и события — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <link rel="stylesheet" href="gui.css">
+  <script src="../components.js" defer></script>
+  <style>
+    .interactive-demo {
+      background: rgba(137, 180, 250, 0.05);
+      border-radius: 12px;
+      padding: 1em;
+      margin: 1.5em 0;
+    }
+    .interactive-demo .coord-note {
+      margin-top: 1em;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Графические виджеты</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Виджеты • Урок 1</div>
+      <h1>Кнопки и события</h1>
+      <p class="docs-subtitle">Как заставить кнопку что-то делать при нажатии</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Создание кнопки (повторение)</h2>
+      <p>Как мы уже знаем из прошлого урока, кнопка создаётся через объявление переменной типа <code>gui.Button</code>:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 200;
+    win.title = "Кнопка-пустышка";
+
+    gui.Button btn;
+    btn.text = "Нажми меня";
+    btn.x = 50;
+    btn.y = 50;
+
+    win.add_child(btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 200px; position: relative;">
+            <button class="idyl-button" style="position: absolute; left: 50px; top: 50px;">
+              Нажми меня
+            </button>
+            <div style="position: absolute; bottom: 8px; left: 8px; font-size: 12px; color: var(--text-dim);">
+              (попробуйте нажать — пока ничего интересного)
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          🖱️ Попробуйте нажать на кнопку. Пока что происходит <strong>большое и прекрасное ничего</strong>.
+        </div>
+      </div>
+
+      <p>Кнопка создана, отображается, нажимается — но на нажатие <strong>ничего не происходит</strong>. Почему? Потому что мы не сказали программе, <em>что именно</em> должно случиться при клике.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Обработка нажатия: свойство <code>on_click</code></h2>
+      <p>Чтобы кнопка реагировала на нажатие, нужно присвоить её свойству <code>on_click</code> <strong>функцию</strong>. Эта функция будет вызываться каждый раз, когда пользователь нажимает на кнопку.</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 200;
+    win.title = "Рабочая кнопка";
+
+    gui.Button btn;
+    btn.text = "Нажми меня";
+    btn.x = 50;
+    btn.y = 50;
+
+    // Присваиваем функцию-обработчик
+    btn.on_click = void function() {
+        btn.text = "Кнопка нажата!";
+    };
+
+    win.add_child(btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 200px; position: relative;">
+            <button class="idyl-button" style="position: absolute; left: 50px; top: 50px;" id="demoBtn">
+              Нажми меня
+            </button>
+            <div style="position: absolute; bottom: 8px; left: 8px; font-size: 12px; color: var(--text-dim);">
+              (работает! нажмите — текст изменится)
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          ✨ Теперь при нажатии текст на кнопке меняется на «Кнопка нажата!».
+        </div>
+      </div>
+
+      <p>Разберём код обработчика:</p>
+      <ul>
+        <li><code>btn.on_click = void function() { ... }</code> — мы присваиваем свойству <code>on_click</code> безымянную функцию.</li>
+        <li><code>void</code> — означает, что функция ничего не возвращает (просто выполняет действия).</li>
+        <li>Внутри функции мы можем менять свойства самой кнопки (<code>btn.text</code>) или любых других виджетов.</li>
+      </ul>
+
+      <div class="tip-box" style="margin-top: 1em;">
+        <strong>💡 Важно:</strong> Функция-обработчик не вызывается вами напрямую. Она вызывается автоматически, когда пользователь нажимает на кнопку.
+      </div>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Влияние на другие виджеты</h2>
+      <p>Самое интересное — обработчик может менять <strong>любые</strong> виджеты, не только ту кнопку, на которую нажали.</p>
+      <p>Вот пример с двумя кнопками и текстовой меткой. Каждая кнопка меняет текст метки «на себя»:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 400;
+    win.height = 200;
+    win.title = "Битва за лейбл";
+
+    // Текстовая метка (пока пустая)
+    gui.Label label;
+    label.x = 150;
+    label.y = 30;
+    label.text = "???";
+
+    // Левая кнопка
+    gui.Button leftBtn;
+    leftBtn.text = "Мой лейбл!";
+    leftBtn.x = 30;
+    leftBtn.y = 100;
+    leftBtn.width = 120;
+
+    // Правая кнопка
+    gui.Button rightBtn;
+    rightBtn.text = "Нет, мой лейбл!";
+    rightBtn.x = 250;
+    rightBtn.y = 100;
+    rightBtn.width = 120;
+
+    // Левая кнопка: устанавливает текст "Мой лейбл!"
+    leftBtn.on_click = void function() {
+        label.text = "Мой лейбл!";
+    };
+
+    // Правая кнопка: устанавливает текст "Нет, мой лейбл!"
+    rightBtn.on_click = void function() {
+        label.text = "Нет, мой!";
+    };
+
+    win.add_child(label);
+    win.add_child(leftBtn);
+    win.add_child(rightBtn);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 200px; position: relative;">
+            <div style="position: absolute; left: 150px; top: 30px; font-size: 18px; color: #cdd6f4; font-weight: 500;" id="demoLabel">
+              ???
+            </div>
+            <button class="idyl-button" style="position: absolute; left: 30px; top: 100px; width: 120px;" id="leftDemoBtn">
+              Мой лейбл!
+            </button>
+            <button class="idyl-button" style="position: absolute; left: 250px; top: 100px; width: 120px;" id="rightDemoBtn">
+              Нет, мой!
+            </button>
+            <div style="position: absolute; bottom: 8px; left: 8px; font-size: 12px; color: var(--text-dim);">
+              (нажмите на кнопки — текст метки изменится)
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          🏆 Левая кнопка пишет «Мой лейбл!», правая — «Нет, мой!». Обе кнопки управляют одним и тем же виджетом <code>label</code>.
+        </div>
+      </div>
+
+      <p>Обратите внимание:</p>
+      <ul>
+        <li>Переменная <code>label</code> объявлена <strong>до</strong> функций-обработчиков, чтобы они могли к ней обращаться.</li>
+        <li>Каждая кнопка имеет <strong>свой собственный</strong> обработчик.</li>
+        <li>Внутри обработчика можно обращаться к любым виджетам, которые были созданы ранее.</li>
+      </ul>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="000_window.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 0: Первое графическое приложение</strong>
+      </a>
+      <a class="docs-nav-btn next" href="002_label.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 2: Виджет Label</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+<script>
+  // Интерактив для демо-примеров
+  document.addEventListener('DOMContentLoaded', () => {
+    // Пример 2: кнопка меняет свой текст
+    const demoBtn = document.getElementById('demoBtn');
+    if (demoBtn) {
+      demoBtn.addEventListener('click', () => {
+        demoBtn.textContent = 'Кнопка нажата!';
+      });
+    }
+
+    // Пример 3: две кнопки управляют меткой
+    const leftDemoBtn = document.getElementById('leftDemoBtn');
+    const rightDemoBtn = document.getElementById('rightDemoBtn');
+    const demoLabel = document.getElementById('demoLabel');
+
+    if (leftDemoBtn && rightDemoBtn && demoLabel) {
+      leftDemoBtn.addEventListener('click', () => {
+        demoLabel.textContent = 'Мой лейбл!';
+      });
+      rightDemoBtn.addEventListener('click', () => {
+        demoLabel.textContent = 'Нет, мой лейбл!';
+      });
+    }
+  });
+</script>
+</body>
+</html>

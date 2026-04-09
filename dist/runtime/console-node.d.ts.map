@@ -1,0 +1,1 @@
+{"version":3,"file":"console-node.d.ts","sourceRoot":"","sources":["../../src/runtime/console-node.ts"],"names":[],"mappings":"AAEA,OAAO,EAAE,SAAS,EAAE,MAAM,WAAW,CAAC;AACtC,OAAO,KAAK,QAAQ,MAAM,UAAU,CAAC;AAErC,wBAAgB,iBAAiB,IAAI,SAAS,CAmB7C;AAED,wBAAgB,gBAAgB,CAAC,EAAE,EAAE,QAAQ,CAAC,SAAS,GAAG,IAAI,CAE7D"}
