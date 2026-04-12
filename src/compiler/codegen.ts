@@ -202,9 +202,7 @@ export class CodeGenerator {
     }
 
     private getFunctionParams(name: string): string[] | null {
-        // Проверяем пользовательские функции в AST
-        // Нужно сохранить AST программы
-        return null;  // будет реализовано ниже
+        return null;
     }
 
     private genUserModule(moduleName: string, moduleInfo: UserModuleInfo): void {
@@ -721,9 +719,20 @@ export class CodeGenerator {
             }
             return;
         }
-    
+
+        // String index assignment: str[i] = ch  →  str = $rt.strSetChar(str, i, ch, loc)
         if (stmt.target.kind === 'IndexAccess') {
             const objType = this.typeOf(stmt.target.object);
+
+            if (objType.tag === 'string') {
+                const obj = this.genAssignTarget(stmt.target.object);
+                const idx = this.genExpr(stmt.target.index);
+                const val = this.genExpr(stmt.value);
+                const loc = $loc(stmt.loc);
+                this.emit(`${obj} = $rt.strSetChar(${obj}, ${idx}, ${val}, ${loc});`);
+                return;
+            }
+
             if (isArrayLike(objType)) {
                 const obj = this.genExpr(stmt.target.object);
                 const idx = this.genExpr(stmt.target.index);
@@ -738,6 +747,16 @@ export class CodeGenerator {
                 }
                 return;
             }
+        }
+
+        // Array-to-array assignment: copy via $rt.IdylArray.from()
+        if (stmt.operator === '=' && isArrayLike(targetType)) {
+            const target = this.genAssignTarget(stmt.target);
+            const value = this.genExpr(stmt.value);
+            const fixed = targetType.tag === 'array' ? 'true' : 'false';
+            const size = targetType.tag === 'array' ? (targetType as any).size : -1;
+            this.emit(`${target} = $rt.IdylArray.from(${value}, ${size}, ${fixed});`);
+            return;
         }
     
         const target = this.genAssignTarget(stmt.target);
@@ -986,6 +1005,13 @@ export class CodeGenerator {
             }
     
             return `(${leftVal} ${jsOp} ${rightVal})`;
+        }
+
+        // Array comparison
+        if ((expr.operator === '==' || expr.operator === '!=') &&
+            isArrayLike(leftType) && isArrayLike(rightType)) {
+            const eq = `$rt.arraysEqual(${left}, ${right})`;
+            return expr.operator === '==' ? eq : `(!${eq})`;
         }
     
         let jsOp: string;

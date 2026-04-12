@@ -113,6 +113,36 @@ function strCharAt(s: string, index: number, file: string, line: number): string
     return s[index];
 }
 
+function strSetChar(s: string, index: number, ch: string, file: string, line: number): string {
+    if (index < 0 || index >= s.length) {
+        const valid = s.length > 0
+            ? `valid indices 0-${s.length - 1}`
+            : 'string is empty';
+        throw new IdylRuntimeError(file, line,
+            `string index ${index} out of bounds (length ${s.length}, ${valid})`);
+    }
+    return s.substring(0, index) + ch[0] + s.substring(index + 1);
+}
+
+function arraysEqual(a: unknown, b: unknown): boolean {
+    if (a instanceof IdylArray && b instanceof IdylArray) {
+        const dataA = a.getData();
+        const dataB = b.getData();
+        if (dataA.length !== dataB.length) return false;
+        for (let i = 0; i < dataA.length; i++) {
+            const elA = dataA[i];
+            const elB = dataB[i];
+            if (elA instanceof IdylArray || elB instanceof IdylArray) {
+                if (!arraysEqual(elA, elB)) return false;
+            } else if (elA !== elB) {
+                return false;
+            }
+        }
+        return true;
+    }
+    return a === b;
+}
+
 function strContains(s: string, search: string): boolean {
     return s.includes(search);
 }
@@ -521,6 +551,8 @@ export interface IdylRuntime {
     sum:       typeof idylSum;
     avg:       typeof idylAvg;
     strCharAt:    typeof strCharAt;
+    strSetChar:   typeof strSetChar;
+    arraysEqual:  typeof arraysEqual;
     strContains:  typeof strContains;
     strFind:      typeof strFind;
     strCount:     typeof strCount;
@@ -562,6 +594,8 @@ export function createRuntime(options: RuntimeOptions): IdylRuntime {
         avg:       idylAvg,
 
         strCharAt,
+        strSetChar,
+        arraysEqual,
         strContains,
         strFind,
         strCount,

@@ -188,6 +188,12 @@ export function isAssignable(target: ResolvedType, source: ResolvedType): boolea
     if (target.tag === 'dyn_array' && source.tag === 'array') {
         return isAssignable(target.elementType, source.elementType);
     }
+    if (target.tag === 'dyn_array' && source.tag === 'dyn_array') {
+        return isAssignable(target.elementType, source.elementType);
+    }
+    if (target.tag === 'array' && source.tag === 'array') {
+        return isAssignable(target.elementType, source.elementType);
+    }
 
     if (target.tag === 'qualified' && source.tag === 'qualified') {
         if (target.qualifier === 'file' && source.qualifier === 'file') {
@@ -274,6 +280,13 @@ export function isNumericArray(t: ResolvedType): boolean {
     return el !== null && isNumeric(el);
 }
 
+function areElementTypesCompatible(a: ResolvedType, b: ResolvedType): boolean {
+    const elA = getElementType(a);
+    const elB = getElementType(b);
+    if (elA === null || elB === null) return false;
+    return typesEqual(elA, elB) || isAssignable(elA, elB) || isAssignable(elB, elA);
+}
+
 export function arithmeticResultType(
     left: ResolvedType,
     right: ResolvedType,
@@ -325,6 +338,13 @@ export function comparisonResultType(
     if (left.tag === 'char' && right.tag === 'char') return BOOL_TYPE;
     if (left.tag === 'bool' && right.tag === 'bool') {
         return BOOL_TYPE;
+    }
+
+    // Array comparison: == and != only
+    if ((op === '==' || op === '!=') && isArrayLike(left) && isArrayLike(right)) {
+        if (areElementTypesCompatible(left, right)) {
+            return BOOL_TYPE;
+        }
     }
 
     if (left.tag === 'class' && right.tag === 'class' && left.name === right.name) {

@@ -40,7 +40,10 @@ export class IdylArray<T> {
         this.fixed = fixed;
     }
 
-    static from<T>(elements: T[], expectedSize: number, fixed: boolean): IdylArray<T> {
+    static from<T>(elements: T[] | IdylArray<T>, expectedSize: number, fixed: boolean): IdylArray<T> {
+        if (elements instanceof IdylArray) {
+            return new IdylArray<T>([...elements.getData()], fixed);
+        }
         const arr = new IdylArray<T>([...elements], fixed);
         return arr;
     }
