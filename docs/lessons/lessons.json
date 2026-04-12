@@ -75,7 +75,8 @@
         { "id": "008", "file": "oop/008_inheritance.html",   "title": "Наследование" },
         { "id": "009", "file": "oop/009_polymorphism.html",  "title": "Полиморфизм" },
         { "id": "010", "file": "oop/010_encapsulation.html", "title": "Инкапсуляция" },
-        { "id": "011", "file": "oop/011_errors.html",        "title": "Типичные ошибки" }
+        { "id": "011", "file": "oop/011_static.html",        "title": "Статические методы" },
+        { "id": "012", "file": "oop/012_errors.html",        "title": "Типичные ошибки" }
       ]
     },
     {

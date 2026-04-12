@@ -12,7 +12,7 @@ import {
     IntLiteralExpr, FloatLiteralExpr, StringLiteralExpr,
     CharLiteralExpr, BoolLiteralExpr, ArrayLiteralExpr,
     IdentifierExpr, ThisExpr,
-    FunctionCallExpr, MethodCallExpr, ConstructorCallExpr,
+    FunctionCallExpr, MethodCallExpr, ConstructorCallExpr, ParentCallExpr,
     PropertyAccessExpr, IndexAccessExpr,
     LambdaExpr,
     TypeNode, Parameter, Argument,
@@ -459,15 +459,24 @@ export class CodeGenerator {
     
         this.dedent();
         this.emit('}');
+
+        const staticFields = fields.filter(f => f.isStatic);
+        for (const field of staticFields) {
+            const val = field.initializer !== null
+                ? this.genExpr(field.initializer)
+                : this.defaultValue(field.fieldType);
+            this.emit(`${name}.${safeName(field.name)} = ${val};`);
+        }
     }
 
     private genDefaultConstructor(fields: ClassField[], hasParent: boolean): void {
+        const instanceFields = fields.filter(f => !f.isStatic);
         this.emit('constructor() {');
         this.indent();
         if (hasParent) {
             this.emit('super();');
         }
-        for (const field of fields) {
+        for (const field of instanceFields) {
             const val = field.initializer !== null
                 ? this.genExpr(field.initializer)
                 : this.defaultValue(field.fieldType);
@@ -480,13 +489,23 @@ export class CodeGenerator {
     private genConstructor(
         ctor: ClassConstructor, fields: ClassField[], hasParent: boolean,
     ): void {
+        const instanceFields = fields.filter(f => !f.isStatic);
         const params = ctor.params.map(p => this.genParamWithDefault(p)).join(', ');
         this.emit(`constructor(${params}) {`);
         this.indent();
-        if (hasParent) {
+
+        if (ctor.parentArgs !== null) {
+            const parentParamNames = this.resolveParentConstructorParams(ctor);
+            const reorderedArgs = parentParamNames
+                ? this.reorderArguments(ctor.parentArgs, parentParamNames)
+                : ctor.parentArgs;
+            const args = reorderedArgs.map(a => this.genExpr(a.value)).join(', ');
+            this.emit(`super(${args});`);
+        } else if (hasParent) {
             this.emit('super();');
         }
-        for (const field of fields) {
+
+        for (const field of instanceFields) {
             const val = field.initializer !== null
                 ? this.genExpr(field.initializer)
                 : this.defaultValue(field.fieldType);
@@ -497,10 +516,25 @@ export class CodeGenerator {
         this.emit('}');
     }
 
+    private resolveParentConstructorParams(ctor: ClassConstructor): string[] | null {
+        for (const decl of this.program.declarations) {
+            if (decl.kind === 'ClassDecl' && decl.name === ctor.className) {
+                if (decl.parentClass) {
+                    const key = decl.parentModule
+                        ? `${decl.parentModule}.${decl.parentClass}.__constructor__`
+                        : `${decl.parentClass}.__constructor__`;
+                    return this.methodParams.get(key) || null;
+                }
+            }
+        }
+        return null;
+    }
+
     private genClassMethod(method: ClassMethod): void {
         const name = safeName(method.name);
         const params = method.params.map(p => this.genParamWithDefault(p)).join(', ');
-        this.emit(`async ${name}(${params}) {`);
+        const staticPrefix = method.isStatic ? 'static ' : '';
+        this.emit(`${staticPrefix}async ${name}(${params}) {`);
         this.indent();
         this.genBlockBody(method.body);
         this.dedent();
@@ -508,7 +542,7 @@ export class CodeGenerator {
     }
 
     private genDestructor(dtor: ClassDestructor): void {
-        this.emit('__destructor__() {');
+        this.emit('async __destructor__() {');
         this.indent();
         this.genBlockBody(dtor.body);
         this.dedent();
@@ -934,6 +968,7 @@ export class CodeGenerator {
             case 'IndexAccess':     return this.genIndexAccess(expr);
             case 'Lambda':          return this.genLambda(expr);
             case 'ConstructorCall': return this.genConstructorCall(expr);
+            case 'ParentCall': return this.genParentCall(expr);
         }
     }
 
@@ -1091,6 +1126,11 @@ export class CodeGenerator {
         return `new ${safeName(expr.className)}(${args})`;
     }
 
+    private genParentCall(expr: ParentCallExpr): string {
+        const args = expr.args.map(a => this.genExpr(a.value)).join(', ');
+        return `super(${args})`;
+    }
+
     private genMethodCall(expr: MethodCallExpr): string {
         if (expr.object.kind === 'Identifier') {
             const libName = expr.object.name;
@@ -1157,9 +1197,9 @@ export class CodeGenerator {
             case 'console':
                 switch (func) {
                     case 'write':
-                        return `$rt.console.write(${args})`;
+                        return `(await $rt.console.write(${args}))`;
                     case 'writeln':
-                        return `$rt.console.writeln(${args})`;
+                        return `(await $rt.console.writeln(${args}))`;
                     case 'get_int':
                         return `(await $rt.console.getInt(${$loc(expr.loc)}))`;
                     case 'get_float':

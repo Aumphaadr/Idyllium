@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 8: Наследование — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Объектно-ориентированное программирование</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">ООП • Урок 8</div>
+      <h1>Наследование</h1>
+      <p class="docs-subtitle">Как один класс может быть частным случаем другого</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Антипример: дублирование кода</h2>
+      <p>Представьте, что мы пишем программу для автопарка. У нас есть обычные автомобили и грузовики. У них много общего, но у грузовиков есть дополнительная характеристика — грузоподъёмность.</p>
+
+      <idyl-code-block><script type="text/plain">
+class Car {
+    string brand;
+    string model;
+    int year;
+    float engine_volume;
+
+    void function start() {
+        console.writeln("Двигатель запущен");
+    }
+
+    void function stop() {
+        console.writeln("Двигатель заглушен");
+    }
+}
+
+class Truck {
+    string brand;
+    string model;
+    int year;
+    float engine_volume;
+    float load_capacity;   // грузоподъёмность (тонн)
+
+    void function start() {
+        console.writeln("Двигатель запущен");
+    }
+
+    void function stop() {
+        console.writeln("Двигатель заглушен");
+    }
+}
+</script></idyl-code-block>
+
+      <p>Проблема: свойства <code>brand</code>, <code>model</code>, <code>year</code>, <code>engine_volume</code> и методы <code>start()</code>, <code>stop()</code> повторяются в двух классах. Это нарушает принцип DRY.</p>
+      <p>Если захочется добавить новое общее свойство (например, <code>color</code>), придётся менять оба класса.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Решение: наследование</h2>
+      <p><strong>Наследование</strong> — это механизм, позволяющий создать новый класс на основе уже существующего. Новый класс (потомок) получает все свойства и методы родительского класса и может добавлять свои.</p>
+      <p>Синтаксис: <code>class ИмяПотомка extends ИмяРодителя</code>.</p>
+
+      <idyl-code-block><script type="text/plain">
+class Car {
+    string brand;
+    string model;
+    int year;
+    float engine_volume;
+
+    void function start() {
+        console.writeln("Двигатель запущен");
+    }
+
+    void function stop() {
+        console.writeln("Двигатель заглушен");
+    }
+}
+
+class Truck extends Car {
+    float load_capacity;   // только то, чего нет в Car
+}
+</script></idyl-code-block>
+
+      <p>Теперь класс <code>Truck</code> автоматически имеет все свойства и методы класса <code>Car</code>, плюс собственное свойство <code>load_capacity</code>. Дублирование кода исчезло!</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Доступ к унаследованным свойствам и методам</h2>
+      <p>Свойства и методы, объявленные в родительском классе, доступны потомку так же, как если бы они были объявлены в нём самом:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+class Car {
+    string brand;
+    string model;
+
+    void function start() {
+        console.writeln(this.brand, " ", this.model, " завёлся");
+    }
+}
+
+class Truck extends Car {
+    float load_capacity;
+}
+
+main() {
+    Truck kamaz;
+    kamaz.brand = "КАМАЗ";
+    kamaz.model = "5490";
+    kamaz.load_capacity = 20.0;
+    kamaz.start();   // метод унаследован от Car
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>КАМАЗ 5490 завёлся</idyl-output-block>
+
+      <p>Потомок «видит» всё, что есть у родителя.</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Конструкторы и parent()</h2>
+      <p>Если у родительского класса есть конструктор, потомок может вызвать его с помощью ключевого слова <code>parent()</code>. Это нужно, чтобы не дублировать инициализацию унаследованных свойств.</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+class Car {
+    string brand;
+    string model;
+
+    constructor Car(string ex_brand, string ex_model) {
+        this.brand = ex_brand;
+        this.model = ex_model;
+    }
+
+    void function start() {
+        console.writeln(this.brand, " ", this.model, " завёлся");
+    }
+}
+
+class Truck extends Car {
+    float load_capacity;
+
+    constructor Truck(string ex_brand, string ex_model, float ex_load_capacity) {
+        parent(ex_brand, ex_model);   // вызываем конструктор Car
+        this.load_capacity = ex_load_capacity;
+    }
+}
+
+main() {
+    Truck kamaz("КАМАЗ", "5490", 20.0);
+    kamaz.start();
+    console.writeln("Грузоподъёмность: ", kamaz.load_capacity, " тонн");
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>КАМАЗ 5490 завёлся
+Грузоподъёмность: 20 тонн</idyl-output-block>
+
+      <p><code>parent()</code> всегда должен быть первым в теле конструктора потомка.</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Итог</h2>
+      <ul>
+        <li><strong>Наследование</strong> — механизм создания нового класса на основе существующего.</li>
+        <li>Синтаксис: <code>class Потомок extends Родитель</code>.</li>
+        <li>Потомок получает все свойства и методы родителя.</li>
+        <li><strong>parent()</strong> — вызов конструктора родительского класса из конструктора потомка.</li>
+        <li>Потомок может <strong>переопределять</strong> методы родителя, давая свою реализацию.</li>
+        <li>Наследование помогает избегать дублирования кода и выражает отношение «является» (is-a).</li>
+      </ul>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="007_composition.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 7: Композиция</strong>
+      </a>
+      <a class="docs-nav-btn next" href="009_polymorphism.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 9: Полиморфизм</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

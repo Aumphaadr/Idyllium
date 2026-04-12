@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 2: Свойства и методы — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Объектно-ориентированное программирование</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">ООП • Урок 2</div>
+      <h1>Свойства и методы</h1>
+      <p class="docs-subtitle">Как объекты объединяют данные и действия</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Напоминание: переменные и функции</h2>
+      <p><strong>Переменные</strong> предназначены для хранения данных. <strong>Функции</strong> предназначены для выполнения действий.</p>
+      <p>У каждого из этих инструментов есть фундаментальное ограничение:</p>
+      <ul>
+        <li>Переменные могут хранить данные, но <strong>не могут ничего с ними делать</strong>.</li>
+        <li>Функции могут обрабатывать данные, но <strong>не могут их хранить</strong>.</li>
+      </ul>
+      <p>Переменные и функции взаимно дополняют друг друга — каждый делает то, чего не умеет другой.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Объекты объединяют данные и действия</h2>
+      <p>Ключевая фишка объектов в ООП — они <strong>умеют и хранить данные, и выполнять действия</strong>. Объекты объединяют в себе способности переменных и функций.</p>
+      <p>Как это происходит? Очень просто: внутри класса можно объявить как переменные, так и функции.</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+class Cat {
+    string name;
+    string color;
+    int age;
+
+    void function meow() {
+        console.writeln("Мяу!");
+    }
+}
+
+main() {
+    Cat my_cat;
+    my_cat.name = "Барсик";
+    my_cat.color = "рыжий";
+    my_cat.age = 3;
+
+    my_cat.meow();
+    my_cat.meow();
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Мяу!
+Мяу!</idyl-output-block>
+
+      <p>Класс <code>Cat</code> <strong>определяет</strong> набор переменных (<code>name</code>, <code>color</code>, <code>age</code>) и функцию (<code>meow()</code>). Объект <code>my_cat</code> <strong>пользуется</strong> этими переменными и функцией.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Терминология: свойства и методы</h2>
+      <p>В контексте ООП используются специальные термины:</p>
+      <ul>
+        <li><strong>Свойство (поле)</strong> — это переменная, объявленная в теле класса.</li>
+        <li><strong>Метод</strong> — это функция, объявленная в теле класса.</li>
+      </ul>
+      <p>То есть, у класса <code>Cat</code> есть свойства <code>name</code>, <code>color</code>, <code>age</code> и метод <code>meow()</code>.</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Пример: класс Brick</h2>
+      <p>Рассмотрим класс <code>Brick</code> (кирпич) со свойствами и методом:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+class Brick {
+    string color;
+    float mass;
+    string material;
+
+    void function fall_on_head() {
+        console.writeln("Бам! На голову упал кирпич!");
+    }
+}
+
+main() {
+    Brick b1;
+    b1.color = "красный";
+    b1.mass = 2.5;
+    b1.material = "керамика";
+
+    Brick b2;
+    b2.color = "силикатный";
+    b2.mass = 3.0;
+    b2.material = "известняк";
+
+    b1.fall_on_head();
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Бам! На голову упал кирпич!</idyl-output-block>
+      <div class="warning-message">
+        main.idyl:24: warning: ⚠️ Падение кирпичей на голову является опасным для жизни и здоровья. Рекомендуем носить защитное снаряжение.
+      </div>
+
+      <p>В этом примере:</p>
+      <ul>
+        <li>Свойства: <code>color</code>, <code>mass</code>, <code>material</code></li>
+        <li>Метод: <code>fall_on_head()</code></li>
+        <li>Создано два объекта (<code>b1</code> и <code>b2</code>) с разными характеристиками</li>
+        <li>Метод вызван только у первого кирпича</li>
+      </ul>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Важное замечание</h2>
+      <p>Свойства и методы объявляются <strong>в теле класса</strong>, а используются <strong>объектами этого класса</strong>.</p>
+      <p>Попытка обратиться к свойству или методу <strong>через сам класс</strong> (а не через объект) приведёт к ошибке компиляции:</p>
+
+      <idyl-code-block><script type="text/plain">
+class Cat {
+    string name;
+    void function meow() { }
+}
+
+main() {
+    Cat.meow();     // ОШИБКА!
+    string n = Cat.name;  // ОШИБКА!
+}
+</script></idyl-code-block>
+
+      <div class="warning-message">
+        main.idyl:8: error: 'meow' is not a static member of 'Cat'
+      </div>
+
+      <p>Класс — это только <strong>чертёж</strong>. Чтобы что-то сделать, нужно создать <strong>объект</strong> (экземпляр) по этому чертежу.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="001_classes.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 1: Создание класса</strong>
+      </a>
+      <a class="docs-nav-btn next" href="003_this.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 3: Идентификатор this</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

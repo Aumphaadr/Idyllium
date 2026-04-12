@@ -3,53 +3,137 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Основы программирования на Idyllium</title>
+  <title>Idyllium — учебный язык программирования</title>
   <link rel="icon" type="image/png" href="../favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="../fonts/fonts.css">
   <link rel="stylesheet" href="docs.css">
-  <script src="components.js" defer></script>
   <style>
-    .example {
-      padding: 0.5em 1em 1em 1em;
+    .welcome-hero {
+      text-align: center;
+      padding: 3rem 2rem 2rem 2rem;
+      background: linear-gradient(135deg, rgba(137, 180, 250, 0.08) 0%, rgba(137, 180, 250, 0.02) 100%);
+      border-radius: 24px;
+      margin-bottom: 2rem;
     }
-    .example button {
-      font-size: 18px;
+    .welcome-hero h1 {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
     }
-    /* Category navigation styles */
-    .docs-nav-categories {
-      background: var(--bg-secondary, #f5f5f5);
-      border-radius: 12px;
-      padding: 1rem;
-      margin-bottom: 1.5rem;
+    .welcome-hero .tagline {
+      font-size: 1.25rem;
+      color: var(--accent);
+      font-weight: 500;
+      margin-bottom: 1rem;
     }
-    .docs-nav-categories h3 {
-      margin-top: 0;
-      margin-bottom: 0.75rem;
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--text-primary, #333);
+    .welcome-hero .subtitle {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
     }
-    .docs-category-links {
+    .philosophy-grid {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.5rem;
+      gap: 1rem;
+      margin: 2rem 0;
+      justify-content: center;
     }
-    .docs-category-links a {
-      padding: 0.4rem 0.9rem;
-      border-radius: 20px;
-      background: var(--bg-primary, white);
-      color: var(--text-secondary, #666);
-      text-decoration: none;
+    .philosophy-card {
+      flex: 0 1 320px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+      text-align: center;
+    }
+    .philosophy-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+    .philosophy-card .emoji {
+      font-size: 1.75rem;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+    .philosophy-card h3 {
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+    .philosophy-card p {
       font-size: 0.85rem;
-      transition: all 0.2s ease;
-      border: 1px solid var(--border-color, #e0e0e0);
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin: 0;
     }
-    .docs-category-links a:hover,
-    .docs-category-links a.current {
-      background: var(--accent-color, #6c5ce7);
-      color: white;
-      border-color: var(--accent-color, #6c5ce7);
+    .hub-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      margin: 2rem 0;
+      justify-content: center;
+    }
+    .hub-card {
+      flex: 0 1 320px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      text-align: center;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .hub-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+      background: rgba(137, 180, 250, 0.05);
+    }
+    .hub-card .hub-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+      display: block;
+    }
+    .hub-card h3 {
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+    .hub-card p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+    .why-link {
+      text-align: center;
+      margin: 2rem 0 1rem;
+    }
+    .why-link a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 40px;
+      color: var(--text-primary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+    .why-link a:hover {
+      border-color: var(--accent);
+      background: rgba(137, 180, 250, 0.1);
+      transform: translateY(-1px);
+    }
+    .footer-note {
+      text-align: center;
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 0.8rem;
     }
   </style>
 </head>
@@ -62,7 +146,6 @@
     <span class="docs-header-badge">Документация</span>
   </div>
   <div class="docs-header-right">
-    <a class="docs-header-link" href="docs.html">Уроки</a>
     <a class="docs-back-btn" href="../index.html">
       <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
@@ -73,252 +156,90 @@
   </div>
 </header>
 
-<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
-<div class="docs-layout">
+<!-- ── Main content (без сайдбара) ────────────────────────────────────── -->
+<main style="margin: 0 3rem; padding: 2rem;">
 
-  <!-- Sidebar Web Component — loads navigation from lessons.json -->
-  <idyl-sidebar src="lessons.json"></idyl-sidebar>
+  <!-- Hero -->
+  <div class="welcome-hero">
+    <h1>🌿 Язык программирования Idyllium</h1>
+    <div class="tagline">Гармония синтаксиса. Простота понимания. Надёжность обучения.</div>
+    <p class="subtitle">Учебный язык программирования, созданный для того, чтобы учить думать, а не зубрить исключения.</p>
+  </div>
 
-  <!-- ── Main content ─────────────────────────────────────────────── -->
-  <main class="docs-main">
+  <!-- Навигация по хабам -->
+  <h2 style="margin-bottom: 1rem; text-align: center;">📚 Изучайте по разделам</h2>
+  <div class="hub-links">
+    <a href="cli/cli_hub.html" class="hub-card">
+      <span class="hub-icon">📟</span>
+      <h3>Консольное программирование</h3>
+      <p>27 уроков — от «Hello, World!» до двумерных массивов и типичных ошибок</p>
+    </a>
+    <a href="widgets/widgets_hub.html" class="hub-card">
+      <span class="hub-icon">🖼️</span>
+      <h3>Графические виджеты</h3>
+      <p>17 уроков — от первого окна до модальных диалогов и типичных ошибок</p>
+    </a>
+    <a href="oop/oop_hub.html" class="hub-card">
+      <span class="hub-icon">🏗️</span>
+      <h3>Объектно-ориентированное программирование</h3>
+      <p>12 уроков — от введения в ООП до инкапсуляции и типичных ошибок</p>
+    </a>
+    <a href="examples/examples_hub.html" class="hub-card">
+      <span class="hub-icon">💡</span>
+      <h3>Примеры задач</h3>
+      <p>Практические задания для закрепления материала</p>
+    </a>
+  </div>
 
-    <!-- Hero -->
-    <div class="docs-hero">
-      <h1>Основы программирования на Idyllium</h1>
-      <p class="docs-subtitle">Изучите язык от "Hello, World!" до работы с файлами и библиотеками — без лишнего шума и с предсказуемой логикой</p>
+  <!-- Философия -->
+  <h2 style="margin-bottom: 1rem; text-align: center;">📖 Философия языка</h2>
+  <div class="philosophy-grid">
+    <div class="philosophy-card">
+      <span class="emoji">🎯</span>
+      <h3>Приоритет — лёгкость выражения мыслей</h3>
+      <p>Пиши так, как думаешь. Язык не должен заставлять гадать.</p>
     </div>
-
-    <!-- Category Navigation -->
-    <div class="docs-nav-categories">
-      <h3>📚 Категории</h3>
-      <div class="docs-category-links">
-        <a href="#basics" class="current">Основы Idyllium</a>
-        <a href="#gui">Приложения с GUI</a>
-        <a href="#oop">ООП в Idyllium</a>
-        <a href="#xanadu">Xanadu (GUI)</a>
-        <a href="#projects">Проекты</a>
-      </div>
+    <div class="philosophy-card">
+      <span class="emoji">🧠</span>
+      <h3>Язык должен учить думать, а не зубрить исключения</h3>
+      <p>Каждое правило работает везде одинаково. Никаких «а вот здесь по-другому».</p>
     </div>
-
-    <!-- Lessons Grid -->
-    <div class="docs-lessons-grid">
-
-      <!-- Урок 0 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 0</div>
-        <h2>Установка Idyllium</h2>
-        <p>Настройте среду разработки: установите расширение для VS Code и запустите свою первую программу.</p>
-        <a href="cli/000_setup.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 1 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 1</div>
-        <h2>Первая программа</h2>
-        <p>Напишите классический "Hello, World!" и изучите базовый синтаксис вывода данных в консоль.</p>
-        <a href="cli/001_hello.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 2 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 2</div>
-        <h2>Переменные и типы данных</h2>
-        <p>Познакомьтесь с основными типами: целые числа, дробные числа и строки. Научитесь объявлять переменные и присваивать им значения.</p>
-        <a href="cli/002_variables.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 3 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 3</div>
-        <h2>Ввод данных</h2>
-        <p>Научитесь получать данные от пользователя с помощью функций <code>console.get_int()</code>, <code>get_float()</code> и <code>get_string()</code>.</p>
-        <a href="cli/003_input.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 4 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 4</div>
-        <h2>Арифметика</h2>
-        <p>Освойте операции сложения, вычитания, умножения и деления. Поймите, почему результат деления всегда <code>float</code>, и как использовать <code>div()</code> и <code>mod()</code>.</p>
-        <a href="cli/004_arithmetics.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 5 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 5</div>
-        <h2>Улучшенный вывод текста</h2>
-        <p>Управляйте форматом вывода: переходите на новую строку с <code>'\n'</code>, используйте табуляцию <code>'\t'</code> и окрашивайте текст с помощью ANSI-последовательностей.</p>
-        <a href="cli/005_colors.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 6 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 6</div>
-        <h2>Преобразования данных</h2>
-        <p>Научитесь преобразовывать числа в строки и обратно с помощью функций <code>to_int()</code>, <code>to_float()</code> и <code>to_string()</code>.</p>
-        <a href="cli/006_transforms.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 7 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 7</div>
-        <h2>Базовые математические функции</h2>
-        <p>Используйте библиотеку <code>math</code>: округляйте числа, вычисляйте модуль, степень и корень, ограничивайте значения с помощью <code>clamp()</code>.</p>
-        <a href="cli/007_math.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 8 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 8</div>
-        <h2>Условный оператор и тип 'bool'</h2>
-        <p>Научитесь принимать решения в программе с помощью <code>if</code> и <code>else</code>. Поймите, что такое логическое значение и как его получить.</p>
-        <a href="cli/008_if.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 9 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 9</div>
-        <h2>Инкремент и декремент</h2>
-        <p>Изменяйте значение переменной самой собой: увеличивайте, уменьшайте, умножайте или применяйте функции — всё это через простое присваивание.</p>
-        <a href="cli/009_increment.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 10 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 10</div>
-        <h2>Случайные числа</h2>
-        <p>Генерируйте случайные целые и дробные числа, выбирайте символы из строки и задавайте сид для воспроизводимости.</p>
-        <a href="cli/010_random.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 11 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 11</div>
-        <h2>Логические операции</h2>
-        <p>Комбинируйте условия с помощью <code>and</code>, <code>or</code> и <code>xor</code>. Используйте <code>not()</code> для инверсии логических значений.</p>
-        <a href="cli/011_bool.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 12 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 12</div>
-        <h2>Циклы</h2>
-        <p>Повторяйте действия с помощью <code>while</code>, <code>for</code> и <code>do-while</code>. Управляйте выполнением циклов с помощью <code>break</code> и <code>continue</code>.</p>
-        <a href="cli/012_loops.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 13 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 13</div>
-        <h2>Массивы (статика)</h2>
-        <p>Создавайте массивы фиксированной длины, обращайтесь к их элементам по индексу и не выходите за границы — Idyllium вас об этом предупредит.</p>
-        <a href="cli/013_array.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 14 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 14</div>
-        <h2>Тип 'char' и строки</h2>
-        <p>Работайте со строками как с последовательностями символов. Изучите конкатенацию, посимвольный перебор и методы строк.</p>
-        <a href="cli/014_char.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 15 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 15</div>
-        <h2>Динамические массивы</h2>
-        <p>Создавайте массивы, которые могут менять размер: добавляйте и удаляйте элементы, узнавайте их количество.</p>
-        <a href="cli/015_dyn_array.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 16 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 16</div>
-        <h2>Функции для работы с массивами</h2>
-        <p>Находите максимум, минимум, среднее и сумму элементов массива с помощью встроенных функций.</p>
-        <a href="cli/016_arr_functions.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 17 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 17</div>
-        <h2>Методы массивов</h2>
-        <p>Используйте методы <code>contains</code>, <code>index</code>, <code>reverse</code> и <code>sort</code> для работы с содержимым массивов.</p>
-        <a href="cli/017_arr_methods.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 18 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 18</div>
-        <h2>Методы строк</h2>
-        <p>Преобразовывайте строки: меняйте регистр, проверяйте наличие подстрок, разбивайте строки на части.</p>
-        <a href="cli/018_string_methods.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 19 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 19</div>
-        <h2>Библиотека 'time'</h2>
-        <p>Работайте со временем: приостанавливайте программу, получайте текущую дату и время, извлекайте отдельные компоненты даты.</p>
-        <a href="cli/019_time.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 20 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 20</div>
-        <h2>Библиотека 'types'</h2>
-        <p>Изучите специализированные типы данных: <code>int8</code>, <code>int16</code>, <code>uint32</code> и другие. Конвертируйте числа в двоичную форму и обратно.</p>
-        <a href="cli/020_types.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 21 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 21</div>
-        <h2>Создание собственных функций</h2>
-        <p>Пишите свои функции: процедуры (void) и функции, возвращающие результат. Учитесь передавать аргументы и возвращать значения.</p>
-        <a href="cli/021_functions.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 22 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 22</div>
-        <h2>Создание собственных библиотек</h2>
-        <p>Объединяйте функции в библиотеки и подключайте их в других программах. Организуйте код логически и повторно используйте его.</p>
-        <a href="cli/022_libs.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 23 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 23</div>
-        <h2>Работа с файлами</h2>
-        <p>Записывайте данные в файлы и читайте их обратно. Используйте типы <code>ostream</code> и <code>istream</code> для управления потоками ввода/вывода.</p>
-        <a href="cli/023_files.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 24 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 24</div>
-        <h2>Продвинутые математические функции</h2>
-        <p>Используйте тригонометрию (<code>sin</code>, <code>cos</code>, <code>tan</code>), логарифмы и константы <code>math.pi</code> и <code>math.e</code> для сложных вычислений.</p>
-        <a href="cli/024_math.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
-      <!-- Урок 25 -->
-      <div class="docs-lesson-card">
-        <div class="docs-lesson-number">Урок 25</div>
-        <h2>Подведение итогов</h2>
-        <p>Подведите итоги: вспомните, что вы узнали, и примените знания в реальных проектах. Готовьтесь к следующему уровню — ООП и GUI.</p>
-        <a href="cli/025_matrix.html" class="docs-lesson-btn">Открыть →</a>
-      </div>
-
+    <div class="philosophy-card">
+      <span class="emoji">⚖️</span>
+      <h3>Каждое правило — в единой логике и везде одинаково</h3>
+      <p>Последовательность важнее количества конструкций.</p>
     </div>
+    <div class="philosophy-card">
+      <span class="emoji">✨</span>
+      <h3>Логика важнее краткости, но код не должен «шуметь»</h3>
+      <p>Минимум boilerplate, максимум ясности.</p>
+    </div>
+    <div class="philosophy-card">
+      <span class="emoji">🔍</span>
+      <h3>Новичку должно быть проще понять, чем запомнить</h3>
+      <p>Синтаксис следует логике, а не историческим причинам.</p>
+    </div>
+    <div class="philosophy-card">
+      <span class="emoji">🚀</span>
+      <h3>Миграция на промышленные языки должна быть удобной</h3>
+      <p>Idyllium не заменяет C++, Java или Python — он готовит к ним.</p>
+    </div>
+  </div>
 
-  </main>
-</div>
+  <!-- Ссылка на why.html -->
+  <div class="why-link">
+    <a href="why.html">
+      <span>❓</span>
+      Почему Idyllium, а не Python/Pascal/C++?
+      <span>→</span>
+    </a>
+  </div>
 
-<footer class="docs-footer">
-  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
-</footer>
+  <div class="footer-note">
+    Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+  </div>
+
+</main>
 
 <script src="../version.js" defer></script>
 </body>

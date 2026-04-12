@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 11: Статические методы — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Объектно-ориентированное программирование</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">ООП • Урок 11</div>
+      <h1>Статические методы</h1>
+      <p class="docs-subtitle">Методы, которые принадлежат классу, а не объекту</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Проблема: метод, которому не нужен объект</h2>
+      <p>До сих пор все методы, которые мы писали, вызывались у конкретного объекта. Но что, если метод не использует никакие свойства объекта? Например, метод <code>meow()</code> у кота — он просто выводит «Мяу», не обращаясь к <code>this.name</code> или другим свойствам.</p>
+
+      <idyl-code-block><script type="text/plain">
+class Cat {
+    void function meow() {
+        console.writeln("Мяу");
+    }
+}
+
+main() {
+    Cat some_cat;
+    some_cat.meow();   // нужно создавать объект, даже если он не нужен
+}
+</script></idyl-code-block>
+
+      <p>Создавать объект только для того, чтобы вызвать метод, который не использует свойства объекта — нелогично и накладно.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Решение: статический метод</h2>
+      <p><strong>Статический метод</strong> — это метод, который принадлежит не конкретному объекту, а самому классу. Для его вызова не нужно создавать объект — достаточно обратиться к классу.</p>
+      <p>Синтаксис: ключевое слово <code>static</code> перед объявлением метода.</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+class Cat {
+    static void function meow() {
+        console.writeln("Мяу");
+    }
+}
+
+main() {
+    Cat.meow();   // не нужен объект!
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Мяу</idyl-output-block>
+
+      <p>Метод вызван напрямую у класса <code>Cat</code>, без создания объекта.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Ограничение статических методов</h2>
+      <p>Статический метод <strong>не имеет доступа к <code>this</code></strong>. Он не связан ни с каким конкретным объектом, поэтому не может обращаться к нестатическим свойствам и методам класса.</p>
+
+      <idyl-code-block><script type="text/plain">
+class Cat {
+    string name = "Барсик";
+
+    static void function meow() {
+        console.writeln(this.name);   // ОШИБКА!
+    }
+}
+</script></idyl-code-block>
+
+      <div class="error-message">
+        main.idyl:6: error: 'this' cannot be used in static method
+      </div>
+
+      <p>Статические методы могут работать только с:</p>
+      <ul>
+        <li>своими локальными переменными</li>
+        <li>другими статическими методами</li>
+        <li>параметрами, переданными в метод</li>
+      </ul>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Практическое применение: вспомогательные функции</h2>
+      <p>Статические методы идеально подходят для функций, которые логически относятся к классу, но не требуют объекта. Например, математические утилиты, конвертеры, фабричные методы.</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+class MathUtils {
+    static int function square(int x) {
+        return x * x;
+    }
+
+    static int function cube(int x) {
+        return x * x * x;
+    }
+
+    static bool function is_even(int x) {
+        return mod(x, 2) == 0;
+    }
+}
+
+main() {
+    int a = 5;
+    console.writeln("Квадрат ", a, ": ", MathUtils.square(a));
+    console.writeln("Куб ", a, ": ", MathUtils.cube(a));
+    console.writeln(a, " чётное? ", MathUtils.is_even(a));
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Квадрат 5: 25
+Куб 5: 125
+5 чётное? false</idyl-output-block>
+
+      <p>Все эти методы не требуют создания объекта <code>MathUtils</code> — они вызываются напрямую у класса.</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Сравнение: статический vs обычный метод</h2>
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr><th style="border: 1px solid var(--border); padding: 8px; text-align: left;">Характеристика</th>
+          <th style="border: 1px solid var(--border); padding: 8px; text-align: left;">Обычный метод</th>
+          <th style="border: 1px solid var(--border); padding: 8px; text-align: left;">Статический метод</th>
+        </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border: 1px solid var(--border); padding: 8px;">Вызов</td>
+            <td style="border: 1px solid var(--border); padding: 8px;"><code>объект.метод()</code></td>
+            <td style="border: 1px solid var(--border); padding: 8px;"><code>Класс.метод()</code></td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid var(--border); padding: 8px;">Доступ к <code>this</code></td>
+            <td style="border: 1px solid var(--border); padding: 8px;">✅ есть</td>
+            <td style="border: 1px solid var(--border); padding: 8px;">❌ нет</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid var(--border); padding: 8px;">Доступ к нестатическим свойствам</td>
+            <td style="border: 1px solid var(--border); padding: 8px;">✅ есть (через <code>this</code>)</td>
+            <td style="border: 1px solid var(--border); padding: 8px;">❌ нет</td>
+          </tr>
+          <tr>
+            <td style="border: 1px solid var(--border); padding: 8px;">Нужен ли объект?</td>
+            <td style="border: 1px solid var(--border); padding: 8px;">✅ да</td>
+            <td style="border: 1px solid var(--border); padding: 8px;">❌ нет</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Когда использовать статические методы?</h2>
+      <ul>
+        <li>Метод не использует свойства объекта (не нужен <code>this</code>).</li>
+        <li>Метод выполняет вспомогательную функцию, логически связанную с классом.</li>
+        <li>Метод является «фабричным» — создаёт объекты определённым образом.</li>
+        <li>Метод не должен зависеть от состояния конкретного объекта.</li>
+      </ul>
+      <p>Если метод обращается к свойствам объекта — он <strong>не должен быть статическим</strong>.</p>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>Итог</h2>
+      <ul>
+        <li><strong>Статический метод</strong> принадлежит классу, а не объекту.</li>
+        <li>Вызывается через имя класса: <code>ИмяКласса.метод()</code>.</li>
+        <li>Не имеет доступа к <code>this</code> и нестатическим членам класса.</li>
+        <li>Идеален для вспомогательных и утилитарных функций.</li>
+      </ul>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="010_encapsulation.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 10: Инкапсуляция</strong>
+      </a>
+      <a class="docs-nav-btn next" href="012_errors.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 12: Типичные ошибки</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

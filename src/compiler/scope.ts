@@ -23,6 +23,7 @@ export interface FieldInfo {
     readonly name: string;
     readonly type: ResolvedType;
     readonly access: AccessModifier;
+    readonly isStatic: boolean;
 }
 
 export interface MethodInfo {
@@ -34,6 +35,7 @@ export interface MethodInfo {
         hasDefault: boolean;
     }[];
     readonly access: AccessModifier;
+    readonly isStatic: boolean;
 }
 
 export interface ConstructorInfo {
@@ -126,6 +128,12 @@ export class Scope {
             this.scopeKind === 'method' ||
             this.scopeKind === 'constructor') return true;
         if (this.parent !== null) return this.parent.isInsideFunction();
+        return false;
+    }
+
+    isInsideConstructor(): boolean {
+        if (this.scopeKind === 'constructor') return true;
+        if (this.parent !== null) return this.parent.isInsideConstructor();
         return false;
     }
 }

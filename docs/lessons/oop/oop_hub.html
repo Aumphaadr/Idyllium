@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Объектно-ориентированное программирование на Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+  <style>
+    .docs-nav-categories {
+      background: rgba(137, 180, 250, 0.08);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--border);
+    }
+    .docs-nav-categories h3 {
+      margin-top: 0;
+      margin-bottom: 0.75rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+    }
+    .docs-category-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .docs-category-links a {
+      padding: 0.4rem 0.9rem;
+      border-radius: 20px;
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+      border: 1px solid var(--border);
+    }
+    .docs-category-links a:hover,
+    .docs-category-links a.current {
+      background: var(--accent);
+      color: #1e1e2e;
+      border-color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Объектно-ориентированное программирование</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <h1>🏗️ Объектно-ориентированное программирование</h1>
+      <p class="docs-subtitle">12 уроков — от введения в ООП до инкапсуляции и типичных ошибок</p>
+    </div>
+
+    <!-- Category Navigation -->
+    <div class="docs-nav-categories">
+      <h3>📚 КАТЕГОРИИ</h3>
+      <div class="docs-category-links">
+        <a href="../cli/cli_hub.html">Консольное программирование</a>
+        <a href="../widgets/widgets_hub.html">Графические виджеты</a>
+        <a href="oop_hub.html" class="current">ООП в Idyllium</a>
+        <a href="../examples/examples_hub.html">Примеры задач</a>
+      </div>
+    </div>
+
+    <!-- Lessons Grid -->
+    <div class="docs-lessons-grid">
+
+      <!-- Урок 000 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 000</div>
+        <h2>Введение в ООП</h2>
+        <p>Что такое объектно-ориентированное программирование? Зачем нужны классы и объекты? Основные парадигмы.</p>
+        <a href="000_intro.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 001 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 001</div>
+        <h2>Создание класса</h2>
+        <p>Как объявить свой класс, создать объект и работать с ним. Синтаксис и простые примеры.</p>
+        <a href="001_classes.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 002 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 002</div>
+        <h2>Свойства и методы</h2>
+        <p>Поля класса и методы — что это, как объявлять и использовать. Разница между полями и локальными переменными.</p>
+        <a href="002_fields_methods.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 003 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 003</div>
+        <h2>Идентификатор this</h2>
+        <p>Как внутри метода обратиться к полям текущего объекта. Зачем нужен <code>this</code> и когда без него не обойтись.</p>
+        <a href="003_this.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 004 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 004</div>
+        <h2>Разбиение проекта по файлам</h2>
+        <p>Как вынести классы в отдельные файлы и подключать их через <code>use</code>. Организация кода в проекте.</p>
+        <a href="004_modules.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 005 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 005</div>
+        <h2>Массивы объектов</h2>
+        <p>Создание массивов из объектов ваших классов. Статические и динамические массивы объектов.</p>
+        <a href="005_arrays.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 006 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 006</div>
+        <h2>Конструктор и деструктор</h2>
+        <p>Специальные методы для инициализации и очистки объектов. Когда они вызываются и зачем нужны.</p>
+        <a href="006_constructor.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 007 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 007</div>
+        <h2>Композиция</h2>
+        <p>Один класс как часть другого. Как строить сложные объекты из простых.</p>
+        <a href="007_composition.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 008 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 008</div>
+        <h2>Наследование</h2>
+        <p>Создание классов-наследников, расширение и переопределение функциональности. Ключевое слово <code>extends</code>.</p>
+        <a href="008_inheritance.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 009 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 009</div>
+        <h2>Полиморфизм</h2>
+        <p>Один интерфейс — разная реализация. Как работать с объектами разных классов через общий тип.</p>
+        <a href="009_polymorphism.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 010 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 010</div>
+        <h2>Инкапсуляция</h2>
+        <p>Сокрытие внутреннего состояния объекта. Модификаторы доступа <code>public</code> и <code>private</code>.</p>
+        <a href="010_encapsulation.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 011 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 011</div>
+        <h2>Статические методы</h2>
+        <p>Методы, которые принадлежат не объекту, а самому классу. Вызываются через имя класса, а не через объект.</p>
+        <a href="011_static.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 012 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 012</div>
+        <h2>Типичные ошибки</h2>
+        <p>Справочник ошибок при работе с классами и объектами — с примерами и пояснениями.</p>
+        <a href="012_errors.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

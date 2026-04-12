@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 6: Конструктор и деструктор — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Объектно-ориентированное программирование</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">ООП • Урок 6</div>
+      <h1>Конструктор и деструктор</h1>
+      <p class="docs-subtitle">Как инициализировать объекты и освобождать ресурсы</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Антипример: класс без конструктора</h2>
+      <p>Представьте класс <code>Animal</code> с пятью свойствами:</p>
+
+      <idyl-code-block><script type="text/plain">
+class Animal {
+    string name;
+    string species;
+    int age;
+    float weight;
+    string color;
+}
+
+main() {
+    Animal animal1;
+    animal1.name = "Шарик";
+    animal1.species = "Собака";
+    animal1.age = 3;
+    animal1.weight = 12.5;
+    animal1.color = "рыжий";
+
+    Animal animal2;
+    animal2.name = "Мурка";
+    animal2.species = "Кошка";
+    animal2.age = 2;
+    animal2.weight = 4.2;
+    animal2.color = "белый";
+
+    Animal animal3;
+    animal3.name = "Кеша";
+    animal3.species = "Попугай";
+    animal3.age = 1;
+    animal3.weight = 0.3;
+    animal3.color = "зелёный";
+}
+</script></idyl-code-block>
+
+      <p>Три объекта — 15 строк кода только на заполнение свойств. Код становится громоздким и однотипным. Должен быть способ оптимизировать этот процесс.</p>
+      <p>И он есть!</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Конструктор — метод, вызываемый при создании объекта</h2>
+      <p><strong>Конструктор</strong> — это специальный метод, который автоматически срабатывает в момент создания объекта. Синтаксис: <code>constructor</code>, затем параметры, затем тело.</p>
+
+      <p>Для начала — конструктор, который просто выводит сообщение:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+class Animal {
+    constructor Animal() {
+        console.writeln("Создан новый объект Animal");
+    }
+}
+
+main() {
+    Animal a1;
+    Animal a2;
+    Animal a3;
+    Animal a4;
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Создан новый объект Animal
+Создан новый объект Animal
+Создан новый объект Animal
+Создан новый объект Animal</idyl-output-block>
+
+      <p>Конструктор вызывается 4 раза — по числу созданных объектов.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Полезный конструктор</h2>
+      <p>Добавим в класс <code>Animal</code> конструктор с параметрами — чтобы инициализировать свойства прямо при создании:</p>
+
+      <idyl-code-block><script type="text/plain">
+class Animal {
+    string name;
+    string species;
+    int age;
+    float weight;
+    string color;
+
+    constructor Animal(string ex_name, string ex_species, int ex_age, float ex_weight, string ex_color) {
+        this.name = ex_name;
+        this.species = ex_species;
+        this.age = ex_age;
+        this.weight = ex_weight;
+        this.color = ex_color;
+    }
+}
+
+main() {
+    Animal animal1("Шарик", "Собака", 3, 12.5, "рыжий");
+    Animal animal2("Мурка", "Кошка", 2, 4.2, "белый");
+    Animal animal3("Кеша", "Попугай", 1, 0.3, "зелёный");
+}
+</script></idyl-code-block>
+
+      <p>Инициализация трёх объектов сократилась с 18 строк до 3 строк! Код стал чище и понятнее.</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Деструктор</h2>
+      <p><strong>Деструктор</strong> — это метод, который вызывается при уничтожении объекта. В Idyllium деструктор успешно срабатывает при удалении ячеек из динамического массива.</p>
+      <p>Синтаксис: <code>destructor ~ИмяКласса()</code>.</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+class Circle {
+    float radius;
+    string name;
+
+    constructor Circle(string ex_name, float ex_radius) {
+        this.name = ex_name;
+        this.radius = ex_radius;
+    }
+
+    destructor ~Circle() {
+        console.writeln("Круг ", this.name, " уничтожен");
+    }
+}
+
+main() {
+    dyn_array<Circle> circles;
+
+    for (int i = 0; i < 5; i = i + 1) {
+        Circle tmp("Круг_" + to_string(i), 1.0);
+        circles.add(tmp);
+    }
+
+    console.writeln("Удаляем первый круг...");
+    circles.remove_at(0);
+
+    console.writeln("Удаляем ещё один...");
+    circles.remove_at(0);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Удаляем первый круг...
+Круг Круг_0 уничтожен
+Удаляем ещё один...
+Круг Круг_1 уничтожен</idyl-output-block>
+
+      <p>Деструктор позволяет выполнить cleanup-действия — закрыть файлы, освободить ресурсы или просто сообщить об удалении объекта.</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Специальный метод to_string()</h2>
+      <p>Если добавить в класс метод <code>to_string()</code>, объекты этого класса можно будет выводить в консоль напрямую:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+class Cat {
+    string name;
+
+    constructor Cat(string ex_name) {
+        this.name = ex_name;
+    }
+
+    string function to_string() {
+        return "Cat(" + this.name + ")";
+    }
+}
+
+main() {
+    Cat cat1("Барсик");
+    Cat cat2("Мурка");
+
+    console.writeln(cat1);
+    console.writeln(cat2);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Cat(Барсик)
+Cat(Мурка)</idyl-output-block>
+
+      <p>Метод <code>to_string()</code> вызывается автоматически, когда объект нужно представить в виде строки (например, при выводе в консоль или при конкатенации).</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Итог</h2>
+      <ul>
+        <li><strong>Конструктор</strong> — вызывается при создании объекта. Позволяет инициализировать свойства без лишнего кода.</li>
+        <li><strong>Деструктор</strong> — вызывается при уничтожении объекта. Полезен для освобождения ресурсов.</li>
+        <li><strong>to_string()</strong> — позволяет выводить объекты в консоль напрямую.</li>
+      </ul>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="005_arrays.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 5: Массивы объектов</strong>
+      </a>
+      <a class="docs-nav-btn next" href="007_composition.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 7: Композиция</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

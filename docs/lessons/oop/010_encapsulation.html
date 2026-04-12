@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 10: Инкапсуляция — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Объектно-ориентированное программирование</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">ООП • Урок 10</div>
+      <h1>Инкапсуляция</h1>
+      <p class="docs-subtitle">Как защитить данные от неконтролируемых изменений</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Антипример: незащищённое здоровье</h2>
+      <p>Представьте, что мы создаём класс <code>Hero</code> (герой) со свойством <code>hp</code> (здоровье). По задумке, здоровье должно быть в диапазоне от 0 до 100.</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+class Hero {
+    string name;
+    int hp;
+}
+
+main() {
+    Hero hero1;
+    hero1.name = "Воин";
+    hero1.hp = 40;
+
+    console.writeln(hero1.name, ": ", hero1.hp);
+
+    // Где-то в коде кто-то решил подлечиться
+    hero1.hp = hero1.hp + 75;  // 40 + 75 = 115
+
+    console.writeln(hero1.name, ": ", hero1.hp);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Воин: 40
+Воин: 115</idyl-output-block>
+
+      <p>Проблема: здоровье превысило задуманный нами максимум (100). Ничто не мешает установить здоровье в 115, 200 или даже -10. Данные не защищены.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Инкапсуляция — защита данных</h2>
+      <p><strong>Инкапсуляция</strong> — это принцип ООП, при котором внутренние данные объекта скрыты от прямого доступа извне и могут изменяться только через специальные методы.</p>
+      <p>Это позволяет контролировать, как именно изменяются данные, и предотвращать невалидные состояния.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Модификаторы доступа: public и private</h2>
+      <p>В Idyllium доступ к свойствам и методам класса регулируется модификаторами <code>public</code> и <code>private</code>. Синтаксис — как в C++: модификатор, затем двоеточие, и всё, что ниже, относится к этому модификатору до следующего модификатора.</p>
+      <ul>
+        <li><code>public</code> — доступно отовсюду (из любого места программы).</li>
+        <li><code>private</code> — доступно только внутри методов самого класса.</li>
+      </ul>
+
+      <idyl-code-block><script type="text/plain">
+class Hero {
+    private:
+    int hp;   // приватное свойство — доступно только внутри Hero
+
+    public:
+    string name;   // публичное свойство — доступно отовсюду
+
+    constructor Hero(string ex_name, int ex_hp) {
+        this.name = ex_name;
+        this.hp = ex_hp;
+    }
+
+    void function heal(int amount) {
+        this.hp = this.hp + amount;
+        if (this.hp > 100) {
+            this.hp = 100;
+        }
+    }
+
+    void function hit(int amount) {
+        this.hp = this.hp - amount;
+        if (this.hp < 0) {
+            this.hp = 0;
+        }
+    }
+
+    int function get_hp() {
+        return this.hp;
+    }
+}
+</script></idyl-code-block>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Пример с защищённым здоровьем</h2>
+      <p>Теперь здоровье героя защищено. Изменять его можно только через методы <code>heal()</code> и <code>hit()</code>, которые следят за границами диапазона:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+class Hero {
+    private:
+    int hp;
+
+    public:
+    string name;
+
+    constructor Hero(string ex_name, int ex_hp) {
+        this.name = ex_name;
+        this.hp = ex_hp;
+    }
+
+    void function heal(int amount) {
+        this.hp = this.hp + amount;
+        if (this.hp > 100) {
+            this.hp = 100;
+            console.writeln("Здоровье восстановлено до максимума!");
+        }
+    }
+
+    void function hit(int amount) {
+        this.hp = this.hp - amount;
+        if (this.hp < 0) {
+            this.hp = 0;
+            console.writeln("Герой повержен!");
+        }
+    }
+
+    int function get_hp() {
+        return this.hp;
+    }
+}
+
+main() {
+    Hero hero1("Воин", 40);
+
+    console.writeln(hero1.name, ": ", hero1.get_hp());
+
+    hero1.heal(75);   // 40 + 75 = 115 → ограничивается 100
+    console.writeln(hero1.name, ": ", hero1.get_hp());
+
+    hero1.hit(30);    // 100 - 30 = 70
+    console.writeln(hero1.name, ": ", hero1.get_hp());
+
+    hero1.hit(100);   // 70 - 100 = -30 → ограничивается 0
+    console.writeln(hero1.name, ": ", hero1.get_hp());
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Воин: 40
+Здоровье восстановлено до максимума!
+Воин: 100
+Воин: 70
+Герой повержен!
+Воин: 0</idyl-output-block>
+
+      <p>Теперь здоровье героя всегда в диапазоне 0–100. Перехилить невозможно!</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Попытка доступа к приватному свойству</h2>
+      <p>Если попробовать обратиться к приватному свойству напрямую из <code>main()</code>, компилятор выдаст ошибку:</p>
+
+      <idyl-code-block><script type="text/plain">
+main() {
+    Hero hero1("Воин", 40);
+    hero1.hp = 100;   // ОШИБКА!
+}
+</script></idyl-code-block>
+
+      <div class="error-message">
+        main.idyl: error: 'hp' is private in this context
+      </div>
+
+      <p>Это защищает данные от случайного или намеренного повреждения извне.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Правила хорошего тона</h2>
+      <ul>
+        <li>Все свойства класса делайте <code>private</code>.</li>
+        <li>Для доступа к значениям свойств создавайте публичные методы-геттеры (<code>get_...</code>).</li>
+        <li>Для изменения значений — методы-сеттеры (<code>set_...</code>) с проверкой корректности.</li>
+        <li>Публичными (public) можно оставлять только те методы, которые образуют интерфейс класса.</li>
+      </ul>
+      <p>Этот подход называется <strong>«скрытие реализации»</strong> и является основой надёжного объектно-ориентированного дизайна.</p>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>Итог</h2>
+      <ul>
+        <li><strong>Инкапсуляция</strong> — сокрытие внутренних данных объекта от внешнего мира.</li>
+        <li><code>public</code> — доступно везде.</li>
+        <li><code>private</code> — доступно только внутри методов класса.</li>
+        <li>Приватные свойства изменяются только через публичные методы, которые могут проверять корректность новых значений.</li>
+        <li>Инкапсуляция защищает данные от неконтролируемых изменений.</li>
+      </ul>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="009_polymorphism.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 9: Полиморфизм</strong>
+      </a>
+      <a class="docs-nav-btn next" href="011_static.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 11: Статические методы</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

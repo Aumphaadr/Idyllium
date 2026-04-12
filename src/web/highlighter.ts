@@ -21,7 +21,7 @@ const KEYWORDS = new Set([
     'use', 'if', 'else', 'while', 'do', 'for', 'break', 'continue', 'return',
     'try', 'catch',
     'function', 'class', 'extends', 'this', 'constructor', 'destructor',
-    'public', 'private',
+    'public', 'private', 'static', 'parent',
     'and', 'or', 'xor', 'not',
     'true', 'false',
 ]);
