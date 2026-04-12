@@ -119,6 +119,7 @@ export interface ClassField {
     readonly kind: 'ClassField';
     readonly loc: SourceLocation;
     readonly access: AccessModifier;
+    readonly isStatic: boolean;
     readonly fieldType: TypeNode;
     readonly name: string;
     readonly initializer: Expression | null;
@@ -128,6 +129,7 @@ export interface ClassMethod {
     readonly kind: 'ClassMethod';
     readonly loc: SourceLocation;
     readonly access: AccessModifier;
+    readonly isStatic: boolean;
     readonly returnType: TypeNode;
     readonly name: string;
     readonly params: Parameter[];
@@ -140,6 +142,7 @@ export interface ClassConstructor {
     readonly access: AccessModifier;
     readonly className: string;
     readonly params: Parameter[];
+    readonly parentArgs: Argument[] | null;
     readonly body: Block;
 }
 
@@ -378,6 +381,12 @@ export interface ConstructorCallExpr {
     readonly args: Argument[];
 }
 
+export interface ParentCallExpr {
+    readonly kind: 'ParentCall';
+    readonly loc: SourceLocation;
+    readonly args: Argument[];
+}
+
 export type Expression =
     | IntLiteralExpr
     | FloatLiteralExpr
@@ -395,7 +404,8 @@ export type Expression =
     | PropertyAccessExpr
     | IndexAccessExpr
     | LambdaExpr
-    | ConstructorCallExpr;
+    | ConstructorCallExpr
+    | ParentCallExpr;
 
 export type AnyNode =
     | PrimitiveType
@@ -459,6 +469,7 @@ const EXPRESSION_KINDS: ReadonlySet<string> = new Set([
     'IndexAccess',
     'Lambda',
     'ConstructorCall',
+    'ParentCall',
 ]);
 
 const STATEMENT_KINDS: ReadonlySet<string> = new Set([

@@ -1,4 +1,4 @@
-// src/compliler/tokens.ts
+// src/compiler/tokens.ts
 
 export enum TokenType {
     INT_LITERAL,
@@ -48,6 +48,8 @@ export enum TokenType {
     KW_DESTRUCTOR,
     KW_PUBLIC,
     KW_PRIVATE,
+    KW_STATIC,
+    KW_PARENT,
 
     KW_DIV,
     KW_MOD,
@@ -134,6 +136,8 @@ export const KEYWORDS: Readonly<Record<string, TokenType>> = {
     'destructor':   TokenType.KW_DESTRUCTOR,
     'public':       TokenType.KW_PUBLIC,
     'private':      TokenType.KW_PRIVATE,
+    'static':       TokenType.KW_STATIC,
+    'parent':       TokenType.KW_PARENT,
 
     'div':          TokenType.KW_DIV,
     'mod':          TokenType.KW_MOD,
@@ -196,6 +200,8 @@ const TOKEN_DISPLAY: Record<TokenType, string> = {
     [TokenType.KW_DESTRUCTOR]:  "'destructor'",
     [TokenType.KW_PUBLIC]:      "'public'",
     [TokenType.KW_PRIVATE]:     "'private'",
+    [TokenType.KW_STATIC]:      "'static'",
+    [TokenType.KW_PARENT]:      "'parent'",
 
     [TokenType.KW_DIV]:         "'div'",
     [TokenType.KW_MOD]:         "'mod'",

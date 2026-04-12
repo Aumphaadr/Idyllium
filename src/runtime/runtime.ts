@@ -204,7 +204,8 @@ export interface ConsoleIO {
 function createConsoleModule(io: ConsoleIO) {
     let precision: number | null = null;
 
-    function formatValue(v: unknown): string {
+    async function formatValueAsync(v: unknown): Promise<string> {
+        if (v === null || v === undefined) return 'null';
         if (v instanceof IdylArray) return v.toString();
         if (v instanceof FixedInt) return v.get().toString();
         if (v instanceof FixedFloat) {
@@ -218,18 +219,41 @@ function createConsoleModule(io: ConsoleIO) {
             return Number(v.toFixed(precision)).toString();
         }
         if (typeof v === 'boolean') return v ? 'true' : 'false';
+        if (typeof v === 'string') return v;
+
+        if (typeof v === 'object') {
+            const obj = v as Record<string, unknown>;
+            if (typeof obj.to_string === 'function') {
+                try {
+                    const result = await obj.to_string();
+                    return String(result);
+                } catch (e) {
+                    // Fall through to error
+                }
+            }
+            const className = v.constructor?.name ?? 'Object';
+            throw new IdylRuntimeError('runtime', 0,
+                `cannot print object of class '${className}' directly; define a 'string function to_string()' method`);
+        }
+
         return String(v);
     }
 
     return {
-        write(...args: unknown[]): void {
-            const text = args.map(formatValue).join('');
-            io.print(text);
+        async write(...args: unknown[]): Promise<void> {
+            const parts: string[] = [];
+            for (const v of args) {
+                parts.push(await formatValueAsync(v));
+            }
+            io.print(parts.join(''));
         },
 
-        writeln(...args: unknown[]): void {
-            const text = args.map(formatValue).join('') + '\n';
-            io.print(text);
+        async writeln(...args: unknown[]): Promise<void> {
+            const parts: string[] = [];
+            for (const v of args) {
+                parts.push(await formatValueAsync(v));
+            }
+            io.print(parts.join('') + '\n');
         },
 
         async getInt(file: string, line: number): Promise<number> {

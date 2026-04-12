@@ -20,6 +20,16 @@ let currentFilePath: string | null = null;
 let isRunning = false;
 let abortController: AbortController | null = null;
 
+function normalizeKey(e: KeyboardEvent): string {
+    if ((e.ctrlKey || e.metaKey) && e.code) {
+        if (e.code === 'KeyS') return 's';
+        if (e.code === 'KeyZ') return 'z';
+        if (e.code === 'KeyY') return 'y';
+        if (e.code === 'KeyI') return 'i';
+    }
+    return e.key.toLowerCase();
+}
+
 export function init(): void {
     const fileTreeContainer = document.getElementById('file-tree');
     const tabsContainer = document.getElementById('tabs-container');
@@ -115,17 +125,20 @@ export function init(): void {
     }
 
     document.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'i') {
+        const key = normalizeKey(e);
+        
+        // Ctrl+Shift+I / Ctrl+Shift+Ш (форматирование)
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && key === 'i') {
             e.preventDefault();
             if (editor) {
                 editor.formatCode();
                 terminal?.printSystem('✨ Код отформатирован\n', 'success');
             }
+            return;
         }
-    });
-
-    document.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        
+        // Ctrl+S / Ctrl+Ы (сохранение)
+        if ((e.ctrlKey || e.metaKey) && key === 's') {
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
@@ -133,6 +146,7 @@ export function init(): void {
             return;
         }
         
+        // Ctrl+Enter (запуск)
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
             e.preventDefault();
             e.stopPropagation();

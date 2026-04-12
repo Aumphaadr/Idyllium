@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 5: Массивы объектов — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Объектно-ориентированное программирование</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">ООП • Урок 5</div>
+      <h1>Массивы объектов</h1>
+      <p class="docs-subtitle">Как хранить много собак в одной упряжке</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Напоминание: что такое массив?</h2>
+      <p><strong>Массив</strong> — это набор ячеек памяти, способных хранить много значений одного типа.</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    array<string, 6> names = ["Барсик", "Мурка", "Рекс", "Тузик", "Дружок", "Мурзик"];
+
+    for (int i = 0; i < 6; i = i + 1) {
+        console.writeln(names[i]);
+    }
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Барсик
+Мурка
+Рекс
+Тузик
+Дружок
+Мурзик</idyl-output-block>
+
+      <p>В этом примере массив <code>names</code> хранит 6 строк. Каждая ячейка массива — это <strong>переменная</strong>, которая содержит строку.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Каждая ячейка — переменная</h2>
+      <p>Если массив работает как набор переменных, то каждая ячейка массива по сути является переменной. А значит, после <code>names[i]</code> можно ставить точку и обращаться к методам:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    array<string, 6> names = ["Барсик", "Мурка", "Рекс", "Тузик", "Дружок", "Мурзик"];
+
+    for (int i = 0; i < 6; i = i + 1) {
+        int L = names[i].length();   // длина строки
+        console.writeln(names[i], " -> ", L);
+    }
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Барсик -> 6
+Мурка -> 5
+Рекс -> 4
+Тузик -> 5
+Дружок -> 6
+Мурзик -> 6</idyl-output-block>
+
+      <p><code>names[i]</code> — это строка. А у строк есть метод <code>length()</code>. Всё логично!</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Массив объектов</h2>
+      <p>С объектами это работает точно так же, как с переменными. Можно создать массив, где каждая ячейка — это объект какого-либо класса.</p>
+
+      <idyl-code-block><script type="text/plain">
+class Dog {
+    string name;
+    int age;
+
+    void function bark() {
+        console.writeln(this.name, " гавкнул!");
+    }
+}
+
+main() {
+    array<Dog, 3> dogs;
+
+    dogs[0].name = "Шарик";
+    dogs[1].name = "Бобик";
+    dogs[2].name = "Рекс";
+
+    dogs[0].age = 3;
+    dogs[1].age = 5;
+    dogs[2].age = 2;
+}
+</script></idyl-code-block>
+
+      <p>Если массив <code>dogs</code> работает как набор объектов, то каждая ячейка (<code>dogs[0]</code>, <code>dogs[1]</code>, <code>dogs[2]</code>) по сути является <strong>объектом</strong>. А значит, после таких объектов можно ставить точку и обращаться к их свойствам и методам.</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Вызов методов у объектов в массиве</h2>
+      <p>После квадратных скобок с номером ячейки можно обращаться не только к свойствам, но и к методам:</p>
+
+      <idyl-code-block><script type="text/plain">
+array<Dog, 7> dogs;
+
+// ... заполнение собак ...
+
+dogs[0].bark();
+dogs[1].bark();
+dogs[2].bark();
+dogs[3].bark();
+dogs[4].bark();
+dogs[5].bark();
+dogs[6].bark();
+</script></idyl-code-block>
+
+      <p>Семь собак — семь команд. Каждая собака гавкнет по команде.</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Упаковываем повторяющиеся действия в цикл</h2>
+      <p>Когда собак много, писать 7 одинаковых строк утомительно. На помощь приходит <strong>цикл</strong>:</p>
+
+      <idyl-code-block><script type="text/plain">
+array<Dog, 7> dogs;
+
+// ... заполнение собак ...
+
+for (int i = 0; i < 7; i = i + 1) {
+    dogs[i].bark();
+}
+</script></idyl-code-block>
+
+      <p>Все семь собак гавкнут по одному разу. А если собак станет 100 — достаточно поменять число в условии цикла.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Динамический массив объектов</h2>
+      <p>Иногда мы не знаем заранее, сколько объектов понадобится. На помощь приходит <code>dyn_array</code> (динамический массив).</p>
+
+      <idyl-code-block><script type="text/plain">
+class Dog {
+    string name;
+    int age;
+}
+
+main() {
+    dyn_array<Dog> dogs;
+
+    // Создаём временную собаку
+    Dog tmp;
+    tmp.name = "Шарик";
+    tmp.age = 3;
+    dogs.add(tmp);   // добавляем во временную переменную в массив
+
+    // Теперь собака 'tmp' хранится в 'dogs[0]'
+
+    // Временную переменную можно использовать для другой собаки
+    tmp.name = "Бобик";
+    tmp.age = 5;
+    dogs.add(tmp);
+    // Теперь собака 'tmp' хранится в 'dogs[1]'
+
+    // Обе собаки теперь в массиве
+    for (int i = 0; i < dogs.length(); i = i + 1) {
+        console.writeln(dogs[i].name, " ", dogs[i].age);
+    }
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Шарик 3
+Бобик 5</idyl-output-block>
+
+      <p>Динамический массив сам следит за своим размером. Можно добавлять новые объекты в любом количестве — массив подстроится.</p>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>Итог</h2>
+      <ul>
+        <li>Массив может хранить объекты любого класса.</li>
+        <li>Каждая ячейка массива — это полноценный объект.</li>
+        <li>К свойствам и методам объекта в массиве обращаемся через <code>массив[индекс].свойство</code>.</li>
+        <li>Повторяющиеся действия с массивом удобно упаковывать в цикл.</li>
+        <li>Динамический массив (<code>dyn_array</code>) позволяет добавлять объекты во время выполнения программы.</li>
+      </ul>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="004_modules.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 4: Разбиение проекта по файлам</strong>
+      </a>
+      <a class="docs-nav-btn next" href="006_constructor.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 6: Конструктор и деструктор</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

@@ -659,6 +659,7 @@ export class Parser {
     private parseClassBody(className: string): ClassMember[] {
         const members: ClassMember[] = [];
         let currentAccess: AccessModifier = 'public';
+        let currentStatic: boolean = false;
 
         while (!this.isAtEnd() && this.currentType() !== TokenType.RBRACE) {
             if ((this.currentType() === TokenType.KW_PUBLIC ||
@@ -667,29 +668,45 @@ export class Parser {
                 currentAccess = this.currentType() === TokenType.KW_PUBLIC ? 'public' : 'private';
                 this.advance();
                 this.advance();
+                currentStatic = false;
                 continue;
             }
 
+            // Parse 'static' modifier
+            let isStatic = false;
+            if (this.currentType() === TokenType.KW_STATIC) {
+                isStatic = true;
+                this.advance();
+            }
+
             if (this.currentType() === TokenType.KW_CONSTRUCTOR) {
+                if (isStatic) {
+                    this.errors.addError(this.file, this.currentLine(),
+                        "constructors cannot be static");
+                }
                 const ctor = this.parseConstructor(className, currentAccess);
                 if (ctor !== null) members.push(ctor);
                 continue;
             }
 
             if (this.currentType() === TokenType.KW_DESTRUCTOR) {
+                if (isStatic) {
+                    this.errors.addError(this.file, this.currentLine(),
+                        "destructors cannot be static");
+                }
                 const dtor = this.parseDestructor(className, currentAccess);
                 if (dtor !== null) members.push(dtor);
                 continue;
             }
 
             if (this.looksLikeFunctionDecl()) {
-                const method = this.parseClassMethod(currentAccess);
+                const method = this.parseClassMethod(currentAccess, isStatic);
                 if (method !== null) members.push(method);
                 continue;
             }
 
             if (isTypeStart(this.currentType())) {
-                const fields = this.parseClassFields(currentAccess);
+                const fields = this.parseClassFields(currentAccess, isStatic);
                 members.push(...fields);
                 continue;
             }
@@ -702,7 +719,7 @@ export class Parser {
         return members;
     }
 
-    private parseClassFields(access: AccessModifier): ClassField[] {
+    private parseClassFields(access: AccessModifier, isStatic: boolean = false): ClassField[] {
         const fieldLoc = this.here();
         const fieldType = this.parseType();
         if (fieldType === null) {
@@ -728,6 +745,7 @@ export class Parser {
                 kind: 'ClassField',
                 loc: this.locOf(nameTok),
                 access,
+                isStatic,
                 fieldType,
                 name: nameTok.value,
                 initializer,
@@ -740,7 +758,7 @@ export class Parser {
         return fields;
     }
 
-    private parseClassMethod(access: AccessModifier): ClassMethod | null {
+    private parseClassMethod(access: AccessModifier, isStatic: boolean = false): ClassMethod | null {
         const methodLoc = this.here();
 
         const returnType = this.parseType();
@@ -767,6 +785,7 @@ export class Parser {
             kind: 'ClassMethod',
             loc: methodLoc,
             access,
+            isStatic,
             returnType,
             name: nameTok.value,
             params,
@@ -792,7 +811,45 @@ export class Parser {
         const params = this.parseParameterList();
         this.expect(TokenType.RPAREN, "after constructor parameters");
 
-        const body = this.parseBlock();
+        const blockLoc = this.here();
+        if (!this.expect(TokenType.LBRACE, "to open constructor body")) {
+            return {
+                kind: 'ClassConstructor',
+                loc: ctorLoc,
+                access,
+                className,
+                params,
+                parentArgs: null,
+                body: { kind: 'Block', loc: blockLoc, statements: [] },
+            };
+        }
+
+        let parentArgs: Argument[] | null = null;
+
+        if (this.currentType() === TokenType.KW_PARENT &&
+            this.peek(1).type === TokenType.LPAREN) {
+            const parentLoc = this.here();
+            this.advance(); // skip 'parent'
+            this.advance(); // skip '('
+            parentArgs = this.parseArgumentList();
+            this.expect(TokenType.RPAREN, "after parent() arguments");
+            this.expect(TokenType.SEMICOLON, "after parent() call");
+        }
+
+        const statements: Statement[] = [];
+        while (!this.isAtEnd() && this.currentType() !== TokenType.RBRACE) {
+            const stmt = this.parseStatement();
+            if (stmt !== null) {
+                statements.push(stmt);
+            }
+        }
+        this.expect(TokenType.RBRACE, "to close constructor body");
+
+        const body: Block = {
+            kind: 'Block',
+            loc: blockLoc,
+            statements,
+        };
 
         return {
             kind: 'ClassConstructor',
@@ -800,6 +857,7 @@ export class Parser {
             access,
             className,
             params,
+            parentArgs,
             body,
         };
     }
@@ -1573,6 +1631,12 @@ export class Parser {
                     return this.parseLambda();
                 }
                 break;
+            
+            case TokenType.KW_PARENT:
+                this.errors.addError(this.file, this.currentLine(),
+                    "'parent()' can only be used as the first statement in a constructor");
+                this.advance();
+                return null;
 
             default:
                 break;

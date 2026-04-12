@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 7: Композиция — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Объектно-ориентированное программирование</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">ООП • Урок 7</div>
+      <h1>Композиция</h1>
+      <p class="docs-subtitle">Как строить сложные объекты из простых</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Проблема: повторяющийся код</h2>
+      <p>Рассмотрим классы «Прямоугольник» и «Круг». У обоих есть цвет, который задаётся тремя числами (R, G, B):</p>
+
+      <idyl-code-block><script type="text/plain">
+class Rectangle {
+    float width;
+    float height;
+    int colorR;
+    int colorG;
+    int colorB;
+}
+
+class Circle {
+    float radius;
+    int colorR;
+    int colorG;
+    int colorB;
+}
+
+main() {
+    Rectangle rect;
+    rect.width = 10;
+    rect.height = 20;
+    rect.colorR = 255;
+    rect.colorG = 0;
+    rect.colorB = 0;
+
+    Circle circ;
+    circ.radius = 5;
+    circ.colorR = 0;
+    circ.colorG = 255;
+    circ.colorB = 0;
+}
+</script></idyl-code-block>
+
+      <p>Код работает, но три свойства цвета повторяются в каждом классе. Это неудобно и нарушает принцип <strong>DRY</strong> (Don't Repeat Yourself — «не повторяйся»).</p>
+      <p>Если захочется добавить цвету ещё одно свойство (например, прозрачность), придётся менять каждый класс по отдельности.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Решение: композиция</h2>
+      <p><strong>Композиция</strong> — это принцип, при котором один класс содержит внутри себя объекты других классов. Вместо того чтобы хранить три числа цвета, создадим отдельный класс <code>Color</code> и будем использовать его внутри <code>Rectangle</code> и <code>Circle</code>.</p>
+
+      <idyl-code-block><script type="text/plain">
+class Color {
+    int r, g, b;
+
+    constructor Color(int ex_r, int ex_g, int ex_b) {
+        this.r = ex_r;
+        this.g = ex_g;
+        this.b = ex_b;
+    }
+}
+
+class Rectangle {
+    float width;
+    float height;
+    Color color;
+}
+
+class Circle {
+    float radius;
+    Color color;
+}
+
+main() {
+    Color red(255, 0, 0);
+    Color green(0, 255, 0);
+
+    Rectangle rect;
+    rect.width = 10;
+    rect.height = 20;
+    rect.color = red;
+
+    Circle circ;
+    circ.radius = 5;
+    circ.color = green;
+}
+</script></idyl-code-block>
+
+      <p>Код стал более экономным и упорядоченным. А класс <code>Color</code> можно использовать для любых фигур — треугольника, эллипса, многоугольника и т.д.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Как это работает</h2>
+      <p>Объект <code>rect</code> содержит внутри себя объект <code>color</code>. Чтобы обратиться к красной компоненте цвета прямоугольника, нужно написать:</p>
+
+      <idyl-code-block><script type="text/plain">
+int redValue = rect.color.r;
+</script></idyl-code-block>
+
+      <p>То есть: у прямоугольника (<code>rect</code>) есть цвет (<code>color</code>), а у цвета — красная компонента (<code>r</code>).</p>
+      <p>Это напоминает матрёшку: один объект вложен в другой.</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Преимущества композиции</h2>
+      <ul>
+        <li><strong>Переиспользование кода</strong> — класс <code>Color</code> можно использовать в любом месте проекта.</li>
+        <li><strong>Упрощение изменений</strong> — если нужно добавить цвету прозрачность, достаточно изменить только класс <code>Color</code>.</li>
+        <li><strong>Читаемость</strong> — <code>rect.color.r</code> читается естественно: «у прямоугольника цвет, у цвета красная компонента».</li>
+        <li><strong>Логическая структура</strong> — объекты собираются из более мелких, отражая реальное устройство вещей.</li>
+      </ul>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Композиция в реальном мире</h2>
+      <p>Композиция постоянно встречается в реальном программировании:</p>
+      <ul>
+        <li>Автомобиль имеет двигатель, колёса, руль. Колёса имеют диаметр, ширину профиля и тип резины.</li>
+        <li>Дом имеет комнаты, двери, окна. Окна имеют ширину, высоту и материал.</li>
+        <li>Заказ в интернет-магазине имеет покупателя, список товаров, адрес доставки. Покупатель имеет логин, пароль и аватарку.</li>
+      </ul>
+      <p>Композиция помогает моделировать эти отношения «имеет» (has-a) прямо в коде.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Важное отличие: композиция vs наследование</h2>
+      <p>В этом уроке мы строим сложные объекты из простых — это <strong>композиция</strong>. В следующем уроке мы рассмотрим <strong>наследование</strong> — когда один класс является частным случаем другого.</p>
+      <ul>
+        <li><strong>Композиция</strong>: «Круг <strong>имеет</strong> цвет» (has-a).</li>
+        <li><strong>Наследование</strong>: «Собака <strong>является</strong> животным» (is-a).</li>
+      </ul>
+      <p>Оба подхода важны и используются в разных ситуациях.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="006_constructor.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 6: Конструктор и деструктор</strong>
+      </a>
+      <a class="docs-nav-btn next" href="008_inheritance.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 8: Наследование</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

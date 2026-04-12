@@ -28,6 +28,8 @@ const KEYWORDS: CompletionItem[] = [
     { label: 'not', kind: 'keyword', detail: 'логическое НЕ' },
     { label: 'true', kind: 'keyword', detail: 'истина' },
     { label: 'false', kind: 'keyword', detail: 'ложь' },
+    { label: 'static', kind: 'keyword', detail: 'статический элемент' },
+    { label: 'parent', kind: 'keyword', detail: 'вызов конструктора родителя' },
 ];
 
 const TYPES: CompletionItem[] = [

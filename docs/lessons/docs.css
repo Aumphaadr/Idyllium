@@ -786,6 +786,46 @@ idyl-output-block {
   transform: translateX(2px);
 }
 
+/* Warnings and errors */ 
+
+.error-example {
+  margin: 1.5em 0;
+}
+
+.error-message {
+  background: rgba(243, 139, 168, 0.15);
+  border-left: 3px solid #f38ba8;
+  padding: 0.75em 1em;
+  font-family: 'Source Code Pro', monospace;
+  font-size: 0.85em;
+  color: #f38ba8;
+  margin: 0.5em 0 1em 0;
+  border-radius: 0 6px 6px 0;
+}
+
+.warning-message {
+  background: rgba(249, 226, 175, 0.15);
+  border-left: 3px solid #f9e2af;
+  padding: 0.75em 1em;
+  font-family: 'Source Code Pro', monospace;
+  font-size: 0.85em;
+  color: #f9e2af;
+  margin: 0.5em 0 1em 0;
+  border-radius: 0 6px 6px 0;
+}
+
+.tip-box {
+  background: rgba(137, 180, 250, 0.1);
+  border: 1px solid rgba(137, 180, 250, 0.3);
+  border-radius: 8px;
+  padding: 1em 1.25em;
+  margin: 1.5em 0;
+}
+
+.tip-box strong {
+  color: #89b4fa;
+}
+
 /* ─── Category Navigation (Main page) ────────────────────────────────────── */
 
 .docs-nav-categories {

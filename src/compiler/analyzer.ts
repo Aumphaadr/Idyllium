@@ -16,6 +16,7 @@ import {
     LambdaExpr, ConstructorCallExpr,
     TypeNode, Parameter, Argument,
     SourceLocation,
+    ParentCallExpr,
 } from './ast';
 
 import {
@@ -367,6 +368,7 @@ export class Analyzer {
                         name: member.name,
                         type: fieldType,
                         access: member.access,
+                        isStatic: member.isStatic,
                     });
                     break;
                 }
@@ -381,6 +383,7 @@ export class Analyzer {
                         returnTypeNode: member.returnType,
                         params,
                         access: member.access,
+                        isStatic: member.isStatic,
                     });
                     break;
                 }
@@ -584,6 +587,15 @@ export class Analyzer {
         this.popScope();
     }
 
+    private isClassReference(expr: Expression): string | null {
+        if (expr.kind !== 'Identifier') return null;
+        const sym = this.scope.lookup(expr.name);
+        if (sym !== null && sym.kind === 'class') {
+            return expr.name;
+        }
+        return null;
+    }
+
     private registerClass(decl: ClassDecl): void {
         if (decl.parentClass !== null) {
             if (decl.parentModule !== null) {
@@ -641,6 +653,7 @@ export class Analyzer {
                         name: member.name,
                         type: this.resolveType(member.fieldType),
                         access: member.access,
+                        isStatic: member.isStatic,
                     });
                     break;
                 }
@@ -655,6 +668,7 @@ export class Analyzer {
                         returnTypeNode: member.returnType,
                         params,
                         access: member.access,
+                        isStatic: member.isStatic,
                     });
                     break;
                 }
@@ -719,6 +733,47 @@ export class Analyzer {
         }
     
         return { returnType, paramTypes };
+    }
+
+    private checkParentConstructorArgs(
+        className: string,
+        args: Argument[],
+        loc: SourceLocation,
+    ): void {
+        const cls = this.classRegistry.get(className);
+        if (!cls || cls.parentName === null) {
+            this.error(loc,
+                `'parent()' used in class '${className}' which has no parent class`);
+            return;
+        }
+        let parentInfo: ClassInfo | undefined;
+        if (cls.parentModule !== null) {
+            const userModule = this.userModules.get(cls.parentModule);
+            parentInfo = userModule?.classes.get(cls.parentName);
+        } else {
+            parentInfo = this.classRegistry.get(cls.parentName);
+        }
+        if (!parentInfo) return;
+        for (const a of args) {
+            this.inferType(a.value);
+        }
+        if (parentInfo.constructors.length === 0) {
+            if (args.length > 0) {
+                this.error(loc,
+                    `parent class '${cls.parentName}' has no constructor that accepts arguments`);
+            }
+            return;
+        }
+        const matching = parentInfo.constructors.find(c => {
+            const reordered = this.reorderArgsByParams(args, c.params);
+            const reorderedTypes = reordered.map(a =>
+                this.typeMap.get(a.value) ?? this.inferType(a.value));
+            return this.isCallCompatible(c.params, reorderedTypes);
+        });
+        if (!matching) {
+            this.error(loc,
+                `no matching parent constructor for '${cls.parentName}' with ${args.length} argument(s)`);
+        }
     }
 
     private analyzeClassBodies(decl: ClassDecl): void {
@@ -799,6 +854,31 @@ export class Analyzer {
         for (const param of ctor.params) {
             const pType = this.resolveType(param.paramType);
             this.declareSymbol(param.name, pType, 'parameter', param.loc);
+        }
+
+        if (ctor.parentArgs !== null) {
+            this.checkParentConstructorArgs(className, ctor.parentArgs, ctor.loc);
+        } else {
+            const cls = this.classRegistry.get(className);
+            if (cls && cls.parentName !== null) {
+                let parentInfo: ClassInfo | undefined;
+                if (cls.parentModule !== null) {
+                    const userModule = this.userModules.get(cls.parentModule);
+                    parentInfo = userModule?.classes.get(cls.parentName);
+                } else {
+                    parentInfo = this.classRegistry.get(cls.parentName);
+                }
+
+                if (parentInfo && parentInfo.constructors.length > 0) {
+                    const hasDefaultCtor = parentInfo.constructors.some(c =>
+                        c.params.every(p => p.hasDefault)
+                    );
+                    if (!hasDefaultCtor) {
+                        this.warning(ctor.loc,
+                            `constructor of '${className}' does not call 'parent()'; parent class '${cls.parentName}' has a non-default constructor`);
+                    }
+                }
+            }
         }
 
         this.analyzeBlock(ctor.body);
@@ -1151,6 +1231,7 @@ export class Analyzer {
             case 'IndexAccess':       return this.inferIndexAccess(expr);
             case 'Lambda':            return this.inferLambda(expr);
             case 'ConstructorCall':   return this.inferConstructorCall(expr);
+            case 'ParentCall':        return this.inferParentCall(expr);
         }
     }
 
@@ -1299,6 +1380,13 @@ export class Analyzer {
                 return this.resolveLibraryCall(
                     sym.name, expr.method, expr.args, expr.loc);
             }
+
+            // Static method call: ClassName.method()
+            if (sym !== null && sym.kind === 'class') {
+                this.typeMap.set(expr.object, sym.type);
+                return this.resolveStaticMethodCall(
+                    sym.name, expr.method, expr.args, expr.loc);
+            }
         }
     
         const objType = this.inferType(expr.object);
@@ -1335,6 +1423,110 @@ export class Analyzer {
     
         this.error(expr.loc,
             `type '${typeToString(objType)}' has no methods`);
+        return ERROR_TYPE;
+    }
+
+    private inferParentCall(expr: ParentCallExpr): ResolvedType {
+        if (!this.scope.isInsideConstructor()) {
+            this.error(expr.loc, "'parent()' can only be used inside a class constructor");
+            return ERROR_TYPE;
+        }
+        const className = this.scope.getClassName();
+        if (className === null) {
+            this.error(expr.loc, "'parent()' can only be used inside a class constructor");
+            return ERROR_TYPE;
+        }
+        this.checkParentConstructorArgs(className, expr.args, expr.loc);
+        return VOID_TYPE;
+    }
+
+    private resolveStaticMethodCall(
+        className: string, methodName: string, args: Argument[], loc: SourceLocation,
+    ): ResolvedType {
+        const cls = this.classRegistry.get(className);
+        if (!cls) {
+            this.error(loc, `unknown class '${className}'`);
+            return ERROR_TYPE;
+        }
+
+        const methodInfo = cls.methods.get(methodName);
+        if (!methodInfo) {
+            this.error(loc,
+                `class '${className}' has no method '${methodName}'`);
+            return ERROR_TYPE;
+        }
+
+        if (!methodInfo.isStatic) {
+            this.error(loc,
+                `'${methodName}' is not a static method of '${className}'; create an instance first`);
+            return ERROR_TYPE;
+        }
+
+        if (methodInfo.access === 'private') {
+            const currentClass = this.scope.getClassName();
+            if (currentClass !== className) {
+                this.error(loc, `'${methodName}' is private in this context`);
+            }
+        }
+
+        const resolvedMethod = this.resolveMethodInfo(methodInfo);
+        if (resolvedMethod === null) {
+            this.error(loc, `cannot resolve types for method '${methodName}'`);
+            return ERROR_TYPE;
+        }
+
+        this.checkArguments(methodName, resolvedMethod.paramTypes, args, loc);
+        return resolvedMethod.returnType;
+    }
+
+    private resolveStaticFieldAccess(
+        className: string, fieldName: string, loc: SourceLocation,
+    ): ResolvedType {
+        const cls = this.classRegistry.get(className);
+        if (!cls) {
+            this.error(loc, `unknown class '${className}'`);
+            return ERROR_TYPE;
+        }
+
+        const field = cls.fields.get(fieldName);
+        if (field) {
+            if (!field.isStatic) {
+                this.error(loc,
+                    `'${fieldName}' is not a static field of '${className}'; create an instance first`);
+                return ERROR_TYPE;
+            }
+
+            if (field.access === 'private') {
+                const currentClass = this.scope.getClassName();
+                if (currentClass !== className) {
+                    this.error(loc, `'${fieldName}' is private in this context`);
+                }
+            }
+            return field.type;
+        }
+
+        const methodInfo = cls.methods.get(fieldName);
+        if (methodInfo) {
+            if (!methodInfo.isStatic) {
+                this.error(loc,
+                    `'${fieldName}' is not a static member of '${className}'; create an instance first`);
+                return ERROR_TYPE;
+            }
+
+            if (methodInfo.access === 'private') {
+                const currentClass = this.scope.getClassName();
+                if (currentClass !== className) {
+                    this.error(loc, `'${fieldName}' is private in this context`);
+                }
+            }
+
+            const resolvedMethod = this.resolveMethodInfo(methodInfo);
+            if (resolvedMethod === null) return ERROR_TYPE;
+            return makeFunctionType(resolvedMethod.paramTypes, resolvedMethod.returnType);
+        }
+
+        this.error(loc,
+            `class '${className}' has no static member '${fieldName}'`);
         return ERROR_TYPE;
     }
 
@@ -1387,6 +1579,13 @@ export class Analyzer {
             if (sym !== null && sym.kind === 'library') {
                 this.typeMap.set(expr.object, VOID_TYPE);
                 return this.resolveLibraryProperty(
+                    sym.name, expr.property, expr.loc);
+            }
+
+            // Static field access: ClassName.field
+            if (sym !== null && sym.kind === 'class') {
+                this.typeMap.set(expr.object, sym.type);
+                return this.resolveStaticFieldAccess(
                     sym.name, expr.property, expr.loc);
             }
         }
@@ -1641,6 +1840,18 @@ export class Analyzer {
         switch (func) {
             case 'write':
             case 'writeln':
+                // Check that no raw class instances are passed
+                for (let i = 0; i < argTypes.length; i++) {
+                    const t = argTypes[i];
+                    if (t.tag === 'class') {
+                        const cls = this.classRegistry.get(t.name);
+                        const hasToString = cls?.methods.has('to_string') ?? false;
+                        if (!hasToString) {
+                            this.error(args[i].loc,
+                                `cannot print object of class '${t.name}' directly; define a 'string function to_string()' method or convert to string first`);
+                        }
+                    }
+                }
                 return VOID_TYPE;
 
             case 'get_int':

@@ -4,7 +4,7 @@ const KEYWORDS = new Set([
   'use', 'if', 'else', 'while', 'do', 'for', 'break', 'continue', 'return',
   'try', 'catch',
   'function', 'class', 'extends', 'this', 'constructor', 'destructor',
-  'public', 'private',
+  'public', 'private', 'static', 'parent',  // Добавлен 'parent' и 'static'
   'and', 'or', 'xor', 'not',
   'true', 'false',
 ]);
@@ -18,7 +18,7 @@ const QUALIFIED_TYPES = new Set([
   'istream', 'ostream', 'stream', 'stamp',
   'Window', 'Button', 'Label', 'SpinBox', 'FloatSpinBox',
   'LineEdit', 'CheckBox', 'ProgressBar', 'TextEdit',
-  'ComboBox', 'Slider', 'Frame', 'Timer', 'Modal',
+  'ComboBox', 'Slider', 'Frame', 'Timer', 'Modal', 'RadioButton',  // Добавлен RadioButton
   'int8', 'int16', 'int32', 'int64',
   'uint8', 'uint16', 'uint32', 'uint64',
   'float32', 'float64',
@@ -32,10 +32,11 @@ function isPascalCase(name) { return name.length > 0 && name[0] >= 'A' && name[0
 
 function extractClassNames(source) {
   const classNames = new Set();
+  // Ищем class Name - важно: имя класса должно начинаться с заглавной буквы
   const regex = /\bclass\s+([A-Z][a-zA-Z0-9_]*)/g;
   let match;
   while ((match = regex.exec(source)) !== null) {
-      classNames.add(match[1]);
+    classNames.add(match[1]);
   }
   return classNames;
 }
@@ -45,7 +46,7 @@ function extractImportedModules(source) {
   const regex = /\buse\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*;/g;
   let match;
   while ((match = regex.exec(source)) !== null) {
-      modules.add(match[1]);
+    modules.add(match[1]);
   }
   return modules;
 }
@@ -59,159 +60,159 @@ function tokenize(source) {
   const importedModules = extractImportedModules(source);
 
   function peekNonWhitespace(startPos) {
-      let p = startPos;
-      while (p < len && isWhitespace(source[p])) p++;
-      return p < len ? source[p] : '';
+    let p = startPos;
+    while (p < len && isWhitespace(source[p])) p++;
+    return p < len ? source[p] : '';
   }
 
   function lastSignificantToken() {
-      for (let i = tokens.length - 1; i >= 0; i--) {
-          if (tokens[i].category !== 'plain') return tokens[i];
-      }
-      return null;
+    for (let i = tokens.length - 1; i >= 0; i--) {
+      if (tokens[i].category !== 'plain') return tokens[i];
+    }
+    return null;
   }
   
   function tokenBeforeDot() {
-      let dotFound = false;
-      for (let i = tokens.length - 1; i >= 0; i--) {
-          if (tokens[i].category === 'plain') continue;
-          if (tokens[i].text === '.') {
-              dotFound = true;
-              continue;
-          }
-          if (dotFound) return tokens[i];
+    let dotFound = false;
+    for (let i = tokens.length - 1; i >= 0; i--) {
+      if (tokens[i].category === 'plain') continue;
+      if (tokens[i].text === '.') {
+        dotFound = true;
+        continue;
       }
-      return null;
+      if (dotFound) return tokens[i];
+    }
+    return null;
   }
 
   while (pos < len) {
-      const ch = source[pos];
+    const ch = source[pos];
 
-      if (isWhitespace(ch)) {
-          let text = '';
-          while (pos < len && isWhitespace(source[pos])) text += source[pos++];
-          tokens.push({ text, category: 'plain' });
-          continue;
-      }
+    if (isWhitespace(ch)) {
+      let text = '';
+      while (pos < len && isWhitespace(source[pos])) text += source[pos++];
+      tokens.push({ text, category: 'plain' });
+      continue;
+    }
 
-      // Single-line comment
-      if (ch === '/' && source[pos + 1] === '/') {
-          let text = '';
-          while (pos < len && source[pos] !== '\n') text += source[pos++];
-          tokens.push({ text, category: 'comment' });
-          continue;
-      }
+    // Single-line comment
+    if (ch === '/' && source[pos + 1] === '/') {
+      let text = '';
+      while (pos < len && source[pos] !== '\n') text += source[pos++];
+      tokens.push({ text, category: 'comment' });
+      continue;
+    }
 
-      // Multi-line comment
-      if (ch === '/' && source[pos + 1] === '*') {
-          let text = '/*';
+    // Multi-line comment
+    if (ch === '/' && source[pos + 1] === '*') {
+      let text = '/*';
+      pos += 2;
+      while (pos < len) {
+        if (source[pos] === '*' && source[pos + 1] === '/') {
+          text += '*/';
           pos += 2;
-          while (pos < len) {
-              if (source[pos] === '*' && source[pos + 1] === '/') {
-                  text += '*/';
-                  pos += 2;
-                  break;
-              }
-              text += source[pos++];
-          }
-          tokens.push({ text, category: 'comment' });
-          continue;
+          break;
+        }
+        text += source[pos++];
       }
+      tokens.push({ text, category: 'comment' });
+      continue;
+    }
 
-      // String "..."
-      if (ch === '"') {
-          let text = '"';
-          pos++;
-          while (pos < len && source[pos] !== '"') {
-              if (source[pos] === '\\' && pos + 1 < len) {
-                  text += source[pos] + source[pos + 1];
-                  pos += 2;
-              } else if (source[pos] === '\n') break;
-              else text += source[pos++];
-          }
-          if (pos < len && source[pos] === '"') text += '"', pos++;
-          tokens.push({ text, category: 'string' });
-          continue;
-      }
-
-      // Char '...'
-      if (ch === "'") {
-          let text = "'";
-          pos++;
-          while (pos < len && source[pos] !== "'") {
-              if (source[pos] === '\\' && pos + 1 < len) {
-                  text += source[pos] + source[pos + 1];
-                  pos += 2;
-              } else if (source[pos] === '\n') break;
-              else text += source[pos++];
-          }
-          if (pos < len && source[pos] === "'") text += "'", pos++;
-          tokens.push({ text, category: 'string' });
-          continue;
-      }
-
-      // Number
-      if (isDigit(ch)) {
-          let text = '';
-          while (pos < len && (isDigit(source[pos]) || source[pos] === '.')) text += source[pos++];
-          tokens.push({ text, category: 'number' });
-          continue;
-      }
-
-      // Identifier / keyword
-      if (isIdentStart(ch)) {
-          let text = '';
-          while (pos < len && isIdentPart(source[pos])) text += source[pos++];
-
-          let category = 'object';
-          const nextChar = peekNonWhitespace(pos);
-          const lastTok = lastSignificantToken();
-          const afterDot = lastTok !== null && lastTok.text === '.';
-
-          if (afterDot) {
-              const beforeDot = tokenBeforeDot();
-              const isAfterModule = beforeDot !== null && importedModules.has(beforeDot.text);
-              
-              if (QUALIFIED_TYPES.has(text)) {
-                  category = 'className';
-              } else if (isAfterModule && isPascalCase(text)) {
-                  category = 'className';
-              } else if (nextChar === '(') {
-                  category = 'function';
-              } else {
-                  category = 'object';
-              }
-          } else if (TYPES.has(text)) {
-              category = 'typeName';
-          } else if (KEYWORDS.has(text)) {
-              category = 'keyword';
-          } else if (userClasses.has(text)) {
-              category = 'className';
-          } else if (nextChar === '(') {
-              category = 'function';
-          }
-
-          tokens.push({ text, category });
-          continue;
-      }
-
-      // Two-char operators
-      const twoChar = source.substring(pos, pos + 2);
-      if (['==', '!=', '<=', '>=', '+=', '-=', '*=', '/='].includes(twoChar)) {
-          tokens.push({ text: twoChar, category: 'brackets' });
-          pos += 2;
-          continue;
-      }
-
-      // Single char punctuation
-      if ('+-*/<>=!{}[]();,.:~'.includes(ch)) {
-          tokens.push({ text: ch, category: 'brackets' });
-          pos++;
-          continue;
-      }
-
-      tokens.push({ text: ch, category: 'plain' });
+    // String "..."
+    if (ch === '"') {
+      let text = '"';
       pos++;
+      while (pos < len && source[pos] !== '"') {
+        if (source[pos] === '\\' && pos + 1 < len) {
+          text += source[pos] + source[pos + 1];
+          pos += 2;
+        } else if (source[pos] === '\n') break;
+        else text += source[pos++];
+      }
+      if (pos < len && source[pos] === '"') text += '"', pos++;
+      tokens.push({ text, category: 'string' });
+      continue;
+    }
+
+    // Char '...'
+    if (ch === "'") {
+      let text = "'";
+      pos++;
+      while (pos < len && source[pos] !== "'") {
+        if (source[pos] === '\\' && pos + 1 < len) {
+          text += source[pos] + source[pos + 1];
+          pos += 2;
+        } else if (source[pos] === '\n') break;
+        else text += source[pos++];
+      }
+      if (pos < len && source[pos] === "'") text += "'", pos++;
+      tokens.push({ text, category: 'string' });
+      continue;
+    }
+
+    // Number
+    if (isDigit(ch)) {
+      let text = '';
+      while (pos < len && (isDigit(source[pos]) || source[pos] === '.')) text += source[pos++];
+      tokens.push({ text, category: 'number' });
+      continue;
+    }
+
+    // Identifier / keyword
+    if (isIdentStart(ch)) {
+      let text = '';
+      while (pos < len && isIdentPart(source[pos])) text += source[pos++];
+
+      let category = 'object';
+      const nextChar = peekNonWhitespace(pos);
+      const lastTok = lastSignificantToken();
+      const afterDot = lastTok !== null && lastTok.text === '.';
+
+      if (afterDot) {
+        const beforeDot = tokenBeforeDot();
+        const isAfterModule = beforeDot !== null && importedModules.has(beforeDot.text);
+        
+        if (QUALIFIED_TYPES.has(text)) {
+          category = 'className';
+        } else if (isAfterModule && isPascalCase(text)) {
+          category = 'className';
+        } else if (nextChar === '(') {
+          category = 'function';
+        } else {
+          category = 'object';
+        }
+      } else if (TYPES.has(text)) {
+        category = 'typeName';
+      } else if (KEYWORDS.has(text)) {
+        category = 'keyword';
+      } else if (userClasses.has(text)) {
+        category = 'className';
+      } else if (nextChar === '(') {
+        category = 'function';
+      }
+
+      tokens.push({ text, category });
+      continue;
+    }
+
+    // Two-char operators
+    const twoChar = source.substring(pos, pos + 2);
+    if (['==', '!=', '<=', '>=', '+=', '-=', '*=', '/='].includes(twoChar)) {
+      tokens.push({ text: twoChar, category: 'brackets' });
+      pos += 2;
+      continue;
+    }
+
+    // Single char punctuation
+    if ('+-*/<>=!{}[]();,.:~'.includes(ch)) {
+      tokens.push({ text: ch, category: 'brackets' });
+      pos++;
+      continue;
+    }
+
+    tokens.push({ text: ch, category: 'plain' });
+    pos++;
   }
 
   return tokens;
@@ -219,31 +220,32 @@ function tokenize(source) {
 
 function highlightIdyllium(code) {
   const escape = s => s
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 
   const tokens = tokenize(code);
   let html = '';
 
   for (const tok of tokens) {
-      const escaped = escape(tok.text);
-      if (tok.category === 'plain') {
-          html += escaped;
-      } else {
-          html += `<span class="hl-${tok.category}">${escaped}</span>`;
-      }
+    const escaped = escape(tok.text);
+    if (tok.category === 'plain') {
+      html += escaped;
+    } else {
+      html += `<span class="hl-${tok.category}">${escaped}</span>`;
+    }
   }
 
   return html;
 }
 
-
 /* ─── <idyl-code-block> ──────────────────────────────────────────────────── */
 
 class IdylCodeBlock extends HTMLElement {
   connectedCallback() {
+    // Получаем исходный код из содержимого элемента
     const raw = this.textContent ?? '';
+    // Удаляем лишние переносы в начале и конце
     const code = raw.replace(/^\n/, '').replace(/\n\s*$/, '');
 
     const pre = document.createElement('pre');
@@ -322,12 +324,9 @@ class IdylSidebar extends HTMLElement {
     const toggle = this.querySelector('#idyl-nav-toggle');
     const list = this.querySelector('#idyl-nav-list');
     
-    // Автоматическое определение базового пути
     const basePath = this.getBasePath();
-    
     const currentFile = window.location.pathname.split('/').pop();
 
-    // Восстанавливаем состояние
     try {
       const saved = sessionStorage.getItem('idyl-open-sections');
       if (saved) {
@@ -353,7 +352,6 @@ class IdylSidebar extends HTMLElement {
       const data = await resp.json();
       const sections = data.sections;
 
-      // Открываем секцию с текущим уроком
       for (let i = 0; i < sections.length; i++) {
         const section = sections[i];
         const hasCurrent = section.lessons.some(lesson => lesson.file === currentFile);
@@ -383,7 +381,6 @@ class IdylSidebar extends HTMLElement {
             <div class="idyl-lessons ${isOpen ? '' : 'collapsed'}">
               ${section.lessons.map(lesson => {
                 const isCurrent = lesson.file === currentFile;
-                // Ключевой момент: используем basePath для формирования правильной ссылки
                 const href = basePath === '.' ? lesson.file : `${basePath}/${lesson.file}`;
                 return `
                   <a class="idyl-nav-item${isCurrent ? ' current' : ''}"
@@ -398,7 +395,6 @@ class IdylSidebar extends HTMLElement {
         `;
       }).join('');
       
-      // Обработчики кликов
       document.querySelectorAll('.idyl-section-header').forEach(header => {
         header.addEventListener('click', (e) => {
           const sectionId = header.dataset.section;

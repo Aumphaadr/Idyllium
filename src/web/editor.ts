@@ -122,6 +122,16 @@ export class Editor {
         this.updateLineNumbers();
     }
 
+    private normalizeKey(e: KeyboardEvent): string {
+        if ((e.ctrlKey || e.metaKey) && e.code) {
+            if (e.code === 'KeyS') return 's';
+            if (e.code === 'KeyZ') return 'z';
+            if (e.code === 'KeyY') return 'y';
+            if (e.code === 'KeyI') return 'i';
+        }
+        return e.key;
+    }
+
     private getCurrentLineIndent(pos: number): string {
         const value = this.textarea.value;
         let lineStart = pos;
@@ -752,15 +762,25 @@ export class Editor {
             }
         }
 
-        if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
+        if (e.ctrlKey && this.normalizeKey(e) === 'z' && !e.shiftKey) {
             e.preventDefault();
             this.undo();
             return;
         }
 
-        if ((e.ctrlKey && e.shiftKey && e.key === 'Z') || (e.ctrlKey && e.key === 'y')) {
+        if ((e.ctrlKey && this.normalizeKey(e) === 'y') || 
+            (e.ctrlKey && e.shiftKey && this.normalizeKey(e) === 'z')) {
             e.preventDefault();
             this.redo();
+            return;
+        }
+
+        if ((e.ctrlKey || e.metaKey) && this.normalizeKey(e) === 's') {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            const saveEvent = new CustomEvent('editor-save');
+            this.textarea.dispatchEvent(saveEvent);
             return;
         }
     }
