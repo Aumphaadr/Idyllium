@@ -247,20 +247,26 @@ export class Editor {
         const shouldIncreaseIndent = (line: string): boolean => {
             const trimmed = line.trim();
             if (trimmed.endsWith('{')) return true;
-            if (trimmed.startsWith('if ') && trimmed.endsWith('{')) return true;
-            if (trimmed.startsWith('else') && trimmed.endsWith('{')) return true;
-            if (trimmed.startsWith('for ') && trimmed.endsWith('{')) return true;
-            if (trimmed.startsWith('while ') && trimmed.endsWith('{')) return true;
-            if (trimmed.startsWith('function ') && trimmed.endsWith('{')) return true;
-            if (trimmed.startsWith('class ') && trimmed.endsWith('{')) return true;
             return false;
         };
         
         const shouldDecreaseIndent = (line: string): boolean => {
             const trimmed = line.trim();
             if (trimmed === '}') return true;
-            if (trimmed.startsWith('}') && !trimmed.startsWith('} else')) return true;
+            if (trimmed.startsWith('}')) return true;
             return false;
+        };
+
+        const isElseLine = (line: string): boolean => {
+            const trimmed = line.trim();
+            return trimmed === 'else {' || 
+                   trimmed === 'else{' ||
+                   trimmed.startsWith('else if');
+        };
+
+        const isCuddledElse = (line: string): boolean => {
+            const trimmed = line.trim();
+            return trimmed.startsWith('} else');
         };
         
         for (let i = 0; i < lines.length; i++) {
@@ -276,6 +282,24 @@ export class Editor {
                 formattedLines.push(indentStr.repeat(indentLevel) + trimmed);
                 continue;
             }
+
+            // Handle cuddled "} else {" — split into two or three lines
+            if (isCuddledElse(trimmed)) {
+                const closingIndent = Math.max(0, indentLevel - 1);
+                formattedLines.push(indentStr.repeat(closingIndent) + '}');
+                indentLevel = closingIndent;
+
+                // Extract everything after "} "
+                const afterBrace = trimmed.substring(1).trim(); // "else {" or "else if (...) {"
+                
+                if (afterBrace.endsWith('{')) {
+                    formattedLines.push(indentStr.repeat(indentLevel) + afterBrace);
+                    indentLevel++;
+                } else {
+                    formattedLines.push(indentStr.repeat(indentLevel) + afterBrace);
+                }
+                continue;
+            }
             
             let currentIndent = indentLevel;
             
@@ -283,18 +307,14 @@ export class Editor {
                 currentIndent = Math.max(0, indentLevel - 1);
             }
             
-            let formattedLine = indentStr.repeat(currentIndent) + trimmed;
-            
-            if (trimmed === '} else {') {
-                formattedLine = indentStr.repeat(Math.max(0, indentLevel - 1)) + '} else {';
-            }
+            const formattedLine = indentStr.repeat(currentIndent) + trimmed;
             
             formattedLines.push(formattedLine);
             
             if (shouldIncreaseIndent(line)) {
-                indentLevel++;
-            } else if (shouldDecreaseIndent(line) && trimmed !== '} else {') {
-                indentLevel = Math.max(0, indentLevel - 1);
+                indentLevel = currentIndent + 1;
+            } else if (shouldDecreaseIndent(line)) {
+                indentLevel = currentIndent;
             }
         }
         
