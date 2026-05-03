@@ -413,6 +413,22 @@ function createRandomModule() {
     };
 }
 
+async function initValueDeep<T>(value: T): Promise<T> {
+    if (value instanceof IdylArray) {
+        await value.initElementsDeep(async (item) => await initValueDeep(item));
+        return value;
+    }
+
+    if (value !== null && typeof value === 'object') {
+        const obj = value as { __init__?: (...args: never[]) => Promise<unknown> | unknown };
+        if (typeof obj.__init__ === 'function') {
+            await obj.__init__();
+        }
+    }
+
+    return value;
+}
+
 class TimeStamp {
     private readonly date: Date;
 
@@ -565,6 +581,7 @@ function createFileModule(fs: VirtualFS) {
 
 export interface IdylRuntime {
     IdylArray: typeof IdylArray;
+    initValueDeep: typeof initValueDeep;
     div:       typeof idylDiv;
     mod:       typeof idylMod;
     toInt:     typeof idylToInt;
@@ -606,7 +623,7 @@ export function createRuntime(options: RuntimeOptions): IdylRuntime {
 
     return {
         IdylArray,
-
+        initValueDeep,
         div:       idylDiv,
         mod:       idylMod,
         toInt:     idylToInt,
