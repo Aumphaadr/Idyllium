@@ -1,0 +1,24 @@
+# Зависимости
+node_modules/
+
+# Сборка
+dist/
+build/
+.out/
+
+# Среда разработки
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ОС
+.DS_Store
+Thumbs.db
+
+# Локальные настройки
+.env.local
+.env
+
+# Vite cache
+.vite/
