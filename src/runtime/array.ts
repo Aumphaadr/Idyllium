@@ -200,6 +200,12 @@ export class IdylArray<T> {
         }).join(', ');
         return `[${inner}]`;
     }
+
+    async initElementsDeep(init: (value: unknown) => Promise<unknown>): Promise<void> {
+        for (let i = 0; i < this.data.length; i++) {
+            this.data[i] = await init(this.data[i]) as T;
+        }
+    }
 }
 
 function defaultOf(sample: unknown): unknown {

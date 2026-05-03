@@ -236,7 +236,7 @@ export class CodeGenerator {
     
     private genModuleClass(moduleName: string, decl: ClassDecl): void {
         const className = safeName(decl.name);
-    
+
         let ext = '';
         if (decl.parentClass) {
             if (decl.parentModule) {
@@ -245,32 +245,40 @@ export class CodeGenerator {
                 ext = ` extends ${moduleName}.${safeName(decl.parentClass)}`;
             }
         }
-    
+
         this.emit(`${moduleName}.${className} = class${ext} {`);
         this.indent();
-    
+
         const ctors = decl.members.filter(m => m.kind === 'ClassConstructor') as ClassConstructor[];
         const fields = decl.members.filter(m => m.kind === 'ClassField') as ClassField[];
         const dtor = decl.members.find(m => m.kind === 'ClassDestructor') as ClassDestructor | undefined;
-    
-        if (ctors.length > 0) {
-            this.genConstructor(ctors[0], fields, decl.parentClass !== null);
-        } else {
-            this.genDefaultConstructor(fields, decl.parentClass !== null);
-        }
-    
+
+        const ctor = ctors.length > 0 ? ctors[0] : null;
+
+        this.genRawConstructor(decl.name, decl.parentClass !== null, moduleName);
+        this.genAsyncInitializer(decl.name, ctor, fields, decl.parentClass !== null, moduleName);
+        this.genCreateFactory(ctor);
+
         for (const member of decl.members) {
             if (member.kind === 'ClassMethod') {
                 this.genClassMethod(member);
             }
         }
-    
+
         if (dtor) {
             this.genDestructor(dtor);
         }
-    
+
         this.dedent();
         this.emit('};');
+
+        const staticFields = fields.filter(f => f.isStatic);
+        for (const field of staticFields) {
+            const val = field.initializer !== null
+                ? this.genExpr(field.initializer)
+                : this.defaultValueAsync(field.fieldType);
+            this.emit(`${moduleName}.${className}.${safeName(field.name)} = ${val};`);
+        }
     }
 
     private genModuleFunction(moduleName: string, decl: FunctionDecl): void {
@@ -312,7 +320,7 @@ export class CodeGenerator {
         return this.info.expressionTypes.get(expr) ?? ERROR_TYPE;
     }
 
-    private defaultValue(type: TypeNode): string {
+    private defaultValueSync(type: TypeNode): string {
         switch (type.kind) {
             case 'PrimitiveType':
                 switch (type.name) {
@@ -324,22 +332,22 @@ export class CodeGenerator {
                     case 'void':   return 'undefined';
                 }
                 break;
-                
+
             case 'ArrayType': {
                 if (this.needsFactory(type.elementType)) {
                     const factory = this.defaultValueFactory(type.elementType);
                     return `$rt.IdylArray.generate(${type.size}, ${factory}, true)`;
                 }
-                const elemDefault = this.defaultValue(type.elementType);
+                const elemDefault = this.defaultValueSync(type.elementType);
                 return `$rt.IdylArray.filled(${type.size}, ${elemDefault}, true)`;
             }
-    
+
             case 'DynArrayType':
                 return `$rt.IdylArray.empty(false)`;
-                
+
             case 'ClassType':
                 return `new ${safeName(type.name)}()`;
-                
+
             case 'QualifiedType':
                 if (type.qualifier === 'gui' || type.qualifier === 'xanadu') {
                     return `new $rt.gui.${type.name}()`;
@@ -354,7 +362,12 @@ export class CodeGenerator {
                 }
                 return 'null';
         }
+
         return 'undefined';
+    }
+
+    private defaultValueAsync(type: TypeNode): string {
+        return `(await $rt.initValueDeep(${this.defaultValueSync(type)}))`;
     }
 
     private needsFactory(type: TypeNode): boolean {
@@ -395,12 +408,16 @@ export class CodeGenerator {
                     const innerFactory = this.defaultValueFactory(type.elementType);
                     return `() => $rt.IdylArray.generate(${type.size}, ${innerFactory}, true)`;
                 }
-                return `() => $rt.IdylArray.filled(${type.size}, ${this.defaultValue(type.elementType)}, true)`;
+                return `() => $rt.IdylArray.filled(${type.size}, ${this.defaultValueSync(type.elementType)}, true)`;
             case 'DynArrayType':
                 return `() => $rt.IdylArray.empty(false)`;
             default:
-                return `() => ${this.defaultValue(type)}`;
+                return `() => ${this.defaultValueSync(type)}`;
         }
+    }
+
+    private initFlagKey(className: string, moduleName?: string): string {
+        return `__idyl_init_done__${moduleName ? moduleName + '__' : ''}${className}`;
     }
 
     private genFunctionDecl(decl: FunctionDecl): void {
@@ -422,6 +439,93 @@ export class CodeGenerator {
         return name;
     }
 
+    private genRawConstructor(className: string, hasParent: boolean, moduleName?: string): void {
+        const flag = JSON.stringify(this.initFlagKey(className, moduleName));
+
+        this.emit('constructor() {');
+        this.indent();
+
+        if (hasParent) {
+            this.emit('super();');
+        }
+
+        this.emit(`this[${flag}] = false;`);
+
+        this.dedent();
+        this.emit('}');
+    }
+
+    private genAsyncInitializer(
+        className: string,
+        ctor: ClassConstructor | null,
+        fields: ClassField[],
+        hasParent: boolean,
+        moduleName?: string,
+    ): void {
+        const params = ctor
+            ? ctor.params.map(p => this.genParamWithDefault(p)).join(', ')
+            : '';
+
+        const flag = JSON.stringify(this.initFlagKey(className, moduleName));
+        const instanceFields = fields.filter(f => !f.isStatic);
+
+        this.emit(`async __init__(${params}) {`);
+        this.indent();
+
+        this.emit(`if (this[${flag}]) return this;`);
+        this.emit(`this[${flag}] = true;`);
+
+        if (hasParent) {
+            if (ctor !== null && ctor.parentArgs !== null) {
+                const parentParamNames = this.resolveParentConstructorParams(ctor, moduleName);
+                const reorderedArgs = parentParamNames
+                    ? this.reorderArguments(ctor.parentArgs, parentParamNames)
+                    : ctor.parentArgs;
+                const args = reorderedArgs.map(a => this.genExpr(a.value)).join(', ');
+                this.emit(`await super.__init__(${args});`);
+            } else {
+                this.emit(`await super.__init__();`);
+            }
+        }
+
+        for (const field of instanceFields) {
+            const target = `this.${safeName(field.name)}`;
+            const value = field.initializer !== null
+                ? this.genExpr(field.initializer)
+                : this.defaultValueSync(field.fieldType);
+
+            this.emit(`${target} = ${value};`);
+            this.emit(`${target} = await $rt.initValueDeep(${target});`);
+        }
+
+        if (ctor !== null) {
+            this.genBlockBody(ctor.body);
+        }
+
+        this.emit('return this;');
+
+        this.dedent();
+        this.emit('}');
+    }
+
+    private genCreateFactory(ctor: ClassConstructor | null): void {
+        const params = ctor
+            ? ctor.params.map(p => this.genParamWithDefault(p)).join(', ')
+            : '';
+
+        const args = ctor
+            ? ctor.params.map(p => safeName(p.name)).join(', ')
+            : '';
+
+        this.emit(`static async __create__(${params}) {`);
+        this.indent();
+        this.emit(`const __obj = new this();`);
+        this.emit(`await __obj.__init__(${args});`);
+        this.emit(`return __obj;`);
+        this.dedent();
+        this.emit('}');
+    }
+
     private genClassDecl(decl: ClassDecl): void {
         const name = safeName(decl.name);
     
@@ -441,11 +545,11 @@ export class CodeGenerator {
         const fields = decl.members.filter(m => m.kind === 'ClassField') as ClassField[];
         const dtor = decl.members.find(m => m.kind === 'ClassDestructor') as ClassDestructor | undefined;
     
-        if (ctors.length > 0) {
-            this.genConstructor(ctors[0], fields, decl.parentClass !== null);
-        } else {
-            this.genDefaultConstructor(fields, decl.parentClass !== null);
-        }
+        const ctor = ctors.length > 0 ? ctors[0] : null;
+
+        this.genRawConstructor(decl.name, decl.parentClass !== null);
+        this.genAsyncInitializer(decl.name, ctor, fields, decl.parentClass !== null);
+        this.genCreateFactory(ctor);
     
         for (const member of decl.members) {
             if (member.kind === 'ClassMethod') {
@@ -464,70 +568,50 @@ export class CodeGenerator {
         for (const field of staticFields) {
             const val = field.initializer !== null
                 ? this.genExpr(field.initializer)
-                : this.defaultValue(field.fieldType);
+                : this.defaultValueAsync(field.fieldType);
             this.emit(`${name}.${safeName(field.name)} = ${val};`);
         }
     }
 
-    private genDefaultConstructor(fields: ClassField[], hasParent: boolean): void {
-        const instanceFields = fields.filter(f => !f.isStatic);
-        this.emit('constructor() {');
-        this.indent();
-        if (hasParent) {
-            this.emit('super();');
-        }
-        for (const field of instanceFields) {
-            const val = field.initializer !== null
-                ? this.genExpr(field.initializer)
-                : this.defaultValue(field.fieldType);
-            this.emit(`this.${safeName(field.name)} = ${val};`);
-        }
-        this.dedent();
-        this.emit('}');
-    }
+    private resolveParentConstructorParams(
+        ctor: ClassConstructor,
+        moduleName?: string,
+    ): string[] | null {
+        let ownerDecl: ClassDecl | null = null;
 
-    private genConstructor(
-        ctor: ClassConstructor, fields: ClassField[], hasParent: boolean,
-    ): void {
-        const instanceFields = fields.filter(f => !f.isStatic);
-        const params = ctor.params.map(p => this.genParamWithDefault(p)).join(', ');
-        this.emit(`constructor(${params}) {`);
-        this.indent();
-
-        if (ctor.parentArgs !== null) {
-            const parentParamNames = this.resolveParentConstructorParams(ctor);
-            const reorderedArgs = parentParamNames
-                ? this.reorderArguments(ctor.parentArgs, parentParamNames)
-                : ctor.parentArgs;
-            const args = reorderedArgs.map(a => this.genExpr(a.value)).join(', ');
-            this.emit(`super(${args});`);
-        } else if (hasParent) {
-            this.emit('super();');
-        }
-
-        for (const field of instanceFields) {
-            const val = field.initializer !== null
-                ? this.genExpr(field.initializer)
-                : this.defaultValue(field.fieldType);
-            this.emit(`this.${safeName(field.name)} = ${val};`);
-        }
-        this.genBlockBody(ctor.body);
-        this.dedent();
-        this.emit('}');
-    }
-
-    private resolveParentConstructorParams(ctor: ClassConstructor): string[] | null {
-        for (const decl of this.program.declarations) {
-            if (decl.kind === 'ClassDecl' && decl.name === ctor.className) {
-                if (decl.parentClass) {
-                    const key = decl.parentModule
-                        ? `${decl.parentModule}.${decl.parentClass}.__constructor__`
-                        : `${decl.parentClass}.__constructor__`;
-                    return this.methodParams.get(key) || null;
+        if (moduleName) {
+            const mod = this.info.userModules.get(moduleName);
+            if (mod) {
+                for (const decl of mod.ast.declarations) {
+                    if (decl.kind === 'ClassDecl' && decl.name === ctor.className) {
+                        ownerDecl = decl;
+                        break;
+                    }
+                }
+            }
+        } else {
+            for (const decl of this.program.declarations) {
+                if (decl.kind === 'ClassDecl' && decl.name === ctor.className) {
+                    ownerDecl = decl;
+                    break;
                 }
             }
         }
-        return null;
+
+        if (!ownerDecl || !ownerDecl.parentClass) {
+            return null;
+        }
+
+        let key: string;
+        if (ownerDecl.parentModule) {
+            key = `${ownerDecl.parentModule}.${ownerDecl.parentClass}.__constructor__`;
+        } else if (moduleName) {
+            key = `${moduleName}.${ownerDecl.parentClass}.__constructor__`;
+        } else {
+            key = `${ownerDecl.parentClass}.__constructor__`;
+        }
+
+        return this.methodParams.get(key) || null;
     }
 
     private genClassMethod(method: ClassMethod): void {
@@ -582,14 +666,20 @@ export class CodeGenerator {
 
     private genVarDecl(decl: VariableDecl): void {
         const name = safeName(decl.name);
-    
+
         if (decl.varType.kind === 'QualifiedType') {
             const qt = decl.varType;
+
             if (qt.qualifier === 'gui' || qt.qualifier === 'xanadu') {
-                this.emit(`let ${name} = new $rt.gui.${qt.name}();`);
+                if (decl.initializer !== null) {
+                    const value = this.genExpr(decl.initializer);
+                    this.emit(`let ${name} = ${value};`);
+                } else {
+                    this.emit(`let ${name} = new $rt.gui.${qt.name}();`);
+                }
                 return;
             }
-    
+
             if (qt.qualifier === 'types' &&
                 (FIXED_INT_TYPES.has(qt.name) || FIXED_FLOAT_TYPES.has(qt.name))) {
                 if (decl.initializer !== null) {
@@ -600,26 +690,29 @@ export class CodeGenerator {
                 }
                 return;
             }
-    
+
             if (this.info.userModules.has(qt.qualifier)) {
-                if (decl.constructorArgs !== null) {
+                if (decl.initializer !== null) {
+                    const value = this.genExpr(decl.initializer);
+                    this.emit(`let ${name} = ${value};`);
+                } else if (decl.constructorArgs !== null) {
                     const paramNames = this.methodParams.get(
                         `${qt.qualifier}.${qt.name}.__constructor__`
                     ) || [];
                     const reorderedArgs = this.reorderArguments(decl.constructorArgs, paramNames);
                     const args = reorderedArgs.map(a => this.genExpr(a.value)).join(', ');
-                    this.emit(`let ${name} = new ${safeName(qt.qualifier)}.${safeName(qt.name)}(${args});`);
+                    this.emit(`let ${name} = await ${safeName(qt.qualifier)}.${safeName(qt.name)}.__create__(${args});`);
                 } else {
-                    this.emit(`let ${name} = new ${safeName(qt.qualifier)}.${safeName(qt.name)}();`);
+                    const val = this.defaultValueSync(decl.varType);
+                    this.emit(`let ${name} = await $rt.initValueDeep(${val});`);
                 }
                 return;
             }
         }
-    
+
         if (decl.initializer !== null) {
             const value = this.genExpr(decl.initializer);
-            const initType = this.typeOf(decl.initializer);
-    
+
             if (decl.varType.kind === 'ArrayType') {
                 this.emit(`let ${name} = $rt.IdylArray.from(${value}, ${decl.varType.size}, true);`);
             } else if (decl.varType.kind === 'DynArrayType') {
@@ -632,19 +725,20 @@ export class CodeGenerator {
                 this.emit(`let ${name} = ${value};`);
             }
         } else if (decl.constructorArgs !== null) {
-            const typeName = decl.varType.kind === 'ClassType'
-                ? safeName(decl.varType.name) : 'Object';
-            
-            const paramNames = this.methodParams.get(
-                `${decl.varType.kind === 'ClassType' ? decl.varType.name : ''}.__constructor__`
-            ) || [];
-            const reorderedArgs = this.reorderArguments(decl.constructorArgs, paramNames);
-            const args = reorderedArgs.map(a => this.genExpr(a.value)).join(', ');
-            
-            this.emit(`let ${name} = new ${typeName}(${args});`);
+            if (decl.varType.kind === 'ClassType') {
+                const paramNames = this.methodParams.get(
+                    `${decl.varType.name}.__constructor__`
+                ) || [];
+                const reorderedArgs = this.reorderArguments(decl.constructorArgs, paramNames);
+                const args = reorderedArgs.map(a => this.genExpr(a.value)).join(', ');
+
+                this.emit(`let ${name} = await ${safeName(decl.varType.name)}.__create__(${args});`);
+            } else {
+                this.emit(`let ${name} = await $rt.initValueDeep(${this.defaultValueSync(decl.varType)});`);
+            }
         } else {
-            const val = this.defaultValue(decl.varType);
-            this.emit(`let ${name} = ${val};`);
+            const val = this.defaultValueSync(decl.varType);
+            this.emit(`let ${name} = await $rt.initValueDeep(${val});`);
         }
     }
     
@@ -672,14 +766,20 @@ export class CodeGenerator {
     private genMultiVarDecl(decl: MultiVariableDecl): void {
         for (const d of decl.declarations) {
             const name = safeName(d.name);
-    
+
             if (decl.varType.kind === 'QualifiedType') {
                 const qt = decl.varType;
+
                 if (qt.qualifier === 'gui' || qt.qualifier === 'xanadu') {
-                    this.emit(`let ${name} = new $rt.gui.${qt.name}();`);
+                    if (d.initializer !== null) {
+                        const value = this.genExpr(d.initializer);
+                        this.emit(`let ${name} = ${value};`);
+                    } else {
+                        this.emit(`let ${name} = new $rt.gui.${qt.name}();`);
+                    }
                     continue;
                 }
-    
+
                 if (qt.qualifier === 'types' &&
                     (FIXED_INT_TYPES.has(qt.name) || FIXED_FLOAT_TYPES.has(qt.name))) {
                     if (d.initializer !== null) {
@@ -690,25 +790,29 @@ export class CodeGenerator {
                     }
                     continue;
                 }
-    
+
                 if (this.info.userModules.has(qt.qualifier)) {
-                    if (d.constructorArgs !== null) {
+                    if (d.initializer !== null) {
+                        const value = this.genExpr(d.initializer);
+                        this.emit(`let ${name} = ${value};`);
+                    } else if (d.constructorArgs !== null) {
                         const paramNames = this.methodParams.get(
                             `${qt.qualifier}.${qt.name}.__constructor__`
                         ) || [];
                         const reorderedArgs = this.reorderArguments(d.constructorArgs, paramNames);
                         const args = reorderedArgs.map(a => this.genExpr(a.value)).join(', ');
-                        this.emit(`let ${name} = new ${safeName(qt.qualifier)}.${safeName(qt.name)}(${args});`);
+                        this.emit(`let ${name} = await ${safeName(qt.qualifier)}.${safeName(qt.name)}.__create__(${args});`);
                     } else {
-                        this.emit(`let ${name} = new ${safeName(qt.qualifier)}.${safeName(qt.name)}();`);
+                        const val = this.defaultValueSync(decl.varType);
+                        this.emit(`let ${name} = await $rt.initValueDeep(${val});`);
                     }
                     continue;
                 }
             }
-    
+
             if (d.initializer !== null) {
                 const value = this.genExpr(d.initializer);
-    
+
                 if (decl.varType.kind === 'ArrayType') {
                     this.emit(`let ${name} = $rt.IdylArray.from(${value}, ${decl.varType.size}, true);`);
                 } else if (decl.varType.kind === 'DynArrayType') {
@@ -721,19 +825,20 @@ export class CodeGenerator {
                     this.emit(`let ${name} = ${value};`);
                 }
             } else if (d.constructorArgs !== null) {
-                const typeName = decl.varType.kind === 'ClassType'
-                    ? safeName(decl.varType.name) : 'Object';
-    
-                const paramNames = this.methodParams.get(
-                    `${decl.varType.kind === 'ClassType' ? decl.varType.name : ''}.__constructor__`
-                ) || [];
-                const reorderedArgs = this.reorderArguments(d.constructorArgs, paramNames);
-                const args = reorderedArgs.map(a => this.genExpr(a.value)).join(', ');
-    
-                this.emit(`let ${name} = new ${typeName}(${args});`);
+                if (decl.varType.kind === 'ClassType') {
+                    const paramNames = this.methodParams.get(
+                        `${decl.varType.name}.__constructor__`
+                    ) || [];
+                    const reorderedArgs = this.reorderArguments(d.constructorArgs, paramNames);
+                    const args = reorderedArgs.map(a => this.genExpr(a.value)).join(', ');
+
+                    this.emit(`let ${name} = await ${safeName(decl.varType.name)}.__create__(${args});`);
+                } else {
+                    this.emit(`let ${name} = await $rt.initValueDeep(${this.defaultValueSync(decl.varType)});`);
+                }
             } else {
-                const val = this.defaultValue(decl.varType);
-                this.emit(`let ${name} = ${val};`);
+                const val = this.defaultValueSync(decl.varType);
+                this.emit(`let ${name} = await $rt.initValueDeep(${val});`);
             }
         }
     }
@@ -1085,7 +1190,7 @@ export class CodeGenerator {
             const paramNames = this.methodParams.get(`${expr.callee}.__constructor__`) || [];
             const reorderedArgs = this.reorderArguments(expr.args, paramNames);
             const args = this.genArgList(reorderedArgs);
-            return `new ${safeName(expr.callee)}(${args})`;
+            return `(await ${safeName(expr.callee)}.__create__(${args}))`;
         }
     
         const paramNames = this.functionParams.get(expr.callee);
@@ -1123,12 +1228,12 @@ export class CodeGenerator {
 
     private genConstructorCall(expr: ConstructorCallExpr): string {
         const args = this.genArgList(expr.args);
-        return `new ${safeName(expr.className)}(${args})`;
+        return `(await ${safeName(expr.className)}.__create__(${args}))`;
     }
 
     private genParentCall(expr: ParentCallExpr): string {
         const args = expr.args.map(a => this.genExpr(a.value)).join(', ');
-        return `super(${args})`;
+        return `(await super.__init__(${args}))`;
     }
 
     private genMethodCall(expr: MethodCallExpr): string {
