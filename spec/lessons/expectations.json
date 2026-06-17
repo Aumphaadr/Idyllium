@@ -1,0 +1,409 @@
+{
+  "version": 1,
+  "examples": {
+    "cli.002_variables.003": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'float' value to 'int' variable",
+        "cannot assign 'string' value to 'float' variable",
+        "cannot assign 'int' value to 'string' variable"
+      ]
+    },
+    "cli.002_variables.008": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'diam' was not declared in this scope"
+      ]
+    },
+    "cli.004_arithmetics.002": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'float' value to 'int' variable"
+      ]
+    },
+    "cli.006_transforms.001": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'int' value to 'string' variable"
+      ]
+    },
+    "cli.006_transforms.004": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'string' value to 'int' variable"
+      ]
+    },
+    "cli.006_transforms.005": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'string' value to 'float' variable"
+      ]
+    },
+    "cli.006_transforms.007": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "'to_int' cannot convert 'ъеъ ъуъ' to int"
+      ]
+    },
+    "cli.008_if.010": {
+      "kind": "docs_only",
+      "reason": "Snippet must be normalized into a full program before it can assert assignment-in-condition diagnostics."
+    },
+    "cli.013_array.005": {
+      "kind": "docs_only",
+      "reason": "Snippet must be normalized into a full program before it can assert array bounds diagnostics."
+    },
+    "cli.013_array.010": {
+      "kind": "docs_only",
+      "reason": "Snippet must be normalized into a full program before it can assert array/scalar operator diagnostics."
+    },
+    "cli.014_char.003": {
+      "kind": "docs_only",
+      "reason": "Snippet must be normalized into a full program before it can assert string bounds diagnostics."
+    },
+    "cli.015_dyn_array.001": {
+      "kind": "docs_only",
+      "reason": "Snippet contains commented teaching errors and must be rewritten before executable checks."
+    },
+    "cli.016_arr_functions.002": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'max' expects a numeric array, got 'array<string, 2>'"
+      ]
+    },
+    "cli.021_encoding.010": {
+      "kind": "docs_only",
+      "reason": "Encoding library behavior is not implemented in the next core yet."
+    },
+    "cli.021_encoding.011": {
+      "kind": "docs_only",
+      "reason": "Encoding library behavior is not implemented in the next core yet."
+    },
+    "cli.022_functions.002": {
+      "kind": "docs_only",
+      "reason": "Template-style lesson block uses placeholder variable 'выходные_данные' and must be normalized before executable checks."
+    },
+    "cli.023_libs.002": {
+      "kind": "docs_only",
+      "reason": "Multi-file lesson example depends on draw.idyl; project fixtures are needed before executable checks."
+    },
+    "cli.026_matrix.003": {
+      "kind": "docs_only",
+      "reason": "Matrix declaration contains placeholder initializer '[ /* ... */ ]' and must be normalized before executable checks."
+    },
+    "cli.027_errors.001": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'string' value to 'int' variable"
+      ]
+    },
+    "cli.027_errors.002": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'float' value to 'int' variable"
+      ]
+    },
+    "cli.027_errors.003": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot declare variable of type 'void'"
+      ]
+    },
+    "cli.027_errors.004": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'float' value to 'int' variable"
+      ]
+    },
+    "cli.027_errors.005": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'x' was not declared in this scope"
+      ]
+    },
+    "cli.027_errors.006": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'math' is not imported (use 'use math;')"
+      ]
+    },
+    "cli.027_errors.007": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "if condition must be 'bool', got 'int'"
+      ]
+    },
+    "cli.027_errors.008": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'break' is only valid inside a loop"
+      ]
+    },
+    "cli.027_errors.009": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "function with return type 'int' must return a value"
+      ]
+    },
+    "cli.027_errors.010": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "void function cannot return a value"
+      ]
+    },
+    "cli.027_errors.011": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'add' expects 2 arguments, got 3"
+      ]
+    },
+    "cli.027_errors.012": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "array initializer has 3 elements, but 'array<int, 5>' requires 5"
+      ]
+    },
+    "cli.027_errors.013": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "method 'add' is only available on 'dyn_array'"
+      ]
+    },
+    "cli.027_errors.014": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "comparison '>' requires numeric operands"
+      ]
+    },
+    "cli.027_errors.015": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "division by zero"
+      ]
+    },
+    "cli.027_errors.016": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "array index 5 out of bounds (size 3, valid indices 0-2)"
+      ]
+    },
+    "cli.027_errors.017": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "string index 10 out of bounds (length 3, valid indices 0-2)"
+      ]
+    },
+    "cli.027_errors.018": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "'to_int' cannot convert 'abc' to int"
+      ]
+    },
+    "cli.027_errors.019": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "math.sqrt() expects a non-negative number, got -4"
+      ]
+    },
+    "cli.027_errors.020": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "file.open() cannot open",
+        "for reading: file does not exist"
+      ]
+    },
+    "cli.027_errors.021": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "cannot pop from empty array"
+      ]
+    },
+    "cli.027_errors.022": {
+      "kind": "docs_only",
+      "reason": "Encoding runtime error example is deferred until the encoding library is implemented."
+    },
+    "oop.000_intro.004": {
+      "kind": "docs_only",
+      "reason": "Lesson fragment uses Cat from surrounding lesson text; context-aware lesson fixtures are needed before executable checks."
+    },
+    "oop.001_classes.001": {
+      "kind": "valid"
+    },
+    "oop.001_classes.002": {
+      "kind": "valid"
+    },
+    "oop.002_fields_methods.001": {
+      "kind": "valid"
+    },
+    "oop.002_fields_methods.002": {
+      "kind": "valid"
+    },
+    "oop.002_fields_methods.003": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "instance method 'Cat.meow' must be called on an object",
+        "instance field 'Cat.name' must be accessed through an object"
+      ]
+    },
+    "oop.003_this.001": {
+      "kind": "valid"
+    },
+    "oop.003_this.002": {
+      "kind": "valid"
+    },
+    "oop.003_this.003": {
+      "kind": "valid"
+    },
+    "oop.003_this.004": {
+      "kind": "valid"
+    },
+    "oop.004_modules.002": {
+      "kind": "docs_only",
+      "reason": "Multi-file lesson example depends on rect.idyl; project fixtures are needed before executable checks."
+    },
+    "oop.005_arrays.003": {
+      "kind": "docs_only",
+      "reason": "Legacy lesson block omits 'use console;' while class methods call console; normalize before executable checks."
+    },
+    "oop.005_arrays.006": {
+      "kind": "docs_only",
+      "reason": "Legacy lesson block omits 'use console;' while main() calls console; normalize before executable checks."
+    },
+    "oop.006_constructor.001": {
+      "kind": "valid"
+    },
+    "oop.006_constructor.002": {
+      "kind": "valid"
+    },
+    "oop.006_constructor.003": {
+      "kind": "valid"
+    },
+    "oop.006_constructor.004": {
+      "kind": "docs_only",
+      "reason": "Destructor syntax is present in the legacy lesson, but destructor semantics still need an explicit design decision."
+    },
+    "oop.006_constructor.005": {
+      "kind": "valid"
+    },
+    "oop.007_composition.001": {
+      "kind": "valid"
+    },
+    "oop.007_composition.002": {
+      "kind": "valid"
+    },
+    "oop.008_inheritance.003": {
+      "kind": "valid"
+    },
+    "oop.008_inheritance.004": {
+      "kind": "valid"
+    },
+    "oop.009_polymorphism.001": {
+      "kind": "valid"
+    },
+    "oop.009_polymorphism.002": {
+      "kind": "docs_only",
+      "reason": "Lesson fragment extends Animal from surrounding lesson text; context-aware lesson fixtures are needed before executable checks."
+    },
+    "oop.009_polymorphism.003": {
+      "kind": "docs_only",
+      "reason": "Legacy lesson block omits 'use console;' while class methods call console; normalize before executable checks."
+    },
+    "oop.009_polymorphism.004": {
+      "kind": "docs_only",
+      "reason": "Snippet lacks surrounding class definitions; constructor-call expressions remain intentionally invalid."
+    },
+    "oop.010_encapsulation.001": {
+      "kind": "valid"
+    },
+    "oop.010_encapsulation.003": {
+      "kind": "valid"
+    },
+    "oop.010_encapsulation.004": {
+      "kind": "docs_only",
+      "reason": "Snippet demonstrates an error against a class from the lesson text, but does not include the class definition."
+    },
+    "oop.011_static.002": {
+      "kind": "valid"
+    },
+    "oop.011_static.003": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'this' cannot be used in a static method"
+      ]
+    },
+    "oop.011_static.004": {
+      "kind": "valid"
+    },
+    "oop.011_static.001": {
+      "kind": "docs_only",
+      "reason": "Legacy lesson block omits 'use console;' while class methods call console; normalize before executable checks."
+    },
+    "oop.012_errors.002": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'this' cannot be used in a static method"
+      ]
+    },
+    "oop.012_errors.003": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "member 'BankAccount.balance' is private and can only be used inside class 'BankAccount'"
+      ]
+    },
+    "oop.012_errors.004": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "unknown class 'Cat'"
+      ]
+    },
+    "oop.012_errors.006": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "static method 'MathUtils.square' must be called on class 'MathUtils'"
+      ]
+    },
+    "widgets.002_label.004": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'int' value to 'string' variable"
+      ]
+    },
+    "widgets.016_errors.003": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "callback property 'on_click' expects function(): void or function(gui.Button): void, got function(gui.Label): void"
+      ]
+    },
+    "widgets.016_errors.004": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'int' value to 'string' variable"
+      ]
+    },
+    "widgets.016_errors.005": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'btn' was not declared in this scope"
+      ]
+    },
+    "widgets.016_errors.007": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'add_child' argument 1 expects gui widget, got 'gui.Modal'"
+      ]
+    },
+    "widgets.016_errors.008": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "array index 5 out of bounds (size 3, valid indices 0-2)"
+      ]
+    },
+    "widgets.016_errors.009": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "type 'gui.Button' has no property 'placeholder'",
+        "type 'gui.Button' has no property 'font_size'"
+      ]
+    }
+  }
+}

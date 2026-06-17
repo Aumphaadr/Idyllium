@@ -1,0 +1,387 @@
+const fs: any = require('fs');
+const path: any = require('path');
+
+export {};
+
+interface OldLessonsJson {
+  readonly sections: readonly OldSection[];
+}
+
+interface OldSection {
+  readonly id: string;
+  readonly title: string;
+  readonly icon?: string;
+  readonly lessons: readonly OldLessonRef[];
+}
+
+interface OldLessonRef {
+  readonly id: string;
+  readonly file: string;
+  readonly title: string;
+}
+
+interface MigrationManifest {
+  readonly version: 1;
+  readonly generatedAt: string;
+  readonly sourceRoot: string;
+  readonly outputRoot: string;
+  readonly copiedFiles: readonly string[];
+  readonly totals: {
+    readonly sections: number;
+    readonly referencedLessons: number;
+    readonly htmlFiles: number;
+    readonly cssFiles: number;
+    readonly jsFiles: number;
+    readonly fontFiles: number;
+    readonly otherFiles: number;
+  };
+  readonly notes: readonly string[];
+}
+
+const DEFAULT_SOURCE_ROOT = '/home/nathaniel/IdylliumProjects/Idyllium/docs';
+const DEFAULT_OUTPUT_ROOT = path.resolve(process.cwd(), 'packages/docs');
+const GENERATED_MARKER = '.idyllium-generated-docs';
+
+function main(): void {
+  const sourceRoot = path.resolve(readArg('--source') ?? DEFAULT_SOURCE_ROOT);
+  const outputRoot = path.resolve(readArg('--out') ?? DEFAULT_OUTPUT_ROOT);
+
+  if (!fs.existsSync(sourceRoot)) {
+    throw new Error(`old documentation root does not exist: ${sourceRoot}`);
+  }
+
+  const lessonsRoot = path.join(sourceRoot, 'lessons');
+  const lessonsJsonPath = path.join(lessonsRoot, 'lessons.json');
+  if (!fs.existsSync(lessonsJsonPath)) {
+    throw new Error(`old lessons.json does not exist: ${lessonsJsonPath}`);
+  }
+
+  prepareGeneratedOutput(outputRoot);
+
+  const copiedFiles: string[] = [];
+  copyFileIfExists(path.join(sourceRoot, 'favicon.png'), path.join(outputRoot, 'favicon.png'), copiedFiles, outputRoot);
+  copyFileIfExists(path.join(sourceRoot, 'version.js'), path.join(outputRoot, 'version.js'), copiedFiles, outputRoot);
+  copyFileIfExists(path.join(sourceRoot, 'version.json'), path.join(outputRoot, 'version.json'), copiedFiles, outputRoot);
+  copyDirectory(path.join(sourceRoot, 'fonts'), path.join(outputRoot, 'fonts'), copiedFiles, outputRoot);
+  copyDirectory(lessonsRoot, path.join(outputRoot, 'lessons'), copiedFiles, outputRoot);
+
+  const lessonsJson = JSON.parse(fs.readFileSync(lessonsJsonPath, 'utf8')) as OldLessonsJson;
+  generateMissingLessonPlaceholders(lessonsJson, lessonsRoot, outputRoot, copiedFiles);
+  generateMissingSectionHubs(lessonsJson, outputRoot, copiedFiles);
+
+  const rootIndexPath = path.join(outputRoot, 'index.html');
+  fs.writeFileSync(rootIndexPath, rootIndexHtml(), 'utf8');
+  copiedFiles.push(normalizePath(path.relative(outputRoot, rootIndexPath)));
+
+  const readmePath = path.join(outputRoot, 'README.md');
+  fs.writeFileSync(readmePath, readmeMarkdown(sourceRoot), 'utf8');
+  copiedFiles.push(normalizePath(path.relative(outputRoot, readmePath)));
+
+  const manifest: MigrationManifest = {
+    version: 1,
+    generatedAt: new Date().toISOString(),
+    sourceRoot,
+    outputRoot,
+    copiedFiles: copiedFiles.sort(),
+    totals: manifestTotals(copiedFiles, lessonsJson),
+    notes: [
+      'This is a raw migration of the old living textbook.',
+      'Lesson prose and code examples are intentionally preserved.',
+      'Manual rewrite is still required for console.clear(), colors, Canvas, JSON, expected errors, and outdated syntax.',
+      'Do not edit generated files directly unless you intentionally take ownership of packages/docs.',
+    ],
+  };
+
+  const manifestPath = path.join(outputRoot, 'migration-manifest.json');
+  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+  fs.writeFileSync(path.join(outputRoot, GENERATED_MARKER), markerText(sourceRoot), 'utf8');
+
+  console.log(`documentation raw migration: ${manifest.totals.referencedLessons} referenced lessons`);
+  console.log(`copied files: ${manifest.copiedFiles.length}`);
+  console.log(`html/css/js/fonts: ${manifest.totals.htmlFiles}/${manifest.totals.cssFiles}/${manifest.totals.jsFiles}/${manifest.totals.fontFiles}`);
+  console.log(`output: ${outputRoot}`);
+  console.log(`manifest: ${manifestPath}`);
+}
+
+function prepareGeneratedOutput(outputRoot: string): void {
+  const repoRoot = path.resolve(process.cwd());
+  const resolvedOutput = path.resolve(outputRoot);
+  const packagesRoot = path.join(repoRoot, 'packages');
+
+  if (!isInside(resolvedOutput, packagesRoot)) {
+    throw new Error(`refusing to write generated docs outside packages/: ${resolvedOutput}`);
+  }
+
+  if (!fs.existsSync(resolvedOutput)) {
+    fs.mkdirSync(resolvedOutput, { recursive: true });
+    return;
+  }
+
+  const markerPath = path.join(resolvedOutput, GENERATED_MARKER);
+  if (!fs.existsSync(markerPath)) {
+    throw new Error(
+      `refusing to overwrite ${resolvedOutput} because it is not marked as generated by ${GENERATED_MARKER}`,
+    );
+  }
+
+  for (const entry of fs.readdirSync(resolvedOutput, { withFileTypes: true })) {
+    fs.rmSync(path.join(resolvedOutput, entry.name), { recursive: true, force: true });
+  }
+}
+
+function copyDirectory(sourceDir: string, outputDir: string, copiedFiles: string[], outputRoot: string): void {
+  if (!fs.existsSync(sourceDir)) return;
+
+  fs.mkdirSync(outputDir, { recursive: true });
+  for (const entry of fs.readdirSync(sourceDir, { withFileTypes: true })) {
+    const sourcePath = path.join(sourceDir, entry.name);
+    const outputPath = path.join(outputDir, entry.name);
+    if (entry.isDirectory()) {
+      copyDirectory(sourcePath, outputPath, copiedFiles, outputRoot);
+      continue;
+    }
+    if (!entry.isFile()) continue;
+    copyFile(sourcePath, outputPath, copiedFiles, outputRoot);
+  }
+}
+
+function copyFileIfExists(sourcePath: string, outputPath: string, copiedFiles: string[], outputRoot: string): void {
+  if (!fs.existsSync(sourcePath)) return;
+  copyFile(sourcePath, outputPath, copiedFiles, outputRoot);
+}
+
+function copyFile(sourcePath: string, outputPath: string, copiedFiles: string[], outputRoot: string): void {
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.copyFileSync(sourcePath, outputPath);
+  copiedFiles.push(normalizePath(path.relative(outputRoot, outputPath)));
+}
+
+function generateMissingLessonPlaceholders(
+  lessonsJson: OldLessonsJson,
+  lessonsRoot: string,
+  outputRoot: string,
+  copiedFiles: string[],
+): void {
+  for (const section of lessonsJson.sections) {
+    for (const lesson of section.lessons) {
+      const sourcePath = path.join(lessonsRoot, lesson.file);
+      if (fs.existsSync(sourcePath)) continue;
+
+      const outputPath = path.join(outputRoot, 'lessons', lesson.file);
+      if (fs.existsSync(outputPath)) continue;
+
+      fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+      fs.writeFileSync(outputPath, placeholderLessonHtml(section, lesson), 'utf8');
+      copiedFiles.push(normalizePath(path.relative(outputRoot, outputPath)));
+    }
+  }
+}
+
+function generateMissingSectionHubs(lessonsJson: OldLessonsJson, outputRoot: string, copiedFiles: string[]): void {
+  for (const section of lessonsJson.sections) {
+    const firstLesson = section.lessons[0];
+    if (!firstLesson) continue;
+
+    const sectionDir = path.dirname(firstLesson.file);
+    const hubPath = path.join(outputRoot, 'lessons', sectionDir, `${sectionDir}_hub.html`);
+    if (fs.existsSync(hubPath)) continue;
+
+    fs.mkdirSync(path.dirname(hubPath), { recursive: true });
+    fs.writeFileSync(hubPath, placeholderHubHtml(section), 'utf8');
+    copiedFiles.push(normalizePath(path.relative(outputRoot, hubPath)));
+  }
+}
+
+function manifestTotals(copiedFiles: readonly string[], lessonsJson: OldLessonsJson): MigrationManifest['totals'] {
+  const referencedLessons = lessonsJson.sections.reduce((sum, section) => sum + section.lessons.length, 0);
+
+  return {
+    sections: lessonsJson.sections.length,
+    referencedLessons,
+    htmlFiles: copiedFiles.filter((file) => file.endsWith('.html')).length,
+    cssFiles: copiedFiles.filter((file) => file.endsWith('.css')).length,
+    jsFiles: copiedFiles.filter((file) => file.endsWith('.js')).length,
+    fontFiles: copiedFiles.filter((file) => /\.(woff2?|ttf|otf)$/u.test(file)).length,
+    otherFiles: copiedFiles.filter((file) => !/\.(html|css|js|woff2?|ttf|otf)$/u.test(file)).length,
+  };
+}
+
+function rootIndexHtml(): string {
+  return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="refresh" content="0; url=lessons/docs.html">
+  <title>Idyllium — документация</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="fonts/fonts.css">
+  <style>
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      background: #0c0515;
+      color: #f7eefc;
+      font-family: "Salma Pro", system-ui, sans-serif;
+    }
+    a {
+      color: #9fcbff;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Документация Idyllium</h1>
+    <p>Открываем учебник. Если переход не сработал, нажмите <a href="lessons/docs.html">сюда</a>.</p>
+  </main>
+</body>
+</html>
+`;
+}
+
+function placeholderLessonHtml(section: OldSection, lesson: OldLessonRef): string {
+  const lessonDir = path.dirname(lesson.file);
+  const hubFile = `${lessonDir}_hub.html`;
+  return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(lesson.title)} — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">Открыть IDE</a>
+  </div>
+</header>
+
+<div class="docs-layout">
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+  <main class="docs-main">
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="${hubFile}">К разделу</a>
+      <div class="docs-lesson-tag">${escapeHtml(section.title)}</div>
+      <h1>${escapeHtml(lesson.title)}</h1>
+      <p class="docs-subtitle">Этот урок был указан в старой карте документации, но HTML-файл в старом проекте отсутствовал.</p>
+    </div>
+    <div class="docs-section">
+      <h2>Нужно восстановить вручную</h2>
+      <p>Мигратор оставил эту страницу как честную заглушку, чтобы ссылка из навигации не вела в пустоту. Текст урока нужно будет написать или восстановить отдельно.</p>
+    </div>
+  </main>
+</div>
+</body>
+</html>
+`;
+}
+
+function placeholderHubHtml(section: OldSection): string {
+  const firstLesson = section.lessons[0];
+  const sectionDir = firstLesson ? path.dirname(firstLesson.file) : '.';
+  const lessonLinks = section.lessons.map((lesson) => {
+    const fileName = path.basename(lesson.file);
+    return `        <li><a href="${fileName}">${escapeHtml(lesson.title)}</a></li>`;
+  }).join('\n');
+
+  return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(section.title)} — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+</head>
+<body>
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">Открыть IDE</a>
+  </div>
+</header>
+
+<main class="docs-main" style="margin: 0 auto;">
+  <div class="docs-hero">
+    <a class="docs-lesson-back-btn" href="../docs.html">На главную</a>
+    <div class="docs-lesson-tag">${escapeHtml(sectionDir)}</div>
+    <h1>${escapeHtml(section.title)}</h1>
+    <p class="docs-subtitle">Раздел был указан в старой карте документации, но отдельная hub-страница отсутствовала.</p>
+  </div>
+  <div class="docs-section">
+    <h2>Уроки раздела</h2>
+    <ul>
+${lessonLinks}
+    </ul>
+  </div>
+</main>
+</body>
+</html>
+`;
+}
+
+function readmeMarkdown(sourceRoot: string): string {
+  return `# Idyllium Documentation Draft
+
+Эта папка сгенерирована командой:
+
+\`\`\`text
+npm run docs:migrate
+\`\`\`
+
+Источник:
+
+\`\`\`text
+${sourceRoot}
+\`\`\`
+
+Это сырой перенос старой живой документации. Он сохраняет авторский педагогический текст и старые HTML-уроки, но ещё не приводит примеры к актуальному синтаксису IdylliumNext.
+
+Ручная редактура должна идти по плану из \`docs/documentation-migration.md\` и отчёту \`docs/migration/outdated-syntax-report.md\`.
+`;
+}
+
+function markerText(sourceRoot: string): string {
+  return `Generated by tools/docs-migrate.ts from ${sourceRoot}\n`;
+}
+
+function readArg(name: string): string | undefined {
+  const index = process.argv.indexOf(name);
+  if (index === -1 || index + 1 >= process.argv.length) return undefined;
+  return process.argv[index + 1];
+}
+
+function isInside(candidate: string, parent: string): boolean {
+  const relative = path.relative(parent, candidate);
+  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+}
+
+function normalizePath(filePath: string): string {
+  return filePath.split(path.sep).join('/');
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+main();

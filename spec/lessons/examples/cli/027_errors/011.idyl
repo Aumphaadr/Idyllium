@@ -1,0 +1,7 @@
+int function add(int a, int b) {
+    return a + b;
+}
+
+main() {
+    int x = add(1, 2, 3);
+}

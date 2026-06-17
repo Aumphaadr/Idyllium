@@ -1,0 +1,10 @@
+use console;
+use encoding;
+
+main() {
+    string word = "Ёж";
+    dyn_array<int> win = encoding.encode(word, "windows-1251");
+    dyn_array<int> koi = encoding.encode(word, "koi8-r");
+    console.writeln("Windows-1251: ", win);
+    console.writeln("KOI8-R: ", koi);
+}

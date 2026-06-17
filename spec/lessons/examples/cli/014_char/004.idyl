@@ -1,0 +1,5 @@
+string p = "Пингвин";
+
+for (int i = 0; i < 7; i = i + 1) {
+    console.writeln(p[i]);
+}

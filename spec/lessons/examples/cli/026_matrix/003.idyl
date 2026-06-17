@@ -1,0 +1,13 @@
+use console;
+
+main() {
+    // объявление (как выше)
+    array<array<int, 6>, 4> mx = [ /* ... */ ];
+
+    for (int row = 0; row < 4; row = row + 1) {
+        for (int col = 0; col < 6; col = col + 1) {
+            console.write(mx[row][col], " ");
+        }
+        console.write('\n');
+    }
+}

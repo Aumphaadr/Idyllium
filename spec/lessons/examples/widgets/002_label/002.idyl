@@ -1,0 +1,24 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 400;
+    win.height = 200;
+    win.title = "Размер шрифта";
+
+    gui.Label small;
+    small.text = "Маленький текст";
+    small.x = 20;
+    small.y = 30;
+    small.font_size = 12;
+
+    gui.Label big;
+    big.text = "Большой текст";
+    big.x = 20;
+    big.y = 80;
+    big.font_size = 24;
+
+    win.add_child(small);
+    win.add_child(big);
+    win.show();
+}

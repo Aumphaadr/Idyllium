@@ -1,0 +1,170 @@
+<!-- Hero -->
+    
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Оператор присваивания: напоминание</h2>
+      <p>Оператор <code>=</code> работает просто и честно:</p>
+      <blockquote>
+        «Беру значение справа от себя и кладу его в переменную слева от себя».
+      </blockquote>
+      <p>Пример:</p>
+
+      <idyl-code-block><script type="text/plain">
+int A = 5;
+int D = A + 1; // в 'D' кладётся результат вычисления 'A + 1'
+</script></idyl-code-block>
+
+      <p>Здесь всё предсказуемо: сначала вычисляется правая часть, потом результат присваивается левой.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Переменная изменяет саму себя</h2>
+      <p>Теперь представим, что слева и справа — одна и та же переменная:</p>
+
+      <idyl-code-block><script type="text/plain">
+int N = 10;
+N = N + 1; // в 'N' кладётся результат 'N + 1'
+</script></idyl-code-block>
+
+      <p>Это не ошибка и не парадокс. Это — <strong>саморедактирование</strong>.</p>
+      <p>Переменная <code>N</code> участвует в выражении в двух ролях:</p>
+      <ul>
+        <li><strong>справа</strong> — как источник текущего значения («я сейчас 10»);</li>
+        <li><strong>слева</strong> — как получатель нового значения («теперь я стану 11»).</li>
+      </ul>
+      <p>Такая операция называется <strong>инкрементом</strong> — увеличением на единицу.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Другие формы изменения переменной</h2>
+      <p>Аналогично можно изменять переменную другими способами:</p>
+
+      <idyl-code-block><script type="text/plain">
+int score = 100;
+score = score - 10; // декремент: уменьшение на 10
+
+float price = 200.0;
+price = price / 2; // скидка 50%
+
+int counter = 3;
+counter = counter * 2; // удвоение: 3 → 6
+</script></idyl-code-block>
+
+      <p>Во всех случаях сначала вычисляется правая часть, затем результат присваивается переменной слева — даже если это та же самая переменная.</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Изменение через функции</h2>
+      <p>Переменную можно «редактировать» и с помощью функций:</p>
+
+      <idyl-code-block><script type="text/plain">
+use math;
+
+int K = -25;
+K = math.abs(K); // K станет 25
+
+int volume = 120;
+volume = math.clamp(0, volume, 100); // volume станет 100
+</script></idyl-code-block>
+
+      <p>Здесь тоже действует то же правило: сначала функция вычисляет результат, потом он присваивается переменной. Переменная «переписывает» саму себя на основе своего же предыдущего значения.</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Почему в Idyllium нет <code>++</code> и <code>--</code>?</h2>
+      <p>Во многих языках (C++, Java, JavaScript) существуют сокращения:</p>
+
+      <idyl-code-block><script type="text/plain">
+N++;  // то же, что N = N + 1;
+M--;  // то же, что M = M - 1;
+</script></idyl-code-block>
+
+      <p>Idyllium <strong>намеренно от них отказывается</strong>. Почему?</p>
+      <ul>
+        <li>Это синтаксический сахар, который не добавляет новой логики;</li>
+        <li>Он маскирует суть операции — присваивание;</li>
+        <li>Он порождает сложности (в чём разница между <code>++i</code> и <code>i++</code>?);</li>
+        <li>Детям важнее понять "как работает", а не "как написать короче".</li>
+      </ul>
+      <p>В Idyllium всё явно: если вы хотите изменить переменную — напишите это честно: <code>N = N + 1</code>.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Практическое применение</h2>
+      <p>Саморедактирование переменной — основа счётчиков, накопителей и ограничителей:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    int attempts = 1;
+
+    console.writeln("Попытка ", attempts, ": введите пароль");
+    attempts = attempts + 1; // счётчик увеличился, теперь равен 2
+
+    console.writeln("Попытка ", attempts, ": введите пароль");
+    attempts = attempts + 1; // счётчик увеличился, теперь равен 3
+
+    console.writeln("Попытка ", attempts, ": введите пароль");
+    attempts = attempts + 1; // счётчик увеличился, теперь равен 4
+}
+</script></idyl-code-block>
+
+      <p>Такие паттерны встречаются везде — от игр до баз данных.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+
+<div class="docs-section">
+  <h2>Короткая форма: <code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code></h2>
+  <p>
+    Запись <code>N = N + 1</code> честная и понятная, но иногда она слишком длинная.
+    Поэтому в Idyllium есть короткие формы присваивания:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+int N = 10;
+N += 1;  // то же самое, что N = N + 1
+N -= 3;  // то же самое, что N = N - 3
+N *= 2;  // то же самое, что N = N * 2
+N /= 4;  // то же самое, что N = N / 4
+</script></idyl-code-block>
+
+  <p>
+    Важно: это всё ещё присваивание. Просто правая часть записана короче.
+    Компьютер читает <code>N += 1</code> примерно так:
+    «возьми старое значение <code>N</code>, прибавь <code>1</code>, положи результат обратно в <code>N</code>».
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    int attempts = 1;
+
+    console.writeln("Попытка ", attempts);
+    attempts += 1;
+
+    console.writeln("Попытка ", attempts);
+    attempts += 1;
+
+    console.writeln("Попытка ", attempts);
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Попытка 1
+Попытка 2
+Попытка 3</idyl-output-block>
+
+  <p>
+    А вот операторов <code>++</code> и <code>--</code> в Idyllium нет. Мы не теряем
+    от этого никакой силы: <code>+= 1</code> и <code>-= 1</code> делают то же самое,
+    зато не заводят отдельную странную грамматику ради одной единицы.
+  </p>
+</div>

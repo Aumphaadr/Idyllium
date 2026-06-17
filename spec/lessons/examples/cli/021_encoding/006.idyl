@@ -1,0 +1,8 @@
+use console;
+use encoding;
+
+main() {
+    string word = "Hi";
+    dyn_array<int> codes = encoding.encode(word, "ascii");
+    console.writeln(codes);
+}

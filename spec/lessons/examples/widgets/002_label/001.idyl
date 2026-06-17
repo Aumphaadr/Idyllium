@@ -1,0 +1,22 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 400;
+    win.height = 200;
+    win.title = "Координаты лейблов";
+
+    gui.Label label1;
+    label1.text = "Я слева";
+    label1.x = 20;
+    label1.y = 30;
+
+    gui.Label label2;
+    label2.text = "Я справа";
+    label2.x = 200;
+    label2.y = 30;
+
+    win.add_child(label1);
+    win.add_child(label2);
+    win.show();
+}

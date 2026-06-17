@@ -1,0 +1,2 @@
+int points;        // int — тип данных, points — имя переменной
+Car ferrari;       // Car — класс, ferrari — имя объекта

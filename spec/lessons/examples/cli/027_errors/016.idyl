@@ -1,0 +1,4 @@
+main() {
+    array<int, 3> arr = [10, 20, 30];
+    int x = arr[5];
+}

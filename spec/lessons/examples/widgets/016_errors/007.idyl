@@ -1,0 +1,9 @@
+use gui;
+
+main() {
+    gui.Window win;
+    gui.Modal m;
+    win.add_child(m);  // ОШИБКА!
+    m.show_alert();
+    win.show();
+}

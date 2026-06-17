@@ -1,0 +1,9 @@
+use console;
+use encoding;
+
+main() {
+    dyn_array<string> encodings = encoding.list_encodings();
+    for (int i = 0; i < encodings.length(); i += 1) {
+        console.writeln(encodings[i]);
+    }
+}

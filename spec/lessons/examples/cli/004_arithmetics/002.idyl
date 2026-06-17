@@ -1,0 +1,11 @@
+use console;
+
+main() {
+    int A = 37;
+    int B = 10;
+
+    float C = A / B; // всё хорошо, присвоится 3.7
+    console.write(C, '\n');
+
+    int D = A / B; // ОШИБКА: нельзя присвоить дробное число в 'int'
+}

@@ -1,0 +1,8 @@
+use console;
+use math;
+
+main() {
+    console.writeln(math.sqrt(49));    // 7
+    console.writeln(math.sqrt(2));     // примерно 1.4142
+    console.writeln(math.sqrt(0));     // 0
+}

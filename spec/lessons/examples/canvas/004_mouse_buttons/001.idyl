@@ -1,0 +1,29 @@
+use console;
+use gui;
+
+void function on_mouse_pressed(gui.Canvas canvas, gui.MouseEvent e) {
+    console.writeln("Нажата кнопка мыши: ", e.mouse_button);
+    console.writeln("Координаты: ", e.x, "; ", e.y);
+}
+
+void function on_mouse_released(gui.Canvas canvas, gui.MouseEvent e) {
+    console.writeln("Отпущена кнопка мыши: ", e.mouse_button);
+}
+
+main() {
+    gui.Window win;
+    win.width = 430;
+    win.height = 300;
+    win.title = "Кнопки мыши";
+
+    gui.Canvas canvas;
+    canvas.x = 20;
+    canvas.y = 20;
+    canvas.width = 380;
+    canvas.height = 230;
+    canvas.on_mouse_pressed = on_mouse_pressed;
+    canvas.on_mouse_released = on_mouse_released;
+
+    win.add_child(canvas);
+    win.show();
+}

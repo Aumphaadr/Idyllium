@@ -1,0 +1,34 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 400;
+    win.height = 300;
+    win.title = "Вложенные рамки";
+
+    gui.Frame outer;
+    outer.x = 20;
+    outer.y = 20;
+    outer.width = 360;
+    outer.height = 250;
+    outer.title = "Основная рамка";
+
+    gui.Frame inner1;
+    inner1.x = 15;
+    inner1.y = 30;
+    inner1.width = 150;
+    inner1.height = 100;
+    inner1.title = "Блок 1";
+
+    gui.Frame inner2;
+    inner2.x = 180;
+    inner2.y = 30;
+    inner2.width = 150;
+    inner2.height = 100;
+    inner2.title = "Блок 2";
+
+    outer.add_child(inner1);
+    outer.add_child(inner2);
+    win.add_child(outer);
+    win.show();
+}

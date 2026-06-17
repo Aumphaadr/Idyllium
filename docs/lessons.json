@@ -1,0 +1,962 @@
+{
+  "version": 1,
+  "generatedAt": "2026-06-17T19:54:37.846Z",
+  "sourceRoot": "/home/nathaniel/IdylliumProjects/Idyllium/docs",
+  "sections": [
+    {
+      "id": "console",
+      "title": "Консоль",
+      "icon": "terminal",
+      "status": "ready",
+      "lessons": [
+        {
+          "id": "setup",
+          "title": "Установка Idyllium",
+          "subtitle": "Спойлер: она вам не понадобится",
+          "file": "content/console/setup.html",
+          "sourceFile": "cli/000_setup.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "hello",
+          "title": "Первая программа",
+          "subtitle": "Вывод данных в консоль — без путаницы и магии",
+          "file": "content/console/hello.html",
+          "sourceFile": "cli/001_hello.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review"
+          ]
+        },
+        {
+          "id": "variables",
+          "title": "Переменные и типы данных",
+          "subtitle": "Храните данные так, чтобы не запутаться ни вам, ни компьютеру",
+          "file": "content/console/variables.html",
+          "sourceFile": "cli/002_variables.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review",
+            "program-compile-failure"
+          ]
+        },
+        {
+          "id": "input",
+          "title": "Ввод данных",
+          "subtitle": "Программа становится живой, когда умеет слушать пользователя",
+          "file": "content/console/input.html",
+          "sourceFile": "cli/003_input.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review"
+          ]
+        },
+        {
+          "id": "arithmetics",
+          "title": "Арифметика",
+          "subtitle": "Предсказуемые операции без скрытых подводных камней",
+          "file": "content/console/arithmetics.html",
+          "sourceFile": "cli/004_arithmetics.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review",
+            "program-compile-failure"
+          ]
+        },
+        {
+          "id": "colors",
+          "title": "Улучшенный вывод текста",
+          "subtitle": "Как управлять форматом и внешним видом текста в консоли",
+          "file": "content/console/colors.html",
+          "sourceFile": "cli/005_colors.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review",
+            "review-console-colors-and-clear"
+          ]
+        },
+        {
+          "id": "transforms",
+          "title": "Преобразования данных",
+          "subtitle": "Как превратить число в строку и наоборот — без магии и неожиданностей",
+          "file": "content/console/transforms.html",
+          "sourceFile": "cli/006_transforms.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review",
+            "program-compile-failure"
+          ]
+        },
+        {
+          "id": "math-basics",
+          "title": "Базовые математические функции",
+          "subtitle": "Мощные инструменты из библиотеки math — без лишнего шума",
+          "file": "content/console/math-basics.html",
+          "sourceFile": "cli/007_math.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "if",
+          "title": "Условный оператор и тип bool",
+          "subtitle": "Как научить программу принимать решения",
+          "file": "content/console/if.html",
+          "sourceFile": "cli/008_if.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review"
+          ]
+        },
+        {
+          "id": "increment",
+          "title": "Инкремент и декремент",
+          "subtitle": "Как переменная может изменять саму себя — без магии",
+          "file": "content/console/increment.html",
+          "sourceFile": "cli/009_increment.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review",
+            "rewrite-increment-lesson-no-plus-plus"
+          ]
+        },
+        {
+          "id": "random",
+          "title": "Случайные числа",
+          "subtitle": "Как добавить в программу элемент неожиданности",
+          "file": "content/console/random.html",
+          "sourceFile": "cli/010_random.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "bool",
+          "title": "Логические операции",
+          "subtitle": "Как комбинировать условия, не путаясь в приоритетах",
+          "file": "content/console/bool.html",
+          "sourceFile": "cli/011_bool.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "loops",
+          "title": "Циклы",
+          "subtitle": "Как заставить компьютер делать одно и то же много раз — без копипасты",
+          "file": "content/console/loops.html",
+          "sourceFile": "cli/012_loops.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "array",
+          "title": "Массивы",
+          "subtitle": "Как хранить много однотипных данных без сотни переменных",
+          "file": "content/console/array.html",
+          "sourceFile": "cli/013_array.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review"
+          ]
+        },
+        {
+          "id": "char",
+          "title": "Тип char как элемент строки",
+          "subtitle": "Как устроены строки изнутри и как с ними работать посимвольно",
+          "file": "content/console/char.html",
+          "sourceFile": "cli/014_char.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review"
+          ]
+        },
+        {
+          "id": "dyn-array",
+          "title": "Динамические массивы",
+          "subtitle": "Массив, который сам подстраивается под ваши данные",
+          "file": "content/console/dyn-array.html",
+          "sourceFile": "cli/015_dyn_array.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review"
+          ]
+        },
+        {
+          "id": "arr-functions",
+          "title": "Функции для работы с массивами",
+          "subtitle": "max, min, sum, avg — анализ числовых данных без циклов",
+          "file": "content/console/arr-functions.html",
+          "sourceFile": "cli/016_arr_functions.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review"
+          ]
+        },
+        {
+          "id": "arr-methods",
+          "title": "Методы массивов",
+          "subtitle": "Поиск, сортировка, модификация — всё под рукой",
+          "file": "content/console/arr-methods.html",
+          "sourceFile": "cli/017_arr_methods.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "string-methods",
+          "title": "Методы строк",
+          "subtitle": "Анализ, изменение и разбор текста — без регулярных выражений и путаницы",
+          "file": "content/console/string-methods.html",
+          "sourceFile": "cli/018_string_methods.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "time",
+          "title": "Библиотека time",
+          "subtitle": "Работа со временем: от пауз до точных временных меток",
+          "file": "content/console/time.html",
+          "sourceFile": "cli/019_time.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "types",
+          "title": "Библиотека types",
+          "subtitle": "Как устроены числа «под капотом» — узнаем, чтобы не пугаться C++ и Java",
+          "file": "content/console/types.html",
+          "sourceFile": "cli/020_types.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "encoding",
+          "title": "Библиотека encoding",
+          "subtitle": "Как работать с кодировками текста — превращать символы в числа и обратно",
+          "file": "content/console/encoding.html",
+          "sourceFile": "cli/021_encoding.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review"
+          ]
+        },
+        {
+          "id": "functions",
+          "title": "Создание собственных функций",
+          "subtitle": "Как превратить повторяющиеся действия в переиспользуемые блоки кода",
+          "file": "content/console/functions.html",
+          "sourceFile": "cli/022_functions.html",
+          "status": "ready",
+          "reviewFlags": [
+            "program-compile-failure"
+          ]
+        },
+        {
+          "id": "libs",
+          "title": "Создание собственных библиотек",
+          "subtitle": "Как разбить программу на несколько файлов, чтобы не запутаться в коде",
+          "file": "content/console/libs.html",
+          "sourceFile": "cli/023_libs.html",
+          "status": "ready",
+          "reviewFlags": [
+            "program-compile-failure"
+          ]
+        },
+        {
+          "id": "files",
+          "title": "Работа с файлами",
+          "subtitle": "Как сохранить результаты программы и читать внешние данные",
+          "file": "content/console/files.html",
+          "sourceFile": "cli/024_files.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "math-advanced",
+          "title": "Продвинутые инструменты math",
+          "subtitle": "Тригонометрия, логарифмы и математические константы — мощь науки в доступной форме",
+          "file": "content/console/math-advanced.html",
+          "sourceFile": "cli/025_math.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "matrix",
+          "title": "Двумерные массивы",
+          "subtitle": "Матрицы, таблицы и игры на клетчатом поле — всё это начинается с двумерного массива",
+          "file": "content/console/matrix.html",
+          "sourceFile": "cli/026_matrix.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review",
+            "program-compile-failure"
+          ]
+        },
+        {
+          "id": "recursion",
+          "title": "Рекурсия",
+          "subtitle": "Функция, которая вызывает саму себя и умеет вовремя остановиться",
+          "file": "content/console/recursion.html",
+          "sourceFile": "docs/manual-content/console/recursion.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "errors",
+          "title": "Типичные ошибки",
+          "subtitle": "Справочник ошибок компиляции и выполнения — с примерами и пояснениями",
+          "file": "content/console/errors.html",
+          "sourceFile": "cli/027_errors.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review",
+            "program-compile-failure",
+            "teaching-errors"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "widgets",
+      "title": "Виджеты",
+      "icon": "widgets",
+      "status": "ready",
+      "lessons": [
+        {
+          "id": "window",
+          "title": "Первое графическое приложение",
+          "subtitle": "Создаём окно, добавляем кнопки и знакомимся с координатами",
+          "file": "content/widgets/window.html",
+          "sourceFile": "widgets/000_window.html",
+          "status": "ready",
+          "reviewFlags": [
+            "pre-canvas-widget-doc"
+          ]
+        },
+        {
+          "id": "button",
+          "title": "Кнопки и события",
+          "subtitle": "Как заставить кнопку что-то делать при нажатии",
+          "file": "content/widgets/button.html",
+          "sourceFile": "widgets/001_button.html",
+          "status": "ready",
+          "reviewFlags": [
+            "pre-canvas-widget-doc"
+          ]
+        },
+        {
+          "id": "label",
+          "title": "Виджет Label",
+          "subtitle": "Текстовая метка: координаты, размер шрифта, цвет и динамическое изменение",
+          "file": "content/widgets/label.html",
+          "sourceFile": "widgets/002_label.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review",
+            "pre-canvas-widget-doc",
+            "program-compile-failure"
+          ]
+        },
+        {
+          "id": "progressbar",
+          "title": "Виджет ProgressBar",
+          "subtitle": "Полоска прогресса — показываем, сколько осталось ждать",
+          "file": "content/widgets/progressbar.html",
+          "sourceFile": "widgets/003_progressbar.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review",
+            "pre-canvas-widget-doc",
+            "review-progressbar-colors"
+          ]
+        },
+        {
+          "id": "colors",
+          "title": "Цвета виджетов",
+          "subtitle": "text_color, background_color, border_color и библиотека colors без HEX-угадаек",
+          "file": "content/widgets/colors.html",
+          "sourceFile": "docs/manual-content/widgets/colors.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "spinbox",
+          "title": "Виджеты SpinBox и FloatSpinBox",
+          "subtitle": "Числовые поля с кнопками увеличения и уменьшения",
+          "file": "content/widgets/spinbox.html",
+          "sourceFile": "widgets/004_spinbox.html",
+          "status": "ready",
+          "reviewFlags": [
+            "pre-canvas-widget-doc"
+          ]
+        },
+        {
+          "id": "slider",
+          "title": "Виджет Slider",
+          "subtitle": "Ползунок для выбора значения из диапазона",
+          "file": "content/widgets/slider.html",
+          "sourceFile": "widgets/005_slider.html",
+          "status": "ready",
+          "reviewFlags": [
+            "pre-canvas-widget-doc"
+          ]
+        },
+        {
+          "id": "lineedit",
+          "title": "Виджет LineEdit",
+          "subtitle": "Однострочное и многострочное текстовые поля",
+          "file": "content/widgets/lineedit.html",
+          "sourceFile": "widgets/006_lineedit.html",
+          "status": "ready",
+          "reviewFlags": [
+            "pre-canvas-widget-doc"
+          ]
+        },
+        {
+          "id": "image",
+          "title": "Виджет Image",
+          "subtitle": "Как показать картинку в интерфейсе и не путать виджет с файлом",
+          "file": "content/widgets/image.html",
+          "sourceFile": "docs/manual-content/widgets/image.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "checkbox",
+          "title": "Виджет CheckBox",
+          "subtitle": "Флажок для выбора опции «вкл/выкл»",
+          "file": "content/widgets/checkbox.html",
+          "sourceFile": "widgets/007_checkbox.html",
+          "status": "ready",
+          "reviewFlags": [
+            "pre-canvas-widget-doc"
+          ]
+        },
+        {
+          "id": "radiobutton",
+          "title": "Виджет RadioButton",
+          "subtitle": "Переключатель для выбора одного варианта из группы",
+          "file": "content/widgets/radiobutton.html",
+          "sourceFile": "widgets/008_radiobutton.html",
+          "status": "ready",
+          "reviewFlags": [
+            "pre-canvas-widget-doc"
+          ]
+        },
+        {
+          "id": "frame",
+          "title": "Виджет Frame",
+          "subtitle": "Контейнер для группировки других виджетов",
+          "file": "content/widgets/frame.html",
+          "sourceFile": "widgets/009_frame.html",
+          "status": "ready",
+          "reviewFlags": [
+            "pre-canvas-widget-doc"
+          ]
+        },
+        {
+          "id": "combobox",
+          "title": "Виджет ComboBox",
+          "subtitle": "Выпадающий список для выбора одного варианта из нескольких",
+          "file": "content/widgets/combobox.html",
+          "sourceFile": "widgets/010_combobox.html",
+          "status": "ready",
+          "reviewFlags": [
+            "pre-canvas-widget-doc"
+          ]
+        },
+        {
+          "id": "visibility",
+          "title": "Видимость виджетов",
+          "subtitle": "Как скрывать и показывать элементы интерфейса",
+          "file": "content/widgets/visibility.html",
+          "sourceFile": "widgets/011_visibility.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review",
+            "pre-canvas-widget-doc"
+          ]
+        },
+        {
+          "id": "arrays",
+          "title": "Массивы виджетов",
+          "subtitle": "Как управлять группой однотипных элементов интерфейса",
+          "file": "content/widgets/arrays.html",
+          "sourceFile": "widgets/012_arrays.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review",
+            "pre-canvas-widget-doc"
+          ]
+        },
+        {
+          "id": "sender",
+          "title": "Отправители",
+          "subtitle": "Как узнать, какой виджет вызвал обработчик",
+          "file": "content/widgets/sender.html",
+          "sourceFile": "widgets/013_sender.html",
+          "status": "ready",
+          "reviewFlags": [
+            "pre-canvas-widget-doc"
+          ]
+        },
+        {
+          "id": "timer",
+          "title": "Объект Timer",
+          "subtitle": "Выполнение кода через равные промежутки времени",
+          "file": "content/widgets/timer.html",
+          "sourceFile": "widgets/014_timer.html",
+          "status": "ready",
+          "reviewFlags": [
+            "pre-canvas-widget-doc"
+          ]
+        },
+        {
+          "id": "modal",
+          "title": "Модальные окна",
+          "subtitle": "Диалоги для уведомлений, подтверждений и ввода данных",
+          "file": "content/widgets/modal.html",
+          "sourceFile": "widgets/015_modal.html",
+          "status": "ready",
+          "reviewFlags": [
+            "pre-canvas-widget-doc"
+          ]
+        },
+        {
+          "id": "errors",
+          "title": "Типичные ошибки",
+          "subtitle": "Как не попасть в ловушки и понять сообщения компилятора",
+          "file": "content/widgets/errors.html",
+          "sourceFile": "widgets/016_errors.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review",
+            "pre-canvas-widget-doc",
+            "program-compile-failure",
+            "teaching-errors"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "oop",
+      "title": "ООП",
+      "icon": "classes",
+      "status": "ready",
+      "lessons": [
+        {
+          "id": "intro",
+          "title": "Введение в ООП",
+          "subtitle": "От переменных и функций — к собственным типам данных",
+          "file": "content/oop/intro.html",
+          "sourceFile": "oop/000_intro.html",
+          "status": "ready",
+          "reviewFlags": [
+            "program-compile-failure"
+          ]
+        },
+        {
+          "id": "classes",
+          "title": "Создание класса",
+          "subtitle": "Как объявить свой тип данных и создавать объекты",
+          "file": "content/oop/classes.html",
+          "sourceFile": "oop/001_classes.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "fields-methods",
+          "title": "Свойства и методы",
+          "subtitle": "Как объекты объединяют данные и действия",
+          "file": "content/oop/fields-methods.html",
+          "sourceFile": "oop/002_fields_methods.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review",
+            "program-compile-failure"
+          ]
+        },
+        {
+          "id": "this",
+          "title": "Идентификатор this",
+          "subtitle": "Как методу узнать, какой объект его вызвал",
+          "file": "content/oop/this.html",
+          "sourceFile": "oop/003_this.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "modules",
+          "title": "Разбиение проекта по файлам",
+          "subtitle": "Как не заблудиться в собственном коде",
+          "file": "content/oop/modules.html",
+          "sourceFile": "oop/004_modules.html",
+          "status": "ready",
+          "reviewFlags": [
+            "program-compile-failure"
+          ]
+        },
+        {
+          "id": "arrays",
+          "title": "Массивы объектов",
+          "subtitle": "Как хранить много собак в одной упряжке",
+          "file": "content/oop/arrays.html",
+          "sourceFile": "oop/005_arrays.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review",
+            "program-compile-failure"
+          ]
+        },
+        {
+          "id": "constructor",
+          "title": "Конструктор и деструктор",
+          "subtitle": "Как инициализировать объекты и освобождать ресурсы",
+          "file": "content/oop/constructor.html",
+          "sourceFile": "oop/006_constructor.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review",
+            "program-compile-failure"
+          ]
+        },
+        {
+          "id": "composition",
+          "title": "Композиция",
+          "subtitle": "Как строить сложные объекты из простых",
+          "file": "content/oop/composition.html",
+          "sourceFile": "oop/007_composition.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review"
+          ]
+        },
+        {
+          "id": "inheritance",
+          "title": "Наследование",
+          "subtitle": "Как один класс может быть частным случаем другого",
+          "file": "content/oop/inheritance.html",
+          "sourceFile": "oop/008_inheritance.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "polymorphism",
+          "title": "Полиморфизм",
+          "subtitle": "Как потомок может изменить поведение унаследованного метода",
+          "file": "content/oop/polymorphism.html",
+          "sourceFile": "oop/009_polymorphism.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review",
+            "program-compile-failure"
+          ]
+        },
+        {
+          "id": "encapsulation",
+          "title": "Инкапсуляция",
+          "subtitle": "Как защитить данные от неконтролируемых изменений",
+          "file": "content/oop/encapsulation.html",
+          "sourceFile": "oop/010_encapsulation.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review",
+            "program-compile-failure"
+          ]
+        },
+        {
+          "id": "static",
+          "title": "Статические методы",
+          "subtitle": "Методы, которые принадлежат классу, а не объекту",
+          "file": "content/oop/static.html",
+          "sourceFile": "oop/011_static.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review",
+            "program-compile-failure"
+          ]
+        },
+        {
+          "id": "errors",
+          "title": "Типичные ошибки",
+          "subtitle": "Справочник ошибок при работе с классами и объектами",
+          "file": "content/oop/errors.html",
+          "sourceFile": "oop/012_errors.html",
+          "status": "ready",
+          "reviewFlags": [
+            "code-needs-review",
+            "program-compile-failure",
+            "teaching-errors"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "canvas",
+      "title": "Canvas",
+      "icon": "canvas",
+      "status": "ready",
+      "lessons": [
+        {
+          "id": "intro",
+          "title": "Первый Canvas",
+          "subtitle": "Холст как виджет и первый нарисованный круг",
+          "file": "content/canvas/intro.html",
+          "sourceFile": "docs/manual-content/canvas/intro.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "drawable",
+          "title": "Drawable-объекты",
+          "subtitle": "Rectangle, Circle, Line и их основные свойства",
+          "file": "content/canvas/drawable.html",
+          "sourceFile": "docs/manual-content/canvas/drawable.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "update",
+          "title": "Однократные и повторяющиеся действия",
+          "subtitle": "on_init, on_update и framerate_limit",
+          "file": "content/canvas/update.html",
+          "sourceFile": "docs/manual-content/canvas/update.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "keyboard",
+          "title": "События клавиатуры",
+          "subtitle": "on_key_pressed и on_key_released на простом примере",
+          "file": "content/canvas/keyboard.html",
+          "sourceFile": "docs/manual-content/canvas/keyboard.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "pressed-keys",
+          "title": "Плавное движение",
+          "subtitle": "Массив зажатых клавиш и движение в on_update",
+          "file": "content/canvas/pressed-keys.html",
+          "sourceFile": "docs/manual-content/canvas/pressed-keys.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "mouse-buttons",
+          "title": "Кнопки мыши",
+          "subtitle": "on_mouse_pressed, on_mouse_released и координаты клика",
+          "file": "content/canvas/mouse-buttons.html",
+          "sourceFile": "docs/manual-content/canvas/mouse-buttons.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "mouse-motion",
+          "title": "Движение мыши и колесо",
+          "subtitle": "on_mouse_move, on_mouse_scroll и простая реакция объектов",
+          "file": "content/canvas/mouse-motion.html",
+          "sourceFile": "docs/manual-content/canvas/mouse-motion.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "modules",
+          "title": "Разделение проекта на файлы",
+          "subtitle": "Canvas-код отдельно, главный файл отдельно",
+          "file": "content/canvas/modules.html",
+          "sourceFile": "docs/manual-content/canvas/modules.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "text",
+          "title": "Шрифт и текст",
+          "subtitle": "drawable.Font, drawable.Text и координаты курсора",
+          "file": "content/canvas/text.html",
+          "sourceFile": "docs/manual-content/canvas/text.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "sprites",
+          "title": "Текстуры и спрайты",
+          "subtitle": "Texture, Sprite и управление по WASD",
+          "file": "content/canvas/sprites.html",
+          "sourceFile": "docs/manual-content/canvas/sprites.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "object-arrays",
+          "title": "Массивы объектов",
+          "subtitle": "Несколько Rectangle-объектов и метод rotate()",
+          "file": "content/canvas/object-arrays.html",
+          "sourceFile": "docs/manual-content/canvas/object-arrays.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "temporary-objects",
+          "title": "Временные объекты",
+          "subtitle": "tmp, dyn_array и круги, появляющиеся по клику",
+          "file": "content/canvas/temporary-objects.html",
+          "sourceFile": "docs/manual-content/canvas/temporary-objects.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "rectangle-hit-test",
+          "title": "Точка в прямоугольной области",
+          "subtitle": "Левый, правый, верхний и нижний край",
+          "file": "content/canvas/rectangle-hit-test.html",
+          "sourceFile": "docs/manual-content/canvas/rectangle-hit-test.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "circle-hit-test",
+          "title": "Точка в круглой области",
+          "subtitle": "Расстояние до центра и теорема Пифагора",
+          "file": "content/canvas/circle-hit-test.html",
+          "sourceFile": "docs/manual-content/canvas/circle-hit-test.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "circle-collisions",
+          "title": "Круглые коллизии",
+          "subtitle": "Когда два круга касаются друг друга",
+          "file": "content/canvas/circle-collisions.html",
+          "sourceFile": "docs/manual-content/canvas/circle-collisions.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "rectangle-collisions",
+          "title": "Прямоугольные коллизии",
+          "subtitle": "Алгоритм опровержения касания прямоугольников",
+          "file": "content/canvas/rectangle-collisions.html",
+          "sourceFile": "docs/manual-content/canvas/rectangle-collisions.html",
+          "status": "ready",
+          "reviewFlags": []
+        }
+      ]
+    },
+    {
+      "id": "json",
+      "title": "JSON",
+      "icon": "json",
+      "status": "ready",
+      "lessons": [
+        {
+          "id": "intro",
+          "title": "Работа с файлами: повторение",
+          "subtitle": "Зачем вообще понадобился JSON, если у нас уже есть file",
+          "file": "content/json/intro.html",
+          "sourceFile": "docs/manual-content/json/intro.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "first-object",
+          "title": "Первый JSON-объект",
+          "subtitle": "Ключи, значения, json.Object и json.Value",
+          "file": "content/json/first-object.html",
+          "sourceFile": "docs/manual-content/json/first-object.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "reading",
+          "title": "Чтение JSON-данных",
+          "subtitle": "parse, get, to_int, to_string и проверка типов",
+          "file": "content/json/reading.html",
+          "sourceFile": "docs/manual-content/json/reading.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "arrays",
+          "title": "JSON-массивы",
+          "subtitle": "Списки значений внутри JSON",
+          "file": "content/json/arrays.html",
+          "sourceFile": "docs/manual-content/json/arrays.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "nested-objects",
+          "title": "Вложенные объекты",
+          "subtitle": "Объект как значение другого объекта",
+          "file": "content/json/nested-objects.html",
+          "sourceFile": "docs/manual-content/json/nested-objects.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "object-arrays",
+          "title": "Массивы объектов",
+          "subtitle": "Несколько игроков в одном JSON-файле",
+          "file": "content/json/object-arrays.html",
+          "sourceFile": "docs/manual-content/json/object-arrays.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "array-methods",
+          "title": "Методы массивов",
+          "subtitle": "length, at, add, set, insert, pop, remove, clear",
+          "file": "content/json/array-methods.html",
+          "sourceFile": "docs/manual-content/json/array-methods.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "object-methods",
+          "title": "Методы объектов",
+          "subtitle": "length, has, get, add, set, remove, keys",
+          "file": "content/json/object-methods.html",
+          "sourceFile": "docs/manual-content/json/object-methods.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "oop",
+          "title": "JSON и ООП",
+          "subtitle": "Методы to_json и from_json у собственного класса",
+          "file": "content/json/oop.html",
+          "sourceFile": "docs/manual-content/json/oop.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "errors",
+          "title": "Типичные ошибки",
+          "subtitle": "Невалидный JSON, лишние запятые, комментарии и неверные типы",
+          "file": "content/json/errors.html",
+          "sourceFile": "docs/manual-content/json/errors.html",
+          "status": "ready",
+          "reviewFlags": []
+        }
+      ]
+    },
+    {
+      "id": "examples",
+      "title": "Примеры задач",
+      "icon": "examples",
+      "status": "ready",
+      "lessons": [
+        {
+          "id": "calc",
+          "title": "Калькулятор",
+          "subtitle": "",
+          "file": "content/examples/calc.html",
+          "sourceFile": "examples/000_calc.html",
+          "status": "ready",
+          "reviewFlags": [
+            "missing-html-file"
+          ]
+        }
+      ]
+    }
+  ]
+}

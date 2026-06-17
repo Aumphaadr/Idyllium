@@ -1,0 +1,54 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 200;
+    win.title = "Выбор цвета";
+
+    gui.Label title;
+    title.text = "Любимый цвет:";
+    title.x = 20;
+    title.y = 15;
+
+    gui.RadioButton rb1;
+    rb1.x = 20;
+    rb1.y = 45;
+    rb1.text = "Красный";
+    rb1.group = "colors";
+    rb1.is_selected = true;
+
+    gui.RadioButton rb2;
+    rb2.x = 20;
+    rb2.y = 75;
+    rb2.text = "Зелёный";
+    rb2.group = "colors";
+
+    gui.RadioButton rb3;
+    rb3.x = 20;
+    rb3.y = 105;
+    rb3.text = "Синий";
+    rb3.group = "colors";
+
+    gui.Label result;
+    result.x = 20;
+    result.y = 150;
+    result.text = "Выбрано: Красный";
+
+    rb1.on_change = void function() {
+        result.text = "Выбрано: Красный";
+    };
+    rb2.on_change = void function() {
+        result.text = "Выбрано: Зелёный";
+    };
+    rb3.on_change = void function() {
+        result.text = "Выбрано: Синий";
+    };
+
+    win.add_child(title);
+    win.add_child(rb1);
+    win.add_child(rb2);
+    win.add_child(rb3);
+    win.add_child(result);
+    win.show();
+}

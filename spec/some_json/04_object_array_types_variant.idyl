@@ -1,0 +1,24 @@
+// Alternative design: json.Object and json.Array.
+// This is attractive for autocomplete, but less convenient with the current architecture.
+
+use console;
+use json;
+
+main() {
+    // Possible typed entry points:
+    json.Object root = json.parse_object("{\"name\":\"Mira\",\"scores\":[5,4,5]}");
+    json.Array scores = root.get_array("scores");
+
+    console.writeln(root.get_string("name"));
+    console.writeln(scores.at_int(0));
+
+    // Problem:
+    // json.parse() cannot always return json.Object, because valid JSON can also be:
+    // 123
+    // "hello"
+    // [1, 2, 3]
+    // null
+    //
+    // If json.parse() returns json.Value, then we need a safe way to convert json.Value to json.Object/json.Array.
+    // Current Idyllium has no downcast syntax, so the MVP should avoid depending on this.
+}

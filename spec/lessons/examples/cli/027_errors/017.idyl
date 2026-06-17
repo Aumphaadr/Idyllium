@@ -1,0 +1,6 @@
+use console;
+
+main() {
+    string s = "ABC";
+    char c = s[10];
+}

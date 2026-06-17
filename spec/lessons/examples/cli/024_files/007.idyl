@@ -1,0 +1,13 @@
+use console;
+use file;
+
+main() {
+    file.istream fin = file.open("input.txt", "read");
+    string line1 = fin.read_line(); // "Кирка\n"
+    string line2 = fin.read_line(); // "Топор\n"
+    string line3 = fin.read_line(); // "Меч"
+    fin.close();
+
+    array<string, 3> t = [line1, line2, line3];
+    console.writeln(t);
+}

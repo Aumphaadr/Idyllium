@@ -1,0 +1,66 @@
+use file;
+use json;
+
+main() {
+    json.Object root;
+
+    json.Value name_value("John Doe");
+    root.add("name", name_value);
+
+    json.Value age_value;
+    age_value.set_int(30);
+    root.add("age", age_value);
+
+    json.Value wife_value; // null by default
+    root.add("wife", wife_value);
+
+    // editing existing field:
+    if (root.has("wife")) {
+        root.set("wife", json.Value("Jane Doe"));
+    }    
+
+    json.Object address;
+    address.add("street", json.Value("123 Main St"));
+    address.add("city", json.Value("Anytown"));
+    address.add("state", json.Value("CA"));
+    address.add("zip", json.Value(12345));
+    root.add("address", json.Value(address));
+
+    json.Array phone_numbers;
+    json.Object home_phone;
+    home_phone.add("type", json.Value("home"));
+    home_phone.add("number", json.Value("555-1234"));
+    phone_numbers.add(json.Value(home_phone));
+
+    json.Object work_phone;
+    work_phone.add("type", json.Value("work"));
+    work_phone.add("number", json.Value("555-5678"));
+    phone_numbers.add(json.Value(work_phone));
+
+    root.add("phone_numbers", json.Value(phone_numbers));
+    root.add("is_active", json.Value(true));
+
+    json.Array chaotic;
+    chaotic.add(json.Value(1));
+    chaotic.add(json.Value("two"));
+    json.Object three_object;
+    three_object.add("three", json.Value(3));
+    chaotic.add(json.Value(three_object));
+    json.Array nested_numbers;
+    nested_numbers.add(json.Value(4));
+    nested_numbers.add(json.Value(5));
+    chaotic.add(json.Value(nested_numbers));
+    chaotic.add(json.NULL);
+    root.add("chaotic_array", json.Value(chaotic));
+
+    // create compact JSON string
+    string compact_json = root.to_json();
+
+    // create pretty JSON string with indentation of 4 spaces
+    string pretty_json = root.to_pretty_json(4);
+
+    // write to file
+    file.ostream f = file.open("output.json", "write");
+    f.write_line(pretty_json);
+    f.close();
+}

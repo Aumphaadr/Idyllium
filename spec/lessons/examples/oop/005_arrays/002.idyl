@@ -1,0 +1,10 @@
+use console;
+
+main() {
+    array<string, 6> names = ["Барсик", "Мурка", "Рекс", "Тузик", "Дружок", "Мурзик"];
+
+    for (int i = 0; i < 6; i = i + 1) {
+        int L = names[i].length();   // длина строки
+        console.writeln(names[i], " -> ", L);
+    }
+}

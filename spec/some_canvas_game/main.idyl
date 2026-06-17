@@ -1,0 +1,31 @@
+// main.idyl
+
+use gui;
+use my_cvs;   // импортируем наш модуль с графикой
+
+main() {
+    gui.Window win;
+    win.width = 800;
+    win.height = 600;
+    win.title = "Моя игра";
+    
+    gui.Canvas canvas;
+    canvas.x = 0;
+    canvas.y = 0;
+    canvas.width = 800;
+    canvas.height = 600;
+    canvas.framerate_limit = 50;
+    
+    // Привязываем функции из модуля my_cvs
+    canvas.on_init = my_cvs.init_scene;      // один раз при создании
+    canvas.on_key_pressed = my_cvs.on_key_pressed; // при нажатии клавиши
+    canvas.on_key_released = my_cvs.on_key_released; // при отпускании клавиши
+    canvas.on_mouse_pressed = my_cvs.on_mouse_pressed; // при нажатии мыши
+    canvas.on_mouse_released = my_cvs.on_mouse_released; // при отпускании мыши
+    canvas.on_mouse_move = my_cvs.on_mouse_move; // при движении мыши
+    canvas.on_mouse_scroll = my_cvs.on_mouse_scroll; // при движении мыши
+    canvas.on_update = my_cvs.on_update;  // каждый кадр
+    
+    win.add_child(canvas);
+    win.show();
+}

@@ -1,0 +1,2 @@
+string res1 = noun + ' ' + adj; // "пицца вкусная"
+string res2 = adj + ' ' + noun; // "вкусная пицца"

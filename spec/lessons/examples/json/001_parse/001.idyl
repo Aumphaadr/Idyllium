@@ -1,0 +1,26 @@
+use console;
+use json;
+
+main() {
+    string text = "{\"name\":\"Mira\",\"age\":12,\"is_admin\":false,\"scores\":[5,4,5]}";
+
+    if (json.is_valid(text) == false) {
+        console.writeln("Invalid JSON");
+        return;
+    }
+
+    json.Value root_value = json.parse(text);
+    json.Object root = root_value.to_object();
+
+    string name = root.get("name").to_string();
+    int age = root.get("age").to_int();
+    bool is_admin = root.get("is_admin").to_bool();
+
+    json.Array scores = root.get("scores").to_array();
+    int first_score = scores.at(0).to_int();
+
+    console.writeln("Имя: ", name);
+    console.writeln("Возраст: ", age);
+    console.writeln("Админ: ", is_admin);
+    console.writeln("Первая оценка: ", first_score);
+}

@@ -1,0 +1,40 @@
+use gui;
+use colors;
+
+main() {
+    gui.Window win;
+    win.width = 500;
+    win.height = 260;
+    win.title = "Роли цвета";
+    win.background_color = colors.RGB(245, 247, 250);
+
+    gui.Button button;
+    button.x = 40;
+    button.y = 40;
+    button.width = 180;
+    button.height = 44;
+    button.text = "Запустить";
+    button.text_color = colors.WHITE;
+    button.background_color = colors.RGB(27, 31, 44);
+    button.border_color = colors.RGB(54, 62, 88);
+
+    gui.Label caption;
+    caption.x = 40;
+    caption.y = 110;
+    caption.text = "text_color меняет цвет текста";
+    caption.text_color = colors.RGB(27, 31, 44);
+    caption.background_color = colors.TRANSPARENT;
+
+    gui.Frame panel;
+    panel.x = 260;
+    panel.y = 40;
+    panel.width = 180;
+    panel.height = 120;
+    panel.background_color = colors.RGBA(34, 145, 188, 0.2);
+    panel.border_color = colors.RGB(34, 145, 188);
+
+    win.add_child(button);
+    win.add_child(caption);
+    win.add_child(panel);
+    win.show();
+}

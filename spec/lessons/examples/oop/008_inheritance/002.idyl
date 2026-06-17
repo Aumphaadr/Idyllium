@@ -1,0 +1,18 @@
+class Car {
+    string brand;
+    string model;
+    int year;
+    float engine_volume;
+
+    void function start() {
+        console.writeln("Двигатель запущен");
+    }
+
+    void function stop() {
+        console.writeln("Двигатель заглушен");
+    }
+}
+
+class Truck extends Car {
+    float load_capacity;   // только то, чего нет в Car
+}

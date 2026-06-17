@@ -1,0 +1,157 @@
+<!-- Hero -->
+    
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Проблема: одинаковый вывод</h2>
+      <p>Создадим класс <code>Cat</code> с именем и методом <code>meow()</code>. В методе просто выведем «Кот мяукнул!»:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+class Cat {
+    string name;
+
+    void function meow() {
+        console.writeln("Кот мяукнул!");
+    }
+}
+
+main() {
+    Cat cat1;
+    cat1.name = "Барсик";
+
+    Cat cat2;
+    cat2.name = "Мурзик";
+
+    cat1.meow();
+    cat2.meow();
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Кот мяукнул!
+Кот мяукнул!</idyl-output-block>
+
+      <p>В консоли не видно, <strong>какой именно кот</strong> мяукнул. Оба вывели одинаковое сообщение. Как это исправить?</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Решение: идентификатор this</h2>
+      <p>Внутри метода есть специальный идентификатор <strong><code>this</code></strong>, который ссылается на объект, вызвавший этот метод. Через <code>this</code> можно обращаться к свойствам и методам текущего объекта.</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+class Cat {
+    string name;
+
+    void function meow() {
+        console.writeln(this.name, " мяукнул!");
+    }
+}
+
+main() {
+    Cat cat1;
+    cat1.name = "Барсик";
+
+    Cat cat2;
+    cat2.name = "Мурзик";
+
+    cat1.meow();  // в этот момент this указывает на cat1
+    cat2.meow();  // в этот момент this указывает на cat2
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Барсик мяукнул!
+Мурзик мяукнул!</idyl-output-block>
+
+      <p>Теперь видно, какой кот мяукнул. Магия <code>this</code> позволяет методу понять, с каким объектом он работает.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Как это работает</h2>
+      <p>Когда мы пишем <code>cat1.meow()</code>, внутри метода <code>meow()</code> идентификатор <code>this</code> становится ссылкой на <code>cat1</code>.</p>
+      <p>При вызове <code>cat2.meow()</code> — <code>this</code> указывает на <code>cat2</code>.</p>
+      <p><code>this</code> — это как если бы методу невидимо передавался параметр «тот объект, от которого меня вызвали».</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Проблема: вывод объекта на консоль</h2>
+      <p>Что будет, если попробовать вывести объект напрямую?</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+class Cat {
+    string name;
+}
+
+main() {
+    Cat cat1;
+    cat1.name = "Барсик";
+    console.writeln(cat1);
+}
+</script></idyl-code-block>
+
+      <div class="error-message">
+        main.idyl:10: error: cannot print object of class 'Cat' directly
+      </div>
+
+      <p>Компилятор не знает, как вывести объект <code>Cat</code> в консоль. Нужно объяснить это ему самостоятельно.</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Решение: метод info()</h2>
+      <p>Добавим в класс метод <code>info()</code>, который возвращает строковое представление объекта:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+class Cat {
+    string name;
+    int age;
+    string color;
+
+    void function info() {
+        console.writeln("Кот по кличке ", this.name, ": ", this.age, " лет, цвет ", this.color);
+    }
+}
+
+main() {
+    Cat cat1;
+    cat1.name = "Барсик";
+    cat1.age = 3;
+    cat1.color = "рыжий";
+
+    Cat cat2;
+    cat2.name = "Мурзик";
+    cat2.age = 5;
+    cat2.color = "белый";
+
+    cat1.info();
+    cat2.info();
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Кот по кличке Барсик: 3 лет, цвет рыжий
+Кот по кличке Мурзик: 5 лет, цвет белый</idyl-output-block>
+
+      <p>Метод <code>info()</code> использует <code>this</code>, чтобы получить доступ к свойствам текущего объекта, и выводит удобочитаемую строку.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Итог</h2>
+      <ul>
+        <li><code>this</code> — это ссылка на объект, вызвавший метод.</li>
+        <li>Через <code>this</code> можно обращаться к свойствам и методам текущего объекта.</li>
+        <li><code>this</code> неявно передаётся в каждый нестатический метод.</li>
+        <li>Вывести объект на консоль напрямую нельзя — нужно создать метод, который вернёт строковое представление (например, <code>info()</code>).</li>
+      </ul>
+    </div>
+
+    <!-- Lesson navigation -->

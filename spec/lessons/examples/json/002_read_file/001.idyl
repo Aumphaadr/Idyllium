@@ -1,0 +1,19 @@
+use console;
+use file;
+use json;
+
+main() {
+    file.istream fin = file.open("input.json", "read");
+    string text = fin.read_all();
+    fin.close();
+
+    json.Value root_value = json.parse(text);
+    json.Object root = root_value.to_object();
+
+    string name = root.get("name").to_string();
+    string city = root.get("city").to_string();
+    json.Array scores = root.get("scores").to_array();
+
+    console.writeln(name, " живёт в городе ", city);
+    console.writeln("Оценок в массиве: ", scores.length());
+}

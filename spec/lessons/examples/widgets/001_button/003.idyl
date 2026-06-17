@@ -1,0 +1,43 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 400;
+    win.height = 200;
+    win.title = "Битва за лейбл";
+
+    // Текстовая метка (пока пустая)
+    gui.Label label;
+    label.x = 150;
+    label.y = 30;
+    label.text = "???";
+
+    // Левая кнопка
+    gui.Button leftBtn;
+    leftBtn.text = "Мой лейбл!";
+    leftBtn.x = 30;
+    leftBtn.y = 100;
+    leftBtn.width = 120;
+
+    // Правая кнопка
+    gui.Button rightBtn;
+    rightBtn.text = "Нет, мой лейбл!";
+    rightBtn.x = 250;
+    rightBtn.y = 100;
+    rightBtn.width = 120;
+
+    // Левая кнопка: устанавливает текст "Мой лейбл!"
+    leftBtn.on_click = void function() {
+        label.text = "Мой лейбл!";
+    };
+
+    // Правая кнопка: устанавливает текст "Нет, мой лейбл!"
+    rightBtn.on_click = void function() {
+        label.text = "Нет, мой!";
+    };
+
+    win.add_child(label);
+    win.add_child(leftBtn);
+    win.add_child(rightBtn);
+    win.show();
+}

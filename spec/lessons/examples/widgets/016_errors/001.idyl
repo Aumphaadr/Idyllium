@@ -1,0 +1,11 @@
+use gui;
+
+main() {
+    gui.Window win;
+    gui.Button btn;
+    btn.text = "Я невидимка";
+    btn.x = 20;
+    btn.y = 20;
+    // win.add_child(btn); ← забыли!
+    win.show();
+}

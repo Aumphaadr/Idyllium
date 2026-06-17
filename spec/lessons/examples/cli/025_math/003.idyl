@@ -1,0 +1,2 @@
+console.writeln("arcsin(1) = ", math.asin(1)); // π/2
+console.writeln("arccos(0) = ", math.acos(0)); // π/2

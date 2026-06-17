@@ -1,0 +1,12 @@
+use console;
+
+main() {
+    int NA = 20;
+    int NB = 30;
+
+    string SA = to_string(NA); // из числа 20 порождается строка "20"
+    string SB = to_string(NB); // из числа 30 порождается строка "30"
+
+    console.writeln("Числовая сумма: ", NA + NB);
+    console.writeln("Строковая сумма: ", SA + SB);
+}

@@ -1,0 +1,6 @@
+gui.Button corner_btn;
+corner_btn.text = "Угол";
+corner_btn.x = 0;
+corner_btn.y = 0;
+
+win.add_child(corner_btn);

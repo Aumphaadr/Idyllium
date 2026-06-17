@@ -1,0 +1,26 @@
+use console;
+
+class Cat {
+    string name;
+    int age;
+    string color;
+
+    void function info() {
+        console.writeln("Кот по кличке ", this.name, ": ", this.age, " лет, цвет ", this.color);
+    }
+}
+
+main() {
+    Cat cat1;
+    cat1.name = "Барсик";
+    cat1.age = 3;
+    cat1.color = "рыжий";
+
+    Cat cat2;
+    cat2.name = "Мурзик";
+    cat2.age = 5;
+    cat2.color = "белый";
+
+    cat1.info();
+    cat2.info();
+}

@@ -1,0 +1,12 @@
+use console;
+use encoding;
+
+main() {
+    char ch = 'Я';
+    int code_win = encoding.char_to_int(ch, "windows-1251");
+    int code_koi = encoding.char_to_int(ch, "koi8-r");
+    int code_utf = encoding.char_to_int(ch, "utf-8");
+    console.writeln("'Я' в Windows-1251: ", code_win);
+    console.writeln("'Я' в KOI8-R: ", code_koi);
+    console.writeln("'Я' в UTF-8: ", code_utf);
+}

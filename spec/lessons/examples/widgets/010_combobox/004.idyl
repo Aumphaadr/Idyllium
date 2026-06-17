@@ -1,0 +1,38 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 150;
+    win.title = "Выбор цвета";
+
+    gui.ComboBox combo;
+    combo.x = 20;
+    combo.y = 20;
+    combo.width = 200;
+    combo.add_item("Красный");
+    combo.add_item("Зелёный");
+    combo.add_item("Синий");
+    combo.selected_index = 0;
+
+    gui.Button btn;
+    btn.text = "Показать выбор";
+    btn.x = 20;
+    btn.y = 70;
+    btn.width = 150;
+
+    gui.Label label;
+    label.x = 20;
+    label.y = 110;
+    label.text = "";
+
+    btn.on_click = void function() {
+        string msg = "Вы выбрали: " + combo.selected_text;
+        label.text = msg;
+    };
+
+    win.add_child(combo);
+    win.add_child(btn);
+    win.add_child(label);
+    win.show();
+}

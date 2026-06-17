@@ -1,0 +1,7 @@
+use gui;
+
+main() {
+    gui.Window win;
+    gui.Label label;
+    label.text = 42;  // ОШИБКА!
+}

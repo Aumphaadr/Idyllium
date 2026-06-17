@@ -1,0 +1,90 @@
+<div class="docs-section">
+  <h2>Когда два прямоугольника касаются</h2>
+  <p>
+    С прямоугольниками удобно думать наоборот. Сначала предположим, что они
+    касаются. Потом попробуем это опровергнуть.
+  </p>
+  <p>
+    Если один прямоугольник целиком правее, левее, выше или ниже другого, значит,
+    касания нет. Если ни одно опровержение не сработало, прямоугольники
+    пересекаются.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use colors;
+use drawable;
+use gui;
+
+drawable.Rectangle wall;
+drawable.Rectangle player;
+
+bool function rectangles_touch(drawable.Rectangle a, drawable.Rectangle b) {
+    if (a.x > b.x + b.width) {
+        return false;
+    }
+    if (a.y > b.y + b.height) {
+        return false;
+    }
+    if (b.x > a.x + a.width) {
+        return false;
+    }
+    if (b.y > a.y + a.height) {
+        return false;
+    }
+    return true;
+}
+
+void function init(gui.Canvas canvas) {
+    wall.x = 260;
+    wall.y = 80;
+    wall.width = 90;
+    wall.height = 90;
+    wall.fill_color = colors.RGB(34, 145, 188);
+
+    player.x = 20;
+    player.y = 100;
+    player.width = 70;
+    player.height = 50;
+}
+
+void function update(gui.Canvas canvas, float delta_time) {
+    player.x += 2;
+    if (player.x > 430) {
+        player.x = 20;
+    }
+
+    if (rectangles_touch(player, wall)) {
+        player.fill_color = colors.RED;
+    } else {
+        player.fill_color = colors.GREEN;
+    }
+
+    canvas.fill(colors.RGB(20, 24, 32));
+    canvas.draw(wall);
+    canvas.draw(player);
+}
+
+main() {
+    gui.Window win;
+    win.width = 500;
+    win.height = 320;
+
+    gui.Canvas canvas;
+    canvas.x = 20;
+    canvas.y = 20;
+    canvas.width = 450;
+    canvas.height = 250;
+    canvas.framerate_limit = 60;
+    canvas.on_init = init;
+    canvas.on_update = update;
+
+    win.add_child(canvas);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <p>
+    Функция <code>rectangles_touch()</code> выглядит длинной, зато её можно
+    вызывать в любой игре, где нужны прямоугольные столкновения.
+  </p>
+</div>

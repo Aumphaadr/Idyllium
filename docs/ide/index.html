@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Idyllium Web IDE</title>
+  <link rel="icon" href="assets/favicon-32x32.png" sizes="32x32">
+  <link rel="icon" href="assets/idyllium.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="theme-dark">
+  <header class="topbar">
+    <div class="brand">Idyllium <span class="idyllium-version">v1.0.0</span></div>
+    <div class="actions">
+      <div class="theme-wrapper">
+        <button id="theme-button" type="button" aria-expanded="false">Внешний вид</button>
+        <div id="theme-menu" class="theme-menu" hidden>
+          <button id="theme-dark-button" type="button">Тема: тёмная</button>
+          <button id="theme-light-button" type="button">Тема: светлая</button>
+          <div class="theme-menu-separator" aria-hidden="true"></div>
+          <div class="font-size-row">
+            <span>Размер шрифта</span>
+            <div class="font-size-control">
+              <button id="font-size-decrease" type="button" aria-label="Уменьшить размер шрифта">−</button>
+              <input id="font-size-input" type="number" min="10" max="32" step="1" value="16" aria-label="Размер шрифта в редакторе">
+              <span>px</span>
+              <button id="font-size-increase" type="button" aria-label="Увеличить размер шрифта">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <a class="doc-link" href="../index.html" target="_blank" rel="noopener noreferrer">Документация</a>
+      <div class="color-picker-wrapper">
+        <button id="color-picker-button" type="button" aria-expanded="false">Генератор цвета</button>
+        <div id="color-picker-menu" class="color-picker-menu" hidden>
+          <div class="color-picker-grid">
+            <div class="color-picker-controls">
+              <label class="color-channel-row">
+                <span>R</span>
+                <input id="color-red-slider" class="color-slider color-slider-red" type="range" min="0" max="255" step="1" value="34">
+                <span class="color-number-control">
+                  <button class="color-step-button" type="button" data-color-channel="red" data-color-step="-1" aria-label="Уменьшить R">−</button>
+                  <input id="color-red-input" type="number" min="0" max="255" step="1" value="34" aria-label="Значение R">
+                  <button class="color-step-button" type="button" data-color-channel="red" data-color-step="1" aria-label="Увеличить R">+</button>
+                </span>
+              </label>
+              <label class="color-channel-row">
+                <span>G</span>
+                <input id="color-green-slider" class="color-slider color-slider-green" type="range" min="0" max="255" step="1" value="145">
+                <span class="color-number-control">
+                  <button class="color-step-button" type="button" data-color-channel="green" data-color-step="-1" aria-label="Уменьшить G">−</button>
+                  <input id="color-green-input" type="number" min="0" max="255" step="1" value="145" aria-label="Значение G">
+                  <button class="color-step-button" type="button" data-color-channel="green" data-color-step="1" aria-label="Увеличить G">+</button>
+                </span>
+              </label>
+              <label class="color-channel-row">
+                <span>B</span>
+                <input id="color-blue-slider" class="color-slider color-slider-blue" type="range" min="0" max="255" step="1" value="188">
+                <span class="color-number-control">
+                  <button class="color-step-button" type="button" data-color-channel="blue" data-color-step="-1" aria-label="Уменьшить B">−</button>
+                  <input id="color-blue-input" type="number" min="0" max="255" step="1" value="188" aria-label="Значение B">
+                  <button class="color-step-button" type="button" data-color-channel="blue" data-color-step="1" aria-label="Увеличить B">+</button>
+                </span>
+              </label>
+              <label class="color-channel-row">
+                <span>A</span>
+                <input id="color-alpha-slider" class="color-slider color-slider-alpha" type="range" min="0" max="1" step="0.01" value="1">
+                <span class="color-number-control color-alpha-control">
+                  <button class="color-step-button" type="button" data-color-channel="alpha" data-color-step="-0.01" aria-label="Уменьшить A">−</button>
+                  <input id="color-alpha-input" type="number" min="0" max="1" step="0.01" value="1" aria-label="Значение A">
+                  <button class="color-step-button" type="button" data-color-channel="alpha" data-color-step="0.01" aria-label="Увеличить A">+</button>
+                </span>
+              </label>
+            </div>
+            <div class="color-preview-wrap">
+              <div id="color-preview" class="color-preview" aria-label="Выбранный цвет"></div>
+            </div>
+          </div>
+          <div class="color-code-list">
+            <div class="color-code-row">
+              <span>RGB</span>
+              <code id="color-rgb-code">colors.RGB(34, 145, 188)</code>
+              <button id="copy-rgb-button" type="button">Копировать</button>
+            </div>
+            <div class="color-code-row">
+              <span>HEX</span>
+              <code id="color-hex-code">colors.HEX("#2291bc")</code>
+              <button id="copy-hex-button" type="button">Копировать</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="run-actions">
+      <button id="run-button" class="run-button" type="button" title="Запустить: Ctrl+Enter" aria-label="Запустить: Ctrl+Enter">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg>
+        <span>Запустить</span>
+      </button>
+      <button id="stop-button" class="stop-button" type="button" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10H7z"></path></svg>
+        <span>Остановить</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="files">
+      <div class="pane-title files-title">
+        <span>Файлы</span>
+        <div class="file-actions">
+          <button id="new-file-button" class="icon-button" type="button" title="Новый файл" aria-label="Новый файл">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 3h8l4 4v14H6z"></path>
+              <path d="M14 3v5h5"></path>
+              <path d="M12 11v6"></path>
+              <path d="M9 14h6"></path>
+            </svg>
+          </button>
+          <button id="new-folder-button" class="icon-button" type="button" title="Новая папка" aria-label="Новая папка">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 6h7l2 2h9v11H3z"></path>
+              <path d="M12 11v5"></path>
+              <path d="M9.5 13.5h5"></path>
+            </svg>
+          </button>
+          <div class="upload-wrapper">
+            <button id="upload-button" class="icon-button" type="button" title="Загрузить файл с компьютера" aria-label="Загрузить файл с компьютера" aria-expanded="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 16V4"></path>
+                <path d="M7 9l5-5 5 5"></path>
+                <path d="M4 16v4h16v-4"></path>
+              </svg>
+            </button>
+            <div id="upload-menu" class="upload-menu" hidden>
+              <button id="drop-area" class="drop-area" type="button">
+                <span>Перетащите файлы сюда</span>
+                <small>или нажмите, чтобы выбрать .idyl, .txt, ассеты или ZIP-проект</small>
+              </button>
+            </div>
+          </div>
+          <button id="download-project-button" class="icon-button" type="button" title="Скачать проект" aria-label="Скачать проект">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 4v12"></path>
+              <path d="M7 11l5 5 5-5"></path>
+              <path d="M4 20h16"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div id="file-list" class="file-list"></div>
+      <div id="file-context-menu" class="file-context-menu" hidden></div>
+      <input id="upload-input" type="file" multiple hidden>
+    </aside>
+
+    <div class="column-resizer" data-resizer="files" title="Изменить ширину панели файлов"></div>
+
+    <section class="editor-pane">
+      <div class="pane-title editor-titlebar">
+        <span id="editor-title">main.idyl</span>
+        <button id="format-button" class="pane-action-button" type="button">Форматировать</button>
+      </div>
+      <div class="editor-shell">
+        <div id="monaco-editor" class="monaco-editor-host"></div>
+        <div id="asset-viewer" class="asset-viewer" hidden></div>
+        <div id="legacy-editor" class="legacy-editor" hidden>
+          <div id="line-numbers" class="line-numbers" aria-hidden="true">1</div>
+          <div class="editor-stack">
+            <pre id="highlight" class="highlight" aria-hidden="true"><code></code></pre>
+            <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+            <div id="completion-popup" class="completion-popup" hidden></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="column-resizer" data-resizer="runtime" title="Изменить ширину панели запуска"></div>
+
+    <section class="runtime-pane">
+      <div class="output-pane">
+        <div class="pane-title">Вывод</div>
+        <pre id="output"></pre>
+        <div id="console-input-panel" class="console-input-panel" hidden>
+          <input id="console-input" type="text" autocomplete="off" spellcheck="false" aria-label="Ввод для программы">
+          <button id="console-input-submit" type="button">Ввести</button>
+        </div>
+      </div>
+      <div id="runtime-row-resizer" class="runtime-row-resizer" title="Изменить высоту вывода"></div>
+      <div class="preview-pane">
+        <div class="pane-title">Предварительный просмотр</div>
+        <iframe id="gui-frame" title="Idyllium GUI preview" src="gui-preview.html"></iframe>
+      </div>
+    </section>
+  </main>
+
+  <script src="monaco/vs/loader.js"></script>
+  <script src="assets/idyllium-web-core.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

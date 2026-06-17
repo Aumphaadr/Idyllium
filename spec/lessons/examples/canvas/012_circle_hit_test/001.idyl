@@ -1,0 +1,56 @@
+use colors;
+use drawable;
+use gui;
+use math;
+
+drawable.Circle ball;
+
+bool function point_inside_circle(int x, int y) {
+    int dx = x - ball.x;
+    int dy = y - ball.y;
+    float distance = math.sqrt(to_float(dx * dx + dy * dy));
+    return distance <= ball.radius;
+}
+
+void function redraw(gui.Canvas canvas) {
+    canvas.fill(colors.RGB(20, 24, 32));
+    canvas.draw(ball);
+}
+
+void function init(gui.Canvas canvas) {
+    ball.x = 160;
+    ball.y = 110;
+    ball.radius = 50;
+    ball.fill_color = colors.RGB(34, 145, 188);
+    redraw(canvas);
+}
+
+void function on_mouse_pressed(gui.Canvas canvas, gui.MouseEvent e) {
+    if (point_inside_circle(e.x, e.y)) {
+        if (e.mouse_button == "LEFT") {
+            ball.fill_color = colors.RGB(255, 210, 80);
+        }
+        if (e.mouse_button == "RIGHT") {
+            ball.fill_color = colors.RGB(230, 92, 110);
+        }
+        redraw(canvas);
+    }
+}
+
+main() {
+    gui.Window win;
+    win.width = 360;
+    win.height = 280;
+    win.title = "Точка в круге";
+
+    gui.Canvas canvas;
+    canvas.x = 20;
+    canvas.y = 20;
+    canvas.width = 300;
+    canvas.height = 210;
+    canvas.on_init = init;
+    canvas.on_mouse_pressed = on_mouse_pressed;
+
+    win.add_child(canvas);
+    win.show();
+}

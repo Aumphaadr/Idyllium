@@ -1,0 +1,6 @@
+use console;
+
+main() {
+    int A = "345"; // НЕЛЬЗЯ
+    int B = to_int("345"); // МОЖНО
+}

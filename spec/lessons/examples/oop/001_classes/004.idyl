@@ -1,0 +1,6 @@
+int points = 200;              // одно значение
+
+Car my_car;                    // много значений
+my_car.model = "Chrysler";     // строка
+my_car.color = "black";        // строка
+my_car.year = 1994;            // число

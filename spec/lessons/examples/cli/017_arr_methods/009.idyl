@@ -1,0 +1,4 @@
+dyn_array<int> J = [8, 9, 10];
+int last = J.pop(); // last = 10
+console.writeln("Удалено: ", last);
+console.writeln("Теперь: ", J);

@@ -1,0 +1,25 @@
+use console;
+
+class Brick {
+    string color;
+    float mass;
+    string material;
+
+    void function fall_on_head() {
+        console.writeln("Бам! На голову упал кирпич!");
+    }
+}
+
+main() {
+    Brick b1;
+    b1.color = "красный";
+    b1.mass = 2.5;
+    b1.material = "керамика";
+
+    Brick b2;
+    b2.color = "силикатный";
+    b2.mass = 3.0;
+    b2.material = "известняк";
+
+    b1.fall_on_head();
+}

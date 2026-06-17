@@ -1,0 +1,26 @@
+// Expected runtime errors should be short, copyable and understandable.
+// These examples intentionally show what should go wrong.
+
+use console;
+use json;
+
+main() {
+    json.Value root = json.parse("{\"name\":\"Mira\",\"scores\":[5,4,5]}");
+
+    // Missing key:
+    // main.idyl:11: runtime error: json object has no key 'age'
+    int age = root.get_int("age");
+
+    // Wrong type:
+    // main.idyl:15: runtime error: json field 'name' is string, expected int
+    int bad_name = root.get_int("name");
+
+    // Wrong receiver type:
+    // main.idyl:19: runtime error: json value is object, expected array for at_int()
+    int first = root.at_int(0);
+
+    // Array bounds:
+    // main.idyl:23: runtime error: json array index 5 out of bounds (size 3, valid indices 0-2)
+    json.Value scores = root.get("scores");
+    console.writeln(scores.at_int(5));
+}

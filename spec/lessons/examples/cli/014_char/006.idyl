@@ -1,0 +1,5 @@
+string T = "Журавль";
+
+for (int i = 0; i < T.length(); i = i + 1) {
+    console.writeln(T[i]);
+}

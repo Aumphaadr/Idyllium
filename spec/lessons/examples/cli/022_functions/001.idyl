@@ -1,0 +1,4 @@
+int A = math.round(15.9); // 16
+float B = math.sqrt(49); // 7.0
+string C = to_string(287); // "287"
+bool D = C.contains('5'); // false

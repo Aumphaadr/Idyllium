@@ -1,0 +1,7 @@
+use console;
+
+main() {
+    console.writeln("Первая строка");
+    console.writeln("Вторая строка");
+    console.writeln("Третья строка");
+}

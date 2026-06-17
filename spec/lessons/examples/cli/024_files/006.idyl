@@ -1,0 +1,1 @@
+file.istream fin = file.open("input.txt", "read");

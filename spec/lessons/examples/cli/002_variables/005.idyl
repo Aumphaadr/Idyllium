@@ -1,0 +1,8 @@
+// main.idyl
+use console;
+
+main() {
+    int W;
+    W = 5;
+    console.write("Кот сожрал", W, "кг корма!", '\n');
+}

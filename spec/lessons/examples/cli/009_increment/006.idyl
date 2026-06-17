@@ -1,0 +1,14 @@
+use console;
+
+main() {
+    int attempts = 1;
+
+    console.writeln("Попытка ", attempts, ": введите пароль");
+    attempts = attempts + 1; // счётчик увеличился, теперь равен 2
+
+    console.writeln("Попытка ", attempts, ": введите пароль");
+    attempts = attempts + 1; // счётчик увеличился, теперь равен 3
+
+    console.writeln("Попытка ", attempts, ": введите пароль");
+    attempts = attempts + 1; // счётчик увеличился, теперь равен 4
+}

@@ -1,0 +1,14 @@
+use gui;
+
+main() {
+    gui.Window win;
+    gui.Button btn;
+    
+    // ОШИБКА: sender должен быть gui.Button, а не gui.Label
+    btn.on_click = void function(gui.Label sender) {
+        sender.text = "Нажато";
+    };
+    
+    win.add_child(btn);
+    win.show();
+}

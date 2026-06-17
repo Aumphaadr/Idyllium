@@ -1,0 +1,8 @@
+use gui;
+use random;
+
+main() {
+    gui.Window win;
+    gui.Label label;
+    label.text = random.create_int(1, 6);  // ОШИБКА!
+}

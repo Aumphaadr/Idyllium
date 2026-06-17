@@ -1,0 +1,14 @@
+use console;
+
+main() {
+    int A1 = 38;
+    int A2 = 39;
+    int A3 = 40;
+    int A4 = 41;
+    int B = 10;
+
+    int R1 = div(A1, B); // 3
+    int R2 = div(A2, B); // 3
+    int R3 = div(A3, B); // 4
+    int R4 = div(A4, B); // 4
+}

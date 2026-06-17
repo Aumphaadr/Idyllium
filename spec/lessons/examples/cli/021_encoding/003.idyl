@@ -1,0 +1,10 @@
+use console;
+use encoding;
+
+main() {
+    char ch = 'A';
+    int code_utf8 = encoding.char_to_int(ch, "utf-8");
+    int code_ascii = encoding.char_to_int(ch, "ascii");
+    console.writeln("Символ '", ch, "' в UTF-8: ", code_utf8);
+    console.writeln("Символ '", ch, "' в ASCII: ", code_ascii);
+}

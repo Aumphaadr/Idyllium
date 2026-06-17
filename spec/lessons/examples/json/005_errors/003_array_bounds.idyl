@@ -1,0 +1,8 @@
+use json;
+
+main() {
+    json.Value root_value = json.parse("[5,4,5]");
+    json.Array scores = root_value.to_array();
+
+    int score = scores.at(5).to_int();
+}

@@ -1,0 +1,23 @@
+use console;
+
+main() {
+    int A = console.get_int();
+    if (A > 5) {
+        console.writeln("A больше 5");
+    }
+
+    int B = console.get_int();
+    if (B == 20) {
+        console.writeln("B равно 20");
+    }
+
+    int C = console.get_int();
+    if (C <= 11) {
+        console.writeln("C меньше или равно 11");
+    }
+
+    int D = console.get_int();
+    if (D != A) {
+        console.writeln("D не равно A");
+    }
+}

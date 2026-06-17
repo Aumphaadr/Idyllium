@@ -1,0 +1,5 @@
+use console;
+
+main() {
+    console.write("Кот", '\n', "хочет", '\n', "кушать");
+}

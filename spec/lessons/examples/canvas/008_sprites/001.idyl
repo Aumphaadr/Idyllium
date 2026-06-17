@@ -1,0 +1,54 @@
+use colors;
+use drawable;
+use gui;
+
+drawable.Texture hero_texture;
+drawable.Sprite hero;
+
+void function redraw(gui.Canvas canvas) {
+    canvas.fill(colors.RGB(20, 24, 32));
+    canvas.draw(hero);
+}
+
+void function init(gui.Canvas canvas) {
+    hero_texture.load_from_file("player.png");
+    hero.texture = hero_texture;
+    hero.x = 180;
+    hero.y = 120;
+    hero.set_scale(0.5, 0.5);
+    redraw(canvas);
+}
+
+void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
+    if (e.key == "W") {
+        hero.move(0, -8);
+    }
+    if (e.key == "S") {
+        hero.move(0, 8);
+    }
+    if (e.key == "A") {
+        hero.move(-8, 0);
+    }
+    if (e.key == "D") {
+        hero.move(8, 0);
+    }
+    redraw(canvas);
+}
+
+main() {
+    gui.Window win;
+    win.width = 460;
+    win.height = 320;
+    win.title = "Спрайт";
+
+    gui.Canvas canvas;
+    canvas.x = 20;
+    canvas.y = 20;
+    canvas.width = 400;
+    canvas.height = 240;
+    canvas.on_init = init;
+    canvas.on_key_pressed = on_key_pressed;
+
+    win.add_child(canvas);
+    win.show();
+}

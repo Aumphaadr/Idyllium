@@ -1,0 +1,74 @@
+Детальные спецификации
+
+json.Value
+Конструкторы (создание):
+
+json.Value() — создаёт JSON-null.
+json.Value(string s) — строка.
+json.Value(int i) — целое число.
+json.Value(float f) — дробное число.
+json.Value(bool b) — булево.
+json.Value(json.Object obj) — объект.
+json.Value(json.Array arr) — массив.
+
+Методы проверки типа:
+
+bool is_null()
+bool is_string()
+bool is_int() — истина, если число было целым (без точки и экспоненты).
+bool is_float() — истина, если число.
+bool is_bool()
+bool is_object()
+bool is_array()
+
+Методы извлечения (если тип не совпадает — ошибка времени выполнения):
+
+string to_string()
+int to_int() — для целых чисел
+float to_float() — для любых чисел.
+bool to_bool()
+json.Object to_object()
+json.Array to_array()
+
+Константа:
+
+json.NULL — относится к типу json.Value
+
+Сериализация:
+
+string to_json() — плотная JSON-строка без лишних пробелов.
+string to_pretty_json(int indent = 2) — многострочный формат с отступами по indent пробелов на уровень.
+
+Примечание: если корнем JSON является не объект/массив, а, скажем, число, to_json() тоже работает, возвращая "42" и т.п. Это допустимо стандартом.
+
+json.Object
+Конструктор:
+
+json.Object() — пустой объект.
+
+Методы:
+
+int length() — количество ключей.
+bool has(string key) — проверка наличия ключа.
+json.Value get(string key) — получение значения (если ключа нет — ошибка).
+void add(string key, json.Value value) — добавить значение (если ключ уже есть — ошибка).
+void set(string key, json.Value value) — изменить значение (если ключа нет — ошибка).
+void remove(string key) — удалить ключ (если ключа нет — ошибка).
+
+dyn_array<string> keys() — возвращает массив ключей.
+
+json.Array
+Конструктор:
+
+json.Array() — пустой массив.
+
+Методы:
+
+int length() — количество элементов.
+json.Value at(int index) — чтение элемента по индексу.
+void set(int index, json.Value value) — замена элемента.
+void add(json.Value value) — добавить в конец.
+void insert(int index, json.Value value) — вставить перед позицией index.
+json.Value pop() — удалить и вернуть последний элемент.
+void remove(int index) — удалить элемент по индексу.
+void clear() — очистить массив.

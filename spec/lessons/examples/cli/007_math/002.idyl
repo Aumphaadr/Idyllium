@@ -1,0 +1,8 @@
+use console;
+use math;
+
+main() {
+    console.writeln(math.abs(-15)); // 15
+    console.writeln(math.abs(42));  // 42
+    console.writeln(math.abs(-3.7)); // 3.7
+}

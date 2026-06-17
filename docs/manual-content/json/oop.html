@@ -1,0 +1,92 @@
+<div class="docs-section">
+  <h2>Класс и сохранение</h2>
+  <p>
+    Если у вас уже есть класс, JSON можно использовать как мост между объектом
+    программы и текстовым файлом сохранения.
+  </p>
+  <p>
+    Сделаем класс <code>Player</code> и добавим ему метод <code>to_json()</code>,
+    который собирает свойства игрока в <code>json.Object</code>.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use json;
+
+class Player {
+public:
+    string name;
+    int level;
+
+    json.Object function to_json() {
+        json.Object obj;
+        obj.add("name", json.Value(this.name));
+        obj.add("level", json.Value(this.level));
+        return obj;
+    }
+}
+</script></idyl-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>Восстановление из JSON</h2>
+  <p>
+    Обратный метод можно назвать <code>from_json()</code>. Он получает
+    <code>json.Object</code> и раскладывает значения обратно по полям объекта.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use json;
+
+class Player {
+public:
+    string name;
+    int level;
+
+    void function from_json(json.Object obj) {
+        this.name = obj.get("name").to_string();
+        this.level = obj.get("level").to_int();
+    }
+}
+</script></idyl-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>Полный пример</h2>
+  <idyl-code-block><script type="text/plain">
+use console;
+use json;
+
+class Player {
+public:
+    string name;
+    int level;
+
+    json.Object function to_json() {
+        json.Object obj;
+        obj.add("name", json.Value(this.name));
+        obj.add("level", json.Value(this.level));
+        return obj;
+    }
+
+    void function from_json(json.Object obj) {
+        this.name = obj.get("name").to_string();
+        this.level = obj.get("level").to_int();
+    }
+}
+
+main() {
+    Player player;
+    player.name = "Liam";
+    player.level = 7;
+
+    json.Object saved = player.to_json();
+    console.writeln(saved.to_json());
+
+    Player loaded;
+    loaded.from_json(saved);
+    console.writeln(loaded.name, ": ", loaded.level);
+}
+</script></idyl-code-block>
+  <idyl-output-block>{"name":"Liam","level":7}
+Liam: 7</idyl-output-block>
+</div>

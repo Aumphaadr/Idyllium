@@ -1,0 +1,29 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 150;
+    win.title = "Отложенное действие";
+
+    gui.Button btn;
+    btn.text = "Нажми меня";
+    btn.x = 50;
+    btn.y = 50;
+    btn.width = 200;
+
+    gui.Timer timer;
+    timer.interval = 3000;  // 3 секунды
+
+    timer.on_tick = void function() {
+        btn.visible = false;
+        timer.stop();  // останавливаем, чтобы не срабатывало снова
+    };
+
+    btn.on_click = void function(gui.Button sender) {
+        timer.start();
+    };
+
+    win.add_child(btn);
+    win.show();
+}

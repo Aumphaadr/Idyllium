@@ -1,0 +1,38 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 500;
+    win.height = 400;
+    win.title = "Коллекция виджетов";
+
+    // Текстовая метка
+    gui.Label label;
+    label.text = "Это текстовая метка";
+    label.x = 20;
+    label.y = 20;
+
+    // Поле для ввода чисел
+    gui.SpinBox spin;
+    spin.x = 20;
+    spin.y = 70;
+    spin.width = 100;
+    spin.value = 5;
+    spin.min = 0;
+    spin.max = 100;
+
+    // Выпадающий список
+    gui.ComboBox combo;
+    combo.x = 20;
+    combo.y = 130;
+    combo.width = 150;
+    combo.add_item("Колдун");
+    combo.add_item("Жрец");
+    combo.add_item("Лекарь");
+    combo.selected_index = 0;
+
+    win.add_child(label);
+    win.add_child(spin);
+    win.add_child(combo);
+    win.show();
+}

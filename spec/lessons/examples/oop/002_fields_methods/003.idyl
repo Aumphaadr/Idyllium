@@ -1,0 +1,9 @@
+class Cat {
+    string name;
+    void function meow() { }
+}
+
+main() {
+    Cat.meow();     // ОШИБКА!
+    string n = Cat.name;  // ОШИБКА!
+}

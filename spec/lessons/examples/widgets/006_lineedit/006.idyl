@@ -1,0 +1,18 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 200;
+    win.title = "TextEdit";
+
+    gui.TextEdit textarea;
+    textarea.x = 20;
+    textarea.y = 20;
+    textarea.width = 310;
+    textarea.height = 130;
+    textarea.placeholder = "Введите многострочный текст...";
+
+    win.add_child(textarea);
+    win.show();
+}

@@ -1,0 +1,73 @@
+<div class="docs-section">
+  <h2>События клавиатуры</h2>
+  <p>
+    Canvas умеет реагировать на клавиши. Для нажатия есть
+    <code>on_key_pressed</code>, для отпускания — <code>on_key_released</code>.
+  </p>
+  <p>
+    В примере прямоугольник стоит на месте. Мы меняем только цвет его рамки:
+    <code>R</code> делает рамку красной, <code>G</code> — зелёной,
+    <code>B</code> — синей. Когда клавишу отпускают, рамка снова становится
+    прозрачной.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use colors;
+use drawable;
+use gui;
+
+drawable.Rectangle player;
+
+void function redraw(gui.Canvas canvas) {
+    canvas.fill(colors.RGB(20, 24, 32));
+    canvas.draw(player);
+}
+
+void function init(gui.Canvas canvas) {
+    player.x = 150;
+    player.y = 90;
+    player.width = 100;
+    player.height = 60;
+    player.fill_color = colors.RGB(34, 145, 188);
+    player.border_width = 5;
+    player.border_color = colors.RGBA(0, 0, 0, 0);
+    redraw(canvas);
+}
+
+void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
+    if (e.key == "R") {
+        player.border_color = colors.RED;
+    }
+    if (e.key == "G") {
+        player.border_color = colors.GREEN;
+    }
+    if (e.key == "B") {
+        player.border_color = colors.BLUE;
+    }
+    redraw(canvas);
+}
+
+void function on_key_released(gui.Canvas canvas, gui.KeyboardEvent e) {
+    player.border_color = colors.RGBA(0, 0, 0, 0);
+    redraw(canvas);
+}
+
+main() {
+    gui.Window win;
+    win.width = 440;
+    win.height = 300;
+
+    gui.Canvas canvas;
+    canvas.x = 20;
+    canvas.y = 20;
+    canvas.width = 400;
+    canvas.height = 230;
+    canvas.on_init = init;
+    canvas.on_key_pressed = on_key_pressed;
+    canvas.on_key_released = on_key_released;
+
+    win.add_child(canvas);
+    win.show();
+}
+</script></idyl-code-block>
+</div>

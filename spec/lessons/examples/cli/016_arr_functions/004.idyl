@@ -1,0 +1,5 @@
+array<int, 4> C = [10, 20, 30, 40];
+float a = avg(C); // 25.0 (float), а не 25 (int)
+
+// Аналог вручную:
+float manual_avg = sum(C) / C.length(); // то же самое

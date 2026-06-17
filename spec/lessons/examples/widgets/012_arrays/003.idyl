@@ -1,0 +1,23 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 250;
+    win.title = "Динамические поля";
+
+    dyn_array<gui.LineEdit> inputs;
+
+    // Создаём 5 полей ввода
+    for (int i = 0; i < 5; i = i + 1) {
+        gui.LineEdit ed;
+        ed.x = 20;
+        ed.y = 20 + i * 35;
+        ed.width = 260;
+        ed.placeholder = "Поле " + to_string(i);
+        inputs.add(ed);
+        win.add_child(ed);
+    }
+
+    win.show();
+}

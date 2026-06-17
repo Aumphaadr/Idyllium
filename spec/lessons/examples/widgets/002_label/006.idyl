@@ -1,0 +1,31 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 180;
+    win.title = "Цветные лейблы";
+
+    gui.Label red;
+    red.text = "Красный текст";
+    red.x = 50;
+    red.y = 30;
+    red.color = "#FF0000";
+
+    gui.Label green;
+    green.text = "Зелёный текст";
+    green.x = 50;
+    green.y = 70;
+    green.color = "#00FF00";
+
+    gui.Label blue;
+    blue.text = "Синий текст";
+    blue.x = 50;
+    blue.y = 110;
+    blue.color = "#0000FF";
+
+    win.add_child(red);
+    win.add_child(green);
+    win.add_child(blue);
+    win.show();
+}

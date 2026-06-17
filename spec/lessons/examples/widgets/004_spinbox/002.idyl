@@ -1,0 +1,20 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 150;
+    win.title = "Настройки SpinBox";
+
+    gui.SpinBox spin;
+    spin.x = 20;
+    spin.y = 20;
+    spin.width = 120;
+    spin.value = 50;
+    spin.min = 0;
+    spin.max = 100;
+    spin.step = 5;
+
+    win.add_child(spin);
+    win.show();
+}

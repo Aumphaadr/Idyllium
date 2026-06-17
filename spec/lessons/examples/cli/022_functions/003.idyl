@@ -1,0 +1,18 @@
+use console;
+
+// описание функции
+int function modul_chisla(int chislo) {
+    int res = chislo;
+    if (chislo < 0) {
+        res = -chislo;
+    }
+    return res;
+}
+
+main() {
+    int A = modul_chisla(-23); // функция приняла -23 и породила 23
+    console.writeln(A);
+
+    int B = modul_chisla(-40); // функция приняла -40 и породила 40
+    console.writeln(B);
+}

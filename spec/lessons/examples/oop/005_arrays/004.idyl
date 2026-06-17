@@ -1,0 +1,11 @@
+array<Dog, 7> dogs;
+
+// ... заполнение собак ...
+
+dogs[0].bark();
+dogs[1].bark();
+dogs[2].bark();
+dogs[3].bark();
+dogs[4].bark();
+dogs[5].bark();
+dogs[6].bark();

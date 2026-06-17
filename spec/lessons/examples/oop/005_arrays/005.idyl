@@ -1,0 +1,7 @@
+array<Dog, 7> dogs;
+
+// ... заполнение собак ...
+
+for (int i = 0; i < 7; i = i + 1) {
+    dogs[i].bark();
+}

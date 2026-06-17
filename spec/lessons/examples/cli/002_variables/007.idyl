@@ -1,0 +1,10 @@
+// main.idyl
+use console;
+
+main() {
+    int money = 20000;
+    console.write("У вас ", money, " денег\n");
+
+    money = 25000;    
+    console.write("У вас ", money, " денег\n");
+}

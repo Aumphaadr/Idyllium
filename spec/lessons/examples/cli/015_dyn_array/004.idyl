@@ -1,0 +1,5 @@
+dyn_array<string> items = ["Верстак", "Кирка", "Меч"];
+console.writeln("Было: ", items);
+
+items.add("Уголь");
+console.writeln("Стало: ", items);

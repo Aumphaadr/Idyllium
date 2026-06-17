@@ -1,0 +1,16 @@
+use gui;
+
+main() {
+    gui.Window win;
+    array<gui.Button, 3> btns;
+    
+    for (int i = 0; i < 3; i = i + 1) {
+        btns[i].x = 20;
+        btns[i].y = 20 + i * 40;
+        btns[i].text = "Кнопка " + to_string(i);
+        win.add_child(btns[i]);
+    }
+    
+    btns[5].text = "Ошибка";  // индекс 5 не существует
+    win.show();
+}

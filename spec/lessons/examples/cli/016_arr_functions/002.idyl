@@ -1,0 +1,7 @@
+// Работает:
+array<int, 4> nums = [10, 5, 8, 12];
+int m = max(nums); // OK
+
+// Не работает:
+array<string, 2> words = ["кот", "собака"];
+string w = max(words); // Ошибка: max() не работает со строками

@@ -1,0 +1,32 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 220;
+    win.title = "Sender в LineEdit";
+
+    array<gui.LineEdit, 3> inputs;
+    gui.Label result;
+    result.x = 20;
+    result.y = 160;
+    result.text = "Измени текст в любом поле";
+
+    // Создаём три поля ввода
+    for (int i = 0; i < 3; i = i + 1) {
+        inputs[i].x = 20;
+        inputs[i].y = 20 + i * 40;
+        inputs[i].width = 250;
+        inputs[i].placeholder = "Поле " + to_string(i);
+
+        // Общий обработчик с sender
+        inputs[i].on_change = void function(gui.LineEdit sender) {
+            result.text = "Изменено поле: " + sender.placeholder;
+        };
+
+        win.add_child(inputs[i]);
+    }
+
+    win.add_child(result);
+    win.show();
+}

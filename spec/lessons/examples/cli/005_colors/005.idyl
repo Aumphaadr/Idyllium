@@ -1,0 +1,5 @@
+use console;
+
+main() {
+    console.writeln("До Tab", '\t', "После Tab");
+}

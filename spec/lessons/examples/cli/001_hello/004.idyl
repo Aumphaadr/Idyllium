@@ -1,0 +1,7 @@
+// hello.idyl
+use console;
+
+main() {
+    console.write("Сейчас выведем несколько чисел:\n");
+    console.write(11, '\n', 22, '\n', 33, '\n', 44);
+}

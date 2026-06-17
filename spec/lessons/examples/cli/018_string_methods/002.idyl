@@ -1,0 +1,7 @@
+string a = "123";
+string b = "12.5";
+string c = "abc";
+
+console.writeln(a.is_int());     // true
+console.writeln(b.is_float());  // true
+console.writeln(c.is_int());     // false

@@ -1,0 +1,30 @@
+class Animal {
+    string name;
+    string species;
+    int age;
+    float weight;
+    string color;
+}
+
+main() {
+    Animal animal1;
+    animal1.name = "Шарик";
+    animal1.species = "Собака";
+    animal1.age = 3;
+    animal1.weight = 12.5;
+    animal1.color = "рыжий";
+
+    Animal animal2;
+    animal2.name = "Мурка";
+    animal2.species = "Кошка";
+    animal2.age = 2;
+    animal2.weight = 4.2;
+    animal2.color = "белый";
+
+    Animal animal3;
+    animal3.name = "Кеша";
+    animal3.species = "Попугай";
+    animal3.age = 1;
+    animal3.weight = 0.3;
+    animal3.color = "зелёный";
+}

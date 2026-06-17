@@ -1,0 +1,29 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 120;
+    win.title = "Мгновенная реакция";
+
+    gui.ComboBox combo;
+    combo.x = 20;
+    combo.y = 20;
+    combo.width = 200;
+    combo.add_item("Красный");
+    combo.add_item("Зелёный");
+    combo.add_item("Синий");
+
+    gui.Label label;
+    label.x = 20;
+    label.y = 70;
+    label.text = "Выберите цвет";
+
+    combo.on_change = void function() {
+        label.text = "Вы выбрали: " + combo.selected_text;
+    };
+
+    win.add_child(combo);
+    win.add_child(label);
+    win.show();
+}

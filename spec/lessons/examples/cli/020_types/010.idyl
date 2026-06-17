@@ -1,0 +1,3 @@
+types.float32 f = -12.5;
+string bits = f.to_bin();
+console.writeln(bits);

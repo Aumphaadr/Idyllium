@@ -1,0 +1,13 @@
+use console;
+use math;
+
+main() {
+    float v0 = 50.0; // начальная скорость, м/с
+    float deg = 45.0; // угол в градусах
+    float rad = math.to_radians(deg);
+    float g = 9.81; // ускорение свободного падения
+
+    // Формула: L = v₀² · sin(2α) / g
+    float L = (v0 * v0 * math.sin(2.0 * rad)) / g;
+    console.writeln("Дальность полёта при 45°: ", L, " м");
+}

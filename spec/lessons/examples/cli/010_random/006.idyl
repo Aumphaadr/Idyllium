@@ -1,0 +1,5 @@
+float raw = random.create_float(7, 8);
+console.writeln("Сырое случайное число: ", raw);
+
+float res = math.floor(raw, 3); // округляем
+console.writeln("Округлено до 3 знаков: ", res);

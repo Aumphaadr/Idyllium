@@ -1,0 +1,13 @@
+use gui;
+
+main() {
+    gui.Window win;
+    
+    btn.on_click = void function() {  // ОШИБКА: btn ещё не объявлена
+        console.writeln("Нажато");
+    };
+    
+    gui.Button btn;
+    win.add_child(btn);
+    win.show();
+}

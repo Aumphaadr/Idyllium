@@ -1,0 +1,25 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 250;
+    win.title = "Скрыть все";
+
+    array<gui.Button, 5> btns;
+
+    for (int i = 0; i < 5; i = i + 1) {
+        btns[i].x = 20;
+        btns[i].y = 20 + i * 35;
+        btns[i].width = 120;
+        btns[i].text = "Кнопка " + to_string(i);
+        btns[i].on_click = void function() {
+            for (int j = 0; j < 5; j = j + 1) {
+                btns[j].visible = false;
+            }
+        };
+        win.add_child(btns[i]);
+    }
+
+    win.show();
+}

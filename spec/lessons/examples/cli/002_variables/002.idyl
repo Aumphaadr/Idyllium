@@ -1,0 +1,12 @@
+// main.idyl
+use console;
+
+main() {
+    int N = 42;
+    float F = 16.3;
+    string S = "И вообще, я крутой!";
+
+    console.write(N, '\n');
+    console.write(F, '\n');
+    console.write(S, '\n');
+}

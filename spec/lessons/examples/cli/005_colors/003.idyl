@@ -1,0 +1,3 @@
+console.write("Первая строка", '\n');
+console.write("Вторая строка", '\n');
+console.write("Третья строка", '\n');

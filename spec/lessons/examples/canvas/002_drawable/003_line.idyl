@@ -1,0 +1,35 @@
+use colors;
+use drawable;
+use gui;
+
+drawable.Line line;
+
+void function init(gui.Canvas canvas) {
+    canvas.fill(colors.RGB(24, 28, 38));
+
+    line.x1 = 40;
+    line.y1 = 180;
+    line.x2 = 340;
+    line.y2 = 50;
+    line.color = colors.RGB(255, 210, 80);
+    line.thickness = 6;
+
+    canvas.draw(line);
+}
+
+main() {
+    gui.Window win;
+    win.width = 430;
+    win.height = 300;
+    win.title = "Line";
+
+    gui.Canvas canvas;
+    canvas.x = 20;
+    canvas.y = 20;
+    canvas.width = 380;
+    canvas.height = 230;
+    canvas.on_init = init;
+
+    win.add_child(canvas);
+    win.show();
+}

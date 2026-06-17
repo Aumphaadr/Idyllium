@@ -1,0 +1,8 @@
+string noun = "пицца";
+string adj = "вкусная";
+char space = ' ';
+char mark = '!';
+
+console.writeln(noun + adj);
+console.writeln(noun + space + adj);
+console.writeln(noun + space + adj + mark);

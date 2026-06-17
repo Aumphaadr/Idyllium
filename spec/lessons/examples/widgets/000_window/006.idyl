@@ -1,0 +1,12 @@
+gui.Button btn_up;
+btn_up.text = "x: 50, y: 30";
+btn_up.x = 50;
+btn_up.y = 30;
+
+gui.Button btn_down;
+btn_down.text = "x: 50, y: 100";
+btn_down.x = 50;
+btn_down.y = 100;
+
+win.add_child(btn_up);
+win.add_child(btn_down);

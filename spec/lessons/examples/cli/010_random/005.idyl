@@ -1,0 +1,10 @@
+use console;
+use random;
+
+main() {
+    float F = random.create_float(2, 3);
+    float G = random.create_float(2, 3);
+
+    console.writeln("F = ", F);
+    console.writeln("G = ", G);
+}

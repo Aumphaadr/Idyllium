@@ -1,0 +1,12 @@
+use console;
+
+// Функция, которая приветствует пользователя по имени
+void function greet(string person_name) {
+    console.writeln("Привет, ", person_name, "!");
+}
+
+main() {
+    greet("Анна");
+    greet("Пётр");
+    greet("Мария");
+}

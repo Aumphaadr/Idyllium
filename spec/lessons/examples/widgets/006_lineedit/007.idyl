@@ -1,0 +1,41 @@
+use gui;
+use console;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 220;
+    win.title = "Чтение из TextEdit";
+
+    gui.TextEdit textarea;
+    textarea.x = 20;
+    textarea.y = 20;
+    textarea.width = 310;
+    textarea.height = 100;
+    textarea.placeholder = "Напишите что-нибудь...";
+
+    gui.Button btn;
+    btn.text = "Показать текст";
+    btn.x = 20;
+    btn.y = 140;
+    btn.width = 150;
+
+    gui.Label label;
+    label.x = 20;
+    label.y = 180;
+    label.text = "";
+
+    btn.on_click = void function() {
+        string content = textarea.text;
+        if (content == "") {
+            label.text = "Поле пустое!";
+        } else {
+            label.text = "Длина текста: " + to_string(content.length());
+        }
+    };
+
+    win.add_child(textarea);
+    win.add_child(btn);
+    win.add_child(label);
+    win.show();
+}

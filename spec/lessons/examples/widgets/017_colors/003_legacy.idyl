@@ -1,0 +1,17 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 140;
+    win.title = "Legacy color";
+
+    gui.Label label;
+    label.text = "Старый способ всё ещё допустим";
+    label.x = 30;
+    label.y = 40;
+    label.color = "#FF0000"; // legacy: лучше использовать text_color + colors.Color
+
+    win.add_child(label);
+    win.show();
+}

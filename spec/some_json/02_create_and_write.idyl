@@ -1,0 +1,27 @@
+// Building JSON manually.
+// The API avoids overloaded set()/add() because current stdlib functions do not overload by argument type.
+
+use console;
+use json;
+
+main() {
+    json.Value user = json.create_object();
+    user.set_string("name", "Mira");
+    user.set_int("age", 12);
+    user.set_bool("is_admin", false);
+    user.set("middle_name", json.NULL);
+
+    json.Value scores = json.create_array();
+    scores.add_int(5);
+    scores.add_int(4);
+    scores.add_int(5);
+
+    user.set("scores", scores);
+
+    console.writeln(user.to_pretty_string(4));
+
+    // Suggested file helpers.
+    // write_file() writes compact JSON.
+    // write_pretty_file() writes formatted JSON with indentation.
+    user.write_pretty_file("user.json", 4);
+}

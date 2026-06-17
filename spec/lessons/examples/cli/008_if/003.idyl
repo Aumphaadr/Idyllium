@@ -1,0 +1,3 @@
+if (N > 50) {
+    console.write("ЪУЪ!");
+}

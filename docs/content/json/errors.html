@@ -1,0 +1,117 @@
+<div class="docs-section">
+  <h2>Сначала вспомним правила JSON-текста</h2>
+  <p>
+    Большинство ошибок JSON не злые, а механические. Формат строгий, поэтому
+    важно помнить несколько правил:
+  </p>
+  <ul>
+    <li>ключи объекта пишутся в двойных кавычках;</li>
+    <li>строки тоже пишутся в двойных кавычках;</li>
+    <li>объекты заключаются в фигурные скобки <code>{ }</code>;</li>
+    <li>массивы заключаются в квадратные скобки <code>[ ]</code>;</li>
+    <li>между элементами стоят запятые, но после последнего элемента запятая не нужна;</li>
+    <li>комментариев в JSON нет.</li>
+  </ul>
+</div>
+
+<div class="docs-section">
+  <h2>Невалидный JSON</h2>
+  <p>
+    Перед чтением файла можно вызвать <code>json.is_valid()</code>. Это удобно,
+    если вы хотите показать своё сообщение вместо ошибки парсинга.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use json;
+
+main() {
+    string text = "{ \"name\": \"Liam\", }"; // лишняя запятая
+
+    if (json.is_valid(text) == false) {
+        console.writeln("Файл сохранения повреждён");
+        return;
+    }
+
+    json.Value root = json.parse(text);
+}
+</script></idyl-code-block>
+  <idyl-output-block>Файл сохранения повреждён</idyl-output-block>
+</div>
+
+<div class="docs-section">
+  <h2>Комментарии в JSON запрещены</h2>
+  <p>
+    В Idyllium комментарии можно писать через <code>//</code>, но в JSON-файле
+    так делать нельзя. JSON — это формат данных, а не файл с программным кодом.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+{
+    "name": "Liam",
+    // уровень игрока
+    "level": 7
+}
+</script></idyl-code-block>
+
+  <p>
+    Такой файл не распарсится. Если нужен комментарий для человека, лучше
+    объяснить данные в документации проекта или добавить обычное поле вроде
+    <code>"description"</code>, если это действительно часть данных.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Несуществующий ключ</h2>
+  <idyl-code-block><script type="text/plain">
+use json;
+
+main() {
+    json.Object player = json.parse("{\"name\":\"Liam\"}").to_object();
+    int level = player.get("level").to_int(); // runtime error
+}
+</script></idyl-code-block>
+  <idyl-error-block>main.idyl:5: runtime error: json object has no key 'level'</idyl-error-block>
+</div>
+
+<div class="docs-section">
+  <h2>Неподходящий тип</h2>
+  <idyl-code-block><script type="text/plain">
+use json;
+
+main() {
+    json.Object player = json.parse("{\"name\":\"Liam\"}").to_object();
+    int name = player.get("name").to_int(); // runtime error
+}
+</script></idyl-code-block>
+  <idyl-error-block>main.idyl:5: runtime error: json value is string, expected int</idyl-error-block>
+</div>
+
+<div class="docs-section">
+  <h2>Повтор ключа и неверный индекс</h2>
+  <p>
+    <code>add()</code> не даст создать второй такой же ключ, а <code>at()</code>
+    не даст выйти за границы массива.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use json;
+
+main() {
+    json.Object player;
+    player.add("name", json.Value("Liam"));
+    player.add("name", json.Value("Mira")); // runtime error
+}
+</script></idyl-code-block>
+  <idyl-error-block>main.idyl:6: runtime error: json object already has key 'name'</idyl-error-block>
+
+  <idyl-code-block><script type="text/plain">
+use json;
+
+main() {
+    json.Array scores = json.parse("[5,4,5]").to_array();
+    int score = scores.at(5).to_int(); // runtime error
+}
+</script></idyl-code-block>
+  <idyl-error-block>main.idyl:5: runtime error: json array index 5 out of bounds (size 3, valid indices 0-2)</idyl-error-block>
+</div>

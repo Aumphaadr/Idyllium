@@ -1,0 +1,11 @@
+use console;
+use types;
+
+main() {
+    types.uint8 N = 252;
+    N = N + 1; // 253
+    N = N + 1; // 254
+    N = N + 1; // 255
+    N = N + 1; // 0 ← переполнение!
+    N = N + 1; // 1
+}

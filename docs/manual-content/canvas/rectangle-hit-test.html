@@ -1,0 +1,72 @@
+<div class="docs-section">
+  <h2>Точка внутри прямоугольника</h2>
+  <p>
+    Пусть прямоугольник стоит в точке <code>x = 100</code>, <code>y = 150</code>,
+    а его размер равен <code>60x40</code>.
+  </p>
+  <p>
+    Тогда левый край находится в <code>100</code>, правый — в <code>160</code>.
+    Верхний край находится в <code>150</code>, нижний — в <code>190</code>.
+    Правый и нижний край вычисляются через <code>x + width</code> и
+    <code>y + height</code>.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use colors;
+use drawable;
+use gui;
+
+drawable.Rectangle rect;
+
+void function redraw(gui.Canvas canvas) {
+    canvas.fill(colors.RGB(20, 24, 32));
+    canvas.draw(rect);
+}
+
+void function init(gui.Canvas canvas) {
+    rect.x = 100;
+    rect.y = 150;
+    rect.width = 60;
+    rect.height = 40;
+    rect.fill_color = colors.RGB(34, 145, 188);
+    redraw(canvas);
+}
+
+void function on_mouse_move(gui.Canvas canvas, gui.MouseEvent e) {
+    bool inside = e.x >= rect.x
+        and e.x <= rect.x + rect.width
+        and e.y >= rect.y
+        and e.y <= rect.y + rect.height;
+
+    if (inside) {
+        rect.fill_color = colors.RGB(255, 210, 80);
+    } else {
+        rect.fill_color = colors.RGB(34, 145, 188);
+    }
+
+    redraw(canvas);
+}
+
+main() {
+    gui.Window win;
+    win.width = 360;
+    win.height = 280;
+
+    gui.Canvas canvas;
+    canvas.x = 20;
+    canvas.y = 20;
+    canvas.width = 300;
+    canvas.height = 220;
+    canvas.on_init = init;
+    canvas.on_mouse_move = on_mouse_move;
+
+    win.add_child(canvas);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <p>
+    Условие длинное, но оно читается буквально: мышь правее левого края, левее
+    правого, ниже верхнего и выше нижнего.
+  </p>
+</div>

@@ -1,0 +1,18 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 150;
+    win.title = "Окно с рамкой";
+
+    gui.Frame frame;
+    frame.x = 20;
+    frame.y = 20;
+    frame.width = 260;
+    frame.height = 100;
+    frame.title = "Настройки";
+
+    win.add_child(frame);
+    win.show();
+}

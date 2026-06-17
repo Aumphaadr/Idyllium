@@ -1,0 +1,7 @@
+dyn_array<int> nums = [81, 45, 33, 27, 90, 64];
+nums.add(333);
+nums.add(444);
+
+for (int i = 0; i < nums.length(); i = i + 1) {
+    console.writeln(nums[i]);
+}

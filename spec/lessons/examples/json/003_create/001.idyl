@@ -1,0 +1,19 @@
+use console;
+use json;
+
+main() {
+    json.Object root;
+
+    root.add("name", json.Value("Mira"));
+    root.add("age", json.Value(12));
+    root.add("middle_name", json.NULL);
+
+    json.Array scores;
+    scores.add(json.Value(5));
+    scores.add(json.Value(4));
+    scores.add(json.Value(5));
+
+    root.add("scores", json.Value(scores));
+
+    console.writeln(root.to_pretty_json(4));
+}

@@ -1,0 +1,8 @@
+use console;
+use time;
+
+main() {
+    time.stamp birth = time.from_unix(946684800); // 2000-01-01 00:00:00
+    console.writeln("Дата: ", birth);
+    console.writeln("Год: ", birth.year());
+}

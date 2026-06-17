@@ -1,0 +1,72 @@
+use colors;
+use drawable;
+use gui;
+
+drawable.Rectangle wall;
+drawable.Rectangle player;
+
+bool function rectangles_touch(drawable.Rectangle first, drawable.Rectangle second) {
+    if (first.x > second.x + second.width) {
+        return false;
+    }
+    if (first.y > second.y + second.height) {
+        return false;
+    }
+    if (second.x > first.x + first.width) {
+        return false;
+    }
+    if (second.y > first.y + first.height) {
+        return false;
+    }
+
+    return true;
+}
+
+void function init(gui.Canvas canvas) {
+    wall.x = 240;
+    wall.y = 90;
+    wall.width = 90;
+    wall.height = 90;
+    wall.fill_color = colors.RGB(34, 145, 188);
+
+    player.x = 20;
+    player.y = 115;
+    player.width = 60;
+    player.height = 40;
+}
+
+void function update(gui.Canvas canvas, float delta_time) {
+    player.x += 2;
+    if (player.x > 430) {
+        player.x = 20;
+    }
+
+    if (rectangles_touch(player, wall)) {
+        player.fill_color = colors.RED;
+    } else {
+        player.fill_color = colors.GREEN;
+    }
+
+    canvas.fill(colors.RGB(20, 24, 32));
+    canvas.draw(wall);
+    canvas.draw(player);
+}
+
+main() {
+    gui.Window win;
+    win.width = 500;
+    win.height = 320;
+    win.title = "Коллизии прямоугольников";
+
+    gui.Canvas canvas;
+    canvas.x = 20;
+    canvas.y = 20;
+    canvas.width = 450;
+    canvas.height = 250;
+    canvas.framerate_limit = 60;
+    canvas.on_init = init;
+    canvas.on_update = update;
+
+    win.add_child(canvas);
+    win.show();
+}

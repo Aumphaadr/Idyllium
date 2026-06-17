@@ -1,0 +1,5 @@
+use encoding;
+
+main() {
+    int code = encoding.char_to_int('A', "cp866");
+}

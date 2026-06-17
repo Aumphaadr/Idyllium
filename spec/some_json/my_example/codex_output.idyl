@@ -1,0 +1,60 @@
+use file;
+use json;
+
+main() {
+    json.Object root = json.create_object();
+
+    root.set_string("name", "John Doe");
+    root.set_int("age", 30);
+    root.set_float("temperature", 98.6);
+    root.set_string("email", "john.doe@example.com");
+
+    json.Object address = json.create_object();
+    address.set_string("street", "123 Main St");
+    address.set_string("city", "Anytown");
+    address.set_string("state", "CA");
+    address.set_int("zip", 12345);
+    root.set("address", address);
+
+    json.Array phone_numbers = json.create_array();
+
+    json.Object home_phone = json.create_object();
+    home_phone.set_string("type", "home");
+    home_phone.set_string("number", "555-1234");
+    phone_numbers.add(home_phone);
+
+    json.Object work_phone = json.create_object();
+    work_phone.set_string("type", "work");
+    work_phone.set_string("number", "555-5678");
+    phone_numbers.add(work_phone);
+
+    root.set("phone_numbers", phone_numbers);
+    root.set_bool("is_active", true);
+
+    json.Array roles = json.create_array();
+    roles.add_string("admin");
+    roles.add_string("user");
+    root.set("roles", roles);
+
+    root.set_string("created_at", "2024-06-01T12:00:00Z");
+
+    json.Array chaotic_array = json.create_array();
+    chaotic_array.add_int(1);
+    chaotic_array.add_string("two");
+
+    json.Object three_object = json.create_object();
+    three_object.set_int("three", 3);
+    chaotic_array.add(three_object);
+
+    json.Array nested_numbers = json.create_array();
+    nested_numbers.add_int(4);
+    nested_numbers.add_int(5);
+    chaotic_array.add(nested_numbers);
+
+    chaotic_array.add(json.NULL);
+    root.set("chaotic_array", chaotic_array);
+
+    file.ostream f = file.open("output.json", "write");
+    f.write_line(root.to_pretty_string(4));
+    f.close();
+}

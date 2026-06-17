@@ -1,0 +1,17 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 100;
+    win.title = "Slider";
+
+    gui.Slider slider;
+    slider.x = 20;
+    slider.y = 30;
+    slider.width = 260;
+    slider.value = 50;
+
+    win.add_child(slider);
+    win.show();
+}

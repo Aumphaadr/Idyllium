@@ -1,0 +1,6 @@
+use console;
+
+main() {
+    int A = console.get_int();
+    console.write("Ваше число: ", A, '\n');
+}

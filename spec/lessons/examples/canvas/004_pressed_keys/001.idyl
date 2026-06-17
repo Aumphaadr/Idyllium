@@ -1,0 +1,57 @@
+use colors;
+use drawable;
+use gui;
+
+drawable.Rectangle player;
+dyn_array<string> pressed_keys;
+
+void function init(gui.Canvas canvas) {
+    player.x = 20;
+    player.y = 20;
+    player.width = 40;
+    player.height = 40;
+    player.fill_color = colors.RGB(140, 255, 140);
+}
+
+void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
+    if (not(pressed_keys.contains(e.key))) {
+        pressed_keys.add(e.key);
+    }
+}
+
+void function on_key_released(gui.Canvas canvas, gui.KeyboardEvent e) {
+    if (pressed_keys.contains(e.key)) {
+        int index = pressed_keys.find(e.key);
+        pressed_keys.remove_at(index);
+    }
+}
+
+void function on_update(gui.Canvas canvas, float delta_time) {
+    if (pressed_keys.contains("W")) { player.y -= 2; }
+    if (pressed_keys.contains("S")) { player.y += 2; }
+    if (pressed_keys.contains("A")) { player.x -= 2; }
+    if (pressed_keys.contains("D")) { player.x += 2; }
+
+    canvas.clear();
+    canvas.draw(player);
+}
+
+main() {
+    gui.Window win;
+    win.width = 440;
+    win.height = 300;
+
+    gui.Canvas canvas;
+    canvas.x = 20;
+    canvas.y = 20;
+    canvas.width = 400;
+    canvas.height = 230;
+    canvas.on_init = init;
+    canvas.on_key_pressed = on_key_pressed;
+    canvas.on_key_released = on_key_released;
+    canvas.on_update = on_update;
+    canvas.framerate_limit = 50;
+
+    win.add_child(canvas);
+    win.show();
+}

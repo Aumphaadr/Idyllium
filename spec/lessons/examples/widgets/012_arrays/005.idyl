@@ -1,0 +1,38 @@
+use gui;
+use random;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 300;
+    win.title = "Удаление прогрессбаров";
+
+    dyn_array<gui.ProgressBar> bars;
+
+    // Создаём 5 прогрессбаров со случайными значениями
+    for (int i = 0; i < 5; i = i + 1) {
+        gui.ProgressBar pb;
+        pb.x = 20;
+        pb.y = 30 + i * 40;
+        pb.width = 310;
+        pb.value = random.create_int(0, 100);
+        bars.add(pb);
+        win.add_child(pb);
+    }
+
+    gui.Button removeBtn;
+    removeBtn.text = "Удалить первый";
+    removeBtn.x = 20;
+    removeBtn.y = 240;
+    removeBtn.width = 150;
+
+    removeBtn.on_click = void function() {
+        if (bars.length() > 0) {
+            bars[0].visible = false;  // удаляем с экрана
+            bars.remove_at(0);        // удаляем из массива
+        }
+    };
+
+    win.add_child(removeBtn);
+    win.show();
+}

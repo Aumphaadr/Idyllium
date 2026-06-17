@@ -1,0 +1,18 @@
+// rect.idyl
+
+class Rect {
+    float width;
+    float height;
+
+    float function getArea() {
+        return this.width * this.height;
+    }
+
+    void function scaleX(float factor) {
+        this.width = this.width * factor;
+    }
+
+    void function scaleY(float factor) {
+        this.height = this.height * factor;
+    }
+}

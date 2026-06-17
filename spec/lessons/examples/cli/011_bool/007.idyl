@@ -1,0 +1,3 @@
+bool A = true;
+bool B = not(A); // false
+bool C = not(B); // true

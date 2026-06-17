@@ -1,0 +1,17 @@
+use console;
+
+main() {
+    console.write("Сколько у вас денег: ");
+    int money = console.get_int();
+
+    console.write("Сколько стоит йогурт: ");
+    int price = console.get_int();
+
+    if (money >= price) {
+        int new_money = money - price;
+        console.writeln("После покупки останется ", new_money, " денег!");
+    }
+    else {
+        console.writeln("Вам не хватает денег для покупки!");
+    }
+}

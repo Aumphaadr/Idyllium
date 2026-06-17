@@ -1,0 +1,7 @@
+class Cat {
+    string name;
+}   // ← забыли ;
+
+main() {
+    Cat c;
+}

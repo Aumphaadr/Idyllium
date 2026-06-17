@@ -1,0 +1,112 @@
+{
+  "name": "idyllium-vscode",
+  "displayName": "Idyllium",
+  "description": "Поддержка учебного языка программирования Idyllium для VS Code.",
+  "version": "1.0.0",
+  "publisher": "idyllium",
+  "private": true,
+  "license": "MIT",
+  "icon": "media/idyllium128x128.png",
+  "scripts": {
+    "build": "npm --prefix ../.. run build:vscode",
+    "package": "npm --prefix ../.. run package:vscode"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:idyllium",
+    "workspaceContains:**/*.idyl"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "idyllium",
+        "aliases": [
+          "Idyllium",
+          "idyllium"
+        ],
+        "extensions": [
+          ".idyl"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "idyllium",
+        "scopeName": "source.idyllium",
+        "path": "./syntaxes/idyllium.tmLanguage.json"
+      }
+    ],
+    "themes": [
+      {
+        "label": "Idyllium Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/idyllium-dark-color-theme.json"
+      },
+      {
+        "label": "Idyllium Light",
+        "uiTheme": "vs",
+        "path": "./themes/idyllium-light-color-theme.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "idyllium.runCurrentFile",
+        "title": "Запустить",
+        "category": "Idyllium",
+        "icon": {
+          "light": "media/play-green.svg",
+          "dark": "media/play-green.svg"
+        }
+      },
+      {
+        "command": "idyllium.runCurrentFileWithGui",
+        "title": "Запустить GUI",
+        "category": "Idyllium",
+        "icon": {
+          "light": "media/play-gui-green.svg",
+          "dark": "media/play-gui-green.svg"
+        }
+      },
+      {
+        "command": "idyllium.stop",
+        "title": "Остановить",
+        "category": "Idyllium",
+        "icon": {
+          "light": "media/stop-red.svg",
+          "dark": "media/stop-red.svg"
+        }
+      },
+      {
+        "command": "idyllium.refreshDiagnostics",
+        "title": "Обновить диагностику",
+        "category": "Idyllium"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "idyllium.runCurrentFile",
+          "when": "editorLangId == idyllium",
+          "group": "navigation@1"
+        },
+        {
+          "command": "idyllium.runCurrentFileWithGui",
+          "when": "editorLangId == idyllium",
+          "group": "navigation@2"
+        },
+        {
+          "command": "idyllium.stop",
+          "when": "editorLangId == idyllium && idyllium.hasActiveRun",
+          "group": "navigation@3"
+        }
+      ]
+    }
+  }
+}

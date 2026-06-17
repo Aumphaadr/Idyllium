@@ -1,0 +1,22 @@
+use console;
+
+class Car {
+    string brand;
+    string model;
+
+    void function start() {
+        console.writeln(this.brand, " ", this.model, " завёлся");
+    }
+}
+
+class Truck extends Car {
+    float load_capacity;
+}
+
+main() {
+    Truck kamaz;
+    kamaz.brand = "КАМАЗ";
+    kamaz.model = "5490";
+    kamaz.load_capacity = 20.0;
+    kamaz.start();   // метод унаследован от Car
+}

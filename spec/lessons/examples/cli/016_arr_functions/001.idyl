@@ -1,0 +1,4 @@
+dyn_array<int> my_array = [29, 84, 16, 35, 43, 60, 17];
+
+int maximum = max(my_array);
+int summa = sum(my_array);

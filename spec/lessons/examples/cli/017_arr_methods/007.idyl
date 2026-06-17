@@ -1,0 +1,4 @@
+dyn_array<int> G = [1, 2];
+dyn_array<int> H = [3, 4];
+G.join(H);
+console.writeln(G);

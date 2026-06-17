@@ -1,0 +1,13 @@
+use console;
+
+int function sum_to(int n) {
+    if (n <= 1) {
+        return n;
+    }
+
+    return n + sum_to(n - 1);
+}
+
+main() {
+    console.writeln(sum_to(5));
+}

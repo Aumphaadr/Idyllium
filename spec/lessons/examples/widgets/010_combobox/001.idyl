@@ -1,0 +1,20 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 250;
+    win.height = 100;
+    win.title = "ComboBox";
+
+    gui.ComboBox combo;
+    combo.x = 20;
+    combo.y = 30;
+    combo.width = 200;
+    combo.add_item("Пункт 1");
+    combo.add_item("Пункт 2");
+    combo.add_item("Пункт 3");
+    combo.selected_index = 0;
+
+    win.add_child(combo);
+    win.show();
+}

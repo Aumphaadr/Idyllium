@@ -1,0 +1,10 @@
+use console;
+use types;
+
+main() {
+    console.set_precision(25);
+    types.float32 A = 0.1 + 0.2;
+    types.float64 B = 0.1 + 0.2;
+    console.writeln("0.3 в типе float32: ", A);
+    console.writeln("0.3 в типе float64: ", B);
+}

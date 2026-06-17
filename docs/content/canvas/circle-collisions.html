@@ -1,0 +1,74 @@
+<div class="docs-section">
+  <h2>Когда два круга касаются</h2>
+  <p>
+    Есть два круга разных радиусов. Как понять, касаются ли они друг друга?
+    Нужно найти расстояние между их центрами и сравнить его с суммой радиусов.
+  </p>
+  <p>
+    Если расстояние между центрами не больше суммы радиусов, круги касаются или
+    пересекаются.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use colors;
+use drawable;
+use gui;
+use math;
+
+drawable.Circle fixed_ball;
+drawable.Circle moving_ball;
+
+bool function circles_touch() {
+    int dx = fixed_ball.x - moving_ball.x;
+    int dy = fixed_ball.y - moving_ball.y;
+    float distance = math.sqrt(to_float(dx * dx + dy * dy));
+    return distance <= fixed_ball.radius + moving_ball.radius;
+}
+
+void function init(gui.Canvas canvas) {
+    fixed_ball.x = 250;
+    fixed_ball.y = 120;
+    fixed_ball.radius = 46;
+    fixed_ball.fill_color = colors.RGB(34, 145, 188);
+
+    moving_ball.x = 20;
+    moving_ball.y = 120;
+    moving_ball.radius = 30;
+}
+
+void function update(gui.Canvas canvas, float delta_time) {
+    moving_ball.x += 2;
+    if (moving_ball.x > 430) {
+        moving_ball.x = 20;
+    }
+
+    if (circles_touch()) {
+        moving_ball.fill_color = colors.RED;
+    } else {
+        moving_ball.fill_color = colors.GREEN;
+    }
+
+    canvas.fill(colors.RGB(20, 24, 32));
+    canvas.draw(fixed_ball);
+    canvas.draw(moving_ball);
+}
+
+main() {
+    gui.Window win;
+    win.width = 500;
+    win.height = 320;
+
+    gui.Canvas canvas;
+    canvas.x = 20;
+    canvas.y = 20;
+    canvas.width = 450;
+    canvas.height = 250;
+    canvas.framerate_limit = 60;
+    canvas.on_init = init;
+    canvas.on_update = update;
+
+    win.add_child(canvas);
+    win.show();
+}
+</script></idyl-code-block>
+</div>

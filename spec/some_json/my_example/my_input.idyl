@@ -1,0 +1,86 @@
+use file;
+use console;
+use json;
+
+main() {
+    file.istream f = file.open("input.json", "read");
+    string plain_text = f.read_all();
+    f.close();
+
+    bool valid = json.is_valid(plain_text);
+    if (valid == false) {
+        console.writeln("Invalid JSON");
+        return;
+    }
+
+    json.Value root_value = json.parse(plain_text);
+    json.Object root = root_value.to_object();
+
+    json.Value name_value = root.get("name");
+    string name = name_value.to_string();
+
+    json.Value age_value = root.get("age");
+    int age = age_value.to_int();
+
+    json.Value address_value = root.get("address");
+    json.Object address = address_value.to_object();
+
+    json.Value city_value = address.get("city");
+    string city = city_value.to_string();
+
+    json.Value zip_value = address.get("zip");
+    int zip = zip_value.to_int();
+
+    json.Value phone_numbers_value = root.get("phone_numbers");
+    json.Array phone_numbers = phone_numbers_value.to_array();
+
+    json.Value first_phone_value = phone_numbers.at(0);
+    json.Object first_phone = first_phone_value.to_object();
+
+    json.Value first_phone_type_value = first_phone.get("type");
+    string first_phone_type = first_phone_type_value.to_string();
+
+    json.Value first_phone_number_value = first_phone.get("number");
+    string first_phone_number = first_phone_number_value.to_string();
+
+    json.Value roles_value = root.get("roles");
+    json.Array roles = roles_value.to_array();
+
+    json.Value first_role_value = roles.at(0);
+    string first_role = first_role_value.to_string();
+
+    // "chaotic_array": [1, "two", {"three": 3}, [4, 5], null]
+    json.Value chaotic_array_value = root.get("chaotic_array");
+    json.Array chaotic_array = chaotic_array_value.to_array();
+    
+    int size = chaotic_array.length(); // length should be 5
+
+    json.Value first_chaotic_value = chaotic_array.at(0);
+    int first_chaotic = first_chaotic_value.to_int();
+
+    json.Value second_chaotic_value = chaotic_array.at(1);
+    string second_chaotic = second_chaotic_value.to_string();
+
+    json.Value third_chaotic_value = chaotic_array.at(2);
+    json.Object third_chaotic = third_chaotic_value.to_object();
+
+    json.Value third_chaotic_three_value = third_chaotic.get("three");
+    int third_chaotic_three = third_chaotic_three_value.to_int();
+
+    json.Value fourth_chaotic_value = chaotic_array.at(3);
+    json.Array fourth_chaotic = fourth_chaotic_value.to_array();
+
+    json.Value fourth_chaotic_first_value = fourth_chaotic.at(0);
+    int fourth_chaotic_first = fourth_chaotic_first_value.to_int();
+
+    json.Value fourth_chaotic_second_value = fourth_chaotic.at(1);
+    int fourth_chaotic_second = fourth_chaotic_second_value.to_int();
+
+    json.Value fifth_chaotic_value = chaotic_array.at(4);
+    if (fifth_chaotic_value.is_null()) {
+        console.writeln("Fifth chaotic value is null");
+    }
+    else {
+        console.writeln("Fifth chaotic value is not null");
+    }
+}

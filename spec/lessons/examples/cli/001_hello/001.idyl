@@ -1,0 +1,7 @@
+// hello.idyl
+use console;
+
+main() {
+    console.write("Hello, World!", '\n');
+    console.write("Это ваша первая программа на Idyllium!", '\n');
+}

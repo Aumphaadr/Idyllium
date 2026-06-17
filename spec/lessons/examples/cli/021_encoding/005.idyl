@@ -1,0 +1,9 @@
+use console;
+use encoding;
+
+main() {
+    char a = encoding.int_to_char(65, "ascii");
+    char b = encoding.int_to_char(192, "windows-1251");
+    console.writeln("Код 65 в ASCII: ", a);
+    console.writeln("Код 192 в Windows-1251: ", b);
+}

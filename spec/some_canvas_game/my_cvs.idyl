@@ -1,0 +1,146 @@
+// my_cvs.idyl
+
+use drawable;
+use gui;
+use colors;
+use random;
+
+// Глобальные объекты (в рамках модуля)
+drawable.Rectangle rect1;          // прямоугольник
+drawable.Circle circle1;           // круг
+drawable.Sprite player;            // игрок (спрайт)
+drawable.Texture txr;              // текстура для спрайта
+drawable.Font mainFont;            // шрифт для текста
+drawable.Text scoreText;           // текстовый объект (счёт)
+
+// Инициализация сцены (вызывается один раз при создании холста)
+void function init_scene(gui.Canvas canvas) {
+    // Настройка прямоугольника
+    rect1.x = 40;
+    rect1.y = 20;
+    rect1.width = 100;
+    rect1.height = 50;
+    rect1.fill_color = colors.RGB(34, 145, 188);
+    rect1.border_width = 0;
+    
+    // Настройка круга
+    circle1.x = 400;
+    circle1.y = 300;
+    circle1.radius = 30;
+    circle1.fill_color = colors.HEX("#ff6600");
+    circle1.border_width = 5;
+    circle1.border_color = colors.TRANSPARENT;  // изначально без границы
+    
+    // Загрузка текстуры из файла (путь относительно корня проекта)
+    txr.load_from_file("player.png");
+    
+    // Создание спрайта на основе текстуры
+    player.texture = txr;
+    player.x = 400;
+    player.y = 500;
+    // player.set_scale(0.5, 0.5);     // уменьшим вдвое (если текстура большая)
+
+    // Загрузка шрифта из файла
+    mainFont.load_from_file("arial.ttf");   // или другой шрифт
+    
+    // Настройка текстового объекта
+    scoreText.font = mainFont;
+    scoreText.text = "0";                  // начальное значение счёта
+    scoreText.x = 20;
+    scoreText.y = 20;
+    scoreText.font_size = 24;
+    scoreText.text_color = colors.WHITE;
+}
+
+// Обработчик нажатия клавиш клавиатуры
+void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
+    // Движение игрока
+    if (e.key == "W") {
+        player.y = player.y - 5;   // эквивалент 'player.move(0, -5);'
+    }
+    if (e.key == "S") {
+        player.y = player.y + 5;   // эквивалент 'player.move(0, 5);'
+    }
+    if (e.key == "A") {
+        player.x = player.x - 5;   // эквивалент 'player.move(-5, 0);'
+    }
+    if (e.key == "D") {
+        player.x = player.x + 5;   // эквивалент 'player.move(5, 0);'
+    }
+}
+
+// Обработчик отпускания клавиш клавиатуры
+void function on_key_released(gui.Canvas canvas, gui.KeyboardEvent e) {
+    if (e.key == "R") {
+        // Телепортация прямоугольника на случайные координаты
+        rect1.x = random.create_int(0, canvas.width - rect1.width);
+        rect1.y = random.create_int(0, canvas.height - rect1.height);
+    }
+    if (e.key == "K") {
+        // Увеличиваем счёт на 1
+        string currentStr = scoreText.text;
+        int currentScore = to_int(currentStr);
+        currentScore = currentScore + 1;
+        scoreText.text = to_string(currentScore);
+    }
+}
+
+// Обработчик нажатия кнопок мыши
+void function on_mouse_pressed(gui.Canvas canvas, gui.MouseEvent e) {
+    if (e.mouse_button == "LEFT") {
+        circle1.border_color = colors.RED;
+    }
+    if (e.mouse_button == "RIGHT") {
+        circle1.border_color = colors.GREEN;
+    }
+    if (e.mouse_button == "MIDDLE") {
+        circle1.border_color = colors.BLUE;
+    }
+}
+
+// Обработчик отпускания кнопок мыши
+void function on_mouse_released(gui.Canvas canvas, gui.MouseEvent e) {
+    // Возвращаем цвет границы круга в прозрачный при любом отпускании
+    circle1.border_color = colors.TRANSPARENT;
+}
+
+// Обработчик движения мыши
+void function on_mouse_move(gui.Canvas canvas, gui.MouseEvent e) {
+    // Проверка попадания курсора в прямоугольник
+    bool insideRect = (e.x >= rect1.x) and (e.x <= rect1.x + rect1.width) and
+                      (e.y >= rect1.y) and (e.y <= rect1.y + rect1.height);
+    
+    if (insideRect) {
+        rect1.fill_color = colors.WHITE;   // меняем цвет на белый при наведении
+    } else {
+        rect1.fill_color = colors.RGB(34, 145, 188); // возвращаем исходный цвет
+    }
+}
+
+// Обработчик прокрутки колёсика мыши
+void function on_mouse_scroll(gui.Canvas canvas, gui.MouseScrollEvent e) {
+    // e.delta — количество «щелчков» колёсика (положительное — вверх, отрицательное — вниз)
+    int newRadius = circle1.radius + e.delta * 2;  // шаг 2 пикселя
+    // Ограничиваем минимальный и максимальный радиус
+    if (newRadius < 5) {
+        newRadius = 5;
+    }
+    if (newRadius > 150) {
+        newRadius = 150;
+    }
+    circle1.radius = newRadius;
+}
+
+// Обновление логики (каждый кадр)
+void function on_update(gui.Canvas canvas, float deltaTime) {
+    // Очистка холста — можно выбрать любой из способов
+    canvas.clear();                     // заливает чёрным (по умолчанию)
+    // canvas.fill("#FF0000");          // залить красным
+    // canvas.fill(colors.RGB(127, 127, 127)); // залить серым
+    
+    // Отрисовка всех объектов
+    canvas.draw(rect1);
+    canvas.draw(circle1);
+    canvas.draw(player);
+    canvas.draw(scoreText);
+}

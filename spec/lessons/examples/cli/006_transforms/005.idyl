@@ -1,0 +1,6 @@
+use console;
+
+main() {
+    float A = "1.6"; // НЕЛЬЗЯ
+    float B = to_float("1.6"); // МОЖНО
+}

@@ -1,0 +1,9 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 500;        // ширина в пикселях
+    win.height = 400;       // высота в пикселях
+    win.title = "Моё первое окно";
+    win.show();
+}

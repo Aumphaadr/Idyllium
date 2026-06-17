@@ -1,0 +1,16 @@
+class Animal {
+    void function greet() {
+        console.writeln("Я животное");
+    }
+}
+
+class Dog extends Animal {
+    void function greet() {
+        console.writeln("Я собака");
+    }
+}
+
+main() {
+    Dog rex;
+    rex.greet();
+}

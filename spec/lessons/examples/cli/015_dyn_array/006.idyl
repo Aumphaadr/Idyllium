@@ -1,0 +1,7 @@
+dyn_array<int> nums = [11, 22, 33, 44, 55];
+int L1 = nums.length();
+console.writeln("В массиве сейчас ", L1, " ячеек");
+
+nums.add(66);
+int L2 = nums.length();
+console.writeln("А теперь ", L2, " ячеек");

@@ -1,0 +1,35 @@
+use colors;
+use drawable;
+use gui;
+
+drawable.Circle ball;
+
+void function init(gui.Canvas canvas) {
+    canvas.fill(colors.RGB(24, 28, 38));
+
+    ball.x = 190;
+    ball.y = 115;
+    ball.radius = 55;
+    ball.fill_color = colors.RGB(255, 210, 80);
+    ball.border_width = 5;
+    ball.border_color = colors.RGB(34, 145, 188);
+
+    canvas.draw(ball);
+}
+
+main() {
+    gui.Window win;
+    win.width = 430;
+    win.height = 300;
+    win.title = "Circle";
+
+    gui.Canvas canvas;
+    canvas.x = 20;
+    canvas.y = 20;
+    canvas.width = 380;
+    canvas.height = 230;
+    canvas.on_init = init;
+
+    win.add_child(canvas);
+    win.show();
+}

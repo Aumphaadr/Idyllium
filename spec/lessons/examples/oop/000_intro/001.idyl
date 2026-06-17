@@ -1,0 +1,9 @@
+use console;
+
+main() {
+    int age = 25;           // целое число
+    string name = "Анна";   // строка
+    float price = 19.99;    // дробное число
+
+    console.writeln("Имя: ", name, ", Возраст: ", age, ", Цена: ", price);
+}

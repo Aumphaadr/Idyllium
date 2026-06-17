@@ -1,0 +1,3 @@
+string u = "абракадабра";
+int a_count = u.count('а'); // 5
+int abra_count = u.count("абра"); // 2

@@ -1,0 +1,4 @@
+types.int8 x = -35;
+types.uint8 y = 221;
+console.writeln(x.to_bin()); // 11011101
+console.writeln(y.to_bin()); // 11011101

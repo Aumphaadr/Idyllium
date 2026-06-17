@@ -1,0 +1,47 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 200;
+    win.title = "Секундомер";
+    
+    gui.Label time_label;
+    time_label.text = "0";
+    time_label.font_size = 48;
+    time_label.x = 100;
+    time_label.y = 30;
+    
+    gui.Button start_btn;
+    start_btn.text = "Старт";
+    start_btn.x = 30;
+    start_btn.y = 120;
+    
+    gui.Button stop_btn;
+    stop_btn.text = "Стоп";
+    stop_btn.x = 160;
+    stop_btn.y = 120;
+    
+    gui.Timer timer;
+    timer.interval = 1000;
+    
+    int seconds = 0;
+    
+    timer.on_tick = void function() {
+        seconds += 1;
+        time_label.text = to_string(seconds);
+    };
+    
+    start_btn.on_click = void function(gui.Button sender) {
+        timer.start();
+    };
+    
+    stop_btn.on_click = void function(gui.Button sender) {
+        timer.stop();
+    };
+    
+    win.add_child(time_label);
+    win.add_child(start_btn);
+    win.add_child(stop_btn);
+    win.show();
+}

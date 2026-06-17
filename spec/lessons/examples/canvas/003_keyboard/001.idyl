@@ -1,0 +1,58 @@
+use colors;
+use drawable;
+use gui;
+
+drawable.Rectangle player;
+
+void function redraw(gui.Canvas canvas) {
+    canvas.fill(colors.RGB(20, 24, 32));
+    canvas.draw(player);
+}
+
+void function init(gui.Canvas canvas) {
+    player.x = 160;
+    player.y = 95;
+    player.width = 90;
+    player.height = 60;
+    player.fill_color = colors.RGB(34, 145, 188);
+    player.border_width = 5;
+    player.border_color = colors.TRANSPARENT;
+    redraw(canvas);
+}
+
+void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
+    if (e.key == "R") {
+        player.border_color = colors.RED;
+    }
+    if (e.key == "G") {
+        player.border_color = colors.GREEN;
+    }
+    if (e.key == "B") {
+        player.border_color = colors.BLUE;
+    }
+    redraw(canvas);
+}
+
+void function on_key_released(gui.Canvas canvas, gui.KeyboardEvent e) {
+    player.border_color = colors.TRANSPARENT;
+    redraw(canvas);
+}
+
+main() {
+    gui.Window win;
+    win.width = 450;
+    win.height = 300;
+    win.title = "Клавиатура";
+
+    gui.Canvas canvas;
+    canvas.x = 20;
+    canvas.y = 20;
+    canvas.width = 400;
+    canvas.height = 230;
+    canvas.on_init = init;
+    canvas.on_key_pressed = on_key_pressed;
+    canvas.on_key_released = on_key_released;
+
+    win.add_child(canvas);
+    win.show();
+}

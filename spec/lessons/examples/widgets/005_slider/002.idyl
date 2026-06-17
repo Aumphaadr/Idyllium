@@ -1,0 +1,20 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 150;
+    win.title = "Настройки Slider";
+
+    gui.Slider slider;
+    slider.x = 20;
+    slider.y = 30;
+    slider.width = 260;
+    slider.min = 0;
+    slider.max = 200;
+    slider.value = 100;
+    slider.step = 20;
+
+    win.add_child(slider);
+    win.show();
+}

@@ -1,0 +1,11 @@
+use console;
+
+main() {
+    int guess;
+    do {
+        console.write("Угадайте число от 1 до 10: ");
+        guess = console.get_int();
+    } while (guess != 7);
+
+    console.writeln("Правильно! Это 7!");
+}

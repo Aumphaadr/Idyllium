@@ -1,0 +1,10 @@
+class Cat {
+    void function meow() {
+        console.writeln("Мяу");
+    }
+}
+
+main() {
+    Cat some_cat;
+    some_cat.meow();   // нужно создавать объект, даже если он не нужен
+}

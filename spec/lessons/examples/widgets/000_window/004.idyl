@@ -1,0 +1,16 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 400;
+    win.height = 300;
+    win.title = "Окно с кнопкой";
+
+    gui.Button btn;         // создаём кнопку
+    btn.text = "Нажми меня";
+    btn.width = 120;
+    btn.height = 40;
+
+    win.add_child(btn);     // добавляем кнопку на окно
+    win.show();
+}

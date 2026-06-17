@@ -1,0 +1,79 @@
+use gui;
+use console;
+
+main() {
+    gui.Window win;
+    win.title = "Демо модальных окон";
+    win.width = 400;
+    win.height = 250;
+    
+    gui.Button alert_btn;
+    alert_btn.text = "Показать Alert";
+    alert_btn.x = 30;
+    alert_btn.y = 30;
+    
+    gui.Button confirm_btn;
+    confirm_btn.text = "Показать Confirm";
+    confirm_btn.x = 30;
+    confirm_btn.y = 80;
+    
+    gui.Button input_btn;
+    input_btn.text = "Показать Input";
+    input_btn.x = 30;
+    input_btn.y = 130;
+    
+    gui.Label result_label;
+    result_label.text = "";
+    result_label.x = 200;
+    result_label.y = 80;
+    
+    // Alert — просто сообщение
+    alert_btn.on_click = void function(gui.Button sender) {
+        gui.Modal m;
+        m.title = "Уведомление";
+        m.message = "Это простое информационное сообщение.";
+        m.confirm_text = "Понятно";
+        m.show_alert();
+    };
+    
+    // Confirm — да/нет
+    confirm_btn.on_click = void function(gui.Button sender) {
+        gui.Modal m;
+        m.title = "Подтверждение";
+        m.message = "Вы уверены, что хотите продолжить?";
+        m.confirm_text = "Да";
+        m.cancel_text = "Нет";
+        
+        m.on_confirm = void function(gui.Modal modal) {
+            result_label.text = "Вы нажали: Да";
+        };
+        
+        m.on_cancel = void function(gui.Modal modal) {
+            result_label.text = "Вы нажали: Нет";
+        };
+        
+        m.show_confirm();
+    };
+    
+    // Input — ввод текста
+    input_btn.on_click = void function(gui.Button sender) {
+        gui.Modal m;
+        m.title = "Введите имя";
+        m.message = "Как вас зовут?";
+        m.confirm_text = "Сохранить";
+        m.cancel_text = "Отмена";
+        
+        m.on_confirm = void function(gui.Modal modal) {
+            string name = modal.get_input_value();
+            result_label.text = "Привет, " + name + "!";
+        };
+        
+        m.show_input();
+    };
+    
+    win.add_child(alert_btn);
+    win.add_child(confirm_btn);
+    win.add_child(input_btn);
+    win.add_child(result_label);
+    win.show();
+}

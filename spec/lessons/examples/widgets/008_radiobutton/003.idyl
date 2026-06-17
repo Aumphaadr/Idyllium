@@ -1,0 +1,40 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 200;
+    win.title = "Группировка";
+
+    gui.RadioButton rb1;
+    rb1.x = 20;
+    rb1.y = 20;
+    rb1.text = "Группа A - 1";
+    rb1.group = "A";
+    rb1.is_selected = true;
+
+    gui.RadioButton rb2;
+    rb2.x = 20;
+    rb2.y = 50;
+    rb2.text = "Группа A - 2";
+    rb2.group = "A";
+
+    gui.RadioButton rb3;
+    rb3.x = 20;
+    rb3.y = 100;
+    rb3.text = "Группа B - 1";
+    rb3.group = "B";
+    rb3.is_selected = true;
+
+    gui.RadioButton rb4;
+    rb4.x = 20;
+    rb4.y = 130;
+    rb4.text = "Группа B - 2";
+    rb4.group = "B";
+
+    win.add_child(rb1);
+    win.add_child(rb2);
+    win.add_child(rb3);
+    win.add_child(rb4);
+    win.show();
+}

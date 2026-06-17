@@ -1,0 +1,10 @@
+use console;
+
+main() {
+    dyn_array<int> scores = [85, 92, 78, 96, 88];
+
+    console.writeln("Максимум: ", max(scores));
+    console.writeln("Минимум: ", min(scores));
+    console.writeln("Сумма: ", sum(scores));
+    console.writeln("Среднее: ", avg(scores));
+}

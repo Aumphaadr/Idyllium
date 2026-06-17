@@ -1,0 +1,26 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 150;
+    win.title = "Динамический текст";
+
+    gui.Label label;
+    label.text = "Нажми на кнопку";
+    label.x = 50;
+    label.y = 30;
+
+    gui.Button btn;
+    btn.text = "Сменить текст";
+    btn.x = 50;
+    btn.y = 80;
+
+    btn.on_click = void function() {
+        label.text = "Текст изменён!";
+    };
+
+    win.add_child(label);
+    win.add_child(btn);
+    win.show();
+}

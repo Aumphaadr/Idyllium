@@ -1,0 +1,20 @@
+use gui;
+use scene;
+
+main() {
+    gui.Window win;
+    win.width = 430;
+    win.height = 300;
+    win.title = "Canvas в модуле";
+
+    gui.Canvas canvas;
+    canvas.x = 20;
+    canvas.y = 20;
+    canvas.width = 380;
+    canvas.height = 230;
+    canvas.on_init = scene.init;
+    canvas.on_mouse_move = scene.on_mouse_move;
+
+    win.add_child(canvas);
+    win.show();
+}

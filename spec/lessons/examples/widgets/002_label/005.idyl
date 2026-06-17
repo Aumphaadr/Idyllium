@@ -1,0 +1,28 @@
+use gui;
+use random;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 150;
+    win.title = "Случайное число";
+
+    gui.Label label;
+    label.text = "Нажми на кнопку";
+    label.x = 50;
+    label.y = 30;
+
+    gui.Button btn;
+    btn.text = "Бросить кубик";
+    btn.x = 50;
+    btn.y = 80;
+
+    btn.on_click = void function() {
+        int r = random.create_int(1, 6);
+        label.text = "Выпало: " + to_string(r);
+    };
+
+    win.add_child(label);
+    win.add_child(btn);
+    win.show();
+}

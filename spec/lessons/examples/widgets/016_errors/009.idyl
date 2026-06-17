@@ -1,0 +1,8 @@
+use gui;
+
+main() {
+    gui.Window win;
+    gui.Button btn;
+    btn.placeholder = "Кнопка";  // ОШИБКА: у Button нет placeholder
+    btn.font_size = 20;          // ОШИБКА: у Button нет font_size
+}

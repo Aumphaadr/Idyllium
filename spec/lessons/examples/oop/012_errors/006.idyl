@@ -1,0 +1,10 @@
+class MathUtils {
+    static int function square(int x) {
+        return x * x;
+    }
+}
+
+main() {
+    MathUtils m;
+    int y = m.square(5);   // ОШИБКА!
+}

@@ -1,0 +1,7 @@
+use console;
+use time;
+
+main() {
+    time.stamp N = time.now();
+    console.writeln(N);
+}

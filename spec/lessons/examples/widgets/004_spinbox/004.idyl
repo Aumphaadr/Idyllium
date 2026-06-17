@@ -1,0 +1,29 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 150;
+    win.title = "Реакция на изменение";
+
+    gui.SpinBox spin;
+    spin.x = 20;
+    spin.y = 20;
+    spin.width = 100;
+    spin.value = 50;
+    spin.min = 0;
+    spin.max = 100;
+
+    gui.Label label;
+    label.x = 140;
+    label.y = 25;
+    label.text = "Текущее: 50";
+
+    spin.on_change = void function() {
+        label.text = "Текущее: " + to_string(spin.value);
+    };
+
+    win.add_child(spin);
+    win.add_child(label);
+    win.show();
+}

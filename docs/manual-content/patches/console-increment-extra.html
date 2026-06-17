@@ -1,0 +1,47 @@
+<div class="docs-section">
+  <h2>Короткая форма: <code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code></h2>
+  <p>
+    Запись <code>N = N + 1</code> честная и понятная, но иногда она слишком длинная.
+    Поэтому в Idyllium есть короткие формы присваивания:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+int N = 10;
+N += 1;  // то же самое, что N = N + 1
+N -= 3;  // то же самое, что N = N - 3
+N *= 2;  // то же самое, что N = N * 2
+N /= 4;  // то же самое, что N = N / 4
+</script></idyl-code-block>
+
+  <p>
+    Важно: это всё ещё присваивание. Просто правая часть записана короче.
+    Компьютер читает <code>N += 1</code> примерно так:
+    «возьми старое значение <code>N</code>, прибавь <code>1</code>, положи результат обратно в <code>N</code>».
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    int attempts = 1;
+
+    console.writeln("Попытка ", attempts);
+    attempts += 1;
+
+    console.writeln("Попытка ", attempts);
+    attempts += 1;
+
+    console.writeln("Попытка ", attempts);
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Попытка 1
+Попытка 2
+Попытка 3</idyl-output-block>
+
+  <p>
+    А вот операторов <code>++</code> и <code>--</code> в Idyllium нет. Мы не теряем
+    от этого никакой силы: <code>+= 1</code> и <code>-= 1</code> делают то же самое,
+    зато не заводят отдельную странную грамматику ради одной единицы.
+  </p>
+</div>

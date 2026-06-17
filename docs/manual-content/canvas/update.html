@@ -1,0 +1,69 @@
+<div class="docs-section">
+  <h2>Один раз и каждый кадр</h2>
+  <p>
+    У Canvas есть две особенно важные функции-события. <code>on_init</code>
+    вызывается один раз при запуске, а <code>on_update</code> вызывается снова и
+    снова, пока приложение работает.
+  </p>
+  <p>
+    Это похоже на театр: в <code>on_init</code> мы расставляем декорации, а в
+    <code>on_update</code> двигаем актёров по сцене.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use colors;
+use drawable;
+use gui;
+
+drawable.Rectangle left_box;
+drawable.Rectangle right_box;
+
+void function init(gui.Canvas canvas) {
+    left_box.x = 0;
+    left_box.y = 75;
+    left_box.width = 80;
+    left_box.height = 45;
+    left_box.fill_color = colors.RGB(34, 145, 188);
+
+    right_box.x = 320;
+    right_box.y = 145;
+    right_box.width = 80;
+    right_box.height = 45;
+    right_box.fill_color = colors.RGB(230, 92, 110);
+}
+
+void function update(gui.Canvas canvas, float delta_time) {
+    left_box.x += 2;
+    right_box.x -= 2;
+
+    canvas.fill(colors.RGB(20, 24, 32));
+    canvas.draw(left_box);
+    canvas.draw(right_box);
+}
+
+main() {
+    gui.Window win;
+    win.width = 440;
+    win.height = 310;
+    win.title = "Движение";
+
+    gui.Canvas canvas;
+    canvas.x = 20;
+    canvas.y = 20;
+    canvas.width = 400;
+    canvas.height = 240;
+    canvas.framerate_limit = 60;
+    canvas.on_init = init;
+    canvas.on_update = update;
+
+    win.add_child(canvas);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <p>
+    Свойство <code>framerate_limit</code> ограничивает количество обновлений в
+    секунду. Если поставить <code>60</code>, Canvas будет стараться обновляться
+    не чаще шестидесяти раз в секунду.
+  </p>
+</div>

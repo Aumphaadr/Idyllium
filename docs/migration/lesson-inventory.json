@@ -1,0 +1,4632 @@
+{
+  "version": 1,
+  "sourceRoot": "/home/nathaniel/IdylliumProjects/Idyllium/docs/lessons",
+  "generatedAt": "2026-06-14T17:29:20.812Z",
+  "targetStudyLine": [
+    "Консоль",
+    "Виджеты",
+    "ООП",
+    "Canvas",
+    "JSON"
+  ],
+  "sections": [
+    {
+      "id": "console",
+      "title": "📟 Консольное программирование",
+      "lessonCount": 28
+    },
+    {
+      "id": "widgets",
+      "title": "🖼️ Графические виджеты",
+      "lessonCount": 17
+    },
+    {
+      "id": "oop",
+      "title": "🏗️ Объектно-ориентированное программирование",
+      "lessonCount": 13
+    },
+    {
+      "id": "examples",
+      "title": "💡 Примеры задач",
+      "lessonCount": 1
+    }
+  ],
+  "lessons": [
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "000",
+      "lessonPath": "cli/000_setup.html",
+      "lessonTitle": "Установка Idyllium",
+      "htmlTitle": "Установка Idyllium",
+      "subtitle": "Спойлер: она вам не понадобится",
+      "codeBlocks": [],
+      "outputBlocks": [],
+      "reviewFlags": []
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "001",
+      "lessonPath": "cli/001_hello.html",
+      "lessonTitle": "Первая программа",
+      "htmlTitle": "Первая программа",
+      "subtitle": "Вывод данных в консоль — без путаницы и магии",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 7,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "console-write-style"
+          ]
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 97,
+          "lineCount": 7,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "console-write-style"
+          ]
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 126,
+          "lineCount": 6,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "console-write-style"
+          ]
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 155,
+          "lineCount": 7,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "console-write-style"
+          ]
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 109,
+          "preview": "HelloWorld"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 137,
+          "preview": "Hello my Lord"
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 167,
+          "preview": "Сейчас выведем несколько чисел: 11 22 33 44"
+        }
+      ],
+      "reviewFlags": [
+        "code-needs-review"
+      ]
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "002",
+      "lessonPath": "cli/002_variables.html",
+      "lessonTitle": "Переменные и типы данных",
+      "htmlTitle": "Переменные и типы данных",
+      "subtitle": "Храните данные так, чтобы не запутаться ни вам, ни компьютеру",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 72,
+          "lineCount": 10,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "console-write-style"
+          ]
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 106,
+          "lineCount": 12,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "console-write-style"
+          ]
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 127,
+          "lineCount": 18,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/002_variables.html:7:13: error: cannot assign 'float' value to 'int' variable\ncli/002_variables.html:12:15: error: cannot assign 'string' value to 'float' variable\ncli/002_variables.html:17:16: error: cannot assign 'int' value to 'string' variable",
+          "reviewFlags": [
+            "teaching-error-or-error-handling"
+          ]
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 160,
+          "lineCount": 9,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 178,
+          "lineCount": 8,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "console-write-style"
+          ]
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 195,
+          "lineCount": 7,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "console-write-style"
+          ]
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 217,
+          "lineCount": 10,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "console-write-style"
+          ]
+        },
+        {
+          "blockIndex": 8,
+          "sourceLine": 243,
+          "lineCount": 8,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/002_variables.html:5:32: error: 'diam' was not declared in this scope",
+          "reviewFlags": [
+            "console-write-style",
+            "teaching-error-or-error-handling"
+          ]
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 87,
+          "preview": "42 91"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 191,
+          "preview": "Кот сожрал5кг корма!"
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 207,
+          "preview": "Кот сожрал 5 кг корма!"
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 232,
+          "preview": "У вас 20000 денег У вас 25000 денег"
+        }
+      ],
+      "reviewFlags": [
+        "code-needs-review",
+        "program-compile-failure"
+      ]
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "003",
+      "lessonPath": "cli/003_input.html",
+      "lessonTitle": "Ввод данных",
+      "htmlTitle": "Ввод данных",
+      "subtitle": "Программа становится живой, когда умеет слушать пользователя",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 72,
+          "lineCount": 6,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "console-write-style"
+          ]
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 94,
+          "lineCount": 17,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "console-write-style"
+          ]
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 135,
+          "lineCount": 14,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "console-write-style"
+          ]
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 175,
+          "lineCount": 10,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "console-write-style"
+          ]
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 83,
+          "preview": "75 Ваше число: 75"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 116,
+          "preview": "Сейчас посчитаем периметр треугольника Введите первую сторону: 5 Введите вторую сторону: 7 Введит..."
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 154,
+          "preview": "Сколько вам лет: 14 Какая у вас температура: 36.6 Как вас зовут: Рома Рома здоров. Свободен. След..."
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 190,
+          "preview": "Как вас зовут: Пётр Пётр, у вас 0 денег!"
+        }
+      ],
+      "reviewFlags": [
+        "code-needs-review"
+      ]
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "004",
+      "lessonPath": "cli/004_arithmetics.html",
+      "lessonTitle": "Арифметика",
+      "htmlTitle": "Арифметика",
+      "subtitle": "Предсказуемые операции без скрытых подводных камней",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 7,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 84,
+          "lineCount": 11,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/004_arithmetics.html:10:13: error: cannot assign 'float' value to 'int' variable",
+          "reviewFlags": [
+            "console-write-style",
+            "teaching-error-or-error-handling"
+          ]
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 109,
+          "lineCount": 18,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "console-write-style"
+          ]
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 143,
+          "lineCount": 14,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 168,
+          "lineCount": 14,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 72,
+          "preview": "12 -1 18"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 98,
+          "preview": "3.7"
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 130,
+          "preview": "12.5 7.5 25 4"
+        }
+      ],
+      "reviewFlags": [
+        "code-needs-review",
+        "program-compile-failure"
+      ]
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "005",
+      "lessonPath": "cli/005_colors.html",
+      "lessonTitle": "Улучшенный вывод текста",
+      "htmlTitle": "Улучшенный вывод текста",
+      "subtitle": "Как управлять форматом и внешним видом текста в консоли",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 5,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "console-write-style"
+          ]
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 78,
+          "lineCount": 7,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 94,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": [
+            "console-write-style"
+          ]
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 114,
+          "lineCount": 5,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 132,
+          "lineCount": 5,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 150,
+          "lineCount": 11,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 179,
+          "lineCount": 11,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 8,
+          "sourceLine": 208,
+          "lineCount": 6,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 68,
+          "preview": "Кот хочет кушать"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 88,
+          "preview": "Первая строка Вторая строка Третья строка"
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 122,
+          "preview": "Игра \"Minecraft\" была создана в 2009 году"
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 140,
+          "preview": "До Tab После Tab"
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 164,
+          "preview": "Красный текст Зелёный текст Жёлтый текст Синий текст Малиновый текст Стандартный текст"
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 193,
+          "preview": "Текст стал зелёным Текст всё ещё зелёный Пока цвет не поменять, он будет зелёным А теперь текст с..."
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 217,
+          "preview": "Цвет изменён на циановый Цвет сброшен до обычного"
+        }
+      ],
+      "reviewFlags": [
+        "code-needs-review",
+        "review-console-colors-and-clear"
+      ]
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "006",
+      "lessonPath": "cli/006_transforms.html",
+      "lessonTitle": "Преобразования данных",
+      "htmlTitle": "Преобразования данных",
+      "subtitle": "Как превратить число в строку и наоборот — без магии и неожиданностей",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 5,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/006_transforms.html:4:16: error: cannot assign 'int' value to 'string' variable",
+          "reviewFlags": [
+            "teaching-error-or-error-handling"
+          ]
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 76,
+          "lineCount": 6,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 93,
+          "lineCount": 12,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 119,
+          "lineCount": 6,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/006_transforms.html:4:13: error: cannot assign 'string' value to 'int' variable",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 135,
+          "lineCount": 6,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/006_transforms.html:4:15: error: cannot assign 'string' value to 'float' variable",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 152,
+          "lineCount": 17,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 191,
+          "lineCount": 7,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 108,
+          "preview": "Числовая сумма: 50 Строковая сумма: 2030"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 174,
+          "preview": "Будем красить текст! Варианты: 1) Красный 2) Зелёный 3) Жёлтый 4) Синий Выбирайте: 2 Покрашено!"
+        }
+      ],
+      "reviewFlags": [
+        "code-needs-review",
+        "program-compile-failure"
+      ]
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "007",
+      "lessonPath": "cli/007_math.html",
+      "lessonTitle": "Базовые математические функции",
+      "htmlTitle": "Базовые математические функции",
+      "subtitle": "Мощные инструменты из библиотеки math — без лишнего шума",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 1,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 72,
+          "lineCount": 8,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 99,
+          "lineCount": 16,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 134,
+          "lineCount": 8,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 155,
+          "lineCount": 8,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 178,
+          "lineCount": 13,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 83,
+          "preview": "15 42 3.7"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 118,
+          "preview": "Исходное число: 3.6789 round(x): 4 floor(x): 3 ceil(x): 4 round(x, 2): 3.68 floor(x, 2): 3.67 cei..."
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 145,
+          "preview": "256 125 0.25"
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 166,
+          "preview": "7 1.4142135623731 0"
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 194,
+          "preview": "5 0 10 Громкость: 100"
+        }
+      ],
+      "reviewFlags": []
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "008",
+      "lessonPath": "cli/008_if.html",
+      "lessonTitle": "Условный оператор и тип bool",
+      "htmlTitle": "Условный оператор и тип bool",
+      "subtitle": "Как научить программу принимать решения",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 12,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 89,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 98,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": [
+            "console-write-style"
+          ]
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 111,
+          "lineCount": 14,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 142,
+          "lineCount": 16,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 177,
+          "lineCount": 6,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 188,
+          "lineCount": 17,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 8,
+          "sourceLine": 240,
+          "lineCount": 12,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 9,
+          "sourceLine": 274,
+          "lineCount": 23,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 10,
+          "sourceLine": 311,
+          "lineCount": 1,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": [
+            "teaching-error-or-error-handling"
+          ]
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 77,
+          "preview": "Сколько у вас денег: 100 Сколько стоит йогурт: 35 После покупки останется 65 денег!"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 130,
+          "preview": "Сколько у вас денег: 80 Сколько стоит йогурт: 25 После покупки останется 55 денег!"
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 163,
+          "preview": "Введите число: 42 Ваше число положительное!"
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 168,
+          "preview": "Введите число: 0 Ваше число равно нулю!"
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 210,
+          "preview": "Сколько у вас денег: 30 Сколько стоит йогурт: 25 После покупки останется 5 денег!"
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 216,
+          "preview": "Сколько у вас денег: 10 Сколько стоит йогурт: 25 Вам не хватает денег для покупки!"
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 255,
+          "preview": "true true false"
+        }
+      ],
+      "reviewFlags": [
+        "code-needs-review"
+      ]
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "009",
+      "lessonPath": "cli/009_increment.html",
+      "lessonTitle": "Инкремент и декремент",
+      "htmlTitle": "Инкремент и декремент",
+      "subtitle": "Как переменная может изменять саму себя — без магии",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 64,
+          "lineCount": 2,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 77,
+          "lineCount": 2,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 96,
+          "lineCount": 8,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 115,
+          "lineCount": 7,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 133,
+          "lineCount": 2,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": [
+            "uses-plus-plus-or-minus-minus"
+          ]
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 153,
+          "lineCount": 14,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [],
+      "reviewFlags": [
+        "code-needs-review",
+        "rewrite-increment-lesson-no-plus-plus"
+      ]
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "010",
+      "lessonPath": "cli/010_random.html",
+      "lessonTitle": "Случайные числа",
+      "htmlTitle": "Случайные числа",
+      "subtitle": "Как добавить в программу элемент неожиданности",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 1,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 72,
+          "lineCount": 1,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 78,
+          "lineCount": 10,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 101,
+          "lineCount": 1,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 107,
+          "lineCount": 10,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 131,
+          "lineCount": 5,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 148,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 8,
+          "sourceLine": 165,
+          "lineCount": 19,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 9,
+          "sourceLine": 208,
+          "lineCount": 14,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 91,
+          "preview": "42 78 15"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 120,
+          "preview": "F = 2.8374629104857392 G = 2.1295837461029384"
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 139,
+          "preview": "Сырое случайное число: 7.938472635192847 Округлено до 3 знаков: 7.938"
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 154,
+          "preview": "Случайный символ из S: D"
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 187,
+          "preview": "83 86 77 83 86 77 83 86 77"
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 225,
+          "preview": "83 86 77 95 11 22"
+        }
+      ],
+      "reviewFlags": []
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "011",
+      "lessonPath": "cli/011_bool.html",
+      "lessonTitle": "Логические операции",
+      "htmlTitle": "Логические операции",
+      "subtitle": "Как комбинировать условия, не путаясь в приоритетах",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 68,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 82,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 100,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 114,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 128,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 144,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 8,
+          "sourceLine": 158,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 9,
+          "sourceLine": 166,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 10,
+          "sourceLine": 180,
+          "lineCount": 2,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 11,
+          "sourceLine": 188,
+          "lineCount": 4,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [],
+      "reviewFlags": []
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "012",
+      "lessonPath": "cli/012_loops.html",
+      "lessonTitle": "Циклы",
+      "htmlTitle": "Циклы",
+      "subtitle": "Как заставить компьютер делать одно и то же много раз — без копипасты",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 9,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 86,
+          "lineCount": 11,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 113,
+          "lineCount": 7,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 136,
+          "lineCount": 10,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 151,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 166,
+          "lineCount": 11,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 194,
+          "lineCount": 10,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 72,
+          "preview": "Итерация 1 Итерация 2 Итерация 3 Итерация 4 Итерация 5"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 123,
+          "preview": "i = 0 i = 1 i = 2"
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 180,
+          "preview": "1 2 3 4 Цикл завершён."
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 207,
+          "preview": "1 2 4 5"
+        }
+      ],
+      "reviewFlags": []
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "013",
+      "lessonPath": "cli/013_array.html",
+      "lessonTitle": "Массивы",
+      "htmlTitle": "Массивы фиксированной длины",
+      "subtitle": "Как хранить много однотипных данных без сотни переменных",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 15,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 94,
+          "lineCount": 1,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 113,
+          "lineCount": 5,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 134,
+          "lineCount": 12,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 159,
+          "lineCount": 9,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": [
+            "console-write-style",
+            "teaching-error-or-error-handling"
+          ]
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 179,
+          "lineCount": 15,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 199,
+          "lineCount": 4,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 8,
+          "sourceLine": 214,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 9,
+          "sourceLine": 225,
+          "lineCount": 21,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 10,
+          "sourceLine": 255,
+          "lineCount": 6,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": [
+            "console-write-style",
+            "teaching-error-or-error-handling"
+          ]
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 149,
+          "preview": "51 [29, 84, 16, 35] 16"
+        }
+      ],
+      "reviewFlags": [
+        "code-needs-review"
+      ]
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "014",
+      "lessonPath": "cli/014_char.html",
+      "lessonTitle": "Тип char как элемент строки",
+      "htmlTitle": "Тип char и строки",
+      "subtitle": "Как устроены строки изнутри и как с ними работать посимвольно",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 5,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 80,
+          "lineCount": 5,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 101,
+          "lineCount": 7,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": [
+            "teaching-error-or-error-handling"
+          ]
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 119,
+          "lineCount": 5,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 141,
+          "lineCount": 7,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 160,
+          "lineCount": 5,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 184,
+          "lineCount": 8,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 8,
+          "sourceLine": 201,
+          "lineCount": 2,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 127,
+          "preview": "П и н г в и н"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 151,
+          "preview": "Птица: Страус, длина: 6 символов Птица: Фламинго, длина: 8 символов"
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 168,
+          "preview": "Ж у р а в л ь"
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 195,
+          "preview": "пиццавкусная пицца вкусная пицца вкусная!"
+        }
+      ],
+      "reviewFlags": [
+        "code-needs-review"
+      ]
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "015",
+      "lessonPath": "cli/015_dyn_array.html",
+      "lessonTitle": "Динамические массивы",
+      "htmlTitle": "Динамические массивы",
+      "subtitle": "Массив, который сам подстраивается под ваши данные",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 6,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": [
+            "teaching-error-or-error-handling"
+          ]
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 89,
+          "lineCount": 1,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 107,
+          "lineCount": 8,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 128,
+          "lineCount": 5,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 146,
+          "lineCount": 5,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 163,
+          "lineCount": 7,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 182,
+          "lineCount": 7,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 8,
+          "sourceLine": 209,
+          "lineCount": 7,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 118,
+          "preview": "[11, 22, 33, 44, 55, 66]"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 136,
+          "preview": "Было: [Верстак, Кирка, Меч] Стало: [Верстак, Кирка, Меч, Уголь]"
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 154,
+          "preview": "[11, 22, 44, 55, 66, 77, 88]"
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 173,
+          "preview": "В массиве сейчас 5 ячеек А теперь 6 ячеек"
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 192,
+          "preview": "81 45 33 27 90 64 333 444"
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 219,
+          "preview": "A = [24, 91, 63, 50, 78, 0, 0, 0, 0, 0] B = [81, 45, 33, 27, 90]"
+        }
+      ],
+      "reviewFlags": [
+        "code-needs-review"
+      ]
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "016",
+      "lessonPath": "cli/016_arr_functions.html",
+      "lessonTitle": "Функции для работы с массивами",
+      "htmlTitle": "Функции для работы с массивами",
+      "subtitle": "max, min, sum, avg — анализ числовых данных без циклов",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 73,
+          "lineCount": 4,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 88,
+          "lineCount": 7,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": [
+            "teaching-error-or-error-handling"
+          ]
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 104,
+          "lineCount": 7,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 120,
+          "lineCount": 5,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 135,
+          "lineCount": 10,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 159,
+          "lineCount": 4,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 148,
+          "preview": "Максимум: 96 Минимум: 78 Сумма: 439 Среднее: 87.8"
+        }
+      ],
+      "reviewFlags": [
+        "code-needs-review"
+      ]
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "017",
+      "lessonPath": "cli/017_arr_methods.html",
+      "lessonTitle": "Методы массивов",
+      "htmlTitle": "Методы массивов",
+      "subtitle": "Поиск, сортировка, модификация — всё под рукой",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 66,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 78,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 90,
+          "lineCount": 2,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 107,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 121,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 143,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 157,
+          "lineCount": 4,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 8,
+          "sourceLine": 172,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 9,
+          "sourceLine": 186,
+          "lineCount": 4,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 113,
+          "preview": "[4, 3, 2, 1]"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 127,
+          "preview": "[1, 3, 5, 7, 9]"
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 149,
+          "preview": "[10, 15, 20, 30]"
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 164,
+          "preview": "[1, 2, 3, 4]"
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 178,
+          "preview": "Длина: 0"
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 193,
+          "preview": "Удалено: 10 Теперь: [8, 9]"
+        }
+      ],
+      "reviewFlags": []
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "018",
+      "lessonPath": "cli/018_string_methods.html",
+      "lessonTitle": "Методы строк",
+      "htmlTitle": "Методы строк",
+      "subtitle": "Анализ, изменение и разбор текста — без регулярных выражений и путаницы",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 66,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 78,
+          "lineCount": 7,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 100,
+          "lineCount": 4,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 113,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 131,
+          "lineCount": 8,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 151,
+          "lineCount": 9,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 175,
+          "lineCount": 4,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 8,
+          "sourceLine": 198,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 142,
+          "preview": "ПРИВЕТ привет"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 163,
+          "preview": "BcD De FgHiJ"
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 182,
+          "preview": "Кот и кот и ещё кот Кот и пёс и ещё пёс"
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 204,
+          "preview": "[\"яблоко\", \"банан\", \"апельсин\"]"
+        }
+      ],
+      "reviewFlags": []
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "019",
+      "lessonPath": "cli/019_time.html",
+      "lessonTitle": "Библиотека time",
+      "htmlTitle": "Библиотека time",
+      "subtitle": "Работа со временем: от пауз до точных временных меток",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 6,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 77,
+          "lineCount": 7,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 97,
+          "lineCount": 13,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 129,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 145,
+          "lineCount": 8,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 87,
+          "preview": "2025-11-29 18:55:36"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 113,
+          "preview": "Год: 2025 Месяц: 11 День: 29 Час: 18 Минута: 55 Секунда: 36 День недели: 6"
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 135,
+          "preview": "UNIX-время: 1769734536"
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 156,
+          "preview": "Дата: 2000-01-01 00:00:00 Год: 2000"
+        }
+      ],
+      "reviewFlags": []
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "020",
+      "lessonPath": "cli/020_types.html",
+      "lessonTitle": "Библиотека types",
+      "htmlTitle": "Библиотека types",
+      "subtitle": "Как устроены числа «под капотом» — узнаем, чтобы не пугаться C++ и Java",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 86,
+          "lineCount": 11,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 137,
+          "lineCount": 8,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 156,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 166,
+          "lineCount": 9,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 198,
+          "lineCount": 4,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 214,
+          "lineCount": 6,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 234,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 8,
+          "sourceLine": 250,
+          "lineCount": 6,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 9,
+          "sourceLine": 276,
+          "lineCount": 10,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 10,
+          "sourceLine": 306,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 162,
+          "preview": "01001011"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 178,
+          "preview": "Десятичное: 0 = двоичное 00000000 Десятичное: 1 = двоичное 00000001 Десятичное: 2 = двоичное 0000..."
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 205,
+          "preview": "11011101 11011101"
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 223,
+          "preview": "163 -93"
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 240,
+          "preview": "ff"
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 259,
+          "preview": "163 -93"
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 289,
+          "preview": "0.3 в типе float32: 0.300000011920928955078125 0.3 в типе float64: 0.300000000000000044408921"
+        },
+        {
+          "blockIndex": 8,
+          "sourceLine": 312,
+          "preview": "11000001010010000000000000000000"
+        }
+      ],
+      "reviewFlags": []
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "021",
+      "lessonPath": "cli/021_encoding.html",
+      "lessonTitle": "Библиотека encoding",
+      "htmlTitle": "Библиотека encoding",
+      "subtitle": "Как работать с кодировками текста — превращать символы в числа и обратно",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 59,
+          "lineCount": 1,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 91,
+          "lineCount": 9,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 116,
+          "lineCount": 10,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 134,
+          "lineCount": 12,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 159,
+          "lineCount": 9,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 182,
+          "lineCount": 8,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 198,
+          "lineCount": 10,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 8,
+          "sourceLine": 222,
+          "lineCount": 8,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 9,
+          "sourceLine": 237,
+          "lineCount": 11,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 10,
+          "sourceLine": 261,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": [
+            "teaching-error-or-error-handling"
+          ]
+        },
+        {
+          "blockIndex": 11,
+          "sourceLine": 270,
+          "lineCount": 2,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": [
+            "teaching-error-or-error-handling"
+          ]
+        },
+        {
+          "blockIndex": 12,
+          "sourceLine": 281,
+          "lineCount": 22,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 103,
+          "preview": "utf-8 utf-16 ascii windows-1251 iso-8859-5 koi8-r"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 129,
+          "preview": "Символ 'A' в UTF-8: 65 Символ 'A' в ASCII: 65"
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 149,
+          "preview": "'Я' в Windows-1251: 223 'Я' в KOI8-R: 241 'Я' в UTF-8: 1071"
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 171,
+          "preview": "Код 65 в ASCII: A Код 192 в Windows-1251: А"
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 193,
+          "preview": "[72, 105]"
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 211,
+          "preview": "Windows-1251: [168, 230] KOI8-R: [179, 214]"
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 233,
+          "preview": "Hello"
+        },
+        {
+          "blockIndex": 8,
+          "sourceLine": 251,
+          "preview": "Исходник: Привет Коды: [207, 240, 232, 226, 229, 242] Обратно: Привет"
+        },
+        {
+          "blockIndex": 9,
+          "sourceLine": 306,
+          "preview": "Исходное: Hello World Зашифрованное: Khoor Zruog"
+        }
+      ],
+      "reviewFlags": [
+        "code-needs-review"
+      ]
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "022",
+      "lessonPath": "cli/022_functions.html",
+      "lessonTitle": "Создание собственных функций",
+      "htmlTitle": "Создание собственных функций",
+      "subtitle": "Как превратить повторяющиеся действия в переиспользуемые блоки кода",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 59,
+          "lineCount": 4,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 81,
+          "lineCount": 15,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/022_functions.html:6:12: error: 'выходные_данные' was not declared in this scope",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 117,
+          "lineCount": 18,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 146,
+          "lineCount": 21,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 180,
+          "lineCount": 16,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 209,
+          "lineCount": 1,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 214,
+          "lineCount": 1,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 137,
+          "preview": "23 40"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 169,
+          "preview": "720 24024"
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 198,
+          "preview": "----- ------------"
+        }
+      ],
+      "reviewFlags": [
+        "program-compile-failure"
+      ]
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "023",
+      "lessonPath": "cli/023_libs.html",
+      "lessonTitle": "Создание собственных библиотек",
+      "htmlTitle": "Создание собственных библиотек",
+      "subtitle": "Как разбить программу на несколько файлов, чтобы не запутаться в коде",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 77,
+          "lineCount": 13,
+          "form": "module",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 94,
+          "lineCount": 12,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/023_libs.html:4:1: error: module 'draw' was not found",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 115,
+          "lineCount": 1,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 119,
+          "lineCount": 1,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 152,
+          "lineCount": 5,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [],
+      "reviewFlags": [
+        "program-compile-failure"
+      ]
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "024",
+      "lessonPath": "cli/024_files.html",
+      "lessonTitle": "Работа с файлами",
+      "htmlTitle": "Работа с файлами",
+      "subtitle": "Как сохранить результаты программы и читать внешние данные",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 83,
+          "lineCount": 1,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 97,
+          "lineCount": 1,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 114,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 127,
+          "lineCount": 1,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 136,
+          "lineCount": 9,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 157,
+          "lineCount": 1,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 179,
+          "lineCount": 13,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 8,
+          "sourceLine": 206,
+          "lineCount": 12,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 9,
+          "sourceLine": 228,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 10,
+          "sourceLine": 239,
+          "lineCount": 21,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 194,
+          "preview": "[\"Кирка\\n\", \"Топор\\n\", \"Меч\"]"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 220,
+          "preview": "[\"Кирка\", \"Топор\", \"Меч\"]"
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 267,
+          "preview": "[\"Кирка\", \"Топор\", \"Меч\"]"
+        }
+      ],
+      "reviewFlags": []
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "025",
+      "lessonPath": "cli/025_math.html",
+      "lessonTitle": "Продвинутые инструменты math",
+      "htmlTitle": "Продвинутые возможности библиотеки math",
+      "subtitle": "Тригонометрия, логарифмы и математические константы — мощь науки в доступной форме",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 63,
+          "lineCount": 7,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 85,
+          "lineCount": 8,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 109,
+          "lineCount": 2,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 125,
+          "lineCount": 6,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 145,
+          "lineCount": 2,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 158,
+          "lineCount": 13,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 72,
+          "preview": "π = 3.141592653589793 e = 2.718281828459045"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 95,
+          "preview": "sin(90°) = 1 cos(60°) = 0.5000000000000001"
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 113,
+          "preview": "arcsin(1) = 1.5707963267948966 arccos(0) = 1.5707963267948966"
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 133,
+          "preview": "180° = 3.141592653589793 рад π рад = 180°"
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 149,
+          "preview": "ln(e) = 1 log₁₀(1000) = 3"
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 173,
+          "preview": "Дальность полёта при 45°: 254.841997961264 м"
+        }
+      ],
+      "reviewFlags": []
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "026",
+      "lessonPath": "cli/026_matrix.html",
+      "lessonTitle": "Двумерные массивы",
+      "htmlTitle": "Двумерные массивы",
+      "subtitle": "Матрицы, таблицы и игры на клетчатом поле — всё это начинается с двумерного массива",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 61,
+          "lineCount": 6,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 81,
+          "lineCount": 3,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 93,
+          "lineCount": 13,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/026_matrix.html:5:34: error: array initializer has 0 elements, but 'array<array<int, 6>, 4>' requires 4\ncli/026_matrix.html:5:34: error: cannot assign 'array<any, 0>' value to 'array<array<int, 6>, 4>' variable",
+          "reviewFlags": [
+            "console-write-style"
+          ]
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 125,
+          "lineCount": 7,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 140,
+          "lineCount": 1,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 108,
+          "preview": "26 41 73 19 87 52 65 20 42 67 18 38 74 55 93 10 24 89 12 53 40 63 94 76"
+        }
+      ],
+      "reviewFlags": [
+        "code-needs-review",
+        "program-compile-failure"
+      ]
+    },
+    {
+      "sectionId": "console",
+      "sectionTitle": "📟 Консольное программирование",
+      "lessonId": "027",
+      "lessonPath": "cli/027_errors.html",
+      "lessonTitle": "Типичные ошибки",
+      "htmlTitle": "Типичные ошибки",
+      "subtitle": "Справочник ошибок компиляции и выполнения — с примерами и пояснениями",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 105,
+          "lineCount": 3,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/027_errors.html:2:13: error: cannot assign 'string' value to 'int' variable",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 114,
+          "lineCount": 4,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/027_errors.html:3:9: error: cannot assign 'float' value to 'int' variable",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 124,
+          "lineCount": 3,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/027_errors.html:2:5: error: cannot declare variable of type 'void'",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 133,
+          "lineCount": 5,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/027_errors.html:4:13: error: cannot assign 'float' value to 'int' variable",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 149,
+          "lineCount": 5,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/027_errors.html:4:19: error: 'x' was not declared in this scope",
+          "reviewFlags": [
+            "console-write-style"
+          ]
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 160,
+          "lineCount": 3,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/027_errors.html:2:13: error: 'math' is not imported (use 'use math;')",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 174,
+          "lineCount": 5,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/027_errors.html:2:9: error: if condition must be 'bool', got 'int'",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 8,
+          "sourceLine": 185,
+          "lineCount": 3,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/027_errors.html:2:5: error: 'break' is only valid inside a loop",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 9,
+          "sourceLine": 199,
+          "lineCount": 5,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/027_errors.html:1:1: error: function with return type 'int' must return a value",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 10,
+          "sourceLine": 210,
+          "lineCount": 5,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/027_errors.html:2:12: error: void function cannot return a value",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 11,
+          "sourceLine": 221,
+          "lineCount": 7,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/027_errors.html:6:13: error: 'add' expects 2 arguments, got 3",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 12,
+          "sourceLine": 239,
+          "lineCount": 3,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/027_errors.html:2:26: error: array initializer has 3 elements, but 'array<int, 5>' requires 5\ncli/027_errors.html:2:26: error: cannot assign 'array<int, 3>' value to 'array<int, 5>' variable",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 13,
+          "sourceLine": 248,
+          "lineCount": 4,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/027_errors.html:3:5: error: method 'add' is only available on 'dyn_array'",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 14,
+          "sourceLine": 263,
+          "lineCount": 4,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "cli/027_errors.html:3:9: error: comparison '>' requires numeric operands",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 15,
+          "sourceLine": 278,
+          "lineCount": 3,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 16,
+          "sourceLine": 287,
+          "lineCount": 4,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 17,
+          "sourceLine": 297,
+          "lineCount": 6,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 18,
+          "sourceLine": 309,
+          "lineCount": 3,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 19,
+          "sourceLine": 318,
+          "lineCount": 5,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 20,
+          "sourceLine": 329,
+          "lineCount": 5,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 21,
+          "sourceLine": 340,
+          "lineCount": 4,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 22,
+          "sourceLine": 350,
+          "lineCount": 5,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [],
+      "reviewFlags": [
+        "code-needs-review",
+        "program-compile-failure",
+        "teaching-errors"
+      ]
+    },
+    {
+      "sectionId": "widgets",
+      "sectionTitle": "🖼️ Графические виджеты",
+      "lessonId": "000",
+      "lessonPath": "widgets/000_window.html",
+      "lessonTitle": "Первое графическое приложение",
+      "htmlTitle": "Первое графическое приложение",
+      "subtitle": "Создаём окно, добавляем кнопки и знакомимся с координатами",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 78,
+          "lineCount": 1,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 90,
+          "lineCount": 6,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 124,
+          "lineCount": 9,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 144,
+          "lineCount": 16,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 188,
+          "lineCount": 12,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 216,
+          "lineCount": 12,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 244,
+          "lineCount": 6,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 8,
+          "sourceLine": 270,
+          "lineCount": 38,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [],
+      "reviewFlags": [
+        "pre-canvas-widget-doc"
+      ]
+    },
+    {
+      "sectionId": "widgets",
+      "sectionTitle": "🖼️ Графические виджеты",
+      "lessonId": "001",
+      "lessonPath": "widgets/001_button.html",
+      "lessonTitle": "Кнопки и события",
+      "htmlTitle": "Кнопки и события",
+      "subtitle": "Как заставить кнопку что-то делать при нажатии",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 72,
+          "lineCount": 16,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 115,
+          "lineCount": 21,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 173,
+          "lineCount": 43,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [],
+      "reviewFlags": [
+        "pre-canvas-widget-doc"
+      ]
+    },
+    {
+      "sectionId": "widgets",
+      "sectionTitle": "🖼️ Графические виджеты",
+      "lessonId": "002",
+      "lessonPath": "widgets/002_label.html",
+      "lessonTitle": "Виджет Label",
+      "htmlTitle": "Виджет Label",
+      "subtitle": "Текстовая метка: координаты, размер шрифта, цвет и динамическое изменение",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 93,
+          "lineCount": 22,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 136,
+          "lineCount": 24,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 181,
+          "lineCount": 26,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 228,
+          "lineCount": 8,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "widgets/002_label.html:7:18: error: cannot assign 'int' value to 'string' variable",
+          "reviewFlags": [
+            "teaching-error-or-error-handling"
+          ]
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 245,
+          "lineCount": 28,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 294,
+          "lineCount": 31,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "legacy-widget-color-string",
+            "raw-hex-color-string"
+          ]
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 347,
+          "lineCount": 21,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 8,
+          "sourceLine": 388,
+          "lineCount": 7,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [],
+      "reviewFlags": [
+        "code-needs-review",
+        "pre-canvas-widget-doc",
+        "program-compile-failure"
+      ]
+    },
+    {
+      "sectionId": "widgets",
+      "sectionTitle": "🖼️ Графические виджеты",
+      "lessonId": "003",
+      "lessonPath": "widgets/003_progressbar.html",
+      "lessonTitle": "Виджет ProgressBar",
+      "htmlTitle": "Виджет ProgressBar",
+      "subtitle": "Полоска прогресса — показываем, сколько осталось ждать",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 84,
+          "lineCount": 17,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "progressbar-example"
+          ]
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 134,
+          "lineCount": 5,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": [
+            "progressbar-example"
+          ]
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 152,
+          "lineCount": 34,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "progressbar-example"
+          ]
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 225,
+          "lineCount": 30,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "progressbar-example"
+          ]
+        }
+      ],
+      "outputBlocks": [],
+      "reviewFlags": [
+        "code-needs-review",
+        "pre-canvas-widget-doc",
+        "review-progressbar-colors"
+      ]
+    },
+    {
+      "sectionId": "widgets",
+      "sectionTitle": "🖼️ Графические виджеты",
+      "lessonId": "004",
+      "lessonPath": "widgets/004_spinbox.html",
+      "lessonTitle": "Виджеты SpinBox и FloatSpinBox",
+      "htmlTitle": "Виджеты SpinBox и FloatSpinBox",
+      "subtitle": "Числовые поля с кнопками увеличения и уменьшения",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 87,
+          "lineCount": 17,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 132,
+          "lineCount": 20,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 174,
+          "lineCount": 20,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 216,
+          "lineCount": 29,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [],
+      "reviewFlags": [
+        "pre-canvas-widget-doc"
+      ]
+    },
+    {
+      "sectionId": "widgets",
+      "sectionTitle": "🖼️ Графические виджеты",
+      "lessonId": "005",
+      "lessonPath": "widgets/005_slider.html",
+      "lessonTitle": "Виджет Slider",
+      "htmlTitle": "Виджет Slider",
+      "subtitle": "Ползунок для выбора значения из диапазона",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 81,
+          "lineCount": 17,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 126,
+          "lineCount": 20,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 169,
+          "lineCount": 29,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [],
+      "reviewFlags": [
+        "pre-canvas-widget-doc"
+      ]
+    },
+    {
+      "sectionId": "widgets",
+      "sectionTitle": "🖼️ Графические виджеты",
+      "lessonId": "006",
+      "lessonPath": "widgets/006_lineedit.html",
+      "lessonTitle": "Виджет LineEdit",
+      "htmlTitle": "Виджеты LineEdit и TextEdit",
+      "subtitle": "Однострочное и многострочное текстовые поля",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 81,
+          "lineCount": 16,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 119,
+          "lineCount": 39,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 182,
+          "lineCount": 27,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 236,
+          "lineCount": 18,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 281,
+          "lineCount": 53,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 374,
+          "lineCount": 18,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 418,
+          "lineCount": 41,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [],
+      "reviewFlags": [
+        "pre-canvas-widget-doc"
+      ]
+    },
+    {
+      "sectionId": "widgets",
+      "sectionTitle": "🖼️ Графические виджеты",
+      "lessonId": "007",
+      "lessonPath": "widgets/007_checkbox.html",
+      "lessonTitle": "Виджет CheckBox",
+      "htmlTitle": "Виджет CheckBox",
+      "subtitle": "Флажок для выбора опции «вкл/выкл»",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 81,
+          "lineCount": 16,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 126,
+          "lineCount": 37,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 188,
+          "lineCount": 30,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [],
+      "reviewFlags": [
+        "pre-canvas-widget-doc"
+      ]
+    },
+    {
+      "sectionId": "widgets",
+      "sectionTitle": "🖼️ Графические виджеты",
+      "lessonId": "008",
+      "lessonPath": "widgets/008_radiobutton.html",
+      "lessonTitle": "Виджет RadioButton",
+      "htmlTitle": "Виджет RadioButton",
+      "subtitle": "Переключатель для выбора одного варианта из группы",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 81,
+          "lineCount": 28,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 144,
+          "lineCount": 48,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 225,
+          "lineCount": 40,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 300,
+          "lineCount": 54,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [],
+      "reviewFlags": [
+        "pre-canvas-widget-doc"
+      ]
+    },
+    {
+      "sectionId": "widgets",
+      "sectionTitle": "🖼️ Графические виджеты",
+      "lessonId": "009",
+      "lessonPath": "widgets/009_frame.html",
+      "lessonTitle": "Виджет Frame",
+      "htmlTitle": "Виджет Frame",
+      "subtitle": "Контейнер для группировки других виджетов",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 81,
+          "lineCount": 18,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 122,
+          "lineCount": 45,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 199,
+          "lineCount": 34,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [],
+      "reviewFlags": [
+        "pre-canvas-widget-doc"
+      ]
+    },
+    {
+      "sectionId": "widgets",
+      "sectionTitle": "🖼️ Графические виджеты",
+      "lessonId": "010",
+      "lessonPath": "widgets/010_combobox.html",
+      "lessonTitle": "Виджет ComboBox",
+      "htmlTitle": "Виджет ComboBox",
+      "subtitle": "Выпадающий список для выбора одного варианта из нескольких",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 81,
+          "lineCount": 20,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 127,
+          "lineCount": 9,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 145,
+          "lineCount": 1,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 159,
+          "lineCount": 38,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 223,
+          "lineCount": 29,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [],
+      "reviewFlags": [
+        "pre-canvas-widget-doc"
+      ]
+    },
+    {
+      "sectionId": "widgets",
+      "sectionTitle": "🖼️ Графические виджеты",
+      "lessonId": "011",
+      "lessonPath": "widgets/011_visibility.html",
+      "lessonTitle": "Видимость виджетов",
+      "htmlTitle": "Видимость виджетов",
+      "subtitle": "Как скрывать и показывать элементы интерфейса",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 72,
+          "lineCount": 25,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "progressbar-example"
+          ]
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 123,
+          "lineCount": 39,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 184,
+          "lineCount": 57,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [],
+      "reviewFlags": [
+        "code-needs-review",
+        "pre-canvas-widget-doc"
+      ]
+    },
+    {
+      "sectionId": "widgets",
+      "sectionTitle": "🖼️ Графические виджеты",
+      "lessonId": "012",
+      "lessonPath": "widgets/012_arrays.html",
+      "lessonTitle": "Массивы виджетов",
+      "htmlTitle": "Массивы виджетов",
+      "subtitle": "Как управлять группой однотипных элементов интерфейса",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 75,
+          "lineCount": 9,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 103,
+          "lineCount": 32,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 162,
+          "lineCount": 23,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 209,
+          "lineCount": 32,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 262,
+          "lineCount": 38,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "progressbar-example"
+          ]
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 87,
+          "preview": "numbers[0] = 10 numbers[1] = 20 numbers[2] = 30 numbers[3] = 40 numbers[4] = 50 numbers[5] = 60 n..."
+        }
+      ],
+      "reviewFlags": [
+        "code-needs-review",
+        "pre-canvas-widget-doc"
+      ]
+    },
+    {
+      "sectionId": "widgets",
+      "sectionTitle": "🖼️ Графические виджеты",
+      "lessonId": "013",
+      "lessonPath": "widgets/013_sender.html",
+      "lessonTitle": "Отправители",
+      "htmlTitle": "Отправители (sender)",
+      "subtitle": "Как узнать, какой виджет вызвал обработчик",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 72,
+          "lineCount": 25,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 122,
+          "lineCount": 31,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 182,
+          "lineCount": 32,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [],
+      "reviewFlags": [
+        "pre-canvas-widget-doc"
+      ]
+    },
+    {
+      "sectionId": "widgets",
+      "sectionTitle": "🖼️ Графические виджеты",
+      "lessonId": "014",
+      "lessonPath": "widgets/014_timer.html",
+      "lessonTitle": "Объект Timer",
+      "htmlTitle": "Объект Timer",
+      "subtitle": "Выполнение кода через равные промежутки времени",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 81,
+          "lineCount": 28,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 133,
+          "lineCount": 4,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 148,
+          "lineCount": 3,
+          "form": "module",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 167,
+          "lineCount": 47,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 236,
+          "lineCount": 29,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 285,
+          "lineCount": 4,
+          "form": "module",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [],
+      "reviewFlags": [
+        "pre-canvas-widget-doc"
+      ]
+    },
+    {
+      "sectionId": "widgets",
+      "sectionTitle": "🖼️ Графические виджеты",
+      "lessonId": "015",
+      "lessonPath": "widgets/015_modal.html",
+      "lessonTitle": "Модальные окна",
+      "htmlTitle": "Модальные окна",
+      "subtitle": "Диалоги для уведомлений, подтверждений и ввода данных",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 91,
+          "lineCount": 25,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 143,
+          "lineCount": 41,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 215,
+          "lineCount": 42,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 289,
+          "lineCount": 79,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [],
+      "reviewFlags": [
+        "pre-canvas-widget-doc"
+      ]
+    },
+    {
+      "sectionId": "widgets",
+      "sectionTitle": "🖼️ Графические виджеты",
+      "lessonId": "016",
+      "lessonPath": "widgets/016_errors.html",
+      "lessonTitle": "Типичные ошибки",
+      "htmlTitle": "Типичные ошибки при работе с виджетами",
+      "subtitle": "Как не попасть в ловушки и понять сообщения компилятора",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 61,
+          "lineCount": 11,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 87,
+          "lineCount": 22,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 124,
+          "lineCount": 14,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "widgets/016_errors.html:8:20: error: callback property 'on_click' expects function(): void or function(gui.Button): void, got function(gui.Label): void",
+          "reviewFlags": [
+            "teaching-error-or-error-handling"
+          ]
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 153,
+          "lineCount": 7,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "widgets/016_errors.html:6:18: error: cannot assign 'int' value to 'string' variable",
+          "reviewFlags": [
+            "teaching-error-or-error-handling"
+          ]
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 175,
+          "lineCount": 13,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "widgets/016_errors.html:6:5: error: 'btn' was not declared in this scope\nwidgets/016_errors.html:6:5: error: type '<error>' has no property 'on_click'\nwidgets/016_errors.html:7:9: error: 'console' is not imported (use 'use console;')",
+          "reviewFlags": [
+            "teaching-error-or-error-handling"
+          ]
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 203,
+          "lineCount": 17,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 7,
+          "sourceLine": 235,
+          "lineCount": 9,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "widgets/016_errors.html:6:19: error: 'add_child' argument 1 expects gui widget, got 'gui.Modal'",
+          "reviewFlags": [
+            "teaching-error-or-error-handling"
+          ]
+        },
+        {
+          "blockIndex": 8,
+          "sourceLine": 259,
+          "lineCount": 16,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "teaching-error-or-error-handling"
+          ]
+        },
+        {
+          "blockIndex": 9,
+          "sourceLine": 290,
+          "lineCount": 8,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "widgets/016_errors.html:6:5: error: type 'gui.Button' has no property 'placeholder'\nwidgets/016_errors.html:7:5: error: type 'gui.Button' has no property 'font_size'",
+          "reviewFlags": [
+            "teaching-error-or-error-handling"
+          ]
+        }
+      ],
+      "outputBlocks": [],
+      "reviewFlags": [
+        "code-needs-review",
+        "pre-canvas-widget-doc",
+        "program-compile-failure",
+        "teaching-errors"
+      ]
+    },
+    {
+      "sectionId": "oop",
+      "sectionTitle": "🏗️ Объектно-ориентированное программирование",
+      "lessonId": "000",
+      "lessonPath": "oop/000_intro.html",
+      "lessonTitle": "Введение в ООП",
+      "htmlTitle": "Введение в ООП",
+      "subtitle": "От переменных и функций — к собственным типам данных",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 9,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 83,
+          "lineCount": 12,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 110,
+          "lineCount": 7,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 136,
+          "lineCount": 9,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "oop/000_intro.html:4:5: error: unknown class 'Cat'\noop/000_intro.html:5:5: error: type '<error>' has no property 'name'\noop/000_intro.html:6:5: error: type '<error>' has no property 'color'\noop/000_intro.html:7:5: error: type '<error>' has no property 'age'\noop/000_intro.html:8:5: error: type '<error>' has no method 'meow'",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 152,
+          "lineCount": 5,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 72,
+          "preview": "Имя: Анна, Возраст: 25, Цена: 19.99"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 98,
+          "preview": "Привет, Анна! Привет, Пётр! Привет, Мария!"
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 148,
+          "preview": "Мяу! Меня зовут Барсик"
+        }
+      ],
+      "reviewFlags": [
+        "program-compile-failure"
+      ]
+    },
+    {
+      "sectionId": "oop",
+      "sectionTitle": "🏗️ Объектно-ориентированное программирование",
+      "lessonId": "001",
+      "lessonPath": "oop/001_classes.html",
+      "lessonTitle": "Создание класса",
+      "htmlTitle": "Создание класса",
+      "subtitle": "Как объявить свой тип данных и создавать объекты",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 5,
+          "form": "module",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 81,
+          "lineCount": 28,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 130,
+          "lineCount": 2,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 147,
+          "lineCount": 6,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 112,
+          "preview": "Toyota red 2020 BMW black 2022 Lada white 2015"
+        }
+      ],
+      "reviewFlags": []
+    },
+    {
+      "sectionId": "oop",
+      "sectionTitle": "🏗️ Объектно-ориентированное программирование",
+      "lessonId": "002",
+      "lessonPath": "oop/002_fields_methods.html",
+      "lessonTitle": "Свойства и методы",
+      "htmlTitle": "Свойства и методы",
+      "subtitle": "Как объекты объединяют данные и действия",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 73,
+          "lineCount": 21,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 119,
+          "lineCount": 25,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 167,
+          "lineCount": 9,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "oop/002_fields_methods.html:7:5: error: instance method 'Cat.meow' must be called on an object\noop/002_fields_methods.html:8:16: error: instance field 'Cat.name' must be accessed through an object",
+          "reviewFlags": [
+            "standalone-without-use",
+            "teaching-error-or-error-handling"
+          ]
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 97,
+          "preview": "Мяу! Мяу!"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 147,
+          "preview": "Бам! На голову упал кирпич!"
+        }
+      ],
+      "reviewFlags": [
+        "code-needs-review",
+        "program-compile-failure"
+      ]
+    },
+    {
+      "sectionId": "oop",
+      "sectionTitle": "🏗️ Объектно-ориентированное программирование",
+      "lessonId": "003",
+      "lessonPath": "oop/003_this.html",
+      "lessonTitle": "Идентификатор this",
+      "htmlTitle": "Идентификатор this",
+      "subtitle": "Как методу узнать, какой объект его вызвал",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 20,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 94,
+          "lineCount": 20,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 136,
+          "lineCount": 11,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 162,
+          "lineCount": 26,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 83,
+          "preview": "Кот мяукнул! Кот мяукнул!"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 117,
+          "preview": "Барсик мяукнул! Мурзик мяукнул!"
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 191,
+          "preview": "Кот по кличке Барсик: 3 лет, цвет рыжий Кот по кличке Мурзик: 5 лет, цвет белый"
+        }
+      ],
+      "reviewFlags": []
+    },
+    {
+      "sectionId": "oop",
+      "sectionTitle": "🏗️ Объектно-ориентированное программирование",
+      "lessonId": "004",
+      "lessonPath": "oop/004_modules.html",
+      "lessonTitle": "Разбиение проекта по файлам",
+      "htmlTitle": "Разбиение проекта по файлам",
+      "subtitle": "Как не заблудиться в собственном коде",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 67,
+          "lineCount": 18,
+          "form": "module",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 96,
+          "lineCount": 13,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "oop/004_modules.html:2:1: error: module 'rect' was not found",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 112,
+          "preview": "Площадь равна: 600 После масштабирования: 780"
+        }
+      ],
+      "reviewFlags": [
+        "program-compile-failure"
+      ]
+    },
+    {
+      "sectionId": "oop",
+      "sectionTitle": "🏗️ Объектно-ориентированное программирование",
+      "lessonId": "005",
+      "lessonPath": "oop/005_arrays.html",
+      "lessonTitle": "Массивы объектов",
+      "htmlTitle": "Массивы объектов",
+      "subtitle": "Как хранить много собак в одной упряжке",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 9,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 87,
+          "lineCount": 10,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 115,
+          "lineCount": 20,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "oop/005_arrays.html:6:9: error: 'console' is not imported (use 'use console;')",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 146,
+          "lineCount": 11,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 168,
+          "lineCount": 7,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 186,
+          "lineCount": 27,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "oop/005_arrays.html:25:9: error: 'console' is not imported (use 'use console;')",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 72,
+          "preview": "Барсик Мурка Рекс Тузик Дружок Мурзик"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 100,
+          "preview": "Барсик -> 6 Мурка -> 5 Рекс -> 4 Тузик -> 5 Дружок -> 6 Мурзик -> 6"
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 216,
+          "preview": "Шарик 3 Бобик 5"
+        }
+      ],
+      "reviewFlags": [
+        "code-needs-review",
+        "program-compile-failure"
+      ]
+    },
+    {
+      "sectionId": "oop",
+      "sectionTitle": "🏗️ Объектно-ориентированное программирование",
+      "lessonId": "006",
+      "lessonPath": "oop/006_constructor.html",
+      "lessonTitle": "Конструктор и деструктор",
+      "htmlTitle": "Конструктор и деструктор",
+      "subtitle": "Как инициализировать объекты и освобождать ресурсы",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 30,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 104,
+          "lineCount": 14,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 134,
+          "lineCount": 21,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 167,
+          "lineCount": 30,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "oop/006_constructor.html:12:5: error: destructors are not supported yet\noop/006_constructor.html:15:1: error: unexpected token 'RightBrace' at top level",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 213,
+          "lineCount": 21,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 121,
+          "preview": "Создан новый объект Animal Создан новый объект Animal Создан новый объект Animal Создан новый объ..."
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 200,
+          "preview": "Удаляем первый круг... Круг Круг_0 уничтожен Удаляем ещё один... Круг Круг_1 уничтожен"
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 237,
+          "preview": "Cat(Барсик) Cat(Мурка)"
+        }
+      ],
+      "reviewFlags": [
+        "code-needs-review",
+        "program-compile-failure"
+      ]
+    },
+    {
+      "sectionId": "oop",
+      "sectionTitle": "🏗️ Объектно-ориентированное программирование",
+      "lessonId": "007",
+      "lessonPath": "oop/007_composition.html",
+      "lessonTitle": "Композиция",
+      "htmlTitle": "Композиция",
+      "subtitle": "Как строить сложные объекты из простых",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 29,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 101,
+          "lineCount": 34,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 146,
+          "lineCount": 1,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [],
+      "reviewFlags": [
+        "code-needs-review"
+      ]
+    },
+    {
+      "sectionId": "oop",
+      "sectionTitle": "🏗️ Объектно-ориентированное программирование",
+      "lessonId": "008",
+      "lessonPath": "oop/008_inheritance.html",
+      "lessonTitle": "Наследование",
+      "htmlTitle": "Наследование",
+      "subtitle": "Как один класс может быть частным случаем другого",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 30,
+          "form": "module",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 103,
+          "lineCount": 18,
+          "form": "module",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 132,
+          "lineCount": 22,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 167,
+          "lineCount": 30,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 157,
+          "preview": "КАМАЗ 5490 завёлся"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 200,
+          "preview": "КАМАЗ 5490 завёлся Грузоподъёмность: 20 тонн"
+        }
+      ],
+      "reviewFlags": []
+    },
+    {
+      "sectionId": "oop",
+      "sectionTitle": "🏗️ Объектно-ориентированное программирование",
+      "lessonId": "009",
+      "lessonPath": "oop/009_polymorphism.html",
+      "lessonTitle": "Полиморфизм",
+      "htmlTitle": "Переопределение методов",
+      "subtitle": "Как потомок может изменить поведение унаследованного метода",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 67,
+          "lineCount": 41,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 122,
+          "lineCount": 11,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "oop/009_polymorphism.html:1:1: error: unknown base class 'Animal'\noop/009_polymorphism.html:3:9: error: 'parent' expects 0 arguments, got 1\noop/009_polymorphism.html:10:5: error: type 'Cow' has no method 'speak'",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 144,
+          "lineCount": 16,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "oop/009_polymorphism.html:3:9: error: 'console' is not imported (use 'use console;')\noop/009_polymorphism.html:9:9: error: 'console' is not imported (use 'use console;')",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 171,
+          "lineCount": 1,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": [
+            "teaching-error-or-error-handling"
+          ]
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 111,
+          "preview": "Рекс гавкнул: Woof! Мурка мяукнул: Meow!"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 136,
+          "preview": "..."
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 163,
+          "preview": "Я собака"
+        }
+      ],
+      "reviewFlags": [
+        "code-needs-review",
+        "program-compile-failure"
+      ]
+    },
+    {
+      "sectionId": "oop",
+      "sectionTitle": "🏗️ Объектно-ориентированное программирование",
+      "lessonId": "010",
+      "lessonPath": "oop/010_encapsulation.html",
+      "lessonTitle": "Инкапсуляция",
+      "htmlTitle": "Инкапсуляция",
+      "subtitle": "Как защитить данные от неконтролируемых изменений",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 19,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 104,
+          "lineCount": 30,
+          "form": "module",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 143,
+          "lineCount": 49,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 210,
+          "lineCount": 4,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "oop/010_encapsulation.html:2:5: error: unknown class 'Hero'\noop/010_encapsulation.html:2:5: error: constructor-style declaration requires a class type, got '<error>'\noop/010_encapsulation.html:3:5: error: type '<error>' has no property 'hp'",
+          "reviewFlags": [
+            "standalone-without-use",
+            "teaching-error-or-error-handling"
+          ]
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 82,
+          "preview": "Воин: 40 Воин: 115"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 195,
+          "preview": "Воин: 40 Здоровье восстановлено до максимума! Воин: 100 Воин: 70 Герой повержен! Воин: 0"
+        }
+      ],
+      "reviewFlags": [
+        "code-needs-review",
+        "program-compile-failure"
+      ]
+    },
+    {
+      "sectionId": "oop",
+      "sectionTitle": "🏗️ Объектно-ориентированное программирование",
+      "lessonId": "011",
+      "lessonPath": "oop/011_static.html",
+      "lessonTitle": "Статические методы",
+      "htmlTitle": "Статические методы",
+      "subtitle": "Методы, которые принадлежат классу, а не объекту",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 10,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "oop/011_static.html:3:9: error: 'console' is not imported (use 'use console;')",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 82,
+          "lineCount": 11,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 106,
+          "lineCount": 7,
+          "form": "module",
+          "compileStatus": "skipped",
+          "reviewFlags": [
+            "teaching-error-or-error-handling"
+          ]
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 133,
+          "lineCount": 22,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": []
+        }
+      ],
+      "outputBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 96,
+          "preview": "Мяу"
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 158,
+          "preview": "Квадрат 5: 25 Куб 5: 125 5 чётное? false"
+        }
+      ],
+      "reviewFlags": [
+        "code-needs-review",
+        "program-compile-failure"
+      ]
+    },
+    {
+      "sectionId": "oop",
+      "sectionTitle": "🏗️ Объектно-ориентированное программирование",
+      "lessonId": "012",
+      "lessonPath": "oop/012_errors.html",
+      "lessonTitle": "Типичные ошибки",
+      "htmlTitle": "Типичные ошибки",
+      "subtitle": "Справочник ошибок при работе с классами и объектами",
+      "codeBlocks": [
+        {
+          "blockIndex": 1,
+          "sourceLine": 60,
+          "lineCount": 7,
+          "form": "program",
+          "compileStatus": "success",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 2,
+          "sourceLine": 82,
+          "lineCount": 7,
+          "form": "module",
+          "compileStatus": "skipped",
+          "reviewFlags": [
+            "teaching-error-or-error-handling"
+          ]
+        },
+        {
+          "blockIndex": 3,
+          "sourceLine": 104,
+          "lineCount": 9,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "oop/012_errors.html:8:5: error: member 'BankAccount.balance' is private and can only be used inside class 'BankAccount'",
+          "reviewFlags": [
+            "standalone-without-use",
+            "teaching-error-or-error-handling"
+          ]
+        },
+        {
+          "blockIndex": 4,
+          "sourceLine": 128,
+          "lineCount": 4,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "oop/012_errors.html:3:5: error: unknown class 'Cat'",
+          "reviewFlags": [
+            "standalone-without-use"
+          ]
+        },
+        {
+          "blockIndex": 5,
+          "sourceLine": 147,
+          "lineCount": 5,
+          "form": "snippet",
+          "compileStatus": "skipped",
+          "reviewFlags": []
+        },
+        {
+          "blockIndex": 6,
+          "sourceLine": 167,
+          "lineCount": 10,
+          "form": "program",
+          "compileStatus": "failure",
+          "diagnosticsText": "oop/012_errors.html:9:13: error: static method 'MathUtils.square' must be called on class 'MathUtils'",
+          "reviewFlags": [
+            "standalone-without-use",
+            "teaching-error-or-error-handling"
+          ]
+        }
+      ],
+      "outputBlocks": [],
+      "reviewFlags": [
+        "code-needs-review",
+        "program-compile-failure",
+        "teaching-errors"
+      ]
+    },
+    {
+      "sectionId": "examples",
+      "sectionTitle": "💡 Примеры задач",
+      "lessonId": "000",
+      "lessonPath": "examples/000_calc.html",
+      "lessonTitle": "Калькулятор",
+      "htmlTitle": "",
+      "subtitle": "",
+      "codeBlocks": [],
+      "outputBlocks": [],
+      "reviewFlags": [
+        "missing-html-file"
+      ]
+    }
+  ],
+  "orphanHtmlFiles": [
+    "cli/cli_hub.html",
+    "docs.html",
+    "oop/oop_hub.html",
+    "widgets/widgets_hub.html"
+  ],
+  "totals": {
+    "lessons": 59,
+    "codeBlocks": 352,
+    "outputBlocks": 127,
+    "programCodeBlocks": 221,
+    "moduleCodeBlocks": 10,
+    "snippetCodeBlocks": 121,
+    "compiledPrograms": 179,
+    "failedPrograms": 42,
+    "reviewLessons": 45
+  }
+}

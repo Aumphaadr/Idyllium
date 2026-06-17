@@ -1,0 +1,7 @@
+int total = 0;
+for (int r = 0; r < 4; r = r + 1) {
+    for (int c = 0; c < 6; c = c + 1) {
+        total = total + mx[r][c];
+    }
+}
+console.writeln("Сумма: ", total); // Сумма: 1424

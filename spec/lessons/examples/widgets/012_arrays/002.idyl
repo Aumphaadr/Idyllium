@@ -1,0 +1,32 @@
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 200;
+    win.height = 280;
+    win.title = "Массив лейблов";
+
+    array<gui.Label, 7> labels;
+
+    for (int i = 0; i < 7; i = i + 1) {
+        labels[i].x = 20;
+        labels[i].y = 20 + i * 30;
+        labels[i].text = "Лейбл " + to_string(i);
+        win.add_child(labels[i]);
+    }
+
+    gui.Button btn;
+    btn.text = "Сменить текст";
+    btn.x = 20;
+    btn.y = 230;
+    btn.width = 150;
+
+    btn.on_click = void function() {
+        for (int i = 0; i < 7; i = i + 1) {
+            labels[i].text = "Новый текст " + to_string(i);
+        }
+    };
+
+    win.add_child(btn);
+    win.show();
+}

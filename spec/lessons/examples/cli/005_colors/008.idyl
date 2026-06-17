@@ -1,0 +1,6 @@
+use console;
+
+main() {
+    console.writeln("\e[36m", "Цвет изменён на циановый");
+    console.writeln("\e[0m", "Цвет сброшен до обычного");
+}
