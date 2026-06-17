@@ -1,0 +1,122 @@
+<div class="docs-section">
+  <h2>Прочитаем JSON из файла</h2>
+  <p>
+    Для чтения JSON удобно забрать весь файл одной строкой через
+    <code>read_all()</code>, а затем передать текст в <code>json.parse()</code>.
+  </p>
+  <p>
+    Пусть в файле <code>player.json</code> лежит такой JSON:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+{
+    "name": "Liam",
+    "age": 12,
+    "is_admin": false,
+    "middle_name": null
+}
+</script></idyl-code-block>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use file;
+use json;
+
+main() {
+    file.istream fin = file.open("player.json", "read");
+    string text = fin.read_all();
+    fin.close();
+
+    json.Value root_value = json.parse(text);
+    console.writeln(root_value.to_json());
+}
+</script></idyl-code-block>
+  <idyl-output-block>{"name":"Liam","age":12,"is_admin":false,"middle_name":null}</idyl-output-block>
+</div>
+
+<div class="docs-section">
+  <h2>Достаём отдельные свойства</h2>
+  <p>
+    Метод <code>get()</code> достаёт значение по ключу. Но возвращает он не
+    сразу строку или число, а <code>json.Value</code>. После этого мы явно
+    говорим, какой тип ожидаем.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use json;
+
+main() {
+    string data = "{\"name\":\"Liam\",\"age\":12,\"is_admin\":false,\"middle_name\":null}";
+    json.Value root_value = json.parse(data);
+    json.Object root = root_value.to_object();
+
+    string name = root.get("name").to_string();
+    int age = root.get("age").to_int();
+    bool is_admin = root.get("is_admin").to_bool();
+
+    console.writeln(name, ": ", age, ", admin = ", is_admin);
+}
+</script></idyl-code-block>
+  <idyl-output-block>Liam: 12, admin = false</idyl-output-block>
+</div>
+
+<div class="docs-section">
+  <h2>Если тип заранее неизвестен</h2>
+  <p>
+    Иногда программа не уверена, что именно лежит в JSON. Тогда можно сначала
+    проверить тип, а уже потом преобразовывать значение.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use json;
+
+main() {
+    json.Value value = json.parse("12");
+
+    if (value.is_int()) {
+        console.writeln("Целое число: ", value.to_int());
+    }
+    else if (value.is_string()) {
+        console.writeln("Строка: ", value.to_string());
+    }
+}
+</script></idyl-code-block>
+  <idyl-output-block>Целое число: 12</idyl-output-block>
+</div>
+
+<div class="docs-section">
+  <h2>Что такое <code>null</code></h2>
+  <p>
+    <code>null</code> означает «значения нет». Это не пустая строка, не ноль и
+    не <code>false</code>. Это отдельное состояние: ячейка есть, но внутри неё
+    ничего не лежит.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+{
+    "name": "Liam",
+    "middle_name": null
+}
+</script></idyl-code-block>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use json;
+
+main() {
+    json.Value value = json.NULL;
+
+    if (value.is_null()) {
+        console.writeln("Значения нет");
+    }
+}
+</script></idyl-code-block>
+  <idyl-output-block>Значения нет</idyl-output-block>
+
+  <p>
+    <code>null</code> нельзя превратить в строку, число или булево значение.
+    Если попробовать, программа выдаст понятную ошибку времени выполнения.
+  </p>
+</div>

@@ -1,0 +1,250 @@
+<style data-lesson-style>
+.interactive-demo {
+      background: rgba(137, 180, 250, 0.05);
+      border-radius: 12px;
+      padding: 1em;
+      margin: 1.5em 0;
+    }
+    .interactive-demo .coord-note {
+      margin-top: 1em;
+    }
+</style>
+
+<!-- Hero -->
+    
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Свойство <code>visible</code></h2>
+      <p>У каждого виджета есть свойство <code>visible</code> логического типа (<code>bool</code>). Если <code>visible = false</code> — виджет не отображается на экране, но продолжает существовать в памяти.</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 180;
+    win.title = "Видимость прогрессбаров";
+
+    gui.ProgressBar pb1;
+    pb1.x = 20;
+    pb1.y = 30;
+    pb1.width = 310;
+    pb1.value = 75;
+
+    gui.ProgressBar pb2;
+    pb2.x = 20;
+    pb2.y = 80;
+    pb2.width = 310;
+    pb2.value = 30;
+    pb2.visible = false;  // скрыт
+
+    win.add_child(pb1);
+    win.add_child(pb2);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 130px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 30px; width: 310px;">
+              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
+                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 75%; border-radius: 4px;"></div>
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">75%</div>
+              </div>
+            </div>
+            <!-- Второй прогрессбар скрыт — не отображается -->
+          </div>
+        </div>
+        <div class="coord-note">
+          👻 Второй прогрессбар (<code>visible = false</code>) не виден, хотя код добавления присутствует.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Динамическое изменение видимости</h2>
+      <p>Свойство <code>visible</code> можно менять во время работы программы. Например, по нажатию на кнопки:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 180;
+    win.title = "Скрытие и показ";
+
+    gui.Label label;
+    label.text = "Я видимый лейбл!";
+    label.x = 50;
+    label.y = 30;
+    label.font_size = 16;
+
+    gui.Button hideBtn;
+    hideBtn.text = "Скрыть лейбл";
+    hideBtn.x = 50;
+    hideBtn.y = 80;
+    hideBtn.width = 120;
+
+    gui.Button showBtn;
+    showBtn.text = "Показать лейбл";
+    showBtn.x = 190;
+    showBtn.y = 80;
+    showBtn.width = 120;
+
+    hideBtn.on_click = void function() {
+        label.visible = false;
+    };
+
+    showBtn.on_click = void function() {
+        label.visible = true;
+    };
+
+    win.add_child(label);
+    win.add_child(hideBtn);
+    win.add_child(showBtn);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 130px; position: relative;">
+            <div style="position: absolute; left: 50px; top: 30px; color: #cdd6f4; font-size: 16px;" id="demoLabel">Я видимый лейбл!</div>
+            <button class="idyl-button" style="position: absolute; left: 50px; top: 80px; width: 120px;" id="hideBtn">Скрыть лейбл</button>
+            <button class="idyl-button" style="position: absolute; left: 190px; top: 80px; width: 120px;" id="showBtn">Показать лейбл</button>
+          </div>
+        </div>
+        <div class="coord-note">
+          🕹️ Кнопка «Скрыть» делает лейбл невидимым, «Показать» — возвращает на экран.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Скрытие контейнеров (Frame)</h2>
+      <p>Если скрыть виджет-контейнер (<code>Frame</code>), то <strong>все его потомки</strong> тоже станут невидимыми. Это удобно для скрытия целых групп элементов.</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 400;
+    win.height = 280;
+    win.title = "Скрытие контейнера";
+
+    // Рамка с потомками
+    gui.Frame frame;
+    frame.x = 20;
+    frame.y = 20;
+    frame.width = 360;
+    frame.height = 170;
+    frame.title = "Панель управления";
+
+    gui.Label label;
+    label.x = 15;
+    label.y = 10;
+    label.text = "Имя пользователя:";
+
+    gui.LineEdit input;
+    input.x = 15;
+    input.y = 35;
+    input.width = 200;
+
+    gui.Button innerBtn;
+    innerBtn.text = "Кнопка внутри рамки";
+    innerBtn.x = 15;
+    innerBtn.y = 75;
+    innerBtn.width = 200;
+
+    frame.add_child(label);
+    frame.add_child(input);
+    frame.add_child(innerBtn);
+
+    // Кнопка управления видимостью рамки (не внутри рамки)
+    gui.Button toggleBtn;
+    toggleBtn.text = "Скрыть панель";
+    toggleBtn.x = 20;
+    toggleBtn.y = 210;
+    toggleBtn.width = 160;
+
+    toggleBtn.on_click = void function() {
+        if (frame.visible) {
+            frame.visible = false;
+            toggleBtn.text = "Показать панель";
+        } else {
+            frame.visible = true;
+            toggleBtn.text = "Скрыть панель";
+        }
+    };
+
+    win.add_child(frame);
+    win.add_child(toggleBtn);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 240px; position: relative;">
+            <fieldset class="idyl-frame" style="position: absolute; left: 20px; top: 20px; width: 360px; height: 170px;" id="demoFrame">
+              <legend class="idyl-frame-title">Панель управления</legend>
+              <div class="idyl-frame-content" style="position: relative; height: 100%;">
+                <div style="position: absolute; left: 15px; top: 10px; color: #cdd6f4;">Имя пользователя:</div>
+                <div style="position: absolute; left: 15px; top: 35px;">
+                  <input type="text" class="idyl-lineedit" style="width: 200px;">
+                </div>
+                <button class="idyl-button" style="position: absolute; left: 15px; top: 75px; width: 200px;">Кнопка внутри рамки</button>
+              </div>
+            </fieldset>
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 210px; width: 160px;" id="toggleFrameBtn">Скрыть панель</button>
+          </div>
+        </div>
+        <div class="coord-note">
+          📦 Нажмите на кнопку — скроется вся рамка вместе с её содержимым. Повторное нажатие вернёт всё обратно.
+        </div>
+      </div>
+
+      <p>Обратите внимание: скрытие контейнера скрывает <strong>всех потомков</strong>, но не удаляет их из памяти. При повторном отображении все виджеты внутри контейнера будут выглядеть так же, как до скрытия.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+
+<script data-lesson-script type="text/plain">
+// Интерактив для демо-примеров
+  document.addEventListener('DOMContentLoaded', () => {
+    // Пример 2: скрытие и показ лейбла
+    const demoLabel = document.getElementById('demoLabel');
+    const hideBtn = document.getElementById('hideBtn');
+    const showBtn = document.getElementById('showBtn');
+    if (demoLabel && hideBtn && showBtn) {
+      hideBtn.addEventListener('click', () => {
+        demoLabel.style.display = 'none';
+      });
+      showBtn.addEventListener('click', () => {
+        demoLabel.style.display = '';
+      });
+    }
+
+    // Пример 3: скрытие контейнера
+    const demoFrame = document.getElementById('demoFrame');
+    const toggleFrameBtn = document.getElementById('toggleFrameBtn');
+    if (demoFrame && toggleFrameBtn) {
+      toggleFrameBtn.addEventListener('click', () => {
+        if (demoFrame.style.display === 'none') {
+          demoFrame.style.display = '';
+          toggleFrameBtn.textContent = 'Скрыть панель';
+        } else {
+          demoFrame.style.display = 'none';
+          toggleFrameBtn.textContent = 'Показать панель';
+        }
+      });
+    }
+  });
+</script>

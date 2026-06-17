@@ -1,0 +1,79 @@
+<div class="docs-section">
+  <h2>Что умеет <code>json.Array</code></h2>
+  <p>
+    JSON-массив похож на динамический массив, но каждый его элемент является
+    <code>json.Value</code>. Поэтому числа, строки и объекты сначала упаковываются
+    в <code>json.Value(...)</code>.
+  </p>
+
+  <ul>
+    <li><code>length()</code> — узнать количество элементов;</li>
+    <li><code>at(index)</code> — прочитать элемент;</li>
+    <li><code>add(value)</code> — добавить в конец;</li>
+    <li><code>set(index, value)</code> — заменить элемент;</li>
+    <li><code>insert(index, value)</code> — вставить перед индексом;</li>
+    <li><code>pop()</code> — удалить и вернуть последний элемент;</li>
+    <li><code>remove(index)</code> — удалить элемент по индексу;</li>
+    <li><code>clear()</code> — очистить массив.</li>
+  </ul>
+</div>
+
+<div class="docs-section">
+  <h2>Добавление и замена</h2>
+  <idyl-code-block><script type="text/plain">
+use console;
+use json;
+
+main() {
+    json.Array items;
+    items.add(json.Value("sword"));
+    items.add(json.Value("shield"));
+
+    items.set(1, json.Value("potion"));
+
+    console.writeln(items.to_json());
+}
+</script></idyl-code-block>
+  <idyl-output-block>["sword","potion"]</idyl-output-block>
+</div>
+
+<div class="docs-section">
+  <h2>Вставка, удаление и последний элемент</h2>
+  <idyl-code-block><script type="text/plain">
+use console;
+use json;
+
+main() {
+    json.Array items;
+    items.add(json.Value("sword"));
+    items.add(json.Value("potion"));
+
+    items.insert(1, json.Value("shield"));
+    json.Value last = items.pop();
+
+    console.writeln("Удалили: ", last.to_string());
+    console.writeln(items.to_json());
+}
+</script></idyl-code-block>
+  <idyl-output-block>Удалили: potion
+["sword","shield"]</idyl-output-block>
+</div>
+
+<div class="docs-section">
+  <h2>Индексы проверяются</h2>
+  <p>
+    Если обратиться к несуществующему индексу, Idyllium выдаст ошибку. Это лучше,
+    чем молча вернуть странное значение и заставить вас искать проблему полчаса.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use json;
+
+main() {
+    json.Array items;
+    items.add(json.Value("sword"));
+
+    items.at(5); // runtime error
+}
+</script></idyl-code-block>
+</div>

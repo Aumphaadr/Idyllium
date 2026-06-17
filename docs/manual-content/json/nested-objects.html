@@ -1,0 +1,69 @@
+<div class="docs-section">
+  <h2>Объект внутри объекта</h2>
+  <p>
+    Иногда значение слишком сложное для одной строки или одного числа. Например,
+    позиция игрока состоит из двух координат: <code>x</code> и <code>y</code>.
+    В JSON такое удобно хранить вложенным объектом.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+{
+    "name": "Liam",
+    "position": {
+        "x": 120,
+        "y": 80
+    }
+}
+</script></idyl-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>Создаём вложенный объект</h2>
+  <p>
+    Вложенный объект сначала создаётся отдельно, а потом добавляется как значение
+    в главный объект.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use json;
+
+main() {
+    json.Object player;
+    player.add("name", json.Value("Liam"));
+
+    json.Object position;
+    position.add("x", json.Value(120));
+    position.add("y", json.Value(80));
+
+    player.add("position", json.Value(position));
+
+    console.writeln(player.to_pretty_json(4));
+}
+</script></idyl-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>Читаем вложенный объект</h2>
+  <p>
+    Метод <code>get()</code> вернёт <code>json.Value</code>. Чтобы работать с ним
+    как с объектом, используем <code>to_object()</code>.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use json;
+
+main() {
+    string text = "{\"name\":\"Liam\",\"position\":{\"x\":120,\"y\":80}}";
+    json.Object player = json.parse(text).to_object();
+
+    json.Object position = player.get("position").to_object();
+    int x = position.get("x").to_int();
+    int y = position.get("y").to_int();
+
+    console.writeln("Позиция: ", x, ", ", y);
+}
+</script></idyl-code-block>
+  <idyl-output-block>Позиция: 120, 80</idyl-output-block>
+</div>

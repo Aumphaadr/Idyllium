@@ -1,0 +1,100 @@
+{
+  "$schema": "vscode://schemas/color-theme",
+  "name": "Idyllium Light",
+  "type": "light",
+  "colors": {
+    "editor.background": "#fbfcff",
+    "editor.foreground": "#11151d",
+    "editorLineNumber.foreground": "#8a93a5",
+    "editorCursor.foreground": "#11151d",
+    "editor.selectionBackground": "#1469c82e",
+    "editorBracketHighlight.foreground1": "#4d5a5a",
+    "editorBracketHighlight.foreground2": "#4d5a5a",
+    "editorBracketHighlight.foreground3": "#4d5a5a",
+    "editorBracketHighlight.foreground4": "#4d5a5a",
+    "editorBracketHighlight.foreground5": "#4d5a5a",
+    "editorBracketHighlight.foreground6": "#4d5a5a",
+    "editorBracketMatch.background": "#e6edf6",
+    "editorBracketMatch.border": "#94a3b8",
+    "editorIndentGuide.background1": "#dde3ec",
+    "editorIndentGuide.activeBackground1": "#a9b4c2"
+  },
+  "tokenColors": [
+    {
+      "scope": [
+        "keyword.control.idyllium",
+        "keyword.declaration.idyllium",
+        "keyword.declaration.import.idyllium",
+        "keyword.declaration.class.idyllium",
+        "keyword.declaration.extends.idyllium",
+        "keyword.operator.logical.idyllium",
+        "constant.language.boolean.idyllium"
+      ],
+      "settings": { "foreground": "#9a4b82" }
+    },
+    {
+      "scope": [
+        "storage.type.primitive.idyllium",
+        "storage.type.numeric.idyllium"
+      ],
+      "settings": { "foreground": "#226fa8" }
+    },
+    {
+      "scope": [
+        "entity.name.type.class.idyllium",
+        "entity.other.inherited-class.idyllium"
+      ],
+      "settings": { "foreground": "#238064" }
+    },
+    {
+      "scope": [
+        "entity.name.function.idyllium",
+        "entity.name.function.main.idyllium",
+        "entity.name.function.member.idyllium",
+        "support.function.builtin.idyllium"
+      ],
+      "settings": { "foreground": "#8a741b" }
+    },
+    {
+      "scope": [
+        "support.module.idyllium",
+        "variable.language.this.idyllium",
+        "variable.language.parent.idyllium",
+        "variable.other.member.idyllium",
+        "constant.other.color.idyllium"
+      ],
+      "settings": { "foreground": "#147194" }
+    },
+    {
+      "scope": [
+        "string.quoted.double.idyllium",
+        "string.quoted.single.idyllium"
+      ],
+      "settings": { "foreground": "#9a572c" }
+    },
+    {
+      "scope": [
+        "constant.numeric.float.idyllium",
+        "constant.numeric.integer.idyllium"
+      ],
+      "settings": { "foreground": "#647a30" }
+    },
+    {
+      "scope": [
+        "comment.block.idyllium",
+        "comment.line.double-slash.idyllium"
+      ],
+      "settings": {
+        "foreground": "#4f7f3f",
+        "fontStyle": "italic"
+      }
+    },
+    {
+      "scope": [
+        "keyword.operator.idyllium",
+        "punctuation.idyllium"
+      ],
+      "settings": { "foreground": "#4d5a5a" }
+    }
+  ]
+}

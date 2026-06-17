@@ -1,0 +1,105 @@
+<div class="docs-section">
+  <h2>Зачем вспоминать файлы?</h2>
+  <p>
+    JSON почти всегда появляется рядом с файлами. Если программа умеет сохранить
+    данные в файл, эти данные переживут закрытие программы, перезапуск компьютера
+    и возвращение ученика к проекту через неделю.
+  </p>
+  <p>
+    В игре с системой сохранений без файлов не обойтись: нужно помнить имя игрока,
+    уровень, деньги, здоровье, предметы в инвентаре и много других вещей.
+    Начнём с простого повторения.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use file;
+
+main() {
+    file.ostream fout = file.open("save.txt", "write");
+    fout.write_line("Liam", '\n');
+    fout.write_line(7, '\n');
+    fout.close();
+}
+</script></idyl-code-block>
+
+  <p>
+    В файле <code>save.txt</code> окажутся две строки: имя игрока и уровень.
+    Это уже похоже на сохранение игры, только очень маленькое.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Прочитаем сохранение обратно</h2>
+  <p>
+    Теперь откроем тот же файл на чтение. Имя читается как строка, а уровень
+    тоже сначала приходит строкой, поэтому его нужно превратить в число.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use file;
+
+main() {
+    file.istream fin = file.open("save.txt", "read");
+    string name = fin.read_line().trim();
+    int level = to_int(fin.read_line());
+    fin.close();
+
+    console.writeln(name, " имеет уровень ", level);
+}
+</script></idyl-code-block>
+  <idyl-output-block>Liam имеет уровень 7</idyl-output-block>
+</div>
+
+<div class="docs-section">
+  <h2>Когда данных становится больше</h2>
+  <p>
+    Представим многопользовательскую игру. У каждого игрока есть имя и уровень.
+    Можно хранить имена в одном файле, а уровни в другом.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use file;
+
+main() {
+    dyn_array<string> names;
+    dyn_array<int> levels;
+
+    file.istream names_file = file.open("names.txt", "read");
+    while (names_file.has_next_line()) {
+        names.add(names_file.read_line().trim());
+    }
+    names_file.close();
+
+    file.istream levels_file = file.open("levels.txt", "read");
+    while (levels_file.has_next_line()) {
+        levels.add(to_int(levels_file.read_line()));
+    }
+    levels_file.close();
+
+    for (int i = 0; i < names.length(); i = i + 1) {
+        console.writeln(names[i], ": ", levels[i]);
+    }
+}
+</script></idyl-code-block>
+
+  <p>
+    Для двух параметров такой подход ещё можно терпеть. Но если у игрока появятся
+    пароль, деньги, здоровье, мана и инвентарь, придётся заводить всё больше
+    файлов и массивов. Код станет похож на шкаф, где каждый ящик подписан отдельно,
+    но связаны эти ящики только нашей памятью.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Зачем тут JSON</h2>
+  <p>
+    JSON позволяет хранить сложные данные одним цельным объектом: имя рядом с
+    уровнем, деньги рядом со здоровьем, а инвентарь прямо внутри игрока.
+  </p>
+  <p>
+    В следующих уроках мы научимся создавать такие JSON-данные, записывать их в
+    файл и читать обратно без десятка разрозненных массивов.
+  </p>
+</div>

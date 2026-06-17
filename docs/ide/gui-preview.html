@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Idyllium GUI</title>
+  <link rel="stylesheet" href="gui-renderer/renderer.css">
+</head>
+<body>
+  <div class="toolbar">
+    <strong>Idyllium GUI preview</strong>
+    <span id="summary"></span>
+  </div>
+  <div id="stage" class="stage"></div>
+  <script nonce="idyllium-web">
+    window.IdylliumGuiInitialState = {"windows":[],"canvases":[],"modals":[],"output":""};
+    window.IdylliumGuiHost = { postMessage: function(message) { parent.postMessage({ type: 'idylliumGuiEvent', message: message }, '*'); } };
+  </script>
+  <script nonce="idyllium-web" src="gui-renderer/renderer.js"></script>
+</body>
+</html>

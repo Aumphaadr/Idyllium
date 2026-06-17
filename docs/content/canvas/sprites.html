@@ -1,0 +1,69 @@
+<div class="docs-section">
+  <h2>Текстуры и спрайты</h2>
+  <p>
+    <code>drawable.Texture</code> хранит загруженную картинку, а
+    <code>drawable.Sprite</code> показывает эту картинку на Canvas.
+  </p>
+  <p>
+    В примере спрайт двигается клавишами <code>W</code>, <code>A</code>,
+    <code>S</code>, <code>D</code>. Для движения используется метод
+    <code>move()</code>.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use colors;
+use drawable;
+use gui;
+
+drawable.Texture hero_texture;
+drawable.Sprite hero;
+
+void function redraw(gui.Canvas canvas) {
+    canvas.fill(colors.RGB(20, 24, 32));
+    canvas.draw(hero);
+}
+
+void function init(gui.Canvas canvas) {
+    hero.x = 180;
+    hero.y = 90;
+    hero.texture = hero_texture;
+    hero.set_scale(0.6, 0.6);
+    redraw(canvas);
+}
+
+void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
+    if (e.key == "W") {
+        hero.move(0, -8);
+    }
+    if (e.key == "S") {
+        hero.move(0, 8);
+    }
+    if (e.key == "A") {
+        hero.move(-8, 0);
+    }
+    if (e.key == "D") {
+        hero.move(8, 0);
+    }
+    redraw(canvas);
+}
+
+main() {
+    hero_texture.load_from_file("cat.png");
+
+    gui.Window win;
+    win.width = 500;
+    win.height = 320;
+
+    gui.Canvas canvas;
+    canvas.x = 20;
+    canvas.y = 20;
+    canvas.width = 450;
+    canvas.height = 250;
+    canvas.on_init = init;
+    canvas.on_key_pressed = on_key_pressed;
+
+    win.add_child(canvas);
+    win.show();
+}
+</script></idyl-code-block>
+</div>

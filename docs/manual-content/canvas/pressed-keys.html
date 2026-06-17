@@ -1,0 +1,194 @@
+<div class="docs-section">
+  <h2>Почему плавное движение не получается через key_pressed</h2>
+  <p>
+    В прошлом уроке мы реагировали на само событие нажатия клавиши. Для смены
+    цвета рамки это нормально: нажали <code>R</code> — рамка стала красной.
+    Но для движения персонажа такой способ быстро начинает мешать.
+  </p>
+  <p>
+    Если двигать объект прямо внутри <code>on_key_pressed</code>, движение
+    получается неровным. Сначала объект сдвигается один раз, потом будто
+    замирает на мгновение, а потом начинает прыгать дальше. Это не ошибка
+    Canvas. Так устроен ввод с клавиатуры в операционной системе.
+  </p>
+  <p>
+    Можно проверить прямо здесь: поставьте курсор в поле ниже, зажмите любую
+    букву и посмотрите, как она печатается. Сначала один символ, потом пауза,
+    потом много символов подряд.
+  </p>
+
+  <input class="key-repeat-demo" type="text" placeholder="Зажмите здесь любую букву">
+
+  <p>
+    Для текста такое поведение удобно: система понимает разницу между
+    одиночным нажатием и удержанием клавиши. А вот для игры нам хочется другого:
+    пока клавиша зажата, объект должен двигаться каждый кадр.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Идея: хранить все зажатые клавиши</h2>
+  <p>
+    Сделаем массив <code>pressed_keys</code>. Когда клавишу нажали, добавим её
+    в массив. Когда клавишу отпустили, удалим её из массива. Тогда в любой
+    момент программы мы сможем спросить: «А клавиша <code>W</code> сейчас
+    зажата?» или «А клавиши <code>W</code> и <code>D</code> зажаты одновременно?».
+  </p>
+  <p>
+    Для такого массива удобно использовать <code>dyn_array&lt;string&gt;</code>,
+    потому что количество зажатых клавиш заранее неизвестно.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+dyn_array<string> pressed_keys;
+
+void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
+    if (not(pressed_keys.contains(e.key))) {
+        pressed_keys.add(e.key);
+    }
+}
+
+void function on_key_released(gui.Canvas canvas, gui.KeyboardEvent e) {
+    if (pressed_keys.contains(e.key)) {
+        int index = pressed_keys.find(e.key);
+        pressed_keys.remove_at(index);
+    }
+}
+</script></idyl-code-block>
+
+  <p>
+    Проверка <code>not(pressed_keys.contains(e.key))</code> нужна, чтобы одна и
+    та же клавиша не добавлялась в массив много раз. Нам нужно хранить факт
+    «клавиша зажата», а не считать, сколько раз система прислала событие.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Проверка через консоль</h2>
+  <p>
+    Перед тем как двигать персонажа, полезно увидеть сам массив. Для этого
+    можно временно добавить в <code>on_update</code> две строки:
+    <code>console.clear()</code> и <code>console.writeln(pressed_keys)</code>.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+void function on_update(gui.Canvas canvas, float delta_time) {
+    console.clear();
+    console.writeln(pressed_keys);
+}
+</script></idyl-code-block>
+
+  <p>
+    Теперь при запуске программы в консоли будет постоянно отображаться массив
+    нажатых клавиш. Зажали <code>W</code> — увидели <code>["W"]</code>.
+    Зажали <code>W</code> и <code>D</code> — увидели <code>["W", "D"]</code>.
+    Отпустили клавишу — она исчезла из массива.
+  </p>
+  <p>
+    Это отличный маленький приём для отладки: сначала убеждаемся, что программа
+    правильно понимает ввод, и только потом прикручиваем движение.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Движение в on_update</h2>
+  <p>
+    Теперь движение нужно делать не в обработчике нажатия, а в
+    <code>on_update</code>. Эта функция вызывается равномерно, кадр за кадром,
+    поэтому движение получается плавнее.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+void function on_update(gui.Canvas canvas, float delta_time) {
+    if (pressed_keys.contains("W")) { player.y -= 2; }
+    if (pressed_keys.contains("S")) { player.y += 2; }
+    if (pressed_keys.contains("A")) { player.x -= 2; }
+    if (pressed_keys.contains("D")) { player.x += 2; }
+
+    canvas.clear();
+    canvas.draw(player);
+}
+</script></idyl-code-block>
+
+  <p>
+    Здесь уже легко обработать две клавиши одновременно. Если зажать
+    <code>W</code> и <code>D</code>, прямоугольник будет двигаться вверх и
+    вправо. Мы не ждём повторного события клавиатуры: мы каждый кадр смотрим,
+    какие клавиши сейчас лежат в массиве.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Полный пример</h2>
+  <p>
+    А теперь соберём всё вместе: прямоугольник-игрок, массив зажатых клавиш,
+    обработчики нажатия/отпускания и плавное движение в <code>on_update</code>.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use colors;
+use drawable;
+use gui;
+
+drawable.Rectangle player;
+dyn_array<string> pressed_keys;
+
+void function init(gui.Canvas canvas) {
+    player.x = 20;
+    player.y = 20;
+    player.width = 40;
+    player.height = 40;
+    player.fill_color = colors.RGB(140, 255, 140);
+}
+
+void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
+    if (not(pressed_keys.contains(e.key))) {
+        pressed_keys.add(e.key);
+    }
+}
+
+void function on_key_released(gui.Canvas canvas, gui.KeyboardEvent e) {
+    if (pressed_keys.contains(e.key)) {
+        int index = pressed_keys.find(e.key);
+        pressed_keys.remove_at(index);
+    }
+}
+
+void function on_update(gui.Canvas canvas, float delta_time) {
+    if (pressed_keys.contains("W")) { player.y -= 2; }
+    if (pressed_keys.contains("S")) { player.y += 2; }
+    if (pressed_keys.contains("A")) { player.x -= 2; }
+    if (pressed_keys.contains("D")) { player.x += 2; }
+
+    canvas.clear();
+    canvas.draw(player);
+}
+
+main() {
+    gui.Window win;
+    win.width = 440;
+    win.height = 300;
+
+    gui.Canvas canvas;
+    canvas.x = 20;
+    canvas.y = 20;
+    canvas.width = 400;
+    canvas.height = 230;
+    canvas.on_init = init;
+    canvas.on_key_pressed = on_key_pressed;
+    canvas.on_key_released = on_key_released;
+    canvas.on_update = on_update;
+    canvas.framerate_limit = 50;
+
+    win.add_child(canvas);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <p>
+    Важно заметить: <code>on_key_pressed</code> и <code>on_key_released</code>
+    теперь не двигают игрока. Они только поддерживают список зажатых клавиш.
+    А движение живёт в <code>on_update</code>, то есть там, где у нас есть
+    равномерный игровой ритм.
+  </p>
+</div>

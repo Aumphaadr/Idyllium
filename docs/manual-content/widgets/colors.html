@@ -1,0 +1,206 @@
+<div class="docs-section">
+  <h2>Почему не просто <code>"#FF0000"</code>?</h2>
+  <p>
+    В первых GUI-примерах цвет иногда задавался строкой вроде <code>"#FF0000"</code>.
+    Такой способ можно встретить в HTML и CSS, но для ученика он не самый дружелюбный:
+    нужно помнить решётку, шестнадцатеричные цифры и то, что две первые цифры отвечают
+    за красный, две следующие — за зелёный, а две последние — за синий.
+  </p>
+  <p>
+    Поэтому основной способ работы с цветом в Idyllium — библиотека <code>colors</code>.
+    Она позволяет создать цвет явно и читаемо.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use gui;
+use colors;
+
+main() {
+    gui.Window win;
+    win.width = 430;
+    win.height = 170;
+    win.title = "Цвета без загадок";
+
+    gui.Label label;
+    label.text = "Синий текст";
+    label.x = 30;
+    label.y = 35;
+    label.text_color = colors.RGB(34, 145, 188);
+
+    win.add_child(label);
+    win.show();
+}
+</script></idyl-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>Один цвет — разные записи</h2>
+  <p>
+    Один и тот же цвет можно получить разными способами. Это не соревнование
+    «какой способ правильный». Это разные инструменты для разных ситуаций.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use colors;
+
+main() {
+    colors.Color c1 = colors.RGB(34, 145, 188);
+    colors.Color c2 = colors.HEX("#2291bc");
+    colors.Color c3 = colors.HSL(197, 69, 44);
+}
+</script></idyl-code-block>
+
+  <p>
+    <code>RGB</code> удобно читать как «красный, зелёный, синий».
+    <code>HEX</code> полезен, если цвет пришёл из графического редактора.
+    <code>HSL</code> удобен, когда вы хотите думать оттенком, насыщенностью и яркостью.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Цвет текста, фона и границы</h2>
+  <p>
+    У виджета может быть несколько разных цветов. Поэтому свойство
+    <code>color</code> слишком туманное: непонятно, что именно оно красит.
+    В новом стиле мы называем вещи прямо:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+button1.text_color = colors.RGB(255, 255, 255);
+button1.background_color = colors.RGB(27, 31, 44);
+button1.border_color = colors.RGB(54, 62, 88);
+</script></idyl-code-block>
+
+  <p>
+    Такой код можно прочитать почти как обычный русский текст:
+    «цвет текста — белый, цвет фона — тёмный, цвет границы — чуть светлее фона».
+  </p>
+
+  <div class="gui-demo-container">
+    <div class="gui-demo-window">
+      <div class="demo-content" style="min-height: 130px; position: relative;">
+        <button class="idyl-button" style="position: absolute; left: 30px; top: 35px; width: 190px; height: 42px; color: white; background: rgb(27, 31, 44); border-color: rgb(54, 62, 88);">
+          Тёмная кнопка
+        </button>
+      </div>
+    </div>
+    <div class="coord-note">
+      Здесь цвет текста, фона и границы задаются отдельно. Так понятнее и ученику, и будущему читателю кода.
+    </div>
+  </div>
+</div>
+
+<div class="docs-section">
+  <h2>Особый случай: ProgressBar</h2>
+  <p>
+    У <code>gui.ProgressBar</code> есть не только текст и фон. У него есть ещё
+    заполненная часть полоски. Чтобы не гадать, что именно красится, используем
+    три отдельных свойства:
+  </p>
+  <ul>
+    <li><code>text_color</code> — цвет процентов по центру;</li>
+    <li><code>background_color</code> — цвет пустой части полоски;</li>
+    <li><code>foreground_color</code> — цвет заполненной части полоски.</li>
+  </ul>
+
+  <idyl-code-block><script type="text/plain">
+use gui;
+use colors;
+
+main() {
+    gui.Window win;
+    win.width = 430;
+    win.height = 160;
+    win.title = "Цветная полоска";
+
+    gui.ProgressBar progress;
+    progress.x = 35;
+    progress.y = 50;
+    progress.width = 340;
+    progress.value = 65;
+    progress.text_color = colors.RGB(102, 14, 28);
+    progress.background_color = colors.RGB(255, 232, 236);
+    progress.foreground_color = colors.RGB(248, 150, 165);
+
+    win.add_child(progress);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <div class="gui-demo-container">
+    <div class="gui-demo-window">
+      <div class="demo-content" style="min-height: 110px; position: relative;">
+        <div class="idyl-progressbar" style="position: absolute; left: 35px; top: 50px; width: 340px; height: 24px; color: rgb(102, 14, 28); background: rgb(255, 232, 236); border-color: rgb(204, 88, 108);">
+          <div class="idyl-progressbar-fill" style="width: 65%; background: rgb(248, 150, 165);"></div>
+          <div class="idyl-progressbar-label">65%</div>
+        </div>
+      </div>
+    </div>
+    <div class="coord-note">
+      Старое свойство <code>fill_color</code> пока остаётся рабочим, но в новых
+      уроках лучше писать <code>foreground_color</code>: так название совпадает
+      со смыслом.
+    </div>
+  </div>
+</div>
+
+<div class="docs-section">
+  <h2>Цвет наследуется от родителей</h2>
+  <p>
+    У окна тоже может быть <code>text_color</code>. Если лейбл не задал свой цвет
+    явно, он берёт цвет у окна.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use gui;
+use colors;
+
+main() {
+    gui.Window win;
+    win.width = 520;
+    win.height = 260;
+    win.title = "Наследование цветов";
+    win.text_color = colors.RED;
+
+    gui.Label label1;
+    label1.text = "Я беру цвет у окна";
+    label1.x = 40;
+    label1.y = 45;
+
+    gui.Label label2;
+    label2.text = "Я тоже беру цвет у окна";
+    label2.x = 40;
+    label2.y = 90;
+
+    gui.Label label3;
+    label3.text = "А я сам выбираю синий";
+    label3.x = 40;
+    label3.y = 135;
+    label3.text_color = colors.BLUE;
+
+    win.add_child(label1);
+    win.add_child(label2);
+    win.add_child(label3);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <div class="gui-demo-container">
+    <div class="gui-demo-window">
+      <div class="demo-content" style="min-height: 190px; position: relative;">
+        <div style="position: absolute; left: 40px; top: 45px; color: #ff4f4f;">Я беру цвет у окна</div>
+        <div style="position: absolute; left: 40px; top: 90px; color: #ff4f4f;">Я тоже беру цвет у окна</div>
+        <div style="position: absolute; left: 40px; top: 135px; color: #4f8cff;">А я сам выбираю синий</div>
+      </div>
+    </div>
+    <div class="coord-note">
+      Первые два лейбла не задают цвет сами. Поэтому они выглядят так, будто унаследовали настройку от окна.
+    </div>
+  </div>
+
+  <p>
+    Первые два лейбла не задают <code>text_color</code>, поэтому наследуют красный
+    цвет от окна. Третий лейбл задаёт свой цвет, и его личная настройка важнее
+    настройки родителя.
+  </p>
+</div>

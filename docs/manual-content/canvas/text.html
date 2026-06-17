@@ -1,0 +1,69 @@
+<div class="docs-section">
+  <h2>Текст на Canvas</h2>
+  <p>
+    Для текста используется <code>drawable.Text</code>. Ему можно задать позицию,
+    размер шрифта, цвет и сам текст. Если нужен конкретный шрифт, его можно
+    загрузить через <code>drawable.Font</code>.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use colors;
+use drawable;
+use gui;
+
+drawable.Font main_font;
+drawable.Text coordinates;
+drawable.Circle marker;
+
+void function redraw(gui.Canvas canvas) {
+    canvas.fill(colors.RGB(20, 24, 32));
+    canvas.draw(marker);
+    canvas.draw(coordinates);
+}
+
+void function init(gui.Canvas canvas) {
+    marker.radius = 12;
+    marker.fill_color = colors.RGB(255, 210, 80);
+
+    coordinates.x = 20;
+    coordinates.y = 20;
+    coordinates.font = main_font;
+    coordinates.font_size = 20;
+    coordinates.text_color = colors.WHITE;
+    coordinates.text = "x=0, y=0";
+
+    redraw(canvas);
+}
+
+void function on_mouse_move(gui.Canvas canvas, gui.MouseEvent e) {
+    marker.x = e.x;
+    marker.y = e.y;
+    coordinates.text = "x=" + to_string(e.x) + ", y=" + to_string(e.y);
+    redraw(canvas);
+}
+
+main() {
+    main_font.load_from_file("SourceCodePro-Regular.ttf");
+
+    gui.Window win;
+    win.width = 500;
+    win.height = 320;
+
+    gui.Canvas canvas;
+    canvas.x = 20;
+    canvas.y = 20;
+    canvas.width = 450;
+    canvas.height = 250;
+    canvas.on_init = init;
+    canvas.on_mouse_move = on_mouse_move;
+
+    win.add_child(canvas);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <p>
+    Файл шрифта должен лежать в проекте рядом с программой. Если файла нет,
+    Idyllium честно скажет, что не смог его найти.
+  </p>
+</div>

@@ -1,0 +1,288 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Idyllium",
+  "scopeName": "source.idyllium",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#useStatements" },
+    { "include": "#classDeclarations" },
+    { "include": "#keywords" },
+    { "include": "#types" },
+    { "include": "#qualifiedNames" },
+    { "include": "#functions" },
+    { "include": "#operators" },
+    { "include": "#punctuation" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.block.idyllium",
+          "begin": "/\\*",
+          "end": "\\*/"
+        },
+        {
+          "name": "comment.line.double-slash.idyllium",
+          "match": "//.*$"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.idyllium",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.idyllium",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.idyllium",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.idyllium",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.idyllium",
+          "match": "\\b\\d+\\.\\d+\\b"
+        },
+        {
+          "name": "constant.numeric.integer.idyllium",
+          "match": "\\b\\d+\\b"
+        }
+      ]
+    },
+    "useStatements": {
+      "patterns": [
+        {
+          "match": "\\b(use)\\s+([\\p{L}_][\\p{L}\\p{N}_]*)",
+          "captures": {
+            "1": { "name": "keyword.declaration.import.idyllium" },
+            "2": { "name": "support.module.idyllium" }
+          }
+        }
+      ]
+    },
+    "classDeclarations": {
+      "patterns": [
+        {
+          "match": "\\b(class)\\s+([\\p{L}_][\\p{L}\\p{N}_]*)",
+          "captures": {
+            "1": { "name": "keyword.declaration.class.idyllium" },
+            "2": { "name": "entity.name.type.class.idyllium" }
+          }
+        },
+        {
+          "match": "\\b(extends)\\s+([\\p{L}_][\\p{L}\\p{N}_]*)",
+          "captures": {
+            "1": { "name": "keyword.declaration.extends.idyllium" },
+            "2": { "name": "entity.other.inherited-class.idyllium" }
+          }
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.idyllium",
+          "match": "\\b(?:if|else|while|do|for|break|continue|return)\\b"
+        },
+        {
+          "name": "keyword.operator.logical.idyllium",
+          "match": "\\b(?:and|or|xor|not)\\b"
+        },
+        {
+          "name": "keyword.operator.word.idyllium",
+          "match": "\\b(?:div|mod)\\b"
+        },
+        {
+          "name": "keyword.declaration.idyllium",
+          "match": "\\b(?:function|constructor|destructor|static|public|private)\\b"
+        },
+        {
+          "name": "variable.language.this.idyllium",
+          "match": "\\bthis\\b"
+        },
+        {
+          "name": "variable.language.parent.idyllium",
+          "match": "\\bparent\\b"
+        },
+        {
+          "name": "entity.name.function.main.idyllium",
+          "match": "\\bmain\\b(?=\\s*\\()"
+        },
+        {
+          "name": "constant.language.boolean.idyllium",
+          "match": "\\b(?:true|false)\\b"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "storage.type.primitive.idyllium",
+          "match": "\\b(?:int|float|string|char|bool|void|array|dyn_array|set)\\b"
+        },
+        {
+          "name": "entity.name.type.class.idyllium",
+          "match": "\\b[A-Z][\\p{L}\\p{N}_]*\\b"
+        }
+      ]
+    },
+    "qualifiedNames": {
+      "patterns": [
+        {
+          "match": "\\b(gui)\\s*(\\.)(Window|Widget|Button|Label|SpinBox|FloatSpinBox|LineEdit|CheckBox|RadioButton|ProgressBar|TextEdit|ComboBox|Slider|Frame|Image|Timer|Modal|Canvas|KeyboardEvent|MouseEvent|MouseScrollEvent)\\b",
+          "captures": {
+            "1": { "name": "support.module.idyllium" },
+            "2": { "name": "punctuation.accessor.idyllium" },
+            "3": { "name": "entity.name.type.class.idyllium" }
+          }
+        },
+        {
+          "match": "\\b(drawable)\\s*(\\.)(Drawable|Rectangle|Circle|Line|Sprite|Texture|Font|Text)\\b",
+          "captures": {
+            "1": { "name": "support.module.idyllium" },
+            "2": { "name": "punctuation.accessor.idyllium" },
+            "3": { "name": "entity.name.type.class.idyllium" }
+          }
+        },
+        {
+          "match": "\\b(colors)\\s*(\\.)(Color)\\b",
+          "captures": {
+            "1": { "name": "support.module.idyllium" },
+            "2": { "name": "punctuation.accessor.idyllium" },
+            "3": { "name": "entity.name.type.class.idyllium" }
+          }
+        },
+        {
+          "match": "\\b(colors)\\s*(\\.)(RED|GREEN|BLUE|WHITE|BLACK|TRANSPARENT)\\b",
+          "captures": {
+            "1": { "name": "support.module.idyllium" },
+            "2": { "name": "punctuation.accessor.idyllium" },
+            "3": { "name": "constant.other.color.idyllium" }
+          }
+        },
+        {
+          "match": "\\b(types)\\s*(\\.)(u?int(?:8|16|32|64)|float(?:32|64))\\b",
+          "captures": {
+            "1": { "name": "support.module.idyllium" },
+            "2": { "name": "punctuation.accessor.idyllium" },
+            "3": { "name": "storage.type.numeric.idyllium" }
+          }
+        },
+        {
+          "match": "\\b(time)\\s*(\\.)(stamp)\\b",
+          "captures": {
+            "1": { "name": "support.module.idyllium" },
+            "2": { "name": "punctuation.accessor.idyllium" },
+            "3": { "name": "entity.name.type.class.idyllium" }
+          }
+        },
+        {
+          "match": "\\b(file)\\s*(\\.)(istream|ostream|stream)\\b",
+          "captures": {
+            "1": { "name": "support.module.idyllium" },
+            "2": { "name": "punctuation.accessor.idyllium" },
+            "3": { "name": "entity.name.type.class.idyllium" }
+          }
+        },
+        {
+          "match": "\\b(console|math|random|time|file|encoding|gui|colors|types|drawable)\\b",
+          "captures": {
+            "1": { "name": "support.module.idyllium" }
+          }
+        },
+        {
+          "match": "(\\.)([\\p{L}_][\\p{L}\\p{N}_]*)(?=\\s*\\()",
+          "captures": {
+            "1": { "name": "punctuation.accessor.idyllium" },
+            "2": { "name": "entity.name.function.member.idyllium" }
+          }
+        },
+        {
+          "match": "(\\.)([\\p{L}_][\\p{L}\\p{N}_]*)\\b",
+          "captures": {
+            "1": { "name": "punctuation.accessor.idyllium" },
+            "2": { "name": "variable.other.member.idyllium" }
+          }
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "name": "support.function.builtin.idyllium",
+          "match": "\\b(?:to_int|to_float|to_string|max|min|sum|avg)\\s*(?=\\()"
+        },
+        {
+          "name": "entity.name.function.idyllium",
+          "match": "\\b[\\p{L}_][\\p{L}\\p{N}_]*\\s*(?=\\()"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.assignment.compound.idyllium",
+          "match": "\\+=|-=|\\*=|/="
+        },
+        {
+          "name": "keyword.operator.comparison.idyllium",
+          "match": "==|!=|<=|>=|<|>"
+        },
+        {
+          "name": "keyword.operator.assignment.idyllium",
+          "match": "="
+        },
+        {
+          "name": "keyword.operator.arithmetic.idyllium",
+          "match": "\\+|-|\\*|/"
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.section.braces.idyllium",
+          "match": "[{}]"
+        },
+        {
+          "name": "punctuation.section.brackets.idyllium",
+          "match": "[\\[\\]]"
+        },
+        {
+          "name": "punctuation.section.parens.idyllium",
+          "match": "[()]"
+        },
+        {
+          "name": "punctuation.separator.idyllium",
+          "match": "[,;:]"
+        },
+        {
+          "name": "punctuation.accessor.idyllium",
+          "match": "\\."
+        },
+        {
+          "name": "punctuation.definition.generic.idyllium",
+          "match": "[<>]"
+        }
+      ]
+    }
+  }
+}

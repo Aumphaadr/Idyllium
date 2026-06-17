@@ -1,27 +1,38 @@
 {
-    "name": "idyllium",
-    "version": "0.4.0",
-    "description": "Idyllium — educational programming language",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
-    "scripts": {
-        "build": "tsc",
-        "build:web": "node build-web.js",
-        "build:all": "tsc && node build-web.js",
-        "test": "node dist/test.js",
-        "deploy": "npm run build:all && echo 'Ready! Commit and push docs/ folder.'",
-        "dev": "tsc --watch",
-        "serve": "npx http-server web -p 8080 -o"
-    },
-    "keywords": [
-        "education",
-        "programming-language",
-        "compiler"
-    ],
-    "license": "MIT",
-    "devDependencies": {
-        "@types/node": "^25.5.2",
-        "esbuild": "^0.28.0",
-        "typescript": "^5.4.0"
-    }
+  "name": "idyllium-next",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Next-generation core for the Idyllium educational programming language",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "bin": {
+    "idyllium": "dist/src/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:web": "npm run build && node tools/build-web-ide.js",
+    "build:vscode": "npm run build && node tools/build-vscode-extension.js",
+    "package:vscode": "npm run build:vscode && node tools/package-vscode-extension.js",
+    "test": "npm run build && node dist/tests/smoke.test.js && node dist/tests/cli.test.js && node dist/tests/lesson-spec.test.js && node dist/tests/canvas-draft.test.js && node dist/tests/widget-colors-draft.test.js && node dist/tests/widget-image-draft.test.js && node dist/tests/core-lessons-draft.test.js && node dist/tests/json-draft.test.js",
+    "docs:inventory": "npm run build && node dist/tools/docs-inventory.js",
+    "docs:site": "npm run build:web && node dist/tools/docs-build-site.js",
+    "docs:serve": "node tools/serve-docs.js",
+    "spec:extract": "npm run build && node dist/tools/extract-lesson-specs.js",
+    "spec:check": "npm run build && node dist/tests/lesson-spec.test.js",
+    "docs:migrate": "npm run build && node dist/tools/docs-migrate.js"
+  },
+  "keywords": [
+    "idyllium",
+    "education",
+    "programming-language",
+    "compiler",
+    "lsp"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "monaco-editor": "^0.52.2"
+  }
 }

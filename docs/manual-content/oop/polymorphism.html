@@ -1,0 +1,146 @@
+<div class="docs-section">
+  <h2>Что такое полиморфизм?</h2>
+  <p>
+    Полиморфизм — это возможность работать с разными потомками через общий
+    родительский тип, не теряя их настоящее поведение.
+  </p>
+  <p>
+    Если сказать проще: переменная может иметь тип родителя, но внутри неё может
+    лежать объект потомка. Когда мы вызываем метод, Idyllium смотрит не только на
+    тип переменной, но и на настоящий объект внутри неё.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Потомок в переменной родителя</h2>
+  <p>
+    Создадим общий класс <code>Shape</code> и два потомка: <code>Circle</code> и
+    <code>Rectangle</code>. У всех есть метод <code>draw()</code>, но каждый рисуется
+    по-своему.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Shape {
+    void function draw() {
+        console.writeln("Неизвестная фигура");
+    }
+}
+
+class Circle extends Shape {
+    void function draw() {
+        console.writeln("Рисуем круг");
+    }
+}
+
+class Rectangle extends Shape {
+    void function draw() {
+        console.writeln("Рисуем прямоугольник");
+    }
+}
+
+main() {
+    Circle circle;
+
+    Shape shape = circle;
+    shape.draw();
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Рисуем круг</idyl-output-block>
+
+  <p>
+    Переменная <code>shape</code> имеет тип <code>Shape</code>, но внутри неё лежит
+    <code>Circle</code>. Поэтому вызвался не родительский <code>draw()</code>, а
+    переопределённый метод круга.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Функция принимает родителя, а получает потомка</h2>
+  <p>
+    Это особенно полезно в функциях. Функция может сказать: «мне подойдёт любая
+    фигура», а мы передадим ей круг или прямоугольник.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Shape {
+    void function draw() {
+        console.writeln("Неизвестная фигура");
+    }
+}
+
+class Circle extends Shape {
+    void function draw() {
+        console.writeln("Рисуем круг");
+    }
+}
+
+class Rectangle extends Shape {
+    void function draw() {
+        console.writeln("Рисуем прямоугольник");
+    }
+}
+
+void function draw_twice(Shape shape) {
+    shape.draw();
+    shape.draw();
+}
+
+main() {
+    Rectangle rect;
+    draw_twice(rect);
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Рисуем прямоугольник
+Рисуем прямоугольник</idyl-output-block>
+
+  <p>
+    Функция <code>draw_twice()</code> ничего не знает о конкретном классе
+    <code>Rectangle</code>. Ей достаточно того, что <code>Rectangle</code> является
+    потомком <code>Shape</code>.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Зачем это нужно в Idyllium?</h2>
+  <p>
+    Полиморфизм нужен не только для учебных примеров. Он пригодится в стандартных
+    библиотеках:
+  </p>
+  <ul>
+    <li><code>gui.Window.add_child()</code> принимает разные виджеты: <code>Button</code>, <code>Label</code>, <code>Slider</code> и другие.</li>
+    <li><code>canvas.draw()</code> должен принимать разные drawable-объекты: круги, прямоугольники, текст, спрайты.</li>
+    <li>Ваши собственные функции тоже могут принимать родительский тип и работать со всеми его потомками.</li>
+  </ul>
+  <p>
+    Это позволяет писать меньше одноразового кода. Вместо отдельных функций
+    <code>draw_circle()</code>, <code>draw_rectangle()</code> и ещё десятка похожих
+    функций можно написать одну функцию, которая принимает общий тип.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Чего делать нельзя</h2>
+  <p>
+    Конструктор в Idyllium не является выражением. Поэтому такую запись писать
+    нельзя:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+Shape shape = Circle();  // ошибка: конструктор нельзя вызвать как обычную функцию
+</script></idyl-code-block>
+
+  <p>
+    Сначала создайте объект, а затем присвойте его переменной родительского типа:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+Circle circle;
+Shape shape = circle;
+</script></idyl-code-block>
+</div>

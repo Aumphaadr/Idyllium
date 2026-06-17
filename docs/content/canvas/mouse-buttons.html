@@ -1,0 +1,49 @@
+<div class="docs-section">
+  <h2>Кнопки мыши</h2>
+  <p>
+    Для нажатия кнопки мыши используется <code>on_mouse_pressed</code>, для
+    отпускания — <code>on_mouse_released</code>. Обработчик получает объект
+    <code>gui.MouseEvent</code>.
+  </p>
+  <p>
+    В нём есть <code>x</code>, <code>y</code> и <code>mouse_button</code>.
+    Кнопка мыши приходит текстом: <code>"LEFT"</code>, <code>"RIGHT"</code> или
+    <code>"MIDDLE"</code>.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use gui;
+
+void function on_mouse_pressed(gui.Canvas canvas, gui.MouseEvent e) {
+    console.writeln("Нажата кнопка: ", e.mouse_button);
+    console.writeln("Координаты: x=", e.x, ", y=", e.y);
+}
+
+void function on_mouse_released(gui.Canvas canvas, gui.MouseEvent e) {
+    console.writeln("Отпущена кнопка: ", e.mouse_button);
+}
+
+main() {
+    gui.Window win;
+    win.width = 440;
+    win.height = 300;
+
+    gui.Canvas canvas;
+    canvas.x = 20;
+    canvas.y = 20;
+    canvas.width = 400;
+    canvas.height = 230;
+    canvas.on_mouse_pressed = on_mouse_pressed;
+    canvas.on_mouse_released = on_mouse_released;
+
+    win.add_child(canvas);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <p>
+    Такой пример полезно запускать и щёлкать по разным местам Canvas. Сразу
+    видно, что координаты считаются от левого верхнего угла холста.
+  </p>
+</div>
