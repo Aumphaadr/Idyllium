@@ -927,6 +927,13 @@ button:disabled:active {
   min-height: 0;
 }
 
+.monaco-editor-host .view-line,
+.monaco-editor-host .inputarea {
+  letter-spacing: 0 !important;
+  font-variant-ligatures: none !important;
+  font-feature-settings: "liga" 0, "calt" 0 !important;
+}
+
 .asset-viewer {
   height: 100%;
   min-width: 0;

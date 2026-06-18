@@ -730,6 +730,10 @@ test('browser runtime returns written virtual project files', async () => {
   const output = result.files['/workspace/output.txt'];
   assert(typeof output !== 'string', 'expected structured output file');
   assert(output?.content === 'Привет, мир!\nФайл создан с помощью Idyllium!', `unexpected written file: ${JSON.stringify(output)}`);
+  const writtenOutput = result.writtenFiles['/workspace/output.txt'];
+  assert(typeof writtenOutput !== 'string', 'expected structured written output file');
+  assert(writtenOutput?.content === output.content, `unexpected written snapshot: ${JSON.stringify(result.writtenFiles)}`);
+  assert(!('/workspace/main.idyl' in result.writtenFiles), 'source file must not be reported as written');
 });
 
 test('browser runtime snapshots drawable asset resource uris', async () => {

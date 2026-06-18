@@ -3,11 +3,12 @@
 
 const fs = require('fs');
 const http = require('http');
+const os = require('os');
 const path = require('path');
 
 const root = path.resolve(process.cwd(), readRootArg() || 'docs');
 const requestedPort = Number(process.env.PORT || readArg('--port') || 4173);
-const host = process.env.HOST || '127.0.0.1';
+const host = process.env.HOST || readArg('--host') || '0.0.0.0';
 
 const mimeTypes = new Map([
   ['.css', 'text/css; charset=utf-8'],
@@ -44,7 +45,7 @@ function readArg(name) {
 function readRootArg() {
   for (let index = 2; index < process.argv.length; index += 1) {
     const value = process.argv[index];
-    if (value === '--port') {
+    if (value === '--port' || value === '--host') {
       index += 1;
       continue;
     }
@@ -64,9 +65,44 @@ function listen(port) {
     throw error;
   });
   server.listen(port, host, () => {
-    console.log(`Idyllium docs: http://${host}:${port}/`);
+    console.log('Idyllium docs:');
+    for (const url of serverUrls(port)) console.log(`  ${url}`);
     console.log(`Serving: ${root}`);
+    if (host === '0.0.0.0' || host === '::') {
+      console.log('Listening on all network interfaces. Local firewall rules may still block other devices.');
+    }
   });
+}
+
+function serverUrls(port) {
+  const urls = new Set();
+  if (host === '0.0.0.0' || host === '::') {
+    urls.add(`http://127.0.0.1:${port}/`);
+    for (const address of localNetworkAddresses()) {
+      urls.add(`http://${address}:${port}/`);
+    }
+  } else {
+    urls.add(`http://${host}:${port}/`);
+  }
+  return [...urls];
+}
+
+function localNetworkAddresses() {
+  const result = [];
+  for (const entries of Object.values(os.networkInterfaces())) {
+    for (const entry of entries || []) {
+      if (entry.family !== 'IPv4' || entry.internal) continue;
+      result.push(entry.address);
+    }
+  }
+  return result.sort((left, right) => scoreAddress(left) - scoreAddress(right) || left.localeCompare(right));
+}
+
+function scoreAddress(address) {
+  if (address.startsWith('192.168.')) return 0;
+  if (address.startsWith('10.')) return 1;
+  if (/^172\.(1[6-9]|2\d|3[01])\./u.test(address)) return 2;
+  return 3;
 }
 
 function handleRequest(request, response) {

@@ -699,6 +699,7 @@ export interface RuntimeFileSystem {
   appendText(filePath: string, text: string): void;
   resourceUri?(filePath: string): string | null;
   snapshot?(): Record<string, MemoryRuntimeFile>;
+  writtenFilesSnapshot?(): Record<string, MemoryRuntimeFile>;
 }
 
 export interface MemoryRuntimeFile {
@@ -713,6 +714,7 @@ export function createMemoryRuntimeFileSystem(
 ): RuntimeFileSystem {
   const files = new Map<string, { content: string; resourceUri: string | null }>();
   const directories = new Set<string>();
+  const writtenFiles = new Set<string>();
   const normalizedCwd = normalizeMemoryPath(cwd);
   addMemoryDirectory(directories, '/');
   addMemoryDirectory(directories, normalizedCwd);
@@ -758,12 +760,14 @@ export function createMemoryRuntimeFileSystem(
       if (!directories.has(parent)) throw new Error(`directory does not exist: ${parent}`);
       if (directories.has(normalized)) throw new Error(`path is a directory: ${normalized}`);
       files.set(normalized, { content: text, resourceUri: null });
+      writtenFiles.add(normalized);
     },
     appendText(filePath: string, text: string): void {
       const normalized = normalizeMemoryPath(filePath, normalizedCwd);
       const file = files.get(normalized);
       if (!file) throw new Error(`file does not exist: ${normalized}`);
       files.set(normalized, { ...file, content: file.content + text });
+      writtenFiles.add(normalized);
     },
     resourceUri(filePath: string): string | null {
       return files.get(normalizeMemoryPath(filePath, normalizedCwd))?.resourceUri ?? null;
@@ -774,6 +778,19 @@ export function createMemoryRuntimeFileSystem(
         result[directory] = { kind: 'directory' };
       }
       for (const [filePath, file] of [...files.entries()].sort(([left], [right]) => left.localeCompare(right))) {
+        result[filePath] = {
+          kind: 'file',
+          content: file.content,
+          resourceUri: file.resourceUri ?? undefined,
+        };
+      }
+      return result;
+    },
+    writtenFilesSnapshot(): Record<string, MemoryRuntimeFile> {
+      const result: Record<string, MemoryRuntimeFile> = {};
+      for (const filePath of [...writtenFiles].sort()) {
+        const file = files.get(filePath);
+        if (!file) continue;
         result[filePath] = {
           kind: 'file',
           content: file.content,

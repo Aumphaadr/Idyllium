@@ -26,6 +26,7 @@ async function runIdylliumInBrowser(options) {
             compilation: prepared.compilation,
             runtime: null,
             files: prepared.fileSystemSnapshot(),
+            writtenFiles: prepared.writtenFilesSnapshot(),
             windows: [],
             canvases: [],
             modals: [],
@@ -33,7 +34,7 @@ async function runIdylliumInBrowser(options) {
     }
     try {
         await prepared.run();
-        return browserRunSuccess(prepared.runtime, prepared.compilation, prepared.fileSystemSnapshot());
+        return browserRunSuccess(prepared.runtime, prepared.compilation, prepared.fileSystemSnapshot(), prepared.writtenFilesSnapshot());
     }
     catch (error) {
         return {
@@ -43,6 +44,7 @@ async function runIdylliumInBrowser(options) {
             compilation: prepared.compilation,
             runtime: prepared.runtime,
             files: prepared.fileSystemSnapshot(),
+            writtenFiles: prepared.writtenFilesSnapshot(),
             windows: prepared.runtime.getWindows(),
             canvases: prepared.runtime.getCanvases(),
             modals: prepared.runtime.getModals(),
@@ -55,6 +57,7 @@ async function prepareIdylliumBrowserProgram(options) {
     const source = browserFileText(files[entryFile]);
     const fileSystem = (0, runtime_1.createMemoryRuntimeFileSystem)(files);
     const fileSystemSnapshot = () => fileSystem.snapshot?.() ?? files;
+    const writtenFilesSnapshot = () => fileSystem.writtenFilesSnapshot?.() ?? {};
     const compilation = (0, run_1.compileIdyllium)(source, {
         file: entryFile,
         sources: browserSources(files),
@@ -68,6 +71,7 @@ async function prepareIdylliumBrowserProgram(options) {
             compilation,
             runtime: null,
             fileSystemSnapshot,
+            writtenFilesSnapshot,
             async run() {
                 // The compilation result already contains the diagnostics.
             },
@@ -81,6 +85,7 @@ async function prepareIdylliumBrowserProgram(options) {
         compilation,
         runtime,
         fileSystemSnapshot,
+        writtenFilesSnapshot,
         async run() {
             await program(runtime);
         },
@@ -93,7 +98,7 @@ function createMemoryRuntime(options, fileSystem) {
         fileSystem,
     });
 }
-function browserRunSuccess(runtime, compilation, files) {
+function browserRunSuccess(runtime, compilation, files, writtenFiles) {
     return {
         success: true,
         output: runtime.getOutput(),
@@ -101,6 +106,7 @@ function browserRunSuccess(runtime, compilation, files) {
         compilation,
         runtime,
         files,
+        writtenFiles,
         windows: runtime.getWindows(),
         canvases: runtime.getCanvases(),
         modals: runtime.getModals(),
@@ -6416,6 +6422,7 @@ function jsonKindText(value) {
 function createMemoryRuntimeFileSystem(entries = {}, cwd = '/workspace') {
     const files = new Map();
     const directories = new Set();
+    const writtenFiles = new Set();
     const normalizedCwd = normalizeMemoryPath(cwd);
     addMemoryDirectory(directories, '/');
     addMemoryDirectory(directories, normalizedCwd);
@@ -6461,6 +6468,7 @@ function createMemoryRuntimeFileSystem(entries = {}, cwd = '/workspace') {
             if (directories.has(normalized))
                 throw new Error(`path is a directory: ${normalized}`);
             files.set(normalized, { content: text, resourceUri: null });
+            writtenFiles.add(normalized);
         },
         appendText(filePath, text) {
             const normalized = normalizeMemoryPath(filePath, normalizedCwd);
@@ -6468,6 +6476,7 @@ function createMemoryRuntimeFileSystem(entries = {}, cwd = '/workspace') {
             if (!file)
                 throw new Error(`file does not exist: ${normalized}`);
             files.set(normalized, { ...file, content: file.content + text });
+            writtenFiles.add(normalized);
         },
         resourceUri(filePath) {
             return files.get(normalizeMemoryPath(filePath, normalizedCwd))?.resourceUri ?? null;
@@ -6478,6 +6487,20 @@ function createMemoryRuntimeFileSystem(entries = {}, cwd = '/workspace') {
                 result[directory] = { kind: 'directory' };
             }
             for (const [filePath, file] of [...files.entries()].sort(([left], [right]) => left.localeCompare(right))) {
+                result[filePath] = {
+                    kind: 'file',
+                    content: file.content,
+                    resourceUri: file.resourceUri ?? undefined,
+                };
+            }
+            return result;
+        },
+        writtenFilesSnapshot() {
+            const result = {};
+            for (const filePath of [...writtenFiles].sort()) {
+                const file = files.get(filePath);
+                if (!file)
+                    continue;
                 result[filePath] = {
                     kind: 'file',
                     content: file.content,
