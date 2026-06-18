@@ -316,6 +316,12 @@
         });
         legacyEditor.hidden = true;
         monacoReady = true;
+        refreshMonacoFontMetrics();
+        if (document.fonts?.ready) {
+          document.fonts.ready
+            .then(refreshMonacoFontMetrics)
+            .catch(() => {});
+        }
         resolve(true);
       }, () => {
         enableLegacyEditor();
@@ -727,8 +733,16 @@
         fontSize: editorFontSize,
         lineHeight: editorLineHeight(editorFontSize),
       });
+      refreshMonacoFontMetrics();
     }
     updateEditorVisuals();
+  }
+
+  function refreshMonacoFontMetrics() {
+    if (!monacoReady || !monacoEditor || !window.monaco) return;
+    window.monaco.editor.remeasureFonts?.();
+    monacoEditor.layout();
+    if (typeof monacoEditor.render === 'function') monacoEditor.render(true);
   }
 
   async function initializeIde() {
@@ -1710,7 +1724,7 @@
       }
 
       currentRuntime = prepared.runtime;
-      currentRuntimeFileSnapshot = prepared.fileSystemSnapshot;
+      currentRuntimeFileSnapshot = prepared.writtenFilesSnapshot;
       startOutputSync();
       await prepared.run();
       if (runId !== runSequence) return;

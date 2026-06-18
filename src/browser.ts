@@ -33,6 +33,7 @@ export interface BrowserRunResult {
   readonly compilation: CompileResult;
   readonly runtime: IdylliumRuntime | null;
   readonly files: Readonly<Record<string, BrowserIdylliumFile>>;
+  readonly writtenFiles: Readonly<Record<string, BrowserIdylliumFile>>;
   readonly windows: readonly IdylliumWindowSnapshot[];
   readonly canvases: readonly IdylliumCanvasSnapshot[];
   readonly modals: readonly IdylliumModalSnapshot[];
@@ -42,6 +43,7 @@ export interface BrowserPreparedProgram {
   readonly compilation: CompileResult;
   readonly runtime: IdylliumRuntime | null;
   fileSystemSnapshot(): Readonly<Record<string, BrowserIdylliumFile>>;
+  writtenFilesSnapshot(): Readonly<Record<string, BrowserIdylliumFile>>;
   run(): Promise<void>;
 }
 
@@ -55,6 +57,7 @@ export async function runIdylliumInBrowser(options: BrowserRunOptions): Promise<
       compilation: prepared.compilation,
       runtime: null,
       files: prepared.fileSystemSnapshot(),
+      writtenFiles: prepared.writtenFilesSnapshot(),
       windows: [],
       canvases: [],
       modals: [],
@@ -63,7 +66,12 @@ export async function runIdylliumInBrowser(options: BrowserRunOptions): Promise<
 
   try {
     await prepared.run();
-    return browserRunSuccess(prepared.runtime, prepared.compilation, prepared.fileSystemSnapshot());
+    return browserRunSuccess(
+      prepared.runtime,
+      prepared.compilation,
+      prepared.fileSystemSnapshot(),
+      prepared.writtenFilesSnapshot(),
+    );
   } catch (error) {
     return {
       success: false,
@@ -72,6 +80,7 @@ export async function runIdylliumInBrowser(options: BrowserRunOptions): Promise<
       compilation: prepared.compilation,
       runtime: prepared.runtime,
       files: prepared.fileSystemSnapshot(),
+      writtenFiles: prepared.writtenFilesSnapshot(),
       windows: prepared.runtime.getWindows(),
       canvases: prepared.runtime.getCanvases(),
       modals: prepared.runtime.getModals(),
@@ -85,6 +94,7 @@ export async function prepareIdylliumBrowserProgram(options: BrowserRunOptions):
   const source = browserFileText(files[entryFile]);
   const fileSystem = createMemoryRuntimeFileSystem(files);
   const fileSystemSnapshot = () => fileSystem.snapshot?.() ?? files;
+  const writtenFilesSnapshot = () => fileSystem.writtenFilesSnapshot?.() ?? {};
   const compilation = compileIdyllium(source, {
     file: entryFile,
     sources: browserSources(files),
@@ -99,6 +109,7 @@ export async function prepareIdylliumBrowserProgram(options: BrowserRunOptions):
       compilation,
       runtime: null,
       fileSystemSnapshot,
+      writtenFilesSnapshot,
       async run() {
         // The compilation result already contains the diagnostics.
       },
@@ -114,6 +125,7 @@ export async function prepareIdylliumBrowserProgram(options: BrowserRunOptions):
     compilation,
     runtime,
     fileSystemSnapshot,
+    writtenFilesSnapshot,
     async run() {
       await program(runtime);
     },
@@ -138,6 +150,7 @@ function browserRunSuccess(
   runtime: IdylliumRuntime,
   compilation: CompileResult,
   files: Readonly<Record<string, BrowserIdylliumFile>>,
+  writtenFiles: Readonly<Record<string, BrowserIdylliumFile>>,
 ): BrowserRunResult {
   return {
     success: true,
@@ -146,6 +159,7 @@ function browserRunSuccess(
     compilation,
     runtime,
     files,
+    writtenFiles,
     windows: runtime.getWindows(),
     canvases: runtime.getCanvases(),
     modals: runtime.getModals(),
