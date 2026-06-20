@@ -16,15 +16,14 @@
     'array', 'bool', 'char', 'dyn_array', 'float', 'int', 'set', 'string', 'void',
   ]);
   const CLASS_NAMES = new Set([
-    'Button', 'Canvas', 'CheckBox', 'Circle', 'Color', 'ComboBox', 'FloatSpinBox', 'Font', 'Frame',
-    'Image', 'Label', 'Line', 'LineEdit', 'Modal', 'ProgressBar', 'RadioButton', 'Rectangle', 'Slider', 'SpinBox', 'Sprite', 'Text',
-    'TextEdit', 'Texture', 'Timer', 'Window',
+    'Array', 'Button', 'Canvas', 'CheckBox', 'Circle', 'Color', 'ComboBox', 'Drawable', 'FloatSpinBox', 'Font', 'Frame',
+    'Image', 'KeyboardEvent', 'Label', 'Line', 'LineEdit', 'Modal', 'MouseEvent', 'MouseScrollEvent', 'Music',
+    'Object', 'ProgressBar', 'RadioButton', 'Rectangle', 'Slider', 'Sound', 'SpinBox', 'Sprite', 'Text',
+    'TextEdit', 'Texture', 'Timer', 'Value', 'Widget', 'Window',
   ]);
   const QUALIFIED_TYPES = new Set([
-    'Array',
-    'Button', 'Canvas', 'CheckBox', 'Circle', 'Color', 'ComboBox', 'FloatSpinBox', 'Font', 'Frame', 'Label',
-    'Image', 'Line', 'LineEdit', 'Modal', 'ProgressBar', 'RadioButton', 'Rectangle', 'Slider', 'SpinBox', 'Sprite',
-    'Object', 'Text', 'TextEdit', 'Texture', 'Timer', 'Value', 'Window', 'float32', 'float64', 'int8', 'int16', 'int32',
+    ...CLASS_NAMES,
+    'float32', 'float64', 'int8', 'int16', 'int32',
     'int64', 'istream', 'ostream', 'stamp', 'stream', 'uint8', 'uint16', 'uint32', 'uint64',
   ]);
   const CRC32_TABLE = buildCrc32Table();
@@ -34,6 +33,7 @@
   const AUTOSAVE_DELAY_MS = 450;
   const LAYOUT_STORAGE_KEY = 'idyllium-web-layout';
   const FONT_SIZE_STORAGE_KEY = 'idyllium-web-editor-font-size';
+  const WEB_IDE_BASE_URL = detectWebIdeBaseUrl();
   const COLOR_PICKER_CHANNELS = ['red', 'green', 'blue', 'alpha'];
   const ANSI_FOREGROUND_CLASSES = new Map([
     [30, 'ansi-fg-black'],
@@ -78,6 +78,7 @@
   let guiTimer = null;
   let lastTick = Date.now();
   let guiBusy = false;
+  const pendingGuiEvents = [];
   let guiFrameReady = false;
   let pendingSnapshot = null;
   let completionItems = [];
@@ -93,6 +94,7 @@
   let currentRuntimeFileSnapshot = null;
   let outputSyncTimer = null;
   let runSequence = 0;
+  let previewGeneration = 0;
   let pendingConsoleInput = null;
   let consoleInputEchoes = [];
   let lastSnapshotJson = '';
@@ -252,7 +254,7 @@
       return;
     }
     if (data.message.type !== 'guiEvent') return;
-    handleGuiEvent(data.message).catch((error) => {
+    enqueueGuiEvent(data.message).catch((error) => {
       setStatus('Ошибка события GUI', true);
       appendOutput(formatThrownError(error), 'output-error');
     });
@@ -268,7 +270,7 @@
         return;
       }
 
-      window.require.config({ paths: { vs: 'monaco/vs' } });
+      window.require.config({ paths: { vs: monacoBasePath() } });
       window.require(['vs/editor/editor.main'], () => {
         registerMonacoIdyllium();
         monacoEditor = window.monaco.editor.create(monacoHost, {
@@ -328,6 +330,32 @@
         resolve(false);
       });
     });
+  }
+
+  function monacoBasePath() {
+    return new URL('monaco/vs', WEB_IDE_BASE_URL).toString().replace(/\/$/u, '');
+  }
+
+  function detectWebIdeBaseUrl() {
+    const currentScript = document.currentScript;
+    if (currentScript && typeof currentScript.src === 'string' && currentScript.src) {
+      return new URL('.', currentScript.src).toString();
+    }
+
+    const appScript = document.querySelector('script[src$="app.js"]');
+    if (appScript && typeof appScript.src === 'string' && appScript.src) {
+      return new URL('.', appScript.src).toString();
+    }
+
+    const url = new URL(window.location.href);
+    if (!url.pathname.endsWith('/')) {
+      if (/\.[^/]+$/u.test(url.pathname)) {
+        url.pathname = url.pathname.replace(/[^/]*$/u, '');
+      } else {
+        url.pathname += '/';
+      }
+    }
+    return url.toString();
   }
 
   function enableLegacyEditor() {
@@ -881,7 +909,9 @@
     const bytes = item.bytes instanceof Uint8Array ? item.bytes : assetBytes(item);
     const detectedMime = detectAssetMimeType(file, bytes);
     const extensionMime = mimeTypeForFile(file);
-    const alpha = imageAlphaInfo(detectedMime, bytes);
+    const isImage = detectedMime.startsWith('image/');
+    const isAudio = detectedMime.startsWith('audio/');
+    const alpha = isImage ? imageAlphaInfo(detectedMime, bytes) : 'нет';
 
     const preview = document.createElement('div');
     preview.className = 'asset-preview';
@@ -895,21 +925,40 @@
     addAssetDetail(details, 'Размер файла', formatBytes(bytes.length));
     addAssetDetail(details, 'Тип по расширению', extensionMime);
     addAssetDetail(details, 'Фактический тип', detectedMime);
-    addAssetDetail(details, 'Ширина', 'загрузка...');
-    addAssetDetail(details, 'Высота', 'загрузка...');
-    addAssetDetail(details, 'Альфа-канал', alpha);
+    if (isAudio) {
+      addAssetDetail(details, 'Длительность', 'загрузка...');
+    } else {
+      addAssetDetail(details, 'Ширина', isImage ? 'загрузка...' : 'нет');
+      addAssetDetail(details, 'Высота', isImage ? 'загрузка...' : 'нет');
+      addAssetDetail(details, 'Альфа-канал', alpha);
+    }
 
     if (extensionMime !== detectedMime && detectedMime !== 'application/octet-stream') {
       addAssetDetail(details, 'Несовпадение типа', `${extensionMime} -> ${detectedMime}`, true);
     }
 
-    if (!detectedMime.startsWith('image/')) {
+    if (isAudio) {
+      const audio = document.createElement('audio');
+      audio.className = 'asset-audio-player';
+      audio.controls = true;
+      audio.preload = 'metadata';
+      audio.addEventListener('loadedmetadata', () => {
+        updateAssetDetail(details, 'Длительность', formatDuration(audio.duration));
+      });
+      audio.addEventListener('error', () => {
+        updateAssetDetail(details, 'Длительность', 'ошибка');
+      });
+      audio.src = bytes.length > 0 ? bytesToDataUrlWithMime(detectedMime, bytes) : item.resourceUri;
+      preview.classList.add('asset-preview-audio');
+      preview.appendChild(audio);
+      return;
+    }
+
+    if (!isImage) {
       const empty = document.createElement('div');
       empty.className = 'asset-preview-empty';
       empty.textContent = 'Предпросмотр для этого типа файла пока недоступен';
       preview.appendChild(empty);
-      updateAssetDetail(details, 'Ширина', 'нет');
-      updateAssetDetail(details, 'Высота', 'нет');
       return;
     }
 
@@ -1686,6 +1735,7 @@
   async function runProgram() {
     stopProgram(true);
     const runId = ++runSequence;
+    previewGeneration++;
     saveCurrentEditor();
     hideCompletions();
     output.textContent = '';
@@ -1726,7 +1776,9 @@
       currentRuntime = prepared.runtime;
       currentRuntimeFileSnapshot = prepared.writtenFilesSnapshot;
       startOutputSync();
-      await prepared.run();
+      await runRuntimeActionWithSnapshotPump(async () => {
+        await prepared.run();
+      });
       if (runId !== runSequence) return;
       syncRuntimeFilesFromSnapshot();
       syncRuntimeOutput();
@@ -1736,6 +1788,7 @@
         setRunControls(false, true);
       } else {
         stopOutputSync();
+        postEmptySnapshot();
         if (!output.textContent) output.textContent = 'Программа Idyllium успешно завершилась.';
         runAbortController = null;
         setRunControls(false);
@@ -1762,11 +1815,16 @@
 
   function stopProgram(silent = false) {
     const hadRuntime = Boolean(currentRuntime || runAbortController);
-    if (hadRuntime) runSequence++;
+    if (hadRuntime) {
+      runSequence++;
+      previewGeneration++;
+      lastSnapshotJson = '';
+    }
     if (runAbortController && !runAbortController.signal.aborted) runAbortController.abort();
     syncRuntimeFilesFromSnapshot();
     stopOutputSync();
     stopGuiLoop();
+    pendingGuiEvents.length = 0;
     clearPendingConsoleInput();
     currentRuntime = null;
     currentRuntimeFileSnapshot = null;
@@ -1869,7 +1927,13 @@
       runtime.getWindows().length > 0
       || runtime.getCanvases().length > 0
       || runtime.getModals().length > 0
+      || runtimeHasActiveAudio(runtime)
     ));
+  }
+
+  function runtimeHasActiveAudio(runtime) {
+    if (!runtime || typeof runtime.getAudio !== 'function') return false;
+    return runtime.getAudio().some((item) => item && item.properties && item.properties.is_playing === true);
   }
 
   function requestConsoleInput(signal) {
@@ -2103,17 +2167,53 @@
     return result;
   }
 
-  async function handleGuiEvent(message) {
-    if (!currentRuntime || guiBusy || !message || message.type !== 'guiEvent') return;
+  async function enqueueGuiEvent(message) {
+    if (!message || message.type !== 'guiEvent') return;
+    pendingGuiEvents.push(message);
+    await drainGuiEvents();
+  }
+
+  async function drainGuiEvents() {
+    if (!currentRuntime || guiBusy) return;
     guiBusy = true;
     try {
-      await currentRuntime.dispatchGuiEvent(Number(message.objectId), String(message.eventName), message.payload || {});
-      syncRuntimeOutput();
-      syncRuntimeFilesFromSnapshot();
-      sendRuntimeSnapshot();
+      while (currentRuntime && pendingGuiEvents.length > 0) {
+        const message = pendingGuiEvents.shift();
+        await runRuntimeActionWithSnapshotPump(async () => {
+          await currentRuntime.dispatchGuiEvent(Number(message.objectId), String(message.eventName), message.payload || {});
+        });
+      }
     } finally {
       guiBusy = false;
     }
+  }
+
+  async function runRuntimeActionWithSnapshotPump(action) {
+    let finished = false;
+    let failure = null;
+    const actionPromise = Promise.resolve()
+      .then(action)
+      .catch((error) => {
+        failure = error;
+      })
+      .finally(() => {
+        finished = true;
+      });
+
+    while (!finished) {
+      await Promise.race([actionPromise, waitForSnapshotPump()]);
+      syncRuntimeOutput();
+      syncRuntimeFilesFromSnapshot();
+      sendRuntimeSnapshot();
+    }
+
+    if (failure) throw failure;
+  }
+
+  function waitForSnapshotPump() {
+    return new Promise((resolve) => {
+      window.setTimeout(resolve, 50);
+    });
   }
 
   function startGuiLoop() {
@@ -2131,6 +2231,9 @@
         syncRuntimeOutput();
         syncRuntimeFilesFromSnapshot();
         sendRuntimeSnapshot();
+        if (!runtimeHasGui(currentRuntime)) {
+          finishCompletedRuntime();
+        }
       } catch (error) {
         stopOutputSync();
         appendOutput(formatThrownError(error), 'output-error');
@@ -2142,6 +2245,7 @@
         postEmptySnapshot();
       } finally {
         guiBusy = false;
+        if (pendingGuiEvents.length > 0) void drainGuiEvents();
       }
     }, intervalMs);
   }
@@ -2151,12 +2255,25 @@
     guiTimer = null;
   }
 
+  function finishCompletedRuntime() {
+    stopOutputSync();
+    stopGuiLoop();
+    currentRuntime = null;
+    currentRuntimeFileSnapshot = null;
+    runAbortController = null;
+    setRunControls(false);
+    if (!output.textContent) output.textContent = 'Программа Idyllium успешно завершилась.';
+    setStatus('Готово');
+    postEmptySnapshot();
+  }
+
   function sendRuntimeSnapshot() {
     if (!currentRuntime) {
       postEmptySnapshot();
       return;
     }
     postSnapshot({
+      audio: currentRuntime.getAudio ? currentRuntime.getAudio() : [],
       windows: currentRuntime.getWindows(),
       canvases: currentRuntime.getCanvases(),
       modals: currentRuntime.getModals(),
@@ -2182,21 +2299,27 @@
   }
 
   function postEmptySnapshot() {
-    postSnapshot({ windows: [], canvases: [], modals: [], output: '' });
+    postSnapshot({ audio: [], windows: [], canvases: [], modals: [], output: '' });
   }
 
   function postSnapshot(snapshot) {
-    pendingSnapshot = snapshot;
+    const fullSnapshot = {
+      ...snapshot,
+      generation: previewGeneration,
+    };
+    pendingSnapshot = fullSnapshot;
     if (!guiFrameReady || !guiFrame.contentWindow) return;
-    const snapshotJson = JSON.stringify(snapshot);
+    const snapshotJson = JSON.stringify(fullSnapshot);
     if (snapshotJson === lastSnapshotJson) return;
     lastSnapshotJson = snapshotJson;
     guiFrame.contentWindow.postMessage({
       type: 'snapshot',
-      windows: snapshot.windows,
-      canvases: snapshot.canvases,
-      modals: snapshot.modals,
-      output: snapshot.output,
+      generation: fullSnapshot.generation,
+      audio: fullSnapshot.audio || [],
+      windows: fullSnapshot.windows,
+      canvases: fullSnapshot.canvases,
+      modals: fullSnapshot.modals,
+      output: fullSnapshot.output,
     }, '*');
   }
 
@@ -3095,6 +3218,11 @@
     if (name.endsWith('.otf')) return 'font/otf';
     if (name.endsWith('.woff')) return 'font/woff';
     if (name.endsWith('.woff2')) return 'font/woff2';
+    if (name.endsWith('.mp3')) return 'audio/mpeg';
+    if (name.endsWith('.wav')) return 'audio/wav';
+    if (name.endsWith('.ogg')) return 'audio/ogg';
+    if (name.endsWith('.aac')) return 'audio/aac';
+    if (name.endsWith('.m4a')) return 'audio/mp4';
     return 'application/octet-stream';
   }
 
@@ -3105,8 +3233,21 @@
     const header6 = asciiBytes(bytes, 0, 6);
     if (header6 === 'GIF87a' || header6 === 'GIF89a') return 'image/gif';
     if (asciiBytes(bytes, 0, 4) === 'RIFF' && asciiBytes(bytes, 8, 4) === 'WEBP') return 'image/webp';
+    if (asciiBytes(bytes, 0, 4) === 'RIFF' && asciiBytes(bytes, 8, 4) === 'WAVE') return 'audio/wav';
+    if (hasBytes(bytes, [0x49, 0x44, 0x33], 0) || mp3FrameHeader(bytes)) return 'audio/mpeg';
+    if (asciiBytes(bytes, 0, 4) === 'OggS') return 'audio/ogg';
+    if (aacHeader(bytes)) return 'audio/aac';
+    if (asciiBytes(bytes, 4, 4) === 'ftyp') return 'audio/mp4';
     if (looksLikeSvg(bytes)) return 'image/svg+xml';
     return mimeTypeForFile(fileName);
+  }
+
+  function mp3FrameHeader(bytes) {
+    return bytes.length >= 2 && bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0;
+  }
+
+  function aacHeader(bytes) {
+    return bytes.length >= 2 && bytes[0] === 0xff && (bytes[1] & 0xf6) === 0xf0;
   }
 
   function imageAlphaInfo(mime, bytes) {
@@ -3188,6 +3329,14 @@
 
   function trimFileSize(value) {
     return value >= 10 ? value.toFixed(1) : value.toFixed(2);
+  }
+
+  function formatDuration(seconds) {
+    if (!Number.isFinite(seconds) || seconds < 0) return 'неизвестно';
+    const rounded = Math.round(seconds);
+    const minutes = Math.floor(rounded / 60);
+    const rest = rounded % 60;
+    return `${minutes}:${String(rest).padStart(2, '0')}`;
   }
 
   function dataUrlBytes(value) {

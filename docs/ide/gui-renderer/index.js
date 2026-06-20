@@ -21,7 +21,7 @@ function renderGuiWebviewHtml({
 }) {
   const serialized = JSON.stringify(state).replace(/</gu, '\\u003c');
   const csp = cspSource
-    ? `  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${cspSource} data:; font-src ${cspSource} data:; style-src ${cspSource}; script-src 'nonce-${nonce}' ${cspSource};">\n`
+    ? `  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${cspSource} data:; media-src ${cspSource} data:; font-src ${cspSource} data:; style-src ${cspSource}; script-src 'nonce-${nonce}' ${cspSource};">\n`
     : '';
   return `<!doctype html>
 <html lang="en">
@@ -46,8 +46,8 @@ ${csp}  <title>Idyllium GUI</title>
 </html>`;
 }
 
-function buildGuiState(adapter, windows, canvases, modals, _output) {
-  return addGuiResourceUris(adapter, { windows, canvases, modals });
+function buildGuiState(adapter, windows, canvases, modals, _output, audio = []) {
+  return addGuiResourceUris(adapter, { audio, windows, canvases, modals });
 }
 
 function addGuiResourceUris(adapter, value) {
@@ -63,7 +63,13 @@ function addGuiResourceUris(adapter, value) {
   }
 
   if (
-    (result.type === 'drawable.Texture' || result.type === 'drawable.Font' || result.type === 'gui.Image')
+    (
+      result.type === 'drawable.Texture'
+      || result.type === 'drawable.Font'
+      || result.type === 'gui.Image'
+      || result.type === 'audio.Sound'
+      || result.type === 'audio.Music'
+    )
     && result.properties
     && typeof result.properties === 'object'
     && typeof result.properties.resolved_path === 'string'
@@ -81,7 +87,7 @@ function addGuiResourceUris(adapter, value) {
   return result;
 }
 
-function collectGuiAssetPaths(windows, canvases) {
+function collectGuiAssetPaths(windows, canvases, audio = []) {
   const result = [];
   const visit = (value) => {
     if (Array.isArray(value)) {
@@ -93,7 +99,13 @@ function collectGuiAssetPaths(windows, canvases) {
     const type = value.type;
     const properties = value.properties;
     if (
-      (type === 'drawable.Texture' || type === 'drawable.Font' || type === 'gui.Image')
+      (
+        type === 'drawable.Texture'
+        || type === 'drawable.Font'
+        || type === 'gui.Image'
+        || type === 'audio.Sound'
+        || type === 'audio.Music'
+      )
       && properties
       && typeof properties.resolved_path === 'string'
       && path.isAbsolute(properties.resolved_path)
@@ -106,6 +118,7 @@ function collectGuiAssetPaths(windows, canvases) {
 
   visit(windows);
   visit(canvases);
+  visit(audio);
   return result;
 }
 

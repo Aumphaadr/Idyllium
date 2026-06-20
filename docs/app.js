@@ -11,12 +11,13 @@
   ]);
 
   const QUALIFIED_TYPES = new Set([
-    'Array', 'Color', 'Font', 'Object', 'Texture', 'Value',
-    'Circle', 'Rectangle', 'Sprite', 'Text',
+    'Array', 'Color', 'Drawable', 'Font', 'Music', 'Object', 'Sound', 'Texture', 'Value',
+    'Circle', 'Line', 'Rectangle', 'Sprite', 'Text',
     'istream', 'ostream', 'stream', 'stamp',
-    'Window', 'Button', 'Label', 'SpinBox', 'FloatSpinBox',
+    'Window', 'Widget', 'Button', 'Label', 'SpinBox', 'FloatSpinBox',
     'LineEdit', 'CheckBox', 'ProgressBar', 'TextEdit',
     'ComboBox', 'Slider', 'Frame', 'Timer', 'Modal', 'RadioButton', 'Image',
+    'Canvas', 'KeyboardEvent', 'MouseEvent', 'MouseScrollEvent',
     'int8', 'int16', 'int32', 'int64',
     'uint8', 'uint16', 'uint32', 'uint64',
     'float32', 'float64',

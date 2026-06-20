@@ -203,7 +203,23 @@
           }
         },
         {
-          "match": "\\b(console|math|random|time|file|encoding|gui|colors|types|drawable)\\b",
+          "match": "\\b(json)\\s*(\\.)(Value|Object|Array)\\b",
+          "captures": {
+            "1": { "name": "support.module.idyllium" },
+            "2": { "name": "punctuation.accessor.idyllium" },
+            "3": { "name": "entity.name.type.class.idyllium" }
+          }
+        },
+        {
+          "match": "\\b(audio)\\s*(\\.)(Sound|Music)\\b",
+          "captures": {
+            "1": { "name": "support.module.idyllium" },
+            "2": { "name": "punctuation.accessor.idyllium" },
+            "3": { "name": "entity.name.type.class.idyllium" }
+          }
+        },
+        {
+          "match": "\\b(console|math|random|time|file|encoding|json|gui|colors|types|drawable|audio)\\b",
           "captures": {
             "1": { "name": "support.module.idyllium" }
           }

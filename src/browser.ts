@@ -6,6 +6,7 @@ import { formatIdyllium } from './language/formatter';
 import { IdylliumProject } from './language/project';
 import {
   ConsoleIO,
+  IdylliumAudioSnapshot,
   IdylliumCanvasSnapshot,
   IdylliumModalSnapshot,
   IdylliumRuntime,
@@ -34,6 +35,7 @@ export interface BrowserRunResult {
   readonly runtime: IdylliumRuntime | null;
   readonly files: Readonly<Record<string, BrowserIdylliumFile>>;
   readonly writtenFiles: Readonly<Record<string, BrowserIdylliumFile>>;
+  readonly audio: readonly IdylliumAudioSnapshot[];
   readonly windows: readonly IdylliumWindowSnapshot[];
   readonly canvases: readonly IdylliumCanvasSnapshot[];
   readonly modals: readonly IdylliumModalSnapshot[];
@@ -58,6 +60,7 @@ export async function runIdylliumInBrowser(options: BrowserRunOptions): Promise<
       runtime: null,
       files: prepared.fileSystemSnapshot(),
       writtenFiles: prepared.writtenFilesSnapshot(),
+      audio: [],
       windows: [],
       canvases: [],
       modals: [],
@@ -81,6 +84,7 @@ export async function runIdylliumInBrowser(options: BrowserRunOptions): Promise<
       runtime: prepared.runtime,
       files: prepared.fileSystemSnapshot(),
       writtenFiles: prepared.writtenFilesSnapshot(),
+      audio: prepared.runtime.getAudio(),
       windows: prepared.runtime.getWindows(),
       canvases: prepared.runtime.getCanvases(),
       modals: prepared.runtime.getModals(),
@@ -160,6 +164,7 @@ function browserRunSuccess(
     runtime,
     files,
     writtenFiles,
+    audio: runtime.getAudio(),
     windows: runtime.getWindows(),
     canvases: runtime.getCanvases(),
     modals: runtime.getModals(),

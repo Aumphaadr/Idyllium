@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-06-18T09:53:28.776Z",
+  "generatedAt": "2026-06-20T12:28:26.251Z",
   "sourceRoot": "/home/nathaniel/IdylliumProjects/Idyllium/docs",
   "sections": [
     {
@@ -476,6 +476,15 @@
           ]
         },
         {
+          "id": "audio",
+          "title": "Работа со звуками",
+          "subtitle": "audio.Sound, audio.Music и первые звуки в GUI-приложении",
+          "file": "content/widgets/audio.html",
+          "sourceFile": "docs/manual-content/widgets/audio.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
           "id": "arrays",
           "title": "Массивы виджетов",
           "subtitle": "Как управлять группой однотипных элементов интерфейса",
@@ -800,6 +809,15 @@
           "subtitle": "tmp, dyn_array и круги, появляющиеся по клику",
           "file": "content/canvas/temporary-objects.html",
           "sourceFile": "docs/manual-content/canvas/temporary-objects.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "audio",
+          "title": "Звуки и музыка",
+          "subtitle": "Sound, Music, loop, position и on_finished в Canvas-проектах",
+          "file": "content/canvas/audio.html",
+          "sourceFile": "docs/manual-content/canvas/audio.html",
           "status": "ready",
           "reviewFlags": []
         },

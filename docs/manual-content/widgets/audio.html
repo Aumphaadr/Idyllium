@@ -1,0 +1,194 @@
+<div class="docs-section">
+  <h2>Звук по нажатию кнопки</h2>
+  <p>
+    Иногда интерфейсу хочется дать голос. Кнопка нажалась — прозвучал щелчок.
+    Игрок подобрал монетку — прозвучал короткий сигнал. Для таких коротких
+    эффектов в Idyllium есть класс <code>audio.Sound</code>.
+  </p>
+  <p>
+    Файл со звуком должен лежать рядом с программой. В примерах этого урока
+    используется файл <code>click.wav</code>. Если будете повторять пример в
+    Web IDE, загрузите этот файл в проект так же, как загружали картинки.
+  </p>
+
+  <audio controls src="assets/click.wav"></audio>
+
+  <idyl-code-block><script type="text/plain">
+use audio;
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 320;
+    win.height = 160;
+    win.title = "Кнопка со звуком";
+
+    gui.Button btn;
+    btn.text = "Нажми меня";
+    btn.x = 70;
+    btn.y = 50;
+    btn.width = 160;
+
+    audio.Sound click;
+    click.load_from_file("click.wav");
+
+    btn.on_click = void function() {
+        click.play();
+    };
+
+    win.add_child(btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <p>
+    Метод <code>load_from_file()</code> подгружает аудиофайл, а
+    <code>play()</code> запускает звук. Один и тот же <code>Sound</code> можно
+    запускать несколько раз: это удобно для кликов, выстрелов, прыжков и других
+    коротких эффектов.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Громкость</h2>
+  <p>
+    Если звук слишком громкий или слишком тихий, у него можно изменить свойство
+    <code>volume</code>. Значение пишется дробным числом от <code>0.0</code> до
+    <code>1.0</code>.
+  </p>
+  <ul>
+    <li><code>0.0</code> — совсем тихо;</li>
+    <li><code>0.5</code> — примерно половина громкости;</li>
+    <li><code>1.0</code> — полная громкость.</li>
+  </ul>
+
+  <idyl-code-block><script type="text/plain">
+use audio;
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 320;
+    win.height = 160;
+    win.title = "Тихий щелчок";
+
+    gui.Button btn;
+    btn.text = "Тихий звук";
+    btn.x = 70;
+    btn.y = 50;
+    btn.width = 160;
+
+    audio.Sound click;
+    click.load_from_file("click.wav");
+    click.volume = 0.25;
+
+    btn.on_click = void function() {
+        click.play();
+    };
+
+    win.add_child(btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <p>
+    Idyllium не исправляет неправильную громкость молча. Если написать
+    <code>click.volume = 4;</code>, программа получит runtime error, потому что
+    <code>4</code> не входит в диапазон от <code>0.0</code> до <code>1.0</code>.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Музыка — это не короткий звук</h2>
+  <p>
+    Короткий эффект можно быстро запускать много раз. А музыкальный трек обычно
+    длинный: несколько десятков секунд или несколько минут. Такой файл не всегда
+    хочется держать в памяти как обычный «щелчок».
+  </p>
+  <p>
+    Для длинных файлов используйте <code>audio.Music</code>. У музыки есть те же
+    основные команды: <code>play()</code>, <code>pause()</code>,
+    <code>resume()</code> и <code>stop()</code>.
+  </p>
+
+  <audio controls src="assets/theme.mp3"></audio>
+
+  <idyl-code-block><script type="text/plain">
+use audio;
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 560;
+    win.height = 210;
+    win.title = "Музыкальный плеер";
+
+    audio.Music music;
+    music.load_from_file("theme.mp3");
+    music.volume = 0.35;
+
+    gui.Button play_btn;
+    play_btn.text = "Старт";
+    play_btn.x = 30;
+    play_btn.y = 50;
+
+    gui.Button pause_btn;
+    pause_btn.text = "Пауза";
+    pause_btn.x = 150;
+    pause_btn.y = 50;
+
+    gui.Button resume_btn;
+    resume_btn.text = "Продолжить";
+    resume_btn.x = 270;
+    resume_btn.y = 50;
+
+    gui.Button stop_btn;
+    stop_btn.text = "Стоп";
+    stop_btn.x = 410;
+    stop_btn.y = 50;
+
+    play_btn.on_click = void function() {
+        music.play();
+    };
+
+    pause_btn.on_click = void function() {
+        music.pause();
+    };
+
+    resume_btn.on_click = void function() {
+        music.resume();
+    };
+
+    stop_btn.on_click = void function() {
+        music.stop();
+    };
+
+    win.add_child(play_btn);
+    win.add_child(pause_btn);
+    win.add_child(resume_btn);
+    win.add_child(stop_btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <p>
+    <code>pause()</code> ставит музыку на паузу, <code>resume()</code> продолжает
+    с того же места, а <code>stop()</code> останавливает и возвращает позицию в
+    начало.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Sound или Music?</h2>
+  <p>
+    Простое правило такое:
+  </p>
+  <ul>
+    <li><code>audio.Sound</code> — короткий эффект, который хочется запускать быстро и часто;</li>
+    <li><code>audio.Music</code> — длинный трек, который хочется ставить на паузу, продолжать и останавливать.</li>
+  </ul>
+  <p>
+    Если сомневаетесь, спросите себя: «Это щелчок или фоновая музыка?». Обычно
+    ответ сразу становится понятным.
+  </p>
+</div>

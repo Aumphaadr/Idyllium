@@ -279,6 +279,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   const jsonValue = qualified('json', 'Value');
   const jsonObject = qualified('json', 'Object');
   const jsonArray = qualified('json', 'Array');
+  const audioMusic = qualified('audio', 'Music');
 
   registry.registerModule(moduleSpec('console', [
     functionSpec('write', [], VOID, {
@@ -447,6 +448,43 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       functionSpec('remove', [{ name: 'index', type: INT }], VOID),
       functionSpec('clear', [], VOID),
     ], jsonValue),
+  ]));
+
+  registry.registerModule(moduleSpec('audio', [], [], [
+    typeSpec('Sound', [
+      propertySpec('src', STRING, true),
+      propertySpec('duration', FLOAT, true),
+      propertySpec('volume', FLOAT),
+      propertySpec('is_playing', BOOL, true),
+    ], [
+      functionSpec('load_from_file', [{ name: 'path', type: STRING }], VOID, {
+        documentation: 'Loads an audio file or raises a clear runtime error if loading fails.',
+      }),
+      functionSpec('play', [], VOID),
+      functionSpec('pause', [], VOID),
+      functionSpec('resume', [], VOID),
+      functionSpec('stop', [], VOID),
+    ]),
+    typeSpec('Music', [
+      propertySpec('src', STRING, true),
+      propertySpec('duration', FLOAT, true),
+      propertySpec('position', FLOAT),
+      propertySpec('volume', FLOAT),
+      propertySpec('loop', BOOL),
+      propertySpec('is_playing', BOOL, true),
+      callbackPropertySpec('on_finished', [
+        callbackSpec([]),
+        callbackSpec([audioMusic]),
+      ]),
+    ], [
+      functionSpec('load_from_file', [{ name: 'path', type: STRING }], VOID, {
+        documentation: 'Loads an audio file or raises a clear runtime error if loading fails.',
+      }),
+      functionSpec('play', [], VOID),
+      functionSpec('pause', [], VOID),
+      functionSpec('resume', [], VOID),
+      functionSpec('stop', [], VOID),
+    ]),
   ]));
 
   const drawableTexture = qualified('drawable', 'Texture');

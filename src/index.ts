@@ -15,6 +15,8 @@ export {
   IdylliumRuntimeError,
   IdylliumColor,
   IdylliumArray,
+  IdylliumAudioSnapshot,
+  IdylliumAudioCommand,
   IdylliumCanvasSnapshot,
   IdylliumCanvasCommand,
   IdylliumDrawableSnapshot,

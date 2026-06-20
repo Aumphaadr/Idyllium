@@ -432,11 +432,11 @@ async function runCurrentFileWithGui(core, target, context) {
       vscode.ViewColumn.Beside,
       {
         enableScripts: true,
-        localResourceRoots: guiLocalResourceRoots(document, context, result.windows, result.canvases),
+        localResourceRoots: guiLocalResourceRoots(document, context, result.windows, result.canvases, result.audio),
       }
     );
 
-    panel.webview.html = guiWebviewHtml(panel.webview, result.windows, result.canvases, result.modals, result.output);
+    panel.webview.html = guiWebviewHtml(panel.webview, result.windows, result.canvases, result.modals, result.output, result.audio);
     let stopNoticeWritten = false;
     session.onStop = () => {
       if (!stopNoticeWritten) {
@@ -458,6 +458,7 @@ function attachGuiSession(panel, result, channel, session) {
 
   let disposed = false;
   let busy = false;
+  const pendingGuiEvents = [];
   let lastTick = Date.now();
   let lastSnapshotJson = '';
   let lastChannelOutput = runtime.getOutput ? runtime.getOutput() : (result.output || '');
@@ -487,13 +488,15 @@ function attachGuiSession(panel, result, channel, session) {
       runtime.getWindows ? runtime.getWindows() : [],
       runtime.getCanvases ? runtime.getCanvases() : [],
       runtime.getModals ? runtime.getModals() : [],
-      ''
+      '',
+      runtime.getAudio ? runtime.getAudio() : []
     );
     const snapshotJson = JSON.stringify(state);
     if (snapshotJson === lastSnapshotJson) return;
     lastSnapshotJson = snapshotJson;
     panel.webview.postMessage({
       type: 'snapshot',
+      audio: state.audio,
       windows: state.windows,
       canvases: state.canvases,
       modals: state.modals,
@@ -508,8 +511,7 @@ function attachGuiSession(panel, result, channel, session) {
         panel.dispose();
         return;
       }
-      await action();
-      sendSnapshot();
+      await runActionWithSnapshotPump(action, sendSnapshot);
     } catch (error) {
       if (session?.signal.aborted || isProgramStoppedError(error)) {
         panel.dispose();
@@ -519,7 +521,25 @@ function attachGuiSession(panel, result, channel, session) {
       vscode.window.showErrorMessage('Idyllium GUI event failed. See the Idyllium output channel.');
     } finally {
       busy = false;
+      if (pendingGuiEvents.length > 0) void drainGuiEvents();
     }
+  };
+
+  const enqueueGuiEvent = (message) => {
+    pendingGuiEvents.push(message);
+    void drainGuiEvents();
+  };
+
+  const drainGuiEvents = async () => {
+    if (busy || disposed) return;
+    const message = pendingGuiEvents.shift();
+    if (!message) return;
+    await runRuntimeAction(async () => {
+      if (runtime.dispatchGuiEvent) {
+        await runtime.dispatchGuiEvent(Number(message.objectId ?? message.canvasId), String(message.eventName), message.payload ?? {});
+      }
+    });
+    void drainGuiEvents();
   };
 
   panel.webview.onDidReceiveMessage((message) => {
@@ -529,11 +549,7 @@ function attachGuiSession(panel, result, channel, session) {
       return;
     }
     if (message.type === 'guiEvent') {
-      runRuntimeAction(async () => {
-        if (runtime.dispatchGuiEvent) {
-          await runtime.dispatchGuiEvent(Number(message.objectId ?? message.canvasId), String(message.eventName), message.payload ?? {});
-        }
-      });
+      enqueueGuiEvent(message);
     }
   });
 
@@ -565,7 +581,33 @@ function guiPreviewIntervalMs(windows, canvases) {
   return guiRenderer.guiPreviewIntervalMs(windows, canvases);
 }
 
-function guiLocalResourceRoots(document, context, windows, canvases) {
+async function runActionWithSnapshotPump(action, sendSnapshot) {
+  let finished = false;
+  let failure = null;
+  const actionPromise = Promise.resolve()
+    .then(action)
+    .catch((error) => {
+      failure = error;
+    })
+    .finally(() => {
+      finished = true;
+    });
+
+  while (!finished) {
+    await Promise.race([actionPromise, waitForSnapshotPump()]);
+    sendSnapshot();
+  }
+
+  if (failure) throw failure;
+}
+
+function waitForSnapshotPump() {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 50);
+  });
+}
+
+function guiLocalResourceRoots(document, context, windows, canvases, audio = []) {
   const roots = [];
   const addRoot = (uri) => {
     if (!uri) return;
@@ -581,23 +623,23 @@ function guiLocalResourceRoots(document, context, windows, canvases) {
     if (folder) addRoot(folder.uri);
   }
 
-  for (const filePath of guiAssetPaths(windows, canvases)) {
+  for (const filePath of guiAssetPaths(windows, canvases, audio)) {
     addRoot(vscode.Uri.file(path.dirname(filePath)));
   }
 
   return roots;
 }
 
-function guiAssetPaths(windows, canvases) {
-  return guiRenderer.collectGuiAssetPaths(windows, canvases);
+function guiAssetPaths(windows, canvases, audio = []) {
+  return guiRenderer.collectGuiAssetPaths(windows, canvases, audio);
 }
 
-function guiWebviewState(webview, windows, canvases, modals, output) {
+function guiWebviewState(webview, windows, canvases, modals, output, audio = []) {
   return guiRenderer.buildGuiState({
     toResourceUri(filePath) {
       return webview.asWebviewUri(vscode.Uri.file(filePath)).toString();
     },
-  }, windows, canvases, modals, output);
+  }, windows, canvases, modals, output, audio);
 }
 
 async function executeIdylliumInExtension(core, runFile, files, document, options = {}) {
@@ -625,6 +667,7 @@ async function executeIdylliumInExtension(core, runFile, files, document, option
       output: '',
       diagnosticsText: compilation.diagnosticsText,
       runtimeError: null,
+      audio: [],
       windows: [],
       canvases: [],
       modals: [],
@@ -665,6 +708,7 @@ async function executeIdylliumInExtension(core, runFile, files, document, option
       runtimeError: null,
       windows: runtime.getWindows ? runtime.getWindows() : [],
       canvases: runtime.getCanvases ? runtime.getCanvases() : [],
+      audio: runtime.getAudio ? runtime.getAudio() : [],
       modals: runtime.getModals ? runtime.getModals() : [],
       runtime,
     };
@@ -676,6 +720,7 @@ async function executeIdylliumInExtension(core, runFile, files, document, option
       runtimeError: error instanceof Error ? error.message : String(error),
       windows: runtime.getWindows ? runtime.getWindows() : [],
       canvases: runtime.getCanvases ? runtime.getCanvases() : [],
+      audio: runtime.getAudio ? runtime.getAudio() : [],
       modals: runtime.getModals ? runtime.getModals() : [],
       runtime,
     };
@@ -720,14 +765,14 @@ function mainRunCodeLenses(document) {
   return lenses;
 }
 
-function guiWebviewHtml(webview, windows, canvases, modals, output) {
+function guiWebviewHtml(webview, windows, canvases, modals, output, audio = []) {
   const nonce = webviewNonce();
   return guiRenderer.renderGuiWebviewHtml({
     cspSource: webview.cspSource,
     cssUri: webview.asWebviewUri(vscode.Uri.file(guiRenderer.rendererAssetPaths().css)).toString(),
     nonce,
     scriptUri: webview.asWebviewUri(vscode.Uri.file(guiRenderer.rendererAssetPaths().script)).toString(),
-    state: guiWebviewState(webview, windows, canvases, modals, output),
+    state: guiWebviewState(webview, windows, canvases, modals, output, audio),
   });
 }
 function webviewNonce() {

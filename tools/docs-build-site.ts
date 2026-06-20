@@ -121,6 +121,16 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     reviewFlags: [],
   },
   {
+    sectionId: 'widgets',
+    afterLessonId: 'visibility',
+    id: 'audio',
+    title: 'Работа со звуками',
+    subtitle: 'audio.Sound, audio.Music и первые звуки в GUI-приложении',
+    sourceFile: 'docs/manual-content/widgets/audio.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
     sectionId: 'canvas',
     id: 'intro',
     title: 'Первый Canvas',
@@ -225,6 +235,16 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     title: 'Временные объекты',
     subtitle: 'tmp, dyn_array и круги, появляющиеся по клику',
     sourceFile: 'docs/manual-content/canvas/temporary-objects.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'canvas',
+    afterLessonId: 'temporary-objects',
+    id: 'audio',
+    title: 'Звуки и музыка',
+    subtitle: 'Sound, Music, loop, position и on_finished в Canvas-проектах',
+    sourceFile: 'docs/manual-content/canvas/audio.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -801,6 +821,14 @@ function copyAssets(sourceRoot: string, outputRoot: string): void {
   copyFileIfExists(
     path.resolve(process.cwd(), 'my_images', 'cat.png'),
     path.join(outputRoot, 'assets', 'cat.png'),
+  );
+  copyFileIfExists(
+    path.resolve(process.cwd(), 'spec', 'some_audio', 'click.wav'),
+    path.join(outputRoot, 'assets', 'click.wav'),
+  );
+  copyFileIfExists(
+    path.resolve(process.cwd(), 'spec', 'some_audio', 'theme.mp3'),
+    path.join(outputRoot, 'assets', 'theme.mp3'),
   );
 }
 

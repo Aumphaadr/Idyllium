@@ -13,10 +13,10 @@
     "build:web": "npm run build && node tools/build-web-ide.js",
     "build:vscode": "npm run build && node tools/build-vscode-extension.js",
     "package:vscode": "npm run build:vscode && node tools/package-vscode-extension.js",
-    "test": "npm run build && node dist/tests/smoke.test.js && node dist/tests/cli.test.js && node dist/tests/lesson-spec.test.js && node dist/tests/canvas-draft.test.js && node dist/tests/widget-colors-draft.test.js && node dist/tests/widget-image-draft.test.js && node dist/tests/core-lessons-draft.test.js && node dist/tests/json-draft.test.js",
+    "test": "npm run build && node dist/tests/smoke.test.js && node dist/tests/cli.test.js && node dist/tests/lesson-spec.test.js && node dist/tests/canvas-draft.test.js && node dist/tests/widget-colors-draft.test.js && node dist/tests/widget-image-draft.test.js && node dist/tests/core-lessons-draft.test.js && node dist/tests/json-draft.test.js && node dist/tests/gui-renderer.test.js",
     "docs:inventory": "npm run build && node dist/tools/docs-inventory.js",
     "docs:site": "npm run build:web && node dist/tools/docs-build-site.js",
-    "docs:serve": "node tools/serve-docs.js",
+    "docs:serve": "npm run docs:site && node tools/serve-docs.js",
     "spec:extract": "npm run build && node dist/tools/extract-lesson-specs.js",
     "spec:check": "npm run build && node dist/tests/lesson-spec.test.js",
     "docs:migrate": "npm run build && node dist/tools/docs-migrate.js"
