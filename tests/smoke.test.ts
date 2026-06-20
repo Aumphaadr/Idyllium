@@ -1,8 +1,9 @@
-import { compileIdyllium, runIdyllium, IdylliumLanguageService, IdylliumProject, compileProject, createRuntime, formatIdyllium, runIdylliumInBrowser } from '../src';
+import { compileIdyllium, runIdyllium, IdylliumLanguageService, IdylliumProject, compileProject, createRuntime, createMemoryRuntimeFileSystem, formatIdyllium, runIdylliumInBrowser } from '../src';
 
 const fs: any = require('fs');
 const os: any = require('os');
 const path: any = require('path');
+const BufferRef: any = require('buffer').Buffer;
 
 let passed = 0;
 let failed = 0;
@@ -55,6 +56,39 @@ async function runWithInspectableRuntime(source: string, compileOptions: Paramet
   const program = await factory();
   await program(runtime);
   return { runtime, compilation };
+}
+
+async function runWithMemoryFiles(source: string, files: Record<string, string>) {
+  const compilation = compileIdyllium(source, { file: '/workspace/main.idyl' });
+  assert(compilation.success, compilation.diagnosticsText);
+  assert(compilation.jsCode !== null, 'expected generated JavaScript');
+
+  const runtime = createRuntime({
+    fileSystem: createMemoryRuntimeFileSystem(files),
+  });
+  const AsyncFunction = Object.getPrototypeOf(async function idle() {}).constructor;
+  const factory = new AsyncFunction(compilation.jsCode);
+  const program = await factory();
+  await program(runtime);
+  return { runtime, compilation };
+}
+
+function tinyWavBinary(): string {
+  const bytes = BufferRef.alloc(44);
+  bytes.write('RIFF', 0, 'ascii');
+  bytes.writeUInt32LE(36, 4);
+  bytes.write('WAVE', 8, 'ascii');
+  bytes.write('fmt ', 12, 'ascii');
+  bytes.writeUInt32LE(16, 16);
+  bytes.writeUInt16LE(1, 20);
+  bytes.writeUInt16LE(1, 22);
+  bytes.writeUInt32LE(8000, 24);
+  bytes.writeUInt32LE(8000, 28);
+  bytes.writeUInt16LE(1, 32);
+  bytes.writeUInt16LE(8, 34);
+  bytes.write('data', 36, 'ascii');
+  bytes.writeUInt32LE(0, 40);
+  return bytes.toString('binary');
 }
 
 test('hello world runs', async () => {
@@ -2827,6 +2861,106 @@ test('project API compiles files and powers user module completions', () => {
   const symbols = project.documentSymbols('rect.idyl');
   assert(symbols.some((item) => item.name === 'Rect' && item.kind === 'class'), 'expected Rect document symbol');
   assert(symbols.some((item) => item.name === 'getArea' && item.kind === 'method'), 'expected getArea document symbol');
+});
+
+test('audio module records sound and music commands', async () => {
+  const result = await runWithMemoryFiles(`
+    use audio;
+
+    main() {
+      audio.Sound click;
+      click.load_from_file("click.wav");
+      click.volume = 0.5;
+      click.play();
+      click.pause();
+      click.resume();
+      click.stop();
+
+      audio.Music music;
+      music.load_from_file("theme.wav");
+      music.volume = 0.25;
+      music.loop = true;
+      music.position = 0.0;
+      music.play();
+    }
+  `, {
+    '/workspace/click.wav': tinyWavBinary(),
+    '/workspace/theme.wav': tinyWavBinary(),
+  });
+
+  const audio = result.runtime.getAudio();
+  assert(audio.length === 2, `expected two audio objects, got ${JSON.stringify(audio)}`);
+  const sound = audio.find((item) => item.type === 'audio.Sound');
+  const music = audio.find((item) => item.type === 'audio.Music');
+  assert(sound !== undefined, 'expected audio.Sound snapshot');
+  assert(music !== undefined, 'expected audio.Music snapshot');
+  assert(sound.properties.src === 'click.wav', `unexpected sound src: ${JSON.stringify(sound.properties)}`);
+  assert(sound.properties.volume === 0.5, `unexpected sound volume: ${JSON.stringify(sound.properties)}`);
+  assert(sound.commands.map((command) => command.action).join(',') === 'play,pause,resume,stop', `unexpected sound commands: ${JSON.stringify(sound.commands)}`);
+  assert(music.properties.loop === true, `unexpected music loop: ${JSON.stringify(music.properties)}`);
+  assert(music.properties.volume === 0.25, `unexpected music volume: ${JSON.stringify(music.properties)}`);
+  assert(music.commands.map((command) => command.action).join(',') === 'play', `unexpected music commands: ${JSON.stringify(music.commands)}`);
+});
+
+test('audio load and property errors are readable', async () => {
+  await assertRuntimeFails(`
+    use audio;
+
+    main() {
+      audio.Sound click;
+      click.load_from_file("missing.wav");
+    }
+  `, "Sound.load_from_file() cannot load 'missing.wav': file does not exist");
+
+  const compilation = compileIdyllium(`
+    use audio;
+
+    main() {
+      audio.Sound click;
+      click.load_from_file("click.wav");
+      click.volume = 1.5;
+    }
+  `, { file: '/workspace/main.idyl' });
+  assert(compilation.success && compilation.jsCode !== null, compilation.diagnosticsText);
+
+  const runtime = createRuntime({
+    fileSystem: createMemoryRuntimeFileSystem({ '/workspace/click.wav': tinyWavBinary() }),
+  });
+  const AsyncFunction = Object.getPrototypeOf(async function idle() {}).constructor;
+  const factory = new AsyncFunction(compilation.jsCode);
+  const program = await factory();
+  try {
+    await program(runtime);
+    throw new Error('expected audio volume runtime error');
+  } catch (error) {
+    const text = error instanceof Error ? error.message : String(error);
+    assert(text.includes('Sound.volume must be between 0 and 1'), `unexpected audio volume error: ${text}`);
+  }
+});
+
+test('audio music finished event runs callback', async () => {
+  const result = await runWithMemoryFiles(`
+    use audio;
+    use console;
+
+    main() {
+      audio.Music intro;
+      intro.load_from_file("intro.wav");
+      intro.on_finished = void function(audio.Music current) {
+        console.writeln("finished: ", current.src);
+      };
+      intro.play();
+    }
+  `, {
+    '/workspace/intro.wav': tinyWavBinary(),
+  });
+
+  const music = result.runtime.getAudio().find((item) => item.type === 'audio.Music');
+  assert(music !== undefined, 'expected music snapshot');
+  await result.runtime.dispatchGuiEvent(music.id, 'finished', {});
+  assert(result.runtime.getOutput() === 'finished: intro.wav\n', `unexpected on_finished output: ${JSON.stringify(result.runtime.getOutput())}`);
+  const updated = result.runtime.getAudio().find((item) => item.id === music.id);
+  assert(updated?.properties.is_playing === false, `expected finished music to stop playing, got ${JSON.stringify(updated)}`);
 });
 
 test('project API returns diagnostics per file', () => {

@@ -27,6 +27,7 @@ async function runIdylliumInBrowser(options) {
             runtime: null,
             files: prepared.fileSystemSnapshot(),
             writtenFiles: prepared.writtenFilesSnapshot(),
+            audio: [],
             windows: [],
             canvases: [],
             modals: [],
@@ -45,6 +46,7 @@ async function runIdylliumInBrowser(options) {
             runtime: prepared.runtime,
             files: prepared.fileSystemSnapshot(),
             writtenFiles: prepared.writtenFilesSnapshot(),
+            audio: prepared.runtime.getAudio(),
             windows: prepared.runtime.getWindows(),
             canvases: prepared.runtime.getCanvases(),
             modals: prepared.runtime.getModals(),
@@ -107,6 +109,7 @@ function browserRunSuccess(runtime, compilation, files, writtenFiles) {
         runtime,
         files,
         writtenFiles,
+        audio: runtime.getAudio(),
         windows: runtime.getWindows(),
         canvases: runtime.getCanvases(),
         modals: runtime.getModals(),
@@ -530,6 +533,10 @@ class JavaScriptGenerator {
                 const value = this.castForType(this.expression(statement.value), targetType);
                 return `$rt.array.set(${this.expression(statement.target.object)}, ${this.expression(statement.target.index)}, ${value}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
             }
+            if (statement.target.kind === 'MemberExpression') {
+                const value = this.castForType(this.expression(statement.value), targetType);
+                return `$rt.setProperty(${this.expression(statement.target.object)}, ${JSON.stringify(statement.target.name)}, ${value}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
+            }
             return `${this.expression(statement.target)} = ${this.castForType(this.expression(statement.value), targetType)}`;
         }
         if (statement.target.kind === 'IndexExpression') {
@@ -543,6 +550,10 @@ class JavaScriptGenerator {
         const target = this.expression(statement.target);
         const value = this.expression(statement.value);
         const rawAssignedValue = this.compoundAssignmentValue(statement.operator, target, value, statement.range);
+        if (statement.target.kind === 'MemberExpression') {
+            const assignedValue = this.castForType(rawAssignedValue, targetType);
+            return `$rt.setProperty(${this.expression(statement.target.object)}, ${JSON.stringify(statement.target.name)}, ${assignedValue}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
+        }
         return `${target} = ${this.castForType(rawAssignedValue, targetType)}`;
     }
     compoundAssignmentValue(operator, target, value, range) {
@@ -3967,6 +3978,7 @@ function createDefaultStandardLibrary() {
     const jsonValue = (0, types_1.qualified)('json', 'Value');
     const jsonObject = (0, types_1.qualified)('json', 'Object');
     const jsonArray = (0, types_1.qualified)('json', 'Array');
+    const audioMusic = (0, types_1.qualified)('audio', 'Music');
     registry.registerModule(moduleSpec('console', [
         functionSpec('write', [], types_1.VOID, {
             variadic: true,
@@ -4128,6 +4140,42 @@ function createDefaultStandardLibrary() {
             functionSpec('remove', [{ name: 'index', type: types_1.INT }], types_1.VOID),
             functionSpec('clear', [], types_1.VOID),
         ], jsonValue),
+    ]));
+    registry.registerModule(moduleSpec('audio', [], [], [
+        typeSpec('Sound', [
+            propertySpec('src', types_1.STRING, true),
+            propertySpec('duration', types_1.FLOAT, true),
+            propertySpec('volume', types_1.FLOAT),
+            propertySpec('is_playing', types_1.BOOL, true),
+        ], [
+            functionSpec('load_from_file', [{ name: 'path', type: types_1.STRING }], types_1.VOID, {
+                documentation: 'Loads an audio file or raises a clear runtime error if loading fails.',
+            }),
+            functionSpec('play', [], types_1.VOID),
+            functionSpec('pause', [], types_1.VOID),
+            functionSpec('resume', [], types_1.VOID),
+            functionSpec('stop', [], types_1.VOID),
+        ]),
+        typeSpec('Music', [
+            propertySpec('src', types_1.STRING, true),
+            propertySpec('duration', types_1.FLOAT, true),
+            propertySpec('position', types_1.FLOAT),
+            propertySpec('volume', types_1.FLOAT),
+            propertySpec('loop', types_1.BOOL),
+            propertySpec('is_playing', types_1.BOOL, true),
+            callbackPropertySpec('on_finished', [
+                callbackSpec([]),
+                callbackSpec([audioMusic]),
+            ]),
+        ], [
+            functionSpec('load_from_file', [{ name: 'path', type: types_1.STRING }], types_1.VOID, {
+                documentation: 'Loads an audio file or raises a clear runtime error if loading fails.',
+            }),
+            functionSpec('play', [], types_1.VOID),
+            functionSpec('pause', [], types_1.VOID),
+            functionSpec('resume', [], types_1.VOID),
+            functionSpec('stop', [], types_1.VOID),
+        ]),
     ]));
     const drawableTexture = (0, types_1.qualified)('drawable', 'Texture');
     const drawableFont = (0, types_1.qualified)('drawable', 'Font');
@@ -6524,11 +6572,13 @@ function createRuntime(options = {}) {
     const fileSystem = options.fileSystem ?? createNodeRuntimeFileSystem();
     const runtimeObjects = {
         objects: [],
+        audio: [],
         canvases: [],
         fileSystem,
         modals: [],
         timers: [],
         windows: [],
+        nextAudioCommandId: 1,
         nextObjectId: 1,
     };
     const io = {
@@ -6901,6 +6951,7 @@ function createRuntime(options = {}) {
                 }),
                 NULL: createJsonValue(),
             },
+            audio: {},
             gui: {},
             colors: {
                 RGB: contextFunction((red, green, blue, file, line) => IdylliumColor.RGB(red, green, blue, file, line)),
@@ -6918,6 +6969,21 @@ function createRuntime(options = {}) {
         createObject(moduleName, typeName) {
             throwIfRuntimeStopped('', 0);
             return createPlainRuntimeObject(moduleName, typeName, runtimeObjects);
+        },
+        setProperty(target, propertyName, value, file, line) {
+            throwIfRuntimeStopped(file, line);
+            if (target === null || typeof target !== 'object') {
+                throw new IdylliumRuntimeError(file, line, `cannot set property '${propertyName}' on '${runtimeTypeName(target)}'`);
+            }
+            const obj = target;
+            const setters = runtimePropertySetters(obj);
+            const setter = setters[propertyName];
+            if (setter) {
+                setter(value, file, line);
+                return value;
+            }
+            obj[propertyName] = value;
+            return value;
         },
         callModuleFunction(moduleName, functionName, args, file, line) {
             throwIfRuntimeStopped(file, line);
@@ -6950,6 +7016,9 @@ function createRuntime(options = {}) {
         },
         getOutput() {
             return output;
+        },
+        getAudio() {
+            return runtimeObjects.audio.map(audioSnapshot);
         },
         getCanvases() {
             return runtimeObjects.canvases.map(canvasSnapshot);
@@ -7696,6 +7765,36 @@ function explicitRuntimeProperties(obj) {
     });
     return properties;
 }
+function runtimePropertySetters(obj) {
+    if (isPlainObject(obj.__runtimePropertySetters))
+        return obj.__runtimePropertySetters;
+    const setters = {};
+    Object.defineProperty(obj, '__runtimePropertySetters', {
+        value: setters,
+        enumerable: false,
+        configurable: true,
+    });
+    return setters;
+}
+function defineValidatedRuntimeProperty(obj, name, defaultValue, validator) {
+    const values = trackedRuntimePropertyValues(obj);
+    values[name] = defaultValue;
+    runtimePropertySetters(obj)[name] = (value, file, line) => {
+        values[name] = validator(value, file, line);
+        explicitRuntimeProperties(obj).add(name);
+    };
+    Object.defineProperty(obj, name, {
+        enumerable: true,
+        configurable: true,
+        get() {
+            return values[name];
+        },
+        set(value) {
+            values[name] = validator(value, 'runtime', 0);
+            explicitRuntimeProperties(obj).add(name);
+        },
+    });
+}
 function createPlainRuntimeObject(moduleName, typeName, state) {
     if (moduleName === 'json') {
         if (typeName === 'Value')
@@ -7715,6 +7814,9 @@ function createPlainRuntimeObject(moduleName, typeName, state) {
     }
     if (moduleName === 'drawable') {
         initializeDrawableObject(obj, typeName, state);
+    }
+    if (moduleName === 'audio') {
+        initializeAudioObject(obj, typeName, state);
     }
     return obj;
 }
@@ -8087,6 +8189,113 @@ function attachLineMove(obj) {
         obj.y2 = finiteNumber(obj.y2, 'Line.move() current y2', file, line) + deltaY;
     });
 }
+function initializeAudioObject(obj, typeName, state) {
+    if (typeName !== 'Sound' && typeName !== 'Music')
+        return;
+    obj.src = '';
+    obj.resolved_path = '';
+    obj.resource_uri = '';
+    obj.is_loaded = false;
+    obj.duration = 0;
+    obj.is_playing = false;
+    obj.__audioCommands = [];
+    defineValidatedRuntimeProperty(obj, 'volume', 1, (value, file, line) => (rangeNumber(value, `${typeName}.volume`, 0, 1, file, line)));
+    obj.load_from_file = contextFunction((targetPath, file, line) => {
+        const requestedPath = stringArgument(targetPath, `${typeName}.load_from_file() path`, file, line);
+        const resolvedPath = state.fileSystem.resolvePath(requestedPath, file);
+        if (!state.fileSystem.exists(resolvedPath)) {
+            throw new IdylliumRuntimeError(file, line, `${typeName}.load_from_file() cannot load '${requestedPath}': file does not exist`);
+        }
+        if (!runtimeIsFile(state.fileSystem, resolvedPath, file, line, 'reading')) {
+            throw new IdylliumRuntimeError(file, line, `${typeName}.load_from_file() cannot load '${requestedPath}': path is not a file`);
+        }
+        obj.src = requestedPath;
+        obj.resolved_path = resolvedPath;
+        obj.resource_uri = state.fileSystem.resourceUri?.(resolvedPath) ?? '';
+        obj.duration = audioDuration(state.fileSystem, resolvedPath);
+        obj.is_loaded = true;
+    });
+    obj.play = contextFunction((file, line) => {
+        assertAudioLoaded(obj, typeName, 'play', file, line);
+        obj.is_playing = true;
+        pushAudioCommand(obj, state, 'play');
+    });
+    obj.pause = () => {
+        obj.is_playing = false;
+        pushAudioCommand(obj, state, 'pause');
+    };
+    obj.resume = contextFunction((file, line) => {
+        assertAudioLoaded(obj, typeName, 'resume', file, line);
+        obj.is_playing = true;
+        pushAudioCommand(obj, state, 'resume');
+    });
+    obj.stop = () => {
+        obj.is_playing = false;
+        if (typeName === 'Music')
+            obj.position = 0;
+        pushAudioCommand(obj, state, 'stop');
+    };
+    if (typeName === 'Music') {
+        obj.loop = false;
+        defineValidatedRuntimeProperty(obj, 'position', 0, (value, file, line) => {
+            const position = finiteNumber(value, 'Music.position', file, line);
+            const duration = typeof obj.duration === 'number' ? obj.duration : 0;
+            if (position < 0) {
+                throw new IdylliumRuntimeError(file, line, `Music.position must be non-negative, got ${position}`);
+            }
+            if (duration > 0 && position > duration) {
+                throw new IdylliumRuntimeError(file, line, `Music.position must be between 0 and ${duration}, got ${position}`);
+            }
+            return position;
+        });
+    }
+    state.audio.push(obj);
+}
+function pushAudioCommand(obj, state, action) {
+    audioCommands(obj).push({ id: state.nextAudioCommandId++, action });
+}
+function assertAudioLoaded(obj, typeName, methodName, file, line) {
+    if (obj.is_loaded === true)
+        return;
+    throw new IdylliumRuntimeError(file, line, `${typeName}.${methodName}() cannot play audio before load_from_file()`);
+}
+function audioCommands(obj) {
+    if (Array.isArray(obj.__audioCommands))
+        return obj.__audioCommands;
+    const commands = [];
+    Object.defineProperty(obj, '__audioCommands', {
+        value: commands,
+        enumerable: false,
+        configurable: true,
+    });
+    return commands;
+}
+function audioDuration(fileSystem, filePath) {
+    try {
+        const text = fileSystem.readText(filePath);
+        const dataUrlMatch = /^data:audio\/[^;]+;base64,(.+)$/u.exec(text);
+        if (dataUrlMatch)
+            return wavDuration(nodeBuffer.from(dataUrlMatch[1], 'base64'));
+        return wavDuration(nodeBuffer.from(text, 'binary'));
+    }
+    catch {
+        return 0;
+    }
+}
+function wavDuration(bytes) {
+    if (!bytes || typeof bytes.length !== 'number' || bytes.length < 44)
+        return 0;
+    if (bytes.toString('ascii', 0, 4) !== 'RIFF' || bytes.toString('ascii', 8, 12) !== 'WAVE')
+        return 0;
+    const channels = bytes.readUInt16LE(22);
+    const sampleRate = bytes.readUInt32LE(24);
+    const bitsPerSample = bytes.readUInt16LE(34);
+    const dataSize = bytes.readUInt32LE(40);
+    const bytesPerSecond = sampleRate * Math.max(1, channels) * Math.max(1, bitsPerSample) / 8;
+    if (!Number.isFinite(bytesPerSecond) || bytesPerSecond <= 0)
+        return 0;
+    return dataSize / bytesPerSecond;
+}
 function isGuiWidget(typeName) {
     return typeName === 'Window'
         || typeName === 'Widget'
@@ -8139,6 +8348,14 @@ function canvasSnapshot(canvas) {
         type: 'gui.Canvas',
         properties: objectPropertiesSnapshot(canvas),
         commands: canvasCommands(canvas).map((command) => ({ ...command })),
+    };
+}
+function audioSnapshot(audio) {
+    return {
+        id: runtimeObjectId(audio),
+        type: audio.__idylliumType === 'audio.Music' ? 'audio.Music' : 'audio.Sound',
+        properties: objectPropertiesSnapshot(audio),
+        commands: audioCommands(audio).map((command) => ({ ...command })),
     };
 }
 function windowSnapshot(window) {
@@ -8252,6 +8469,14 @@ async function stepGuiTimer(timer, deltaTime) {
     }
 }
 function applyGuiEventPayload(target, eventName, payload, state) {
+    if (target.__idylliumType === 'audio.Music' && eventName === 'finished') {
+        target.is_playing = false;
+        return;
+    }
+    if (target.__idylliumType === 'audio.Sound' && eventName === 'sound_finished') {
+        target.is_playing = false;
+        return;
+    }
     if (eventName === 'modal_confirm' || eventName === 'modal_cancel') {
         if (typeof payload.input_value === 'string') {
             target.__input_value = payload.input_value;
@@ -8319,6 +8544,8 @@ function guiCallbackName(target, eventName) {
         return 'on_confirm';
     if (target.__idylliumType === 'gui.Modal' && eventName === 'modal_cancel')
         return 'on_cancel';
+    if (target.__idylliumType === 'audio.Music' && eventName === 'finished')
+        return 'on_finished';
     if (target.__idylliumType !== 'gui.Canvas')
         return null;
     switch (eventName) {

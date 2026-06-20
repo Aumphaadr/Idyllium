@@ -3,12 +3,13 @@
 (function () {
   const host = window.IdylliumGuiHost
     || (typeof acquireVsCodeApi === 'function' ? acquireVsCodeApi() : { postMessage() {} });
-  let state = window.IdylliumGuiInitialState || { windows: [], canvases: [], modals: [] };
+  let state = normalizeState(window.IdylliumGuiInitialState || {});
   let stateJson = JSON.stringify(state);
   let activeCanvasId = null;
   let activeControl = null;
   let deferredState = null;
   let draggingControlId = null;
+  const audioEntries = new Map();
   let fontRefreshScheduled = false;
   const fontCache = new Map();
   const imageCache = new Map();
@@ -24,13 +25,11 @@
       return;
     }
     if (!message || message.type !== 'snapshot') return;
-    const nextState = {
-      windows: message.windows || [],
-      canvases: message.canvases || [],
-      modals: message.modals || [],
-    };
+    const nextState = normalizeState(message);
     const nextStateJson = JSON.stringify(nextState);
     if (nextStateJson === stateJson) return;
+    const generationChanged = nextState.generation !== state.generation;
+    if (generationChanged) clearAudioEntries();
     if (draggingControlId !== null) {
       deferredState = nextState;
       return;
@@ -55,6 +54,16 @@
   });
 
   renderAll();
+
+  function normalizeState(value) {
+    return {
+      generation: Number.isFinite(Number(value && value.generation)) ? Number(value.generation) : 0,
+      audio: value && Array.isArray(value.audio) ? value.audio : [],
+      windows: value && Array.isArray(value.windows) ? value.windows : [],
+      canvases: value && Array.isArray(value.canvases) ? value.canvases : [],
+      modals: value && Array.isArray(value.modals) ? value.modals : [],
+    };
+  }
 
   function applyTheme(theme) {
     const light = theme === 'light';
@@ -92,6 +101,7 @@
     }
 
     restoreActiveControl();
+    syncAudio(state.audio || []);
   }
 
   function renderWindow(win) {
@@ -652,6 +662,226 @@
 
   function postCloseApp() {
     host.postMessage({ type: 'closeApp' });
+  }
+
+  function syncAudio(audioSnapshots) {
+    const activeIds = new Set();
+    for (const snapshot of audioSnapshots || []) {
+      if (!snapshot || typeof snapshot.id !== 'number') continue;
+      activeIds.add(snapshot.id);
+      const entry = ensureAudioEntry(snapshot);
+      configureAudioEntry(entry, snapshot);
+      for (const command of snapshot.commands || []) {
+        if (!command || typeof command.id !== 'number' || entry.handledCommands.has(command.id)) continue;
+        entry.handledCommands.add(command.id);
+        runAudioCommand(entry, command.action);
+      }
+    }
+
+    for (const [id, entry] of audioEntries) {
+      if (activeIds.has(id)) continue;
+      stopAudioEntry(entry);
+      audioEntries.delete(id);
+    }
+  }
+
+  function ensureAudioEntry(snapshot) {
+    let entry = audioEntries.get(snapshot.id);
+    if (entry) {
+      entry.snapshot = snapshot;
+      return entry;
+    }
+
+    entry = {
+      id: snapshot.id,
+      snapshot,
+      type: snapshot.type,
+      src: '',
+      element: null,
+      instances: new Set(),
+      handledCommands: new Set(),
+      lastPosition: null,
+      volume: 1,
+    };
+    audioEntries.set(snapshot.id, entry);
+    return entry;
+  }
+
+  function configureAudioEntry(entry, snapshot) {
+    const props = snapshot.properties || {};
+    const uri = String(props.webview_uri || props.resource_uri || '');
+    entry.type = snapshot.type;
+    if (entry.type !== 'audio.Music') return;
+    const element = ensureMusicElement(entry);
+    if (uri && entry.src !== uri) {
+      entry.src = uri;
+      element.src = uri;
+      element.load();
+      entry.lastPosition = null;
+    }
+    element.loop = props.loop === true;
+    entry.volume = normalizedVolume(props.volume);
+    applyElementVolume(element, entry.volume);
+
+    const position = Number(props.position);
+    if (Number.isFinite(position) && position >= 0 && position !== entry.lastPosition && element.readyState > 0) {
+      try {
+        element.currentTime = position;
+        entry.lastPosition = position;
+      } catch (_error) {
+        // Browsers can reject seeking before enough metadata is available.
+      }
+    }
+  }
+
+  function runAudioCommand(entry, action) {
+    if (entry.type === 'audio.Music') {
+      runMusicCommand(entry, action);
+      return;
+    }
+    runSoundCommand(entry, action);
+  }
+
+  function runSoundCommand(entry, action) {
+    if (action === 'play') {
+      playSound(entry);
+      return;
+    }
+    if (action === 'pause') {
+      for (const item of entry.instances) item.pause();
+      return;
+    }
+    if (action === 'resume') {
+      if (entry.instances.size === 0) {
+        playSound(entry);
+        return;
+      }
+      for (const item of entry.instances) safePlay(item);
+      return;
+    }
+    if (action === 'stop') {
+      for (const item of entry.instances) {
+        item.pause();
+        try {
+          item.currentTime = 0;
+        } catch (_error) {
+          // Detached audio can reject seeking; it is about to be forgotten.
+        }
+      }
+      entry.instances.clear();
+    }
+  }
+
+  function playSound(entry) {
+    const props = entry.snapshot.properties || {};
+    const uri = String(props.webview_uri || props.resource_uri || '');
+    if (!uri || typeof Audio !== 'function') return;
+    const element = new Audio(uri);
+    const volume = normalizedVolume(props.volume);
+    applyElementVolume(element, volume);
+    installVolumeGuards(element, () => volume);
+    entry.instances.add(element);
+    element.addEventListener('ended', () => {
+      entry.instances.delete(element);
+      if (entry.instances.size === 0) postGuiEvent(entry.id, 'sound_finished', {});
+    }, { once: true });
+    safePlay(element);
+  }
+
+  function runMusicCommand(entry, action) {
+    const element = ensureMusicElement(entry);
+    if (!entry.src) return;
+    if (action === 'play') {
+      applyElementVolume(element, entry.volume);
+      try {
+        element.currentTime = 0;
+        entry.lastPosition = 0;
+      } catch (_error) {
+        // Metadata might not be ready yet.
+      }
+      safePlay(element);
+      return;
+    }
+    if (action === 'pause') {
+      element.pause();
+      return;
+    }
+    if (action === 'resume') {
+      applyElementVolume(element, entry.volume);
+      safePlay(element);
+      return;
+    }
+    if (action === 'stop') {
+      element.pause();
+      try {
+        element.currentTime = 0;
+        entry.lastPosition = 0;
+      } catch (_error) {
+        // Metadata might not be ready yet.
+      }
+    }
+  }
+
+  function ensureMusicElement(entry) {
+    if (entry.element) return entry.element;
+    const element = new Audio();
+    element.preload = 'auto';
+    installVolumeGuards(element, () => entry.volume);
+    element.addEventListener('ended', () => {
+      if (!element.loop) postGuiEvent(entry.id, 'finished', {});
+    });
+    entry.element = element;
+    return element;
+  }
+
+  function stopAudioEntry(entry) {
+    if (entry.element) {
+      entry.element.pause();
+      try {
+        entry.element.currentTime = 0;
+      } catch (_error) {
+        // Ignore cleanup seek failures.
+      }
+    }
+    for (const item of entry.instances) item.pause();
+    entry.instances.clear();
+  }
+
+  function clearAudioEntries() {
+    for (const entry of audioEntries.values()) stopAudioEntry(entry);
+    audioEntries.clear();
+  }
+
+  function safePlay(element) {
+    if (typeof element.__idylliumVolume === 'number') {
+      applyElementVolume(element, element.__idylliumVolume);
+    }
+    const promise = element.play();
+    if (promise && typeof promise.catch === 'function') promise.catch(() => {});
+  }
+
+  function installVolumeGuards(element, volumeProvider) {
+    const reapply = () => applyElementVolume(element, volumeProvider());
+    for (const eventName of ['loadstart', 'loadedmetadata', 'canplay', 'playing', 'volumechange']) {
+      element.addEventListener(eventName, reapply);
+    }
+  }
+
+  function applyElementVolume(element, value) {
+    const volume = normalizedVolume(value);
+    element.__idylliumVolume = volume;
+    try {
+      element.volume = volume;
+    } catch (_error) {
+      // Some browser environments make media volume read-only. In that case
+      // the program still runs; the platform simply ignores software volume.
+    }
+  }
+
+  function normalizedVolume(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return 1;
+    return Math.min(1, Math.max(0, number));
   }
 
   function mousePayload(canvas, event) {

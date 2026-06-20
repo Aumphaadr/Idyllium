@@ -977,6 +977,16 @@ button:disabled:active {
   image-rendering: auto;
 }
 
+.asset-preview-audio {
+  min-height: 160px;
+  background: color-mix(in srgb, var(--editor-bg) 82%, var(--panel-raised));
+}
+
+.asset-audio-player {
+  width: min(520px, calc(100% - 28px));
+  accent-color: var(--accent);
+}
+
 .asset-preview-empty {
   max-width: 360px;
   color: var(--muted);

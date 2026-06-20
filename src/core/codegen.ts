@@ -438,6 +438,10 @@ export class JavaScriptGenerator {
         const value = this.castForType(this.expression(statement.value), targetType);
         return `$rt.array.set(${this.expression(statement.target.object)}, ${this.expression(statement.target.index)}, ${value}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
       }
+      if (statement.target.kind === 'MemberExpression') {
+        const value = this.castForType(this.expression(statement.value), targetType);
+        return `$rt.setProperty(${this.expression(statement.target.object)}, ${JSON.stringify(statement.target.name)}, ${value}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
+      }
       return `${this.expression(statement.target)} = ${this.castForType(this.expression(statement.value), targetType)}`;
     }
 
@@ -453,6 +457,10 @@ export class JavaScriptGenerator {
     const target = this.expression(statement.target);
     const value = this.expression(statement.value);
     const rawAssignedValue = this.compoundAssignmentValue(statement.operator, target, value, statement.range);
+    if (statement.target.kind === 'MemberExpression') {
+      const assignedValue = this.castForType(rawAssignedValue, targetType);
+      return `$rt.setProperty(${this.expression(statement.target.object)}, ${JSON.stringify(statement.target.name)}, ${assignedValue}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
+    }
     return `${target} = ${this.castForType(rawAssignedValue, targetType)}`;
   }
 

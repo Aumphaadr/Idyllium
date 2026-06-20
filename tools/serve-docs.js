@@ -19,11 +19,16 @@ const mimeTypes = new Map([
   ['.jpg', 'image/jpeg'],
   ['.js', 'text/javascript; charset=utf-8'],
   ['.json', 'application/json; charset=utf-8'],
+  ['.aac', 'audio/aac'],
   ['.md', 'text/markdown; charset=utf-8'],
+  ['.m4a', 'audio/mp4'],
+  ['.mp3', 'audio/mpeg'],
+  ['.ogg', 'audio/ogg'],
   ['.png', 'image/png'],
   ['.svg', 'image/svg+xml; charset=utf-8'],
   ['.ttf', 'font/ttf'],
   ['.wasm', 'application/wasm'],
+  ['.wav', 'audio/wav'],
   ['.woff', 'font/woff'],
   ['.woff2', 'font/woff2'],
 ]);
@@ -122,6 +127,10 @@ function handleRequest(request, response) {
 
   fs.stat(filePath, (statError, stat) => {
     if (!statError && stat.isDirectory()) {
+      if (!requestPathnameEndsWithSlash(request.url || '/')) {
+        redirectToDirectoryUrl(request.url || '/', response);
+        return;
+      }
       sendFile(path.join(filePath, 'index.html'), method, response, true);
       return;
     }
@@ -134,6 +143,24 @@ function handleRequest(request, response) {
     const fallback = path.join(root, 'index.html');
     sendFile(fallback, method, response, true);
   });
+}
+
+function requestPathnameEndsWithSlash(rawUrl) {
+  try {
+    return new URL(rawUrl, 'http://localhost').pathname.endsWith('/');
+  } catch {
+    return true;
+  }
+}
+
+function redirectToDirectoryUrl(rawUrl, response) {
+  const url = new URL(rawUrl, 'http://localhost');
+  url.pathname += '/';
+  response.writeHead(308, {
+    'Content-Type': 'text/plain; charset=utf-8',
+    Location: `${url.pathname}${url.search}`,
+  });
+  response.end('Redirecting to directory URL');
 }
 
 function resolveRequestPath(rawUrl) {
