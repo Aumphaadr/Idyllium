@@ -1,10 +1,10 @@
 {
-  "name": "idyllium-vscode",
+  "name": "idyllium-vsc",
   "displayName": "Idyllium",
   "description": "Поддержка учебного языка программирования Idyllium для VS Code.",
   "version": "1.0.0",
   "publisher": "idyllium",
-  "private": true,
+  "private": false,
   "license": "MIT",
   "icon": "media/idyllium128x128.png",
   "scripts": {

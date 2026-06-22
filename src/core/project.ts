@@ -3,6 +3,7 @@ import {
   ArrayTypeNameNode,
   ClassDeclaration,
   FunctionDeclaration,
+  ParameterDeclaration,
   Program,
   TypeName,
 } from './ast';
@@ -254,7 +255,12 @@ function functionSpecFromDeclaration(
     type: resolveModuleExportType(parameter.paramType, moduleName, program, localClasses, stdlib, userModules, diagnostics),
   }));
   const returnType = resolveModuleExportType(declaration.returnType, moduleName, program, localClasses, stdlib, userModules, diagnostics);
-  return { name: declaration.name, parameters, returnType };
+  return {
+    name: declaration.name,
+    parameters,
+    returnType,
+    minArguments: requiredParameterCount(declaration.parameters),
+  };
 }
 
 function classSpecFromDeclaration(
@@ -306,6 +312,7 @@ function classSpecFromDeclaration(
           type: resolveModuleExportType(parameter.paramType, moduleName, program, localClasses, stdlib, userModules, diagnostics),
         })),
         returnType: VOID,
+        minArguments: requiredParameterCount(member.parameters),
       };
       constructorAccess = member.access;
     }
@@ -321,6 +328,11 @@ function classSpecFromDeclaration(
     constructorAccess,
     range: declaration.range,
   };
+}
+
+function requiredParameterCount(parameters: readonly ParameterDeclaration[]): number {
+  const firstDefault = parameters.findIndex((parameter) => parameter.defaultValue !== null);
+  return firstDefault < 0 ? parameters.length : firstDefault;
 }
 
 function resolveModuleExportType(

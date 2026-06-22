@@ -1297,6 +1297,261 @@ test('functions return values', async () => {
   assert(result.output === '23 40', `unexpected output: ${JSON.stringify(result.output)}`);
 });
 
+test('typed main returns a value but program ignores it', async () => {
+  const result = await runIdyllium(`
+    use console;
+
+    string function main() {
+      console.write("typed main");
+      return "ignored";
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === 'typed main', `unexpected output: ${JSON.stringify(result.output)}`);
+});
+
+test('typed main can use any normal return type', () => {
+  assertCompiles(`
+    array<int, 2> function main() {
+      array<int, 2> values = [10, 20];
+      return values;
+    }
+  `);
+
+  assertCompiles(`
+    class Cat {
+      public:
+      string name;
+    }
+
+    Cat function main() {
+      Cat cat;
+      cat.name = "Мурка";
+      return cat;
+    }
+  `);
+
+  assertCompiles(`
+    void function main() {
+    }
+  `);
+});
+
+test('typed main diagnostics are readable', () => {
+  assertFails(`
+    int function main() {
+    }
+  `, "function with return type 'int' must return a value");
+
+  assertFails(`
+    int function main(int exit_code) {
+      return exit_code;
+    }
+  `, "entry point 'main' cannot have parameters");
+
+  assertFails(`
+    main() {
+    }
+
+    string function main() {
+      return "again";
+    }
+  `, "entry point 'main' is already declared");
+});
+
+test('default arguments run for functions methods and constructors', async () => {
+  const result = await runIdyllium(`
+    use console;
+
+    int function sub(int left, int right = 10) {
+      return left - right;
+    }
+
+    int function add_twice(int first, int second = first) {
+      return first + second;
+    }
+
+    class Counter {
+      int value;
+
+      constructor Counter(int start = 5) {
+        this.value = start;
+      }
+
+      void function add(int amount = 1) {
+        this.value += amount;
+      }
+
+      int function get() {
+        return this.value;
+      }
+    }
+
+    main() {
+      Counter a();
+      a.add();
+      a.add(4);
+
+      Counter b(10);
+      b.add();
+
+      console.write(sub(50), ":", sub(50, 30), ":", add_twice(7), ":", a.get(), ":", b.get());
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === '40:20:14:10:11', `unexpected output: ${JSON.stringify(result.output)}`);
+});
+
+test('default argument diagnostics are readable', () => {
+  assertFails(`
+    void function greet(string name = "Мира", string suffix) {
+    }
+
+    main() {}
+  `, "parameter 'suffix' without default value cannot follow a parameter with default value");
+
+  assertFails(`
+    void function print_num(int value = "сорок два") {
+    }
+
+    main() {}
+  `, "default value for parameter 'value' expects 'int', got 'string'");
+
+  assertFails(`
+    int function sub(int left, int right = 10) {
+      return left - right;
+    }
+
+    main() {
+      int value = sub();
+    }
+  `, "'sub' expects 1 or 2 arguments, got 0");
+});
+
+test('named arguments run for functions stdlib methods and constructors', async () => {
+  const result = await runIdyllium(`
+    use colors;
+    use console;
+    use math;
+
+    int function sub(int left, int right = 10) {
+      return left - right;
+    }
+
+    class Counter {
+      int value;
+
+      constructor Counter(int start = 5) {
+        this.value = start;
+      }
+
+      void function add(int amount = 1) {
+        this.value += amount;
+      }
+    }
+
+    main() {
+      Counter counter(start=20);
+      counter.add(amount=3);
+
+      string text = "кот и пёс";
+      string replaced = text.replace(new_text="дракон", old_text="пёс");
+      colors.Color color = colors.RGB(blue=30, red=10, green=20);
+      gui_dummy(color);
+
+      console.write(
+        sub(right=50, left=30), ":",
+        sub(50, right=5), ":",
+        math.clamp(max=10, min=0, value=25), ":",
+        div(right=4, left=21), ":",
+        replaced, ":",
+        counter.value
+      );
+    }
+
+    void function gui_dummy(colors.Color value) {
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === '-20:45:10:5:кот и дракон:23', `unexpected output: ${JSON.stringify(result.output)}`);
+});
+
+test('named arguments work across user modules', async () => {
+  const result = await runIdyllium(`
+    use console;
+    use math_tools;
+
+    main() {
+      console.write(math_tools.sub(right=50, left=30), ":", math_tools.sub(30));
+    }
+  `, {}, {
+    file: 'main.idyl',
+    sources: {
+      'math_tools.idyl': `
+        int function sub(int left, int right = 10) {
+          return left - right;
+        }
+      `,
+    },
+  });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === '-20:20', `unexpected output: ${JSON.stringify(result.output)}`);
+});
+
+test('named argument diagnostics are readable', () => {
+  assertFails(`
+    int function sub(int left, int right) {
+      return left - right;
+    }
+
+    main() {
+      int value = sub(left=50, 30);
+    }
+  `, 'positional argument cannot follow named argument');
+
+  assertFails(`
+    int function sub(int left, int right) {
+      return left - right;
+    }
+
+    main() {
+      int value = sub(50, left=30);
+    }
+  `, "'sub' argument 'left' was already provided");
+
+  assertFails(`
+    int function sub(int left, int right) {
+      return left - right;
+    }
+
+    main() {
+      int value = sub(left=30);
+    }
+  `, "'sub' missing required argument 'right'");
+
+  assertFails(`
+    int function sub(int left, int right) {
+      return left - right;
+    }
+
+    main() {
+      int value = sub(start=30);
+    }
+  `, "'sub' has no argument named 'start'");
+
+  assertFails(`
+    use console;
+
+    main() {
+      console.write(value=42);
+    }
+  `, "'write' does not support named arguments");
+});
+
 test('recursive functions run', async () => {
   const result = await runIdyllium(`
     use console;
@@ -1577,13 +1832,13 @@ test('user modules expose functions and classes across files', async () => {
       rect.Rect r;
       r.width = 20;
       r.height = 30;
-      console.write(math_tools.square(5), ":", r.getArea());
+      console.write(math_tools.square(), ":", math_tools.square(5), ":", r.getArea());
     }
   `, {}, {
     file: 'main.idyl',
     sources: {
       'math_tools.idyl': `
-        int function square(int x) {
+        int function square(int x = 4) {
           return x * x;
         }
       `,
@@ -1601,7 +1856,7 @@ test('user modules expose functions and classes across files', async () => {
   });
 
   assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
-  assert(result.output === '25:600', `unexpected output: ${JSON.stringify(result.output)}`);
+  assert(result.output === '16:25:600', `unexpected output: ${JSON.stringify(result.output)}`);
 });
 
 test('user module diagnostics are checked across files', () => {
@@ -2790,6 +3045,55 @@ test('project API compiles files and powers user module completions', () => {
   assert(stringSignature !== null, 'expected text.replace signature help');
   assert(stringSignature.signatures[0].label === 'replace(old_text: string, new_text: string): string', `unexpected text.replace signature: ${stringSignature.signatures[0].label}`);
   assert(stringSignature.activeParameter === 1, `expected replace second active parameter, got ${stringSignature.activeParameter}`);
+
+  const namedArgSource = `
+    int function sub(int left, int right = 10) {
+      return left - right;
+    }
+
+    main() {
+      int a = sub();
+    }
+  `;
+  const namedArgProject = new IdylliumProject({
+    entryFile: 'main.idyl',
+    files: { 'main.idyl': namedArgSource },
+  });
+  const namedArgCompletions = namedArgProject.completions({ file: 'main.idyl', offset: namedArgSource.lastIndexOf('sub(') + 'sub('.length });
+  assert(namedArgCompletions.some((item) => item.name === 'left=' && item.kind === 'parameter'), 'expected left= argument completion');
+  assert(namedArgCompletions.some((item) => item.name === 'right=' && item.kind === 'parameter'), 'expected right= argument completion');
+
+  const remainingArgSource = namedArgSource.replace('sub();', 'sub(right=50, left=20);');
+  const remainingArgProject = new IdylliumProject({
+    entryFile: 'main.idyl',
+    files: { 'main.idyl': remainingArgSource },
+  });
+  const remainingArgCompletions = remainingArgProject.completions({
+    file: 'main.idyl',
+    offset: remainingArgSource.indexOf('right=50, ') + 'right=50, '.length,
+  });
+  assert(remainingArgCompletions.some((item) => item.name === 'left='), 'expected remaining left= argument completion');
+  assert(!remainingArgCompletions.some((item) => item.name === 'right='), 'right= should not be suggested twice');
+
+  const namedSignatureSource = namedArgSource.replace('sub();', 'sub(right=50);');
+  const namedSignatureProject = new IdylliumProject({
+    entryFile: 'main.idyl',
+    files: { 'main.idyl': namedSignatureSource },
+  });
+  const namedSignature = namedSignatureProject.signatureHelp({
+    file: 'main.idyl',
+    offset: namedSignatureSource.indexOf('right=') + 'right='.length,
+  });
+  assert(namedSignature !== null, 'expected named argument signature help');
+  assert(namedSignature.activeParameter === 1, `expected right active parameter, got ${namedSignature.activeParameter}`);
+
+  const variadicArgSource = 'use console;\nmain() {\n  console.write();\n}';
+  const variadicArgProject = new IdylliumProject({
+    entryFile: 'main.idyl',
+    files: { 'main.idyl': variadicArgSource },
+  });
+  const variadicArgCompletions = variadicArgProject.completions({ file: 'main.idyl', offset: variadicArgSource.indexOf('write(') + 'write('.length });
+  assert(!variadicArgCompletions.some((item) => item.kind === 'parameter'), 'variadic functions should not suggest named arguments');
 
   const definitionSource = [
     'use helper;',

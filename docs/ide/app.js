@@ -466,7 +466,7 @@
       },
     });
     monaco.languages.registerCompletionItemProvider(MONACO_LANGUAGE_ID, {
-      triggerCharacters: ['.', ' '],
+      triggerCharacters: ['.', ' ', '(', ','],
       provideCompletionItems(model, position, context) {
         const request = monacoCompletionRequest(model, position, context);
         if (!request) return { suggestions: [] };
@@ -486,6 +486,33 @@
             range: request.range,
           }));
         return { suggestions: items };
+      },
+    });
+    monaco.languages.registerSignatureHelpProvider(MONACO_LANGUAGE_ID, {
+      signatureHelpTriggerCharacters: ['(', ',', '='],
+      signatureHelpRetriggerCharacters: [',', '='],
+      provideSignatureHelp(model, position) {
+        const help = projectSignatureHelp(
+          model.uri.path || currentFile,
+          model.getValue(),
+          model.getOffsetAt(position),
+        );
+        if (!help) return null;
+        return {
+          value: {
+            signatures: help.signatures.map((signature) => ({
+              label: signature.label,
+              documentation: signature.documentation,
+              parameters: signature.parameters.map((parameter) => ({
+                label: parameter.label,
+                documentation: parameter.documentation,
+              })),
+            })),
+            activeSignature: help.activeSignature,
+            activeParameter: help.activeParameter,
+          },
+          dispose() {},
+        };
       },
     });
     monaco.languages.registerDocumentFormattingEditProvider(MONACO_LANGUAGE_ID, {
@@ -630,6 +657,16 @@
       };
     }
 
+    const triggerCharacter = context && context.triggerCharacter;
+    if ((triggerCharacter === '(' || triggerCharacter === ',' || triggerCharacter === ' ') && hasOpenCallableFrame(prefix)) {
+      return {
+        kind: 'argument',
+        prefix: '',
+        requestOffset: offset,
+        range: completionRangeForMonaco(model, position),
+      };
+    }
+
     if (!manual) return null;
 
     return {
@@ -638,6 +675,65 @@
       requestOffset: offset,
       range: completionRangeForMonaco(model, position),
     };
+  }
+
+  function hasOpenCallableFrame(source) {
+    const frames = [];
+    let squareDepth = 0;
+    for (let i = 0; i < source.length; i++) {
+      const char = source[i];
+      const next = source[i + 1];
+
+      if (char === '/' && next === '/') {
+        while (i < source.length && source[i] !== '\n') i++;
+        continue;
+      }
+      if (char === '/' && next === '*') {
+        i += 2;
+        while (i + 1 < source.length && !(source[i] === '*' && source[i + 1] === '/')) i++;
+        i++;
+        continue;
+      }
+      if (char === '"' || char === "'") {
+        const quote = char;
+        i++;
+        while (i < source.length) {
+          if (source[i] === '\\') {
+            i += 2;
+            continue;
+          }
+          if (source[i] === quote) break;
+          i++;
+        }
+        continue;
+      }
+
+      if (char === '[') squareDepth++;
+      if (char === ']') squareDepth = Math.max(0, squareDepth - 1);
+      if (char === '(') {
+        frames.push(calleeTextBeforeOffset(source, i) !== null);
+        continue;
+      }
+      if (char === ')') {
+        frames.pop();
+        continue;
+      }
+      if (char === ',' && squareDepth === 0 && frames.length > 0) continue;
+    }
+
+    for (let i = frames.length - 1; i >= 0; i--) {
+      if (frames[i]) return true;
+    }
+    return false;
+  }
+
+  function calleeTextBeforeOffset(source, openParenIndex) {
+    const fragment = source.slice(Math.max(0, openParenIndex - 160), openParenIndex);
+    const match = /((?:[\p{L}_][\p{L}\p{N}_]*\s*\.\s*)?[\p{L}_][\p{L}\p{N}_]*)\s*$/u.exec(fragment);
+    if (!match) return null;
+
+    const text = match[1].trim();
+    return ['if', 'while', 'for', 'function', 'main', 'constructor'].includes(text) ? null : text;
   }
 
   function projectCompletions(file, source, offset) {
@@ -655,6 +751,21 @@
     }
   }
 
+  function projectSignatureHelp(file, source, offset) {
+    try {
+      const normalized = normalizeWorkspacePath(file || currentFile);
+      const projectFiles = textSourceMap();
+      projectFiles.set(normalized, source);
+      const project = new window.Idyllium.IdylliumProject({
+        entryFile: MAIN_FILE,
+        files: projectFiles,
+      });
+      return project.signatureHelp({ file: normalized, offset });
+    } catch (_error) {
+      return null;
+    }
+  }
+
   function monacoCompletionKind(kind) {
     const monaco = window.monaco;
     if (kind === 'module') return monaco.languages.CompletionItemKind.Module;
@@ -663,6 +774,7 @@
     if (kind === 'constant') return monaco.languages.CompletionItemKind.Constant;
     if (kind === 'type') return monaco.languages.CompletionItemKind.Class;
     if (kind === 'property') return monaco.languages.CompletionItemKind.Property;
+    if (kind === 'parameter') return monaco.languages.CompletionItemKind.Variable;
     return monaco.languages.CompletionItemKind.Text;
   }
 

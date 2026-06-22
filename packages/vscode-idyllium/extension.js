@@ -63,7 +63,9 @@ function activate(context) {
       },
     },
     '.',
-    ' '
+    ' ',
+    '(',
+    ','
   ));
 
   context.subscriptions.push(vscode.languages.registerHoverProvider(
@@ -1020,6 +1022,8 @@ function toVsCompletionKind(kind) {
       return vscode.CompletionItemKind.Property;
     case 'method':
       return vscode.CompletionItemKind.Method;
+    case 'parameter':
+      return vscode.CompletionItemKind.Variable;
     default:
       return vscode.CompletionItemKind.Text;
   }

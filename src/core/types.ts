@@ -35,6 +35,7 @@ export interface FunctionType {
   readonly kind: 'function';
   readonly parameters: readonly TypeRef[];
   readonly returnType: TypeRef;
+  readonly minArguments?: number;
 }
 
 export type TypeRef = PrimitiveType | QualifiedType | ClassType | ArrayType | FunctionType | AnyType | ErrorType;
@@ -161,6 +162,6 @@ export function arrayType(elementType: TypeRef, size: number | null, dynamic: bo
   return { kind: 'array', elementType, size, dynamic };
 }
 
-export function functionType(parameters: readonly TypeRef[], returnType: TypeRef): FunctionType {
-  return { kind: 'function', parameters, returnType };
+export function functionType(parameters: readonly TypeRef[], returnType: TypeRef, minArguments?: number): FunctionType {
+  return { kind: 'function', parameters, returnType, minArguments };
 }

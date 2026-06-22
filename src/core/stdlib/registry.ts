@@ -53,7 +53,7 @@ export interface ModuleSpec {
 
 export interface CompletionItem {
   readonly name: string;
-  readonly kind: 'module' | 'function' | 'constant' | 'type' | 'property' | 'method';
+  readonly kind: 'module' | 'function' | 'constant' | 'type' | 'property' | 'method' | 'parameter';
   readonly detail: string;
 }
 

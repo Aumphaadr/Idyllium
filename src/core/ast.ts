@@ -48,6 +48,8 @@ export interface ImportDeclaration {
 
 export interface MainFunction {
   readonly kind: 'MainFunction';
+  readonly returnType: TypeName;
+  readonly parameters: ParameterDeclaration[];
   readonly body: BlockStatement;
   readonly range: SourceRange;
 }
@@ -76,7 +78,7 @@ export interface VariableDeclaration {
   readonly declaredType: TypeName;
   readonly name: string;
   readonly initializer: Expression | null;
-  readonly constructorArgs: Expression[] | null;
+  readonly constructorArgs: CallArgument[] | null;
   readonly range: SourceRange;
 }
 
@@ -196,6 +198,7 @@ export interface ParameterDeclaration {
   readonly kind: 'ParameterDeclaration';
   readonly paramType: TypeName;
   readonly name: string;
+  readonly defaultValue: Expression | null;
   readonly range: SourceRange;
 }
 
@@ -268,7 +271,14 @@ export interface FunctionExpression {
 export interface CallExpression {
   readonly kind: 'CallExpression';
   readonly callee: Expression;
-  readonly args: Expression[];
+  readonly args: CallArgument[];
+  readonly range: SourceRange;
+}
+
+export interface CallArgument {
+  readonly kind: 'CallArgument';
+  readonly name: string | null;
+  readonly value: Expression;
   readonly range: SourceRange;
 }
 
