@@ -51,9 +51,11 @@ export interface IdylliumSignature {
   readonly label: string;
   readonly parameters: readonly IdylliumSignatureParameter[];
   readonly documentation?: string;
+  readonly allowsNamedArguments?: boolean;
 }
 
 export interface IdylliumSignatureParameter {
+  readonly name?: string;
   readonly label: string;
   readonly documentation?: string;
 }
@@ -134,6 +136,9 @@ export class IdylliumProject {
     const source = this.files.get(file) ?? '';
     const prefix = source.slice(0, request.offset);
     const index = this.index(file);
+
+    const argumentCompletions = this.argumentNameCompletions(index, source, request.offset);
+    if (argumentCompletions.length > 0) return argumentCompletions;
 
     const memberMatch = /([A-Za-z_][A-Za-z0-9_]*)\.\s*$/.exec(prefix);
     if (memberMatch) {
@@ -218,7 +223,7 @@ export class IdylliumProject {
     return {
       signatures,
       activeSignature: 0,
-      activeParameter: Math.min(call.activeParameter, maxParameter),
+      activeParameter: Math.min(activeParameterForCall(call, signatures[0]), maxParameter),
     };
   }
 
@@ -275,7 +280,12 @@ export class IdylliumProject {
     }
 
     if (parsed.ast.main) {
-      symbols.push({ name: 'main', kind: 'function', detail: 'main()', range: parsed.ast.main.range });
+      symbols.push({
+        name: 'main',
+        kind: 'function',
+        detail: callableDetail('main', [], typeNameText(parsed.ast.main.returnType)),
+        range: parsed.ast.main.range,
+      });
     }
 
     return symbols;
@@ -399,6 +409,27 @@ export class IdylliumProject {
     if (localFunction) return [signatureFromFunctionDeclaration(localFunction)];
 
     return [];
+  }
+
+  private argumentNameCompletions(index: ProjectIndex, source: string, offset: number): CompletionItem[] {
+    const call = activeCallAtOffset(source, offset);
+    if (!call) return [];
+
+    const signature = this.signatureCandidates(index, call.calleeText)[0];
+    if (!signature || signature.allowsNamedArguments === false) return [];
+
+    const prefix = argumentNamePrefix(call.activeArgumentText);
+    if (prefix === null) return [];
+
+    const used = usedNamedArgumentNames(call);
+    return signature.parameters
+      .filter((parameter) => parameter.name && !used.has(parameter.name))
+      .filter((parameter) => parameter.name?.toLowerCase().startsWith(prefix.toLowerCase()))
+      .map((parameter) => ({
+        name: `${parameter.name}=`,
+        kind: 'parameter' as const,
+        detail: `argument ${parameter.label}`,
+      }));
   }
 
   private memberDefinition(index: ProjectIndex, objectName: string, memberName: string): IdylliumDefinition | null {
@@ -638,9 +669,7 @@ function localClassMemberCompletions(declaration: ClassDeclaration): CompletionI
       items.set(member.name, {
         name: member.name,
         kind: 'method',
-        detail: callableDetail(member.name, member.parameters.map((parameter) => (
-          `${parameter.name}: ${typeNameText(parameter.paramType)}`
-        )), typeNameText(member.returnType)),
+        detail: callableDetail(member.name, member.parameters.map(parameterDetail), typeNameText(member.returnType)),
       });
     }
   }
@@ -756,10 +785,14 @@ function callableDetail(name: string, parameters: readonly string[], returnType:
 interface ActiveCall {
   readonly calleeText: string;
   readonly activeParameter: number;
+  readonly activeArgumentText: string;
+  readonly previousArgumentTexts: readonly string[];
 }
 
 interface CallFrame {
   readonly calleeText: string | null;
+  readonly openParenIndex: number;
+  currentArgumentStart: number;
   activeParameter: number;
 }
 
@@ -788,7 +821,12 @@ function activeCallAtOffset(source: string, offset: number): ActiveCall | null {
     if (char === '[') squareDepth++;
     if (char === ']') squareDepth = Math.max(0, squareDepth - 1);
     if (char === '(') {
-      frames.push({ calleeText: calleeTextBefore(source, i), activeParameter: 0 });
+      frames.push({
+        calleeText: calleeTextBefore(source, i),
+        openParenIndex: i,
+        currentArgumentStart: i + 1,
+        activeParameter: 0,
+      });
       continue;
     }
 
@@ -798,21 +836,63 @@ function activeCallAtOffset(source: string, offset: number): ActiveCall | null {
     }
 
     if (char === ',' && squareDepth === 0 && frames.length > 0) {
-      frames[frames.length - 1].activeParameter++;
+      const frame = frames[frames.length - 1];
+      frame.activeParameter++;
+      frame.currentArgumentStart = i + 1;
     }
   }
 
   for (let i = frames.length - 1; i >= 0; i--) {
     const frame = frames[i];
     if (frame.calleeText) {
+      const argumentSource = source.slice(frame.openParenIndex + 1, safeOffset);
       return {
         calleeText: frame.calleeText,
         activeParameter: frame.activeParameter,
+        activeArgumentText: source.slice(frame.currentArgumentStart, safeOffset),
+        previousArgumentTexts: splitTopLevelArguments(argumentSource).slice(0, -1),
       };
     }
   }
 
   return null;
+}
+
+function splitTopLevelArguments(text: string): string[] {
+  const result: string[] = [];
+  let start = 0;
+  let parenDepth = 0;
+  let squareDepth = 0;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const next = text[i + 1];
+
+    if (char === '/' && next === '/') {
+      i = skipLineComment(text, i + 2);
+      continue;
+    }
+    if (char === '/' && next === '*') {
+      i = skipBlockComment(text, i + 2);
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      i = skipQuotedText(text, i, char, text.length);
+      continue;
+    }
+
+    if (char === '(') parenDepth++;
+    if (char === ')') parenDepth = Math.max(0, parenDepth - 1);
+    if (char === '[') squareDepth++;
+    if (char === ']') squareDepth = Math.max(0, squareDepth - 1);
+    if (char === ',' && parenDepth === 0 && squareDepth === 0) {
+      result.push(text.slice(start, i));
+      start = i + 1;
+    }
+  }
+
+  result.push(text.slice(start));
+  return result;
 }
 
 function calleeTextBefore(source: string, openParenIndex: number): string | null {
@@ -854,9 +934,17 @@ function skipQuotedText(source: string, quoteStart: number, quote: string, limit
 }
 
 function signatureFromFunctionSpec(fn: FunctionSpec): IdylliumSignature {
-  const parameters = fn.parameters.map((param) => ({ label: `${param.name}: ${typeToString(param.type)}` }));
+  const minArguments = fn.minArguments ?? fn.parameters.length;
+  const parameters: IdylliumSignatureParameter[] = fn.parameters.map((param, index) => {
+    const label = `${param.name}: ${typeToString(param.type)}`;
+    return {
+      name: param.name,
+      label: index >= minArguments ? `[${label}]` : label,
+    };
+  });
   if (fn.variadic) {
     parameters.push({
+      name: undefined,
       label: fn.variadicTypes?.length === 1 ? `...values: ${typeToString(fn.variadicTypes[0])}` : '...values',
     });
   }
@@ -865,12 +953,14 @@ function signatureFromFunctionSpec(fn: FunctionSpec): IdylliumSignature {
     label: signatureDetail(fn),
     parameters,
     documentation: fn.documentation,
+    allowsNamedArguments: !fn.variadic,
   };
 }
 
 function signatureFromFunctionDeclaration(declaration: FunctionDeclaration): IdylliumSignature {
   const parameters = declaration.parameters.map((parameter) => ({
-    label: `${parameter.name}: ${typeNameText(parameter.paramType)}`,
+    name: parameter.name,
+    label: parameterDetail(parameter),
   }));
 
   return {
@@ -880,7 +970,12 @@ function signatureFromFunctionDeclaration(declaration: FunctionDeclaration): Idy
       typeNameText(declaration.returnType),
     ),
     parameters,
+    allowsNamedArguments: true,
   };
+}
+
+function parameterDetail(parameter: FunctionDeclaration['parameters'][number]): string {
+  return `${parameter.name}: ${typeNameText(parameter.paramType)}${parameter.defaultValue ? ' = ...' : ''}`;
 }
 
 function signatureFromDetail(detail: string): IdylliumSignature {
@@ -889,12 +984,102 @@ function signatureFromDetail(detail: string): IdylliumSignature {
   const parametersText = open >= 0 && close >= open ? detail.slice(open + 1, close).trim() : '';
   const parameters = parametersText.length === 0
     ? []
-    : splitSignatureParameters(parametersText).map((label) => ({ label }));
+    : splitSignatureParameters(parametersText).map((label) => ({
+      name: parameterNameFromLabel(label),
+      label,
+    }));
 
   return {
     label: detail,
     parameters,
+    allowsNamedArguments: !parameters.some((parameter) => parameter.label.trim().startsWith('...')),
   };
+}
+
+function activeParameterForCall(call: ActiveCall, signature: IdylliumSignature): number {
+  const named = namedArgumentName(call.activeArgumentText);
+  if (named) {
+    const namedIndex = signature.parameters.findIndex((parameter) => parameter.name === named);
+    if (namedIndex >= 0) return namedIndex;
+  }
+
+  const hasNamedArguments = call.previousArgumentTexts.some((text) => namedArgumentName(text) !== null);
+  if (hasNamedArguments && argumentNamePrefix(call.activeArgumentText) !== null) {
+    const used = usedNamedArgumentNames(call);
+    const availableIndex = signature.parameters.findIndex((parameter) => parameter.name && !used.has(parameter.name));
+    if (availableIndex >= 0) return availableIndex;
+  }
+
+  return call.activeParameter;
+}
+
+function argumentNamePrefix(text: string): string | null {
+  const trimmed = text.trimStart();
+  if (topLevelEqualsIndex(trimmed) >= 0) return null;
+
+  const match = /^([\p{L}_][\p{L}\p{N}_]*)?$/u.exec(trimmed);
+  return match ? (match[1] ?? '') : null;
+}
+
+function namedArgumentName(text: string): string | null {
+  const trimmed = text.trimStart();
+  const equals = topLevelEqualsIndex(trimmed);
+  if (equals < 0) return null;
+
+  const name = trimmed.slice(0, equals).trim();
+  return /^[\p{L}_][\p{L}\p{N}_]*$/u.test(name) ? name : null;
+}
+
+function usedNamedArgumentNames(call: ActiveCall): Set<string> {
+  const used = new Set<string>();
+  for (const argumentText of call.previousArgumentTexts) {
+    const name = namedArgumentName(argumentText);
+    if (name) used.add(name);
+  }
+
+  const current = namedArgumentName(call.activeArgumentText);
+  if (current) used.add(current);
+  return used;
+}
+
+function topLevelEqualsIndex(text: string): number {
+  let parenDepth = 0;
+  let squareDepth = 0;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const next = text[i + 1];
+
+    if (char === '/' && next === '/') {
+      i = skipLineComment(text, i + 2);
+      continue;
+    }
+    if (char === '/' && next === '*') {
+      i = skipBlockComment(text, i + 2);
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      i = skipQuotedText(text, i, char, text.length);
+      continue;
+    }
+
+    if (char === '(') parenDepth++;
+    if (char === ')') parenDepth = Math.max(0, parenDepth - 1);
+    if (char === '[') squareDepth++;
+    if (char === ']') squareDepth = Math.max(0, squareDepth - 1);
+    if (char === '=' && parenDepth === 0 && squareDepth === 0) return i;
+  }
+
+  return -1;
+}
+
+function parameterNameFromLabel(label: string): string | undefined {
+  const cleaned = label.trim().replace(/^\[/u, '').replace(/\]$/u, '').replace(/^\.\.\./u, '');
+  const colon = cleaned.indexOf(':');
+  if (colon < 0) return undefined;
+
+  const name = cleaned.slice(0, colon).trim();
+  return /^[\p{L}_][\p{L}\p{N}_]*$/u.test(name) ? name : undefined;
 }
 
 function splitSignatureParameters(text: string): string[] {

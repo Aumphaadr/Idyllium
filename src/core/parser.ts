@@ -10,6 +10,7 @@ import {
   ClassFieldDeclaration,
   ClassMethodDeclaration,
   ClassTypeNameNode,
+  CallArgument,
   CallExpression,
   ConstructorDeclaration,
   ContinueStatement,
@@ -77,6 +78,13 @@ export class Parser {
 
       if (this.checkTypeStart()) {
         const declaration = this.parseTopLevelDeclaration();
+        if (declaration.kind === 'FunctionDeclaration' && declaration.name === 'main') {
+          if (main !== null) {
+            this.error(declaration.range, "entry point 'main' is already declared");
+          }
+          main = this.mainFromFunctionDeclaration(declaration);
+          continue;
+        }
         topLevelDeclarations.push(declaration);
         continue;
       }
@@ -122,8 +130,20 @@ export class Parser {
 
     return {
       kind: 'MainFunction',
+      returnType: this.voidTypeName(main.range),
+      parameters: [],
       body,
       range: { start: main.range.start, end: body.range.end },
+    };
+  }
+
+  private mainFromFunctionDeclaration(declaration: FunctionDeclaration): MainFunction {
+    return {
+      kind: 'MainFunction',
+      returnType: declaration.returnType,
+      parameters: declaration.parameters,
+      body: declaration.body,
+      range: declaration.range,
     };
   }
 
@@ -136,24 +156,9 @@ export class Parser {
   }
 
   private finishFunctionDeclaration(returnType: TypeName): FunctionDeclaration {
-    const name = this.consume(TokenKind.Identifier, 'expected function name');
+    const name = this.consumeFunctionName();
     this.consume(TokenKind.LeftParen, "expected '(' after function name");
-
-    const parameters: ParameterDeclaration[] = [];
-    if (!this.check(TokenKind.RightParen)) {
-      do {
-        const paramType = this.parseTypeName();
-        const paramName = this.consume(TokenKind.Identifier, 'expected parameter name');
-        parameters.push({
-          kind: 'ParameterDeclaration',
-          paramType,
-          name: paramName.lexeme,
-          range: { start: paramType.range.start, end: paramName.range.end },
-        });
-      } while (this.match(TokenKind.Comma));
-    }
-
-    this.consume(TokenKind.RightParen, "expected ')' after parameters");
+    const parameters = this.parseParameterList();
     const body = this.parseBlock();
     return {
       kind: 'FunctionDeclaration',
@@ -162,6 +167,25 @@ export class Parser {
       parameters,
       body,
       range: { start: returnType.range.start, end: body.range.end },
+    };
+  }
+
+  private consumeFunctionName(): Token {
+    if (this.check(TokenKind.Identifier, TokenKind.KwMain)) return this.advance();
+    this.error(this.peek().range, 'expected function name');
+    return {
+      kind: TokenKind.Identifier,
+      lexeme: '',
+      literal: null,
+      range: this.peek().range,
+    };
+  }
+
+  private voidTypeName(range: SourceRange): TypeName {
+    return {
+      kind: 'PrimitiveTypeName',
+      name: 'void',
+      range,
     };
   }
 
@@ -229,7 +253,7 @@ export class Parser {
   private finishVariableDeclaration(declaredType: TypeName): VariableDeclaration {
     const name = this.consume(TokenKind.Identifier, 'expected variable name');
     let initializer: Expression | null = null;
-    let constructorArgs: Expression[] | null = null;
+    let constructorArgs: CallArgument[] | null = null;
 
     if (this.match(TokenKind.Equal)) {
       initializer = this.parseExpression();
@@ -374,19 +398,25 @@ export class Parser {
     const parameters: ParameterDeclaration[] = [];
     if (!this.check(TokenKind.RightParen)) {
       do {
-        const paramType = this.parseTypeName();
-        const paramName = this.consume(TokenKind.Identifier, 'expected parameter name');
-        parameters.push({
-          kind: 'ParameterDeclaration',
-          paramType,
-          name: paramName.lexeme,
-          range: { start: paramType.range.start, end: paramName.range.end },
-        });
+        parameters.push(this.parseParameterDeclaration());
       } while (this.match(TokenKind.Comma));
     }
 
     this.consume(TokenKind.RightParen, "expected ')' after parameters");
     return parameters;
+  }
+
+  private parseParameterDeclaration(): ParameterDeclaration {
+    const paramType = this.parseTypeName();
+    const paramName = this.consume(TokenKind.Identifier, 'expected parameter name');
+    const defaultValue = this.match(TokenKind.Equal) ? this.parseExpression() : null;
+    return {
+      kind: 'ParameterDeclaration',
+      paramType,
+      name: paramName.lexeme,
+      defaultValue,
+      range: { start: paramType.range.start, end: (defaultValue ?? paramName).range.end },
+    };
   }
 
   private synchronizeClassMember(): void {
@@ -667,10 +697,10 @@ export class Parser {
       }
 
       if (this.match(TokenKind.LeftParen)) {
-        const args: Expression[] = [];
+        const args: CallArgument[] = [];
         if (!this.check(TokenKind.RightParen)) {
           do {
-            args.push(this.parseExpression());
+            args.push(this.parseCallArgument());
           } while (this.match(TokenKind.Comma));
         }
         const rightParen = this.consume(TokenKind.RightParen, "expected ')' after arguments");
@@ -775,22 +805,7 @@ export class Parser {
 
   private finishFunctionExpression(returnType: TypeName): FunctionExpression {
     this.consume(TokenKind.LeftParen, "expected '(' after function");
-
-    const parameters: ParameterDeclaration[] = [];
-    if (!this.check(TokenKind.RightParen)) {
-      do {
-        const paramType = this.parseTypeName();
-        const paramName = this.consume(TokenKind.Identifier, 'expected parameter name');
-        parameters.push({
-          kind: 'ParameterDeclaration',
-          paramType,
-          name: paramName.lexeme,
-          range: { start: paramType.range.start, end: paramName.range.end },
-        });
-      } while (this.match(TokenKind.Comma));
-    }
-
-    this.consume(TokenKind.RightParen, "expected ')' after parameters");
+    const parameters = this.parseParameterList();
     const body = this.parseBlock();
     return {
       kind: 'FunctionExpression',
@@ -949,15 +964,37 @@ export class Parser {
       );
   }
 
-  private parseArgumentListAfterLeftParen(): Expression[] {
-    const args: Expression[] = [];
+  private parseArgumentListAfterLeftParen(): CallArgument[] {
+    const args: CallArgument[] = [];
     if (!this.check(TokenKind.RightParen)) {
       do {
-        args.push(this.parseExpression());
+        args.push(this.parseCallArgument());
       } while (this.match(TokenKind.Comma));
     }
     this.consume(TokenKind.RightParen, "expected ')' after arguments");
     return args;
+  }
+
+  private parseCallArgument(): CallArgument {
+    if (this.check(TokenKind.Identifier) && this.checkNext(TokenKind.Equal)) {
+      const name = this.advance();
+      this.consume(TokenKind.Equal, "expected '=' after argument name");
+      const value = this.parseExpression();
+      return {
+        kind: 'CallArgument',
+        name: name.lexeme,
+        value,
+        range: { start: name.range.start, end: value.range.end },
+      };
+    }
+
+    const value = this.parseExpression();
+    return {
+      kind: 'CallArgument',
+      name: null,
+      value,
+      range: value.range,
+    };
   }
 
   private match(...kinds: TokenKind[]): boolean {

@@ -173,19 +173,29 @@ function browserDirname(filePath) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.JavaScriptGenerator = void 0;
+const types_1 = require("./types");
+const registry_1 = require("./stdlib/registry");
 class JavaScriptGenerator {
     importedModules = new Set();
     userClassNames = new Set();
     classFields = new Map();
+    functionParameters = new Map();
+    classMethodParameters = new Map();
+    classConstructorParameters = new Map();
+    moduleFunctionParameters = new Map();
+    moduleClassMethodParameters = new Map();
+    moduleClassConstructorParameters = new Map();
     scopes = [new Map()];
     currentClassNames = [];
     returnTypes = [];
     userModuleNames;
+    stdlib = (0, registry_1.createDefaultStandardLibrary)();
     constructor(options = {}) {
         this.userModuleNames = options.userModuleNames ?? new Set();
     }
     generate(program, options = {}) {
         const modules = options.modules ?? [];
+        this.prepareModuleSignatures(modules);
         this.importedModules = new Set(program.imports.map((item) => item.moduleName));
         this.userClassNames = new Set(program.declarations
             .filter((item) => item.kind === 'ClassDeclaration')
@@ -199,7 +209,9 @@ class JavaScriptGenerator {
         this.emitProgramDeclarations(program, lines, 1);
         if (program.main) {
             lines.push('  async function main() {');
+            this.returnTypes.push(program.main.returnType);
             this.emitBlock(program.main.body, lines, 2);
+            this.returnTypes.pop();
             lines.push('  }');
             lines.push('  await main();');
         }
@@ -234,16 +246,28 @@ class JavaScriptGenerator {
             .filter((item) => item.kind === 'ClassDeclaration')
             .map((item) => item.name));
         this.classFields = new Map();
+        this.functionParameters = new Map();
+        this.classMethodParameters = new Map();
+        this.classConstructorParameters = new Map();
         const ownClassFields = new Map();
         for (const declaration of program.declarations) {
+            if (declaration.kind === 'FunctionDeclaration') {
+                this.functionParameters.set(declaration.name, declaration.parameters);
+            }
             if (declaration.kind !== 'ClassDeclaration')
                 continue;
             const fields = new Map();
             for (const member of declaration.members) {
-                if (member.kind !== 'ClassFieldDeclaration')
-                    continue;
-                for (const field of member.fields)
-                    fields.set(field.name, member.declaredType);
+                if (member.kind === 'ClassFieldDeclaration') {
+                    for (const field of member.fields)
+                        fields.set(field.name, member.declaredType);
+                }
+                if (member.kind === 'ClassMethodDeclaration') {
+                    this.classMethodParameters.set(this.classMemberKey(declaration.name, member.name), member.parameters);
+                }
+                if (member.kind === 'ConstructorDeclaration') {
+                    this.classConstructorParameters.set(declaration.name, member.parameters);
+                }
             }
             ownClassFields.set(declaration.name, fields);
         }
@@ -272,6 +296,29 @@ class JavaScriptGenerator {
         this.scopes = [new Map()];
         this.currentClassNames = [];
         this.returnTypes = [];
+    }
+    prepareModuleSignatures(modules) {
+        this.moduleFunctionParameters = new Map();
+        this.moduleClassMethodParameters = new Map();
+        this.moduleClassConstructorParameters = new Map();
+        for (const module of modules) {
+            for (const declaration of module.program.declarations) {
+                if (declaration.kind === 'FunctionDeclaration') {
+                    this.moduleFunctionParameters.set(`${module.name}.${declaration.name}`, declaration.parameters);
+                    continue;
+                }
+                if (declaration.kind !== 'ClassDeclaration')
+                    continue;
+                for (const member of declaration.members) {
+                    if (member.kind === 'ClassMethodDeclaration') {
+                        this.moduleClassMethodParameters.set(`${module.name}.${this.classMemberKey(declaration.name, member.name)}`, member.parameters);
+                    }
+                    if (member.kind === 'ConstructorDeclaration') {
+                        this.moduleClassConstructorParameters.set(`${module.name}.${declaration.name}`, member.parameters);
+                    }
+                }
+            }
+        }
     }
     emitProgramDeclarations(program, lines, indent) {
         for (const declaration of program.declarations) {
@@ -360,6 +407,7 @@ class JavaScriptGenerator {
         lines.push(`${pad}async function ${declaration.name}(${params}) {`);
         this.pushScope();
         this.returnTypes.push(declaration.returnType);
+        this.emitParameterDefaults(declaration.parameters, lines, indent + 1);
         this.emitParameterCasts(declaration.parameters, lines, indent + 1);
         this.emitBlock(declaration.body, lines, indent + 1);
         this.returnTypes.pop();
@@ -429,6 +477,7 @@ class JavaScriptGenerator {
         this.pushScope();
         this.currentClassNames.push(className);
         this.returnTypes.push(declaration.returnType);
+        this.emitParameterDefaults(declaration.parameters, lines, indent + 1);
         this.emitParameterCasts(declaration.parameters, lines, indent + 1);
         this.emitBlock(declaration.body, lines, indent + 1);
         this.returnTypes.pop();
@@ -443,6 +492,7 @@ class JavaScriptGenerator {
         this.pushScope();
         this.currentClassNames.push(className);
         this.returnTypes.push(declaration.returnType);
+        this.emitParameterDefaults(declaration.parameters, lines, indent + 1);
         this.emitParameterCasts(declaration.parameters, lines, indent + 1);
         this.emitBlock(declaration.body, lines, indent + 1);
         this.returnTypes.pop();
@@ -456,6 +506,7 @@ class JavaScriptGenerator {
         lines.push(`${pad}await (async function(${params}) {`);
         this.pushScope();
         this.currentClassNames.push(className);
+        this.emitParameterDefaults(declaration.parameters, lines, indent + 1);
         this.emitParameterCasts(declaration.parameters, lines, indent + 1);
         this.emitBlock(declaration.body, lines, indent + 1);
         this.currentClassNames.pop();
@@ -599,6 +650,7 @@ class JavaScriptGenerator {
         const lines = [`(async function(${params}) {`];
         this.pushScope();
         this.returnTypes.push(expression.returnType);
+        this.emitParameterDefaults(expression.parameters, lines, 1);
         this.emitParameterCasts(expression.parameters, lines, 1);
         this.emitBlock(expression.body, lines, 1);
         this.returnTypes.pop();
@@ -623,21 +675,23 @@ class JavaScriptGenerator {
     callExpression(expression) {
         const callee = expression.callee;
         if (callee.kind === 'IdentifierExpression') {
-            const args = expression.args.map((arg) => this.expression(arg)).join(', ');
             if (callee.name === 'max' || callee.name === 'min' || callee.name === 'sum' || callee.name === 'avg') {
+                const args = this.callArgumentValues(expression.args, ['array']).join(', ');
                 return `$rt.array.${callee.name}(${args}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
             }
             if (callee.name === 'div' || callee.name === 'mod' || callee.name === 'to_int' || callee.name === 'to_float') {
+                const args = this.callArgumentValues(expression.args, this.stdlib.getGlobalFunction(callee.name)?.parameters.map((parameter) => parameter.name)).join(', ');
                 return `$rt.core.${callee.name}(${args}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
             }
             if (callee.name === 'to_string') {
+                const args = this.callArgumentValues(expression.args, this.stdlib.getGlobalFunction(callee.name)?.parameters.map((parameter) => parameter.name)).join(', ');
                 return `$rt.core.to_string(${args})`;
             }
         }
         if (callee.kind === 'MemberExpression' && callee.object.kind === 'IdentifierExpression') {
-            const args = expression.args.map((arg) => this.expression(arg)).join(', ');
             const moduleName = callee.object.name;
             if (this.importedModules.has(moduleName) && moduleName === 'console') {
+                const args = this.callArgumentValues(expression.args, this.stdlib.getModuleFunction(moduleName, callee.name)?.parameters.map((parameter) => parameter.name)).join(', ');
                 if (callee.name === 'get_int' || callee.name === 'get_float') {
                     return `$rt.console.${callee.name}(${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
                 }
@@ -647,6 +701,8 @@ class JavaScriptGenerator {
                 return `$rt.console.${callee.name}(${args})`;
             }
             if (this.importedModules.has(moduleName)) {
+                const parameterNames = this.moduleFunctionParameterNames(moduleName, callee.name);
+                const args = this.callArgumentValues(expression.args, parameterNames).join(', ');
                 if (!this.userModuleNames.has(moduleName)) {
                     return `$rt.callModuleFunction(${JSON.stringify(moduleName)}, ${JSON.stringify(callee.name)}, [${args}], ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
                 }
@@ -662,7 +718,7 @@ class JavaScriptGenerator {
             const args = this.methodCallArgs(callee.name, expression.args, typeName).join(', ');
             return `$rt.callMethod(${this.expression(callee.object)}, ${JSON.stringify(callee.name)}, [${args}], ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
         }
-        return `${this.expression(callee)}(${expression.args.map((arg) => this.expression(arg)).join(', ')})`;
+        return `${this.expression(callee)}(${this.callArgumentValues(expression.args, this.callableParameterNames(callee)).join(', ')})`;
     }
     memberExpression(expression) {
         if (expression.object.kind === 'IdentifierExpression') {
@@ -684,18 +740,18 @@ class JavaScriptGenerator {
     }
     constructorInitializer(statement) {
         if (statement.declaredType.kind === 'QualifiedTypeName' && this.userModuleNames.has(statement.declaredType.moduleName)) {
-            const args = (statement.constructorArgs ?? []).map((arg) => this.expression(arg)).join(', ');
+            const args = this.callArgumentValues(statement.constructorArgs ?? [], this.constructorParameterNames(statement.declaredType)).join(', ');
             return `await $rt.modules.${statement.declaredType.moduleName}.${this.exportedClassCreateName(statement.declaredType.name)}(${args})`;
         }
         if (statement.declaredType.kind === 'QualifiedTypeName'
             && statement.declaredType.moduleName === 'json'
             && statement.declaredType.name === 'Value') {
-            const args = (statement.constructorArgs ?? []).map((arg) => this.expression(arg)).join(', ');
+            const args = this.callArgumentValues(statement.constructorArgs ?? [], this.stdlib.getModuleFunction('json', 'Value')?.parameters.map((parameter) => parameter.name)).join(', ');
             return `$rt.callModuleFunction("json", "Value", [${args}], ${JSON.stringify(statement.range.start.file)}, ${statement.range.start.line})`;
         }
         if (statement.declaredType.kind !== 'ClassTypeName')
             return this.defaultValue(statement.declaredType);
-        const args = (statement.constructorArgs ?? []).map((arg) => this.expression(arg)).join(', ');
+        const args = this.callArgumentValues(statement.constructorArgs ?? [], this.constructorParameterNames(statement.declaredType)).join(', ');
         return `await ${this.classCreateFactoryName(statement.declaredType.name)}(${args})`;
     }
     arrayLiteralExpression(expression, dynamic, staticSize, defaultFactory, elementType = null) {
@@ -768,17 +824,151 @@ class JavaScriptGenerator {
             }
         }
     }
+    emitParameterDefaults(parameters, lines, indent) {
+        const pad = '  '.repeat(indent);
+        for (const parameter of parameters) {
+            if (!parameter.defaultValue)
+                continue;
+            lines.push(`${pad}if (${parameter.name} === undefined) {`);
+            lines.push(`${pad}  ${parameter.name} = ${this.expression(parameter.defaultValue)};`);
+            lines.push(`${pad}}`);
+        }
+    }
+    callArgumentValues(args, parameterNames) {
+        return this.orderedCallArguments(args, parameterNames).map((arg) => (arg ? this.expression(arg.value) : 'undefined'));
+    }
+    orderedCallArguments(args, parameterNames) {
+        if (!args.some((arg) => arg.name !== null) || !parameterNames)
+            return [...args];
+        const ordered = new Array(parameterNames.length).fill(null);
+        let positionalIndex = 0;
+        let lastProvidedIndex = -1;
+        for (const arg of args) {
+            if (arg.name !== null) {
+                const parameterIndex = parameterNames.indexOf(arg.name);
+                if (parameterIndex >= 0) {
+                    ordered[parameterIndex] = arg;
+                    lastProvidedIndex = Math.max(lastProvidedIndex, parameterIndex);
+                }
+                continue;
+            }
+            if (positionalIndex < ordered.length) {
+                ordered[positionalIndex] = arg;
+                lastProvidedIndex = Math.max(lastProvidedIndex, positionalIndex);
+            }
+            positionalIndex += 1;
+        }
+        if (lastProvidedIndex < 0)
+            return [];
+        return ordered.slice(0, lastProvidedIndex + 1);
+    }
+    callableParameterNames(callee) {
+        if (callee.kind === 'IdentifierExpression') {
+            return this.functionParameters.get(callee.name)?.map((parameter) => parameter.name)
+                ?? this.stdlib.getGlobalFunction(callee.name)?.parameters.map((parameter) => parameter.name);
+        }
+        return undefined;
+    }
+    moduleFunctionParameterNames(moduleName, functionName) {
+        if (this.userModuleNames.has(moduleName)) {
+            return this.moduleFunctionParameters.get(`${moduleName}.${functionName}`)?.map((parameter) => parameter.name);
+        }
+        return this.stdlib.getModuleFunction(moduleName, functionName)?.parameters.map((parameter) => parameter.name);
+    }
+    constructorParameterNames(type) {
+        if (type.kind === 'ClassTypeName') {
+            return this.classConstructorParameters.get(type.name)?.map((parameter) => parameter.name);
+        }
+        if (type.kind === 'QualifiedTypeName' && this.userModuleNames.has(type.moduleName)) {
+            return this.moduleClassConstructorParameters.get(`${type.moduleName}.${type.name}`)?.map((parameter) => parameter.name);
+        }
+        return undefined;
+    }
+    methodParameterNames(methodName, receiverType) {
+        if (!receiverType)
+            return undefined;
+        if (receiverType.kind === 'ClassTypeName') {
+            return this.classMethodParameters.get(this.classMemberKey(receiverType.name, methodName))?.map((parameter) => parameter.name);
+        }
+        if (receiverType.kind === 'QualifiedTypeName' && this.userModuleNames.has(receiverType.moduleName)) {
+            return this.moduleClassMethodParameters.get(`${receiverType.moduleName}.${this.classMemberKey(receiverType.name, methodName)}`)?.map((parameter) => parameter.name);
+        }
+        if (receiverType.kind === 'ArrayTypeName') {
+            return this.arrayMethodParameterNames(methodName);
+        }
+        const typeRef = this.typeRefFromTypeName(receiverType);
+        if (!typeRef)
+            return this.stringMethodParameterNames(receiverType, methodName);
+        return this.stdlib.getTypeMethod(typeRef, methodName)?.parameters.map((parameter) => parameter.name)
+            ?? this.stringMethodParameterNames(receiverType, methodName);
+    }
+    arrayMethodParameterNames(methodName) {
+        switch (methodName) {
+            case 'contains':
+            case 'find':
+            case 'count':
+            case 'add':
+                return ['value'];
+            case 'remove_at':
+                return ['index'];
+            case 'resize':
+                return ['size'];
+            case 'insert':
+                return ['index', 'value'];
+            case 'join':
+                return ['other'];
+            default:
+                return [];
+        }
+    }
+    stringMethodParameterNames(receiverType, methodName) {
+        if (receiverType.kind !== 'PrimitiveTypeName' || receiverType.name !== 'string')
+            return undefined;
+        switch (methodName) {
+            case 'contains':
+            case 'find':
+            case 'count':
+                return ['text'];
+            case 'substring':
+                return ['start', 'length'];
+            case 'replace':
+                return ['old_text', 'new_text'];
+            case 'split':
+                return ['separator'];
+            default:
+                return [];
+        }
+    }
+    typeRefFromTypeName(type) {
+        if (type.kind === 'PrimitiveTypeName')
+            return (0, types_1.primitive)(type.name);
+        if (type.kind === 'QualifiedTypeName')
+            return (0, types_1.qualified)(type.moduleName, type.name);
+        if (type.kind === 'ArrayTypeName') {
+            const elementType = this.typeRefFromTypeName(type.elementType);
+            return elementType ? (0, types_1.arrayType)(elementType, type.size, type.dynamic) : null;
+        }
+        return null;
+    }
     methodCallArgs(methodName, args, receiverType) {
+        const orderedArgs = this.orderedCallArguments(args, this.methodParameterNames(methodName, receiverType));
         if (receiverType?.kind !== 'ArrayTypeName') {
-            return args.map((arg) => this.expression(arg));
+            return orderedArgs.map((arg) => (arg ? this.expression(arg.value) : 'undefined'));
         }
         if (methodName === 'add' || methodName === 'contains' || methodName === 'find' || methodName === 'count') {
-            return args.map((arg, index) => (index === 0 ? this.castForType(this.expression(arg), receiverType.elementType) : this.expression(arg)));
+            return orderedArgs.map((arg, index) => (index === 0 && arg
+                ? this.castForType(this.expression(arg.value), receiverType.elementType)
+                : arg ? this.expression(arg.value) : 'undefined'));
         }
         if (methodName === 'insert') {
-            return args.map((arg, index) => (index === 1 ? this.castForType(this.expression(arg), receiverType.elementType) : this.expression(arg)));
+            return orderedArgs.map((arg, index) => (index === 1 && arg
+                ? this.castForType(this.expression(arg.value), receiverType.elementType)
+                : arg ? this.expression(arg.value) : 'undefined'));
         }
-        return args.map((arg) => this.expression(arg));
+        return orderedArgs.map((arg) => (arg ? this.expression(arg.value) : 'undefined'));
+    }
+    classMemberKey(className, memberName) {
+        return `${className}.${memberName}`;
     }
     castForType(value, type) {
         const runtimeName = this.typesRuntimeName(type);
@@ -1314,6 +1504,13 @@ class Parser {
             }
             if (this.checkTypeStart()) {
                 const declaration = this.parseTopLevelDeclaration();
+                if (declaration.kind === 'FunctionDeclaration' && declaration.name === 'main') {
+                    if (main !== null) {
+                        this.error(declaration.range, "entry point 'main' is already declared");
+                    }
+                    main = this.mainFromFunctionDeclaration(declaration);
+                    continue;
+                }
                 topLevelDeclarations.push(declaration);
                 continue;
             }
@@ -1353,8 +1550,19 @@ class Parser {
         const body = this.parseBlock();
         return {
             kind: 'MainFunction',
+            returnType: this.voidTypeName(main.range),
+            parameters: [],
             body,
             range: { start: main.range.start, end: body.range.end },
+        };
+    }
+    mainFromFunctionDeclaration(declaration) {
+        return {
+            kind: 'MainFunction',
+            returnType: declaration.returnType,
+            parameters: declaration.parameters,
+            body: declaration.body,
+            range: declaration.range,
         };
     }
     parseTopLevelDeclaration() {
@@ -1365,22 +1573,9 @@ class Parser {
         return this.finishVariableDeclaration(declaredType);
     }
     finishFunctionDeclaration(returnType) {
-        const name = this.consume(tokens_1.TokenKind.Identifier, 'expected function name');
+        const name = this.consumeFunctionName();
         this.consume(tokens_1.TokenKind.LeftParen, "expected '(' after function name");
-        const parameters = [];
-        if (!this.check(tokens_1.TokenKind.RightParen)) {
-            do {
-                const paramType = this.parseTypeName();
-                const paramName = this.consume(tokens_1.TokenKind.Identifier, 'expected parameter name');
-                parameters.push({
-                    kind: 'ParameterDeclaration',
-                    paramType,
-                    name: paramName.lexeme,
-                    range: { start: paramType.range.start, end: paramName.range.end },
-                });
-            } while (this.match(tokens_1.TokenKind.Comma));
-        }
-        this.consume(tokens_1.TokenKind.RightParen, "expected ')' after parameters");
+        const parameters = this.parseParameterList();
         const body = this.parseBlock();
         return {
             kind: 'FunctionDeclaration',
@@ -1389,6 +1584,24 @@ class Parser {
             parameters,
             body,
             range: { start: returnType.range.start, end: body.range.end },
+        };
+    }
+    consumeFunctionName() {
+        if (this.check(tokens_1.TokenKind.Identifier, tokens_1.TokenKind.KwMain))
+            return this.advance();
+        this.error(this.peek().range, 'expected function name');
+        return {
+            kind: tokens_1.TokenKind.Identifier,
+            lexeme: '',
+            literal: null,
+            range: this.peek().range,
+        };
+    }
+    voidTypeName(range) {
+        return {
+            kind: 'PrimitiveTypeName',
+            name: 'void',
+            range,
         };
     }
     parseBlock() {
@@ -1571,18 +1784,23 @@ class Parser {
         const parameters = [];
         if (!this.check(tokens_1.TokenKind.RightParen)) {
             do {
-                const paramType = this.parseTypeName();
-                const paramName = this.consume(tokens_1.TokenKind.Identifier, 'expected parameter name');
-                parameters.push({
-                    kind: 'ParameterDeclaration',
-                    paramType,
-                    name: paramName.lexeme,
-                    range: { start: paramType.range.start, end: paramName.range.end },
-                });
+                parameters.push(this.parseParameterDeclaration());
             } while (this.match(tokens_1.TokenKind.Comma));
         }
         this.consume(tokens_1.TokenKind.RightParen, "expected ')' after parameters");
         return parameters;
+    }
+    parseParameterDeclaration() {
+        const paramType = this.parseTypeName();
+        const paramName = this.consume(tokens_1.TokenKind.Identifier, 'expected parameter name');
+        const defaultValue = this.match(tokens_1.TokenKind.Equal) ? this.parseExpression() : null;
+        return {
+            kind: 'ParameterDeclaration',
+            paramType,
+            name: paramName.lexeme,
+            defaultValue,
+            range: { start: paramType.range.start, end: (defaultValue ?? paramName).range.end },
+        };
     }
     synchronizeClassMember() {
         while (!this.isAtEnd() && !this.check(tokens_1.TokenKind.Semicolon, tokens_1.TokenKind.RightBrace)) {
@@ -1830,7 +2048,7 @@ class Parser {
                 const args = [];
                 if (!this.check(tokens_1.TokenKind.RightParen)) {
                     do {
-                        args.push(this.parseExpression());
+                        args.push(this.parseCallArgument());
                     } while (this.match(tokens_1.TokenKind.Comma));
                 }
                 const rightParen = this.consume(tokens_1.TokenKind.RightParen, "expected ')' after arguments");
@@ -1928,20 +2146,7 @@ class Parser {
     }
     finishFunctionExpression(returnType) {
         this.consume(tokens_1.TokenKind.LeftParen, "expected '(' after function");
-        const parameters = [];
-        if (!this.check(tokens_1.TokenKind.RightParen)) {
-            do {
-                const paramType = this.parseTypeName();
-                const paramName = this.consume(tokens_1.TokenKind.Identifier, 'expected parameter name');
-                parameters.push({
-                    kind: 'ParameterDeclaration',
-                    paramType,
-                    name: paramName.lexeme,
-                    range: { start: paramType.range.start, end: paramName.range.end },
-                });
-            } while (this.match(tokens_1.TokenKind.Comma));
-        }
-        this.consume(tokens_1.TokenKind.RightParen, "expected ')' after parameters");
+        const parameters = this.parseParameterList();
         const body = this.parseBlock();
         return {
             kind: 'FunctionExpression',
@@ -2082,11 +2287,31 @@ class Parser {
         const args = [];
         if (!this.check(tokens_1.TokenKind.RightParen)) {
             do {
-                args.push(this.parseExpression());
+                args.push(this.parseCallArgument());
             } while (this.match(tokens_1.TokenKind.Comma));
         }
         this.consume(tokens_1.TokenKind.RightParen, "expected ')' after arguments");
         return args;
+    }
+    parseCallArgument() {
+        if (this.check(tokens_1.TokenKind.Identifier) && this.checkNext(tokens_1.TokenKind.Equal)) {
+            const name = this.advance();
+            this.consume(tokens_1.TokenKind.Equal, "expected '=' after argument name");
+            const value = this.parseExpression();
+            return {
+                kind: 'CallArgument',
+                name: name.lexeme,
+                value,
+                range: { start: name.range.start, end: value.range.end },
+            };
+        }
+        const value = this.parseExpression();
+        return {
+            kind: 'CallArgument',
+            name: null,
+            value,
+            range: value.range,
+        };
     }
     match(...kinds) {
         if (!this.check(...kinds))
@@ -2287,7 +2512,12 @@ function functionSpecFromDeclaration(declaration, moduleName, program, localClas
         type: resolveModuleExportType(parameter.paramType, moduleName, program, localClasses, stdlib, userModules, diagnostics),
     }));
     const returnType = resolveModuleExportType(declaration.returnType, moduleName, program, localClasses, stdlib, userModules, diagnostics);
-    return { name: declaration.name, parameters, returnType };
+    return {
+        name: declaration.name,
+        parameters,
+        returnType,
+        minArguments: requiredParameterCount(declaration.parameters),
+    };
 }
 function classSpecFromDeclaration(declaration, moduleName, program, localClasses, stdlib, userModules, diagnostics) {
     const qualifiedName = (0, modules_1.qualifiedUserClassName)(moduleName, declaration.name);
@@ -2327,6 +2557,7 @@ function classSpecFromDeclaration(declaration, moduleName, program, localClasses
                     type: resolveModuleExportType(parameter.paramType, moduleName, program, localClasses, stdlib, userModules, diagnostics),
                 })),
                 returnType: types_1.VOID,
+                minArguments: requiredParameterCount(member.parameters),
             };
             constructorAccess = member.access;
         }
@@ -2341,6 +2572,10 @@ function classSpecFromDeclaration(declaration, moduleName, program, localClasses
         constructorAccess,
         range: declaration.range,
     };
+}
+function requiredParameterCount(parameters) {
+    const firstDefault = parameters.findIndex((parameter) => parameter.defaultValue !== null);
+    return firstDefault < 0 ? parameters.length : firstDefault;
 }
 function resolveModuleExportType(typeName, moduleName, program, localClasses, stdlib, userModules, diagnostics) {
     if (typeName.kind === 'PrimitiveTypeName') {
@@ -2440,9 +2675,7 @@ class SemanticAnalyzer {
             }
         }
         if (program.main) {
-            this.returnTypes.push(types_1.VOID);
-            this.analyzeStatement(program.main.body);
-            this.returnTypes.pop();
+            this.analyzeMainFunction(program.main);
         }
         return {
             success: !this.diagnostics.hasErrors(),
@@ -2507,16 +2740,46 @@ class SemanticAnalyzer {
         this.functions.set(declaration.name, declaration);
         const parameters = declaration.parameters.map((parameter) => this.resolveTypeName(parameter.paramType));
         const returnType = this.resolveTypeName(declaration.returnType);
-        this.declare(declaration.name, (0, types_1.functionType)(parameters, returnType), 'function', declaration.range);
+        this.declare(declaration.name, (0, types_1.functionType)(parameters, returnType, requiredParameterCount(declaration.parameters)), 'function', declaration.range);
     }
     analyzeFunctionDeclaration(declaration) {
         const returnType = this.resolveTypeName(declaration.returnType);
         this.returnTypes.push(returnType);
         this.pushScope();
-        for (const parameter of declaration.parameters) {
+        this.analyzeParameters(declaration.parameters);
+        this.analyzeStatement(declaration.body);
+        this.reportMissingReturn(returnType, declaration.body, declaration.range);
+        this.popScope();
+        this.returnTypes.pop();
+    }
+    analyzeParameters(parameters) {
+        const resolved = [];
+        let sawDefault = false;
+        for (const parameter of parameters) {
             const parameterType = this.resolveTypeName(parameter.paramType);
+            resolved.push(parameterType);
+            if (parameter.defaultValue) {
+                sawDefault = true;
+                const defaultType = this.expressionType(parameter.defaultValue);
+                if (!this.canAssign(parameterType, defaultType)) {
+                    this.diagnostics.error(parameter.defaultValue.range, `default value for parameter '${parameter.name}' expects '${(0, types_1.typeToString)(parameterType)}', got '${(0, types_1.typeToString)(defaultType)}'`);
+                }
+            }
+            else if (sawDefault) {
+                this.diagnostics.error(parameter.range, `parameter '${parameter.name}' without default value cannot follow a parameter with default value`);
+            }
             this.declare(parameter.name, parameterType, 'parameter', parameter.range);
         }
+        return resolved;
+    }
+    analyzeMainFunction(declaration) {
+        const returnType = this.resolveTypeName(declaration.returnType);
+        if (declaration.parameters.length > 0) {
+            this.diagnostics.error(declaration.parameters[0].range, "entry point 'main' cannot have parameters");
+        }
+        this.returnTypes.push(returnType);
+        this.pushScope();
+        this.analyzeParameters(declaration.parameters);
         this.analyzeStatement(declaration.body);
         this.reportMissingReturn(returnType, declaration.body, declaration.range);
         this.popScope();
@@ -2646,6 +2909,7 @@ class SemanticAnalyzer {
             name: declaration.name,
             parameters: parameters.map((type, index) => ({ name: declaration.parameters[index].name, type })),
             returnType,
+            minArguments: requiredParameterCount(declaration.parameters),
         });
         info.methodDeclarations.set(declaration.name, declaration);
         info.methodAccess.set(declaration.name, {
@@ -2670,6 +2934,7 @@ class SemanticAnalyzer {
             name: declaration.name,
             parameters: parameters.map((type, index) => ({ name: declaration.parameters[index].name, type })),
             returnType: types_1.VOID,
+            minArguments: requiredParameterCount(declaration.parameters),
         };
         info.constructorDeclaration = declaration;
     }
@@ -2713,10 +2978,7 @@ class SemanticAnalyzer {
         if (!declaration.isStatic) {
             this.declare('this', (0, types_1.classType)(info.declaration.name), 'parameter', declaration.range);
         }
-        for (const parameter of declaration.parameters) {
-            const parameterType = this.resolveTypeName(parameter.paramType);
-            this.declare(parameter.name, parameterType, 'parameter', parameter.range);
-        }
+        this.analyzeParameters(declaration.parameters);
         this.analyzeStatement(declaration.body);
         this.reportMissingReturn(returnType, declaration.body, declaration.range);
         this.popScope();
@@ -2735,12 +2997,9 @@ class SemanticAnalyzer {
                 parameters: [],
                 returnType: types_1.VOID,
             };
-            this.declare('parent', (0, types_1.functionType)(baseConstructor.parameters.map((parameter) => parameter.type), types_1.VOID), 'function', declaration.range);
+            this.declare('parent', (0, types_1.functionType)(baseConstructor.parameters.map((parameter) => parameter.type), types_1.VOID, baseConstructor.minArguments), 'function', declaration.range);
         }
-        for (const parameter of declaration.parameters) {
-            const parameterType = this.resolveTypeName(parameter.paramType);
-            this.declare(parameter.name, parameterType, 'parameter', parameter.range);
-        }
+        this.analyzeParameters(declaration.parameters);
         this.analyzeStatement(declaration.body);
         this.popScope();
         this.popClassContext();
@@ -2902,7 +3161,7 @@ class SemanticAnalyzer {
         if (declaredType.kind !== 'class') {
             this.diagnostics.error(statement.range, `constructor-style declaration requires a class type, got '${(0, types_1.typeToString)(declaredType)}'`);
             for (const arg of statement.constructorArgs ?? [])
-                this.expressionType(arg);
+                this.expressionType(arg.value);
             return;
         }
         const info = this.classes.get(declaredType.name);
@@ -2912,7 +3171,7 @@ class SemanticAnalyzer {
         if (!constructor) {
             this.diagnostics.error(statement.range, `class '${declaredType.name}' has no constructor`);
             for (const arg of statement.constructorArgs ?? [])
-                this.expressionType(arg);
+                this.expressionType(arg.value);
             return;
         }
         if (info.constructorDeclaration?.access === 'private'
@@ -3084,14 +3343,12 @@ class SemanticAnalyzer {
         const parameters = expression.parameters.map((parameter) => this.resolveTypeName(parameter.paramType));
         this.returnTypes.push(returnType);
         this.pushScope();
-        for (let i = 0; i < expression.parameters.length; i++) {
-            this.declare(expression.parameters[i].name, parameters[i], 'parameter', expression.parameters[i].range);
-        }
+        this.analyzeParameters(expression.parameters);
         this.analyzeStatement(expression.body);
         this.reportMissingReturn(returnType, expression.body, expression.range);
         this.popScope();
         this.returnTypes.pop();
-        return (0, types_1.functionType)(parameters, returnType);
+        return (0, types_1.functionType)(parameters, returnType, requiredParameterCount(expression.parameters));
     }
     reportMissingReturn(returnType, body, range) {
         if ((0, types_1.sameType)(returnType, types_1.VOID) || returnType.kind === 'error')
@@ -3248,7 +3505,7 @@ class SemanticAnalyzer {
         const resolved = this.resolveCall(expression);
         if (!resolved) {
             for (const arg of expression.args)
-                this.expressionType(arg);
+                this.expressionType(arg.value);
             return types_1.ERROR_TYPE;
         }
         this.checkArguments(expression, resolved);
@@ -3258,17 +3515,20 @@ class SemanticAnalyzer {
         return name === 'max' || name === 'min' || name === 'sum' || name === 'avg';
     }
     arrayGlobalFunctionType(name, expression) {
-        if (expression.args.length !== 1) {
-            this.diagnostics.error(expression.range, `'${name}' expects 1 argument, got ${expression.args.length}`);
+        const fn = { name, parameters: [{ name: 'array', type: types_1.ANY_TYPE }], returnType: types_1.ANY_TYPE };
+        this.checkArgumentList(expression.args, fn, expression.range);
+        const ordered = this.orderedArguments(expression.args, fn);
+        const arg = ordered[0];
+        if (!arg) {
             return types_1.ERROR_TYPE;
         }
-        const argType = this.expressionType(expression.args[0]);
+        const argType = this.expressionType(arg.value);
         if (argType.kind !== 'array') {
-            this.diagnostics.error(expression.args[0].range, `'${name}' expects an array, got '${(0, types_1.typeToString)(argType)}'`);
+            this.diagnostics.error(arg.range, `'${name}' expects an array, got '${(0, types_1.typeToString)(argType)}'`);
             return types_1.ERROR_TYPE;
         }
         if (!(0, types_1.isNumeric)(argType.elementType)) {
-            this.diagnostics.error(expression.args[0].range, `'${name}' expects a numeric array, got '${(0, types_1.typeToString)(argType)}'`);
+            this.diagnostics.error(arg.range, `'${name}' expects a numeric array, got '${(0, types_1.typeToString)(argType)}'`);
             return types_1.ERROR_TYPE;
         }
         return name === 'avg' ? types_1.FLOAT : argType.elementType;
@@ -3285,19 +3545,17 @@ class SemanticAnalyzer {
                 this.diagnostics.error(callee.object.range, "'math' is not imported (use 'use math;')");
                 return types_1.ERROR_TYPE;
             }
-            if (expression.args.length !== 1 && expression.args.length !== 2) {
-                this.diagnostics.error(expression.range, `'${callee.name}' expects 1 or 2 arguments, got ${expression.args.length}`);
-                return types_1.ERROR_TYPE;
-            }
-            const valueType = this.expressionType(expression.args[0]);
-            if (!(0, types_1.isNumeric)(valueType)) {
-                this.diagnostics.error(expression.args[0].range, `'${callee.name}' argument 1 expects numeric value, got '${(0, types_1.typeToString)(valueType)}'`);
-            }
+            const fn = {
+                name: callee.name,
+                parameters: [
+                    { name: 'value', type: types_1.FLOAT },
+                    { name: 'digits', type: types_1.INT },
+                ],
+                returnType: types_1.FLOAT,
+                minArguments: 1,
+            };
+            this.checkArgumentList(expression.args, fn, expression.range);
             if (expression.args.length === 2) {
-                const digitsType = this.expressionType(expression.args[1]);
-                if (!(0, types_1.isIntegerLike)(digitsType)) {
-                    this.diagnostics.error(expression.args[1].range, `'${callee.name}' argument 2 expects integer value, got '${(0, types_1.typeToString)(digitsType)}'`);
-                }
                 return types_1.FLOAT;
             }
             return types_1.INT;
@@ -3307,11 +3565,17 @@ class SemanticAnalyzer {
                 this.diagnostics.error(callee.object.range, "'math' is not imported (use 'use math;')");
                 return types_1.ERROR_TYPE;
             }
-            if (expression.args.length !== 3) {
-                this.diagnostics.error(expression.range, "'clamp' expects 3 arguments");
-                return types_1.ERROR_TYPE;
-            }
-            const argTypes = expression.args.map((arg) => this.expressionType(arg));
+            const fn = {
+                name: 'clamp',
+                parameters: [
+                    { name: 'min', type: types_1.FLOAT },
+                    { name: 'value', type: types_1.FLOAT },
+                    { name: 'max', type: types_1.FLOAT },
+                ],
+                returnType: types_1.FLOAT,
+            };
+            this.checkArgumentList(expression.args, fn, expression.range);
+            const argTypes = expression.args.map((arg) => this.expressionType(arg.value));
             for (let i = 0; i < argTypes.length; i++) {
                 if (!(0, types_1.isNumeric)(argTypes[i])) {
                     this.diagnostics.error(expression.args[i].range, `'clamp' argument ${i + 1} expects numeric value, got '${(0, types_1.typeToString)(argTypes[i])}'`);
@@ -3331,12 +3595,26 @@ class SemanticAnalyzer {
             const global = this.stdlib.getGlobalFunction(callee.name);
             if (global)
                 return global;
+            const localFunction = this.functions.get(callee.name);
+            if (localFunction) {
+                const parameters = localFunction.parameters.map((parameter) => ({
+                    name: parameter.name,
+                    type: this.resolveTypeName(parameter.paramType),
+                }));
+                return {
+                    name: callee.name,
+                    parameters,
+                    returnType: this.resolveTypeName(localFunction.returnType),
+                    minArguments: requiredParameterCount(localFunction.parameters),
+                };
+            }
             const symbol = this.lookup(callee.name);
             if (symbol?.type.kind === 'function') {
                 return {
                     name: callee.name,
                     parameters: symbol.type.parameters.map((type, index) => ({ name: `arg${index + 1}`, type })),
                     returnType: symbol.type.returnType,
+                    minArguments: symbol.type.minArguments,
                 };
             }
             this.diagnostics.error(callee.range, `function '${callee.name}' was not declared in this scope`);
@@ -3438,34 +3716,115 @@ class SemanticAnalyzer {
     checkArgumentList(args, fn, range) {
         const minArguments = fn.minArguments ?? fn.parameters.length;
         const maxArguments = fn.parameters.length;
-        if (!fn.variadic && (args.length < minArguments || args.length > maxArguments)) {
+        const { resolved, providedCount, positionalCount } = this.resolveArguments(args, fn, range);
+        const hasNamedArguments = args.some((arg) => arg.name !== null);
+        if (!fn.variadic && positionalCount > maxArguments) {
             this.diagnostics.error(range, `'${fn.name}' expects ${argumentCountText(minArguments, maxArguments)} arguments, got ${args.length}`);
-            return;
+        }
+        else if (!fn.variadic && !hasNamedArguments && args.length < minArguments) {
+            this.diagnostics.error(range, `'${fn.name}' expects ${argumentCountText(minArguments, maxArguments)} arguments, got ${args.length}`);
+        }
+        else if (!fn.variadic) {
+            for (let i = 0; i < minArguments; i++) {
+                if (!resolved.some((item) => item.parameterIndex === i)) {
+                    this.diagnostics.error(range, `'${fn.name}' missing required argument '${fn.parameters[i].name}'`);
+                }
+            }
+            if (providedCount > maxArguments) {
+                this.diagnostics.error(range, `'${fn.name}' expects ${argumentCountText(minArguments, maxArguments)} arguments, got ${args.length}`);
+            }
         }
         if (fn.variadic && args.length < minArguments) {
             this.diagnostics.error(range, `'${fn.name}' expects at least ${minArguments} arguments, got ${args.length}`);
-            return;
         }
-        for (let i = 0; i < args.length; i++) {
-            const argType = this.expressionType(args[i]);
-            const parameter = fn.parameters[i];
+        for (const item of resolved) {
+            const argType = this.expressionType(item.arg.value);
+            const parameter = item.parameter;
             if (parameter) {
                 if (parameter.acceptedTypes) {
                     const accepts = parameter.acceptedTypes.some((candidate) => this.canAssign(candidate, argType));
                     if (!accepts) {
-                        this.diagnostics.error(args[i].range, `'${fn.name}' argument ${i + 1} expects ${parameter.acceptedDescription ?? parameter.acceptedTypes.map(types_1.typeToString).join(' or ')}, got '${(0, types_1.typeToString)(argType)}'`);
+                        this.diagnostics.error(item.arg.range, this.argumentTypeError(fn, item, parameter.acceptedDescription ?? parameter.acceptedTypes.map(types_1.typeToString).join(' or '), argType));
                     }
                     continue;
                 }
                 if (!this.canAssign(parameter.type, argType)) {
-                    this.diagnostics.error(args[i].range, `'${fn.name}' argument ${i + 1} expects '${(0, types_1.typeToString)(parameter.type)}', got '${(0, types_1.typeToString)(argType)}'`);
+                    this.diagnostics.error(item.arg.range, this.argumentTypeError(fn, item, `'${(0, types_1.typeToString)(parameter.type)}'`, argType));
                 }
                 continue;
             }
             if (fn.variadicTypes && !fn.variadicTypes.some((candidate) => this.canAssign(candidate, argType))) {
-                this.diagnostics.error(args[i].range, `'${fn.name}' does not accept argument of type '${(0, types_1.typeToString)(argType)}'`);
+                this.diagnostics.error(item.arg.range, `'${fn.name}' does not accept argument of type '${(0, types_1.typeToString)(argType)}'`);
             }
         }
+    }
+    resolveArguments(args, fn, range) {
+        const resolved = [];
+        const assigned = new Map();
+        let sawNamed = false;
+        let positionalCount = 0;
+        for (let argumentIndex = 0; argumentIndex < args.length; argumentIndex++) {
+            const arg = args[argumentIndex];
+            if (arg.name !== null) {
+                sawNamed = true;
+                if (fn.variadic) {
+                    this.diagnostics.error(arg.range, `'${fn.name}' does not support named arguments`);
+                    resolved.push({ arg, parameter: null, parameterIndex: null, argumentIndex });
+                    continue;
+                }
+                const parameterIndex = fn.parameters.findIndex((parameter) => parameter.name === arg.name);
+                if (parameterIndex < 0) {
+                    this.diagnostics.error(arg.range, `'${fn.name}' has no argument named '${arg.name}'`);
+                    resolved.push({ arg, parameter: null, parameterIndex: null, argumentIndex });
+                    continue;
+                }
+                if (assigned.has(parameterIndex)) {
+                    this.diagnostics.error(arg.range, `'${fn.name}' argument '${arg.name}' was already provided`);
+                }
+                assigned.set(parameterIndex, arg);
+                resolved.push({ arg, parameter: fn.parameters[parameterIndex], parameterIndex, argumentIndex });
+                continue;
+            }
+            if (sawNamed) {
+                this.diagnostics.error(arg.range, 'positional argument cannot follow named argument');
+            }
+            const parameterIndex = positionalCount;
+            positionalCount += 1;
+            const parameter = fn.parameters[parameterIndex] ?? null;
+            if (parameter && assigned.has(parameterIndex)) {
+                this.diagnostics.error(arg.range, `'${fn.name}' argument '${parameter.name}' was already provided`);
+            }
+            if (parameter)
+                assigned.set(parameterIndex, arg);
+            resolved.push({ arg, parameter, parameterIndex: parameter ? parameterIndex : null, argumentIndex });
+        }
+        return {
+            resolved,
+            providedCount: assigned.size,
+            positionalCount,
+        };
+    }
+    orderedArguments(args, fn) {
+        if (!args.some((arg) => arg.name !== null))
+            return [...args];
+        const ordered = new Array(fn.parameters.length).fill(null);
+        let positionalIndex = 0;
+        for (const arg of args) {
+            if (arg.name !== null) {
+                const parameterIndex = fn.parameters.findIndex((parameter) => parameter.name === arg.name);
+                if (parameterIndex >= 0)
+                    ordered[parameterIndex] = arg;
+                continue;
+            }
+            if (positionalIndex < ordered.length)
+                ordered[positionalIndex] = arg;
+            positionalIndex += 1;
+        }
+        return ordered.filter((arg) => arg !== null);
+    }
+    argumentTypeError(fn, item, expected, actual) {
+        const label = item.arg.name ? `argument '${item.arg.name}'` : `argument ${item.argumentIndex + 1}`;
+        return `'${fn.name}' ${label} expects ${expected}, got '${(0, types_1.typeToString)(actual)}'`;
     }
     memberType(expression) {
         if (expression.object.kind === 'IdentifierExpression') {
@@ -3757,6 +4116,10 @@ function argumentCountText(minArguments, maxArguments) {
     if (maxArguments === minArguments + 1)
         return `${minArguments} or ${maxArguments}`;
     return `${minArguments}-${maxArguments}`;
+}
+function requiredParameterCount(parameters) {
+    const firstDefault = parameters.findIndex((parameter) => parameter.defaultValue !== null);
+    return firstDefault < 0 ? parameters.length : firstDefault;
 }
 //# sourceMappingURL=semantics.js.map
 },
@@ -4855,8 +5218,8 @@ function classType(name) {
 function arrayType(elementType, size, dynamic) {
     return { kind: 'array', elementType, size, dynamic };
 }
-function functionType(parameters, returnType) {
-    return { kind: 'function', parameters, returnType };
+function functionType(parameters, returnType, minArguments) {
+    return { kind: 'function', parameters, returnType, minArguments };
 }
 //# sourceMappingURL=types.js.map
 },
@@ -4991,6 +5354,9 @@ class IdylliumProject {
         const source = this.files.get(file) ?? '';
         const prefix = source.slice(0, request.offset);
         const index = this.index(file);
+        const argumentCompletions = this.argumentNameCompletions(index, source, request.offset);
+        if (argumentCompletions.length > 0)
+            return argumentCompletions;
         const memberMatch = /([A-Za-z_][A-Za-z0-9_]*)\.\s*$/.exec(prefix);
         if (memberMatch) {
             const moduleName = memberMatch[1];
@@ -5067,7 +5433,7 @@ class IdylliumProject {
         return {
             signatures,
             activeSignature: 0,
-            activeParameter: Math.min(call.activeParameter, maxParameter),
+            activeParameter: Math.min(activeParameterForCall(call, signatures[0]), maxParameter),
         };
     }
     definition(request) {
@@ -5119,7 +5485,12 @@ class IdylliumProject {
             }
         }
         if (parsed.ast.main) {
-            symbols.push({ name: 'main', kind: 'function', detail: 'main()', range: parsed.ast.main.range });
+            symbols.push({
+                name: 'main',
+                kind: 'function',
+                detail: callableDetail('main', [], typeNameText(parsed.ast.main.returnType)),
+                range: parsed.ast.main.range,
+            });
         }
         return symbols;
     }
@@ -5230,6 +5601,26 @@ class IdylliumProject {
         if (localFunction)
             return [signatureFromFunctionDeclaration(localFunction)];
         return [];
+    }
+    argumentNameCompletions(index, source, offset) {
+        const call = activeCallAtOffset(source, offset);
+        if (!call)
+            return [];
+        const signature = this.signatureCandidates(index, call.calleeText)[0];
+        if (!signature || signature.allowsNamedArguments === false)
+            return [];
+        const prefix = argumentNamePrefix(call.activeArgumentText);
+        if (prefix === null)
+            return [];
+        const used = usedNamedArgumentNames(call);
+        return signature.parameters
+            .filter((parameter) => parameter.name && !used.has(parameter.name))
+            .filter((parameter) => parameter.name?.toLowerCase().startsWith(prefix.toLowerCase()))
+            .map((parameter) => ({
+            name: `${parameter.name}=`,
+            kind: 'parameter',
+            detail: `argument ${parameter.label}`,
+        }));
     }
     memberDefinition(index, objectName, memberName) {
         const module = index.userModuleDeclarations.get(objectName);
@@ -5448,7 +5839,7 @@ function localClassMemberCompletions(declaration) {
             items.set(member.name, {
                 name: member.name,
                 kind: 'method',
-                detail: callableDetail(member.name, member.parameters.map((parameter) => (`${parameter.name}: ${typeNameText(parameter.paramType)}`)), typeNameText(member.returnType)),
+                detail: callableDetail(member.name, member.parameters.map(parameterDetail), typeNameText(member.returnType)),
             });
         }
     }
@@ -5564,7 +5955,12 @@ function activeCallAtOffset(source, offset) {
         if (char === ']')
             squareDepth = Math.max(0, squareDepth - 1);
         if (char === '(') {
-            frames.push({ calleeText: calleeTextBefore(source, i), activeParameter: 0 });
+            frames.push({
+                calleeText: calleeTextBefore(source, i),
+                openParenIndex: i,
+                currentArgumentStart: i + 1,
+                activeParameter: 0,
+            });
             continue;
         }
         if (char === ')') {
@@ -5572,19 +5968,60 @@ function activeCallAtOffset(source, offset) {
             continue;
         }
         if (char === ',' && squareDepth === 0 && frames.length > 0) {
-            frames[frames.length - 1].activeParameter++;
+            const frame = frames[frames.length - 1];
+            frame.activeParameter++;
+            frame.currentArgumentStart = i + 1;
         }
     }
     for (let i = frames.length - 1; i >= 0; i--) {
         const frame = frames[i];
         if (frame.calleeText) {
+            const argumentSource = source.slice(frame.openParenIndex + 1, safeOffset);
             return {
                 calleeText: frame.calleeText,
                 activeParameter: frame.activeParameter,
+                activeArgumentText: source.slice(frame.currentArgumentStart, safeOffset),
+                previousArgumentTexts: splitTopLevelArguments(argumentSource).slice(0, -1),
             };
         }
     }
     return null;
+}
+function splitTopLevelArguments(text) {
+    const result = [];
+    let start = 0;
+    let parenDepth = 0;
+    let squareDepth = 0;
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const next = text[i + 1];
+        if (char === '/' && next === '/') {
+            i = skipLineComment(text, i + 2);
+            continue;
+        }
+        if (char === '/' && next === '*') {
+            i = skipBlockComment(text, i + 2);
+            continue;
+        }
+        if (char === '"' || char === "'") {
+            i = skipQuotedText(text, i, char, text.length);
+            continue;
+        }
+        if (char === '(')
+            parenDepth++;
+        if (char === ')')
+            parenDepth = Math.max(0, parenDepth - 1);
+        if (char === '[')
+            squareDepth++;
+        if (char === ']')
+            squareDepth = Math.max(0, squareDepth - 1);
+        if (char === ',' && parenDepth === 0 && squareDepth === 0) {
+            result.push(text.slice(start, i));
+            start = i + 1;
+        }
+    }
+    result.push(text.slice(start));
+    return result;
 }
 function calleeTextBefore(source, openParenIndex) {
     const fragment = source.slice(Math.max(0, openParenIndex - 160), openParenIndex);
@@ -5625,9 +6062,17 @@ function skipQuotedText(source, quoteStart, quote, limit) {
     return limit;
 }
 function signatureFromFunctionSpec(fn) {
-    const parameters = fn.parameters.map((param) => ({ label: `${param.name}: ${(0, types_1.typeToString)(param.type)}` }));
+    const minArguments = fn.minArguments ?? fn.parameters.length;
+    const parameters = fn.parameters.map((param, index) => {
+        const label = `${param.name}: ${(0, types_1.typeToString)(param.type)}`;
+        return {
+            name: param.name,
+            label: index >= minArguments ? `[${label}]` : label,
+        };
+    });
     if (fn.variadic) {
         parameters.push({
+            name: undefined,
             label: fn.variadicTypes?.length === 1 ? `...values: ${(0, types_1.typeToString)(fn.variadicTypes[0])}` : '...values',
         });
     }
@@ -5635,16 +6080,22 @@ function signatureFromFunctionSpec(fn) {
         label: signatureDetail(fn),
         parameters,
         documentation: fn.documentation,
+        allowsNamedArguments: !fn.variadic,
     };
 }
 function signatureFromFunctionDeclaration(declaration) {
     const parameters = declaration.parameters.map((parameter) => ({
-        label: `${parameter.name}: ${typeNameText(parameter.paramType)}`,
+        name: parameter.name,
+        label: parameterDetail(parameter),
     }));
     return {
         label: callableDetail(declaration.name, parameters.map((parameter) => parameter.label), typeNameText(declaration.returnType)),
         parameters,
+        allowsNamedArguments: true,
     };
+}
+function parameterDetail(parameter) {
+    return `${parameter.name}: ${typeNameText(parameter.paramType)}${parameter.defaultValue ? ' = ...' : ''}`;
 }
 function signatureFromDetail(detail) {
     const open = detail.indexOf('(');
@@ -5652,11 +6103,97 @@ function signatureFromDetail(detail) {
     const parametersText = open >= 0 && close >= open ? detail.slice(open + 1, close).trim() : '';
     const parameters = parametersText.length === 0
         ? []
-        : splitSignatureParameters(parametersText).map((label) => ({ label }));
+        : splitSignatureParameters(parametersText).map((label) => ({
+            name: parameterNameFromLabel(label),
+            label,
+        }));
     return {
         label: detail,
         parameters,
+        allowsNamedArguments: !parameters.some((parameter) => parameter.label.trim().startsWith('...')),
     };
+}
+function activeParameterForCall(call, signature) {
+    const named = namedArgumentName(call.activeArgumentText);
+    if (named) {
+        const namedIndex = signature.parameters.findIndex((parameter) => parameter.name === named);
+        if (namedIndex >= 0)
+            return namedIndex;
+    }
+    const hasNamedArguments = call.previousArgumentTexts.some((text) => namedArgumentName(text) !== null);
+    if (hasNamedArguments && argumentNamePrefix(call.activeArgumentText) !== null) {
+        const used = usedNamedArgumentNames(call);
+        const availableIndex = signature.parameters.findIndex((parameter) => parameter.name && !used.has(parameter.name));
+        if (availableIndex >= 0)
+            return availableIndex;
+    }
+    return call.activeParameter;
+}
+function argumentNamePrefix(text) {
+    const trimmed = text.trimStart();
+    if (topLevelEqualsIndex(trimmed) >= 0)
+        return null;
+    const match = /^([\p{L}_][\p{L}\p{N}_]*)?$/u.exec(trimmed);
+    return match ? (match[1] ?? '') : null;
+}
+function namedArgumentName(text) {
+    const trimmed = text.trimStart();
+    const equals = topLevelEqualsIndex(trimmed);
+    if (equals < 0)
+        return null;
+    const name = trimmed.slice(0, equals).trim();
+    return /^[\p{L}_][\p{L}\p{N}_]*$/u.test(name) ? name : null;
+}
+function usedNamedArgumentNames(call) {
+    const used = new Set();
+    for (const argumentText of call.previousArgumentTexts) {
+        const name = namedArgumentName(argumentText);
+        if (name)
+            used.add(name);
+    }
+    const current = namedArgumentName(call.activeArgumentText);
+    if (current)
+        used.add(current);
+    return used;
+}
+function topLevelEqualsIndex(text) {
+    let parenDepth = 0;
+    let squareDepth = 0;
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const next = text[i + 1];
+        if (char === '/' && next === '/') {
+            i = skipLineComment(text, i + 2);
+            continue;
+        }
+        if (char === '/' && next === '*') {
+            i = skipBlockComment(text, i + 2);
+            continue;
+        }
+        if (char === '"' || char === "'") {
+            i = skipQuotedText(text, i, char, text.length);
+            continue;
+        }
+        if (char === '(')
+            parenDepth++;
+        if (char === ')')
+            parenDepth = Math.max(0, parenDepth - 1);
+        if (char === '[')
+            squareDepth++;
+        if (char === ']')
+            squareDepth = Math.max(0, squareDepth - 1);
+        if (char === '=' && parenDepth === 0 && squareDepth === 0)
+            return i;
+    }
+    return -1;
+}
+function parameterNameFromLabel(label) {
+    const cleaned = label.trim().replace(/^\[/u, '').replace(/\]$/u, '').replace(/^\.\.\./u, '');
+    const colon = cleaned.indexOf(':');
+    if (colon < 0)
+        return undefined;
+    const name = cleaned.slice(0, colon).trim();
+    return /^[\p{L}_][\p{L}\p{N}_]*$/u.test(name) ? name : undefined;
 }
 function splitSignatureParameters(text) {
     const result = [];

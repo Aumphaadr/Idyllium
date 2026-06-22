@@ -3,6 +3,7 @@ import {
   BinaryExpression,
   BlockStatement,
   BreakStatement,
+  CallArgument,
   CallExpression,
   ClassDeclaration,
   ClassFieldDeclaration,
@@ -24,6 +25,8 @@ import {
   VariableDeclaration,
   WhileStatement,
 } from './ast';
+import { TypeRef, arrayType, primitive, qualified } from './types';
+import { createDefaultStandardLibrary } from './stdlib/registry';
 
 export interface CodegenResult {
   readonly jsCode: string;
@@ -46,10 +49,17 @@ export class JavaScriptGenerator {
   private importedModules = new Set<string>();
   private userClassNames = new Set<string>();
   private classFields = new Map<string, Map<string, TypeName>>();
+  private functionParameters = new Map<string, readonly ParameterDeclaration[]>();
+  private classMethodParameters = new Map<string, readonly ParameterDeclaration[]>();
+  private classConstructorParameters = new Map<string, readonly ParameterDeclaration[]>();
+  private moduleFunctionParameters = new Map<string, readonly ParameterDeclaration[]>();
+  private moduleClassMethodParameters = new Map<string, readonly ParameterDeclaration[]>();
+  private moduleClassConstructorParameters = new Map<string, readonly ParameterDeclaration[]>();
   private scopes: Array<Map<string, TypeName>> = [new Map()];
   private currentClassNames: string[] = [];
   private returnTypes: TypeName[] = [];
   private readonly userModuleNames: ReadonlySet<string>;
+  private readonly stdlib = createDefaultStandardLibrary();
 
   constructor(options: JavaScriptGeneratorOptions = {}) {
     this.userModuleNames = options.userModuleNames ?? new Set();
@@ -57,6 +67,7 @@ export class JavaScriptGenerator {
 
   generate(program: Program, options: GenerateOptions = {}): CodegenResult {
     const modules = options.modules ?? [];
+    this.prepareModuleSignatures(modules);
     this.importedModules = new Set(program.imports.map((item) => item.moduleName));
     this.userClassNames = new Set(program.declarations
       .filter((item): item is ClassDeclaration => item.kind === 'ClassDeclaration')
@@ -73,7 +84,9 @@ export class JavaScriptGenerator {
 
     if (program.main) {
       lines.push('  async function main() {');
+      this.returnTypes.push(program.main.returnType);
       this.emitBlock(program.main.body, lines, 2);
+      this.returnTypes.pop();
       lines.push('  }');
       lines.push('  await main();');
     }
@@ -111,13 +124,26 @@ export class JavaScriptGenerator {
       .filter((item): item is ClassDeclaration => item.kind === 'ClassDeclaration')
       .map((item) => item.name));
     this.classFields = new Map();
+    this.functionParameters = new Map();
+    this.classMethodParameters = new Map();
+    this.classConstructorParameters = new Map();
     const ownClassFields = new Map<string, Map<string, TypeName>>();
     for (const declaration of program.declarations) {
+      if (declaration.kind === 'FunctionDeclaration') {
+        this.functionParameters.set(declaration.name, declaration.parameters);
+      }
       if (declaration.kind !== 'ClassDeclaration') continue;
       const fields = new Map<string, TypeName>();
       for (const member of declaration.members) {
-        if (member.kind !== 'ClassFieldDeclaration') continue;
-        for (const field of member.fields) fields.set(field.name, member.declaredType);
+        if (member.kind === 'ClassFieldDeclaration') {
+          for (const field of member.fields) fields.set(field.name, member.declaredType);
+        }
+        if (member.kind === 'ClassMethodDeclaration') {
+          this.classMethodParameters.set(this.classMemberKey(declaration.name, member.name), member.parameters);
+        }
+        if (member.kind === 'ConstructorDeclaration') {
+          this.classConstructorParameters.set(declaration.name, member.parameters);
+        }
       }
       ownClassFields.set(declaration.name, fields);
     }
@@ -149,6 +175,31 @@ export class JavaScriptGenerator {
     this.scopes = [new Map()];
     this.currentClassNames = [];
     this.returnTypes = [];
+  }
+
+  private prepareModuleSignatures(modules: readonly ModuleProgram[]): void {
+    this.moduleFunctionParameters = new Map();
+    this.moduleClassMethodParameters = new Map();
+    this.moduleClassConstructorParameters = new Map();
+
+    for (const module of modules) {
+      for (const declaration of module.program.declarations) {
+        if (declaration.kind === 'FunctionDeclaration') {
+          this.moduleFunctionParameters.set(`${module.name}.${declaration.name}`, declaration.parameters);
+          continue;
+        }
+
+        if (declaration.kind !== 'ClassDeclaration') continue;
+        for (const member of declaration.members) {
+          if (member.kind === 'ClassMethodDeclaration') {
+            this.moduleClassMethodParameters.set(`${module.name}.${this.classMemberKey(declaration.name, member.name)}`, member.parameters);
+          }
+          if (member.kind === 'ConstructorDeclaration') {
+            this.moduleClassConstructorParameters.set(`${module.name}.${declaration.name}`, member.parameters);
+          }
+        }
+      }
+    }
   }
 
   private emitProgramDeclarations(program: Program, lines: string[], indent: number): void {
@@ -246,6 +297,7 @@ export class JavaScriptGenerator {
     lines.push(`${pad}async function ${declaration.name}(${params}) {`);
     this.pushScope();
     this.returnTypes.push(declaration.returnType);
+    this.emitParameterDefaults(declaration.parameters, lines, indent + 1);
     this.emitParameterCasts(declaration.parameters, lines, indent + 1);
     this.emitBlock(declaration.body, lines, indent + 1);
     this.returnTypes.pop();
@@ -322,6 +374,7 @@ export class JavaScriptGenerator {
     this.pushScope();
     this.currentClassNames.push(className);
     this.returnTypes.push(declaration.returnType);
+    this.emitParameterDefaults(declaration.parameters, lines, indent + 1);
     this.emitParameterCasts(declaration.parameters, lines, indent + 1);
     this.emitBlock(declaration.body, lines, indent + 1);
     this.returnTypes.pop();
@@ -337,6 +390,7 @@ export class JavaScriptGenerator {
     this.pushScope();
     this.currentClassNames.push(className);
     this.returnTypes.push(declaration.returnType);
+    this.emitParameterDefaults(declaration.parameters, lines, indent + 1);
     this.emitParameterCasts(declaration.parameters, lines, indent + 1);
     this.emitBlock(declaration.body, lines, indent + 1);
     this.returnTypes.pop();
@@ -351,6 +405,7 @@ export class JavaScriptGenerator {
     lines.push(`${pad}await (async function(${params}) {`);
     this.pushScope();
     this.currentClassNames.push(className);
+    this.emitParameterDefaults(declaration.parameters, lines, indent + 1);
     this.emitParameterCasts(declaration.parameters, lines, indent + 1);
     this.emitBlock(declaration.body, lines, indent + 1);
     this.currentClassNames.pop();
@@ -513,6 +568,7 @@ export class JavaScriptGenerator {
     const lines = [`(async function(${params}) {`];
     this.pushScope();
     this.returnTypes.push(expression.returnType);
+    this.emitParameterDefaults(expression.parameters, lines, 1);
     this.emitParameterCasts(expression.parameters, lines, 1);
     this.emitBlock(expression.body, lines, 1);
     this.returnTypes.pop();
@@ -540,22 +596,24 @@ export class JavaScriptGenerator {
     const callee = expression.callee;
 
     if (callee.kind === 'IdentifierExpression') {
-      const args = expression.args.map((arg) => this.expression(arg)).join(', ');
       if (callee.name === 'max' || callee.name === 'min' || callee.name === 'sum' || callee.name === 'avg') {
+        const args = this.callArgumentValues(expression.args, ['array']).join(', ');
         return `$rt.array.${callee.name}(${args}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
       }
       if (callee.name === 'div' || callee.name === 'mod' || callee.name === 'to_int' || callee.name === 'to_float') {
+        const args = this.callArgumentValues(expression.args, this.stdlib.getGlobalFunction(callee.name)?.parameters.map((parameter) => parameter.name)).join(', ');
         return `$rt.core.${callee.name}(${args}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
       }
       if (callee.name === 'to_string') {
+        const args = this.callArgumentValues(expression.args, this.stdlib.getGlobalFunction(callee.name)?.parameters.map((parameter) => parameter.name)).join(', ');
         return `$rt.core.to_string(${args})`;
       }
     }
 
     if (callee.kind === 'MemberExpression' && callee.object.kind === 'IdentifierExpression') {
-      const args = expression.args.map((arg) => this.expression(arg)).join(', ');
       const moduleName = callee.object.name;
       if (this.importedModules.has(moduleName) && moduleName === 'console') {
+        const args = this.callArgumentValues(expression.args, this.stdlib.getModuleFunction(moduleName, callee.name)?.parameters.map((parameter) => parameter.name)).join(', ');
         if (callee.name === 'get_int' || callee.name === 'get_float') {
           return `$rt.console.${callee.name}(${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
         }
@@ -565,6 +623,8 @@ export class JavaScriptGenerator {
         return `$rt.console.${callee.name}(${args})`;
       }
       if (this.importedModules.has(moduleName)) {
+        const parameterNames = this.moduleFunctionParameterNames(moduleName, callee.name);
+        const args = this.callArgumentValues(expression.args, parameterNames).join(', ');
         if (!this.userModuleNames.has(moduleName)) {
           return `$rt.callModuleFunction(${JSON.stringify(moduleName)}, ${JSON.stringify(callee.name)}, [${args}], ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
         }
@@ -583,7 +643,7 @@ export class JavaScriptGenerator {
       return `$rt.callMethod(${this.expression(callee.object)}, ${JSON.stringify(callee.name)}, [${args}], ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
     }
 
-    return `${this.expression(callee)}(${expression.args.map((arg) => this.expression(arg)).join(', ')})`;
+    return `${this.expression(callee)}(${this.callArgumentValues(expression.args, this.callableParameterNames(callee)).join(', ')})`;
   }
 
   private memberExpression(expression: MemberExpression): string {
@@ -614,7 +674,7 @@ export class JavaScriptGenerator {
 
   private constructorInitializer(statement: VariableDeclaration): string {
     if (statement.declaredType.kind === 'QualifiedTypeName' && this.userModuleNames.has(statement.declaredType.moduleName)) {
-      const args = (statement.constructorArgs ?? []).map((arg) => this.expression(arg)).join(', ');
+      const args = this.callArgumentValues(statement.constructorArgs ?? [], this.constructorParameterNames(statement.declaredType)).join(', ');
       return `await $rt.modules.${statement.declaredType.moduleName}.${this.exportedClassCreateName(statement.declaredType.name)}(${args})`;
     }
     if (
@@ -622,11 +682,14 @@ export class JavaScriptGenerator {
       && statement.declaredType.moduleName === 'json'
       && statement.declaredType.name === 'Value'
     ) {
-      const args = (statement.constructorArgs ?? []).map((arg) => this.expression(arg)).join(', ');
+      const args = this.callArgumentValues(
+        statement.constructorArgs ?? [],
+        this.stdlib.getModuleFunction('json', 'Value')?.parameters.map((parameter) => parameter.name),
+      ).join(', ');
       return `$rt.callModuleFunction("json", "Value", [${args}], ${JSON.stringify(statement.range.start.file)}, ${statement.range.start.line})`;
     }
     if (statement.declaredType.kind !== 'ClassTypeName') return this.defaultValue(statement.declaredType);
-    const args = (statement.constructorArgs ?? []).map((arg) => this.expression(arg)).join(', ');
+    const args = this.callArgumentValues(statement.constructorArgs ?? [], this.constructorParameterNames(statement.declaredType)).join(', ');
     return `await ${this.classCreateFactoryName(statement.declaredType.name)}(${args})`;
   }
 
@@ -718,24 +781,168 @@ export class JavaScriptGenerator {
     }
   }
 
-  private methodCallArgs(methodName: string, args: readonly Expression[], receiverType: TypeName | null): string[] {
+  private emitParameterDefaults(parameters: readonly ParameterDeclaration[], lines: string[], indent: number): void {
+    const pad = '  '.repeat(indent);
+    for (const parameter of parameters) {
+      if (!parameter.defaultValue) continue;
+      lines.push(`${pad}if (${parameter.name} === undefined) {`);
+      lines.push(`${pad}  ${parameter.name} = ${this.expression(parameter.defaultValue)};`);
+      lines.push(`${pad}}`);
+    }
+  }
+
+  private callArgumentValues(args: readonly CallArgument[], parameterNames?: readonly string[]): string[] {
+    return this.orderedCallArguments(args, parameterNames).map((arg) => (
+      arg ? this.expression(arg.value) : 'undefined'
+    ));
+  }
+
+  private orderedCallArguments(args: readonly CallArgument[], parameterNames?: readonly string[]): Array<CallArgument | null> {
+    if (!args.some((arg) => arg.name !== null) || !parameterNames) return [...args];
+
+    const ordered = new Array<CallArgument | null>(parameterNames.length).fill(null);
+    let positionalIndex = 0;
+    let lastProvidedIndex = -1;
+
+    for (const arg of args) {
+      if (arg.name !== null) {
+        const parameterIndex = parameterNames.indexOf(arg.name);
+        if (parameterIndex >= 0) {
+          ordered[parameterIndex] = arg;
+          lastProvidedIndex = Math.max(lastProvidedIndex, parameterIndex);
+        }
+        continue;
+      }
+
+      if (positionalIndex < ordered.length) {
+        ordered[positionalIndex] = arg;
+        lastProvidedIndex = Math.max(lastProvidedIndex, positionalIndex);
+      }
+      positionalIndex += 1;
+    }
+
+    if (lastProvidedIndex < 0) return [];
+    return ordered.slice(0, lastProvidedIndex + 1);
+  }
+
+  private callableParameterNames(callee: Expression): readonly string[] | undefined {
+    if (callee.kind === 'IdentifierExpression') {
+      return this.functionParameters.get(callee.name)?.map((parameter) => parameter.name)
+        ?? this.stdlib.getGlobalFunction(callee.name)?.parameters.map((parameter) => parameter.name);
+    }
+    return undefined;
+  }
+
+  private moduleFunctionParameterNames(moduleName: string, functionName: string): readonly string[] | undefined {
+    if (this.userModuleNames.has(moduleName)) {
+      return this.moduleFunctionParameters.get(`${moduleName}.${functionName}`)?.map((parameter) => parameter.name);
+    }
+    return this.stdlib.getModuleFunction(moduleName, functionName)?.parameters.map((parameter) => parameter.name);
+  }
+
+  private constructorParameterNames(type: TypeName): readonly string[] | undefined {
+    if (type.kind === 'ClassTypeName') {
+      return this.classConstructorParameters.get(type.name)?.map((parameter) => parameter.name);
+    }
+    if (type.kind === 'QualifiedTypeName' && this.userModuleNames.has(type.moduleName)) {
+      return this.moduleClassConstructorParameters.get(`${type.moduleName}.${type.name}`)?.map((parameter) => parameter.name);
+    }
+    return undefined;
+  }
+
+  private methodParameterNames(methodName: string, receiverType: TypeName | null): readonly string[] | undefined {
+    if (!receiverType) return undefined;
+    if (receiverType.kind === 'ClassTypeName') {
+      return this.classMethodParameters.get(this.classMemberKey(receiverType.name, methodName))?.map((parameter) => parameter.name);
+    }
+    if (receiverType.kind === 'QualifiedTypeName' && this.userModuleNames.has(receiverType.moduleName)) {
+      return this.moduleClassMethodParameters.get(`${receiverType.moduleName}.${this.classMemberKey(receiverType.name, methodName)}`)?.map((parameter) => parameter.name);
+    }
+    if (receiverType.kind === 'ArrayTypeName') {
+      return this.arrayMethodParameterNames(methodName);
+    }
+
+    const typeRef = this.typeRefFromTypeName(receiverType);
+    if (!typeRef) return this.stringMethodParameterNames(receiverType, methodName);
+    return this.stdlib.getTypeMethod(typeRef, methodName)?.parameters.map((parameter) => parameter.name)
+      ?? this.stringMethodParameterNames(receiverType, methodName);
+  }
+
+  private arrayMethodParameterNames(methodName: string): readonly string[] | undefined {
+    switch (methodName) {
+      case 'contains':
+      case 'find':
+      case 'count':
+      case 'add':
+        return ['value'];
+      case 'remove_at':
+        return ['index'];
+      case 'resize':
+        return ['size'];
+      case 'insert':
+        return ['index', 'value'];
+      case 'join':
+        return ['other'];
+      default:
+        return [];
+    }
+  }
+
+  private stringMethodParameterNames(receiverType: TypeName, methodName: string): readonly string[] | undefined {
+    if (receiverType.kind !== 'PrimitiveTypeName' || receiverType.name !== 'string') return undefined;
+    switch (methodName) {
+      case 'contains':
+      case 'find':
+      case 'count':
+        return ['text'];
+      case 'substring':
+        return ['start', 'length'];
+      case 'replace':
+        return ['old_text', 'new_text'];
+      case 'split':
+        return ['separator'];
+      default:
+        return [];
+    }
+  }
+
+  private typeRefFromTypeName(type: TypeName): TypeRef | null {
+    if (type.kind === 'PrimitiveTypeName') return primitive(type.name);
+    if (type.kind === 'QualifiedTypeName') return qualified(type.moduleName, type.name);
+    if (type.kind === 'ArrayTypeName') {
+      const elementType = this.typeRefFromTypeName(type.elementType);
+      return elementType ? arrayType(elementType, type.size, type.dynamic) : null;
+    }
+    return null;
+  }
+
+  private methodCallArgs(methodName: string, args: readonly CallArgument[], receiverType: TypeName | null): string[] {
+    const orderedArgs = this.orderedCallArguments(args, this.methodParameterNames(methodName, receiverType));
     if (receiverType?.kind !== 'ArrayTypeName') {
-      return args.map((arg) => this.expression(arg));
+      return orderedArgs.map((arg) => (arg ? this.expression(arg.value) : 'undefined'));
     }
 
     if (methodName === 'add' || methodName === 'contains' || methodName === 'find' || methodName === 'count') {
-      return args.map((arg, index) => (
-        index === 0 ? this.castForType(this.expression(arg), receiverType.elementType) : this.expression(arg)
+      return orderedArgs.map((arg, index) => (
+        index === 0 && arg
+          ? this.castForType(this.expression(arg.value), receiverType.elementType)
+          : arg ? this.expression(arg.value) : 'undefined'
       ));
     }
 
     if (methodName === 'insert') {
-      return args.map((arg, index) => (
-        index === 1 ? this.castForType(this.expression(arg), receiverType.elementType) : this.expression(arg)
+      return orderedArgs.map((arg, index) => (
+        index === 1 && arg
+          ? this.castForType(this.expression(arg.value), receiverType.elementType)
+          : arg ? this.expression(arg.value) : 'undefined'
       ));
     }
 
-    return args.map((arg) => this.expression(arg));
+    return orderedArgs.map((arg) => (arg ? this.expression(arg.value) : 'undefined'));
+  }
+
+  private classMemberKey(className: string, memberName: string): string {
+    return `${className}.${memberName}`;
   }
 
   private castForType(value: string, type: TypeName | null): string {

@@ -3,6 +3,7 @@ import {
   AssignmentStatement,
   BinaryExpression,
   BreakStatement,
+  CallArgument,
   CallExpression,
   ClassDeclaration,
   ClassFieldDeclaration,
@@ -17,7 +18,9 @@ import {
   FunctionDeclaration,
   IfStatement,
   IndexExpression,
+  MainFunction,
   MemberExpression,
+  ParameterDeclaration,
   Program,
   ReturnStatement,
   Statement,
@@ -27,7 +30,7 @@ import {
 } from './ast';
 import { DiagnosticBag, SourceRange } from './diagnostics';
 import { UserModuleRegistry } from './modules';
-import { FunctionSpec, PropertySpec, StandardLibraryRegistry, createDefaultStandardLibrary } from './stdlib/registry';
+import { FunctionSpec, ParameterSpec, PropertySpec, StandardLibraryRegistry, createDefaultStandardLibrary } from './stdlib/registry';
 import {
   ANY_TYPE,
   BOOL,
@@ -167,9 +170,7 @@ export class SemanticAnalyzer {
     }
 
     if (program.main) {
-      this.returnTypes.push(VOID);
-      this.analyzeStatement(program.main.body);
-      this.returnTypes.pop();
+      this.analyzeMainFunction(program.main);
     }
 
     return {
@@ -241,7 +242,7 @@ export class SemanticAnalyzer {
     this.functions.set(declaration.name, declaration);
     const parameters = declaration.parameters.map((parameter) => this.resolveTypeName(parameter.paramType));
     const returnType = this.resolveTypeName(declaration.returnType);
-    this.declare(declaration.name, functionType(parameters, returnType), 'function', declaration.range);
+    this.declare(declaration.name, functionType(parameters, returnType, requiredParameterCount(declaration.parameters)), 'function', declaration.range);
   }
 
   private analyzeFunctionDeclaration(declaration: FunctionDeclaration): void {
@@ -249,10 +250,54 @@ export class SemanticAnalyzer {
     this.returnTypes.push(returnType);
     this.pushScope();
 
-    for (const parameter of declaration.parameters) {
+    this.analyzeParameters(declaration.parameters);
+
+    this.analyzeStatement(declaration.body);
+    this.reportMissingReturn(returnType, declaration.body, declaration.range);
+    this.popScope();
+    this.returnTypes.pop();
+  }
+
+  private analyzeParameters(parameters: readonly ParameterDeclaration[]): TypeRef[] {
+    const resolved: TypeRef[] = [];
+    let sawDefault = false;
+
+    for (const parameter of parameters) {
       const parameterType = this.resolveTypeName(parameter.paramType);
+      resolved.push(parameterType);
+
+      if (parameter.defaultValue) {
+        sawDefault = true;
+        const defaultType = this.expressionType(parameter.defaultValue);
+        if (!this.canAssign(parameterType, defaultType)) {
+          this.diagnostics.error(
+            parameter.defaultValue.range,
+            `default value for parameter '${parameter.name}' expects '${typeToString(parameterType)}', got '${typeToString(defaultType)}'`,
+          );
+        }
+      } else if (sawDefault) {
+        this.diagnostics.error(
+          parameter.range,
+          `parameter '${parameter.name}' without default value cannot follow a parameter with default value`,
+        );
+      }
+
       this.declare(parameter.name, parameterType, 'parameter', parameter.range);
     }
+
+    return resolved;
+  }
+
+  private analyzeMainFunction(declaration: MainFunction): void {
+    const returnType = this.resolveTypeName(declaration.returnType);
+    if (declaration.parameters.length > 0) {
+      this.diagnostics.error(declaration.parameters[0].range, "entry point 'main' cannot have parameters");
+    }
+
+    this.returnTypes.push(returnType);
+    this.pushScope();
+
+    this.analyzeParameters(declaration.parameters);
 
     this.analyzeStatement(declaration.body);
     this.reportMissingReturn(returnType, declaration.body, declaration.range);
@@ -390,6 +435,7 @@ export class SemanticAnalyzer {
       name: declaration.name,
       parameters: parameters.map((type, index) => ({ name: declaration.parameters[index].name, type })),
       returnType,
+      minArguments: requiredParameterCount(declaration.parameters),
     });
     info.methodDeclarations.set(declaration.name, declaration);
     info.methodAccess.set(declaration.name, {
@@ -417,6 +463,7 @@ export class SemanticAnalyzer {
       name: declaration.name,
       parameters: parameters.map((type, index) => ({ name: declaration.parameters[index].name, type })),
       returnType: VOID,
+      minArguments: requiredParameterCount(declaration.parameters),
     };
     info.constructorDeclaration = declaration;
   }
@@ -467,10 +514,7 @@ export class SemanticAnalyzer {
       this.declare('this', classType(info.declaration.name), 'parameter', declaration.range);
     }
 
-    for (const parameter of declaration.parameters) {
-      const parameterType = this.resolveTypeName(parameter.paramType);
-      this.declare(parameter.name, parameterType, 'parameter', parameter.range);
-    }
+    this.analyzeParameters(declaration.parameters);
 
     this.analyzeStatement(declaration.body);
     this.reportMissingReturn(returnType, declaration.body, declaration.range);
@@ -494,16 +538,17 @@ export class SemanticAnalyzer {
       };
       this.declare(
         'parent',
-        functionType(baseConstructor.parameters.map((parameter) => parameter.type), VOID),
+        functionType(
+          baseConstructor.parameters.map((parameter) => parameter.type),
+          VOID,
+          baseConstructor.minArguments,
+        ),
         'function',
         declaration.range,
       );
     }
 
-    for (const parameter of declaration.parameters) {
-      const parameterType = this.resolveTypeName(parameter.paramType);
-      this.declare(parameter.name, parameterType, 'parameter', parameter.range);
-    }
+    this.analyzeParameters(declaration.parameters);
 
     this.analyzeStatement(declaration.body);
     this.popScope();
@@ -700,7 +745,7 @@ export class SemanticAnalyzer {
 
     if (declaredType.kind !== 'class') {
       this.diagnostics.error(statement.range, `constructor-style declaration requires a class type, got '${typeToString(declaredType)}'`);
-      for (const arg of statement.constructorArgs ?? []) this.expressionType(arg);
+      for (const arg of statement.constructorArgs ?? []) this.expressionType(arg.value);
       return;
     }
 
@@ -710,7 +755,7 @@ export class SemanticAnalyzer {
     const constructor = info.constructorSpec;
     if (!constructor) {
       this.diagnostics.error(statement.range, `class '${declaredType.name}' has no constructor`);
-      for (const arg of statement.constructorArgs ?? []) this.expressionType(arg);
+      for (const arg of statement.constructorArgs ?? []) this.expressionType(arg.value);
       return;
     }
 
@@ -931,16 +976,14 @@ export class SemanticAnalyzer {
     this.returnTypes.push(returnType);
     this.pushScope();
 
-    for (let i = 0; i < expression.parameters.length; i++) {
-      this.declare(expression.parameters[i].name, parameters[i], 'parameter', expression.parameters[i].range);
-    }
+    this.analyzeParameters(expression.parameters);
 
     this.analyzeStatement(expression.body);
     this.reportMissingReturn(returnType, expression.body, expression.range);
     this.popScope();
     this.returnTypes.pop();
 
-    return functionType(parameters, returnType);
+    return functionType(parameters, returnType, requiredParameterCount(expression.parameters));
   }
 
   private reportMissingReturn(returnType: TypeRef, body: Statement, range: SourceRange): void {
@@ -1136,7 +1179,7 @@ export class SemanticAnalyzer {
 
     const resolved = this.resolveCall(expression);
     if (!resolved) {
-      for (const arg of expression.args) this.expressionType(arg);
+      for (const arg of expression.args) this.expressionType(arg.value);
       return ERROR_TYPE;
     }
 
@@ -1149,15 +1192,18 @@ export class SemanticAnalyzer {
   }
 
   private arrayGlobalFunctionType(name: string, expression: CallExpression): TypeRef {
-    if (expression.args.length !== 1) {
-      this.diagnostics.error(expression.range, `'${name}' expects 1 argument, got ${expression.args.length}`);
+    const fn: FunctionSpec = { name, parameters: [{ name: 'array', type: ANY_TYPE }], returnType: ANY_TYPE };
+    this.checkArgumentList(expression.args, fn, expression.range);
+    const ordered = this.orderedArguments(expression.args, fn);
+    const arg = ordered[0];
+    if (!arg) {
       return ERROR_TYPE;
     }
 
-    const argType = this.expressionType(expression.args[0]);
+    const argType = this.expressionType(arg.value);
     if (argType.kind !== 'array') {
       this.diagnostics.error(
-        expression.args[0].range,
+        arg.range,
         `'${name}' expects an array, got '${typeToString(argType)}'`,
       );
       return ERROR_TYPE;
@@ -1165,7 +1211,7 @@ export class SemanticAnalyzer {
 
     if (!isNumeric(argType.elementType)) {
       this.diagnostics.error(
-        expression.args[0].range,
+        arg.range,
         `'${name}' expects a numeric array, got '${typeToString(argType)}'`,
       );
       return ERROR_TYPE;
@@ -1187,27 +1233,17 @@ export class SemanticAnalyzer {
         return ERROR_TYPE;
       }
 
-      if (expression.args.length !== 1 && expression.args.length !== 2) {
-        this.diagnostics.error(expression.range, `'${callee.name}' expects 1 or 2 arguments, got ${expression.args.length}`);
-        return ERROR_TYPE;
-      }
-
-      const valueType = this.expressionType(expression.args[0]);
-      if (!isNumeric(valueType)) {
-        this.diagnostics.error(
-          expression.args[0].range,
-          `'${callee.name}' argument 1 expects numeric value, got '${typeToString(valueType)}'`,
-        );
-      }
-
+      const fn: FunctionSpec = {
+        name: callee.name,
+        parameters: [
+          { name: 'value', type: FLOAT },
+          { name: 'digits', type: INT },
+        ],
+        returnType: FLOAT,
+        minArguments: 1,
+      };
+      this.checkArgumentList(expression.args, fn, expression.range);
       if (expression.args.length === 2) {
-        const digitsType = this.expressionType(expression.args[1]);
-        if (!isIntegerLike(digitsType)) {
-          this.diagnostics.error(
-            expression.args[1].range,
-            `'${callee.name}' argument 2 expects integer value, got '${typeToString(digitsType)}'`,
-          );
-        }
         return FLOAT;
       }
 
@@ -1220,12 +1256,17 @@ export class SemanticAnalyzer {
         return ERROR_TYPE;
       }
 
-      if (expression.args.length !== 3) {
-        this.diagnostics.error(expression.range, "'clamp' expects 3 arguments");
-        return ERROR_TYPE;
-      }
-
-      const argTypes = expression.args.map((arg) => this.expressionType(arg));
+      const fn: FunctionSpec = {
+        name: 'clamp',
+        parameters: [
+          { name: 'min', type: FLOAT },
+          { name: 'value', type: FLOAT },
+          { name: 'max', type: FLOAT },
+        ],
+        returnType: FLOAT,
+      };
+      this.checkArgumentList(expression.args, fn, expression.range);
+      const argTypes = expression.args.map((arg) => this.expressionType(arg.value));
       for (let i = 0; i < argTypes.length; i++) {
         if (!isNumeric(argTypes[i])) {
           this.diagnostics.error(
@@ -1253,12 +1294,27 @@ export class SemanticAnalyzer {
       const global = this.stdlib.getGlobalFunction(callee.name);
       if (global) return global;
 
+      const localFunction = this.functions.get(callee.name);
+      if (localFunction) {
+        const parameters = localFunction.parameters.map((parameter) => ({
+          name: parameter.name,
+          type: this.resolveTypeName(parameter.paramType),
+        }));
+        return {
+          name: callee.name,
+          parameters,
+          returnType: this.resolveTypeName(localFunction.returnType),
+          minArguments: requiredParameterCount(localFunction.parameters),
+        };
+      }
+
       const symbol = this.lookup(callee.name);
       if (symbol?.type.kind === 'function') {
         return {
           name: callee.name,
           parameters: symbol.type.parameters.map((type, index) => ({ name: `arg${index + 1}`, type })),
           returnType: symbol.type.returnType,
+          minArguments: symbol.type.minArguments,
         };
       }
 
@@ -1370,16 +1426,35 @@ export class SemanticAnalyzer {
     this.checkArgumentList(expression.args, fn, expression.range);
   }
 
-  private checkArgumentList(args: readonly Expression[], fn: FunctionSpec, range: SourceRange): void {
+  private checkArgumentList(args: readonly CallArgument[], fn: FunctionSpec, range: SourceRange): void {
     const minArguments = fn.minArguments ?? fn.parameters.length;
     const maxArguments = fn.parameters.length;
 
-    if (!fn.variadic && (args.length < minArguments || args.length > maxArguments)) {
+    const { resolved, providedCount, positionalCount } = this.resolveArguments(args, fn, range);
+    const hasNamedArguments = args.some((arg) => arg.name !== null);
+
+    if (!fn.variadic && positionalCount > maxArguments) {
       this.diagnostics.error(
         range,
         `'${fn.name}' expects ${argumentCountText(minArguments, maxArguments)} arguments, got ${args.length}`,
       );
-      return;
+    } else if (!fn.variadic && !hasNamedArguments && args.length < minArguments) {
+      this.diagnostics.error(
+        range,
+        `'${fn.name}' expects ${argumentCountText(minArguments, maxArguments)} arguments, got ${args.length}`,
+      );
+    } else if (!fn.variadic) {
+      for (let i = 0; i < minArguments; i++) {
+        if (!resolved.some((item) => item.parameterIndex === i)) {
+          this.diagnostics.error(range, `'${fn.name}' missing required argument '${fn.parameters[i].name}'`);
+        }
+      }
+      if (providedCount > maxArguments) {
+        this.diagnostics.error(
+          range,
+          `'${fn.name}' expects ${argumentCountText(minArguments, maxArguments)} arguments, got ${args.length}`,
+        );
+      }
     }
 
     if (fn.variadic && args.length < minArguments) {
@@ -1387,19 +1462,18 @@ export class SemanticAnalyzer {
         range,
         `'${fn.name}' expects at least ${minArguments} arguments, got ${args.length}`,
       );
-      return;
     }
 
-    for (let i = 0; i < args.length; i++) {
-      const argType = this.expressionType(args[i]);
-      const parameter = fn.parameters[i];
+    for (const item of resolved) {
+      const argType = this.expressionType(item.arg.value);
+      const parameter = item.parameter;
       if (parameter) {
         if (parameter.acceptedTypes) {
           const accepts = parameter.acceptedTypes.some((candidate) => this.canAssign(candidate, argType));
           if (!accepts) {
             this.diagnostics.error(
-              args[i].range,
-              `'${fn.name}' argument ${i + 1} expects ${parameter.acceptedDescription ?? parameter.acceptedTypes.map(typeToString).join(' or ')}, got '${typeToString(argType)}'`,
+              item.arg.range,
+              this.argumentTypeError(fn, item, parameter.acceptedDescription ?? parameter.acceptedTypes.map(typeToString).join(' or '), argType),
             );
           }
           continue;
@@ -1407,8 +1481,8 @@ export class SemanticAnalyzer {
 
         if (!this.canAssign(parameter.type, argType)) {
           this.diagnostics.error(
-            args[i].range,
-            `'${fn.name}' argument ${i + 1} expects '${typeToString(parameter.type)}', got '${typeToString(argType)}'`,
+            item.arg.range,
+            this.argumentTypeError(fn, item, `'${typeToString(parameter.type)}'`, argType),
           );
         }
         continue;
@@ -1416,11 +1490,109 @@ export class SemanticAnalyzer {
 
       if (fn.variadicTypes && !fn.variadicTypes.some((candidate) => this.canAssign(candidate, argType))) {
         this.diagnostics.error(
-          args[i].range,
+          item.arg.range,
           `'${fn.name}' does not accept argument of type '${typeToString(argType)}'`,
         );
       }
     }
+  }
+
+  private resolveArguments(
+    args: readonly CallArgument[],
+    fn: FunctionSpec,
+    range: SourceRange,
+  ): {
+    readonly resolved: Array<{
+      readonly arg: CallArgument;
+      readonly parameter: ParameterSpec | null;
+      readonly parameterIndex: number | null;
+      readonly argumentIndex: number;
+    }>;
+    readonly providedCount: number;
+    readonly positionalCount: number;
+  } {
+    const resolved: Array<{
+      readonly arg: CallArgument;
+      readonly parameter: ParameterSpec | null;
+      readonly parameterIndex: number | null;
+      readonly argumentIndex: number;
+    }> = [];
+    const assigned = new Map<number, CallArgument>();
+    let sawNamed = false;
+    let positionalCount = 0;
+
+    for (let argumentIndex = 0; argumentIndex < args.length; argumentIndex++) {
+      const arg = args[argumentIndex];
+      if (arg.name !== null) {
+        sawNamed = true;
+        if (fn.variadic) {
+          this.diagnostics.error(arg.range, `'${fn.name}' does not support named arguments`);
+          resolved.push({ arg, parameter: null, parameterIndex: null, argumentIndex });
+          continue;
+        }
+
+        const parameterIndex = fn.parameters.findIndex((parameter) => parameter.name === arg.name);
+        if (parameterIndex < 0) {
+          this.diagnostics.error(arg.range, `'${fn.name}' has no argument named '${arg.name}'`);
+          resolved.push({ arg, parameter: null, parameterIndex: null, argumentIndex });
+          continue;
+        }
+
+        if (assigned.has(parameterIndex)) {
+          this.diagnostics.error(arg.range, `'${fn.name}' argument '${arg.name}' was already provided`);
+        }
+        assigned.set(parameterIndex, arg);
+        resolved.push({ arg, parameter: fn.parameters[parameterIndex], parameterIndex, argumentIndex });
+        continue;
+      }
+
+      if (sawNamed) {
+        this.diagnostics.error(arg.range, 'positional argument cannot follow named argument');
+      }
+
+      const parameterIndex = positionalCount;
+      positionalCount += 1;
+      const parameter = fn.parameters[parameterIndex] ?? null;
+      if (parameter && assigned.has(parameterIndex)) {
+        this.diagnostics.error(arg.range, `'${fn.name}' argument '${parameter.name}' was already provided`);
+      }
+      if (parameter) assigned.set(parameterIndex, arg);
+      resolved.push({ arg, parameter, parameterIndex: parameter ? parameterIndex : null, argumentIndex });
+    }
+
+    return {
+      resolved,
+      providedCount: assigned.size,
+      positionalCount,
+    };
+  }
+
+  private orderedArguments(args: readonly CallArgument[], fn: FunctionSpec): CallArgument[] {
+    if (!args.some((arg) => arg.name !== null)) return [...args];
+    const ordered = new Array<CallArgument | null>(fn.parameters.length).fill(null);
+    let positionalIndex = 0;
+
+    for (const arg of args) {
+      if (arg.name !== null) {
+        const parameterIndex = fn.parameters.findIndex((parameter) => parameter.name === arg.name);
+        if (parameterIndex >= 0) ordered[parameterIndex] = arg;
+        continue;
+      }
+      if (positionalIndex < ordered.length) ordered[positionalIndex] = arg;
+      positionalIndex += 1;
+    }
+
+    return ordered.filter((arg): arg is CallArgument => arg !== null);
+  }
+
+  private argumentTypeError(
+    fn: FunctionSpec,
+    item: { readonly arg: CallArgument; readonly parameter: ParameterSpec | null; readonly argumentIndex: number },
+    expected: string,
+    actual: TypeRef,
+  ): string {
+    const label = item.arg.name ? `argument '${item.arg.name}'` : `argument ${item.argumentIndex + 1}`;
+    return `'${fn.name}' ${label} expects ${expected}, got '${typeToString(actual)}'`;
   }
 
   private memberType(expression: MemberExpression): TypeRef {
@@ -1742,4 +1914,9 @@ function argumentCountText(minArguments: number, maxArguments: number): string {
   if (minArguments === maxArguments) return String(maxArguments);
   if (maxArguments === minArguments + 1) return `${minArguments} or ${maxArguments}`;
   return `${minArguments}-${maxArguments}`;
+}
+
+function requiredParameterCount(parameters: readonly ParameterDeclaration[]): number {
+  const firstDefault = parameters.findIndex((parameter) => parameter.defaultValue !== null);
+  return firstDefault < 0 ? parameters.length : firstDefault;
 }
