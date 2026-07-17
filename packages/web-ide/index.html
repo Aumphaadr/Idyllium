@@ -195,6 +195,14 @@
                 <span>Перетащите файлы сюда</span>
                 <small>или нажмите, чтобы выбрать .idyl, .txt, ассеты или ZIP-проект</small>
               </button>
+              <div id="upload-conflict" class="upload-conflict" role="alert" hidden>
+                <strong id="upload-conflict-name"></strong>
+                <span>Файл с таким именем уже существует. Заменить его?</span>
+                <div class="upload-conflict-actions">
+                  <button id="upload-conflict-skip" type="button">Оставить прежний</button>
+                  <button id="upload-conflict-replace" class="primary" type="button">Заменить</button>
+                </div>
+              </div>
             </div>
           </div>
           <button id="download-project-button" class="icon-button" type="button" title="Скачать проект" aria-label="Скачать проект">

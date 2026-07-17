@@ -123,6 +123,7 @@
   let assetFontCounter = 0;
   let activeAssetFontFace = null;
   let activeAssetImageCleanup = null;
+  let pendingUploadConflictResolve = null;
   const colorCopyTimers = new WeakMap();
   const browserAssetUrls = new Map();
   const structuredViewModes = new Map();
@@ -161,6 +162,10 @@
   const uploadMenu = document.getElementById('upload-menu');
   const dropArea = document.getElementById('drop-area');
   const uploadInput = document.getElementById('upload-input');
+  const uploadConflict = document.getElementById('upload-conflict');
+  const uploadConflictName = document.getElementById('upload-conflict-name');
+  const uploadConflictSkip = document.getElementById('upload-conflict-skip');
+  const uploadConflictReplace = document.getElementById('upload-conflict-replace');
   const themeButton = document.getElementById('theme-button');
   const themeMenu = document.getElementById('theme-menu');
   const themeDarkButton = document.getElementById('theme-dark-button');
@@ -214,6 +219,8 @@
   document.getElementById('download-project-button').addEventListener('click', downloadProject);
   uploadButton.addEventListener('click', toggleUploadMenu);
   dropArea.addEventListener('click', () => uploadInput.click());
+  uploadConflictSkip.addEventListener('click', () => resolveUploadConflict(false));
+  uploadConflictReplace.addEventListener('click', () => resolveUploadConflict(true));
   fileList.addEventListener('contextmenu', (event) => {
     if (event.target instanceof Element && event.target.closest('.file-row')) return;
     event.preventDefault();
@@ -3356,15 +3363,28 @@
     const selected = Array.from(fileList || []);
     if (selected.length === 0) return;
 
+    saveCurrentEditor();
     let lastPath = null;
+    let loadedCurrentFile = false;
+    let loadedCount = 0;
+    let skippedCount = 0;
     for (const file of selected) {
-      lastPath = await loadExternalFile(file);
+      const loadedPath = await loadExternalFile(file);
+      if (loadedPath) {
+        if (loadedPath === currentFile) loadedCurrentFile = true;
+        lastPath = loadedPath;
+        loadedCount++;
+      } else {
+        skippedCount++;
+      }
     }
 
     hideUploadMenu();
+    if (loadedCurrentFile) editorReady = false;
     if (lastPath) openFile(lastPath);
     scheduleAutosave();
-    setStatus(`Загружено файлов: ${selected.length}`);
+    const skippedText = skippedCount > 0 ? `, пропущено: ${skippedCount}` : '';
+    setStatus(`Загружено файлов: ${loadedCount}${skippedText}`);
   }
 
   async function loadExternalFile(file) {
@@ -3373,6 +3393,12 @@
     }
 
     const path = normalizeWorkspacePath(file.webkitRelativePath || file.name);
+    if (path === WORKSPACE_ROOT || folders.has(path) || hasFileAncestor(path)) {
+      setStatus(`Нельзя загрузить файл по пути «${shortFileName(path) || path}»`, true);
+      return null;
+    }
+    if (files.has(path) && !await requestUploadReplacement(path)) return null;
+
     if (isEditableTextFile(file)) {
       setProjectFile(path, {
         kind: 'text',
@@ -4777,9 +4803,29 @@
   }
 
   function hideUploadMenu() {
+    resolveUploadConflict(false);
     uploadMenu.hidden = true;
     uploadButton.setAttribute('aria-expanded', 'false');
     dropArea.classList.remove('drag-over');
+  }
+
+  function requestUploadReplacement(path) {
+    showUploadMenu();
+    dropArea.hidden = true;
+    uploadConflict.hidden = false;
+    uploadConflictName.textContent = shortFileName(path);
+    return new Promise((resolve) => {
+      pendingUploadConflictResolve = resolve;
+      uploadConflictReplace.focus();
+    });
+  }
+
+  function resolveUploadConflict(replace) {
+    const resolve = pendingUploadConflictResolve;
+    pendingUploadConflictResolve = null;
+    uploadConflict.hidden = true;
+    dropArea.hidden = false;
+    if (resolve) resolve(replace);
   }
 
   function installDropArea() {

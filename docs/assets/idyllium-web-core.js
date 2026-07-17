@@ -10445,6 +10445,14 @@ function runtimeEquals(left, right) {
     const rightIsNull = right === null || isRuntimeNullValue(right);
     if (leftIsNull || rightIsNull)
         return leftIsNull && rightIsNull;
+    if (left instanceof IdylliumColor || right instanceof IdylliumColor) {
+        if (!(left instanceof IdylliumColor) || !(right instanceof IdylliumColor))
+            return false;
+        return left.red === right.red
+            && left.green === right.green
+            && left.blue === right.blue
+            && left.alpha === right.alpha;
+    }
     if (left instanceof IdylliumArray || right instanceof IdylliumArray) {
         if (!(left instanceof IdylliumArray) || !(right instanceof IdylliumArray))
             return false;
@@ -11365,12 +11373,14 @@ function runtimePropertySetters(obj) {
     });
     return setters;
 }
-function defineValidatedRuntimeProperty(obj, name, defaultValue, validator) {
+function defineValidatedRuntimeProperty(obj, name, defaultValue, validator, afterSet) {
     const values = trackedRuntimePropertyValues(obj);
     values[name] = defaultValue;
     runtimePropertySetters(obj)[name] = (value, file, line) => {
-        values[name] = validator(value, file, line);
+        const validated = validator(value, file, line);
+        values[name] = validated;
         explicitRuntimeProperties(obj).add(name);
+        afterSet?.(validated, file, line);
     };
     Object.defineProperty(obj, name, {
         enumerable: true,
@@ -11379,8 +11389,10 @@ function defineValidatedRuntimeProperty(obj, name, defaultValue, validator) {
             return values[name];
         },
         set(value) {
-            values[name] = validator(value, 'runtime', 0);
+            const validated = validator(value, 'runtime', 0);
+            values[name] = validated;
             explicitRuntimeProperties(obj).add(name);
+            afterSet?.(validated, 'runtime', 0);
         },
     });
 }
@@ -12289,7 +12301,7 @@ function initializeAudioObject(obj, typeName, state) {
                 throw new IdylliumRuntimeError(file, line, `Music.position must be between 0 and ${duration}, got ${position}`);
             }
             return position;
-        });
+        }, () => pushAudioCommand(obj, state, 'seek'));
     }
     state.audio.push(obj);
 }
@@ -12314,15 +12326,24 @@ function audioCommands(obj) {
 }
 function audioDuration(fileSystem, filePath) {
     try {
+        if (fileSystem.readBytes) {
+            const duration = encodedAudioDuration(nodeBuffer.from(fileSystem.readBytes(filePath)));
+            if (duration > 0)
+                return duration;
+        }
         const text = fileSystem.readText(filePath);
         const dataUrlMatch = /^data:audio\/[^;]+;base64,(.+)$/u.exec(text);
-        if (dataUrlMatch)
-            return wavDuration(nodeBuffer.from(dataUrlMatch[1], 'base64'));
-        return wavDuration(nodeBuffer.from(text, 'binary'));
+        const bytes = dataUrlMatch
+            ? nodeBuffer.from(dataUrlMatch[1], 'base64')
+            : nodeBuffer.from(text, 'binary');
+        return encodedAudioDuration(bytes);
     }
     catch {
         return 0;
     }
+}
+function encodedAudioDuration(bytes) {
+    return wavDuration(bytes) || mp3Duration(bytes);
 }
 function wavDuration(bytes) {
     if (!bytes || typeof bytes.length !== 'number' || bytes.length < 44)
@@ -12337,6 +12358,57 @@ function wavDuration(bytes) {
     if (!Number.isFinite(bytesPerSecond) || bytesPerSecond <= 0)
         return 0;
     return dataSize / bytesPerSecond;
+}
+function mp3Duration(bytes) {
+    if (!bytes || typeof bytes.length !== 'number' || bytes.length < 4)
+        return 0;
+    let offset = 0;
+    if (bytes.length >= 10
+        && bytes[0] === 0x49
+        && bytes[1] === 0x44
+        && bytes[2] === 0x33) {
+        const tagSize = ((bytes[6] & 0x7f) << 21)
+            | ((bytes[7] & 0x7f) << 14)
+            | ((bytes[8] & 0x7f) << 7)
+            | (bytes[9] & 0x7f);
+        offset = 10 + tagSize + ((bytes[5] & 0x10) !== 0 ? 10 : 0);
+    }
+    const mpeg1Layer3Bitrates = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0];
+    const mpeg2Layer3Bitrates = [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 0];
+    const baseSampleRates = [44100, 48000, 32000];
+    let duration = 0;
+    let frameCount = 0;
+    while (offset + 4 <= bytes.length) {
+        const second = bytes[offset + 1];
+        if (bytes[offset] !== 0xff || (second & 0xe0) !== 0xe0) {
+            offset++;
+            continue;
+        }
+        const versionBits = (second >> 3) & 0x03;
+        const layerBits = (second >> 1) & 0x03;
+        const third = bytes[offset + 2];
+        const bitrateIndex = (third >> 4) & 0x0f;
+        const sampleRateIndex = (third >> 2) & 0x03;
+        const padding = (third >> 1) & 0x01;
+        if (versionBits === 1 || layerBits !== 1 || bitrateIndex === 0 || bitrateIndex === 15 || sampleRateIndex === 3) {
+            offset++;
+            continue;
+        }
+        const mpeg1 = versionBits === 3;
+        const bitrate = (mpeg1 ? mpeg1Layer3Bitrates : mpeg2Layer3Bitrates)[bitrateIndex] * 1000;
+        const sampleRateDivisor = versionBits === 3 ? 1 : versionBits === 2 ? 2 : 4;
+        const sampleRate = baseSampleRates[sampleRateIndex] / sampleRateDivisor;
+        const samplesPerFrame = mpeg1 ? 1152 : 576;
+        const frameLength = Math.floor((mpeg1 ? 144 : 72) * bitrate / sampleRate) + padding;
+        if (bitrate <= 0 || sampleRate <= 0 || frameLength <= 4 || offset + frameLength > bytes.length) {
+            offset++;
+            continue;
+        }
+        duration += samplesPerFrame / sampleRate;
+        frameCount++;
+        offset += frameLength;
+    }
+    return frameCount > 0 ? duration : 0;
 }
 function isGuiWidget(typeName) {
     return typeName === 'Window'
@@ -12516,6 +12588,15 @@ async function stepGuiTimer(timer, deltaTime) {
     return changed;
 }
 function applyGuiEventPayload(target, eventName, payload, state) {
+    if (target.__idylliumType === 'audio.Music' && eventName === 'metadata') {
+        const duration = Number(payload.duration);
+        if (Number.isFinite(duration) && duration >= 0) {
+            target.duration = duration;
+            if (typeof target.position === 'number' && target.position > duration)
+                target.position = duration;
+        }
+        return;
+    }
     if (target.__idylliumType === 'audio.Music' && eventName === 'finished') {
         target.is_playing = false;
         return;

@@ -852,6 +852,49 @@ button:disabled:active {
   background: color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
+.upload-conflict {
+  display: grid;
+  gap: 8px;
+  padding: 4px;
+}
+
+.upload-conflict[hidden] {
+  display: none;
+}
+
+.upload-conflict strong {
+  overflow-wrap: anywhere;
+  color: var(--text);
+}
+
+.upload-conflict span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.upload-conflict-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+  margin-top: 3px;
+}
+
+.upload-conflict-actions button {
+  min-height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-soft);
+  color: var(--text);
+  padding: 0 10px;
+}
+
+.upload-conflict-actions button.primary {
+  border-color: var(--accent-strong);
+  background: var(--accent);
+  color: #ffffff;
+}
+
 .workspace {
   height: calc(100vh - 50px);
   display: grid;
