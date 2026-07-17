@@ -92,6 +92,19 @@ function tinyWavBinary(): string {
   return bytes.toString('binary');
 }
 
+function tinyMp3Bytes(frameCount = 10): Uint8Array {
+  const frameLength = Math.floor(144 * 128000 / 44100);
+  const bytes = new Uint8Array(frameLength * frameCount);
+  for (let frame = 0; frame < frameCount; frame++) {
+    const offset = frame * frameLength;
+    bytes[offset] = 0xff;
+    bytes[offset + 1] = 0xfb;
+    bytes[offset + 2] = 0x90;
+    bytes[offset + 3] = 0x00;
+  }
+  return bytes;
+}
+
 function tinyTtfHeader(): Uint8Array {
   return new Uint8Array([0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
 }
@@ -1926,13 +1939,15 @@ test('colors factories produce Color values', async () => {
       colors.Color second = colors.HEX("#2291bc");
       colors.Color transparent;
 
+      console.write(first == second, '\\n');
+      console.write(first == colors.RGBA(34, 145, 188, 0.5), '\\n');
       console.write(first, '\\n', second, '\\n', transparent);
     }
   `);
 
   assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
   assert(
-    result.output === '#2291bc\n#2291bc\nrgba(0, 0, 0, 0)',
+    result.output === 'true\nfalse\n#2291bc\n#2291bc\nrgba(0, 0, 0, 0)',
     `unexpected output: ${JSON.stringify(result.output)}`,
   );
 });
@@ -4235,7 +4250,47 @@ test('audio module records sound and music commands', async () => {
   assert(sound.commands.map((command) => command.action).join(',') === 'play,pause,resume,stop', `unexpected sound commands: ${JSON.stringify(sound.commands)}`);
   assert(music.properties.loop === true, `unexpected music loop: ${JSON.stringify(music.properties)}`);
   assert(music.properties.volume === 0.25, `unexpected music volume: ${JSON.stringify(music.properties)}`);
-  assert(music.commands.map((command) => command.action).join(',') === 'play', `unexpected music commands: ${JSON.stringify(music.commands)}`);
+  assert(music.commands.map((command) => command.action).join(',') === 'seek,play', `unexpected music commands: ${JSON.stringify(music.commands)}`);
+});
+
+test('audio music reads MP3 duration from binary project assets', async () => {
+  const compilation = compileIdyllium(`
+    use audio;
+
+    main() {
+      audio.Music music;
+      music.load_from_file("theme.mp3");
+      music.position = music.duration / 2.0;
+      music.position = music.duration / 2.0;
+    }
+  `, { file: '/workspace/main.idyl' });
+  assert(compilation.success && compilation.jsCode !== null, compilation.diagnosticsText);
+
+  const runtime = createRuntime({
+    fileSystem: createMemoryRuntimeFileSystem({
+      '/workspace/theme.mp3': { bytes: tinyMp3Bytes() },
+    }),
+  });
+  const AsyncFunction = Object.getPrototypeOf(async function idle() {}).constructor;
+  const factory = new AsyncFunction(compilation.jsCode);
+  const program = await factory();
+  await program(runtime);
+
+  const music = runtime.getAudio().find((item) => item.type === 'audio.Music');
+  assert(music !== undefined, 'expected MP3 music snapshot');
+  const expectedDuration = 10 * 1152 / 44100;
+  assert(
+    Math.abs(Number(music.properties.duration) - expectedDuration) < 0.000001,
+    `unexpected MP3 duration: ${String(music.properties.duration)}`,
+  );
+  assert(
+    Math.abs(Number(music.properties.position) - expectedDuration / 2) < 0.000001,
+    `unexpected MP3 midpoint: ${String(music.properties.position)}`,
+  );
+  assert(
+    music.commands.map((command) => command.action).join(',') === 'seek,seek',
+    `expected repeated seek commands, got ${JSON.stringify(music.commands)}`,
+  );
 });
 
 test('audio load and property errors are readable', async () => {
@@ -4293,6 +4348,9 @@ test('audio music finished event runs callback', async () => {
 
   const music = result.runtime.getAudio().find((item) => item.type === 'audio.Music');
   assert(music !== undefined, 'expected music snapshot');
+  await result.runtime.dispatchGuiEvent(music.id, 'metadata', { duration: 12.5 });
+  const withMetadata = result.runtime.getAudio().find((item) => item.id === music.id);
+  assert(withMetadata?.properties.duration === 12.5, `unexpected metadata duration: ${JSON.stringify(withMetadata)}`);
   await result.runtime.dispatchGuiEvent(music.id, 'finished', {});
   assert(result.runtime.getOutput() === 'finished: intro.wav\n', `unexpected on_finished output: ${JSON.stringify(result.runtime.getOutput())}`);
   const updated = result.runtime.getAudio().find((item) => item.id === music.id);

@@ -31,6 +31,7 @@
     if (nextStateJson === stateJson) return;
     const generationChanged = nextState.generation !== state.generation;
     if (generationChanged) clearAudioEntries();
+    if (!generationChanged && patchLabelTextOnly(nextState, nextStateJson)) return;
     if (draggingControlId !== null) {
       deferredState = nextState;
       return;
@@ -104,6 +105,59 @@
 
     restoreActiveControl();
     syncAudio(state.audio || []);
+  }
+
+  function patchLabelTextOnly(nextState, nextStateJson) {
+    if (labelInsensitiveStateJson(state) !== labelInsensitiveStateJson(nextState)) return false;
+
+    const patches = [];
+    const visit = (widget) => {
+      if (widget.type === 'gui.Label') {
+        const element = findWidgetElement(widget.id);
+        if (!element) return false;
+        patches.push([element, stringValue(widget.properties && widget.properties.text, '')]);
+      }
+      for (const child of widget.children || []) {
+        if (!visit(child)) return false;
+      }
+      return true;
+    };
+
+    for (const win of nextState.windows || []) {
+      if (!visit(win)) return false;
+    }
+    for (const [element, text] of patches) element.textContent = text;
+    state = nextState;
+    stateJson = nextStateJson;
+    syncAudio(state.audio || []);
+    return true;
+  }
+
+  function labelInsensitiveStateJson(snapshot) {
+    const normalizeWidget = (widget) => ({
+      ...widget,
+      properties: widget.type === 'gui.Label'
+        ? { ...(widget.properties || {}), text: null }
+        : widget.properties,
+      children: (widget.children || []).map(normalizeWidget),
+    });
+    return JSON.stringify({
+      ...snapshot,
+      windows: (snapshot.windows || []).map(normalizeWidget),
+    });
+  }
+
+  function findWidgetElement(widgetId) {
+    const expected = String(widgetId);
+    const visit = (element) => {
+      if (element && element.dataset && element.dataset.widgetId === expected) return element;
+      for (const child of element && element.children ? element.children : []) {
+        const found = visit(child);
+        if (found) return found;
+      }
+      return null;
+    };
+    return visit(stage);
   }
 
   function renderWindow(win) {
@@ -723,6 +777,7 @@
       instances: new Set(),
       handledCommands: new Set(),
       lastPosition: null,
+      pendingPosition: null,
       volume: 1,
     };
     audioEntries.set(snapshot.id, entry);
@@ -746,13 +801,20 @@
     applyElementVolume(element, entry.volume);
 
     const position = Number(props.position);
-    if (Number.isFinite(position) && position >= 0 && position !== entry.lastPosition && element.readyState > 0) {
-      try {
-        element.currentTime = position;
-        entry.lastPosition = position;
-      } catch (_error) {
-        // Browsers can reject seeking before enough metadata is available.
-      }
+    if (Number.isFinite(position) && position >= 0) entry.pendingPosition = position;
+    applyPendingMusicPosition(entry);
+  }
+
+  function applyPendingMusicPosition(entry, force = false) {
+    const element = entry.element;
+    const position = Number(entry.pendingPosition);
+    if (!element || element.readyState <= 0 || !Number.isFinite(position) || position < 0) return;
+    if (!force && position === entry.lastPosition) return;
+    try {
+      element.currentTime = position;
+      entry.lastPosition = position;
+    } catch (_error) {
+      // loadedmetadata will retry the pending position.
     }
   }
 
@@ -813,14 +875,13 @@
   function runMusicCommand(entry, action) {
     const element = ensureMusicElement(entry);
     if (!entry.src) return;
+    if (action === 'seek') {
+      applyPendingMusicPosition(entry, true);
+      return;
+    }
     if (action === 'play') {
       applyElementVolume(element, entry.volume);
-      try {
-        element.currentTime = 0;
-        entry.lastPosition = 0;
-      } catch (_error) {
-        // Metadata might not be ready yet.
-      }
+      applyPendingMusicPosition(entry, true);
       safePlay(element);
       return;
     }
@@ -838,6 +899,7 @@
       try {
         element.currentTime = 0;
         entry.lastPosition = 0;
+        entry.pendingPosition = 0;
       } catch (_error) {
         // Metadata might not be ready yet.
       }
@@ -849,6 +911,14 @@
     const element = new Audio();
     element.preload = 'auto';
     installVolumeGuards(element, () => entry.volume);
+    element.addEventListener('loadedmetadata', () => {
+      applyElementVolume(element, entry.volume);
+      applyPendingMusicPosition(entry);
+      const duration = Number(element.duration);
+      if (Number.isFinite(duration) && duration >= 0) {
+        postGuiEvent(entry.id, 'metadata', { duration });
+      }
+    });
     element.addEventListener('ended', () => {
       if (!element.loop) postGuiEvent(entry.id, 'finished', {});
     });

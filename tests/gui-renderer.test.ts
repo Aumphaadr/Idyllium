@@ -28,6 +28,7 @@ class FakeAudio {
   loop = false;
   preload = '';
   currentTime = 0;
+  duration = 0;
   readyState = 1;
   playCount = 0;
   pauseCount = 0;
@@ -333,6 +334,50 @@ test('gui renderer changes SpinBox with the mouse wheel', () => {
       && message.payload?.value === 8
     )),
     `expected SpinBox change event, got ${JSON.stringify(harness.postedMessages)}`,
+  );
+});
+
+test('gui renderer updates timer labels without replacing controls', () => {
+  const harness = createRendererHarness();
+  const snapshot = (text: string) => ({
+    generation: 1,
+    audio: [],
+    windows: [{
+      id: 1,
+      type: 'gui.Window',
+      properties: { width: 320, height: 180, title: 'Timer' },
+      children: [{
+        id: 2,
+        type: 'gui.Label',
+        properties: { x: 10, y: 20, width: 120, height: 32, visible: true, text },
+        children: [],
+      }, {
+        id: 3,
+        type: 'gui.Button',
+        properties: { x: 10, y: 70, width: 120, height: 32, visible: true, text: 'Stop' },
+        children: [],
+      }],
+    }],
+    canvases: [],
+    modals: [],
+  });
+
+  harness.sendSnapshot(snapshot('0'));
+  const originalButton = findElement(harness.stage, (element) => element.dataset?.widgetId === '3');
+  assert(originalButton !== null, 'expected Timer stop button');
+
+  harness.sendSnapshot(snapshot('1'));
+  const updatedButton = findElement(harness.stage, (element) => element.dataset?.widgetId === '3');
+  const updatedLabel = findElement(harness.stage, (element) => element.dataset?.widgetId === '2');
+  assert(updatedButton === originalButton, 'timer tick must preserve the existing Button DOM node');
+  assert(updatedLabel?.textContent === '1', `expected updated Label text, got ${updatedLabel?.textContent}`);
+
+  updatedButton.dispatch('click');
+  assert(
+    harness.postedMessages.some((message: any) => (
+      message?.type === 'guiEvent' && message.objectId === 3 && message.eventName === 'click'
+    )),
+    `expected first Button click to reach the host, got ${JSON.stringify(harness.postedMessages)}`,
   );
 });
 
@@ -763,6 +808,85 @@ test('gui renderer sends music finished event to the host', () => {
     JSON.stringify(harness.postedMessages).includes('"eventName":"finished"'),
     `expected finished event, got ${JSON.stringify(harness.postedMessages)}`,
   );
+});
+
+test('gui renderer retries a pending music seek after metadata loads', () => {
+  const harness = createRendererHarness();
+
+  harness.sendSnapshot({
+    generation: 1,
+    audio: [{
+      id: 9,
+      type: 'audio.Music',
+      properties: {
+        webview_uri: 'theme.mp3',
+        volume: 0.25,
+        loop: false,
+        position: 0,
+      },
+      commands: [],
+    }],
+    windows: [],
+    canvases: [],
+    modals: [],
+  });
+
+  const music = FakeAudio.instances[0];
+  music.readyState = 0;
+  harness.sendSnapshot({
+    generation: 1,
+    audio: [{
+      id: 9,
+      type: 'audio.Music',
+      properties: {
+        webview_uri: 'theme.mp3',
+        volume: 0.25,
+        loop: false,
+        position: 12.5,
+      },
+      commands: [{ id: 1, action: 'play' }],
+    }],
+    windows: [],
+    canvases: [],
+    modals: [],
+  });
+  assertNumberEquals(music.currentTime, 0, 'position before metadata');
+
+  music.readyState = 1;
+  music.duration = 30;
+  music.dispatch('loadedmetadata');
+  assertNumberEquals(music.currentTime, 12.5, 'position after metadata');
+  assertNumberEquals(music.playCount, 1, 'play command count');
+  assert(
+    harness.postedMessages.some((message: any) => (
+      message?.type === 'guiEvent'
+      && message.objectId === 9
+      && message.eventName === 'metadata'
+      && message.payload?.duration === 30
+    )),
+    `expected metadata event, got ${JSON.stringify(harness.postedMessages)}`,
+  );
+
+  music.currentTime = 20;
+  harness.sendSnapshot({
+    generation: 1,
+    audio: [{
+      id: 9,
+      type: 'audio.Music',
+      properties: {
+        webview_uri: 'theme.mp3',
+        volume: 0.25,
+        loop: false,
+        position: 12.5,
+      },
+      commands: [{ id: 1, action: 'play' }, { id: 2, action: 'seek' }],
+    }],
+    windows: [],
+    canvases: [],
+    modals: [],
+  });
+  assertNumberEquals(music.currentTime, 12.5, 'repeated seek position');
+  assertNumberEquals(music.playCount, 1, 'seek must not start another playback');
 });
 
 async function main(): Promise<void> {
