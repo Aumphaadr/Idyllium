@@ -28,6 +28,7 @@ void function on_mouse_pressed(gui.Canvas canvas, gui.MouseEvent e) {
     if (e.mouse_button == "LEFT") {
         drawable.Circle tmp;
         tmp.radius = 20;
+        tmp.set_origin(20, 20);
         tmp.fill_color = colors.WHITE;
         tmp.x = e.x;
         tmp.y = e.y;

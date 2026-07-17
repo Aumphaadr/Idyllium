@@ -1,0 +1,183 @@
+<div class="docs-section">
+  <h2>Готовые геометрические проверки</h2>
+  <p>
+    В предыдущих уроках мы вручную искали точку внутри фигуры и писали функции
+    для столкновений. Эти алгоритмы важно было разобрать: теперь выражения вроде
+    «круги пересекаются» не выглядят магией.
+  </p>
+  <p>
+    Но переписывать одну и ту же геометрию в каждой игре не обязательно.
+    У drawable-объектов есть готовые методы <code>contains()</code> и
+    <code>intersects()</code>.
+  </p>
+
+  <h3>Находится ли точка внутри</h3>
+  <p>
+    Метод <code>contains(x, y)</code> получает координаты мировой точки и
+    возвращает <code>true</code> или <code>false</code>.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+if (button_shape.contains(e.x, e.y)) {
+    button_shape.fill_color = colors.GREEN;
+} else {
+    button_shape.fill_color = colors.BLUE;
+}
+</script></idyl-code-block>
+
+  <p>
+    Метод учитывает не только <code>x</code>, <code>y</code> и размеры, но также
+    <code>origin</code> и <code>rotation</code>. Если прямоугольник повёрнут на
+    27 градусов, его область тоже будет повёрнутой, а не останется невидимым
+    прямым прямоугольником вокруг рисунка.
+  </p>
+
+  <h3>Пересекаются ли два объекта</h3>
+  <p>
+    Метод <code>intersects(other)</code> проверяет уже не точку, а другой
+    drawable-объект.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+if (player.intersects(wall)) {
+    player.fill_color = colors.RED;
+}
+</script></idyl-code-block>
+
+  <p>
+    Объекты не обязаны принадлежать одному классу. Можно проверять круг с
+    прямоугольником, линию со спрайтом или текст с кругом. Метод сам выбирает
+    подходящий геометрический алгоритм. Касание границ считается пересечением.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+bool function objects_touch(
+    drawable.Drawable first,
+    drawable.Drawable second
+) {
+    return first.intersects(second);
+}
+</script></idyl-code-block>
+
+  <p>
+    Базовый тип <code>drawable.Drawable</code> пригодился благодаря
+    полиморфизму: функция принимает любые отрисовываемые объекты, у которых есть
+    нужная геометрия.
+  </p>
+
+  <h3>Текст и картинки</h3>
+  <p>
+    У спрайта проверяется прямоугольник всей картинки, включая прозрачные
+    пиксели. У текста проверяется прямоугольная область строки, а не контур
+    каждой отдельной буквы. Если шрифт явно не назначен, Idyllium использует
+    встроенный Source Code Pro и знает его точные размеры.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+drawable.Text hint;
+hint.text = "Нажми Enter";
+hint.font_size = 28;
+
+bool mouse_over_hint = hint.contains(e.x, e.y);
+</script></idyl-code-block>
+
+  <p>
+    Свой шрифт назначается привычным способом. Геометрия поддерживает все те же
+    форматы, что и отрисовка: TTF, OTF, WOFF и WOFF2.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+fonts.Font heading_font;
+heading_font.load_from_file("Lobster-Regular.ttf");
+
+drawable.Text heading;
+heading.font = heading_font;
+heading.text = "Новая игра";
+heading.font_size = 48;
+
+bool mouse_over_text = heading.contains(e.x, e.y);
+</script></idyl-code-block>
+
+  <h3>Точка и маленький круг дают разные ответы</h3>
+  <p>
+    В полном примере курсор считается точкой, а жёлтый маркер вокруг него имеет
+    радиус 12. Поэтому около края прямоугольника возможна интересная ситуация:
+    точка ещё снаружи, но круг уже касается фигуры.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use colors;
+use drawable;
+use gui;
+
+drawable.Rectangle target;
+drawable.Circle probe;
+
+void function redraw(gui.Canvas canvas) {
+    canvas.fill(colors.RGB(20, 24, 32));
+    canvas.draw(target);
+    canvas.draw(probe);
+}
+
+void function init(gui.Canvas canvas) {
+    target.width = 180;
+    target.height = 90;
+    target.set_origin(90, 45);
+    target.x = 270;
+    target.y = 150;
+    target.rotation = 25;
+    target.fill_color = colors.RGB(34, 145, 188);
+    target.border_width = 5;
+    target.border_color = colors.TRANSPARENT;
+
+    probe.radius = 12;
+    probe.set_origin(12, 12);
+    probe.fill_color = colors.RGB(255, 210, 80);
+
+    redraw(canvas);
+}
+
+void function mouse_move(gui.Canvas canvas, gui.MouseEvent e) {
+    probe.x = e.x;
+    probe.y = e.y;
+
+    if (target.contains(e.x, e.y)) {
+        target.border_color = colors.WHITE;
+    } else {
+        target.border_color = colors.TRANSPARENT;
+    }
+
+    if (target.intersects(probe)) {
+        target.fill_color = colors.RED;
+    } else {
+        target.fill_color = colors.RGB(34, 145, 188);
+    }
+
+    redraw(canvas);
+}
+
+main() {
+    gui.Window win;
+    win.width = 600;
+    win.height = 400;
+    win.title = "contains() и intersects()";
+
+    gui.Canvas canvas;
+    canvas.x = 20;
+    canvas.y = 20;
+    canvas.width = 540;
+    canvas.height = 320;
+    canvas.on_init = init;
+    canvas.on_mouse_move = mouse_move;
+
+    win.add_child(canvas);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <p>
+    Цвет и прозрачность не меняют геометрию. Полностью прозрачная фигура всё
+    равно существует и может участвовать в проверках, пока её размеры не равны
+    нулю.
+  </p>
+</div>

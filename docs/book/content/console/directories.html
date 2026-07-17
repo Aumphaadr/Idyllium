@@ -1,0 +1,162 @@
+<div class="docs-section">
+  <h2>Файлу понадобился дом</h2>
+  <p>
+    Пока файлов мало, их можно складывать рядом с <code>main.idyl</code>. Но у
+    игры быстро появляются сохранения, картинки, настройки и таблицы уровней.
+    Если свалить всё в одну кучу, найти нужный файл станет труднее, чем нужный
+    носок в ящике после очень бодрой стирки.
+  </p>
+  <p>
+    Попытка сразу записать файл в несуществующую папку закончится ошибкой:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use file;
+
+main() {
+    file.ostream fout = file.open("saves/player.txt", "write");
+}
+  </script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:4: runtime error: file.open() cannot open 'saves/player.txt' for writing: directory does not exist</idyl-error-block>
+
+  <p>
+    Файл <code>player.txt</code> создать можно, но сначала программе нужна папка
+    <code>saves</code>.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Создаём папку</h2>
+
+  <idyl-code-block><script type="text/plain">
+use file;
+
+main() {
+    file.create_directory("saves");
+
+    file.ostream fout = file.open("saves/player.txt", "write");
+    fout.write_line("Liam;12");
+    fout.close();
+}
+  </script></idyl-code-block>
+
+  <p>
+    Метод <code>create_directory()</code> создаёт одну папку. Её родитель уже
+    должен существовать. Поэтому создать <code>game/saves/players</code> одним
+    обычным вызовом не получится: сначала нет даже папки <code>game</code>.
+  </p>
+  <p>
+    Когда промежуточные папки тоже нужно создать автоматически, передайте
+    именованный аргумент <code>parents=true</code>:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+file.create_directory("game/saves/players", parents=true);
+  </script></idyl-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>Что находится по этому пути?</h2>
+  <p>
+    Метод <code>exists()</code> отвечает только на вопрос «что-нибудь здесь
+    есть?». Иногда этого недостаточно: файл нельзя открыть как папку, а в папку
+    нельзя записывать строки как в файл.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use file;
+
+main() {
+    file.create_directory("saves");
+
+    console.writeln(file.exists("saves"));
+    console.writeln(file.is_directory("saves"));
+    console.writeln(file.is_file("saves"));
+}
+  </script></idyl-code-block>
+
+  <idyl-output-block>true
+true
+false</idyl-output-block>
+
+  <p>
+    А <code>list_directory()</code> возвращает динамический массив с именами
+    файлов и папок, лежащих непосредственно внутри указанной папки. Имена
+    отсортированы, чтобы один и тот же проект не выдавал случайный порядок на
+    разных компьютерах.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+dyn_array<string> items = file.list_directory("saves");
+console.writeln(items);
+  </script></idyl-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>Копирование и переименование</h2>
+  <p>
+    <code>copy()</code> создаёт копию файла или целой папки вместе с её
+    содержимым. <code>rename()</code> меняет путь существующего объекта: этим
+    методом можно и переименовать, и перенести его в другую папку.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+file.copy("saves/player.txt", "saves/player_backup.txt");
+file.rename("saves/player_backup.txt", "saves/liam_backup.txt");
+  </script></idyl-code-block>
+
+  <p>
+    Оба метода откажутся работать, если путь назначения уже занят. Это защита
+    от опечатки: программа не должна молча уничтожать старый файл только потому,
+    что ученик случайно указал его имя.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Удаление без неприятных сюрпризов</h2>
+  <p>
+    <code>remove()</code> удаляет файл или пустую папку. Если папка не пустая,
+    обычный вызов остановится с runtime error. Так язык даёт возможность ещё
+    раз проверить путь перед удалением целого дерева.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+file.remove("saves/liam_backup.txt");
+file.remove("saves"); // Сработает, только если saves теперь пуста
+  </script></idyl-code-block>
+
+  <p>
+    Когда удалить папку вместе со всем содержимым действительно необходимо,
+    это намерение пишется прямо в коде:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+file.remove("old_saves", recursive=true);
+  </script></idyl-code-block>
+
+  <p>
+    Создавать, копировать, переносить и удалять объекты можно только внутри
+    текущего проекта. Путь с множеством <code>../</code> не даст программе
+    добраться до чужих каталогов компьютера.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Поток ещё открыт?</h2>
+  <p>
+    У входных и выходных потоков есть readonly-свойство <code>is_open</code>.
+    Оно равно <code>true</code> до вызова <code>close()</code> и
+    <code>false</code> после него.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+file.ostream fout = file.open("result.txt", "write");
+console.writeln(fout.is_open); // true
+
+fout.close();
+console.writeln(fout.is_open); // false
+  </script></idyl-code-block>
+</div>
+

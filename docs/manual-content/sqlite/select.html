@@ -1,0 +1,170 @@
+<div class="docs-section">
+  <h2>Просим базу вернуть данные</h2>
+  <p>
+    Команда <code>SELECT</code> выбирает данные из таблицы. После слова
+    <code>SELECT</code> перечисляются нужные колонки, а после
+    <code>FROM</code> — таблица.
+  </p>
+  <table>
+    <caption>Исходная таблица players</caption>
+    <thead><tr><th>name</th><th>level</th><th>is_active</th></tr></thead>
+    <tbody>
+      <tr><td>Liam</td><td>7</td><td>1</td></tr>
+      <tr><td>Mira</td><td>12</td><td>1</td></tr>
+      <tr><td>Nika</td><td>4</td><td>0</td></tr>
+    </tbody>
+  </table>
+  <idyl-code-block><script type="text/plain">
+sqlite.Result rows = db.execute(
+    "SELECT name, level FROM players"
+);
+</script></idyl-code-block>
+  <p>
+    Результат может содержать ноль, одну или много строк, поэтому
+    <code>execute()</code> не может сразу вернуть одно имя. Он возвращает
+    объект <code>sqlite.Result</code> — набор найденных строк.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Первая строка не выбирается сама</h2>
+  <p>
+    Новый <code>Result</code> находится <em>перед</em> первой строкой. Метод
+    <code>next()</code> переходит к следующей строке и отвечает, удалось ли это
+    сделать.
+  </p>
+  <idyl-code-block><script type="text/plain">
+sqlite.Result rows = db.execute(
+    "SELECT name, level FROM players"
+);
+
+if (rows.next()) {
+    string name = rows.get_string("name");
+    int level = rows.get_int("level");
+    console.writeln(name, ": level ", level);
+}
+
+rows.close();
+</script></idyl-code-block>
+  <p>
+    Если таблица пуста, <code>next()</code> вернёт <code>false</code>, а тело
+    <code>if</code> не выполнится. Вызывать методы чтения до успешного
+    <code>next()</code> нельзя: у результата ещё нет текущей строки.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Читаем все строки</h2>
+  <p>
+    Для неизвестного заранее количества строк отлично подходит цикл
+    <code>while</code>. Каждый вызов <code>next()</code> передвигается дальше, а
+    после последней строки возвращает <code>false</code>.
+  </p>
+  <idyl-code-block><script type="text/plain">
+while (rows.next()) {
+    console.writeln(
+        rows.get_string("name"),
+        ": level ",
+        rows.get_int("level")
+    );
+}
+</script></idyl-code-block>
+  <idyl-output-block>Liam: level 7
+Mira: level 12
+Nika: level 4</idyl-output-block>
+</div>
+
+<div class="docs-section">
+  <h2>Каждому типу — свой метод чтения</h2>
+  <p>
+    Idyllium не превращает данные базы во что попало. Текст читается через
+    <code>get_string()</code>, целое число — через <code>get_int()</code>,
+    дробное — через <code>get_float()</code>, а булево — через
+    <code>get_bool()</code>. Во все методы передаётся название колонки.
+  </p>
+  <idyl-code-block><script type="text/plain">
+int id = rows.get_int("id");
+string name = rows.get_string("name");
+int level = rows.get_int("level");
+bool active = rows.get_bool("is_active");
+</script></idyl-code-block>
+  <p>
+    В самой SQLite отдельного булева типа нет. Для него используются числа
+    <code>0</code> и <code>1</code>, а <code>get_bool()</code> аккуратно
+    превращает их в <code>false</code> и <code>true</code>.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Порядок и вычисляемая колонка</h2>
+  <p>
+    <code>ORDER BY level DESC</code> ставит игроков с большим уровнем первыми.
+    SQL умеет вычислить значение, а <code>AS</code> даёт вычисленной колонке
+    понятное имя.
+  </p>
+  <idyl-code-block><script type="text/plain">
+sqlite.Result rows = db.execute(
+    "SELECT name, level, level + 1 AS next_level " +
+    "FROM players ORDER BY level DESC"
+);
+
+while (rows.next()) {
+    console.writeln(
+        rows.get_string("name"),
+        ": сейчас ", rows.get_int("level"),
+        ", затем ", rows.get_int("next_level")
+    );
+}
+</script></idyl-code-block>
+  <idyl-output-block>Mira: сейчас 12, затем 13
+Liam: сейчас 7, затем 8
+Nika: сейчас 4, затем 5</idyl-output-block>
+  <table>
+    <caption>Строки результата после ORDER BY level DESC</caption>
+    <thead><tr><th>name</th><th>level</th><th>next_level</th></tr></thead>
+    <tbody>
+      <tr><td>Mira</td><td>12</td><td>13</td></tr>
+      <tr><td>Liam</td><td>7</td><td>8</td></tr>
+      <tr><td>Nika</td><td>4</td><td>5</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="docs-section">
+  <h2>Полная программа</h2>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("select_rows.db");
+    db.execute(
+        "CREATE TABLE players (" +
+        "name TEXT, " +
+        "level INTEGER, " +
+        "is_active INTEGER" +
+        ")"
+    );
+
+    db.execute("INSERT INTO players VALUES ('Liam', 7, 1)");
+    db.execute("INSERT INTO players VALUES ('Mira', 12, 1)");
+    db.execute("INSERT INTO players VALUES ('Nika', 4, 0)");
+
+    sqlite.Result rows = db.execute(
+        "SELECT name, level FROM players ORDER BY level DESC"
+    );
+
+    while (rows.next()) {
+        console.writeln(
+            rows.get_string("name"), ": level ", rows.get_int("level")
+        );
+    }
+
+    rows.close();
+    db.close();
+}
+</script></idyl-code-block>
+  <idyl-output-block>Mira: level 12
+Liam: level 7
+Nika: level 4</idyl-output-block>
+</div>

@@ -1,0 +1,206 @@
+<div class="docs-section">
+  <h2>Точка отсчёта и вращение</h2>
+  <p>
+    В прошлом уроке мы ставили точку вращения в центр прямоугольника методом
+    <code>set_origin()</code>. Теперь разберёмся, что именно этот метод меняет
+    и как с его помощью заставить объект двигаться по окружности.
+  </p>
+
+  <h3>Где находится origin</h3>
+  <p>
+    У drawable-объекта есть собственная система координат. Точка
+    <code>(0, 0)</code> в ней находится в левом верхнем углу. По умолчанию
+    origin расположен именно там, а свойства <code>x</code> и <code>y</code>
+    задают положение origin на Canvas.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+drawable.Rectangle box;
+box.x = 300;
+box.y = 200;
+box.width = 100;
+box.height = 50;
+
+box.rotate(30); // Левый верхний угол останется в точке (300, 200)
+</script></idyl-code-block>
+
+  <p>
+    Метод <code>rotate(30)</code> прибавляет 30 градусов к текущему углу.
+    Положительный угол вращает объект по часовой стрелке. Поскольку origin
+    находится в левом верхнем углу, этот угол остаётся на месте, а остальные
+    точки прямоугольника движутся вокруг него.
+  </p>
+
+  <h3>Переносим origin в центр</h3>
+  <p>
+    Координаты origin считаются относительно самого объекта. У прямоугольника
+    шириной 100 и высотой 50 центр находится в локальной точке
+    <code>(50, 25)</code>.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+box.set_origin(box.width / 2, box.height / 2);
+box.x = 300;
+box.y = 200;
+
+box.rotate(30); // Теперь в точке (300, 200) остаётся центр
+</script></idyl-code-block>
+
+  <p>
+    После <code>set_origin(50, 25)</code> свойства <code>box.x</code> и
+    <code>box.y</code> обозначают уже положение центра. Сам origin не обязан
+    находиться внутри объекта. Его можно вынести далеко в сторону и получить
+    вращение по орбите.
+  </p>
+
+  <h3>Точка на окружности</h3>
+  <p>
+    Представим маленький круг справа от центра большой окружности. Расстояние
+    от центра окружности до маленького круга равно её радиусу. Значит, локальный
+    origin маленького круга нужно сместить влево на этот радиус.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+point.radius = 10;
+point.set_origin(point.radius - orbit.radius, point.radius);
+point.x = center_x;
+point.y = center_y;
+
+point.rotation = angle;
+</script></idyl-code-block>
+
+  <p>
+    При угле 0 маленький круг находится справа. При 90 градусах он окажется
+    снизу, при 180 слева, а при 270 сверху. Ось Y на Canvas направлена вниз,
+    поэтому первая половина окружности проходит ниже центра.
+  </p>
+
+  <h3>То же движение через синус и косинус</h3>
+  <p>
+    Угол <code>rotation</code> хранится в градусах, а функции
+    <code>math.sin()</code> и <code>math.cos()</code> принимают радианы. Это
+    единственное преобразование, которое нам понадобится.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+float radians = math.to_radians(angle);
+
+calculated_point.x = center_x + orbit.radius * math.cos(radians);
+calculated_point.y = center_y + orbit.radius * math.sin(radians);
+</script></idyl-code-block>
+
+  <p>
+    Координаты drawable-объектов имеют тип <code>float</code>, поэтому результат
+    вычислений можно присваивать напрямую. Никаких <code>to_int()</code>, смены
+    знака или дополнительного смещения угла здесь нет.
+  </p>
+
+  <table class="docs-table">
+    <thead>
+      <tr><th>Угол</th><th>cos</th><th>sin</th><th>Положение на Canvas</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0°</td><td>1</td><td>0</td><td>Справа от центра</td></tr>
+      <tr><td>90°</td><td>0</td><td>1</td><td>Ниже центра</td></tr>
+      <tr><td>180°</td><td>-1</td><td>0</td><td>Слева от центра</td></tr>
+      <tr><td>270°</td><td>0</td><td>-1</td><td>Выше центра</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Проверяем обе модели вместе</h3>
+  <p>
+    Жёлтая точка в следующем примере движется благодаря свойству
+    <code>rotation</code>, а маленькая белая точка получает координаты через
+    синус и косинус. Если всё рассчитано правильно, белая точка постоянно
+    остаётся в центре жёлтой.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use colors;
+use drawable;
+use gui;
+use math;
+
+drawable.Circle orbit;
+drawable.Circle rotating_point;
+drawable.Circle calculated_point;
+
+float center_x;
+float center_y;
+float angle;
+
+void function place_points() {
+    rotating_point.rotation = angle;
+
+    float radians = math.to_radians(angle);
+    calculated_point.x = center_x + orbit.radius * math.cos(radians);
+    calculated_point.y = center_y + orbit.radius * math.sin(radians);
+}
+
+void function redraw(gui.Canvas canvas) {
+    canvas.fill(colors.RGB(20, 24, 32));
+    canvas.draw(orbit);
+    canvas.draw(rotating_point);
+    canvas.draw(calculated_point);
+}
+
+void function init(gui.Canvas canvas) {
+    center_x = 260;
+    center_y = 170;
+    angle = 0;
+
+    orbit.radius = 110;
+    orbit.set_origin(110, 110);
+    orbit.x = center_x;
+    orbit.y = center_y;
+    orbit.fill_color = colors.TRANSPARENT;
+    orbit.border_width = 3;
+    orbit.border_color = colors.RGB(120, 130, 155);
+
+    rotating_point.radius = 10;
+    rotating_point.set_origin(
+        rotating_point.radius - orbit.radius,
+        rotating_point.radius
+    );
+    rotating_point.x = center_x;
+    rotating_point.y = center_y;
+    rotating_point.fill_color = colors.RGB(255, 210, 80);
+
+    calculated_point.radius = 3;
+    calculated_point.set_origin(3, 3);
+    calculated_point.fill_color = colors.WHITE;
+
+    place_points();
+    redraw(canvas);
+}
+
+void function update(gui.Canvas canvas, float delta_time) {
+    angle += 1;
+    if (angle >= 360) {
+        angle -= 360;
+    }
+
+    place_points();
+    redraw(canvas);
+}
+
+main() {
+    gui.Window win;
+    win.width = 580;
+    win.height = 420;
+    win.title = "Origin, синус и косинус";
+
+    gui.Canvas canvas;
+    canvas.x = 20;
+    canvas.y = 20;
+    canvas.width = 520;
+    canvas.height = 340;
+    canvas.framerate_limit = 60;
+    canvas.on_init = init;
+    canvas.on_update = update;
+
+    win.add_child(canvas);
+    win.show();
+}
+</script></idyl-code-block>
+</div>

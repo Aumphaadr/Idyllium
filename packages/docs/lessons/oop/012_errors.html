@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 12: Типичные ошибки при работе с классами — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Объектно-ориентированное программирование</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">ООП • Урок 12</div>
+      <h1>Типичные ошибки</h1>
+      <p class="docs-subtitle">Справочник ошибок при работе с классами и объектами</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Забыли точку с запятой после класса</h2>
+      <p>В Idyllium после тела класса <strong>нужна точка с запятой</strong>. Эту ошибку легко пропустить, но компилятор о ней сообщит.</p>
+
+      <idyl-code-block><script type="text/plain">
+class Cat {
+    string name;
+}   // ← забыли ;
+
+main() {
+    Cat c;
+}
+</script></idyl-code-block>
+
+      <div class="error-message">
+        main.idyl:5: error: expected ';' after class definition
+      </div>
+
+      <p>Исправление: добавить <code>;</code> после закрывающей фигурной скобки класса.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Обращение к нестатическому члену из статического метода</h2>
+      <p>Статические методы не имеют доступа к <code>this</code> и нестатическим свойствам/методам класса.</p>
+
+      <idyl-code-block><script type="text/plain">
+class Cat {
+    string name;
+
+    static void function meow() {
+        console.writeln(this.name);   // ОШИБКА!
+    }
+}
+</script></idyl-code-block>
+
+      <div class="error-message">
+        main.idyl:6: error: 'this' cannot be used in static method
+      </div>
+
+      <p>Исправление: либо сделайте метод нестатическим, либо передавайте нужные данные как параметры.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Попытка обратиться к приватному свойству извне</h2>
+      <p>Свойства, объявленные как <code>private</code>, доступны только внутри методов класса. Из <code>main()</code> или других классов к ним обратиться нельзя.</p>
+
+      <idyl-code-block><script type="text/plain">
+class BankAccount {
+    private:
+    int balance;
+}
+
+main() {
+    BankAccount acc;
+    acc.balance = 1000;   // ОШИБКА!
+}
+</script></idyl-code-block>
+
+      <div class="error-message">
+        main.idyl:9: error: 'balance' is private in this context
+      </div>
+
+      <p>Исправление: создайте публичные методы <code>set_balance()</code> и <code>get_balance()</code> для доступа к приватному свойству.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Класс не найден (забыли подключить файл)</h2>
+      <p>Если класс объявлен в другом файле, его нужно подключить через <code>use</code>.</p>
+
+      <idyl-code-block><script type="text/plain">
+// main.idyl
+main() {
+    Cat c;   // Cat объявлен в cat.idyl, но файл не подключён
+}
+</script></idyl-code-block>
+
+      <div class="error-message">
+        main.idyl:2: error: 'Cat' was not declared in this scope
+      </div>
+
+      <p>Исправление: добавить <code>use cat;</code> в начало файла.</p>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>Циклическая зависимость файлов</h2>
+      <p>Нельзя, чтобы файл A подключал B, а B подключал A. Это вызывает ошибку.</p>
+
+      <idyl-code-block><script type="text/plain">
+// a.idyl
+use b;
+
+// b.idyl
+use a;
+</script></idyl-code-block>
+
+      <div class="error-message">
+        a.idyl:1: error: circular import detected: 'b'
+      </div>
+
+      <p>Исправление: пересмотрите архитектуру проекта. Возможно, классы A и B нужно объединить или вынести общую часть в третий файл.</p>
+    </div>
+
+    <!-- Section 8 -->
+    <div class="docs-section">
+      <h2>Использование static метода как нестатического</h2>
+      <p>Статические методы вызываются через класс, а не через объект. Попытка вызвать их через объект приведёт к ошибке.</p>
+
+      <idyl-code-block><script type="text/plain">
+class MathUtils {
+    static int function square(int x) {
+        return x * x;
+    }
+}
+
+main() {
+    MathUtils m;
+    int y = m.square(5);   // ОШИБКА!
+}
+</script></idyl-code-block>
+
+      <div class="error-message">
+        main.idyl:10: error: static method 'square' cannot be called on object
+      </div>
+
+      <p>Исправление: вызывать статические методы через класс: <code>MathUtils.square(5)</code>.</p>
+    </div>
+
+    <!-- Section 9 -->
+    <div class="docs-section">
+      <h2>Итог</h2>
+      <ul>
+        <li>Не забывайте точку с запятой после определения класса.</li>
+        <li>Статические методы не видят <code>this</code> и нестатические члены.</li>
+        <li>Приватные свойства доступны только внутри класса.</li>
+        <li>В конструкторе потомка обязательно вызывайте <code>parent()</code> первым.</li>
+        <li>Подключайте файлы с классами через <code>use</code>.</li>
+        <li>Избегайте циклических зависимостей между файлами.</li>
+        <li>Статические методы вызывайте через класс, а не через объект.</li>
+      </ul>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="011_static.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 11: Статические методы</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

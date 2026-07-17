@@ -1,0 +1,370 @@
+<div class="docs-section">
+  <h2>Картинка и место для неё</h2>
+  <p>
+    Допустим, мы хотим показать в окне аватар, иконку предмета, карту уровня
+    или фотографию кота. Для этого понадобятся два разных объекта.
+  </p>
+  <p>
+    <code>image.Static</code> загружает и хранит саму картинку, а
+    <code>gui.ImageBox</code> выделяет для неё место в окне. Виджет
+    <code>gui.ImageBox</code> не является картинкой, но в нём можно размещать
+    картинку. Благодаря такому разделению один загруженный ресурс можно показать
+    сразу в нескольких местах.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use gui;
+use image;
+
+main() {
+    image.Static cat;
+    cat.load_from_file("cat.png");
+
+    gui.Window win;
+    win.width = 420;
+    win.height = 260;
+    win.title = "Картинка в окне";
+
+    gui.ImageBox img;
+    img.x = 30;
+    img.y = 30;
+    img.width = 160;
+    img.height = 120;
+    img.set_image(cat);
+
+    win.add_child(img);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <div class="gui-demo-container">
+    <div class="gui-demo-window">
+      <div class="demo-content" style="min-height: 170px; position: relative;">
+        <img class="idyl-image-preview" src="assets/cat.png" alt="Кот из файла cat.png" style="position: absolute; left: 30px; top: 30px; width: 160px; height: 120px; object-fit: contain;">
+      </div>
+    </div>
+    <div class="coord-note">
+      Картинка размером 112x100 пикселей показана внутри виджета размером
+      160x120 пикселей.
+    </div>
+  </div>
+</div>
+
+<div class="docs-section">
+  <h2>Что знает картинка</h2>
+  <p>
+    После загрузки ресурс знает имя исходного файла, свои размеры, настоящий
+    формат и наличие прозрачных пикселей. Эти свойства доступны для чтения,
+    но присваивать им новые значения нельзя.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use image;
+
+main() {
+    image.Static cat;
+
+    console.writeln("До загрузки: ", cat.is_loaded);
+    cat.load_from_file("cat.png");
+
+    console.writeln("После загрузки: ", cat.is_loaded);
+    console.writeln("Файл: ", cat.src);
+    console.writeln("Размер: ", cat.width, "x", cat.height);
+    console.writeln("Формат: ", cat.format);
+    console.writeln("Есть прозрачность: ", cat.has_alpha);
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>До загрузки: false
+После загрузки: true
+Файл: cat.png
+Размер: 112x100
+Формат: png
+Есть прозрачность: true</idyl-output-block>
+
+  <p>
+    Свойство <code>format</code> определяется по содержимому файла, а не по его
+    названию. Если переименовать <code>cat.jpeg</code> в <code>cat.png</code>,
+    картинка не превратится в PNG. Idyllium всё равно увидит её настоящий тип.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Что если файл не найден?</h2>
+  <p>
+    Если вы написали <code>cat.load_from_file("cat.png");</code>, а файла
+    <code>cat.png</code> в проекте нет, Idyllium должен сказать об этом прямо.
+    Молчать и показывать пустое место было бы нечестно.
+  </p>
+
+  <idyl-error-block>main.idyl:6: runtime error: Static.load_from_file() cannot load 'cat.png': file does not exist</idyl-error-block>
+
+  <p>
+    Такая ошибка обычно лечится просто: проверьте имя файла, расширение и папку,
+    в которой картинка лежит. <code>cat.png</code> и <code>Cat.png</code> - это
+    разные имена.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Размер виджета и <code>resize_mode</code></h2>
+  <p>
+    У виджета есть <code>width</code> и <code>height</code>. Они отвечают за размер
+    места, в котором картинка будет показана.
+  </p>
+  <p>
+    Если сама картинка имеет другой размер, вступает в дело
+    <code>resize_mode</code>. Это свойство говорит, как именно изображение должно
+    жить внутри прямоугольника виджета.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use gui;
+use image;
+
+main() {
+    image.Static cat;
+    cat.load_from_file("cat.png");
+
+    gui.Window win;
+    win.width = 720;
+    win.height = 260;
+    win.title = "resize_mode";
+
+    gui.ImageBox fit_image;
+    fit_image.x = 30;
+    fit_image.y = 40;
+    fit_image.width = 140;
+    fit_image.height = 70;
+    fit_image.set_image(cat);
+    fit_image.resize_mode = "fit";
+
+    gui.ImageBox fill_image;
+    fill_image.x = 190;
+    fill_image.y = 40;
+    fill_image.width = 140;
+    fill_image.height = 70;
+    fill_image.set_image(cat);
+    fill_image.resize_mode = "fill";
+
+    gui.ImageBox stretch_image;
+    stretch_image.x = 350;
+    stretch_image.y = 40;
+    stretch_image.width = 140;
+    stretch_image.height = 70;
+    stretch_image.set_image(cat);
+    stretch_image.resize_mode = "stretch";
+
+    gui.ImageBox original_image;
+    original_image.x = 510;
+    original_image.y = 40;
+    original_image.width = 140;
+    original_image.height = 70;
+    original_image.set_image(cat);
+    original_image.resize_mode = "original";
+
+    win.add_child(fit_image);
+    win.add_child(fill_image);
+    win.add_child(stretch_image);
+    win.add_child(original_image);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <div class="gui-demo-container">
+    <div class="gui-demo-window">
+      <div class="demo-content" style="min-height: 190px; position: relative;">
+        <div class="image-mode-demo image-mode-fit" style="left: 20px;">
+          <img src="assets/cat.png" alt="Режим fit">
+          <span>fit</span>
+        </div>
+        <div class="image-mode-demo image-mode-fill" style="left: 180px;">
+          <img src="assets/cat.png" alt="Режим fill">
+          <span>fill</span>
+        </div>
+        <div class="image-mode-demo image-mode-stretch" style="left: 340px;">
+          <img src="assets/cat.png" alt="Режим stretch">
+          <span>stretch</span>
+        </div>
+        <div class="image-mode-demo image-mode-original" style="left: 500px;">
+          <img src="assets/cat.png" alt="Режим original">
+          <span>original</span>
+        </div>
+      </div>
+    </div>
+    <div class="coord-note">
+      <code>fit</code> вписывает картинку целиком, <code>fill</code> заполняет
+      виджет с возможной обрезкой, <code>stretch</code> растягивает, а
+      <code>original</code> показывает исходный размер.
+    </div>
+  </div>
+</div>
+
+<div class="docs-section">
+  <h2>Копии и преобразования</h2>
+  <p>
+    Методы преобразования не портят исходную картинку. Каждый из них создаёт
+    новый объект <code>image.Static</code>. Поэтому мы можем сохранить обычного
+    кота, а рядом получить кота вверх ногами и полупрозрачную копию.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use gui;
+use image;
+
+main() {
+    image.Static cat;
+    cat.load_from_file("cat.png");
+
+    image.Static upside_down_cat = cat.scale(1, -1);
+    image.Static faded_cat = cat.with_opacity(0.3);
+
+    gui.Window win;
+    win.width = 520;
+    win.height = 210;
+    win.title = "Три версии одной картинки";
+
+    gui.ImageBox original;
+    original.x = 30;
+    original.y = 30;
+    original.width = 120;
+    original.height = 110;
+    original.set_image(cat);
+
+    gui.ImageBox upside_down;
+    upside_down.x = 190;
+    upside_down.y = 30;
+    upside_down.width = 120;
+    upside_down.height = 110;
+    upside_down.set_image(upside_down_cat);
+
+    gui.ImageBox faded;
+    faded.x = 350;
+    faded.y = 30;
+    faded.width = 120;
+    faded.height = 110;
+    faded.set_image(faded_cat);
+
+    win.add_child(original);
+    win.add_child(upside_down);
+    win.add_child(faded);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <div class="gui-demo-container">
+    <div class="gui-demo-window image-transform-window">
+      <div class="demo-content image-transform-demo">
+        <figure>
+          <img src="assets/cat.png" alt="Исходная картинка">
+          <figcaption>исходная</figcaption>
+        </figure>
+        <figure>
+          <img class="image-mirrored-y" src="assets/cat.png" alt="Картинка вверх ногами">
+          <figcaption>scale(1, -1)</figcaption>
+        </figure>
+        <figure>
+          <img class="image-faded" src="assets/cat.png" alt="Полупрозрачная картинка">
+          <figcaption>with_opacity(0.3)</figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
+
+  <p>У статичных картинок есть и другие полезные преобразования:</p>
+
+  <idyl-code-block><script type="text/plain">
+use colors;
+use image;
+
+main() {
+    image.Static cat;
+    cat.load_from_file("cat.png");
+
+    image.Static large = cat.scale(2, 2);
+    image.Static turned = cat.rotate(180);
+    image.Static red = cat.tint(colors.RED);
+    image.Static gray = cat.desaturate();
+    image.Static pale = cat.desaturate(0.5);
+    image.Static fragment = cat.crop(20, 10, 70, 70);
+
+    gray.export_to_file("gray_cat.png");
+}
+</script></idyl-code-block>
+
+  <ul>
+    <li><code>scale(x, y)</code> меняет размер; отрицательное число ещё и отражает картинку по выбранной оси;</li>
+    <li><code>rotate(angle)</code> поворачивает на угол, кратный 90 градусам;</li>
+    <li><code>tint(color)</code> тонирует картинку выбранным цветом;</li>
+    <li><code>with_opacity(value)</code> задаёт прозрачность от <code>0.0</code> до <code>1.0</code>;</li>
+    <li><code>desaturate()</code> делает копию чёрно-белой, а аргумент позволяет ослабить эффект;</li>
+    <li><code>crop(x, y, width, height)</code> вырезает прямоугольный фрагмент;</li>
+    <li><code>export_to_file(path)</code> сохраняет результат в новый файл проекта.</li>
+  </ul>
+  <p>
+    Нулевой масштаб, угол вроде 45 градусов или обрезка за границами картинки
+    приводят к понятной runtime error. Idyllium не будет молча угадывать, что
+    программист хотел получить.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Анимированные картинки</h2>
+  <p>
+    Для GIF и APNG с несколькими кадрами существует
+    <code>image.Animation</code>. Виджет <code>gui.ImageBox</code> принимает её
+    тем же методом <code>set_image()</code>. Отдельный анимированный виджет для
+    этого не нужен.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use gui;
+use image;
+
+main() {
+    image.Animation walk;
+    walk.load_from_file("walk.gif");
+
+    gui.Window win;
+    win.width = 300;
+    win.height = 220;
+    win.title = "Анимация";
+
+    gui.ImageBox view;
+    view.x = 70;
+    view.y = 30;
+    view.width = 140;
+    view.height = 130;
+    view.resize_mode = "fit";
+    view.set_image(walk);
+
+    win.add_child(view);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <div class="gui-demo-container">
+    <div class="gui-demo-window image-animation-window">
+      <div class="demo-content image-animation-demo">
+        <img src="assets/walk.gif" alt="Анимация из файла walk.gif">
+      </div>
+    </div>
+    <div class="coord-note">
+      Один объект <code>image.Animation</code> хранит все кадры и время их показа.
+    </div>
+  </div>
+
+  <p>
+    Свойство <code>frame_count</code> сообщает количество кадров. Метод
+    <code>get_frame(index)</code> достаёт отдельный кадр как
+    <code>image.Static</code>. У многих анимаций все кадры показываются одинаковое
+    время: тогда точную длительность одного кадра хранит
+    <code>frame_duration</code>, а <code>has_uniform_frame_duration</code> равен
+    <code>true</code>.
+  </p>
+  <p>
+    Форматы GIF и APNG разрешают разным кадрам иметь разную длительность. Для
+    такого файла используйте <code>get_frame_duration(index)</code>.
+  </p>
+</div>

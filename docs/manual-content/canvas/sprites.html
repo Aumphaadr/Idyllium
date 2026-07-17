@@ -1,21 +1,23 @@
 <div class="docs-section">
-  <h2>Текстуры и спрайты</h2>
+  <h2>Картинка становится спрайтом</h2>
   <p>
-    <code>drawable.Texture</code> хранит загруженную картинку, а
-    <code>drawable.Sprite</code> показывает эту картинку на Canvas.
+    В GUI картинку показывал виджет <code>gui.ImageBox</code>. На Canvas этим
+    занимается <code>drawable.Sprite</code>. Сам файл по-прежнему загружает
+    библиотека <code>image</code>.
   </p>
   <p>
-    В примере спрайт двигается клавишами <code>W</code>, <code>A</code>,
-    <code>S</code>, <code>D</code>. Для движения используется метод
-    <code>move()</code>.
+    Получается простое разделение обязанностей: <code>image.Static</code> хранит
+    пиксели, а <code>drawable.Sprite</code> знает, где и в каком размере их
+    нарисовать на холсте.
   </p>
 
   <idyl-code-block><script type="text/plain">
 use colors;
 use drawable;
 use gui;
+use image;
 
-drawable.Texture hero_texture;
+image.Static hero_picture;
 drawable.Sprite hero;
 
 void function redraw(gui.Canvas canvas) {
@@ -26,7 +28,7 @@ void function redraw(gui.Canvas canvas) {
 void function init(gui.Canvas canvas) {
     hero.x = 180;
     hero.y = 90;
-    hero.texture = hero_texture;
+    hero.set_image(hero_picture);
     hero.set_scale(0.6, 0.6);
     redraw(canvas);
 }
@@ -48,11 +50,12 @@ void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
 }
 
 main() {
-    hero_texture.load_from_file("cat.png");
+    hero_picture.load_from_file("cat.png");
 
     gui.Window win;
     win.width = 500;
     win.height = 320;
+    win.title = "Спрайт на Canvas";
 
     gui.Canvas canvas;
     canvas.x = 20;
@@ -66,4 +69,182 @@ main() {
     win.show();
 }
 </script></idyl-code-block>
+
+  <div class="gui-demo-container">
+    <div class="gui-demo-window">
+      <div class="demo-content canvas-sprite-demo">
+        <div class="canvas-sprite-surface">
+          <img src="assets/cat.png" alt="Спрайт с картинкой кота">
+          <span>W A S D</span>
+        </div>
+      </div>
+    </div>
+    <div class="coord-note">
+      <code>move(dx, dy)</code> смещает спрайт относительно его текущей позиции.
+    </div>
+  </div>
+</div>
+
+<div class="docs-section">
+  <h2>Не нужно ждать загрузку вручную</h2>
+  <p>
+    Обратите внимание: файл загружается до показа окна. Когда выполнение
+    переходит на следующую строку после <code>load_from_file()</code>, ресурс уже
+    готов к использованию.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use drawable;
+use gui;
+use image;
+
+main() {
+    image.Static hero_picture;
+    hero_picture.load_from_file("cat.png");
+
+    drawable.Sprite hero;
+    hero.set_image(hero_picture);
+
+    gui.Canvas canvas;
+    canvas.draw(hero);
+}
+</script></idyl-code-block>
+
+  <p>
+    Добавлять <code>time.sleep()</code>, повторно вызывать
+    <code>load_from_file()</code> или постоянно перерисовывать Canvas только ради
+    загрузки картинки не требуется. Web IDE и VSIX сами дождутся подготовки
+    изображения и обновят Preview.
+  </p>
+  <p>
+    Если файла нет или его содержимое не является поддерживаемой картинкой,
+    программа завершится понятной runtime error вместо пустого квадрата.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Размер спрайта и размер ресурса</h2>
+  <p>
+    Метод <code>hero.set_scale(0.6, 0.6)</code> уменьшает только отображение на
+    Canvas. Загруженный ресурс остаётся прежнего размера, и другой спрайт может
+    показать его в другом масштабе.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use drawable;
+use image;
+
+main() {
+    image.Static hero_picture;
+    hero_picture.load_from_file("cat.png");
+
+    drawable.Sprite small_hero;
+    small_hero.set_image(hero_picture);
+    small_hero.set_scale(0.5, 0.5);
+
+    drawable.Sprite large_hero;
+    large_hero.set_image(hero_picture);
+    large_hero.set_scale(2, 2);
+}
+</script></idyl-code-block>
+
+  <p>
+    Метод <code>hero_picture.scale(2, 2)</code> решает другую задачу: он создаёт
+    новый ресурс с пересчитанными пикселями. Для обычного изменения размера
+    спрайта достаточно <code>set_scale()</code>.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Один ресурс в разных местах</h2>
+  <p>
+    Одну картинку не нужно загружать отдельно для каждого объекта. Её можно
+    передать нескольким спрайтам и одновременно показать в обычном GUI.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use drawable;
+use gui;
+use image;
+
+main() {
+    image.Static cat;
+    cat.load_from_file("cat.png");
+
+    gui.ImageBox avatar;
+    avatar.set_image(cat);
+
+    drawable.Sprite first_cat;
+    first_cat.set_image(cat);
+
+    drawable.Sprite second_cat;
+    second_cat.set_image(cat);
+}
+</script></idyl-code-block>
+
+  <p>
+    Все три объекта используют один ресурс <code>cat</code>. При этом у каждого
+    спрайта остаются собственные координаты и масштаб, а у виджета
+    <code>avatar</code> - собственные размеры и <code>resize_mode</code>.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Анимация на Canvas</h2>
+  <p>
+    Спрайт принимает не только <code>image.Static</code>, но и
+    <code>image.Animation</code>. Достаточно загрузить GIF или APNG и передать его
+    тому же методу <code>set_image()</code>.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use colors;
+use drawable;
+use gui;
+use image;
+
+image.Animation walk;
+drawable.Sprite hero;
+
+void function init(gui.Canvas canvas) {
+    hero.x = 100;
+    hero.y = 50;
+    hero.set_image(walk);
+
+    canvas.fill(colors.RGB(20, 24, 32));
+    canvas.draw(hero);
+}
+
+main() {
+    walk.load_from_file("walk.gif");
+
+    gui.Window win;
+    win.width = 360;
+    win.height = 260;
+
+    gui.Canvas canvas;
+    canvas.x = 20;
+    canvas.y = 20;
+    canvas.width = 300;
+    canvas.height = 180;
+    canvas.on_init = init;
+
+    win.add_child(canvas);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <div class="gui-demo-container">
+    <div class="gui-demo-window">
+      <div class="demo-content canvas-animation-demo">
+        <div class="canvas-animation-surface">
+          <img src="assets/walk.gif" alt="Анимированный спрайт">
+        </div>
+      </div>
+    </div>
+    <div class="coord-note">
+      Кадры переключаются автоматически. <code>on_update</code> понадобится,
+      только если спрайт должен ещё и двигаться или менять своё состояние.
+    </div>
+  </div>
 </div>

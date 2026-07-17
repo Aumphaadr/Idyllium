@@ -1,0 +1,121 @@
+<div class="docs-section">
+  <h2>База умеет искать сама</h2>
+  <p>
+    Можно получить все строки и отфильтровать их циклом Idyllium. Но для большой
+    таблицы это лишняя работа: SQLite умеет выбрать только подходящие строки ещё
+    до того, как они попадут в программу.
+  </p>
+  <table>
+    <caption>Исходные данные</caption>
+    <thead><tr><th>name</th><th>level</th><th>is_active</th></tr></thead>
+    <tbody>
+      <tr><td>Liam</td><td>7</td><td>1</td></tr>
+      <tr><td>Mira</td><td>12</td><td>1</td></tr>
+      <tr><td>Nika</td><td>4</td><td>0</td></tr>
+    </tbody>
+  </table>
+  <idyl-code-block><script type="text/plain">
+sqlite.Result rows = db.execute(
+    "SELECT name, level FROM players WHERE level >= 5"
+);
+</script></idyl-code-block>
+  <p>
+    Условие после <code>WHERE</code> похоже на условие <code>if</code>:
+    выбираются игроки с уровнем не меньше пяти.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Несколько условий</h2>
+  <idyl-code-block><script type="text/plain">
+"SELECT name, level FROM players " +
+"WHERE level >= 5 AND is_active = 1"
+</script></idyl-code-block>
+  <p>
+    Оператор <code>AND</code> требует одновременного выполнения обоих условий.
+    В SQLite булево значение хранится как <code>0</code> или <code>1</code>,
+    поэтому <code>is_active = 1</code> означает «игрок активен».
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Параметры работают и в SELECT</h2>
+  <p>
+    Если минимальный уровень выбрал пользователь, снова нужен подготовленный
+    запрос. Параметры предназначены не только для <code>INSERT</code>.
+  </p>
+  <idyl-code-block><script type="text/plain">
+sqlite.Statement find_players = db.prepare(
+    "SELECT name, level FROM players " +
+    "WHERE level >= :min_level AND is_active = :active"
+);
+
+find_players.bind("min_level", 5);
+find_players.bind("active", true);
+
+sqlite.Result rows = find_players.execute();
+</script></idyl-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>Сортировка и ограничение количества</h2>
+  <idyl-code-block><script type="text/plain">
+"SELECT name, level FROM players " +
+"WHERE level >= :min_level " +
+"ORDER BY level DESC LIMIT 3"
+</script></idyl-code-block>
+  <p>
+    <code>ORDER BY level DESC</code> сортирует от большего уровня к меньшему, а
+    <code>LIMIT 3</code> оставляет только первые три строки. Так можно получить,
+    например, тройку лидеров.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Полная программа</h2>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("select_with_bind.db");
+    db.execute(
+        "CREATE TABLE players (" +
+        "name TEXT, level INTEGER, is_active INTEGER)"
+    );
+
+    db.execute("INSERT INTO players VALUES ('Liam', 7, 1)");
+    db.execute("INSERT INTO players VALUES ('Mira', 12, 1)");
+    db.execute("INSERT INTO players VALUES ('Nika', 4, 0)");
+
+    sqlite.Statement find_players = db.prepare(
+        "SELECT name, level FROM players " +
+        "WHERE level >= :min_level AND is_active = :active " +
+        "ORDER BY level DESC"
+    );
+    find_players.bind("min_level", 5);
+    find_players.bind("active", true);
+
+    sqlite.Result rows = find_players.execute();
+    while (rows.next()) {
+        console.writeln(
+            rows.get_string("name"), ": level ", rows.get_int("level")
+        );
+    }
+
+    rows.close();
+    find_players.close();
+    db.close();
+}
+</script></idyl-code-block>
+  <idyl-output-block>Mira: level 12
+Liam: level 7</idyl-output-block>
+  <table>
+    <caption>Результат фильтрации: активные игроки с уровнем не ниже 5</caption>
+    <thead><tr><th>name</th><th>level</th></tr></thead>
+    <tbody>
+      <tr><td>Mira</td><td>12</td></tr>
+      <tr><td>Liam</td><td>7</td></tr>
+    </tbody>
+  </table>
+</div>

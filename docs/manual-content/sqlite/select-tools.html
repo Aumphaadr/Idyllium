@@ -1,0 +1,113 @@
+<div class="docs-section">
+  <h2>Когда колонок стало много</h2>
+  <p>
+    До сих пор после <code>SELECT</code> мы перечисляли нужные колонки. Звёздочка
+    означает «все колонки таблицы» и удобна, когда хочется быстро осмотреть
+    данные.
+  </p>
+  <table>
+    <caption>Таблица players</caption>
+    <thead><tr><th>id</th><th>name</th><th>class_name</th><th>level</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Liam</td><td>warrior</td><td>7</td></tr>
+      <tr><td>2</td><td>Mira</td><td>mage</td><td>12</td></tr>
+      <tr><td>3</td><td>Nika</td><td>archer</td><td>4</td></tr>
+      <tr><td>4</td><td>Omar</td><td>warrior</td><td>9</td></tr>
+      <tr><td>5</td><td>Vera</td><td>mage</td><td>6</td></tr>
+    </tbody>
+  </table>
+  <sql-code-block><script type="text/plain">
+SELECT * FROM players;
+</script></sql-code-block>
+  <p>
+    Для исследования базы это удобно. В готовой программе всё же полезнее
+    перечислять только действительно нужные колонки: так результат понятнее, а
+    изменение таблицы не принесёт программе неожиданные данные.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Только разные значения</h2>
+  <p>
+    В таблице пять игроков, но классов персонажей всего три. Слово
+    <code>DISTINCT</code> убирает повторяющиеся строки результата.
+  </p>
+  <sql-code-block><script type="text/plain">
+SELECT DISTINCT class_name
+FROM players
+ORDER BY class_name;
+</script></sql-code-block>
+  <table>
+    <caption>Результат DISTINCT</caption>
+    <thead><tr><th>class_name</th></tr></thead>
+    <tbody>
+      <tr><td>archer</td></tr>
+      <tr><td>mage</td></tr>
+      <tr><td>warrior</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="docs-section">
+  <h2>База умеет считать</h2>
+  <p>
+    Функции <code>COUNT</code>, <code>MIN</code>, <code>MAX</code> и
+    <code>AVG</code> собирают много строк в одну итоговую строку.
+    <code>COUNT(*)</code> считает все найденные строки, а остальные функции
+    работают с указанной колонкой.
+  </p>
+  <sql-code-block><script type="text/plain">
+SELECT
+    COUNT(*) AS player_count,
+    MIN(level) AS min_level,
+    MAX(level) AS max_level,
+    AVG(level) AS average_level
+FROM players;
+</script></sql-code-block>
+  <table>
+    <caption>Краткая статистика по всем игрокам</caption>
+    <thead>
+      <tr><th>player_count</th><th>min_level</th><th>max_level</th><th>average_level</th></tr>
+    </thead>
+    <tbody><tr><td>5</td><td>4</td><td>12</td><td>7.6</td></tr></tbody>
+  </table>
+</div>
+
+<div class="docs-section">
+  <h2>Статистика по группам</h2>
+  <p>
+    <code>GROUP BY class_name</code> сначала собирает игроков с одинаковым
+    классом в группы, а затем запускает функции отдельно для каждой группы.
+  </p>
+  <sql-code-block><script type="text/plain">
+SELECT
+    class_name,
+    COUNT(*) AS player_count,
+    AVG(level) AS average_level
+FROM players
+GROUP BY class_name
+ORDER BY class_name;
+</script></sql-code-block>
+  <table>
+    <caption>Количество и средний уровень по классам</caption>
+    <thead><tr><th>class_name</th><th>player_count</th><th>average_level</th></tr></thead>
+    <tbody>
+      <tr><td>archer</td><td>1</td><td>4.0</td></tr>
+      <tr><td>mage</td><td>2</td><td>9.0</td></tr>
+      <tr><td>warrior</td><td>2</td><td>8.0</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Для Idyllium это всё ещё обычный результат. Если запрос возвращает одну
+    итоговую строку, достаточно одного успешного <code>next()</code>.
+  </p>
+  <idyl-code-block><script type="text/plain">
+sqlite.Result rows = db.execute(
+    "SELECT COUNT(*) AS player_count FROM players"
+);
+
+rows.next();
+console.writeln("Игроков: ", rows.get_int("player_count"));
+rows.close();
+</script></idyl-code-block>
+</div>

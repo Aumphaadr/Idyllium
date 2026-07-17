@@ -1,0 +1,103 @@
+<div class="docs-section">
+  <h2>Таблица есть. Где данные?</h2>
+  <p>
+    В прошлом уроке мы создали таблицу <code>players</code>, но пока она пуста.
+    Для изменения данных в SQL чаще всего используются три команды:
+    <code>INSERT</code> добавляет строки, <code>UPDATE</code> изменяет их, а
+    <code>DELETE</code> удаляет.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Добавляем игроков</h2>
+  <p>
+    Сначала перечисляются колонки, затем — значения в том же порядке. Текст в
+    SQL записывается в одинарных кавычках, а числа — без кавычек.
+  </p>
+  <idyl-code-block><script type="text/plain">
+db.execute(
+    "INSERT INTO players (name, level) VALUES ('Liam', 4)"
+);
+db.execute(
+    "INSERT INTO players (name, level) VALUES ('Mira', 7)"
+);
+</script></idyl-code-block>
+  <p>
+    В этих командах значения придуманы автором программы и написаны прямо в
+    коде. Пользовательский ввод так подставлять нельзя — безопасный способ мы
+    изучим через два урока.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Изменяем нужную строку</h2>
+  <idyl-code-block><script type="text/plain">
+sqlite.Result result = db.execute(
+    "UPDATE players SET level = 5 WHERE name = 'Liam'"
+);
+
+console.writeln("Изменено строк: ", result.affected_rows);
+result.close();
+</script></idyl-code-block>
+  <idyl-output-block>Изменено строк: 1</idyl-output-block>
+  <table>
+    <caption>Таблица players после INSERT и UPDATE</caption>
+    <thead><tr><th>name</th><th>level</th></tr></thead>
+    <tbody>
+      <tr><td>Liam</td><td>5</td></tr>
+      <tr><td>Mira</td><td>7</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Условие <code>WHERE</code> выбирает строки с именем Liam. Без него команда
+    изменила бы уровень <em>всех</em> игроков. Метод <code>execute()</code>
+    возвращает <code>sqlite.Result</code>, а свойство
+    <code>affected_rows</code> сообщает, сколько строк действительно
+    изменилось.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Удаляем запись</h2>
+  <idyl-code-block><script type="text/plain">
+sqlite.Result result = db.execute(
+    "DELETE FROM players WHERE name = 'Nika'"
+);
+console.writeln("Удалено строк: ", result.affected_rows);
+result.close();
+</script></idyl-code-block>
+  <p>
+    Здесь снова важно условие <code>WHERE</code>. Команда
+    <code>DELETE FROM players</code> без условия удалит из таблицы вообще всех
+    игроков. SQL послушен буквально: он не угадывает, что программист «наверное
+    имел в виду».
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Полная программа</h2>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("hardcoded_queries.db");
+
+    db.execute(
+        "CREATE TABLE players (name TEXT, level INTEGER)"
+    );
+
+    db.execute("INSERT INTO players (name, level) VALUES ('Liam', 4)");
+    db.execute("INSERT INTO players (name, level) VALUES ('Mira', 7)");
+
+    sqlite.Result result = db.execute(
+        "UPDATE players SET level = 5 WHERE name = 'Liam'"
+    );
+    console.writeln("Изменено строк: ", result.affected_rows);
+
+    result.close();
+    db.close();
+}
+</script></idyl-code-block>
+  <idyl-output-block>Изменено строк: 1</idyl-output-block>
+</div>

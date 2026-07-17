@@ -1,0 +1,122 @@
+<div class="docs-section">
+  <h2>Пустая строка — тоже значение</h2>
+  <p>
+    У игрока может не быть прозвища. Можно сохранить пустую строку, но она
+    означает «прозвище известно и состоит из нуля символов». Число
+    <code>0</code> тоже является настоящим числом, а <code>false</code> —
+    настоящим булевым значением.
+  </p>
+  <p>
+    Для случая «значение отсутствует или неизвестно» в SQL существует
+    <code>NULL</code>. В Idyllium ему соответствует языковое значение
+    <code>null</code>.
+  </p>
+  <p>
+    Мы уже встречали его в разделе про JSON: <code>json.Value</code> можно
+    сравнивать с <code>null</code> и проверять методом <code>is_null()</code>.
+    Обычные <code>int</code>, <code>string</code> и другие типы от этого не
+    становятся «наполовину пустыми». Значение <code>null</code> принимают только
+    специальные типы, для которых отсутствие данных действительно имеет смысл.
+  </p>
+  <idyl-code-block><script type="text/plain">
+json.Value value = null;
+
+if (value.is_null()) {
+    console.writeln("Значение отсутствует");
+}
+</script></idyl-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>Какие колонки разрешают null?</h2>
+  <idyl-code-block><script type="text/plain">
+db.execute(
+    "CREATE TABLE players (" +
+    "name TEXT NOT NULL, " +
+    "nickname TEXT" +
+    ")"
+);
+</script></idyl-code-block>
+  <p>
+    Имя помечено как <code>NOT NULL</code>, поэтому оно обязательно. У колонки
+    <code>nickname</code> такого ограничения нет: она может хранить текст или
+    <code>NULL</code>.
+  </p>
+  <p>
+    Мы впервые добавили к типу колонки SQL-ограничение. Запись
+    <code>name TEXT NOT NULL</code> читается так: «колонка <code>name</code>
+    хранит текст и не разрешает неизвестное значение».
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Сохраняем null</h2>
+  <idyl-code-block><script type="text/plain">
+sqlite.Statement add_player = db.prepare(
+    "INSERT INTO players (name, nickname) VALUES (:name, :nickname)"
+);
+
+add_player.bind("name", "Liam");
+add_player.bind("nickname", null);
+add_player.execute();
+</script></idyl-code-block>
+  <table>
+    <caption>Как null выглядит в таблице</caption>
+    <thead><tr><th>name</th><th>nickname</th></tr></thead>
+    <tbody>
+      <tr><td>Liam</td><td>NULL</td></tr>
+      <tr><td>Mira</td><td>Star</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Обычный <code>bind()</code> умеет принимать <code>null</code>. Равнозначный,
+    но более явный вариант выглядит так:
+  </p>
+  <idyl-code-block><script type="text/plain">
+add_player.bind_string("name", "Liam");
+add_player.bind_null("nickname");
+</script></idyl-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>Проверяем перед чтением</h2>
+  <p>
+    Вызов <code>get_string("nickname")</code> для SQL NULL завершится понятной
+    ошибкой: неизвестное прозвище нельзя превратить в строку. Сначала значение
+    проверяется.
+  </p>
+  <idyl-code-block><script type="text/plain">
+if (rows.is_null("nickname")) {
+    console.writeln("Прозвище не указано");
+}
+else {
+    console.writeln(rows.get_string("nickname"));
+}
+</script></idyl-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>sqlite.Value: значение неизвестного типа</h2>
+  <p>
+    Метод <code>get()</code> возвращает универсальное
+    <code>sqlite.Value</code>. Оно полезно, когда значение может оказаться
+    <code>null</code> или его тип заранее неизвестен.
+  </p>
+  <idyl-code-block><script type="text/plain">
+sqlite.Value nickname = rows.get("nickname");
+
+if (nickname == null) {
+    console.writeln("Прозвище не указано");
+}
+else {
+    console.writeln(nickname.to_string());
+}
+</script></idyl-code-block>
+  <p>
+    Также доступны проверки <code>is_null()</code>, <code>is_int()</code>,
+    <code>is_float()</code> и <code>is_string()</code>, а после проверки —
+    преобразования <code>to_int()</code>, <code>to_int64()</code>,
+    <code>to_float()</code>, <code>to_string()</code> и
+    <code>to_bool()</code>.
+  </p>
+</div>

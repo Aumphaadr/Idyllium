@@ -8,14 +8,14 @@
     Пусть в файле <code>player.json</code> лежит такой JSON:
   </p>
 
-  <idyl-code-block><script type="text/plain">
+  <json-code-block><script type="text/plain">
 {
     "name": "Liam",
     "age": 12,
     "is_admin": false,
     "middle_name": null
 }
-</script></idyl-code-block>
+</script></json-code-block>
 
   <idyl-code-block><script type="text/plain">
 use console;
@@ -94,19 +94,19 @@ main() {
     ничего не лежит.
   </p>
 
-  <idyl-code-block><script type="text/plain">
+  <json-code-block><script type="text/plain">
 {
     "name": "Liam",
     "middle_name": null
 }
-</script></idyl-code-block>
+</script></json-code-block>
 
   <idyl-code-block><script type="text/plain">
 use console;
 use json;
 
 main() {
-    json.Value value = json.NULL;
+    json.Value value = null;
 
     if (value.is_null()) {
         console.writeln("Значения нет");
@@ -118,5 +118,11 @@ main() {
   <p>
     <code>null</code> нельзя превратить в строку, число или булево значение.
     Если попробовать, программа выдаст понятную ошибку времени выполнения.
+  </p>
+  <p>
+    В Idyllium <code>null</code> разрешён только для специальных типов, которым
+    действительно нужно состояние «значения нет». Например, его можно присвоить
+    <code>json.Value</code>, но нельзя присвоить переменной типа <code>int</code>,
+    <code>string</code> или <code>json.Object</code>.
   </p>
 </div>

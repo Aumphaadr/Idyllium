@@ -1,0 +1,73 @@
+<div class="docs-section">
+  <h2>Три игрока — три одинаковых запроса?</h2>
+  <p>
+    Если данные уже лежат в массивах, можно создать отдельный подготовленный
+    запрос для каждого игрока. Но текст запроса от игрока к игроку не меняется:
+    меняются только значения параметров. Значит, один
+    <code>sqlite.Statement</code> можно использовать много раз.
+  </p>
+  <idyl-code-block><script type="text/plain">
+array<string, 3> names = ["Liam", "Mira", "Nika"];
+array<int, 3> levels = [7, 12, 4];
+
+sqlite.Statement add_player = db.prepare(
+    "INSERT INTO players (name, level) VALUES (:name, :level)"
+);
+</script></idyl-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>Заполняем запрос в цикле</h2>
+  <idyl-code-block><script type="text/plain">
+for (int i = 0; i < names.length(); i += 1) {
+    add_player.clear_bindings();
+    add_player.bind("name", names[i]);
+    add_player.bind("level", levels[i]);
+    add_player.execute();
+}
+</script></idyl-code-block>
+  <table>
+    <caption>Три выполнения одного Statement</caption>
+    <thead><tr><th>name</th><th>level</th></tr></thead>
+    <tbody>
+      <tr><td>Liam</td><td>7</td></tr>
+      <tr><td>Mira</td><td>12</td></tr>
+      <tr><td>Nika</td><td>4</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Метод <code>execute()</code> не стирает привязанные значения: это позволяет
+    заменить только один параметр и сохранить остальные. Но здесь каждая строка
+    является независимым набором данных, поэтому в начале итерации вызывается
+    <code>clear_bindings()</code>.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Зачем очищать привязки?</h2>
+  <p>
+    Представим, что во второй итерации программист случайно забыл привязать
+    <code>level</code>. Без очистки запрос молча использовал бы прошлый уровень.
+    После <code>clear_bindings()</code> забытый параметр останется пустым, и
+    Idyllium остановит программу с понятной ошибкой вместо тихой порчи данных.
+  </p>
+  <idyl-code-block><script type="text/plain">
+add_player.clear_bindings();
+add_player.bind("name", "Mira");
+// add_player.bind("level", 12); забыли
+add_player.execute();
+</script></idyl-code-block>
+  <idyl-error-block>main.idyl:4: runtime error: sqlite statement has unbound parameter ':level'</idyl-error-block>
+</div>
+
+<div class="docs-section">
+  <h2>Повторный bind заменяет значение</h2>
+  <p>
+    Если привязать одно имя дважды, в запрос отправится последнее значение. Это
+    бывает удобно, когда почти все параметры одинаковы.
+  </p>
+  <idyl-code-block><script type="text/plain">
+find_players.bind("min_level", 5);
+find_players.bind("min_level", 10); // теперь минимум равен 10
+</script></idyl-code-block>
+</div>

@@ -1,0 +1,133 @@
+<div class="docs-section">
+  <h2>Когда SQL становится тесно в строках</h2>
+  <p>
+    Пока таблица была маленькой, её устройство помещалось в одну строку
+    Idyllium. В настоящей базе могут быть десятки таблиц, индексы и начальные
+    данные. Склеивать такой SQL из множества строк неудобно: скобки и кавычки
+    начинают заслонять саму структуру базы.
+  </p>
+  <p>
+    SQL-команды можно вынести в отдельный файл с расширением
+    <code>.sql</code>. Такой файл называется SQL-скриптом.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Файл setup.sql</h2>
+  <sql-code-block><script type="text/plain">
+-- SQL-комментарий начинается с двух дефисов.
+
+DROP TABLE IF EXISTS achievements;
+
+CREATE TABLE achievements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    points INTEGER NOT NULL
+);
+
+INSERT INTO achievements (title, points) VALUES
+    ('First Steps', 10),
+    ('Treasure Hunter', 25),
+    ('Dragon Slayer', 100);
+</script></sql-code-block>
+  <p>
+    Точка с запятой завершает каждую SQL-команду. Один скрипт может содержать
+    сколько угодно команд, а переносы строк и отступы делают его удобным для
+    чтения человеком.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Читаем скрипт целиком</h2>
+  <p>
+    Метод <code>read_all()</code> из библиотеки <code>file</code> возвращает всё
+    содержимое файла одной строкой.
+  </p>
+  <idyl-code-block><script type="text/plain">
+file.istream fin = file.open("setup.sql", "read");
+string script = fin.read_all();
+fin.close();
+</script></idyl-code-block>
+  <p>
+    Поэтому в проекте должны лежать рядом два файла: программа
+    <code>main.idyl</code> и скрипт <code>setup.sql</code>.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Выполняем несколько команд</h2>
+  <idyl-code-block><script type="text/plain">
+sqlite.Database db = sqlite.open("achievements.db");
+db.exec_script(script);
+</script></idyl-code-block>
+  <p>
+    Обычный <code>execute()</code> принимает ровно одну SQL-команду.
+    <code>exec_script()</code> предназначен для текста с несколькими командами.
+    Если какая-либо команда ошибочна, выполнение остановится на ней.
+  </p>
+  <p>
+    Метод <code>exec_script()</code> не создаёт транзакцию автоматически. Если
+    скрипт должен выполниться строго целиком, оберните его в уже знакомые
+    <code>begin_transaction()</code>, <code>commit()</code> и
+    <code>rollback()</code>.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Что происходит с SELECT внутри скрипта?</h2>
+  <p>
+    <code>exec_script()</code> ничего не возвращает. Если внутри скрипта есть
+    <code>SELECT</code>, найденные им строки будут отброшены. Для чтения данных
+    выполняйте отдельный <code>execute()</code> и сохраняйте полученный
+    <code>sqlite.Result</code>.
+  </p>
+  <idyl-code-block><script type="text/plain">
+sqlite.Result rows = db.execute(
+    "SELECT title, points FROM achievements ORDER BY points"
+);
+</script></idyl-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>Файл main.idyl</h2>
+  <idyl-code-block><script type="text/plain">
+use console;
+use file;
+use sqlite;
+
+main() {
+    file.istream fin = file.open("setup.sql", "read");
+    string script = fin.read_all();
+    fin.close();
+
+    sqlite.Database db = sqlite.open("achievements.db");
+    db.exec_script(script);
+
+    sqlite.Result rows = db.execute(
+        "SELECT title, points FROM achievements ORDER BY points"
+    );
+
+    while (rows.next()) {
+        console.writeln(
+            rows.get_string("title"),
+            ": ", rows.get_int("points"), " очков"
+        );
+    }
+
+    rows.close();
+    db.close();
+}
+</script></idyl-code-block>
+  <idyl-output-block>First Steps: 10 очков
+Treasure Hunter: 25 очков
+Dragon Slayer: 100 очков</idyl-output-block>
+  <table>
+    <caption>Таблица achievements, созданная скриптом</caption>
+    <thead><tr><th>id</th><th>title</th><th>points</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>First Steps</td><td>10</td></tr>
+      <tr><td>2</td><td>Treasure Hunter</td><td>25</td></tr>
+      <tr><td>3</td><td>Dragon Slayer</td><td>100</td></tr>
+    </tbody>
+  </table>
+</div>

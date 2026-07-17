@@ -1,4 +1,5 @@
-import { compileIdyllium, runIdyllium, IdylliumLanguageService, IdylliumProject, compileProject, createRuntime, createMemoryRuntimeFileSystem, formatIdyllium, runIdylliumInBrowser } from '../src';
+import { compileIdyllium, runIdyllium, IdylliumLanguageService, IdylliumProject, compileProject, createRuntime, createMemoryRuntimeFileSystem, createNodeImageService, createDefaultStandardLibrary, formatIdyllium, runIdylliumInBrowser } from '../src';
+import { scaleRaster } from '../src/runtime/image-service';
 
 const fs: any = require('fs');
 const os: any = require('os');
@@ -91,6 +92,10 @@ function tinyWavBinary(): string {
   return bytes.toString('binary');
 }
 
+function tinyTtfHeader(): Uint8Array {
+  return new Uint8Array([0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+}
+
 test('hello world runs', async () => {
   const result = await runIdyllium(`
     use console;
@@ -122,6 +127,113 @@ test('variables and assignment run', async () => {
     result.output === 'У вас 20000 денег\nУ вас 25000 денег\n',
     `unexpected output: ${JSON.stringify(result.output)}`,
   );
+});
+
+test('local and global named constants run', async () => {
+  const result = await runIdyllium(`
+    use console;
+
+    const int BASE_SCORE = 40;
+
+    main() {
+      const int BONUS = 2;
+      console.writeln(BASE_SCORE + BONUS);
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === '42\n', `unexpected output: ${JSON.stringify(result.output)}`);
+  assert(result.compilation.jsCode?.includes('const BASE_SCORE = 40') === true, 'expected global JavaScript const');
+  assert(result.compilation.jsCode?.includes('const BONUS = 2') === true, 'expected local JavaScript const');
+});
+
+test('named constants require an initializer and reject reassignment', () => {
+  assertFails(`
+    main() {
+      const int answer;
+    }
+  `, "constant 'answer' must have an initializer");
+
+  assertFails(`
+    main() {
+      const int answer = 42;
+      answer = 64;
+    }
+  `, "cannot assign to constant 'answer'");
+
+  assertFails(`
+    main() {
+      const int answer = 42;
+      answer += 1;
+    }
+  `, "cannot assign to constant 'answer'");
+
+  assertFails(`
+    class Rules {
+      const int LIMIT = 10;
+    }
+  `, 'const class fields are not supported');
+
+  assertFails(`
+    void function show(const int value) {}
+  `, 'const parameters are not supported');
+});
+
+test('const arrays keep a readonly binding but mutable elements', async () => {
+  const result = await runIdyllium(`
+    use console;
+
+    main() {
+      const array<int, 2> values = [10, 20];
+      values[0] = 42;
+      console.writeln(values);
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === '[42, 20]\n', `unexpected output: ${JSON.stringify(result.output)}`);
+
+  assertFails(`
+    main() {
+      const array<int, 2> values = [10, 20];
+      values = [30, 40];
+    }
+  `, "cannot assign to constant 'values'");
+});
+
+test('const objects keep a readonly binding but mutable fields', async () => {
+  const result = await runIdyllium(`
+    use console;
+
+    class Box {
+      int value;
+
+      constructor Box(int initial) {
+        this.value = initial;
+      }
+    }
+
+    main() {
+      const Box box(10);
+      box.value = 42;
+      console.writeln(box.value);
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === '42\n', `unexpected output: ${JSON.stringify(result.output)}`);
+
+  assertFails(`
+    class Box {
+      constructor Box() {}
+    }
+
+    main() {
+      const Box first();
+      Box second;
+      first = second;
+    }
+  `, "cannot assign to constant 'first'");
 });
 
 test('division always has float type', () => {
@@ -573,6 +685,75 @@ test('json module parses validates and extracts values', async () => {
   assert(result.output === 'true:Ada:12:true:two:true:London', `unexpected JSON output: ${JSON.stringify(result.output)}`);
 });
 
+test('language null works with explicitly nullable library types', async () => {
+  const result = await runIdyllium([
+    'use console;',
+    'use json;',
+    '',
+    'json.Value function optional_value(bool empty) {',
+    '    if (empty) {',
+    '        return null;',
+    '    }',
+    '    return json.Value("ready");',
+    '}',
+    '',
+    'void function print_null(json.Value value = null) {',
+    '    console.write(value == null);',
+    '}',
+    '',
+    'main() {',
+    '    json.Value first = null;',
+    '    json.Value second = optional_value(true);',
+    '    dyn_array<json.Value> values = [null];',
+    '    values.add(null);',
+    '',
+    '    json.Object root;',
+    '    root.add("missing", null);',
+    '',
+    '    print_null();',
+    '    console.write(":", first == null, ":", null == second);',
+    '    console.write(":", values[0] == null, ":", values[1].is_null());',
+    '    console.write(":", root.get("missing") == null);',
+    '',
+    '    first = json.Value("text");',
+    '    console.write(":", first == null);',
+    '}',
+  ].join('\n'));
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === 'true:true:true:true:true:true:false', `unexpected null output: ${JSON.stringify(result.output)}`);
+});
+
+test('language null rejects non-nullable types', () => {
+  assertFails(`
+    main() {
+      int number = null;
+    }
+  `, "cannot assign 'null' value to 'int' variable");
+
+  assertFails(`
+    use json;
+
+    main() {
+      json.Object object = null;
+    }
+  `, "cannot assign 'null' value to 'json.Object' variable");
+
+  assertFails(`
+    main() {
+      bool same = 42 == null;
+    }
+  `, "cannot compare 'int' and 'null'");
+
+  assertFails(`
+    int function bad() {
+      return null;
+    }
+
+    main() {}
+  `, "cannot return 'null' value from 'int' function");
+});
+
 test('json module creates serializes and writes values', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'idyllium-json-'));
   const sourceFile = path.join(dir, 'main.idyl');
@@ -587,7 +768,7 @@ test('json module creates serializes and writes values', async () => {
       '    json.Object root;',
       '    json.Value name("John Doe");',
       '    root.add("name", name);',
-      '    root.add("wife", json.NULL);',
+      '    root.add("wife", null);',
       '',
       '    if (root.has("wife")) {',
       '        root.set("wife", json.Value("Jane Doe"));',
@@ -777,18 +958,23 @@ test('browser runtime snapshots drawable asset resource uris', async () => {
       '/workspace/main.idyl': [
         'use colors;',
         'use drawable;',
+        'use fonts;',
         'use gui;',
+        'use image;',
         '',
         'main() {',
         '    gui.Window win;',
-        '    gui.Image image;',
-        '    image.load_from_file("cat.png");',
-        '    image.resize_mode = "fill";',
-        '    win.add_child(image);',
+        '    image.Static cat;',
+        '    cat.load_from_file("cat.png");',
+        '    gui.ImageBox picture;',
+        '    picture.set_image(cat);',
+        '    picture.resize_mode = "fill";',
+        '    win.add_child(picture);',
         '    win.show();',
         '',
-        '    drawable.Font font;',
+        '    fonts.Font font;',
         '    font.load_from_file("lobster.ttf");',
+        '    win.font = font;',
         '',
         '    drawable.Text text;',
         '    text.font = font;',
@@ -801,10 +987,12 @@ test('browser runtime snapshots drawable asset resource uris', async () => {
       ].join('\n'),
       '/workspace/lobster.ttf': {
         content: '',
+        bytes: tinyTtfHeader(),
         resourceUri: 'blob:idyllium-font',
       },
       '/workspace/cat.png': {
         content: '',
+        bytes: new Uint8Array(fs.readFileSync(path.join(process.cwd(), 'my_images/cat.png'))),
         resourceUri: 'blob:idyllium-cat',
       },
     },
@@ -812,11 +1000,206 @@ test('browser runtime snapshots drawable asset resource uris', async () => {
 
   assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
   const draw = result.canvases[0]?.commands.find((command) => command.kind === 'draw');
-  const font = draw?.object?.properties.font as { properties?: Record<string, unknown> } | undefined;
+  const font = draw?.object?.properties.font as { type?: string; properties?: Record<string, unknown> } | undefined;
   assert(font?.properties?.resource_uri === 'blob:idyllium-font', `expected font resource uri, got ${JSON.stringify(draw)}`);
-  const image = result.windows[0]?.children.find((widget) => widget.type === 'gui.Image');
-  assert(image?.properties.resource_uri === 'blob:idyllium-cat', `expected image resource uri, got ${JSON.stringify(image)}`);
-  assert(image?.properties.resize_mode === 'fill', `expected image resize mode, got ${JSON.stringify(image)}`);
+  assert(font?.properties?.format === 'ttf', `expected detected TTF format, got ${JSON.stringify(font)}`);
+  assert(font?.type === 'fonts.Font', `expected canonical fonts.Font snapshot, got ${JSON.stringify(font)}`);
+  const windowFont = result.windows[0]?.properties.font as { type?: string; properties?: Record<string, unknown> } | undefined;
+  assert(windowFont?.type === 'fonts.Font', `expected Window to use fonts.Font, got ${JSON.stringify(windowFont)}`);
+  assert(explicitProperties(result.windows[0]?.properties ?? {}).includes('font'), 'expected Window font to be explicit');
+  const imageBox = result.windows[0]?.children.find((widget) => widget.type === 'gui.ImageBox');
+  const image = imageBox?.properties.image as { properties?: Record<string, unknown> } | undefined;
+  assert(image?.properties?.resource_uri === 'blob:idyllium-cat', `expected image resource uri, got ${JSON.stringify(imageBox)}`);
+  assert(imageBox?.properties.resize_mode === 'fill', `expected image resize mode, got ${JSON.stringify(imageBox)}`);
+});
+
+test('drawable.Font legacy alias is rejected', () => {
+  assertFails(`
+    use drawable;
+
+    main() {
+      drawable.Font old_font;
+    }
+  `, "unknown type 'drawable.Font'");
+});
+
+test('font resource metadata is read-only', () => {
+  assertFails(`
+    use fonts;
+
+    main() {
+      fonts.Font font;
+      font.format = "ttf";
+    }
+  `, "property 'format' is read-only");
+});
+
+test('font loading detects all supported formats by contents', async () => {
+  const result = await runIdylliumInBrowser({
+    entryFile: '/workspace/main.idyl',
+    files: {
+      '/workspace/main.idyl': [
+        'use console;',
+        'use fonts;',
+        '',
+        'main() {',
+        '    fonts.Font ttf;',
+        '    fonts.Font otf;',
+        '    fonts.Font woff;',
+        '    fonts.Font woff2;',
+        '    ttf.load_from_file("first.bin");',
+        '    otf.load_from_file("second.bin");',
+        '    woff.load_from_file("third.bin");',
+        '    woff2.load_from_file("fourth.bin");',
+        '    console.writeln(ttf.format, ",", otf.format, ",", woff.format, ",", woff2.format);',
+        '}',
+      ].join('\n'),
+      '/workspace/first.bin': { content: '', bytes: tinyTtfHeader() },
+      '/workspace/second.bin': { content: '', bytes: new TextEncoder().encode('OTTOfont') },
+      '/workspace/third.bin': { content: '', bytes: new TextEncoder().encode('wOFFfont') },
+      '/workspace/fourth.bin': { content: '', bytes: new TextEncoder().encode('wOF2font') },
+    },
+  });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === 'ttf,otf,woff,woff2\n', `unexpected font formats: ${JSON.stringify(result.output)}`);
+});
+
+test('font loading rejects unsupported file contents', async () => {
+  const result = await runIdylliumInBrowser({
+    entryFile: '/workspace/main.idyl',
+    files: {
+      '/workspace/main.idyl': [
+        'use fonts;',
+        '',
+        'main() {',
+        '    fonts.Font broken;',
+        '    broken.load_from_file("broken.ttf");',
+        '}',
+      ].join('\n'),
+      '/workspace/broken.ttf': {
+        content: 'this is not a font',
+        bytes: new TextEncoder().encode('this is not a font'),
+        resourceUri: 'blob:idyllium-broken-font',
+      },
+    },
+  });
+
+  assert(!result.success, 'expected unsupported font to fail at runtime');
+  assert(
+    result.runtimeError?.includes('unsupported font format') === true,
+    `unexpected font runtime error: ${result.runtimeError}`,
+  );
+});
+
+test('image resources transform export and build animations', async () => {
+  const result = await runIdylliumInBrowser({
+    entryFile: '/workspace/main.idyl',
+    files: {
+      '/workspace/main.idyl': `
+        use console;
+        use image;
+
+        main() {
+          image.Static source;
+          source.load_from_file("cat.png");
+
+          image.Static mirrored = source.scale(-1, 1);
+          image.Static rotated = source.rotate(90);
+          image.Static cropped = source.crop(10, 10, 20, 30);
+          mirrored.export_to_file("mirrored.png");
+
+          dyn_array<image.Static> frames = [source, mirrored];
+          image.Animation created;
+          created.create_from_frames(frames, 0.1);
+          created.export_to_file("created.gif");
+
+          image.Animation loaded;
+          loaded.load_from_file("created.gif");
+          image.Static second = loaded.get_frame(1);
+
+          console.write(
+            mirrored.width, "x", mirrored.height, ":",
+            rotated.width, "x", rotated.height, ":",
+            cropped.width, "x", cropped.height, ":",
+            loaded.frame_count, ":", loaded.frame_duration, ":",
+            loaded.has_uniform_frame_duration, ":",
+            second.width, "x", second.height
+          );
+        }
+      `,
+      '/workspace/cat.png': {
+        bytes: new Uint8Array(fs.readFileSync(path.join(process.cwd(), 'my_images/cat.png'))),
+      },
+    },
+  });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === '112x100:100x112:20x30:2:0.1:true:112x100', `unexpected image output: ${JSON.stringify(result.output)}`);
+  const mirrored = result.writtenFiles['/workspace/mirrored.png'];
+  const animation = result.writtenFiles['/workspace/created.gif'];
+  assert(typeof mirrored !== 'string' && mirrored?.bytes instanceof Uint8Array && mirrored.bytes.length > 0, 'expected exported PNG bytes');
+  assert(typeof animation !== 'string' && animation?.bytes instanceof Uint8Array && animation.bytes.length > 0, 'expected exported GIF bytes');
+});
+
+test('node image service round-trips jpeg and webp images', async () => {
+  const service = createNodeImageService();
+  const source = {
+    width: 2,
+    height: 1,
+    pixels: new Uint8Array([
+      255, 20, 30, 255,
+      10, 200, 40, 128,
+    ]),
+  };
+  const webpBytes = await service.encodeStatic(source, 'webp');
+  const webpImage = await service.decodeStatic(webpBytes, 'webp');
+  const jpegBytes = await service.encodeStatic(source, 'jpeg');
+  const jpegImage = await service.decodeStatic(jpegBytes, 'jpeg');
+
+  assert(webpBytes.length > 0, 'expected encoded WebP bytes');
+  assert(webpImage.format === 'webp', `expected WebP format, got ${webpImage.format}`);
+  assert(webpImage.width === 2 && webpImage.height === 1, `unexpected WebP size ${webpImage.width}x${webpImage.height}`);
+  assert(webpImage.pixels.length === 8, `unexpected WebP pixel count ${webpImage.pixels.length}`);
+
+  assert(jpegBytes.length > 0, 'expected encoded JPEG bytes');
+  assert(jpegImage.format === 'jpeg', `expected JPEG format, got ${jpegImage.format}`);
+  assert(jpegImage.width === 2 && jpegImage.height === 1, `unexpected JPEG size ${jpegImage.width}x${jpegImage.height}`);
+  assert(jpegImage.pixels.length === 8, `unexpected JPEG pixel count ${jpegImage.pixels.length}`);
+});
+
+test('negative image scale mirrors pixels on both axes', () => {
+  const horizontal = scaleRaster({
+    width: 2,
+    height: 1,
+    pixels: new Uint8Array([
+      255, 0, 0, 255,
+      0, 0, 255, 255,
+    ]),
+  }, -1, 1);
+  assert(
+    JSON.stringify([...horizontal.pixels]) === JSON.stringify([
+      0, 0, 255, 255,
+      255, 0, 0, 255,
+    ]),
+    `unexpected horizontal mirror: ${JSON.stringify([...horizontal.pixels])}`,
+  );
+
+  const vertical = scaleRaster({
+    width: 1,
+    height: 2,
+    pixels: new Uint8Array([
+      20, 40, 60, 255,
+      100, 120, 140, 255,
+    ]),
+  }, 1, -1);
+  assert(
+    JSON.stringify([...vertical.pixels]) === JSON.stringify([
+      100, 120, 140, 255,
+      20, 40, 60, 255,
+    ]),
+    `unexpected vertical mirror: ${JSON.stringify([...vertical.pixels])}`,
+  );
 });
 
 test('static and dynamic arrays run', async () => {
@@ -840,6 +1223,146 @@ test('static and dynamic arrays run', async () => {
 
   assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
   assert(result.output === '25:3:[9, 2, 0, 0]:3', `unexpected output: ${JSON.stringify(result.output)}`);
+});
+
+test('arrays use value semantics for assignments parameters and returns', async () => {
+  const result = await runIdyllium(`
+    use console;
+
+    array<int, 3> function changed(array<int, 3> values) {
+      values[0] = 90;
+      return values;
+    }
+
+    main() {
+      array<int, 3> original = [1, 2, 3];
+      array<int, 3> assigned = original;
+      assigned[1] = 80;
+
+      array<int, 3> returned = changed(original);
+      console.write(original, ":", assigned, ":", returned);
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === '[1, 2, 3]:[1, 80, 3]:[90, 2, 3]',
+    `unexpected array value output: ${JSON.stringify(result.output)}`,
+  );
+});
+
+test('static and dynamic arrays convert by value in both directions', async () => {
+  const result = await runIdyllium(`
+    use console;
+
+    array<int, 20> function repeat_to_20(dyn_array<int> arr) {
+      dyn_array<int> tmp;
+      while (tmp.length() < 20) {
+        tmp.join(arr);
+      }
+      tmp.resize(20);
+
+      array<int, 20> result = tmp;
+      return result;
+    }
+
+    main() {
+      array<int, 3> source = [34, 59, 20];
+      dyn_array<int> repeated = repeat_to_20(source);
+      repeated.add(77);
+
+      console.writeln(source);
+      console.writeln(repeated);
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === [
+      '[34, 59, 20]',
+      '[34, 59, 20, 34, 59, 20, 34, 59, 20, 34, 59, 20, 34, 59, 20, 34, 59, 20, 34, 59, 77]',
+      '',
+    ].join('\n'),
+    `unexpected converted array output: ${JSON.stringify(result.output)}`,
+  );
+});
+
+test('dynamic arrays can satisfy fixed array parameters after a size check', async () => {
+  const result = await runIdyllium(`
+    use console;
+
+    array<int, 4> function changed(array<int, 4> values) {
+      values[0] = 40;
+      return values;
+    }
+
+    main() {
+      dyn_array<int> source = [1, 2, 3, 4];
+      array<int, 4> result = changed(source);
+      console.write(source, ":", result);
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === '[1, 2, 3, 4]:[40, 2, 3, 4]', `unexpected fixed parameter output: ${JSON.stringify(result.output)}`);
+});
+
+test('nested static and dynamic arrays convert recursively', async () => {
+  const result = await runIdyllium(`
+    use console;
+
+    dyn_array<dyn_array<int>> function touch(dyn_array<dyn_array<int>> matrix) {
+      matrix[0][0] += 100;
+      matrix[0].add(9);
+      return matrix;
+    }
+
+    main() {
+      dyn_array<array<int, 3>> first = [[1, 2, 3], [4, 5, 6]];
+      array<dyn_array<int>, 2> second = [[10], [20, 30]];
+      array<array<int, 2>, 2> third = [[40, 41], [50, 51]];
+
+      dyn_array<dyn_array<int>> first_result = touch(first);
+      dyn_array<dyn_array<int>> second_result = touch(second);
+      dyn_array<dyn_array<int>> third_result = touch(third);
+
+      console.writeln(first, ":", first_result);
+      console.writeln(second, ":", second_result);
+      console.writeln(third, ":", third_result);
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === [
+      '[[1, 2, 3], [4, 5, 6]]:[[101, 2, 3, 9], [4, 5, 6]]',
+      '[[10], [20, 30]]:[[110, 9], [20, 30]]',
+      '[[40, 41], [50, 51]]:[[140, 41, 9], [50, 51]]',
+      '',
+    ].join('\n'),
+    `unexpected nested conversion output: ${JSON.stringify(result.output)}`,
+  );
+});
+
+test('array value comparisons are structural', async () => {
+  const result = await runIdyllium(`
+    use console;
+
+    main() {
+      array<array<int, 2>, 3> fixed = [[1, 2], [3, 4], [1, 2]];
+      dyn_array<dyn_array<int>> dynamic = [[1, 2], [3, 4], [1, 2]];
+
+      console.write(
+        fixed == dynamic, ":",
+        fixed.contains([1, 2]), ":",
+        fixed.find([3, 4]), ":",
+        fixed.count([1, 2])
+      );
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === 'true:true:1:2', `unexpected array comparison output: ${JSON.stringify(result.output)}`);
 });
 
 test('arrays quote and escape string values', async () => {
@@ -896,6 +1419,46 @@ test('array diagnostics are readable', () => {
       string word = max(words);
     }
   `, "expects a numeric array");
+
+  assertFails(`
+    main() {
+      array<int, 2> source = [1, 2];
+      array<int, 3> target = source;
+    }
+  `, "cannot assign 'array<int, 2>' value to 'array<int, 3>' variable");
+
+  assertFails(`
+    main() {
+      array<string, 2> source = ["1", "2"];
+      dyn_array<int> target = source;
+    }
+  `, "cannot assign 'array<string, 2>' value to 'dyn_array<int>' variable");
+});
+
+test('dynamic to static array conversion errors are readable', async () => {
+  await assertRuntimeFails(`
+    main() {
+      dyn_array<int> source = [1, 2, 3];
+      array<int, 4> target = source;
+    }
+  `, "cannot convert dyn_array of size 3 to 'array<int, 4>' (expected size 4)");
+
+  await assertRuntimeFails(`
+    main() {
+      dyn_array<dyn_array<int>> source = [[1, 2], [3]];
+      array<array<int, 2>, 2> target = source;
+    }
+  `, "cannot convert dyn_array of size 1 to 'array<int, 2>' (expected size 2)");
+
+  await assertRuntimeFails(`
+    void function expects_four(array<int, 4> values) {
+    }
+
+    main() {
+      dyn_array<int> source = [1, 2];
+      expects_four(source);
+    }
+  `, "cannot convert dyn_array of size 2 to 'array<int, 4>' (expected size 4)");
 });
 
 test('array out of bounds runtime error is readable', async () => {
@@ -1132,6 +1695,180 @@ test('types binary and hexadecimal helpers run', async () => {
 
   assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
   assert(result.output === '11011101:11011101:DD:DD:163:-93:163:-93', `unexpected types bits output: ${JSON.stringify(result.output)}`);
+});
+
+test('types bit shifts use fixed-width zero-filled cells', async () => {
+  const result = await runIdyllium(`
+    use console;
+    use types;
+
+    main() {
+      types.uint8 right_source = types.from_bin("00101011", "uint8");
+      types.uint8 shifted_right = right_source.shift_right(bits=3);
+
+      types.int8 left_source = types.from_bin("11000101", "int8");
+      types.int8 shifted_left = left_source.shift_left(3);
+
+      types.int8 negative = types.from_bin("10000000", "int8");
+      types.int8 lost_sign = negative.shift_right(1);
+
+      types.int8 positive = types.from_bin("01000000", "int8");
+      types.int8 gained_sign = positive.shift_left(1);
+
+      types.uint8 zero = right_source.shift_left(12);
+      types.uint8 chained = right_source.shift_left(1).shift_right(1);
+
+      console.write(
+        shifted_right.to_bin(), ":", shifted_right, ":",
+        shifted_left.to_bin(), ":", shifted_left, ":",
+        lost_sign.to_bin(), ":", lost_sign, ":",
+        gained_sign.to_bin(), ":", gained_sign, ":",
+        zero.to_bin(), ":", zero, ":", chained.to_bin()
+      );
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === '00000101:5:00101000:40:01000000:64:10000000:-128:00000000:0:00101011',
+    `unexpected fixed-width shift output: ${JSON.stringify(result.output)}`,
+  );
+});
+
+test('types float shifts reinterpret shifted IEEE bit cells', async () => {
+  const result = await runIdyllium(`
+    use console;
+    use types;
+
+    main() {
+      types.float32 f32 = 4.5;
+      types.float32 f32_left = f32.shift_left(3);
+      types.float32 f32_right = f32.shift_right(3);
+      types.float32 f32_zero = f32.shift_right(100);
+      types.float32 finite = 1.5;
+      types.float32 infinity = finite.shift_left(1);
+
+      types.float64 f64 = 4.5;
+      types.float64 f64_left = f64.shift_left(3);
+      types.float64 f64_zero = f64.shift_left(64);
+
+      console.writeln(f32.to_bin());
+      console.writeln(f32_left.to_bin());
+      console.writeln(f32_right.to_bin());
+      console.writeln(f32_zero.to_bin());
+      console.writeln(infinity.to_bin());
+      console.writeln(f64_left.to_bin());
+      console.writeln(f64_zero.to_bin());
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === [
+      '01000000100100000000000000000000',
+      '00000100100000000000000000000000',
+      '00001000000100100000000000000000',
+      '00000000000000000000000000000000',
+      '01111111100000000000000000000000',
+      '0000000010010000000000000000000000000000000000000000000000000000',
+      '0000000000000000000000000000000000000000000000000000000000000000',
+      '',
+    ].join('\n'),
+    `unexpected float shift output: ${JSON.stringify(result.output)}`,
+  );
+});
+
+test('types negative bit counts reverse shift direction', async () => {
+  const result = await runIdyllium(`
+    use console;
+    use types;
+
+    main() {
+      types.uint8 value = types.from_bin("00101011", "uint8");
+      types.uint8 left_negative = value.shift_left(-3);
+      types.uint8 right_negative = value.shift_right(-3);
+      types.uint8 erased = value.shift_right(-12);
+
+      types.float32 number = 4.5;
+      types.float32 float_left_negative = number.shift_left(-3);
+      types.float32 float_right_negative = number.shift_right(-3);
+
+      console.writeln(left_negative.to_bin());
+      console.writeln(right_negative.to_bin());
+      console.writeln(erased.to_bin());
+      console.writeln(float_left_negative.to_bin());
+      console.writeln(float_right_negative.to_bin());
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === [
+      '00000101',
+      '01011000',
+      '00000000',
+      '00001000000100100000000000000000',
+      '00000100100000000000000000000000',
+      '',
+    ].join('\n'),
+    `unexpected negative shift output: ${JSON.stringify(result.output)}`,
+  );
+});
+
+test('types int64 and uint64 preserve exact values and wrap', async () => {
+  const result = await runIdyllium(`
+    use console;
+    use math;
+    use types;
+
+    main() {
+      types.uint64 exact = 9007199254740993;
+      types.uint64 added = exact + 10;
+      types.uint64 maximum = 18446744073709551615;
+      types.uint64 wrapped = maximum + 1;
+
+      types.int64 signed_maximum = 9223372036854775807;
+      types.int64 signed_minimum = signed_maximum + 1;
+      types.int64 minus_one = types.from_hex("FFFFFFFFFFFFFFFF", "int64");
+      types.uint64 parsed = types.from_bin(
+        "1111111111111111111111111111111111111111111111111111111111111111",
+        "uint64"
+      );
+      types.uint64 index = 1;
+      array<string, 2> names = ["zero", "one"];
+
+      console.write(
+        exact, ":", added, ":", wrapped, ":",
+        signed_minimum, ":", minus_one, ":", parsed, ":",
+        exact < added, ":", maximum.to_hex(), ":",
+        names[index], ":", math.sqrt(index + 80), ":", div(maximum, 3)
+      );
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === '9007199254740993:9007199254741003:0:-9223372036854775808:-1:18446744073709551615:true:FFFFFFFFFFFFFFFF:one:9:6148914691236517205',
+    `unexpected 64-bit types output: ${JSON.stringify(result.output)}`,
+  );
+});
+
+test('types int64 values cross gui snapshot boundaries', async () => {
+  const { runtime } = await runWithInspectableRuntime(`
+    use gui;
+    use types;
+
+    main() {
+      types.int64 left = 120;
+
+      gui.Window win;
+      win.x = left;
+      win.show();
+    }
+  `);
+
+  const snapshot = runtime.getWindows();
+  assert(JSON.stringify(snapshot).includes('"x":120'), 'expected bigint-backed coordinate in serializable gui snapshot');
 });
 
 test('types float32 and float64 preserve different precision', async () => {
@@ -1859,6 +2596,88 @@ test('user modules expose functions and classes across files', async () => {
   assert(result.output === '16:25:600', `unexpected output: ${JSON.stringify(result.output)}`);
 });
 
+test('user modules expose readonly named constants', async () => {
+  const mainSource = [
+    'use console;',
+    'use config;',
+    '',
+    'main() {',
+    '    console.writeln(config.MAX_PLAYERS);',
+    '}',
+  ].join('\n');
+  const configSource = 'const int MAX_PLAYERS = 8;\n';
+  const result = await runIdyllium(mainSource, {}, {
+    file: 'main.idyl',
+    sources: { 'config.idyl': configSource },
+  });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === '8\n', `unexpected module constant output: ${JSON.stringify(result.output)}`);
+
+  const assignment = compileIdyllium(`
+    use config;
+
+    main() {
+      config.MAX_PLAYERS = 10;
+    }
+  `, {
+    file: 'main.idyl',
+    sources: { 'config.idyl': configSource },
+  });
+  assert(!assignment.success, 'expected imported constant assignment failure');
+  assert(
+    assignment.diagnosticsText.includes("cannot assign to constant 'config.MAX_PLAYERS'"),
+    `unexpected imported constant diagnostic:\n${assignment.diagnosticsText}`,
+  );
+
+  const project = new IdylliumProject({
+    entryFile: 'main.idyl',
+    files: { 'main.idyl': mainSource, 'config.idyl': configSource },
+  });
+  const completionOffset = mainSource.indexOf('config.MAX_PLAYERS') + 'config.'.length;
+  const completions = project.completions({ file: 'main.idyl', offset: completionOffset });
+  assert(
+    completions.some((item) => item.name === 'MAX_PLAYERS' && item.kind === 'constant'),
+    'expected imported constant completion',
+  );
+  const definition = project.definition({
+    file: 'main.idyl',
+    offset: mainSource.indexOf('MAX_PLAYERS') + 1,
+  });
+  assert(definition?.file === 'config.idyl', `expected config.idyl definition, got ${definition?.file}`);
+  assert(definition?.range.start.line === 1, `expected constant definition on line 1, got ${definition?.range.start.line}`);
+});
+
+test('array fields on imported user classes keep value semantics', async () => {
+  const result = await runIdyllium(`
+    use console;
+    use storage;
+
+    main() {
+      storage.Holder holder;
+      array<int, 2> source = [1, 2];
+
+      holder.values = source;
+      source[0] = 9;
+      holder.values.add(3);
+
+      console.write(source, ":", holder.values);
+    }
+  `, {}, {
+    file: 'main.idyl',
+    sources: {
+      'storage.idyl': `
+        class Holder {
+          dyn_array<int> values;
+        }
+      `,
+    },
+  });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === '[9, 2]:[1, 2, 3]', `unexpected module array field output: ${JSON.stringify(result.output)}`);
+});
+
 test('user module diagnostics are checked across files', () => {
   const badArgument = compileIdyllium(`
     use math_tools;
@@ -1978,10 +2797,10 @@ test('gui widget registry covers lesson widgets in headless runtime', async () =
       gui.RadioButton rb;
       gui.ComboBox combo;
       gui.Frame frame;
-      gui.Image image;
+      gui.ImageBox image_box;
       gui.Modal modal;
 
-      image.resize_mode = "fit";
+      image_box.resize_mode = "fit";
 
       spin.value = 5;
       spin.min = 0;
@@ -2016,9 +2835,9 @@ test('gui widget registry covers lesson widgets in headless runtime', async () =
       modal.show_alert();
 
       win.add_child(frame);
-      win.add_child(image);
+      win.add_child(image_box);
       win.add_child(combo);
-      console.write(spin.value, ":", fspin.value, ":", slider.value, ":", cb.is_checked, ":", rb.is_selected, ":", image.resize_mode, ":", modal.get_input_value());
+      console.write(spin.value, ":", fspin.value, ":", slider.value, ":", cb.is_checked, ":", rb.is_selected, ":", image_box.resize_mode, ":", modal.get_input_value());
     }
   `);
 
@@ -2045,7 +2864,7 @@ test('gui widgets have useful default sizes', async () => {
       gui.ComboBox combo;
       gui.Frame frame;
       gui.Canvas canvas;
-      gui.Image image;
+      gui.ImageBox image_box;
 
       win.add_child(label);
       win.add_child(button);
@@ -2060,7 +2879,7 @@ test('gui widgets have useful default sizes', async () => {
       win.add_child(combo);
       win.add_child(frame);
       win.add_child(canvas);
-      win.add_child(image);
+      win.add_child(image_box);
       win.show();
     }
   `);
@@ -2086,7 +2905,7 @@ test('gui widgets have useful default sizes', async () => {
   assert(JSON.stringify(sizes.get('gui.ComboBox')) === JSON.stringify([180, 30]), 'expected default ComboBox size');
   assert(JSON.stringify(sizes.get('gui.Frame')) === JSON.stringify([220, 140]), 'expected default Frame size');
   assert(JSON.stringify(sizes.get('gui.Canvas')) === JSON.stringify([300, 150]), 'expected default Canvas size');
-  assert(JSON.stringify(sizes.get('gui.Image')) === JSON.stringify([160, 120]), 'expected default Image size');
+  assert(JSON.stringify(sizes.get('gui.ImageBox')) === JSON.stringify([160, 120]), 'expected default ImageBox size');
 });
 
 test('progress bar exposes text background and foreground colors', async () => {
@@ -2116,7 +2935,28 @@ test('progress bar exposes text background and foreground colors', async () => {
   assert(explicitProperties(progress.properties).includes('text_color'), 'expected ProgressBar text_color to be explicit');
   assert(explicitProperties(progress.properties).includes('background_color'), 'expected ProgressBar background_color to be explicit');
   assert(explicitProperties(progress.properties).includes('foreground_color'), 'expected ProgressBar foreground_color to be explicit');
-  assert(!explicitProperties(progress.properties).includes('fill_color'), 'expected legacy fill_color to remain default');
+  assert(!('fill_color' in progress.properties), 'expected ProgressBar fill_color legacy property to be absent');
+});
+
+test('removed widget color legacy properties are rejected', () => {
+  assertFails(`
+    use colors;
+    use gui;
+
+    main() {
+      gui.ProgressBar progress;
+      progress.fill_color = colors.RED;
+    }
+  `, "has no property 'fill_color'");
+
+  assertFails(`
+    use gui;
+
+    main() {
+      gui.Label label;
+      label.color = "#ff0000";
+    }
+  `, "has no property 'color'");
 });
 
 test('gui color inheritance metadata tracks explicit widget colors', async () => {
@@ -2272,14 +3112,14 @@ test('canvas draw accepts drawable objects only', () => {
 
   assertFails(`
     use gui;
-    use drawable;
+    use image;
 
     main() {
       gui.Canvas canvas;
-      drawable.Texture texture;
-      canvas.draw(texture);
+      image.Static picture;
+      canvas.draw(picture);
     }
-  `, "'draw' argument 1 expects drawable object, got 'drawable.Texture'");
+  `, "'draw' argument 1 expects drawable object, got 'image.Static'");
 });
 
 test('headless canvas records drawable commands', async () => {
@@ -2368,6 +3208,11 @@ test('headless canvas records drawable commands', async () => {
   assert(canvas.commands[5].object?.properties.scale_x === 0.5 && canvas.commands[5].object?.properties.scale_y === 2, 'expected sprite scale');
   assert(canvas.commands[6].object?.properties.text === 'Score', 'expected text snapshot');
   assert(canvas.commands[6].object?.properties.x === 9 && canvas.commands[6].object?.properties.y === 11, 'expected moved text position');
+  const defaultTextFont = canvas.commands[6].object?.properties.font as {
+    properties?: Record<string, unknown>;
+  } | undefined;
+  assert(defaultTextFont?.properties?.is_builtin === true, `expected bundled Text font, got ${JSON.stringify(defaultTextFont)}`);
+  assert(defaultTextFont?.properties?.format === 'woff2', `expected bundled WOFF2 font, got ${JSON.stringify(defaultTextFont)}`);
 });
 
 test('gui window show initializes canvas callbacks and snapshots widget tree', async () => {
@@ -2441,7 +3286,8 @@ test('gui step keeps static canvas commands when no update callback exists', asy
     }
   `);
 
-  await result.runtime.stepGui(0.016);
+  const changed = await result.runtime.stepGui(0.016);
+  assert(changed === false, 'expected a static Canvas GUI step to stay unchanged');
   const canvas = result.runtime.getCanvases()[0];
   assert(canvas.commands.length === 1, `expected static draw command to remain, got ${canvas.commands.length}`);
   assert(canvas.commands[0].object?.properties.x === 10, `unexpected static canvas snapshot: ${JSON.stringify(canvas)}`);
@@ -2497,12 +3343,12 @@ test('gui canvas events update state and next frame snapshot', async () => {
   assert(draw?.object?.properties.x === 10 && draw.object.properties.y === 20, `unexpected initial draw snapshot: ${JSON.stringify(draw)}`);
 
   await result.runtime.dispatchGuiEvent(canvasId, 'key_pressed', { key: 'D' });
-  await result.runtime.stepGui(0.016);
+  assert(await result.runtime.stepGui(0.016), 'expected Canvas on_update to change the GUI snapshot');
   draw = result.runtime.getCanvases()[0].commands.find((command) => command.kind === 'draw');
   assert(draw?.object?.properties.x === 15, `expected key event to move player, got ${JSON.stringify(draw)}`);
 
   await result.runtime.dispatchGuiEvent(canvasId, 'mouse_scroll', { x: 3, y: 4, delta: -2 });
-  await result.runtime.stepGui(0.016);
+  assert(await result.runtime.stepGui(0.016), 'expected Canvas on_update after mouse scroll');
   draw = result.runtime.getCanvases()[0].commands.find((command) => command.kind === 'draw');
   assert(draw?.object?.properties.y === 18, `expected mouse scroll to move player, got ${JSON.stringify(draw)}`);
 });
@@ -2642,11 +3488,11 @@ test('gui timers tick during gui steps', async () => {
   `);
 
   const label = () => result.runtime.getWindows()[0].children[0];
-  await result.runtime.stepGui(0.25);
+  assert(await result.runtime.stepGui(0.25), 'expected timer ticks to change GUI state');
   assert(label().properties.text === '2', `expected two timer ticks, got ${JSON.stringify(label())}`);
-  await result.runtime.stepGui(0.10);
+  assert(await result.runtime.stepGui(0.10), 'expected the final timer tick to change GUI state');
   assert(label().properties.text === '3', `expected third timer tick, got ${JSON.stringify(label())}`);
-  await result.runtime.stepGui(0.50);
+  assert(await result.runtime.stepGui(0.50) === false, 'expected a stopped timer GUI step to stay unchanged');
   assert(label().properties.text === '3', `expected stopped timer to stay at 3, got ${JSON.stringify(label())}`);
 });
 
@@ -2725,24 +3571,24 @@ test('gui modals snapshot close and run callbacks', async () => {
   assert(label().properties.text === 'Hello, Ada', `expected input callback to read value, got ${JSON.stringify(label())}`);
 });
 
-test('drawable asset loading reports readable runtime errors', async () => {
+test('image asset loading reports readable runtime errors', async () => {
   await assertRuntimeFails([
-    'use drawable;',
+    'use image;',
     '',
     'main() {',
-    '    drawable.Texture texture;',
-    '    texture.load_from_file("missing-player.png");',
+    '    image.Static picture;',
+    '    picture.load_from_file("missing-player.png");',
     '}',
-  ].join('\n'), "main.idyl:5: runtime error: Texture.load_from_file() cannot load 'missing-player.png': file does not exist");
+  ].join('\n'), "main.idyl:5: runtime error: Static.load_from_file() cannot load 'missing-player.png': file does not exist");
 
-  await assertRuntimeFails([
-    'use gui;',
-    '',
-    'main() {',
-    '    gui.Image image;',
-    '    image.load_from_file("missing-cat.png");',
-    '}',
-  ].join('\n'), "main.idyl:5: runtime error: Image.load_from_file() cannot load 'missing-cat.png': file does not exist");
+  assertFails(`
+    use gui;
+
+    main() {
+      gui.ImageBox picture;
+      picture.load_from_file("cat.png");
+    }
+  `, "type 'gui.ImageBox' has no method 'load_from_file'");
 });
 
 test('button does not accept placeholder or font_size', () => {
@@ -2822,6 +3668,26 @@ test('stdlib registry powers completions', () => {
   assert(completions.some((item) => item.name === 'write'), 'expected console.write completion');
 });
 
+test('json completions use language null instead of legacy NULL', () => {
+  const service = new IdylliumLanguageService();
+  const source = 'use json;\nmain() {\n  json.';
+  const completions = service.completions({ source, offset: source.length });
+
+  assert(completions.some((item) => item.name === 'Value' && item.kind === 'type'), 'expected json.Value completion');
+  assert(completions.some((item) => item.name === 'parse'), 'expected json.parse completion');
+  assert(!completions.some((item) => item.name === 'NULL'), 'json.NULL must not remain in completions');
+});
+
+test('stdlib registry exposes reference metadata', () => {
+  const registry = createDefaultStandardLibrary();
+  const imageModule = registry.listModuleSpecs().find((module) => module.name === 'image');
+  const desaturate = imageModule?.types.get('Static')?.methods.get('desaturate');
+
+  assert(imageModule !== undefined, 'expected image module metadata');
+  assert(desaturate?.parameters[0]?.defaultValue === '1.0', 'expected documented desaturate default');
+  assert(registry.listGlobalFunctions().some((fn) => fn.name === 'to_int'), 'expected global function metadata');
+});
+
 test('colors registry powers completions', () => {
   const service = new IdylliumLanguageService();
   const source = 'use colors;\nmain() {\n  colors.';
@@ -2829,6 +3695,45 @@ test('colors registry powers completions', () => {
   assert(completions.some((item) => item.name === 'Color' && item.kind === 'type'), 'expected colors.Color completion');
   assert(completions.some((item) => item.name === 'RGB'), 'expected colors.RGB completion');
   assert(completions.some((item) => item.name === 'WHITE'), 'expected colors.WHITE completion');
+});
+
+test('image registry powers resource completions', () => {
+  const moduleSource = 'use image;\nmain() {\n  image.';
+  const moduleProject = new IdylliumProject({
+    entryFile: '/workspace/main.idyl',
+    files: { '/workspace/main.idyl': moduleSource },
+  });
+  const moduleItems = moduleProject.completions({ file: '/workspace/main.idyl', offset: moduleSource.length });
+  assert(moduleItems.some((item) => item.name === 'Static' && item.kind === 'type'), 'expected image.Static completion');
+  assert(moduleItems.some((item) => item.name === 'Animation' && item.kind === 'type'), 'expected image.Animation completion');
+
+  const valueSource = 'use image;\nmain() {\n  image.Static picture;\n  picture.';
+  const valueProject = new IdylliumProject({
+    entryFile: '/workspace/main.idyl',
+    files: { '/workspace/main.idyl': valueSource },
+  });
+  const valueItems = valueProject.completions({ file: '/workspace/main.idyl', offset: valueSource.length });
+  assert(valueItems.some((item) => item.name === 'scale'), 'expected image.Static.scale completion');
+  assert(valueItems.some((item) => item.name === 'with_opacity'), 'expected image.Static.with_opacity completion');
+});
+
+test('fonts registry powers shared font completions', () => {
+  const moduleSource = 'use fonts;\nmain() {\n  fonts.';
+  const moduleProject = new IdylliumProject({
+    entryFile: '/workspace/main.idyl',
+    files: { '/workspace/main.idyl': moduleSource },
+  });
+  const moduleItems = moduleProject.completions({ file: '/workspace/main.idyl', offset: moduleSource.length });
+  assert(moduleItems.some((item) => item.name === 'Font' && item.kind === 'type'), 'expected fonts.Font completion');
+
+  const valueSource = 'use fonts;\nmain() {\n  fonts.Font heading;\n  heading.';
+  const valueProject = new IdylliumProject({
+    entryFile: '/workspace/main.idyl',
+    files: { '/workspace/main.idyl': valueSource },
+  });
+  const valueItems = valueProject.completions({ file: '/workspace/main.idyl', offset: valueSource.length });
+  assert(valueItems.some((item) => item.name === 'load_from_file'), 'expected fonts.Font.load_from_file completion');
+  assert(valueItems.some((item) => item.name === 'format'), 'expected fonts.Font.format completion');
 });
 
 test('formatter normalizes indentation without touching braces in text', () => {
@@ -3165,6 +4070,133 @@ test('project API compiles files and powers user module completions', () => {
   const symbols = project.documentSymbols('rect.idyl');
   assert(symbols.some((item) => item.name === 'Rect' && item.kind === 'class'), 'expected Rect document symbol');
   assert(symbols.some((item) => item.name === 'getArea' && item.kind === 'method'), 'expected getArea document symbol');
+});
+
+test('project semantic tokens follow resolved symbols instead of identifier casing', () => {
+  const source = [
+    'use colors;',
+    'use json;',
+    '',
+    'class Player {',
+    '    string name;',
+    '',
+    '    void function set_name(string value) {',
+    '        this.name = value;',
+    '    }',
+    '}',
+    '',
+    'int function score(int level) {',
+    '    int A = level;',
+    '    return A;',
+    '}',
+    '',
+    'main() {',
+    '    json.Object root;',
+    '    Player player;',
+    '    player.set_name("Liam");',
+    '    root.add("color", json.Value(colors.RED));',
+    '    score(3);',
+    '}',
+  ].join('\n');
+  const project = new IdylliumProject({
+    entryFile: 'main.idyl',
+    files: { 'main.idyl': source },
+  });
+  const tokens = project.semanticTokens('main.idyl');
+  const lines = source.split('\n');
+  const tokenText = (token: typeof tokens[number]) => {
+    const { start, end } = token.range;
+    assert(start.line === end.line, 'semantic identifier token must stay on one line');
+    return lines[start.line - 1].slice(start.column - 1, end.column - 1);
+  };
+  const matching = (text: string, kind: typeof tokens[number]['kind']) => (
+    tokens.filter((token) => token.kind === kind && tokenText(token) === text)
+  );
+
+  assert(matching('json', 'namespace').length >= 3, 'expected imported and referenced json namespace tokens');
+  assert(matching('Object', 'class').length === 1, 'expected json.Object class token');
+  assert(matching('Player', 'class').length === 2, 'expected Player declaration and type reference');
+  assert(matching('set_name', 'method').length === 2, 'expected method declaration and call tokens');
+  assert(matching('name', 'property').length === 2, 'expected field declaration and access tokens');
+  assert(matching('value', 'parameter').length === 2, 'expected parameter declaration and reference tokens');
+  assert(matching('A', 'variable').length === 2, 'uppercase variable must remain a variable');
+  assert(matching('A', 'class').length === 0, 'uppercase variable must not be classified as a class');
+  assert(matching('score', 'function').length === 2, 'expected function declaration and call tokens');
+  assert(matching('add', 'method').length === 1, 'expected stdlib method token');
+  const red = matching('RED', 'variable');
+  assert(red.length === 1 && red[0].modifiers.includes('readonly'), 'expected readonly colors.RED token');
+});
+
+test('language tooling marks named constants as readonly', () => {
+  const source = [
+    'use console;',
+    '',
+    'const int LIMIT = 3;',
+    '',
+    'main() {',
+    '    const string title = "Idyllium";',
+    '    int value = LIMIT;',
+    '    console.writeln(title, value);',
+    '}',
+  ].join('\n');
+  const project = new IdylliumProject({
+    entryFile: 'main.idyl',
+    files: { 'main.idyl': source },
+  });
+  const lines = source.split('\n');
+  const tokens = project.semanticTokens('main.idyl');
+  const tokenText = (token: typeof tokens[number]) => (
+    lines[token.range.start.line - 1].slice(token.range.start.column - 1, token.range.end.column - 1)
+  );
+  const constantTokens = tokens.filter((token) => (
+    token.kind === 'variable'
+    && (tokenText(token) === 'LIMIT' || tokenText(token) === 'title')
+  ));
+
+  assert(constantTokens.length === 4, `expected four constant tokens, got ${constantTokens.length}`);
+  assert(constantTokens.every((token) => token.modifiers.includes('readonly')), 'all constant tokens must be readonly');
+  assert(constantTokens.filter((token) => token.modifiers.includes('declaration')).length === 2, 'expected two constant declarations');
+
+  const hover = project.hover({ file: 'main.idyl', offset: source.lastIndexOf('title') + 1 });
+  assert(hover?.detail === 'const title: string', `unexpected const hover: ${hover?.detail}`);
+
+  const symbols = project.documentSymbols('main.idyl');
+  const limit = symbols.find((symbol) => symbol.name === 'LIMIT');
+  assert(limit?.kind === 'constant', `expected constant document symbol, got ${limit?.kind}`);
+});
+
+test('project semantic tokens resolve classes and methods across user modules', () => {
+  const source = [
+    'use shapes;',
+    'main() {',
+    '    shapes.Box box;',
+    '    box.area();',
+    '}',
+  ].join('\n');
+  const project = new IdylliumProject({
+    entryFile: 'main.idyl',
+    files: {
+      'main.idyl': source,
+      'shapes.idyl': [
+        'class Box {',
+        '    float function area() {',
+        '        return 0.0;',
+        '    }',
+        '}',
+      ].join('\n'),
+    },
+  });
+  const lines = source.split('\n');
+  const tokens = project.semanticTokens('main.idyl');
+  const has = (text: string, kind: typeof tokens[number]['kind']) => tokens.some((token) => {
+    if (token.kind !== kind || token.range.start.line !== token.range.end.line) return false;
+    return lines[token.range.start.line - 1].slice(token.range.start.column - 1, token.range.end.column - 1) === text;
+  });
+
+  assert(has('shapes', 'namespace'), 'expected user module namespace token');
+  assert(has('Box', 'class'), 'expected imported user class token');
+  assert(has('box', 'variable'), 'expected imported class variable token');
+  assert(has('area', 'method'), 'expected imported class method token');
 });
 
 test('audio module records sound and music commands', async () => {

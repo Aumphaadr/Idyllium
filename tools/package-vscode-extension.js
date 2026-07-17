@@ -67,6 +67,7 @@ function contentTypesXml() {
   <Default Extension="svg" ContentType="image/svg+xml"/>
   <Default Extension="ts" ContentType="text/plain"/>
   <Default Extension="txt" ContentType="text/plain"/>
+  <Default Extension="wasm" ContentType="application/wasm"/>
   <Default Extension="xml" ContentType="text/xml"/>
   <Default Extension="vsixmanifest" ContentType="text/xml"/>
 </Types>

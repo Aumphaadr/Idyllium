@@ -2,16 +2,37 @@
   <h2>Текст на Canvas</h2>
   <p>
     Для текста используется <code>drawable.Text</code>. Ему можно задать позицию,
-    размер шрифта, цвет и сам текст. Если нужен конкретный шрифт, его можно
-    загрузить через <code>drawable.Font</code>.
+    размер шрифта, цвет и сам текст. Без дополнительных настроек используется
+    встроенный Source Code Pro. Если нужен конкретный шрифт, его можно загрузить
+    через общий ресурс <code>fonts.Font</code>. Тот же объект подходит и для
+    GUI-виджетов.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use fonts;
+
+fonts.Font main_font;
+main_font.load_from_file("SourceCodePro-Regular.ttf");
+
+drawable.Text coordinates;
+coordinates.font = main_font;
+coordinates.font_size = 20;
+coordinates.text = "x=0, y=0";
+</script></idyl-code-block>
+
+  <p>
+    <code>font</code> выбирает рисунок букв, а <code>font_size</code> — их размер.
+    Поэтому один объект <code>main_font</code> можно использовать у нескольких
+    текстов разных размеров.
   </p>
 
   <idyl-code-block><script type="text/plain">
 use colors;
 use drawable;
+use fonts;
 use gui;
 
-drawable.Font main_font;
+fonts.Font main_font;
 drawable.Text coordinates;
 drawable.Circle marker;
 
@@ -23,6 +44,7 @@ void function redraw(gui.Canvas canvas) {
 
 void function init(gui.Canvas canvas) {
     marker.radius = 12;
+    marker.set_origin(12, 12);
     marker.fill_color = colors.RGB(255, 210, 80);
 
     coordinates.x = 20;
@@ -64,6 +86,7 @@ main() {
 
   <p>
     Файл шрифта должен лежать в проекте рядом с программой. Если файла нет,
-    Idyllium честно скажет, что не смог его найти.
+    Idyllium честно скажет, что не смог его найти. Если файл существует, но не
+    является TTF, OTF, WOFF или WOFF2, ошибка тоже появится сразу.
   </p>
 </div>

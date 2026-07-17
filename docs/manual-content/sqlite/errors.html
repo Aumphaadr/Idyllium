@@ -1,0 +1,133 @@
+<div class="docs-section">
+  <h2>Сначала коротко повторим правила</h2>
+  <p>
+    База открывается через <code>sqlite.open()</code>, один запрос выполняется
+    через <code>execute()</code>, а параметры связываются через
+    <code>bind()</code>. Результат начинается перед первой строкой, поэтому до
+    методов чтения нужен успешный <code>next()</code>. Открытые объекты закрываются
+    методами <code>close()</code>.
+  </p>
+  <p>
+    Теперь намеренно нарушим несколько правил. Такие примеры нужны не для
+    копирования в проект, а для знакомства с сообщениями об ошибках.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Забыли привязать параметр</h2>
+  <idyl-code-block><script type="text/plain">
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("error_unbound.db");
+    db.execute("DROP TABLE IF EXISTS players");
+    db.execute("CREATE TABLE players (name TEXT NOT NULL, level INTEGER NOT NULL)");
+
+    sqlite.Statement stmt = db.prepare(
+        "INSERT INTO players (name, level) VALUES (:name, :level)"
+    );
+    stmt.bind_string("name", "Liam");
+    stmt.execute();
+}
+</script></idyl-code-block>
+  <idyl-error-block>main.idyl:12: runtime error: sqlite statement has unbound parameter ':level'</idyl-error-block>
+  <p>
+    В SQL есть параметры <code>:name</code> и <code>:level</code>, но значение
+    получил только первый. Idyllium не превращает забытый параметр в
+    <code>NULL</code> молча: ошибка прямо называет отсутствующий
+    <code>:level</code>.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Выбрали неверный метод чтения</h2>
+  <idyl-code-block><script type="text/plain">
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("error_getter.db");
+    db.execute("DROP TABLE IF EXISTS players");
+    db.execute("CREATE TABLE players (name TEXT NOT NULL)");
+    db.execute("INSERT INTO players VALUES ('Mira')");
+
+    sqlite.Result rows = db.execute("SELECT name FROM players");
+    rows.next();
+    int name = rows.get_int("name");
+}
+</script></idyl-code-block>
+  <idyl-error-block>main.idyl:11: runtime error: sqlite column 'name' is text, expected int</idyl-error-block>
+  <p>
+    Колонка <code>name</code> содержит текст, а программа потребовала целое
+    число через <code>get_int()</code>. Нужно заменить его на
+    <code>get_string()</code> и тип переменной на <code>string</code>.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Обратились к несуществующей колонке</h2>
+  <idyl-code-block><script type="text/plain">
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("error_column.db");
+    db.execute("DROP TABLE IF EXISTS players");
+    db.execute("CREATE TABLE players (name TEXT NOT NULL)");
+    db.execute("INSERT INTO players VALUES ('Nika')");
+
+    sqlite.Result rows = db.execute("SELECT name FROM players");
+    rows.next();
+    int score = rows.get_int("score");
+}
+</script></idyl-code-block>
+  <idyl-error-block>main.idyl:11: runtime error: sqlite result has no column 'score'</idyl-error-block>
+  <p>
+    Даже если колонка <code>score</code> существует в таблице, её нужно указать
+    в текущем <code>SELECT</code>. Здесь запрос вернул только
+    <code>name</code>, поэтому у результата нет колонки <code>score</code>.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Забыли next()</h2>
+  <idyl-code-block><script type="text/plain">
+sqlite.Result rows = db.execute("SELECT name FROM players");
+string name = rows.get_string("name"); // runtime error
+</script></idyl-code-block>
+  <p>
+    Новый результат находится перед первой строкой. Getter разрешён только
+    после того, как <code>next()</code> вернул <code>true</code>. Если он вернул
+    <code>false</code>, строк нет и читать тоже нечего.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Попытались использовать закрытый объект</h2>
+  <idyl-code-block><script type="text/plain">
+sqlite.Database db = sqlite.open("game.db");
+db.close();
+db.execute("SELECT 1"); // runtime error
+</script></idyl-code-block>
+  <p>
+    После <code>close()</code> объект больше не связан с ресурсом. Это относится
+    к <code>sqlite.Database</code>, <code>sqlite.Statement</code> и
+    <code>sqlite.Result</code>. Проверить состояние можно через свойство
+    <code>is_open</code>, но обычно проще организовать программу так, чтобы код
+    после <code>close()</code> к объекту уже не обращался.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>SQL тоже проверяет свои правила</h2>
+  <p>
+    SQLite отдельно сообщит о несуществующей таблице, ошибочном синтаксисе SQL,
+    повторяющемся уникальном значении и попытке записать <code>NULL</code> в
+    колонку <code>NOT NULL</code>. Сообщение всё равно будет оформлено как
+    обычная runtime error Idyllium и укажет строку программы, на которой был
+    выполнен запрос.
+  </p>
+  <p>
+    Читайте сообщение слева направо: файл и строка → вид ошибки → объект SQLite
+    → конкретная причина. Как правило, в одной строке уже написано, какой
+    параметр, колонка или тип привёл к проблеме.
+  </p>
+</div>

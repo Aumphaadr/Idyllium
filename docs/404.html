@@ -1,18 +1,36 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Idyllium — страница не найдена</title>
-  <link rel="icon" type="image/png" href="favicon.png">
-  <link rel="stylesheet" href="fonts/fonts.css">
-  <link rel="stylesheet" href="app.css">
+  <title>Idyllium - страница не найдена</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px; background: #101012; color: #f1f1f3; font: 18px/1.5 system-ui, sans-serif; }
+    main { width: min(100%, 560px); padding: 26px; border: 1px solid #34363d; border-radius: 8px; background: #18191d; }
+    h1 { margin: 0 0 10px; font-size: 30px; }
+    p { color: #c7c9cf; }
+    nav { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+    a { padding: 8px 12px; border: 1px solid #34363d; border-radius: 6px; color: #f1f1f3; text-decoration: none; }
+    a:hover { border-color: #76bff4; }
+  </style>
 </head>
-<body class="not-found-page">
-  <main class="not-found-card">
+<body>
+  <main>
     <h1>Страница не найдена</h1>
-    <p>Документация Idyllium работает как лёгкое SPA. Откройте главную страницу и выберите нужный урок в навигации.</p>
-    <a class="topbar-link" href="./">Открыть документацию</a>
+    <p>Можно вернуться в IDE, открыть учебник или воспользоваться справочником.</p>
+    <nav>
+      <a data-site-path="">Открыть IDE</a>
+      <a data-site-path="book/">Учебник</a>
+      <a data-site-path="reference/">Документация</a>
+    </nav>
   </main>
+  <script>
+    const parts = location.pathname.split('/').filter(Boolean);
+    const base = location.hostname.endsWith('github.io') && parts.length > 0 ? '/' + parts[0] + '/' : '/';
+    document.querySelectorAll('[data-site-path]').forEach((link) => {
+      link.href = base + link.dataset.sitePath;
+    });
+  </script>
 </body>
 </html>

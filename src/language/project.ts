@@ -1,6 +1,7 @@
 import { ClassDeclaration, FunctionDeclaration, Program, Statement, TypeName } from '../core/ast';
 import { Diagnostic, DiagnosticBag, SourceRange, formatDiagnostics } from '../core/diagnostics';
 import { UserModuleClassSpec } from '../core/modules';
+import { IdylliumSemanticToken, SemanticAnalyzer } from '../core/semantics';
 import {
   LoadedModule,
   ModuleLoadOptions,
@@ -62,7 +63,7 @@ export interface IdylliumSignatureParameter {
 
 export interface IdylliumDocumentSymbol {
   readonly name: string;
-  readonly kind: 'class' | 'constructor' | 'field' | 'function' | 'method' | 'variable';
+  readonly kind: 'class' | 'constructor' | 'field' | 'function' | 'method' | 'variable' | 'constant';
   readonly detail: string;
   readonly range: SourceRange;
 }
@@ -87,17 +88,20 @@ interface ProjectIndex {
   readonly functions: ReadonlyMap<string, FunctionDeclaration>;
   readonly localClasses: ReadonlyMap<string, ClassDeclaration>;
   readonly userModuleDeclarations: ReadonlyMap<string, ModuleDeclarationIndex>;
+  readonly semanticTokens: readonly IdylliumSemanticToken[];
 }
 
 interface VariableInfo {
   readonly name: string;
   readonly typeName: TypeName;
   readonly range: SourceRange;
+  readonly isConst: boolean;
 }
 
 interface ModuleDeclarationIndex {
   readonly file: string;
   readonly functions: ReadonlyMap<string, SourceRange>;
+  readonly constants: ReadonlyMap<string, SourceRange>;
   readonly classes: ReadonlyMap<string, ClassDeclaration>;
 }
 
@@ -184,7 +188,12 @@ export class IdylliumProject {
 
     const variable = index.variables.get(word.text);
     if (variable) {
-      return hoverFromWord(source, file, word, `${variable.name}: ${typeNameText(variable.typeName)}`);
+      return hoverFromWord(
+        source,
+        file,
+        word,
+        `${variable.isConst ? 'const ' : ''}${variable.name}: ${typeNameText(variable.typeName)}`,
+      );
     }
 
     if (this.stdlib.hasModule(word.text)) {
@@ -275,7 +284,12 @@ export class IdylliumProject {
         symbols.push({ name: declaration.name, kind: 'function', detail: functionDetail(declaration.name, declaration.parameters.length), range: declaration.range });
       }
       if (declaration.kind === 'VariableDeclaration') {
-        symbols.push({ name: declaration.name, kind: 'variable', detail: `${declaration.name}: ${typeNameText(declaration.declaredType)}`, range: declaration.range });
+        symbols.push({
+          name: declaration.name,
+          kind: declaration.isConst ? 'constant' : 'variable',
+          detail: `${declaration.isConst ? 'const ' : ''}${declaration.name}: ${typeNameText(declaration.declaredType)}`,
+          range: declaration.range,
+        });
       }
     }
 
@@ -291,6 +305,14 @@ export class IdylliumProject {
     return symbols;
   }
 
+  semanticTokens(file: string): readonly IdylliumSemanticToken[] {
+    const normalized = normalizeFile(file);
+    if (!this.files.has(normalized)) return [];
+    return this.index(normalized).semanticTokens.filter(
+      (token) => normalizeFile(token.range.start.file) === normalized,
+    );
+  }
+
   private index(file: string): ProjectIndex {
     const diagnostics = new DiagnosticBag();
     const source = this.files.get(file) ?? '';
@@ -302,6 +324,9 @@ export class IdylliumProject {
     }
 
     const userModules = buildUserModuleRegistry(modules, this.stdlib, diagnostics);
+    const semanticTokens = root.ast
+      ? new SemanticAnalyzer(this.stdlib, userModules).analyze(root.ast).tokens
+      : [];
     const allDiagnostics = diagnostics.all();
     return {
       diagnostics: allDiagnostics,
@@ -313,6 +338,7 @@ export class IdylliumProject {
       functions: root.ast ? collectFunctions(root.ast) : new Map(),
       localClasses: root.ast ? collectLocalClasses(root.ast) : new Map(),
       userModuleDeclarations: collectUserModuleDeclarations(modules),
+      semanticTokens,
     };
   }
 
@@ -330,8 +356,13 @@ export class IdylliumProject {
       kind: 'function' as const,
       detail: signatureDetail(item),
     }));
+    const constants = [...module.constants.values()].map((item) => ({
+      name: item.name,
+      kind: 'constant' as const,
+      detail: `const ${moduleName}.${item.name}: ${typeToString(item.type)}`,
+    }));
 
-    return [...classes, ...functions].sort((left, right) => left.name.localeCompare(right.name));
+    return [...classes, ...constants, ...functions].sort((left, right) => left.name.localeCompare(right.name));
   }
 
   private listProjectModules(): CompletionItem[] {
@@ -435,6 +466,8 @@ export class IdylliumProject {
   private memberDefinition(index: ProjectIndex, objectName: string, memberName: string): IdylliumDefinition | null {
     const module = index.userModuleDeclarations.get(objectName);
     if (module) {
+      const constantRange = module.constants.get(memberName);
+      if (constantRange) return { file: normalizeFile(constantRange.start.file), range: constantRange };
       const functionRange = module.functions.get(memberName);
       if (functionRange) return { file: normalizeFile(functionRange.start.file), range: functionRange };
       const classDeclaration = module.classes.get(memberName);
@@ -532,11 +565,21 @@ function collectVariables(program: Program): Map<string, VariableInfo> {
 
   for (const declaration of program.declarations) {
     if (declaration.kind === 'VariableDeclaration') {
-      variables.set(declaration.name, { name: declaration.name, typeName: declaration.declaredType, range: declaration.range });
+      variables.set(declaration.name, {
+        name: declaration.name,
+        typeName: declaration.declaredType,
+        range: declaration.range,
+        isConst: declaration.isConst,
+      });
     }
     if (declaration.kind === 'FunctionDeclaration') {
       for (const parameter of declaration.parameters) {
-        variables.set(parameter.name, { name: parameter.name, typeName: parameter.paramType, range: parameter.range });
+        variables.set(parameter.name, {
+          name: parameter.name,
+          typeName: parameter.paramType,
+          range: parameter.range,
+          isConst: false,
+        });
       }
       collectStatementVariables(declaration.body, variables);
     }
@@ -544,13 +587,23 @@ function collectVariables(program: Program): Map<string, VariableInfo> {
       for (const member of declaration.members) {
         if (member.kind === 'ClassMethodDeclaration') {
           for (const parameter of member.parameters) {
-            variables.set(parameter.name, { name: parameter.name, typeName: parameter.paramType, range: parameter.range });
+            variables.set(parameter.name, {
+              name: parameter.name,
+              typeName: parameter.paramType,
+              range: parameter.range,
+              isConst: false,
+            });
           }
           collectStatementVariables(member.body, variables);
         }
         if (member.kind === 'ConstructorDeclaration') {
           for (const parameter of member.parameters) {
-            variables.set(parameter.name, { name: parameter.name, typeName: parameter.paramType, range: parameter.range });
+            variables.set(parameter.name, {
+              name: parameter.name,
+              typeName: parameter.paramType,
+              range: parameter.range,
+              isConst: false,
+            });
           }
           collectStatementVariables(member.body, variables);
         }
@@ -577,7 +630,12 @@ function collectFunctions(program: Program): Map<string, FunctionDeclaration> {
 
 function collectStatementVariables(statement: Statement, variables: Map<string, VariableInfo>): void {
   if (statement.kind === 'VariableDeclaration') {
-    variables.set(statement.name, { name: statement.name, typeName: statement.declaredType, range: statement.range });
+    variables.set(statement.name, {
+      name: statement.name,
+      typeName: statement.declaredType,
+      range: statement.range,
+      isConst: statement.isConst,
+    });
     return;
   }
 
@@ -616,11 +674,15 @@ function collectUserModuleDeclarations(modules: readonly LoadedModule[]): Map<st
   const result = new Map<string, ModuleDeclarationIndex>();
   for (const module of modules) {
     const functions = new Map<string, SourceRange>();
+    const constants = new Map<string, SourceRange>();
     const classes = new Map<string, ClassDeclaration>();
 
     for (const declaration of module.ast.declarations) {
       if (declaration.kind === 'FunctionDeclaration') {
         functions.set(declaration.name, declaration.range);
+      }
+      if (declaration.kind === 'VariableDeclaration' && declaration.isConst) {
+        constants.set(declaration.name, declaration.nameRange);
       }
       if (declaration.kind === 'ClassDeclaration') {
         classes.set(declaration.name, declaration);
@@ -630,6 +692,7 @@ function collectUserModuleDeclarations(modules: readonly LoadedModule[]): Map<st
     result.set(module.name, {
       file: normalizeFile(module.file),
       functions,
+      constants,
       classes,
     });
   }

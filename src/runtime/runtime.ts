@@ -2,6 +2,48 @@ const nodeFs: any = require('fs');
 const nodePath: any = require('path');
 const nodeBuffer: any = require('buffer').Buffer;
 
+import {
+  RuntimeAnimationFrame,
+  RuntimeDecodedAnimation,
+  RuntimeImageFormat,
+  RuntimeImageService,
+  RuntimeRasterImage,
+  bytesToDataUri,
+  cloneRaster,
+  cropRaster,
+  desaturateRaster,
+  detectImageFormat,
+  imageFormatFromPath,
+  imageMimeType,
+  opacityRaster,
+  rasterHasAlpha,
+  rotateRaster,
+  scaleRaster,
+  tintRaster,
+} from './image-service';
+import {
+  RuntimeSqliteBindable,
+  RuntimeSqliteDatabase,
+  RuntimeSqliteExecution,
+  RuntimeSqliteService,
+  RuntimeSqliteTypedBinding,
+  RuntimeSqliteValue,
+} from './sqlite-service';
+import {
+  DrawableCollisionShape,
+  DrawableTransform,
+  capsuleCollisionShape,
+  circleCollisionShape,
+  collisionShapeContains,
+  collisionShapesIntersect,
+  rectangleCollisionShape,
+} from './drawable-geometry';
+import {
+  RuntimeFontMetricsService,
+  RuntimeTextMetrics,
+  createRuntimeFontMetricsService,
+} from './font-metrics-service';
+
 export class IdylliumRuntimeError extends Error {
   constructor(
     readonly file: string,
@@ -211,11 +253,43 @@ export class IdylliumArray {
     return new IdylliumArray([...values], dynamic, dynamic ? null : staticSize, defaultFactory);
   }
 
-  get(index: number, file: string, line: number): unknown {
+  static convert(
+    value: unknown,
+    dynamic: boolean,
+    staticSize: number | null,
+    defaultFactory: () => unknown,
+    convertElement: (value: unknown) => unknown,
+    targetType: string,
+    file: string,
+    line: number,
+  ): IdylliumArray {
+    if (!(value instanceof IdylliumArray)) {
+      throw new IdylliumRuntimeError(file, line, `cannot convert '${runtimeTypeName(value)}' to '${targetType}'`);
+    }
+
+    const actualSize = value.items.length;
+    if (!dynamic && staticSize !== null && actualSize !== staticSize) {
+      const sourceType = value.dynamic ? 'dyn_array' : 'array';
+      throw new IdylliumRuntimeError(
+        file,
+        line,
+        `cannot convert ${sourceType} of size ${actualSize} to '${targetType}' (expected size ${staticSize})`,
+      );
+    }
+
+    return new IdylliumArray(
+      value.items.map(convertElement),
+      dynamic,
+      dynamic ? null : staticSize,
+      defaultFactory,
+    );
+  }
+
+  get(index: unknown, file: string, line: number): unknown {
     return this.items[this.validIndex(index, file, line)];
   }
 
-  set(index: number, value: unknown, file: string, line: number): void {
+  set(index: unknown, value: unknown, file: string, line: number): void {
     this.items[this.validIndex(index, file, line)] = value;
   }
 
@@ -224,15 +298,15 @@ export class IdylliumArray {
   }
 
   contains(value: unknown): boolean {
-    return this.items.includes(value);
+    return this.items.some((item) => runtimeEquals(item, value));
   }
 
   find(value: unknown): number {
-    return this.items.indexOf(value);
+    return this.items.findIndex((item) => runtimeEquals(item, value));
   }
 
   count(value: unknown): number {
-    return this.items.filter((item) => Object.is(item, value) || item === value).length;
+    return this.items.filter((item) => runtimeEquals(item, value)).length;
   }
 
   reverse(): void {
@@ -240,8 +314,8 @@ export class IdylliumArray {
   }
 
   sort(): void {
-    if (this.items.every((item) => typeof item === 'number')) {
-      this.items.sort((left, right) => (left as number) - (right as number));
+    if (this.items.every((item) => typeof item === 'number' || typeof item === 'bigint')) {
+      this.items.sort((left, right) => runtimeCompare(left as number | bigint, right as number | bigint));
       return;
     }
     this.items.sort((left, right) => formatForInspect(left).localeCompare(formatForInspect(right)));
@@ -252,12 +326,12 @@ export class IdylliumArray {
     this.items.push(value);
   }
 
-  remove_at(index: number, file: string, line: number): void {
+  remove_at(index: unknown, file: string, line: number): void {
     this.expectDynamic('remove_at', file, line);
     this.items.splice(this.validIndex(index, file, line), 1);
   }
 
-  resize(size: number, file: string, line: number): void {
+  resize(size: unknown, file: string, line: number): void {
     this.expectDynamic('resize', file, line);
     const normalizedSize = this.validSize(size, file, line);
     while (this.items.length < normalizedSize) {
@@ -266,7 +340,7 @@ export class IdylliumArray {
     this.items.length = normalizedSize;
   }
 
-  insert(index: number, value: unknown, file: string, line: number): void {
+  insert(index: unknown, value: unknown, file: string, line: number): void {
     this.expectDynamic('insert', file, line);
     const normalizedIndex = this.validInsertIndex(index, file, line);
     this.items.splice(normalizedIndex, 0, value);
@@ -310,11 +384,11 @@ export class IdylliumArray {
       case 'add':
         return this.add(args[0], file, line);
       case 'remove_at':
-        return this.remove_at(args[0] as number, file, line);
+        return this.remove_at(args[0], file, line);
       case 'resize':
-        return this.resize(args[0] as number, file, line);
+        return this.resize(args[0], file, line);
       case 'insert':
-        return this.insert(args[0] as number, args[1], file, line);
+        return this.insert(args[0], args[1], file, line);
       case 'join':
         return this.join(args[0], file, line);
       case 'clear':
@@ -338,30 +412,24 @@ export class IdylliumArray {
     return `[${this.items.map(formatForInspect).join(', ')}]`;
   }
 
-  private validIndex(index: number, file: string, line: number): number {
-    if (!Number.isInteger(index)) {
-      throw new IdylliumRuntimeError(file, line, `array index must be int, got '${String(index)}'`);
-    }
+  private validIndex(value: unknown, file: string, line: number): number {
+    const index = integerNumber(value, 'array index', file, line);
     if (index < 0 || index >= this.items.length) {
       throw new IdylliumRuntimeError(file, line, `array index ${index} out of bounds (size ${this.items.length}, valid indices ${this.validIndexRange()})`);
     }
     return index;
   }
 
-  private validInsertIndex(index: number, file: string, line: number): number {
-    if (!Number.isInteger(index)) {
-      throw new IdylliumRuntimeError(file, line, `array index must be int, got '${String(index)}'`);
-    }
+  private validInsertIndex(value: unknown, file: string, line: number): number {
+    const index = integerNumber(value, 'array insert index', file, line);
     if (index < 0 || index > this.items.length) {
       throw new IdylliumRuntimeError(file, line, `array insert index ${index} out of bounds (size ${this.items.length}, valid indices 0-${this.items.length})`);
     }
     return index;
   }
 
-  private validSize(size: number, file: string, line: number): number {
-    if (!Number.isInteger(size)) {
-      throw new IdylliumRuntimeError(file, line, `array size must be int, got '${String(size)}'`);
-    }
+  private validSize(value: unknown, file: string, line: number): number {
+    const size = integerNumber(value, 'array size', file, line);
     if (size < 0) {
       throw new IdylliumRuntimeError(file, line, `array size must be non-negative, got ${size}`);
     }
@@ -670,6 +738,740 @@ function jsonKindText(value: JsonRuntimeValue): string {
   return value.__jsonKind;
 }
 
+type SqliteRuntimeKind = 'null' | 'integer' | 'real' | 'text' | 'blob';
+
+type SqliteRuntimeValueObject = Record<string, unknown> & {
+  __idylliumType: 'sqlite.Value';
+  __sqliteKind: SqliteRuntimeKind;
+  __sqliteValue: RuntimeSqliteValue;
+};
+
+interface SqliteRuntimeDatabaseState {
+  engine: RuntimeSqliteDatabase | null;
+  path: string;
+  resolvedPath: string;
+  isOpen: boolean;
+  inTransaction: boolean;
+  readonly runtime: RuntimeObjectState;
+  readonly statements: Set<SqliteRuntimeStatementState>;
+}
+
+interface SqliteRuntimeStatementState {
+  readonly database: SqliteRuntimeDatabaseState | null;
+  readonly sql: string;
+  readonly parameterNames: ReadonlySet<string>;
+  readonly bindings: Map<string, RuntimeSqliteBindable>;
+  isOpen: boolean;
+}
+
+interface SqliteRuntimeResultState {
+  readonly columns: readonly string[];
+  readonly rows: readonly (readonly RuntimeSqliteValue[])[];
+  isOpen: boolean;
+  cursor: number;
+}
+
+function createSqliteValue(value: unknown = null, file = 'sqlite', line = 0): SqliteRuntimeValueObject {
+  if (isSqliteRuntimeValue(value)) return value;
+
+  let kind: SqliteRuntimeKind;
+  let stored: RuntimeSqliteValue;
+  if (value === null || isRuntimeNullValue(value)) {
+    kind = 'null';
+    stored = null;
+  } else if (typeof value === 'bigint') {
+    kind = 'integer';
+    stored = value;
+  } else if (typeof value === 'number' && Number.isFinite(value)) {
+    kind = Number.isInteger(value) ? 'integer' : 'real';
+    stored = value;
+  } else if (typeof value === 'string') {
+    kind = 'text';
+    stored = value;
+  } else if (typeof value === 'boolean') {
+    kind = 'integer';
+    stored = value ? 1n : 0n;
+  } else if (value instanceof Uint8Array) {
+    kind = 'blob';
+    stored = new Uint8Array(value);
+  } else {
+    throw new IdylliumRuntimeError(file, line, `cannot convert '${runtimeTypeName(value)}' to sqlite.Value`);
+  }
+
+  const obj: SqliteRuntimeValueObject = {
+    __idylliumType: 'sqlite.Value',
+    __sqliteKind: kind,
+    __sqliteValue: stored,
+  };
+  obj.is_null = () => obj.__sqliteKind === 'null';
+  obj.is_int = () => obj.__sqliteKind === 'integer';
+  obj.is_float = () => obj.__sqliteKind === 'real';
+  obj.is_string = () => obj.__sqliteKind === 'text';
+  obj.to_int = contextFunction((callFile = 'sqlite', callLine = 0) => sqliteValueToInt(obj, callFile, callLine));
+  obj.to_int64 = contextFunction((callFile = 'sqlite', callLine = 0) => sqliteValueToInt64(obj, callFile, callLine));
+  obj.to_float = contextFunction((callFile = 'sqlite', callLine = 0) => sqliteValueToFloat(obj, callFile, callLine));
+  obj.to_string = contextFunction((callFile = 'sqlite', callLine = 0) => sqliteValueToString(obj, callFile, callLine));
+  obj.to_bool = contextFunction((callFile = 'sqlite', callLine = 0) => sqliteValueToBool(obj, callFile, callLine));
+  return obj;
+}
+
+function isSqliteRuntimeValue(value: unknown): value is SqliteRuntimeValueObject {
+  return isPlainObject(value)
+    && value.__idylliumType === 'sqlite.Value'
+    && typeof value.__sqliteKind === 'string';
+}
+
+function sqliteValueToInt(value: SqliteRuntimeValueObject, file: string, line: number): number {
+  expectSqliteValueKind(value, 'integer', 'int', file, line);
+  const integer = value.__sqliteValue;
+  if (typeof integer === 'number') {
+    if (Number.isSafeInteger(integer)) return integer;
+  } else if (typeof integer === 'bigint') {
+    const min = BigInt(Number.MIN_SAFE_INTEGER);
+    const max = BigInt(Number.MAX_SAFE_INTEGER);
+    if (integer >= min && integer <= max) return Number(integer);
+  }
+  throw new IdylliumRuntimeError(file, line, 'sqlite integer is outside the int range; use to_int64()');
+}
+
+function sqliteValueToInt64(value: SqliteRuntimeValueObject, file: string, line: number): bigint {
+  expectSqliteValueKind(value, 'integer', 'int64', file, line);
+  return typeof value.__sqliteValue === 'bigint'
+    ? value.__sqliteValue
+    : BigInt(value.__sqliteValue as number);
+}
+
+function sqliteValueToFloat(value: SqliteRuntimeValueObject, file: string, line: number): number {
+  if (value.__sqliteKind !== 'integer' && value.__sqliteKind !== 'real') {
+    throwSqliteValueExpected(value, 'float', file, line);
+  }
+  return Number(value.__sqliteValue);
+}
+
+function sqliteValueToString(value: SqliteRuntimeValueObject, file: string, line: number): string {
+  expectSqliteValueKind(value, 'text', 'string', file, line);
+  return value.__sqliteValue as string;
+}
+
+function sqliteValueToBool(value: SqliteRuntimeValueObject, file: string, line: number): boolean {
+  expectSqliteValueKind(value, 'integer', 'bool (integer 0 or 1)', file, line);
+  if (value.__sqliteValue === 0 || value.__sqliteValue === 0n) return false;
+  if (value.__sqliteValue === 1 || value.__sqliteValue === 1n) return true;
+  throw new IdylliumRuntimeError(
+    file,
+    line,
+    `sqlite value is integer ${String(value.__sqliteValue)}, expected bool (integer 0 or 1)`,
+  );
+}
+
+function expectSqliteValueKind(
+  value: SqliteRuntimeValueObject,
+  kind: SqliteRuntimeKind,
+  expected: string,
+  file: string,
+  line: number,
+): void {
+  if (value.__sqliteKind === kind) return;
+  throwSqliteValueExpected(value, expected, file, line);
+}
+
+function throwSqliteValueExpected(
+  value: SqliteRuntimeValueObject,
+  expected: string,
+  file: string,
+  line: number,
+): never {
+  throw new IdylliumRuntimeError(file, line, `sqlite value is ${value.__sqliteKind}, expected ${expected}`);
+}
+
+async function openSqliteDatabase(
+  pathValue: unknown,
+  file: string,
+  line: number,
+  runtime: RuntimeObjectState,
+): Promise<RuntimeObject> {
+  const requestedPath = stringArgument(pathValue, 'sqlite.open() path', file, line);
+  if (requestedPath.trim() === '') {
+    throw new IdylliumRuntimeError(file, line, 'sqlite.open() path must not be empty');
+  }
+  if (!runtime.sqliteService) {
+    throw new IdylliumRuntimeError(file, line, 'sqlite runtime is unavailable');
+  }
+
+  const resolvedPath = runtime.fileSystem.resolvePath(requestedPath, file);
+  const parentPath = runtimeDirname(resolvedPath);
+  try {
+    if (runtime.fileSystem.exists(resolvedPath) && !runtime.fileSystem.isFile(resolvedPath)) {
+      throw new Error('path is not a file');
+    }
+    if (!runtime.fileSystem.exists(parentPath) || !runtime.fileSystem.isDirectory(parentPath)) {
+      throw new Error(`parent directory does not exist: ${parentPath}`);
+    }
+  } catch (error) {
+    throw new IdylliumRuntimeError(file, line, `sqlite.open() cannot open '${requestedPath}': ${errorMessage(error)}`);
+  }
+
+  const existed = runtime.fileSystem.exists(resolvedPath);
+  let bytes: Uint8Array | undefined;
+  if (existed) {
+    try {
+      bytes = runtime.fileSystem.readBytes
+        ? runtime.fileSystem.readBytes(resolvedPath)
+        : new TextEncoder().encode(runtime.fileSystem.readText(resolvedPath));
+    } catch (error) {
+      throw new IdylliumRuntimeError(file, line, `sqlite.open() cannot read '${requestedPath}': ${errorMessage(error)}`);
+    }
+  }
+
+  let engine: RuntimeSqliteDatabase;
+  try {
+    engine = await runtime.sqliteService.open(bytes);
+  } catch (error) {
+    throw new IdylliumRuntimeError(file, line, `sqlite.open() cannot open '${requestedPath}': ${errorMessage(error)}`);
+  }
+
+  const obj = createClosedSqliteDatabase(runtime);
+  const state = sqliteDatabaseState(obj);
+  state.engine = engine;
+  state.path = requestedPath;
+  state.resolvedPath = resolvedPath;
+  state.isOpen = true;
+
+  if (!existed) persistSqliteDatabase(state, file, line);
+  return obj;
+}
+
+function createClosedSqliteDatabase(runtime: RuntimeObjectState): RuntimeObject {
+  const state: SqliteRuntimeDatabaseState = {
+    engine: null,
+    path: '',
+    resolvedPath: '',
+    isOpen: false,
+    inTransaction: false,
+    runtime,
+    statements: new Set(),
+  };
+  const obj: RuntimeObject = { __idylliumType: 'sqlite.Database' };
+  Object.defineProperty(obj, '__sqliteDatabaseState', { value: state });
+  defineRuntimeGetter(obj, 'path', () => state.path);
+  defineRuntimeGetter(obj, 'is_open', () => state.isOpen);
+  defineRuntimeGetter(obj, 'in_transaction', () => state.inTransaction);
+
+  obj.execute = contextFunction((sql: unknown, file: string, line: number) => (
+    executeSqliteDatabase(state, sql, new Map(), file, line)
+  ));
+  obj.prepare = contextFunction((sql: unknown, file: string, line: number) => (
+    createSqliteStatement(state, sql, file, line)
+  ));
+  obj.exec_script = contextFunction((sql: unknown, file: string, line: number) => {
+    const engine = assertSqliteDatabaseOpen(state, file, line);
+    const source = stringArgument(sql, 'sqlite.Database.exec_script() sql', file, line);
+    try {
+      engine.executeScript(source);
+      if (!state.inTransaction) persistSqliteDatabase(state, file, line);
+    } catch (error) {
+      if (error instanceof IdylliumRuntimeError) throw error;
+      throw new IdylliumRuntimeError(file, line, `sqlite script execution failed: ${errorMessage(error)}`);
+    }
+  });
+  obj.begin_transaction = contextFunction((file: string, line: number) => {
+    const engine = assertSqliteDatabaseOpen(state, file, line);
+    if (state.inTransaction) {
+      throw new IdylliumRuntimeError(file, line, 'sqlite database already has an active transaction');
+    }
+    executeSqliteTransaction(engine, 'BEGIN TRANSACTION', 'begin', file, line);
+    state.inTransaction = true;
+  });
+  obj.commit = contextFunction((file: string, line: number) => {
+    const engine = assertSqliteDatabaseOpen(state, file, line);
+    if (!state.inTransaction) {
+      throw new IdylliumRuntimeError(file, line, 'sqlite database has no active transaction to commit');
+    }
+    executeSqliteTransaction(engine, 'COMMIT', 'commit', file, line);
+    state.inTransaction = false;
+    persistSqliteDatabase(state, file, line);
+  });
+  obj.rollback = contextFunction((file: string, line: number) => {
+    const engine = assertSqliteDatabaseOpen(state, file, line);
+    if (!state.inTransaction) {
+      throw new IdylliumRuntimeError(file, line, 'sqlite database has no active transaction to roll back');
+    }
+    executeSqliteTransaction(engine, 'ROLLBACK', 'rollback', file, line);
+    state.inTransaction = false;
+  });
+  obj.close = contextFunction((file: string, line: number) => {
+    const engine = assertSqliteDatabaseOpen(state, file, line);
+    if (state.inTransaction) {
+      executeSqliteTransaction(engine, 'ROLLBACK', 'rollback while closing', file, line);
+      state.inTransaction = false;
+    }
+    for (const statement of state.statements) statement.isOpen = false;
+    state.statements.clear();
+    engine.close();
+    state.engine = null;
+    state.isOpen = false;
+  });
+  return obj;
+}
+
+function sqliteDatabaseState(obj: RuntimeObject): SqliteRuntimeDatabaseState {
+  return obj.__sqliteDatabaseState as SqliteRuntimeDatabaseState;
+}
+
+function assertSqliteDatabaseOpen(
+  state: SqliteRuntimeDatabaseState,
+  file: string,
+  line: number,
+): RuntimeSqliteDatabase {
+  if (!state.isOpen || !state.engine) {
+    throw new IdylliumRuntimeError(file, line, 'sqlite database is already closed');
+  }
+  return state.engine;
+}
+
+function persistSqliteDatabase(state: SqliteRuntimeDatabaseState, file: string, line: number): void {
+  const engine = assertSqliteDatabaseOpen(state, file, line);
+  if (!state.runtime.fileSystem.writeBytes) {
+    throw new IdylliumRuntimeError(file, line, 'sqlite cannot save a database: binary file writing is unavailable');
+  }
+  try {
+    state.runtime.fileSystem.writeBytes(state.resolvedPath, engine.export());
+  } catch (error) {
+    throw new IdylliumRuntimeError(file, line, `sqlite cannot save '${state.path}': ${errorMessage(error)}`);
+  }
+}
+
+function executeSqliteTransaction(
+  engine: RuntimeSqliteDatabase,
+  sql: string,
+  operation: string,
+  file: string,
+  line: number,
+): void {
+  try {
+    engine.execute(sql);
+  } catch (error) {
+    throw new IdylliumRuntimeError(file, line, `sqlite ${operation} failed: ${errorMessage(error)}`);
+  }
+}
+
+function createSqliteStatement(
+  database: SqliteRuntimeDatabaseState,
+  sqlValue: unknown,
+  file: string,
+  line: number,
+): RuntimeObject {
+  assertSqliteDatabaseOpen(database, file, line);
+  const sql = stringArgument(sqlValue, 'sqlite.Database.prepare() sql', file, line);
+  const parameterNames = scanSqliteParameters(sql, file, line);
+  const state: SqliteRuntimeStatementState = {
+    database,
+    sql,
+    parameterNames,
+    bindings: new Map(),
+    isOpen: true,
+  };
+  database.statements.add(state);
+  return createSqliteStatementObject(state);
+}
+
+function createClosedSqliteStatement(): RuntimeObject {
+  return createSqliteStatementObject({
+    database: null,
+    sql: '',
+    parameterNames: new Set(),
+    bindings: new Map(),
+    isOpen: false,
+  });
+}
+
+function createSqliteStatementObject(state: SqliteRuntimeStatementState): RuntimeObject {
+  const obj: RuntimeObject = { __idylliumType: 'sqlite.Statement' };
+  defineRuntimeGetter(obj, 'sql', () => state.sql);
+  defineRuntimeGetter(obj, 'is_open', () => state.isOpen);
+
+  obj.bind = contextFunction((name: unknown, value: unknown, file: string, line: number) => {
+    bindSqliteStatement(state, name, sqliteBindingFromValue(value, file, line), file, line);
+  });
+  obj.bind_int = contextFunction((name: unknown, value: unknown, file: string, line: number) => {
+    bindSqliteStatement(
+      state,
+      name,
+      sqliteTypedBinding('integer', runtimeInteger(value, 'sqlite.Statement.bind_int() value', file, line)),
+      file,
+      line,
+    );
+  });
+  obj.bind_int64 = contextFunction((name: unknown, value: unknown, file: string, line: number) => {
+    bindSqliteStatement(
+      state,
+      name,
+      sqliteTypedBinding('integer', runtimeInteger(value, 'sqlite.Statement.bind_int64() value', file, line)),
+      file,
+      line,
+    );
+  });
+  obj.bind_float = contextFunction((name: unknown, value: unknown, file: string, line: number) => {
+    bindSqliteStatement(
+      state,
+      name,
+      sqliteTypedBinding('real', finiteNumber(value, 'sqlite.Statement.bind_float() value', file, line)),
+      file,
+      line,
+    );
+  });
+  obj.bind_string = contextFunction((name: unknown, value: unknown, file: string, line: number) => {
+    bindSqliteStatement(state, name, stringArgument(value, 'sqlite.Statement.bind_string() value', file, line), file, line);
+  });
+  obj.bind_bool = contextFunction((name: unknown, value: unknown, file: string, line: number) => {
+    if (typeof value !== 'boolean') {
+      throw new IdylliumRuntimeError(file, line, 'sqlite.Statement.bind_bool() value must be bool');
+    }
+    bindSqliteStatement(state, name, sqliteTypedBinding('integer', value ? 1 : 0), file, line);
+  });
+  obj.bind_null = contextFunction((name: unknown, file: string, line: number) => {
+    bindSqliteStatement(state, name, null, file, line);
+  });
+  obj.execute = contextFunction((file: string, line: number) => {
+    const database = assertSqliteStatementOpen(state, file, line);
+    return executeSqliteDatabase(database, state.sql, state.bindings, file, line);
+  });
+  obj.clear_bindings = contextFunction((file: string, line: number) => {
+    assertSqliteStatementOpen(state, file, line);
+    state.bindings.clear();
+  });
+  obj.close = contextFunction((file: string, line: number) => {
+    const database = assertSqliteStatementOpen(state, file, line);
+    state.isOpen = false;
+    database.statements.delete(state);
+    state.bindings.clear();
+  });
+  return obj;
+}
+
+function sqliteBindingFromValue(value: unknown, file: string, line: number): RuntimeSqliteBindable {
+  if (value === null || isRuntimeNullValue(value)) return null;
+
+  if (isSqliteRuntimeValue(value)) {
+    if (value.__sqliteKind === 'null') return null;
+    if (value.__sqliteKind === 'integer') {
+      return sqliteTypedBinding('integer', value.__sqliteValue as number | bigint);
+    }
+    if (value.__sqliteKind === 'real') {
+      return sqliteTypedBinding('real', value.__sqliteValue as number);
+    }
+    if (value.__sqliteKind === 'text') return value.__sqliteValue as string;
+    if (value.__sqliteValue instanceof Uint8Array) return new Uint8Array(value.__sqliteValue);
+  }
+
+  if (typeof value === 'bigint') return sqliteTypedBinding('integer', value);
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return sqliteTypedBinding(Number.isInteger(value) ? 'integer' : 'real', value);
+  }
+  if (typeof value === 'string') return value;
+  if (typeof value === 'boolean') return sqliteTypedBinding('integer', value ? 1 : 0);
+  if (value instanceof Uint8Array) return new Uint8Array(value);
+
+  throw new IdylliumRuntimeError(
+    file,
+    line,
+    `sqlite.Statement.bind() cannot bind '${runtimeTypeName(value)}'; expected int, float, string, bool, null, or sqlite.Value`,
+  );
+}
+
+function sqliteTypedBinding(
+  storageClass: RuntimeSqliteTypedBinding['storageClass'],
+  value: number | bigint,
+): RuntimeSqliteTypedBinding {
+  return { storageClass, value };
+}
+
+function assertSqliteStatementOpen(
+  state: SqliteRuntimeStatementState,
+  file: string,
+  line: number,
+): SqliteRuntimeDatabaseState {
+  if (!state.isOpen || !state.database) {
+    throw new IdylliumRuntimeError(file, line, 'sqlite statement is already closed');
+  }
+  assertSqliteDatabaseOpen(state.database, file, line);
+  return state.database;
+}
+
+function bindSqliteStatement(
+  state: SqliteRuntimeStatementState,
+  nameValue: unknown,
+  value: RuntimeSqliteBindable,
+  file: string,
+  line: number,
+): void {
+  assertSqliteStatementOpen(state, file, line);
+  const name = stringArgument(nameValue, 'sqlite parameter name', file, line);
+  if (!/^[\p{L}_][\p{L}\p{N}_]*$/u.test(name)) {
+    throw new IdylliumRuntimeError(
+      file,
+      line,
+      `sqlite parameter name must be written without ':' and contain only letters, digits, and '_', got '${name}'`,
+    );
+  }
+  if (!state.parameterNames.has(name)) {
+    throw new IdylliumRuntimeError(file, line, `sqlite statement has no parameter ':${name}'`);
+  }
+  state.bindings.set(name, value);
+}
+
+function executeSqliteDatabase(
+  state: SqliteRuntimeDatabaseState,
+  sqlValue: unknown,
+  bindings: ReadonlyMap<string, RuntimeSqliteBindable>,
+  file: string,
+  line: number,
+): RuntimeObject {
+  const engine = assertSqliteDatabaseOpen(state, file, line);
+  const sql = stringArgument(sqlValue, 'sqlite execute() sql', file, line);
+  const parameters = scanSqliteParameters(sql, file, line);
+  for (const name of parameters) {
+    if (!bindings.has(name)) {
+      throw new IdylliumRuntimeError(file, line, `sqlite statement has unbound parameter ':${name}'`);
+    }
+  }
+  const keyword = sqliteLeadingKeyword(sql);
+  if (['BEGIN', 'COMMIT', 'END', 'ROLLBACK', 'SAVEPOINT', 'RELEASE'].includes(keyword)) {
+    throw new IdylliumRuntimeError(
+      file,
+      line,
+      'use begin_transaction(), commit(), or rollback() instead of transaction SQL in execute()',
+    );
+  }
+
+  const sqliteBindings: Record<string, RuntimeSqliteBindable> = {};
+  for (const [name, value] of bindings) sqliteBindings[`:${name}`] = value;
+
+  let execution: RuntimeSqliteExecution;
+  try {
+    execution = engine.execute(sql, sqliteBindings);
+  } catch (error) {
+    throw new IdylliumRuntimeError(file, line, `sqlite execution failed: ${errorMessage(error)}`);
+  }
+  if (!state.inTransaction) persistSqliteDatabase(state, file, line);
+  return createSqliteResult(execution);
+}
+
+function createSqliteResult(execution: RuntimeSqliteExecution): RuntimeObject {
+  const state: SqliteRuntimeResultState = {
+    columns: [...execution.columns],
+    rows: execution.rows.map((row) => [...row]),
+    isOpen: true,
+    cursor: -1,
+  };
+  const obj: RuntimeObject = { __idylliumType: 'sqlite.Result' };
+  Object.defineProperty(obj, '__sqliteResultState', { value: state });
+  defineRuntimeGetter(obj, 'is_open', () => state.isOpen);
+  defineRuntimeGetter(obj, 'has_rows', () => state.columns.length > 0);
+  defineRuntimeGetter(obj, 'affected_rows', () => execution.affectedRows);
+  defineRuntimeGetter(obj, 'last_insert_id', () => createSqliteValue(execution.lastInsertId));
+
+  obj.next = contextFunction((file: string, line: number) => {
+    assertSqliteResultOpen(state, file, line);
+    const nextIndex = state.cursor + 1;
+    if (nextIndex >= state.rows.length) {
+      state.cursor = state.rows.length;
+      return false;
+    }
+    state.cursor = nextIndex;
+    return true;
+  });
+  obj.get = contextFunction((column: unknown, file: string, line: number) => (
+    createSqliteValue(sqliteResultColumn(state, column, file, line))
+  ));
+  obj.is_null = contextFunction((column: unknown, file: string, line: number) => (
+    sqliteResultColumn(state, column, file, line) === null
+  ));
+  obj.get_int = contextFunction((column: unknown, file: string, line: number) => {
+    const name = stringArgument(column, 'sqlite result column', file, line);
+    return sqliteColumnConversion(state, name, file, line, (value) => sqliteValueToInt(value, file, line));
+  });
+  obj.get_int64 = contextFunction((column: unknown, file: string, line: number) => {
+    const name = stringArgument(column, 'sqlite result column', file, line);
+    return sqliteColumnConversion(state, name, file, line, (value) => sqliteValueToInt64(value, file, line));
+  });
+  obj.get_float = contextFunction((column: unknown, file: string, line: number) => {
+    const name = stringArgument(column, 'sqlite result column', file, line);
+    return sqliteColumnConversion(state, name, file, line, (value) => sqliteValueToFloat(value, file, line));
+  });
+  obj.get_string = contextFunction((column: unknown, file: string, line: number) => {
+    const name = stringArgument(column, 'sqlite result column', file, line);
+    return sqliteColumnConversion(state, name, file, line, (value) => sqliteValueToString(value, file, line));
+  });
+  obj.get_bool = contextFunction((column: unknown, file: string, line: number) => {
+    const name = stringArgument(column, 'sqlite result column', file, line);
+    return sqliteColumnConversion(state, name, file, line, (value) => sqliteValueToBool(value, file, line));
+  });
+  obj.column_count = contextFunction((file: string, line: number) => {
+    assertSqliteResultOpen(state, file, line);
+    return state.columns.length;
+  });
+  obj.column_name = contextFunction((index: unknown, file: string, line: number) => {
+    assertSqliteResultOpen(state, file, line);
+    const columnIndex = integerNumber(index, 'sqlite.Result.column_name() index', file, line);
+    if (columnIndex < 0 || columnIndex >= state.columns.length) {
+      throw new IdylliumRuntimeError(
+        file,
+        line,
+        `sqlite column index ${columnIndex} out of bounds (size ${state.columns.length}, valid indices ${validRange(state.columns.length)})`,
+      );
+    }
+    return state.columns[columnIndex];
+  });
+  obj.close = contextFunction((file: string, line: number) => {
+    assertSqliteResultOpen(state, file, line);
+    state.isOpen = false;
+    state.cursor = state.rows.length;
+  });
+  return obj;
+}
+
+function createClosedSqliteResult(): RuntimeObject {
+  const result = createSqliteResult({ columns: [], rows: [], affectedRows: 0, lastInsertId: null });
+  (result.__sqliteResultState as SqliteRuntimeResultState).isOpen = false;
+  return result;
+}
+
+function assertSqliteResultOpen(state: SqliteRuntimeResultState, file: string, line: number): void {
+  if (!state.isOpen) throw new IdylliumRuntimeError(file, line, 'sqlite result is already closed');
+}
+
+function sqliteResultColumn(
+  state: SqliteRuntimeResultState,
+  columnValue: unknown,
+  file: string,
+  line: number,
+): RuntimeSqliteValue {
+  assertSqliteResultOpen(state, file, line);
+  if (state.cursor < 0 || state.cursor >= state.rows.length) {
+    throw new IdylliumRuntimeError(file, line, 'sqlite result has no current row; call next() first');
+  }
+  const column = stringArgument(columnValue, 'sqlite result column', file, line);
+  const matching = state.columns
+    .map((name, index) => ({ name, index }))
+    .filter((item) => item.name === column);
+  if (matching.length === 0) {
+    throw new IdylliumRuntimeError(file, line, `sqlite result has no column '${column}'`);
+  }
+  if (matching.length > 1) {
+    throw new IdylliumRuntimeError(file, line, `sqlite result column '${column}' is ambiguous; use SQL aliases`);
+  }
+  return state.rows[state.cursor][matching[0].index];
+}
+
+function sqliteColumnConversion<T>(
+  state: SqliteRuntimeResultState,
+  column: string,
+  file: string,
+  line: number,
+  convert: (value: SqliteRuntimeValueObject) => T,
+): T {
+  const value = createSqliteValue(sqliteResultColumn(state, column, file, line));
+  try {
+    return convert(value);
+  } catch (error) {
+    if (error instanceof IdylliumRuntimeError) {
+      const detail = error.message.replace(/^.*?:\d+: runtime error: /u, '');
+      throw new IdylliumRuntimeError(file, line, detail.replace(/^sqlite value/u, `sqlite column '${column}'`));
+    }
+    throw error;
+  }
+}
+
+function defineRuntimeGetter(obj: RuntimeObject, name: string, getter: () => unknown): void {
+  Object.defineProperty(obj, name, {
+    enumerable: true,
+    configurable: true,
+    get: getter,
+  });
+}
+
+function scanSqliteParameters(sql: string, file: string, line: number): ReadonlySet<string> {
+  const names = new Set<string>();
+  let mode: 'normal' | 'single' | 'double' | 'backtick' | 'bracket' | 'line-comment' | 'block-comment' = 'normal';
+
+  for (let index = 0; index < sql.length; index += 1) {
+    const char = sql[index];
+    const next = sql[index + 1] ?? '';
+
+    if (mode === 'line-comment') {
+      if (char === '\n') mode = 'normal';
+      continue;
+    }
+    if (mode === 'block-comment') {
+      if (char === '*' && next === '/') {
+        mode = 'normal';
+        index += 1;
+      }
+      continue;
+    }
+    if (mode === 'single' || mode === 'double' || mode === 'backtick') {
+      const closing = mode === 'single' ? "'" : mode === 'double' ? '"' : '`';
+      if (char === closing) {
+        if (next === closing) index += 1;
+        else mode = 'normal';
+      }
+      continue;
+    }
+    if (mode === 'bracket') {
+      if (char === ']') mode = 'normal';
+      continue;
+    }
+
+    if (char === '-' && next === '-') {
+      mode = 'line-comment';
+      index += 1;
+      continue;
+    }
+    if (char === '/' && next === '*') {
+      mode = 'block-comment';
+      index += 1;
+      continue;
+    }
+    if (char === "'") {
+      mode = 'single';
+      continue;
+    }
+    if (char === '"') {
+      mode = 'double';
+      continue;
+    }
+    if (char === '`') {
+      mode = 'backtick';
+      continue;
+    }
+    if (char === '[') {
+      mode = 'bracket';
+      continue;
+    }
+    if (char === ':' && /^[\p{L}_]$/u.test(next)) {
+      let end = index + 2;
+      while (end < sql.length && /^[\p{L}\p{N}_]$/u.test(sql[end])) end += 1;
+      names.add(sql.slice(index + 1, end));
+      index = end - 1;
+      continue;
+    }
+    if (char === '?' || char === '@' || char === '$') {
+      throw new IdylliumRuntimeError(
+        file,
+        line,
+        `unsupported SQLite parameter '${char}'; use named parameters such as ':name'`,
+      );
+    }
+  }
+  return names;
+}
+
+function sqliteLeadingKeyword(sql: string): string {
+  const withoutComments = sql.replace(/^(?:\s+|--[^\n]*(?:\n|$)|\/\*[\s\S]*?\*\/)+/u, '');
+  return /^[A-Za-z]+/u.exec(withoutComments)?.[0].toUpperCase() ?? '';
+}
+
 export interface ConsoleIO {
   write(text: string): void;
   readLine(): Promise<string>;
@@ -686,6 +1488,10 @@ export interface RuntimeOptions {
   readonly console?: Partial<ConsoleIO>;
   readonly input?: readonly string[];
   readonly fileSystem?: RuntimeFileSystem;
+  readonly projectRoot?: string;
+  readonly fontMetricsService?: RuntimeFontMetricsService;
+  readonly imageService?: RuntimeImageService;
+  readonly sqliteService?: RuntimeSqliteService;
   readonly abortSignal?: RuntimeAbortSignal;
 }
 
@@ -697,6 +1503,13 @@ export interface RuntimeFileSystem {
   readText(filePath: string): string;
   writeText(filePath: string, text: string): void;
   appendText(filePath: string, text: string): void;
+  createDirectory?(filePath: string, parents: boolean): void;
+  listDirectory?(filePath: string): readonly string[];
+  copy?(sourcePath: string, destinationPath: string): void;
+  rename?(sourcePath: string, destinationPath: string): void;
+  remove?(filePath: string, recursive: boolean): void;
+  readBytes?(filePath: string): Uint8Array;
+  writeBytes?(filePath: string, bytes: Uint8Array, resourceUri?: string): void;
   resourceUri?(filePath: string): string | null;
   snapshot?(): Record<string, MemoryRuntimeFile>;
   writtenFilesSnapshot?(): Record<string, MemoryRuntimeFile>;
@@ -704,7 +1517,8 @@ export interface RuntimeFileSystem {
 
 export interface MemoryRuntimeFile {
   readonly content?: string;
-  readonly kind?: 'file' | 'directory';
+  readonly bytes?: Uint8Array;
+  readonly kind?: 'file' | 'directory' | 'deleted';
   readonly resourceUri?: string;
 }
 
@@ -712,9 +1526,9 @@ export function createMemoryRuntimeFileSystem(
   entries: Readonly<Record<string, string | MemoryRuntimeFile>> = {},
   cwd = '/workspace',
 ): RuntimeFileSystem {
-  const files = new Map<string, { content: string; resourceUri: string | null }>();
+  const files = new Map<string, { content: string; bytes?: Uint8Array; resourceUri: string | null }>();
   const directories = new Set<string>();
-  const writtenFiles = new Set<string>();
+  const touchedPaths = new Set<string>();
   const normalizedCwd = normalizeMemoryPath(cwd);
   addMemoryDirectory(directories, '/');
   addMemoryDirectory(directories, normalizedCwd);
@@ -729,6 +1543,7 @@ export function createMemoryRuntimeFileSystem(
     addMemoryDirectory(directories, memoryDirname(filePath));
     files.set(filePath, {
       content: typeof rawEntry === 'string' ? rawEntry : rawEntry.content ?? '',
+      bytes: typeof rawEntry === 'string' || !rawEntry.bytes ? undefined : new Uint8Array(rawEntry.bytes),
       resourceUri: typeof rawEntry === 'string' ? null : rawEntry.resourceUri ?? null,
     });
   }
@@ -756,18 +1571,195 @@ export function createMemoryRuntimeFileSystem(
     },
     writeText(filePath: string, text: string): void {
       const normalized = normalizeMemoryPath(filePath, normalizedCwd);
+      assertMemoryProjectPath(normalized, normalizedCwd, 'file write');
       const parent = memoryDirname(normalized);
       if (!directories.has(parent)) throw new Error(`directory does not exist: ${parent}`);
       if (directories.has(normalized)) throw new Error(`path is a directory: ${normalized}`);
       files.set(normalized, { content: text, resourceUri: null });
-      writtenFiles.add(normalized);
+      touchedPaths.add(normalized);
     },
     appendText(filePath: string, text: string): void {
       const normalized = normalizeMemoryPath(filePath, normalizedCwd);
+      assertMemoryProjectPath(normalized, normalizedCwd, 'file write');
       const file = files.get(normalized);
       if (!file) throw new Error(`file does not exist: ${normalized}`);
-      files.set(normalized, { ...file, content: file.content + text });
-      writtenFiles.add(normalized);
+      files.set(normalized, { content: file.content + text, resourceUri: null });
+      touchedPaths.add(normalized);
+    },
+    createDirectory(filePath: string, parents: boolean): void {
+      const normalized = normalizeMemoryPath(filePath, normalizedCwd);
+      assertMemoryProjectPath(normalized, normalizedCwd, 'file.create_directory()');
+      if (files.has(normalized) || directories.has(normalized)) {
+        throw new Error(`path already exists: ${normalized}`);
+      }
+
+      if (!parents) {
+        const parent = memoryDirname(normalized);
+        if (!directories.has(parent)) throw new Error(`directory does not exist: ${parent}`);
+        directories.add(normalized);
+        touchedPaths.add(normalized);
+        return;
+      }
+
+      const missing: string[] = [];
+      let current = normalized;
+      while (!directories.has(current)) {
+        assertMemoryProjectPath(current, normalizedCwd, 'file.create_directory()');
+        if (files.has(current)) throw new Error(`path is a file: ${current}`);
+        missing.push(current);
+        const parent = memoryDirname(current);
+        if (parent === current) break;
+        current = parent;
+      }
+      for (const directory of missing.reverse()) {
+        directories.add(directory);
+        touchedPaths.add(directory);
+      }
+    },
+    listDirectory(filePath: string): readonly string[] {
+      const normalized = normalizeMemoryPath(filePath, normalizedCwd);
+      if (!directories.has(normalized)) {
+        if (files.has(normalized)) throw new Error(`path is not a directory: ${normalized}`);
+        throw new Error(`directory does not exist: ${normalized}`);
+      }
+      const names = new Set<string>();
+      for (const directory of directories) {
+        if (directory !== normalized && memoryDirname(directory) === normalized) {
+          names.add(memoryBasename(directory));
+        }
+      }
+      for (const file of files.keys()) {
+        if (memoryDirname(file) === normalized) names.add(memoryBasename(file));
+      }
+      return [...names].sort((left, right) => left.localeCompare(right));
+    },
+    copy(sourcePath: string, destinationPath: string): void {
+      const source = normalizeMemoryPath(sourcePath, normalizedCwd);
+      const destination = normalizeMemoryPath(destinationPath, normalizedCwd);
+      assertMemoryProjectPath(source, normalizedCwd, 'file.copy()');
+      assertMemoryProjectPath(destination, normalizedCwd, 'file.copy()');
+      assertMemoryMovableSource(source, normalizedCwd, 'file.copy()');
+      assertMemoryDestinationAvailable(files, directories, destination);
+      assertMemoryDestinationParent(directories, destination);
+
+      const sourceFile = files.get(source);
+      if (sourceFile) {
+        files.set(destination, cloneMemoryFile(sourceFile));
+        touchedPaths.add(destination);
+        return;
+      }
+      if (!directories.has(source)) throw new Error(`path does not exist: ${source}`);
+      if (destination.startsWith(`${source}/`)) {
+        throw new Error('cannot copy a directory inside itself');
+      }
+
+      const prefix = `${source}/`;
+      const copiedDirectories = [...directories]
+        .filter((directory) => directory === source || directory.startsWith(prefix))
+        .sort((left, right) => left.length - right.length);
+      const copiedFiles = [...files.entries()].filter(([file]) => file.startsWith(prefix));
+      for (const directory of copiedDirectories) {
+        const target = `${destination}${directory.slice(source.length)}`;
+        directories.add(target);
+        touchedPaths.add(target);
+      }
+      for (const [file, value] of copiedFiles) {
+        const target = `${destination}${file.slice(source.length)}`;
+        files.set(target, cloneMemoryFile(value));
+        touchedPaths.add(target);
+      }
+    },
+    rename(sourcePath: string, destinationPath: string): void {
+      const source = normalizeMemoryPath(sourcePath, normalizedCwd);
+      const destination = normalizeMemoryPath(destinationPath, normalizedCwd);
+      assertMemoryProjectPath(source, normalizedCwd, 'file.rename()');
+      assertMemoryProjectPath(destination, normalizedCwd, 'file.rename()');
+      assertMemoryMovableSource(source, normalizedCwd, 'file.rename()');
+      assertMemoryDestinationAvailable(files, directories, destination);
+      assertMemoryDestinationParent(directories, destination);
+
+      const sourceFile = files.get(source);
+      if (sourceFile) {
+        files.delete(source);
+        files.set(destination, sourceFile);
+        touchedPaths.add(source);
+        touchedPaths.add(destination);
+        return;
+      }
+      if (!directories.has(source)) throw new Error(`path does not exist: ${source}`);
+      if (destination.startsWith(`${source}/`)) {
+        throw new Error('cannot move a directory inside itself');
+      }
+
+      const prefix = `${source}/`;
+      const movedDirectories = [...directories]
+        .filter((directory) => directory === source || directory.startsWith(prefix));
+      const movedFiles = [...files.entries()].filter(([file]) => file.startsWith(prefix));
+      for (const [file] of movedFiles) {
+        files.delete(file);
+        touchedPaths.add(file);
+      }
+      for (const directory of movedDirectories) {
+        directories.delete(directory);
+        touchedPaths.add(directory);
+      }
+      for (const directory of movedDirectories.sort((left, right) => left.length - right.length)) {
+        const target = `${destination}${directory.slice(source.length)}`;
+        directories.add(target);
+        touchedPaths.add(target);
+      }
+      for (const [file, value] of movedFiles) {
+        const target = `${destination}${file.slice(source.length)}`;
+        files.set(target, value);
+        touchedPaths.add(target);
+      }
+    },
+    remove(filePath: string, recursive: boolean): void {
+      const normalized = normalizeMemoryPath(filePath, normalizedCwd);
+      assertMemoryProjectPath(normalized, normalizedCwd, 'file.remove()');
+      assertMemoryMovableSource(normalized, normalizedCwd, 'file.remove()');
+      if (files.delete(normalized)) {
+        touchedPaths.add(normalized);
+        return;
+      }
+      if (!directories.has(normalized)) throw new Error(`path does not exist: ${normalized}`);
+
+      const prefix = `${normalized}/`;
+      const childFiles = [...files.keys()].filter((file) => file.startsWith(prefix));
+      const childDirectories = [...directories].filter((directory) => directory.startsWith(prefix));
+      if (!recursive && (childFiles.length > 0 || childDirectories.length > 0)) {
+        throw new Error(`directory is not empty: ${normalized}`);
+      }
+      for (const file of childFiles) {
+        files.delete(file);
+        touchedPaths.add(file);
+      }
+      for (const directory of childDirectories.sort((left, right) => right.length - left.length)) {
+        directories.delete(directory);
+        touchedPaths.add(directory);
+      }
+      directories.delete(normalized);
+      touchedPaths.add(normalized);
+    },
+    readBytes(filePath: string): Uint8Array {
+      const normalized = normalizeMemoryPath(filePath, normalizedCwd);
+      const file = files.get(normalized);
+      if (!file) throw new Error(`file does not exist: ${normalized}`);
+      if (file.bytes) return new Uint8Array(file.bytes);
+      return new TextEncoder().encode(file.content);
+    },
+    writeBytes(filePath: string, bytes: Uint8Array, resourceUri?: string): void {
+      const normalized = normalizeMemoryPath(filePath, normalizedCwd);
+      assertMemoryProjectPath(normalized, normalizedCwd, 'binary file write');
+      const parent = memoryDirname(normalized);
+      if (!directories.has(parent)) throw new Error(`directory does not exist: ${parent}`);
+      if (directories.has(normalized)) throw new Error(`path is a directory: ${normalized}`);
+      files.set(normalized, {
+        content: '',
+        bytes: new Uint8Array(bytes),
+        resourceUri: resourceUri ?? null,
+      });
+      touchedPaths.add(normalized);
     },
     resourceUri(filePath: string): string | null {
       return files.get(normalizeMemoryPath(filePath, normalizedCwd))?.resourceUri ?? null;
@@ -781,6 +1773,7 @@ export function createMemoryRuntimeFileSystem(
         result[filePath] = {
           kind: 'file',
           content: file.content,
+          bytes: file.bytes ? new Uint8Array(file.bytes) : undefined,
           resourceUri: file.resourceUri ?? undefined,
         };
       }
@@ -788,14 +1781,20 @@ export function createMemoryRuntimeFileSystem(
     },
     writtenFilesSnapshot(): Record<string, MemoryRuntimeFile> {
       const result: Record<string, MemoryRuntimeFile> = {};
-      for (const filePath of [...writtenFiles].sort()) {
+      for (const filePath of [...touchedPaths].sort()) {
         const file = files.get(filePath);
-        if (!file) continue;
-        result[filePath] = {
-          kind: 'file',
-          content: file.content,
-          resourceUri: file.resourceUri ?? undefined,
-        };
+        if (file) {
+          result[filePath] = {
+            kind: 'file',
+            content: file.content,
+            bytes: file.bytes ? new Uint8Array(file.bytes) : undefined,
+            resourceUri: file.resourceUri ?? undefined,
+          };
+        } else if (directories.has(filePath)) {
+          result[filePath] = { kind: 'directory' };
+        } else {
+          result[filePath] = { kind: 'deleted' };
+        }
       }
       return result;
     },
@@ -873,27 +1872,41 @@ export interface IdylliumRuntime {
     set_precision(file: string, line: number, digits: number): Promise<void>;
   };
   readonly core: {
-    divide(left: number, right: number, file: string, line: number): number;
-    div(left: number, right: number, file: string, line: number): number;
-    mod(left: number, right: number, file: string, line: number): number;
-    to_int(value: unknown, file: string, line: number): number;
+    binary(operator: string, left: unknown, right: unknown, file: string, line: number): unknown;
+    negate(value: unknown): number | bigint;
+    divide(left: unknown, right: unknown, file: string, line: number): number;
+    div(left: unknown, right: unknown, file: string, line: number): number | bigint;
+    mod(left: unknown, right: unknown, file: string, line: number): number | bigint;
+    to_int(value: unknown, file: string, line: number): number | bigint;
     to_float(value: unknown, file: string, line: number): number;
     to_string(value: unknown): string;
   };
   readonly array: {
     create(size: number, defaultFactory: () => unknown, dynamic: boolean): IdylliumArray;
     from(values: unknown[], dynamic: boolean, staticSize: number | null, defaultFactory: () => unknown): IdylliumArray;
-    get(array: unknown, index: number, file: string, line: number): unknown;
-    set(array: unknown, index: number, value: unknown, file: string, line: number): void;
-    max(array: unknown, file: string, line: number): number;
-    min(array: unknown, file: string, line: number): number;
-    sum(array: unknown, file: string, line: number): number;
+    convert(
+      value: unknown,
+      dynamic: boolean,
+      staticSize: number | null,
+      defaultFactory: () => unknown,
+      convertElement: (value: unknown) => unknown,
+      targetType: string,
+      file: string,
+      line: number,
+    ): IdylliumArray;
+    get(array: unknown, index: unknown, file: string, line: number): unknown;
+    set(array: unknown, index: unknown, value: unknown, file: string, line: number): void;
+    max(array: unknown, file: string, line: number): number | bigint;
+    min(array: unknown, file: string, line: number): number | bigint;
+    sum(array: unknown, file: string, line: number): number | bigint;
     avg(array: unknown, file: string, line: number): number;
   };
   readonly types: {
-    cast(value: unknown, typeName: string): number;
+    cast(value: unknown, typeName: string): number | bigint;
     to_bin(value: unknown, typeName: string): string;
     to_hex(value: unknown, typeName: string): string;
+    shift_left(value: unknown, typeName: string, bits: unknown, file: string, line: number): number | bigint;
+    shift_right(value: unknown, typeName: string, bits: unknown, file: string, line: number): number | bigint;
   };
   readonly modules: {
     readonly math: Record<string, unknown>;
@@ -903,11 +1916,14 @@ export interface IdylliumRuntime {
     readonly types: Record<string, unknown>;
     readonly encoding: Record<string, unknown>;
     readonly json: Record<string, unknown>;
+    readonly sqlite: Record<string, unknown>;
     readonly audio: Record<string, unknown>;
+    readonly image: Record<string, unknown>;
     readonly gui: Record<string, unknown>;
     readonly colors: Record<string, unknown>;
   };
   createObject(moduleName: string, typeName: string): Record<string, unknown>;
+  convertNullable(moduleName: string, typeName: string, value: unknown, file: string, line: number): unknown;
   setProperty(target: unknown, propertyName: string, value: unknown, file: string, line: number): unknown;
   callModuleFunction(moduleName: string, functionName: string, args: readonly unknown[], file: string, line: number): unknown;
   callMethod(target: unknown, methodName: string, args: readonly unknown[], file: string, line: number): unknown;
@@ -916,8 +1932,33 @@ export interface IdylliumRuntime {
   getCanvases(): readonly IdylliumCanvasSnapshot[];
   getWindows(): readonly IdylliumWindowSnapshot[];
   getModals(): readonly IdylliumModalSnapshot[];
-  stepGui(deltaTime?: number): Promise<void>;
+  hasGui(): boolean;
+  stepGui(deltaTime?: number): Promise<boolean>;
   dispatchGuiEvent(canvasId: number, eventName: string, payload: Readonly<Record<string, unknown>>): Promise<void>;
+}
+
+function defaultRuntimeImageService(): RuntimeImageService | undefined {
+  const nodeProcess = typeof process === 'object' ? process as any : null;
+  if (!nodeProcess?.versions?.node) return undefined;
+  try {
+    // Keep the Node codec out of the browser bundle; browser.ts injects its own service.
+    const dynamicRequire = eval('require') as (request: string) => any;
+    return dynamicRequire('./node-image-service').createNodeImageService();
+  } catch {
+    return undefined;
+  }
+}
+
+function defaultRuntimeSqliteService(): RuntimeSqliteService | undefined {
+  const nodeProcess = typeof process === 'object' ? process as any : null;
+  if (!nodeProcess?.versions?.node) return undefined;
+  try {
+    // Keep sql.js and its Node loader out of the browser bundle.
+    const dynamicRequire = eval('require') as (request: string) => any;
+    return dynamicRequire('./node-sqlite-service').createNodeSqliteService();
+  } catch {
+    return undefined;
+  }
 }
 
 export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
@@ -925,12 +1966,15 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
   let precision: number | null = null;
   let randomSeed: number | null = null;
   const input = [...(options.input ?? [])];
-  const fileSystem = options.fileSystem ?? createNodeRuntimeFileSystem();
+  const fileSystem = options.fileSystem ?? createNodeRuntimeFileSystem(options.projectRoot);
   const runtimeObjects: RuntimeObjectState = {
     objects: [],
     audio: [],
     canvases: [],
     fileSystem,
+    fontMetricsService: options.fontMetricsService ?? createRuntimeFontMetricsService(),
+    imageService: options.imageService ?? defaultRuntimeImageService(),
+    sqliteService: options.sqliteService ?? defaultRuntimeSqliteService(),
     modals: [],
     timers: [],
     windows: [],
@@ -998,6 +2042,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     let closed = false;
     const stream: Record<string, unknown> = {
       __idylliumType: 'file.istream',
+      is_open: true,
       read_line: contextFunction((file: string, callLine: number) => {
         expectOpen(!closed, 'istream.read_line()', file, callLine);
         if (index >= lines.length) {
@@ -1017,6 +2062,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       }),
       close: () => {
         closed = true;
+        stream.is_open = false;
       },
     };
     return stream;
@@ -1040,6 +2086,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     let closed = false;
     const stream: Record<string, unknown> = {
       __idylliumType: 'file.ostream',
+      is_open: true,
       write_line: contextFunction(async (...rawArgs: unknown[]) => {
         const { values, file, line: callLine } = splitContextArgs(rawArgs);
         expectOpen(!closed, 'ostream.write_line()', file, callLine);
@@ -1047,25 +2094,30 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       }),
       close: () => {
         closed = true;
+        stream.is_open = false;
       },
     };
     return stream;
   }
 
   const core = {
-    divide(left: number, right: number, file: string, line: number): number {
-      if (right === 0) throw new IdylliumRuntimeError(file, line, 'division by zero');
-      return left / right;
+    binary(operator: string, left: unknown, right: unknown, file: string, line: number): unknown {
+      return runtimeBinary(operator, left, right, file, line);
     },
-    div(left: number, right: number, file: string, line: number): number {
-      if (right === 0) throw new IdylliumRuntimeError(file, line, 'division by zero');
-      return Math.trunc(left / right);
+    negate(value: unknown): number | bigint {
+      return runtimeNegate(value);
     },
-    mod(left: number, right: number, file: string, line: number): number {
-      if (right === 0) throw new IdylliumRuntimeError(file, line, 'division by zero');
-      return left % right;
+    divide(left: unknown, right: unknown, file: string, line: number): number {
+      return runtimeDivide(left, right, file, line);
     },
-    to_int(value: unknown, file: string, line: number): number {
+    div(left: unknown, right: unknown, file: string, line: number): number | bigint {
+      return runtimeIntegerDivision(left, right, file, line);
+    },
+    mod(left: unknown, right: unknown, file: string, line: number): number | bigint {
+      return runtimeModulo(left, right, file, line);
+    },
+    to_int(value: unknown, file: string, line: number): number | bigint {
+      if (typeof value === 'bigint') return value;
       if (typeof value === 'number') {
         return Math.trunc(finiteNumber(value, "'to_int' value", file, line));
       }
@@ -1075,7 +2127,9 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       throw new IdylliumRuntimeError(file, line, `'to_int' cannot convert '${String(value)}' to int`);
     },
     to_float(value: unknown, file: string, line: number): number {
-      if (typeof value === 'number') return finiteNumber(value, "'to_float' value", file, line);
+      if (typeof value === 'number' || typeof value === 'bigint') {
+        return finiteNumber(value, "'to_float' value", file, line);
+      }
       if (typeof value === 'string') {
         return parseFloatText(value, "'to_float'", file, line);
       }
@@ -1098,35 +2152,58 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     ): IdylliumArray {
       return IdylliumArray.from(values, dynamic, staticSize, defaultFactory);
     },
-    get(value: unknown, index: number, file: string, line: number): unknown {
+    convert(
+      value: unknown,
+      dynamic: boolean,
+      staticSize: number | null,
+      defaultFactory: () => unknown,
+      convertElement: (value: unknown) => unknown,
+      targetType: string,
+      file: string,
+      line: number,
+    ): IdylliumArray {
+      return IdylliumArray.convert(
+        value,
+        dynamic,
+        staticSize,
+        defaultFactory,
+        convertElement,
+        targetType,
+        file,
+        line,
+      );
+    },
+    get(value: unknown, index: unknown, file: string, line: number): unknown {
       if (typeof value === 'string') return stringCharAt(value, index, file, line);
       return expectArray(value, file, line).get(index, file, line);
     },
-    set(value: unknown, index: number, item: unknown, file: string, line: number): void {
+    set(value: unknown, index: unknown, item: unknown, file: string, line: number): void {
       if (typeof value === 'string') {
         throw new IdylliumRuntimeError(file, line, 'string characters are read-only');
       }
       expectArray(value, file, line).set(index, item, file, line);
     },
-    max(value: unknown, file: string, line: number): number {
+    max(value: unknown, file: string, line: number): number | bigint {
       const values = numericValues(value, 'max', file, line);
-      return Math.max(...values);
+      return values.reduce((best, item) => runtimeCompare(item, best) > 0 ? item : best);
     },
-    min(value: unknown, file: string, line: number): number {
+    min(value: unknown, file: string, line: number): number | bigint {
       const values = numericValues(value, 'min', file, line);
-      return Math.min(...values);
+      return values.reduce((best, item) => runtimeCompare(item, best) < 0 ? item : best);
     },
-    sum(value: unknown, file: string, line: number): number {
-      return numericValues(value, 'sum', file, line).reduce((total, item) => total + item, 0);
+    sum(value: unknown, file: string, line: number): number | bigint {
+      return numericValues(value, 'sum', file, line)
+        .reduce<number | bigint>((total, item) => runtimeAdd(total, item), 0);
     },
     avg(value: unknown, file: string, line: number): number {
       const values = numericValues(value, 'avg', file, line);
-      return values.reduce((total, item) => total + item, 0) / values.length;
+      const total = values.reduce<number | bigint>((sum, item) => runtimeAdd(sum, item), 0);
+      return Number(total) / values.length;
     },
   };
 
   const types = {
-    cast(value: unknown, typeName: string): number {
+    cast(value: unknown, typeName: string): number | bigint {
       return castTypesValue(value, typeName);
     },
     to_bin(value: unknown, typeName: string): string {
@@ -1134,6 +2211,12 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     },
     to_hex(value: unknown, typeName: string): string {
       return typesToHex(value, typeName);
+    },
+    shift_left(value: unknown, typeName: string, bits: unknown, file: string, line: number): number | bigint {
+      return typesShift(value, typeName, bits, 'left', file, line);
+    },
+    shift_right(value: unknown, typeName: string, bits: unknown, file: string, line: number): number | bigint {
+      return typesShift(value, typeName, bits, 'right', file, line);
     },
   };
 
@@ -1275,6 +2358,96 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
           const requestedPath = stringArgument(targetPath, 'file.exists() path', file, line);
           return fileSystem.exists(fileSystem.resolvePath(requestedPath, file));
         }),
+        is_file: contextFunction((targetPath: string, file: string, line: number) => {
+          const requestedPath = stringArgument(targetPath, 'file.is_file() path', file, line);
+          const resolvedPath = fileSystem.resolvePath(requestedPath, file);
+          try {
+            return fileSystem.exists(resolvedPath) && fileSystem.isFile(resolvedPath);
+          } catch (error) {
+            throw new IdylliumRuntimeError(file, line, `file.is_file() cannot inspect '${requestedPath}': ${errorMessage(error)}`);
+          }
+        }),
+        is_directory: contextFunction((targetPath: string, file: string, line: number) => {
+          const requestedPath = stringArgument(targetPath, 'file.is_directory() path', file, line);
+          const resolvedPath = fileSystem.resolvePath(requestedPath, file);
+          try {
+            return fileSystem.exists(resolvedPath) && fileSystem.isDirectory(resolvedPath);
+          } catch (error) {
+            throw new IdylliumRuntimeError(file, line, `file.is_directory() cannot inspect '${requestedPath}': ${errorMessage(error)}`);
+          }
+        }),
+        create_directory: contextFunction((...rawArgs: unknown[]) => {
+          const { values, file, line } = splitContextArgs(rawArgs);
+          const requestedPath = stringArgument(values[0], 'file.create_directory() path', file, line);
+          const parents = values.length >= 2
+            ? booleanArgument(values[1], 'file.create_directory() parents', file, line)
+            : false;
+          if (!fileSystem.createDirectory) {
+            throw new IdylliumRuntimeError(file, line, 'file.create_directory() is not supported by this runtime');
+          }
+          try {
+            fileSystem.createDirectory(fileSystem.resolvePath(requestedPath, file), parents);
+          } catch (error) {
+            throw new IdylliumRuntimeError(file, line, `file.create_directory() cannot create '${requestedPath}': ${errorMessage(error)}`);
+          }
+        }),
+        list_directory: contextFunction((targetPath: string, file: string, line: number) => {
+          const requestedPath = stringArgument(targetPath, 'file.list_directory() path', file, line);
+          if (!fileSystem.listDirectory) {
+            throw new IdylliumRuntimeError(file, line, 'file.list_directory() is not supported by this runtime');
+          }
+          try {
+            const names = fileSystem.listDirectory(fileSystem.resolvePath(requestedPath, file));
+            return IdylliumArray.from([...names], true, null, () => '');
+          } catch (error) {
+            throw new IdylliumRuntimeError(file, line, `file.list_directory() cannot inspect '${requestedPath}': ${errorMessage(error)}`);
+          }
+        }),
+        copy: contextFunction((sourcePath: string, destinationPath: string, file: string, line: number) => {
+          const source = stringArgument(sourcePath, 'file.copy() source', file, line);
+          const destination = stringArgument(destinationPath, 'file.copy() destination', file, line);
+          if (!fileSystem.copy) {
+            throw new IdylliumRuntimeError(file, line, 'file.copy() is not supported by this runtime');
+          }
+          try {
+            fileSystem.copy(
+              fileSystem.resolvePath(source, file),
+              fileSystem.resolvePath(destination, file),
+            );
+          } catch (error) {
+            throw new IdylliumRuntimeError(file, line, `file.copy() cannot copy '${source}' to '${destination}': ${errorMessage(error)}`);
+          }
+        }),
+        rename: contextFunction((sourcePath: string, destinationPath: string, file: string, line: number) => {
+          const source = stringArgument(sourcePath, 'file.rename() source', file, line);
+          const destination = stringArgument(destinationPath, 'file.rename() destination', file, line);
+          if (!fileSystem.rename) {
+            throw new IdylliumRuntimeError(file, line, 'file.rename() is not supported by this runtime');
+          }
+          try {
+            fileSystem.rename(
+              fileSystem.resolvePath(source, file),
+              fileSystem.resolvePath(destination, file),
+            );
+          } catch (error) {
+            throw new IdylliumRuntimeError(file, line, `file.rename() cannot rename '${source}' to '${destination}': ${errorMessage(error)}`);
+          }
+        }),
+        remove: contextFunction((...rawArgs: unknown[]) => {
+          const { values, file, line } = splitContextArgs(rawArgs);
+          const requestedPath = stringArgument(values[0], 'file.remove() path', file, line);
+          const recursive = values.length >= 2
+            ? booleanArgument(values[1], 'file.remove() recursive', file, line)
+            : false;
+          if (!fileSystem.remove) {
+            throw new IdylliumRuntimeError(file, line, 'file.remove() is not supported by this runtime');
+          }
+          try {
+            fileSystem.remove(fileSystem.resolvePath(requestedPath, file), recursive);
+          } catch (error) {
+            throw new IdylliumRuntimeError(file, line, `file.remove() cannot remove '${requestedPath}': ${errorMessage(error)}`);
+          }
+        }),
         open: contextFunction((targetPath: string, mode: string, file: string, line: number) => {
           const requestedPath = stringArgument(targetPath, 'file.open() path', file, line);
           const openMode = stringArgument(mode, 'file.open() mode', file, line);
@@ -1322,9 +2495,14 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
           }
           return createJsonValue(valueOrFile, fileOrLine as string, maybeLine);
         }),
-        NULL: createJsonValue(),
+      },
+      sqlite: {
+        open: contextFunction(async (path: unknown, file: string, line: number) => (
+          openSqliteDatabase(path, file, line, runtimeObjects)
+        )),
       },
       audio: {},
+      image: {},
       gui: {},
       colors: {
         RGB: contextFunction((red: number, green: number, blue: number, file: string, line: number) => IdylliumColor.RGB(red, green, blue, file, line)),
@@ -1342,6 +2520,16 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     createObject(moduleName: string, typeName: string): Record<string, unknown> {
       throwIfRuntimeStopped('', 0);
       return createPlainRuntimeObject(moduleName, typeName, runtimeObjects);
+    },
+    convertNullable(moduleName: string, typeName: string, value: unknown, file: string, line: number): unknown {
+      throwIfRuntimeStopped(file, line);
+      if (moduleName === 'json' && typeName === 'Value') {
+        return createJsonValue(value, file, line);
+      }
+      if (moduleName === 'sqlite' && typeName === 'Value') {
+        return createSqliteValue(value, file, line);
+      }
+      throw new IdylliumRuntimeError(file, line, `type '${moduleName}.${typeName}' does not support null`);
     },
     setProperty(target: unknown, propertyName: string, value: unknown, file: string, line: number): unknown {
       throwIfRuntimeStopped(file, line);
@@ -1406,10 +2594,17 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     getModals(): readonly IdylliumModalSnapshot[] {
       return runtimeObjects.modals.map(modalSnapshot);
     },
-    async stepGui(deltaTime = 0): Promise<void> {
+    hasGui(): boolean {
+      return runtimeObjects.windows.length > 0
+        || runtimeObjects.canvases.length > 0
+        || runtimeObjects.modals.length > 0
+        || runtimeObjects.audio.some((item) => item.is_playing === true);
+    },
+    async stepGui(deltaTime = 0): Promise<boolean> {
       throwIfRuntimeStopped('', 0);
+      let changed = false;
       for (const timer of runtimeObjects.timers) {
-        await stepGuiTimer(timer, deltaTime);
+        if (await stepGuiTimer(timer, deltaTime)) changed = true;
       }
 
       for (const canvas of runtimeObjects.canvases) {
@@ -1417,8 +2612,10 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
         if (typeof onUpdate === 'function') {
           canvas.__commands = [];
           await onUpdate(canvas, deltaTime);
+          changed = true;
         }
       }
+      return changed;
     },
     async dispatchGuiEvent(canvasId: number, eventName: string, payload: Readonly<Record<string, unknown>>): Promise<void> {
       throwIfRuntimeStopped('', 0);
@@ -1485,7 +2682,7 @@ function expectArray(value: unknown, file: string, line: number): IdylliumArray 
   throw new IdylliumRuntimeError(file, line, `expected array, got '${String(value)}'`);
 }
 
-function numericValues(value: unknown, functionName: string, file: string, line: number): number[] {
+function numericValues(value: unknown, functionName: string, file: string, line: number): Array<number | bigint> {
   const array = expectArray(value, file, line);
   const values = array.values();
   if (values.length === 0) {
@@ -1493,12 +2690,130 @@ function numericValues(value: unknown, functionName: string, file: string, line:
   }
 
   for (const item of values) {
-    if (typeof item !== 'number') {
+    if (typeof item !== 'number' && typeof item !== 'bigint') {
       throw new IdylliumRuntimeError(file, line, `'${functionName}' expects a numeric array`);
     }
   }
 
-  return values as number[];
+  return values as Array<number | bigint>;
+}
+
+function runtimeBinary(operator: string, left: unknown, right: unknown, file: string, line: number): unknown {
+  if (operator === '==') return runtimeEquals(left, right);
+  if (operator === '!=') return !runtimeEquals(left, right);
+
+  if (operator === '+' && (typeof left === 'string' || typeof right === 'string')) {
+    return `${String(left)}${String(right)}`;
+  }
+
+  const numericLeft = runtimeNumber(left, `operator '${operator}' left operand`, file, line);
+  const numericRight = runtimeNumber(right, `operator '${operator}' right operand`, file, line);
+  switch (operator) {
+    case '+':
+      return runtimeAdd(numericLeft, numericRight);
+    case '-':
+      return runtimeSubtract(numericLeft, numericRight);
+    case '*':
+      return runtimeMultiply(numericLeft, numericRight);
+    case '/':
+      return runtimeDivide(numericLeft, numericRight, file, line);
+    case '<':
+      return runtimeCompare(numericLeft, numericRight) < 0;
+    case '<=':
+      return runtimeCompare(numericLeft, numericRight) <= 0;
+    case '>':
+      return runtimeCompare(numericLeft, numericRight) > 0;
+    case '>=':
+      return runtimeCompare(numericLeft, numericRight) >= 0;
+    default:
+      throw new IdylliumRuntimeError(file, line, `unknown binary operator '${operator}'`);
+  }
+}
+
+function runtimeNegate(value: unknown): number | bigint {
+  return typeof value === 'bigint' ? -value : -(value as number);
+}
+
+function runtimeAdd(left: number | bigint, right: number | bigint): number | bigint {
+  const integers = exactIntegerPair(left, right);
+  return integers ? integers[0] + integers[1] : Number(left) + Number(right);
+}
+
+function runtimeSubtract(left: number | bigint, right: number | bigint): number | bigint {
+  const integers = exactIntegerPair(left, right);
+  return integers ? integers[0] - integers[1] : Number(left) - Number(right);
+}
+
+function runtimeMultiply(left: number | bigint, right: number | bigint): number | bigint {
+  const integers = exactIntegerPair(left, right);
+  return integers ? integers[0] * integers[1] : Number(left) * Number(right);
+}
+
+function runtimeDivide(left: unknown, right: unknown, file: string, line: number): number {
+  const dividend = runtimeNumber(left, 'division left operand', file, line);
+  const divisor = runtimeNumber(right, 'division right operand', file, line);
+  if (divisor === 0 || divisor === 0n) throw new IdylliumRuntimeError(file, line, 'division by zero');
+  return Number(dividend) / Number(divisor);
+}
+
+function runtimeIntegerDivision(left: unknown, right: unknown, file: string, line: number): number | bigint {
+  const dividend = runtimeNumber(left, 'div() left operand', file, line);
+  const divisor = runtimeNumber(right, 'div() right operand', file, line);
+  if (divisor === 0 || divisor === 0n) throw new IdylliumRuntimeError(file, line, 'division by zero');
+  const integers = exactIntegerPair(dividend, divisor);
+  return integers ? integers[0] / integers[1] : Math.trunc(Number(dividend) / Number(divisor));
+}
+
+function runtimeModulo(left: unknown, right: unknown, file: string, line: number): number | bigint {
+  const dividend = runtimeNumber(left, 'mod() left operand', file, line);
+  const divisor = runtimeNumber(right, 'mod() right operand', file, line);
+  if (divisor === 0 || divisor === 0n) throw new IdylliumRuntimeError(file, line, 'division by zero');
+  const integers = exactIntegerPair(dividend, divisor);
+  return integers ? integers[0] % integers[1] : Number(dividend) % Number(divisor);
+}
+
+function runtimeCompare(left: number | bigint, right: number | bigint): number {
+  if (left < right) return -1;
+  if (left > right) return 1;
+  return 0;
+}
+
+function runtimeEquals(left: unknown, right: unknown): boolean {
+  const leftIsNull = left === null || isRuntimeNullValue(left);
+  const rightIsNull = right === null || isRuntimeNullValue(right);
+  if (leftIsNull || rightIsNull) return leftIsNull && rightIsNull;
+
+  if (left instanceof IdylliumArray || right instanceof IdylliumArray) {
+    if (!(left instanceof IdylliumArray) || !(right instanceof IdylliumArray)) return false;
+    const leftValues = left.values();
+    const rightValues = right.values();
+    return leftValues.length === rightValues.length
+      && leftValues.every((value, index) => runtimeEquals(value, rightValues[index]));
+  }
+  if (typeof left === 'bigint' && typeof right === 'number' && Number.isInteger(right)) {
+    return left === BigInt(right);
+  }
+  if (typeof right === 'bigint' && typeof left === 'number' && Number.isInteger(left)) {
+    return BigInt(left) === right;
+  }
+  return Object.is(left, right) || left === right;
+}
+
+function isRuntimeNullValue(value: unknown): boolean {
+  return (isJsonRuntimeValue(value) && value.__jsonKind === 'null')
+    || (isSqliteRuntimeValue(value) && value.__sqliteKind === 'null');
+}
+
+function exactIntegerPair(left: number | bigint, right: number | bigint): readonly [bigint, bigint] | null {
+  if (typeof left !== 'bigint' && typeof right !== 'bigint') return null;
+  if (typeof left === 'number' && !Number.isInteger(left)) return null;
+  if (typeof right === 'number' && !Number.isInteger(right)) return null;
+  return [BigInt(left), BigInt(right)];
+}
+
+function runtimeNumber(value: unknown, argumentName: string, file: string, line: number): number | bigint {
+  if (typeof value === 'bigint') return value;
+  return finiteNumber(value, argumentName, file, line);
 }
 
 function callStringMethod(
@@ -1550,11 +2865,9 @@ function callStringMethod(
   }
 }
 
-function stringCharAt(value: string, index: number, file: string, line: number): string {
+function stringCharAt(value: string, rawIndex: unknown, file: string, line: number): string {
   const chars = Array.from(value);
-  if (!Number.isInteger(index)) {
-    throw new IdylliumRuntimeError(file, line, `string index must be int, got '${String(index)}'`);
-  }
+  const index = integerNumber(rawIndex, 'string index', file, line);
   if (index < 0 || index >= chars.length) {
     throw new IdylliumRuntimeError(file, line, `string index ${index} out of bounds (length ${chars.length}, valid indices ${validRange(chars.length)})`);
   }
@@ -1577,9 +2890,20 @@ function resolveRuntimePath(requestedPath: string, sourceFile: string): string {
   return nodePath.resolve(base, requestedPath);
 }
 
-function createNodeRuntimeFileSystem(): RuntimeFileSystem {
+function createNodeRuntimeFileSystem(projectRoot?: string): RuntimeFileSystem {
+  let mutationRoot = projectRoot ? nodePath.resolve(projectRoot) : null;
+  const mutationPath = (filePath: string, operation: string): string => (
+    assertNodeProjectPath(mutationRoot ?? process.cwd(), filePath, operation)
+  );
   return {
-    resolvePath: resolveRuntimePath,
+    resolvePath(requestedPath: string, sourceFile: string): string {
+      if (!mutationRoot) {
+        mutationRoot = sourceFile.trim() !== '' && nodePath.isAbsolute(sourceFile)
+          ? nodePath.dirname(nodePath.normalize(sourceFile))
+          : process.cwd();
+      }
+      return resolveRuntimePath(requestedPath, sourceFile);
+    },
     exists(filePath: string): boolean {
       return nodeFs.existsSync(filePath);
     },
@@ -1593,10 +2917,65 @@ function createNodeRuntimeFileSystem(): RuntimeFileSystem {
       return nodeFs.readFileSync(filePath, 'utf8');
     },
     writeText(filePath: string, text: string): void {
-      nodeFs.writeFileSync(filePath, text, 'utf8');
+      nodeFs.writeFileSync(mutationPath(filePath, 'file write'), text, 'utf8');
     },
     appendText(filePath: string, text: string): void {
-      nodeFs.appendFileSync(filePath, text, 'utf8');
+      nodeFs.appendFileSync(mutationPath(filePath, 'file write'), text, 'utf8');
+    },
+    createDirectory(filePath: string, parents: boolean): void {
+      const target = mutationPath(filePath, 'file.create_directory()');
+      if (nodeFs.existsSync(target)) throw new Error(`path already exists: ${target}`);
+      nodeFs.mkdirSync(target, { recursive: parents });
+    },
+    listDirectory(filePath: string): readonly string[] {
+      if (!nodeFs.existsSync(filePath)) throw new Error(`directory does not exist: ${filePath}`);
+      if (!nodeFs.statSync(filePath).isDirectory()) throw new Error(`path is not a directory: ${filePath}`);
+      return nodeFs.readdirSync(filePath).sort((left: string, right: string) => left.localeCompare(right));
+    },
+    copy(sourcePath: string, destinationPath: string): void {
+      const root = mutationRoot ?? process.cwd();
+      const source = mutationPath(sourcePath, 'file.copy()');
+      const destination = mutationPath(destinationPath, 'file.copy()');
+      assertNodeMovableSource(root, source, 'file.copy()');
+      assertNodeDestination(destination);
+      assertNodeTreeHasNoSymlinks(source, 'file.copy()');
+      if (nodeFs.statSync(source).isDirectory() && isNodePathWithin(source, destination)) {
+        throw new Error('cannot copy a directory inside itself');
+      }
+      copyNodeEntry(source, destination);
+    },
+    rename(sourcePath: string, destinationPath: string): void {
+      const root = mutationRoot ?? process.cwd();
+      const source = mutationPath(sourcePath, 'file.rename()');
+      const destination = mutationPath(destinationPath, 'file.rename()');
+      assertNodeMovableSource(root, source, 'file.rename()');
+      assertNodeDestination(destination);
+      assertNodeTreeHasNoSymlinks(source, 'file.rename()');
+      if (nodeFs.statSync(source).isDirectory() && isNodePathWithin(source, destination)) {
+        throw new Error('cannot move a directory inside itself');
+      }
+      nodeFs.renameSync(source, destination);
+    },
+    remove(filePath: string, recursive: boolean): void {
+      const root = mutationRoot ?? process.cwd();
+      const target = mutationPath(filePath, 'file.remove()');
+      assertNodeMovableSource(root, target, 'file.remove()');
+      assertNodeTreeHasNoSymlinks(target, 'file.remove()');
+      const stat = nodeFs.statSync(target);
+      if (stat.isDirectory()) {
+        if (recursive) nodeFs.rmSync(target, { recursive: true, force: false });
+        else nodeFs.rmdirSync(target);
+      } else if (stat.isFile()) {
+        nodeFs.unlinkSync(target);
+      } else {
+        throw new Error(`unsupported file-system object: ${target}`);
+      }
+    },
+    readBytes(filePath: string): Uint8Array {
+      return new Uint8Array(nodeFs.readFileSync(filePath));
+    },
+    writeBytes(filePath: string, bytes: Uint8Array): void {
+      nodeFs.writeFileSync(mutationPath(filePath, 'binary file write'), bytes);
     },
     resourceUri(filePath: string): string {
       return filePath;
@@ -1659,6 +3038,108 @@ function memoryDirname(filePath: string): string {
   return normalized.slice(0, index);
 }
 
+function memoryBasename(filePath: string): string {
+  const normalized = normalizeMemoryPath(filePath);
+  if (normalized === '/') return '/';
+  return normalized.slice(normalized.lastIndexOf('/') + 1);
+}
+
+function assertMemoryProjectPath(filePath: string, root: string, operation: string): void {
+  if (filePath === root || filePath.startsWith(`${root}/`)) return;
+  throw new Error(`${operation} path is outside the project: ${filePath}`);
+}
+
+function assertMemoryMovableSource(filePath: string, root: string, operation: string): void {
+  if (filePath === root) throw new Error(`${operation} cannot modify the project root`);
+}
+
+function assertMemoryDestinationAvailable(
+  files: ReadonlyMap<string, unknown>,
+  directories: ReadonlySet<string>,
+  destination: string,
+): void {
+  if (files.has(destination) || directories.has(destination)) {
+    throw new Error(`destination already exists: ${destination}`);
+  }
+}
+
+function assertMemoryDestinationParent(directories: ReadonlySet<string>, destination: string): void {
+  const parent = memoryDirname(destination);
+  if (!directories.has(parent)) throw new Error(`directory does not exist: ${parent}`);
+}
+
+function cloneMemoryFile(
+  file: { content: string; bytes?: Uint8Array; resourceUri: string | null },
+): { content: string; bytes?: Uint8Array; resourceUri: string | null } {
+  return {
+    content: file.content,
+    bytes: file.bytes ? new Uint8Array(file.bytes) : undefined,
+    resourceUri: file.resourceUri,
+  };
+}
+
+function assertNodeProjectPath(root: string, filePath: string, operation: string): string {
+  const candidate = nodePath.resolve(filePath);
+  if (!isNodePathWithin(root, candidate)) {
+    throw new Error(`${operation} path is outside the project: ${candidate}`);
+  }
+
+  let existing = candidate;
+  while (!nodeFs.existsSync(existing)) {
+    const parent = nodePath.dirname(existing);
+    if (parent === existing) break;
+    existing = parent;
+  }
+  const realRoot = nodeFs.realpathSync(root);
+  const realExisting = nodeFs.realpathSync(existing);
+  if (!isNodePathWithin(realRoot, realExisting)) {
+    throw new Error(`${operation} path escapes the project through a symbolic link: ${candidate}`);
+  }
+  return candidate;
+}
+
+function isNodePathWithin(root: string, candidate: string): boolean {
+  const relative = nodePath.relative(root, candidate);
+  return relative === '' || (!relative.startsWith('..') && !nodePath.isAbsolute(relative));
+}
+
+function assertNodeMovableSource(root: string, source: string, operation: string): void {
+  if (source === root) throw new Error(`${operation} cannot modify the project root`);
+  if (!nodeFs.existsSync(source)) throw new Error(`path does not exist: ${source}`);
+}
+
+function assertNodeDestination(destination: string): void {
+  if (nodeFs.existsSync(destination)) throw new Error(`destination already exists: ${destination}`);
+  const parent = nodePath.dirname(destination);
+  if (!nodeFs.existsSync(parent)) throw new Error(`directory does not exist: ${parent}`);
+  if (!nodeFs.statSync(parent).isDirectory()) throw new Error(`path is not a directory: ${parent}`);
+}
+
+function assertNodeTreeHasNoSymlinks(filePath: string, operation: string): void {
+  const stat = nodeFs.lstatSync(filePath);
+  if (stat.isSymbolicLink()) throw new Error(`${operation} does not support symbolic links: ${filePath}`);
+  if (!stat.isDirectory()) return;
+  for (const name of nodeFs.readdirSync(filePath)) {
+    assertNodeTreeHasNoSymlinks(nodePath.join(filePath, name), operation);
+  }
+}
+
+function copyNodeEntry(source: string, destination: string): void {
+  const stat = nodeFs.lstatSync(source);
+  if (stat.isDirectory()) {
+    nodeFs.mkdirSync(destination);
+    for (const name of nodeFs.readdirSync(source)) {
+      copyNodeEntry(nodePath.join(source, name), nodePath.join(destination, name));
+    }
+    return;
+  }
+  if (stat.isFile()) {
+    nodeFs.copyFileSync(source, destination);
+    return;
+  }
+  throw new Error(`unsupported file-system object: ${source}`);
+}
+
 function addMemoryDirectory(directories: Set<string>, directory: string): void {
   const normalized = normalizeMemoryPath(directory);
   if (directories.has(normalized)) return;
@@ -1696,6 +3177,11 @@ function errorMessage(error: unknown): string {
 function intArgument(value: unknown, argumentName: string, file: string, line: number): number {
   if (typeof value === 'number' && Number.isInteger(value)) return value;
   throw new IdylliumRuntimeError(file, line, `${argumentName} must be int`);
+}
+
+function booleanArgument(value: unknown, argumentName: string, file: string, line: number): boolean {
+  if (typeof value === 'boolean') return value;
+  throw new IdylliumRuntimeError(file, line, `${argumentName} must be bool`);
 }
 
 function findInString(value: string, needle: string): number {
@@ -1899,7 +3385,7 @@ function sequentialEntries(start: number, chars: string): Array<readonly [number
   return Array.from(chars).map((char, index) => [start + index, char] as const);
 }
 
-type RuntimeTypesName = 'int8' | 'uint8' | 'int16' | 'uint16' | 'int32' | 'uint32' | 'float32' | 'float64';
+type RuntimeTypesName = 'int8' | 'uint8' | 'int16' | 'uint16' | 'int32' | 'uint32' | 'int64' | 'uint64' | 'float32' | 'float64';
 
 interface RuntimeTypesSpec {
   readonly kind: 'integer' | 'float';
@@ -1914,27 +3400,34 @@ const RUNTIME_TYPES: Record<RuntimeTypesName, RuntimeTypesSpec> = {
   uint16: { kind: 'integer', bits: 16, signed: false },
   int32: { kind: 'integer', bits: 32, signed: true },
   uint32: { kind: 'integer', bits: 32, signed: false },
+  int64: { kind: 'integer', bits: 64, signed: true },
+  uint64: { kind: 'integer', bits: 64, signed: false },
   float32: { kind: 'float', bits: 32, signed: true },
   float64: { kind: 'float', bits: 64, signed: true },
 };
 
-function castTypesValue(value: unknown, typeName: string): number {
+function castTypesValue(value: unknown, typeName: string): number | bigint {
   const name = normalizeRuntimeTypesName(typeName, 'types', 0);
   const spec = RUNTIME_TYPES[name];
-  const number = finiteNumber(value, `types.${name} value`, 'types', 0);
 
   if (spec.kind === 'float') {
+    if (typeof value !== 'number') {
+      throw new IdylliumRuntimeError('types', 0, `types.${name} value must be a number, got '${String(value)}'`);
+    }
+    const number = value;
     return name === 'float32' ? Math.fround(number) : number;
   }
 
-  return wrapInteger(number, spec);
+  const integer = runtimeInteger(value, `types.${name} value`, 'types', 0);
+  if (spec.bits === 64) return wrapBigInteger(integer, spec);
+  return wrapInteger(integer, spec);
 }
 
 function typesToBin(value: unknown, typeName: string): string {
   const name = normalizeRuntimeTypesName(typeName, 'types', 0);
   const spec = RUNTIME_TYPES[name];
   if (spec.kind === 'float') {
-    return bytesToBinary(floatBytes(castTypesValue(value, name), name));
+    return bytesToBinary(floatBytes(Number(castTypesValue(value, name)), name));
   }
 
   return integerToUnsigned(value, name).toString(2).padStart(spec.bits, '0');
@@ -1944,30 +3437,62 @@ function typesToHex(value: unknown, typeName: string): string {
   const name = normalizeRuntimeTypesName(typeName, 'types', 0);
   const spec = RUNTIME_TYPES[name];
   if (spec.kind === 'float') {
-    return bytesToHex(floatBytes(castTypesValue(value, name), name));
+    return bytesToHex(floatBytes(Number(castTypesValue(value, name)), name));
   }
 
   return integerToUnsigned(value, name).toString(16).padStart(spec.bits / 4, '0').toUpperCase();
 }
 
-function typesFromBin(bits: unknown, typeName: unknown, file: string, line: number): number {
+function typesShift(
+  value: unknown,
+  typeName: string,
+  bitCount: unknown,
+  direction: 'left' | 'right',
+  file: string,
+  line: number,
+): number | bigint {
+  const name = normalizeRuntimeTypesName(typeName, file, line);
+  const spec = RUNTIME_TYPES[name];
+  const method = `types.${name}.shift_${direction}()`;
+  const requestedAmount = runtimeInteger(bitCount, `${method} bit count`, file, line);
+  const effectiveDirection = requestedAmount < 0n
+    ? direction === 'left' ? 'right' : 'left'
+    : direction;
+  const amount = requestedAmount < 0n ? -requestedAmount : requestedAmount;
+
+  const source = typesToBin(value, name);
+  let shifted: string;
+  if (amount >= BigInt(spec.bits)) {
+    shifted = '0'.repeat(spec.bits);
+  } else {
+    const count = Number(amount);
+    shifted = effectiveDirection === 'left'
+      ? source.slice(count) + '0'.repeat(count)
+      : '0'.repeat(count) + source.slice(0, source.length - count);
+  }
+
+  if (spec.kind === 'float') return floatFromBytes(binaryToBytes(shifted), name);
+  return castTypesValue(BigInt(`0b${shifted}`), name);
+}
+
+function typesFromBin(bits: unknown, typeName: unknown, file: string, line: number): number | bigint {
   const name = normalizeTypesName(typeName, file, line);
   const spec = RUNTIME_TYPES[name];
   const normalized = normalizedBinary(bits, spec.bits, file, line);
   if (spec.kind === 'float') {
     return floatFromBytes(binaryToBytes(normalized), name);
   }
-  return castTypesValue(Number.parseInt(normalized, 2), name);
+  return castTypesValue(BigInt(`0b${normalized}`), name);
 }
 
-function typesFromHex(hex: unknown, typeName: unknown, file: string, line: number): number {
+function typesFromHex(hex: unknown, typeName: unknown, file: string, line: number): number | bigint {
   const name = normalizeTypesName(typeName, file, line);
   const spec = RUNTIME_TYPES[name];
   const normalized = normalizedHex(hex, spec.bits, file, line);
   if (spec.kind === 'float') {
     return floatFromBytes(hexToBytes(normalized), name);
   }
-  return castTypesValue(Number.parseInt(normalized, 16), name);
+  return castTypesValue(BigInt(`0x${normalized}`), name);
 }
 
 function normalizeTypesName(value: unknown, file: string, line: number): RuntimeTypesName {
@@ -1982,19 +3507,31 @@ function normalizeRuntimeTypesName(value: string, file: string, line: number): R
   throw new IdylliumRuntimeError(file, line, `unknown types numeric type '${value}'`);
 }
 
-function wrapInteger(value: number, spec: RuntimeTypesSpec): number {
-  const modulo = 2 ** spec.bits;
-  let wrapped = ((Math.trunc(value) % modulo) + modulo) % modulo;
-  if (spec.signed && wrapped >= 2 ** (spec.bits - 1)) {
+function wrapInteger(value: bigint, spec: RuntimeTypesSpec): number {
+  const modulo = 1n << BigInt(spec.bits);
+  let wrapped = ((value % modulo) + modulo) % modulo;
+  const signBit = 1n << BigInt(spec.bits - 1);
+  if (spec.signed && wrapped >= signBit) {
     wrapped -= modulo;
   }
+  return Number(wrapped);
+}
+
+function wrapBigInteger(value: bigint, spec: RuntimeTypesSpec): bigint {
+  const modulo = 1n << BigInt(spec.bits);
+  let wrapped = ((value % modulo) + modulo) % modulo;
+  const signBit = 1n << BigInt(spec.bits - 1);
+  if (spec.signed && wrapped >= signBit) wrapped -= modulo;
   return wrapped;
 }
 
-function integerToUnsigned(value: unknown, typeName: RuntimeTypesName): number {
+function integerToUnsigned(value: unknown, typeName: RuntimeTypesName): number | bigint {
   const spec = RUNTIME_TYPES[typeName];
   const casted = castTypesValue(value, typeName);
   if (spec.kind !== 'integer') return casted;
+  if (typeof casted === 'bigint') {
+    return casted < 0n ? casted + (1n << BigInt(spec.bits)) : casted;
+  }
   return casted < 0 ? casted + 2 ** spec.bits : casted;
 }
 
@@ -2104,11 +3641,27 @@ function parseFloatText(value: string, functionName: string, file: string, line:
 }
 
 function finiteNumber(value: unknown, argumentName: string, file: string, line: number): number {
+  if (typeof value === 'bigint') {
+    const converted = Number(value);
+    if (Number.isFinite(converted)) return converted;
+  }
   if (typeof value === 'number' && Number.isFinite(value)) return value;
   throw new IdylliumRuntimeError(file, line, `${argumentName} must be a finite number, got '${String(value)}'`);
 }
 
+function runtimeInteger(value: unknown, argumentName: string, file: string, line: number): bigint {
+  if (typeof value === 'bigint') return value;
+  if (typeof value === 'number' && Number.isFinite(value)) return BigInt(Math.trunc(value));
+  throw new IdylliumRuntimeError(file, line, `${argumentName} must be an integer, got '${String(value)}'`);
+}
+
 function integerNumber(value: unknown, argumentName: string, file: string, line: number): number {
+  if (typeof value === 'bigint') {
+    const min = BigInt(Number.MIN_SAFE_INTEGER);
+    const max = BigInt(Number.MAX_SAFE_INTEGER);
+    if (value >= min && value <= max) return Number(value);
+    throw new IdylliumRuntimeError(file, line, `${argumentName} is outside the supported index range, got ${value}`);
+  }
   const number = finiteNumber(value, argumentName, file, line);
   if (Number.isInteger(number)) return number;
   throw new IdylliumRuntimeError(file, line, `${argumentName} must be int, got ${number}`);
@@ -2191,6 +3744,9 @@ interface RuntimeObjectState {
   readonly audio: RuntimeObject[];
   readonly canvases: RuntimeObject[];
   readonly fileSystem: RuntimeFileSystem;
+  readonly fontMetricsService: RuntimeFontMetricsService;
+  readonly imageService?: RuntimeImageService;
+  readonly sqliteService?: RuntimeSqliteService;
   readonly modals: RuntimeObject[];
   readonly timers: RuntimeObject[];
   readonly windows: RuntimeObject[];
@@ -2295,6 +3851,13 @@ function createPlainRuntimeObject(moduleName: string, typeName: string, state: R
     if (typeName === 'Array') return createJsonArray();
   }
 
+  if (moduleName === 'sqlite') {
+    if (typeName === 'Value') return createSqliteValue();
+    if (typeName === 'Database') return createClosedSqliteDatabase(state);
+    if (typeName === 'Statement') return createClosedSqliteStatement();
+    if (typeName === 'Result') return createClosedSqliteResult();
+  }
+
   const obj: Record<string, unknown> = {
     __idylliumObjectId: state.nextObjectId++,
     __idylliumType: `${moduleName}.${typeName}`,
@@ -2309,8 +3872,16 @@ function createPlainRuntimeObject(moduleName: string, typeName: string, state: R
     initializeDrawableObject(obj, typeName, state);
   }
 
+  if (moduleName === 'fonts') {
+    initializeFontObject(obj, typeName, state);
+  }
+
   if (moduleName === 'audio') {
     initializeAudioObject(obj, typeName, state);
+  }
+
+  if (moduleName === 'image') {
+    initializeImageObject(obj, typeName, state);
   }
 
   return obj;
@@ -2326,6 +3897,7 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
     obj.visible = true;
     defineTrackedRuntimeProperty(obj, 'text_color', colorBlack());
     defineTrackedRuntimeProperty(obj, 'background_color', colorTransparent());
+    defineTrackedRuntimeProperty(obj, 'font', null);
   }
 
   if (typeName === 'Window' || typeName === 'Frame') {
@@ -2390,7 +3962,6 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
     setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
     setTrackedRuntimePropertyDefault(obj, 'background_color', colorTransparent());
     obj.border_color = colorTransparent();
-    obj.color = '';
   }
 
   if (typeName === 'Button') {
@@ -2408,25 +3979,11 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
     obj.border_width = 1;
   }
 
-  if (typeName === 'Image') {
-    obj.path = '';
-    obj.resolved_path = '';
-    obj.resource_uri = '';
-    obj.is_loaded = false;
+  if (typeName === 'ImageBox') {
+    obj.image = null;
     obj.resize_mode = 'fit';
-    obj.load_from_file = contextFunction((targetPath: unknown, file: string, line: number) => {
-      const requestedPath = stringArgument(targetPath, 'Image.load_from_file() path', file, line);
-      const resolvedPath = state.fileSystem.resolvePath(requestedPath, file);
-      if (!state.fileSystem.exists(resolvedPath)) {
-        throw new IdylliumRuntimeError(file, line, `Image.load_from_file() cannot load '${requestedPath}': file does not exist`);
-      }
-      if (!runtimeIsFile(state.fileSystem, resolvedPath, file, line, 'reading')) {
-        throw new IdylliumRuntimeError(file, line, `Image.load_from_file() cannot load '${requestedPath}': path is not a file`);
-      }
-      obj.path = requestedPath;
-      obj.resolved_path = resolvedPath;
-      obj.resource_uri = state.fileSystem.resourceUri?.(resolvedPath) ?? '';
-      obj.is_loaded = true;
+    obj.set_image = contextFunction((image: unknown, file: string, line: number) => {
+      obj.image = runtimeImageResource(image, 'ImageBox.set_image()', file, line);
     });
   }
 
@@ -2455,7 +4012,6 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
     setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
     setTrackedRuntimePropertyDefault(obj, 'background_color', colorVeryLightGray());
     setTrackedRuntimePropertyDefault(obj, 'foreground_color', colorBlue());
-    setTrackedRuntimePropertyDefault(obj, 'fill_color', colorBlue());
     obj.border_color = colorGray();
   }
 
@@ -2529,7 +4085,7 @@ function defaultGuiWidgetSize(typeName: string): { width: number; height: number
       return { width: 120, height: 32 };
     case 'Frame':
       return { width: 220, height: 140 };
-    case 'Image':
+    case 'ImageBox':
       return { width: 160, height: 120 };
     case 'LineEdit':
       return { width: 180, height: 28 };
@@ -2587,40 +4143,29 @@ function defineComboBoxProperties(obj: RuntimeObject, items: string[]): void {
 
 function initializeDrawableObject(obj: RuntimeObject, typeName: string, state: RuntimeObjectState): void {
   if (typeName === 'Rectangle') {
-    obj.__idylliumDrawable = true;
     obj.x = 0;
     obj.y = 0;
     obj.width = 0;
     obj.height = 0;
-    obj.rotation = 0;
     obj.fill_color = colorTransparent();
     obj.border_width = 0;
     obj.border_color = colorTransparent();
     attachPositionMove(obj, 'Rectangle');
-    obj.rotate = contextFunction((angle: unknown, file: string, line: number) => {
-      obj.rotation = finiteNumber(obj.rotation, 'Rectangle.rotate() current rotation', file, line)
-        + finiteNumber(angle, 'Rectangle.rotate() angle', file, line);
-    });
+    attachDrawableTransform(obj, 'Rectangle');
   }
 
   if (typeName === 'Circle') {
-    obj.__idylliumDrawable = true;
     obj.x = 0;
     obj.y = 0;
     obj.radius = 0;
-    obj.rotation = 0;
     obj.fill_color = colorTransparent();
     obj.border_width = 0;
     obj.border_color = colorTransparent();
     attachPositionMove(obj, 'Circle');
-    obj.rotate = contextFunction((angle: unknown, file: string, line: number) => {
-      obj.rotation = finiteNumber(obj.rotation, 'Circle.rotate() current rotation', file, line)
-        + finiteNumber(angle, 'Circle.rotate() angle', file, line);
-    });
+    attachDrawableTransform(obj, 'Circle');
   }
 
   if (typeName === 'Line') {
-    obj.__idylliumDrawable = true;
     obj.x1 = 0;
     obj.y1 = 0;
     obj.x2 = 0;
@@ -2630,70 +4175,629 @@ function initializeDrawableObject(obj: RuntimeObject, typeName: string, state: R
     attachLineMove(obj);
   }
 
-  if (typeName === 'Texture') {
-    obj.path = '';
-    obj.resolved_path = '';
-    obj.is_loaded = false;
-    obj.load_from_file = contextFunction((targetPath: unknown, file: string, line: number) => {
-      const requestedPath = stringArgument(targetPath, 'Texture.load_from_file() path', file, line);
-      const resolvedPath = state.fileSystem.resolvePath(requestedPath, file);
-      if (!state.fileSystem.exists(resolvedPath)) {
-        throw new IdylliumRuntimeError(file, line, `Texture.load_from_file() cannot load '${requestedPath}': file does not exist`);
-      }
-      if (!runtimeIsFile(state.fileSystem, resolvedPath, file, line, 'reading')) {
-        throw new IdylliumRuntimeError(file, line, `Texture.load_from_file() cannot load '${requestedPath}': path is not a file`);
-      }
-      obj.path = requestedPath;
-      obj.resolved_path = resolvedPath;
-      obj.resource_uri = state.fileSystem.resourceUri?.(resolvedPath) ?? '';
-      obj.is_loaded = true;
-    });
-  }
-
   if (typeName === 'Font') {
-    obj.path = '';
-    obj.resolved_path = '';
-    obj.is_loaded = false;
-    obj.load_from_file = contextFunction((targetPath: unknown, file: string, line: number) => {
-      const requestedPath = stringArgument(targetPath, 'Font.load_from_file() path', file, line);
-      const resolvedPath = state.fileSystem.resolvePath(requestedPath, file);
-      if (!state.fileSystem.exists(resolvedPath)) {
-        throw new IdylliumRuntimeError(file, line, `Font.load_from_file() cannot load '${requestedPath}': file does not exist`);
-      }
-      if (!runtimeIsFile(state.fileSystem, resolvedPath, file, line, 'reading')) {
-        throw new IdylliumRuntimeError(file, line, `Font.load_from_file() cannot load '${requestedPath}': path is not a file`);
-      }
-      obj.path = requestedPath;
-      obj.resolved_path = resolvedPath;
-      obj.resource_uri = state.fileSystem.resourceUri?.(resolvedPath) ?? '';
-      obj.is_loaded = true;
-    });
+    initializeFontObject(obj, typeName, state);
   }
 
   if (typeName === 'Sprite') {
-    obj.__idylliumDrawable = true;
-    obj.texture = createPlainRuntimeObject('drawable', 'Texture', state);
+    obj.image = null;
     obj.x = 0;
     obj.y = 0;
     obj.scale_x = 1;
     obj.scale_y = 1;
+    obj.set_image = contextFunction((image: unknown, file: string, line: number) => {
+      obj.image = runtimeImageResource(image, 'Sprite.set_image()', file, line);
+    });
     obj.set_scale = contextFunction((x: unknown, y: unknown, file: string, line: number) => {
       obj.scale_x = finiteNumber(x, 'Sprite.set_scale() x', file, line);
       obj.scale_y = finiteNumber(y, 'Sprite.set_scale() y', file, line);
     });
     attachPositionMove(obj, 'Sprite');
+    attachDrawableTransform(obj, 'Sprite');
   }
 
   if (typeName === 'Text') {
-    obj.__idylliumDrawable = true;
-    obj.font = createPlainRuntimeObject('drawable', 'Font', state);
+    obj.font = createDefaultDrawableFont(state);
     obj.text = '';
     obj.x = 0;
     obj.y = 0;
     obj.font_size = 16;
     obj.text_color = colorWhite();
     attachPositionMove(obj, 'Text');
+    attachDrawableTransform(obj, 'Text');
+    obj.get_width = contextFunction((file: string, line: number) => (
+      drawableTextMetrics(obj, 'Text.get_width()', file, line, state).width
+    ));
+    obj.get_height = contextFunction((file: string, line: number) => (
+      drawableTextMetrics(obj, 'Text.get_height()', file, line, state).height
+    ));
   }
+
+  if (['Rectangle', 'Circle', 'Line', 'Sprite', 'Text'].includes(typeName)) {
+    obj.__idylliumDrawable = true;
+    attachDrawableGeometry(obj, typeName, state);
+  }
+}
+
+type RuntimeFontFormat = 'ttf' | 'otf' | 'woff' | 'woff2';
+
+function initializeFontObject(obj: RuntimeObject, typeName: string, state: RuntimeObjectState): void {
+  if (typeName !== 'Font') return;
+
+  obj.src = '';
+  obj.path = '';
+  obj.resolved_path = '';
+  obj.resource_uri = '';
+  obj.format = '';
+  obj.is_loaded = false;
+  Object.defineProperty(obj, '__fontBytes', {
+    configurable: true,
+    enumerable: false,
+    value: null,
+    writable: true,
+  });
+  obj.load_from_file = contextFunction((targetPath: unknown, file: string, line: number) => {
+    const requestedPath = stringArgument(targetPath, 'Font.load_from_file() path', file, line);
+    const resolvedPath = state.fileSystem.resolvePath(requestedPath, file);
+    if (!state.fileSystem.exists(resolvedPath)) {
+      throw new IdylliumRuntimeError(file, line, `Font.load_from_file() cannot load '${requestedPath}': file does not exist`);
+    }
+    if (!runtimeIsFile(state.fileSystem, resolvedPath, file, line, 'reading')) {
+      throw new IdylliumRuntimeError(file, line, `Font.load_from_file() cannot load '${requestedPath}': path is not a file`);
+    }
+
+    const bytes = readRuntimeBytes(state.fileSystem, resolvedPath, file, line, 'Font.load_from_file()');
+    const format = detectFontFormat(bytes);
+    if (format === null) {
+      throw new IdylliumRuntimeError(
+        file,
+        line,
+        `Font.load_from_file() cannot decode '${requestedPath}': unsupported font format (expected TTF, OTF, WOFF, or WOFF2)`,
+      );
+    }
+
+    obj.src = requestedPath;
+    obj.path = requestedPath;
+    obj.resolved_path = resolvedPath;
+    const existingResourceUri = state.fileSystem.resourceUri?.(resolvedPath) || '';
+    obj.resource_uri = existingResourceUri && !existingResourceUri.startsWith('data:')
+      ? existingResourceUri
+      : bytesToDataUri(bytes, fontMimeType(format));
+    obj.__fontBytes = bytes;
+    obj.format = format;
+    obj.is_builtin = false;
+    obj.is_loaded = true;
+  });
+}
+
+function createDefaultDrawableFont(state: RuntimeObjectState): RuntimeObject {
+  const font = createPlainRuntimeObject('fonts', 'Font', state);
+  font.src = '<Idyllium default font>';
+  font.format = 'woff2';
+  font.is_loaded = true;
+  font.is_builtin = true;
+  return font;
+}
+
+function detectFontFormat(bytes: Uint8Array): RuntimeFontFormat | null {
+  if (bytes.length >= 4 && bytes[0] === 0x00 && bytes[1] === 0x01 && bytes[2] === 0x00 && bytes[3] === 0x00) {
+    return 'ttf';
+  }
+
+  const signature = String.fromCharCode(bytes[0] ?? 0, bytes[1] ?? 0, bytes[2] ?? 0, bytes[3] ?? 0);
+  if (signature === 'true') return 'ttf';
+  if (signature === 'OTTO') return 'otf';
+  if (signature === 'wOFF') return 'woff';
+  if (signature === 'wOF2') return 'woff2';
+  return null;
+}
+
+function fontMimeType(format: RuntimeFontFormat): string {
+  if (format === 'ttf') return 'font/ttf';
+  if (format === 'otf') return 'font/otf';
+  if (format === 'woff') return 'font/woff';
+  return 'font/woff2';
+}
+
+interface StoredStaticImage {
+  readonly raster: RuntimeRasterImage;
+  readonly sourceBytes?: Uint8Array;
+}
+
+interface StoredAnimation {
+  readonly animation: RuntimeDecodedAnimation;
+  readonly sourceBytes?: Uint8Array;
+}
+
+function initializeImageObject(obj: RuntimeObject, typeName: string, state: RuntimeObjectState): void {
+  obj.src = '';
+  obj.resolved_path = '';
+  obj.resource_uri = '';
+  obj.width = 0;
+  obj.height = 0;
+  obj.format = '';
+  obj.has_alpha = false;
+  obj.is_loaded = false;
+
+  if (typeName === 'Static') {
+    obj.load_from_file = contextFunction(async (targetPath: unknown, file: string, line: number) => {
+      const requestedPath = stringArgument(targetPath, 'Static.load_from_file() path', file, line);
+      const resolvedPath = resolveImageInputPath(requestedPath, file, line, state, 'Static.load_from_file()');
+      const bytes = readRuntimeBytes(state.fileSystem, resolvedPath, file, line, 'Static.load_from_file()');
+      const format = detectImageFormat(bytes);
+      if (format === 'unknown') {
+        throw new IdylliumRuntimeError(file, line, `Static.load_from_file() cannot decode '${requestedPath}': unsupported image format`);
+      }
+      const service = imageService(state, file, line);
+      try {
+        const decoded = await service.decodeStatic(bytes, format);
+        setLoadedStaticImage(obj, decoded, bytes, requestedPath, resolvedPath, state);
+      } catch (error) {
+        throw imageRuntimeError(file, line, `Static.load_from_file() cannot decode '${requestedPath}'`, error);
+      }
+    });
+
+    obj.scale = contextFunction(async (x: unknown, y: unknown, file: string, line: number) => {
+      const source = storedStaticImage(obj, 'Static.scale()', file, line);
+      const scaleX = finiteNumber(x, 'Static.scale() x', file, line);
+      const scaleY = finiteNumber(y, 'Static.scale() y', file, line);
+      if (scaleX === 0 || scaleY === 0) {
+        throw new IdylliumRuntimeError(file, line, `Static.scale() factors cannot be zero (got ${scaleX}, ${scaleY})`);
+      }
+      ensureImageSize(
+        Math.max(1, Math.round(source.raster.width * Math.abs(scaleX))),
+        Math.max(1, Math.round(source.raster.height * Math.abs(scaleY))),
+        'Static.scale()',
+        file,
+        line,
+      );
+      return createGeneratedStaticImage(scaleRaster(source.raster, scaleX, scaleY), String(obj.src), state, file, line);
+    });
+
+    obj.rotate = contextFunction(async (angle: unknown, file: string, line: number) => {
+      const source = storedStaticImage(obj, 'Static.rotate()', file, line);
+      const degrees = integerNumber(angle, 'Static.rotate() angle', file, line);
+      if (degrees % 90 !== 0) {
+        throw new IdylliumRuntimeError(file, line, `Static.rotate() angle must be divisible by 90, got ${degrees}`);
+      }
+      return createGeneratedStaticImage(rotateRaster(source.raster, degrees), String(obj.src), state, file, line);
+    });
+
+    obj.tint = contextFunction(async (color: unknown, file: string, line: number) => {
+      const source = storedStaticImage(obj, 'Static.tint()', file, line);
+      if (!(color instanceof IdylliumColor)) {
+        throw new IdylliumRuntimeError(file, line, `Static.tint() color must be colors.Color`);
+      }
+      return createGeneratedStaticImage(
+        tintRaster(source.raster, color.red, color.green, color.blue),
+        String(obj.src),
+        state,
+        file,
+        line,
+      );
+    });
+
+    obj.with_opacity = contextFunction(async (value: unknown, file: string, line: number) => {
+      const source = storedStaticImage(obj, 'Static.with_opacity()', file, line);
+      const opacityValue = rangeNumber(value, 'Static.with_opacity() opacity', 0, 1, file, line);
+      return createGeneratedStaticImage(opacityRaster(source.raster, opacityValue), String(obj.src), state, file, line);
+    });
+
+    obj.desaturate = contextFunction(async (
+      amountOrFile: number | string,
+      fileOrLine: string | number,
+      maybeLine?: number,
+    ) => {
+      const context = optionalNumberContext(amountOrFile, fileOrLine, maybeLine);
+      const source = storedStaticImage(obj, 'Static.desaturate()', context.file, context.line);
+      const amount = context.value === undefined
+        ? 1
+        : rangeNumber(context.value, 'Static.desaturate() amount', 0, 1, context.file, context.line);
+      return createGeneratedStaticImage(
+        desaturateRaster(source.raster, amount),
+        String(obj.src),
+        state,
+        context.file,
+        context.line,
+      );
+    });
+
+    obj.crop = contextFunction(async (
+      x: unknown,
+      y: unknown,
+      width: unknown,
+      height: unknown,
+      file: string,
+      line: number,
+    ) => {
+      const source = storedStaticImage(obj, 'Static.crop()', file, line);
+      const cropX = integerNumber(x, 'Static.crop() x', file, line);
+      const cropY = integerNumber(y, 'Static.crop() y', file, line);
+      const cropWidth = integerNumber(width, 'Static.crop() width', file, line);
+      const cropHeight = integerNumber(height, 'Static.crop() height', file, line);
+      if (cropX < 0 || cropY < 0 || cropWidth <= 0 || cropHeight <= 0) {
+        throw new IdylliumRuntimeError(
+          file,
+          line,
+          `Static.crop() expects non-negative coordinates and positive size, got (${cropX}, ${cropY}, ${cropWidth}, ${cropHeight})`,
+        );
+      }
+      if (cropX + cropWidth > source.raster.width || cropY + cropHeight > source.raster.height) {
+        throw new IdylliumRuntimeError(
+          file,
+          line,
+          `Static.crop() rectangle (${cropX}, ${cropY}, ${cropWidth}, ${cropHeight}) is outside image bounds ${source.raster.width}x${source.raster.height}`,
+        );
+      }
+      return createGeneratedStaticImage(
+        cropRaster(source.raster, cropX, cropY, cropWidth, cropHeight),
+        String(obj.src),
+        state,
+        file,
+        line,
+      );
+    });
+
+    obj.export_to_file = contextFunction(async (targetPath: unknown, file: string, line: number) => {
+      const source = storedStaticImage(obj, 'Static.export_to_file()', file, line);
+      const requestedPath = stringArgument(targetPath, 'Static.export_to_file() path', file, line);
+      const outputFormat = imageFormatFromPath(requestedPath);
+      if (!['png', 'jpeg', 'webp', 'gif'].includes(outputFormat)) {
+        throw new IdylliumRuntimeError(
+          file,
+          line,
+          `Static.export_to_file() cannot determine a supported format from '${requestedPath}'`,
+        );
+      }
+      const service = imageService(state, file, line);
+      try {
+        const bytes = await service.encodeStatic(source.raster, outputFormat);
+        writeRuntimeImageBytes(requestedPath, bytes, outputFormat, state, file, line, 'Static.export_to_file()');
+      } catch (error) {
+        throw imageRuntimeError(file, line, `Static.export_to_file() cannot write '${requestedPath}'`, error);
+      }
+    });
+  }
+
+  if (typeName === 'Animation') {
+    obj.frame_count = 0;
+    obj.frame_duration = 0;
+    obj.has_uniform_frame_duration = true;
+
+    obj.load_from_file = contextFunction(async (targetPath: unknown, file: string, line: number) => {
+      const requestedPath = stringArgument(targetPath, 'Animation.load_from_file() path', file, line);
+      const resolvedPath = resolveImageInputPath(requestedPath, file, line, state, 'Animation.load_from_file()');
+      const bytes = readRuntimeBytes(state.fileSystem, resolvedPath, file, line, 'Animation.load_from_file()');
+      const format = detectImageFormat(bytes);
+      if (format !== 'gif' && format !== 'apng') {
+        throw new IdylliumRuntimeError(
+          file,
+          line,
+          `Animation.load_from_file() expects GIF or APNG data, got '${format}'`,
+        );
+      }
+      const service = imageService(state, file, line);
+      try {
+        const animation = await service.decodeAnimation(bytes, format);
+        if (animation.frames.length < 2) {
+          throw new Error('the file contains only one frame; use image.Static instead');
+        }
+        setLoadedAnimation(obj, animation, bytes, requestedPath, resolvedPath, state);
+      } catch (error) {
+        throw imageRuntimeError(file, line, `Animation.load_from_file() cannot decode '${requestedPath}'`, error);
+      }
+    });
+
+    obj.get_frame = contextFunction(async (index: unknown, file: string, line: number) => {
+      const source = storedAnimation(obj, 'Animation.get_frame()', file, line);
+      const frameIndex = imageFrameIndex(source.animation.frames, index, 'Animation.get_frame()', file, line);
+      return createGeneratedStaticImage(source.animation.frames[frameIndex], String(obj.src), state, file, line);
+    });
+
+    obj.get_frame_duration = contextFunction((index: unknown, file: string, line: number) => {
+      const source = storedAnimation(obj, 'Animation.get_frame_duration()', file, line);
+      const frameIndex = imageFrameIndex(source.animation.frames, index, 'Animation.get_frame_duration()', file, line);
+      return source.animation.frames[frameIndex].duration;
+    });
+
+    obj.create_from_frames = contextFunction(async (
+      framesValue: unknown,
+      durationValue: unknown,
+      file: string,
+      line: number,
+    ) => {
+      if (!(framesValue instanceof IdylliumArray)) {
+        throw new IdylliumRuntimeError(file, line, `Animation.create_from_frames() frames must be dyn_array<image.Static>`);
+      }
+      const values = framesValue.values();
+      if (values.length < 2) {
+        throw new IdylliumRuntimeError(file, line, `Animation.create_from_frames() expects at least 2 frames, got ${values.length}`);
+      }
+      const duration = finiteNumber(durationValue, 'Animation.create_from_frames() frame_duration', file, line);
+      if (duration <= 0) {
+        throw new IdylliumRuntimeError(
+          file,
+          line,
+          `Animation.create_from_frames() frame_duration must be greater than 0, got ${duration}`,
+        );
+      }
+      const frames: RuntimeAnimationFrame[] = [];
+      let expectedWidth = 0;
+      let expectedHeight = 0;
+      values.forEach((value, index) => {
+        if (!isRuntimeObject(value) || value.__idylliumType !== 'image.Static') {
+          throw new IdylliumRuntimeError(
+            file,
+            line,
+            `Animation.create_from_frames() item ${index} must be image.Static, got '${runtimeTypeName(value)}'`,
+          );
+        }
+        const stored = storedStaticImage(value, 'Animation.create_from_frames()', file, line);
+        if (index === 0) {
+          expectedWidth = stored.raster.width;
+          expectedHeight = stored.raster.height;
+        } else if (stored.raster.width !== expectedWidth || stored.raster.height !== expectedHeight) {
+          throw new IdylliumRuntimeError(
+            file,
+            line,
+            `Animation.create_from_frames() frame ${index} has size ${stored.raster.width}x${stored.raster.height}, expected ${expectedWidth}x${expectedHeight}`,
+          );
+        }
+        frames.push({ ...cloneRaster(stored.raster), duration });
+      });
+      const animation: RuntimeDecodedAnimation = {
+        width: expectedWidth,
+        height: expectedHeight,
+        format: 'gif',
+        frames,
+      };
+      const service = imageService(state, file, line);
+      try {
+        const encoded = await service.encodeAnimation(animation, 'gif');
+        setGeneratedAnimation(obj, animation, encoded);
+      } catch (error) {
+        throw imageRuntimeError(file, line, 'Animation.create_from_frames() cannot encode animation', error);
+      }
+    });
+
+    obj.export_to_file = contextFunction(async (targetPath: unknown, file: string, line: number) => {
+      const source = storedAnimation(obj, 'Animation.export_to_file()', file, line);
+      const requestedPath = stringArgument(targetPath, 'Animation.export_to_file() path', file, line);
+      const pathFormat = imageFormatFromPath(requestedPath);
+      const outputFormat: RuntimeImageFormat = pathFormat === 'png' ? 'apng' : pathFormat;
+      if (outputFormat !== 'gif' && outputFormat !== 'apng') {
+        throw new IdylliumRuntimeError(
+          file,
+          line,
+          `Animation.export_to_file() expects .gif, .png or .apng output path, got '${requestedPath}'`,
+        );
+      }
+      const service = imageService(state, file, line);
+      try {
+        const bytes = await service.encodeAnimation(source.animation, outputFormat);
+        writeRuntimeImageBytes(requestedPath, bytes, outputFormat, state, file, line, 'Animation.export_to_file()');
+      } catch (error) {
+        throw imageRuntimeError(file, line, `Animation.export_to_file() cannot write '${requestedPath}'`, error);
+      }
+    });
+  }
+}
+
+function setLoadedStaticImage(
+  obj: RuntimeObject,
+  decoded: RuntimeRasterImage & { readonly format: RuntimeImageFormat },
+  sourceBytes: Uint8Array,
+  requestedPath: string,
+  resolvedPath: string,
+  state: RuntimeObjectState,
+): void {
+  obj.__imageStatic = { raster: cloneRaster(decoded), sourceBytes: new Uint8Array(sourceBytes) } satisfies StoredStaticImage;
+  setImageMetadata(obj, decoded, decoded.format, requestedPath, resolvedPath, imageResourceUri(state, resolvedPath, sourceBytes, decoded.format));
+}
+
+async function createGeneratedStaticImage(
+  raster: RuntimeRasterImage,
+  sourcePath: string,
+  state: RuntimeObjectState,
+  file: string,
+  line: number,
+): Promise<RuntimeObject> {
+  ensureImageSize(raster.width, raster.height, 'image transformation', file, line);
+  const service = imageService(state, file, line);
+  try {
+    const encoded = await service.encodeStatic(raster, 'png');
+    const result = createPlainRuntimeObject('image', 'Static', state);
+    result.__imageStatic = { raster: cloneRaster(raster), sourceBytes: encoded } satisfies StoredStaticImage;
+    setImageMetadata(result, raster, 'png', sourcePath, '', bytesToDataUri(encoded, imageMimeType('png')));
+    return result;
+  } catch (error) {
+    throw imageRuntimeError(file, line, 'image transformation cannot create its result', error);
+  }
+}
+
+function setLoadedAnimation(
+  obj: RuntimeObject,
+  animation: RuntimeDecodedAnimation,
+  sourceBytes: Uint8Array,
+  requestedPath: string,
+  resolvedPath: string,
+  state: RuntimeObjectState,
+): void {
+  obj.__imageAnimation = { animation: cloneAnimation(animation), sourceBytes: new Uint8Array(sourceBytes) } satisfies StoredAnimation;
+  setImageMetadata(
+    obj,
+    { width: animation.width, height: animation.height, pixels: animation.frames[0].pixels },
+    animation.format,
+    requestedPath,
+    resolvedPath,
+    imageResourceUri(state, resolvedPath, sourceBytes, animation.format),
+  );
+  obj.has_alpha = animation.frames.some((frame) => rasterHasAlpha(frame));
+  setAnimationMetadata(obj, animation.frames);
+}
+
+function setGeneratedAnimation(obj: RuntimeObject, animation: RuntimeDecodedAnimation, encoded: Uint8Array): void {
+  obj.__imageAnimation = { animation: cloneAnimation(animation), sourceBytes: new Uint8Array(encoded) } satisfies StoredAnimation;
+  setImageMetadata(
+    obj,
+    { width: animation.width, height: animation.height, pixels: animation.frames[0].pixels },
+    'gif',
+    '',
+    '',
+    bytesToDataUri(encoded, imageMimeType('gif')),
+  );
+  obj.has_alpha = animation.frames.some((frame) => rasterHasAlpha(frame));
+  setAnimationMetadata(obj, animation.frames);
+}
+
+function setImageMetadata(
+  obj: RuntimeObject,
+  image: RuntimeRasterImage,
+  format: RuntimeImageFormat,
+  src: string,
+  resolvedPath: string,
+  resourceUri: string,
+): void {
+  obj.src = src;
+  obj.resolved_path = resolvedPath;
+  obj.resource_uri = resourceUri;
+  obj.width = image.width;
+  obj.height = image.height;
+  obj.format = format;
+  obj.has_alpha = rasterHasAlpha(image);
+  obj.is_loaded = true;
+}
+
+function setAnimationMetadata(obj: RuntimeObject, frames: readonly RuntimeAnimationFrame[]): void {
+  const firstDuration = frames[0]?.duration ?? 0;
+  obj.frame_count = frames.length;
+  obj.frame_duration = firstDuration;
+  obj.has_uniform_frame_duration = frames.every((frame) => Math.abs(frame.duration - firstDuration) < 0.0000001);
+}
+
+function storedStaticImage(obj: RuntimeObject, methodName: string, file: string, line: number): StoredStaticImage {
+  const stored = obj.__imageStatic as StoredStaticImage | undefined;
+  if (obj.is_loaded === true && stored?.raster) return stored;
+  throw new IdylliumRuntimeError(file, line, `${methodName} cannot be used before load_from_file()`);
+}
+
+function storedAnimation(obj: RuntimeObject, methodName: string, file: string, line: number): StoredAnimation {
+  const stored = obj.__imageAnimation as StoredAnimation | undefined;
+  if (obj.is_loaded === true && stored?.animation) return stored;
+  throw new IdylliumRuntimeError(file, line, `${methodName} cannot be used before loading or creating an animation`);
+}
+
+function cloneAnimation(animation: RuntimeDecodedAnimation): RuntimeDecodedAnimation {
+  return {
+    width: animation.width,
+    height: animation.height,
+    format: animation.format,
+    frames: animation.frames.map((frame) => ({ ...cloneRaster(frame), duration: frame.duration })),
+  };
+}
+
+function imageFrameIndex(
+  frames: readonly RuntimeAnimationFrame[],
+  value: unknown,
+  methodName: string,
+  file: string,
+  line: number,
+): number {
+  const index = integerNumber(value, `${methodName} index`, file, line);
+  if (index < 0 || index >= frames.length) {
+    throw new IdylliumRuntimeError(
+      file,
+      line,
+      `${methodName} frame index ${index} out of bounds (frame count ${frames.length}, valid indices ${validRange(frames.length)})`,
+    );
+  }
+  return index;
+}
+
+function resolveImageInputPath(
+  requestedPath: string,
+  file: string,
+  line: number,
+  state: RuntimeObjectState,
+  methodName: string,
+): string {
+  const resolvedPath = state.fileSystem.resolvePath(requestedPath, file);
+  if (!state.fileSystem.exists(resolvedPath)) {
+    throw new IdylliumRuntimeError(file, line, `${methodName} cannot load '${requestedPath}': file does not exist`);
+  }
+  if (!state.fileSystem.isFile(resolvedPath)) {
+    throw new IdylliumRuntimeError(file, line, `${methodName} cannot load '${requestedPath}': path is not a file`);
+  }
+  return resolvedPath;
+}
+
+function readRuntimeBytes(
+  fileSystem: RuntimeFileSystem,
+  resolvedPath: string,
+  file: string,
+  line: number,
+  methodName: string,
+): Uint8Array {
+  if (!fileSystem.readBytes) {
+    throw new IdylliumRuntimeError(file, line, `${methodName} requires binary file support in this runtime`);
+  }
+  try {
+    return fileSystem.readBytes(resolvedPath);
+  } catch (error) {
+    throw imageRuntimeError(file, line, `${methodName} cannot read '${resolvedPath}'`, error);
+  }
+}
+
+function writeRuntimeImageBytes(
+  requestedPath: string,
+  bytes: Uint8Array,
+  format: RuntimeImageFormat,
+  state: RuntimeObjectState,
+  file: string,
+  line: number,
+  methodName: string,
+): void {
+  if (!state.fileSystem.writeBytes) {
+    throw new IdylliumRuntimeError(file, line, `${methodName} requires binary file support in this runtime`);
+  }
+  const resolvedPath = state.fileSystem.resolvePath(requestedPath, file);
+  state.fileSystem.writeBytes(resolvedPath, bytes, bytesToDataUri(bytes, imageMimeType(format)));
+}
+
+function imageResourceUri(
+  state: RuntimeObjectState,
+  resolvedPath: string,
+  bytes: Uint8Array,
+  format: RuntimeImageFormat,
+): string {
+  return state.fileSystem.resourceUri?.(resolvedPath) || bytesToDataUri(bytes, imageMimeType(format));
+}
+
+function imageService(state: RuntimeObjectState, file: string, line: number): RuntimeImageService {
+  if (state.imageService) return state.imageService;
+  throw new IdylliumRuntimeError(file, line, 'image processing is unavailable in this runtime');
+}
+
+function runtimeImageResource(value: unknown, methodName: string, file: string, line: number): RuntimeObject {
+  if (!isRuntimeObject(value) || !['image.Static', 'image.Animation'].includes(String(value.__idylliumType))) {
+    throw new IdylliumRuntimeError(file, line, `${methodName} expects image.Static or image.Animation, got '${runtimeTypeName(value)}'`);
+  }
+  if (value.is_loaded !== true) {
+    throw new IdylliumRuntimeError(file, line, `${methodName} cannot use an image before it is loaded or created`);
+  }
+  return value;
+}
+
+function ensureImageSize(width: number, height: number, operation: string, file: string, line: number): void {
+  const pixelCount = width * height;
+  if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width <= 0 || height <= 0 || pixelCount > 25_000_000) {
+    throw new IdylliumRuntimeError(file, line, `${operation} result size ${width}x${height} is invalid or too large`);
+  }
+}
+
+function imageRuntimeError(file: string, line: number, prefix: string, error: unknown): IdylliumRuntimeError {
+  if (error instanceof IdylliumRuntimeError) return error;
+  return new IdylliumRuntimeError(file, line, `${prefix}: ${errorMessage(error)}`);
 }
 
 function attachPositionMove(obj: RuntimeObject, typeName: string): void {
@@ -2714,6 +4818,160 @@ function attachLineMove(obj: RuntimeObject): void {
     obj.x2 = finiteNumber(obj.x2, 'Line.move() current x2', file, line) + deltaX;
     obj.y2 = finiteNumber(obj.y2, 'Line.move() current y2', file, line) + deltaY;
   });
+}
+
+function attachDrawableTransform(obj: RuntimeObject, typeName: string): void {
+  obj.origin_x = 0;
+  obj.origin_y = 0;
+  obj.rotation = 0;
+  obj.set_origin = contextFunction((x: unknown, y: unknown, file: string, line: number) => {
+    obj.origin_x = finiteNumber(x, `${typeName}.set_origin() x`, file, line);
+    obj.origin_y = finiteNumber(y, `${typeName}.set_origin() y`, file, line);
+  });
+  obj.rotate = contextFunction((angle: unknown, file: string, line: number) => {
+    obj.rotation = finiteNumber(obj.rotation, `${typeName}.rotate() current rotation`, file, line)
+      + finiteNumber(angle, `${typeName}.rotate() angle`, file, line);
+  });
+}
+
+function attachDrawableGeometry(obj: RuntimeObject, typeName: string, state: RuntimeObjectState): void {
+  obj.contains = contextFunction((x: unknown, y: unknown, file: string, line: number) => {
+    const point = {
+      x: finiteNumber(x, `${typeName}.contains() x`, file, line),
+      y: finiteNumber(y, `${typeName}.contains() y`, file, line),
+    };
+    return collisionShapeContains(drawableCollisionShape(obj, `${typeName}.contains()`, file, line, state), point);
+  });
+  obj.intersects = contextFunction((other: unknown, file: string, line: number) => {
+    if (!isDrawableObject(other)) {
+      throw new IdylliumRuntimeError(
+        file,
+        line,
+        `${typeName}.intersects() expects drawable object, got '${runtimeTypeName(other)}'`,
+      );
+    }
+    return collisionShapesIntersect(
+      drawableCollisionShape(obj, `${typeName}.intersects()`, file, line, state),
+      drawableCollisionShape(other, `${typeName}.intersects()`, file, line, state),
+    );
+  });
+}
+
+function drawableCollisionShape(
+  obj: RuntimeObject,
+  operation: string,
+  file: string,
+  line: number,
+  state: RuntimeObjectState,
+): DrawableCollisionShape | null {
+  const typeName = String(obj.__idylliumType ?? 'drawable.Drawable');
+
+  if (typeName === 'drawable.Rectangle') {
+    return rectangleCollisionShape(
+      drawableTransform(obj, 'Rectangle', 1, 1, file, line),
+      finiteNumber(obj.width, `${operation} Rectangle.width`, file, line),
+      finiteNumber(obj.height, `${operation} Rectangle.height`, file, line),
+    );
+  }
+
+  if (typeName === 'drawable.Circle') {
+    return circleCollisionShape(
+      drawableTransform(obj, 'Circle', 1, 1, file, line),
+      finiteNumber(obj.radius, `${operation} Circle.radius`, file, line),
+    );
+  }
+
+  if (typeName === 'drawable.Line') {
+    return capsuleCollisionShape(
+      {
+        x: finiteNumber(obj.x1, `${operation} Line.x1`, file, line),
+        y: finiteNumber(obj.y1, `${operation} Line.y1`, file, line),
+      },
+      {
+        x: finiteNumber(obj.x2, `${operation} Line.x2`, file, line),
+        y: finiteNumber(obj.y2, `${operation} Line.y2`, file, line),
+      },
+      finiteNumber(obj.thickness, `${operation} Line.thickness`, file, line),
+    );
+  }
+
+  if (typeName === 'drawable.Sprite') {
+    const image = obj.image;
+    if (!isRuntimeObject(image) || image.is_loaded !== true) {
+      throw new IdylliumRuntimeError(file, line, `${operation} cannot inspect Sprite geometry before an image is loaded`);
+    }
+    return rectangleCollisionShape(
+      drawableTransform(
+        obj,
+        'Sprite',
+        finiteNumber(obj.scale_x, `${operation} Sprite.scale_x`, file, line),
+        finiteNumber(obj.scale_y, `${operation} Sprite.scale_y`, file, line),
+        file,
+        line,
+      ),
+      finiteNumber(image.width, `${operation} Sprite image width`, file, line),
+      finiteNumber(image.height, `${operation} Sprite image height`, file, line),
+    );
+  }
+
+  if (typeName === 'drawable.Text') {
+    const metrics = drawableTextMetrics(obj, operation, file, line, state);
+    return rectangleCollisionShape(
+      drawableTransform(obj, 'Text', 1, 1, file, line),
+      metrics.width,
+      metrics.height,
+    );
+  }
+
+  throw new IdylliumRuntimeError(file, line, `${operation} cannot inspect unsupported '${typeName}' geometry`);
+}
+
+function drawableTextMetrics(
+  obj: RuntimeObject,
+  operation: string,
+  file: string,
+  line: number,
+  state: RuntimeObjectState,
+): RuntimeTextMetrics {
+  const font = obj.font;
+  if (!isRuntimeObject(font) || font.is_loaded !== true) {
+    throw new IdylliumRuntimeError(file, line, `${operation} cannot inspect Text geometry before a font is loaded`);
+  }
+  const text = String(obj.text ?? '');
+  const fontSize = finiteNumber(obj.font_size, `${operation} Text.font_size`, file, line);
+  try {
+    return font.is_builtin === true
+      ? state.fontMetricsService.measureDefault(text, fontSize)
+      : state.fontMetricsService.measure(runtimeFontBytes(font, operation, file, line), text, fontSize);
+  } catch (error) {
+    if (error instanceof IdylliumRuntimeError) throw error;
+    throw new IdylliumRuntimeError(file, line, `${operation} cannot measure Text: ${errorMessage(error)}`);
+  }
+}
+
+function runtimeFontBytes(font: RuntimeObject, operation: string, file: string, line: number): Uint8Array {
+  const bytes = font.__fontBytes;
+  if (bytes instanceof Uint8Array) return bytes;
+  throw new IdylliumRuntimeError(file, line, `${operation} cannot inspect Text geometry without font bytes`);
+}
+
+function drawableTransform(
+  obj: RuntimeObject,
+  typeName: string,
+  scaleX: number,
+  scaleY: number,
+  file: string,
+  line: number,
+): DrawableTransform {
+  return {
+    x: finiteNumber(obj.x, `${typeName} x`, file, line),
+    y: finiteNumber(obj.y, `${typeName} y`, file, line),
+    originX: finiteNumber(obj.origin_x, `${typeName} origin_x`, file, line),
+    originY: finiteNumber(obj.origin_y, `${typeName} origin_y`, file, line),
+    rotation: finiteNumber(obj.rotation, `${typeName} rotation`, file, line),
+    scaleX,
+    scaleY,
+  };
 }
 
 function initializeAudioObject(obj: RuntimeObject, typeName: string, state: RuntimeObjectState): void {
@@ -2834,7 +5092,7 @@ function isGuiWidget(typeName: string): boolean {
     || typeName === 'Label'
     || typeName === 'Button'
     || typeName === 'Frame'
-    || typeName === 'Image'
+    || typeName === 'ImageBox'
     || typeName === 'LineEdit'
     || typeName === 'TextEdit'
     || typeName === 'ProgressBar'
@@ -2959,6 +5217,7 @@ function runtimeObjectId(value: RuntimeObject): number {
 
 function snapshotValue(value: unknown): unknown {
   if (value instanceof IdylliumColor) return value.toCss();
+  if (typeof value === 'bigint') return Number(value);
   if (value instanceof IdylliumArray) return value.values().map(snapshotValue);
   if (isRuntimeObject(value)) {
     return {
@@ -3002,21 +5261,24 @@ function colorTransparent(): IdylliumColor {
   return IdylliumColor.RGBA(0, 0, 0, 0);
 }
 
-async function stepGuiTimer(timer: RuntimeObject, deltaTime: number): Promise<void> {
-  if (timer.__running !== true) return;
+async function stepGuiTimer(timer: RuntimeObject, deltaTime: number): Promise<boolean> {
+  if (timer.__running !== true) return false;
   const callback = timer.on_tick;
-  if (typeof callback !== 'function') return;
+  if (typeof callback !== 'function') return false;
 
   const interval = typeof timer.interval === 'number' && Number.isFinite(timer.interval)
     ? Math.max(1, Math.trunc(timer.interval))
     : 1000;
   const elapsed = (typeof timer.__elapsedMs === 'number' ? timer.__elapsedMs : 0) + Math.max(0, deltaTime * 1000);
   timer.__elapsedMs = elapsed;
+  let changed = false;
 
   while (timer.__running === true && typeof timer.__elapsedMs === 'number' && timer.__elapsedMs >= interval) {
     timer.__elapsedMs -= interval;
     await callback(timer);
+    changed = true;
   }
+  return changed;
 }
 
 function applyGuiEventPayload(
@@ -3160,6 +5422,7 @@ function eventFloat(value: unknown): number {
 
 function runtimeTypeName(value: unknown): string {
   if (isRuntimeObject(value) && typeof value.__idylliumType === 'string') return value.__idylliumType;
+  if (typeof value === 'bigint') return 'int';
   return String(value);
 }
 

@@ -25,10 +25,11 @@ void function redraw(gui.Canvas canvas) {
 
 void function init(gui.Canvas canvas) {
     for (int i = 0; i < blocks.length(); i = i + 1) {
-        blocks[i].x = 160;
-        blocks[i].y = 35 + i * 40;
+        blocks[i].x = 215;
+        blocks[i].y = 47 + i * 40;
         blocks[i].width = 110;
         blocks[i].height = 24;
+        blocks[i].set_origin(55, 12);
         blocks[i].fill_color = colors.RGB(34, 145, 188);
     }
     redraw(canvas);
@@ -64,6 +65,7 @@ main() {
   <p>
     Метод <code>rotate()</code> поворачивает объект ещё на указанное количество
     градусов. Если вызвать <code>rotate(8)</code> несколько раз, угол будет
-    накапливаться.
+    накапливаться. Метод <code>set_origin(55, 12)</code> ставит точку вращения
+    в центр прямоугольника: половина ширины равна 55, а половина высоты — 12.
   </p>
 </div>

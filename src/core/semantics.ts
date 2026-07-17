@@ -38,6 +38,7 @@ import {
   ERROR_TYPE,
   FLOAT,
   INT,
+  NULL_TYPE,
   STRING,
   TypeRef,
   VOID,
@@ -57,12 +58,31 @@ import {
 export interface SemanticResult {
   readonly success: boolean;
   readonly diagnostics: DiagnosticBag;
+  readonly tokens: readonly IdylliumSemanticToken[];
+}
+
+export type IdylliumSemanticTokenKind =
+  | 'namespace'
+  | 'class'
+  | 'function'
+  | 'method'
+  | 'property'
+  | 'variable'
+  | 'parameter';
+
+export type IdylliumSemanticTokenModifier = 'declaration' | 'readonly' | 'static' | 'defaultLibrary';
+
+export interface IdylliumSemanticToken {
+  readonly kind: IdylliumSemanticTokenKind;
+  readonly range: SourceRange;
+  readonly modifiers: readonly IdylliumSemanticTokenModifier[];
 }
 
 interface SymbolInfo {
   readonly type: TypeRef;
   readonly range: SourceRange;
   readonly kind: 'variable' | 'parameter' | 'function';
+  readonly readonly: boolean;
 }
 
 interface AssignmentTargetInfo {
@@ -107,6 +127,7 @@ interface ClassContext {
 
 export class SemanticAnalyzer {
   private readonly diagnostics = new DiagnosticBag();
+  private readonly semanticTokens: IdylliumSemanticToken[] = [];
   private readonly imports = new Set<string>();
   private readonly userModules = new Set<string>();
   private readonly scopes: Array<Map<string, SymbolInfo>> = [new Map()];
@@ -123,6 +144,11 @@ export class SemanticAnalyzer {
 
   analyze(program: Program): SemanticResult {
     for (const importDecl of program.imports) {
+      this.markSemanticToken(
+        'namespace',
+        importDecl.moduleNameRange,
+        this.stdlib.hasModule(importDecl.moduleName) ? ['defaultLibrary'] : [],
+      );
       this.imports.add(importDecl.moduleName);
       if (!this.stdlib.hasModule(importDecl.moduleName)) {
         if (this.userModuleRegistry.hasModule(importDecl.moduleName)) {
@@ -170,12 +196,14 @@ export class SemanticAnalyzer {
     }
 
     if (program.main) {
+      this.markSemanticToken('function', program.main.nameRange, ['declaration']);
       this.analyzeMainFunction(program.main);
     }
 
     return {
       success: !this.diagnostics.hasErrors(),
       diagnostics: this.diagnostics,
+      tokens: deduplicateSemanticTokens(this.semanticTokens),
     };
   }
 
@@ -215,7 +243,9 @@ export class SemanticAnalyzer {
         declaration: {
           kind: 'ClassDeclaration',
           name: classSpec.qualifiedName,
+          nameRange: classSpec.range,
           baseName: classSpec.baseName,
+          baseNameRange: null,
           members: [],
           range: classSpec.range,
         },
@@ -234,6 +264,7 @@ export class SemanticAnalyzer {
   }
 
   private registerFunction(declaration: FunctionDeclaration): void {
+    this.markSemanticToken('function', declaration.nameRange, ['declaration']);
     if (this.functions.has(declaration.name)) {
       this.diagnostics.error(declaration.range, `function '${declaration.name}' is already declared`);
       return;
@@ -263,6 +294,7 @@ export class SemanticAnalyzer {
     let sawDefault = false;
 
     for (const parameter of parameters) {
+      this.markSemanticToken('parameter', parameter.nameRange, ['declaration']);
       const parameterType = this.resolveTypeName(parameter.paramType);
       resolved.push(parameterType);
 
@@ -306,6 +338,10 @@ export class SemanticAnalyzer {
   }
 
   private registerClass(declaration: ClassDeclaration): void {
+    this.markSemanticToken('class', declaration.nameRange, ['declaration']);
+    if (declaration.baseNameRange) {
+      this.markSemanticToken('class', declaration.baseNameRange);
+    }
     if (this.classes.has(declaration.name)) {
       this.diagnostics.error(declaration.range, `class '${declaration.name}' is already declared`);
       return;
@@ -396,6 +432,7 @@ export class SemanticAnalyzer {
     }
 
     for (const field of declaration.fields) {
+      this.markSemanticToken('property', field.nameRange, ['declaration']);
       if (info.fields.has(field.name) || info.methods.has(field.name)) {
         this.diagnostics.error(field.range, `class '${info.declaration.name}' already has member '${field.name}'`);
         continue;
@@ -412,6 +449,11 @@ export class SemanticAnalyzer {
   }
 
   private registerClassMethod(info: UserClassInfo, declaration: ClassMethodDeclaration): void {
+    this.markSemanticToken(
+      'method',
+      declaration.nameRange,
+      declaration.isStatic ? ['declaration', 'static'] : ['declaration'],
+    );
     const inheritedField = info.fields.get(declaration.name);
     if (inheritedField && inheritedField.owner !== info.declaration.name) {
       this.diagnostics.error(declaration.range, `method '${declaration.name}' conflicts with inherited field '${inheritedField.owner}.${declaration.name}'`);
@@ -449,6 +491,7 @@ export class SemanticAnalyzer {
   }
 
   private registerClassConstructor(info: UserClassInfo, declaration: ConstructorDeclaration): void {
+    this.markSemanticToken('method', declaration.nameRange, ['declaration']);
     if (declaration.name !== info.declaration.name) {
       this.diagnostics.error(declaration.range, `constructor name '${declaration.name}' must match class '${info.declaration.name}'`);
     }
@@ -701,10 +744,17 @@ export class SemanticAnalyzer {
     statement: VariableDeclaration,
     kind: SymbolInfo['kind'],
   ): void {
+    const modifiers: IdylliumSemanticTokenModifier[] = ['declaration'];
+    if (statement.isConst) modifiers.push('readonly');
+    this.markSemanticToken(kind === 'parameter' ? 'parameter' : 'variable', statement.nameRange, modifiers);
     const declaredType = this.resolveTypeName(statement.declaredType);
     if (declaredType.kind === 'primitive' && declaredType.name === 'void') {
       this.diagnostics.error(statement.range, "cannot declare variable of type 'void'");
       return;
+    }
+
+    if (statement.isConst && !statement.initializer && !statement.constructorArgs) {
+      this.diagnostics.error(statement.nameRange, `constant '${statement.name}' must have an initializer`);
     }
 
     if (statement.initializer) {
@@ -733,7 +783,7 @@ export class SemanticAnalyzer {
       this.analyzeConstructorArguments(statement, declaredType);
     }
 
-    this.declare(statement.name, declaredType, kind, statement.range);
+    this.declare(statement.name, declaredType, kind, statement.range, statement.isConst);
   }
 
   private analyzeConstructorArguments(statement: VariableDeclaration, declaredType: TypeRef): void {
@@ -789,12 +839,24 @@ export class SemanticAnalyzer {
     }
 
     if (typeName.kind === 'ClassTypeName') {
+      this.markSemanticToken('class', typeName.nameRange);
       if (!this.classes.has(typeName.name)) {
         this.diagnostics.error(typeName.range, `unknown class '${typeName.name}'`);
         return ERROR_TYPE;
       }
       return classType(typeName.name);
     }
+
+    this.markSemanticToken(
+      'namespace',
+      typeName.moduleNameRange,
+      this.stdlib.hasModule(typeName.moduleName) ? ['defaultLibrary'] : [],
+    );
+    this.markSemanticToken(
+      'class',
+      typeName.nameRange,
+      this.stdlib.hasModule(typeName.moduleName) ? ['defaultLibrary'] : [],
+    );
 
     if (!this.imports.has(typeName.moduleName)) {
       this.diagnostics.error(typeName.range, `'${typeName.moduleName}' is not imported (use 'use ${typeName.moduleName};')`);
@@ -870,14 +932,39 @@ export class SemanticAnalyzer {
         this.diagnostics.error(target.range, `variable '${target.name}' was not declared in this scope`);
         return { type: ERROR_TYPE };
       }
+      this.markSymbolReference(symbol, target.range, target.name);
       if (symbol.kind === 'function') {
         this.diagnostics.error(target.range, `cannot assign to function '${target.name}'`);
         return { type: ERROR_TYPE };
+      }
+      if (symbol.readonly) {
+        this.diagnostics.error(target.range, `cannot assign to constant '${target.name}'`);
       }
       return { type: symbol.type };
     }
 
     if (target.kind === 'MemberExpression') {
+      if (target.object.kind === 'IdentifierExpression') {
+        const moduleName = target.object.name;
+        const stdlibConstant = this.stdlib.getModule(moduleName)?.constants.get(target.name);
+        const userConstant = this.userModuleRegistry.getModule(moduleName)?.constants.get(target.name);
+        const constant = stdlibConstant ?? userConstant;
+        if (constant) {
+          this.markSemanticToken(
+            'namespace',
+            target.object.range,
+            stdlibConstant ? ['defaultLibrary'] : [],
+          );
+          this.markSemanticToken(
+            'variable',
+            target.nameRange,
+            stdlibConstant ? ['readonly', 'defaultLibrary'] : ['readonly'],
+          );
+          this.diagnostics.error(target.range, `cannot assign to constant '${moduleName}.${target.name}'`);
+          return { type: constant.type };
+        }
+      }
+
       const objectType = this.expressionType(target.object);
       if (objectType.kind === 'class') {
         const field = this.getClassField(objectType.name, target.name);
@@ -885,6 +972,7 @@ export class SemanticAnalyzer {
           this.diagnostics.error(target.range, `type '${typeToString(objectType)}' has no field '${target.name}'`);
           return { type: ERROR_TYPE };
         }
+        this.markSemanticToken('property', target.nameRange);
         this.checkClassMemberAccess(field, target.range);
         return { type: field.type };
       }
@@ -894,6 +982,7 @@ export class SemanticAnalyzer {
         this.diagnostics.error(target.range, `type '${typeToString(objectType)}' has no property '${target.name}'`);
         return { type: ERROR_TYPE };
       }
+      this.markSemanticToken('property', target.nameRange, ['defaultLibrary']);
       if (property.readonly) {
         this.diagnostics.error(target.range, `property '${target.name}' is read-only`);
       }
@@ -949,7 +1038,7 @@ export class SemanticAnalyzer {
   private expressionType(expression: Expression): TypeRef {
     switch (expression.kind) {
       case 'LiteralExpression':
-        return primitive(expression.valueType);
+        return expression.valueType === 'null' ? NULL_TYPE : primitive(expression.valueType);
       case 'IdentifierExpression':
         return this.identifierType(expression.name, expression.range);
       case 'UnaryExpression':
@@ -1032,6 +1121,19 @@ export class SemanticAnalyzer {
   }
 
   private mergeArrayElementTypes(left: TypeRef, right: TypeRef): TypeRef {
+    if (left.kind === 'array' && right.kind === 'array') {
+      const elementType = this.mergeArrayElementTypes(left.elementType, right.elementType);
+      if (elementType.kind === 'error') return ERROR_TYPE;
+
+      const sameStaticShape = !left.dynamic
+        && !right.dynamic
+        && left.size === right.size;
+      return arrayType(
+        elementType,
+        sameStaticShape ? left.size : null,
+        !sameStaticShape,
+      );
+    }
     if (this.canAssign(left, right)) return left;
     if (this.canAssign(right, left)) return right;
     if (isNumeric(left) && isNumeric(right)) {
@@ -1068,9 +1170,13 @@ export class SemanticAnalyzer {
 
   private identifierType(name: string, range: SourceRange): TypeRef {
     const symbol = this.lookup(name);
-    if (symbol) return symbol.type;
+    if (symbol) {
+      this.markSymbolReference(symbol, range, name);
+      return symbol.type;
+    }
 
     if (this.stdlib.hasModule(name)) {
+      this.markSemanticToken('namespace', range, ['defaultLibrary']);
       if (!this.imports.has(name)) {
         this.diagnostics.error(range, `'${name}' is not imported (use 'use ${name};')`);
       }
@@ -1078,10 +1184,12 @@ export class SemanticAnalyzer {
     }
 
     if (this.userModules.has(name)) {
+      this.markSemanticToken('namespace', range);
       return ANY_TYPE;
     }
 
     if (this.classes.has(name)) {
+      this.markSemanticToken('class', range);
       this.diagnostics.error(range, `class '${name}' cannot be used as a value`);
       return ERROR_TYPE;
     }
@@ -1171,6 +1279,7 @@ export class SemanticAnalyzer {
 
   private callType(expression: CallExpression): TypeRef {
     if (expression.callee.kind === 'IdentifierExpression' && this.isArrayGlobalFunction(expression.callee.name)) {
+      this.markSemanticToken('function', expression.callee.range, ['defaultLibrary']);
       return this.arrayGlobalFunctionType(expression.callee.name, expression);
     }
 
@@ -1226,6 +1335,9 @@ export class SemanticAnalyzer {
       return null;
     }
     if (callee.object.name !== 'math') return null;
+
+    this.markSemanticToken('namespace', callee.object.range, ['defaultLibrary']);
+    this.markSemanticToken('function', callee.nameRange, ['defaultLibrary']);
 
     if (callee.name === 'round' || callee.name === 'floor' || callee.name === 'ceil') {
       if (!this.imports.has('math')) {
@@ -1292,10 +1404,14 @@ export class SemanticAnalyzer {
       }
 
       const global = this.stdlib.getGlobalFunction(callee.name);
-      if (global) return global;
+      if (global) {
+        this.markSemanticToken('function', callee.range, ['defaultLibrary']);
+        return global;
+      }
 
       const localFunction = this.functions.get(callee.name);
       if (localFunction) {
+        this.markSemanticToken('function', callee.range);
         const parameters = localFunction.parameters.map((parameter) => ({
           name: parameter.name,
           type: this.resolveTypeName(parameter.paramType),
@@ -1310,6 +1426,7 @@ export class SemanticAnalyzer {
 
       const symbol = this.lookup(callee.name);
       if (symbol?.type.kind === 'function') {
+        this.markSymbolReference(symbol, callee.range, callee.name);
         return {
           name: callee.name,
           parameters: symbol.type.parameters.map((type, index) => ({ name: `arg${index + 1}`, type })),
@@ -1326,6 +1443,8 @@ export class SemanticAnalyzer {
       const moduleName = callee.object.name;
       const module = this.stdlib.getModule(moduleName);
       if (module) {
+        this.markSemanticToken('namespace', callee.object.range, ['defaultLibrary']);
+        this.markSemanticToken('function', callee.nameRange, ['defaultLibrary']);
         if (!this.imports.has(moduleName)) {
           this.diagnostics.error(callee.object.range, `'${moduleName}' is not imported (use 'use ${moduleName};')`);
           return null;
@@ -1341,6 +1460,8 @@ export class SemanticAnalyzer {
 
       const userModule = this.userModuleRegistry.getModule(moduleName);
       if (userModule) {
+        this.markSemanticToken('namespace', callee.object.range);
+        this.markSemanticToken('function', callee.nameRange);
         if (!this.imports.has(moduleName)) {
           this.diagnostics.error(callee.object.range, `'${moduleName}' is not imported (use 'use ${moduleName};')`);
           return null;
@@ -1355,11 +1476,15 @@ export class SemanticAnalyzer {
       }
 
       if (this.userModules.has(moduleName)) {
+        this.markSemanticToken('namespace', callee.object.range);
+        this.markSemanticToken('function', callee.nameRange);
         return { name: callee.name, parameters: [], returnType: ANY_TYPE, variadic: true, variadicTypes: [ANY_TYPE] };
       }
 
       const classInfo = this.classes.get(moduleName);
       if (classInfo) {
+        this.markSemanticToken('class', callee.object.range);
+        this.markSemanticToken('method', callee.nameRange, ['static']);
         const method = classInfo.methods.get(callee.name);
         if (method) {
           const access = classInfo.methodAccess.get(callee.name);
@@ -1384,18 +1509,21 @@ export class SemanticAnalyzer {
     if (callee.kind === 'MemberExpression') {
       const objectType = this.expressionType(callee.object);
       if (this.isStringType(objectType)) {
+        this.markSemanticToken('method', callee.nameRange);
         const method = this.stringMethodSpec(callee.name);
         if (method) return method;
         this.diagnostics.error(callee.range, `type 'string' has no method '${callee.name}'`);
         return null;
       }
       if (objectType.kind === 'array') {
+        this.markSemanticToken('method', callee.nameRange);
         const method = this.arrayMethodSpec(objectType, callee.name);
         if (method) return method;
         this.reportUnknownArrayMethod(objectType, callee.name, callee.range);
         return null;
       }
       if (objectType.kind === 'class') {
+        this.markSemanticToken('method', callee.nameRange);
         const method = this.getClassMethodInfo(objectType.name, callee.name);
         if (method) {
           this.checkClassMemberAccess(method.access, callee.range);
@@ -1413,7 +1541,10 @@ export class SemanticAnalyzer {
         return null;
       }
       const method = this.stdlib.getTypeMethod(objectType, callee.name);
-      if (method) return method;
+      if (method) {
+        this.markSemanticToken('method', callee.nameRange, ['defaultLibrary']);
+        return method;
+      }
       this.diagnostics.error(callee.range, `type '${typeToString(objectType)}' has no method '${callee.name}'`);
       return null;
     }
@@ -1427,6 +1558,9 @@ export class SemanticAnalyzer {
   }
 
   private checkArgumentList(args: readonly CallArgument[], fn: FunctionSpec, range: SourceRange): void {
+    for (const arg of args) {
+      if (arg.nameRange) this.markSemanticToken('parameter', arg.nameRange);
+    }
     const minArguments = fn.minArguments ?? fn.parameters.length;
     const maxArguments = fn.parameters.length;
 
@@ -1600,42 +1734,69 @@ export class SemanticAnalyzer {
       const moduleName = expression.object.name;
       const module = this.stdlib.getModule(moduleName);
       if (module) {
+        this.markSemanticToken('namespace', expression.object.range, ['defaultLibrary']);
         if (!this.imports.has(moduleName)) {
           this.diagnostics.error(expression.object.range, `'${moduleName}' is not imported (use 'use ${moduleName};')`);
           return ERROR_TYPE;
         }
         const constant = module.constants.get(expression.name);
-        if (constant) return constant.type;
+        if (constant) {
+          this.markSemanticToken('variable', expression.nameRange, ['readonly', 'defaultLibrary']);
+          return constant.type;
+        }
         const fn = module.functions.get(expression.name);
-        if (fn) return functionType(fn.parameters.map((param) => param.type), fn.returnType);
-        if (module.types.has(expression.name)) return ERROR_TYPE;
+        if (fn) {
+          this.markSemanticToken('function', expression.nameRange, ['defaultLibrary']);
+          return functionType(fn.parameters.map((param) => param.type), fn.returnType);
+        }
+        if (module.types.has(expression.name)) {
+          this.markSemanticToken('class', expression.nameRange, ['defaultLibrary']);
+          return ERROR_TYPE;
+        }
         this.diagnostics.error(expression.range, `'${moduleName}' has no member '${expression.name}'`);
         return ERROR_TYPE;
       }
 
       const userModule = this.userModuleRegistry.getModule(moduleName);
       if (userModule) {
+        this.markSemanticToken('namespace', expression.object.range);
         if (!this.imports.has(moduleName)) {
           this.diagnostics.error(expression.object.range, `'${moduleName}' is not imported (use 'use ${moduleName};')`);
           return ERROR_TYPE;
         }
 
+        const constant = userModule.constants.get(expression.name);
+        if (constant) {
+          this.markSemanticToken('variable', expression.nameRange, ['readonly']);
+          return constant.type;
+        }
+
         const fn = userModule.functions.get(expression.name);
-        if (fn) return functionType(fn.parameters.map((param) => param.type), fn.returnType);
-        if (userModule.classes.has(expression.name)) return ERROR_TYPE;
+        if (fn) {
+          this.markSemanticToken('function', expression.nameRange);
+          return functionType(fn.parameters.map((param) => param.type), fn.returnType);
+        }
+        if (userModule.classes.has(expression.name)) {
+          this.markSemanticToken('class', expression.nameRange);
+          return ERROR_TYPE;
+        }
 
         this.diagnostics.error(expression.range, `module '${moduleName}' has no member '${expression.name}'`);
         return ERROR_TYPE;
       }
 
       if (this.userModules.has(moduleName)) {
+        this.markSemanticToken('namespace', expression.object.range);
+        this.markSemanticToken('property', expression.nameRange);
         return ANY_TYPE;
       }
 
       const classInfo = this.classes.get(moduleName);
       if (classInfo) {
+        this.markSemanticToken('class', expression.object.range);
         const method = classInfo.methods.get(expression.name);
         if (method) {
+          this.markSemanticToken('method', expression.nameRange, ['static']);
           const access = classInfo.methodAccess.get(expression.name);
           if (access?.isStatic) {
             this.checkClassMemberAccess(access, expression.range);
@@ -1658,14 +1819,20 @@ export class SemanticAnalyzer {
     const objectType = this.expressionType(expression.object);
     if (this.isStringType(objectType)) {
       const method = this.stringMethodSpec(expression.name);
-      if (method) return functionType(method.parameters.map((param) => param.type), method.returnType);
+      if (method) {
+        this.markSemanticToken('method', expression.nameRange, ['defaultLibrary']);
+        return functionType(method.parameters.map((param) => param.type), method.returnType);
+      }
       this.diagnostics.error(expression.range, `type 'string' has no member '${expression.name}'`);
       return ERROR_TYPE;
     }
 
     if (objectType.kind === 'array') {
       const method = this.arrayMethodSpec(objectType, expression.name);
-      if (method) return functionType(method.parameters.map((param) => param.type), method.returnType);
+      if (method) {
+        this.markSemanticToken('method', expression.nameRange, ['defaultLibrary']);
+        return functionType(method.parameters.map((param) => param.type), method.returnType);
+      }
       this.reportUnknownArrayMethod(objectType, expression.name, expression.range);
       return ERROR_TYPE;
     }
@@ -1673,12 +1840,14 @@ export class SemanticAnalyzer {
     if (objectType.kind === 'class') {
       const field = this.getClassField(objectType.name, expression.name);
       if (field) {
+        this.markSemanticToken('property', expression.nameRange);
         this.checkClassMemberAccess(field, expression.range);
         return field.type;
       }
 
       const method = this.getClassMethodInfo(objectType.name, expression.name);
       if (method) {
+        this.markSemanticToken('method', expression.nameRange);
         this.checkClassMemberAccess(method.access, expression.range);
         return functionType(method.spec.parameters.map((param) => param.type), method.spec.returnType);
       }
@@ -1696,10 +1865,16 @@ export class SemanticAnalyzer {
     }
 
     const property = this.stdlib.getTypeProperty(objectType, expression.name);
-    if (property) return property.type;
+    if (property) {
+      this.markSemanticToken('property', expression.nameRange, ['defaultLibrary']);
+      return property.type;
+    }
 
     const method = this.stdlib.getTypeMethod(objectType, expression.name);
-    if (method) return functionType(method.parameters.map((param) => param.type), method.returnType);
+    if (method) {
+      this.markSemanticToken('method', expression.nameRange, ['defaultLibrary']);
+      return functionType(method.parameters.map((param) => param.type), method.returnType);
+    }
 
     this.diagnostics.error(expression.range, `type '${typeToString(objectType)}' has no member '${expression.name}'`);
     return ERROR_TYPE;
@@ -1828,6 +2003,10 @@ export class SemanticAnalyzer {
   private canAssign(target: TypeRef, value: TypeRef): boolean {
     if (isAssignable(target, value)) return true;
 
+    if (value.kind === 'null' && this.stdlib.typeAcceptsNull(target)) {
+      return true;
+    }
+
     if (target.kind === 'class' && value.kind === 'class') {
       return this.classExtends(value.name, target.name);
     }
@@ -1837,11 +2016,29 @@ export class SemanticAnalyzer {
     }
 
     if (target.kind === 'array' && value.kind === 'array') {
-      const sizeMatches = target.dynamic || (!value.dynamic && target.size === value.size);
+      const sizeMatches = target.dynamic || value.dynamic || target.size === value.size;
       return sizeMatches && this.canAssign(target.elementType, value.elementType);
     }
 
     return false;
+  }
+
+  private markSemanticToken(
+    kind: IdylliumSemanticTokenKind,
+    range: SourceRange,
+    modifiers: readonly IdylliumSemanticTokenModifier[] = [],
+  ): void {
+    this.semanticTokens.push({ kind, range, modifiers: [...modifiers] });
+  }
+
+  private markSymbolReference(symbol: SymbolInfo, range: SourceRange, name: string): void {
+    if (name === 'this') return;
+    const kind: IdylliumSemanticTokenKind = symbol.kind === 'function'
+      ? 'function'
+      : symbol.kind === 'parameter'
+        ? 'parameter'
+        : 'variable';
+    this.markSemanticToken(kind, range, symbol.readonly ? ['readonly'] : []);
   }
 
   private classExtends(childName: string, parentName: string): boolean {
@@ -1864,13 +2061,14 @@ export class SemanticAnalyzer {
     type: TypeRef,
     kind: SymbolInfo['kind'],
     range: SourceRange,
+    readonly = false,
   ): void {
     const scope = this.currentScope();
     if (scope.has(name)) {
       this.diagnostics.error(range, `'${name}' is already declared in this scope`);
       return;
     }
-    scope.set(name, { type, kind, range });
+    scope.set(name, { type, kind, range, readonly });
   }
 
   private lookup(name: string): SymbolInfo | null {
@@ -1914,6 +2112,31 @@ function argumentCountText(minArguments: number, maxArguments: number): string {
   if (minArguments === maxArguments) return String(maxArguments);
   if (maxArguments === minArguments + 1) return `${minArguments} or ${maxArguments}`;
   return `${minArguments}-${maxArguments}`;
+}
+
+function deduplicateSemanticTokens(tokens: readonly IdylliumSemanticToken[]): IdylliumSemanticToken[] {
+  const byRange = new Map<string, IdylliumSemanticToken>();
+  for (const token of tokens) {
+    const { start, end } = token.range;
+    const key = `${start.file}:${start.line}:${start.column}:${end.line}:${end.column}`;
+    const existing = byRange.get(key);
+    if (!existing) {
+      byRange.set(key, token);
+      continue;
+    }
+    if (existing.kind !== token.kind) continue;
+    byRange.set(key, {
+      ...existing,
+      modifiers: [...new Set([...existing.modifiers, ...token.modifiers])],
+    });
+  }
+
+  return [...byRange.values()].sort((left, right) => (
+    left.range.start.line - right.range.start.line
+    || left.range.start.column - right.range.start.column
+    || left.range.end.line - right.range.end.line
+    || left.range.end.column - right.range.end.column
+  ));
 }
 
 function requiredParameterCount(parameters: readonly ParameterDeclaration[]): number {

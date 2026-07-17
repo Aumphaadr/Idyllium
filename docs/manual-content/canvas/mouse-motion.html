@@ -25,6 +25,7 @@ void function redraw(gui.Canvas canvas) {
 
 void function init(gui.Canvas canvas) {
     cursor_circle.radius = 18;
+    cursor_circle.set_origin(18, 18);
     cursor_circle.fill_color = colors.RGB(255, 210, 80);
 
     box.x = 145;
@@ -66,4 +67,10 @@ main() {
     win.show();
 }
 </script></idyl-code-block>
+
+  <p>
+    Метод <code>set_origin(18, 18)</code> переносит точку отсчёта круга из
+    левого верхнего угла в центр. Поэтому присваивание координат мыши свойствам
+    <code>x</code> и <code>y</code> ставит под курсор именно центр круга.
+  </p>
 </div>

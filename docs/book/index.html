@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Idyllium - Учебник</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="fonts/fonts.css">
+  <link rel="stylesheet" href="assets/gui.css">
+  <link rel="stylesheet" href="app.css">
+  <script src="version.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="docs-topbar">
+    <div class="topbar-left">
+      <button class="icon-button menu-toggle" id="menu-toggle" type="button" title="Показать навигацию">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <a class="brand" href="./">
+        <span class="brand-mark">I</span>
+        <span class="brand-text">Idyllium</span>
+        <span class="idyllium-version">v</span>
+      </a>
+      <span class="topbar-badge">Учебник</span>
+    </div>
+    <nav class="topbar-actions" aria-label="Основные действия">
+      <a class="topbar-link" href="../">Открыть IDE</a>
+      <a class="topbar-link" href="../reference/">Документация</a>
+      <button class="topbar-link" id="theme-toggle" type="button">Светлая тема</button>
+    </nav>
+  </header>
+
+  <div class="docs-shell">
+    <aside class="docs-sidebar" id="docs-sidebar">
+      <div class="sidebar-head">
+        <label class="search-box">
+          <span>Поиск</span>
+          <input id="lesson-search" type="search" autocomplete="off" placeholder="Найти урок">
+        </label>
+      </div>
+      <nav class="lesson-nav" id="lesson-nav" aria-label="Уроки"></nav>
+    </aside>
+
+    <main class="docs-main" id="docs-main" tabindex="-1">
+      <article class="lesson-view" id="lesson-view">
+        <div class="loading-card">Загрузка учебника...</div>
+      </article>
+    </main>
+
+    <aside class="docs-toc" id="docs-toc" aria-label="Разделы урока"></aside>
+  </div>
+</body>
+</html>

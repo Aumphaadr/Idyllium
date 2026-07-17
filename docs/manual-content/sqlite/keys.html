@@ -1,0 +1,93 @@
+<div class="docs-section">
+  <h2>Почему одного имени недостаточно?</h2>
+  <p>
+    У двух игроков вполне может быть одинаковое имя. Если написать
+    <code>WHERE name = 'Alex'</code>, база изменит обе подходящие строки. Нужна
+    колонка, значение которой однозначно указывает ровно на одну запись.
+  </p>
+  <table>
+    <caption>Имена повторяются, идентификаторы — нет</caption>
+    <thead><tr><th>id</th><th>name</th><th>level</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Alex</td><td>5</td></tr>
+      <tr><td>2</td><td>Mira</td><td>12</td></tr>
+      <tr><td>3</td><td>Alex</td><td>8</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="docs-section">
+  <h2>Первичный ключ</h2>
+  <p>
+    <code>PRIMARY KEY</code> назначает колонку главным идентификатором строки.
+    Значения первичного ключа не повторяются и не бывают <code>NULL</code>. У
+    таблицы может быть только один первичный ключ.
+  </p>
+  <sql-code-block><script type="text/plain">
+CREATE TABLE players (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    level INTEGER DEFAULT 1
+);
+</script></sql-code-block>
+  <p>
+    <code>AUTOINCREMENT</code> поручает SQLite самой выдавать следующий номер:
+    <code>1</code>, затем <code>2</code>, затем <code>3</code>. Колонку
+    <code>id</code> больше не нужно указывать в <code>INSERT</code>.
+  </p>
+  <sql-code-block><script type="text/plain">
+INSERT INTO players (name, level) VALUES ('Alex', 5);
+INSERT INTO players (name, level) VALUES ('Mira', 12);
+</script></sql-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>Номер только что добавленной строки</h2>
+  <p>
+    Результат <code>INSERT</code> хранит созданный идентификатор в свойстве
+    <code>last_insert_id</code>. Если команда ничего не добавляла, там будет
+    <code>null</code>.
+  </p>
+  <idyl-code-block><script type="text/plain">
+sqlite.Result saved = add_player.execute();
+
+if (saved.last_insert_id != null) {
+    console.writeln(
+        "Новый id: ",
+        saved.last_insert_id.to_int64()
+    );
+}
+</script></idyl-code-block>
+  <p>
+    Используется <code>to_int64()</code>, потому что SQLite рассчитана и на
+    таблицы с очень большим количеством строк.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Другие уникальные значения</h2>
+  <p>
+    Первичный ключ один, но запретить повторы можно и в других колонках.
+    Например, отображаемые имена игроков могут совпадать, а логины — нет.
+  </p>
+  <sql-code-block><script type="text/plain">
+CREATE TABLE players (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    login TEXT UNIQUE
+);
+</script></sql-code-block>
+  <table>
+    <caption>Допустимые строки: name повторяется, login остаётся уникальным</caption>
+    <thead><tr><th>id</th><th>name</th><th>login</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Alex</td><td>alex_fox</td></tr>
+      <tr><td>2</td><td>Alex</td><td>alex_wolf</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Попытка добавить ещё одну строку с логином <code>alex_fox</code> завершится
+    ошибкой ограничения <code>UNIQUE</code>. База не станет молча портить
+    правило, которое мы ей задали.
+  </p>
+</div>

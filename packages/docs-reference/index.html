@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Idyllium - Документация</title>
+  <link rel="icon" href="../assets/favicon-32x32.png" sizes="32x32">
+  <link rel="icon" href="../assets/idyllium.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="app.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="reference-topbar">
+    <div class="topbar-left">
+      <button class="menu-toggle" id="menu-toggle" type="button" title="Показать навигацию" aria-label="Показать навигацию">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <a class="brand" href="./">
+        <span class="brand-mark">I</span>
+        <span>Idyllium</span>
+        <span class="version" id="version">v1.1.0</span>
+      </a>
+      <span class="section-badge">Документация</span>
+    </div>
+    <nav class="topbar-actions" aria-label="Основные разделы">
+      <a href="../">Открыть IDE</a>
+      <a href="../book/">Учебник</a>
+      <button id="theme-toggle" type="button">Светлая тема</button>
+    </nav>
+  </header>
+
+  <div class="reference-shell">
+    <aside class="reference-sidebar" id="reference-sidebar">
+      <div class="sidebar-search">
+        <label for="reference-search">Поиск по API</label>
+        <input id="reference-search" type="search" autocomplete="off" placeholder="Например: set_image">
+      </div>
+      <nav id="reference-nav" class="reference-nav" aria-label="Документация Idyllium"></nav>
+    </aside>
+
+    <main class="reference-main" id="reference-main" tabindex="-1">
+      <article id="reference-view" class="reference-view">
+        <div class="loading-state">Загрузка документации...</div>
+      </article>
+    </main>
+  </div>
+</body>
+</html>
