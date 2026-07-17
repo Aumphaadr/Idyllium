@@ -16,6 +16,16 @@ import {
   createRuntime,
   createMemoryRuntimeFileSystem,
 } from './runtime/runtime';
+import { createBrowserImageService } from './runtime/browser-image-service';
+import { createBrowserSqliteService } from './runtime/browser-sqlite-service';
+import {
+  SqliteDatabaseDescription,
+  SqliteObjectPreview,
+  inspectSqliteDatabase,
+  previewSqliteObject,
+} from './runtime/sqlite-inspector';
+
+const browserSqliteService = createBrowserSqliteService();
 
 export type BrowserIdylliumFile = string | MemoryRuntimeFile;
 
@@ -136,6 +146,18 @@ export async function prepareIdylliumBrowserProgram(options: BrowserRunOptions):
   };
 }
 
+export function inspectSqliteDatabaseInBrowser(bytes: Uint8Array): Promise<SqliteDatabaseDescription> {
+  return inspectSqliteDatabase(browserSqliteService, bytes);
+}
+
+export function previewSqliteObjectInBrowser(
+  bytes: Uint8Array,
+  name: string,
+  limit?: number,
+): Promise<SqliteObjectPreview> {
+  return previewSqliteObject(browserSqliteService, bytes, name, limit);
+}
+
 export {
   compileIdyllium,
   formatIdyllium,
@@ -147,6 +169,8 @@ function createMemoryRuntime(options: BrowserRunOptions, fileSystem: RuntimeFile
     console: options.console,
     input: options.input,
     fileSystem,
+    imageService: createBrowserImageService(),
+    sqliteService: browserSqliteService,
   });
 }
 

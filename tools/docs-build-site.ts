@@ -1,7 +1,7 @@
 const fs: any = require('fs');
 const path: any = require('path');
 
-export {};
+import { buildReferenceSite } from './docs-build-reference';
 
 interface OldLessonsJson {
   readonly sections: readonly OldSection[];
@@ -62,17 +62,28 @@ interface ManualLesson {
   readonly reviewFlags: readonly string[];
 }
 
-const DEFAULT_SOURCE_ROOT = '/home/nathaniel/IdylliumProjects/Idyllium/docs';
+const DEFAULT_SOURCE_ROOT = path.resolve(process.cwd(), 'packages/docs');
 const DEFAULT_OUTPUT_ROOT = path.resolve(process.cwd(), 'docs');
 const MANAGED_PATHS = [
+  'index.html',
+  'app.css',
+  'app.js',
   'assets',
-  'content',
   'fonts',
+  'monaco',
+  'vendor',
+  'gui-renderer',
+  'gui-preview.html',
+  'book',
+  'reference',
   'ide',
+  'docs',
+  'content',
   'favicon.png',
   'lessons.json',
   'version.js',
   'version.json',
+  '404.html',
 ];
 
 const SECTION_RENAMES: Record<string, { readonly id: string; readonly title: string; readonly icon: string }> = {
@@ -87,9 +98,19 @@ const SLUG_OVERRIDES: Record<string, string> = {
   'cli/025_math.html': 'math-advanced',
 };
 
-const SECTION_ORDER = ['console', 'widgets', 'oop', 'canvas', 'json', 'examples'];
+const SECTION_ORDER = ['console', 'widgets', 'oop', 'canvas', 'json', 'sqlite', 'examples'];
 
 const MANUAL_LESSONS: readonly ManualLesson[] = [
+  {
+    sectionId: 'console',
+    afterLessonId: 'variables',
+    id: 'constants',
+    title: 'Именованные константы',
+    subtitle: 'Значения, которым программа не даст случайно измениться',
+    sourceFile: 'docs/manual-content/console/constants.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
   {
     sectionId: 'console',
     afterLessonId: 'matrix',
@@ -97,6 +118,16 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     title: 'Рекурсия',
     subtitle: 'Функция, которая вызывает саму себя и умеет вовремя остановиться',
     sourceFile: 'docs/manual-content/console/recursion.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'console',
+    afterLessonId: 'files',
+    id: 'directories',
+    title: 'Файлы и папки проекта',
+    subtitle: 'Создание, просмотр, копирование, переименование и безопасное удаление',
+    sourceFile: 'docs/manual-content/console/directories.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -112,10 +143,20 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
   },
   {
     sectionId: 'widgets',
+    afterLessonId: 'colors',
+    id: 'fonts',
+    title: 'Шрифты в GUI',
+    subtitle: 'fonts.Font, наследование от окна и один ресурс для нескольких виджетов',
+    sourceFile: 'docs/manual-content/widgets/fonts.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'widgets',
     afterLessonId: 'lineedit',
     id: 'image',
-    title: 'Виджет Image',
-    subtitle: 'Как показать картинку в интерфейсе и не путать виджет с файлом',
+    title: 'Картинки в GUI',
+    subtitle: 'image.Static, image.Animation, ImageBox и преобразования картинок',
     sourceFile: 'docs/manual-content/widgets/image.html',
     status: 'ready',
     reviewFlags: [],
@@ -206,7 +247,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     sectionId: 'canvas',
     id: 'text',
     title: 'Шрифт и текст',
-    subtitle: 'drawable.Font, drawable.Text и координаты курсора',
+    subtitle: 'fonts.Font, drawable.Text и координаты курсора',
     sourceFile: 'docs/manual-content/canvas/text.html',
     status: 'ready',
     reviewFlags: [],
@@ -214,8 +255,8 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
   {
     sectionId: 'canvas',
     id: 'sprites',
-    title: 'Текстуры и спрайты',
-    subtitle: 'Texture, Sprite и управление по WASD',
+    title: 'Картинки и спрайты',
+    subtitle: 'image.Static, image.Animation, Sprite и управление по WASD',
     sourceFile: 'docs/manual-content/canvas/sprites.html',
     status: 'ready',
     reviewFlags: [],
@@ -226,6 +267,15 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     title: 'Массивы объектов',
     subtitle: 'Несколько Rectangle-объектов и метод rotate()',
     sourceFile: 'docs/manual-content/canvas/object-arrays.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'canvas',
+    id: 'origin',
+    title: 'Точка отсчёта и вращение',
+    subtitle: 'Origin, движение по окружности, синус и косинус',
+    sourceFile: 'docs/manual-content/canvas/origin.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -281,6 +331,15 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     title: 'Прямоугольные коллизии',
     subtitle: 'Алгоритм опровержения касания прямоугольников',
     sourceFile: 'docs/manual-content/canvas/rectangle-collisions.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'canvas',
+    id: 'geometry-methods',
+    title: 'Готовые геометрические проверки',
+    subtitle: 'contains(), intersects(), повороты и разные типы объектов',
+    sourceFile: 'docs/manual-content/canvas/geometry-methods.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -374,11 +433,138 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     status: 'ready',
     reviewFlags: [],
   },
+  {
+    sectionId: 'sqlite',
+    id: 'intro',
+    title: 'Первая база данных',
+    subtitle: 'Файл базы, таблица players и первое подключение через sqlite.open()',
+    sourceFile: 'docs/manual-content/sqlite/intro.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'sqlite',
+    id: 'changes',
+    title: 'Таблицы и первые записи',
+    subtitle: 'INSERT, UPDATE, DELETE и количество изменённых строк',
+    sourceFile: 'docs/manual-content/sqlite/changes.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'sqlite',
+    id: 'select',
+    title: 'Чтение строк',
+    subtitle: 'SELECT, sqlite.Result, next() и типизированные методы чтения',
+    sourceFile: 'docs/manual-content/sqlite/select.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'sqlite',
+    id: 'parameters',
+    title: 'Безопасные параметры',
+    subtitle: 'prepare(), :name и bind() вместо склеивания SQL-строк',
+    sourceFile: 'docs/manual-content/sqlite/parameters.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'sqlite',
+    id: 'filters',
+    title: 'Поиск и фильтрация',
+    subtitle: 'WHERE, AND, ORDER BY, LIMIT и параметры в SELECT',
+    sourceFile: 'docs/manual-content/sqlite/filters.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'sqlite',
+    id: 'null',
+    title: 'Неизвестные значения и null',
+    subtitle: 'Пустое значение в таблице, sqlite.Value и безопасная проверка',
+    sourceFile: 'docs/manual-content/sqlite/null.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'sqlite',
+    id: 'reuse',
+    title: 'Много записей одним запросом',
+    subtitle: 'Повторное использование Statement внутри цикла',
+    sourceFile: 'docs/manual-content/sqlite/reuse.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'sqlite',
+    id: 'transactions',
+    title: 'Всё или ничего',
+    subtitle: 'Транзакции, commit(), rollback() и целостность данных',
+    sourceFile: 'docs/manual-content/sqlite/transactions.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'sqlite',
+    id: 'scripts',
+    title: 'SQL в отдельном файле',
+    subtitle: 'read_all(), exec_script() и проект из нескольких файлов',
+    sourceFile: 'docs/manual-content/sqlite/scripts.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'sqlite',
+    id: 'select-tools',
+    title: 'Все строки и краткая статистика',
+    subtitle: 'SELECT *, DISTINCT, агрегатные функции и GROUP BY',
+    sourceFile: 'docs/manual-content/sqlite/select-tools.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'sqlite',
+    id: 'defaults',
+    title: 'Повторный запуск и значения по умолчанию',
+    subtitle: 'IF NOT EXISTS, IF EXISTS и DEFAULT',
+    sourceFile: 'docs/manual-content/sqlite/defaults.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'sqlite',
+    id: 'keys',
+    title: 'Ключи и уникальные значения',
+    subtitle: 'PRIMARY KEY, AUTOINCREMENT и UNIQUE',
+    sourceFile: 'docs/manual-content/sqlite/keys.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'sqlite',
+    id: 'joins',
+    title: 'Связи между таблицами',
+    subtitle: 'FOREIGN KEY, JOIN, псевдонимы таблиц и LEFT JOIN',
+    sourceFile: 'docs/manual-content/sqlite/joins.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'sqlite',
+    id: 'errors',
+    title: 'Типичные ошибки',
+    subtitle: 'Непривязанные параметры, неверные методы чтения и отсутствующие колонки',
+    sourceFile: 'docs/manual-content/sqlite/errors.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
 ];
 
 const LESSON_EXTRAS: Record<string, string> = {
   'cli/005_colors.html': 'docs/manual-content/patches/console-colors-extra.html',
   'cli/009_increment.html': 'docs/manual-content/patches/console-increment-extra.html',
+  'cli/020_types.html': 'docs/manual-content/patches/console-types-shifts.html',
   'cli/024_files.html': 'docs/manual-content/patches/console-files-read-all.html',
 };
 
@@ -389,7 +575,8 @@ const LESSON_REPLACEMENTS: Record<string, string> = {
 
 function main(): void {
   const sourceRoot = path.resolve(readArg('--source') ?? DEFAULT_SOURCE_ROOT);
-  const outputRoot = path.resolve(readArg('--out') ?? DEFAULT_OUTPUT_ROOT);
+  const siteRoot = path.resolve(readArg('--out') ?? DEFAULT_OUTPUT_ROOT);
+  const bookRoot = path.join(siteRoot, 'book');
   const lessonsRoot = path.join(sourceRoot, 'lessons');
   const lessonsJsonPath = path.join(lessonsRoot, 'lessons.json');
 
@@ -397,27 +584,31 @@ function main(): void {
     throw new Error(`old lessons.json does not exist: ${lessonsJsonPath}`);
   }
 
-  prepareOutput(outputRoot);
-  copyAssets(sourceRoot, outputRoot);
-  copyWebIde(outputRoot);
+  prepareOutput(siteRoot);
+  copyWebIde(siteRoot);
+  writeLegacyIdeRedirect(siteRoot);
+  writeSite404(siteRoot);
+  copyBookShell(bookRoot);
+  copyAssets(sourceRoot, bookRoot);
 
   const oldLessons = JSON.parse(fs.readFileSync(lessonsJsonPath, 'utf8')) as OldLessonsJson;
   const inventory = readInventory();
-  const convertedSections = oldLessons.sections.map((section) => convertSection(section, lessonsRoot, outputRoot, inventory));
+  const convertedSections = oldLessons.sections.map((section) => convertSection(section, lessonsRoot, bookRoot, inventory));
   const manifest: SiteManifest = {
     version: 1,
     generatedAt: new Date().toISOString(),
-    sourceRoot,
-    sections: orderedSections(withManualLessons(convertedSections, outputRoot)),
+    sourceRoot: normalizePath(path.relative(process.cwd(), sourceRoot)) || '.',
+    sections: orderedSections(withManualLessons(convertedSections, bookRoot)),
   };
 
-  fs.writeFileSync(path.join(outputRoot, 'lessons.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+  fs.writeFileSync(path.join(bookRoot, 'lessons.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+  buildReferenceSite(path.join(siteRoot, 'reference'));
 
   const lessonCount = manifest.sections.reduce((sum, section) => sum + section.lessons.length, 0);
   const needsReview = manifest.sections.flatMap((section) => section.lessons).filter((lesson) => lesson.status === 'needs-review').length;
-  console.log(`docs site generated: ${manifest.sections.length} sections, ${lessonCount} lessons`);
+  console.log(`book generated: ${manifest.sections.length} sections, ${lessonCount} lessons`);
   console.log(`needs review: ${needsReview}`);
-  console.log(`output: ${outputRoot}`);
+  console.log(`site output: ${siteRoot}`);
 }
 
 function convertSection(
@@ -504,6 +695,14 @@ function withManualLessons(sections: readonly SiteSection[], outputRoot: string)
 
   ensureSection(byId, outputRoot, 'canvas', 'Canvas', 'canvas', 'Canvas появится отдельным разделом после ООП.');
   ensureSection(byId, outputRoot, 'json', 'JSON', 'json', 'JSON появится после Canvas, когда мы согласуем синтаксис библиотеки.');
+  ensureSection(
+    byId,
+    outputRoot,
+    'sqlite',
+    'SQLite',
+    'database',
+    'Библиотека sqlite уже работает, а последовательная линия уроков готовится после раздела JSON.',
+  );
 
   for (const manual of MANUAL_LESSONS) {
     const section = byId.get(manual.sectionId);
@@ -594,6 +793,34 @@ function lessonFragment(sourceFile: string, html: string): string {
 function transformLesson(sourceFile: string, html: string): string {
   if (sourceFile === 'widgets/002_label.html') {
     return html
+      .replace(
+        '<p>Свойство <code>color</code> позволяет задать цвет текста в формате <strong>шестнадцатеричного кода</strong> (HEX). Например, <code>"#FF0000"</code> — красный, <code>"#00FF00"</code> — зелёный, <code>"#0000FF"</code> — синий.</p>',
+        '<p>Свойство <code>text_color</code> задаёт цвет текста. Сам цвет берётся из библиотеки <code>colors</code>: можно выбрать готовую константу или создать собственный цвет через <code>colors.RGB()</code>, <code>colors.HEX()</code> и другие функции.</p>',
+      )
+      .replace(
+        `use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 180;
+    win.title = "Цветные лейблы";`,
+        `use colors;
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 180;
+    win.title = "Цветные лейблы";`,
+      )
+      .replace('red.color = "#FF0000";', 'red.text_color = colors.RED;')
+      .replace('green.color = "#00FF00";', 'green.text_color = colors.GREEN;')
+      .replace('blue.color = "#0000FF";', 'blue.text_color = colors.BLUE;')
+      .replace(
+        '🎨 Цвет задаётся в формате <code>"#RRGGBB"</code>, где RR — красный, GG — зелёный, BB — синий (00–FF).',
+        '🎨 У лейбла меняется именно <code>text_color</code>. Строка с HEX-кодом сама цветом не считается: сначала превратите её через <code>colors.HEX()</code>.',
+      )
       .replace(
         /gui\.Window win;\n    win\.width = 400;\n    win\.height = 200;\n\n    gui\.Label label;\n    label\.x = 20;\n    label\.y = 20;\n    label\.text = "Широкая электрификация южных губерний";\n\n    gui\.Button btn;\n    btn\.x = 50;\n    btn\.y = 20;\n    btn\.text = "Нажми меня";/u,
         `gui.Window win;
@@ -823,6 +1050,10 @@ function copyAssets(sourceRoot: string, outputRoot: string): void {
     path.join(outputRoot, 'assets', 'cat.png'),
   );
   copyFileIfExists(
+    path.resolve(process.cwd(), 'spec', 'some_images', 'walk.gif'),
+    path.join(outputRoot, 'assets', 'walk.gif'),
+  );
+  copyFileIfExists(
     path.resolve(process.cwd(), 'spec', 'some_audio', 'click.wav'),
     path.join(outputRoot, 'assets', 'click.wav'),
   );
@@ -832,21 +1063,92 @@ function copyAssets(sourceRoot: string, outputRoot: string): void {
   );
 }
 
+function copyBookShell(outputRoot: string): void {
+  const sourceRoot = path.resolve(process.cwd(), 'packages', 'docs-book');
+  fs.mkdirSync(outputRoot, { recursive: true });
+  for (const file of ['index.html', 'app.css', 'app.js']) {
+    copyFileIfExists(path.join(sourceRoot, file), path.join(outputRoot, file));
+  }
+}
+
 function writeCurrentVersion(outputPath: string): void {
   const packagePath = path.resolve(process.cwd(), 'package.json');
   const version = fs.existsSync(packagePath)
-    ? String(JSON.parse(fs.readFileSync(packagePath, 'utf8')).version ?? '1.0.0')
-    : '1.0.0';
+    ? String(JSON.parse(fs.readFileSync(packagePath, 'utf8')).version ?? '1.1.0')
+    : '1.1.0';
   fs.writeFileSync(outputPath, `${JSON.stringify({ version }, null, 2)}\n`, 'utf8');
 }
 
 function copyWebIde(outputRoot: string): void {
   const sourceWebDir = path.resolve(process.cwd(), 'dist', 'web');
-  const outputIdeDir = path.join(outputRoot, 'ide');
   if (!fs.existsSync(sourceWebDir)) {
     throw new Error(`web IDE build does not exist: ${sourceWebDir}`);
   }
-  fs.cpSync(sourceWebDir, outputIdeDir, { recursive: true });
+  fs.cpSync(sourceWebDir, outputRoot, { recursive: true });
+}
+
+function writeLegacyIdeRedirect(outputRoot: string): void {
+  const redirectDir = path.join(outputRoot, 'ide');
+  fs.mkdirSync(redirectDir, { recursive: true });
+  fs.writeFileSync(path.join(redirectDir, 'index.html'), `<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="refresh" content="0; url=../">
+  <title>Idyllium Web IDE</title>
+</head>
+<body>
+  <p>Web IDE переместилась на <a href="../">главную страницу</a>.</p>
+  <script>
+    const target = new URL('../', location.href);
+    target.search = location.search;
+    target.hash = location.hash;
+    location.replace(target.href);
+  </script>
+</body>
+</html>
+`, 'utf8');
+}
+
+function writeSite404(outputRoot: string): void {
+  fs.writeFileSync(path.join(outputRoot, '404.html'), `<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Idyllium - страница не найдена</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px; background: #101012; color: #f1f1f3; font: 18px/1.5 system-ui, sans-serif; }
+    main { width: min(100%, 560px); padding: 26px; border: 1px solid #34363d; border-radius: 8px; background: #18191d; }
+    h1 { margin: 0 0 10px; font-size: 30px; }
+    p { color: #c7c9cf; }
+    nav { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+    a { padding: 8px 12px; border: 1px solid #34363d; border-radius: 6px; color: #f1f1f3; text-decoration: none; }
+    a:hover { border-color: #76bff4; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Страница не найдена</h1>
+    <p>Можно вернуться в IDE, открыть учебник или воспользоваться справочником.</p>
+    <nav>
+      <a data-site-path="">Открыть IDE</a>
+      <a data-site-path="book/">Учебник</a>
+      <a data-site-path="reference/">Документация</a>
+    </nav>
+  </main>
+  <script>
+    const parts = location.pathname.split('/').filter(Boolean);
+    const base = location.hostname.endsWith('github.io') && parts.length > 0 ? '/' + parts[0] + '/' : '/';
+    document.querySelectorAll('[data-site-path]').forEach((link) => {
+      link.href = base + link.dataset.sitePath;
+    });
+  </script>
+</body>
+</html>
+`, 'utf8');
 }
 
 function prepareOutput(outputRoot: string): void {

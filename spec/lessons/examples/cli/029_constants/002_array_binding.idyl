@@ -1,0 +1,9 @@
+use console;
+
+main() {
+    const array<int, 3> scores = [10, 20, 30];
+
+    // const запрещает заменить весь массив, но не замораживает его ячейки.
+    scores[1] = 42;
+    console.writeln(scores);
+}

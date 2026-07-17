@@ -1,0 +1,126 @@
+<div class="docs-section">
+  <h2>Зачем ещё один способ хранить данные?</h2>
+  <p>
+    В разделе про JSON мы уже сохраняли игровые данные в файлы. JSON прекрасно
+    подходит, когда программе удобно прочитать документ целиком: например,
+    настройки или одно сохранение. Но представим сервер игры с десятью тысячами
+    игроков. Чтобы найти одного игрока, не хочется каждый раз перебирать огромный
+    массив и заново сохранять весь файл после изменения одного уровня.
+  </p>
+  <p>
+    <strong>База данных</strong> хранит множество записей и умеет искать,
+    добавлять и изменять нужные строки. SQLite особенно удобна для знакомства с
+    базами: ей не нужен отдельный сервер. Вся база помещается в один файл рядом
+    с проектом.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Таблица, строки и колонки</h2>
+  <p>
+    Таблица похожа на знакомую электронную таблицу. В таблице
+    <code>players</code> одна строка описывает одного игрока, а каждая колонка
+    хранит один вид данных.
+  </p>
+  <table>
+    <thead><tr><th>id</th><th>name</th><th>level</th><th>nickname</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Liam</td><td>7</td><td>NULL</td></tr>
+      <tr><td>2</td><td>Mira</td><td>12</td><td>Star</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Название таблицы и названия колонок придумывает автор программы. Значение
+    <code>NULL</code> пока можно читать как «данные неизвестны». Мы спокойно
+    разберём его в отдельном уроке.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Открываем базу</h2>
+  <p>
+    Библиотека называется <code>sqlite</code>. Функция
+    <code>sqlite.open()</code> открывает существующий файл базы или создаёт
+    новый, если такого файла ещё нет.
+  </p>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("game.db");
+
+    console.writeln("Путь: ", db.path);
+    console.writeln("База открыта: ", db.is_open);
+
+    db.close();
+}
+</script></idyl-code-block>
+  <idyl-output-block>Путь: game.db
+База открыта: true</idyl-output-block>
+  <p>
+    Переменная <code>db</code> хранит открытое соединение с базой. Метод
+    <code>close()</code> завершает работу с ним. После закрытия свойство
+    <code>is_open</code> станет равным <code>false</code>.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Первая таблица</h2>
+  <p>
+    Команды для базы пишутся на языке SQL и передаются в метод
+    <code>execute()</code>. Команда <code>CREATE TABLE</code> создаёт таблицу.
+  </p>
+  <idyl-code-block><script type="text/plain">
+db.execute(
+    "CREATE TABLE players (" +
+    "id INTEGER, " +
+    "name TEXT, " +
+    "level INTEGER, " +
+    "nickname TEXT" +
+    ")"
+);
+</script></idyl-code-block>
+  <p>
+    После <code>CREATE TABLE</code> написано придуманное нами имя таблицы —
+    <code>players</code>. В круглых скобках через запятую перечисляются колонки.
+    У каждой колонки сначала записано имя, затем тип данных:
+    <code>INTEGER</code> означает целое число, а <code>TEXT</code> — текст.
+  </p>
+  <p>
+    Такой запрос предназначен для пустой базы: при повторной попытке создать уже
+    существующую таблицу SQLite честно сообщит об ошибке. Позже мы научим запрос
+    спокойно переживать повторный запуск, а пока перед новым экспериментом можно
+    удалить созданный файл базы.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Соберём всё вместе</h2>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("first_database.db");
+
+    db.execute(
+        "CREATE TABLE players (" +
+        "id INTEGER, " +
+        "name TEXT, " +
+        "level INTEGER, " +
+        "nickname TEXT" +
+        ")"
+    );
+
+    console.writeln("База создана: ", db.path);
+    db.close();
+}
+</script></idyl-code-block>
+  <idyl-output-block>База создана: first_database.db</idyl-output-block>
+  <p>
+    После запуска в проекте появится файл <code>first_database.db</code>. Это не
+    текстовый файл, поэтому не пытайтесь исправлять его содержимое в блокноте:
+    дальше мы будем работать с ним только через SQL-команды.
+  </p>
+</div>

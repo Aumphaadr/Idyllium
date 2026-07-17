@@ -109,7 +109,7 @@ main() {
 
 ## 🧩 Что умеет Idyllium
 
-- Переменные и типы данных (`int`, `float`, `string`, `char`, `bool`, `void`)
+- Переменные, именованные константы `const` и строгие типы данных (`int`, `float`, `string`, `char`, `bool`, `void`)
 - Условный оператор `if` / `else` / `else if`
 - Циклы `while`, `do-while`, `for`
 - Статические и динамические массивы (`array`, `dyn_array`)
@@ -135,7 +135,9 @@ main() {
 ```
 3. Нажми **Запустить**
 
-📚 **Документация:** [https://aumphaadr.github.io/Idyllium/lessons/docs.html](https://aumphaadr.github.io/Idyllium/lessons/docs.html)
+📚 **Учебник:** [https://aumphaadr.github.io/Idyllium/book/](https://aumphaadr.github.io/Idyllium/book/)
+
+📖 **Документация:** [https://aumphaadr.github.io/Idyllium/reference/](https://aumphaadr.github.io/Idyllium/reference/)
 
 ---
 

@@ -1,0 +1,4 @@
+main() {
+    const int answer = 42;
+    answer = 64; // compile error: cannot assign to constant 'answer'
+}

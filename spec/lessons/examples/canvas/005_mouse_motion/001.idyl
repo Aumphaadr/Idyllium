@@ -15,6 +15,7 @@ void function init(gui.Canvas canvas) {
     cursor_circle.x = 200;
     cursor_circle.y = 120;
     cursor_circle.radius = 18;
+    cursor_circle.set_origin(18, 18);
     cursor_circle.fill_color = colors.RGB(255, 210, 80);
 
     box.x = 60;

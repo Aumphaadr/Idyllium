@@ -1,6 +1,6 @@
 {
   "name": "idyllium-next",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Next-generation core for the Idyllium educational programming language",
   "main": "dist/src/index.js",
@@ -10,15 +10,19 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "fonts:generate-default-metrics": "node tools/generate-default-font-metrics.js",
+    "sqlite:build-preview": "node tools/build-sqlite-preview-fixture.js",
     "build:web": "npm run build && node tools/build-web-ide.js",
     "build:vscode": "npm run build && node tools/build-vscode-extension.js",
     "package:vscode": "npm run build:vscode && node tools/package-vscode-extension.js",
-    "test": "npm run build && node dist/tests/smoke.test.js && node dist/tests/cli.test.js && node dist/tests/lesson-spec.test.js && node dist/tests/canvas-draft.test.js && node dist/tests/widget-colors-draft.test.js && node dist/tests/widget-image-draft.test.js && node dist/tests/core-lessons-draft.test.js && node dist/tests/json-draft.test.js && node dist/tests/gui-renderer.test.js",
+    "test": "npm run build && node dist/tests/smoke.test.js && node dist/tests/cli.test.js && node dist/tests/lesson-spec.test.js && node dist/tests/canvas-draft.test.js && node dist/tests/drawable-geometry.test.js && node dist/tests/drawable-origin-draft.test.js && node dist/tests/font-metrics.test.js && node dist/tests/widget-colors-draft.test.js && node dist/tests/widget-image-draft.test.js && node dist/tests/image-draft.test.js && node dist/tests/font-draft.test.js && node dist/tests/core-lessons-draft.test.js && node dist/tests/constants-draft.test.js && node dist/tests/file-system-draft.test.js && node dist/tests/json-draft.test.js && node dist/tests/sqlite-draft.test.js && node dist/tests/sqlite-inspector.test.js && node dist/tests/gui-renderer.test.js",
     "docs:inventory": "npm run build && node dist/tools/docs-inventory.js",
     "docs:site": "npm run build:web && node dist/tools/docs-build-site.js",
     "docs:serve": "npm run docs:site && node tools/serve-docs.js",
     "spec:extract": "npm run build && node dist/tools/extract-lesson-specs.js",
     "spec:check": "npm run build && node dist/tests/lesson-spec.test.js",
+    "manual:generate": "node tools/generate-manual-tests.js",
+    "manual:check": "npm run build && node tools/check-manual-tests.js",
     "docs:migrate": "npm run build && node dist/tools/docs-migrate.js"
   },
   "keywords": [
@@ -30,9 +34,19 @@
   ],
   "license": "MIT",
   "devDependencies": {
+    "@types/sql.js": "^1.4.11",
     "typescript": "^5.4.0"
   },
   "dependencies": {
-    "monaco-editor": "^0.52.2"
+    "fontkit": "^2.0.4",
+    "gifenc": "^1.0.3",
+    "gifuct-js": "^2.1.2",
+    "jpeg-js": "^0.4.4",
+    "monaco-editor": "^0.52.2",
+    "pako": "^1.0.11",
+    "papaparse": "^5.5.4",
+    "sql.js": "^1.14.1",
+    "upng-js": "^2.1.0",
+    "webp-wasm": "^1.0.6"
   }
 }

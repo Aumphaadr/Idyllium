@@ -12,13 +12,16 @@ export interface PrimitiveTypeNameNode {
 export interface QualifiedTypeNameNode {
   readonly kind: 'QualifiedTypeName';
   readonly moduleName: string;
+  readonly moduleNameRange: SourceRange;
   readonly name: string;
+  readonly nameRange: SourceRange;
   readonly range: SourceRange;
 }
 
 export interface ClassTypeNameNode {
   readonly kind: 'ClassTypeName';
   readonly name: string;
+  readonly nameRange: SourceRange;
   readonly range: SourceRange;
 }
 
@@ -43,11 +46,13 @@ export type TopLevelDeclaration = VariableDeclaration | FunctionDeclaration | Cl
 export interface ImportDeclaration {
   readonly kind: 'ImportDeclaration';
   readonly moduleName: string;
+  readonly moduleNameRange: SourceRange;
   readonly range: SourceRange;
 }
 
 export interface MainFunction {
   readonly kind: 'MainFunction';
+  readonly nameRange: SourceRange;
   readonly returnType: TypeName;
   readonly parameters: ParameterDeclaration[];
   readonly body: BlockStatement;
@@ -75,8 +80,10 @@ export interface BlockStatement {
 
 export interface VariableDeclaration {
   readonly kind: 'VariableDeclaration';
+  readonly isConst: boolean;
   readonly declaredType: TypeName;
   readonly name: string;
+  readonly nameRange: SourceRange;
   readonly initializer: Expression | null;
   readonly constructorArgs: CallArgument[] | null;
   readonly range: SourceRange;
@@ -143,6 +150,7 @@ export interface FunctionDeclaration {
   readonly kind: 'FunctionDeclaration';
   readonly returnType: TypeName;
   readonly name: string;
+  readonly nameRange: SourceRange;
   readonly parameters: ParameterDeclaration[];
   readonly body: BlockStatement;
   readonly range: SourceRange;
@@ -151,7 +159,9 @@ export interface FunctionDeclaration {
 export interface ClassDeclaration {
   readonly kind: 'ClassDeclaration';
   readonly name: string;
+  readonly nameRange: SourceRange;
   readonly baseName: string | null;
+  readonly baseNameRange: SourceRange | null;
   readonly members: ClassMember[];
   readonly range: SourceRange;
 }
@@ -170,6 +180,7 @@ export interface ClassFieldDeclaration {
 export interface FieldDeclarator {
   readonly kind: 'FieldDeclarator';
   readonly name: string;
+  readonly nameRange: SourceRange;
   readonly initializer: Expression | null;
   readonly range: SourceRange;
 }
@@ -178,6 +189,7 @@ export interface ClassMethodDeclaration {
   readonly kind: 'ClassMethodDeclaration';
   readonly returnType: TypeName;
   readonly name: string;
+  readonly nameRange: SourceRange;
   readonly parameters: ParameterDeclaration[];
   readonly body: BlockStatement;
   readonly isStatic: boolean;
@@ -188,6 +200,7 @@ export interface ClassMethodDeclaration {
 export interface ConstructorDeclaration {
   readonly kind: 'ConstructorDeclaration';
   readonly name: string;
+  readonly nameRange: SourceRange;
   readonly parameters: ParameterDeclaration[];
   readonly body: BlockStatement;
   readonly access: AccessModifier;
@@ -198,6 +211,7 @@ export interface ParameterDeclaration {
   readonly kind: 'ParameterDeclaration';
   readonly paramType: TypeName;
   readonly name: string;
+  readonly nameRange: SourceRange;
   readonly defaultValue: Expression | null;
   readonly range: SourceRange;
 }
@@ -221,8 +235,9 @@ export type Expression =
 
 export interface LiteralExpression {
   readonly kind: 'LiteralExpression';
-  readonly value: string | number | boolean;
-  readonly valueType: PrimitiveTypeName;
+  readonly value: string | number | boolean | null;
+  readonly valueType: PrimitiveTypeName | 'null';
+  readonly sourceText?: string;
   readonly range: SourceRange;
 }
 
@@ -278,6 +293,7 @@ export interface CallExpression {
 export interface CallArgument {
   readonly kind: 'CallArgument';
   readonly name: string | null;
+  readonly nameRange: SourceRange | null;
   readonly value: Expression;
   readonly range: SourceRange;
 }
@@ -286,5 +302,6 @@ export interface MemberExpression {
   readonly kind: 'MemberExpression';
   readonly object: Expression;
   readonly name: string;
+  readonly nameRange: SourceRange;
   readonly range: SourceRange;
 }

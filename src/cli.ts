@@ -66,6 +66,7 @@ async function runCommand(args: readonly string[], io: CliIO): Promise<number> {
   const result = await runIdyllium(
     source,
     {
+      projectRoot: path.dirname(resolveFilePath(file, io.cwd())),
       console: {
         write(text) {
           io.stdout(String(text));

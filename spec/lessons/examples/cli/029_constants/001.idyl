@@ -1,0 +1,8 @@
+use console;
+
+const int MAX_LEVEL = 100;
+
+main() {
+    const int START_LEVEL = 1;
+    console.writeln(START_LEVEL, " из ", MAX_LEVEL);
+}

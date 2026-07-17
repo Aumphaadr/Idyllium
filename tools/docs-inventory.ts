@@ -74,7 +74,7 @@ interface InventoryResult {
   };
 }
 
-const DEFAULT_SOURCE_ROOT = '/home/nathaniel/IdylliumProjects/Idyllium/docs/lessons';
+const DEFAULT_SOURCE_ROOT = path.resolve(process.cwd(), 'packages/docs/lessons');
 const DEFAULT_OUTPUT_ROOT = path.resolve(process.cwd(), 'docs/migration');
 const TARGET_STUDY_LINE = ['Консоль', 'Виджеты', 'ООП', 'Canvas', 'JSON'];
 

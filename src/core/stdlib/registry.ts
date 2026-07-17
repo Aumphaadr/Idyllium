@@ -5,6 +5,7 @@ export interface ParameterSpec {
   readonly type: TypeRef;
   readonly acceptedTypes?: readonly TypeRef[];
   readonly acceptedDescription?: string;
+  readonly defaultValue?: string;
 }
 
 export interface FunctionSpec {
@@ -40,6 +41,7 @@ export interface CallbackSpec {
 export interface TypeSpec {
   readonly name: string;
   readonly baseType?: QualifiedType;
+  readonly acceptsNull: boolean;
   readonly properties: ReadonlyMap<string, PropertySpec>;
   readonly methods: ReadonlyMap<string, FunctionSpec>;
 }
@@ -111,6 +113,11 @@ export class StandardLibraryRegistry {
     return this.qualifiedTypeExtends(child, parent, new Set());
   }
 
+  typeAcceptsNull(type: TypeRef): boolean {
+    if (type.kind !== 'qualified') return false;
+    return this.getQualifiedType(type.moduleName, type.name)?.acceptsNull ?? false;
+  }
+
   getGlobalFunction(name: string): FunctionSpec | undefined {
     return this.globals.get(name);
   }
@@ -121,6 +128,14 @@ export class StandardLibraryRegistry {
       kind: 'module',
       detail: `module ${module.name}`,
     }));
+  }
+
+  listModuleSpecs(): readonly ModuleSpec[] {
+    return [...this.modules.values()].sort((left, right) => left.name.localeCompare(right.name));
+  }
+
+  listGlobalFunctions(): readonly FunctionSpec[] {
+    return [...this.globals.values()].sort((left, right) => left.name.localeCompare(right.name));
   }
 
   listModuleMembers(moduleName: string): CompletionItem[] {
@@ -245,6 +260,22 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     { name: 'dx', type: FLOAT },
     { name: 'dy', type: FLOAT },
   ], VOID);
+  const drawableTransformProperties = [
+    propertySpec('origin_x', FLOAT, true, 'Локальная координата X точки отсчёта. Изменяется методом set_origin().'),
+    propertySpec('origin_y', FLOAT, true, 'Локальная координата Y точки отсчёта. Изменяется методом set_origin().'),
+    propertySpec('rotation', FLOAT, false, 'Угол поворота в градусах по часовой стрелке.'),
+  ];
+  const drawableTransformMethods = [
+    functionSpec('set_origin', [
+      { name: 'x', type: FLOAT },
+      { name: 'y', type: FLOAT },
+    ], VOID, {
+      documentation: 'Назначает локальную точку отсчёта; мировая позиция этой точки задаётся свойствами x и y.',
+    }),
+    functionSpec('rotate', [{ name: 'angle', type: FLOAT }], VOID, {
+      documentation: 'Прибавляет угол в градусах к текущему rotation. Положительный угол вращает по часовой стрелке.',
+    }),
+  ];
 
   const positioned = [
     propertySpec('x', INT),
@@ -279,21 +310,29 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   const jsonValue = qualified('json', 'Value');
   const jsonObject = qualified('json', 'Object');
   const jsonArray = qualified('json', 'Array');
+  const sqliteDatabase = qualified('sqlite', 'Database');
+  const sqliteStatement = qualified('sqlite', 'Statement');
+  const sqliteResult = qualified('sqlite', 'Result');
+  const sqliteValue = qualified('sqlite', 'Value');
+  const typesInt64 = qualified('types', 'int64');
   const audioMusic = qualified('audio', 'Music');
+  const imageImage = qualified('image', 'Image');
+  const imageStatic = qualified('image', 'Static');
+  const fontsFont = qualified('fonts', 'Font');
 
   registry.registerModule(moduleSpec('console', [
     functionSpec('write', [], VOID, {
       variadic: true,
       variadicTypes: [ANY_TYPE],
-      documentation: 'Writes values exactly as passed, without automatic spaces or line breaks.',
+      documentation: 'Выводит значения подряд без автоматических пробелов и переноса строки.',
     }),
     functionSpec('writeln', [], VOID, {
       variadic: true,
       variadicTypes: [ANY_TYPE],
-      documentation: 'Writes values and then writes a line break.',
+      documentation: 'Выводит значения подряд, затем переносит строку.',
     }),
     functionSpec('clear', [], VOID, {
-      documentation: 'Clears the console output.',
+      documentation: 'Очищает содержимое консоли.',
     }),
     functionSpec('get_int', [], INT),
     functionSpec('get_float', [], FLOAT),
@@ -323,8 +362,8 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     functionSpec('to_radians', [{ name: 'degrees', type: FLOAT }], FLOAT),
     functionSpec('to_degrees', [{ name: 'radians', type: FLOAT }], FLOAT),
   ], [
-    { name: 'pi', type: FLOAT, documentation: 'Pi constant.' },
-    { name: 'e', type: FLOAT, documentation: 'Euler number.' },
+    { name: 'pi', type: FLOAT, documentation: 'Число π.' },
+    { name: 'e', type: FLOAT, documentation: 'Число Эйлера.' },
   ]));
 
   registry.registerModule(moduleSpec('random', [
@@ -352,19 +391,60 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   ]));
 
   registry.registerModule(moduleSpec('file', [
-    functionSpec('exists', [{ name: 'path', type: STRING }], BOOL),
+    functionSpec('exists', [{ name: 'path', type: STRING }], BOOL, {
+      documentation: 'Проверяет существование файла или каталога.',
+    }),
+    functionSpec('is_file', [{ name: 'path', type: STRING }], BOOL, {
+      documentation: 'Проверяет, существует ли путь и является ли он файлом.',
+    }),
+    functionSpec('is_directory', [{ name: 'path', type: STRING }], BOOL, {
+      documentation: 'Проверяет, существует ли путь и является ли он каталогом.',
+    }),
+    functionSpec('create_directory', [
+      { name: 'path', type: STRING },
+      { name: 'parents', type: BOOL, defaultValue: 'false' },
+    ], VOID, {
+      minArguments: 1,
+      documentation: 'Создаёт каталог; parents=true также создаёт недостающие родительские каталоги.',
+    }),
+    functionSpec('list_directory', [{ name: 'path', type: STRING }], arrayType(STRING, null, true), {
+      documentation: 'Возвращает отсортированные имена непосредственных потомков каталога.',
+    }),
+    functionSpec('copy', [
+      { name: 'source', type: STRING },
+      { name: 'destination', type: STRING },
+    ], VOID, {
+      documentation: 'Копирует файл или дерево каталогов, не перезаписывая существующую цель.',
+    }),
+    functionSpec('rename', [
+      { name: 'source', type: STRING },
+      { name: 'destination', type: STRING },
+    ], VOID, {
+      documentation: 'Переименовывает или перемещает файл либо каталог внутри проекта.',
+    }),
+    functionSpec('remove', [
+      { name: 'path', type: STRING },
+      { name: 'recursive', type: BOOL, defaultValue: 'false' },
+    ], VOID, {
+      minArguments: 1,
+      documentation: 'Удаляет файл или пустой каталог; recursive=true разрешает удалить дерево каталогов.',
+    }),
     functionSpec('open', [
       { name: 'path', type: STRING },
       { name: 'mode', type: STRING },
     ], ANY_TYPE),
   ], [], [
-    typeSpec('istream', [], [
+    typeSpec('istream', [
+      propertySpec('is_open', BOOL, true, 'Показывает, открыт ли поток.'),
+    ], [
       functionSpec('read_line', [], STRING),
       functionSpec('read_all', [], STRING),
       functionSpec('has_next_line', [], BOOL),
       functionSpec('close', [], VOID),
     ]),
-    typeSpec('ostream', [], [
+    typeSpec('ostream', [
+      propertySpec('is_open', BOOL, true, 'Показывает, открыт ли поток.'),
+    ], [
       functionSpec('write_line', [], VOID, {
         variadic: true,
         variadicTypes: [ANY_TYPE],
@@ -396,13 +476,11 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   registry.registerModule(moduleSpec('json', [
     functionSpec('is_valid', [{ name: 'text', type: STRING }], BOOL),
     functionSpec('parse', [{ name: 'text', type: STRING }], jsonValue),
-    functionSpec('Value', [{ name: 'value', type: ANY_TYPE }], jsonValue, {
+    functionSpec('Value', [{ name: 'value', type: ANY_TYPE, defaultValue: 'null' }], jsonValue, {
       minArguments: 0,
-      documentation: 'Creates a JSON value. Without arguments creates JSON null.',
+      documentation: 'Создаёт JSON-значение. Вызов без аргумента создаёт JSON null.',
     }),
-  ], [
-    { name: 'NULL', type: jsonValue },
-  ], [
+  ], [], [
     typeSpec('Value', [], [
       functionSpec('is_null', [], BOOL),
       functionSpec('is_string', [], BOOL),
@@ -425,10 +503,10 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       functionSpec('set_object', [{ name: 'value', type: jsonObject }], VOID),
       functionSpec('set_array', [{ name: 'value', type: jsonArray }], VOID),
       functionSpec('to_json', [], STRING),
-      functionSpec('to_pretty_json', [{ name: 'indent', type: INT }], STRING, {
+      functionSpec('to_pretty_json', [{ name: 'indent', type: INT, defaultValue: '2' }], STRING, {
         minArguments: 0,
       }),
-    ]),
+    ], undefined, true),
     typeSpec('Object', [], [
       functionSpec('length', [], INT),
       functionSpec('has', [{ name: 'key', type: STRING }], BOOL),
@@ -450,6 +528,68 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], jsonValue),
   ]));
 
+  registry.registerModule(moduleSpec('sqlite', [
+    functionSpec('open', [{ name: 'path', type: STRING }], sqliteDatabase),
+  ], [], [
+    typeSpec('Database', [
+      propertySpec('path', STRING, true),
+      propertySpec('is_open', BOOL, true),
+      propertySpec('in_transaction', BOOL, true),
+    ], [
+      functionSpec('execute', [{ name: 'sql', type: STRING }], sqliteResult),
+      functionSpec('prepare', [{ name: 'sql', type: STRING }], sqliteStatement),
+      functionSpec('exec_script', [{ name: 'sql', type: STRING }], VOID),
+      functionSpec('begin_transaction', [], VOID),
+      functionSpec('commit', [], VOID),
+      functionSpec('rollback', [], VOID),
+      functionSpec('close', [], VOID),
+    ]),
+    typeSpec('Statement', [
+      propertySpec('sql', STRING, true),
+      propertySpec('is_open', BOOL, true),
+    ], [
+      functionSpec('bind', [{ name: 'name', type: STRING }, { name: 'value', type: ANY_TYPE }], VOID),
+      functionSpec('bind_int', [{ name: 'name', type: STRING }, { name: 'value', type: INT }], VOID),
+      functionSpec('bind_int64', [{ name: 'name', type: STRING }, { name: 'value', type: typesInt64 }], VOID),
+      functionSpec('bind_float', [{ name: 'name', type: STRING }, { name: 'value', type: FLOAT }], VOID),
+      functionSpec('bind_string', [{ name: 'name', type: STRING }, { name: 'value', type: STRING }], VOID),
+      functionSpec('bind_bool', [{ name: 'name', type: STRING }, { name: 'value', type: BOOL }], VOID),
+      functionSpec('bind_null', [{ name: 'name', type: STRING }], VOID),
+      functionSpec('execute', [], sqliteResult),
+      functionSpec('clear_bindings', [], VOID),
+      functionSpec('close', [], VOID),
+    ]),
+    typeSpec('Result', [
+      propertySpec('is_open', BOOL, true),
+      propertySpec('has_rows', BOOL, true),
+      propertySpec('affected_rows', INT, true),
+      propertySpec('last_insert_id', sqliteValue, true),
+    ], [
+      functionSpec('next', [], BOOL),
+      functionSpec('get', [{ name: 'column', type: STRING }], sqliteValue),
+      functionSpec('is_null', [{ name: 'column', type: STRING }], BOOL),
+      functionSpec('get_int', [{ name: 'column', type: STRING }], INT),
+      functionSpec('get_int64', [{ name: 'column', type: STRING }], typesInt64),
+      functionSpec('get_float', [{ name: 'column', type: STRING }], FLOAT),
+      functionSpec('get_string', [{ name: 'column', type: STRING }], STRING),
+      functionSpec('get_bool', [{ name: 'column', type: STRING }], BOOL),
+      functionSpec('column_count', [], INT),
+      functionSpec('column_name', [{ name: 'index', type: INT }], STRING),
+      functionSpec('close', [], VOID),
+    ]),
+    typeSpec('Value', [], [
+      functionSpec('is_null', [], BOOL),
+      functionSpec('is_int', [], BOOL),
+      functionSpec('is_float', [], BOOL),
+      functionSpec('is_string', [], BOOL),
+      functionSpec('to_int', [], INT),
+      functionSpec('to_int64', [], typesInt64),
+      functionSpec('to_float', [], FLOAT),
+      functionSpec('to_string', [], STRING),
+      functionSpec('to_bool', [], BOOL),
+    ], undefined, true),
+  ]));
+
   registry.registerModule(moduleSpec('audio', [], [], [
     typeSpec('Sound', [
       propertySpec('src', STRING, true),
@@ -458,7 +598,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       propertySpec('is_playing', BOOL, true),
     ], [
       functionSpec('load_from_file', [{ name: 'path', type: STRING }], VOID, {
-        documentation: 'Loads an audio file or raises a clear runtime error if loading fails.',
+        documentation: 'Загружает аудиофайл или сообщает понятную runtime error.',
       }),
       functionSpec('play', [], VOID),
       functionSpec('pause', [], VOID),
@@ -478,7 +618,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ]),
     ], [
       functionSpec('load_from_file', [{ name: 'path', type: STRING }], VOID, {
-        documentation: 'Loads an audio file or raises a clear runtime error if loading fails.',
+        documentation: 'Загружает аудиофайл или сообщает понятную runtime error.',
       }),
       functionSpec('play', [], VOID),
       functionSpec('pause', [], VOID),
@@ -487,13 +627,68 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ]),
   ]));
 
-  const drawableTexture = qualified('drawable', 'Texture');
-  const drawableFont = qualified('drawable', 'Font');
+  registry.registerModule(moduleSpec('image', [], [], [
+    typeSpec('Image', [
+      propertySpec('src', STRING, true),
+      propertySpec('width', INT, true),
+      propertySpec('height', INT, true),
+      propertySpec('format', STRING, true),
+      propertySpec('has_alpha', BOOL, true),
+      propertySpec('is_loaded', BOOL, true),
+    ]),
+    typeSpec('Static', [], [
+      functionSpec('load_from_file', [{ name: 'path', type: STRING }], VOID),
+      functionSpec('scale', [
+        { name: 'x', type: FLOAT },
+        { name: 'y', type: FLOAT },
+      ], imageStatic),
+      functionSpec('rotate', [{ name: 'angle', type: INT }], imageStatic),
+      functionSpec('tint', [{ name: 'color', type: COLOR }], imageStatic),
+      functionSpec('with_opacity', [{ name: 'opacity', type: FLOAT }], imageStatic),
+      functionSpec('desaturate', [{ name: 'amount', type: FLOAT, defaultValue: '1.0' }], imageStatic, {
+        minArguments: 0,
+      }),
+      functionSpec('crop', [
+        { name: 'x', type: INT },
+        { name: 'y', type: INT },
+        { name: 'width', type: INT },
+        { name: 'height', type: INT },
+      ], imageStatic),
+      functionSpec('export_to_file', [{ name: 'path', type: STRING }], VOID),
+    ], imageImage),
+    typeSpec('Animation', [
+      propertySpec('frame_count', INT, true),
+      propertySpec('frame_duration', FLOAT, true),
+      propertySpec('has_uniform_frame_duration', BOOL, true),
+    ], [
+      functionSpec('load_from_file', [{ name: 'path', type: STRING }], VOID),
+      functionSpec('get_frame', [{ name: 'index', type: INT }], imageStatic),
+      functionSpec('get_frame_duration', [{ name: 'index', type: INT }], FLOAT),
+      functionSpec('create_from_frames', [
+        { name: 'frames', type: arrayType(imageStatic, null, true) },
+        { name: 'frame_duration', type: FLOAT },
+      ], VOID),
+      functionSpec('export_to_file', [{ name: 'path', type: STRING }], VOID),
+    ], imageImage),
+  ]));
+
+  registry.registerModule(moduleSpec('fonts', [], [], [
+    typeSpec('Font', [
+      propertySpec('src', STRING, true),
+      propertySpec('format', STRING, true),
+      propertySpec('is_loaded', BOOL, true),
+    ], [
+      functionSpec('load_from_file', [{ name: 'path', type: STRING }], VOID, {
+        documentation: 'Загружает TTF, OTF, WOFF или WOFF2 и определяет формат по содержимому файла.',
+      }),
+    ]),
+  ]));
 
   registry.registerModule(moduleSpec('gui', [], [], [
     typeSpec('Window', [
       ...positioned,
       ...inheritableColorRoles,
+      propertySpec('font', fontsFont),
       propertySpec('title', STRING),
     ], [
       functionSpec('add_child', [guiChildParameter], VOID),
@@ -503,6 +698,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...visible,
       ...inheritableColorRoles,
+      propertySpec('font', fontsFont),
     ]),
     typeSpec('Canvas', [
       ...positioned,
@@ -536,7 +732,6 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ]),
       propertySpec('text', STRING),
       propertySpec('font_size', INT),
-      propertySpec('color', STRING, false, 'Legacy text color shortcut. Prefer text_color with colors.Color.'),
     ], [], guiWidget),
     typeSpec('Button', [
       ...positioned,
@@ -555,14 +750,12 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], [
       functionSpec('add_child', [guiChildParameter], VOID),
     ], guiWidget),
-    typeSpec('Image', [
+    typeSpec('ImageBox', [
       ...positioned,
       ...visible,
       propertySpec('resize_mode', STRING),
     ], [
-      functionSpec('load_from_file', [{ name: 'path', type: STRING }], VOID, {
-        documentation: 'Loads an image file into the widget or raises a clear runtime error if loading fails.',
-      }),
+      functionSpec('set_image', [{ name: 'image', type: imageImage }], VOID),
     ], guiWidget),
     typeSpec('LineEdit', [
       ...positioned,
@@ -590,7 +783,6 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       propertySpec('text_color', COLOR),
       propertySpec('background_color', COLOR),
       propertySpec('foreground_color', COLOR),
-      propertySpec('fill_color', COLOR),
       propertySpec('border_color', COLOR),
     ], [], guiWidget),
     typeSpec('SpinBox', [
@@ -690,69 +882,79 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   ]));
 
   registry.registerModule(moduleSpec('drawable', [], [], [
-    typeSpec('Drawable'),
+    typeSpec('Drawable', [], [
+      functionSpec('contains', [
+        { name: 'x', type: FLOAT },
+        { name: 'y', type: FLOAT },
+      ], BOOL, {
+        documentation: 'Проверяет, находится ли мировая точка внутри объекта. Точка на границе считается находящейся внутри.',
+      }),
+      functionSpec('intersects', [{ name: 'other', type: drawableDrawable }], BOOL, {
+        documentation: 'Проверяет пересечение с другим drawable-объектом. Касание границ считается пересечением.',
+      }),
+    ]),
     typeSpec('Rectangle', [
-      propertySpec('x', INT),
-      propertySpec('y', INT),
+      propertySpec('x', FLOAT),
+      propertySpec('y', FLOAT),
       propertySpec('width', INT),
       propertySpec('height', INT),
-      propertySpec('rotation', FLOAT),
+      ...drawableTransformProperties,
       propertySpec('fill_color', COLOR),
       propertySpec('border_width', INT),
       propertySpec('border_color', COLOR),
     ], [
       drawableMoveMethod,
-      functionSpec('rotate', [{ name: 'angle', type: FLOAT }], VOID),
+      ...drawableTransformMethods,
     ], drawableDrawable),
     typeSpec('Circle', [
-      propertySpec('x', INT),
-      propertySpec('y', INT),
+      propertySpec('x', FLOAT),
+      propertySpec('y', FLOAT),
       propertySpec('radius', INT),
-      propertySpec('rotation', FLOAT),
+      ...drawableTransformProperties,
       propertySpec('fill_color', COLOR),
       propertySpec('border_width', INT),
       propertySpec('border_color', COLOR),
     ], [
       drawableMoveMethod,
-      functionSpec('rotate', [{ name: 'angle', type: FLOAT }], VOID),
+      ...drawableTransformMethods,
     ], drawableDrawable),
     typeSpec('Line', [
-      propertySpec('x1', INT),
-      propertySpec('y1', INT),
-      propertySpec('x2', INT),
-      propertySpec('y2', INT),
+      propertySpec('x1', FLOAT),
+      propertySpec('y1', FLOAT),
+      propertySpec('x2', FLOAT),
+      propertySpec('y2', FLOAT),
       propertySpec('color', COLOR),
       propertySpec('thickness', INT),
     ], [
       drawableMoveMethod,
     ], drawableDrawable),
     typeSpec('Sprite', [
-      propertySpec('texture', drawableTexture),
-      propertySpec('x', INT),
-      propertySpec('y', INT),
+      propertySpec('x', FLOAT),
+      propertySpec('y', FLOAT),
+      ...drawableTransformProperties,
     ], [
+      functionSpec('set_image', [{ name: 'image', type: imageImage }], VOID),
       functionSpec('set_scale', [{ name: 'x', type: FLOAT }, { name: 'y', type: FLOAT }], VOID),
       drawableMoveMethod,
+      ...drawableTransformMethods,
     ], drawableDrawable),
-    typeSpec('Texture', [], [
-      functionSpec('load_from_file', [{ name: 'path', type: STRING }], VOID, {
-        documentation: 'Loads an image file or raises a clear runtime error if loading fails.',
-      }),
-    ]),
-    typeSpec('Font', [], [
-      functionSpec('load_from_file', [{ name: 'path', type: STRING }], VOID, {
-        documentation: 'Loads a font file or raises a clear runtime error if loading fails.',
-      }),
-    ]),
     typeSpec('Text', [
-      propertySpec('font', drawableFont),
+      propertySpec('font', fontsFont),
       propertySpec('text', STRING),
-      propertySpec('x', INT),
-      propertySpec('y', INT),
+      propertySpec('x', FLOAT),
+      propertySpec('y', FLOAT),
+      ...drawableTransformProperties,
       propertySpec('font_size', INT),
       propertySpec('text_color', COLOR),
     ], [
+      functionSpec('get_width', [], FLOAT, {
+        documentation: 'Возвращает точную ширину однострочного текста по метрикам назначенного шрифта.',
+      }),
+      functionSpec('get_height', [], FLOAT, {
+        documentation: 'Возвращает высоту области текста, равную текущему font_size.',
+      }),
       drawableMoveMethod,
+      ...drawableTransformMethods,
     ], drawableDrawable),
   ]));
 
@@ -762,7 +964,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       { name: 'green', type: INT },
       { name: 'blue', type: INT },
     ], COLOR, {
-      documentation: 'Creates an opaque color from red, green, and blue channels in the 0..255 range.',
+      documentation: 'Создаёт непрозрачный цвет из каналов RGB в диапазоне от 0 до 255.',
     }),
     functionSpec('RGBA', [
       { name: 'red', type: INT },
@@ -770,19 +972,19 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       { name: 'blue', type: INT },
       { name: 'alpha', type: FLOAT },
     ], COLOR, {
-      documentation: 'Creates a color from red, green, blue, and alpha channels. Alpha is in the 0.0..1.0 range.',
+      documentation: 'Создаёт цвет из каналов RGB и alpha; alpha принимает значения от 0.0 до 1.0.',
     }),
     functionSpec('HEX', [
       { name: 'value', type: STRING },
     ], COLOR, {
-      documentation: 'Creates a color from a CSS-style #RRGGBB or #RRGGBBAA string.',
+      documentation: 'Создаёт цвет из строки #RRGGBB или #RRGGBBAA.',
     }),
     functionSpec('HSL', [
       { name: 'hue', type: INT },
       { name: 'saturation', type: INT },
       { name: 'lightness', type: INT },
     ], COLOR, {
-      documentation: 'Creates a color from hue, saturation, and lightness. Saturation and lightness are percentages.',
+      documentation: 'Создаёт цвет по тону, насыщенности и светлоте; насыщенность и светлота задаются в процентах.',
     }),
   ], [
     { name: 'BLACK', type: COLOR },
@@ -793,10 +995,23 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     { name: 'TRANSPARENT', type: COLOR },
   ], [typeSpec('Color')]));
 
-  const typesNumericMethods = [
-    functionSpec('to_bin', [], STRING),
-    functionSpec('to_hex', [], STRING),
-  ];
+  const typesNumericTypeNames = [
+    'int8', 'uint8', 'int16', 'uint16', 'int32',
+    'uint32', 'int64', 'uint64', 'float32', 'float64',
+  ] as const;
+  const typesNumericTypeSpecs = typesNumericTypeNames.map((name) => {
+    const ownType = qualified('types', name);
+    return typeSpec(name, [], [
+      functionSpec('to_bin', [], STRING),
+      functionSpec('to_hex', [], STRING),
+      functionSpec('shift_left', [{ name: 'bits', type: INT }], ownType, {
+        documentation: 'Сдвигает биты влево, отбрасывая вышедшие за границу типа биты и заполняя освободившиеся позиции нулями. Отрицательное количество сдвигает вправо.',
+      }),
+      functionSpec('shift_right', [{ name: 'bits', type: INT }], ownType, {
+        documentation: 'Логически сдвигает биты вправо без сохранения знака и заполняет освободившиеся позиции нулями. Отрицательное количество сдвигает влево.',
+      }),
+    ]);
+  });
   registry.registerModule(moduleSpec('types', [
     functionSpec('from_bin', [
       { name: 'bits', type: STRING },
@@ -806,16 +1021,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       { name: 'hex', type: STRING },
       { name: 'type_name', type: STRING },
     ], ANY_TYPE),
-  ], [], [
-    typeSpec('int8', [], typesNumericMethods),
-    typeSpec('uint8', [], typesNumericMethods),
-    typeSpec('int16', [], typesNumericMethods),
-    typeSpec('uint16', [], typesNumericMethods),
-    typeSpec('int32', [], typesNumericMethods),
-    typeSpec('uint32', [], typesNumericMethods),
-    typeSpec('float32', [], typesNumericMethods),
-    typeSpec('float64', [], typesNumericMethods),
-  ]));
+  ], [], typesNumericTypeSpecs));
 
   registry.registerGlobalFunction(functionSpec('div', [
     { name: 'left', type: INT },
@@ -880,6 +1086,7 @@ function signatureDetail(fn: FunctionSpec): string {
   const minArguments = fn.minArguments ?? fn.parameters.length;
   const params = fn.parameters.map((param, index) => {
     const text = `${param.name}: ${typeName(param.type)}`;
+    if (param.defaultValue !== undefined) return `${text} = ${param.defaultValue}`;
     return index >= minArguments ? `[${text}]` : text;
   });
   const suffix = fn.variadic ? (params.length > 0 ? ', ...values' : '...values') : '';
@@ -917,10 +1124,12 @@ function typeSpec(
   properties: readonly PropertySpec[] = [],
   methods: readonly FunctionSpec[] = [],
   baseType?: QualifiedType,
+  acceptsNull = false,
 ): TypeSpec {
   return {
     name,
     baseType,
+    acceptsNull,
     properties: new Map(properties.map((property) => [property.name, property])),
     methods: new Map(methods.map((method) => [method.name, method])),
   };

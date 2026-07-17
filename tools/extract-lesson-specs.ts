@@ -26,7 +26,7 @@ interface LessonManifest {
   readonly examples: readonly LessonExample[];
 }
 
-const DEFAULT_SOURCE_ROOT = '/home/nathaniel/IdylliumProjects/Idyllium/docs/lessons';
+const DEFAULT_SOURCE_ROOT = path.resolve(process.cwd(), 'packages/docs/lessons');
 const DEFAULT_OUTPUT_ROOT = path.resolve(process.cwd(), 'spec/lessons');
 
 function main(): void {

@@ -1,41 +1,45 @@
 use gui;
+use image;
 
 main() {
+    image.Static landscape;
+    landscape.load_from_file("landscape.png");
+
     gui.Window win;
     win.width = 680;
     win.height = 360;
     win.title = "Масштабирование картинок";
 
-    gui.Image fit_image;
+    gui.ImageBox fit_image;
     fit_image.x = 30;
     fit_image.y = 40;
     fit_image.width = 140;
     fit_image.height = 110;
-    fit_image.load_from_file("landscape.png");
+    fit_image.set_image(landscape);
     fit_image.resize_mode = "fit";
 
-    gui.Image fill_image;
+    gui.ImageBox fill_image;
     fill_image.x = 190;
     fill_image.y = 40;
     fill_image.width = 140;
     fill_image.height = 110;
-    fill_image.load_from_file("landscape.png");
+    fill_image.set_image(landscape);
     fill_image.resize_mode = "fill";
 
-    gui.Image stretch_image;
+    gui.ImageBox stretch_image;
     stretch_image.x = 350;
     stretch_image.y = 40;
     stretch_image.width = 140;
     stretch_image.height = 110;
-    stretch_image.load_from_file("landscape.png");
+    stretch_image.set_image(landscape);
     stretch_image.resize_mode = "stretch";
 
-    gui.Image original_image;
+    gui.ImageBox original_image;
     original_image.x = 510;
     original_image.y = 40;
     original_image.width = 140;
     original_image.height = 110;
-    original_image.load_from_file("landscape.png");
+    original_image.set_image(landscape);
     original_image.resize_mode = "original";
 
     win.add_child(fit_image);

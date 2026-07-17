@@ -18,6 +18,7 @@ void function on_mouse_pressed(gui.Canvas canvas, gui.MouseEvent e) {
         tmp.x = e.x;
         tmp.y = e.y;
         tmp.radius = 20;
+        tmp.set_origin(20, 20);
         tmp.fill_color = colors.WHITE;
         circles.add(tmp);
         redraw(canvas);

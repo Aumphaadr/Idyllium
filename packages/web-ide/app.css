@@ -4,6 +4,9 @@
   --mono-font: "Source Code Pro", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --editor-font-size: 16px;
   --editor-line-height: 25px;
+  --console-font-size: 13px;
+  --console-line-height: 19px;
+  --console-control-height: 32px;
   font-family: var(--ui-font);
 }
 
@@ -280,6 +283,11 @@ button:disabled:active {
   display: inline-flex;
 }
 
+.app-menu-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
 .theme-wrapper {
   position: relative;
   display: inline-flex;
@@ -301,6 +309,209 @@ button:disabled:active {
   border-radius: 8px;
   background: var(--panel-raised);
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.34);
+}
+
+.app-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 292px;
+  max-height: min(620px, calc(100vh - 72px));
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-raised);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.34);
+}
+
+.app-menu[hidden],
+.app-menu-panel[hidden],
+.appearance-label-short {
+  display: none;
+}
+
+.app-menu button {
+  width: 100%;
+  height: 32px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  justify-content: stretch;
+  border-color: transparent;
+  background: transparent;
+  text-align: left;
+}
+
+.app-menu button > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-menu button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.app-menu button.app-menu-danger:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--danger) 62%, var(--border));
+  background: color-mix(in srgb, var(--danger) 15%, transparent);
+  color: var(--danger);
+}
+
+.app-menu kbd {
+  align-self: center;
+  color: var(--muted);
+  font: 11px var(--mono-font);
+}
+
+.app-menu-separator {
+  height: 1px;
+  margin: 6px 4px;
+  background: var(--border);
+}
+
+.app-menu-current-project {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  margin: 0 4px 7px;
+  padding: 4px 8px 9px;
+  border-bottom: 1px solid var(--border);
+}
+
+.app-menu-current-project span,
+.app-menu-panel-label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.app-menu-current-project strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-menu-panel {
+  display: grid;
+  gap: 8px;
+}
+
+.app-menu-panel-header {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+}
+
+.app-menu-panel-header button {
+  width: 32px;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  padding: 0;
+  font-size: 18px;
+}
+
+.app-menu-panel-header strong {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-menu-form {
+  display: grid;
+  gap: 8px;
+  padding: 2px 4px 4px;
+}
+
+.app-menu-form input {
+  width: 100%;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  outline: 0;
+  background: var(--panel-soft);
+  color: var(--text);
+  font: 13px var(--ui-font);
+  padding: 0 9px;
+}
+
+.app-menu-form input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.app-menu-form input.invalid {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 16%, transparent);
+}
+
+.app-menu-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.app-menu-form-actions button {
+  width: auto;
+  display: inline-flex;
+  padding: 0 10px;
+}
+
+.app-menu-form-actions button.primary {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.app-menu-error {
+  min-height: 16px;
+  margin: 0;
+  color: var(--danger);
+  font-size: 12px;
+}
+
+.project-menu-list {
+  display: grid;
+  gap: 3px;
+}
+
+.project-menu-list button {
+  height: auto;
+  min-height: 44px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+  align-content: center;
+}
+
+.project-menu-list button strong,
+.project-menu-list button small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-menu-list button strong {
+  font-size: 13px;
+}
+
+.project-menu-list button small {
+  color: var(--muted);
+  font: 11px var(--ui-font);
+}
+
+.project-menu-empty,
+.project-delete-copy {
+  margin: 2px 4px 6px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 .theme-menu {
@@ -698,6 +909,48 @@ button:disabled:active {
   gap: 10px;
 }
 
+.editor-title-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.editor-view-toggle {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--panel-raised) 78%, transparent);
+}
+
+.editor-view-toggle[hidden] {
+  display: none;
+}
+
+.editor-view-toggle button {
+  height: 20px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  font: 700 11px var(--ui-font);
+  text-transform: none;
+}
+
+.editor-view-toggle button:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--panel-raised) 88%, transparent);
+}
+
+.editor-view-toggle button.active {
+  color: var(--text);
+  background: var(--panel-raised);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 38%, transparent);
+}
+
 #editor-title {
   min-width: 0;
   overflow: hidden;
@@ -711,6 +964,10 @@ button:disabled:active {
   border-radius: 6px;
   font-size: 12px;
   flex: 0 0 auto;
+}
+
+.pane-action-button[hidden] {
+  display: none;
 }
 
 .file-actions {
@@ -743,6 +1000,14 @@ button:disabled:active {
   min-height: 0;
   overflow: auto;
   padding: 6px;
+  outline: 2px dashed transparent;
+  outline-offset: -5px;
+  transition: background-color 0.12s ease, outline-color 0.12s ease;
+}
+
+.file-list.drag-over {
+  outline-color: color-mix(in srgb, var(--accent) 72%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .file-row {
@@ -934,6 +1199,352 @@ button:disabled:active {
   font-feature-settings: "liga" 0, "calt" 0 !important;
 }
 
+.csv-viewer,
+.json-viewer {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--editor-bg);
+  color: var(--editor-text);
+  overflow: hidden;
+}
+
+.csv-viewer[hidden],
+.json-viewer[hidden] {
+  display: none;
+}
+
+.csv-toolbar {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--panel-raised) 72%, var(--editor-bg));
+}
+
+.csv-summary {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font: 12px var(--mono-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.csv-header-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  color: var(--editor-text);
+  font: 12px var(--ui-font);
+  white-space: nowrap;
+}
+
+.csv-header-option input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.csv-messages {
+  display: grid;
+  gap: 4px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.csv-message {
+  margin: 0;
+  color: var(--warning, #f9c74f);
+  font: 12px/1.45 var(--ui-font);
+}
+
+.csv-message-error {
+  color: var(--danger, #f38ba8);
+}
+
+.csv-table-scroll {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.csv-table {
+  min-width: 100%;
+  border-spacing: 0;
+  border-collapse: separate;
+  color: var(--editor-text);
+  font: 13px/1.4 var(--mono-font);
+}
+
+.csv-table th,
+.csv-table td {
+  min-width: 90px;
+  max-width: 340px;
+  padding: 7px 10px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--editor-bg);
+  text-align: left;
+  vertical-align: top;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.csv-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  color: var(--text);
+  background: var(--panel-raised);
+  font-weight: 700;
+}
+
+.csv-table .csv-row-number {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 48px;
+  width: 48px;
+  max-width: 48px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--panel-raised) 76%, var(--editor-bg));
+  font-weight: 400;
+  text-align: right;
+  user-select: none;
+}
+
+.csv-table thead .csv-row-number {
+  z-index: 3;
+  background: var(--panel-raised);
+  font-weight: 700;
+}
+
+.csv-table tbody tr:hover td,
+.csv-table tbody tr:hover th {
+  background: color-mix(in srgb, var(--accent-soft) 18%, var(--editor-bg));
+}
+
+.csv-table tbody tr:hover .csv-row-number {
+  background: color-mix(in srgb, var(--accent-soft) 24%, var(--panel-raised));
+}
+
+.csv-empty {
+  display: grid;
+  flex: 1 1 auto;
+  place-items: center;
+  min-height: 0;
+  padding: 24px;
+  color: var(--muted);
+  font: 600 14px var(--ui-font);
+  text-align: center;
+}
+
+.json-toolbar {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--panel-raised) 72%, var(--editor-bg));
+}
+
+.json-summary {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font: 12px var(--mono-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.json-toolbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.json-toolbar-button {
+  height: 25px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--panel-raised);
+  color: var(--text);
+  font: 600 11px var(--ui-font);
+}
+
+.json-toolbar-button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, var(--panel-raised));
+}
+
+.json-toolbar-button:disabled {
+  opacity: 0.46;
+}
+
+.json-render-warning {
+  margin: 0;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--function);
+  font: 12px/1.45 var(--ui-font);
+}
+
+.json-tree-scroll {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px 10px 18px;
+}
+
+.json-tree {
+  min-width: 100%;
+  color: var(--editor-text);
+  font: 13px/1.45 var(--mono-font);
+}
+
+.json-node {
+  min-width: 0;
+}
+
+.json-node-line {
+  min-height: 27px;
+  padding: 4px 7px;
+  border-radius: 4px;
+  letter-spacing: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+summary.json-node-line {
+  cursor: pointer;
+  user-select: none;
+}
+
+summary.json-node-line::marker {
+  color: var(--editor-muted);
+}
+
+.json-leaf:hover,
+summary.json-node-line:hover {
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+
+.json-children {
+  margin-left: 8px;
+  padding-left: 15px;
+  border-left: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+}
+
+.json-root-label {
+  color: var(--class-name);
+  font-weight: 700;
+}
+
+.json-key {
+  color: var(--property);
+}
+
+.json-index {
+  color: var(--editor-muted);
+}
+
+.json-punctuation {
+  color: var(--brackets);
+}
+
+.json-meta {
+  color: var(--editor-muted);
+  font: 11px var(--ui-font);
+}
+
+.json-value-string {
+  color: var(--string);
+}
+
+.json-value-number {
+  color: var(--number);
+}
+
+.json-value-boolean {
+  color: var(--keyword);
+}
+
+.json-value-null {
+  color: var(--editor-muted);
+  font-style: italic;
+}
+
+.json-limit-marker {
+  color: var(--function);
+  font-family: var(--ui-font);
+}
+
+.json-empty {
+  display: grid;
+  flex: 1 1 auto;
+  place-items: center;
+  min-height: 0;
+  padding: 24px;
+  color: var(--muted);
+  font: 600 14px var(--ui-font);
+  text-align: center;
+}
+
+.json-error {
+  align-self: flex-start;
+  width: min(680px, calc(100% - 32px));
+  margin: 16px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--danger) 58%, var(--border));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--danger) 8%, var(--editor-bg));
+  color: var(--editor-text);
+  font: 13px/1.5 var(--ui-font);
+}
+
+.json-error strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.json-error p {
+  margin: 0;
+}
+
+.json-error-snippet {
+  max-width: 100%;
+  margin: 10px 0;
+  overflow: auto;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--output-bg);
+  color: var(--editor-text);
+  font: 12px/1.45 var(--mono-font);
+  white-space: pre;
+}
+
+.json-error-hint {
+  color: var(--muted);
+}
+
 .asset-viewer {
   height: 100%;
   min-width: 0;
@@ -977,9 +1588,547 @@ button:disabled:active {
   image-rendering: auto;
 }
 
+.asset-preview-image {
+  display: grid;
+  grid-template-rows: 40px minmax(0, 1fr);
+  place-items: stretch;
+  min-height: 260px;
+  background: color-mix(in srgb, var(--editor-bg) 88%, var(--panel-raised));
+}
+
+.asset-image-toolbar {
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--panel-raised) 88%, var(--editor-bg));
+}
+
+.asset-image-button {
+  flex: 0 0 auto;
+}
+
+.asset-image-button:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+.asset-image-actual-size {
+  width: 34px;
+  height: 26px;
+  padding: 0;
+  border-radius: 6px;
+  font: 700 11px var(--mono-font);
+}
+
+.asset-image-scale {
+  width: 54px;
+  color: var(--editor-text);
+  font: 12px var(--mono-font);
+  text-align: center;
+}
+
+.asset-image-viewport {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  outline: none;
+  touch-action: none;
+  background:
+    linear-gradient(45deg, color-mix(in srgb, var(--editor-muted) 18%, transparent) 25%, transparent 25%),
+    linear-gradient(-45deg, color-mix(in srgb, var(--editor-muted) 18%, transparent) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, color-mix(in srgb, var(--editor-muted) 18%, transparent) 75%),
+    linear-gradient(-45deg, transparent 75%, color-mix(in srgb, var(--editor-muted) 18%, transparent) 75%);
+  background-color: color-mix(in srgb, var(--editor-bg) 82%, var(--panel-raised));
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  background-size: 20px 20px;
+}
+
+.asset-image-viewport:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.asset-image-viewport.can-pan {
+  cursor: grab;
+}
+
+.asset-image-viewport.dragging {
+  cursor: grabbing;
+}
+
+.asset-image-viewport img {
+  position: absolute;
+  display: block;
+  max-width: none;
+  max-height: none;
+  transform: translate(-50%, -50%);
+  user-select: none;
+  pointer-events: none;
+}
+
 .asset-preview-audio {
   min-height: 160px;
   background: color-mix(in srgb, var(--editor-bg) 82%, var(--panel-raised));
+}
+
+.asset-preview-font {
+  display: block;
+  min-height: 320px;
+  overflow: auto;
+  background: color-mix(in srgb, var(--editor-bg) 88%, var(--panel-raised));
+}
+
+.asset-preview-sqlite {
+  display: block;
+  min-height: 320px;
+  place-items: initial;
+  background: var(--editor-bg);
+}
+
+.sqlite-inspector {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(150px, 220px) minmax(0, 1fr);
+  color: var(--editor-text);
+}
+
+.sqlite-sidebar {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  background: color-mix(in srgb, var(--panel-raised) 68%, var(--editor-bg));
+}
+
+.sqlite-sidebar-header {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font: 600 11px var(--ui-font);
+  text-transform: uppercase;
+}
+
+.sqlite-sidebar-header span {
+  min-width: 24px;
+  padding: 2px 5px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--accent) 13%, transparent);
+  color: var(--editor-text);
+  font: 12px var(--mono-font);
+  text-align: center;
+}
+
+.sqlite-object-list {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 5px;
+}
+
+.sqlite-object-button {
+  width: 100%;
+  min-width: 0;
+  height: 31px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--editor-text);
+  font: 12px var(--mono-font);
+  text-align: left;
+}
+
+.sqlite-object-button:hover {
+  background: var(--panel-soft);
+}
+
+.sqlite-object-button.active {
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border));
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.sqlite-object-kind {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font: 700 10px var(--ui-font);
+}
+
+.sqlite-object-kind-table {
+  color: var(--type);
+}
+
+.sqlite-object-kind-view {
+  color: var(--function);
+}
+
+.sqlite-object-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sqlite-sidebar-empty,
+.sqlite-sidebar-note {
+  margin: 0;
+  color: var(--muted);
+  font: 11px/1.45 var(--ui-font);
+}
+
+.sqlite-sidebar-empty {
+  padding: 10px 7px;
+}
+
+.sqlite-sidebar-note {
+  padding: 7px 9px;
+  border-top: 1px solid var(--border);
+}
+
+.sqlite-object-view {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--editor-bg);
+}
+
+.sqlite-object-header {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 10px 0 12px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--panel-raised) 72%, var(--editor-bg));
+}
+
+.sqlite-object-identity {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.sqlite-object-identity strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--editor-text);
+  font: 700 13px var(--mono-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sqlite-object-identity span {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font: 11px var(--ui-font);
+}
+
+.sqlite-object-tabs {
+  flex: 0 0 auto;
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.sqlite-object-tabs button {
+  height: 25px;
+  padding: 0 9px;
+  border: 0;
+  border-right: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--editor-bg);
+  color: var(--muted);
+  font: 600 11px var(--ui-font);
+}
+
+.sqlite-object-tabs button:last-child {
+  border-right: 0;
+}
+
+.sqlite-object-tabs button:hover,
+.sqlite-object-tabs button.active {
+  background: color-mix(in srgb, var(--accent) 14%, var(--panel-raised));
+  color: var(--text);
+}
+
+.sqlite-object-body {
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sqlite-data-summary,
+.sqlite-schema-summary {
+  margin: 0;
+  color: var(--muted);
+  font: 12px var(--mono-font);
+}
+
+.sqlite-data-summary {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sqlite-preview-warning {
+  margin: 0;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--function);
+  font: 11px/1.45 var(--ui-font);
+}
+
+.sqlite-table-scroll {
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: auto;
+}
+
+.sqlite-table {
+  min-width: 100%;
+  border-spacing: 0;
+  border-collapse: separate;
+  color: var(--editor-text);
+  font: 13px/1.4 var(--mono-font);
+}
+
+.sqlite-table th,
+.sqlite-table td {
+  min-width: 90px;
+  max-width: 360px;
+  padding: 7px 10px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--editor-bg);
+  text-align: left;
+  vertical-align: top;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.sqlite-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--panel-raised);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.sqlite-table .sqlite-row-number {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 48px;
+  width: 48px;
+  max-width: 48px;
+  background: color-mix(in srgb, var(--panel-raised) 76%, var(--editor-bg));
+  color: var(--muted);
+  font-weight: 400;
+  text-align: right;
+  user-select: none;
+}
+
+.sqlite-table thead .sqlite-row-number {
+  z-index: 3;
+  background: var(--panel-raised);
+  font-weight: 700;
+}
+
+.sqlite-table tbody tr:hover td,
+.sqlite-table tbody tr:hover th {
+  background: color-mix(in srgb, var(--accent-soft) 18%, var(--editor-bg));
+}
+
+.sqlite-value-null {
+  color: var(--keyword);
+  font-style: italic;
+}
+
+.sqlite-value-number {
+  color: var(--number);
+}
+
+.sqlite-value-blob {
+  color: var(--function);
+}
+
+.sqlite-muted-value {
+  color: var(--muted);
+}
+
+.sqlite-empty-table {
+  margin: 16px;
+  color: var(--muted);
+  font: 12px var(--ui-font);
+}
+
+.sqlite-schema-scroll {
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 12px;
+}
+
+.sqlite-schema-summary {
+  margin-bottom: 12px;
+}
+
+.sqlite-schema-label {
+  margin-bottom: 5px;
+  color: var(--muted);
+  font: 600 11px var(--ui-font);
+  text-transform: uppercase;
+}
+
+.sqlite-schema-sql {
+  margin: 0 0 14px;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--panel-raised) 64%, var(--editor-bg));
+  color: var(--editor-text);
+  font: 12px/1.5 var(--mono-font);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.sqlite-schema-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.sqlite-schema-table th,
+.sqlite-schema-table td {
+  min-width: 76px;
+}
+
+.sqlite-viewer-message {
+  width: 100%;
+  height: 100%;
+  min-height: 160px;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: var(--muted);
+  font: 600 13px var(--ui-font);
+  text-align: center;
+}
+
+.sqlite-viewer-error {
+  max-width: 520px;
+  margin: auto;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--danger) 58%, var(--border));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--danger) 9%, var(--editor-bg));
+  color: var(--editor-text);
+  font: 13px/1.5 var(--ui-font);
+}
+
+.sqlite-viewer-error strong {
+  color: var(--danger);
+}
+
+.sqlite-viewer-error p {
+  margin: 6px 0 0;
+}
+
+.asset-font-preview {
+  min-width: 0;
+  padding: 18px 20px 22px;
+}
+
+.asset-font-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 32px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.asset-font-size-label {
+  display: grid;
+  grid-template-columns: auto minmax(110px, 180px) 50px;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font: 600 12px var(--ui-font);
+}
+
+.asset-font-size-range {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.asset-font-size-value {
+  color: var(--editor-text);
+  font: 13px var(--mono-font);
+  text-align: right;
+}
+
+.asset-font-samples {
+  display: grid;
+  gap: 18px;
+}
+
+.asset-font-sample {
+  min-width: 0;
+}
+
+.asset-font-sample-label {
+  margin-bottom: 6px;
+  color: var(--muted);
+  font: 600 11px var(--ui-font);
+  text-transform: uppercase;
+}
+
+.asset-font-sample-text {
+  min-width: 0;
+  color: var(--editor-text);
+  font-size: var(--asset-font-size);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.asset-font-note {
+  margin: 20px 0 0;
+  color: var(--muted);
+  font: 12px/1.5 var(--ui-font);
 }
 
 .asset-audio-player {
@@ -1207,7 +2356,7 @@ button:disabled:active {
   padding: 12px;
   background: var(--output-bg);
   color: var(--output-text, #edf3ff);
-  font: 13px/1.45 var(--mono-font);
+  font: var(--console-font-size)/var(--console-line-height) var(--mono-font);
   white-space: pre-wrap;
 }
 
@@ -1299,12 +2448,12 @@ button:disabled:active {
 
 .console-input-panel input {
   min-width: 0;
-  height: 32px;
+  height: var(--console-control-height);
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--output-bg);
   color: var(--output-text, #edf3ff);
-  font: 13px var(--mono-font);
+  font: var(--console-font-size)/var(--console-line-height) var(--mono-font);
   outline: 0;
   padding: 0 10px;
 }
@@ -1315,7 +2464,7 @@ button:disabled:active {
 }
 
 .console-input-panel button {
-  height: 32px;
+  height: var(--console-control-height);
 }
 
 #gui-frame {
@@ -1367,5 +2516,25 @@ button:disabled:active {
 
   .color-preview {
     max-width: 180px;
+  }
+}
+
+@media (max-width: 1180px) and (min-width: 981px) {
+  .appearance-label-full {
+    display: none;
+  }
+
+  .appearance-label-short {
+    display: inline;
+  }
+
+  .actions {
+    gap: 5px;
+  }
+
+  button,
+  .doc-link {
+    padding-right: 9px;
+    padding-left: 9px;
   }
 }

@@ -25,8 +25,9 @@ import {
   VariableDeclaration,
   WhileStatement,
 } from './ast';
-import { TypeRef, arrayType, primitive, qualified } from './types';
-import { createDefaultStandardLibrary } from './stdlib/registry';
+import { SourceRange } from './diagnostics';
+import { TypeRef, arrayType, primitive, qualified, typeToString } from './types';
+import { ParameterSpec, createDefaultStandardLibrary } from './stdlib/registry';
 
 export interface CodegenResult {
   readonly jsCode: string;
@@ -55,6 +56,7 @@ export class JavaScriptGenerator {
   private moduleFunctionParameters = new Map<string, readonly ParameterDeclaration[]>();
   private moduleClassMethodParameters = new Map<string, readonly ParameterDeclaration[]>();
   private moduleClassConstructorParameters = new Map<string, readonly ParameterDeclaration[]>();
+  private moduleClassFields = new Map<string, Map<string, TypeName>>();
   private scopes: Array<Map<string, TypeName>> = [new Map()];
   private currentClassNames: string[] = [];
   private returnTypes: TypeName[] = [];
@@ -181,8 +183,11 @@ export class JavaScriptGenerator {
     this.moduleFunctionParameters = new Map();
     this.moduleClassMethodParameters = new Map();
     this.moduleClassConstructorParameters = new Map();
+    this.moduleClassFields = new Map();
 
     for (const module of modules) {
+      const declarations = new Map<string, ClassDeclaration>();
+      const ownFields = new Map<string, Map<string, TypeName>>();
       for (const declaration of module.program.declarations) {
         if (declaration.kind === 'FunctionDeclaration') {
           this.moduleFunctionParameters.set(`${module.name}.${declaration.name}`, declaration.parameters);
@@ -190,7 +195,12 @@ export class JavaScriptGenerator {
         }
 
         if (declaration.kind !== 'ClassDeclaration') continue;
+        declarations.set(declaration.name, declaration);
+        const fields = new Map<string, TypeName>();
         for (const member of declaration.members) {
+          if (member.kind === 'ClassFieldDeclaration') {
+            for (const field of member.fields) fields.set(field.name, member.declaredType);
+          }
           if (member.kind === 'ClassMethodDeclaration') {
             this.moduleClassMethodParameters.set(`${module.name}.${this.classMemberKey(declaration.name, member.name)}`, member.parameters);
           }
@@ -198,6 +208,28 @@ export class JavaScriptGenerator {
             this.moduleClassConstructorParameters.set(`${module.name}.${declaration.name}`, member.parameters);
           }
         }
+        ownFields.set(declaration.name, fields);
+      }
+
+      const collectFields = (className: string, seen = new Set<string>()): Map<string, TypeName> => {
+        const key = `${module.name}.${className}`;
+        const cached = this.moduleClassFields.get(key);
+        if (cached) return cached;
+        if (seen.has(className)) return ownFields.get(className) ?? new Map();
+        seen.add(className);
+
+        const fields = new Map<string, TypeName>();
+        const declaration = declarations.get(className);
+        if (declaration?.baseName) {
+          for (const [name, type] of collectFields(declaration.baseName, seen)) fields.set(name, type);
+        }
+        for (const [name, type] of ownFields.get(className) ?? new Map()) fields.set(name, type);
+        this.moduleClassFields.set(key, fields);
+        return fields;
+      };
+
+      for (const className of declarations.keys()) {
+        collectFields(className);
       }
     }
   }
@@ -362,7 +394,9 @@ export class JavaScriptGenerator {
       const rawValue = field.initializer
         ? this.expression(field.initializer)
         : this.defaultValue(declaration.declaredType, false);
-      const value = this.castForType(rawValue, declaration.declaredType);
+      const value = field.initializer
+        ? this.valueForType(rawValue, declaration.declaredType, field.initializer.range)
+        : this.castForType(rawValue, declaration.declaredType);
       lines.push(`${pad}self.${field.name} = ${value};`);
     }
   }
@@ -459,7 +493,7 @@ export class JavaScriptGenerator {
     const rawValue = statement.value ? this.expression(statement.value) : '';
     const returnType = this.returnTypes[this.returnTypes.length - 1] ?? null;
     const value = statement.value
-      ? ` ${returnType ? this.castForType(rawValue, returnType) : rawValue}`
+      ? ` ${returnType ? this.valueForType(rawValue, returnType, statement.value.range) : rawValue}`
       : '';
     lines.push(`${pad}return${value};`);
   }
@@ -477,27 +511,29 @@ export class JavaScriptGenerator {
 
   private variableDeclarationCode(statement: VariableDeclaration): string {
     const rawValue = statement.initializer
-      ? this.initializerExpression(statement.initializer, statement.declaredType)
+      ? this.expression(statement.initializer)
       : statement.constructorArgs
         ? this.constructorInitializer(statement)
         : this.defaultValue(statement.declaredType);
-    const value = this.castForType(rawValue, statement.declaredType);
+    const value = statement.initializer
+      ? this.valueForType(rawValue, statement.declaredType, statement.initializer.range)
+      : this.castForType(rawValue, statement.declaredType);
     this.declareType(statement.name, statement.declaredType);
-    return `let ${statement.name} = ${value}`;
+    return `${statement.isConst ? 'const' : 'let'} ${statement.name} = ${value}`;
   }
 
   private assignmentCode(statement: AssignmentStatement): string {
     const targetType = this.targetTypeName(statement.target);
     if (statement.operator === '=') {
       if (statement.target.kind === 'IndexExpression') {
-        const value = this.castForType(this.expression(statement.value), targetType);
+        const value = this.valueForType(this.expression(statement.value), targetType, statement.value.range);
         return `$rt.array.set(${this.expression(statement.target.object)}, ${this.expression(statement.target.index)}, ${value}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
       }
       if (statement.target.kind === 'MemberExpression') {
-        const value = this.castForType(this.expression(statement.value), targetType);
+        const value = this.valueForType(this.expression(statement.value), targetType, statement.value.range);
         return `$rt.setProperty(${this.expression(statement.target.object)}, ${JSON.stringify(statement.target.name)}, ${value}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
       }
-      return `${this.expression(statement.target)} = ${this.castForType(this.expression(statement.value), targetType)}`;
+      return `${this.expression(statement.target)} = ${this.valueForType(this.expression(statement.value), targetType, statement.value.range)}`;
     }
 
     if (statement.target.kind === 'IndexExpression') {
@@ -505,7 +541,7 @@ export class JavaScriptGenerator {
       const index = this.expression(statement.target.index);
       const current = `$rt.array.get(${object}, ${index}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
       const rawValue = this.compoundAssignmentValue(statement.operator, current, this.expression(statement.value), statement.range);
-      const value = this.castForType(rawValue, targetType);
+      const value = this.valueForType(rawValue, targetType, statement.range);
       return `$rt.array.set(${object}, ${index}, ${value}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
     }
 
@@ -513,10 +549,10 @@ export class JavaScriptGenerator {
     const value = this.expression(statement.value);
     const rawAssignedValue = this.compoundAssignmentValue(statement.operator, target, value, statement.range);
     if (statement.target.kind === 'MemberExpression') {
-      const assignedValue = this.castForType(rawAssignedValue, targetType);
+      const assignedValue = this.valueForType(rawAssignedValue, targetType, statement.range);
       return `$rt.setProperty(${this.expression(statement.target.object)}, ${JSON.stringify(statement.target.name)}, ${assignedValue}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
     }
-    return `${target} = ${this.castForType(rawAssignedValue, targetType)}`;
+    return `${target} = ${this.valueForType(rawAssignedValue, targetType, statement.range)}`;
   }
 
   private compoundAssignmentValue(
@@ -529,7 +565,7 @@ export class JavaScriptGenerator {
     if (binaryOperator === '/') {
       return `$rt.core.divide(${target}, ${value}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
     }
-    return `(${target} ${binaryOperator} ${value})`;
+    return `$rt.core.binary(${JSON.stringify(binaryOperator)}, ${target}, ${value}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
   }
 
   private maybeAwait(expression: Expression): string {
@@ -539,6 +575,13 @@ export class JavaScriptGenerator {
   private expression(expression: Expression): string {
     switch (expression.kind) {
       case 'LiteralExpression':
+        if (
+          expression.valueType === 'int'
+          && typeof expression.value === 'number'
+          && !Number.isSafeInteger(expression.value)
+        ) {
+          return `BigInt(${JSON.stringify(expression.sourceText ?? String(expression.value))})`;
+        }
         return JSON.stringify(expression.value);
       case 'IdentifierExpression':
         if (expression.name === 'this') return 'this';
@@ -547,7 +590,7 @@ export class JavaScriptGenerator {
       case 'UnaryExpression':
         return expression.operator === 'not'
           ? `(!${this.expression(expression.operand)})`
-          : `(-${this.expression(expression.operand)})`;
+          : `$rt.core.negate(${this.expression(expression.operand)})`;
       case 'BinaryExpression':
         return this.binaryExpression(expression);
       case 'ArrayLiteralExpression':
@@ -589,7 +632,7 @@ export class JavaScriptGenerator {
     if (expression.operator === 'or') {
       return `(${left} || ${right})`;
     }
-    return `(${left} ${expression.operator} ${right})`;
+    return `$rt.core.binary(${JSON.stringify(expression.operator)}, ${left}, ${right}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
   }
 
   private callExpression(expression: CallExpression): string {
@@ -623,8 +666,12 @@ export class JavaScriptGenerator {
         return `$rt.console.${callee.name}(${args})`;
       }
       if (this.importedModules.has(moduleName)) {
-        const parameterNames = this.moduleFunctionParameterNames(moduleName, callee.name);
-        const args = this.callArgumentValues(expression.args, parameterNames).join(', ');
+        const args = this.userModuleNames.has(moduleName)
+          ? this.callArgumentValues(expression.args, this.moduleFunctionParameterNames(moduleName, callee.name)).join(', ')
+          : this.stdlibCallArgumentValues(
+            expression.args,
+            this.stdlib.getModuleFunction(moduleName, callee.name)?.parameters,
+          ).join(', ');
         if (!this.userModuleNames.has(moduleName)) {
           return `$rt.callModuleFunction(${JSON.stringify(moduleName)}, ${JSON.stringify(callee.name)}, [${args}], ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
         }
@@ -637,6 +684,10 @@ export class JavaScriptGenerator {
       const typesRuntimeName = this.typesRuntimeName(typeName);
       if (typesRuntimeName && (callee.name === 'to_bin' || callee.name === 'to_hex')) {
         return `$rt.types.${callee.name}(${this.expression(callee.object)}, ${JSON.stringify(typesRuntimeName)})`;
+      }
+      if (typesRuntimeName && (callee.name === 'shift_left' || callee.name === 'shift_right')) {
+        const [bits] = this.methodCallArgs(callee.name, expression.args, typeName);
+        return `$rt.types.${callee.name}(${this.expression(callee.object)}, ${JSON.stringify(typesRuntimeName)}, ${bits}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
       }
 
       const args = this.methodCallArgs(callee.name, expression.args, typeName).join(', ');
@@ -657,19 +708,6 @@ export class JavaScriptGenerator {
       }
     }
     return `${this.expression(expression.object)}.${expression.name}`;
-  }
-
-  private initializerExpression(expression: Expression, declaredType: TypeName): string {
-    if (expression.kind === 'ArrayLiteralExpression' && declaredType.kind === 'ArrayTypeName') {
-      return this.arrayLiteralExpression(
-        expression,
-        declaredType.dynamic,
-        declaredType.dynamic ? null : declaredType.size,
-        `() => ${this.defaultValue(declaredType.elementType, false)}`,
-        declaredType.elementType,
-      );
-    }
-    return this.expression(expression);
   }
 
   private constructorInitializer(statement: VariableDeclaration): string {
@@ -774,7 +812,7 @@ export class JavaScriptGenerator {
     const pad = '  '.repeat(indent);
     for (const parameter of parameters) {
       this.declareType(parameter.name, parameter.paramType);
-      const value = this.castForType(parameter.name, parameter.paramType);
+      const value = this.valueForType(parameter.name, parameter.paramType, parameter.range);
       if (value !== parameter.name) {
         lines.push(`${pad}${parameter.name} = ${value};`);
       }
@@ -795,6 +833,19 @@ export class JavaScriptGenerator {
     return this.orderedCallArguments(args, parameterNames).map((arg) => (
       arg ? this.expression(arg.value) : 'undefined'
     ));
+  }
+
+  private stdlibCallArgumentValues(
+    args: readonly CallArgument[],
+    parameters?: readonly ParameterSpec[],
+  ): string[] {
+    const orderedArgs = this.orderedCallArguments(args, parameters?.map((parameter) => parameter.name));
+    return orderedArgs.map((arg, index) => {
+      if (!arg) return 'undefined';
+      const value = this.expression(arg.value);
+      const parameter = parameters?.[index];
+      return parameter ? this.valueForTypeRef(value, parameter.type, arg.value.range) : value;
+    });
   }
 
   private orderedCallArguments(args: readonly CallArgument[], parameterNames?: readonly string[]): Array<CallArgument | null> {
@@ -919,13 +970,20 @@ export class JavaScriptGenerator {
   private methodCallArgs(methodName: string, args: readonly CallArgument[], receiverType: TypeName | null): string[] {
     const orderedArgs = this.orderedCallArguments(args, this.methodParameterNames(methodName, receiverType));
     if (receiverType?.kind !== 'ArrayTypeName') {
-      return orderedArgs.map((arg) => (arg ? this.expression(arg.value) : 'undefined'));
+      const typeRef = receiverType ? this.typeRefFromTypeName(receiverType) : null;
+      const method = typeRef ? this.stdlib.getTypeMethod(typeRef, methodName) : undefined;
+      return orderedArgs.map((arg, index) => {
+        if (!arg) return 'undefined';
+        const value = this.expression(arg.value);
+        const parameter = method?.parameters[index];
+        return parameter ? this.valueForTypeRef(value, parameter.type, arg.value.range) : value;
+      });
     }
 
     if (methodName === 'add' || methodName === 'contains' || methodName === 'find' || methodName === 'count') {
       return orderedArgs.map((arg, index) => (
         index === 0 && arg
-          ? this.castForType(this.expression(arg.value), receiverType.elementType)
+          ? this.valueForType(this.expression(arg.value), receiverType.elementType, arg.value.range)
           : arg ? this.expression(arg.value) : 'undefined'
       ));
     }
@@ -933,9 +991,24 @@ export class JavaScriptGenerator {
     if (methodName === 'insert') {
       return orderedArgs.map((arg, index) => (
         index === 1 && arg
-          ? this.castForType(this.expression(arg.value), receiverType.elementType)
+          ? this.valueForType(this.expression(arg.value), receiverType.elementType, arg.value.range)
           : arg ? this.expression(arg.value) : 'undefined'
       ));
+    }
+
+    if (methodName === 'join') {
+      return orderedArgs.map((arg, index) => {
+        if (!arg) return 'undefined';
+        if (index !== 0) return this.expression(arg.value);
+        const targetType: TypeName = {
+          kind: 'ArrayTypeName',
+          elementType: receiverType.elementType,
+          size: null,
+          dynamic: true,
+          range: arg.value.range,
+        };
+        return this.valueForType(this.expression(arg.value), targetType, arg.value.range);
+      });
     }
 
     return orderedArgs.map((arg) => (arg ? this.expression(arg.value) : 'undefined'));
@@ -943,6 +1016,89 @@ export class JavaScriptGenerator {
 
   private classMemberKey(className: string, memberName: string): string {
     return `${className}.${memberName}`;
+  }
+
+  private valueForType(value: string, type: TypeName | null, range: SourceRange): string {
+    if (type?.kind === 'ArrayTypeName') {
+      const size = type.dynamic ? 'null' : String(type.size ?? 0);
+      const convertedElement = this.valueForType('__array_item', type.elementType, range);
+      return [
+        '$rt.array.convert(',
+        value,
+        `, ${type.dynamic ? 'true' : 'false'}`,
+        `, ${size}`,
+        `, () => ${this.defaultValue(type.elementType, false)}`,
+        `, (__array_item) => ${convertedElement}`,
+        `, ${JSON.stringify(this.typeNameToString(type))}`,
+        `, ${JSON.stringify(range.start.file)}`,
+        `, ${range.start.line})`,
+      ].join('');
+    }
+    if (type?.kind === 'QualifiedTypeName') {
+      const typeRef = qualified(type.moduleName, type.name);
+      if (this.stdlib.typeAcceptsNull(typeRef)) {
+        return this.nullableValue(value, type.moduleName, type.name, range);
+      }
+    }
+    return this.castForType(value, type);
+  }
+
+  private valueForTypeRef(value: string, type: TypeRef, range: SourceRange): string {
+    if (type.kind === 'array') {
+      const size = type.dynamic ? 'null' : String(type.size ?? 0);
+      const convertedElement = this.valueForTypeRef('__array_item', type.elementType, range);
+      return [
+        '$rt.array.convert(',
+        value,
+        `, ${type.dynamic ? 'true' : 'false'}`,
+        `, ${size}`,
+        `, () => ${this.defaultValueForTypeRef(type.elementType)}`,
+        `, (__array_item) => ${convertedElement}`,
+        `, ${JSON.stringify(typeToString(type))}`,
+        `, ${JSON.stringify(range.start.file)}`,
+        `, ${range.start.line})`,
+      ].join('');
+    }
+
+    if (type.kind === 'qualified' && type.moduleName === 'types' && TYPE_RUNTIME_NAMES.has(type.name)) {
+      return `$rt.types.cast(${value}, ${JSON.stringify(type.name)})`;
+    }
+    if (type.kind === 'qualified' && this.stdlib.typeAcceptsNull(type)) {
+      return this.nullableValue(value, type.moduleName, type.name, range);
+    }
+    return value;
+  }
+
+  private nullableValue(value: string, moduleName: string, typeName: string, range: SourceRange): string {
+    return `$rt.convertNullable(${JSON.stringify(moduleName)}, ${JSON.stringify(typeName)}, ${value}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
+  }
+
+  private typeNameToString(type: TypeName): string {
+    if (type.kind === 'PrimitiveTypeName' || type.kind === 'ClassTypeName') return type.name;
+    if (type.kind === 'QualifiedTypeName') return `${type.moduleName}.${type.name}`;
+    if (type.dynamic) return `dyn_array<${this.typeNameToString(type.elementType)}>`;
+    return `array<${this.typeNameToString(type.elementType)}, ${type.size ?? '?'}>`;
+  }
+
+  private defaultValueForTypeRef(type: TypeRef): string {
+    if (type.kind === 'array') {
+      const size = type.dynamic ? 0 : type.size ?? 0;
+      return `$rt.array.create(${size}, () => ${this.defaultValueForTypeRef(type.elementType)}, ${type.dynamic ? 'true' : 'false'})`;
+    }
+    if (type.kind === 'qualified' && type.moduleName === 'types' && TYPE_RUNTIME_NAMES.has(type.name)) {
+      return `$rt.types.cast(0, ${JSON.stringify(type.name)})`;
+    }
+    if (type.kind === 'qualified') {
+      if (type.moduleName === 'colors' && type.name === 'Color') return '$rt.modules.colors.TRANSPARENT';
+      return `$rt.createObject(${JSON.stringify(type.moduleName)}, ${JSON.stringify(type.name)})`;
+    }
+    if (type.kind === 'primitive') {
+      if (type.name === 'string') return JSON.stringify('');
+      if (type.name === 'char') return JSON.stringify('\0');
+      if (type.name === 'bool') return 'false';
+      return '0';
+    }
+    return 'null';
   }
 
   private castForType(value: string, type: TypeName | null): string {
@@ -975,6 +1131,12 @@ export class JavaScriptGenerator {
         const objectType = this.expressionTypeName(expression.object);
         return objectType?.kind === 'ArrayTypeName' ? objectType.elementType : null;
       }
+      case 'CallExpression': {
+        if (expression.callee.kind !== 'MemberExpression') return null;
+        if (expression.callee.name !== 'shift_left' && expression.callee.name !== 'shift_right') return null;
+        const objectType = this.expressionTypeName(expression.callee.object);
+        return this.typesRuntimeName(objectType) ? objectType : null;
+      }
       default:
         return null;
     }
@@ -987,8 +1149,15 @@ export class JavaScriptGenerator {
     }
 
     const objectType = this.expressionTypeName(expression.object);
-    if (objectType?.kind !== 'ClassTypeName') return null;
-    return this.classFields.get(objectType.name)?.get(expression.name) ?? null;
+    if (objectType?.kind === 'ClassTypeName') {
+      return this.classFields.get(objectType.name)?.get(expression.name) ?? null;
+    }
+    if (objectType?.kind === 'QualifiedTypeName' && this.userModuleNames.has(objectType.moduleName)) {
+      return this.moduleClassFields
+        .get(`${objectType.moduleName}.${objectType.name}`)
+        ?.get(expression.name) ?? null;
+    }
+    return null;
   }
 
   private declareType(name: string, type: TypeName): void {
@@ -1019,6 +1188,8 @@ const TYPE_RUNTIME_NAMES = new Set([
   'uint16',
   'int32',
   'uint32',
+  'int64',
+  'uint64',
   'float32',
   'float64',
 ]);

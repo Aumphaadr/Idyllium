@@ -1,0 +1,52 @@
+// Покупка временно уменьшает остаток на складе.
+// Если остаток стал отрицательным, rollback() возвращает прежнее значение.
+
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("transaction_rollback.db");
+    db.execute("DROP TABLE IF EXISTS inventory");
+    db.execute("CREATE TABLE inventory (item TEXT PRIMARY KEY, count INTEGER NOT NULL)");
+    db.execute("INSERT INTO inventory VALUES ('healing potion', 2)");
+
+    int requested = 5;
+    db.begin_transaction();
+
+    sqlite.Statement take_items = db.prepare(
+        "UPDATE inventory SET count = count - :count WHERE item = :item"
+    );
+    take_items.bind_int("count", requested);
+    take_items.bind_string("item", "healing potion");
+    take_items.execute();
+    take_items.close();
+
+    sqlite.Result check = db.execute(
+        "SELECT count FROM inventory WHERE item = 'healing potion'"
+    );
+    check.next();
+    int remaining = check.get_int("count");
+    check.close();
+
+    if (remaining < 0) {
+        db.rollback();
+        console.writeln("Not enough items. Purchase cancelled.");
+    }
+    else {
+        db.commit();
+        console.writeln("Purchase completed.");
+    }
+
+    sqlite.Result result = db.execute(
+        "SELECT count FROM inventory WHERE item = 'healing potion'"
+    );
+    result.next();
+    console.writeln("Items left: ", result.get_int("count"));
+
+    result.close();
+    db.close();
+}
+
+// Expected output:
+// Not enough items. Purchase cancelled.
+// Items left: 2

@@ -6,9 +6,9 @@ use math;
 drawable.Circle ball;
 
 bool function point_inside_circle(int x, int y) {
-    int dx = x - ball.x;
-    int dy = y - ball.y;
-    float distance = math.sqrt(to_float(dx * dx + dy * dy));
+    float dx = x - ball.x;
+    float dy = y - ball.y;
+    float distance = math.sqrt(dx * dx + dy * dy);
     return distance <= ball.radius;
 }
 
@@ -21,6 +21,7 @@ void function init(gui.Canvas canvas) {
     ball.x = 160;
     ball.y = 110;
     ball.radius = 50;
+    ball.set_origin(50, 50);
     ball.fill_color = colors.RGB(34, 145, 188);
     redraw(canvas);
 }

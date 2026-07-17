@@ -71,6 +71,9 @@
         "'max' expects a numeric array, got 'array<string, 2>'"
       ]
     },
+    "cli.020_types.011": {
+      "kind": "valid"
+    },
     "cli.021_encoding.010": {
       "kind": "docs_only",
       "reason": "Encoding library behavior is not implemented in the next core yet."
@@ -368,6 +371,13 @@
         "cannot assign 'int' value to 'string' variable"
       ]
     },
+    "widgets.002_label.006": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "type 'gui.Label' has no property 'color'"
+      ],
+      "reason": "The frozen lesson preserves the removed string-based Label.color API; current code uses text_color with colors.Color."
+    },
     "widgets.016_errors.003": {
       "kind": "compile_error",
       "diagnosticIncludes": [
@@ -403,6 +413,54 @@
       "diagnosticIncludes": [
         "type 'gui.Button' has no property 'placeholder'",
         "type 'gui.Button' has no property 'font_size'"
+      ]
+    },
+    "sqlite.001_intro.001": {
+      "kind": "valid"
+    },
+    "sqlite.002_changes.001": {
+      "kind": "valid"
+    },
+    "sqlite.003_select.001": {
+      "kind": "valid"
+    },
+    "sqlite.004_parameters.001": {
+      "kind": "valid"
+    },
+    "sqlite.005_filters.001": {
+      "kind": "valid"
+    },
+    "sqlite.006_null.001": {
+      "kind": "valid"
+    },
+    "sqlite.007_reuse.001": {
+      "kind": "valid"
+    },
+    "sqlite.008_transactions.001": {
+      "kind": "valid"
+    },
+    "sqlite.008_transactions.002": {
+      "kind": "valid"
+    },
+    "sqlite.009_scripts.001": {
+      "kind": "valid"
+    },
+    "sqlite.010_errors.001": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "sqlite statement has unbound parameter ':level'"
+      ]
+    },
+    "sqlite.010_errors.002": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "sqlite column 'name' is text, expected int"
+      ]
+    },
+    "sqlite.010_errors.003": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "sqlite result has no column 'score'"
       ]
     }
   }

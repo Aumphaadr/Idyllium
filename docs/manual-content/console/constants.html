@@ -1,0 +1,142 @@
+<div class="docs-section">
+  <h2>Переменная, которая не должна меняться</h2>
+  <p>
+    Переменная получила своё название не случайно: её значение можно изменить.
+    Счёт игрока растёт, температура меняется, а список покупок пополняется.
+    Но не всякое значение в программе должно вести себя так же.
+  </p>
+  <p>
+    Например, в неделе всегда семь дней. Если записать это число в обычную
+    переменную, компилятор разрешит случайно заменить его на восемь:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+int DAYS_IN_WEEK = 7;
+DAYS_IN_WEEK = 8; // Синтаксически всё правильно, но неделя испорчена
+  </script></idyl-code-block>
+
+  <p>
+    Для таких случаев существует <strong>именованная константа</strong>. Перед
+    типом пишется слово <code>const</code>, и после объявления значение уже
+    нельзя заменить.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Первая константа</h2>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    const int DAYS_IN_WEEK = 7;
+    console.writeln("В неделе дней: ", DAYS_IN_WEEK);
+}
+  </script></idyl-code-block>
+
+  <idyl-output-block>В неделе дней: 7</idyl-output-block>
+
+  <p>
+    Слово <code>const</code> не создаёт новый тип числа. У константы
+    <code>DAYS_IN_WEEK</code> по-прежнему тип <code>int</code>, поэтому её можно
+    складывать, умножать и передавать в функции как обычное целое число.
+  </p>
+  <p>
+    Имена констант принято писать большими буквами, разделяя слова знаком
+    подчёркивания: <code>MAX_SPEED</code>, <code>START_HEALTH</code>,
+    <code>WINDOW_TITLE</code>. Это соглашение для людей, а не требование языка:
+    компилятор поймёт и маленькие буквы, но большие помогают сразу заметить
+    значение, которое не должно меняться.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Константу можно вычислить</h2>
+  <p>
+    Справа от знака <code>=</code> не обязано стоять готовое число. Значение
+    можно вычислить один раз при объявлении, а затем спокойно использовать.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    const int ROWS = 6;
+    const int CELLS_IN_ROW = 8;
+    const int TOTAL_CELLS = ROWS * CELLS_IN_ROW;
+
+    console.writeln("Всего клеток: ", TOTAL_CELLS);
+}
+  </script></idyl-code-block>
+
+  <idyl-output-block>Всего клеток: 48</idyl-output-block>
+</div>
+
+<div class="docs-section">
+  <h2>Константы для всей программы</h2>
+  <p>
+    Константу можно объявить не только внутри <code>main()</code>, но и перед
+    функциями. Тогда она будет доступна во всех функциях этого файла. Это удобно
+    для общих правил программы: максимального уровня, размера поля или
+    стандартного числа попыток.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+const int MAX_LEVEL = 100;
+
+void function show_limit() {
+    console.writeln("Максимальный уровень: ", MAX_LEVEL);
+}
+
+main() {
+    show_limit();
+}
+  </script></idyl-code-block>
+
+  <idyl-output-block>Максимальный уровень: 100</idyl-output-block>
+</div>
+
+<div class="docs-section">
+  <h2>Что остановит компилятор</h2>
+  <p>
+    Константа обязана получить значение сразу. Запись без правой части не даёт
+    понять, какое именно неизменяемое значение мы хотели сохранить.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+main() {
+    const int answer;
+}
+  </script></idyl-code-block>
+  <idyl-error-block>main.idyl:2: error: constant 'answer' must have an initializer</idyl-error-block>
+
+  <p>
+    Повторное присваивание тоже запрещено. Это не просьба и не предупреждение:
+    программа не скомпилируется, пока ошибка не будет исправлена.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+main() {
+    const int answer = 42;
+    answer = 64;
+}
+  </script></idyl-code-block>
+  <idyl-error-block>main.idyl:3: error: cannot assign to constant 'answer'</idyl-error-block>
+</div>
+
+<div class="docs-section">
+  <h2>Когда использовать const</h2>
+  <p>
+    Используйте константу, если имя обозначает правило или настройку, которые
+    не должны изменяться во время работы программы. Если значение по смыслу
+    должно расти, уменьшаться или заменяться, оставьте обычную переменную.
+  </p>
+  <p>
+    Полезный вопрос перед объявлением звучит так: «Если эта строка программы
+    случайно изменит значение позже, это будет нормальной частью алгоритма или
+    ошибкой?» Если ошибкой — <code>const</code> как раз поставит ограждение в
+    нужном месте.
+  </p>
+</div>

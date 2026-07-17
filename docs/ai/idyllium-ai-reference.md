@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: IdylliumNext 1.0.0.
+Current language target: IdylliumNext 1.1.0.
 
 Important rule for AI assistants: Idyllium is a child-friendly educational
 language. Do not invent syntax. Do not replace Idyllium syntax with C++, C#,
@@ -54,6 +54,7 @@ Modules are imported by file/library name:
 use console;
 use math;
 use gui;
+use fonts;
 ```
 
 User modules are ordinary `.idyl` files in the same project. If there is
@@ -146,6 +147,37 @@ Do not use:
 ```idyllium
 age++;  // wrong: no ++ in Idyllium
 age--;  // wrong: no -- in Idyllium
+```
+
+Named constants use `const` before the type:
+
+```idyllium
+const int MAX_LEVEL = 100;
+
+main() {
+    const string GAME_TITLE = "Idyllium Quest";
+    console.writeln(GAME_TITLE, ": ", MAX_LEVEL);
+}
+```
+
+Rules for named constants:
+
+- `const` is supported for local and top-level variable declarations.
+- An initializer is mandatory.
+- Direct assignment and compound assignment to the name are compile errors.
+- A top-level constant in `config.idyl` is available as `config.NAME` after
+  `use config;`.
+- For arrays and objects, `const` protects the binding, not the complete object
+  graph. `items[0] = value` and mutating methods remain valid, while
+  `items = other_items` is forbidden.
+- `const` is not currently a class-field or parameter modifier.
+- Uppercase names such as `MAX_LEVEL` are a convention, not a parser rule.
+
+Readable diagnostics include:
+
+```text
+main.idyl:2: error: constant 'answer' must have an initializer
+main.idyl:3: error: cannot assign to constant 'answer'
 ```
 
 ## 6. Type Conversion
@@ -344,6 +376,22 @@ values.join(other)
 values.clear()
 values.pop()
 ```
+
+Arrays have value semantics. Assignment, a function argument, and a function return
+create an independent array copy. Nested array containers are copied recursively;
+class and library objects stored in cells retain their object identity.
+
+Fixed and dynamic arrays are mutually convertible when their element types are
+compatible. The target type determines whether the copy is fixed or dynamic:
+
+```idyllium
+array<int, 3> fixed = [10, 20, 30];
+dyn_array<int> dynamic = fixed;
+```
+
+Converting `dyn_array<T>` to `array<T, N>` performs a runtime size check. A size
+mismatch is a readable runtime error; it never truncates or pads the array implicitly.
+Known mismatched sizes between two fixed arrays are compile-time errors.
 
 Global array helper functions exist in lessons and runtime, but prefer methods
 when writing new educational code.
@@ -775,6 +823,42 @@ Common modes:
 
 Always close streams in examples.
 
+Streams expose a read-only `bool` property `is_open`:
+
+```idyllium
+file.ostream fout = file.open("output.txt", "write");
+console.writeln(fout.is_open); // true
+fout.close();
+console.writeln(fout.is_open); // false
+```
+
+Project file-system operations:
+
+```idyllium
+file.create_directory("saves");
+file.create_directory("game/saves/players", parents=true);
+
+bool any_entry = file.exists("saves");
+bool regular_file = file.is_file("saves/player.txt");
+bool directory = file.is_directory("saves");
+dyn_array<string> names = file.list_directory("saves");
+
+file.copy("saves", "saves_backup");
+file.rename("saves_backup", "archive");
+file.remove("archive", recursive=true);
+```
+
+Rules:
+
+- `create_directory(path)` requires the parent directory to exist;
+- `parents=true` creates missing parent directories;
+- `copy()` handles files and directory trees;
+- `rename()` also moves entries when the destination has another parent;
+- `copy()` and `rename()` never overwrite an existing destination;
+- `remove()` removes files and empty directories;
+- deleting a non-empty directory requires explicit `recursive=true`;
+- mutating operations are restricted to the current project root.
+
 ## 21. Library `encoding`
 
 ```idyllium
@@ -824,8 +908,9 @@ colors.TRANSPARENT
 Invalid channel values are runtime errors. Do not silently clamp
 `colors.RGB(999, -20, 300)`.
 
-Prefer `text_color`, `background_color`, `border_color`, `foreground_color`
-over vague legacy `color`.
+Use the property that names its role explicitly: `text_color`,
+`background_color`, `border_color`, or `foreground_color`. Color properties
+accept `colors.Color`; convert a HEX string explicitly with `colors.HEX()`.
 
 ## 23. Library `types`
 
@@ -842,6 +927,8 @@ types.int16
 types.uint16
 types.int32
 types.uint32
+types.int64
+types.uint64
 types.float32
 types.float64
 ```
@@ -864,6 +951,8 @@ main() {
 
 Operations between integer-like `types` values and `int` first produce an
 ordinary integer result, then assignment/call converts to the target type.
+`int64` and `uint64` preserve their complete 64-bit ranges exactly, including
+values above 2^53. They use the same silent wraparound at typed boundaries.
 
 Float-to-integer-like assignment is forbidden without explicit `to_int()`.
 
@@ -872,9 +961,22 @@ Helpers:
 ```idyllium
 value.to_bin()
 value.to_hex()
+value.shift_left(bits)
+value.shift_right(bits)
 types.from_bin("11111111", "uint8")
 types.from_hex("FF", "uint8")
 ```
+
+Both shift methods operate on the fixed-width bit cell of the receiver, and
+they are available on integer and floating `types` values. Bits leaving either
+edge are silently discarded; vacated positions are always filled with zero.
+Right shift is logical even for signed types and does not preserve the sign.
+A shift magnitude greater than or equal to the type width produces an all-zero
+cell. A negative count reverses direction: `shift_left(-N)` is equivalent to
+`shift_right(N)`, and `shift_right(-N)` is equivalent to `shift_left(N)`.
+Floating values shift their IEEE-754 representation and then reinterpret the
+resulting bits as the same float type. The result keeps the receiver's exact
+`types.*` type.
 
 ## 24. JSON
 
@@ -892,17 +994,20 @@ json.Object
 json.Array
 ```
 
-Constants/functions:
+Literal/functions:
 
 ```idyllium
-json.NULL
+null
 json.is_valid(text)
 json.parse(text)
 json.Value()
 json.Value(value)
 ```
 
-`json.Value()` without arguments creates `null`.
+`null` is a language literal, but it is assignable only to library types that
+explicitly support an absent value. Currently `json.Value` and `sqlite.Value`
+support it; primitive types, user classes, `json.Object`, and `json.Array` do not.
+`json.Value()` without arguments also creates JSON null.
 
 Create JSON:
 
@@ -916,7 +1021,7 @@ main() {
     root.add("name", json.Value("Mira"));
     root.add("age", json.Value(12));
     root.add("admin", json.Value(false));
-    root.add("middle_name", json.NULL);
+    root.add("middle_name", null);
 
     json.Array scores;
     scores.add(json.Value(5));
@@ -1050,6 +1155,7 @@ height: int
 visible: bool
 text_color: colors.Color
 background_color: colors.Color
+font: fonts.Font
 ```
 
 Common color properties:
@@ -1061,15 +1167,16 @@ border_color
 foreground_color   // ProgressBar fill color role
 ```
 
-`text_color` and `background_color` may be inherited by child widgets where the
-runtime supports inheritance.
+`text_color`, `background_color`, and `font` are inherited by child widgets.
+An explicit child value overrides its parent. `font_size` remains a property of
+the text consumer, not of the font resource.
 
 ### GUI Types
 
 `gui.Window`:
 
 ```idyllium
-x, y, width, height, title, text_color, background_color
+x, y, width, height, title, text_color, background_color, font
 add_child(child)
 show()
 ```
@@ -1081,7 +1188,6 @@ x, y, width, height, visible
 text, font_size
 text_color, background_color, border_color
 on_click
-color  // legacy string text color shortcut; prefer text_color
 ```
 
 `gui.Button`:
@@ -1102,16 +1208,17 @@ background_color, border_color, border_width
 add_child(child)
 ```
 
-`gui.Image`:
+`gui.ImageBox`:
 
 ```idyllium
 x, y, width, height, visible
 resize_mode
-load_from_file(path)
+set_image(image: image.Image)
 ```
 
-Known resize modes are documentation-level strings; use examples from the
-current docs/spec when choosing a mode.
+Resize modes are `"fit"`, `"fill"`, `"stretch"`, and `"original"`.
+`ImageBox` does not load files itself. Load an `image.Static` or
+`image.Animation`, then pass it to `set_image()`.
 
 `gui.LineEdit`:
 
@@ -1326,71 +1433,226 @@ Base type:
 
 ```idyllium
 drawable.Drawable
+contains(float x, float y) -> bool
+intersects(drawable.Drawable other) -> bool
 ```
+
+`contains()` includes the boundary. `intersects()` treats touching objects as
+an intersection and dispatches by the concrete runtime types.
+
+Rectangle, Circle, Sprite, and Text share this transform API:
+
+```idyllium
+origin_x: float  // read-only
+origin_y: float  // read-only
+rotation: float
+set_origin(float x, float y)
+rotate(float angle)
+move(float dx, float dy)
+```
+
+`x/y` is the world position of the local origin. The default origin is
+`(0, 0)`. Positive angles rotate clockwise. `rotate(angle)` adds to the current
+rotation instead of replacing it.
+
+Drawable positions are floating-point values. Rectangle, Circle, Sprite, and
+Text use `x: float` and `y: float`; Line uses `x1/y1/x2/y2: float`. Dimensions,
+radius, border width, line thickness, and font size remain `int`. GUI widget
+coordinates are still `int` and are not affected by this rule.
+
+For a local point at offset `(radius, 0)` from the origin, Canvas coordinates
+follow the same clockwise/Y-down convention as the renderer:
+
+```idyllium
+float radians = math.to_radians(angle);
+point.x = center_x + radius * math.cos(radians);
+point.y = center_y + radius * math.sin(radians);
+```
+
+Do not negate `sin`, shift the angle, or convert the result to `int`.
 
 `drawable.Rectangle`:
 
 ```idyllium
-x, y, width, height
-rotation: float
+x: float
+y: float
+width: int
+height: int
 fill_color: colors.Color
 border_width: int
 border_color: colors.Color
-move(dx, dy)
-rotate(angle)
 ```
 
 `drawable.Circle`:
 
 ```idyllium
-x, y, radius
-rotation: float
+x: float
+y: float
+radius: int
 fill_color: colors.Color
 border_width: int
 border_color: colors.Color
-move(dx, dy)
-rotate(angle)
 ```
+
+Circle local bounds are `(0, 0)..(2 * radius, 2 * radius)`, so with the default
+origin its `x/y` denotes the top-left corner of that square. To make `x/y` the
+circle center, call `set_origin(radius, radius)` after assigning the radius.
 
 `drawable.Line`:
 
 ```idyllium
-x1, y1, x2, y2
+x1, y1, x2, y2: float
 color: colors.Color
 thickness: int
 move(dx, dy)
 ```
 
-`drawable.Texture`:
+### Image Resources
+
+Import:
+
+```idyllium
+use image;
+```
+
+`image.Image` is the common base type accepted by GUI and Canvas consumers.
+Programs normally instantiate one of its concrete descendants:
+
+```idyllium
+image.Static picture;
+image.Animation animation;
+```
+
+Common read-only properties:
+
+```idyllium
+src: string
+width: int
+height: int
+format: string
+has_alpha: bool
+is_loaded: bool
+```
+
+`format` is detected from file contents, not trusted from the extension.
+
+`image.Static`:
 
 ```idyllium
 load_from_file(path)
+scale(x, y) -> image.Static
+rotate(angle) -> image.Static
+tint(color) -> image.Static
+with_opacity(opacity) -> image.Static
+desaturate(amount = 1.0) -> image.Static
+crop(x, y, width, height) -> image.Static
+export_to_file(path)
 ```
+
+Transformations return a new image and do not mutate the source. Scale factors
+may be positive or negative but not zero. Negative X mirrors horizontally;
+negative Y mirrors vertically. Rotation angles must be divisible by 90.
+Opacity and desaturation use `0.0..1.0`. A crop rectangle must fit fully inside
+the source.
+
+`image.Animation`:
+
+```idyllium
+frame_count: int
+frame_duration: float
+has_uniform_frame_duration: bool
+load_from_file(path)
+get_frame(index) -> image.Static
+get_frame_duration(index) -> float
+create_from_frames(frames, frame_duration)
+export_to_file(path)
+```
+
+GIF and APNG files may contain different delays per frame. Use
+`get_frame_duration(index)` for arbitrary imported animations.
+`frame_duration` is exact when `has_uniform_frame_duration` is true. Animations
+created with `create_from_frames()` always have uniform timing, so their total
+duration is `frame_count * frame_duration`.
+
+Example shared by GUI and Canvas:
+
+```idyllium
+use drawable;
+use gui;
+use image;
+
+image.Static cat;
+cat.load_from_file("cat.png");
+
+gui.ImageBox preview;
+preview.set_image(cat);
+preview.resize_mode = "fit";
+
+drawable.Sprite hero;
+hero.set_image(cat);
+```
+
+After `load_from_file()` returns, the resource is ready for both consumers.
+Never generate `time.sleep()` calls or repeated drawing merely to wait for an
+image to decode. GUI Preview redraws itself when its browser-side image becomes
+available.
+
+Do not generate the removed APIs `gui.Image` or `drawable.Texture`.
 
 `drawable.Sprite`:
 
 ```idyllium
-texture: drawable.Texture
 x, y
+set_image(image: image.Image)
 set_scale(x, y)
-move(dx, dy)
 ```
 
-`drawable.Font`:
+Sprite collision geometry is the transformed rectangle of the whole image;
+transparent pixels are not excluded. Geometry methods report a readable
+runtime error before an image is loaded.
+
+`fonts.Font` is the canonical reusable font resource:
 
 ```idyllium
+src: string       // read-only
+format: string    // read-only: "ttf", "otf", "woff", or "woff2"
+is_loaded: bool   // read-only
 load_from_file(path)
 ```
+
+The runtime detects the format from file contents rather than its extension.
+The same loaded object can be assigned to a GUI widget and to
+`drawable.Text`. Font resources are declared only as `fonts.Font`.
 
 `drawable.Text`:
 
 ```idyllium
-font: drawable.Font
+font: fonts.Font
 text: string
-x, y
+x, y: float
 font_size: int
 text_color: colors.Color
-move(dx, dy)
+```
+
+Text rendering and collision geometry support origin and rotation. Before
+calling `Text.contains()` or `Text.intersects()`, a custom font is optional:
+without one, Idyllium uses its bundled Source Code Pro. User-loaded TTF, OTF,
+WOFF and WOFF2 files are all supported. The runtime uses exact advance metrics
+and the single-line layout rectangle, not individual glyph outlines. Missing
+glyphs and multiline strings produce readable runtime errors instead of
+guessed bounds.
+
+```idyllium
+fonts.Font heading_font;
+heading_font.load_from_file("Lobster-Regular.ttf");
+
+drawable.Text heading;
+heading.font = heading_font;
+heading.text = "New game";
+heading.font_size = 48;
+
+bool hovered = heading.contains(mouse_x, mouse_y);
+bool touched = heading.intersects(cursor_circle);
 ```
 
 Example:
@@ -1406,6 +1668,7 @@ void function init(gui.Canvas canvas) {
     ball.x = 120;
     ball.y = 80;
     ball.radius = 30;
+    ball.set_origin(30, 30);
     ball.fill_color = colors.RGB(255, 210, 80);
 
     canvas.clear();
@@ -1558,7 +1821,149 @@ main() {
 }
 ```
 
-## 28. Errors
+## 28. SQLite
+
+Import:
+
+```idyllium
+use sqlite;
+```
+
+`sqlite.open(path)` opens an existing SQLite file or creates a new one. Relative
+paths are resolved from the running `.idyl` file. The same API works in CLI,
+VSIX, and Web IDE; Web IDE stores the binary `.db` file in the virtual project.
+
+Complete example:
+
+```idyllium
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("players.db");
+    db.execute(
+        "CREATE TABLE IF NOT EXISTS players (" +
+        "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+        "name TEXT NOT NULL, level INTEGER NOT NULL)"
+    );
+
+    sqlite.Statement insert = db.prepare(
+        "INSERT INTO players (name, level) VALUES (:name, :level)"
+    );
+    insert.bind("name", "Mira");
+    insert.bind("level", 7);
+    insert.execute();
+    insert.close();
+
+    sqlite.Result rows = db.execute(
+        "SELECT name, level FROM players ORDER BY id"
+    );
+    while (rows.next()) {
+        console.writeln(
+            rows.get_string("name"), ": ", rows.get_int("level")
+        );
+    }
+
+    rows.close();
+    db.close();
+}
+```
+
+`sqlite.Database` read-only properties:
+
+```idyllium
+path
+is_open
+in_transaction
+```
+
+Methods:
+
+```idyllium
+execute(sql)              // exactly one SQL statement -> sqlite.Result
+prepare(sql)              // -> sqlite.Statement
+exec_script(sql)          // multiple statements, returned rows discarded
+begin_transaction()
+commit()
+rollback()
+close()
+```
+
+Do not concatenate user input into SQL. Use native SQLite parameters `:name`.
+The bind method receives the name without the colon:
+
+```idyllium
+stmt.bind("name", value)       // usual form: infer the SQLite storage class
+stmt.bind_int("name", value)
+stmt.bind_int64("name", value)
+stmt.bind_float("name", value)
+stmt.bind_string("name", value)
+stmt.bind_bool("name", value)
+stmt.bind_null("name")
+stmt.execute()
+stmt.clear_bindings()
+stmt.close()
+```
+
+Prefer `bind()` for ordinary `int`, `float`, `string`, `char`, `bool`, `null`,
+`types` integers, and `sqlite.Value`. Typed methods remain available when the
+exact SQLite storage class matters. At runtime `2` and `2.0` are the same
+Idyllium numeric value, so use `bind_float("name", 2.0)` when SQLite must store
+it as REAL rather than INTEGER.
+
+All declared parameters must be bound before `execute()`. Bindings remain after
+execution so a statement can be reused; call `clear_bindings()` before filling
+an independent new set. Forms `?`, `@name`, and `$name` are intentionally not
+supported by Idyllium's first SQLite API.
+
+`sqlite.Result` read-only metadata:
+
+```idyllium
+is_open
+has_rows
+affected_rows
+last_insert_id       // sqlite.Value; null when nothing was inserted
+```
+
+Row and column methods:
+
+```idyllium
+next()
+get(column)          // sqlite.Value
+is_null(column)
+get_int(column)
+get_int64(column)
+get_float(column)
+get_string(column)
+get_bool(column)     // only SQLite INTEGER 0 or 1
+column_count()
+column_name(index)
+close()
+```
+
+A result starts before its first row. Call `next()` before any getter. Results
+are buffered snapshots and can outlive the statement that produced them.
+
+`sqlite.Value` is nullable and has:
+
+```idyllium
+is_null()
+is_int()
+is_float()
+is_string()
+to_int()
+to_int64()
+to_float()
+to_string()
+to_bool()
+```
+
+SQLite INTEGER values are read exactly. Use `get_int64()` / `to_int64()` for
+values outside the safe ordinary `int` range. BLOB values do not yet have a
+dedicated Idyllium type. Nested transactions and savepoints are not in the
+first API.
+
+## 29. Errors
 
 Prefer examples that produce clear, precise errors. Good error style:
 
@@ -1573,7 +1978,7 @@ When generating teaching materials, include both:
 - correct code;
 - intentionally wrong code with expected error text.
 
-## 29. Do Not Generate These
+## 30. Do Not Generate These
 
 Do not generate:
 
@@ -1597,7 +2002,7 @@ Do not invent dictionaries/maps, async/await, lambdas with arrow syntax,
 interfaces, generics for user classes, exceptions, namespaces, package imports,
 or operator overloading unless the current project spec explicitly adds them.
 
-## 30. Good AI Behavior For Idyllium Tasks
+## 31. Good AI Behavior For Idyllium Tasks
 
 When asked to generate Idyllium code:
 
@@ -1615,7 +2020,7 @@ When asked to generate Idyllium code:
 10. If syntax is uncertain, say so and ask for the project spec instead of
     inventing syntax.
 
-## 31. Compact Program Templates
+## 32. Compact Program Templates
 
 Console:
 
@@ -1688,6 +2093,7 @@ void function init(gui.Canvas canvas) {
     circle.x = 100;
     circle.y = 80;
     circle.radius = 30;
+    circle.set_origin(30, 30);
     circle.fill_color = colors.BLUE;
     canvas.draw(circle);
 }
@@ -1722,4 +2128,3 @@ main() {
     console.writeln(root.to_pretty_json(4));
 }
 ```
-

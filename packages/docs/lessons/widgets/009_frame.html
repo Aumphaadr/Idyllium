@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 9: Виджет Frame — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <link rel="stylesheet" href="gui.css">
+  <script src="../components.js" defer></script>
+  <style>
+    .interactive-demo {
+      background: rgba(137, 180, 250, 0.05);
+      border-radius: 12px;
+      padding: 1em;
+      margin: 1.5em 0;
+    }
+    .interactive-demo .coord-note {
+      margin-top: 1em;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Графические виджеты</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Виджеты • Урок 9</div>
+      <h1>Виджет Frame</h1>
+      <p class="docs-subtitle">Контейнер для группировки других виджетов</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Что такое Frame?</h2>
+      <p><code>gui.Frame</code> — это виджет-контейнер, который может содержать внутри себя другие виджеты. Он визуально выделяет область на окне (рамкой и заголовком) и позволяет группировать логически связанные элементы управления.</p>
+      <p>Где он встречается:</p>
+      <ul>
+        <li>⚙️ Панель настроек — группа «Параметры отображения»</li>
+        <li>🎮 Интерфейс игры — панель «Статистика персонажа»</li>
+        <li>📋 Форма регистрации — группа «Личные данные»</li>
+        <li>🎨 Графический редактор — панель «Инструменты рисования»</li>
+      </ul>
+
+      <p>Вот простейший Frame с рамкой и заголовком:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 150;
+    win.title = "Окно с рамкой";
+
+    gui.Frame frame;
+    frame.x = 20;
+    frame.y = 20;
+    frame.width = 260;
+    frame.height = 100;
+    frame.title = "Настройки";
+
+    win.add_child(frame);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 150px; position: relative;">
+            <fieldset class="idyl-frame" style="position: absolute; left: 20px; top: 20px; width: 260px; height: 100px;">
+              <legend class="idyl-frame-title">Настройки</legend>
+              <div class="idyl-frame-content" style="height: 100%;"></div>
+            </fieldset>
+          </div>
+        </div>
+        <div class="coord-note">
+          🖼️ Рамка с заголовком. Пока пустая — внутри нет виджетов.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Frame как контейнер</h2>
+      <p>Главная особенность <code>Frame</code> — он может содержать другие виджеты. Добавление происходит через метод <code>add_child()</code>, как и в случае с окном:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 200;
+    win.title = "Настройки пользователя";
+
+    gui.Frame frame;
+    frame.x = 20;
+    frame.y = 20;
+    frame.width = 350;
+    frame.height = 220;
+    frame.title = "Личные данные";
+
+    gui.Label name_label;
+    name_label.x = 15;
+    name_label.y = 30;
+    name_label.text = "Имя:";
+
+    gui.LineEdit name_input;
+    name_input.x = 15;
+    name_input.y = 55;
+    name_input.width = 280;
+
+    gui.Label city_label;
+    city_label.x = 15;
+    city_label.y = 90;
+    city_label.text = "Город:";
+
+    gui.LineEdit city_input;
+    city_input.x = 15;
+    city_input.y = 115;
+    city_input.width = 280;
+
+    // Добавляем виджеты в рамку, а не в окно
+    frame.add_child(name_label);
+    frame.add_child(name_input);
+    frame.add_child(city_label);
+    frame.add_child(city_input);
+
+    // Рамку добавляем в окно
+    win.add_child(frame);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 200px; position: relative;">
+            <fieldset class="idyl-frame" style="position: absolute; left: 20px; top: 20px; width: 350px; height: 220px;">
+              <legend class="idyl-frame-title">Личные данные</legend>
+              <div class="idyl-frame-content" style="position: relative; height: 100%;">
+                <div style="position: absolute; left: 15px; top: 30px; color: #cdd6f4;">Имя:</div>
+                <div style="position: absolute; left: 15px; top: 55px;">
+                  <input type="text" class="idyl-lineedit" style="width: 280px;">
+                </div>
+                <div style="position: absolute; left: 15px; top: 90px; color: #cdd6f4;">Город:</div>
+                <div style="position: absolute; left: 15px; top: 115px;">
+                  <input type="text" class="idyl-lineedit" style="width: 280px;">
+                </div>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+        <div class="coord-note">
+          📦 Виджеты внутри рамки. Координаты считаются <strong>относительно рамки</strong>, а не окна.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Вложенность контейнеров</h2>
+      <p>Frame можно вкладывать друг в друга, создавая иерархию контейнеров:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 400;
+    win.height = 300;
+    win.title = "Вложенные рамки";
+
+    gui.Frame outer;
+    outer.x = 20;
+    outer.y = 20;
+    outer.width = 360;
+    outer.height = 250;
+    outer.title = "Основная рамка";
+
+    gui.Frame inner1;
+    inner1.x = 15;
+    inner1.y = 30;
+    inner1.width = 150;
+    inner1.height = 100;
+    inner1.title = "Блок 1";
+
+    gui.Frame inner2;
+    inner2.x = 180;
+    inner2.y = 30;
+    inner2.width = 150;
+    inner2.height = 100;
+    inner2.title = "Блок 2";
+
+    outer.add_child(inner1);
+    outer.add_child(inner2);
+    win.add_child(outer);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 280px; position: relative;">
+            <fieldset class="idyl-frame" style="position: absolute; left: 20px; top: 20px; width: 360px; height: 260px;">
+              <legend class="idyl-frame-title">Основная рамка</legend>
+              <div class="idyl-frame-content" style="position: relative; height: 100%;">
+                <fieldset class="idyl-frame" style="position: absolute; left: 15px; top: 30px; width: 150px; height: 100px;">
+                  <legend class="idyl-frame-title">Блок 1</legend>
+                  <div class="idyl-frame-content"></div>
+                </fieldset>
+                <fieldset class="idyl-frame" style="position: absolute; left: 180px; top: 30px; width: 150px; height: 100px;">
+                  <legend class="idyl-frame-title">Блок 2</legend>
+                  <div class="idyl-frame-content"></div>
+                </fieldset>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+        <div class="coord-note">
+          🪆 Рамка внутри рамки. Координаты внутренней рамки — относительно внешней.
+        </div>
+      </div>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="008_radiobutton.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 8: Виджет RadioButton</strong>
+      </a>
+      <a class="docs-nav-btn next" href="010_combobox.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 10: Виджет ComboBox</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

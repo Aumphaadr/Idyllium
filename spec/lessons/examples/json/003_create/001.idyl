@@ -6,7 +6,7 @@ main() {
 
     root.add("name", json.Value("Mira"));
     root.add("age", json.Value(12));
-    root.add("middle_name", json.NULL);
+    root.add("middle_name", null);
 
     json.Array scores;
     scores.add(json.Value(5));

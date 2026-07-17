@@ -19,10 +19,11 @@ function main(): void {
 
   assertCompiles(path.join(colorLessonRoot, '001.idyl'));
   assertCompiles(path.join(colorLessonRoot, '002.idyl'));
-  assertCompiles(path.join(colorLessonRoot, '003_legacy.idyl'));
   assertCompiles(path.join(colorLessonRoot, '004_progressbar.idyl'));
+  assertCompiles(path.join(colorLessonRoot, '005_label_text_color.idyl'));
+  assertCompiles(path.join(colorLessonRoot, '006_label_color_inheritance.idyl'));
 
-  console.log('widget colors draft spec: 4 examples compile');
+  console.log('widget colors draft spec: 5 examples compile');
 }
 
 main();

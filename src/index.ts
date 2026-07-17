@@ -28,6 +28,29 @@ export {
   MemoryRuntimeFile,
   ConsoleIO,
 } from './runtime/runtime';
+export { createNodeImageService } from './runtime/node-image-service';
+export {
+  createRuntimeFontMetricsService,
+  RuntimeFontMetricsService,
+  RuntimeTextMetrics,
+} from './runtime/font-metrics-service';
+export {
+  RuntimeImageFormat,
+  RuntimeImageService,
+  RuntimeRasterImage,
+  RuntimeDecodedImage,
+  RuntimeDecodedAnimation,
+  RuntimeAnimationFrame,
+} from './runtime/image-service';
+export {
+  SqliteInspectableObjectKind,
+  SqliteColumnDescription,
+  SqliteObjectDescription,
+  SqliteDatabaseDescription,
+  SqliteObjectPreview,
+  inspectSqliteDatabase,
+  previewSqliteObject,
+} from './runtime/sqlite-inspector';
 
 export {
   StandardLibraryRegistry,
@@ -57,6 +80,11 @@ export {
 export { Lexer } from './core/lexer';
 export { Parser } from './core/parser';
 export { SemanticAnalyzer } from './core/semantics';
+export {
+  IdylliumSemanticToken,
+  IdylliumSemanticTokenKind,
+  IdylliumSemanticTokenModifier,
+} from './core/semantics';
 export { JavaScriptGenerator } from './core/codegen';
 export { Diagnostic, formatDiagnostics } from './core/diagnostics';
 export { Token, TokenKind } from './core/tokens';
@@ -64,6 +92,8 @@ export { Program } from './core/ast';
 export {
   runIdylliumInBrowser,
   prepareIdylliumBrowserProgram,
+  inspectSqliteDatabaseInBrowser,
+  previewSqliteObjectInBrowser,
   BrowserIdylliumFile,
   BrowserPreparedProgram,
   BrowserRunOptions,

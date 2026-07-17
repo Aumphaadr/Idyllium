@@ -1,0 +1,24 @@
+use console;
+use types;
+
+main() {
+    types.uint8 first = types.from_bin("00101011", "uint8");
+    types.uint8 first_result = first.shift_right(3);
+
+    types.int8 second = types.from_bin("11000101", "int8");
+    types.int8 second_result = second.shift_left(3);
+
+    types.uint8 erased = first.shift_left(12);
+    types.uint8 negative_left = first.shift_left(-3);
+    types.uint8 negative_right = first.shift_right(-3);
+
+    types.float32 number = 4.5;
+    types.float32 strange_number = number.shift_left(3);
+
+    console.writeln(first_result.to_bin());
+    console.writeln(second_result.to_bin());
+    console.writeln(erased.to_bin());
+    console.writeln(negative_left.to_bin());
+    console.writeln(negative_right.to_bin());
+    console.writeln(strange_number.to_bin());
+}

@@ -1,0 +1,41 @@
+use colors;
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 540;
+    win.height = 300;
+    win.title = "Наследование цвета текста";
+    win.background_color = colors.RGB(24, 28, 38);
+    win.text_color = colors.RGB(235, 239, 248);
+
+    gui.Label window_label;
+    window_label.x = 32;
+    window_label.y = 32;
+    window_label.text = "Наследую светлый цвет от окна";
+
+    gui.Frame frame;
+    frame.x = 32;
+    frame.y = 80;
+    frame.width = 450;
+    frame.height = 150;
+    frame.text_color = colors.RGB(126, 231, 135);
+    frame.border_color = colors.RGB(71, 102, 78);
+
+    gui.Label inherited_label;
+    inherited_label.x = 20;
+    inherited_label.y = 30;
+    inherited_label.text = "Наследую зелёный цвет от Frame";
+
+    gui.Label own_label;
+    own_label.x = 20;
+    own_label.y = 80;
+    own_label.text = "У меня собственный жёлтый цвет";
+    own_label.text_color = colors.RGB(255, 218, 108);
+
+    frame.add_child(inherited_label);
+    frame.add_child(own_label);
+    win.add_child(window_label);
+    win.add_child(frame);
+    win.show();
+}

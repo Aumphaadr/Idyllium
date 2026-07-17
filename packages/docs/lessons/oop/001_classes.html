@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 1: Создание класса — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Объектно-ориентированное программирование</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">ООП • Урок 1</div>
+      <h1>Создание класса</h1>
+      <p class="docs-subtitle">Как объявить свой тип данных и создавать объекты</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Синтаксис класса</h2>
+      <p>Класс объявляется с помощью ключевого слова <code>class</code>, затем идёт имя класса (с большой буквы — это общепринятое соглашение), а в фигурных скобках перечисляются <strong>свойства (поля)</strong> класса.</p>
+
+      <idyl-code-block><script type="text/plain">
+class Car {
+    string model;
+    string color;
+    int year;
+}
+</script></idyl-code-block>
+
+      <p>В этом примере мы создали класс <code>Car</code> (автомобиль) с тремя свойствами:</p>
+      <ul>
+        <li><code>model</code> — марка автомобиля (строка)</li>
+        <li><code>color</code> — цвет автомобиля (строка)</li>
+        <li><code>year</code> — год выпуска (целое число)</li>
+      </ul>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Создание объектов</h2>
+      <p>Когда класс объявлен, мы можем создавать его <strong>объекты</strong> (экземпляры). Синтаксис такой же, как у обычных переменных:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+class Car {
+    string model;
+    string color;
+    int year;
+}
+
+main() {
+    Car car1;
+    car1.model = "Toyota";
+    car1.color = "red";
+    car1.year = 2020;
+
+    Car car2;
+    car2.model = "BMW";
+    car2.color = "black";
+    car2.year = 2022;
+
+    Car car3;
+    car3.model = "Lada";
+    car3.color = "white";
+    car3.year = 2015;
+
+    console.writeln(car1.model, " ", car1.color, " ", car1.year);
+    console.writeln(car2.model, " ", car2.color, " ", car2.year);
+    console.writeln(car3.model, " ", car3.color, " ", car3.year);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Toyota red 2020
+BMW black 2022
+Lada white 2015</idyl-output-block>
+
+      <p>Обратите внимание: класс описан <strong>один раз</strong>, а объектов на его основе создано <strong>три</strong>. Каждый объект хранит свои собственные значения свойств.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Класс и объект</h2>
+      <p>Разберём два ключевых термина:</p>
+      <ul>
+        <li><strong>Класс</strong> — это шаблон, по которому создаются объекты.</li>
+        <li><strong>Объект</strong> — это экземпляр класса (конкретный представитель).</li>
+      </ul>
+
+      <p>Проведём параллель с уже известными вам типами данных и переменными:</p>
+
+      <idyl-code-block><script type="text/plain">
+int points;        // int — тип данных, points — имя переменной
+Car ferrari;       // Car — класс, ferrari — имя объекта
+</script></idyl-code-block>
+
+      <p>Из этого следует упрощённое определение:</p>
+      <ul>
+        <li><strong>Класс</strong> — это самодельный тип данных.</li>
+        <li><strong>Объект</strong> — это переменная самодельного типа.</li>
+      </ul>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Чем объект отличается от обычной переменной?</h2>
+      <p>Обычная переменная хранит <strong>одно значение</strong> определённого типа. Объект же может хранить <strong>много значений разных типов</strong> одновременно — это все его свойства (поля).</p>
+
+      <idyl-code-block><script type="text/plain">
+int points = 200;              // одно значение
+
+Car my_car;                    // много значений
+my_car.model = "Chrysler";     // строка
+my_car.color = "black";        // строка
+my_car.year = 1994;            // число
+</script></idyl-code-block>
+
+      <p>Объект — это как коробка с несколькими отделениями, каждое из которых хранит свой тип данных. А обычная переменная — это коробка с одним отделением.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="000_intro.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 0: Введение в ООП</strong>
+      </a>
+      <a class="docs-nav-btn next" href="002_fields_methods.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 2: Свойства и методы</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

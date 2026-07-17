@@ -1,0 +1,109 @@
+<div class="docs-section">
+  <h2>Опасная половина перевода</h2>
+  <p>
+    Лиам отправляет Мире 75 монет. Программа должна уменьшить баланс Лиама и
+    увеличить баланс Миры. Если между этими командами произойдёт ошибка, нельзя
+    оставлять только первую половину перевода: монеты исчезнут.
+  </p>
+  <p>
+    <strong>Транзакция</strong> объединяет несколько команд в одну неделимую
+    операцию. В конце мы либо подтверждаем все изменения, либо отменяем все.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Начинаем и подтверждаем</h2>
+  <table>
+    <caption>Баланс до перевода</caption>
+    <thead><tr><th>name</th><th>coins</th></tr></thead>
+    <tbody>
+      <tr><td>Liam</td><td>300</td></tr>
+      <tr><td>Mira</td><td>120</td></tr>
+    </tbody>
+  </table>
+  <idyl-code-block><script type="text/plain">
+db.begin_transaction();
+
+db.execute(
+    "UPDATE players SET coins = coins - 75 WHERE name = 'Liam'"
+);
+db.execute(
+    "UPDATE players SET coins = coins + 75 WHERE name = 'Mira'"
+);
+
+db.commit();
+</script></idyl-code-block>
+  <table>
+    <caption>Баланс после commit()</caption>
+    <thead><tr><th>name</th><th>coins</th></tr></thead>
+    <tbody>
+      <tr><td>Liam</td><td>225</td></tr>
+      <tr><td>Mira</td><td>195</td></tr>
+    </tbody>
+  </table>
+  <p>
+    <code>begin_transaction()</code> начинает транзакцию, а
+    <code>commit()</code> подтверждает накопленные изменения. Пока транзакция
+    активна, свойство <code>db.in_transaction</code> равно <code>true</code>.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Отменяем неудачную покупку</h2>
+  <p>
+    Теперь игрок пытается купить пять зелий, хотя на складе осталось только два.
+    Сначала временно уменьшим остаток, затем проверим результат.
+  </p>
+  <idyl-code-block><script type="text/plain">
+db.begin_transaction();
+
+db.execute(
+    "UPDATE inventory SET count = count - 5 " +
+    "WHERE item = 'healing potion'"
+);
+
+sqlite.Result check = db.execute(
+    "SELECT count FROM inventory WHERE item = 'healing potion'"
+);
+check.next();
+int remaining = check.get_int("count");
+check.close();
+
+if (remaining < 0) {
+    db.rollback();
+}
+else {
+    db.commit();
+}
+</script></idyl-code-block>
+  <p>
+    Метод <code>rollback()</code> отменяет все изменения после
+    <code>begin_transaction()</code>. Остаток снова станет равен двум, будто
+    неудачной покупки никогда не было.
+  </p>
+  <table>
+    <caption>Результат неудачной покупки</caption>
+    <thead><tr><th>Момент</th><th>item</th><th>count</th></tr></thead>
+    <tbody>
+      <tr><td>До транзакции</td><td>healing potion</td><td>2</td></tr>
+      <tr><td>Внутри транзакции</td><td>healing potion</td><td>-3</td></tr>
+      <tr><td>После rollback()</td><td>healing potion</td><td>2</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="docs-section">
+  <h2>Закрытие тоже защищает данные</h2>
+  <p>
+    Если соединение закрывается с незавершённой транзакцией, Idyllium выполняет
+    rollback автоматически. Это последняя страховка при runtime error, но не
+    повод забывать явные <code>commit()</code> и <code>rollback()</code>:
+    решение программы должно быть видно в коде.
+  </p>
+  <p>
+    Вложенные транзакции не поддерживаются. Нельзя вызвать
+    <code>begin_transaction()</code> второй раз до завершения первой, а
+    <code>commit()</code> и <code>rollback()</code> без активной транзакции
+    являются ошибками.
+  </p>
+</div>

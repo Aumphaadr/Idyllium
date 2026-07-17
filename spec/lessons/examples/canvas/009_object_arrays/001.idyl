@@ -14,10 +14,11 @@ void function redraw(gui.Canvas canvas) {
 
 void function init(gui.Canvas canvas) {
     for (int i = 0; i < 5; i += 1) {
-        blocks[i].x = 70;
-        blocks[i].y = 30 + i * 38;
+        blocks[i].x = 160;
+        blocks[i].y = 42 + i * 38;
         blocks[i].width = 180;
         blocks[i].height = 24;
+        blocks[i].set_origin(90, 12);
         blocks[i].fill_color = colors.RGB(34, 145, 188);
     }
 

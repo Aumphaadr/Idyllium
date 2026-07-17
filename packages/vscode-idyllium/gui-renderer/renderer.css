@@ -1,3 +1,11 @@
+@font-face {
+  font-family: IdylliumCanvasDefault;
+  src: url("fonts/SourceCodePro-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
 :root {
   color-scheme: light dark;
   --panel: var(--vscode-editor-background, #f5f7fb);

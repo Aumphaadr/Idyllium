@@ -13,6 +13,7 @@ void function init(gui.Canvas canvas) {
     ball.x = 190;
     ball.y = 115;
     ball.radius = 25;
+    ball.set_origin(25, 25);
     ball.fill_color = colors.RGB(255, 210, 80);
     redraw(canvas);
 }

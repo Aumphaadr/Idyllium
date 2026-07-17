@@ -11,6 +11,7 @@
   let draggingControlId = null;
   const audioEntries = new Map();
   let fontRefreshScheduled = false;
+  let imageRefreshScheduled = false;
   const fontCache = new Map();
   const imageCache = new Map();
   const modalInputValues = new Map();
@@ -54,6 +55,7 @@
   });
 
   renderAll();
+  host.postMessage({ type: 'rendererReady' });
 
   function normalizeState(value) {
     return {
@@ -116,6 +118,7 @@
     root.style.background = displayedWidgetColor(win.properties, 'background_color', {}) || '#ffffff';
     const textColor = displayedWidgetColor(win.properties, 'text_color', {});
     if (textColor) root.style.color = textColor;
+    applyWidgetFont(root, win.properties, {});
 
     const title = document.createElement('div');
     title.className = 'titlebar';
@@ -242,27 +245,28 @@
     if (widget.type === 'gui.ComboBox') return renderComboBox(widget, inheritedColors);
     if (widget.type === 'gui.ProgressBar') return renderProgressBar(widget, inheritedColors);
     if (widget.type === 'gui.Frame') return renderFrame(widget, inheritedColors);
-    if (widget.type === 'gui.Image') return renderImage(widget, inheritedColors);
+    if (widget.type === 'gui.ImageBox') return renderImageBox(widget, inheritedColors);
     if (widget.type === 'gui.Label') return renderLabel(widget, inheritedColors);
 
     return renderPlaceholder(widget, inheritedColors);
   }
 
-  function renderImage(widget, inheritedColors) {
+  function renderImageBox(widget, inheritedColors) {
     const props = widget.properties || {};
     const el = baseWidget('div', widget, 'image-widget', inheritedColors);
-    const uri = props.webview_uri || props.resource_uri;
+    const resource = props.image && props.image.properties ? props.image.properties : null;
+    const uri = resource && (resource.webview_uri || resource.resource_uri);
 
-    if (props.is_loaded === true && uri) {
+    if (resource && resource.is_loaded === true && uri) {
       const image = document.createElement('img');
-      image.alt = stringValue(props.path, 'image');
+      image.alt = stringValue(resource.src, 'image');
       image.src = uri;
       image.draggable = false;
       applyImageResizeMode(image, stringValue(props.resize_mode, 'fit'));
       el.appendChild(image);
     } else {
       const placeholder = document.createElement('span');
-      placeholder.textContent = stringValue(props.path, 'image');
+      placeholder.textContent = resource ? stringValue(resource.src, 'image') : '';
       el.classList.add('image-placeholder');
       el.appendChild(placeholder);
     }
@@ -471,10 +475,7 @@
     const fill = document.createElement('div');
     fill.className = 'progressbar-fill';
     fill.style.width = percent + '%';
-    const fillColor = isExplicitProperty(widget.properties, 'foreground_color')
-      ? widget.properties.foreground_color
-      : widget.properties.fill_color;
-    fill.style.backgroundColor = color(fillColor, '#0066cc');
+    fill.style.backgroundColor = color(widget.properties.foreground_color, '#0066cc');
     el.appendChild(fill);
 
     const label = document.createElement('div');
@@ -511,6 +512,7 @@
     el.dataset.widgetId = String(widget.id);
     applyWidgetBox(el, widget.properties);
     applyWidgetColors(el, widget.properties, inheritedColors);
+    applyWidgetFont(el, widget.properties, inheritedColors);
     return el;
   }
 
@@ -522,7 +524,9 @@
     const height = positiveNumber(widget.properties.height, 150);
     canvas.width = width;
     canvas.height = height;
-    drawCanvasCommands(canvas, widget.canvas.commands || []);
+    const commands = widget.canvas.commands || [];
+    drawCanvasCommands(canvas, commands);
+    scheduleAnimatedCanvas(canvas, commands);
     installCanvasEventHandlers(canvas, widget.canvas.id);
     return canvas;
   }
@@ -536,7 +540,9 @@
     canvas.height = height;
     canvas.style.width = width + 'px';
     canvas.style.height = height + 'px';
-    drawCanvasCommands(canvas, canvasSnapshot.commands || []);
+    const commands = canvasSnapshot.commands || [];
+    drawCanvasCommands(canvas, commands);
+    scheduleAnimatedCanvas(canvas, commands);
     installCanvasEventHandlers(canvas, canvasSnapshot.id);
     return canvas;
   }
@@ -566,6 +572,22 @@
       postGuiEvent(canvasId, 'mouse_scroll', payload);
       event.preventDefault();
     }, { passive: false });
+  }
+
+  function scheduleAnimatedCanvas(canvas, commands) {
+    const hasAnimation = commands.some((command) => {
+      const object = command && command.object;
+      const resource = object && object.properties && object.properties.image;
+      return resource && resource.type === 'image.Animation';
+    });
+    if (!hasAnimation || typeof requestAnimationFrame !== 'function') return;
+
+    const redraw = () => {
+      if (!canvas.isConnected) return;
+      drawCanvasCommands(canvas, commands);
+      requestAnimationFrame(redraw);
+    };
+    requestAnimationFrame(redraw);
   }
 
   function ensureActiveCanvas() {
@@ -928,70 +950,79 @@
   function drawObject(ctx, object) {
     const props = object.properties || {};
     if (object.type === 'drawable.Rectangle') {
-      const x = numberValue(props.x);
-      const y = numberValue(props.y);
       const width = positiveNumber(props.width);
       const height = positiveNumber(props.height);
-      const rotation = numberValue(props.rotation, 0);
-      if (rotation !== 0) {
-        ctx.save();
-        ctx.translate(x + width / 2, y + height / 2);
-        ctx.rotate((rotation * Math.PI) / 180);
+      drawWithTransform(ctx, props, 1, 1, (originX, originY) => {
         ctx.fillStyle = color(props.fill_color, 'rgba(0, 0, 0, 0)');
-        ctx.fillRect(-width / 2, -height / 2, width, height);
-        drawBorderRectAt(ctx, props, -width / 2, -height / 2, width, height);
-        ctx.restore();
-        return;
-      }
-      ctx.fillStyle = color(props.fill_color, 'rgba(0, 0, 0, 0)');
-      ctx.fillRect(x, y, width, height);
-      drawBorderRect(ctx, props);
+        ctx.fillRect(-originX, -originY, width, height);
+        drawBorderRectAt(ctx, props, -originX, -originY, width, height);
+      });
     }
     if (object.type === 'drawable.Circle') {
-      ctx.beginPath();
-      ctx.arc(numberValue(props.x), numberValue(props.y), positiveNumber(props.radius), 0, Math.PI * 2);
-      ctx.fillStyle = color(props.fill_color, 'rgba(0, 0, 0, 0)');
-      ctx.fill();
-      drawBorderCircle(ctx, props);
+      const radius = positiveNumber(props.radius);
+      drawWithTransform(ctx, props, 1, 1, (originX, originY) => {
+        ctx.beginPath();
+        ctx.arc(radius - originX, radius - originY, radius, 0, Math.PI * 2);
+        ctx.fillStyle = color(props.fill_color, 'rgba(0, 0, 0, 0)');
+        ctx.fill();
+        drawBorderCircleAt(ctx, props, radius - originX, radius - originY, radius);
+      });
     }
     if (object.type === 'drawable.Line') {
-      const thickness = positiveNumber(props.thickness, 1);
+      const thickness = numberValue(props.thickness, 1);
       if (thickness <= 0) return;
       ctx.beginPath();
       ctx.moveTo(numberValue(props.x1), numberValue(props.y1));
       ctx.lineTo(numberValue(props.x2), numberValue(props.y2));
       ctx.lineWidth = thickness;
+      ctx.lineCap = 'round';
       ctx.strokeStyle = color(props.color, '#ffffff');
       ctx.stroke();
     }
     if (object.type === 'drawable.Text') {
-      ctx.fillStyle = color(props.text_color, '#ffffff');
-      ctx.font = canvasTextFont(props);
-      ctx.textBaseline = 'top';
-      ctx.fillText(stringValue(props.text, ''), numberValue(props.x), numberValue(props.y));
+      drawWithTransform(ctx, props, 1, 1, (originX, originY) => {
+        ctx.fillStyle = color(props.text_color, '#ffffff');
+        ctx.font = canvasTextFont(props);
+        if ('fontKerning' in ctx) ctx.fontKerning = 'none';
+        ctx.textBaseline = 'top';
+        ctx.fillText(stringValue(props.text, ''), -originX, -originY);
+      });
     }
     if (object.type === 'drawable.Sprite') {
-      const x = numberValue(props.x);
-      const y = numberValue(props.y);
-      const texture = props.texture && props.texture.properties ? props.texture.properties : null;
-      const image = loadImage(texture && (texture.webview_uri || texture.resource_uri));
-      if (image && image.complete && image.naturalWidth > 0) {
-        const w = image.naturalWidth * numberValue(props.scale_x, 1);
-        const h = image.naturalHeight * numberValue(props.scale_y, 1);
-        ctx.drawImage(image, x, y, w, h);
-      } else {
-        const w = 64 * numberValue(props.scale_x, 1);
-        const h = 64 * numberValue(props.scale_y, 1);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
-        ctx.fillRect(x, y, w, h);
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
-        ctx.strokeRect(x, y, w, h);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
-        ctx.font = '12px sans-serif';
-        ctx.textBaseline = 'top';
-        ctx.fillText(texture && texture.path ? texture.path : 'sprite', x + 6, y + 6);
-      }
+      const resource = props.image && props.image.properties ? props.image.properties : null;
+      const image = loadImage(resource && (resource.webview_uri || resource.resource_uri));
+      drawWithTransform(
+        ctx,
+        props,
+        numberValue(props.scale_x, 1),
+        numberValue(props.scale_y, 1),
+        (originX, originY) => {
+          if (image && image.complete && image.naturalWidth > 0) {
+            ctx.drawImage(image, -originX, -originY, image.naturalWidth, image.naturalHeight);
+            return;
+          }
+          const width = positiveNumber(resource && resource.width, 64);
+          const height = positiveNumber(resource && resource.height, 64);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+          ctx.fillRect(-originX, -originY, width, height);
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+          ctx.strokeRect(-originX, -originY, width, height);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+          ctx.font = '12px sans-serif';
+          ctx.textBaseline = 'top';
+          ctx.fillText(resource && resource.src ? resource.src : 'sprite', -originX + 6, -originY + 6);
+        },
+      );
     }
+  }
+
+  function drawWithTransform(ctx, props, scaleX, scaleY, draw) {
+    ctx.save();
+    ctx.translate(numberValue(props.x), numberValue(props.y));
+    ctx.rotate((numberValue(props.rotation, 0) * Math.PI) / 180);
+    ctx.scale(scaleX, scaleY);
+    draw(numberValue(props.origin_x), numberValue(props.origin_y));
+    ctx.restore();
   }
 
   function loadImage(uri) {
@@ -1000,9 +1031,22 @@
     if (cached) return cached;
 
     const image = new Image();
+    image.addEventListener('load', scheduleImageRefresh, { once: true });
     image.src = uri;
     imageCache.set(uri, image);
     return image;
+  }
+
+  function scheduleImageRefresh() {
+    if (imageRefreshScheduled) return;
+    imageRefreshScheduled = true;
+    const schedule = typeof requestAnimationFrame === 'function'
+      ? requestAnimationFrame
+      : (callback) => setTimeout(callback, 0);
+    schedule(() => {
+      imageRefreshScheduled = false;
+      renderAll();
+    });
   }
 
   function canvasTextFont(props) {
@@ -1013,6 +1057,10 @@
   }
 
   function canvasFontFamily(font) {
+    if (font && font.is_builtin === true) {
+      ensureDefaultCanvasFont();
+      return 'IdylliumCanvasDefault';
+    }
     const uri = font && (font.webview_uri || font.resource_uri);
     if (!font || font.is_loaded !== true || !uri) return 'sans-serif';
 
@@ -1042,6 +1090,24 @@
     return family;
   }
 
+  function ensureDefaultCanvasFont() {
+    const key = '__idyllium_canvas_default__';
+    if (fontCache.has(key)) return;
+    const cached = { family: 'IdylliumCanvasDefault', status: 'loading' };
+    fontCache.set(key, cached);
+    if (!document.fonts || typeof document.fonts.load !== 'function') {
+      cached.status = 'unsupported';
+      return;
+    }
+    document.fonts.load('16px IdylliumCanvasDefault').then(() => {
+      cached.status = 'loaded';
+      scheduleFontRefresh();
+    }).catch(() => {
+      cached.status = 'error';
+      scheduleFontRefresh();
+    });
+  }
+
   function scheduleFontRefresh() {
     if (fontRefreshScheduled) return;
     fontRefreshScheduled = true;
@@ -1058,10 +1124,6 @@
     return String(value).replace(/\\/gu, '\\\\').replace(/"/gu, '\\"');
   }
 
-  function drawBorderRect(ctx, props) {
-    drawBorderRectAt(ctx, props, numberValue(props.x), numberValue(props.y), positiveNumber(props.width), positiveNumber(props.height));
-  }
-
   function drawBorderRectAt(ctx, props, x, y, widthValue, heightValue) {
     const width = positiveNumber(props.border_width, 0);
     if (width <= 0) return;
@@ -1070,13 +1132,13 @@
     ctx.strokeRect(x, y, widthValue, heightValue);
   }
 
-  function drawBorderCircle(ctx, props) {
+  function drawBorderCircleAt(ctx, props, x, y, radius) {
     const width = positiveNumber(props.border_width, 0);
     if (width <= 0) return;
     ctx.lineWidth = width;
     ctx.strokeStyle = color(props.border_color, 'rgba(0, 0, 0, 0)');
     ctx.beginPath();
-    ctx.arc(numberValue(props.x), numberValue(props.y), positiveNumber(props.radius), 0, Math.PI * 2);
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
     ctx.stroke();
   }
 
@@ -1121,7 +1183,25 @@
         delete next[name];
       }
     }
+
+    if (isExplicitProperty(props, 'font')) {
+      if (props.font && props.font.properties) {
+        next.font = props.font;
+      } else {
+        delete next.font;
+      }
+    }
     return next;
+  }
+
+  function applyWidgetFont(el, props, inheritedColors) {
+    const explicit = isExplicitProperty(props, 'font');
+    const resource = explicit ? props.font : inheritedColors.font;
+    if (!resource && !explicit) return;
+
+    const font = resource && resource.properties ? resource.properties : null;
+    const family = canvasFontFamily(font);
+    el.style.fontFamily = family === 'sans-serif' ? 'sans-serif' : family + ', sans-serif';
   }
 
   function displayedWidgetColor(props, name, inheritedColors) {

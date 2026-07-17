@@ -17,7 +17,7 @@ Initial preserved rules:
 - Colors are represented by the `colors.Color` value type.
 - `colors.RGB`, `colors.RGBA`, `colors.HEX`, and `colors.HSL` create `colors.Color` values.
 - GUI and future Canvas APIs should prefer explicit color properties such as `text_color`, `background_color`, and `border_color` over ambiguous `color`.
-- `gui.Label.color = "#FF0000";` remains a legacy-compatible shortcut, but new teaching material should prefer `text_color = colors.RED` or another `colors.Color`.
+- Color properties accept only `colors.Color`; a HEX string must be converted explicitly with `colors.HEX()`.
 - Project modules may contain top-level state and `void function ...` callbacks.
 - Canvas callback names should use `snake_case`, for example `on_key_pressed` and `on_update`.
 - Missing GUI/Canvas resources such as textures or fonts should become clear runtime errors.

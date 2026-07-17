@@ -1,0 +1,42 @@
+// Готовые значения автора программы можно писать прямо в SQL.
+// Пользовательский ввод так вставлять нельзя: для него нужен prepare().
+
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("hardcoded_queries.db");
+
+    db.execute("DROP TABLE IF EXISTS players");
+    db.execute(
+        "CREATE TABLE players (" +
+        "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+        "name TEXT NOT NULL, " +
+        "level INTEGER NOT NULL" +
+        ")"
+    );
+
+    db.execute("INSERT INTO players (name, level) VALUES ('Liam', 4)");
+    db.execute("INSERT INTO players (name, level) VALUES ('Mira', 7)");
+    sqlite.Result update_result = db.execute(
+        "UPDATE players SET level = 5 WHERE name = 'Liam'"
+    );
+    console.writeln("Updated rows: ", update_result.affected_rows);
+    update_result.close();
+
+    sqlite.Result rows = db.execute(
+        "SELECT name, level FROM players ORDER BY id"
+    );
+
+    while (rows.next()) {
+        console.writeln(rows.get_string("name"), ": level ", rows.get_int("level"));
+    }
+
+    rows.close();
+    db.close();
+}
+
+// Expected output:
+// Updated rows: 1
+// Liam: level 5
+// Mira: level 7

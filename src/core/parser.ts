@@ -76,6 +76,11 @@ export class Parser {
         continue;
       }
 
+      if (this.check(TokenKind.KwConst)) {
+        topLevelDeclarations.push(this.parseVariableDeclaration());
+        continue;
+      }
+
       if (this.checkTypeStart()) {
         const declaration = this.parseTopLevelDeclaration();
         if (declaration.kind === 'FunctionDeclaration' && declaration.name === 'main') {
@@ -116,6 +121,7 @@ export class Parser {
     return {
       kind: 'ImportDeclaration',
       moduleName: moduleToken.lexeme,
+      moduleNameRange: moduleToken.range,
       range: { start: useToken.range.start, end: this.previous().range.end },
     };
   }
@@ -130,6 +136,7 @@ export class Parser {
 
     return {
       kind: 'MainFunction',
+      nameRange: main.range,
       returnType: this.voidTypeName(main.range),
       parameters: [],
       body,
@@ -140,6 +147,7 @@ export class Parser {
   private mainFromFunctionDeclaration(declaration: FunctionDeclaration): MainFunction {
     return {
       kind: 'MainFunction',
+      nameRange: declaration.nameRange,
       returnType: declaration.returnType,
       parameters: declaration.parameters,
       body: declaration.body,
@@ -152,7 +160,7 @@ export class Parser {
     if (this.match(TokenKind.KwFunction)) {
       return this.finishFunctionDeclaration(declaredType);
     }
-    return this.finishVariableDeclaration(declaredType);
+    return this.finishVariableDeclaration(declaredType, false, declaredType.range.start);
   }
 
   private finishFunctionDeclaration(returnType: TypeName): FunctionDeclaration {
@@ -164,6 +172,7 @@ export class Parser {
       kind: 'FunctionDeclaration',
       returnType,
       name: name.lexeme,
+      nameRange: name.range,
       parameters,
       body,
       range: { start: returnType.range.start, end: body.range.end },
@@ -206,6 +215,10 @@ export class Parser {
   }
 
   private parseStatement(): Statement {
+    if (this.check(TokenKind.KwConst)) {
+      return this.parseVariableDeclaration();
+    }
+
     if (this.checkTypeStart()) {
       return this.parseVariableDeclaration();
     }
@@ -246,11 +259,20 @@ export class Parser {
   }
 
   private parseVariableDeclaration(): VariableDeclaration {
+    const constToken = this.match(TokenKind.KwConst) ? this.previous() : null;
     const declaredType = this.parseTypeName();
-    return this.finishVariableDeclaration(declaredType);
+    return this.finishVariableDeclaration(
+      declaredType,
+      constToken !== null,
+      constToken?.range.start ?? declaredType.range.start,
+    );
   }
 
-  private finishVariableDeclaration(declaredType: TypeName): VariableDeclaration {
+  private finishVariableDeclaration(
+    declaredType: TypeName,
+    isConst: boolean,
+    start: SourceRange['start'],
+  ): VariableDeclaration {
     const name = this.consume(TokenKind.Identifier, 'expected variable name');
     let initializer: Expression | null = null;
     let constructorArgs: CallArgument[] | null = null;
@@ -264,11 +286,13 @@ export class Parser {
     const semicolon = this.consume(TokenKind.Semicolon, "expected ';' after variable declaration");
     return {
       kind: 'VariableDeclaration',
+      isConst,
       declaredType,
       name: name.lexeme,
+      nameRange: name.range,
       initializer,
       constructorArgs,
-      range: { start: declaredType.range.start, end: semicolon.range.end },
+      range: { start, end: semicolon.range.end },
     };
   }
 
@@ -276,10 +300,12 @@ export class Parser {
     const classToken = this.consume(TokenKind.KwClass, "expected 'class'");
     const name = this.consume(TokenKind.Identifier, 'expected class name');
     let baseName: string | null = null;
+    let baseNameRange: SourceRange | null = null;
 
     if (this.match(TokenKind.KwExtends)) {
       const base = this.consume(TokenKind.Identifier, 'expected base class name after extends');
       baseName = base.lexeme;
+      baseNameRange = base.range;
     }
 
     const leftBrace = this.consume(TokenKind.LeftBrace, "expected '{' to start class body");
@@ -298,6 +324,12 @@ export class Parser {
         const destructor = this.advance();
         this.error(destructor.range, 'destructors are not supported yet');
         this.synchronizeClassMember();
+        continue;
+      }
+
+      if (this.check(TokenKind.KwConst)) {
+        const token = this.advance();
+        this.error(token.range, 'const class fields are not supported; use a top-level or local constant');
         continue;
       }
 
@@ -331,7 +363,9 @@ export class Parser {
     return {
       kind: 'ClassDeclaration',
       name: name.lexeme,
+      nameRange: name.range,
       baseName,
+      baseNameRange,
       members,
       range: { start: classToken.range.start, end: rightBrace.range.end },
     };
@@ -346,6 +380,7 @@ export class Parser {
       fields.push({
         kind: 'FieldDeclarator',
         name: name.lexeme,
+        nameRange: name.range,
         initializer,
         range: { start: name.range.start, end: (initializer ?? name).range.end },
       });
@@ -370,6 +405,7 @@ export class Parser {
       kind: 'ClassMethodDeclaration',
       returnType,
       name: name.lexeme,
+      nameRange: name.range,
       parameters,
       body,
       isStatic,
@@ -387,6 +423,7 @@ export class Parser {
     return {
       kind: 'ConstructorDeclaration',
       name: name.lexeme,
+      nameRange: name.range,
       parameters,
       body,
       access,
@@ -407,6 +444,9 @@ export class Parser {
   }
 
   private parseParameterDeclaration(): ParameterDeclaration {
+    if (this.match(TokenKind.KwConst)) {
+      this.error(this.previous().range, 'const parameters are not supported');
+    }
     const paramType = this.parseTypeName();
     const paramName = this.consume(TokenKind.Identifier, 'expected parameter name');
     const defaultValue = this.match(TokenKind.Equal) ? this.parseExpression() : null;
@@ -414,6 +454,7 @@ export class Parser {
       kind: 'ParameterDeclaration',
       paramType,
       name: paramName.lexeme,
+      nameRange: paramName.range,
       defaultValue,
       range: { start: paramType.range.start, end: (defaultValue ?? paramName).range.end },
     };
@@ -567,7 +608,7 @@ export class Parser {
       return null;
     }
 
-    if (this.checkTypeStart()) {
+    if (this.check(TokenKind.KwConst) || this.checkTypeStart()) {
       return this.parseVariableDeclaration();
     }
 
@@ -691,6 +732,7 @@ export class Parser {
           kind: 'MemberExpression',
           object: expression,
           name: name.lexeme,
+          nameRange: name.range,
           range: { start: expression.range.start, end: name.range.end },
         } satisfies MemberExpression;
         continue;
@@ -761,6 +803,9 @@ export class Parser {
     if (this.match(TokenKind.KwTrue, TokenKind.KwFalse)) {
       return this.literal(this.previous(), 'bool');
     }
+    if (this.match(TokenKind.KwNull)) {
+      return this.literal(this.previous(), 'null');
+    }
     if (this.match(TokenKind.LeftBracket)) {
       const leftBracket = this.previous();
       const elements: Expression[] = [];
@@ -816,11 +861,12 @@ export class Parser {
     };
   }
 
-  private literal(token: Token, valueType: PrimitiveTypeName): LiteralExpression {
+  private literal(token: Token, valueType: LiteralExpression['valueType']): LiteralExpression {
     return {
       kind: 'LiteralExpression',
-      value: token.literal as string | number | boolean,
+      value: token.literal as string | number | boolean | null,
       valueType,
+      sourceText: token.lexeme,
       range: token.range,
     };
   }
@@ -907,6 +953,7 @@ export class Parser {
       return {
         kind: 'ClassTypeName',
         name: moduleToken.lexeme,
+        nameRange: moduleToken.range,
         range: moduleToken.range,
       } satisfies ClassTypeNameNode;
     }
@@ -914,7 +961,9 @@ export class Parser {
     return {
       kind: 'QualifiedTypeName',
       moduleName: moduleToken.lexeme,
+      moduleNameRange: moduleToken.range,
       name: nameToken.lexeme,
+      nameRange: nameToken.range,
       range: { start: start.range.start, end: nameToken.range.end },
     };
   }
@@ -983,6 +1032,7 @@ export class Parser {
       return {
         kind: 'CallArgument',
         name: name.lexeme,
+        nameRange: name.range,
         value,
         range: { start: name.range.start, end: value.range.end },
       };
@@ -992,6 +1042,7 @@ export class Parser {
     return {
       kind: 'CallArgument',
       name: null,
+      nameRange: null,
       value,
       range: value.range,
     };

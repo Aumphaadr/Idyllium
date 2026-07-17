@@ -1,0 +1,45 @@
+// Result начинает работу перед первой строкой.
+// Каждый успешный next() переводит курсор на следующую строку результата.
+
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("select_rows.db");
+    db.execute("DROP TABLE IF EXISTS players");
+    db.execute(
+        "CREATE TABLE players (" +
+        "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+        "name TEXT NOT NULL, " +
+        "level INTEGER NOT NULL, " +
+        "is_active INTEGER NOT NULL" +
+        ")"
+    );
+
+    db.execute("INSERT INTO players (name, level, is_active) VALUES ('Liam', 7, 1)");
+    db.execute("INSERT INTO players (name, level, is_active) VALUES ('Mira', 12, 1)");
+    db.execute("INSERT INTO players (name, level, is_active) VALUES ('Nika', 4, 0)");
+
+    sqlite.Result rows = db.execute(
+        "SELECT id, name, level, is_active, level + 1 AS next_level " +
+        "FROM players ORDER BY level DESC"
+    );
+
+    while (rows.next()) {
+        int id = rows.get_int("id");
+        string name = rows.get_string("name");
+        int level = rows.get_int("level");
+        bool active = rows.get_bool("is_active");
+        int next_level = rows.get_int("next_level");
+
+        console.writeln(
+            id, " | ", name,
+            " | level ", level,
+            " | next ", next_level,
+            " | active ", active
+        );
+    }
+
+    rows.close();
+    db.close();
+}

@@ -1,0 +1,45 @@
+// Две связанные операции подтверждаются одним commit().
+// Другие соединения не должны увидеть половину перевода.
+
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("transaction_commit.db");
+    db.execute("DROP TABLE IF EXISTS players");
+    db.execute("CREATE TABLE players (name TEXT PRIMARY KEY, coins INTEGER NOT NULL)");
+    db.execute("INSERT INTO players VALUES ('Liam', 500)");
+    db.execute("INSERT INTO players VALUES ('Mira', 100)");
+
+    db.begin_transaction();
+
+    sqlite.Statement change_coins = db.prepare(
+        "UPDATE players SET coins = coins + :delta WHERE name = :name"
+    );
+
+    change_coins.bind_int("delta", -75);
+    change_coins.bind_string("name", "Liam");
+    change_coins.execute();
+
+    change_coins.clear_bindings();
+    change_coins.bind_int("delta", 75);
+    change_coins.bind_string("name", "Mira");
+    change_coins.execute();
+    change_coins.close();
+
+    db.commit();
+
+    sqlite.Result rows = db.execute(
+        "SELECT name, coins FROM players ORDER BY name"
+    );
+    while (rows.next()) {
+        console.writeln(rows.get_string("name"), ": ", rows.get_int("coins"));
+    }
+
+    rows.close();
+    db.close();
+}
+
+// Expected output:
+// Liam: 425
+// Mira: 175

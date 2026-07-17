@@ -1,8 +1,9 @@
 use colors;
 use drawable;
+use fonts;
 use gui;
 
-drawable.Font main_font;
+fonts.Font main_font;
 drawable.Text coordinates;
 drawable.Circle marker;
 
@@ -18,6 +19,7 @@ void function init(gui.Canvas canvas) {
     marker.x = 200;
     marker.y = 120;
     marker.radius = 12;
+    marker.set_origin(12, 12);
     marker.fill_color = colors.RGB(255, 210, 80);
 
     coordinates.font = main_font;

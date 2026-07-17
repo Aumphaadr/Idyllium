@@ -1,0 +1,3 @@
+main() {
+    const int answer; // compile error: constant must have an initializer
+}

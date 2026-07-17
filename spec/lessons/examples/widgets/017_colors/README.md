@@ -10,6 +10,9 @@ Draft-урок для новой спецификации IdylliumNext.
   - `text_color`;
   - `background_color`;
   - `border_color`;
-  - `foreground_color` для заполненной части `gui.ProgressBar`;
-  - `fill_color`, где это естественно для заполняемых объектов или для legacy-кода;
-- старое `label.color = "#FF0000";` остаётся legacy-допущением для совместимости со старой документацией, но не является основным учебным стилем.
+  - `foreground_color` для заполненной части `gui.ProgressBar`.
+- цветовые свойства принимают только `colors.Color`; строковый HEX сначала
+  преобразуется через `colors.HEX()`.
+- `005_label_text_color.idyl` вручную проверяет явные цвета текста;
+- `006_label_color_inheritance.idyl` показывает наследование `text_color` от
+  окна и контейнера с локальным переопределением у отдельного лейбла.

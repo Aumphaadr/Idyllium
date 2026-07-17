@@ -1,0 +1,137 @@
+<div class="docs-section">
+  <h2>Имя, которое сломало запрос</h2>
+  <p>
+    Пока значения в запросах придумывал автор программы. Но настоящая программа
+    получает имена, сообщения и числа от пользователя. Попытка склеить такой
+    текст с SQL ненадёжна:
+  </p>
+  <idyl-code-block><script type="text/plain">
+string player_name = "O'Neil";
+
+// Так делать не надо!
+db.execute(
+    "INSERT INTO players (name) VALUES ('" + player_name + "')"
+);
+</script></idyl-code-block>
+  <p>
+    Апостроф внутри фамилии преждевременно закроет SQL-строку. Специально
+    исправлять кавычки вручную тоже не надо: у SQLite уже есть безопасный
+    механизм параметров.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Готовим запрос с пустыми местами</h2>
+  <p>
+    Метод <code>prepare()</code> создаёт подготовленный запрос. Места для данных
+    обозначаются двоеточием и понятным именем: <code>:name</code>,
+    <code>:level</code>, <code>:active</code>.
+  </p>
+  <idyl-code-block><script type="text/plain">
+sqlite.Statement add_player = db.prepare(
+    "INSERT INTO players (name, level, is_active) " +
+    "VALUES (:name, :level, :active)"
+);
+</script></idyl-code-block>
+  <p>
+    Двоеточие является частью SQL-записи параметра. Когда мы связываем параметр
+    со значением через <code>bind()</code>, имя передаётся уже без двоеточия.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Подставляем значения</h2>
+  <idyl-code-block><script type="text/plain">
+add_player.bind("name", "O'Neil");
+add_player.bind("level", 9);
+add_player.bind("active", true);
+
+sqlite.Result save_result = add_player.execute();
+</script></idyl-code-block>
+  <p>
+    <code>bind()</code> принимает строки, числа, булевы значения и
+    <code>null</code>. Значения передаются SQLite отдельно от текста команды,
+    поэтому фамилия с апострофом останется фамилией и не превратится в кусочек
+    SQL.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Закрываем результат и запрос</h2>
+  <p>
+    Даже у команды без строк для чтения есть результат: в нём, например,
+    хранится количество изменённых строк. После выполнения оба объекта следует
+    закрыть.
+  </p>
+  <idyl-code-block><script type="text/plain">
+save_result.close();
+add_player.close();
+</script></idyl-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>Типизированные варианты bind</h2>
+  <p>
+    В большинстве программ достаточно обычного <code>bind()</code>. Если нужно
+    явно потребовать определённый SQL-тип, существуют методы
+    <code>bind_int()</code>, <code>bind_int64()</code>,
+    <code>bind_float()</code>, <code>bind_string()</code>,
+    <code>bind_bool()</code> и <code>bind_null()</code>.
+  </p>
+  <idyl-code-block><script type="text/plain">
+add_player.bind_string("name", player_name);
+add_player.bind_int("level", player_level);
+add_player.bind_bool("active", true);
+</script></idyl-code-block>
+  <p>
+    Это не разные способы выполнить запрос. Они только точнее описывают тип
+    подставляемого значения.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Полная программа</h2>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    string player_name = "O'Neil";
+    int player_level = 9;
+
+    sqlite.Database db = sqlite.open("named_bind.db");
+    db.execute(
+        "CREATE TABLE players (" +
+        "name TEXT, level INTEGER" +
+        ")"
+    );
+
+    sqlite.Statement add_player = db.prepare(
+        "INSERT INTO players (name, level) VALUES (:name, :level)"
+    );
+    add_player.bind("name", player_name);
+    add_player.bind("level", player_level);
+
+    sqlite.Result saved = add_player.execute();
+    console.writeln("Добавлено строк: ", saved.affected_rows);
+
+    sqlite.Result rows = db.execute("SELECT name, level FROM players");
+    rows.next();
+    console.writeln(
+        rows.get_string("name"), ": level ", rows.get_int("level")
+    );
+
+    rows.close();
+    saved.close();
+    add_player.close();
+    db.close();
+}
+</script></idyl-code-block>
+  <idyl-output-block>Добавлено строк: 1
+O'Neil: level 9</idyl-output-block>
+  <table>
+    <caption>Таблица players после безопасной вставки</caption>
+    <thead><tr><th>name</th><th>level</th></tr></thead>
+    <tbody><tr><td>O'Neil</td><td>9</td></tr></tbody>
+  </table>
+</div>

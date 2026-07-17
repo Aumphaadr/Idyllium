@@ -1,17 +1,21 @@
 use gui;
+use image;
 
 main() {
+    image.Static cat;
+    cat.load_from_file("cat.png");
+
     gui.Window win;
     win.width = 420;
     win.height = 300;
     win.title = "Картинка";
 
-    gui.Image picture;
+    gui.ImageBox picture;
     picture.x = 40;
     picture.y = 30;
     picture.width = 320;
     picture.height = 220;
-    picture.load_from_file("cat.png");
+    picture.set_image(cat);
 
     win.add_child(picture);
     win.show();

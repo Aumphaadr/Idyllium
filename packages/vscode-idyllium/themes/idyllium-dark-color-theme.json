@@ -2,6 +2,7 @@
   "$schema": "vscode://schemas/color-theme",
   "name": "Idyllium Dark",
   "type": "dark",
+  "semanticHighlighting": true,
   "colors": {
     "editor.background": "#17181c",
     "editor.foreground": "#e8eaf0",
@@ -18,6 +19,16 @@
     "editorBracketMatch.border": "#5c6270",
     "editorIndentGuide.background1": "#313541",
     "editorIndentGuide.activeBackground1": "#515765"
+  },
+  "semanticTokenColors": {
+    "namespace": "#9fe4ff",
+    "class": "#4ec9a2",
+    "function": "#dcd98f",
+    "method": "#dcd98f",
+    "property": "#9fe4ff",
+    "variable": "#e8eaf0",
+    "parameter": "#9fe4ff",
+    "variable.readonly": "#9fe4ff"
   },
   "tokenColors": [
     {

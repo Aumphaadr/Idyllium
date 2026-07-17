@@ -31,10 +31,17 @@ export interface UserModuleClassSpec {
   readonly range: SourceRange;
 }
 
+export interface UserModuleConstantSpec {
+  readonly name: string;
+  readonly type: TypeRef;
+  readonly range: SourceRange;
+}
+
 export interface UserModuleExports {
   readonly name: string;
   readonly file: string;
   readonly functions: ReadonlyMap<string, FunctionSpec>;
+  readonly constants: ReadonlyMap<string, UserModuleConstantSpec>;
   readonly classes: ReadonlyMap<string, UserModuleClassSpec>;
 }
 

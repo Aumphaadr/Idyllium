@@ -11,6 +11,9 @@ let diagnosticCollection;
 let refreshTimer = null;
 const activeRunKeys = new Set();
 const activeRunSessions = new Map();
+const semanticTokenTypes = ['namespace', 'class', 'function', 'method', 'property', 'variable', 'parameter'];
+const semanticTokenModifiers = ['declaration', 'readonly', 'static', 'defaultLibrary'];
+const semanticTokenLegend = new vscode.SemanticTokensLegend(semanticTokenTypes, semanticTokenModifiers);
 
 function activate(context) {
   outputChannel = vscode.window.createOutputChannel('Idyllium');
@@ -142,6 +145,22 @@ function activate(context) {
         return project.documentSymbols(normalizeFile(document.uri.fsPath)).map(toVsDocumentSymbol);
       },
     }
+  ));
+
+  context.subscriptions.push(vscode.languages.registerDocumentSemanticTokensProvider(
+    { language: 'idyllium', scheme: 'file' },
+    {
+      async provideDocumentSemanticTokens(document) {
+        if (!core) return new vscode.SemanticTokensBuilder(semanticTokenLegend).build();
+        const project = await createProject(core, document.uri.fsPath);
+        const builder = new vscode.SemanticTokensBuilder(semanticTokenLegend);
+        for (const token of project.semanticTokens(normalizeFile(document.uri.fsPath))) {
+          builder.push(toVsRange(token.range), token.kind, [...token.modifiers]);
+        }
+        return builder.build();
+      },
+    },
+    semanticTokenLegend,
   ));
 
   context.subscriptions.push(vscode.languages.registerCodeLensProvider(
@@ -505,7 +524,7 @@ function attachGuiSession(panel, result, channel, session) {
     });
   };
 
-  const runRuntimeAction = async (action) => {
+  const runRuntimeAction = async (action, pumpSnapshots = true) => {
     if (busy || disposed) return;
     busy = true;
     try {
@@ -513,7 +532,11 @@ function attachGuiSession(panel, result, channel, session) {
         panel.dispose();
         return;
       }
-      await runActionWithSnapshotPump(action, sendSnapshot);
+      if (pumpSnapshots) {
+        await runActionWithSnapshotPump(action, sendSnapshot);
+      } else {
+        await action();
+      }
     } catch (error) {
       if (session?.signal.aborted || isProgramStoppedError(error)) {
         panel.dispose();
@@ -565,8 +588,10 @@ function attachGuiSession(panel, result, channel, session) {
     const delta = Math.max(0, (now - lastTick) / 1000);
     lastTick = now;
     runRuntimeAction(async () => {
-      if (runtime.stepGui) await runtime.stepGui(delta);
-    });
+      if (!runtime.stepGui) return;
+      const changed = await runtime.stepGui(delta);
+      if (changed !== false) sendSnapshot();
+    }, false);
   }, intervalMs);
 
   panel.onDidDispose(() => {
@@ -679,6 +704,7 @@ async function executeIdylliumInExtension(core, runFile, files, document, option
 
   let output = '';
   const runtime = core.createRuntime({
+    projectRoot: path.dirname(runFile),
     abortSignal: options.abortSignal,
     console: options.console ?? {
       write(text) {
@@ -1067,6 +1093,8 @@ function toVsSymbolKind(kind) {
       return vscode.SymbolKind.Method;
     case 'variable':
       return vscode.SymbolKind.Variable;
+    case 'constant':
+      return vscode.SymbolKind.Constant;
     default:
       return vscode.SymbolKind.Object;
   }

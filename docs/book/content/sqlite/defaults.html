@@ -1,0 +1,84 @@
+<div class="docs-section">
+  <h2>Почему первый пример нельзя было запустить дважды?</h2>
+  <p>
+    Команда <code>CREATE TABLE players</code> требует создать новую таблицу. При
+    втором запуске таблица уже существует, поэтому SQLite сообщает об ошибке.
+    Теперь мы готовы добавить условие прямо в SQL.
+  </p>
+  <sql-code-block><script type="text/plain">
+CREATE TABLE IF NOT EXISTS players (
+    name TEXT,
+    level INTEGER
+);
+</script></sql-code-block>
+  <p>
+    Конструкция <code>IF NOT EXISTS</code> читается как «если не существует».
+    При первом запуске таблица будет создана, а при следующих команда спокойно
+    оставит существующую таблицу на месте. Данные внутри неё не удалятся.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Проверка перед удалением</h2>
+  <p>
+    Обратная конструкция <code>IF EXISTS</code> пригодится при удалении таблицы.
+    Эту команду удобно использовать в коротких учебных экспериментах, но в
+    настоящем проекте она безвозвратно удалит и таблицу, и все её строки.
+  </p>
+  <sql-code-block><script type="text/plain">
+DROP TABLE IF EXISTS players;
+</script></sql-code-block>
+  <p>
+    Теперь понятна строка, которую мы раньше иногда встречали в готовых
+    примерах: она очищала место перед повторным созданием учебной таблицы.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Значения по умолчанию</h2>
+  <p>
+    Новый игрок обычно начинает с первого уровня, без монет и остаётся активным.
+    Вместо повторения этих чисел при каждом <code>INSERT</code> таблица может
+    подставлять их сама.
+  </p>
+  <sql-code-block><script type="text/plain">
+CREATE TABLE players (
+    name TEXT,
+    level INTEGER DEFAULT 1,
+    coins INTEGER DEFAULT 0,
+    is_active INTEGER DEFAULT 1
+);
+
+INSERT INTO players (name) VALUES ('Mira');
+INSERT INTO players (name, level) VALUES ('Liam', 7);
+</script></sql-code-block>
+  <table>
+    <caption>DEFAULT сработал только для пропущенных значений</caption>
+    <thead><tr><th>name</th><th>level</th><th>coins</th><th>is_active</th></tr></thead>
+    <tbody>
+      <tr><td>Mira</td><td>1</td><td>0</td><td>1</td></tr>
+      <tr><td>Liam</td><td>7</td><td>0</td><td>1</td></tr>
+    </tbody>
+  </table>
+  <p>
+    <code>DEFAULT</code> не запрещает передать другое значение. У Миры колонка
+    <code>level</code> пропущена и получила <code>1</code>, а для Лиама явно
+    записан уровень <code>7</code>.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Те же команды из Idyllium</h2>
+  <p>
+    Это обычный SQL-текст, поэтому никакого нового метода библиотеки не
+    требуется.
+  </p>
+  <idyl-code-block><script type="text/plain">
+db.execute(
+    "CREATE TABLE IF NOT EXISTS players (" +
+    "name TEXT, level INTEGER DEFAULT 1)"
+);
+
+db.execute("INSERT INTO players (name) VALUES ('Mira')");
+</script></idyl-code-block>
+</div>

@@ -1,0 +1,735 @@
+{
+  "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
+  "language": [
+    {
+      "id": "program",
+      "title": "Структура программы",
+      "description": "Директивы use, файлы проекта и особая точка входа main().",
+      "sections": [
+        {
+          "title": "Минимальный .idyl-файл",
+          "description": "Директива use подключает библиотеку, а выполнение программы начинается с main().",
+          "code": "use console;\n\nmain() {\n    console.writeln(\"Hello, World!\");\n}"
+        },
+        {
+          "title": "Подключение библиотек",
+          "description": "Каждая библиотека подключается отдельной директивой в начале файла. Неподключённая библиотека недоступна.",
+          "code": "use console;\nuse math;\nuse random;"
+        },
+        {
+          "title": "Комментарии",
+          "description": "Однострочный комментарий начинается с //, многострочный заключается между /* и */.",
+          "code": "// Комментарий до конца строки\nint lives = 3;  // комментарий после кода\n\n/* Комментарий\n   на нескольких строках */"
+        },
+        {
+          "title": "Функция main()",
+          "description": "Сокращённая запись main() считается void-функцией. Допустима и полная форма с любым возвращаемым типом; main не принимает аргументы и может быть только одна.",
+          "code": "int function main() {\n    return 0;\n}"
+        },
+        {
+          "title": "Несколько файлов",
+          "description": "Файл player.idyl подключается как модуль player. Его публичные функции и классы доступны через точку.",
+          "code": "// player.idyl\nint function starting_health() {\n    return 100;\n}\n\n// main.idyl\nuse console;\nuse player;\n\nmain() {\n    console.writeln(player.starting_health());\n}"
+        }
+      ]
+    },
+    {
+      "id": "keywords",
+      "title": "Ключевые слова",
+      "description": "Служебные слова Idyllium и области, в которых они используются.",
+      "sections": [
+        {
+          "title": "Структура и функции",
+          "description": "use подключает модуль; main обозначает точку входа; function, return и void используются в функциях.",
+          "code": "use   main   function   return   void"
+        },
+        {
+          "title": "Типы и значения",
+          "description": "Встроенные типы, массивы, именованные константы и логические литералы.",
+          "code": "int   float   string   char   bool\narray   dyn_array   const\ntrue   false   null"
+        },
+        {
+          "title": "Условия и циклы",
+          "description": "Ветвление, повторение и управление текущим циклом.",
+          "code": "if   else\nwhile   do   for\nbreak   continue\nand   or   not"
+        },
+        {
+          "title": "Классы",
+          "description": "Объявление классов, конструкторы, наследование, доступ и обращение к текущему объекту.",
+          "code": "class   constructor   destructor\nextends   parent   this\npublic   private   static"
+        },
+        {
+          "title": "Литерал null",
+          "description": "null означает отсутствие значения и разрешён только для специально поддерживающих его типов. Обычные int, string, классы и json.Object не становятся nullable.",
+          "code": "json.Value empty = null;\nif (empty == null) {\n    // значение отсутствует\n}"
+        }
+      ]
+    },
+    {
+      "id": "types",
+      "title": "Встроенные типы",
+      "description": "Строгие базовые типы значений и правила их объявления.",
+      "sections": [
+        {
+          "title": "Примитивные значения",
+          "description": "int хранит целые числа, float — дробные, string — текст, char — один Unicode-символ, bool — true или false.",
+          "code": "int lives = 3;\nfloat temperature = 36.6;\nstring name = \"Лена\";\nchar grade = 'A';\nbool game_over = false;"
+        },
+        {
+          "title": "Строгие присваивания",
+          "description": "Idyllium не превращает число в строку и float в int неявно. Используйте явные функции преобразования.",
+          "code": "string score_text = to_string(120);\nint whole = to_int(12.8);\nfloat precise = to_float(whole);"
+        },
+        {
+          "title": "Именованные константы",
+          "description": "const разрешён у локальных и верхнеуровневых объявлений. Инициализатор обязателен, а повторное присваивание имени запрещено. У массива или объекта защищается сама привязка: содержимое не замораживается рекурсивно.",
+          "code": "const int MAX_LEVEL = 100;\nconst array<int, 3> scores = [10, 20, 30];\n\nscores[0] = 42;       // допустимо\n// scores = [1, 2, 3]; // compile error"
+        },
+        {
+          "title": "Деление",
+          "description": "Оператор / всегда возвращает float. Для целой части и остатка используются div() и mod().",
+          "code": "float answer = 23 / 10;  // 2.3\nint whole = div(23, 10);  // 2\nint rest = mod(23, 10);   // 3"
+        },
+        {
+          "title": "Тип void",
+          "description": "void используется как возвращаемый тип функции, которая выполняет действие и не возвращает значение.",
+          "code": "void function greet(string name) {\n    console.writeln(\"Привет, \", name);\n}"
+        }
+      ]
+    },
+    {
+      "id": "operators",
+      "title": "Операторы",
+      "description": "Арифметика, сравнения, логические выражения и составные присваивания.",
+      "sections": [
+        {
+          "title": "Арифметика и сравнения",
+          "description": "Доступны +, -, *, /, а также ==, !=, <, <=, > и >=.",
+          "code": "int area = width * height;\nbool fits = area <= 1000;\nbool same = first == second;"
+        },
+        {
+          "title": "Логические операторы",
+          "description": "and требует истинности обеих частей, or — хотя бы одной, not меняет true на false и наоборот.",
+          "code": "bool can_enter = has_ticket and not is_closed;\nbool needs_help = health < 20 or mana < 10;"
+        },
+        {
+          "title": "Составное присваивание",
+          "description": "Операторы +=, -=, *= и /= изменяют существующую переменную. Операторов ++ и -- в Idyllium нет.",
+          "code": "score += 10;\nspeed *= 1.5;\nlives -= 1;"
+        }
+      ]
+    },
+    {
+      "id": "conditions",
+      "title": "Условия",
+      "description": "Ветвление программы через if, else if и else.",
+      "sections": [
+        {
+          "title": "if и else",
+          "description": "Условие в круглых скобках обязано иметь тип bool.",
+          "code": "if (temperature > 37.0) {\n    console.writeln(\"Высокая температура\");\n} else if (temperature < 35.5) {\n    console.writeln(\"Низкая температура\");\n} else {\n    console.writeln(\"Температура в норме\");\n}"
+        }
+      ]
+    },
+    {
+      "id": "loops",
+      "title": "Циклы",
+      "description": "while, do-while и for для повторения действий.",
+      "sections": [
+        {
+          "title": "while",
+          "description": "Условие проверяется перед каждой итерацией.",
+          "code": "int count = 3;\nwhile (count > 0) {\n    console.writeln(count);\n    count -= 1;\n}"
+        },
+        {
+          "title": "do-while",
+          "description": "Тело выполняется хотя бы один раз, затем проверяется условие.",
+          "code": "do {\n    answer = console.get_string();\n} while (answer == \"\");"
+        },
+        {
+          "title": "for",
+          "description": "В заголовке находятся начальное действие, условие и изменение счётчика. Используйте += 1 вместо отсутствующего ++.",
+          "code": "for (int i = 0; i < 10; i += 1) {\n    if (i == 5) {\n        continue;\n    }\n    console.writeln(i);\n}"
+        },
+        {
+          "title": "break и continue",
+          "description": "break завершает ближайший цикл, continue немедленно переходит к следующей итерации.",
+          "code": "while (true) {\n    string command = console.get_string();\n    if (command == \"exit\") {\n        break;\n    }\n}"
+        }
+      ]
+    },
+    {
+      "id": "functions",
+      "title": "Функции",
+      "description": "Объявление, возврат результата, значения по умолчанию и именованные аргументы.",
+      "sections": [
+        {
+          "title": "Объявление и вызов",
+          "description": "Перед function указывается возвращаемый тип, затем имя и типизированные параметры.",
+          "code": "int function square(int value) {\n    return value * value;\n}\n\nint result = square(7);"
+        },
+        {
+          "title": "Значения по умолчанию",
+          "description": "Необязательные параметры располагаются после обязательных.",
+          "code": "void function print_score(int score, string prefix = \"Счёт: \") {\n    console.writeln(prefix, score);\n}\n\nprint_score(120);\nprint_score(50, \"Рекорд: \");"
+        },
+        {
+          "title": "Именованные аргументы",
+          "description": "Имя параметра можно указать при вызове и тем самым безопасно изменить порядок аргументов.",
+          "code": "int function sub(int left, int right) {\n    return left - right;\n}\n\nint first = sub(left=50, right=30);   // 20\nint second = sub(right=50, left=30);  // -20"
+        },
+        {
+          "title": "Callback-функции",
+          "description": "Функцию можно сохранить в callback-свойстве по имени или объявить прямо в месте присваивания.",
+          "code": "void function clicked() {\n    console.writeln(\"Нажато\");\n}\nbutton.on_click = clicked;\n\nbutton.on_click = void function() {\n    console.writeln(\"Нажато ещё раз\");\n};"
+        }
+      ]
+    },
+    {
+      "id": "arrays",
+      "title": "Массивы",
+      "description": "Статические и динамические типизированные коллекции с индексами от нуля.",
+      "sections": [
+        {
+          "title": "Статический массив",
+          "description": "Размер является частью типа и не меняется во время выполнения.",
+          "code": "array<int, 4> scores = [12, 35, 18, 44];\nint first = scores[0];\nscores[2] = 20;"
+        },
+        {
+          "title": "Динамический массив",
+          "description": "dyn_array может расти и уменьшаться. Тип элементов остаётся строгим.",
+          "code": "dyn_array<string> inventory = [\"Кирка\", \"Факел\"];\ninventory.add(\"Ключ\");\ninventory.insert(1, \"Карта\");\ninventory.remove_at(0);"
+        },
+        {
+          "title": "Массивы являются значениями",
+          "description": "Присваивание, передача в функцию и возврат из функции создают независимую копию массива. Вложенные массивы копируются рекурсивно.",
+          "code": "array<int, 3> first = [10, 20, 30];\narray<int, 3> second = first;\nsecond[0] = 99;\n// first по-прежнему содержит [10, 20, 30]"
+        },
+        {
+          "title": "Преобразование array и dyn_array",
+          "description": "Статический массив можно скопировать в динамический. Обратное преобразование проверяет длину во время выполнения и не обрезает массив автоматически.",
+          "code": "array<int, 3> fixed = [10, 20, 30];\ndyn_array<int> dynamic = fixed;\narray<int, 3> restored = dynamic; // длина должна равняться 3"
+        },
+        {
+          "title": "Общие методы",
+          "description": "length(), contains(), find(), count(), reverse() и sort() доступны массивам; динамические массивы дополнительно поддерживают add(), insert(), remove_at(), resize(), join(), clear() и pop().",
+          "code": "int size = inventory.length();\nbool has_key = inventory.contains(\"Ключ\");\nint position = inventory.find(\"Карта\");"
+        },
+        {
+          "title": "Границы",
+          "description": "Индекс обязан находиться между 0 и length - 1. Выход за границы приводит к понятной runtime error, а не к undefined.",
+          "code": "dyn_array<int> values = [44, 35, 122];\nconsole.writeln(values[5]);\n// runtime error: array index 5 out of bounds"
+        }
+      ]
+    },
+    {
+      "id": "classes",
+      "title": "Классы и ООП",
+      "description": "Поля, методы, конструкторы, инкапсуляция, наследование и полиморфизм.",
+      "sections": [
+        {
+          "title": "Класс и объект",
+          "description": "Поля хранят состояние, методы работают с ним через this.",
+          "code": "class Counter {\n    int value;\n\n    constructor Counter(int start = 0) {\n        this.value = start;\n    }\n\n    void function increment() {\n        this.value += 1;\n    }\n}\n\nCounter counter(5);\ncounter.increment();"
+        },
+        {
+          "title": "public и private",
+          "description": "Модификатор с двоеточием действует до следующего модификатора или конца класса.",
+          "code": "class Wallet {\nprivate:\n    int money;\n\npublic:\n    constructor Wallet(int start) {\n        this.money = start;\n    }\n\n    int function balance() {\n        return this.money;\n    }\n}"
+        },
+        {
+          "title": "Наследование",
+          "description": "Класс-наследник получает публичные поля и методы базового класса. parent(...) вызывает родительский конструктор.",
+          "code": "class Animal {\n    string name;\n\n    constructor Animal(string name) {\n        this.name = name;\n    }\n}\n\nclass Dog extends Animal {\n    constructor Dog(string name) {\n        parent(name);\n    }\n}"
+        },
+        {
+          "title": "Полиморфизм",
+          "description": "Значение дочернего класса можно передать туда, где ожидается базовый. Переопределённый метод выбирается по фактическому классу объекта.",
+          "code": "void function show_name(Animal animal) {\n    console.writeln(animal.name);\n}\n\nDog rex(\"Рекс\");\nshow_name(rex);"
+        }
+      ]
+    }
+  ],
+  "modules": {
+    "console": {
+      "title": "Консоль",
+      "description": "Ввод, вывод, перенос строки и управление содержимым консоли.",
+      "notes": [
+        "get_int() и get_float() не подменяют ошибочный ввод нулём, а сообщают о невозможности преобразования.",
+        "write() не добавляет перенос строки; writeln() добавляет его после всех аргументов."
+      ],
+      "example": "console.write(\"Возраст: \");\nint age = console.get_int();\nconsole.writeln(\"Через год: \", age + 1);"
+    },
+    "math": {
+      "title": "Математика",
+      "description": "Округление, степени, корни, тригонометрия, логарифмы и математические константы.",
+      "notes": [
+        "Тригонометрические функции принимают углы в радианах.",
+        "Для перевода градусов используйте to_radians(), для обратного перевода — to_degrees()."
+      ],
+      "example": "float root = math.sqrt(81);       // 9\nint rounded = math.round(3.6);     // 4\nfloat angle = math.to_radians(90);"
+    },
+    "random": {
+      "title": "Случайные числа",
+      "description": "Псевдослучайные целые, дробные значения и воспроизводимые последовательности.",
+      "notes": [
+        "Минимальная граница диапазона не должна превышать максимальную.",
+        "Одинаковый seed порождает одинаковую последовательность значений."
+      ],
+      "example": "int die = random.create_int(1, 6);\nfloat chance = random.create_float(0.0, 1.0);\nrandom.set_seed(42);"
+    },
+    "time": {
+      "title": "Время",
+      "description": "Паузы, текущее время и объект с компонентами даты.",
+      "notes": [
+        "sleep() принимает длительность в секундах и допускает дробные значения."
+      ],
+      "example": "time.sleep(0.5);\ntime.stamp current = time.now();\nconsole.writeln(current.hour(), \":\", current.minute());"
+    },
+    "file": {
+      "title": "Файлы",
+      "description": "Чтение и запись текстовых файлов, а также работа с файлами и каталогами проекта.",
+      "notes": [
+        "Режим read возвращает file.istream, режим write — file.ostream.",
+        "После завершения работы поток следует закрыть методом close().",
+        "copy() и rename() не перезаписывают существующий путь назначения.",
+        "Непустой каталог удаляется только при явном recursive=true."
+      ],
+      "example": "file.create_directory(\"saves\");\nfile.ostream out = file.open(\"saves/result.txt\", \"write\");\nout.write_line(\"Счёт: \", 120);\nout.close();"
+    },
+    "encoding": {
+      "title": "Кодировки",
+      "description": "Преобразование символов, строк и числовых кодов в разных кодировках.",
+      "notes": [
+        "Поддерживаются ascii, utf-8, windows-1251 и koi8-r."
+      ],
+      "example": "dyn_array<int> bytes = encoding.encode(\"Привет\", \"utf-8\");\nstring text = encoding.decode(bytes, \"utf-8\");"
+    },
+    "json": {
+      "title": "JSON",
+      "description": "Разбор, создание, проверка и сериализация JSON-значений, объектов и массивов.",
+      "notes": [
+        "JSON-текст не поддерживает комментарии.",
+        "Методы to_int(), to_string() и другие преобразования строго проверяют фактический тип значения."
+      ],
+      "example": "json.Value data = json.parse(text);\njson.Object player = data.to_object();\nstring name = player.get(\"name\").to_string();",
+      "fullExamples": [
+        {
+          "title": "JSON-данные",
+          "description": "Ключи объекта являются строками, а значения могут иметь разные JSON-типы.",
+          "language": "json",
+          "code": "{\n    \"name\": \"Liam\",\n    \"level\": 7,\n    \"is_admin\": false,\n    \"inventory\": [\"sword\", \"potion\"],\n    \"middle_name\": null\n}"
+        }
+      ]
+    },
+    "audio": {
+      "title": "Звук",
+      "description": "Короткие звуковые эффекты и потоковое воспроизведение музыки.",
+      "notes": [
+        "Sound подходит для коротких эффектов, Music — для продолжительных записей.",
+        "volume принимает значения от 0.0 до 1.0."
+      ],
+      "example": "audio.Sound click;\nclick.load_from_file(\"click.wav\");\nclick.volume = 0.4;\nclick.play();"
+    },
+    "image": {
+      "title": "Изображения",
+      "description": "Переиспользуемые статичные и анимированные изображения для GUI и Canvas.",
+      "notes": [
+        "Картинка является ресурсом, а не виджетом или Canvas-объектом.",
+        "Один загруженный ресурс можно передать нескольким ImageBox и Sprite."
+      ],
+      "example": "image.Static cat;\ncat.load_from_file(\"cat.png\");\nconsole.writeln(cat.width, \"x\", cat.height);"
+    },
+    "fonts": {
+      "title": "Шрифты",
+      "description": "Общий ресурс шрифта для GUI-виджетов и текста на Canvas.",
+      "notes": [
+        "Font сам определяет TTF, OTF, WOFF или WOFF2 по содержимому файла.",
+        "Один загруженный объект можно назначить окну, нескольким виджетам и drawable.Text.",
+        "font_size принадлежит виджету или текстовому объекту, а не файлу шрифта.",
+        "Свойство font наследуется от Window и Frame потомками, у которых нет собственного font.",
+        "Геометрия drawable.Text поддерживает TTF, OTF, WOFF и WOFF2; без явно назначенного Font используется встроенный Source Code Pro."
+      ],
+      "example": "fonts.Font lobster;\nlobster.load_from_file(\"Lobster-Regular.ttf\");\n\nwindow.font = lobster;\ncanvas_text.font = lobster;"
+    },
+    "gui": {
+      "title": "Графический интерфейс",
+      "description": "Окна, виджеты, события, таймеры, модальные диалоги и Canvas.",
+      "notes": [
+        "Координаты x и y отсчитываются от левого верхнего угла родительского контейнера.",
+        "Виджет становится частью окна после add_child()."
+      ],
+      "example": "gui.Window win;\ngui.Label title;\ntitle.text = \"Настройки\";\ntitle.x = 20;\ntitle.y = 20;\nwin.add_child(title);\nwin.show();",
+      "fullExamples": [
+        {
+          "title": "Окно без обработчиков событий",
+          "description": "Минимальное GUI-приложение с окном, надписью и кнопкой.",
+          "code": "use gui;\n\nmain() {\n    gui.Window win;\n    win.width = 360;\n    win.height = 180;\n    win.title = \"Первое окно\";\n\n    gui.Label greeting;\n    greeting.text = \"Привет из Idyllium!\";\n    greeting.x = 30;\n    greeting.y = 30;\n    greeting.font_size = 20;\n\n    gui.Button close_button;\n    close_button.text = \"Готово\";\n    close_button.x = 30;\n    close_button.y = 85;\n    close_button.width = 120;\n\n    win.add_child(greeting);\n    win.add_child(close_button);\n    win.show();\n}"
+        },
+        {
+          "title": "Кнопка с обработчиком события",
+          "description": "Inline callback меняет текст надписи при каждом нажатии.",
+          "code": "use gui;\n\nmain() {\n    gui.Window win;\n    win.width = 380;\n    win.height = 190;\n    win.title = \"Событие кнопки\";\n\n    gui.Label status;\n    status.text = \"Кнопка ещё не нажата\";\n    status.x = 30;\n    status.y = 30;\n\n    gui.Button button;\n    button.text = \"Нажать\";\n    button.x = 30;\n    button.y = 80;\n    button.on_click = void function() {\n        status.text = \"Событие on_click сработало\";\n    };\n\n    win.add_child(status);\n    win.add_child(button);\n    win.show();\n}"
+        }
+      ]
+    },
+    "drawable": {
+      "title": "Объекты Canvas",
+      "description": "Графические примитивы, спрайты, текст и шрифты для рисования на Canvas.",
+      "notes": [
+        "Drawable-объект появится на Canvas только после вызова draw().",
+        "Координаты drawable-объектов имеют тип float; размеры, радиус и толщина остаются целыми.",
+        "Положительный угол вращает по часовой стрелке. Для движения по окружности достаточно x = center_x + radius * cos(angle) и y = center_y + radius * sin(angle), предварительно переведя угол в радианы."
+      ],
+      "example": "drawable.Circle marker;\nmarker.radius = 24;\nmarker.set_origin(24, 24);\nmarker.x = 120;\nmarker.y = 80;\nmarker.fill_color = colors.RED;\ncanvas.draw(marker);",
+      "fullExamples": [
+        {
+          "title": "Первый Canvas",
+          "description": "Холст создаётся как обычный виджет, а круг рисуется один раз в on_init.",
+          "code": "use colors;\nuse drawable;\nuse gui;\n\ndrawable.Circle ball;\n\nvoid function init(gui.Canvas canvas) {\n    canvas.fill(colors.RGB(24, 28, 38));\n\n    ball.x = 155;\n    ball.y = 80;\n    ball.radius = 35;\n    ball.fill_color = colors.RGB(255, 210, 80);\n\n    canvas.draw(ball);\n}\n\nmain() {\n    gui.Window win;\n    win.width = 430;\n    win.height = 300;\n    win.title = \"Первый Canvas\";\n\n    gui.Canvas canvas;\n    canvas.x = 20;\n    canvas.y = 20;\n    canvas.width = 380;\n    canvas.height = 230;\n    canvas.on_init = init;\n\n    win.add_child(canvas);\n    win.show();\n}"
+        },
+        {
+          "title": "Canvas с событием клавиатуры",
+          "description": "Нажатия R, G и B меняют цвет границы прямоугольника.",
+          "code": "use colors;\nuse drawable;\nuse gui;\n\ndrawable.Rectangle player;\n\nvoid function redraw(gui.Canvas canvas) {\n    canvas.fill(colors.RGB(20, 24, 32));\n    canvas.draw(player);\n}\n\nvoid function init(gui.Canvas canvas) {\n    player.x = 160;\n    player.y = 85;\n    player.width = 90;\n    player.height = 60;\n    player.fill_color = colors.RGB(34, 145, 188);\n    player.border_width = 5;\n    player.border_color = colors.TRANSPARENT;\n    redraw(canvas);\n}\n\nvoid function key_pressed(gui.Canvas canvas, gui.KeyboardEvent event) {\n    if (event.key == \"R\") {\n        player.border_color = colors.RED;\n    }\n    if (event.key == \"G\") {\n        player.border_color = colors.GREEN;\n    }\n    if (event.key == \"B\") {\n        player.border_color = colors.BLUE;\n    }\n    redraw(canvas);\n}\n\nmain() {\n    gui.Window win;\n    win.width = 450;\n    win.height = 290;\n    win.title = \"Клавиатура\";\n\n    gui.Canvas canvas;\n    canvas.x = 20;\n    canvas.y = 20;\n    canvas.width = 400;\n    canvas.height = 220;\n    canvas.on_init = init;\n    canvas.on_key_pressed = key_pressed;\n\n    win.add_child(canvas);\n    win.show();\n}"
+        }
+      ]
+    },
+    "colors": {
+      "title": "Цвета",
+      "description": "Тип Color, фабрики RGB/RGBA/HSL/HEX и готовые цветовые константы.",
+      "notes": [
+        "Каналы RGB принимают целые значения от 0 до 255, alpha — дробное значение от 0.0 до 1.0.",
+        "Выход за допустимый диапазон приводит к runtime error, значения не обрезаются автоматически."
+      ],
+      "example": "colors.Color sky = colors.RGB(80, 170, 255);\ncolors.Color glass = colors.RGBA(80, 170, 255, 0.35);\ncolors.Color accent = colors.HEX(\"#50AAFF\");\nbutton.background_color = sky;"
+    },
+    "types": {
+      "title": "Ограниченные числовые типы",
+      "description": "Целые и дробные типы с фиксированной разрядностью для знакомства с поведением C-подобных языков.",
+      "notes": [
+        "Доступны int8, uint8, int16, uint16, int32, uint32, int64, uint64, float32 и float64.",
+        "int64 и uint64 сохраняют весь 64-битный диапазон точно, включая значения больше 2^53.",
+        "При выходе целого значения за диапазон происходит циклическое переполнение без runtime error.",
+        "Неявное преобразование float в целочисленный types-тип запрещено; сначала используйте to_int()."
+      ],
+      "example": "types.uint8 value = 255;\nvalue = value + 1;              // 0\ntypes.int16 signed = 40000;    // -25536\nstring bits = value.to_bin();"
+    }
+  },
+  "types": {
+    "time.stamp": {
+      "description": "Метка времени, из которой можно получить дату, время и Unix timestamp.",
+      "example": "time.stamp current = time.now();\nint year = current.year();\nint unix_time = current.unix();"
+    },
+    "file.istream": {
+      "description": "Входной текстовый поток для последовательного чтения файла.",
+      "example": "file.istream input = file.open(\"data.txt\", \"read\");\nstring contents = input.read_all();\ninput.close();"
+    },
+    "file.ostream": {
+      "description": "Выходной текстовый поток для записи строк в файл.",
+      "example": "file.ostream output = file.open(\"data.txt\", \"write\");\noutput.write_line(\"Первая строка\");\noutput.close();"
+    },
+    "json.Value": {
+      "description": "Универсальное JSON-значение: null, строка, число, bool, объект или массив.",
+      "notes": [
+        "Перед преобразованием неизвестного значения можно проверить его методами is_string(), is_object() и другими.",
+        "is_null() безопасно проверяет значение на null."
+      ],
+      "example": "json.Value answer = json.Value(42);\nint number = answer.to_int();\njson.Value empty = null;"
+    },
+    "json.Object": {
+      "description": "JSON-объект с уникальными строковыми ключами и значениями json.Value.",
+      "example": "json.Object player;\nplayer.add(\"name\", json.Value(\"Liam\"));\nplayer.add(\"level\", json.Value(12));\nplayer.set(\"level\", json.Value(13));"
+    },
+    "json.Array": {
+      "description": "Упорядоченный JSON-массив значений, доступных по индексам от нуля.",
+      "example": "json.Array inventory;\ninventory.add(json.Value(\"Кирка\"));\ninventory.add(json.Value(\"Факел\"));\nstring first = inventory.at(0).to_string();"
+    },
+    "audio.Sound": {
+      "description": "Короткий звуковой эффект, который можно запускать несколькими копиями одновременно.",
+      "notes": [
+        "pause() и stop() воздействуют на все активные копии этого Sound."
+      ],
+      "example": "audio.Sound click;\nclick.load_from_file(\"click.wav\");\nclick.volume = 0.6;\nclick.play();"
+    },
+    "audio.Music": {
+      "description": "Потоковое воспроизведение продолжительной музыки с паузой, перемоткой и событием завершения.",
+      "example": "audio.Music theme;\ntheme.load_from_file(\"theme.mp3\");\ntheme.loop = true;\ntheme.position = 10.0;\ntheme.play();"
+    },
+    "image.Image": {
+      "description": "Общий базовый тип изображения. Напрямую не создаётся; используется как принимаемый тип для ImageBox и Sprite.",
+      "notes": [
+        "Все свойства Image доступны только для чтения.",
+        "format определяется по содержимому файла, а не по расширению."
+      ]
+    },
+    "image.Static": {
+      "description": "Однокадровое изображение. Поддерживает загрузку, неизменяющие исходник преобразования и экспорт.",
+      "notes": [
+        "scale(), rotate(), tint(), with_opacity(), desaturate() и crop() возвращают новый image.Static.",
+        "Отрицательный масштаб отражает изображение; нулевой масштаб запрещён.",
+        "Угол rotate() должен быть кратен 90 градусам."
+      ],
+      "example": "image.Static source;\nsource.load_from_file(\"cat.png\");\n\nimage.Static upside_down = source.scale(1, -1);\nimage.Static faded = source.with_opacity(0.3);\nimage.Static red = source.tint(colors.RED);"
+    },
+    "image.Animation": {
+      "description": "Многокадровое GIF- или APNG-изображение. Может загружаться из файла или собираться из статичных кадров.",
+      "notes": [
+        "get_frame() возвращает отдельный кадр как image.Static.",
+        "has_uniform_frame_duration сообщает, одинаково ли долго показываются все кадры.",
+        "create_from_frames() требует не менее двух кадров одинакового размера."
+      ],
+      "example": "image.Static first;\nfirst.load_from_file(\"frame_1.png\");\nimage.Static second;\nsecond.load_from_file(\"frame_2.png\");\n\ndyn_array<image.Static> frames = [first, second];\nimage.Animation result;\nresult.create_from_frames(frames, 0.1);\nresult.export_to_file(\"animation.gif\");"
+    },
+    "fonts.Font": {
+      "description": "Загруженный файл шрифта, пригодный одновременно для GUI и drawable.Text.",
+      "notes": [
+        "Свойства src, format и is_loaded доступны только для чтения.",
+        "Поддерживаются TTF, OTF, WOFF и WOFF2; расширение файла не определяет формат.",
+        "Если в шрифте нет нужного символа, renderer использует системный fallback для этого символа."
+      ],
+      "example": "fonts.Font heading;\nheading.load_from_file(\"Lobster-Regular.ttf\");\n\nlabel.font = heading;\ntext.font = heading;"
+    },
+    "gui.Window": {
+      "description": "Корневое окно GUI-приложения и контейнер для виджетов.",
+      "example": "gui.Window win;\nwin.width = 640;\nwin.height = 360;\nwin.title = \"Редактор уровня\";\nwin.add_child(toolbar);\nwin.show();"
+    },
+    "gui.Widget": {
+      "description": "Общий базовый тип GUI-виджетов. Удобен для функций, принимающих разные виды виджетов.",
+      "example": "void function hide(gui.Widget widget) {\n    widget.visible = false;\n}"
+    },
+    "gui.Canvas": {
+      "description": "Виджет двумерного холста с отрисовкой drawable-объектов и обработчиками ввода.",
+      "example": "gui.Canvas canvas;\ncanvas.width = 640;\ncanvas.height = 360;\ncanvas.framerate_limit = 60;\ncanvas.on_update = update;"
+    },
+    "gui.Button": {
+      "description": "Кнопка с текстом и обработчиком on_click.",
+      "example": "gui.Button save;\nsave.text = \"Сохранить\";\nsave.on_click = void function() {\n    save_project();\n};"
+    },
+    "gui.CheckBox": {
+      "description": "Флажок для независимого логического выбора.",
+      "example": "gui.CheckBox sound;\nsound.text = \"Включить звук\";\nsound.is_checked = true;"
+    },
+    "gui.ComboBox": {
+      "description": "Выпадающий список с единственным выбранным вариантом.",
+      "example": "gui.ComboBox quality;\nquality.add_item(\"Низкое\");\nquality.add_item(\"Высокое\");\nquality.selected_index = 1;"
+    },
+    "gui.FloatSpinBox": {
+      "description": "Поле выбора дробного числа с границами и шагом.",
+      "example": "gui.FloatSpinBox opacity;\nopacity.min = 0.0;\nopacity.max = 1.0;\nopacity.step = 0.1;\nopacity.value = 0.7;"
+    },
+    "gui.Frame": {
+      "description": "Видимый контейнер, который группирует вложенные виджеты.",
+      "example": "gui.Frame panel;\npanel.title = \"Параметры\";\npanel.add_child(name_input);"
+    },
+    "gui.ImageBox": {
+      "description": "Виджет для показа image.Static или image.Animation внутри окна.",
+      "notes": [
+        "ImageBox не загружает файлы. Готовый ресурс передаётся через set_image().",
+        "resize_mode принимает fit, fill, stretch или original."
+      ],
+      "example": "gui.ImageBox preview;\npreview.width = 240;\npreview.height = 160;\npreview.resize_mode = \"fit\";\npreview.set_image(picture);"
+    },
+    "gui.KeyboardEvent": {
+      "description": "Данные события клавиатуры с именем нажатой или отпущенной клавиши.",
+      "example": "canvas.on_key_pressed = void function(gui.Canvas cvs, gui.KeyboardEvent event) {\n    console.writeln(event.key);\n};"
+    },
+    "gui.Label": {
+      "description": "Текстовая надпись, которая также может реагировать на клик.",
+      "example": "gui.Label status;\nstatus.text = \"Готово\";\nstatus.text_color = colors.GREEN;\nstatus.font_size = 20;"
+    },
+    "gui.LineEdit": {
+      "description": "Однострочное поле ввода текста.",
+      "example": "gui.LineEdit login;\nlogin.placeholder = \"Имя игрока\";\nlogin.echo_mode = \"normal\";"
+    },
+    "gui.Modal": {
+      "description": "Модальный диалог для сообщения, подтверждения или ввода строки.",
+      "example": "gui.Modal dialog;\ndialog.title = \"Удаление\";\ndialog.message = \"Удалить сохранение?\";\ndialog.on_confirm = delete_save;\ndialog.show_confirm();"
+    },
+    "gui.MouseEvent": {
+      "description": "Координаты и кнопка мыши для событий нажатия и отпускания.",
+      "example": "canvas.on_mouse_pressed = void function(gui.Canvas cvs, gui.MouseEvent event) {\n    console.writeln(event.mouse_button, \": \", event.x, \", \", event.y);\n};"
+    },
+    "gui.MouseScrollEvent": {
+      "description": "Координаты курсора и направление прокрутки колеса мыши.",
+      "example": "canvas.on_mouse_scroll = void function(gui.Canvas cvs, gui.MouseScrollEvent event) {\n    zoom = zoom + event.delta;\n};"
+    },
+    "gui.ProgressBar": {
+      "description": "Полоса прогресса с диапазоном, текущим значением и настраиваемыми цветами.",
+      "example": "gui.ProgressBar loading;\nloading.min = 0;\nloading.max = 400;\nloading.value = 100;\nloading.foreground_color = colors.RED;"
+    },
+    "gui.RadioButton": {
+      "description": "Переключатель для выбора одного значения внутри именованной группы.",
+      "example": "gui.RadioButton easy;\neasy.text = \"Легко\";\neasy.group = \"difficulty\";\neasy.is_selected = true;"
+    },
+    "gui.Slider": {
+      "description": "Ползунок для выбора целого значения из диапазона.",
+      "example": "gui.Slider volume;\nvolume.min = 0;\nvolume.max = 100;\nvolume.step = 5;\nvolume.value = 60;"
+    },
+    "gui.SpinBox": {
+      "description": "Поле выбора целого числа с границами и шагом.",
+      "example": "gui.SpinBox lives;\nlives.min = 1;\nlives.max = 9;\nlives.value = 3;"
+    },
+    "gui.TextEdit": {
+      "description": "Многострочное поле ввода текста.",
+      "example": "gui.TextEdit description;\ndescription.placeholder = \"Описание уровня\";\ndescription.width = 320;\ndescription.height = 140;"
+    },
+    "gui.Timer": {
+      "description": "Периодический таймер, вызывающий on_tick через заданное число миллисекунд.",
+      "example": "gui.Timer timer;\ntimer.interval = 1000;\ntimer.on_tick = update_clock;\ntimer.start();"
+    },
+    "drawable.Drawable": {
+      "description": "Общий базовый тип объектов, которые можно передать в Canvas.draw() и проверять методами contains() и intersects()."
+    },
+    "drawable.Circle": {
+      "description": "Круг с радиусом, заливкой и границей. По умолчанию x/y указывают левый верхний угол ограничивающего квадрата.",
+      "notes": [
+        "Вызов set_origin(radius, radius) переносит origin в центр круга, после чего x/y становятся мировой позицией центра."
+      ],
+      "example": "drawable.Circle ball;\nball.radius = 20;\nball.set_origin(20, 20);\nball.x = 120;\nball.y = 80;\nball.fill_color = colors.BLUE;"
+    },
+    "drawable.Line": {
+      "description": "Отрезок между двумя точками с цветом и толщиной. Геометрические проверки учитывают толщину и круглые концы.",
+      "example": "drawable.Line axis;\naxis.x1 = 20;\naxis.y1 = 100;\naxis.x2 = 300;\naxis.y2 = 100;\naxis.thickness = 3;"
+    },
+    "drawable.Rectangle": {
+      "description": "Прямоугольник с размерами, заливкой, границей, origin и вращением.",
+      "example": "drawable.Rectangle platform;\nplatform.x = 40;\nplatform.y = 220;\nplatform.width = 180;\nplatform.height = 24;"
+    },
+    "drawable.Sprite": {
+      "description": "Canvas-объект, отображающий image.Static или image.Animation с origin, вращением и масштабом.",
+      "notes": [
+        "contains() и intersects() используют весь прямоугольник картинки, включая прозрачные пиксели."
+      ],
+      "example": "drawable.Sprite hero;\nhero.set_image(hero_picture);\nhero.x = 100;\nhero.y = 160;\nhero.set_scale(1.5, 1.5);"
+    },
+    "drawable.Text": {
+      "description": "Текстовый Canvas-объект с выбранным шрифтом, размером, цветом, origin и вращением.",
+      "notes": [
+        "contains() и intersects() используют прямоугольную область строки, рассчитанную по метрикам загруженного шрифта, а не контуры букв.",
+        "Без явно назначенного Font Text использует встроенный Source Code Pro; пользовательские TTF, OTF, WOFF и WOFF2 тоже измеряются точно.",
+        "Если в загруженном шрифте нет символа, геометрическая проверка сообщает об этом вместо неточного измерения fallback-шрифта."
+      ],
+      "example": "drawable.Text score;\nscore.font = heading_font;\nscore.text = \"Счёт: 120\";\nscore.font_size = 28;\n\nbool hovered = score.contains(mouse_x, mouse_y);"
+    },
+    "colors.Color": {
+      "description": "Строго типизированное значение цвета для GUI-виджетов, Canvas-объектов и преобразований изображений.",
+      "notes": [
+        "Color создаётся функциями RGB(), RGBA(), HSL(), HEX() или берётся из готовой константы.",
+        "Отдельные каналы объекта Color не редактируются напрямую. Для другого цвета создайте новое значение."
+      ],
+      "example": "colors.Color text = colors.RGB(34, 145, 188);\ncolors.Color overlay = colors.RGBA(34, 145, 188, 0.4);\ncolors.Color same = colors.HSL(197, 69, 44);\nlabel.text_color = text;"
+    },
+    "types.int8": {
+      "description": "Знаковое 8-битное целое число: от -128 до 127.",
+      "example": "types.int8 value = 130;   // -126"
+    },
+    "types.uint8": {
+      "description": "Беззнаковое 8-битное целое число: от 0 до 255.",
+      "example": "types.uint8 value = -11;  // 245"
+    },
+    "types.int16": {
+      "description": "Знаковое 16-битное целое число: от -32768 до 32767.",
+      "example": "types.int16 value = 40000;  // -25536"
+    },
+    "types.uint16": {
+      "description": "Беззнаковое 16-битное целое число: от 0 до 65535.",
+      "example": "types.uint16 value = -1000;  // 64536"
+    },
+    "types.int32": {
+      "description": "Знаковое 32-битное целое число: от -2147483648 до 2147483647.",
+      "example": "types.int32 value = 3000000000;  // -1294967296"
+    },
+    "types.uint32": {
+      "description": "Беззнаковое 32-битное целое число: от 0 до 4294967295.",
+      "example": "types.uint32 value = -1;  // 4294967295"
+    },
+    "types.int64": {
+      "description": "Знаковое 64-битное целое число: от -9223372036854775808 до 9223372036854775807.",
+      "notes": [
+        "Значение хранится точно во всём диапазоне и циклически переполняется на границе типа."
+      ],
+      "example": "types.int64 value = 9223372036854775807;\nvalue += 1;  // -9223372036854775808"
+    },
+    "types.uint64": {
+      "description": "Беззнаковое 64-битное целое число: от 0 до 18446744073709551615.",
+      "notes": [
+        "Значение хранится точно во всём диапазоне и циклически переполняется на границе типа."
+      ],
+      "example": "types.uint64 value = 18446744073709551615;\nvalue += 1;  // 0"
+    },
+    "types.float32": {
+      "description": "32-битное дробное число с одинарной точностью.",
+      "example": "types.float32 value = 0.1 + 0.2;"
+    },
+    "types.float64": {
+      "description": "64-битное дробное число с двойной точностью.",
+      "example": "types.float64 value = 0.1 + 0.2;"
+    }
+  },
+  "members": {
+    "console.write": "Выводит все аргументы подряд и не добавляет перенос строки.",
+    "console.writeln": "Выводит все аргументы подряд, затем переносит строку.",
+    "console.clear": "Очищает содержимое консоли и перемещает курсор в начало.",
+    "math.pi": "Число π.",
+    "math.e": "Число Эйлера.",
+    "random.set_seed": "Устанавливает seed генератора для воспроизводимой последовательности.",
+    "file.exists": "Проверяет существование файла или каталога по указанному пути.",
+    "file.is_file": "Проверяет, существует ли путь и является ли он файлом.",
+    "file.is_directory": "Проверяет, существует ли путь и является ли он каталогом.",
+    "file.create_directory": "Создаёт каталог; parents=true также создаёт недостающих родителей.",
+    "file.list_directory": "Возвращает отсортированные имена непосредственных потомков каталога.",
+    "file.copy": "Копирует файл или дерево каталогов без перезаписи существующей цели.",
+    "file.rename": "Переименовывает или перемещает файл либо каталог внутри проекта.",
+    "file.remove": "Удаляет файл или каталог; для непустого каталога требуется recursive=true.",
+    "file.istream.is_open": "Показывает, открыт ли входной поток.",
+    "file.ostream.is_open": "Показывает, открыт ли выходной поток.",
+    "file.istream.read_all": "Читает весь оставшийся текст потока одной строкой.",
+    "json.Value": "Создаёт json.Value; вызов без аргумента создаёт JSON null.",
+    "audio.Sound.load_from_file": "Загружает аудиофайл или сообщает понятную runtime error.",
+    "audio.Music.load_from_file": "Подготавливает музыкальный файл к потоковому воспроизведению.",
+    "audio.Music.on_finished": "Вызывается после естественного завершения музыки, если loop выключен.",
+    "image.Image.src": "Путь, переданный в load_from_file().",
+    "image.Image.width": "Фактическая ширина изображения в пикселях.",
+    "image.Image.height": "Фактическая высота изображения в пикселях.",
+    "image.Image.format": "Формат, определённый по содержимому файла.",
+    "image.Image.has_alpha": "true, если изображение содержит прозрачные или полупрозрачные пиксели.",
+    "image.Image.is_loaded": "true после успешной загрузки или создания ресурса.",
+    "image.Static.load_from_file": "Загружает и декодирует статичное изображение из файла проекта.",
+    "image.Static.scale": "Создаёт масштабированную копию. Отрицательные коэффициенты отражают изображение.",
+    "image.Static.rotate": "Создаёт копию, повёрнутую на угол, кратный 90 градусам.",
+    "image.Static.tint": "Создаёт копию, тонированную указанным цветом без потери исходной прозрачности.",
+    "image.Static.with_opacity": "Создаёт копию с прозрачностью от 0.0 до 1.0.",
+    "image.Static.desaturate": "Создаёт частично или полностью обесцвеченную копию.",
+    "image.Static.crop": "Вырезает прямоугольную область, полностью находящуюся внутри изображения.",
+    "image.Static.export_to_file": "Кодирует ресурс в формат, выбранный по расширению выходного файла.",
+    "image.Animation.frame_count": "Количество кадров.",
+    "image.Animation.frame_duration": "Длительность одного кадра для равномерной анимации или длительность первого кадра.",
+    "image.Animation.has_uniform_frame_duration": "true, если длительность всех кадров одинакова.",
+    "image.Animation.load_from_file": "Загружает GIF или APNG с несколькими кадрами.",
+    "image.Animation.get_frame": "Возвращает выбранный кадр как image.Static.",
+    "image.Animation.get_frame_duration": "Возвращает длительность конкретного кадра в секундах.",
+    "image.Animation.create_from_frames": "Создаёт равномерную анимацию из массива статичных изображений одинакового размера.",
+    "image.Animation.export_to_file": "Сохраняет анимацию как GIF или APNG.",
+    "fonts.Font.src": "Путь, переданный в load_from_file().",
+    "fonts.Font.format": "Фактический формат ttf, otf, woff или woff2, определённый по содержимому.",
+    "fonts.Font.is_loaded": "true после успешной проверки и загрузки файла шрифта.",
+    "fonts.Font.load_from_file": "Проверяет файл, определяет его формат и подготавливает общий ресурс шрифта.",
+    "gui.Widget.font": "Шрифт виджета. Если не задан явно, наследуется от Window или Frame.",
+    "gui.Window.font": "Шрифт по умолчанию для текстовых дочерних виджетов окна.",
+    "gui.ImageBox.set_image": "Устанавливает общий ресурс типа image.Image.",
+    "drawable.Sprite.set_image": "Устанавливает общий ресурс типа image.Image.",
+    "colors.RGB": "Создаёт непрозрачный цвет по красному, зелёному и синему каналам от 0 до 255.",
+    "colors.RGBA": "Создаёт цвет RGB с альфа-каналом от 0.0 до 1.0.",
+    "colors.HEX": "Создаёт цвет из строки #RRGGBB или #RRGGBBAA.",
+    "colors.HSL": "Создаёт цвет по тону, насыщенности и светлоте; насыщенность и светлота задаются в процентах.",
+    "colors.BLACK": "Чёрный непрозрачный цвет.",
+    "colors.WHITE": "Белый непрозрачный цвет.",
+    "colors.RED": "Красный непрозрачный цвет.",
+    "colors.GREEN": "Зелёный непрозрачный цвет.",
+    "colors.BLUE": "Синий непрозрачный цвет.",
+    "colors.TRANSPARENT": "Полностью прозрачный цвет.",
+    "types.from_bin": "Преобразует строку двоичных цифр в указанный types-тип.",
+    "types.from_hex": "Преобразует строку шестнадцатеричных цифр в указанный types-тип."
+  }
+}

@@ -11,6 +11,7 @@ import { DiagnosticBag, SourceRange } from './diagnostics';
 import { Lexer } from './lexer';
 import {
   UserModuleClassSpec,
+  UserModuleConstantSpec,
   UserModuleExports,
   UserModuleFieldSpec,
   UserModuleMethodSpec,
@@ -178,6 +179,7 @@ export function collectModuleExports(
   diagnostics: DiagnosticBag,
 ): UserModuleExports {
   const functions = new Map<string, FunctionSpec>();
+  const constants = new Map<string, UserModuleConstantSpec>();
   const classes = new Map<string, UserModuleClassSpec>();
   const localClasses = new Set<string>();
 
@@ -195,6 +197,22 @@ export function collectModuleExports(
       );
     }
 
+    if (declaration.kind === 'VariableDeclaration' && declaration.isConst) {
+      constants.set(declaration.name, {
+        name: declaration.name,
+        type: resolveModuleExportType(
+          declaration.declaredType,
+          module.name,
+          module.ast,
+          localClasses,
+          stdlib,
+          userModules,
+          diagnostics,
+        ),
+        range: declaration.nameRange,
+      });
+    }
+
     if (declaration.kind === 'ClassDeclaration') {
       classes.set(
         declaration.name,
@@ -207,6 +225,7 @@ export function collectModuleExports(
     name: module.name,
     file: module.file,
     functions,
+    constants,
     classes,
   };
 }

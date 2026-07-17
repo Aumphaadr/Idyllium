@@ -28,10 +28,17 @@ The first draft object set is:
 
 - `drawable.Rectangle`
 - `drawable.Circle`
+- `drawable.Line`
 - `drawable.Sprite`
-- `drawable.Texture`
-- `drawable.Font`
 - `drawable.Text`
+
+Fonts live in the shared `fonts` module. A `fonts.Font` can be assigned to both
+GUI widgets and `drawable.Text`. Font resources are declared only through
+`fonts.Font`.
+
+Images live in the shared `image` module. Both `image.Static` and
+`image.Animation` can be passed to `drawable.Sprite.set_image()`. The removed
+`drawable.Texture` type must not be restored as a compatibility alias.
 
 The first draft event set is:
 
@@ -52,12 +59,17 @@ canvas.on_mouse_scroll = my_scene.on_mouse_scroll;
 canvas.on_update = my_scene.on_update;
 ```
 
-Open semantic decisions:
+Frozen semantic decisions:
 
 - `deltaTime` should be measured in seconds.
 - Mouse coordinates should be relative to the Canvas.
-- Missing texture/font files should raise clear runtime errors.
+- Missing image/font files should raise clear runtime errors.
+- A completed `image.Static.load_from_file()` or
+  `image.Animation.load_from_file()` call leaves the resource ready to draw;
+  user code does not add sleeps to wait for browser decoding.
 
-Future GUI topic:
+Shared GUI display:
 
-- Add a `gui.Image` widget for showing pictures in widget layouts. Before implementation, decide how the widget should handle image/widget size mismatch: stretch, contain, cover, crop, align, or another explicit mode.
+- `gui.ImageBox` displays the same `image.Image` resources as Canvas sprites.
+- `ImageBox.resize_mode` supports `fit`, `fill`, `stretch`, and `original`.
+- `gui.Image` does not exist, including as a legacy alias.

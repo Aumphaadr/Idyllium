@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 27: Типичные ошибки — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+  <style>
+    .error-example {
+      margin: 1.5em 0;
+    }
+    .error-message {
+      background: rgba(243, 139, 168, 0.15);
+      border-left: 3px solid #f38ba8;
+      padding: 0.75em 1em;
+      font-family: 'Source Code Pro', monospace;
+      font-size: 0.85em;
+      color: #f38ba8;
+      margin: 0.5em 0 1em 0;
+      border-radius: 0 6px 6px 0;
+    }
+    .warning-message {
+      background: rgba(249, 226, 175, 0.15);
+      border-left: 3px solid #f9e2af;
+      padding: 0.75em 1em;
+      font-family: 'Source Code Pro', monospace;
+      font-size: 0.85em;
+      color: #f9e2af;
+      margin: 0.5em 0 1em 0;
+      border-radius: 0 6px 6px 0;
+    }
+    .tip-box {
+      background: rgba(137, 180, 250, 0.1);
+      border: 1px solid rgba(137, 180, 250, 0.3);
+      border-radius: 8px;
+      padding: 1em 1.25em;
+      margin: 1.5em 0;
+    }
+    .tip-box strong {
+      color: #89b4fa;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Документация</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">Урок 27</div>
+      <h1>Типичные ошибки</h1>
+      <p class="docs-subtitle">Справочник ошибок компиляции и выполнения — с примерами и пояснениями</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Два вида ошибок</h2>
+      <p>В Idyllium существует два вида ошибок:</p>
+      <ul>
+        <li><strong>Ошибки компиляции</strong> — обнаруживаются до запуска программы. Программа не будет запущена, пока вы их не исправите.</li>
+        <li><strong>Ошибки выполнения (runtime errors)</strong> — возникают во время работы программы. Компиляция проходит успешно, но при выполнении что-то идёт не так.</li>
+      </ul>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Ошибки компиляции: типы данных</h2>
+
+      <h3>Несовместимый тип при объявлении переменной</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    int x = "hello";
+}
+</script></idyl-code-block>
+      <div class="error-message">main.idyl:2: error: cannot assign 'string' value to 'int' variable</div>
+      <p>Переменной типа <code>int</code> нельзя присвоить строку. Используйте <code>to_int()</code> для преобразования.</p>
+
+      <h3>Несовместимый тип при присваивании</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    int x = 10;
+    x = 3.14;
+}
+</script></idyl-code-block>
+      <div class="error-message">main.idyl:3: error: cannot assign 'float' to 'int'</div>
+      <p>Переменная уже объявлена как <code>int</code> — в неё нельзя записать дробное число.</p>
+
+      <h3>Переменная типа void</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    void x;
+}
+</script></idyl-code-block>
+      <div class="error-message">main.idyl:2: error: cannot declare variable of type 'void'</div>
+      <p>Тип <code>void</code> означает «ничего» и используется только как тип возврата функций.</p>
+
+      <h3>Деление всегда возвращает float</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    int a = 10;
+    int b = 3;
+    int c = a / b;
+}
+</script></idyl-code-block>
+      <div class="error-message">main.idyl:4: error: cannot assign 'float' value to 'int' variable</div>
+      <p>Оператор <code>/</code> всегда возвращает <code>float</code>. Для целочисленного деления используйте <code>div(a, b)</code>.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Ошибки компиляции: необъявленные имена</h2>
+
+      <h3>Использование необъявленной переменной</h3>
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    console.write(x);
+}
+</script></idyl-code-block>
+      <div class="error-message">main.idyl:4: error: 'x' was not declared in this scope</div>
+      <p>Переменная <code>x</code> не была создана. Объявите её перед использованием.</p>
+
+      <h3>Использование библиотеки без импорта</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    int x = math.abs(-5);
+}
+</script></idyl-code-block>
+      <div class="error-message">main.idyl:2: error: 'math' was not declared in this scope</div>
+      <p>Библиотеку нужно подключить: <code>use math;</code></p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Ошибки компиляции: условия и циклы</h2>
+
+      <h3>Условие должно быть типа bool</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    if (5) {
+        int x = 1;
+    }
+}
+</script></idyl-code-block>
+      <div class="error-message">main.idyl:2: error: condition must be 'bool', found 'int'</div>
+      <p>Условие в <code>if</code>, <code>while</code>, <code>for</code> должно быть логическим выражением. Используйте операторы сравнения: <code>5 > 0</code>, <code>x == 10</code> и т.д.</p>
+
+      <h3>break и continue вне цикла</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    break;
+}
+</script></idyl-code-block>
+      <div class="error-message">main.idyl:2: error: 'break' is only valid inside a loop</div>
+      <p>Операторы <code>break</code> и <code>continue</code> работают только внутри <code>while</code>, <code>do-while</code> и <code>for</code>.</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Ошибки компиляции: функции</h2>
+
+      <h3>Функция не возвращает значение</h3>
+      <idyl-code-block><script type="text/plain">
+int function double(int n) {
+    int result = n * 2;
+}
+
+main() { }
+</script></idyl-code-block>
+      <div class="warning-message">main.idyl: warning: 'int' function must return a value</div>
+      <p>Функция объявлена как <code>int</code>, но не содержит <code>return</code>. Добавьте <code>return result;</code> в конец.</p>
+
+      <h3>void-функция возвращает значение</h3>
+      <idyl-code-block><script type="text/plain">
+void function greet() {
+    return "Hello";
+}
+
+main() { }
+</script></idyl-code-block>
+      <div class="error-message">main.idyl:2: error: 'void' function cannot return a value</div>
+      <p>Функция объявлена как <code>void</code> — она не может возвращать значение. Уберите <code>return</code> или смените тип на <code>string</code>.</p>
+
+      <h3>Неправильное количество аргументов</h3>
+      <idyl-code-block><script type="text/plain">
+int function add(int a, int b) {
+    return a + b;
+}
+
+main() {
+    int x = add(1, 2, 3);
+}
+</script></idyl-code-block>
+      <div class="error-message">main.idyl:6: error: function 'add' expects 2 argument(s), got 3</div>
+      <p>Функция <code>add</code> принимает 2 аргумента, а передано 3.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Ошибки компиляции: массивы</h2>
+
+      <h3>Неправильный размер массива</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    array<int, 5> nums = [1, 2, 3];
+}
+</script></idyl-code-block>
+      <div class="error-message">main.idyl:2: error: array initialization has 3 elements, expected 5</div>
+      <p>Количество элементов в инициализаторе должно совпадать с размером массива.</p>
+
+      <h3>Метод динамического массива на статическом</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    array<int, 3> arr = [1, 2, 3];
+    arr.add(4);
+}
+</script></idyl-code-block>
+      <div class="error-message">main.idyl:3: error: '.add' is only available on dynamic arrays (dyn_array)</div>
+      <p>Статический массив имеет фиксированный размер. Используйте <code>dyn_array&lt;int&gt;</code> для динамического массива.</p>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>Ошибки компиляции: строки</h2>
+
+      <h3>Сравнение массива с числом</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    array<int, 3> arr = [1, 2, 3];
+    if (arr > 5) { }
+}
+</script></idyl-code-block>
+      <div class="error-message">main.idyl:3: error: cannot compare 'array&lt;int, 3&gt;' with 'int'</div>
+      <p>Массив нельзя сравнивать с числом. Сравнивайте отдельные элементы: <code>arr[0] > 5</code>.</p>
+    </div>
+
+    <!-- Section 9 -->
+    <div class="docs-section">
+      <h2>Ошибки выполнения</h2>
+
+      <h3>Деление на ноль</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    int x = div(10, 0);
+}
+</script></idyl-code-block>
+      <div class="error-message">main.idyl:2: runtime error: division by zero</div>
+      <p>Деление на ноль невозможно. Проверяйте делитель перед операцией.</p>
+
+      <h3>Выход за границы массива</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    array<int, 3> arr = [10, 20, 30];
+    int x = arr[5];
+}
+</script></idyl-code-block>
+      <div class="error-message">main.idyl:3: runtime error: array index 5 out of bounds (size 3, valid indices 0-2)</div>
+      <p>Индекс 5 выходит за пределы массива из 3 элементов. Допустимые индексы: 0, 1, 2.</p>
+
+      <h3>Выход за границы строки</h3>
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    string s = "ABC";
+    char c = s[10];
+}
+</script></idyl-code-block>
+      <div class="error-message">main.idyl:4: runtime error: string index 10 out of bounds (length 3, valid indices 0-2)</div>
+      <p>Индекс 10 выходит за пределы строки длиной 3.</p>
+
+      <h3>Некорректное преобразование</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    int x = to_int("abc");
+}
+</script></idyl-code-block>
+      <div class="error-message">main.idyl:2: runtime error: 'to_int' cannot convert "abc" to integer</div>
+      <p>Строка "abc" не содержит число. Используйте метод <code>.is_int()</code> для проверки перед преобразованием.</p>
+
+      <h3>Корень из отрицательного числа</h3>
+      <idyl-code-block><script type="text/plain">
+use math;
+
+main() {
+    float x = math.sqrt(-4);
+}
+</script></idyl-code-block>
+      <div class="error-message">main.idyl:4: runtime error: math.sqrt argument must be >= 0 (got -4)</div>
+      <p>Квадратный корень из отрицательного числа не определён в вещественных числах.</p>
+
+      <h3>Файл не найден</h3>
+      <idyl-code-block><script type="text/plain">
+use file;
+
+main() {
+    file.istream f = file.open("data.txt", "read");
+}
+</script></idyl-code-block>
+      <div class="error-message">main.idyl:4: runtime error: cannot open file "data.txt" for reading (file not found)</div>
+      <p>Файл <code>data.txt</code> не существует в файловой системе проекта. Создайте его перед чтением.</p>
+
+      <h3>Pop из пустого массива</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    dyn_array<int> arr;
+    int x = arr.pop();
+}
+</script></idyl-code-block>
+      <div class="error-message">main.idyl:3: runtime error: cannot pop from empty array</div>
+      <p>Массив пуст — нечего извлекать. Проверяйте <code>arr.length() > 0</code> перед вызовом <code>pop()</code>.</p>
+
+      <h3>Неизвестная кодировка</h3>
+      <idyl-code-block><script type="text/plain">
+use encoding;
+
+main() {
+    int code = encoding.char_to_int('A', "cp866");
+}
+</script></idyl-code-block>
+      <div class="error-message">main.idyl:4: runtime error: unknown encoding 'cp866'</div>
+      <p>Кодировка <code>cp866</code> не поддерживается. Используйте <code>encoding.list_encodings()</code> для получения списка доступных кодировок.</p>
+    </div>
+
+    <!-- Section 10 -->
+    <div class="docs-section">
+      <h2>Как читать сообщения об ошибках</h2>
+      <p>Каждое сообщение содержит:</p>
+      <ol>
+        <li><strong>Файл и строку</strong> — <code>main.idyl:4</code> означает файл <code>main.idyl</code>, строка 4;</li>
+        <li><strong>Тип ошибки</strong> — <code>error</code> (ошибка компиляции) или <code>runtime error</code> (ошибка выполнения);</li>
+        <li><strong>Описание</strong> — что именно пошло не так.</li>
+      </ol>
+
+      <div class="tip-box">
+        <strong>💡 Совет:</strong> начинайте исправлять ошибки с первой — часто исправление одной ошибки убирает несколько последующих.
+      </div>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="026_matrix.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 26: Двумерные массивы</strong>
+      </a>
+      <a class="docs-nav-btn next disabled" href="#">
+        <span>Следующий урок →</span>
+        <strong>Курс завершён</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

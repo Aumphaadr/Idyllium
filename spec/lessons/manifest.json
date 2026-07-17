@@ -2,8 +2,8 @@
   "version": 1,
   "sourceRoot": "/home/nathaniel/IdylliumProjects/Idyllium/docs/lessons",
   "normalization": "IdylCodeBlock visible code: raw.replace(/^\\n/, '').replace(/\\n\\s*$/, '') with LF line endings",
-  "totalExamples": 352,
-  "contentSha256": "812bb123ff3f28e4a535a2d423952fdba2bd94d8fe0f89a24d8a23b121cb4a9c",
+  "totalExamples": 366,
+  "contentSha256": "d4d0a4ae33a15347dc66861d5331853cde0b1a56c1f48eac39ac940f2b638fec",
   "examples": [
     {
       "id": "cli.001_hello.001",
@@ -2598,6 +2598,24 @@
       "reasons": [
         "code block is not a complete standalone program"
       ]
+    },
+    {
+      "id": "cli.020_types.011",
+      "section": "cli",
+      "lessonPath": "cli/020_types.html",
+      "lessonTitle": "Библиотека types",
+      "blockIndex": 11,
+      "sourceLine": 334,
+      "codeFile": "examples/cli/020_types/011.idyl",
+      "sha256": "b336ba079f62d7d6ebafe8810d6973316fc271ebdc442242dc7c07cc45581108",
+      "form": "program",
+      "expectation": "unspecified",
+      "tags": [
+        "entry:main",
+        "module:console",
+        "module:types"
+      ],
+      "reasons": []
     },
     {
       "id": "cli.021_encoding.001",
@@ -6302,6 +6320,253 @@
       ],
       "reasons": [
         "code contains an explicit teaching error marker"
+      ]
+    },
+    {
+      "id": "sqlite.001_intro.001",
+      "section": "sqlite",
+      "lessonPath": "sqlite/intro.html",
+      "lessonTitle": "Первая база данных",
+      "blockIndex": 1,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/001_intro/001.idyl",
+      "sha256": "0d78e494c058a20f0372c6d78c9ec1a6da56b03e7b1c6bbe8e9e828423973ec0",
+      "form": "program",
+      "expectation": "unspecified",
+      "tags": [
+        "entry:main",
+        "module:console",
+        "module:sqlite"
+      ],
+      "reasons": []
+    },
+    {
+      "id": "sqlite.002_changes.001",
+      "section": "sqlite",
+      "lessonPath": "sqlite/changes.html",
+      "lessonTitle": "Таблицы и первые записи",
+      "blockIndex": 1,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/002_changes/001.idyl",
+      "sha256": "e16cadaf337599d1bb296ee31e57d44d494618c5dff20f9680b4214890b1a005",
+      "form": "program",
+      "expectation": "unspecified",
+      "tags": [
+        "entry:main",
+        "feature:while",
+        "module:console",
+        "module:sqlite"
+      ],
+      "reasons": []
+    },
+    {
+      "id": "sqlite.003_select.001",
+      "section": "sqlite",
+      "lessonPath": "sqlite/select.html",
+      "lessonTitle": "Чтение строк",
+      "blockIndex": 1,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/003_select/001.idyl",
+      "sha256": "6f05b47b0a11bfc835ef55335eaba87baa9362304fcd4a56317439b0827dbfb0",
+      "form": "program",
+      "expectation": "unspecified",
+      "tags": [
+        "entry:main",
+        "feature:while",
+        "module:console",
+        "module:sqlite"
+      ],
+      "reasons": []
+    },
+    {
+      "id": "sqlite.004_parameters.001",
+      "section": "sqlite",
+      "lessonPath": "sqlite/parameters.html",
+      "lessonTitle": "Безопасные параметры",
+      "blockIndex": 1,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/004_parameters/001.idyl",
+      "sha256": "bf62aeadb4c318971bfd64b14d31a543f57455fdf805b108701805c97f123fc5",
+      "form": "program",
+      "expectation": "unspecified",
+      "tags": [
+        "entry:main",
+        "module:console",
+        "module:sqlite"
+      ],
+      "reasons": []
+    },
+    {
+      "id": "sqlite.005_filters.001",
+      "section": "sqlite",
+      "lessonPath": "sqlite/filters.html",
+      "lessonTitle": "Поиск и фильтрация",
+      "blockIndex": 1,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/005_filters/001.idyl",
+      "sha256": "ed63e2fff4b32634f7f381339ef8393509333f13fde1f1836455373aae7334e6",
+      "form": "program",
+      "expectation": "unspecified",
+      "tags": [
+        "entry:main",
+        "feature:while",
+        "module:console",
+        "module:sqlite"
+      ],
+      "reasons": []
+    },
+    {
+      "id": "sqlite.006_null.001",
+      "section": "sqlite",
+      "lessonPath": "sqlite/null.html",
+      "lessonTitle": "Неизвестные значения и null",
+      "blockIndex": 1,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/006_null/001.idyl",
+      "sha256": "072bea0e3a6971d14a6e3b669cbef39e2f21c9337dfe5554cf46c5e8ae0099b7",
+      "form": "program",
+      "expectation": "unspecified",
+      "tags": [
+        "entry:main",
+        "feature:null",
+        "feature:while",
+        "module:console",
+        "module:sqlite"
+      ],
+      "reasons": []
+    },
+    {
+      "id": "sqlite.007_reuse.001",
+      "section": "sqlite",
+      "lessonPath": "sqlite/reuse.html",
+      "lessonTitle": "Много записей одним запросом",
+      "blockIndex": 1,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/007_reuse/001.idyl",
+      "sha256": "1e28296733d0c7eac31e7c62f09360f75a8aeaceae25df473bbdfd51591455cc",
+      "form": "program",
+      "expectation": "unspecified",
+      "tags": [
+        "entry:main",
+        "feature:array",
+        "feature:for",
+        "module:console",
+        "module:sqlite"
+      ],
+      "reasons": []
+    },
+    {
+      "id": "sqlite.008_transactions.001",
+      "section": "sqlite",
+      "lessonPath": "sqlite/transactions.html",
+      "lessonTitle": "Всё или ничего",
+      "blockIndex": 1,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/008_transactions/001.idyl",
+      "sha256": "e5e11de45d41e083ee75a499f5dd881b2a52fb28990d37b26051036b038fdb79",
+      "form": "program",
+      "expectation": "unspecified",
+      "tags": [
+        "entry:main",
+        "feature:while",
+        "module:console",
+        "module:sqlite"
+      ],
+      "reasons": []
+    },
+    {
+      "id": "sqlite.008_transactions.002",
+      "section": "sqlite",
+      "lessonPath": "sqlite/transactions.html",
+      "lessonTitle": "Всё или ничего",
+      "blockIndex": 2,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/008_transactions/002.idyl",
+      "sha256": "9573b8e2c22edba2ecdb0198965e8646f14684e09142269ed0dc13b078f29e3a",
+      "form": "program",
+      "expectation": "unspecified",
+      "tags": [
+        "entry:main",
+        "module:console",
+        "module:sqlite"
+      ],
+      "reasons": []
+    },
+    {
+      "id": "sqlite.009_scripts.001",
+      "section": "sqlite",
+      "lessonPath": "sqlite/scripts.html",
+      "lessonTitle": "SQL в отдельном файле",
+      "blockIndex": 1,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/009_scripts/001.idyl",
+      "sha256": "1af6d0075a4bcb8a9fa41af91f3bcf32d1a19e42e5cad7a4c3bef6aede5fe4dc",
+      "form": "program",
+      "expectation": "unspecified",
+      "tags": [
+        "entry:main",
+        "feature:while",
+        "module:console",
+        "module:file",
+        "module:sqlite"
+      ],
+      "reasons": []
+    },
+    {
+      "id": "sqlite.010_errors.001",
+      "section": "sqlite",
+      "lessonPath": "sqlite/errors.html",
+      "lessonTitle": "Типичные ошибки",
+      "blockIndex": 1,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/010_errors/001.idyl",
+      "sha256": "12264bc90f7bc4fa0d011b004372fb48a82cedd247ef13af2d4d07c4f93f7e6e",
+      "form": "program",
+      "expectation": "reject",
+      "tags": [
+        "entry:main",
+        "module:sqlite"
+      ],
+      "reasons": [
+        "example is expected to fail at runtime"
+      ]
+    },
+    {
+      "id": "sqlite.010_errors.002",
+      "section": "sqlite",
+      "lessonPath": "sqlite/errors.html",
+      "lessonTitle": "Типичные ошибки",
+      "blockIndex": 2,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/010_errors/002.idyl",
+      "sha256": "2004ebcc3a009abdc275091105c94ed652b7bead52b9520ab19f6ffd79c3a066",
+      "form": "program",
+      "expectation": "reject",
+      "tags": [
+        "entry:main",
+        "module:sqlite"
+      ],
+      "reasons": [
+        "example is expected to fail at runtime"
+      ]
+    },
+    {
+      "id": "sqlite.010_errors.003",
+      "section": "sqlite",
+      "lessonPath": "sqlite/errors.html",
+      "lessonTitle": "Типичные ошибки",
+      "blockIndex": 3,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/010_errors/003.idyl",
+      "sha256": "95bd3ed138aae815a2e070ed90c12131a4ce400bae02be9e1b7e01237075cf4f",
+      "form": "program",
+      "expectation": "reject",
+      "tags": [
+        "entry:main",
+        "module:sqlite"
+      ],
+      "reasons": [
+        "example is expected to fail at runtime"
       ]
     }
   ]

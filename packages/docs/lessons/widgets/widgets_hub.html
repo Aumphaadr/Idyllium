@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Графические виджеты Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+  <style>
+    .docs-nav-categories {
+      background: rgba(137, 180, 250, 0.08);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--border);
+    }
+    .docs-nav-categories h3 {
+      margin-top: 0;
+      margin-bottom: 0.75rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+    }
+    .docs-category-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .docs-category-links a {
+      padding: 0.4rem 0.9rem;
+      border-radius: 20px;
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+      border: 1px solid var(--border);
+    }
+    .docs-category-links a:hover,
+    .docs-category-links a.current {
+      background: var(--accent);
+      color: #1e1e2e;
+      border-color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Графические виджеты</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <h1>🖼️ Графические виджеты</h1>
+      <p class="docs-subtitle">17 уроков — от первого окна до модальных диалогов и типичных ошибок</p>
+    </div>
+
+    <!-- Category Navigation -->
+    <div class="docs-nav-categories">
+      <h3>📚 КАТЕГОРИИ</h3>
+      <div class="docs-category-links">
+        <a href="../cli/cli_hub.html">Консольное программирование</a>
+        <a href="widgets_hub.html" class="current">Графические виджеты</a>
+        <a href="../oop/oop_hub.html">ООП в Idyllium</a>
+        <a href="../examples/examples_hub.html">Примеры задач</a>
+      </div>
+    </div>
+
+    <!-- Lessons Grid -->
+    <div class="docs-lessons-grid">
+
+      <!-- Урок 000 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 000</div>
+        <h2>Первое графическое приложение</h2>
+        <p>Создайте окно, добавьте кнопку и познакомьтесь с координатами виджетов. Никаких обработчиков — только основы.</p>
+        <a href="000_window.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 001 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 001</div>
+        <h2>Кнопки и события</h2>
+        <p>Научитесь обрабатывать нажатия кнопок с помощью события <code>on_click</code>. Изменяйте текст на кнопке и других виджетах.</p>
+        <a href="001_button.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 002 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 002</div>
+        <h2>Виджет Label</h2>
+        <p>Текстовая метка: координаты, размер шрифта, цвет текста и динамическое изменение содержимого.</p>
+        <a href="002_label.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 003 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 003</div>
+        <h2>Виджет ProgressBar</h2>
+        <p>Полоска прогресса — показываем, сколько осталось ждать. Управляйте заполнением через свойство <code>value</code>.</p>
+        <a href="003_progressbar.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 004 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 004</div>
+        <h2>Виджеты SpinBox и FloatSpinBox</h2>
+        <p>Числовые поля с кнопками увеличения/уменьшения. Диапазон, шаг и событие <code>on_change</code>.</p>
+        <a href="004_spinbox.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 005 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 005</div>
+        <h2>Виджет Slider</h2>
+        <p>Ползунок для выбора значения из диапазона. Сравнение со SpinBox и синхронизация между ними.</p>
+        <a href="005_slider.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 006 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 006</div>
+        <h2>Виджеты LineEdit и TextEdit</h2>
+        <p>Однострочное и многострочное текстовые поля. Свойства <code>text</code>, <code>placeholder</code>, <code>font_size</code> и режимы <code>echo_mode</code>.</p>
+        <a href="006_lineedit.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 007 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 007</div>
+        <h2>Виджет CheckBox</h2>
+        <p>Флажок для выбора опции «вкл/выкл». Свойства <code>text</code>, <code>is_checked</code> и событие <code>on_change</code>.</p>
+        <a href="007_checkbox.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 008 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 008</div>
+        <h2>Виджет RadioButton</h2>
+        <p>Переключатель для выбора одного варианта из группы. Свойства <code>group</code> и <code>is_selected</code>, событие <code>on_change</code>.</p>
+        <a href="008_radiobutton.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 009 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 009</div>
+        <h2>Виджет Frame</h2>
+        <p>Контейнер для группировки других виджетов. Создание независимых групп RadioButton и вложенность контейнеров.</p>
+        <a href="009_frame.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 010 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 010</div>
+        <h2>Виджет ComboBox</h2>
+        <p>Выпадающий список для выбора одного варианта из нескольких. Методы <code>add_item()</code>, <code>clear_items()</code> и событие <code>on_change</code>.</p>
+        <a href="010_combobox.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 011 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 011</div>
+        <h2>Видимость виджетов</h2>
+        <p>Свойство <code>visible</code> позволяет скрывать и показывать виджеты. Скрытие контейнера скрывает всех его потомков.</p>
+        <a href="011_visibility.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 012 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 012</div>
+        <h2>Массивы виджетов</h2>
+        <p>Статические и динамические массивы виджетов. Добавление и удаление элементов во время работы программы.</p>
+        <a href="012_arrays.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 013 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 013</div>
+        <h2>Отправители (sender)</h2>
+        <p>Как узнать, какой виджет вызвал обработчик. Параметр <code>sender</code> в событиях <code>on_click</code>, <code>on_change</code> и других.</p>
+        <a href="013_sender.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 014 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 014</div>
+        <h2>Объект Timer</h2>
+        <p>Выполнение кода через равные промежутки времени. Свойства <code>interval</code>, <code>running</code>, методы <code>start()</code>, <code>stop()</code>, <code>restart()</code>.</p>
+        <a href="014_timer.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 015 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 015</div>
+        <h2>Модальные окна</h2>
+        <p>Всплывающие диалоги: Alert (уведомление), Confirm (подтверждение), Input (ввод текста). События <code>on_confirm</code> и <code>on_cancel</code>.</p>
+        <a href="015_modal.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 016 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 016</div>
+        <h2>Типичные ошибки</h2>
+        <p>Забыли <code>add_child()</code>? Неправильный тип в <code>sender</code>? Перекрытие виджетов? Справочник ошибок при работе с GUI.</p>
+        <a href="016_errors.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

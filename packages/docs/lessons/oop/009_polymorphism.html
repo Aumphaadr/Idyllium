@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 9: Переопределение методов — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Объектно-ориентированное программирование</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">ООП • Урок 9</div>
+      <h1>Переопределение методов</h1>
+      <p class="docs-subtitle">Как потомок может изменить поведение унаследованного метода</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Что такое переопределение?</h2>
+      <p><strong>Переопределение метода</strong> — это возможность потомка дать свою реализацию метода, который уже существует в родительском классе.</p>
+      <p>Простыми словами: родитель говорит «все животные издают звук», но потомок решает, какой именно звук он будет издавать.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Пример: животные и их голоса</h2>
+      <p>Создадим класс <code>Animal</code> с методом <code>speak()</code>, который просто выводит многоточие. А затем создадим потомков, которые переопределят этот метод:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+class Animal {
+    string name;
+
+    constructor Animal(string ex_name) {
+        this.name = ex_name;
+    }
+
+    void function speak() {
+        console.writeln("...");
+    }
+}
+
+class Dog extends Animal {
+    constructor Dog(string ex_name) {
+        parent(ex_name);
+    }
+
+    void function speak() {
+        console.writeln(this.name, " гавкнул: Woof!");
+    }
+}
+
+class Cat extends Animal {
+    constructor Cat(string ex_name) {
+        parent(ex_name);
+    }
+
+    void function speak() {
+        console.writeln(this.name, " мяукнул: Meow!");
+    }
+}
+
+main() {
+    Dog rex("Рекс");
+    Cat murka("Мурка");
+
+    rex.speak();   // Рекс гавкнул: Woof!
+    murka.speak(); // Мурка мяукнул: Meow!
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Рекс гавкнул: Woof!
+Мурка мяукнул: Meow!</idyl-output-block>
+
+      <p>Обратите внимание: метод <code>speak()</code> объявлен в классе <code>Animal</code>, но каждый потомок дал свою реализацию. При вызове у объекта вызывается <strong>его собственная</strong> версия метода.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Если метод не переопределён</h2>
+      <p>Если потомок не переопределяет метод, используется версия из родительского класса:</p>
+
+      <idyl-code-block><script type="text/plain">
+class Cow extends Animal {
+    constructor Cow(string ex_name) {
+        parent(ex_name);
+    }
+    // метод speak() не переопределён
+}
+
+main() {
+    Cow burenka("Бурёнка");
+    burenka.speak();   // выведет "..."
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>...</idyl-output-block>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Вызов родительского метода из потомка</h2>
+      <p>В переопределённом методе потомка можно вызвать оригинальный метод родителя с помощью <code>parent.метод()</code>:</p>
+
+      <idyl-code-block><script type="text/plain">
+class Animal {
+    void function greet() {
+        console.writeln("Я животное");
+    }
+}
+
+class Dog extends Animal {
+    void function greet() {
+        console.writeln("Я собака");
+    }
+}
+
+main() {
+    Dog rex;
+    rex.greet();
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Я собака</idyl-output-block>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Важное ограничение</h2>
+      <p>В Idyllium <strong>нет неявного приведения дочернего типа к родительскому</strong>. Это означает, что следующий код не сработает:</p>
+
+      <idyl-code-block><script type="text/plain">
+Animal a = Dog("Рекс");  // ОШИБКА!
+</script></idyl-code-block>
+
+      <div class="error-message">
+        main.idyl: error: cannot convert 'Dog' to 'Animal'
+      </div>
+
+      <p>Каждый объект имеет строго свой тип. Переопределение методов нужно для того, чтобы разные классы могли иметь методы с одинаковыми именами, но разной реализацией — при этом вызываются они всегда через объект конкретного класса.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
+      <h2>Итог</h2>
+      <ul>
+        <li><strong>Переопределение методов</strong> — это когда потомок даёт свою реализацию метода родителя.</li>
+        <li>Если метод не переопределён — используется версия из родительского класса.</li>
+        <li>В Idyllium нет неявного приведения дочернего типа к родительскому — каждый объект строго сохраняет свой тип.</li>
+      </ul>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="008_inheritance.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 8: Наследование</strong>
+      </a>
+      <a class="docs-nav-btn next" href="010_encapsulation.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 10: Инкапсуляция</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

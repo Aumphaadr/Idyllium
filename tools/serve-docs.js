@@ -24,6 +24,7 @@ const mimeTypes = new Map([
   ['.m4a', 'audio/mp4'],
   ['.mp3', 'audio/mpeg'],
   ['.ogg', 'audio/ogg'],
+  ['.otf', 'font/otf'],
   ['.png', 'image/png'],
   ['.svg', 'image/svg+xml; charset=utf-8'],
   ['.ttf', 'font/ttf'],

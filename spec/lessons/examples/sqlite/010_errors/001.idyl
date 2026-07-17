@@ -1,0 +1,16 @@
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("error_unbound.db");
+    db.execute("DROP TABLE IF EXISTS players");
+    db.execute("CREATE TABLE players (name TEXT NOT NULL, level INTEGER NOT NULL)");
+
+    sqlite.Statement stmt = db.prepare(
+        "INSERT INTO players (name, level) VALUES (:name, :level)"
+    );
+    stmt.bind_string("name", "Liam");
+    stmt.execute();
+}
+
+// Expected:
+// main.idyl:12: runtime error: sqlite statement has unbound parameter ':level'

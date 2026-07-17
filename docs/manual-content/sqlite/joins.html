@@ -1,0 +1,126 @@
+<div class="docs-section">
+  <h2>Зачем делить данные на таблицы?</h2>
+  <p>
+    У каждого игрока может быть гильдия. Если хранить её название прямо в
+    <code>players</code>, слово <code>Explorers</code> повторится во множестве
+    строк. А при переименовании гильдии придётся искать и изменять их все.
+  </p>
+  <p>
+    Разделим сущности: таблица <code>guilds</code> хранит гильдии, а
+    <code>players.guild_id</code> — только идентификатор нужной гильдии.
+  </p>
+  <table>
+    <caption>Таблица guilds</caption>
+    <thead><tr><th>id</th><th>title</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Explorers</td></tr>
+      <tr><td>2</td><td>Night Owls</td></tr>
+    </tbody>
+  </table>
+  <table>
+    <caption>Таблица players</caption>
+    <thead><tr><th>id</th><th>name</th><th>guild_id</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Liam</td><td>1</td></tr>
+      <tr><td>2</td><td>Mira</td><td>2</td></tr>
+      <tr><td>3</td><td>Omar</td><td>1</td></tr>
+      <tr><td>4</td><td>Nika</td><td>NULL</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="docs-section">
+  <h2>Описываем связь</h2>
+  <p>
+    <code>FOREIGN KEY</code> называется внешним ключом. Он объясняет, что
+    <code>guild_id</code> ссылается на первичный ключ <code>guilds.id</code>.
+  </p>
+  <sql-code-block><script type="text/plain">
+CREATE TABLE guilds (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT UNIQUE
+);
+
+CREATE TABLE players (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    guild_id INTEGER,
+    FOREIGN KEY (guild_id) REFERENCES guilds(id)
+);
+</script></sql-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>Соединяем строки</h2>
+  <p>
+    <code>JOIN</code> соединяет строки разных таблиц. Условие после
+    <code>ON</code> говорит, какие строки подходят друг другу: значение
+    <code>players.guild_id</code> должно совпасть с <code>guilds.id</code>.
+  </p>
+  <sql-code-block><script type="text/plain">
+SELECT
+    players.name,
+    guilds.title AS guild
+FROM players
+JOIN guilds ON players.guild_id = guilds.id
+ORDER BY players.name;
+</script></sql-code-block>
+  <table>
+    <caption>Результат JOIN</caption>
+    <thead><tr><th>name</th><th>guild</th></tr></thead>
+    <tbody>
+      <tr><td>Liam</td><td>Explorers</td></tr>
+      <tr><td>Mira</td><td>Night Owls</td></tr>
+      <tr><td>Omar</td><td>Explorers</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Ники нет в результате: её <code>guild_id</code> равен <code>NULL</code>, и
+    подходящей строки в <code>guilds</code> не существует.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Псевдонимы и LEFT JOIN</h2>
+  <p>
+    В длинном запросе названия таблиц можно сократить через <code>AS</code>.
+    <code>LEFT JOIN</code> сохраняет все строки левой таблицы, даже если справа
+    ничего не нашлось.
+  </p>
+  <sql-code-block><script type="text/plain">
+SELECT
+    p.name,
+    g.title AS guild
+FROM players AS p
+LEFT JOIN guilds AS g ON p.guild_id = g.id
+ORDER BY p.name;
+</script></sql-code-block>
+  <table>
+    <caption>Результат LEFT JOIN</caption>
+    <thead><tr><th>name</th><th>guild</th></tr></thead>
+    <tbody>
+      <tr><td>Liam</td><td>Explorers</td></tr>
+      <tr><td>Mira</td><td>Night Owls</td></tr>
+      <tr><td>Nika</td><td>NULL</td></tr>
+      <tr><td>Omar</td><td>Explorers</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Буквы <code>p</code> и <code>g</code> — не новые таблицы, а временные
+    короткие имена внутри одного запроса. В Idyllium результат читается
+    привычным способом; для Ники колонку <code>guild</code> нужно проверить
+    через <code>is_null()</code>.
+  </p>
+  <idyl-code-block><script type="text/plain">
+while (rows.next()) {
+    console.write(rows.get_string("name"), ": ");
+
+    if (rows.is_null("guild")) {
+        console.writeln("без гильдии");
+    }
+    else {
+        console.writeln(rows.get_string("guild"));
+    }
+}
+</script></idyl-code-block>
+</div>

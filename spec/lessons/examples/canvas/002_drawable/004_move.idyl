@@ -17,8 +17,8 @@ void function init(gui.Canvas canvas) {
     box.fill_color = colors.RGB(34, 145, 188);
     box.move(20, 10);
 
-    ball.x = 190;
-    ball.y = 70;
+    ball.x = 165;
+    ball.y = 45;
     ball.radius = 25;
     ball.fill_color = colors.RGB(255, 210, 80);
     ball.move(0, 40);

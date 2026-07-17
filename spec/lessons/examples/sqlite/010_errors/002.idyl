@@ -1,0 +1,15 @@
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("error_getter.db");
+    db.execute("DROP TABLE IF EXISTS players");
+    db.execute("CREATE TABLE players (name TEXT NOT NULL)");
+    db.execute("INSERT INTO players VALUES ('Mira')");
+
+    sqlite.Result rows = db.execute("SELECT name FROM players");
+    rows.next();
+    int name = rows.get_int("name");
+}
+
+// Expected:
+// main.idyl:11: runtime error: sqlite column 'name' is text, expected int

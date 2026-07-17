@@ -1,0 +1,23 @@
+// Открытие отсутствующего файла создаёт новую SQLite-базу.
+// Повторный запуск безопасен благодаря IF NOT EXISTS.
+
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("first_database.db");
+
+    db.execute(
+        "CREATE TABLE IF NOT EXISTS players (" +
+        "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+        "name TEXT NOT NULL, " +
+        "level INTEGER NOT NULL DEFAULT 1, " +
+        "nickname TEXT" +
+        ")"
+    );
+
+    console.writeln("Database created: ", db.path);
+    console.writeln("Connection is open: ", db.is_open);
+
+    db.close();
+}

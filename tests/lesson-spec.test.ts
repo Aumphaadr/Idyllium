@@ -1,4 +1,4 @@
-import { compileIdyllium, runIdyllium } from '../src';
+import { compileIdyllium, createMemoryRuntimeFileSystem, runIdyllium } from '../src';
 
 const fs: any = require('fs');
 const path: any = require('path');
@@ -102,7 +102,7 @@ async function main(): Promise<void> {
           compileErrors++;
           break;
         case 'runtime_error':
-          await assertRuntimeError(example, code, expectation);
+          await assertRuntimeError(example, code, expectation, codePath);
           runtimeErrors++;
           break;
         case 'valid':
@@ -155,8 +155,14 @@ function assertCompileError(example: LessonExample, code: string, expectation: L
   assertIncludes(example.id, compiled.diagnosticsText, expectation.diagnosticIncludes ?? []);
 }
 
-async function assertRuntimeError(example: LessonExample, code: string, expectation: LessonExpectation): Promise<void> {
-  const result = await runIdyllium(code, {}, { file: example.codeFile });
+async function assertRuntimeError(
+  example: LessonExample,
+  code: string,
+  expectation: LessonExpectation,
+  codePath: string,
+): Promise<void> {
+  const fileSystem = createMemoryRuntimeFileSystem({ [codePath]: code }, path.dirname(codePath));
+  const result = await runIdyllium(code, { fileSystem }, { file: codePath });
   assert(result.compilation.success, `expected ${example.id} to compile before runtime error, got:\n${result.compilation.diagnosticsText}`);
   assert(!result.success, `expected ${example.id} to fail at runtime`);
   assert(result.runtimeError !== null, `expected ${example.id} to report a runtime error`);

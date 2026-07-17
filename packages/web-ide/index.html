@@ -10,26 +10,85 @@
 </head>
 <body class="theme-dark">
   <header class="topbar">
-    <div class="brand">Idyllium <span class="idyllium-version">v1.0.0</span></div>
+    <div class="brand">Idyllium <span class="idyllium-version">v1.1.0</span></div>
     <div class="actions">
+      <div id="file-app-menu-wrapper" class="app-menu-wrapper">
+        <button id="file-app-menu-button" type="button" aria-expanded="false">Файл</button>
+        <div id="file-app-menu" class="app-menu" role="menu" hidden>
+          <div id="file-app-menu-main">
+            <div class="app-menu-current-project">
+              <span>Текущий проект</span>
+              <strong id="current-project-name">Мой проект</strong>
+            </div>
+            <button type="button" role="menuitem" data-file-command="new-file">
+              <span>Создать новый файл</span><kbd>Ctrl+N</kbd>
+            </button>
+            <button type="button" role="menuitem" data-file-command="open-file">
+              <span>Открыть файл</span><kbd>Ctrl+O</kbd>
+            </button>
+            <div class="app-menu-separator" aria-hidden="true"></div>
+            <button type="button" role="menuitem" data-file-command="new-project"><span>Создать новый проект</span></button>
+            <button type="button" role="menuitem" data-file-command="open-project"><span>Открыть проект</span></button>
+            <button type="button" role="menuitem" data-file-command="save-project">
+              <span>Сохранить проект</span><kbd>Ctrl+S</kbd>
+            </button>
+            <button type="button" role="menuitem" data-file-command="duplicate-project"><span>Дублировать проект</span></button>
+            <button type="button" role="menuitem" data-file-command="delete-project"><span>Удалить проект</span></button>
+            <div class="app-menu-separator" aria-hidden="true"></div>
+            <button type="button" role="menuitem" data-file-command="download-project"><span>Скачать текущий проект</span></button>
+            <button type="button" role="menuitem" data-file-command="download-other-project"><span>Скачать другой проект</span></button>
+          </div>
+          <div id="file-app-menu-panel" class="app-menu-panel" hidden></div>
+        </div>
+      </div>
+      <div id="edit-app-menu-wrapper" class="app-menu-wrapper">
+        <button id="edit-app-menu-button" type="button" aria-expanded="false">Правка</button>
+        <div id="edit-app-menu" class="app-menu app-menu-edit" role="menu" hidden>
+          <button type="button" role="menuitem" data-edit-command="undo"><span>Отменить</span><kbd>Ctrl+Z</kbd></button>
+          <button type="button" role="menuitem" data-edit-command="redo"><span>Повторить</span><kbd>Ctrl+Y</kbd></button>
+          <div class="app-menu-separator" aria-hidden="true"></div>
+          <button type="button" role="menuitem" data-edit-command="cut"><span>Вырезать</span><kbd>Ctrl+X</kbd></button>
+          <button type="button" role="menuitem" data-edit-command="copy"><span>Копировать</span><kbd>Ctrl+C</kbd></button>
+          <button type="button" role="menuitem" data-edit-command="paste"><span>Вставить</span><kbd>Ctrl+V</kbd></button>
+          <div class="app-menu-separator" aria-hidden="true"></div>
+          <button type="button" role="menuitem" data-edit-command="find"><span>Найти</span><kbd>Ctrl+F</kbd></button>
+          <button type="button" role="menuitem" data-edit-command="replace"><span>Найти и заменить</span><kbd>Ctrl+H</kbd></button>
+          <div class="app-menu-separator" aria-hidden="true"></div>
+          <button type="button" role="menuitem" data-edit-command="comment"><span>Закомментировать</span></button>
+          <button type="button" role="menuitem" data-edit-command="uncomment"><span>Раскомментировать</span></button>
+        </div>
+      </div>
       <div class="theme-wrapper">
-        <button id="theme-button" type="button" aria-expanded="false">Внешний вид</button>
+        <button id="theme-button" type="button" aria-expanded="false">
+          <span class="appearance-label-full">Внешний вид</span>
+          <span class="appearance-label-short">Вид</span>
+        </button>
         <div id="theme-menu" class="theme-menu" hidden>
           <button id="theme-dark-button" type="button">Тема: тёмная</button>
           <button id="theme-light-button" type="button">Тема: светлая</button>
           <div class="theme-menu-separator" aria-hidden="true"></div>
           <div class="font-size-row">
-            <span>Размер шрифта</span>
+            <span>Шрифт редактора</span>
             <div class="font-size-control">
-              <button id="font-size-decrease" type="button" aria-label="Уменьшить размер шрифта">−</button>
+              <button id="font-size-decrease" type="button" aria-label="Уменьшить шрифт редактора">−</button>
               <input id="font-size-input" type="number" min="10" max="32" step="1" value="16" aria-label="Размер шрифта в редакторе">
               <span>px</span>
-              <button id="font-size-increase" type="button" aria-label="Увеличить размер шрифта">+</button>
+              <button id="font-size-increase" type="button" aria-label="Увеличить шрифт редактора">+</button>
+            </div>
+          </div>
+          <div class="font-size-row">
+            <span>Шрифт консоли</span>
+            <div class="font-size-control">
+              <button id="console-font-size-decrease" type="button" aria-label="Уменьшить шрифт консоли">−</button>
+              <input id="console-font-size-input" type="number" min="10" max="32" step="1" value="13" aria-label="Размер шрифта в консоли">
+              <span>px</span>
+              <button id="console-font-size-increase" type="button" aria-label="Увеличить шрифт консоли">+</button>
             </div>
           </div>
         </div>
       </div>
-      <a class="doc-link" href="../index.html" target="_blank" rel="noopener noreferrer">Документация</a>
+      <a class="doc-link" href="book/" target="_blank" rel="noopener noreferrer">Учебник</a>
+      <a class="doc-link" href="reference/" target="_blank" rel="noopener noreferrer">Документация</a>
       <div class="color-picker-wrapper">
         <button id="color-picker-button" type="button" aria-expanded="false">Генератор цвета</button>
         <div id="color-picker-menu" class="color-picker-menu" hidden>
@@ -157,11 +216,19 @@
     <section class="editor-pane">
       <div class="pane-title editor-titlebar">
         <span id="editor-title">main.idyl</span>
-        <button id="format-button" class="pane-action-button" type="button">Форматировать</button>
+        <div class="editor-title-actions">
+          <div id="structured-view-toggle" class="editor-view-toggle" role="group" aria-label="Режим просмотра данных" hidden>
+            <button id="structured-text-view-button" type="button" class="active" aria-pressed="true">Текст</button>
+            <button id="structured-data-view-button" type="button" aria-pressed="false">Просмотр</button>
+          </div>
+          <button id="format-button" class="pane-action-button" type="button">Форматировать</button>
+        </div>
       </div>
       <div class="editor-shell">
         <div id="monaco-editor" class="monaco-editor-host"></div>
         <div id="asset-viewer" class="asset-viewer" hidden></div>
+        <div id="csv-viewer" class="csv-viewer" hidden></div>
+        <div id="json-viewer" class="json-viewer" hidden></div>
         <div id="legacy-editor" class="legacy-editor" hidden>
           <div id="line-numbers" class="line-numbers" aria-hidden="true">1</div>
           <div class="editor-stack">
@@ -192,6 +259,7 @@
     </section>
   </main>
 
+  <script src="vendor/papaparse.min.js"></script>
   <script src="monaco/vs/loader.js"></script>
   <script src="assets/idyllium-web-core.js"></script>
   <script src="app.js"></script>

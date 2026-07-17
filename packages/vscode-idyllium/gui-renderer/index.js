@@ -64,9 +64,9 @@ function addGuiResourceUris(adapter, value) {
 
   if (
     (
-      result.type === 'drawable.Texture'
-      || result.type === 'drawable.Font'
-      || result.type === 'gui.Image'
+      result.type === 'image.Static'
+      || result.type === 'image.Animation'
+      || result.type === 'fonts.Font'
       || result.type === 'audio.Sound'
       || result.type === 'audio.Music'
     )
@@ -100,9 +100,9 @@ function collectGuiAssetPaths(windows, canvases, audio = []) {
     const properties = value.properties;
     if (
       (
-        type === 'drawable.Texture'
-        || type === 'drawable.Font'
-        || type === 'gui.Image'
+        type === 'image.Static'
+        || type === 'image.Animation'
+        || type === 'fonts.Font'
         || type === 'audio.Sound'
         || type === 'audio.Music'
       )

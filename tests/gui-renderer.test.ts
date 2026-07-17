@@ -62,7 +62,73 @@ class FakeAudio {
   }
 }
 
+class FakeImage {
+  static instances: FakeImage[] = [];
+
+  readonly listeners = new Map<string, Array<() => void>>();
+  src = '';
+  complete = false;
+  naturalWidth = 0;
+  naturalHeight = 0;
+
+  constructor() {
+    FakeImage.instances.push(this);
+  }
+
+  addEventListener(name: string, listener: () => void): void {
+    const listeners = this.listeners.get(name) ?? [];
+    listeners.push(listener);
+    this.listeners.set(name, listeners);
+  }
+
+  finish(width: number, height: number): void {
+    this.complete = true;
+    this.naturalWidth = width;
+    this.naturalHeight = height;
+    for (const listener of this.listeners.get('load') ?? []) listener();
+  }
+}
+
+function createFakeCanvasContext(): any {
+  return {
+    arcCalls: [] as number[][],
+    drawImageCalls: 0,
+    drawImageArguments: [] as unknown[][],
+    fillRectCalls: [] as number[][],
+    fillTextCalls: 0,
+    fillTextArguments: [] as unknown[][],
+    font: '',
+    fontKerning: 'auto',
+    rotateCalls: [] as number[],
+    scaleCalls: [] as number[][],
+    translateCalls: [] as number[][],
+    beginPath() {},
+    arc(...args: number[]) { this.arcCalls.push(args); },
+    clearRect() {},
+    drawImage(...args: unknown[]) {
+      this.drawImageCalls++;
+      this.drawImageArguments.push(args);
+    },
+    fill() {},
+    fillRect(...args: number[]) { this.fillRectCalls.push(args); },
+    fillText(...args: unknown[]) {
+      this.fillTextCalls++;
+      this.fillTextArguments.push(args);
+    },
+    lineTo() {},
+    moveTo() {},
+    restore() {},
+    rotate(angle: number) { this.rotateCalls.push(angle); },
+    save() {},
+    scale(x: number, y: number) { this.scaleCalls.push([x, y]); },
+    stroke() {},
+    strokeRect() {},
+    translate(x: number, y: number) { this.translateCalls.push([x, y]); },
+  };
+}
+
 function createFakeElement(tagName: string): any {
+  const listeners = new Map<string, Array<(event: any) => void>>();
   const element: any = {
     tagName,
     children: [],
@@ -79,11 +145,16 @@ function createFakeElement(tagName: string): any {
       element.children.push(child);
       return child;
     },
-    addEventListener() {
-      // Events are not needed for these renderer audio tests.
+    addEventListener(name: string, listener: (event: any) => void) {
+      const entries = listeners.get(name) ?? [];
+      entries.push(listener);
+      listeners.set(name, entries);
     },
-    removeEventListener() {
-      // Events are not needed for these renderer audio tests.
+    removeEventListener(name: string, listener: (event: any) => void) {
+      listeners.set(name, (listeners.get(name) ?? []).filter((entry) => entry !== listener));
+    },
+    dispatch(name: string, event: any = {}) {
+      for (const listener of listeners.get(name) ?? []) listener(event);
     },
     replaceChildren(...items: unknown[]) {
       element.children = [...items];
@@ -105,6 +176,7 @@ function createFakeElement(tagName: string): any {
 
 function createRendererHarness() {
   FakeAudio.instances = [];
+  FakeImage.instances = [];
   const windowListeners = new Map<string, Array<(event: any) => void>>();
   const documentListeners = new Map<string, Array<(event: any) => void>>();
   const elements = new Map<string, any>([
@@ -112,6 +184,7 @@ function createRendererHarness() {
     ['summary', createFakeElement('div')],
   ]);
   const postedMessages: unknown[] = [];
+  const canvasContexts: any[] = [];
 
   const windowObject: any = {
     IdylliumGuiInitialState: { audio: [], windows: [], canvases: [], modals: [] },
@@ -129,7 +202,15 @@ function createRendererHarness() {
 
   const documentObject: any = {
     body: createFakeElement('body'),
-    createElement: createFakeElement,
+    createElement(tagName: string) {
+      const element = createFakeElement(tagName);
+      if (tagName === 'canvas') {
+        const context = createFakeCanvasContext();
+        canvasContexts.push(context);
+        element.getContext = () => context;
+      }
+      return element;
+    },
     addEventListener(name: string, listener: (event: any) => void) {
       const listeners = documentListeners.get(name) ?? [];
       listeners.push(listener);
@@ -142,7 +223,12 @@ function createRendererHarness() {
 
   const context = {
     Audio: FakeAudio,
+    Image: FakeImage,
     document: documentObject,
+    requestAnimationFrame(callback: () => void) {
+      callback();
+      return 1;
+    },
     window: windowObject,
   };
 
@@ -155,8 +241,421 @@ function createRendererHarness() {
     }
   };
 
-  return { postedMessages, sendSnapshot };
+  return { canvasContexts, postedMessages, sendSnapshot, stage: elements.get('stage') };
 }
+
+function findElement(root: any, predicate: (element: any) => boolean): any | null {
+  if (predicate(root)) return root;
+  for (const child of root?.children ?? []) {
+    const found = findElement(child, predicate);
+    if (found) return found;
+  }
+  return null;
+}
+
+test('gui renderer announces that it is ready for snapshots', () => {
+  const harness = createRendererHarness();
+  assert(
+    harness.postedMessages.some((message: any) => message?.type === 'rendererReady'),
+    'expected rendererReady host message',
+  );
+});
+
+test('gui renderer close button asks the host to close the application', () => {
+  const harness = createRendererHarness();
+  harness.sendSnapshot({
+    generation: 1,
+    audio: [],
+    windows: [{
+      id: 1,
+      type: 'gui.Window',
+      properties: { width: 320, height: 180, title: 'Close me' },
+      children: [],
+    }],
+    canvases: [],
+    modals: [],
+  });
+
+  const close = findElement(harness.stage, (element) => element.className === 'window-close-button');
+  assert(close !== null, 'expected Window close button');
+  close.dispatch('click', { stopPropagation() {} });
+  assert(
+    harness.postedMessages.some((message: any) => message?.type === 'closeApp'),
+    `expected closeApp host message, got ${JSON.stringify(harness.postedMessages)}`,
+  );
+});
+
+test('gui renderer changes SpinBox with the mouse wheel', () => {
+  const harness = createRendererHarness();
+  harness.sendSnapshot({
+    generation: 1,
+    audio: [],
+    windows: [{
+      id: 1,
+      type: 'gui.Window',
+      properties: { width: 320, height: 180, title: 'SpinBox' },
+      children: [{
+        id: 2,
+        type: 'gui.SpinBox',
+        properties: {
+          x: 10,
+          y: 20,
+          width: 120,
+          height: 32,
+          visible: true,
+          min: 0,
+          max: 20,
+          step: 2,
+          value: 6,
+        },
+        children: [],
+      }],
+    }],
+    canvases: [],
+    modals: [],
+  });
+
+  const spinBox = findElement(harness.stage, (element) => element.tagName === 'input' && element.type === 'number');
+  assert(spinBox !== null, 'expected SpinBox input');
+  let prevented = false;
+  spinBox.dispatch('wheel', {
+    deltaY: -100,
+    preventDefault() { prevented = true; },
+  });
+
+  assert(spinBox.value === '8', `expected SpinBox value 8, got ${spinBox.value}`);
+  assert(prevented, 'SpinBox wheel event must prevent page scrolling');
+  assert(
+    harness.postedMessages.some((message: any) => (
+      message?.type === 'guiEvent'
+      && message.objectId === 2
+      && message.eventName === 'change'
+      && message.payload?.value === 8
+    )),
+    `expected SpinBox change event, got ${JSON.stringify(harness.postedMessages)}`,
+  );
+});
+
+test('gui renderer displays nested image resources in ImageBox', () => {
+  const harness = createRendererHarness();
+
+  harness.sendSnapshot({
+    generation: 1,
+    audio: [],
+    windows: [{
+      id: 1,
+      type: 'gui.Window',
+      properties: { width: 320, height: 220, title: 'Picture' },
+      children: [{
+        id: 2,
+        type: 'gui.ImageBox',
+        properties: {
+          x: 10,
+          y: 20,
+          width: 160,
+          height: 120,
+          visible: true,
+          resize_mode: 'fill',
+          image: {
+            id: 3,
+            type: 'image.Static',
+            properties: {
+              is_loaded: true,
+              src: 'cat.png',
+              webview_uri: 'webview-cat.png',
+            },
+          },
+        },
+        children: [],
+      }],
+    }],
+    canvases: [],
+    modals: [],
+  });
+
+  const image = findElement(harness.stage, (element) => element.tagName === 'img');
+  assert(image !== null, 'expected ImageBox to create an img element');
+  assert(image.src === 'webview-cat.png', `unexpected ImageBox src: ${image.src}`);
+  assert(image.style.objectFit === 'cover', `unexpected ImageBox object-fit: ${image.style.objectFit}`);
+});
+
+test('gui renderer inherits a loaded font from Window to child widgets', () => {
+  const harness = createRendererHarness();
+
+  harness.sendSnapshot({
+    generation: 1,
+    audio: [],
+    windows: [{
+      id: 1,
+      type: 'gui.Window',
+      properties: {
+        width: 320,
+        height: 180,
+        title: 'Fonts',
+        __explicit_properties: ['font'],
+        font: {
+          type: 'fonts.Font',
+          properties: {
+            is_loaded: true,
+            format: 'ttf',
+            webview_uri: 'webview-lobster.ttf',
+          },
+        },
+      },
+      children: [{
+        id: 2,
+        type: 'gui.Label',
+        properties: {
+          x: 10,
+          y: 20,
+          width: 220,
+          height: 32,
+          visible: true,
+          text: 'Inherited font',
+        },
+        children: [],
+      }],
+    }],
+    canvases: [],
+    modals: [],
+  });
+
+  const windowElement = findElement(harness.stage, (element) => element.tagName === 'section');
+  const label = findElement(harness.stage, (element) => String(element.className).includes('label'));
+  assert(windowElement?.style.fontFamily === 'IdylliumFont1, sans-serif', `unexpected Window font: ${windowElement?.style.fontFamily}`);
+  assert(label?.style.fontFamily === 'IdylliumFont1, sans-serif', `unexpected inherited Label font: ${label?.style.fontFamily}`);
+});
+
+test('gui renderer uses fonts.Font for drawable.Text on Canvas', () => {
+  const harness = createRendererHarness();
+
+  harness.sendSnapshot({
+    generation: 1,
+    audio: [],
+    windows: [],
+    canvases: [{
+      id: 5,
+      properties: { width: 300, height: 180 },
+      commands: [{
+        kind: 'draw',
+        object: {
+          type: 'drawable.Text',
+          properties: {
+            x: 20,
+            y: 30,
+            text: 'Canvas font',
+            font_size: 24,
+            text_color: '#ffffff',
+            font: {
+              type: 'fonts.Font',
+              properties: {
+                is_loaded: true,
+                format: 'ttf',
+                webview_uri: 'webview-canvas-font.ttf',
+              },
+            },
+          },
+        },
+      }],
+    }],
+    modals: [],
+  });
+
+  assertNumberEquals(harness.canvasContexts.length, 1, 'Canvas render count');
+  assert(harness.canvasContexts[0].font === '24px IdylliumFont1, sans-serif', `unexpected Canvas font: ${harness.canvasContexts[0].font}`);
+  assert(harness.canvasContexts[0].fontKerning === 'none', `unexpected Canvas kerning: ${harness.canvasContexts[0].fontKerning}`);
+  assertNumberEquals(harness.canvasContexts[0].fillTextCalls, 1, 'Canvas text draw count');
+});
+
+test('gui renderer uses the bundled font for drawable.Text by default', () => {
+  const harness = createRendererHarness();
+
+  harness.sendSnapshot({
+    generation: 1,
+    audio: [],
+    windows: [],
+    canvases: [{
+      id: 5,
+      properties: { width: 300, height: 180 },
+      commands: [{
+        kind: 'draw',
+        object: {
+          type: 'drawable.Text',
+          properties: {
+            x: 20,
+            y: 30,
+            text: 'Default Canvas font',
+            font_size: 20,
+            text_color: '#ffffff',
+            font: {
+              type: 'fonts.Font',
+              properties: {
+                is_loaded: true,
+                is_builtin: true,
+                format: 'woff2',
+              },
+            },
+          },
+        },
+      }],
+    }],
+    modals: [],
+  });
+
+  assertNumberEquals(harness.canvasContexts.length, 1, 'default Canvas font render count');
+  assert(
+    harness.canvasContexts[0].font === '20px IdylliumCanvasDefault, sans-serif',
+    `unexpected default Canvas font: ${harness.canvasContexts[0].font}`,
+  );
+  assert(harness.canvasContexts[0].fontKerning === 'none', 'default Canvas font should disable kerning');
+});
+
+test('gui renderer applies drawable origin and clockwise rotation', () => {
+  const harness = createRendererHarness();
+
+  harness.sendSnapshot({
+    generation: 1,
+    audio: [],
+    windows: [],
+    canvases: [{
+      id: 5,
+      properties: { width: 640, height: 360 },
+      commands: [{
+        kind: 'draw',
+        object: {
+          type: 'drawable.Rectangle',
+          properties: {
+            x: 300, y: 200, width: 100, height: 50,
+            origin_x: 50, origin_y: 25, rotation: 90,
+            fill_color: '#ff0000', border_width: 0,
+          },
+        },
+      }, {
+        kind: 'draw',
+        object: {
+          type: 'drawable.Circle',
+          properties: {
+            x: 500, y: 200, radius: 30,
+            origin_x: 30, origin_y: 30, rotation: 45,
+            fill_color: '#00ff00', border_width: 0,
+          },
+        },
+      }, {
+        kind: 'draw',
+        object: {
+          type: 'drawable.Circle',
+          properties: {
+            x: 40, y: 50, radius: 12,
+            origin_x: 0, origin_y: 0, rotation: 0,
+            fill_color: '#ffcc00', border_width: 0,
+          },
+        },
+      }, {
+        kind: 'draw',
+        object: {
+          type: 'drawable.Text',
+          properties: {
+            x: 80, y: 60, origin_x: 10, origin_y: 5, rotation: 30,
+            text: 'Hello', font_size: 16, text_color: '#ffffff',
+          },
+        },
+      }, {
+        kind: 'draw',
+        object: {
+          type: 'drawable.Line',
+          properties: {
+            x1: 10, y1: 20, x2: 90, y2: 20, thickness: 8, color: '#ffffff',
+          },
+        },
+      }],
+    }],
+    modals: [],
+  });
+
+  const context = harness.canvasContexts[0];
+  assert(
+    JSON.stringify(context.translateCalls) === JSON.stringify([[300, 200], [500, 200], [40, 50], [80, 60]]),
+    `unexpected drawable translations: ${JSON.stringify(context.translateCalls)}`,
+  );
+  assert(Math.abs(context.rotateCalls[0] - Math.PI / 2) < 1e-12, `unexpected rectangle rotation: ${context.rotateCalls[0]}`);
+  assert(
+    context.fillRectCalls.some((args: number[]) => JSON.stringify(args) === JSON.stringify([-50, -25, 100, 50])),
+    `expected origin-relative Rectangle bounds, got ${JSON.stringify(context.fillRectCalls)}`,
+  );
+  assert(
+    context.arcCalls.some((args: number[]) => args[0] === 0 && args[1] === 0 && args[2] === 30),
+    `expected center-origin Circle arc, got ${JSON.stringify(context.arcCalls)}`,
+  );
+  assert(
+    context.arcCalls.some((args: number[]) => args[0] === 12 && args[1] === 12 && args[2] === 12),
+    `expected default-origin Circle bounds, got ${JSON.stringify(context.arcCalls)}`,
+  );
+  assert(
+    context.fillTextArguments.some((args: unknown[]) => args[0] === 'Hello' && args[1] === -10 && args[2] === -5),
+    `expected origin-relative Text position, got ${JSON.stringify(context.fillTextArguments)}`,
+  );
+  assert(context.lineCap === 'round', `expected round Line caps, got ${String(context.lineCap)}`);
+});
+
+test('gui renderer redraws a static Canvas sprite after its image loads', () => {
+  const harness = createRendererHarness();
+
+  harness.sendSnapshot({
+    generation: 1,
+    audio: [],
+    windows: [],
+    canvases: [{
+      id: 5,
+      properties: { width: 300, height: 180 },
+      commands: [{
+        kind: 'draw',
+        object: {
+          id: 6,
+          type: 'drawable.Sprite',
+          properties: {
+            x: 20,
+            y: 30,
+            origin_x: 10,
+            origin_y: 5,
+            rotation: 90,
+            scale_x: -1,
+            scale_y: 2,
+            image: {
+              id: 7,
+              type: 'image.Static',
+              properties: {
+                is_loaded: true,
+                src: 'player.png',
+                webview_uri: 'webview-player.png',
+              },
+            },
+          },
+        },
+      }],
+    }],
+    modals: [],
+  });
+
+  assert(FakeImage.instances.length === 1, `expected one cached image, got ${FakeImage.instances.length}`);
+  assertNumberEquals(harness.canvasContexts.length, 1, 'initial Canvas render count');
+  assert(harness.canvasContexts[0].drawImageCalls === 0, 'image must not be drawn before it is loaded');
+
+  FakeImage.instances[0].finish(112, 100);
+
+  assertNumberEquals(harness.canvasContexts.length, 2, 'Canvas render count after image load');
+  const context = harness.canvasContexts[1];
+  assert(context.drawImageCalls === 1, 'expected loaded sprite to be drawn after refresh');
+  assert(JSON.stringify(context.translateCalls) === JSON.stringify([[20, 30]]), `unexpected Sprite translation: ${JSON.stringify(context.translateCalls)}`);
+  assert(Math.abs(context.rotateCalls[0] - Math.PI / 2) < 1e-12, `unexpected Sprite rotation: ${context.rotateCalls[0]}`);
+  assert(JSON.stringify(context.scaleCalls) === JSON.stringify([[-1, 2]]), `unexpected Sprite scale: ${JSON.stringify(context.scaleCalls)}`);
+  assert(
+    context.drawImageArguments[0][1] === -10
+      && context.drawImageArguments[0][2] === -5
+      && context.drawImageArguments[0][3] === 112
+      && context.drawImageArguments[0][4] === 100,
+    `unexpected Sprite drawImage arguments: ${JSON.stringify(context.drawImageArguments)}`,
+  );
+});
 
 test('gui renderer applies music volume and replays commands on a new preview generation', () => {
   const harness = createRendererHarness();
