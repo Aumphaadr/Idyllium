@@ -298,6 +298,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ...inheritableColorRoles,
     propertySpec('border_color', COLOR),
   ];
+  const fontSized = [
+    propertySpec('font_size', INT),
+  ];
   const buttonClickable = [
     callbackPropertySpec('on_click', [
       callbackSpec([]),
@@ -771,6 +774,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...inheritableColorRoles,
       propertySpec('font', fontsFont),
+      ...fontSized,
       propertySpec('title', STRING),
     ], [
       functionSpec('add_child', [guiChildParameter], VOID),
@@ -808,17 +812,18 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...visible,
       ...colorRoles,
+      ...fontSized,
       callbackPropertySpec('on_click', [
         callbackSpec([]),
         callbackSpec([guiLabel]),
       ]),
       propertySpec('text', STRING),
-      propertySpec('font_size', INT),
     ], [], guiWidget),
     typeSpec('Button', [
       ...positioned,
       ...visible,
       ...colorRoles,
+      ...fontSized,
       ...buttonClickable,
       propertySpec('text', STRING),
     ], [], guiWidget),
@@ -828,6 +833,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       propertySpec('background_color', COLOR),
       propertySpec('border_color', COLOR),
       propertySpec('border_width', INT),
+      ...fontSized,
       propertySpec('title', STRING),
     ], [
       functionSpec('add_child', [guiChildParameter], VOID),
@@ -844,9 +850,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...visible,
       ...changeable,
       ...colorRoles,
+      ...fontSized,
       propertySpec('text', STRING),
       propertySpec('placeholder', STRING),
-      propertySpec('font_size', INT),
       propertySpec('echo_mode', STRING),
     ], [], guiWidget),
     typeSpec('TextEdit', [
@@ -854,6 +860,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...visible,
       ...changeable,
       ...colorRoles,
+      ...fontSized,
       propertySpec('text', STRING),
       propertySpec('placeholder', STRING),
     ], [], guiWidget),
@@ -867,6 +874,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       propertySpec('background_color', COLOR),
       propertySpec('foreground_color', COLOR),
       propertySpec('border_color', COLOR),
+      ...fontSized,
     ], [], guiWidget),
     typeSpec('SpinBox', [
       ...positioned,
@@ -876,6 +884,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       propertySpec('min', INT),
       propertySpec('max', INT),
       propertySpec('step', INT),
+      ...fontSized,
     ], [], guiWidget),
     typeSpec('FloatSpinBox', [
       ...positioned,
@@ -885,6 +894,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       propertySpec('min', FLOAT),
       propertySpec('max', FLOAT),
       propertySpec('step', FLOAT),
+      ...fontSized,
     ], [], guiWidget),
     typeSpec('Slider', [
       ...positioned,
@@ -899,6 +909,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...visible,
       ...changeable,
+      ...fontSized,
       propertySpec('text', STRING),
       propertySpec('is_checked', BOOL),
     ], [], guiWidget),
@@ -906,6 +917,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...visible,
       ...changeable,
+      ...fontSized,
       propertySpec('text', STRING),
       propertySpec('is_selected', BOOL),
       propertySpec('group', STRING),
@@ -914,6 +926,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...visible,
       ...changeable,
+      ...fontSized,
       propertySpec('selected_index', INT),
       propertySpec('selected_text', STRING, true, 'Текст выбранного пункта; изменяется через selected_index.'),
     ], [

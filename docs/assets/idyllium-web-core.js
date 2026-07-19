@@ -5025,6 +5025,9 @@ function createDefaultStandardLibrary() {
         ...inheritableColorRoles,
         propertySpec('border_color', types_1.COLOR),
     ];
+    const fontSized = [
+        propertySpec('font_size', types_1.INT),
+    ];
     const buttonClickable = [
         callbackPropertySpec('on_click', [
             callbackSpec([]),
@@ -5486,6 +5489,7 @@ function createDefaultStandardLibrary() {
             ...positioned,
             ...inheritableColorRoles,
             propertySpec('font', fontsFont),
+            ...fontSized,
             propertySpec('title', types_1.STRING),
         ], [
             functionSpec('add_child', [guiChildParameter], types_1.VOID),
@@ -5523,17 +5527,18 @@ function createDefaultStandardLibrary() {
             ...positioned,
             ...visible,
             ...colorRoles,
+            ...fontSized,
             callbackPropertySpec('on_click', [
                 callbackSpec([]),
                 callbackSpec([guiLabel]),
             ]),
             propertySpec('text', types_1.STRING),
-            propertySpec('font_size', types_1.INT),
         ], [], guiWidget),
         typeSpec('Button', [
             ...positioned,
             ...visible,
             ...colorRoles,
+            ...fontSized,
             ...buttonClickable,
             propertySpec('text', types_1.STRING),
         ], [], guiWidget),
@@ -5543,6 +5548,7 @@ function createDefaultStandardLibrary() {
             propertySpec('background_color', types_1.COLOR),
             propertySpec('border_color', types_1.COLOR),
             propertySpec('border_width', types_1.INT),
+            ...fontSized,
             propertySpec('title', types_1.STRING),
         ], [
             functionSpec('add_child', [guiChildParameter], types_1.VOID),
@@ -5559,9 +5565,9 @@ function createDefaultStandardLibrary() {
             ...visible,
             ...changeable,
             ...colorRoles,
+            ...fontSized,
             propertySpec('text', types_1.STRING),
             propertySpec('placeholder', types_1.STRING),
-            propertySpec('font_size', types_1.INT),
             propertySpec('echo_mode', types_1.STRING),
         ], [], guiWidget),
         typeSpec('TextEdit', [
@@ -5569,6 +5575,7 @@ function createDefaultStandardLibrary() {
             ...visible,
             ...changeable,
             ...colorRoles,
+            ...fontSized,
             propertySpec('text', types_1.STRING),
             propertySpec('placeholder', types_1.STRING),
         ], [], guiWidget),
@@ -5582,6 +5589,7 @@ function createDefaultStandardLibrary() {
             propertySpec('background_color', types_1.COLOR),
             propertySpec('foreground_color', types_1.COLOR),
             propertySpec('border_color', types_1.COLOR),
+            ...fontSized,
         ], [], guiWidget),
         typeSpec('SpinBox', [
             ...positioned,
@@ -5591,6 +5599,7 @@ function createDefaultStandardLibrary() {
             propertySpec('min', types_1.INT),
             propertySpec('max', types_1.INT),
             propertySpec('step', types_1.INT),
+            ...fontSized,
         ], [], guiWidget),
         typeSpec('FloatSpinBox', [
             ...positioned,
@@ -5600,6 +5609,7 @@ function createDefaultStandardLibrary() {
             propertySpec('min', types_1.FLOAT),
             propertySpec('max', types_1.FLOAT),
             propertySpec('step', types_1.FLOAT),
+            ...fontSized,
         ], [], guiWidget),
         typeSpec('Slider', [
             ...positioned,
@@ -5614,6 +5624,7 @@ function createDefaultStandardLibrary() {
             ...positioned,
             ...visible,
             ...changeable,
+            ...fontSized,
             propertySpec('text', types_1.STRING),
             propertySpec('is_checked', types_1.BOOL),
         ], [], guiWidget),
@@ -5621,6 +5632,7 @@ function createDefaultStandardLibrary() {
             ...positioned,
             ...visible,
             ...changeable,
+            ...fontSized,
             propertySpec('text', types_1.STRING),
             propertySpec('is_selected', types_1.BOOL),
             propertySpec('group', types_1.STRING),
@@ -5629,6 +5641,7 @@ function createDefaultStandardLibrary() {
             ...positioned,
             ...visible,
             ...changeable,
+            ...fontSized,
             propertySpec('selected_index', types_1.INT),
             propertySpec('selected_text', types_1.STRING, true, 'Текст выбранного пункта; изменяется через selected_index.'),
         ], [
@@ -12437,6 +12450,9 @@ function initializeGuiObject(obj, typeName, state) {
         defineTrackedRuntimeProperty(obj, 'text_color', colorBlack());
         defineTrackedRuntimeProperty(obj, 'background_color', colorTransparent());
         defineTrackedRuntimeProperty(obj, 'font', null);
+        if (guiObjectUsesFontSize(typeName)) {
+            defineTrackedRuntimeProperty(obj, 'font_size', 13);
+        }
     }
     if (typeName === 'Window' || typeName === 'Frame') {
         obj.__children = [];
@@ -12492,7 +12508,6 @@ function initializeGuiObject(obj, typeName, state) {
     }
     if (typeName === 'Label') {
         obj.text = '';
-        obj.font_size = 12;
         setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
         setTrackedRuntimePropertyDefault(obj, 'background_color', colorTransparent());
         obj.border_color = colorTransparent();
@@ -12520,7 +12535,6 @@ function initializeGuiObject(obj, typeName, state) {
     if (typeName === 'LineEdit') {
         obj.text = '';
         obj.placeholder = '';
-        obj.font_size = 12;
         obj.echo_mode = 'normal';
         setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
         setTrackedRuntimePropertyDefault(obj, 'background_color', colorWhite());
@@ -13578,6 +13592,20 @@ function isGuiWidget(typeName) {
         || typeName === 'SpinBox'
         || typeName === 'FloatSpinBox'
         || typeName === 'Slider'
+        || typeName === 'CheckBox'
+        || typeName === 'RadioButton'
+        || typeName === 'ComboBox';
+}
+function guiObjectUsesFontSize(typeName) {
+    return typeName === 'Window'
+        || typeName === 'Label'
+        || typeName === 'Button'
+        || typeName === 'Frame'
+        || typeName === 'LineEdit'
+        || typeName === 'TextEdit'
+        || typeName === 'ProgressBar'
+        || typeName === 'SpinBox'
+        || typeName === 'FloatSpinBox'
         || typeName === 'CheckBox'
         || typeName === 'RadioButton'
         || typeName === 'ComboBox';

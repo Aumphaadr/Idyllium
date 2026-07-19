@@ -215,7 +215,9 @@ input[type="range"].widget {
   align-items: center;
   justify-content: center;
   color: inherit;
-  font: 600 12px Arial, sans-serif;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 600;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
   pointer-events: none;
 }

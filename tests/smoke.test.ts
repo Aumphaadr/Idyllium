@@ -4730,7 +4730,7 @@ test('image asset loading reports readable runtime errors', async () => {
   `, "type 'gui.ImageBox' has no method 'load_from_file'");
 });
 
-test('button does not accept placeholder or font_size', () => {
+test('button does not accept input-only placeholder', () => {
   assertFails(`
     use gui;
 
@@ -4739,13 +4739,77 @@ test('button does not accept placeholder or font_size', () => {
       btn.placeholder = "Nope";
     }
   `, "has no property 'placeholder'");
+});
 
+test('text-bearing gui widgets expose font_size', async () => {
+  const result = await runWithInspectableRuntime(`
+    use gui;
+
+    main() {
+      gui.Window win;
+      win.font_size = 18;
+
+      gui.Label label; label.font_size = 19;
+      gui.Button button; button.font_size = 20;
+      gui.Frame frame; frame.font_size = 21;
+      gui.LineEdit line; line.font_size = 22;
+      gui.TextEdit text; text.font_size = 23;
+      gui.ProgressBar progress; progress.font_size = 24;
+      gui.SpinBox spin; spin.font_size = 25;
+      gui.FloatSpinBox float_spin; float_spin.font_size = 26;
+      gui.CheckBox checkbox; checkbox.font_size = 27;
+      gui.RadioButton radio; radio.font_size = 28;
+      gui.ComboBox combo; combo.font_size = 29; combo.add_item("One");
+
+      win.add_child(label);
+      win.add_child(button);
+      win.add_child(frame);
+      win.add_child(line);
+      win.add_child(text);
+      win.add_child(progress);
+      win.add_child(spin);
+      win.add_child(float_spin);
+      win.add_child(checkbox);
+      win.add_child(radio);
+      win.add_child(combo);
+      win.show();
+    }
+  `);
+
+  const window = result.runtime.getWindows()[0];
+  assert(window.properties.font_size === 18, `unexpected Window font_size: ${JSON.stringify(window.properties)}`);
+  assert(explicitProperties(window.properties).includes('font_size'), 'expected explicit Window font_size');
+
+  const expected = new Map<string, number>([
+    ['gui.Label', 19],
+    ['gui.Button', 20],
+    ['gui.Frame', 21],
+    ['gui.LineEdit', 22],
+    ['gui.TextEdit', 23],
+    ['gui.ProgressBar', 24],
+    ['gui.SpinBox', 25],
+    ['gui.FloatSpinBox', 26],
+    ['gui.CheckBox', 27],
+    ['gui.RadioButton', 28],
+    ['gui.ComboBox', 29],
+  ]);
+  for (const child of window.children) {
+    const fontSize = expected.get(child.type);
+    if (fontSize === undefined) continue;
+    assert(child.properties.font_size === fontSize, `unexpected ${child.type} font_size: ${JSON.stringify(child.properties)}`);
+    assert(explicitProperties(child.properties).includes('font_size'), `expected explicit ${child.type} font_size`);
+    expected.delete(child.type);
+  }
+  assert(expected.size === 0, `missing font_size snapshots for: ${[...expected.keys()].join(', ')}`);
+});
+
+test('non-text gui widgets do not expose font_size', () => {
   assertFails(`
     use gui;
 
     main() {
-      gui.Button btn;
-      btn.font_size = 20;
+      gui.Canvas canvas;
+      canvas.font_size = 20;
     }
   `, "has no property 'font_size'");
 });
