@@ -1,1 +1,0 @@
-file.ostream fout = file.open("output.txt", "write");

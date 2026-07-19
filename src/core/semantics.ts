@@ -24,6 +24,7 @@ import {
   Program,
   ReturnStatement,
   Statement,
+  TryStatement,
   TypeName,
   VariableDeclaration,
   WhileStatement,
@@ -39,6 +40,7 @@ import {
   FLOAT,
   INT,
   NULL_TYPE,
+  RUNTIME_ERROR_VALUE,
   STRING,
   TypeRef,
   VOID,
@@ -116,6 +118,8 @@ interface UserClassInfo {
   readonly ownMethods: Set<string>;
   constructorSpec: FunctionSpec | null;
   constructorDeclaration: ConstructorDeclaration | null;
+  constructorAccess: AccessModifier;
+  constructorOwner: string;
   membersRegistered: boolean;
   membersRegistering: boolean;
 }
@@ -257,6 +261,8 @@ export class SemanticAnalyzer {
         ownMethods: new Set(methods.keys()),
         constructorSpec: classSpec.constructorSpec,
         constructorDeclaration: null,
+        constructorAccess: classSpec.constructorAccess,
+        constructorOwner: classSpec.qualifiedName,
         membersRegistered: true,
         membersRegistering: false,
       });
@@ -362,6 +368,8 @@ export class SemanticAnalyzer {
       ownMethods: new Set(),
       constructorSpec: null,
       constructorDeclaration: null,
+      constructorAccess: 'public',
+      constructorOwner: declaration.name,
       membersRegistered: false,
       membersRegistering: false,
     });
@@ -509,6 +517,7 @@ export class SemanticAnalyzer {
       minArguments: requiredParameterCount(declaration.parameters),
     };
     info.constructorDeclaration = declaration;
+    info.constructorAccess = declaration.access;
   }
 
   private analyzeClassDeclaration(declaration: ClassDeclaration): void {
@@ -611,6 +620,9 @@ export class SemanticAnalyzer {
       case 'IfStatement':
         this.analyzeIfStatement(statement);
         return;
+      case 'TryStatement':
+        this.analyzeTryStatement(statement);
+        return;
       case 'WhileStatement':
         this.analyzeWhileStatement(statement);
         return;
@@ -646,6 +658,30 @@ export class SemanticAnalyzer {
     this.analyzeStatement(statement.thenBranch);
     if (statement.elseBranch) {
       this.analyzeStatement(statement.elseBranch);
+    }
+  }
+
+  private analyzeTryStatement(statement: TryStatement): void {
+    this.analyzeStatement(statement.tryBlock);
+
+    if (statement.catchClause) {
+      this.pushScope();
+      if (statement.catchClause.name && statement.catchClause.nameRange) {
+        this.markSemanticToken('variable', statement.catchClause.nameRange, ['declaration', 'readonly']);
+        this.declare(
+          statement.catchClause.name,
+          RUNTIME_ERROR_VALUE,
+          'variable',
+          statement.catchClause.nameRange,
+          true,
+        );
+      }
+      this.analyzeStatement(statement.catchClause.body);
+      this.popScope();
+    }
+
+    if (statement.finallyBlock) {
+      this.analyzeStatement(statement.finallyBlock);
     }
   }
 
@@ -799,27 +835,37 @@ export class SemanticAnalyzer {
       return;
     }
 
-    const info = this.classes.get(declaredType.name);
-    if (!info) return;
+    const constructor = this.classConstructorCallSpec(declaredType.name, statement.range);
+    if (constructor) this.checkArgumentList(statement.constructorArgs ?? [], constructor, statement.range);
+  }
 
-    const constructor = info.constructorSpec;
-    if (!constructor) {
-      this.diagnostics.error(statement.range, `class '${declaredType.name}' has no constructor`);
-      for (const arg of statement.constructorArgs ?? []) this.expressionType(arg.value);
-      return;
-    }
+  private classConstructorCallSpec(className: string, range: SourceRange): FunctionSpec | null {
+    const info = this.classes.get(className);
+    if (!info) return null;
 
     if (
-      info.constructorDeclaration?.access === 'private'
-      && this.currentClassName() !== declaredType.name
+      info.constructorAccess === 'private'
+      && this.currentClassName() !== info.constructorOwner
     ) {
       this.diagnostics.error(
-        statement.range,
-        `constructor '${declaredType.name}' is private and can only be used inside class '${declaredType.name}'`,
+        range,
+        `constructor '${className}' is private and can only be used inside class '${info.constructorOwner}'`,
       );
     }
 
-    this.checkArgumentList(statement.constructorArgs ?? [], constructor, statement.range);
+    if (!info.constructorSpec) {
+      return {
+        name: className,
+        parameters: [],
+        returnType: classType(className),
+      };
+    }
+
+    return {
+      ...info.constructorSpec,
+      name: className,
+      returnType: classType(className),
+    };
   }
 
   private resolveTypeName(typeName: TypeName): TypeRef {
@@ -966,6 +1012,17 @@ export class SemanticAnalyzer {
       }
 
       const objectType = this.expressionType(target.object);
+      if (this.isBuiltinLengthProperty(objectType, target.name)) {
+        this.markSemanticToken('property', target.nameRange, ['readonly', 'defaultLibrary']);
+        this.diagnostics.error(target.range, "property 'length' is read-only");
+        return { type: INT };
+      }
+      const runtimeErrorProperty = this.runtimeErrorPropertySpec(objectType, target.name);
+      if (runtimeErrorProperty) {
+        this.markSemanticToken('property', target.nameRange, ['readonly', 'defaultLibrary']);
+        this.diagnostics.error(target.range, `property '${target.name}' is read-only`);
+        return { type: runtimeErrorProperty.type, property: runtimeErrorProperty };
+      }
       if (objectType.kind === 'class') {
         const field = this.getClassField(objectType.name, target.name);
         if (!field) {
@@ -1091,6 +1148,11 @@ export class SemanticAnalyzer {
         return statement.elseBranch !== null
           && this.statementAlwaysReturns(statement.thenBranch)
           && this.statementAlwaysReturns(statement.elseBranch);
+      case 'TryStatement':
+        if (statement.finallyBlock && this.statementAlwaysReturns(statement.finallyBlock)) return true;
+        if (!statement.catchClause) return this.statementAlwaysReturns(statement.tryBlock);
+        return this.statementAlwaysReturns(statement.tryBlock)
+          && this.statementAlwaysReturns(statement.catchClause.body);
       default:
         return false;
     }
@@ -1399,8 +1461,8 @@ export class SemanticAnalyzer {
 
     if (callee.kind === 'IdentifierExpression') {
       if (this.classes.has(callee.name)) {
-        this.diagnostics.error(callee.range, `class '${callee.name}' cannot be called as a function; declare an object with '${callee.name} name(...)'`);
-        return null;
+        this.markSemanticToken('class', callee.range);
+        return this.classConstructorCallSpec(callee.name, callee.range);
       }
 
       const global = this.stdlib.getGlobalFunction(callee.name);
@@ -1461,10 +1523,15 @@ export class SemanticAnalyzer {
       const userModule = this.userModuleRegistry.getModule(moduleName);
       if (userModule) {
         this.markSemanticToken('namespace', callee.object.range);
-        this.markSemanticToken('function', callee.nameRange);
         if (!this.imports.has(moduleName)) {
           this.diagnostics.error(callee.object.range, `'${moduleName}' is not imported (use 'use ${moduleName};')`);
           return null;
+        }
+
+        const classSpec = userModule.classes.get(callee.name);
+        if (classSpec) {
+          this.markSemanticToken('class', callee.nameRange);
+          return this.classConstructorCallSpec(classSpec.qualifiedName, callee.range);
         }
 
         const fn = userModule.functions.get(callee.name);
@@ -1472,6 +1539,7 @@ export class SemanticAnalyzer {
           this.diagnostics.error(callee.range, `module '${moduleName}' has no function '${callee.name}'`);
           return null;
         }
+        this.markSemanticToken('function', callee.nameRange);
         return fn;
       }
 
@@ -1520,6 +1588,14 @@ export class SemanticAnalyzer {
         const method = this.arrayMethodSpec(objectType, callee.name);
         if (method) return method;
         this.reportUnknownArrayMethod(objectType, callee.name, callee.range);
+        return null;
+      }
+      if (objectType.kind === 'runtime-error') {
+        this.markSemanticToken('method', callee.nameRange, ['defaultLibrary']);
+        if (callee.name === 'to_string') {
+          return { name: 'to_string', parameters: [], returnType: STRING };
+        }
+        this.diagnostics.error(callee.range, `type 'RuntimeError' has no method '${callee.name}'`);
         return null;
       }
       if (objectType.kind === 'class') {
@@ -1818,6 +1894,10 @@ export class SemanticAnalyzer {
 
     const objectType = this.expressionType(expression.object);
     if (this.isStringType(objectType)) {
+      if (expression.name === 'length') {
+        this.markSemanticToken('property', expression.nameRange, ['readonly', 'defaultLibrary']);
+        return INT;
+      }
       const method = this.stringMethodSpec(expression.name);
       if (method) {
         this.markSemanticToken('method', expression.nameRange, ['defaultLibrary']);
@@ -1828,12 +1908,30 @@ export class SemanticAnalyzer {
     }
 
     if (objectType.kind === 'array') {
+      if (expression.name === 'length') {
+        this.markSemanticToken('property', expression.nameRange, ['readonly', 'defaultLibrary']);
+        return INT;
+      }
       const method = this.arrayMethodSpec(objectType, expression.name);
       if (method) {
         this.markSemanticToken('method', expression.nameRange, ['defaultLibrary']);
         return functionType(method.parameters.map((param) => param.type), method.returnType);
       }
       this.reportUnknownArrayMethod(objectType, expression.name, expression.range);
+      return ERROR_TYPE;
+    }
+
+    if (objectType.kind === 'runtime-error') {
+      const property = this.runtimeErrorPropertySpec(objectType, expression.name);
+      if (property) {
+        this.markSemanticToken('property', expression.nameRange, ['readonly', 'defaultLibrary']);
+        return property.type;
+      }
+      if (expression.name === 'to_string') {
+        this.markSemanticToken('method', expression.nameRange, ['defaultLibrary']);
+        return functionType([], STRING);
+      }
+      this.diagnostics.error(expression.range, `type 'RuntimeError' has no member '${expression.name}'`);
       return ERROR_TYPE;
     }
 
@@ -1884,10 +1982,23 @@ export class SemanticAnalyzer {
     return type.kind === 'primitive' && type.name === 'string';
   }
 
+  private isBuiltinLengthProperty(type: TypeRef, name: string): boolean {
+    return name === 'length' && (this.isStringType(type) || type.kind === 'array');
+  }
+
+  private runtimeErrorPropertySpec(type: TypeRef, name: string): PropertySpec | null {
+    if (type.kind !== 'runtime-error') return null;
+    if (name === 'message' || name === 'file') {
+      return { name, type: STRING, readonly: true };
+    }
+    if (name === 'line') {
+      return { name, type: INT, readonly: true };
+    }
+    return null;
+  }
+
   private stringMethodSpec(name: string): FunctionSpec | null {
     switch (name) {
-      case 'length':
-        return { name, parameters: [], returnType: INT };
       case 'contains':
       case 'find':
       case 'count':
@@ -1915,8 +2026,6 @@ export class SemanticAnalyzer {
     const index = { name: 'index', type: INT };
 
     switch (name) {
-      case 'length':
-        return { name, parameters: [], returnType: INT };
       case 'contains':
         return { name, parameters: [value], returnType: BOOL };
       case 'find':

@@ -1,5 +1,0 @@
-Cat cat1;
-Cat cat2;
-Cat cat3;
-// или массив:
-array<Cat, 10> cats;

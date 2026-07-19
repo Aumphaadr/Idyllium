@@ -484,6 +484,22 @@ body.light-theme .reference-topbar {
   color: var(--muted);
 }
 
+.api-description code,
+.api-section-intro code,
+.notes-list code,
+.member-description code,
+.full-example p code,
+.type-row span code,
+.language-row span code {
+  padding: 0.08em 0.32em;
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  background: var(--code-bg);
+  color: var(--text);
+  font: 0.92em var(--font-mono);
+  white-space: break-spaces;
+}
+
 .summary-list {
   display: grid;
   grid-template-columns: repeat(3, minmax(120px, 1fr));

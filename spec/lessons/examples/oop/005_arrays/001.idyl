@@ -1,9 +1,0 @@
-use console;
-
-main() {
-    array<string, 6> names = ["Барсик", "Мурка", "Рекс", "Тузик", "Дружок", "Мурзик"];
-
-    for (int i = 0; i < 6; i = i + 1) {
-        console.writeln(names[i]);
-    }
-}

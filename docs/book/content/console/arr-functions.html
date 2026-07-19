@@ -64,14 +64,14 @@ float mx2 = max(B); // 3.5 (float)
     <!-- Section 5 -->
     <div class="docs-section">
       <h2>Особенность функции <code>avg()</code></h2>
-      <p>Среднее арифметическое вычисляется как <code>sum(arr) / arr.length()</code>. Поскольку в Idyllium деление всегда даёт <code>float</code>, функция <code>avg()</code> <strong>всегда возвращает <code>float</code></strong>, даже если массив состоит из целых чисел:</p>
+      <p>Среднее арифметическое вычисляется как <code>sum(arr) / arr.length</code>. Поскольку в Idyllium деление всегда даёт <code>float</code>, функция <code>avg()</code> <strong>всегда возвращает <code>float</code></strong>, даже если массив состоит из целых чисел:</p>
 
       <idyl-code-block><script type="text/plain">
 array<int, 4> C = [10, 20, 30, 40];
 float a = avg(C); // 25.0 (float), а не 25 (int)
 
 // Аналог вручную:
-float manual_avg = sum(C) / C.length(); // то же самое
+float manual_avg = sum(C) / C.length; // то же самое
 </script></idyl-code-block>
 
       <p>Это сделано для точности: среднее может быть дробным, даже если все исходные числа — целые.</p>
@@ -107,7 +107,7 @@ main() {
 
       <idyl-code-block><script type="text/plain">
 int total = 0;
-for (int i = 0; i < arr.length(); i = i + 1) {
+for (int i = 0; i < arr.length; i = i + 1) {
     total = total + arr[i];
 }
 </script></idyl-code-block>

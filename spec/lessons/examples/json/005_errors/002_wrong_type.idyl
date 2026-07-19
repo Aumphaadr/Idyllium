@@ -1,8 +1,0 @@
-use json;
-
-main() {
-    json.Value root_value = json.parse("{\"name\":\"Mira\"}");
-    json.Object root = root_value.to_object();
-
-    int name = root.get("name").to_int();
-}

@@ -1,4 +1,0 @@
-// main.idyl
-main() {
-    Cat c;   // Cat объявлен в cat.idyl, но файл не подключён
-}

@@ -58,7 +58,7 @@ main() {
     string text = "[{\"name\":\"Liam\",\"level\":7},{\"name\":\"Mira\",\"level\":5}]";
     json.Array players = json.parse(text).to_array();
 
-    for (int i = 0; i < players.length(); i = i + 1) {
+    for (int i = 0; i < players.length; i = i + 1) {
         json.Object player = players.at(i).to_object();
         string name = player.get("name").to_string();
         int level = player.get("level").to_int();

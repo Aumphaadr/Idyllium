@@ -1,7 +1,0 @@
-string Q = "Страус";
-int L = Q.length(); // 6
-console.writeln("Птица: ", Q, ", длина: ", L, " символов");
-
-string R = "Фламинго";
-int N = R.length(); // 8
-console.writeln("Птица: ", R, ", длина: ", N, " символов");

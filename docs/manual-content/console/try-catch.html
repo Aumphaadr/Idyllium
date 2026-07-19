@@ -1,0 +1,213 @@
+<div class="docs-section">
+  <h2>Ошибка выполнения останавливает программу</h2>
+  <p>
+    В прошлом уроке мы разделили ошибки на два вида. Ошибку компиляции Idyllium
+    замечает ещё до запуска. А <strong>ошибка выполнения</strong> возникает,
+    когда программа уже работает: например, пытается поделить число на ноль,
+    прочитать отсутствующий файл или преобразовать слово в число.
+  </p>
+  <p>
+    Обычно после такой ошибки программа останавливается. Строки, расположенные
+    ниже опасной операции, уже не выполняются.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    int divisor = 0;
+    console.writeln(100 / divisor);
+    console.writeln("До этой строки программа не дойдёт");
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:5: runtime error: division by zero</idyl-error-block>
+
+  <p>
+    Иногда остановка является правильным поведением: программа обнаружила
+    серьёзную проблему и не знает, что делать дальше. Но иногда мы заранее
+    понимаем, что может пойти не так, и умеем предложить запасной путь.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Опасный участок внутри try</h2>
+  <p>
+    Блок <code>try</code> содержит код, который мы хотим попытаться выполнить.
+    Слово <code>try</code> так и переводится: «попробовать».
+  </p>
+  <p>
+    Если внутри этого блока возникает ошибка выполнения, Idyllium сразу
+    переходит в следующий блок <code>catch</code>. Код внутри
+    <code>catch</code> описывает запасное поведение.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    try {
+        int divisor = 0;
+        console.writeln(100 / divisor);
+    } catch {
+        console.writeln("На ноль делить нельзя");
+    }
+
+    console.writeln("Программа продолжает работу");
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>На ноль делить нельзя
+Программа продолжает работу</idyl-output-block>
+
+  <p>
+    Обратите внимание: строка с делением не завершилась, но вся программа уже
+    не остановилась. После <code>catch</code> выполнение продолжилось обычным
+    образом.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Как узнать, что именно произошло</h2>
+  <p>
+    Короткая форма <code>catch { ... }</code> подходит, когда для любых ошибок
+    у нас один ответ. Если нужны подробности, между круглыми скобками можно
+    создать имя для пойманной ошибки: <code>catch (error)</code>.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    try {
+        int divisor = 0;
+        console.writeln(100 / divisor);
+    } catch (error) {
+        console.writeln("Причина: ", error.message);
+        console.writeln("Файл: ", error.file);
+        console.writeln("Строка: ", error.line);
+    }
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Причина: division by zero
+Файл: main.idyl
+Строка: 6</idyl-output-block>
+
+  <p>У пойманной ошибки есть четыре полезные возможности:</p>
+  <ul>
+    <li><code>error.message</code> — короткая причина;</li>
+    <li><code>error.file</code> — имя файла;</li>
+    <li><code>error.line</code> — номер строки;</li>
+    <li><code>error.to_string()</code> — полное сообщение одной строкой.</li>
+  </ul>
+  <p>
+    Имя <code>error</code> не является особым словом. Можно написать
+    <code>catch (problem)</code> или выбрать другое понятное имя. Эта переменная
+    существует только внутри своего блока <code>catch</code>, а её свойства
+    предназначены только для чтения.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Запасное значение</h2>
+  <p>
+    Обработка ошибки не обязана ограничиваться сообщением. Например, функция
+    может попытаться преобразовать строку в число, а при неудаче вернуть
+    заранее выбранное запасное значение.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+int function safe_int(string text, int fallback = 0) {
+    try {
+        return to_int(text);
+    } catch {
+        return fallback;
+    }
+}
+
+main() {
+    console.writeln(safe_int("42"));
+    console.writeln(safe_int("котики"));
+    console.writeln(safe_int("не число", fallback=10));
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>42
+0
+10</idyl-output-block>
+
+  <p>
+    Такой приём полезен, только если запасное значение действительно имеет
+    смысл. Нельзя оборачивать половину программы в один огромный
+    <code>try</code> и делать вид, что любой сбой неважен. Чем меньше опасный
+    участок, тем понятнее, какую проблему мы собирались обработать.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>finally выполняется в любом случае</h2>
+  <p>
+    После <code>try</code> и <code>catch</code> можно добавить блок
+    <code>finally</code>. Он выполняется и после успеха, и после пойманной
+    ошибки. Это удобное место для обязательного завершающего действия:
+    закрытия файла, отмены незавершённой транзакции или остановки ресурса.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+void function divide(int divisor) {
+    try {
+        console.writeln("Результат: ", 12 / divisor);
+    } catch {
+        console.writeln("Деление не удалось");
+    } finally {
+        console.writeln("Попытка завершена");
+    }
+}
+
+main() {
+    divide(3);
+    divide(0);
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Результат: 4
+Попытка завершена
+Деление не удалось
+Попытка завершена</idyl-output-block>
+
+  <p>
+    У конструкции обязательно должен быть хотя бы один блок: либо
+    <code>catch</code>, либо <code>finally</code>. Допустимы обе формы:
+    <code>try + catch</code> и <code>try + finally</code>. Чаще всего для
+    понятной обработки используются сразу все три блока.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Что try поймать не может</h2>
+  <p>
+    Конструкция <code>try</code> работает только с ошибками выполнения
+    Idyllium. Ошибку компиляции поймать нельзя: программа с неверным синтаксисом
+    или несовместимыми типами вообще не будет запущена. Остановка программы
+    пользователем тоже не превращается в обычную ошибку и не отменяется через
+    <code>catch</code>.
+  </p>
+  <p>
+    Главная идея проста: <code>try</code> не прячет проблемы, а позволяет
+    заранее описать разумный план на случай ожидаемой неудачи.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Попробуйте сами</h2>
+  <ol>
+    <li>Попросите пользователя ввести целое число и выведите понятную подсказку, если вместо числа введён текст.</li>
+    <li>Попытайтесь открыть отсутствующий файл и обработайте ошибку без остановки программы.</li>
+    <li>Добавьте <code>finally</code>, который сообщает о завершении каждой попытки.</li>
+  </ol>
+</div>

@@ -1,3 +1,0 @@
-main() {
-    int x = math.abs(-5);
-}

@@ -96,6 +96,7 @@ interface VariableInfo {
   readonly typeName: TypeName;
   readonly range: SourceRange;
   readonly isConst: boolean;
+  readonly runtimeError?: boolean;
 }
 
 interface ModuleDeclarationIndex {
@@ -382,6 +383,8 @@ export class IdylliumProject {
     const variable = index.variables.get(variableName);
     if (!variable) return [];
 
+    if (variable.runtimeError) return runtimeErrorMemberCompletions();
+
     if (variable.typeName.kind === 'QualifiedTypeName') {
       if (this.stdlib.hasQualifiedType(variable.typeName.moduleName, variable.typeName.name)) {
         return this.stdlib.listTypeMembers(qualified(variable.typeName.moduleName, variable.typeName.name));
@@ -426,7 +429,11 @@ export class IdylliumProject {
       const moduleFunction = this.stdlib.getModuleFunction(objectName, memberName);
       if (moduleFunction) return [signatureFromFunctionSpec(moduleFunction)];
 
-      const userModuleFunction = index.userModules.getModule(objectName)?.functions.get(memberName);
+      const userModule = index.userModules.getModule(objectName);
+      const userModuleClass = userModule?.classes.get(memberName);
+      if (userModuleClass) return [signatureFromUserClassConstructor(userModuleClass)];
+
+      const userModuleFunction = userModule?.functions.get(memberName);
       if (userModuleFunction) return [signatureFromFunctionSpec(userModuleFunction)];
 
       const member = this.memberHoverItem(index, objectName, memberName);
@@ -438,6 +445,9 @@ export class IdylliumProject {
 
     const localFunction = index.functions.get(normalized);
     if (localFunction) return [signatureFromFunctionDeclaration(localFunction)];
+
+    const localClass = index.localClasses.get(normalized);
+    if (localClass) return [signatureFromLocalClassConstructor(localClass)];
 
     return [];
   }
@@ -650,6 +660,29 @@ function collectStatementVariables(statement: Statement, variables: Map<string, 
     return;
   }
 
+  if (statement.kind === 'TryStatement') {
+    collectStatementVariables(statement.tryBlock, variables);
+    if (statement.catchClause) {
+      if (statement.catchClause.name && statement.catchClause.nameRange) {
+        variables.set(statement.catchClause.name, {
+          name: statement.catchClause.name,
+          typeName: {
+            kind: 'ClassTypeName',
+            name: 'RuntimeError',
+            nameRange: statement.catchClause.nameRange,
+            range: statement.catchClause.nameRange,
+          },
+          range: statement.catchClause.nameRange,
+          isConst: true,
+          runtimeError: true,
+        });
+      }
+      collectStatementVariables(statement.catchClause.body, variables);
+    }
+    if (statement.finallyBlock) collectStatementVariables(statement.finallyBlock, variables);
+    return;
+  }
+
   if (statement.kind === 'WhileStatement' || statement.kind === 'DoWhileStatement') {
     collectStatementVariables(statement.body, variables);
     return;
@@ -660,6 +693,15 @@ function collectStatementVariables(statement: Statement, variables: Map<string, 
     collectStatementVariables(statement.body, variables);
     if (statement.increment?.kind === 'VariableDeclaration') collectStatementVariables(statement.increment, variables);
   }
+}
+
+function runtimeErrorMemberCompletions(): CompletionItem[] {
+  return [
+    { name: 'message', kind: 'property', detail: 'message: string (read-only)' },
+    { name: 'file', kind: 'property', detail: 'file: string (read-only)' },
+    { name: 'line', kind: 'property', detail: 'line: int (read-only)' },
+    { name: 'to_string', kind: 'method', detail: 'to_string(): string' },
+  ];
 }
 
 function collectLocalClasses(program: Program): Map<string, ClassDeclaration> {
@@ -764,7 +806,7 @@ function userClassMemberCompletions(classSpec: UserModuleClassSpec): CompletionI
 
 function stringMemberCompletions(): CompletionItem[] {
   return [
-    { name: 'length', kind: 'method', detail: 'length(): int' },
+    { name: 'length', kind: 'property', detail: 'length: int' },
     { name: 'contains', kind: 'method', detail: 'contains(text: string): bool' },
     { name: 'find', kind: 'method', detail: 'find(text: string): int' },
     { name: 'count', kind: 'method', detail: 'count(text: string): int' },
@@ -782,7 +824,7 @@ function stringMemberCompletions(): CompletionItem[] {
 function arrayMemberCompletions(typeName: Extract<TypeName, { kind: 'ArrayTypeName' }>): CompletionItem[] {
   const element = typeNameText(typeName.elementType);
   const items: CompletionItem[] = [
-    { name: 'length', kind: 'method', detail: 'length(): int' },
+    { name: 'length', kind: 'property', detail: 'length: int' },
     { name: 'contains', kind: 'method', detail: `contains(value: ${element}): bool` },
     { name: 'find', kind: 'method', detail: `find(value: ${element}): int` },
     { name: 'count', kind: 'method', detail: `count(value: ${element}): int` },
@@ -1034,6 +1076,43 @@ function signatureFromFunctionDeclaration(declaration: FunctionDeclaration): Idy
     ),
     parameters,
     allowsNamedArguments: true,
+  };
+}
+
+function signatureFromLocalClassConstructor(declaration: ClassDeclaration): IdylliumSignature {
+  const constructor = declaration.members.find(
+    (member): member is Extract<ClassDeclaration['members'][number], { kind: 'ConstructorDeclaration' }> => (
+      member.kind === 'ConstructorDeclaration'
+    ),
+  );
+  const parameters = constructor?.parameters.map((parameter) => ({
+    name: parameter.name,
+    label: parameterDetail(parameter),
+  })) ?? [];
+  return {
+    label: `${declaration.name}(${parameters.map((parameter) => parameter.label).join(', ')})`,
+    parameters,
+    allowsNamedArguments: true,
+  };
+}
+
+function signatureFromUserClassConstructor(classSpec: UserModuleClassSpec): IdylliumSignature {
+  const constructor = classSpec.constructorSpec;
+  if (!constructor) {
+    return {
+      label: `${classSpec.name}()`,
+      parameters: [],
+      allowsNamedArguments: true,
+    };
+  }
+
+  const signature = signatureFromFunctionSpec({
+    ...constructor,
+    name: classSpec.name,
+  });
+  return {
+    ...signature,
+    label: `${classSpec.name}(${signature.parameters.map((parameter) => parameter.label).join(', ')})`,
   };
 }
 

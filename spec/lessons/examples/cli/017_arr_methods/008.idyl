@@ -1,3 +1,0 @@
-dyn_array<int> I = [5, 6, 7];
-I.clear();
-console.writeln("Длина: ", I.length());

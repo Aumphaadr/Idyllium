@@ -1,6 +1,0 @@
-string H = "A3";
-types.uint8 u = types.from_hex(H, "uint8");
-types.int8 s = types.from_hex(H, "int8");
-
-console.writeln(u); // 163
-console.writeln(s); // -93

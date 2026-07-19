@@ -70,7 +70,7 @@
         { "id": "003", "file": "oop/003_this.html",          "title": "Идентификатор this" },
         { "id": "004", "file": "oop/004_modules.html",       "title": "Разбиение проекта по файлам" },
         { "id": "005", "file": "oop/005_arrays.html",        "title": "Массивы объектов" },
-        { "id": "006", "file": "oop/006_constructor.html",   "title": "Конструктор и деструктор" },
+        { "id": "006", "file": "oop/006_constructor.html",   "title": "Конструктор" },
         { "id": "007", "file": "oop/007_composition.html",   "title": "Композиция" },
         { "id": "008", "file": "oop/008_inheritance.html",   "title": "Наследование" },
         { "id": "009", "file": "oop/009_polymorphism.html",  "title": "Полиморфизм" },

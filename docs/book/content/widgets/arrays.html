@@ -27,7 +27,7 @@ use console;
 main() {
     array<int, 7> numbers = [10, 20, 30, 40, 50, 60, 70];
 
-    for (int i = 0; i < numbers.length(); i = i + 1) {
+    for (int i = 0; i < numbers.length; i = i + 1) {
         console.writeln("numbers[", i, "] = ", numbers[i]);
     }
 }
@@ -173,7 +173,7 @@ main() {
     addBtn.width = 150;
 
     addBtn.on_click = void function() {
-        int count = sliders.length();
+        int count = sliders.length;
         gui.Slider s;
         s.x = 20;
         s.y = 70 + count * 35;
@@ -238,7 +238,7 @@ main() {
     removeBtn.width = 150;
 
     removeBtn.on_click = void function() {
-        if (bars.length() > 0) {
+        if (bars.length > 0) {
             bars[0].visible = false;  // удаляем с экрана
             bars.remove_at(0);        // удаляем из массива
         }

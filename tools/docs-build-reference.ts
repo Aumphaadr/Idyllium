@@ -82,7 +82,7 @@ export function buildReferenceSite(outputRoot: string): void {
 
   const api = {
     version: 1,
-    languageVersion: String(packageJson.version ?? '1.1.1'),
+    languageVersion: String(packageJson.version ?? '1.1.2'),
     generatedAt: new Date().toISOString(),
     overview: content.overview,
     language: content.language ?? [],

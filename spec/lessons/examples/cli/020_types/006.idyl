@@ -1,6 +1,0 @@
-string B = "10100011";
-types.uint8 k = types.from_bin(B, "uint8");
-types.int8 p = types.from_bin(B, "int8");
-
-console.writeln(k); // 163
-console.writeln(p); // -93

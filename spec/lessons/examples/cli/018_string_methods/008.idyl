@@ -1,3 +1,0 @@
-string data = "яблоко,банан,апельсин";
-dyn_array<string> fruits = data.split(",");
-console.writeln(fruits);

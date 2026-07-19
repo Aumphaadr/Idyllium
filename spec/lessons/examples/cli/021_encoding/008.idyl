@@ -1,8 +1,0 @@
-use console;
-use encoding;
-
-main() {
-    dyn_array<int> codes = [72, 101, 108, 108, 111];
-    string text = encoding.decode(codes, "ascii");
-    console.writeln(text);
-}

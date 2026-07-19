@@ -1,3 +1,0 @@
-types.uint8 A = 75;
-string S = A.to_bin();
-console.writeln(S);

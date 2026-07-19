@@ -1,5 +1,0 @@
-use math;
-
-main() {
-    float x = math.sqrt(-4);
-}

@@ -1,2 +1,0 @@
-encoding.char_to_int('A', "cp866");
-// Ошибка: unknown encoding 'cp866'

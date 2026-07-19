@@ -84,16 +84,16 @@ for (int i = 0; i < 7; i = i + 1) {
 
     <!-- Section 5 -->
     <div class="docs-section">
-      <h2>Длина строки: метод <code>length()</code></h2>
-      <p>Если длина строки заранее неизвестна, используйте метод <code>length()</code>:</p>
+      <h2>Длина строки: свойство <code>length</code></h2>
+      <p>Если длина строки заранее неизвестна, прочитайте свойство <code>length</code>:</p>
 
       <idyl-code-block><script type="text/plain">
 string Q = "Страус";
-int L = Q.length(); // 6
+int L = Q.length; // 6
 console.writeln("Птица: ", Q, ", длина: ", L, " символов");
 
 string R = "Фламинго";
-int N = R.length(); // 8
+int N = R.length; // 8
 console.writeln("Птица: ", R, ", длина: ", N, " символов");
 </script></idyl-code-block>
 
@@ -104,12 +104,12 @@ console.writeln("Птица: ", R, ", длина: ", N, " символов");
     <!-- Section 6 -->
     <div class="docs-section">
       <h2>Цикл с неизвестной длиной строки</h2>
-      <p>Метод <code>length()</code> возвращает число — значит, его можно подставить в цикл:</p>
+      <p>Свойство <code>length</code> содержит число — значит, его можно подставить в цикл:</p>
 
       <idyl-code-block><script type="text/plain">
 string T = "Журавль";
 
-for (int i = 0; i < T.length(); i = i + 1) {
+for (int i = 0; i < T.length; i = i + 1) {
     console.writeln(T[i]);
 }
 </script></idyl-code-block>

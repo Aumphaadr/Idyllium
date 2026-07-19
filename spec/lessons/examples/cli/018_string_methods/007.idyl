@@ -1,4 +1,0 @@
-string x = "Кот и кот и ещё кот";
-string y = x.replace("кот", "пёс");
-console.writeln(x);
-console.writeln(y);

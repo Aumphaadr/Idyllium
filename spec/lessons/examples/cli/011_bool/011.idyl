@@ -1,4 +1,0 @@
-int A = console.get_int();
-if (not(A > 5)) {
-    console.writeln("A не больше 5");
-}

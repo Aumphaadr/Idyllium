@@ -1,8 +1,0 @@
-use console;
-use math;
-
-main() {
-    console.writeln(math.pow(2, 8));   // 256
-    console.writeln(math.pow(5, 3));   // 125
-    console.writeln(math.pow(4, -1));  // 0.25 (1/4)
-}

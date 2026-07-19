@@ -123,6 +123,16 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
   },
   {
     sectionId: 'console',
+    afterLessonId: 'errors',
+    id: 'try-catch',
+    title: 'Обработка ошибок',
+    subtitle: 'try, catch и finally: как встретить runtime error и продолжить работу',
+    sourceFile: 'docs/manual-content/console/try-catch.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'console',
     afterLessonId: 'files',
     id: 'directories',
     title: 'Файлы и папки проекта',
@@ -570,6 +580,7 @@ const LESSON_EXTRAS: Record<string, string> = {
 
 const LESSON_REPLACEMENTS: Record<string, string> = {
   'cli/000_setup.html': 'docs/manual-content/console/setup.html',
+  'oop/006_constructor.html': 'docs/manual-content/oop/constructor.html',
   'oop/009_polymorphism.html': 'docs/manual-content/oop/polymorphism.html',
 };
 
@@ -1074,8 +1085,8 @@ function copyBookShell(outputRoot: string): void {
 function writeCurrentVersion(outputPath: string): void {
   const packagePath = path.resolve(process.cwd(), 'package.json');
   const version = fs.existsSync(packagePath)
-    ? String(JSON.parse(fs.readFileSync(packagePath, 'utf8')).version ?? '1.1.1')
-    : '1.1.1';
+    ? String(JSON.parse(fs.readFileSync(packagePath, 'utf8')).version ?? '1.1.2')
+    : '1.1.2';
   fs.writeFileSync(outputPath, `${JSON.stringify({ version }, null, 2)}\n`, 'utf8');
 }
 

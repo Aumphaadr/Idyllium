@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: IdylliumNext 1.1.1.
+Current language target: IdylliumNext 1.1.2.
 
 This reference describes implemented behavior. Ideas from `BACKLOG.md` and
 exploratory files under `spec/some_*` are not language features until they are
@@ -311,6 +311,19 @@ if (score >= 90) {
 }
 ```
 
+Every `if`, `while`, `do-while`, and `for` condition must already have type
+`bool`. Idyllium has no Python/JavaScript-style truthy or falsy conversion:
+
+```idyllium
+// if (1) {}               // compile error: got int
+// if (name) {}            // compile error: got string
+// while (items.length) {} // compile error: got int
+
+if (name != "" and items.length > 0) {
+    console.writeln("data exists");
+}
+```
+
 Braces may be omitted when a branch contains exactly one statement:
 
 ```idyllium
@@ -390,10 +403,15 @@ Array indices are zero-based. Out-of-bounds access is a readable runtime error:
 main.idyl:5: runtime error: array index 5 out of bounds (size 3, valid indices 0-2)
 ```
 
-Array methods:
+Array read-only property:
 
 ```idyllium
-values.length()
+values.length
+```
+
+Do not call it as `length()` and do not assign to it. Array methods:
+
+```idyllium
 values.contains(value)
 values.find(value)
 values.count(value)
@@ -458,10 +476,15 @@ This is intentional and helps students see hidden newline characters.
 
 ## 11. Strings And Characters
 
-Strings have methods:
+String read-only property:
 
 ```idyllium
-text.length()
+text.length
+```
+
+Do not call it as `length()`. String methods:
+
+```idyllium
 text.contains("abc")
 text.find("abc")
 text.count("a")
@@ -483,7 +506,7 @@ char first = word[0];
 ```
 
 String characters are read-only. Do not generate code that assigns to
-`word[0]`.
+`word[0]`. Create a new string and assign the complete result instead.
 
 ## 12. Functions
 
@@ -680,16 +703,36 @@ hero.hit(30);
 console.writeln(hero.get_hp());
 ```
 
-Constructors are used in declarations, not as general expressions:
+The pedagogical declaration form remains available:
 
 ```idyllium
 Hero hero("Mira", 100);
 ```
 
-There is no `new` expression, and constructor calls cannot be nested inside
-other expressions. A class with a zero-argument or all-default constructor may
-be initialized with empty parentheses, for example `Counter counter();`.
-Destructors are not implemented.
+Calling a user class creates and returns a fresh object, so constructors may be
+used anywhere an expression of that class is accepted:
+
+```idyllium
+dyn_array<Hero> heroes;
+heroes.add(Hero("Kaspar", 500));
+
+Hero raven = Hero("Raven", 600);
+
+Hero function create_boss() {
+    return Hero("Aranthir", 1000);
+}
+
+bool strong = Hero("Ornella", 750).get_hp() > 700;
+```
+
+Named and default arguments work in constructor expressions. A class imported
+from a user module is created with `geometry.Point(10, 20)`. Each call returns
+an independent object, and a subclass expression may be used where its base
+class is expected. A class without an explicit constructor may be called with
+zero arguments, such as `Empty()`, but not with arguments. Constructor
+expressions are also valid in class field initializers.
+
+There is no `new` expression. Destructors are not implemented.
 
 ### Access Modifiers
 
@@ -862,22 +905,45 @@ use time;
 
 time.sleep(1.5);
 time.stamp now = time.now();
-time.stamp past = time.from_unix(0);
+time.stamp past = time.from_unix(0, "Asia/Yekaterinburg");
 
-console.writeln(now.year());
-console.writeln(now.month());
-console.writeln(now.day());
-console.writeln(now.hour());
-console.writeln(now.minute());
-console.writeln(now.second());
-console.writeln(now.week_day());
-console.writeln(now.unix());
+console.writeln(now.year);
+console.writeln(now.month);
+console.writeln(now.day);
+console.writeln(now.hour);
+console.writeln(now.minute);
+console.writeln(now.second);
+console.writeln(now.week_day);
+console.writeln(now.unix);
+console.writeln(now.timezone);
 console.writeln(now.to_string());
 ```
 
-`time.stamp` uses UTC. `month()` returns `1..12`, and `week_day()` follows the
-usual `0..6` convention where `0` is Sunday. `time.sleep()` accepts a
-non-negative number of seconds and may be stopped by the IDE.
+`time.now()` and `time.from_unix(seconds)` use `"UTC"` by default. Both accept
+an optional IANA timezone such as `"Asia/Yekaterinburg"`, `"Europe/Berlin"`, or
+`"America/New_York"`; named form `timezone="..."` is valid. Invalid timezone
+names are runtime errors. The host `Intl` implementation applies historical
+and daylight-saving transitions.
+
+The components `year`, `month`, `day`, `hour`, `minute`, `second`, `week_day`,
+`unix`, and `timezone` are read-only properties, not getter methods. Do not
+generate `stamp.year()` or `stamp.unix()`. `month` returns `1..12`, and
+`week_day` follows `0..6` with Sunday as `0`.
+
+`stamp.in_timezone(name)` returns a new stamp for the same instant. It changes
+the displayed calendar components but never changes `unix`:
+
+```idyllium
+time.stamp utc = time.from_unix(0);
+time.stamp ekb = utc.in_timezone("Asia/Yekaterinburg");
+
+console.writeln(utc); // 1970-01-01 00:00:00
+console.writeln(ekb); // 1970-01-01 05:00:00
+console.writeln(utc.unix == ekb.unix); // true
+```
+
+`time.sleep()` accepts a non-negative number of seconds and may be stopped by
+the IDE.
 
 ## 20. Library `file`
 
@@ -984,6 +1050,18 @@ dyn_array<int> bytes = encoding.encode("кот", "utf-8");
 string text = encoding.decode(bytes, "utf-8");
 ```
 
+Canonical encoding names returned by `encoding.list_encodings()`:
+
+- `"ascii"`
+- `"utf-8"`
+- `"windows-1251"`
+- `"koi8-r"`
+
+Input also accepts the aliases `"utf8"`, `"cp1251"`, `"win1251"`, and
+`"koi8r"`. An unknown encoding name is a runtime error. ASCII accepts only
+code points `0..127`; a character unavailable in the selected single-byte
+encoding also produces a runtime error instead of silent replacement.
+
 ## 22. Library `colors`
 
 Import:
@@ -1015,8 +1093,35 @@ colors.WHITE
 colors.RED
 colors.GREEN
 colors.BLUE
+colors.YELLOW
+colors.CYAN
+colors.MAGENTA
+colors.GRAY
+colors.LIGHT_GRAY
+colors.DARK_RED
+colors.DARK_GREEN
+colors.DARK_BLUE
+colors.OLIVE
+colors.TEAL
+colors.PURPLE
 colors.TRANSPARENT
 ```
+
+Exact palette values:
+
+| Constant | Value | Constant | Value |
+| --- | --- | --- | --- |
+| `BLACK` | `#000000` | `WHITE` | `#FFFFFF` |
+| `RED` | `#FF0000` | `DARK_RED` | `#800000` |
+| `GREEN` | `#00FF00` | `DARK_GREEN` | `#008000` |
+| `BLUE` | `#0000FF` | `DARK_BLUE` | `#000080` |
+| `YELLOW` | `#FFFF00` | `OLIVE` | `#808000` |
+| `CYAN` | `#00FFFF` | `TEAL` | `#008080` |
+| `MAGENTA` | `#FF00FF` | `PURPLE` | `#800080` |
+| `GRAY` | `#808080` | `LIGHT_GRAY` | `#C0C0C0` |
+
+`TRANSPARENT` is `RGBA(0, 0, 0, 0.0)`. Preserve the established bright
+meaning of `GREEN`: it is `#00FF00`, not the CSS legacy color named `green`.
 
 Invalid channel values are runtime errors. Do not silently clamp
 `colors.RGB(999, -20, 300)`.
@@ -1052,6 +1157,21 @@ types.uint64
 types.float32
 types.float64
 ```
+
+Exact integer ranges:
+
+| Type | Minimum | Maximum |
+|---|---:|---:|
+| `types.int8` | -128 | 127 |
+| `types.uint8` | 0 | 255 |
+| `types.int16` | -32768 | 32767 |
+| `types.uint16` | 0 | 65535 |
+| `types.int32` | -2147483648 | 2147483647 |
+| `types.uint32` | 0 | 4294967295 |
+| `types.int64` | -9223372036854775808 | 9223372036854775807 |
+| `types.uint64` | 0 | 18446744073709551615 |
+
+`types.float32` uses IEEE-754 binary32; `types.float64` uses binary64.
 
 Integer overflow wraps without runtime errors:
 
@@ -1101,6 +1221,20 @@ cell. A negative count reverses direction: `shift_left(-N)` is equivalent to
 Floating values shift their IEEE-754 representation and then reinterpret the
 resulting bits as the same float type. The result keeps the receiver's exact
 `types.*` type.
+
+Examples with observable results:
+
+```idyllium
+types.uint8 value = 221;
+value.to_bin();                       // "11011101"
+value.to_hex();                       // "DD"
+
+types.uint8 bits = types.from_bin("00101011", "uint8");
+bits.shift_right(3).to_bin();         // "00000101"
+bits.shift_left(3).to_bin();          // "01011000"
+bits.shift_left(12).to_bin();         // "00000000"
+bits.shift_right(-3).to_bin();        // "01011000"
+```
 
 ## 24. JSON
 
@@ -1193,6 +1327,8 @@ is_object()
 is_array()
 to_string()
 to_int()
+to_int64()
+to_uint64()
 to_float()
 to_bool()
 to_object()
@@ -1213,10 +1349,21 @@ For JSON numbers, `is_int()` is true only for an integral value, while
 `is_float()` is true for either an integer or a non-integral number because both
 can be converted safely with `to_float()`.
 
+JSON integer tokens are parsed exactly, including values above JavaScript's
+safe-integer limit (`2^53 - 1`). Use `to_int()` for ordinary safe integers,
+`to_int64()` for the signed 64-bit range, and `to_uint64()` for the unsigned
+64-bit range. Passing `types.int64` or `types.uint64` to `json.Value(...)` and
+serializing it writes an unquoted JSON number without losing digits.
+
+`json.Object` read-only property:
+
+```idyllium
+object.length
+```
+
 `json.Object` methods:
 
 ```idyllium
-length()
 has(key)
 get(key)
 add(key, value)
@@ -1228,10 +1375,15 @@ keys()
 `add` requires a new key. `set` updates an existing key. Keys are strings and
 must be unique inside one object.
 
+`json.Array` read-only property:
+
+```idyllium
+array.length
+```
+
 `json.Array` methods:
 
 ```idyllium
-length()
 at(index)
 set(index, value)
 add(value)
@@ -2138,6 +2290,51 @@ first API.
 
 ## 29. Errors
 
+### Runtime Error Handling With `try`
+
+Idyllium handles expected runtime errors with statement-level
+`try/catch/finally`. Braces are mandatory. Valid forms are `try/catch`,
+`try/finally`, and `try/catch/finally`:
+
+```idyllium
+try {
+    int age = console.get_int();
+    console.writeln("Age: ", age);
+} catch {
+    console.writeln("Enter an integer");
+}
+```
+
+Bind a structured read-only error when its details are needed:
+
+```idyllium
+try {
+    float answer = 10 / 0;
+} catch (error) {
+    console.writeln(error.message);    // reason only
+    console.writeln(error.file);       // project-relative file
+    console.writeln(error.line);       // source line
+    console.writeln(error.to_string()); // complete diagnostic
+} finally {
+    console.writeln("Attempt finished");
+}
+```
+
+The catch variable exists only inside its `catch` block. Its inferred type is
+not written in source. The binding and the properties `message`, `file`, and
+`line` are read-only; `to_string()` returns a normalized line such as
+`main.idyl:7: runtime error: division by zero`.
+
+Only normal Idyllium runtime errors are catchable. A compile error prevents the
+program from starting, internal JavaScript faults are implementation defects,
+and IDE cancellation must pass through `catch`. JavaScript still enters
+`finally` while cancellation unwinds the stack, but arbitrary Idyllium runtime
+calls are not guaranteed after the host has stopped the program.
+
+`try` is lexical. A block around `win.show()` does not catch an error raised by
+a future GUI or Canvas event; put a local `try` inside that callback. There is
+currently no user-facing `throw` statement and no typed/multiple catch clauses.
+
 ### Read-Only Library Properties
 
 Library objects may expose observable state as read-only properties. Read them
@@ -2180,10 +2377,8 @@ if (!ok) {}
 int x = 23 / 10;          // likely wrong: / returns float-like division
 label.text = 42;          // wrong: no implicit int-to-string
 button.onclick = ...;     // wrong spelling; use on_click
-new Hero();               // wrong: no new keyword
-Hero("Mira", 100);        // wrong: constructors are declarations, not expressions
+new Hero();               // wrong: no new keyword; use Hero()
 Hero* hero;               // wrong: no pointers
-destructor Hero() {}      // wrong: destructors are not implemented
 json.NULL                 // removed: use the language literal null
 progress.fill_color = colors.RED; // removed: use foreground_color
 drawable.Font font;       // removed: use fonts.Font

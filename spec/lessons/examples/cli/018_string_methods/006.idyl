@@ -1,9 +1,0 @@
-use console;
-
-main() {
-    string a = "aBcDeFgHiJk";
-    
-    console.writeln(a.substring(1, 3)); // BcD
-    console.writeln(a.substring(3, 2)); // De
-    console.writeln(a.substring(5, 5)); // FgHiJ
-}

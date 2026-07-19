@@ -1,3 +1,0 @@
-char ch = 'Ю';
-int code = encoding.char_to_int(ch, "ascii");
-// Ошибка: character 'Ю' is not valid ASCII

@@ -12,6 +12,7 @@ import {
   ClassTypeNameNode,
   CallArgument,
   CallExpression,
+  CatchClause,
   ConstructorDeclaration,
   ContinueStatement,
   DoWhileStatement,
@@ -32,6 +33,7 @@ import {
   Program,
   ReturnStatement,
   Statement,
+  TryStatement,
   TypeName,
   UnaryExpression,
   VariableDeclaration,
@@ -227,6 +229,10 @@ export class Parser {
       return this.parseIfStatement();
     }
 
+    if (this.check(TokenKind.KwTry)) {
+      return this.parseTryStatement();
+    }
+
     if (this.check(TokenKind.KwWhile)) {
       return this.parseWhileStatement();
     }
@@ -262,6 +268,10 @@ export class Parser {
         "'else' has no matching 'if'; without braces an if branch contains only one statement (wrap multiple statements in '{ ... }')",
       );
       return this.parseStatement();
+    }
+
+    if (this.check(TokenKind.KwCatch, TokenKind.KwFinally)) {
+      return this.parseOrphanTryClause();
     }
 
     return this.parseExpressionStatement();
@@ -326,13 +336,6 @@ export class Parser {
         const access = this.advance();
         this.consume(TokenKind.Colon, "expected ':' after access modifier");
         currentAccess = access.kind === TokenKind.KwPrivate ? 'private' : 'public';
-        continue;
-      }
-
-      if (this.check(TokenKind.KwDestructor)) {
-        const destructor = this.advance();
-        this.error(destructor.range, 'destructors are not supported yet');
-        this.synchronizeClassMember();
         continue;
       }
 
@@ -551,6 +554,67 @@ export class Parser {
       elseBranch,
       range: { start: ifToken.range.start, end: (elseBranch ?? thenBranch).range.end },
     };
+  }
+
+  private parseTryStatement(): TryStatement {
+    const tryToken = this.consume(TokenKind.KwTry, "expected 'try'");
+    const tryBlock = this.parseBlock();
+    let catchClause: CatchClause | null = null;
+    let finallyBlock: BlockStatement | null = null;
+
+    if (this.match(TokenKind.KwCatch)) {
+      const catchToken = this.previous();
+      let name: string | null = null;
+      let nameRange: SourceRange | null = null;
+
+      if (this.match(TokenKind.LeftParen)) {
+        const nameToken = this.consume(TokenKind.Identifier, 'expected error variable name inside catch parentheses');
+        name = nameToken.lexeme;
+        nameRange = nameToken.range;
+        this.consume(TokenKind.RightParen, "expected ')' after catch variable name");
+      }
+
+      const body = this.parseBlock();
+      catchClause = {
+        kind: 'CatchClause',
+        name,
+        nameRange,
+        body,
+        range: { start: catchToken.range.start, end: body.range.end },
+      };
+    }
+
+    if (this.match(TokenKind.KwFinally)) {
+      finallyBlock = this.parseBlock();
+    }
+
+    if (!catchClause && !finallyBlock) {
+      this.error(tryToken.range, "'try' must be followed by 'catch' or 'finally'");
+    }
+
+    return {
+      kind: 'TryStatement',
+      tryBlock,
+      catchClause,
+      finallyBlock,
+      range: {
+        start: tryToken.range.start,
+        end: (finallyBlock ?? catchClause?.body ?? tryBlock).range.end,
+      },
+    };
+  }
+
+  private parseOrphanTryClause(): Statement {
+    const token = this.advance();
+    const keyword = token.kind === TokenKind.KwCatch ? 'catch' : 'finally';
+    this.error(token.range, `'${keyword}' has no matching 'try'`);
+
+    if (token.kind === TokenKind.KwCatch && this.match(TokenKind.LeftParen)) {
+      this.consume(TokenKind.Identifier, 'expected error variable name inside catch parentheses');
+      this.consume(TokenKind.RightParen, "expected ')' after catch variable name");
+    }
+
+    return this.parseBlock();
   }
 
   private parseWhileStatement(): WhileStatement {

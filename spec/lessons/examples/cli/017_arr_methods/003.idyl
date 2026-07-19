@@ -1,2 +1,0 @@
-array<int, 6> C = [5, 7, 5, 8, 5, 9];
-int fives = C.count(5); // 3

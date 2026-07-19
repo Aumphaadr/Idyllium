@@ -1,8 +1,0 @@
-use console;
-
-main() {
-    string a = "Привет";
-    
-    console.writeln(a.to_upper()); // ПРИВЕТ
-    console.writeln(a.to_lower()); // привет
-}

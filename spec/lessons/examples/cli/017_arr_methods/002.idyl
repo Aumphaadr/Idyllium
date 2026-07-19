@@ -1,3 +1,0 @@
-dyn_array<int> B = [10, 20, 30, 20];
-int idx1 = B.find(20); // 1
-int idx2 = B.find(50); // -1

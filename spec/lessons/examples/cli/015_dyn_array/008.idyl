@@ -1,7 +1,0 @@
-dyn_array<int> A = [24, 91, 63, 50, 78];
-A.resize(10); // увеличение до 10 ячеек
-console.writeln("A = ", A);
-
-dyn_array<int> B = [81, 45, 33, 27, 90, 64, 15, 83];
-B.resize(5); // уменьшение до 5 ячеек
-console.writeln("B = ", B);

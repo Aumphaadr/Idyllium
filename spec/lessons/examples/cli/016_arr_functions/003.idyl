@@ -1,7 +1,0 @@
-array<int, 3> A = [1, 2, 3];
-int s1 = sum(A);    // 6 (int)
-int mx1 = max(A);   // 3 (int)
-
-array<float, 3> B = [1.5, 2.0, 3.5];
-float s2 = sum(B);  // 7.0 (float)
-float mx2 = max(B); // 3.5 (float)

@@ -1,8 +1,0 @@
-use console;
-use math;
-
-main() {
-    float angle = math.pi / 2; // 90° в радианах
-    console.writeln("sin(90°) = ", math.sin(angle));
-    console.writeln("cos(60°) = ", math.cos(math.pi / 3));
-}

@@ -94,7 +94,7 @@ use encoding;
 
 main() {
     dyn_array<string> encodings = encoding.list_encodings();
-    for (int i = 0; i < encodings.length(); i += 1) {
+    for (int i = 0; i < encodings.length; i += 1) {
         console.writeln(encodings[i]);
     }
 }
@@ -287,7 +287,7 @@ main() {
     int shift = 3;
     string result = "";
 
-    for (int i = 0; i < message.length(); i += 1) {
+    for (int i = 0; i < message.length; i += 1) {
         int code = encoding.char_to_int(message[i], "ascii");
         if (code >= 65 and code <= 90) {
             code = mod(code - 65 + shift, 26) + 65;

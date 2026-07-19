@@ -91,7 +91,7 @@ main() {
     array<string, 6> names = ["Барсик", "Мурка", "Рекс", "Тузик", "Дружок", "Мурзик"];
 
     for (int i = 0; i < 6; i = i + 1) {
-        int L = names[i].length();   // длина строки
+        int L = names[i].length;   // длина строки
         console.writeln(names[i], " -> ", L);
     }
 }
@@ -104,7 +104,7 @@ main() {
 Дружок -> 6
 Мурзик -> 6</idyl-output-block>
 
-      <p><code>names[i]</code> — это строка. А у строк есть метод <code>length()</code>. Всё логично!</p>
+      <p><code>names[i]</code> — это строка. А у строк есть свойство <code>length</code>. Всё логично!</p>
     </div>
 
     <!-- Section 3 -->
@@ -207,7 +207,7 @@ main() {
     // Теперь собака 'tmp' хранится в 'dogs[1]'
 
     // Обе собаки теперь в массиве
-    for (int i = 0; i < dogs.length(); i = i + 1) {
+    for (int i = 0; i < dogs.length; i = i + 1) {
         console.writeln(dogs[i].name, " ", dogs[i].age);
     }
 }
@@ -239,7 +239,7 @@ main() {
       </a>
       <a class="docs-nav-btn next" href="006_constructor.html">
         <span>Следующий урок →</span>
-        <strong>Урок 6: Конструктор и деструктор</strong>
+        <strong>Урок 6: Конструктор</strong>
       </a>
     </nav>
 

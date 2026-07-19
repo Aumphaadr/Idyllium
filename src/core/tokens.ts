@@ -18,6 +18,9 @@ export enum TokenKind {
   KwVoid = 'KwVoid',
   KwIf = 'KwIf',
   KwElse = 'KwElse',
+  KwTry = 'KwTry',
+  KwCatch = 'KwCatch',
+  KwFinally = 'KwFinally',
   KwWhile = 'KwWhile',
   KwDo = 'KwDo',
   KwFor = 'KwFor',
@@ -42,7 +45,6 @@ export enum TokenKind {
   KwExtends = 'KwExtends',
   KwPrivate = 'KwPrivate',
   KwPublic = 'KwPublic',
-  KwDestructor = 'KwDestructor',
 
   LeftParen = 'LeftParen',
   RightParen = 'RightParen',
@@ -95,6 +97,9 @@ export const KEYWORDS: Readonly<Record<string, TokenKind>> = {
   void: TokenKind.KwVoid,
   if: TokenKind.KwIf,
   else: TokenKind.KwElse,
+  try: TokenKind.KwTry,
+  catch: TokenKind.KwCatch,
+  finally: TokenKind.KwFinally,
   while: TokenKind.KwWhile,
   do: TokenKind.KwDo,
   for: TokenKind.KwFor,
@@ -119,7 +124,6 @@ export const KEYWORDS: Readonly<Record<string, TokenKind>> = {
   extends: TokenKind.KwExtends,
   private: TokenKind.KwPrivate,
   public: TokenKind.KwPublic,
-  destructor: TokenKind.KwDestructor,
 };
 
 export function tokenDisplay(kind: TokenKind): string {

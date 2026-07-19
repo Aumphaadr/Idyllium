@@ -148,7 +148,7 @@ main() {
     label.text = "Символов: 0";
 
     input.on_change = void function() {
-        int len = input.text.length();
+        int len = input.text.length;
         label.text = "Символов: " + to_string(len);
     };
 
@@ -397,7 +397,7 @@ main() {
         if (content == "") {
             label.text = "Поле пустое!";
         } else {
-            label.text = "Длина текста: " + to_string(content.length());
+            label.text = "Длина текста: " + to_string(content.length);
         }
     };
 

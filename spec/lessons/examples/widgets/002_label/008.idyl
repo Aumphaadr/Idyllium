@@ -1,7 +1,0 @@
-// Кнопка поверх лейбла
-win.add_child(label);
-win.add_child(btn);  // btn выше
-
-// Лейбл поверх кнопки
-win.add_child(btn);
-win.add_child(label);  // label выше

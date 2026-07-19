@@ -1,9 +1,0 @@
-use console;
-use types;
-
-main() {
-    for (types.uint8 N = 0; N < 10; N = N + 1) {
-        string S = N.to_bin();
-        console.writeln("Десятичное: ", N, " = двоичное ", S);
-    }
-}

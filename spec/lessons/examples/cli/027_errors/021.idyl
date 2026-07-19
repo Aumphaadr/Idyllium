@@ -1,4 +1,0 @@
-main() {
-    dyn_array<int> arr;
-    int x = arr.pop();
-}

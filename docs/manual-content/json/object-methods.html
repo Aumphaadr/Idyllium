@@ -6,7 +6,7 @@
   </p>
 
   <ul>
-    <li><code>length()</code> — количество ключей;</li>
+    <li><code>length</code> — неизменяемое свойство с количеством ключей;</li>
     <li><code>has(key)</code> — проверить наличие ключа;</li>
     <li><code>get(key)</code> — получить значение;</li>
     <li><code>add(key, value)</code> — добавить новый ключ;</li>
@@ -30,7 +30,7 @@ main() {
 
     dyn_array<string> keys = player.keys();
     console.writeln(keys);
-    console.writeln("Всего ключей: ", player.length());
+    console.writeln("Всего ключей: ", player.length);
 }
 </script></idyl-code-block>
   <idyl-output-block>["name", "level", "money"]

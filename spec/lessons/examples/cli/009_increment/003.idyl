@@ -1,8 +1,0 @@
-int score = 100;
-score = score - 10; // декремент: уменьшение на 10
-
-float price = 200.0;
-price = price / 2; // скидка 50%
-
-int counter = 3;
-counter = counter * 2; // удвоение: 3 → 6

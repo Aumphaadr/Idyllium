@@ -1,3 +1,0 @@
-array<int, 5> E = [9, 3, 7, 1, 5];
-E.sort();
-console.writeln(E);

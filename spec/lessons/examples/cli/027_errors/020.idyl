@@ -1,5 +1,0 @@
-use file;
-
-main() {
-    file.istream f = file.open("data.txt", "read");
-}

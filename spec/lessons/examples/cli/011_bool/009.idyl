@@ -1,3 +1,0 @@
-bool P = true;
-bool Q = not(P); // false
-bool R = not(Q); // снова true

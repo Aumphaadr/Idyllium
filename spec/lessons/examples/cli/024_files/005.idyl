@@ -1,9 +1,0 @@
-use file;
-
-main() {
-    file.ostream fout = file.open("output.txt", "write");
-    fout.write_line("Привет, мир!");
-    fout.write_line("Сейчас ", 2025, " год");
-    fout.write("Файл создан с помощью Idyllium!");
-    fout.close();
-}

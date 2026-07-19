@@ -1,3 +1,0 @@
-string s = "Hello, World!";
-bool has_o = s.contains('o');      // true
-bool has_abc = s.contains("abc");   // false

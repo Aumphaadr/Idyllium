@@ -1,4 +1,0 @@
-fout.write_line("Привет, мир!");
-fout.write("Сейчас ", 2025, " год");
-fout.write_line();
-fout.write("Файл создан с помощью Idyllium!");

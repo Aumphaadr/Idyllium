@@ -1,1 +1,0 @@
-float Q = random.create_float(1, 4); // число от 1.0 до 4.0

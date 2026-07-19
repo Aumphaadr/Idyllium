@@ -1,3 +1,0 @@
-time.stamp t = time.now();
-int ts = t.unix();
-console.writeln("UNIX-время: ", ts);

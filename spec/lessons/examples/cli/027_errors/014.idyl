@@ -1,4 +1,0 @@
-main() {
-    array<int, 3> arr = [1, 2, 3];
-    if (arr > 5) { }
-}

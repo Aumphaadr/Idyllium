@@ -1,3 +1,0 @@
-string S = "ABCDEF";
-char some = random.choose_from(S);
-console.writeln("Случайный символ из S: ", some);

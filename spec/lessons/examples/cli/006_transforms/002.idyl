@@ -1,6 +1,0 @@
-use console;
-
-main() {
-    string S = to_string(241); // всё в порядке
-    // to_string(241) → "241"
-}

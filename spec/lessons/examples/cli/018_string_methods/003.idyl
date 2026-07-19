@@ -1,4 +1,0 @@
-string t = "Кот и собака";
-int idx1 = t.find('о');      // 1
-int idx2 = t.find("собака"); // 6
-int idx3 = t.find("рыба");   // -1

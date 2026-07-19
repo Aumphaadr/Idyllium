@@ -24,4 +24,4 @@ npm run build:vscode
 npm run package:vscode
 ```
 
-Готовый VSIX создаётся в `packages/vscode-idyllium/idyllium-vsc-1.1.1.vsix`.
+Готовый VSIX создаётся в `packages/vscode-idyllium/idyllium-vsc-1.1.2.vsix`.

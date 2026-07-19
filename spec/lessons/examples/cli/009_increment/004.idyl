@@ -1,7 +1,0 @@
-use math;
-
-int K = -25;
-K = math.abs(K); // K станет 25
-
-int volume = 120;
-volume = math.clamp(0, volume, 100); // volume станет 100

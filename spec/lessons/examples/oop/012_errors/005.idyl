@@ -1,5 +1,0 @@
-// a.idyl
-use b;
-
-// b.idyl
-use a;

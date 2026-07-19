@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-19T09:46:51.805Z",
+  "generatedAt": "2026-07-19T14:04:19.015Z",
   "sourceRoot": "packages/docs",
   "sections": [
     {
@@ -329,6 +329,15 @@
             "program-compile-failure",
             "teaching-errors"
           ]
+        },
+        {
+          "id": "try-catch",
+          "title": "Обработка ошибок",
+          "subtitle": "try, catch и finally: как встретить runtime error и продолжить работу",
+          "file": "content/console/try-catch.html",
+          "sourceFile": "docs/manual-content/console/try-catch.html",
+          "status": "ready",
+          "reviewFlags": []
         }
       ]
     },
@@ -644,7 +653,7 @@
         },
         {
           "id": "constructor",
-          "title": "Конструктор и деструктор",
+          "title": "Конструктор",
           "subtitle": "Как инициализировать объекты и освобождать ресурсы",
           "file": "content/oop/constructor.html",
           "sourceFile": "oop/006_constructor.html",

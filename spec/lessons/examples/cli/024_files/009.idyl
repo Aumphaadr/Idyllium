@@ -1,3 +1,0 @@
-while (fin.has_next_line()) {
-    string one_line = fin.read_line();
-}

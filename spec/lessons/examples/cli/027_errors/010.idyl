@@ -1,5 +1,0 @@
-void function greet() {
-    return "Hello";
-}
-
-main() { }

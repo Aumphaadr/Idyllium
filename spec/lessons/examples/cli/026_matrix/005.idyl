@@ -1,1 +1,0 @@
-array<array<array<int, 5>, 5>, 5> cube;

@@ -19,7 +19,7 @@ dyn_array<drawable.Circle> circles;
 
 void function redraw(gui.Canvas canvas) {
     canvas.fill(colors.RGB(20, 24, 32));
-    for (int i = 0; i < circles.length(); i = i + 1) {
+    for (int i = 0; i < circles.length; i = i + 1) {
         canvas.draw(circles[i]);
     }
 }

@@ -1,3 +1,0 @@
-true and false  // → false
-false or true   // → true
-true xor true   // → false

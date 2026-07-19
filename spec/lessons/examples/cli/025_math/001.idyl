@@ -1,7 +1,0 @@
-use console;
-use math;
-
-main() {
-    console.writeln("π = ", math.pi);
-    console.writeln("e = ", math.e);
-}

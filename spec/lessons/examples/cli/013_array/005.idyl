@@ -1,9 +1,0 @@
-array<int, 6> K = [81, 45, 33, 27, 90, 64];
-
-console.write(K[0]); // 81
-console.write(K[1]); // 45
-console.write(K[2]); // 33
-console.write(K[3]); // 27
-console.write(K[4]); // 90
-console.write(K[5]); // 64
-console.write(K[6]); // ОШИБКА: нет шестой ячейки

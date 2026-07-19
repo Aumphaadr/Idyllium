@@ -1,7 +1,0 @@
-// hello.idyl
-use console;
-
-main() {
-    console.write("Hello");
-    console.write("World");
-}

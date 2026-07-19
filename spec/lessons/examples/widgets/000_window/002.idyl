@@ -1,6 +1,0 @@
-use gui;
-
-main() {
-    gui.Window win;  // создаём окно
-    win.show();      // показываем его
-}

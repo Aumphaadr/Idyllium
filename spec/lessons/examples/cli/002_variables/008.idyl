@@ -1,8 +1,0 @@
-// main.idyl
-use console;
-
-main() {
-    console.write("Алмазов: ", diam, '\n'); // Ошибка: переменная 'diam' не объявлена
-    int diam = 64;
-    console.write("Алмазов: ", diam, '\n'); // А теперь всё в порядке
-}

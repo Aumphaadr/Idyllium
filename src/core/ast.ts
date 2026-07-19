@@ -62,6 +62,7 @@ export interface MainFunction {
 export type Statement =
   | BlockStatement
   | IfStatement
+  | TryStatement
   | WhileStatement
   | DoWhileStatement
   | ForStatement
@@ -102,6 +103,22 @@ export interface IfStatement {
   readonly condition: Expression;
   readonly thenBranch: Statement;
   readonly elseBranch: Statement | null;
+  readonly range: SourceRange;
+}
+
+export interface CatchClause {
+  readonly kind: 'CatchClause';
+  readonly name: string | null;
+  readonly nameRange: SourceRange | null;
+  readonly body: BlockStatement;
+  readonly range: SourceRange;
+}
+
+export interface TryStatement {
+  readonly kind: 'TryStatement';
+  readonly tryBlock: BlockStatement;
+  readonly catchClause: CatchClause | null;
+  readonly finallyBlock: BlockStatement | null;
   readonly range: SourceRange;
 }
 

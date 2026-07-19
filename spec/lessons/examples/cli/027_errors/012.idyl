@@ -1,3 +1,0 @@
-main() {
-    array<int, 5> nums = [1, 2, 3];
-}

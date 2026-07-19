@@ -211,7 +211,6 @@ function classify(code: string): Omit<LessonExample, 'id' | 'section' | 'lessonP
   if (/\buse\s+encoding\s*;/u.test(code)) tags.add('module:encoding');
   if (/\bclass\s+[A-Za-z_]/u.test(code)) tags.add('feature:class');
   if (/\bconstructor\s*\(/u.test(code)) tags.add('feature:constructor');
-  if (/\bdestructor\s*\(/u.test(code)) tags.add('feature:destructor');
   if (/\bfunction\b/u.test(code)) tags.add('feature:function');
   if (/\bfor\s*\(/u.test(code)) tags.add('feature:for');
   if (/\bwhile\s*\(/u.test(code)) tags.add('feature:while');

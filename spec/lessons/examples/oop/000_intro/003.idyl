@@ -1,7 +1,0 @@
-use gui;
-
-main() {
-    int money;           // примитивный тип
-    gui.Button btn;      // сложный тип (кнопка)
-    gui.Label label;     // сложный тип (лейбл)
-}

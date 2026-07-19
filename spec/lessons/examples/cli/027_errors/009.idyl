@@ -1,5 +1,0 @@
-int function double(int n) {
-    int result = n * 2;
-}
-
-main() { }

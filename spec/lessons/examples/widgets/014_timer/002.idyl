@@ -1,4 +1,0 @@
-gui.Timer timer;
-timer.interval = 500;  // 0.5 секунды
-timer.interval = 2000; // 2 секунды
-timer.interval = 100;  // 0.1 секунды

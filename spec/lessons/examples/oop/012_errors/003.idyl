@@ -1,9 +1,0 @@
-class BankAccount {
-    private:
-    int balance;
-}
-
-main() {
-    BankAccount acc;
-    acc.balance = 1000;   // ОШИБКА!
-}

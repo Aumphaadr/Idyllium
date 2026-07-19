@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "languageVersion": "1.1.1",
-  "generatedAt": "2026-07-19T09:46:51.823Z",
+  "languageVersion": "1.1.2",
+  "generatedAt": "2026-07-19T14:04:19.034Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "language": [
     {
@@ -59,7 +59,7 @@
         {
           "title": "Классы",
           "description": "Объявление классов, конструкторы, наследование, доступ и обращение к текущему объекту.",
-          "code": "class   constructor   destructor\nextends   parent   this\npublic   private   static"
+          "code": "class   constructor\nextends   parent   this\npublic   private   static"
         },
         {
           "title": "Литерал null",
@@ -75,13 +75,23 @@
       "sections": [
         {
           "title": "Примитивные значения",
-          "description": "int хранит целые числа, float — дробные, string — текст, char — один Unicode-символ, bool — true или false.",
+          "description": "`int` хранит целые числа, `float` — дробные, `string` — текст, `char` — один Unicode-символ, `bool` — `true` или `false`.",
           "code": "int lives = 3;\nfloat temperature = 36.6;\nstring name = \"Лена\";\nchar grade = 'A';\nbool game_over = false;"
         },
         {
           "title": "Строгие присваивания",
-          "description": "Idyllium не превращает число в строку и float в int неявно. Используйте явные функции преобразования.",
+          "description": "Idyllium не превращает число в строку и `float` в `int` неявно. Используйте явные функции преобразования.",
           "code": "string score_text = to_string(120);\nint whole = to_int(12.8);\nfloat precise = to_float(whole);"
+        },
+        {
+          "title": "Строки неизменяемы",
+          "description": "Индекс строки возвращает `char`, но заменить отдельный символ нельзя. В отличие от C++, выражение `word[0] = 'm'` является compile error; создайте новую строку и присвойте её переменной целиком.",
+          "code": "string word = \"honey\";\nchar first = word[0];\n// word[0] = 'm'; // compile error: string characters are read-only\nword = word.replace(\"h\", \"m\"); // \"money\""
+        },
+        {
+          "title": "Управляющие последовательности в строках",
+          "description": "Внутри строк и символов доступны `\\n` (новая строка), `\\t` (табуляция), `\\r` (возврат каретки), `\\e` (ESC), `\\0`, `\\\\`, `\\\"` и `\\'`. Неизвестная последовательность является compile error.",
+          "code": "string lines = \"Первая\\nВторая\";\nstring columns = \"Имя:\\tЛена\";\nchar escape = '\\e';\nstring path = \"C:\\\\games\";"
         },
         {
           "title": "Именованные константы",
@@ -90,13 +100,18 @@
         },
         {
           "title": "Деление",
-          "description": "Оператор / всегда возвращает float. Для целой части и остатка используются div() и mod().",
+          "description": "Оператор `/` всегда возвращает `float`. Для целой части и остатка используются `div()` и `mod()`.",
           "code": "float answer = 23 / 10;  // 2.3\nint whole = div(23, 10);  // 2\nint rest = mod(23, 10);   // 3"
         },
         {
           "title": "Тип void",
-          "description": "void используется как возвращаемый тип функции, которая выполняет действие и не возвращает значение.",
+          "description": "`void` используется как возвращаемый тип функции, которая выполняет действие и не возвращает значение.",
           "code": "void function greet(string name) {\n    console.writeln(\"Привет, \", name);\n}"
+        },
+        {
+          "title": "null не является универсальным значением",
+          "description": "Литерал `null` разрешён только типам, для которых отсутствие значения предусмотрено API: сейчас это `json.Value` и `sqlite.Value`. Обычные числа, строки, массивы и пользовательские классы nullable не становятся.",
+          "code": "json.Value missing = null; // допустимо\n// string name = null;       // compile error\n// Hero hero = null;         // compile error"
         }
       ]
     },
@@ -133,6 +148,11 @@
           "code": "if (temperature > 37.0) {\n    console.writeln(\"Высокая температура\");\n} else if (temperature < 35.5) {\n    console.writeln(\"Низкая температура\");\n} else {\n    console.writeln(\"Температура в норме\");\n}"
         },
         {
+          "title": "Нет truthy и falsy",
+          "description": "Idyllium не преобразует числа, строки, массивы или null в bool. Привычные для Python и JavaScript конструкции if (1), if (text) и while (items.length) не компилируются: сравнение нужно записать явно.",
+          "code": "// if (1) { }              // compile error: got 'int'\n// if (name) { }           // compile error: got 'string'\n// while (items.length) { } // compile error: got 'int'\n\nif (name != \"\" and items.length > 0) {\n    console.writeln(\"Данные есть\");\n}"
+        },
+        {
           "title": "Одна команда без фигурных скобок",
           "description": "Скобки можно опустить только для одной команды. Отступы не объединяют команды в ветку: если действий несколько, используйте { ... }.",
           "code": "if (ready)\n    console.writeln(\"Старт\");\nelse\n    console.writeln(\"Ожидание\");\n\nconsole.writeln(\"Эта команда выполняется всегда\");"
@@ -146,17 +166,17 @@
       "sections": [
         {
           "title": "while",
-          "description": "Условие проверяется перед каждой итерацией.",
+          "description": "Условие проверяется перед каждой итерацией и, как у if, обязано иметь тип bool.",
           "code": "int count = 3;\nwhile (count > 0) {\n    console.writeln(count);\n    count -= 1;\n}"
         },
         {
           "title": "do-while",
-          "description": "Тело выполняется хотя бы один раз, затем проверяется условие.",
+          "description": "Тело выполняется хотя бы один раз, затем проверяется строго булево условие.",
           "code": "do {\n    answer = console.get_string();\n} while (answer == \"\");"
         },
         {
           "title": "for",
-          "description": "В заголовке находятся начальное действие, условие и изменение счётчика. Используйте += 1 вместо отсутствующего ++.",
+          "description": "В заголовке находятся начальное действие, строго булево условие и изменение счётчика. Используйте += 1 вместо отсутствующего ++.",
           "code": "for (int i = 0; i < 10; i += 1) {\n    if (i == 5) {\n        continue;\n    }\n    console.writeln(i);\n}"
         },
         {
@@ -205,7 +225,7 @@
         },
         {
           "title": "Динамический массив",
-          "description": "dyn_array может расти и уменьшаться. Тип элементов остаётся строгим.",
+          "description": "`dyn_array` может расти и уменьшаться. Тип элементов остаётся строгим.",
           "code": "dyn_array<string> inventory = [\"Кирка\", \"Факел\"];\ninventory.add(\"Ключ\");\ninventory.insert(1, \"Карта\");\ninventory.remove_at(0);"
         },
         {
@@ -215,17 +235,17 @@
         },
         {
           "title": "Преобразование array и dyn_array",
-          "description": "Статический массив можно скопировать в динамический. Обратное преобразование проверяет длину во время выполнения и не обрезает массив автоматически.",
+          "description": "Статический `array` можно скопировать в `dyn_array`. Обратное преобразование проверяет длину во время выполнения и не обрезает массив автоматически.",
           "code": "array<int, 3> fixed = [10, 20, 30];\ndyn_array<int> dynamic = fixed;\narray<int, 3> restored = dynamic; // длина должна равняться 3"
         },
         {
-          "title": "Общие методы",
-          "description": "length(), contains(), find(), count(), reverse() и sort() доступны массивам; динамические массивы дополнительно поддерживают add(), insert(), remove_at(), resize(), join(), clear() и pop().",
-          "code": "int size = inventory.length();\nbool has_key = inventory.contains(\"Ключ\");\nint position = inventory.find(\"Карта\");"
+          "title": "Длина и общие методы",
+          "description": "`length` — вычисляемое свойство только для чтения. Методы `contains()`, `find()`, `count()`, `reverse()` и `sort()` доступны всем массивам; динамические массивы дополнительно поддерживают `add()`, `insert()`, `remove_at()`, `resize()`, `join()`, `clear()` и `pop()`.",
+          "code": "int size = inventory.length;\nbool has_key = inventory.contains(\"Ключ\");\nint position = inventory.find(\"Карта\");"
         },
         {
           "title": "Границы",
-          "description": "Индекс обязан находиться между 0 и length - 1. Выход за границы приводит к понятной runtime error, а не к undefined.",
+          "description": "Индекс обязан находиться между `0` и `length - 1`. Выход за границы приводит к понятной runtime error, а не к `undefined`.",
           "code": "dyn_array<int> values = [44, 35, 122];\nconsole.writeln(values[5]);\n// runtime error: array index 5 out of bounds"
         }
       ]
@@ -237,8 +257,18 @@
       "sections": [
         {
           "title": "Класс и объект",
-          "description": "Поля хранят состояние, методы работают с ним через this.",
+          "description": "Поля хранят состояние, методы работают с ним через `this`. Внутри метода `this.` обязателен и перед полем, и перед вызовом другого экземплярного метода.",
           "code": "class Counter {\n    int value;\n\n    constructor Counter(int start = 0) {\n        this.value = start;\n    }\n\n    void function increment() {\n        this.value += 1;\n    }\n}\n\nCounter counter(5);\ncounter.increment();"
+        },
+        {
+          "title": "Объекты имеют ссылочную семантику",
+          "description": "В отличие от массивов, присваивание объекта не создаёт независимую копию. Обе переменные указывают на один экземпляр, поэтому изменение через одну ссылку видно через другую.",
+          "code": "Counter first(5);\nCounter second = first;\nsecond.increment();\n\nconsole.writeln(first.value); // 6"
+        },
+        {
+          "title": "Конструктор как выражение",
+          "description": "Вызов имени пользовательского класса создаёт новый независимый объект. Ключевое слово `new` не используется. Работают позиционные, именованные и дефолтные аргументы, немедленный вызов метода и классы пользовательских модулей.",
+          "code": "dyn_array<Hero> heroes;\nheroes.add(Hero(\"Kaspar\", 500));\n\nHero boss = Hero(hp=1000, name=\"Aranthir\");\nbool alive = Hero(\"Mira\").is_alive();\ngeometry.Point point = geometry.Point(10, 20);"
         },
         {
           "title": "public и private",
@@ -254,6 +284,43 @@
           "title": "Полиморфизм",
           "description": "Значение дочернего класса можно передать туда, где ожидается базовый. Переопределённый метод выбирается по фактическому классу объекта.",
           "code": "void function show_name(Animal animal) {\n    console.writeln(animal.name);\n}\n\nDog rex(\"Рекс\");\nshow_name(rex);"
+        },
+        {
+          "title": "Жизненный цикл ресурсов",
+          "description": "Освобождение внешних ресурсов выполняется явно. Закрывайте файлы и базы методом `close()`, а звук — `stop()`; не полагайтесь на момент удаления объекта сборщиком мусора.",
+          "code": "file.istream input = file.open(\"data.txt\", \"read\");\nstring text = input.read();\ninput.close();"
+        }
+      ]
+    },
+    {
+      "id": "errors",
+      "title": "Обработка ошибок",
+      "description": "Конструкция `try/catch/finally` обрабатывает ожидаемые runtime errors и помогает явно освобождать ресурсы.",
+      "sections": [
+        {
+          "title": "Перехват runtime error",
+          "description": "Код внутри `try` выполняется как обычно. Если он завершается штатной runtime error Idyllium, управление переходит в `catch`; при успешном выполнении блок `catch` пропускается.",
+          "code": "try {\n    int age = console.get_int();\n    console.writeln(\"Возраст: \", age);\n} catch {\n    console.writeln(\"Нужно ввести целое число\");\n}"
+        },
+        {
+          "title": "Структурированная ошибка",
+          "description": "Форма `catch (error)` создаёт локальное read-only значение. Свойства `message`, `file` и `line` содержат отдельные части ошибки, а `to_string()` возвращает полную диагностическую строку.",
+          "code": "try {\n    float answer = 10 / 0;\n} catch (error) {\n    console.writeln(error.message);\n    console.writeln(error.file, \":\", error.line);\n    console.writeln(error.to_string());\n}\n\n// error существует только внутри catch"
+        },
+        {
+          "title": "Гарантированный finally",
+          "description": "Необязательный блок `finally` выполняется после успешного `try`, после обработанного `catch` и перед выходом непойманной ошибки. Он подходит для `close()`, `rollback()` и другого явного cleanup.",
+          "code": "file.istream input = file.open(\"data.txt\", \"read\");\n\ntry {\n    console.writeln(input.read());\n} finally {\n    input.close();\n}"
+        },
+        {
+          "title": "Границы перехвата",
+          "description": "`catch` не ловит compile errors, внутренние JavaScript-ошибки runtime и остановку программы кнопкой IDE. Ошибка будущего GUI/Canvas-события ловится только локальным `try` внутри соответствующей callback-функции.",
+          "code": "button.on_click = void function() {\n    try {\n        float answer = 10 / 0;\n    } catch (error) {\n        console.writeln(error.to_string());\n    }\n};"
+        },
+        {
+          "title": "Допустимые формы",
+          "description": "Фигурные скобки обязательны. Разрешены `try/catch`, `try/finally` и `try/catch/finally`; одного `try` без последующего блока недостаточно. Пользовательского оператора `throw` в текущей версии нет.",
+          "code": "try {\n    save();\n} catch (error) {\n    console.writeln(error.message);\n} finally {\n    console.writeln(\"Попытка сохранения завершена\");\n}"
         }
       ]
     }
@@ -375,11 +442,19 @@
       "title": "Консоль",
       "description": "Ввод, вывод, перенос строки и управление содержимым консоли.",
       "notes": [
-        "get_int() и get_float() не подменяют ошибочный ввод нулём, а сообщают о невозможности преобразования.",
-        "write() не добавляет перенос строки; writeln() добавляет его после всех аргументов."
+        "`get_int()` и `get_float()` не подменяют ошибочный ввод нулём, а сообщают о невозможности преобразования.",
+        "`write()` не добавляет перенос строки; `writeln()` добавляет его после всех аргументов.",
+        "`console.clear()` очищает терминал. В строках доступны `\\n`, `\\t`, `\\r` и другие управляющие последовательности.",
+        "ANSI-последовательности `\\e[30m`–`\\e[37m` и `\\e[90m`–`\\e[97m` меняют цвет текста; `\\e[0m` сбрасывает оформление."
       ],
       "example": "console.write(\"Возраст: \");\nint age = console.get_int();\nconsole.writeln(\"Через год: \", age + 1);",
-      "fullExamples": [],
+      "fullExamples": [
+        {
+          "title": "Переносы, табуляция и цвет",
+          "description": "Управляющая последовательность `\\e` создаёт символ ESC, с которого начинается ANSI-команда. После цветного текста оформление следует сбросить через `\\e[0m`.",
+          "code": "console.writeln(\"Первая строка\\nВторая строка\");\nconsole.writeln(\"Имя:\\tЛена\");\nconsole.writeln(\"\\e[31mКрасный текст\\e[0m\");\nconsole.writeln(\"Обычный текст\");"
+        }
+      ],
       "functions": [
         {
           "name": "clear",
@@ -857,16 +932,25 @@
     {
       "name": "time",
       "title": "Время",
-      "description": "Паузы, текущее время и объект с компонентами даты.",
+      "description": "Паузы, Unix-время и календарное представление момента в IANA-часовых поясах.",
       "notes": [
-        "sleep() принимает длительность в секундах и допускает дробные значения."
+        "`sleep()` принимает длительность в секундах и допускает дробные значения.",
+        "`time.now()` и `time.from_unix()` по умолчанию используют `UTC`; желаемую зону можно передать строкой или именованным аргументом `timezone`.",
+        "Unix-время не зависит от часового пояса. `in_timezone()` возвращает новую метку того же момента с другим календарным представлением.",
+        "Используются IANA-имена вроде `Asia/Yekaterinburg` и `Europe/Berlin`; неизвестное имя приводит к runtime error. Переходы летнего времени учитываются средой выполнения."
       ],
-      "example": "time.sleep(0.5);\ntime.stamp current = time.now();\nconsole.writeln(current.hour(), \":\", current.minute());",
-      "fullExamples": [],
+      "example": "time.sleep(0.5);\ntime.stamp current = time.now(\"Asia/Yekaterinburg\");\nconsole.writeln(current.hour, \":\", current.minute);\nconsole.writeln(current.timezone);",
+      "fullExamples": [
+        {
+          "title": "Один момент в двух часовых поясах",
+          "description": "Календарные компоненты отличаются, но read-only свойство `unix` подтверждает, что обе метки обозначают один момент.",
+          "code": "time.stamp utc = time.from_unix(0);\ntime.stamp ekb = utc.in_timezone(\"Asia/Yekaterinburg\");\n\nconsole.writeln(utc); // 1970-01-01 00:00:00\nconsole.writeln(ekb); // 1970-01-01 05:00:00\nconsole.writeln(utc.unix == ekb.unix); // true"
+        }
+      ],
       "functions": [
         {
           "name": "from_unix",
-          "signature": "from_unix(seconds: int): time.stamp",
+          "signature": "from_unix(seconds: int, timezone: string = \"UTC\"): time.stamp",
           "returnType": "time.stamp",
           "parameters": [
             {
@@ -876,18 +960,35 @@
               "defaultValue": "",
               "acceptedTypes": [],
               "acceptedDescription": ""
+            },
+            {
+              "name": "timezone",
+              "type": "string",
+              "optional": true,
+              "defaultValue": "\"UTC\"",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
             }
           ],
           "variadic": false,
-          "documentation": ""
+          "documentation": "Создаёт метку из Unix-времени и отображает её в указанном IANA-часовом поясе."
         },
         {
           "name": "now",
-          "signature": "now(): time.stamp",
+          "signature": "now(timezone: string = \"UTC\"): time.stamp",
           "returnType": "time.stamp",
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "timezone",
+              "type": "string",
+              "optional": true,
+              "defaultValue": "\"UTC\"",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
           "variadic": false,
-          "documentation": ""
+          "documentation": "Возвращает текущий момент в указанном IANA-часовом поясе; по умолчанию используется UTC."
         },
         {
           "name": "sleep",
@@ -913,79 +1014,100 @@
           "name": "stamp",
           "qualifiedName": "time.stamp",
           "baseType": "",
-          "description": "Метка времени, из которой можно получить дату, время и Unix timestamp.",
-          "notes": [],
-          "example": "time.stamp current = time.now();\nint year = current.year();\nint unix_time = current.unix();",
-          "properties": [],
-          "methods": [
+          "description": "Неизменяемая метка момента: хранит Unix-время и календарное представление в выбранном IANA-часовом поясе.",
+          "notes": [
+            "`year`, `month`, `day`, `hour`, `minute`, `second`, `week_day`, `unix` и `timezone` являются read-only свойствами, а не getter-методами.",
+            "`week_day` принимает значения от 0 (воскресенье) до 6 (суббота).",
+            "`in_timezone()` создаёт новую метку и не изменяет исходную."
+          ],
+          "example": "time.stamp current = time.now();\nint year = current.year;\nint unix_time = current.unix;\ntime.stamp local = current.in_timezone(\"Asia/Yekaterinburg\");",
+          "properties": [
             {
               "name": "day",
-              "signature": "day(): int",
-              "returnType": "int",
-              "parameters": [],
-              "variadic": false,
-              "documentation": ""
+              "type": "int",
+              "readonly": true,
+              "documentation": "День месяца в часовом поясе метки.",
+              "callbacks": []
             },
             {
               "name": "hour",
-              "signature": "hour(): int",
-              "returnType": "int",
-              "parameters": [],
-              "variadic": false,
-              "documentation": ""
+              "type": "int",
+              "readonly": true,
+              "documentation": "Час от 0 до 23 в часовом поясе метки.",
+              "callbacks": []
             },
             {
               "name": "minute",
-              "signature": "minute(): int",
-              "returnType": "int",
-              "parameters": [],
-              "variadic": false,
-              "documentation": ""
+              "type": "int",
+              "readonly": true,
+              "documentation": "Минута от 0 до 59.",
+              "callbacks": []
             },
             {
               "name": "month",
-              "signature": "month(): int",
-              "returnType": "int",
-              "parameters": [],
-              "variadic": false,
-              "documentation": ""
+              "type": "int",
+              "readonly": true,
+              "documentation": "Номер месяца от 1 до 12 в часовом поясе метки.",
+              "callbacks": []
             },
             {
               "name": "second",
-              "signature": "second(): int",
-              "returnType": "int",
-              "parameters": [],
+              "type": "int",
+              "readonly": true,
+              "documentation": "Секунда от 0 до 59.",
+              "callbacks": []
+            },
+            {
+              "name": "timezone",
+              "type": "string",
+              "readonly": true,
+              "documentation": "Каноническое IANA-имя часового пояса.",
+              "callbacks": []
+            },
+            {
+              "name": "unix",
+              "type": "int",
+              "readonly": true,
+              "documentation": "Unix-время; не меняется при смене часового пояса.",
+              "callbacks": []
+            },
+            {
+              "name": "week_day",
+              "type": "int",
+              "readonly": true,
+              "documentation": "День недели от 0 (воскресенье) до 6 (суббота).",
+              "callbacks": []
+            },
+            {
+              "name": "year",
+              "type": "int",
+              "readonly": true,
+              "documentation": "Год в часовом поясе метки.",
+              "callbacks": []
+            }
+          ],
+          "methods": [
+            {
+              "name": "in_timezone",
+              "signature": "in_timezone(timezone: string): time.stamp",
+              "returnType": "time.stamp",
+              "parameters": [
+                {
+                  "name": "timezone",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Возвращает новую метку того же момента в другом IANA-часовом поясе."
             },
             {
               "name": "to_string",
               "signature": "to_string(): string",
               "returnType": "string",
-              "parameters": [],
-              "variadic": false,
-              "documentation": ""
-            },
-            {
-              "name": "unix",
-              "signature": "unix(): int",
-              "returnType": "int",
-              "parameters": [],
-              "variadic": false,
-              "documentation": ""
-            },
-            {
-              "name": "week_day",
-              "signature": "week_day(): int",
-              "returnType": "int",
-              "parameters": [],
-              "variadic": false,
-              "documentation": ""
-            },
-            {
-              "name": "year",
-              "signature": "year(): int",
-              "returnType": "int",
               "parameters": [],
               "variadic": false,
               "documentation": ""
@@ -1446,7 +1568,8 @@
       "description": "Разбор, создание, проверка и сериализация JSON-значений, объектов и массивов.",
       "notes": [
         "JSON-текст не поддерживает комментарии.",
-        "Методы to_int(), to_string() и другие преобразования строго проверяют фактический тип значения."
+        "Методы to_int(), to_string() и другие преобразования строго проверяют фактический тип значения.",
+        "Целые числа разбираются без потери точности; для 64-битных значений используйте to_int64() и to_uint64()."
       ],
       "example": "json.Value data = json.parse(text);\njson.Object player = data.to_object();\nstring name = player.get(\"name\").to_string();",
       "fullExamples": [
@@ -1518,8 +1641,16 @@
           "baseType": "json.Value",
           "description": "Упорядоченный JSON-массив значений, доступных по индексам от нуля.",
           "notes": [],
-          "example": "json.Array inventory;\ninventory.add(json.Value(\"Кирка\"));\ninventory.add(json.Value(\"Факел\"));\nstring first = inventory.at(0).to_string();",
-          "properties": [],
+          "example": "json.Array inventory;\ninventory.add(json.Value(\"Кирка\"));\ninventory.add(json.Value(\"Факел\"));\nstring first = inventory.at(0).to_string();\nint item_count = inventory.length;",
+          "properties": [
+            {
+              "name": "length",
+              "type": "int",
+              "readonly": true,
+              "documentation": "Количество элементов в массиве. Свойство доступно только для чтения.",
+              "callbacks": []
+            }
+          ],
           "methods": [
             {
               "name": "add",
@@ -1589,14 +1720,6 @@
               "documentation": ""
             },
             {
-              "name": "length",
-              "signature": "length(): int",
-              "returnType": "int",
-              "parameters": [],
-              "variadic": false,
-              "documentation": ""
-            },
-            {
               "name": "pop",
               "signature": "pop(): json.Value",
               "returnType": "json.Value",
@@ -1654,8 +1777,16 @@
           "baseType": "json.Value",
           "description": "JSON-объект с уникальными строковыми ключами и значениями json.Value.",
           "notes": [],
-          "example": "json.Object player;\nplayer.add(\"name\", json.Value(\"Liam\"));\nplayer.add(\"level\", json.Value(12));\nplayer.set(\"level\", json.Value(13));",
-          "properties": [],
+          "example": "json.Object player;\nplayer.add(\"name\", json.Value(\"Liam\"));\nplayer.add(\"level\", json.Value(12));\nplayer.set(\"level\", json.Value(13));\nint field_count = player.length;",
+          "properties": [
+            {
+              "name": "length",
+              "type": "int",
+              "readonly": true,
+              "documentation": "Количество ключей в объекте. Свойство доступно только для чтения.",
+              "callbacks": []
+            }
+          ],
           "methods": [
             {
               "name": "add",
@@ -1725,14 +1856,6 @@
               "documentation": ""
             },
             {
-              "name": "length",
-              "signature": "length(): int",
-              "returnType": "int",
-              "parameters": [],
-              "variadic": false,
-              "documentation": ""
-            },
-            {
               "name": "remove",
               "signature": "remove(key: string): void",
               "returnType": "void",
@@ -1783,7 +1906,8 @@
           "description": "Универсальное JSON-значение: null, строка, число, bool, объект или массив.",
           "notes": [
             "Перед преобразованием неизвестного значения можно проверить его методами is_string(), is_object() и другими.",
-            "is_null() безопасно проверяет значение на null."
+            "is_null() безопасно проверяет значение на null.",
+            "Большие целые JSON-числа сохраняются точно. to_int64() и to_uint64() проверяют границы соответствующего 64-битного типа."
           ],
           "example": "json.Value answer = json.Value(42);\nint number = answer.to_int();\njson.Value empty = null;",
           "properties": [],
@@ -1987,6 +2111,14 @@
               "documentation": ""
             },
             {
+              "name": "to_int64",
+              "signature": "to_int64(): types.int64",
+              "returnType": "types.int64",
+              "parameters": [],
+              "variadic": false,
+              "documentation": ""
+            },
+            {
               "name": "to_json",
               "signature": "to_json(): string",
               "returnType": "string",
@@ -2023,6 +2155,14 @@
               "name": "to_string",
               "signature": "to_string(): string",
               "returnType": "string",
+              "parameters": [],
+              "variadic": false,
+              "documentation": ""
+            },
+            {
+              "name": "to_uint64",
+              "signature": "to_uint64(): types.uint64",
+              "returnType": "types.uint64",
               "parameters": [],
               "variadic": false,
               "documentation": ""
@@ -5167,10 +5307,17 @@
       "description": "Тип Color, фабрики RGB/RGBA/HSL/HEX и готовые цветовые константы.",
       "notes": [
         "Каналы RGB принимают целые значения от 0 до 255, alpha — дробное значение от 0.0 до 1.0.",
-        "Выход за допустимый диапазон приводит к runtime error, значения не обрезаются автоматически."
+        "Выход за допустимый диапазон приводит к runtime error, значения не обрезаются автоматически.",
+        "Готовая палитра содержит 16 непрозрачных цветов и `TRANSPARENT`. Существующий яркий `GREEN` равен `#00FF00`; более тёмный зелёный называется `DARK_GREEN`."
       ],
       "example": "colors.Color sky = colors.RGB(80, 170, 255);\ncolors.Color glass = colors.RGBA(80, 170, 255, 0.35);\ncolors.Color accent = colors.HEX(\"#50AAFF\");\nbutton.background_color = sky;",
-      "fullExamples": [],
+      "fullExamples": [
+        {
+          "title": "Готовая палитра",
+          "description": "Первые восемь констант дают яркие цифровые цвета, следующие восемь — нейтральные и тёмные варианты.",
+          "code": "colors.BLACK;   colors.WHITE;   colors.RED;      colors.GREEN;\ncolors.BLUE;    colors.YELLOW;  colors.CYAN;     colors.MAGENTA;\n\ncolors.GRAY;       colors.LIGHT_GRAY;  colors.DARK_RED;   colors.DARK_GREEN;\ncolors.DARK_BLUE;  colors.OLIVE;       colors.TEAL;       colors.PURPLE;\n\ncolors.TRANSPARENT;"
+        }
+      ],
       "functions": [
         {
           "name": "HEX",
@@ -5306,17 +5453,67 @@
         {
           "name": "BLUE",
           "type": "colors.Color",
-          "documentation": "Синий непрозрачный цвет."
+          "documentation": "Яркий синий цвет #0000FF."
+        },
+        {
+          "name": "CYAN",
+          "type": "colors.Color",
+          "documentation": "Яркий голубой цвет #00FFFF."
+        },
+        {
+          "name": "DARK_BLUE",
+          "type": "colors.Color",
+          "documentation": "Тёмно-синий цвет #000080."
+        },
+        {
+          "name": "DARK_GREEN",
+          "type": "colors.Color",
+          "documentation": "Тёмно-зелёный цвет #008000."
+        },
+        {
+          "name": "DARK_RED",
+          "type": "colors.Color",
+          "documentation": "Тёмно-красный цвет #800000."
+        },
+        {
+          "name": "GRAY",
+          "type": "colors.Color",
+          "documentation": "Серый цвет #808080."
         },
         {
           "name": "GREEN",
           "type": "colors.Color",
-          "documentation": "Зелёный непрозрачный цвет."
+          "documentation": "Яркий зелёный цвет #00FF00."
+        },
+        {
+          "name": "LIGHT_GRAY",
+          "type": "colors.Color",
+          "documentation": "Светло-серый цвет #C0C0C0."
+        },
+        {
+          "name": "MAGENTA",
+          "type": "colors.Color",
+          "documentation": "Яркий малиновый цвет #FF00FF."
+        },
+        {
+          "name": "OLIVE",
+          "type": "colors.Color",
+          "documentation": "Оливковый цвет #808000."
+        },
+        {
+          "name": "PURPLE",
+          "type": "colors.Color",
+          "documentation": "Фиолетовый цвет #800080."
         },
         {
           "name": "RED",
           "type": "colors.Color",
-          "documentation": "Красный непрозрачный цвет."
+          "documentation": "Яркий красный цвет #FF0000."
+        },
+        {
+          "name": "TEAL",
+          "type": "colors.Color",
+          "documentation": "Тёмный сине-зелёный цвет #008080."
         },
         {
           "name": "TRANSPARENT",
@@ -5327,6 +5524,11 @@
           "name": "WHITE",
           "type": "colors.Color",
           "documentation": "Белый непрозрачный цвет."
+        },
+        {
+          "name": "YELLOW",
+          "type": "colors.Color",
+          "documentation": "Яркий жёлтый цвет #FFFF00."
         }
       ],
       "types": [
@@ -5353,10 +5555,29 @@
         "Доступны int8, uint8, int16, uint16, int32, uint32, int64, uint64, float32 и float64.",
         "int64 и uint64 сохраняют весь 64-битный диапазон точно, включая значения больше 2^53.",
         "При выходе целого значения за диапазон происходит циклическое переполнение без runtime error.",
+        "to_bin() возвращает все биты фиксированной ячейки, to_hex() — столько HEX-цифр, сколько требуется типу.",
+        "shift_left() и shift_right() заполняют новые биты нулями и молча теряют вышедшие за границу; отрицательный аргумент меняет направление.",
+        "Для float32 и float64 сдвигается сырое IEEE-представление, поэтому результат может стать бесконечностью, NaN или очень малым числом.",
         "Неявное преобразование float в целочисленный types-тип запрещено; сначала используйте to_int()."
       ],
       "example": "types.uint8 value = 255;\nvalue = value + 1;              // 0\ntypes.int16 signed = 40000;    // -25536\nstring bits = value.to_bin();",
-      "fullExamples": [],
+      "fullExamples": [
+        {
+          "title": "Двоичное и шестнадцатеричное представление",
+          "description": "Знаковый тип показывает те же физические биты, а не строку с минусом.",
+          "code": "types.uint8 value = 221;\ntypes.int8 signed = -35;\n\nvalue.to_bin();   // \"11011101\"\nsigned.to_bin();  // \"11011101\"\nvalue.to_hex();   // \"DD\""
+        },
+        {
+          "title": "Логические битовые сдвиги",
+          "description": "Знак не сохраняется, лишние биты теряются, большие сдвиги обнуляют ячейку.",
+          "code": "types.uint8 value = types.from_bin(\"00101011\", \"uint8\");\n\nvalue.shift_right(3).to_bin();  // \"00000101\"\nvalue.shift_left(3).to_bin();   // \"01011000\"\nvalue.shift_left(12).to_bin();  // \"00000000\"\nvalue.shift_right(-3).to_bin(); // равно shift_left(3)"
+        },
+        {
+          "title": "Точные 64-битные границы",
+          "description": "int64 и uint64 не проходят через неточный JavaScript number.",
+          "code": "types.int64 signed_max = 9223372036854775807;\ntypes.uint64 unsigned_max = 18446744073709551615;\n\nsigned_max += 1;   // -9223372036854775808\nunsigned_max += 1; // 0"
+        }
+      ],
       "functions": [
         {
           "name": "from_bin",
@@ -5415,8 +5636,11 @@
           "name": "float32",
           "qualifiedName": "types.float32",
           "baseType": "",
-          "description": "32-битное дробное число с одинарной точностью.",
-          "notes": [],
+          "description": "32-битное дробное число IEEE-754: конечные значения примерно от -3.4028235e38 до 3.4028235e38.",
+          "notes": [
+            "Минимальное положительное нормальное значение примерно 1.17549435e-38; субнормальные значения доходят примерно до 1.40129846e-45.",
+            "Точность составляет около 7 значащих десятичных цифр. После вычислений возможны округления, Infinity и NaN."
+          ],
           "example": "types.float32 value = 0.1 + 0.2;",
           "properties": [],
           "methods": [
@@ -5460,7 +5684,7 @@
               "returnType": "string",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Возвращает полное двоичное представление фиксированной ширины. Для float используется сырое IEEE-представление."
             },
             {
               "name": "to_hex",
@@ -5468,7 +5692,7 @@
               "returnType": "string",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Возвращает шестнадцатеричное представление всех битов типа в верхнем регистре."
             }
           ]
         },
@@ -5476,8 +5700,11 @@
           "name": "float64",
           "qualifiedName": "types.float64",
           "baseType": "",
-          "description": "64-битное дробное число с двойной точностью.",
-          "notes": [],
+          "description": "64-битное дробное число IEEE-754: конечные значения примерно от -1.7976931348623157e308 до 1.7976931348623157e308.",
+          "notes": [
+            "Минимальное положительное нормальное значение примерно 2.2250738585072014e-308; субнормальные значения доходят примерно до 4.9406564584124654e-324.",
+            "Точность составляет около 15-17 значащих десятичных цифр."
+          ],
           "example": "types.float64 value = 0.1 + 0.2;",
           "properties": [],
           "methods": [
@@ -5521,7 +5748,7 @@
               "returnType": "string",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Возвращает полное двоичное представление фиксированной ширины. Для float используется сырое IEEE-представление."
             },
             {
               "name": "to_hex",
@@ -5529,7 +5756,7 @@
               "returnType": "string",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Возвращает шестнадцатеричное представление всех битов типа в верхнем регистре."
             }
           ]
         },
@@ -5582,7 +5809,7 @@
               "returnType": "string",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Возвращает полное двоичное представление фиксированной ширины. Для float используется сырое IEEE-представление."
             },
             {
               "name": "to_hex",
@@ -5590,7 +5817,7 @@
               "returnType": "string",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Возвращает шестнадцатеричное представление всех битов типа в верхнем регистре."
             }
           ]
         },
@@ -5643,7 +5870,7 @@
               "returnType": "string",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Возвращает полное двоичное представление фиксированной ширины. Для float используется сырое IEEE-представление."
             },
             {
               "name": "to_hex",
@@ -5651,7 +5878,7 @@
               "returnType": "string",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Возвращает шестнадцатеричное представление всех битов типа в верхнем регистре."
             }
           ]
         },
@@ -5706,7 +5933,7 @@
               "returnType": "string",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Возвращает полное двоичное представление фиксированной ширины. Для float используется сырое IEEE-представление."
             },
             {
               "name": "to_hex",
@@ -5714,7 +5941,7 @@
               "returnType": "string",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Возвращает шестнадцатеричное представление всех битов типа в верхнем регистре."
             }
           ]
         },
@@ -5767,7 +5994,7 @@
               "returnType": "string",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Возвращает полное двоичное представление фиксированной ширины. Для float используется сырое IEEE-представление."
             },
             {
               "name": "to_hex",
@@ -5775,7 +6002,7 @@
               "returnType": "string",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Возвращает шестнадцатеричное представление всех битов типа в верхнем регистре."
             }
           ]
         },
@@ -5828,7 +6055,7 @@
               "returnType": "string",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Возвращает полное двоичное представление фиксированной ширины. Для float используется сырое IEEE-представление."
             },
             {
               "name": "to_hex",
@@ -5836,7 +6063,7 @@
               "returnType": "string",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Возвращает шестнадцатеричное представление всех битов типа в верхнем регистре."
             }
           ]
         },
@@ -5889,7 +6116,7 @@
               "returnType": "string",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Возвращает полное двоичное представление фиксированной ширины. Для float используется сырое IEEE-представление."
             },
             {
               "name": "to_hex",
@@ -5897,7 +6124,7 @@
               "returnType": "string",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Возвращает шестнадцатеричное представление всех битов типа в верхнем регистре."
             }
           ]
         },
@@ -5952,7 +6179,7 @@
               "returnType": "string",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Возвращает полное двоичное представление фиксированной ширины. Для float используется сырое IEEE-представление."
             },
             {
               "name": "to_hex",
@@ -5960,7 +6187,7 @@
               "returnType": "string",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Возвращает шестнадцатеричное представление всех битов типа в верхнем регистре."
             }
           ]
         },
@@ -6013,7 +6240,7 @@
               "returnType": "string",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Возвращает полное двоичное представление фиксированной ширины. Для float используется сырое IEEE-представление."
             },
             {
               "name": "to_hex",
@@ -6021,7 +6248,7 @@
               "returnType": "string",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Возвращает шестнадцатеричное представление всех битов типа в верхнем регистре."
             }
           ]
         }

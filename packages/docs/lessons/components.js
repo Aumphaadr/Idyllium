@@ -2,8 +2,8 @@
 
 const KEYWORDS = new Set([
   'use', 'if', 'else', 'while', 'do', 'for', 'break', 'continue', 'return', 'const',
-  'try', 'catch',
-  'function', 'class', 'extends', 'this', 'constructor', 'destructor',
+  'try', 'catch', 'finally',
+  'function', 'class', 'extends', 'this', 'constructor',
   'public', 'private', 'static', 'parent',  // Добавлен 'parent' и 'static'
   'and', 'or', 'xor', 'not',
   'true', 'false', 'null',

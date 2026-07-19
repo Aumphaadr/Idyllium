@@ -1,6 +1,0 @@
-float deg = 180;
-float rad = math.to_radians(deg); // π
-console.writeln(deg, "° = ", rad, " рад");
-
-float back = math.to_degrees(math.pi);
-console.writeln("π рад = ", back, "°");

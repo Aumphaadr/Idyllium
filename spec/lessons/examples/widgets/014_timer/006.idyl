@@ -1,4 +1,0 @@
-gui.Timer timer;  // не нужен add_child()
-timer.interval = 1000;
-timer.on_tick = void function() { ... };
-timer.start();

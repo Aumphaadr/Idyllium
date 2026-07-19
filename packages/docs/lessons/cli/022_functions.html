@@ -149,7 +149,7 @@ use console;
 // описание функции
 int function mul_all(dyn_array<int> some_arr) {
     int res = 1;
-    for (int i = 0; i < some_arr.length(); i = i + 1) {
+    for (int i = 0; i < some_arr.length; i = i + 1) {
         res = res * some_arr[i];
     }
     return res;
@@ -217,6 +217,127 @@ draw_line(12);
         </li>
       </ul>
       <p>Это не просто синтаксис — это отражение смысла: делаете ли вы вычисления или производите побочный эффект (вывод, рисование и т.д.).</p>
+    </div>
+
+    <!-- Section 9 -->
+    <div class="docs-section">
+      <h2>У аргументов есть имена</h2>
+      <p>
+        Функция может принимать несколько аргументов. При обычном вызове они
+        попадают в параметры слева направо. Но иногда полезно прямо написать,
+        какое значение предназначено какому параметру.
+      </p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+int function rectangle_area(int width, int height) {
+    return width * height;
+}
+
+main() {
+    console.writeln(rectangle_area(5, 3));
+    console.writeln(rectangle_area(height=3, width=5));
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>15
+15</idyl-output-block>
+
+      <p>
+        Во втором вызове аргументы переданы в обратном порядке, но их имена не
+        дают функции перепутать ширину с высотой. Именованные аргументы особенно
+        удобны, когда у функции много похожих параметров.
+      </p>
+      <p>
+        Можно сначала передать позиционные аргументы, а затем именованные. После
+        первого именованного аргумента возвращаться к позиционным уже нельзя.
+        Один параметр нельзя передать дважды, а имя должно совпадать с
+        объявлением функции.
+      </p>
+    </div>
+
+    <!-- Section 10 -->
+    <div class="docs-section">
+      <h2>Значение по умолчанию</h2>
+      <p>
+        Иногда один из аргументов почти всегда одинаковый. Тогда в объявлении
+        функции можно задать ему <strong>значение по умолчанию</strong>. При
+        вызове такой аргумент разрешается не указывать.
+      </p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+void function greet(string name, string greeting = "Привет") {
+    console.writeln(greeting, ", ", name, "!");
+}
+
+main() {
+    greet("Мира");
+    greet("Лиам", "Доброе утро");
+    greet(greeting="С возвращением", name="Саша");
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Привет, Мира!
+Доброе утро, Лиам!
+С возвращением, Саша!</idyl-output-block>
+
+      <p>
+        В первом вызове <code>greeting</code> не указан, поэтому функция берёт
+        строку <code>"Привет"</code>. Во втором и третьем вызовах стандартное
+        приветствие заменено другим.
+      </p>
+      <p>
+        Сначала в объявлении идут обязательные параметры, а после них —
+        параметры со значениями по умолчанию. Иначе короткий вызов был бы
+        неоднозначным.
+      </p>
+
+      <idyl-code-block><script type="text/plain">
+void function bad_greeting(string greeting = "Привет", string name) {
+}
+
+main() {
+}
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:1: error: parameter 'name' without default value cannot follow a parameter with default value</idyl-error-block>
+    </div>
+
+    <!-- Section 11 -->
+    <div class="docs-section">
+      <h2>main тоже является функцией</h2>
+      <p>
+        С первого урока мы писали <code>main() { ... }</code>, хотя ещё не знали
+        функций. Это специальное педагогическое сокращение для
+        <code>void function main()</code>. Теперь при желании можно записать
+        полную форму.
+      </p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+int function main() {
+    console.writeln("main тоже умеет возвращать значение");
+    return 0;
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>main тоже умеет возвращать значение</idyl-output-block>
+
+      <p>
+        У <code>main</code> не должно быть аргументов, а во всей программе может
+        существовать только одна такая функция. Idyllium разрешает ей любой
+        обычный возвращаемый тип, но тогда подходящий <code>return</code>
+        становится обязательным. Web IDE пока вычисляет возвращённое значение
+        и не показывает его пользователю.
+      </p>
+      <p>
+        Короткая запись <code>main() { ... }</code> никуда не исчезает. Для
+        большинства учебных программ она остаётся самой простой и удобной.
+      </p>
     </div>
 
     <!-- Lesson navigation -->
