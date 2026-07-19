@@ -100,8 +100,8 @@ use encoding;
 
 main() {
     char ch = 'Я';
-    int code = encoding.char_to_int(ch, "utf-8");  // 1071
-    char restored = encoding.int_to_char(code, "utf-8");  // 'Я'
+    int code = encoding.char_to_codepoint(ch);  // 1071
+    char restored = encoding.codepoint_to_char(code);  // 'Я'
 }
 ```
 

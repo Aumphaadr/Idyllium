@@ -273,7 +273,7 @@ export interface UnaryExpression {
 
 export interface BinaryExpression {
   readonly kind: 'BinaryExpression';
-  readonly operator: '+' | '-' | '*' | '/' | '==' | '!=' | '<' | '<=' | '>' | '>=' | 'and' | 'or';
+  readonly operator: '+' | '-' | '*' | '/' | '==' | '!=' | '<' | '<=' | '>' | '>=' | 'and' | 'xor' | 'or';
   readonly left: Expression;
   readonly right: Expression;
   readonly range: SourceRange;

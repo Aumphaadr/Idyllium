@@ -1085,8 +1085,8 @@ function copyBookShell(outputRoot: string): void {
 function writeCurrentVersion(outputPath: string): void {
   const packagePath = path.resolve(process.cwd(), 'package.json');
   const version = fs.existsSync(packagePath)
-    ? String(JSON.parse(fs.readFileSync(packagePath, 'utf8')).version ?? '1.1.2')
-    : '1.1.2';
+    ? String(JSON.parse(fs.readFileSync(packagePath, 'utf8')).version ?? '1.1.3')
+    : '1.1.3';
   fs.writeFileSync(outputPath, `${JSON.stringify({ version }, null, 2)}\n`, 'utf8');
 }
 

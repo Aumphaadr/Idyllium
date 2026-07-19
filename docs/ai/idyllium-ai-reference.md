@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: IdylliumNext 1.1.2.
+Current language target: IdylliumNext 1.1.3.
 
 This reference describes implemented behavior. Ideas from `BACKLOG.md` and
 exploratory files under `spec/some_*` are not language features until they are
@@ -249,12 +249,19 @@ if (age >= 10 and age <= 18) {
     console.writeln("school age");
 }
 
+bool only_one = left_pressed xor right_pressed;
+
 if (not(is_ready)) {
     console.writeln("not ready");
 }
 ```
 
-Use `and`, `or`, `not`, not `&&`, `||`, `!`.
+Use `and`, `or`, `xor`, `not`, not `&&`, `||`, `^`, `!`.
+
+All logical operands must have type `bool`; Idyllium has no truthy/falsy
+conversion. Precedence from higher to lower is `not`, comparisons, `and`,
+`xor`, `or`. `and` and `or` short-circuit. `xor` evaluates both operands from
+left to right exactly once and is true only when exactly one operand is true.
 
 ## 8. Console
 
@@ -888,6 +895,11 @@ use random;
 
 int a = random.create_int(1, 10);
 float b = random.create_float(0.0, 1.0);
+char symbol = random.choose_from("ABCDEF");
+
+array<string, 3> names = ["Liam", "Mira", "Raven"];
+string name = random.choose_from(names);
+
 random.set_seed(123);
 ```
 
@@ -896,7 +908,9 @@ either `1` or `10`. `create_float(min, max)` includes `min` but excludes `max`.
 Integer ranges allow `min == max`; float ranges require `min < max`.
 `set_seed()` requires a non-negative integer and makes later results
 reproducible. Invalid ranges are runtime errors. Do not silently swap or clamp
-ranges.
+ranges. `choose_from()` accepts a non-empty string, `array<T, N>`, or
+`dyn_array<T>`. It returns `char` for a string and `T` for an array. Choosing
+from an empty collection is a runtime error.
 
 ## 19. Library `time`
 
@@ -1044,8 +1058,8 @@ Rules:
 use encoding;
 
 dyn_array<string> names = encoding.list_encodings();
-int code = encoding.char_to_int('A', "utf-8");
-char ch = encoding.int_to_char(65, "utf-8");
+int codepoint = encoding.char_to_codepoint('б'); // 1073
+char ch = encoding.codepoint_to_char(1073); // 'б'
 dyn_array<int> bytes = encoding.encode("кот", "utf-8");
 string text = encoding.decode(bytes, "utf-8");
 ```
@@ -1058,9 +1072,16 @@ Canonical encoding names returned by `encoding.list_encodings()`:
 - `"koi8-r"`
 
 Input also accepts the aliases `"utf8"`, `"cp1251"`, `"win1251"`, and
-`"koi8r"`. An unknown encoding name is a runtime error. ASCII accepts only
-code points `0..127`; a character unavailable in the selected single-byte
-encoding also produces a runtime error instead of silent replacement.
+`"koi8r"`. A Unicode code point is independent of its encoded byte sequence:
+`б` is code point `1073`, but its UTF-8 bytes are `[208, 177]`.
+
+`char_to_codepoint()` accepts exactly one Unicode character.
+`codepoint_to_char()` accepts Unicode scalar values `0..1114111`, excluding
+the surrogate range `55296..57343`. An unknown encoding name, an integer
+outside byte range `0..255`, an unrepresentable character, or malformed UTF-8
+is a runtime error. Decoding is strict and never silently inserts the Unicode
+replacement character `�`. Windows-1251 and KOI8-R use complete 256-byte
+tables.
 
 ## 22. Library `colors`
 
@@ -1132,6 +1153,25 @@ Colors compare by RGBA channel values, not object identity:
 ```idyllium
 colors.RGB(255, 0, 0) == colors.HEX("#ff0000")  // true
 ```
+
+`colors.Color` exposes immutable channels:
+
+```idyllium
+red: int       // read-only, 0..255
+green: int     // read-only, 0..255
+blue: int      // read-only, 0..255
+alpha: float   // read-only, 0.0..1.0
+
+with_red(value) -> colors.Color
+with_green(value) -> colors.Color
+with_blue(value) -> colors.Color
+with_alpha(value) -> colors.Color
+with_rgb(red, green, blue) -> colors.Color
+with_rgba(red, green, blue, alpha) -> colors.Color
+```
+
+Every `with_*()` method returns a new color. It never changes the source color
+or widgets and drawable objects that already received the source value.
 
 Use the property that names its role explicitly: `text_color`,
 `background_color`, `border_color`, or `foreground_color`. Color properties
@@ -1207,6 +1247,10 @@ value.to_bin()
 value.to_hex()
 value.shift_left(bits)
 value.shift_right(bits)
+value.bit_and(mask)
+value.bit_or(mask)
+value.bit_xor(mask)
+value.bit_not()
 types.from_bin("11111111", "uint8")
 types.from_hex("FF", "uint8")
 ```
@@ -1222,6 +1266,19 @@ Floating values shift their IEEE-754 representation and then reinterpret the
 resulting bits as the same float type. The result keeps the receiver's exact
 `types.*` type.
 
+The three binary bit methods require an unsigned mask of exactly the same bit
+width. The return type is always the receiver type:
+
+| Receiver | Required mask |
+|---|---|
+| `int8`, `uint8` | `uint8` |
+| `int16`, `uint16` | `uint16` |
+| `int32`, `uint32`, `float32` | `uint32` |
+| `int64`, `uint64`, `float64` | `uint64` |
+
+For floating receivers these methods edit the raw IEEE-754 cell. They may
+therefore produce infinity, NaN, or a seemingly unrelated finite number.
+
 Examples with observable results:
 
 ```idyllium
@@ -1234,6 +1291,11 @@ bits.shift_right(3).to_bin();         // "00000101"
 bits.shift_left(3).to_bin();          // "01011000"
 bits.shift_left(12).to_bin();         // "00000000"
 bits.shift_right(-3).to_bin();        // "01011000"
+
+types.uint8 flags = 173;              // 10101101
+types.uint8 mask = 15;                // 00001111
+flags.bit_and(mask).to_bin();         // "00001101"
+flags.bit_xor(mask).to_bin();         // "10100010"
 ```
 
 ## 24. JSON
@@ -1803,12 +1865,15 @@ use image;
 ```
 
 `image.Image` is the common base type accepted by GUI and Canvas consumers.
-Programs normally instantiate one of its concrete descendants:
+Its concrete descendants are:
 
 ```idyllium
 image.Static picture;
 image.Animation animation;
 ```
+
+`image.Bitmap` is a separate mutable raster type. Convert it through
+`to_static()` before passing its result to GUI or Canvas.
 
 Common read-only properties:
 
@@ -1860,6 +1925,30 @@ GIF and APNG files may contain different delays per frame. Use
 `frame_duration` is exact when `has_uniform_frame_duration` is true. Animations
 created with `create_from_frames()` always have uniform timing, so their total
 duration is `frame_count * frame_duration`.
+
+`image.Bitmap` is a mutable RGBA raster for pixel algorithms and generated
+images:
+
+```idyllium
+is_created: bool // read-only
+
+create(width, height, fill = colors.TRANSPARENT)
+load_from_file(path)
+create_from_image(source: image.Static)
+get_pixel(x, y) -> colors.Color
+set_pixel(x, y, color)
+fill(color)
+fill_rect(x, y, width, height, color)
+to_static() -> image.Static
+export_to_file(path)
+```
+
+Coordinates start at the top-left pixel `(0, 0)`. Dimensions must be positive,
+and all pixel and rectangle coordinates must remain inside the raster. A
+`Bitmap` loaded or created from `Static` owns an independent pixel copy.
+`to_static()` also creates an independent immutable snapshot. Pass that
+snapshot to `ImageBox` or `Sprite`; mutable `Bitmap` is intentionally not a
+direct GUI or Canvas resource.
 
 Example shared by GUI and Canvas:
 

@@ -35,11 +35,11 @@ body.theme-dark {
   --preview-titlebar-text: #eeeaf7;
 }
 body.theme-light {
-  --panel: #f5f7fb;
-  --text: #171a20;
-  --muted: #626b7d;
-  --border: #d9dde7;
-  --accent: #1469c8;
+  --panel: #d3d0d8;
+  --text: #27242e;
+  --muted: #625d69;
+  --border: #aaa3b2;
+  --accent: #315f8c;
 }
 .toolbar {
   display: flex;

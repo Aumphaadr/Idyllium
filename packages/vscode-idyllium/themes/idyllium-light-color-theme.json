@@ -4,31 +4,35 @@
   "type": "light",
   "semanticHighlighting": true,
   "colors": {
-    "editor.background": "#fbfcff",
-    "editor.foreground": "#11151d",
-    "editorLineNumber.foreground": "#8a93a5",
-    "editorCursor.foreground": "#11151d",
-    "editor.selectionBackground": "#1469c82e",
-    "editorBracketHighlight.foreground1": "#4d5a5a",
-    "editorBracketHighlight.foreground2": "#4d5a5a",
-    "editorBracketHighlight.foreground3": "#4d5a5a",
-    "editorBracketHighlight.foreground4": "#4d5a5a",
-    "editorBracketHighlight.foreground5": "#4d5a5a",
-    "editorBracketHighlight.foreground6": "#4d5a5a",
-    "editorBracketMatch.background": "#e6edf6",
-    "editorBracketMatch.border": "#94a3b8",
-    "editorIndentGuide.background1": "#dde3ec",
-    "editorIndentGuide.activeBackground1": "#a9b4c2"
+    "editor.background": "#d9d6df",
+    "editor.foreground": "#252730",
+    "editorLineNumber.foreground": "#77717f",
+    "editorLineNumber.activeForeground": "#47424f",
+    "editorCursor.foreground": "#23252c",
+    "editor.selectionBackground": "#315f8c38",
+    "editor.inactiveSelectionBackground": "#315f8c1c",
+    "editor.lineHighlightBackground": "#275f9e0b",
+    "editor.lineHighlightBorder": "#00000000",
+    "editorBracketHighlight.foreground1": "#445253",
+    "editorBracketHighlight.foreground2": "#445253",
+    "editorBracketHighlight.foreground3": "#445253",
+    "editorBracketHighlight.foreground4": "#445253",
+    "editorBracketHighlight.foreground5": "#445253",
+    "editorBracketHighlight.foreground6": "#445253",
+    "editorBracketMatch.background": "#c6c2cd",
+    "editorBracketMatch.border": "#827a8d",
+    "editorIndentGuide.background1": "#c4c0ca",
+    "editorIndentGuide.activeBackground1": "#9c95a4"
   },
   "semanticTokenColors": {
-    "namespace": "#147194",
-    "class": "#238064",
-    "function": "#8a741b",
-    "method": "#8a741b",
-    "property": "#147194",
-    "variable": "#11151d",
-    "parameter": "#147194",
-    "variable.readonly": "#147194"
+    "namespace": "#0d667f",
+    "class": "#1b745c",
+    "function": "#76620f",
+    "method": "#76620f",
+    "property": "#0d667f",
+    "variable": "#252730",
+    "parameter": "#0d667f",
+    "variable.readonly": "#0d667f"
   },
   "tokenColors": [
     {
@@ -41,21 +45,21 @@
         "keyword.operator.logical.idyllium",
         "constant.language.boolean.idyllium"
       ],
-      "settings": { "foreground": "#9a4b82" }
+      "settings": { "foreground": "#8d3f75" }
     },
     {
       "scope": [
         "storage.type.primitive.idyllium",
         "storage.type.numeric.idyllium"
       ],
-      "settings": { "foreground": "#226fa8" }
+      "settings": { "foreground": "#1d659a" }
     },
     {
       "scope": [
         "entity.name.type.class.idyllium",
         "entity.other.inherited-class.idyllium"
       ],
-      "settings": { "foreground": "#238064" }
+      "settings": { "foreground": "#1b745c" }
     },
     {
       "scope": [
@@ -64,31 +68,31 @@
         "entity.name.function.member.idyllium",
         "support.function.builtin.idyllium"
       ],
-      "settings": { "foreground": "#8a741b" }
+      "settings": { "foreground": "#76620f" }
     },
     {
       "scope": [
-        "support.module.idyllium",
+        "entity.name.namespace.idyllium",
         "variable.language.this.idyllium",
         "variable.language.parent.idyllium",
         "variable.other.member.idyllium",
         "constant.other.color.idyllium"
       ],
-      "settings": { "foreground": "#147194" }
+      "settings": { "foreground": "#0d667f" }
     },
     {
       "scope": [
         "string.quoted.double.idyllium",
         "string.quoted.single.idyllium"
       ],
-      "settings": { "foreground": "#9a572c" }
+      "settings": { "foreground": "#87481f" }
     },
     {
       "scope": [
         "constant.numeric.float.idyllium",
         "constant.numeric.integer.idyllium"
       ],
-      "settings": { "foreground": "#647a30" }
+      "settings": { "foreground": "#5b7027" }
     },
     {
       "scope": [
@@ -96,7 +100,7 @@
         "comment.line.double-slash.idyllium"
       ],
       "settings": {
-        "foreground": "#4f7f3f",
+        "foreground": "#477237",
         "fontStyle": "italic"
       }
     },
@@ -105,7 +109,7 @@
         "keyword.operator.idyllium",
         "punctuation.idyllium"
       ],
-      "settings": { "foreground": "#4d5a5a" }
+      "settings": { "foreground": "#445253" }
     }
   ]
 }

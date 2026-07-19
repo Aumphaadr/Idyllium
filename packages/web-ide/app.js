@@ -18,7 +18,7 @@
   ]);
   const CLASS_NAMES = new Set([
     'Array', 'Button', 'Canvas', 'CheckBox', 'Circle', 'Color', 'ComboBox', 'Drawable', 'FloatSpinBox', 'Font', 'Frame',
-    'Animation', 'Image', 'ImageBox', 'KeyboardEvent', 'Label', 'Line', 'LineEdit', 'Modal', 'MouseEvent', 'MouseScrollEvent', 'Music',
+    'Animation', 'Bitmap', 'Image', 'ImageBox', 'KeyboardEvent', 'Label', 'Line', 'LineEdit', 'Modal', 'MouseEvent', 'MouseScrollEvent', 'Music',
     'Database', 'Object', 'ProgressBar', 'RadioButton', 'Rectangle', 'Result', 'Slider', 'Sound', 'SpinBox', 'Sprite', 'Statement', 'Text',
     'Static', 'TextEdit', 'Timer', 'Value', 'Widget', 'Window',
   ]);
@@ -76,10 +76,6 @@
         '    console.writeln("Hello, World!");',
         '}',
       ].join('\n'),
-    }],
-    ['/workspace/input.txt', {
-      kind: 'text',
-      content: '42\n',
     }],
   ]);
   const folders = new Set([WORKSPACE_ROOT]);
@@ -765,13 +761,13 @@
       ],
       colors: {
         'focusBorder': '#00000000',
-        'editor.background': '#f2edf7',
-        'editor.foreground': '#1d2230',
-        'editorLineNumber.foreground': '#7b7489',
-        'editorLineNumber.activeForeground': '#3f3850',
-        'editorCursor.foreground': '#1d2230',
-        'editor.selectionBackground': '#275f9e2e',
-        'editor.inactiveSelectionBackground': '#275f9e18',
+        'editor.background': '#d9d6df',
+        'editor.foreground': '#252730',
+        'editorLineNumber.foreground': '#77717f',
+        'editorLineNumber.activeForeground': '#47424f',
+        'editorCursor.foreground': '#23252c',
+        'editor.selectionBackground': '#315f8c38',
+        'editor.inactiveSelectionBackground': '#315f8c1c',
         'editor.lineHighlightBackground': '#275f9e0b',
         'editor.lineHighlightBorder': '#00000000',
         'editorBracketHighlight.foreground1': '#445253',
@@ -780,18 +776,18 @@
         'editorBracketHighlight.foreground4': '#445253',
         'editorBracketHighlight.foreground5': '#445253',
         'editorBracketHighlight.foreground6': '#445253',
-        'editorBracketMatch.background': '#e2dcea',
-        'editorBracketMatch.border': '#90849f',
-        'editorIndentGuide.background1': '#d8d0e1',
-        'editorIndentGuide.activeBackground1': '#aaa0b8',
-        'editorGutter.background': '#f2edf7',
-        'editorSuggestWidget.background': '#fbf9fd',
-        'editorSuggestWidget.border': '#c8bed5',
-        'editorSuggestWidget.foreground': '#1d2230',
-        'editorSuggestWidget.highlightForeground': '#275f9e',
-        'editorSuggestWidget.selectedBackground': '#e2ebf6',
-        'editorWidget.background': '#fbf9fd',
-        'editorWidget.border': '#c8bed5',
+        'editorBracketMatch.background': '#c6c2cd',
+        'editorBracketMatch.border': '#827a8d',
+        'editorIndentGuide.background1': '#c4c0ca',
+        'editorIndentGuide.activeBackground1': '#9c95a4',
+        'editorGutter.background': '#d9d6df',
+        'editorSuggestWidget.background': '#e7e4ea',
+        'editorSuggestWidget.border': '#aaa3b2',
+        'editorSuggestWidget.foreground': '#252730',
+        'editorSuggestWidget.highlightForeground': '#315f8c',
+        'editorSuggestWidget.selectedBackground': '#c8d3df',
+        'editorWidget.background': '#e7e4ea',
+        'editorWidget.border': '#aaa3b2',
       },
     });
   }
@@ -3277,6 +3273,7 @@
       : [
           ['Переименовать', () => startRenameItemInline(node.path, 'file')],
           ['Дублировать', () => startDuplicateItemInline(node.path, 'file')],
+          ['Скачать', () => downloadProjectFile(node.path)],
           ['Удалить', () => openDeleteConfirm(node.path, 'file', left, top)],
         ];
 
@@ -3939,6 +3936,26 @@
     }
   }
 
+  function downloadProjectFile(path) {
+    path = normalizeWorkspacePath(path);
+    if (path === currentFile) saveCurrentEditor();
+
+    const item = files.get(path);
+    if (!item) {
+      setStatus('Файл не найден', true);
+      return;
+    }
+
+    const bytes = item.kind === 'asset'
+      ? assetBytes(item)
+      : new TextEncoder().encode(item.content || '');
+    const mime = item.kind === 'asset'
+      ? detectAssetMimeType(path, bytes)
+      : `${mimeTypeForFile(path)};charset=utf-8`;
+    downloadBlob(new Blob([bytes], { type: mime }), basename(path));
+    setStatus('Файл скачан');
+  }
+
   async function downloadStoredProject(projectId) {
     const entry = projectCatalog.find((project) => project.id === projectId);
     if (!entry) throw new Error('Проект не найден');
@@ -3954,10 +3971,14 @@
 
   async function downloadProjectState(state, name) {
     const blob = await createProjectZip(state);
+    downloadBlob(blob, `${safeDownloadName(name)}.zip`);
+  }
+
+  function downloadBlob(blob, name) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${safeDownloadName(name)}.zip`;
+    link.download = name;
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -4608,13 +4629,6 @@
             '    console.writeln("Hello, World!");',
             '}',
           ].join('\n'),
-          bytes: null,
-          resourceUri: '',
-        },
-        {
-          path: '/workspace/input.txt',
-          kind: 'text',
-          content: '42\n',
           bytes: null,
           resourceUri: '',
         },

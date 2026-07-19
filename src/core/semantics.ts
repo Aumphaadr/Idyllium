@@ -1292,7 +1292,7 @@ export class SemanticAnalyzer {
     const left = this.expressionType(expression.left);
     const right = this.expressionType(expression.right);
 
-    if (['and', 'or'].includes(expression.operator)) {
+    if (['and', 'xor', 'or'].includes(expression.operator)) {
       if (!sameType(left, BOOL) || !sameType(right, BOOL)) {
         this.diagnostics.error(expression.range, `operator '${expression.operator}' requires bool operands`);
       }
@@ -1347,6 +1347,9 @@ export class SemanticAnalyzer {
 
     const specialMathType = this.specialMathCallType(expression);
     if (specialMathType) return specialMathType;
+
+    const specialRandomType = this.specialRandomCallType(expression);
+    if (specialRandomType) return specialRandomType;
 
     const resolved = this.resolveCall(expression);
     if (!resolved) {
@@ -1454,6 +1457,35 @@ export class SemanticAnalyzer {
     }
 
     return null;
+  }
+
+  private specialRandomCallType(expression: CallExpression): TypeRef | null {
+    const callee = expression.callee;
+    if (callee.kind !== 'MemberExpression' || callee.object.kind !== 'IdentifierExpression') {
+      return null;
+    }
+    if (callee.object.name !== 'random' || callee.name !== 'choose_from') return null;
+
+    this.markSemanticToken('namespace', callee.object.range, ['defaultLibrary']);
+    this.markSemanticToken('function', callee.nameRange, ['defaultLibrary']);
+
+    if (!this.imports.has('random')) {
+      this.diagnostics.error(callee.object.range, "'random' is not imported (use 'use random;')");
+      return ERROR_TYPE;
+    }
+
+    const fn = this.stdlib.getModuleFunction('random', 'choose_from');
+    if (!fn) return ERROR_TYPE;
+
+    this.checkArgumentList(expression.args, fn, expression.range);
+    const ordered = this.orderedArguments(expression.args, fn);
+    const argument = ordered[0];
+    if (!argument) return ERROR_TYPE;
+
+    const collectionType = this.expressionType(argument.value);
+    if (sameType(collectionType, STRING)) return CHAR;
+    if (collectionType.kind === 'array') return collectionType.elementType;
+    return ERROR_TYPE;
   }
 
   private resolveCall(expression: CallExpression): FunctionSpec | null {
@@ -1678,6 +1710,16 @@ export class SemanticAnalyzer {
       const argType = this.expressionType(item.arg.value);
       const parameter = item.parameter;
       if (parameter) {
+        if (parameter.exactType) {
+          if (!sameType(parameter.type, argType)) {
+            this.diagnostics.error(
+              item.arg.range,
+              this.argumentTypeError(fn, item, `'${typeToString(parameter.type)}'`, argType),
+            );
+          }
+          continue;
+        }
+
         if (parameter.acceptedTypes) {
           const accepts = parameter.acceptedTypes.some((candidate) => this.canAssign(candidate, argType));
           if (!accepts) {

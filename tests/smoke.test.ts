@@ -353,6 +353,41 @@ test('div and mod run', async () => {
   assert(result.output === '3 8', `unexpected output: ${JSON.stringify(result.output)}`);
 });
 
+test('logical xor is strict eager and has precedence between and and or', async () => {
+  const result = await runIdyllium(`
+    use console;
+
+    int calls = 0;
+
+    bool function checked(bool value) {
+      calls += 1;
+      return value;
+    }
+
+    main() {
+      console.write(
+        false xor false, ":",
+        false xor true, ":",
+        true xor false, ":",
+        true xor true, ":",
+        true xor true and false, ":",
+        true or true xor true, ":",
+        checked(true) xor checked(false), ":",
+        calls
+      );
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === 'false:true:true:false:true:true:true:2', `unexpected xor output: ${JSON.stringify(result.output)}`);
+
+  assertFails(`
+    main() {
+      bool value = 1 xor 0;
+    }
+  `, "operator 'xor' requires bool operands");
+});
+
 test('to_float converts strings and reports runtime errors', async () => {
   const result = await runIdyllium(`
     use console;
@@ -501,6 +536,71 @@ test('random seed is deterministic', async () => {
   const parts = result.output.split(':');
   assert(parts.length === 4, `unexpected output: ${JSON.stringify(result.output)}`);
   assert(parts[0] === parts[2] && parts[1] === parts[3], `seeded random was not deterministic: ${result.output}`);
+});
+
+test('random choose_from preserves string array and class element types', async () => {
+  const result = await runIdyllium(`
+    use console;
+    use random;
+
+    class Hero {
+      string name;
+
+      constructor Hero(string name) {
+        this.name = name;
+      }
+    }
+
+    main() {
+      string letters = "ABC";
+      array<int, 3> numbers = [10, 20, 30];
+      dyn_array<string> names = ["Liam", "Mira"];
+      array<Hero, 2> heroes = [Hero("Kaspar"), Hero("Raven")];
+
+      random.set_seed(42);
+      char letter = random.choose_from(letters);
+      int number = random.choose_from(numbers);
+      string name = random.choose_from(names);
+      Hero hero = random.choose_from(heroes);
+
+      console.write(
+        letters.contains(letter), ":",
+        numbers.contains(number), ":",
+        names.contains(name), ":",
+        hero.name == "Kaspar" or hero.name == "Raven"
+      );
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === 'true:true:true:true', `unexpected choose_from output: ${JSON.stringify(result.output)}`);
+});
+
+test('random choose_from reports empty collections and wrong argument types', async () => {
+  await assertRuntimeFails([
+    'use random;',
+    '',
+    'main() {',
+    '    char value = random.choose_from("");',
+    '}',
+  ].join('\n'), 'main.idyl:4: runtime error: random.choose_from() cannot choose from an empty string');
+
+  await assertRuntimeFails([
+    'use random;',
+    '',
+    'main() {',
+    '    dyn_array<int> values;',
+    '    int value = random.choose_from(values);',
+    '}',
+  ].join('\n'), 'main.idyl:5: runtime error: random.choose_from() cannot choose from an empty array');
+
+  assertFails([
+    'use random;',
+    '',
+    'main() {',
+    '    int value = random.choose_from(42);',
+    '}',
+  ].join('\n'), "'choose_from' argument 1 expects string or array, got 'int'");
 });
 
 test('time and file modules run in headless runtime', async () => {
@@ -1363,6 +1463,114 @@ test('image resources transform export and build animations', async () => {
   assert(typeof animation !== 'string' && animation?.bytes instanceof Uint8Array && animation.bytes.length > 0, 'expected exported GIF bytes');
 });
 
+test('image Bitmap edits pixels snapshots Static values and exports', async () => {
+  const result = await runIdylliumInBrowser({
+    entryFile: '/workspace/main.idyl',
+    files: {
+      '/workspace/main.idyl': `
+        use colors;
+        use console;
+        use image;
+
+        main() {
+          image.Bitmap bitmap;
+          bitmap.create(3, 2);
+          bool transparent_after_create = bitmap.has_alpha;
+
+          bitmap.fill(colors.WHITE);
+          bool opaque_after_fill = not bitmap.has_alpha;
+          bitmap.set_pixel(1, 0, colors.RED);
+          bitmap.fill_rect(0, 1, 3, 1, colors.BLUE);
+
+          colors.Color red = bitmap.get_pixel(1, 0);
+          colors.Color blue = bitmap.get_pixel(2, 1);
+          image.Static snapshot = bitmap.to_static();
+
+          bitmap.set_pixel(1, 0, colors.GREEN);
+          image.Bitmap snapshot_copy;
+          snapshot_copy.create_from_image(snapshot);
+          colors.Color preserved = snapshot_copy.get_pixel(1, 0);
+
+          image.Bitmap loaded;
+          loaded.load_from_file("cat.png");
+          bitmap.export_to_file("pixels.png");
+
+          console.write(
+            bitmap.width, "x", bitmap.height, ":",
+            bitmap.is_created, ":",
+            transparent_after_create, ":",
+            opaque_after_fill, ":",
+            red == colors.RED, ":",
+            blue == colors.BLUE, ":",
+            preserved == colors.RED, ":",
+            snapshot.width, "x", snapshot.height, ":",
+            loaded.width, "x", loaded.height
+          );
+        }
+      `,
+      '/workspace/cat.png': {
+        bytes: new Uint8Array(fs.readFileSync(path.join(process.cwd(), 'my_images/cat.png'))),
+      },
+    },
+  });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === '3x2:true:true:true:true:true:true:3x2:112x100',
+    `unexpected Bitmap output: ${JSON.stringify(result.output)}`,
+  );
+  const exported = result.writtenFiles['/workspace/pixels.png'];
+  assert(
+    typeof exported !== 'string' && exported?.bytes instanceof Uint8Array && exported.bytes.length > 0,
+    'expected exported Bitmap PNG bytes',
+  );
+});
+
+test('image Bitmap reports initialization coordinates and rectangle errors', async () => {
+  await assertRuntimeFails([
+    'use image;',
+    '',
+    'main() {',
+    '    image.Bitmap bitmap;',
+    '    bitmap.get_pixel(0, 0);',
+    '}',
+  ].join('\n'), 'cannot be used before create(), load_from_file(), or create_from_image()');
+
+  await assertRuntimeFails([
+    'use colors;',
+    'use image;',
+    '',
+    'main() {',
+    '    image.Bitmap bitmap;',
+    '    bitmap.create(2, 2);',
+    '    bitmap.set_pixel(2, 0, colors.RED);',
+    '}',
+  ].join('\n'), 'coordinates (2, 0) are outside bitmap bounds 2x2');
+
+  await assertRuntimeFails([
+    'use colors;',
+    'use image;',
+    '',
+    'main() {',
+    '    image.Bitmap bitmap;',
+    '    bitmap.create(2, 2);',
+    '    bitmap.fill_rect(1, 1, 2, 1, colors.RED);',
+    '}',
+  ].join('\n'), 'rectangle (1, 1, 2, 1) is outside bitmap bounds 2x2');
+
+  assertFails(`
+    use gui;
+    use image;
+
+    main() {
+      image.Bitmap bitmap;
+      bitmap.create(2, 2);
+      gui.ImageBox view;
+      view.set_image(bitmap);
+    }
+  `, "expects 'image.Image', got 'image.Bitmap'");
+});
+
 test('node image service round-trips jpeg and webp images', async () => {
   const service = createNodeImageService();
   const source = {
@@ -1889,10 +2097,9 @@ test('encoding helpers run and report readable errors', async () => {
       string roundtrip = encoding.decode(encoding.encode("Привет", "windows-1251"), "windows-1251");
 
       console.write(
-        encoding.char_to_int('A', "utf-8"), ":",
-        encoding.char_to_int('Я', "windows-1251"), ":",
-        encoding.char_to_int('Я', "koi8-r"), ":",
-        encoding.int_to_char(192, "windows-1251"), ":",
+        encoding.char_to_codepoint('A'), ":",
+        encoding.char_to_codepoint('Я'), ":",
+        encoding.codepoint_to_char(1040), ":",
         ascii, ":", win, ":", koi, ":",
         text, ":", roundtrip
       );
@@ -1901,7 +2108,7 @@ test('encoding helpers run and report readable errors', async () => {
 
   assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
   assert(
-    result.output === '65:223:241:А:[72, 105]:[168, 230]:[179, 214]:Hello:Привет',
+    result.output === '65:1071:А:[72, 105]:[168, 230]:[179, 214]:Hello:Привет',
     `unexpected encoding output: ${JSON.stringify(result.output)}`,
   );
 
@@ -1909,7 +2116,7 @@ test('encoding helpers run and report readable errors', async () => {
     use encoding;
 
     main() {
-      int code = encoding.char_to_int('Ю', "ascii");
+      dyn_array<int> codes = encoding.encode("Ю", "ascii");
     }
   `, "character 'Ю' is not valid ASCII");
 
@@ -1917,9 +2124,76 @@ test('encoding helpers run and report readable errors', async () => {
     use encoding;
 
     main() {
-      int code = encoding.char_to_int('A', "cp866");
+      dyn_array<int> codes = encoding.encode("A", "cp866");
     }
   `, "unknown encoding 'cp866'");
+});
+
+test('encoding is strict and round-trips complete single-byte tables', async () => {
+  const result = await runIdyllium(`
+    use console;
+    use encoding;
+
+    int function roundtrip_count(string name) {
+      int count = 0;
+      for (int byte = 0; byte < 256; byte += 1) {
+        dyn_array<int> source = [byte];
+        string decoded = encoding.decode(source, name);
+        dyn_array<int> encoded = encoding.encode(decoded, name);
+        if (encoded.length == 1 and encoded[0] == byte) {
+          count += 1;
+        }
+      }
+      return count;
+    }
+
+    main() {
+      console.write(
+        roundtrip_count("windows-1251"), ":",
+        roundtrip_count("koi8-r"), ":",
+        encoding.char_to_codepoint('б'), ":",
+        encoding.codepoint_to_char(1073)
+      );
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === '256:256:1073:б', `unexpected strict encoding output: ${JSON.stringify(result.output)}`);
+
+  await assertRuntimeFails(`
+    use encoding;
+    main() {
+      string text = encoding.decode([208], "utf-8");
+    }
+  `, 'invalid UTF-8 at byte 0 (0xD0): incomplete sequence');
+
+  await assertRuntimeFails(`
+    use encoding;
+    main() {
+      string text = encoding.decode([224, 128, 128], "utf-8");
+    }
+  `, 'invalid UTF-8 at byte 1 (0x80): invalid continuation byte');
+
+  await assertRuntimeFails(`
+    use encoding;
+    main() {
+      dyn_array<int> bytes = encoding.encode("кот 漢", "windows-1251");
+    }
+  `, "character '漢' is not valid windows-1251 at position 4");
+
+  await assertRuntimeFails(`
+    use encoding;
+    main() {
+      char value = encoding.codepoint_to_char(55296);
+    }
+  `, 'codepoint must be a Unicode scalar value');
+
+  assertFails(`
+    use encoding;
+    main() {
+      int value = encoding.char_to_int('A', "ascii");
+    }
+  `, "'encoding' has no function 'char_to_int'");
 });
 
 test('types integer values wrap at typed boundaries', async () => {
@@ -2108,6 +2382,94 @@ test('types negative bit counts reverse shift direction', async () => {
   );
 });
 
+test('types bit masks operate on fixed-width integer cells', async () => {
+  const result = await runIdyllium(`
+    use console;
+    use types;
+
+    main() {
+      types.uint8 flags = 173;
+      types.uint8 mask = 15;
+      types.int8 signed = -128;
+      types.uint8 lowest_bit = 1;
+      types.uint16 packed = 43981;
+      types.uint16 high_mask = 65280;
+
+      console.writeln(flags.bit_and(mask).to_bin());
+      console.writeln(flags.bit_or(mask).to_bin());
+      console.writeln(flags.bit_xor(mask).to_bin());
+      console.writeln(flags.bit_not().to_bin());
+      console.writeln(signed.bit_or(lowest_bit));
+      console.writeln(packed.bit_and(high_mask).shift_right(8));
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === [
+      '00001101',
+      '10101111',
+      '10100010',
+      '01010010',
+      '-127',
+      '171',
+      '',
+    ].join('\n'),
+    `unexpected bit mask output: ${JSON.stringify(result.output)}`,
+  );
+});
+
+test('types float masks operate on raw IEEE cells', async () => {
+  const result = await runIdyllium(`
+    use console;
+    use types;
+
+    main() {
+      types.float32 negative32 = -4.5;
+      types.uint32 magnitude32 = 2147483647;
+      types.float64 negative64 = -4.5;
+      types.uint64 magnitude64 = 9223372036854775807;
+
+      console.writeln(negative32.bit_and(magnitude32).to_bin());
+      console.writeln(negative64.bit_and(magnitude64).to_bin());
+      console.writeln(negative32.bit_not().bit_not().to_bin());
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === [
+      '01000000100100000000000000000000',
+      '0100000000010010000000000000000000000000000000000000000000000000',
+      '11000000100100000000000000000000',
+      '',
+    ].join('\n'),
+    `unexpected float mask output: ${JSON.stringify(result.output)}`,
+  );
+});
+
+test('types bit masks require the unsigned type of the same width', () => {
+  assertFails(`
+    use types;
+
+    main() {
+      types.int8 value = 42;
+      types.uint16 wrong_mask = 255;
+      types.int8 result = value.bit_and(wrong_mask);
+    }
+  `, "'bit_and' argument 1 expects 'types.uint8', got 'types.uint16'");
+
+  assertFails(`
+    use types;
+
+    main() {
+      types.float64 value = 4.5;
+      types.uint32 wrong_mask = 4294967295;
+      types.float64 result = value.bit_xor(wrong_mask);
+    }
+  `, "'bit_xor' argument 1 expects 'types.uint64', got 'types.uint32'");
+});
+
 test('types int64 and uint64 preserve exact values and wrap', async () => {
   const result = await runIdyllium(`
     use console;
@@ -2230,6 +2592,64 @@ test('colors factories produce Color values', async () => {
     result.output === 'true\nfalse\n#2291bc\n#2291bc\nrgba(0, 0, 0, 0)',
     `unexpected output: ${JSON.stringify(result.output)}`,
   );
+});
+
+test('colors Color exposes read-only channels and immutable with methods', async () => {
+  const result = await runIdyllium(`
+    use colors;
+    use console;
+
+    main() {
+      colors.Color base = colors.RGBA(40, 120, 220, 0.75);
+      colors.Color warmer = base.with_red(220);
+      colors.Color greener = base.with_green(200);
+      colors.Color darker = base.with_blue(10);
+      colors.Color faded = base.with_alpha(0.25);
+      colors.Color rgb = base.with_rgb(1, 2, 3);
+      colors.Color rgba = base.with_rgba(4, 5, 6, 0.5);
+
+      console.write(
+        base.red, ",", base.green, ",", base.blue, ",", base.alpha, ":",
+        warmer.red, ":", greener.green, ":", darker.blue, ":", faded.alpha, ":",
+        rgb.red, ",", rgb.green, ",", rgb.blue, ",", rgb.alpha, ":",
+        rgba.red, ",", rgba.green, ",", rgba.blue, ",", rgba.alpha, ":",
+        base == colors.RGBA(40, 120, 220, 0.75)
+      );
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === '40,120,220,0.75:220:200:10:0.25:1,2,3,0.75:4,5,6,0.5:true',
+    `unexpected immutable color output: ${JSON.stringify(result.output)}`,
+  );
+
+  assertFails(`
+    use colors;
+
+    main() {
+      colors.Color color = colors.RED;
+      color.red = 10;
+    }
+  `, "property 'red' is read-only");
+});
+
+test('colors Color with methods validate channel ranges', async () => {
+  await assertRuntimeFails([
+    'use colors;',
+    '',
+    'main() {',
+    '    colors.Color invalid = colors.RED.with_blue(300);',
+    '}',
+  ].join('\n'), 'colors.Color.with_blue() value must be between 0 and 255, got 300');
+
+  await assertRuntimeFails([
+    'use colors;',
+    '',
+    'main() {',
+    '    colors.Color invalid = colors.RED.with_alpha(-0.1);',
+    '}',
+  ].join('\n'), 'colors.Color.with_alpha() value must be between 0 and 1, got -0.1');
 });
 
 test('colors constants are Color values', async () => {
@@ -4416,6 +4836,44 @@ test('brace-less if branches run and orphan else diagnostics are readable', asyn
   assert(!invalid.diagnosticsText.includes("expected ';'"), `unexpected parser cascade:\n${invalid.diagnosticsText}`);
 });
 
+test('top-level executable statements produce one readable diagnostic each', () => {
+  const result = compileIdyllium(`use console;
+
+int A = 5;
+
+console.writeln("Hello, World!");
+
+main() {
+    console.writeln("Hello, World!");
+}
+
+console.writeln("Hello, World!");
+`, { file: 'main.idyl' });
+
+  assert(!result.success, 'expected top-level statements to fail compilation');
+  assert(result.diagnostics.length === 2, `expected two diagnostics, got:\n${result.diagnosticsText}`);
+  assert(
+    result.diagnostics.every(
+      (diagnostic) => diagnostic.message === "executable statements must be inside 'main()' or another function, not at top level",
+    ),
+    `unexpected top-level statement diagnostic:\n${result.diagnosticsText}`,
+  );
+  assert(
+    result.diagnostics.map((diagnostic) => diagnostic.range.start.line).join(',') === '5,11',
+    `expected diagnostics on lines 5 and 11, got:\n${result.diagnosticsText}`,
+  );
+  assert(!result.diagnosticsText.includes('unexpected token'), `unexpected parser cascade:\n${result.diagnosticsText}`);
+
+  assertCompiles(`use console;
+
+int A = 5;
+
+main() {
+    console.writeln(A);
+}
+`);
+});
+
 test('console must be imported', () => {
   assertFails(`
     main() {
@@ -4861,6 +5319,56 @@ test('project API compiles files and powers user module completions', () => {
   const symbols = project.documentSymbols('rect.idyl');
   assert(symbols.some((item) => item.name === 'Rect' && item.kind === 'class'), 'expected Rect document symbol');
   assert(symbols.some((item) => item.name === 'getArea' && item.kind === 'method'), 'expected getArea document symbol');
+});
+
+test('VSIX themes distinguish namespaces from classes like Web IDE', () => {
+  const extensionRoot = path.resolve(process.cwd(), 'packages', 'vscode-idyllium');
+  const readJson = (relativePath: string) => JSON.parse(
+    fs.readFileSync(path.join(extensionRoot, relativePath), 'utf8'),
+  );
+  const dark = readJson('themes/idyllium-dark-color-theme.json');
+  const light = readJson('themes/idyllium-light-color-theme.json');
+  const manifest = readJson('package.json');
+  const grammarText = fs.readFileSync(
+    path.join(extensionRoot, 'syntaxes', 'idyllium.tmLanguage.json'),
+    'utf8',
+  );
+
+  assert(dark.semanticTokenColors.namespace === '#8bdfff', 'unexpected dark namespace color');
+  assert(dark.semanticTokenColors.class === '#59d4b8', 'unexpected dark class color');
+  assert(light.semanticTokenColors.namespace === '#0d667f', 'unexpected light namespace color');
+  assert(light.semanticTokenColors.class === '#1b745c', 'unexpected light class color');
+  assert(light.colors['editor.background'] === '#d9d6df', 'VSIX light editor must match the subdued Web IDE surface');
+  assert(dark.semanticTokenColors.namespace !== dark.semanticTokenColors.class, 'dark namespace and class colors must differ');
+  assert(light.semanticTokenColors.namespace !== light.semanticTokenColors.class, 'light namespace and class colors must differ');
+  assert(!grammarText.includes('support.module.idyllium'), 'legacy module scope must not remain in VSIX grammar');
+  assert(grammarText.includes('entity.name.namespace.idyllium'), 'expected namespace TextMate scope');
+  assert(
+    manifest.contributes.configurationDefaults['[idyllium]']['editor.semanticHighlighting.enabled'] === true,
+    'semantic highlighting must be enabled for Idyllium documents',
+  );
+  const tokenScopes = manifest.contributes.semanticTokenScopes[0].scopes;
+  assert(tokenScopes.namespace.includes('entity.name.namespace.idyllium'), 'expected namespace semantic fallback scope');
+  assert(tokenScopes.class.includes('entity.name.type.class.idyllium'), 'expected class semantic fallback scope');
+});
+
+test('Web IDE default project is minimal and light surfaces are subdued', () => {
+  const webIdeRoot = path.resolve(process.cwd(), 'packages', 'web-ide');
+  const appSource = fs.readFileSync(path.join(webIdeRoot, 'app.js'), 'utf8');
+  const cssSource = fs.readFileSync(path.join(webIdeRoot, 'app.css'), 'utf8');
+  const initialFilesStart = appSource.indexOf('const files = new Map([');
+  const initialFilesEnd = appSource.indexOf('const folders = new Set', initialFilesStart);
+  const factoryStart = appSource.indexOf('function createDefaultProjectState()');
+  const factoryEnd = appSource.indexOf('function copySerializedProjectState', factoryStart);
+
+  assert(initialFilesStart >= 0 && initialFilesEnd > initialFilesStart, 'expected initial Web IDE file map');
+  assert(factoryStart >= 0 && factoryEnd > factoryStart, 'expected default project factory');
+  assert(!appSource.slice(initialFilesStart, initialFilesEnd).includes('input.txt'), 'initial project must not contain input.txt');
+  assert(!appSource.slice(factoryStart, factoryEnd).includes('input.txt'), 'new project must not contain input.txt');
+  assert(cssSource.includes('--bg: #d2cfd7;'), 'expected subdued light page background');
+  assert(cssSource.includes('--panel-raised: #e7e4ea;'), 'expected subdued light raised surface');
+  assert(cssSource.includes('--editor-bg: #d9d6df;'), 'expected subdued light editor surface');
+  assert(cssSource.includes('--output-bg: #cfccd5;'), 'expected subdued light console surface');
 });
 
 test('project semantic tokens follow resolved symbols instead of identifier casing', () => {

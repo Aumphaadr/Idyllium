@@ -96,6 +96,15 @@ export class Parser {
         continue;
       }
 
+      if (this.checkStatementStart()) {
+        const statement = this.parseStatement();
+        this.error(
+          statement.range,
+          "executable statements must be inside 'main()' or another function, not at top level",
+        );
+        continue;
+      }
+
       this.error(this.peek().range, `unexpected token ${tokenDisplay(this.peek().kind)} at top level`);
       this.advance();
     }
@@ -275,6 +284,38 @@ export class Parser {
     }
 
     return this.parseExpressionStatement();
+  }
+
+  private checkStatementStart(): boolean {
+    return this.check(
+      TokenKind.KwIf,
+      TokenKind.KwTry,
+      TokenKind.KwWhile,
+      TokenKind.KwDo,
+      TokenKind.KwFor,
+      TokenKind.KwBreak,
+      TokenKind.KwContinue,
+      TokenKind.KwReturn,
+      TokenKind.LeftBrace,
+      TokenKind.KwElse,
+      TokenKind.KwCatch,
+      TokenKind.KwFinally,
+      TokenKind.IntLiteral,
+      TokenKind.FloatLiteral,
+      TokenKind.StringLiteral,
+      TokenKind.CharLiteral,
+      TokenKind.KwTrue,
+      TokenKind.KwFalse,
+      TokenKind.KwNull,
+      TokenKind.LeftBracket,
+      TokenKind.Identifier,
+      TokenKind.KwDiv,
+      TokenKind.KwMod,
+      TokenKind.KwThis,
+      TokenKind.LeftParen,
+      TokenKind.Minus,
+      TokenKind.KwNot,
+    );
   }
 
   private parseVariableDeclaration(): VariableDeclaration {
@@ -722,8 +763,18 @@ export class Parser {
   }
 
   private parseOr(): Expression {
-    let expression = this.parseAnd();
+    let expression = this.parseXor();
     while (this.match(TokenKind.KwOr)) {
+      const operator = this.previous();
+      const right = this.parseXor();
+      expression = this.binary(expression, operator, right);
+    }
+    return expression;
+  }
+
+  private parseXor(): Expression {
+    let expression = this.parseAnd();
+    while (this.match(TokenKind.KwXor)) {
       const operator = this.previous();
       const right = this.parseAnd();
       expression = this.binary(expression, operator, right);
@@ -978,6 +1029,8 @@ export class Parser {
         return '>=';
       case TokenKind.KwAnd:
         return 'and';
+      case TokenKind.KwXor:
+        return 'xor';
       case TokenKind.KwOr:
         return 'or';
       default:
