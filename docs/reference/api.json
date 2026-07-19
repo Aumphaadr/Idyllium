@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "languageVersion": "1.1.0",
-  "generatedAt": "2026-07-17T18:27:07.124Z",
+  "languageVersion": "1.1.1",
+  "generatedAt": "2026-07-19T09:46:51.823Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "language": [
     {
@@ -131,6 +131,11 @@
           "title": "if и else",
           "description": "Условие в круглых скобках обязано иметь тип bool.",
           "code": "if (temperature > 37.0) {\n    console.writeln(\"Высокая температура\");\n} else if (temperature < 35.5) {\n    console.writeln(\"Низкая температура\");\n} else {\n    console.writeln(\"Температура в норме\");\n}"
+        },
+        {
+          "title": "Одна команда без фигурных скобок",
+          "description": "Скобки можно опустить только для одной команды. Отступы не объединяют команды в ветку: если действий несколько, используйте { ... }.",
+          "code": "if (ready)\n    console.writeln(\"Старт\");\nelse\n    console.writeln(\"Ожидание\");\n\nconsole.writeln(\"Эта команда выполняется всегда\");"
         }
       ]
     },
@@ -995,6 +1000,8 @@
       "description": "Чтение и запись текстовых файлов, а также работа с файлами и каталогами проекта.",
       "notes": [
         "Режим read возвращает file.istream, режим write — file.ostream.",
+        "read(count) читает указанное количество символов; read() и read_all() читают весь остаток.",
+        "write() не добавляет перенос строки, write_line() добавляет его автоматически.",
         "После завершения работы поток следует закрыть методом close().",
         "copy() и rename() не перезаписывают существующий путь назначения.",
         "Непустой каталог удаляется только при явном recursive=true."
@@ -1204,7 +1211,7 @@
           "baseType": "",
           "description": "Входной текстовый поток для последовательного чтения файла.",
           "notes": [],
-          "example": "file.istream input = file.open(\"data.txt\", \"read\");\nstring contents = input.read_all();\ninput.close();",
+          "example": "file.istream input = file.open(\"data.txt\", \"read\");\nstring prefix = input.read(5);\nstring contents = input.read();\ninput.close();",
           "properties": [
             {
               "name": "is_open",
@@ -1232,6 +1239,23 @@
               "documentation": ""
             },
             {
+              "name": "read",
+              "signature": "read([count: int]): string",
+              "returnType": "string",
+              "parameters": [
+                {
+                  "name": "count",
+                  "type": "int",
+                  "optional": true,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Читает count символов или весь оставшийся текст, если count не указан."
+            },
+            {
               "name": "read_all",
               "signature": "read_all(): string",
               "returnType": "string",
@@ -1245,7 +1269,7 @@
               "returnType": "string",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Читает следующую строку вместе с завершающим переводом строки, если он есть."
             }
           ]
         },
@@ -1253,9 +1277,9 @@
           "name": "ostream",
           "qualifiedName": "file.ostream",
           "baseType": "",
-          "description": "Выходной текстовый поток для записи строк в файл.",
+          "description": "Выходной текстовый поток для записи текста в файл.",
           "notes": [],
-          "example": "file.ostream output = file.open(\"data.txt\", \"write\");\noutput.write_line(\"Первая строка\");\noutput.close();",
+          "example": "file.ostream output = file.open(\"data.txt\", \"write\");\noutput.write_line(\"Первая строка\");\noutput.write(\"Без автоматического переноса\");\noutput.close();",
           "properties": [
             {
               "name": "is_open",
@@ -1275,12 +1299,20 @@
               "documentation": ""
             },
             {
+              "name": "write",
+              "signature": "write(...values: any): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": true,
+              "documentation": "Записывает аргументы подряд без автоматического переноса строки."
+            },
+            {
               "name": "write_line",
               "signature": "write_line(...values: any): void",
               "returnType": "void",
               "parameters": [],
               "variadic": true,
-              "documentation": ""
+              "documentation": "Записывает аргументы подряд и автоматически добавляет перенос строки."
             }
           ]
         }
@@ -2005,7 +2037,8 @@
       "description": "Короткие звуковые эффекты и потоковое воспроизведение музыки.",
       "notes": [
         "Sound подходит для коротких эффектов, Music — для продолжительных записей.",
-        "volume принимает значения от 0.0 до 1.0."
+        "volume принимает значения от 0.0 до 1.0.",
+        "Гарантированные учебные форматы — WAV и MP3; OGG, AAC и M4A зависят от кодеков браузера или VSIX webview."
       ],
       "example": "audio.Sound click;\nclick.load_from_file(\"click.wav\");\nclick.volume = 0.4;\nclick.play();",
       "fullExamples": [],
@@ -3051,8 +3084,8 @@
             {
               "name": "selected_text",
               "type": "string",
-              "readonly": false,
-              "documentation": "",
+              "readonly": true,
+              "documentation": "Текст выбранного пункта. Свойство доступно только для чтения и изменяется через selected_index.",
               "callbacks": []
             },
             {
@@ -4089,6 +4122,13 @@
               "callbacks": []
             },
             {
+              "name": "on_change",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Вызывается после изменения многострочного текста пользователем.",
+              "callbacks": []
+            },
+            {
               "name": "placeholder",
               "type": "string",
               "readonly": false,
@@ -4522,11 +4562,28 @@
           "name": "Drawable",
           "qualifiedName": "drawable.Drawable",
           "baseType": "",
-          "description": "Общий базовый тип объектов, которые можно передать в Canvas.draw() и проверять методами contains() и intersects().",
+          "description": "Общий базовый тип объектов, которые можно передать в Canvas.draw() и проверять методами contains() и collides_with().",
           "notes": [],
           "example": "",
           "properties": [],
           "methods": [
+            {
+              "name": "collides_with",
+              "signature": "collides_with(other: drawable.Drawable): bool",
+              "returnType": "bool",
+              "parameters": [
+                {
+                  "name": "other",
+                  "type": "drawable.Drawable",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Проверяет коллизию с другим drawable-объектом. Касание границ считается коллизией."
+            },
             {
               "name": "contains",
               "signature": "contains(x: float, y: float): bool",
@@ -4551,23 +4608,6 @@
               ],
               "variadic": false,
               "documentation": "Проверяет, находится ли мировая точка внутри объекта. Точка на границе считается находящейся внутри."
-            },
-            {
-              "name": "intersects",
-              "signature": "intersects(other: drawable.Drawable): bool",
-              "returnType": "bool",
-              "parameters": [
-                {
-                  "name": "other",
-                  "type": "drawable.Drawable",
-                  "optional": false,
-                  "defaultValue": "",
-                  "acceptedTypes": [],
-                  "acceptedDescription": ""
-                }
-              ],
-              "variadic": false,
-              "documentation": "Проверяет пересечение с другим drawable-объектом. Касание границ считается пересечением."
             }
           ]
         },
@@ -4805,7 +4845,7 @@
           "baseType": "drawable.Drawable",
           "description": "Canvas-объект, отображающий image.Static или image.Animation с origin, вращением и масштабом.",
           "notes": [
-            "contains() и intersects() используют весь прямоугольник картинки, включая прозрачные пиксели."
+            "contains() и collides_with() используют весь прямоугольник картинки, включая прозрачные пиксели."
           ],
           "example": "drawable.Sprite hero;\nhero.set_image(hero_picture);\nhero.x = 100;\nhero.y = 160;\nhero.set_scale(1.5, 1.5);",
           "properties": [
@@ -4963,7 +5003,7 @@
           "baseType": "drawable.Drawable",
           "description": "Текстовый Canvas-объект с выбранным шрифтом, размером, цветом, origin и вращением.",
           "notes": [
-            "contains() и intersects() используют прямоугольную область строки, рассчитанную по метрикам загруженного шрифта, а не контуры букв.",
+            "contains() и collides_with() используют прямоугольную область строки, рассчитанную по метрикам загруженного шрифта, а не контуры букв.",
             "Без явно назначенного Font Text использует встроенный Source Code Pro; пользовательские TTF, OTF, WOFF и WOFF2 тоже измеряются точно.",
             "Если в загруженном шрифте нет символа, геометрическая проверка сообщает об этом вместо неточного измерения fallback-шрифта."
           ],

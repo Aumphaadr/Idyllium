@@ -39,7 +39,7 @@ void function mouse_move(gui.Canvas canvas, gui.MouseEvent e) {
         target.border_color = colors.TRANSPARENT;
     }
 
-    if (target.intersects(probe)) {
+    if (target.collides_with(probe)) {
         target.fill_color = colors.RED;
     } else {
         target.fill_color = colors.RGB(34, 145, 188);
@@ -52,7 +52,7 @@ main() {
     gui.Window win;
     win.width = 600;
     win.height = 400;
-    win.title = "contains() и intersects()";
+    win.title = "contains() и collides_with()";
 
     gui.Canvas canvas;
     canvas.x = 20;

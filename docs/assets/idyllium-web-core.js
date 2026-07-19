@@ -1845,6 +1845,11 @@ class Parser {
         if (this.check(tokens_1.TokenKind.LeftBrace)) {
             return this.parseBlock();
         }
+        if (this.check(tokens_1.TokenKind.KwElse)) {
+            const elseToken = this.advance();
+            this.error(elseToken.range, "'else' has no matching 'if'; without braces an if branch contains only one statement (wrap multiple statements in '{ ... }')");
+            return this.parseStatement();
+        }
         return this.parseExpressionStatement();
     }
     parseVariableDeclaration() {
@@ -4878,6 +4883,10 @@ function createDefaultStandardLibrary() {
         typeSpec('istream', [
             propertySpec('is_open', types_1.BOOL, true, 'Показывает, открыт ли поток.'),
         ], [
+            functionSpec('read', [{ name: 'count', type: types_1.INT }], types_1.STRING, {
+                minArguments: 0,
+                documentation: 'Читает count символов либо весь оставшийся текст, если count не указан.',
+            }),
             functionSpec('read_line', [], types_1.STRING),
             functionSpec('read_all', [], types_1.STRING),
             functionSpec('has_next_line', [], types_1.BOOL),
@@ -4886,9 +4895,15 @@ function createDefaultStandardLibrary() {
         typeSpec('ostream', [
             propertySpec('is_open', types_1.BOOL, true, 'Показывает, открыт ли поток.'),
         ], [
+            functionSpec('write', [], types_1.VOID, {
+                variadic: true,
+                variadicTypes: [types_1.ANY_TYPE],
+                documentation: 'Записывает значения без автоматического перевода строки.',
+            }),
             functionSpec('write_line', [], types_1.VOID, {
                 variadic: true,
                 variadicTypes: [types_1.ANY_TYPE],
+                documentation: 'Записывает значения и добавляет перевод строки.',
             }),
             functionSpec('close', [], types_1.VOID),
         ]),
@@ -5204,6 +5219,7 @@ function createDefaultStandardLibrary() {
         typeSpec('TextEdit', [
             ...positioned,
             ...visible,
+            ...changeable,
             ...colorRoles,
             propertySpec('text', types_1.STRING),
             propertySpec('placeholder', types_1.STRING),
@@ -5266,7 +5282,7 @@ function createDefaultStandardLibrary() {
             ...visible,
             ...changeable,
             propertySpec('selected_index', types_1.INT),
-            propertySpec('selected_text', types_1.STRING),
+            propertySpec('selected_text', types_1.STRING, true, 'Текст выбранного пункта; изменяется через selected_index.'),
         ], [
             functionSpec('add_item', [{ name: 'text', type: types_1.STRING }], types_1.VOID),
             functionSpec('clear_items', [], types_1.VOID),
@@ -5322,8 +5338,8 @@ function createDefaultStandardLibrary() {
             ], types_1.BOOL, {
                 documentation: 'Проверяет, находится ли мировая точка внутри объекта. Точка на границе считается находящейся внутри.',
             }),
-            functionSpec('intersects', [{ name: 'other', type: drawableDrawable }], types_1.BOOL, {
-                documentation: 'Проверяет пересечение с другим drawable-объектом. Касание границ считается пересечением.',
+            functionSpec('collides_with', [{ name: 'other', type: drawableDrawable }], types_1.BOOL, {
+                documentation: 'Проверяет коллизию с другим drawable-объектом. Касание границ считается коллизией.',
             }),
         ]),
         typeSpec('Rectangle', [
@@ -9734,36 +9750,64 @@ function createRuntime(options = {}) {
         if (!runtimeIsFile(fileSystem, filePath, sourceFile, line, 'reading')) {
             throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${filePath}' for reading: path is not a file`);
         }
-        let content;
-        let lines;
+        let characters;
         try {
-            content = fileSystem.readText(filePath);
-            lines = splitFileLines(content);
+            characters = Array.from(fileSystem.readText(filePath));
         }
         catch (error) {
             throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${filePath}' for reading: ${errorMessage(error)}`);
         }
-        let index = 0;
+        let offset = 0;
         let closed = false;
+        const readRemaining = () => {
+            const result = characters.slice(offset).join('');
+            offset = characters.length;
+            return result;
+        };
         const stream = {
             __idylliumType: 'file.istream',
             is_open: true,
+            read: contextFunction((...rawArgs) => {
+                const { values, file, line: callLine } = splitContextArgs(rawArgs);
+                expectOpen(!closed, 'istream.read()', file, callLine);
+                if (values.length === 0)
+                    return readRemaining();
+                const count = integerNumber(values[0], 'istream.read() count', file, callLine);
+                if (count < 0) {
+                    throw new IdylliumRuntimeError(file, callLine, `istream.read() count must be non-negative, got ${count}`);
+                }
+                const end = Math.min(characters.length, offset + count);
+                const result = characters.slice(offset, end).join('');
+                offset = end;
+                return result;
+            }),
             read_line: contextFunction((file, callLine) => {
                 expectOpen(!closed, 'istream.read_line()', file, callLine);
-                if (index >= lines.length) {
+                if (offset >= characters.length) {
                     throw new IdylliumRuntimeError(file, callLine, 'istream.read_line() cannot read past end of file');
                 }
-                return lines[index++];
+                let end = offset;
+                while (end < characters.length) {
+                    const character = characters[end++];
+                    if (character === '\n')
+                        break;
+                    if (character === '\r') {
+                        if (characters[end] === '\n')
+                            end++;
+                        break;
+                    }
+                }
+                const result = characters.slice(offset, end).join('');
+                offset = end;
+                return result;
             }),
             read_all: contextFunction((file, callLine) => {
                 expectOpen(!closed, 'istream.read_all()', file, callLine);
-                const rest = lines.slice(index).join('');
-                index = lines.length;
-                return rest;
+                return readRemaining();
             }),
             has_next_line: contextFunction((file, callLine) => {
                 expectOpen(!closed, 'istream.has_next_line()', file, callLine);
-                return index < lines.length;
+                return offset < characters.length;
             }),
             close: () => {
                 closed = true;
@@ -9790,10 +9834,15 @@ function createRuntime(options = {}) {
         const stream = {
             __idylliumType: 'file.ostream',
             is_open: true,
+            write: contextFunction(async (...rawArgs) => {
+                const { values, file, line: callLine } = splitContextArgs(rawArgs);
+                expectOpen(!closed, 'ostream.write()', file, callLine);
+                fileSystem.appendText(filePath, await formatConsoleValues(values));
+            }),
             write_line: contextFunction(async (...rawArgs) => {
                 const { values, file, line: callLine } = splitContextArgs(rawArgs);
                 expectOpen(!closed, 'ostream.write_line()', file, callLine);
-                fileSystem.appendText(filePath, await formatConsoleValues(values));
+                fileSystem.appendText(filePath, `${await formatConsoleValues(values)}\n`);
             }),
             close: () => {
                 closed = true;
@@ -10784,12 +10833,6 @@ function addMemoryDirectory(directories, directory) {
     if (parent !== normalized)
         addMemoryDirectory(directories, parent);
     directories.add(normalized);
-}
-function splitFileLines(source) {
-    if (source.length === 0)
-        return [];
-    const matches = source.match(/.*(?:\r\n|\n|$)/gu) ?? [];
-    return matches.filter((line, index) => line.length > 0 || index < matches.length - 1);
 }
 function splitContextArgs(args) {
     const file = args[args.length - 2];
@@ -12171,11 +12214,11 @@ function attachDrawableGeometry(obj, typeName, state) {
         };
         return (0, drawable_geometry_1.collisionShapeContains)(drawableCollisionShape(obj, `${typeName}.contains()`, file, line, state), point);
     });
-    obj.intersects = contextFunction((other, file, line) => {
+    obj.collides_with = contextFunction((other, file, line) => {
         if (!isDrawableObject(other)) {
-            throw new IdylliumRuntimeError(file, line, `${typeName}.intersects() expects drawable object, got '${runtimeTypeName(other)}'`);
+            throw new IdylliumRuntimeError(file, line, `${typeName}.collides_with() expects drawable object, got '${runtimeTypeName(other)}'`);
         }
-        return (0, drawable_geometry_1.collisionShapesIntersect)(drawableCollisionShape(obj, `${typeName}.intersects()`, file, line, state), drawableCollisionShape(other, `${typeName}.intersects()`, file, line, state));
+        return (0, drawable_geometry_1.collisionShapesIntersect)(drawableCollisionShape(obj, `${typeName}.collides_with()`, file, line, state), drawableCollisionShape(other, `${typeName}.collides_with()`, file, line, state));
     });
 }
 function drawableCollisionShape(obj, operation, file, line, state) {

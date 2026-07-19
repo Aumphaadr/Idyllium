@@ -152,7 +152,7 @@ async function testNodeProjectBoundary(): Promise<void> {
     fs.writeFileSync(sourceFile, source, 'utf8');
     const success = await runIdyllium(source, { projectRoot: project }, { file: sourceFile });
     assert(success.success, success.runtimeError ?? success.compilation.diagnosticsText);
-    assert(fs.readFileSync(path.join(project, 'archive/items/value.txt'), 'utf8') === '42', 'Node copy lost file contents');
+    assert(fs.readFileSync(path.join(project, 'archive/items/value.txt'), 'utf8') === '42\n', 'Node copy lost file contents');
 
     const escapeSource = [
       'use file;',

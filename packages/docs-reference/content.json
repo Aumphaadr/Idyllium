@@ -128,6 +128,11 @@
           "title": "if и else",
           "description": "Условие в круглых скобках обязано иметь тип bool.",
           "code": "if (temperature > 37.0) {\n    console.writeln(\"Высокая температура\");\n} else if (temperature < 35.5) {\n    console.writeln(\"Низкая температура\");\n} else {\n    console.writeln(\"Температура в норме\");\n}"
+        },
+        {
+          "title": "Одна команда без фигурных скобок",
+          "description": "Скобки можно опустить только для одной команды. Отступы не объединяют команды в ветку: если действий несколько, используйте { ... }.",
+          "code": "if (ready)\n    console.writeln(\"Старт\");\nelse\n    console.writeln(\"Ожидание\");\n\nconsole.writeln(\"Эта команда выполняется всегда\");"
         }
       ]
     },
@@ -291,6 +296,8 @@
       "description": "Чтение и запись текстовых файлов, а также работа с файлами и каталогами проекта.",
       "notes": [
         "Режим read возвращает file.istream, режим write — file.ostream.",
+        "read(count) читает указанное количество символов; read() и read_all() читают весь остаток.",
+        "write() не добавляет перенос строки, write_line() добавляет его автоматически.",
         "После завершения работы поток следует закрыть методом close().",
         "copy() и rename() не перезаписывают существующий путь назначения.",
         "Непустой каталог удаляется только при явном recursive=true."
@@ -327,7 +334,8 @@
       "description": "Короткие звуковые эффекты и потоковое воспроизведение музыки.",
       "notes": [
         "Sound подходит для коротких эффектов, Music — для продолжительных записей.",
-        "volume принимает значения от 0.0 до 1.0."
+        "volume принимает значения от 0.0 до 1.0.",
+        "Гарантированные учебные форматы — WAV и MP3; OGG, AAC и M4A зависят от кодеков браузера или VSIX webview."
       ],
       "example": "audio.Sound click;\nclick.load_from_file(\"click.wav\");\nclick.volume = 0.4;\nclick.play();"
     },
@@ -423,11 +431,11 @@
     },
     "file.istream": {
       "description": "Входной текстовый поток для последовательного чтения файла.",
-      "example": "file.istream input = file.open(\"data.txt\", \"read\");\nstring contents = input.read_all();\ninput.close();"
+      "example": "file.istream input = file.open(\"data.txt\", \"read\");\nstring prefix = input.read(5);\nstring contents = input.read();\ninput.close();"
     },
     "file.ostream": {
-      "description": "Выходной текстовый поток для записи строк в файл.",
-      "example": "file.ostream output = file.open(\"data.txt\", \"write\");\noutput.write_line(\"Первая строка\");\noutput.close();"
+      "description": "Выходной текстовый поток для записи текста в файл.",
+      "example": "file.ostream output = file.open(\"data.txt\", \"write\");\noutput.write_line(\"Первая строка\");\noutput.write(\"Без автоматического переноса\");\noutput.close();"
     },
     "json.Value": {
       "description": "Универсальное JSON-значение: null, строка, число, bool, объект или массив.",
@@ -579,7 +587,7 @@
       "example": "gui.Timer timer;\ntimer.interval = 1000;\ntimer.on_tick = update_clock;\ntimer.start();"
     },
     "drawable.Drawable": {
-      "description": "Общий базовый тип объектов, которые можно передать в Canvas.draw() и проверять методами contains() и intersects()."
+      "description": "Общий базовый тип объектов, которые можно передать в Canvas.draw() и проверять методами contains() и collides_with()."
     },
     "drawable.Circle": {
       "description": "Круг с радиусом, заливкой и границей. По умолчанию x/y указывают левый верхний угол ограничивающего квадрата.",
@@ -599,14 +607,14 @@
     "drawable.Sprite": {
       "description": "Canvas-объект, отображающий image.Static или image.Animation с origin, вращением и масштабом.",
       "notes": [
-        "contains() и intersects() используют весь прямоугольник картинки, включая прозрачные пиксели."
+        "contains() и collides_with() используют весь прямоугольник картинки, включая прозрачные пиксели."
       ],
       "example": "drawable.Sprite hero;\nhero.set_image(hero_picture);\nhero.x = 100;\nhero.y = 160;\nhero.set_scale(1.5, 1.5);"
     },
     "drawable.Text": {
       "description": "Текстовый Canvas-объект с выбранным шрифтом, размером, цветом, origin и вращением.",
       "notes": [
-        "contains() и intersects() используют прямоугольную область строки, рассчитанную по метрикам загруженного шрифта, а не контуры букв.",
+        "contains() и collides_with() используют прямоугольную область строки, рассчитанную по метрикам загруженного шрифта, а не контуры букв.",
         "Без явно назначенного Font Text использует встроенный Source Code Pro; пользовательские TTF, OTF, WOFF и WOFF2 тоже измеряются точно.",
         "Если в загруженном шрифте нет символа, геометрическая проверка сообщает об этом вместо неточного измерения fallback-шрифта."
       ],
@@ -684,7 +692,11 @@
     "file.remove": "Удаляет файл или каталог; для непустого каталога требуется recursive=true.",
     "file.istream.is_open": "Показывает, открыт ли входной поток.",
     "file.ostream.is_open": "Показывает, открыт ли выходной поток.",
+    "file.istream.read": "Читает count символов или весь оставшийся текст, если count не указан.",
+    "file.istream.read_line": "Читает следующую строку вместе с завершающим переводом строки, если он есть.",
     "file.istream.read_all": "Читает весь оставшийся текст потока одной строкой.",
+    "file.ostream.write": "Записывает аргументы подряд без автоматического переноса строки.",
+    "file.ostream.write_line": "Записывает аргументы подряд и автоматически добавляет перенос строки.",
     "json.Value": "Создаёт json.Value; вызов без аргумента создаёт JSON null.",
     "audio.Sound.load_from_file": "Загружает аудиофайл или сообщает понятную runtime error.",
     "audio.Music.load_from_file": "Подготавливает музыкальный файл к потоковому воспроизведению.",
@@ -717,6 +729,8 @@
     "fonts.Font.load_from_file": "Проверяет файл, определяет его формат и подготавливает общий ресурс шрифта.",
     "gui.Widget.font": "Шрифт виджета. Если не задан явно, наследуется от Window или Frame.",
     "gui.Window.font": "Шрифт по умолчанию для текстовых дочерних виджетов окна.",
+    "gui.TextEdit.on_change": "Вызывается после изменения многострочного текста пользователем.",
+    "gui.ComboBox.selected_text": "Текст выбранного пункта. Свойство доступно только для чтения и изменяется через selected_index.",
     "gui.ImageBox.set_image": "Устанавливает общий ресурс типа image.Image.",
     "drawable.Sprite.set_image": "Устанавливает общий ресурс типа image.Image.",
     "colors.RGB": "Создаёт непрозрачный цвет по красному, зелёному и синему каналам от 0 до 255.",

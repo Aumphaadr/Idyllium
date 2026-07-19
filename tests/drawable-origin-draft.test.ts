@@ -13,7 +13,7 @@ async function main(): Promise<void> {
     use drawable;
 
     bool function objects_touch(drawable.Drawable first, drawable.Drawable second) {
-        return first.intersects(second);
+        return first.collides_with(second);
     }
 
     main() {
@@ -188,10 +188,10 @@ async function main(): Promise<void> {
 
             console.writeln(title.contains(180.8, 139.9));
             console.writeln(title.contains(181, 120));
-            console.writeln(title.intersects(marker));
+            console.writeln(title.collides_with(marker));
 
             title.rotate(90);
-            console.writeln(title.intersects(marker));
+            console.writeln(title.collides_with(marker));
             console.writeln(title.contains(80, 140));
         }
       `,
@@ -244,7 +244,7 @@ async function main(): Promise<void> {
     files: { '/workspace/main.idyl': completionSource },
   });
   const completions = project.completions({ file: '/workspace/main.idyl', offset: completionSource.length });
-  for (const expected of ['origin_x', 'set_origin', 'rotate', 'contains', 'intersects']) {
+  for (const expected of ['origin_x', 'set_origin', 'rotate', 'contains', 'collides_with']) {
     assert(completions.some((item) => item.name === expected), `expected Rectangle.${expected} completion`);
   }
 

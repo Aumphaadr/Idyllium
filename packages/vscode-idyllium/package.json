@@ -2,7 +2,7 @@
   "name": "idyllium-vsc",
   "displayName": "Idyllium",
   "description": "Поддержка учебного языка программирования Idyllium для VS Code.",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "publisher": "idyllium",
   "private": false,
   "license": "MIT",

@@ -1,9 +1,9 @@
 {
   "version": 1,
-  "sourceRoot": "/home/nathaniel/IdylliumProjects/Idyllium/docs/lessons",
+  "sourceRoot": "/home/nathaniel/IdylliumProjects/IdylliumNext/packages/docs/lessons",
   "normalization": "IdylCodeBlock visible code: raw.replace(/^\\n/, '').replace(/\\n\\s*$/, '') with LF line endings",
   "totalExamples": 366,
-  "contentSha256": "d4d0a4ae33a15347dc66861d5331853cde0b1a56c1f48eac39ac940f2b638fec",
+  "contentSha256": "c098099b0da94cf82451d5e4a0f297c2fd1c47a3b09640dea254ffc24a690fa1",
   "examples": [
     {
       "id": "cli.001_hello.001",
@@ -2603,9 +2603,9 @@
       "id": "cli.020_types.011",
       "section": "cli",
       "lessonPath": "cli/020_types.html",
-      "lessonTitle": "Библиотека types",
+      "lessonTitle": "Frozen lesson example: cli/020_types",
       "blockIndex": 11,
-      "sourceLine": 334,
+      "sourceLine": 1,
       "codeFile": "examples/cli/020_types/011.idyl",
       "sha256": "b336ba079f62d7d6ebafe8810d6973316fc271ebdc442242dc7c07cc45581108",
       "form": "program",
@@ -2615,7 +2615,9 @@
         "module:console",
         "module:types"
       ],
-      "reasons": []
+      "reasons": [
+        "Frozen spec example referenced by expectations.json."
+      ]
     },
     {
       "id": "cli.021_encoding.001",
@@ -3091,7 +3093,7 @@
       "blockIndex": 3,
       "sourceLine": 114,
       "codeFile": "examples/cli/024_files/003.idyl",
-      "sha256": "59b258f20e183ca2a1e76153613895e5bd544addb804c9908ff1ccf09daef0c2",
+      "sha256": "51ae47fb3c0ad498de655012cbe0236c4c4a3206bdf025f5625dbce31f4b5b00",
       "form": "snippet",
       "expectation": "unspecified",
       "tags": [],
@@ -3105,7 +3107,7 @@
       "lessonPath": "cli/024_files.html",
       "lessonTitle": "Работа с файлами",
       "blockIndex": 4,
-      "sourceLine": 127,
+      "sourceLine": 128,
       "codeFile": "examples/cli/024_files/004.idyl",
       "sha256": "fe899b305f37e748b3ed349a35d54b9d4e886338131acc18a6a03fb9bbd900d7",
       "form": "snippet",
@@ -3121,9 +3123,9 @@
       "lessonPath": "cli/024_files.html",
       "lessonTitle": "Работа с файлами",
       "blockIndex": 5,
-      "sourceLine": 136,
+      "sourceLine": 137,
       "codeFile": "examples/cli/024_files/005.idyl",
-      "sha256": "efe665fa78de4bb4eb9e2b1c4c45217fd9e1c4685ef60d72f0c5b0631741f560",
+      "sha256": "b9c9db2457961f9197f8b976283b17a24d5f5ed56a1f350edfca1f90123eca14",
       "form": "program",
       "expectation": "unspecified",
       "tags": [
@@ -3138,7 +3140,7 @@
       "lessonPath": "cli/024_files.html",
       "lessonTitle": "Работа с файлами",
       "blockIndex": 6,
-      "sourceLine": 157,
+      "sourceLine": 158,
       "codeFile": "examples/cli/024_files/006.idyl",
       "sha256": "a2aa4365c9a33e18ad076f114e9a77818d4295a4e9e40c272b96c37917c1a9c9",
       "form": "snippet",
@@ -3154,7 +3156,7 @@
       "lessonPath": "cli/024_files.html",
       "lessonTitle": "Работа с файлами",
       "blockIndex": 7,
-      "sourceLine": 179,
+      "sourceLine": 180,
       "codeFile": "examples/cli/024_files/007.idyl",
       "sha256": "cc0f8e8b4463d82a5512745415a2d56344f521d2690fe93b60c108073603f5a6",
       "form": "program",
@@ -3173,7 +3175,7 @@
       "lessonPath": "cli/024_files.html",
       "lessonTitle": "Работа с файлами",
       "blockIndex": 8,
-      "sourceLine": 206,
+      "sourceLine": 207,
       "codeFile": "examples/cli/024_files/008.idyl",
       "sha256": "b45882f7f9a428a84bf31eac5b948a34bacfa70bb213119ccb0e34e6a6570269",
       "form": "program",
@@ -3192,7 +3194,7 @@
       "lessonPath": "cli/024_files.html",
       "lessonTitle": "Работа с файлами",
       "blockIndex": 9,
-      "sourceLine": 228,
+      "sourceLine": 229,
       "codeFile": "examples/cli/024_files/009.idyl",
       "sha256": "f190a67c068985982a4d98f7280cc3122f846083ec495a830ae5c6275943d8e5",
       "form": "snippet",
@@ -3210,7 +3212,7 @@
       "lessonPath": "cli/024_files.html",
       "lessonTitle": "Работа с файлами",
       "blockIndex": 10,
-      "sourceLine": 239,
+      "sourceLine": 240,
       "codeFile": "examples/cli/024_files/010.idyl",
       "sha256": "e7ae3213abf6aa91aa5e1172608445edc67f47c6c74d6411f66e49d2fa0ba5cf",
       "form": "program",
@@ -4769,6 +4771,266 @@
       ]
     },
     {
+      "id": "sqlite.001_intro.001",
+      "section": "sqlite",
+      "lessonPath": "sqlite/001_intro.html",
+      "lessonTitle": "Frozen lesson example: sqlite/001_intro",
+      "blockIndex": 1,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/001_intro/001.idyl",
+      "sha256": "0d78e494c058a20f0372c6d78c9ec1a6da56b03e7b1c6bbe8e9e828423973ec0",
+      "form": "program",
+      "expectation": "unspecified",
+      "tags": [
+        "entry:main",
+        "module:console"
+      ],
+      "reasons": [
+        "Frozen spec example referenced by expectations.json."
+      ]
+    },
+    {
+      "id": "sqlite.002_changes.001",
+      "section": "sqlite",
+      "lessonPath": "sqlite/002_changes.html",
+      "lessonTitle": "Frozen lesson example: sqlite/002_changes",
+      "blockIndex": 1,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/002_changes/001.idyl",
+      "sha256": "e16cadaf337599d1bb296ee31e57d44d494618c5dff20f9680b4214890b1a005",
+      "form": "program",
+      "expectation": "reject",
+      "tags": [
+        "entry:main",
+        "feature:while",
+        "module:console"
+      ],
+      "reasons": [
+        "code contains an explicit teaching error marker",
+        "Frozen spec example referenced by expectations.json."
+      ]
+    },
+    {
+      "id": "sqlite.003_select.001",
+      "section": "sqlite",
+      "lessonPath": "sqlite/003_select.html",
+      "lessonTitle": "Frozen lesson example: sqlite/003_select",
+      "blockIndex": 1,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/003_select/001.idyl",
+      "sha256": "6f05b47b0a11bfc835ef55335eaba87baa9362304fcd4a56317439b0827dbfb0",
+      "form": "program",
+      "expectation": "unspecified",
+      "tags": [
+        "entry:main",
+        "feature:while",
+        "module:console"
+      ],
+      "reasons": [
+        "Frozen spec example referenced by expectations.json."
+      ]
+    },
+    {
+      "id": "sqlite.004_parameters.001",
+      "section": "sqlite",
+      "lessonPath": "sqlite/004_parameters.html",
+      "lessonTitle": "Frozen lesson example: sqlite/004_parameters",
+      "blockIndex": 1,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/004_parameters/001.idyl",
+      "sha256": "bf62aeadb4c318971bfd64b14d31a543f57455fdf805b108701805c97f123fc5",
+      "form": "program",
+      "expectation": "unspecified",
+      "tags": [
+        "entry:main",
+        "feature:if",
+        "module:console"
+      ],
+      "reasons": [
+        "Frozen spec example referenced by expectations.json."
+      ]
+    },
+    {
+      "id": "sqlite.005_filters.001",
+      "section": "sqlite",
+      "lessonPath": "sqlite/005_filters.html",
+      "lessonTitle": "Frozen lesson example: sqlite/005_filters",
+      "blockIndex": 1,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/005_filters/001.idyl",
+      "sha256": "ed63e2fff4b32634f7f381339ef8393509333f13fde1f1836455373aae7334e6",
+      "form": "program",
+      "expectation": "unspecified",
+      "tags": [
+        "entry:main",
+        "feature:while",
+        "module:console"
+      ],
+      "reasons": [
+        "Frozen spec example referenced by expectations.json."
+      ]
+    },
+    {
+      "id": "sqlite.006_null.001",
+      "section": "sqlite",
+      "lessonPath": "sqlite/006_null.html",
+      "lessonTitle": "Frozen lesson example: sqlite/006_null",
+      "blockIndex": 1,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/006_null/001.idyl",
+      "sha256": "072bea0e3a6971d14a6e3b669cbef39e2f21c9337dfe5554cf46c5e8ae0099b7",
+      "form": "program",
+      "expectation": "unspecified",
+      "tags": [
+        "entry:main",
+        "feature:if",
+        "feature:while",
+        "module:console"
+      ],
+      "reasons": [
+        "Frozen spec example referenced by expectations.json."
+      ]
+    },
+    {
+      "id": "sqlite.007_reuse.001",
+      "section": "sqlite",
+      "lessonPath": "sqlite/007_reuse.html",
+      "lessonTitle": "Frozen lesson example: sqlite/007_reuse",
+      "blockIndex": 1,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/007_reuse/001.idyl",
+      "sha256": "1e28296733d0c7eac31e7c62f09360f75a8aeaceae25df473bbdfd51591455cc",
+      "form": "program",
+      "expectation": "unspecified",
+      "tags": [
+        "entry:main",
+        "feature:array",
+        "feature:for",
+        "module:console"
+      ],
+      "reasons": [
+        "Frozen spec example referenced by expectations.json."
+      ]
+    },
+    {
+      "id": "sqlite.008_transactions.001",
+      "section": "sqlite",
+      "lessonPath": "sqlite/008_transactions.html",
+      "lessonTitle": "Frozen lesson example: sqlite/008_transactions",
+      "blockIndex": 1,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/008_transactions/001.idyl",
+      "sha256": "e5e11de45d41e083ee75a499f5dd881b2a52fb28990d37b26051036b038fdb79",
+      "form": "program",
+      "expectation": "unspecified",
+      "tags": [
+        "entry:main",
+        "feature:while",
+        "module:console"
+      ],
+      "reasons": [
+        "Frozen spec example referenced by expectations.json."
+      ]
+    },
+    {
+      "id": "sqlite.008_transactions.002",
+      "section": "sqlite",
+      "lessonPath": "sqlite/008_transactions.html",
+      "lessonTitle": "Frozen lesson example: sqlite/008_transactions",
+      "blockIndex": 2,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/008_transactions/002.idyl",
+      "sha256": "9573b8e2c22edba2ecdb0198965e8646f14684e09142269ed0dc13b078f29e3a",
+      "form": "program",
+      "expectation": "unspecified",
+      "tags": [
+        "entry:main",
+        "feature:if",
+        "module:console"
+      ],
+      "reasons": [
+        "Frozen spec example referenced by expectations.json."
+      ]
+    },
+    {
+      "id": "sqlite.009_scripts.001",
+      "section": "sqlite",
+      "lessonPath": "sqlite/009_scripts.html",
+      "lessonTitle": "Frozen lesson example: sqlite/009_scripts",
+      "blockIndex": 1,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/009_scripts/001.idyl",
+      "sha256": "1af6d0075a4bcb8a9fa41af91f3bcf32d1a19e42e5cad7a4c3bef6aede5fe4dc",
+      "form": "program",
+      "expectation": "unspecified",
+      "tags": [
+        "entry:main",
+        "feature:while",
+        "module:console",
+        "module:file"
+      ],
+      "reasons": [
+        "Frozen spec example referenced by expectations.json."
+      ]
+    },
+    {
+      "id": "sqlite.010_errors.001",
+      "section": "sqlite",
+      "lessonPath": "sqlite/010_errors.html",
+      "lessonTitle": "Frozen lesson example: sqlite/010_errors",
+      "blockIndex": 1,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/010_errors/001.idyl",
+      "sha256": "12264bc90f7bc4fa0d011b004372fb48a82cedd247ef13af2d4d07c4f93f7e6e",
+      "form": "program",
+      "expectation": "reject",
+      "tags": [
+        "entry:main"
+      ],
+      "reasons": [
+        "code contains an explicit teaching error marker",
+        "Frozen spec example referenced by expectations.json."
+      ]
+    },
+    {
+      "id": "sqlite.010_errors.002",
+      "section": "sqlite",
+      "lessonPath": "sqlite/010_errors.html",
+      "lessonTitle": "Frozen lesson example: sqlite/010_errors",
+      "blockIndex": 2,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/010_errors/002.idyl",
+      "sha256": "2004ebcc3a009abdc275091105c94ed652b7bead52b9520ab19f6ffd79c3a066",
+      "form": "program",
+      "expectation": "reject",
+      "tags": [
+        "entry:main"
+      ],
+      "reasons": [
+        "code contains an explicit teaching error marker",
+        "Frozen spec example referenced by expectations.json."
+      ]
+    },
+    {
+      "id": "sqlite.010_errors.003",
+      "section": "sqlite",
+      "lessonPath": "sqlite/010_errors.html",
+      "lessonTitle": "Frozen lesson example: sqlite/010_errors",
+      "blockIndex": 3,
+      "sourceLine": 1,
+      "codeFile": "examples/sqlite/010_errors/003.idyl",
+      "sha256": "95bd3ed138aae815a2e070ed90c12131a4ce400bae02be9e1b7e01237075cf4f",
+      "form": "program",
+      "expectation": "reject",
+      "tags": [
+        "entry:main"
+      ],
+      "reasons": [
+        "code contains an explicit teaching error marker",
+        "Frozen spec example referenced by expectations.json."
+      ]
+    },
+    {
       "id": "widgets.000_window.001",
       "section": "widgets",
       "lessonPath": "widgets/000_window.html",
@@ -6320,253 +6582,6 @@
       ],
       "reasons": [
         "code contains an explicit teaching error marker"
-      ]
-    },
-    {
-      "id": "sqlite.001_intro.001",
-      "section": "sqlite",
-      "lessonPath": "sqlite/intro.html",
-      "lessonTitle": "Первая база данных",
-      "blockIndex": 1,
-      "sourceLine": 1,
-      "codeFile": "examples/sqlite/001_intro/001.idyl",
-      "sha256": "0d78e494c058a20f0372c6d78c9ec1a6da56b03e7b1c6bbe8e9e828423973ec0",
-      "form": "program",
-      "expectation": "unspecified",
-      "tags": [
-        "entry:main",
-        "module:console",
-        "module:sqlite"
-      ],
-      "reasons": []
-    },
-    {
-      "id": "sqlite.002_changes.001",
-      "section": "sqlite",
-      "lessonPath": "sqlite/changes.html",
-      "lessonTitle": "Таблицы и первые записи",
-      "blockIndex": 1,
-      "sourceLine": 1,
-      "codeFile": "examples/sqlite/002_changes/001.idyl",
-      "sha256": "e16cadaf337599d1bb296ee31e57d44d494618c5dff20f9680b4214890b1a005",
-      "form": "program",
-      "expectation": "unspecified",
-      "tags": [
-        "entry:main",
-        "feature:while",
-        "module:console",
-        "module:sqlite"
-      ],
-      "reasons": []
-    },
-    {
-      "id": "sqlite.003_select.001",
-      "section": "sqlite",
-      "lessonPath": "sqlite/select.html",
-      "lessonTitle": "Чтение строк",
-      "blockIndex": 1,
-      "sourceLine": 1,
-      "codeFile": "examples/sqlite/003_select/001.idyl",
-      "sha256": "6f05b47b0a11bfc835ef55335eaba87baa9362304fcd4a56317439b0827dbfb0",
-      "form": "program",
-      "expectation": "unspecified",
-      "tags": [
-        "entry:main",
-        "feature:while",
-        "module:console",
-        "module:sqlite"
-      ],
-      "reasons": []
-    },
-    {
-      "id": "sqlite.004_parameters.001",
-      "section": "sqlite",
-      "lessonPath": "sqlite/parameters.html",
-      "lessonTitle": "Безопасные параметры",
-      "blockIndex": 1,
-      "sourceLine": 1,
-      "codeFile": "examples/sqlite/004_parameters/001.idyl",
-      "sha256": "bf62aeadb4c318971bfd64b14d31a543f57455fdf805b108701805c97f123fc5",
-      "form": "program",
-      "expectation": "unspecified",
-      "tags": [
-        "entry:main",
-        "module:console",
-        "module:sqlite"
-      ],
-      "reasons": []
-    },
-    {
-      "id": "sqlite.005_filters.001",
-      "section": "sqlite",
-      "lessonPath": "sqlite/filters.html",
-      "lessonTitle": "Поиск и фильтрация",
-      "blockIndex": 1,
-      "sourceLine": 1,
-      "codeFile": "examples/sqlite/005_filters/001.idyl",
-      "sha256": "ed63e2fff4b32634f7f381339ef8393509333f13fde1f1836455373aae7334e6",
-      "form": "program",
-      "expectation": "unspecified",
-      "tags": [
-        "entry:main",
-        "feature:while",
-        "module:console",
-        "module:sqlite"
-      ],
-      "reasons": []
-    },
-    {
-      "id": "sqlite.006_null.001",
-      "section": "sqlite",
-      "lessonPath": "sqlite/null.html",
-      "lessonTitle": "Неизвестные значения и null",
-      "blockIndex": 1,
-      "sourceLine": 1,
-      "codeFile": "examples/sqlite/006_null/001.idyl",
-      "sha256": "072bea0e3a6971d14a6e3b669cbef39e2f21c9337dfe5554cf46c5e8ae0099b7",
-      "form": "program",
-      "expectation": "unspecified",
-      "tags": [
-        "entry:main",
-        "feature:null",
-        "feature:while",
-        "module:console",
-        "module:sqlite"
-      ],
-      "reasons": []
-    },
-    {
-      "id": "sqlite.007_reuse.001",
-      "section": "sqlite",
-      "lessonPath": "sqlite/reuse.html",
-      "lessonTitle": "Много записей одним запросом",
-      "blockIndex": 1,
-      "sourceLine": 1,
-      "codeFile": "examples/sqlite/007_reuse/001.idyl",
-      "sha256": "1e28296733d0c7eac31e7c62f09360f75a8aeaceae25df473bbdfd51591455cc",
-      "form": "program",
-      "expectation": "unspecified",
-      "tags": [
-        "entry:main",
-        "feature:array",
-        "feature:for",
-        "module:console",
-        "module:sqlite"
-      ],
-      "reasons": []
-    },
-    {
-      "id": "sqlite.008_transactions.001",
-      "section": "sqlite",
-      "lessonPath": "sqlite/transactions.html",
-      "lessonTitle": "Всё или ничего",
-      "blockIndex": 1,
-      "sourceLine": 1,
-      "codeFile": "examples/sqlite/008_transactions/001.idyl",
-      "sha256": "e5e11de45d41e083ee75a499f5dd881b2a52fb28990d37b26051036b038fdb79",
-      "form": "program",
-      "expectation": "unspecified",
-      "tags": [
-        "entry:main",
-        "feature:while",
-        "module:console",
-        "module:sqlite"
-      ],
-      "reasons": []
-    },
-    {
-      "id": "sqlite.008_transactions.002",
-      "section": "sqlite",
-      "lessonPath": "sqlite/transactions.html",
-      "lessonTitle": "Всё или ничего",
-      "blockIndex": 2,
-      "sourceLine": 1,
-      "codeFile": "examples/sqlite/008_transactions/002.idyl",
-      "sha256": "9573b8e2c22edba2ecdb0198965e8646f14684e09142269ed0dc13b078f29e3a",
-      "form": "program",
-      "expectation": "unspecified",
-      "tags": [
-        "entry:main",
-        "module:console",
-        "module:sqlite"
-      ],
-      "reasons": []
-    },
-    {
-      "id": "sqlite.009_scripts.001",
-      "section": "sqlite",
-      "lessonPath": "sqlite/scripts.html",
-      "lessonTitle": "SQL в отдельном файле",
-      "blockIndex": 1,
-      "sourceLine": 1,
-      "codeFile": "examples/sqlite/009_scripts/001.idyl",
-      "sha256": "1af6d0075a4bcb8a9fa41af91f3bcf32d1a19e42e5cad7a4c3bef6aede5fe4dc",
-      "form": "program",
-      "expectation": "unspecified",
-      "tags": [
-        "entry:main",
-        "feature:while",
-        "module:console",
-        "module:file",
-        "module:sqlite"
-      ],
-      "reasons": []
-    },
-    {
-      "id": "sqlite.010_errors.001",
-      "section": "sqlite",
-      "lessonPath": "sqlite/errors.html",
-      "lessonTitle": "Типичные ошибки",
-      "blockIndex": 1,
-      "sourceLine": 1,
-      "codeFile": "examples/sqlite/010_errors/001.idyl",
-      "sha256": "12264bc90f7bc4fa0d011b004372fb48a82cedd247ef13af2d4d07c4f93f7e6e",
-      "form": "program",
-      "expectation": "reject",
-      "tags": [
-        "entry:main",
-        "module:sqlite"
-      ],
-      "reasons": [
-        "example is expected to fail at runtime"
-      ]
-    },
-    {
-      "id": "sqlite.010_errors.002",
-      "section": "sqlite",
-      "lessonPath": "sqlite/errors.html",
-      "lessonTitle": "Типичные ошибки",
-      "blockIndex": 2,
-      "sourceLine": 1,
-      "codeFile": "examples/sqlite/010_errors/002.idyl",
-      "sha256": "2004ebcc3a009abdc275091105c94ed652b7bead52b9520ab19f6ffd79c3a066",
-      "form": "program",
-      "expectation": "reject",
-      "tags": [
-        "entry:main",
-        "module:sqlite"
-      ],
-      "reasons": [
-        "example is expected to fail at runtime"
-      ]
-    },
-    {
-      "id": "sqlite.010_errors.003",
-      "section": "sqlite",
-      "lessonPath": "sqlite/errors.html",
-      "lessonTitle": "Типичные ошибки",
-      "blockIndex": 3,
-      "sourceLine": 1,
-      "codeFile": "examples/sqlite/010_errors/003.idyl",
-      "sha256": "95bd3ed138aae815a2e070ed90c12131a4ce400bae02be9e1b7e01237075cf4f",
-      "form": "program",
-      "expectation": "reject",
-      "tags": [
-        "entry:main",
-        "module:sqlite"
-      ],
-      "reasons": [
-        "example is expected to fail at runtime"
       ]
     }
   ]

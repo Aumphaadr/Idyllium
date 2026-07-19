@@ -597,8 +597,9 @@ test('file streams read and write relative to source file', async () => {
       '    fin.close();',
       '',
       '    file.ostream fout = file.open("output.txt", "write");',
-      '    fout.write_line(first);',
-      '    fout.write_line(second, "\\n", "Готово");',
+      '    fout.write(first);',
+      '    fout.write_line(second);',
+      '    fout.write("Готово");',
       '    fout.close();',
       '',
       '    console.write(first, second, ":", has_more, ":", file.exists("output.txt"));',
@@ -608,6 +609,34 @@ test('file streams read and write relative to source file', async () => {
     assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
     assert(result.output === 'Кирка\nМеч:false:true', `unexpected file stream output: ${JSON.stringify(result.output)}`);
     assert(fs.readFileSync(path.join(dir, 'output.txt'), 'utf8') === 'Кирка\nМеч\nГотово', 'unexpected written file content');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('file stream read counts Unicode characters and shares its cursor', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'idyllium-files-'));
+  const sourceFile = path.join(dir, 'main.idyl');
+  fs.writeFileSync(path.join(dir, 'input.txt'), 'A🙂Б\r\nкот', 'utf8');
+
+  try {
+    const result = await runIdyllium([
+      'use console;',
+      'use file;',
+      '',
+      'main() {',
+      '    file.istream fin = file.open("input.txt", "read");',
+      '    string first = fin.read(2);',
+      '    string line_end = fin.read_line();',
+      '    string rest = fin.read();',
+      '    string empty = fin.read(10);',
+      '    fin.close();',
+      '    console.write(first, "|", line_end, "|", rest, "|", empty);',
+      '}',
+    ].join('\n'), {}, { file: sourceFile });
+
+    assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+    assert(result.output === 'A🙂|Б\r\n|кот|', `unexpected character read output: ${JSON.stringify(result.output)}`);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -796,7 +825,7 @@ test('json module creates serializes and writes values', async () => {
       '    string pretty = root.to_pretty_json();',
       '',
       '    file.ostream f = file.open("output.json", "write");',
-      '    f.write_line(root.to_pretty_json(4));',
+      '    f.write(root.to_pretty_json(4));',
       '    f.close();',
       '',
       '    console.write(compact, "\\n", pretty);',
@@ -878,6 +907,21 @@ test('file stream runtime errors are readable', async () => {
       `unexpected read-after-close error: ${JSON.stringify(readAfterClose.runtimeError)}`,
     );
 
+    const negativeRead = await runIdyllium([
+      'use file;',
+      '',
+      'main() {',
+      '    file.istream fin = file.open("input.txt", "read");',
+      '    string text = fin.read(-1);',
+      '}',
+    ].join('\n'), {}, { file: sourceFile });
+
+    assert(!negativeRead.success, 'expected negative read count to fail');
+    assert(
+      negativeRead.runtimeError?.includes(`${sourceFile}:5: runtime error: istream.read() count must be non-negative, got -1`) === true,
+      `unexpected negative-read error: ${JSON.stringify(negativeRead.runtimeError)}`,
+    );
+
     const writeAfterClose = await runIdyllium([
       'use file;',
       '',
@@ -946,8 +990,8 @@ test('browser runtime returns written virtual project files', async () => {
         '',
         'main() {',
         '    file.ostream fout = file.open("output.txt", "write");',
-        '    fout.write_line("Привет, мир!", \'\\n\');',
-        '    fout.write_line("Файл создан с помощью Idyllium!");',
+        '    fout.write_line("Привет, мир!");',
+        '    fout.write("Файл создан с помощью Idyllium!");',
         '    fout.close();',
         '}',
       ].join('\n'),
@@ -2974,6 +3018,17 @@ test('removed widget color legacy properties are rejected', () => {
   `, "has no property 'color'");
 });
 
+test('derived ComboBox selected_text is read-only', () => {
+  assertFails(`
+    use gui;
+
+    main() {
+      gui.ComboBox combo;
+      combo.selected_text = "Blue";
+    }
+  `, "property 'selected_text' is read-only");
+});
+
 test('gui color inheritance metadata tracks explicit widget colors', async () => {
   const result = await runWithInspectableRuntime(`
     use gui;
@@ -3390,6 +3445,11 @@ test('gui widget events update properties and callbacks', async () => {
         status.text = input.text;
       };
 
+      gui.TextEdit notes;
+      notes.on_change = void function() {
+        status.text = "notes:" + notes.text;
+      };
+
       gui.Slider slider;
       slider.min = 0;
       slider.max = 10;
@@ -3428,6 +3488,7 @@ test('gui widget events update properties and callbacks', async () => {
       win.add_child(status);
       win.add_child(btn);
       win.add_child(input);
+      win.add_child(notes);
       win.add_child(slider);
       win.add_child(cb);
       win.add_child(rb1);
@@ -3453,6 +3514,10 @@ test('gui widget events update properties and callbacks', async () => {
   await result.runtime.dispatchGuiEvent(widget('gui.LineEdit').id, 'change', { text: 'Ada' });
   assert(widget('gui.LineEdit').properties.text === 'Ada', 'expected LineEdit text to update');
   assert(status().properties.text === 'Ada', `unexpected status after input: ${JSON.stringify(status())}`);
+
+  await result.runtime.dispatchGuiEvent(widget('gui.TextEdit').id, 'change', { text: 'Two\nlines' });
+  assert(widget('gui.TextEdit').properties.text === 'Two\nlines', 'expected TextEdit text to update');
+  assert(status().properties.text === 'notes:Two\nlines', `unexpected status after TextEdit: ${JSON.stringify(status())}`);
 
   await result.runtime.dispatchGuiEvent(widget('gui.Slider').id, 'change', { value: 7 });
   assert(widget('gui.Slider').properties.value === 7, 'expected Slider value to update');
@@ -3666,6 +3731,50 @@ test('return and loop control diagnostics', () => {
 
     main() {}
   `, "function with return type 'int' must return a value");
+});
+
+test('brace-less if branches run and orphan else diagnostics are readable', async () => {
+  const valid = await runIdyllium(`
+    use console;
+
+    main() {
+        int value = 214;
+
+        if (value > 200)
+            console.write("A");
+        else
+            console.write("B");
+
+        if (value > 200)
+            console.write("C");
+        console.write("D");
+    }
+  `);
+
+  assert(valid.success, valid.runtimeError ?? valid.compilation.diagnosticsText);
+  assert(valid.output === 'ACD', `unexpected brace-less if output: ${JSON.stringify(valid.output)}`);
+
+  const invalid = compileIdyllium(`
+    use console;
+
+    main() {
+        int value = 214;
+
+        if (value > 200)
+            console.writeln(value);
+        console.writeln("always");
+        else
+            console.writeln("other");
+    }
+  `, { file: 'main.idyl' });
+
+  assert(!invalid.success, 'expected orphan else compilation failure');
+  assert(
+    invalid.diagnosticsText.includes("'else' has no matching 'if'; without braces an if branch contains only one statement"),
+    `expected readable orphan else diagnostic, got:\n${invalid.diagnosticsText}`,
+  );
+  assert(!invalid.diagnosticsText.includes('expected expression'), `unexpected parser cascade:\n${invalid.diagnosticsText}`);
+  assert(!invalid.diagnosticsText.includes("expected ';'"), `unexpected parser cascade:\n${invalid.diagnosticsText}`);
 });
 
 test('console must be imported', () => {

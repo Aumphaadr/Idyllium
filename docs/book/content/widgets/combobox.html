@@ -102,8 +102,13 @@ combo.clear_items();  // список стал пустым
       <p>ComboBox предоставляет два способа узнать, что выбрал пользователь:</p>
       <ul>
         <li><code>selected_index</code> — номер выбранного пункта (<code>int</code>, нумерация с 0)</li>
-        <li><code>selected_text</code> — текст выбранного пункта (<code>string</code>)</li>
+        <li><code>selected_text</code> — текст выбранного пункта (<code>string</code>, только для чтения)</li>
       </ul>
+      <p>
+        Выбор можно изменить через <code>selected_index</code>. Свойство
+        <code>selected_text</code> программа не назначает сама: ComboBox
+        автоматически берёт его из выбранного пункта.
+      </p>
 
       <idyl-code-block><script type="text/plain">
 use gui;

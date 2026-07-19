@@ -338,7 +338,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     sectionId: 'canvas',
     id: 'geometry-methods',
     title: 'Готовые геометрические проверки',
-    subtitle: 'contains(), intersects(), повороты и разные типы объектов',
+    subtitle: 'contains(), collides_with(), повороты и разные типы объектов',
     sourceFile: 'docs/manual-content/canvas/geometry-methods.html',
     status: 'ready',
     reviewFlags: [],
@@ -1074,8 +1074,8 @@ function copyBookShell(outputRoot: string): void {
 function writeCurrentVersion(outputPath: string): void {
   const packagePath = path.resolve(process.cwd(), 'package.json');
   const version = fs.existsSync(packagePath)
-    ? String(JSON.parse(fs.readFileSync(packagePath, 'utf8')).version ?? '1.1.0')
-    : '1.1.0';
+    ? String(JSON.parse(fs.readFileSync(packagePath, 'utf8')).version ?? '1.1.1')
+    : '1.1.1';
   fs.writeFileSync(outputPath, `${JSON.stringify({ version }, null, 2)}\n`, 'utf8');
 }
 

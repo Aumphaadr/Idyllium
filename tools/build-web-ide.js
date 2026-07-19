@@ -18,6 +18,8 @@ const monacoOutputDir = path.join(outputWebDir, 'monaco', 'vs');
 const rendererSourceDir = path.join(rootDir, 'packages', 'gui-renderer');
 const rendererOutputDir = path.join(outputWebDir, 'gui-renderer');
 const papaParseSource = path.join(rootDir, 'node_modules', 'papaparse', 'papaparse.min.js');
+const markedSource = path.join(rootDir, 'node_modules', 'marked', 'lib', 'marked.umd.js');
+const domPurifySource = path.join(rootDir, 'node_modules', 'dompurify', 'dist', 'purify.min.js');
 const vendorOutputDir = path.join(outputWebDir, 'vendor');
 const browserEntry = path.join(distDir, 'src', 'browser.js');
 const sqlJsWasmSource = path.join(rootDir, 'node_modules', 'sql.js', 'dist', 'sql-wasm-browser.wasm');
@@ -50,8 +52,14 @@ if (!fs.existsSync(papaParseSource)) {
   console.error('Papa Parse was not found. Run npm install first.');
   process.exit(1);
 }
+if (!fs.existsSync(markedSource) || !fs.existsSync(domPurifySource)) {
+  console.error('Markdown preview dependencies were not found. Run npm install first.');
+  process.exit(1);
+}
 fs.mkdirSync(vendorOutputDir, { recursive: true });
 fs.copyFileSync(papaParseSource, path.join(vendorOutputDir, 'papaparse.min.js'));
+fs.copyFileSync(markedSource, path.join(vendorOutputDir, 'marked.umd.js'));
+fs.copyFileSync(domPurifySource, path.join(vendorOutputDir, 'purify.min.js'));
 if (!fs.existsSync(sqlJsWasmSource)) {
   console.error('sql.js WASM was not found. Run npm install first.');
   process.exit(1);

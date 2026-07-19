@@ -2,8 +2,8 @@ use file;
 
 main() {
     file.ostream fout = file.open("output.txt", "write");
-    fout.write_line("Привет, мир!", '\n');
-    fout.write_line("Сейчас ", 2025, " год", '\n');
-    fout.write_line("Файл создан с помощью Idyllium!");
+    fout.write_line("Привет, мир!");
+    fout.write_line("Сейчас ", 2025, " год");
+    fout.write("Файл создан с помощью Idyllium!");
     fout.close();
 }
