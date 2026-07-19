@@ -22,6 +22,7 @@ import {
   ReturnStatement,
   Statement,
   TypeName,
+  TryStatement,
   VariableDeclaration,
   WhileStatement,
 } from './ast';
@@ -56,10 +57,12 @@ export class JavaScriptGenerator {
   private moduleFunctionParameters = new Map<string, readonly ParameterDeclaration[]>();
   private moduleClassMethodParameters = new Map<string, readonly ParameterDeclaration[]>();
   private moduleClassConstructorParameters = new Map<string, readonly ParameterDeclaration[]>();
+  private moduleClassNames = new Set<string>();
   private moduleClassFields = new Map<string, Map<string, TypeName>>();
   private scopes: Array<Map<string, TypeName>> = [new Map()];
   private currentClassNames: string[] = [];
   private returnTypes: TypeName[] = [];
+  private classFieldInitializerDepth = 0;
   private readonly userModuleNames: ReadonlySet<string>;
   private readonly stdlib = createDefaultStandardLibrary();
 
@@ -183,6 +186,7 @@ export class JavaScriptGenerator {
     this.moduleFunctionParameters = new Map();
     this.moduleClassMethodParameters = new Map();
     this.moduleClassConstructorParameters = new Map();
+    this.moduleClassNames = new Set();
     this.moduleClassFields = new Map();
 
     for (const module of modules) {
@@ -195,6 +199,7 @@ export class JavaScriptGenerator {
         }
 
         if (declaration.kind !== 'ClassDeclaration') continue;
+        this.moduleClassNames.add(`${module.name}.${declaration.name}`);
         declarations.set(declaration.name, declaration);
         const fields = new Map<string, TypeName>();
         for (const member of declaration.members) {
@@ -280,6 +285,9 @@ export class JavaScriptGenerator {
         }
         lines.push(`${pad}}`);
         return;
+      case 'TryStatement':
+        this.emitTryStatement(statement, lines, indent);
+        return;
       case 'WhileStatement':
         this.emitWhileStatement(statement, lines, indent);
         return;
@@ -323,6 +331,29 @@ export class JavaScriptGenerator {
     lines.push(`${pad}${this.variableDeclarationCode(statement)};`);
   }
 
+  private emitTryStatement(statement: TryStatement, lines: string[], indent: number): void {
+    const pad = '  '.repeat(indent);
+    lines.push(`${pad}try {`);
+    this.emitBlock(statement.tryBlock, lines, indent + 1);
+
+    if (statement.catchClause) {
+      lines.push(`${pad}} catch ($caught) {`);
+      if (statement.catchClause.name) {
+        lines.push(`${pad}  const ${statement.catchClause.name} = $rt.errors.catchValue($caught);`);
+      } else {
+        lines.push(`${pad}  $rt.errors.catchValue($caught);`);
+      }
+      this.emitBlock(statement.catchClause.body, lines, indent + 1);
+    }
+
+    if (statement.finallyBlock) {
+      lines.push(`${pad}} finally {`);
+      this.emitBlock(statement.finallyBlock, lines, indent + 1);
+    }
+
+    lines.push(`${pad}}`);
+  }
+
   private emitFunctionDeclaration(declaration: FunctionDeclaration, lines: string[], indent: number): void {
     const pad = '  '.repeat(indent);
     const params = declaration.parameters.map((parameter) => parameter.name).join(', ');
@@ -342,18 +373,12 @@ export class JavaScriptGenerator {
     const classObjectName = this.classObjectName(declaration.name);
 
     lines.push(`${pad}const ${classObjectName} = {};`);
-    lines.push(`${pad}function ${this.classDefaultFactoryName(declaration.name)}() {`);
+    lines.push(`${pad}async function ${this.classDefaultFactoryName(declaration.name)}() {`);
     if (declaration.baseName) {
-      lines.push(`${pad}  const self = ${this.classDefaultFactoryName(declaration.baseName)}();`);
+      lines.push(`${pad}  const self = await ${this.classDefaultFactoryName(declaration.baseName)}();`);
       lines.push(`${pad}  self.__idylliumType = ${JSON.stringify(declaration.name)};`);
     } else {
       lines.push(`${pad}  const self = { __idylliumType: ${JSON.stringify(declaration.name)} };`);
-    }
-
-    for (const member of declaration.members) {
-      if (member.kind === 'ClassFieldDeclaration') {
-        this.emitClassFieldDefaults(member, lines, indent + 1);
-      }
     }
 
     for (const member of declaration.members) {
@@ -361,6 +386,16 @@ export class JavaScriptGenerator {
         this.emitInstanceMethod(declaration.name, member, lines, indent + 1);
       }
     }
+
+    this.currentClassNames.push(declaration.name);
+    this.classFieldInitializerDepth += 1;
+    for (const member of declaration.members) {
+      if (member.kind === 'ClassFieldDeclaration') {
+        this.emitClassFieldDefaults(member, lines, indent + 1);
+      }
+    }
+    this.classFieldInitializerDepth -= 1;
+    this.currentClassNames.pop();
 
     lines.push(`${pad}  return self;`);
     lines.push(`${pad}}`);
@@ -376,7 +411,7 @@ export class JavaScriptGenerator {
     }
     lines.push(`${pad}}`);
     lines.push(`${pad}async function ${this.classCreateFactoryName(declaration.name)}(...__args) {`);
-    lines.push(`${pad}  const self = ${this.classDefaultFactoryName(declaration.name)}();`);
+    lines.push(`${pad}  const self = await ${this.classDefaultFactoryName(declaration.name)}();`);
     lines.push(`${pad}  await ${this.classInitFunctionName(declaration.name)}(self, ...__args);`);
     lines.push(`${pad}  return self;`);
     lines.push(`${pad}}`);
@@ -584,7 +619,7 @@ export class JavaScriptGenerator {
         }
         return JSON.stringify(expression.value);
       case 'IdentifierExpression':
-        if (expression.name === 'this') return 'this';
+        if (expression.name === 'this') return this.classFieldInitializerDepth > 0 ? 'self' : 'this';
         if (this.userClassNames.has(expression.name)) return this.classObjectName(expression.name);
         return expression.name;
       case 'UnaryExpression':
@@ -639,6 +674,13 @@ export class JavaScriptGenerator {
     const callee = expression.callee;
 
     if (callee.kind === 'IdentifierExpression') {
+      if (this.userClassNames.has(callee.name)) {
+        const args = this.callArgumentValues(
+          expression.args,
+          this.classConstructorParameters.get(callee.name)?.map((parameter) => parameter.name),
+        ).join(', ');
+        return `${this.classCreateFactoryName(callee.name)}(${args})`;
+      }
       if (callee.name === 'max' || callee.name === 'min' || callee.name === 'sum' || callee.name === 'avg') {
         const args = this.callArgumentValues(expression.args, ['array']).join(', ');
         return `$rt.array.${callee.name}(${args}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
@@ -655,6 +697,13 @@ export class JavaScriptGenerator {
 
     if (callee.kind === 'MemberExpression' && callee.object.kind === 'IdentifierExpression') {
       const moduleName = callee.object.name;
+      if (this.moduleClassNames.has(`${moduleName}.${callee.name}`)) {
+        const args = this.callArgumentValues(
+          expression.args,
+          this.moduleClassConstructorParameters.get(`${moduleName}.${callee.name}`)?.map((parameter) => parameter.name),
+        ).join(', ');
+        return `$rt.modules.${moduleName}.${this.exportedClassCreateName(callee.name)}(${args})`;
+      }
       if (this.importedModules.has(moduleName) && moduleName === 'console') {
         const args = this.callArgumentValues(expression.args, this.stdlib.getModuleFunction(moduleName, callee.name)?.parameters.map((parameter) => parameter.name)).join(', ');
         if (callee.name === 'get_int' || callee.name === 'get_float') {
@@ -745,26 +794,26 @@ export class JavaScriptGenerator {
     return `$rt.array.from([${values}], ${dynamic ? 'true' : 'false'}, ${size}, ${defaultFactory})`;
   }
 
-  private defaultValue(type: TypeName, allowAwait = true): string {
+  private defaultValue(type: TypeName, runConstructor = true): string {
     const runtimeTypeName = this.typesRuntimeName(type);
     if (runtimeTypeName) return `$rt.types.cast(0, ${JSON.stringify(runtimeTypeName)})`;
 
     if (type.kind === 'ArrayTypeName') {
       const size = type.dynamic ? 0 : type.size ?? 0;
-      return `$rt.array.create(${size}, () => ${this.defaultValue(type.elementType, false)}, ${type.dynamic ? 'true' : 'false'})`;
+      return `await $rt.array.createAsync(${size}, async () => ${this.defaultValue(type.elementType, false)}, ${type.dynamic ? 'true' : 'false'})`;
     }
 
     if (type.kind === 'ClassTypeName') {
-      return allowAwait
+      return runConstructor
         ? `await ${this.classCreateFactoryName(type.name)}()`
-        : `${this.classDefaultFactoryName(type.name)}()`;
+        : `await ${this.classDefaultFactoryName(type.name)}()`;
     }
 
     if (type.kind === 'QualifiedTypeName') {
       if (this.userModuleNames.has(type.moduleName)) {
-        return allowAwait
+        return runConstructor
           ? `await $rt.modules.${type.moduleName}.${this.exportedClassCreateName(type.name)}()`
-          : `$rt.modules.${type.moduleName}.${this.exportedClassDefaultName(type.name)}()`;
+          : `await $rt.modules.${type.moduleName}.${this.exportedClassDefaultName(type.name)}()`;
       }
       if (type.moduleName === 'colors' && type.name === 'Color') {
         return '$rt.modules.colors.TRANSPARENT';
@@ -1027,7 +1076,7 @@ export class JavaScriptGenerator {
         value,
         `, ${type.dynamic ? 'true' : 'false'}`,
         `, ${size}`,
-        `, () => ${this.defaultValue(type.elementType, false)}`,
+        `, async () => ${this.defaultValue(type.elementType, false)}`,
         `, (__array_item) => ${convertedElement}`,
         `, ${JSON.stringify(this.typeNameToString(type))}`,
         `, ${JSON.stringify(range.start.file)}`,
@@ -1052,7 +1101,7 @@ export class JavaScriptGenerator {
         value,
         `, ${type.dynamic ? 'true' : 'false'}`,
         `, ${size}`,
-        `, () => ${this.defaultValueForTypeRef(type.elementType)}`,
+        `, async () => ${this.defaultValueForTypeRef(type.elementType)}`,
         `, (__array_item) => ${convertedElement}`,
         `, ${JSON.stringify(typeToString(type))}`,
         `, ${JSON.stringify(range.start.file)}`,
@@ -1083,7 +1132,7 @@ export class JavaScriptGenerator {
   private defaultValueForTypeRef(type: TypeRef): string {
     if (type.kind === 'array') {
       const size = type.dynamic ? 0 : type.size ?? 0;
-      return `$rt.array.create(${size}, () => ${this.defaultValueForTypeRef(type.elementType)}, ${type.dynamic ? 'true' : 'false'})`;
+      return `await $rt.array.createAsync(${size}, async () => ${this.defaultValueForTypeRef(type.elementType)}, ${type.dynamic ? 'true' : 'false'})`;
     }
     if (type.kind === 'qualified' && type.moduleName === 'types' && TYPE_RUNTIME_NAMES.has(type.name)) {
       return `$rt.types.cast(0, ${JSON.stringify(type.name)})`;
@@ -1132,6 +1181,28 @@ export class JavaScriptGenerator {
         return objectType?.kind === 'ArrayTypeName' ? objectType.elementType : null;
       }
       case 'CallExpression': {
+        if (expression.callee.kind === 'IdentifierExpression' && this.userClassNames.has(expression.callee.name)) {
+          return {
+            kind: 'ClassTypeName',
+            name: expression.callee.name,
+            nameRange: expression.callee.range,
+            range: expression.callee.range,
+          };
+        }
+        if (
+          expression.callee.kind === 'MemberExpression'
+          && expression.callee.object.kind === 'IdentifierExpression'
+          && this.moduleClassNames.has(`${expression.callee.object.name}.${expression.callee.name}`)
+        ) {
+          return {
+            kind: 'QualifiedTypeName',
+            moduleName: expression.callee.object.name,
+            moduleNameRange: expression.callee.object.range,
+            name: expression.callee.name,
+            nameRange: expression.callee.nameRange,
+            range: expression.callee.range,
+          };
+        }
         if (expression.callee.kind !== 'MemberExpression') return null;
         if (expression.callee.name !== 'shift_left' && expression.callee.name !== 'shift_right') return null;
         const objectType = this.expressionTypeName(expression.callee.object);

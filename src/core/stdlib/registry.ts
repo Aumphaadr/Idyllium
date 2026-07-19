@@ -315,6 +315,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   const sqliteResult = qualified('sqlite', 'Result');
   const sqliteValue = qualified('sqlite', 'Value');
   const typesInt64 = qualified('types', 'int64');
+  const typesUint64 = qualified('types', 'uint64');
   const audioMusic = qualified('audio', 'Music');
   const imageImage = qualified('image', 'Image');
   const imageStatic = qualified('image', 'Static');
@@ -374,18 +375,34 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
 
   registry.registerModule(moduleSpec('time', [
     functionSpec('sleep', [{ name: 'seconds', type: FLOAT }], VOID),
-    functionSpec('now', [], timeStamp),
-    functionSpec('from_unix', [{ name: 'seconds', type: INT }], timeStamp),
+    functionSpec('now', [
+      { name: 'timezone', type: STRING, defaultValue: '"UTC"' },
+    ], timeStamp, {
+      minArguments: 0,
+      documentation: 'Возвращает текущий момент в указанном IANA-часовом поясе; по умолчанию используется UTC.',
+    }),
+    functionSpec('from_unix', [
+      { name: 'seconds', type: INT },
+      { name: 'timezone', type: STRING, defaultValue: '"UTC"' },
+    ], timeStamp, {
+      minArguments: 1,
+      documentation: 'Создаёт метку из Unix-времени и отображает её в указанном IANA-часовом поясе.',
+    }),
   ], [], [
-    typeSpec('stamp', [], [
-      functionSpec('year', [], INT),
-      functionSpec('month', [], INT),
-      functionSpec('day', [], INT),
-      functionSpec('hour', [], INT),
-      functionSpec('minute', [], INT),
-      functionSpec('second', [], INT),
-      functionSpec('week_day', [], INT),
-      functionSpec('unix', [], INT),
+    typeSpec('stamp', [
+      propertySpec('year', INT, true, 'Год в часовом поясе метки.'),
+      propertySpec('month', INT, true, 'Номер месяца от 1 до 12 в часовом поясе метки.'),
+      propertySpec('day', INT, true, 'День месяца в часовом поясе метки.'),
+      propertySpec('hour', INT, true, 'Час от 0 до 23 в часовом поясе метки.'),
+      propertySpec('minute', INT, true, 'Минута от 0 до 59.'),
+      propertySpec('second', INT, true, 'Секунда от 0 до 59.'),
+      propertySpec('week_day', INT, true, 'День недели от 0 (воскресенье) до 6 (суббота).'),
+      propertySpec('unix', INT, true, 'Unix-время; не меняется при смене часового пояса.'),
+      propertySpec('timezone', STRING, true, 'Каноническое IANA-имя часового пояса.'),
+    ], [
+      functionSpec('in_timezone', [{ name: 'timezone', type: STRING }], timeStamp, {
+        documentation: 'Возвращает новую метку того же момента в другом IANA-часовом поясе.',
+      }),
       functionSpec('to_string', [], STRING),
     ]),
   ]));
@@ -501,6 +518,8 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       functionSpec('is_array', [], BOOL),
       functionSpec('to_string', [], STRING),
       functionSpec('to_int', [], INT),
+      functionSpec('to_int64', [], typesInt64),
+      functionSpec('to_uint64', [], typesUint64),
       functionSpec('to_float', [], FLOAT),
       functionSpec('to_bool', [], BOOL),
       functionSpec('to_object', [], jsonObject),
@@ -517,8 +536,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
         minArguments: 0,
       }),
     ], undefined, true),
-    typeSpec('Object', [], [
-      functionSpec('length', [], INT),
+    typeSpec('Object', [
+      propertySpec('length', INT, true, 'Количество ключей в объекте. Свойство доступно только для чтения.'),
+    ], [
       functionSpec('has', [{ name: 'key', type: STRING }], BOOL),
       functionSpec('get', [{ name: 'key', type: STRING }], jsonValue),
       functionSpec('add', [{ name: 'key', type: STRING }, { name: 'value', type: jsonValue }], VOID),
@@ -526,8 +546,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       functionSpec('remove', [{ name: 'key', type: STRING }], VOID),
       functionSpec('keys', [], arrayType(STRING, null, true)),
     ], jsonValue),
-    typeSpec('Array', [], [
-      functionSpec('length', [], INT),
+    typeSpec('Array', [
+      propertySpec('length', INT, true, 'Количество элементов в массиве. Свойство доступно только для чтения.'),
+    ], [
       functionSpec('at', [{ name: 'index', type: INT }], jsonValue),
       functionSpec('set', [{ name: 'index', type: INT }, { name: 'value', type: jsonValue }], VOID),
       functionSpec('add', [{ name: 'value', type: jsonValue }], VOID),
@@ -1003,6 +1024,17 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     { name: 'RED', type: COLOR },
     { name: 'GREEN', type: COLOR },
     { name: 'BLUE', type: COLOR },
+    { name: 'YELLOW', type: COLOR },
+    { name: 'CYAN', type: COLOR },
+    { name: 'MAGENTA', type: COLOR },
+    { name: 'GRAY', type: COLOR },
+    { name: 'LIGHT_GRAY', type: COLOR },
+    { name: 'DARK_RED', type: COLOR },
+    { name: 'DARK_GREEN', type: COLOR },
+    { name: 'DARK_BLUE', type: COLOR },
+    { name: 'OLIVE', type: COLOR },
+    { name: 'TEAL', type: COLOR },
+    { name: 'PURPLE', type: COLOR },
     { name: 'TRANSPARENT', type: COLOR },
   ], [typeSpec('Color')]));
 
@@ -1013,8 +1045,12 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   const typesNumericTypeSpecs = typesNumericTypeNames.map((name) => {
     const ownType = qualified('types', name);
     return typeSpec(name, [], [
-      functionSpec('to_bin', [], STRING),
-      functionSpec('to_hex', [], STRING),
+      functionSpec('to_bin', [], STRING, {
+        documentation: 'Возвращает полное двоичное представление фиксированной ширины. Для float используется сырое IEEE-представление.',
+      }),
+      functionSpec('to_hex', [], STRING, {
+        documentation: 'Возвращает шестнадцатеричное представление всех битов типа в верхнем регистре.',
+      }),
       functionSpec('shift_left', [{ name: 'bits', type: INT }], ownType, {
         documentation: 'Сдвигает биты влево, отбрасывая вышедшие за границу типа биты и заполняя освободившиеся позиции нулями. Отрицательное количество сдвигает вправо.',
       }),
@@ -1027,11 +1063,15 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     functionSpec('from_bin', [
       { name: 'bits', type: STRING },
       { name: 'type_name', type: STRING },
-    ], ANY_TYPE),
+    ], ANY_TYPE, {
+      documentation: 'Создаёт указанный types-тип из строки нулей и единиц фиксированной ширины.',
+    }),
     functionSpec('from_hex', [
       { name: 'hex', type: STRING },
       { name: 'type_name', type: STRING },
-    ], ANY_TYPE),
+    ], ANY_TYPE, {
+      documentation: 'Создаёт указанный types-тип из строки шестнадцатеричных цифр.',
+    }),
   ], [], typesNumericTypeSpecs));
 
   registry.registerGlobalFunction(functionSpec('div', [

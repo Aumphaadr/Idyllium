@@ -100,7 +100,7 @@
       "patterns": [
         {
           "name": "keyword.control.idyllium",
-          "match": "\\b(?:if|else|while|do|for|break|continue|return)\\b"
+          "match": "\\b(?:if|else|while|do|for|break|continue|return|try|catch|finally)\\b"
         },
         {
           "name": "keyword.operator.logical.idyllium",
@@ -112,7 +112,7 @@
         },
         {
           "name": "keyword.declaration.idyllium",
-          "match": "\\b(?:function|constructor|destructor|static|public|private|const)\\b"
+          "match": "\\b(?:function|constructor|static|public|private|const)\\b"
         },
         {
           "name": "variable.language.this.idyllium",

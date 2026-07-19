@@ -1,8 +1,8 @@
 (() => {
   const KEYWORDS = new Set([
-    'use', 'if', 'else', 'while', 'do', 'for', 'break', 'continue', 'return', 'const',
-    'try', 'catch', 'function', 'class', 'extends', 'this', 'constructor',
-    'destructor', 'public', 'private', 'static', 'parent', 'and', 'or', 'xor',
+    'use', 'if', 'else', 'while', 'do', 'for', 'break', 'continue', 'return', 'try', 'catch', 'finally', 'const',
+    'function', 'class', 'extends', 'this', 'constructor',
+    'public', 'private', 'static', 'parent', 'and', 'or', 'xor',
     'not', 'true', 'false', 'null',
   ]);
 
@@ -276,13 +276,13 @@
           <h1>${escapeHtml(page.title)}</h1>
           <span class="kind-badge">язык</span>
         </div>
-        <p class="api-description">${escapeHtml(page.description)}</p>
+        <p class="api-description">${inlineCodeHtml(page.description)}</p>
       </header>
       ${page.sections.map((section) => `
         <section class="api-section">
           <h2>${escapeHtml(section.title)}</h2>
-          ${section.description ? `<p class="api-section-intro">${escapeHtml(section.description)}</p>` : ''}
-          ${section.notes?.length ? `<ul class="notes-list">${section.notes.map((note) => `<li>${escapeHtml(note)}</li>`).join('')}</ul>` : ''}
+          ${section.description ? `<p class="api-section-intro">${inlineCodeHtml(section.description)}</p>` : ''}
+          ${section.notes?.length ? `<ul class="notes-list">${section.notes.map((note) => `<li>${inlineCodeHtml(note)}</li>`).join('')}</ul>` : ''}
           ${section.code ? codeSample(section.code, section.language) : ''}
         </section>
       `).join('')}
@@ -317,7 +317,7 @@
           <h1 class="api-qualified-name">${escapeHtml(module.name)}</h1>
           <span class="kind-badge module">библиотека</span>
         </div>
-        <p class="api-description">${escapeHtml(module.description)}</p>
+        <p class="api-description">${inlineCodeHtml(module.description)}</p>
       </header>
 
       <section class="api-section">
@@ -353,7 +353,7 @@
           ${module.types.map((type) => `
             <a class="type-row" href="#/${encodePart(module.name)}/${encodePart(type.name)}">
               <code>${escapeHtml(type.qualifiedName)}</code>
-              <span>${escapeHtml(type.description || 'Библиотечный тип Idyllium.')}</span>
+              <span>${inlineCodeHtml(type.description || 'Библиотечный тип Idyllium.')}</span>
             </a>
           `).join('')}
         </div>
@@ -403,7 +403,7 @@
           <h1 class="api-qualified-name">${escapeHtml(type.qualifiedName)}</h1>
           <span class="kind-badge type">тип</span>
         </div>
-        <p class="api-description">${escapeHtml(type.description || 'Библиотечный тип Idyllium.')}</p>
+        <p class="api-description">${inlineCodeHtml(type.description || 'Библиотечный тип Idyllium.')}</p>
         ${baseLink}
       </header>
 
@@ -475,7 +475,7 @@
           ${property.readonly ? '<span class="readonly-badge">только чтение</span>' : ''}
           ${inherited ? ownerBadge(entry.owner) : ''}
         </div>
-        ${property.documentation ? `<p class="member-description">${escapeHtml(property.documentation)}</p>` : ''}
+        ${property.documentation ? `<p class="member-description">${inlineCodeHtml(property.documentation)}</p>` : ''}
         ${callbacks}
       </article>
     `;
@@ -499,7 +499,7 @@
           <code class="member-signature">${escapeHtml(callable.signature)}</code>
           ${inherited ? ownerBadge(owner) : ''}
         </div>
-        ${callable.documentation ? `<p class="member-description">${escapeHtml(callable.documentation)}</p>` : ''}
+        ${callable.documentation ? `<p class="member-description">${inlineCodeHtml(callable.documentation)}</p>` : ''}
         ${meta}
       </article>
     `;
@@ -512,7 +512,7 @@
         <div class="member-head">
           <code class="member-signature">${escapeHtml(`${constant.name}: ${constant.type}`)}</code>
         </div>
-        ${constant.documentation ? `<p class="member-description">${escapeHtml(constant.documentation)}</p>` : ''}
+        ${constant.documentation ? `<p class="member-description">${inlineCodeHtml(constant.documentation)}</p>` : ''}
       </article>
     `;
   }
@@ -523,7 +523,7 @@
       <section class="api-section">
         <h2>Правила</h2>
         <ul class="notes-list">
-          ${notes.map((note) => `<li>${escapeHtml(note)}</li>`).join('')}
+          ${notes.map((note) => `<li>${inlineCodeHtml(note)}</li>`).join('')}
         </ul>
       </section>
     `;
@@ -552,7 +552,7 @@
           ${examples.map((example) => `
             <article class="full-example">
               <h3>${escapeHtml(example.title)}</h3>
-              ${example.description ? `<p>${escapeHtml(example.description)}</p>` : ''}
+              ${example.description ? `<p>${inlineCodeHtml(example.description)}</p>` : ''}
               ${codeSample(example.code, example.language)}
             </article>
           `).join('')}
@@ -1033,6 +1033,15 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  function inlineCodeHtml(value) {
+    return String(value).split(/(`[^`]+`)/gu).map((part) => {
+      if (part.startsWith('`') && part.endsWith('`')) {
+        return `<code>${escapeHtml(part.slice(1, -1))}</code>`;
+      }
+      return escapeHtml(part);
+    }).join('');
   }
 
   function escapeAttribute(value) {

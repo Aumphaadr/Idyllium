@@ -34,6 +34,45 @@ main() {
 </div>
 
 <div class="docs-section">
+  <h2>Готовые цвета</h2>
+  <p>
+    Ради обычного красного или жёлтого цвета необязательно вспоминать числа.
+    В библиотеке есть шестнадцать готовых непрозрачных цветов и отдельный
+    прозрачный цвет <code>TRANSPARENT</code>.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+label1.text_color = colors.MAGENTA;
+button1.background_color = colors.DARK_BLUE;
+button1.border_color = colors.CYAN;
+frame1.background_color = colors.TRANSPARENT;
+</script></idyl-code-block>
+
+  <table>
+    <thead>
+      <tr><th>Яркий цвет</th><th>Значение</th><th>Спокойный цвет</th><th>Значение</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>BLACK</code></td><td><code>#000000</code></td><td><code>GRAY</code></td><td><code>#808080</code></td></tr>
+      <tr><td><code>WHITE</code></td><td><code>#FFFFFF</code></td><td><code>LIGHT_GRAY</code></td><td><code>#C0C0C0</code></td></tr>
+      <tr><td><code>RED</code></td><td><code>#FF0000</code></td><td><code>DARK_RED</code></td><td><code>#800000</code></td></tr>
+      <tr><td><code>GREEN</code></td><td><code>#00FF00</code></td><td><code>DARK_GREEN</code></td><td><code>#008000</code></td></tr>
+      <tr><td><code>BLUE</code></td><td><code>#0000FF</code></td><td><code>DARK_BLUE</code></td><td><code>#000080</code></td></tr>
+      <tr><td><code>YELLOW</code></td><td><code>#FFFF00</code></td><td><code>OLIVE</code></td><td><code>#808000</code></td></tr>
+      <tr><td><code>CYAN</code></td><td><code>#00FFFF</code></td><td><code>TEAL</code></td><td><code>#008080</code></td></tr>
+      <tr><td><code>MAGENTA</code></td><td><code>#FF00FF</code></td><td><code>PURPLE</code></td><td><code>#800080</code></td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    Здесь <code>GREEN</code> специально означает яркий зелёный. Если нужен более
+    спокойный оттенок, выбирайте <code>DARK_GREEN</code>. А когда готовый цвет не
+    подходит, всегда остаются <code>RGB()</code>, <code>HEX()</code> и другие
+    способы создать собственный.
+  </p>
+</div>
+
+<div class="docs-section">
   <h2>Один цвет — разные записи</h2>
   <p>
     Один и тот же цвет можно получить разными способами. Это не соревнование

@@ -199,10 +199,12 @@ class JavaScriptGenerator {
     moduleFunctionParameters = new Map();
     moduleClassMethodParameters = new Map();
     moduleClassConstructorParameters = new Map();
+    moduleClassNames = new Set();
     moduleClassFields = new Map();
     scopes = [new Map()];
     currentClassNames = [];
     returnTypes = [];
+    classFieldInitializerDepth = 0;
     userModuleNames;
     stdlib = (0, registry_1.createDefaultStandardLibrary)();
     constructor(options = {}) {
@@ -316,6 +318,7 @@ class JavaScriptGenerator {
         this.moduleFunctionParameters = new Map();
         this.moduleClassMethodParameters = new Map();
         this.moduleClassConstructorParameters = new Map();
+        this.moduleClassNames = new Set();
         this.moduleClassFields = new Map();
         for (const module of modules) {
             const declarations = new Map();
@@ -327,6 +330,7 @@ class JavaScriptGenerator {
                 }
                 if (declaration.kind !== 'ClassDeclaration')
                     continue;
+                this.moduleClassNames.add(`${module.name}.${declaration.name}`);
                 declarations.set(declaration.name, declaration);
                 const fields = new Map();
                 for (const member of declaration.members) {
@@ -408,6 +412,9 @@ class JavaScriptGenerator {
                 }
                 lines.push(`${pad}}`);
                 return;
+            case 'TryStatement':
+                this.emitTryStatement(statement, lines, indent);
+                return;
             case 'WhileStatement':
                 this.emitWhileStatement(statement, lines, indent);
                 return;
@@ -448,6 +455,26 @@ class JavaScriptGenerator {
         const pad = '  '.repeat(indent);
         lines.push(`${pad}${this.variableDeclarationCode(statement)};`);
     }
+    emitTryStatement(statement, lines, indent) {
+        const pad = '  '.repeat(indent);
+        lines.push(`${pad}try {`);
+        this.emitBlock(statement.tryBlock, lines, indent + 1);
+        if (statement.catchClause) {
+            lines.push(`${pad}} catch ($caught) {`);
+            if (statement.catchClause.name) {
+                lines.push(`${pad}  const ${statement.catchClause.name} = $rt.errors.catchValue($caught);`);
+            }
+            else {
+                lines.push(`${pad}  $rt.errors.catchValue($caught);`);
+            }
+            this.emitBlock(statement.catchClause.body, lines, indent + 1);
+        }
+        if (statement.finallyBlock) {
+            lines.push(`${pad}} finally {`);
+            this.emitBlock(statement.finallyBlock, lines, indent + 1);
+        }
+        lines.push(`${pad}}`);
+    }
     emitFunctionDeclaration(declaration, lines, indent) {
         const pad = '  '.repeat(indent);
         const params = declaration.parameters.map((parameter) => parameter.name).join(', ');
@@ -465,24 +492,28 @@ class JavaScriptGenerator {
         const pad = '  '.repeat(indent);
         const classObjectName = this.classObjectName(declaration.name);
         lines.push(`${pad}const ${classObjectName} = {};`);
-        lines.push(`${pad}function ${this.classDefaultFactoryName(declaration.name)}() {`);
+        lines.push(`${pad}async function ${this.classDefaultFactoryName(declaration.name)}() {`);
         if (declaration.baseName) {
-            lines.push(`${pad}  const self = ${this.classDefaultFactoryName(declaration.baseName)}();`);
+            lines.push(`${pad}  const self = await ${this.classDefaultFactoryName(declaration.baseName)}();`);
             lines.push(`${pad}  self.__idylliumType = ${JSON.stringify(declaration.name)};`);
         }
         else {
             lines.push(`${pad}  const self = { __idylliumType: ${JSON.stringify(declaration.name)} };`);
         }
         for (const member of declaration.members) {
-            if (member.kind === 'ClassFieldDeclaration') {
-                this.emitClassFieldDefaults(member, lines, indent + 1);
-            }
-        }
-        for (const member of declaration.members) {
             if (member.kind === 'ClassMethodDeclaration' && !member.isStatic) {
                 this.emitInstanceMethod(declaration.name, member, lines, indent + 1);
             }
         }
+        this.currentClassNames.push(declaration.name);
+        this.classFieldInitializerDepth += 1;
+        for (const member of declaration.members) {
+            if (member.kind === 'ClassFieldDeclaration') {
+                this.emitClassFieldDefaults(member, lines, indent + 1);
+            }
+        }
+        this.classFieldInitializerDepth -= 1;
+        this.currentClassNames.pop();
         lines.push(`${pad}  return self;`);
         lines.push(`${pad}}`);
         const constructor = declaration.members.find((member) => member.kind === 'ConstructorDeclaration');
@@ -497,7 +528,7 @@ class JavaScriptGenerator {
         }
         lines.push(`${pad}}`);
         lines.push(`${pad}async function ${this.classCreateFactoryName(declaration.name)}(...__args) {`);
-        lines.push(`${pad}  const self = ${this.classDefaultFactoryName(declaration.name)}();`);
+        lines.push(`${pad}  const self = await ${this.classDefaultFactoryName(declaration.name)}();`);
         lines.push(`${pad}  await ${this.classInitFunctionName(declaration.name)}(self, ...__args);`);
         lines.push(`${pad}  return self;`);
         lines.push(`${pad}}`);
@@ -679,7 +710,7 @@ class JavaScriptGenerator {
                 return JSON.stringify(expression.value);
             case 'IdentifierExpression':
                 if (expression.name === 'this')
-                    return 'this';
+                    return this.classFieldInitializerDepth > 0 ? 'self' : 'this';
                 if (this.userClassNames.has(expression.name))
                     return this.classObjectName(expression.name);
                 return expression.name;
@@ -731,6 +762,10 @@ class JavaScriptGenerator {
     callExpression(expression) {
         const callee = expression.callee;
         if (callee.kind === 'IdentifierExpression') {
+            if (this.userClassNames.has(callee.name)) {
+                const args = this.callArgumentValues(expression.args, this.classConstructorParameters.get(callee.name)?.map((parameter) => parameter.name)).join(', ');
+                return `${this.classCreateFactoryName(callee.name)}(${args})`;
+            }
             if (callee.name === 'max' || callee.name === 'min' || callee.name === 'sum' || callee.name === 'avg') {
                 const args = this.callArgumentValues(expression.args, ['array']).join(', ');
                 return `$rt.array.${callee.name}(${args}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
@@ -746,6 +781,10 @@ class JavaScriptGenerator {
         }
         if (callee.kind === 'MemberExpression' && callee.object.kind === 'IdentifierExpression') {
             const moduleName = callee.object.name;
+            if (this.moduleClassNames.has(`${moduleName}.${callee.name}`)) {
+                const args = this.callArgumentValues(expression.args, this.moduleClassConstructorParameters.get(`${moduleName}.${callee.name}`)?.map((parameter) => parameter.name)).join(', ');
+                return `$rt.modules.${moduleName}.${this.exportedClassCreateName(callee.name)}(${args})`;
+            }
             if (this.importedModules.has(moduleName) && moduleName === 'console') {
                 const args = this.callArgumentValues(expression.args, this.stdlib.getModuleFunction(moduleName, callee.name)?.parameters.map((parameter) => parameter.name)).join(', ');
                 if (callee.name === 'get_int' || callee.name === 'get_float') {
@@ -816,24 +855,24 @@ class JavaScriptGenerator {
         const size = staticSize === null ? 'null' : String(staticSize);
         return `$rt.array.from([${values}], ${dynamic ? 'true' : 'false'}, ${size}, ${defaultFactory})`;
     }
-    defaultValue(type, allowAwait = true) {
+    defaultValue(type, runConstructor = true) {
         const runtimeTypeName = this.typesRuntimeName(type);
         if (runtimeTypeName)
             return `$rt.types.cast(0, ${JSON.stringify(runtimeTypeName)})`;
         if (type.kind === 'ArrayTypeName') {
             const size = type.dynamic ? 0 : type.size ?? 0;
-            return `$rt.array.create(${size}, () => ${this.defaultValue(type.elementType, false)}, ${type.dynamic ? 'true' : 'false'})`;
+            return `await $rt.array.createAsync(${size}, async () => ${this.defaultValue(type.elementType, false)}, ${type.dynamic ? 'true' : 'false'})`;
         }
         if (type.kind === 'ClassTypeName') {
-            return allowAwait
+            return runConstructor
                 ? `await ${this.classCreateFactoryName(type.name)}()`
-                : `${this.classDefaultFactoryName(type.name)}()`;
+                : `await ${this.classDefaultFactoryName(type.name)}()`;
         }
         if (type.kind === 'QualifiedTypeName') {
             if (this.userModuleNames.has(type.moduleName)) {
-                return allowAwait
+                return runConstructor
                     ? `await $rt.modules.${type.moduleName}.${this.exportedClassCreateName(type.name)}()`
-                    : `$rt.modules.${type.moduleName}.${this.exportedClassDefaultName(type.name)}()`;
+                    : `await $rt.modules.${type.moduleName}.${this.exportedClassDefaultName(type.name)}()`;
             }
             if (type.moduleName === 'colors' && type.name === 'Color') {
                 return '$rt.modules.colors.TRANSPARENT';
@@ -1068,7 +1107,7 @@ class JavaScriptGenerator {
                 value,
                 `, ${type.dynamic ? 'true' : 'false'}`,
                 `, ${size}`,
-                `, () => ${this.defaultValue(type.elementType, false)}`,
+                `, async () => ${this.defaultValue(type.elementType, false)}`,
                 `, (__array_item) => ${convertedElement}`,
                 `, ${JSON.stringify(this.typeNameToString(type))}`,
                 `, ${JSON.stringify(range.start.file)}`,
@@ -1092,7 +1131,7 @@ class JavaScriptGenerator {
                 value,
                 `, ${type.dynamic ? 'true' : 'false'}`,
                 `, ${size}`,
-                `, () => ${this.defaultValueForTypeRef(type.elementType)}`,
+                `, async () => ${this.defaultValueForTypeRef(type.elementType)}`,
                 `, (__array_item) => ${convertedElement}`,
                 `, ${JSON.stringify((0, types_1.typeToString)(type))}`,
                 `, ${JSON.stringify(range.start.file)}`,
@@ -1122,7 +1161,7 @@ class JavaScriptGenerator {
     defaultValueForTypeRef(type) {
         if (type.kind === 'array') {
             const size = type.dynamic ? 0 : type.size ?? 0;
-            return `$rt.array.create(${size}, () => ${this.defaultValueForTypeRef(type.elementType)}, ${type.dynamic ? 'true' : 'false'})`;
+            return `await $rt.array.createAsync(${size}, async () => ${this.defaultValueForTypeRef(type.elementType)}, ${type.dynamic ? 'true' : 'false'})`;
         }
         if (type.kind === 'qualified' && type.moduleName === 'types' && TYPE_RUNTIME_NAMES.has(type.name)) {
             return `$rt.types.cast(0, ${JSON.stringify(type.name)})`;
@@ -1174,6 +1213,26 @@ class JavaScriptGenerator {
                 return objectType?.kind === 'ArrayTypeName' ? objectType.elementType : null;
             }
             case 'CallExpression': {
+                if (expression.callee.kind === 'IdentifierExpression' && this.userClassNames.has(expression.callee.name)) {
+                    return {
+                        kind: 'ClassTypeName',
+                        name: expression.callee.name,
+                        nameRange: expression.callee.range,
+                        range: expression.callee.range,
+                    };
+                }
+                if (expression.callee.kind === 'MemberExpression'
+                    && expression.callee.object.kind === 'IdentifierExpression'
+                    && this.moduleClassNames.has(`${expression.callee.object.name}.${expression.callee.name}`)) {
+                    return {
+                        kind: 'QualifiedTypeName',
+                        moduleName: expression.callee.object.name,
+                        moduleNameRange: expression.callee.object.range,
+                        name: expression.callee.name,
+                        nameRange: expression.callee.nameRange,
+                        range: expression.callee.range,
+                    };
+                }
                 if (expression.callee.kind !== 'MemberExpression')
                     return null;
                 if (expression.callee.name !== 'shift_left' && expression.callee.name !== 'shift_right')
@@ -1824,6 +1883,9 @@ class Parser {
         if (this.check(tokens_1.TokenKind.KwIf)) {
             return this.parseIfStatement();
         }
+        if (this.check(tokens_1.TokenKind.KwTry)) {
+            return this.parseTryStatement();
+        }
         if (this.check(tokens_1.TokenKind.KwWhile)) {
             return this.parseWhileStatement();
         }
@@ -1849,6 +1911,9 @@ class Parser {
             const elseToken = this.advance();
             this.error(elseToken.range, "'else' has no matching 'if'; without braces an if branch contains only one statement (wrap multiple statements in '{ ... }')");
             return this.parseStatement();
+        }
+        if (this.check(tokens_1.TokenKind.KwCatch, tokens_1.TokenKind.KwFinally)) {
+            return this.parseOrphanTryClause();
         }
         return this.parseExpressionStatement();
     }
@@ -1897,12 +1962,6 @@ class Parser {
                 const access = this.advance();
                 this.consume(tokens_1.TokenKind.Colon, "expected ':' after access modifier");
                 currentAccess = access.kind === tokens_1.TokenKind.KwPrivate ? 'private' : 'public';
-                continue;
-            }
-            if (this.check(tokens_1.TokenKind.KwDestructor)) {
-                const destructor = this.advance();
-                this.error(destructor.range, 'destructors are not supported yet');
-                this.synchronizeClassMember();
                 continue;
             }
             if (this.check(tokens_1.TokenKind.KwConst)) {
@@ -2097,6 +2156,57 @@ class Parser {
             elseBranch,
             range: { start: ifToken.range.start, end: (elseBranch ?? thenBranch).range.end },
         };
+    }
+    parseTryStatement() {
+        const tryToken = this.consume(tokens_1.TokenKind.KwTry, "expected 'try'");
+        const tryBlock = this.parseBlock();
+        let catchClause = null;
+        let finallyBlock = null;
+        if (this.match(tokens_1.TokenKind.KwCatch)) {
+            const catchToken = this.previous();
+            let name = null;
+            let nameRange = null;
+            if (this.match(tokens_1.TokenKind.LeftParen)) {
+                const nameToken = this.consume(tokens_1.TokenKind.Identifier, 'expected error variable name inside catch parentheses');
+                name = nameToken.lexeme;
+                nameRange = nameToken.range;
+                this.consume(tokens_1.TokenKind.RightParen, "expected ')' after catch variable name");
+            }
+            const body = this.parseBlock();
+            catchClause = {
+                kind: 'CatchClause',
+                name,
+                nameRange,
+                body,
+                range: { start: catchToken.range.start, end: body.range.end },
+            };
+        }
+        if (this.match(tokens_1.TokenKind.KwFinally)) {
+            finallyBlock = this.parseBlock();
+        }
+        if (!catchClause && !finallyBlock) {
+            this.error(tryToken.range, "'try' must be followed by 'catch' or 'finally'");
+        }
+        return {
+            kind: 'TryStatement',
+            tryBlock,
+            catchClause,
+            finallyBlock,
+            range: {
+                start: tryToken.range.start,
+                end: (finallyBlock ?? catchClause?.body ?? tryBlock).range.end,
+            },
+        };
+    }
+    parseOrphanTryClause() {
+        const token = this.advance();
+        const keyword = token.kind === tokens_1.TokenKind.KwCatch ? 'catch' : 'finally';
+        this.error(token.range, `'${keyword}' has no matching 'try'`);
+        if (token.kind === tokens_1.TokenKind.KwCatch && this.match(tokens_1.TokenKind.LeftParen)) {
+            this.consume(tokens_1.TokenKind.Identifier, 'expected error variable name inside catch parentheses');
+            this.consume(tokens_1.TokenKind.RightParen, "expected ')' after catch variable name");
+        }
+        return this.parseBlock();
     }
     parseWhileStatement() {
         const whileToken = this.consume(tokens_1.TokenKind.KwWhile, "expected 'while'");
@@ -2976,6 +3086,8 @@ class SemanticAnalyzer {
                 ownMethods: new Set(methods.keys()),
                 constructorSpec: classSpec.constructorSpec,
                 constructorDeclaration: null,
+                constructorAccess: classSpec.constructorAccess,
+                constructorOwner: classSpec.qualifiedName,
                 membersRegistered: true,
                 membersRegistering: false,
             });
@@ -3059,6 +3171,8 @@ class SemanticAnalyzer {
             ownMethods: new Set(),
             constructorSpec: null,
             constructorDeclaration: null,
+            constructorAccess: 'public',
+            constructorOwner: declaration.name,
             membersRegistered: false,
             membersRegistering: false,
         });
@@ -3195,6 +3309,7 @@ class SemanticAnalyzer {
             minArguments: requiredParameterCount(declaration.parameters),
         };
         info.constructorDeclaration = declaration;
+        info.constructorAccess = declaration.access;
     }
     analyzeClassDeclaration(declaration) {
         const info = this.classes.get(declaration.name);
@@ -3275,6 +3390,9 @@ class SemanticAnalyzer {
             case 'IfStatement':
                 this.analyzeIfStatement(statement);
                 return;
+            case 'TryStatement':
+                this.analyzeTryStatement(statement);
+                return;
             case 'WhileStatement':
                 this.analyzeWhileStatement(statement);
                 return;
@@ -3309,6 +3427,21 @@ class SemanticAnalyzer {
         this.analyzeStatement(statement.thenBranch);
         if (statement.elseBranch) {
             this.analyzeStatement(statement.elseBranch);
+        }
+    }
+    analyzeTryStatement(statement) {
+        this.analyzeStatement(statement.tryBlock);
+        if (statement.catchClause) {
+            this.pushScope();
+            if (statement.catchClause.name && statement.catchClause.nameRange) {
+                this.markSemanticToken('variable', statement.catchClause.nameRange, ['declaration', 'readonly']);
+                this.declare(statement.catchClause.name, types_1.RUNTIME_ERROR_VALUE, 'variable', statement.catchClause.nameRange, true);
+            }
+            this.analyzeStatement(statement.catchClause.body);
+            this.popScope();
+        }
+        if (statement.finallyBlock) {
+            this.analyzeStatement(statement.finallyBlock);
         }
     }
     analyzeWhileStatement(statement) {
@@ -3429,21 +3562,30 @@ class SemanticAnalyzer {
                 this.expressionType(arg.value);
             return;
         }
-        const info = this.classes.get(declaredType.name);
+        const constructor = this.classConstructorCallSpec(declaredType.name, statement.range);
+        if (constructor)
+            this.checkArgumentList(statement.constructorArgs ?? [], constructor, statement.range);
+    }
+    classConstructorCallSpec(className, range) {
+        const info = this.classes.get(className);
         if (!info)
-            return;
-        const constructor = info.constructorSpec;
-        if (!constructor) {
-            this.diagnostics.error(statement.range, `class '${declaredType.name}' has no constructor`);
-            for (const arg of statement.constructorArgs ?? [])
-                this.expressionType(arg.value);
-            return;
+            return null;
+        if (info.constructorAccess === 'private'
+            && this.currentClassName() !== info.constructorOwner) {
+            this.diagnostics.error(range, `constructor '${className}' is private and can only be used inside class '${info.constructorOwner}'`);
         }
-        if (info.constructorDeclaration?.access === 'private'
-            && this.currentClassName() !== declaredType.name) {
-            this.diagnostics.error(statement.range, `constructor '${declaredType.name}' is private and can only be used inside class '${declaredType.name}'`);
+        if (!info.constructorSpec) {
+            return {
+                name: className,
+                parameters: [],
+                returnType: (0, types_1.classType)(className),
+            };
         }
-        this.checkArgumentList(statement.constructorArgs ?? [], constructor, statement.range);
+        return {
+            ...info.constructorSpec,
+            name: className,
+            returnType: (0, types_1.classType)(className),
+        };
     }
     resolveTypeName(typeName) {
         if (typeName.kind === 'PrimitiveTypeName') {
@@ -3547,6 +3689,17 @@ class SemanticAnalyzer {
                 }
             }
             const objectType = this.expressionType(target.object);
+            if (this.isBuiltinLengthProperty(objectType, target.name)) {
+                this.markSemanticToken('property', target.nameRange, ['readonly', 'defaultLibrary']);
+                this.diagnostics.error(target.range, "property 'length' is read-only");
+                return { type: types_1.INT };
+            }
+            const runtimeErrorProperty = this.runtimeErrorPropertySpec(objectType, target.name);
+            if (runtimeErrorProperty) {
+                this.markSemanticToken('property', target.nameRange, ['readonly', 'defaultLibrary']);
+                this.diagnostics.error(target.range, `property '${target.name}' is read-only`);
+                return { type: runtimeErrorProperty.type, property: runtimeErrorProperty };
+            }
             if (objectType.kind === 'class') {
                 const field = this.getClassField(objectType.name, target.name);
                 if (!field) {
@@ -3653,6 +3806,13 @@ class SemanticAnalyzer {
                 return statement.elseBranch !== null
                     && this.statementAlwaysReturns(statement.thenBranch)
                     && this.statementAlwaysReturns(statement.elseBranch);
+            case 'TryStatement':
+                if (statement.finallyBlock && this.statementAlwaysReturns(statement.finallyBlock))
+                    return true;
+                if (!statement.catchClause)
+                    return this.statementAlwaysReturns(statement.tryBlock);
+                return this.statementAlwaysReturns(statement.tryBlock)
+                    && this.statementAlwaysReturns(statement.catchClause.body);
             default:
                 return false;
         }
@@ -3892,8 +4052,8 @@ class SemanticAnalyzer {
         const callee = expression.callee;
         if (callee.kind === 'IdentifierExpression') {
             if (this.classes.has(callee.name)) {
-                this.diagnostics.error(callee.range, `class '${callee.name}' cannot be called as a function; declare an object with '${callee.name} name(...)'`);
-                return null;
+                this.markSemanticToken('class', callee.range);
+                return this.classConstructorCallSpec(callee.name, callee.range);
             }
             const global = this.stdlib.getGlobalFunction(callee.name);
             if (global) {
@@ -3947,16 +4107,21 @@ class SemanticAnalyzer {
             const userModule = this.userModuleRegistry.getModule(moduleName);
             if (userModule) {
                 this.markSemanticToken('namespace', callee.object.range);
-                this.markSemanticToken('function', callee.nameRange);
                 if (!this.imports.has(moduleName)) {
                     this.diagnostics.error(callee.object.range, `'${moduleName}' is not imported (use 'use ${moduleName};')`);
                     return null;
+                }
+                const classSpec = userModule.classes.get(callee.name);
+                if (classSpec) {
+                    this.markSemanticToken('class', callee.nameRange);
+                    return this.classConstructorCallSpec(classSpec.qualifiedName, callee.range);
                 }
                 const fn = userModule.functions.get(callee.name);
                 if (!fn) {
                     this.diagnostics.error(callee.range, `module '${moduleName}' has no function '${callee.name}'`);
                     return null;
                 }
+                this.markSemanticToken('function', callee.nameRange);
                 return fn;
             }
             if (this.userModules.has(moduleName)) {
@@ -4002,6 +4167,14 @@ class SemanticAnalyzer {
                 if (method)
                     return method;
                 this.reportUnknownArrayMethod(objectType, callee.name, callee.range);
+                return null;
+            }
+            if (objectType.kind === 'runtime-error') {
+                this.markSemanticToken('method', callee.nameRange, ['defaultLibrary']);
+                if (callee.name === 'to_string') {
+                    return { name: 'to_string', parameters: [], returnType: types_1.STRING };
+                }
+                this.diagnostics.error(callee.range, `type 'RuntimeError' has no method '${callee.name}'`);
                 return null;
             }
             if (objectType.kind === 'class') {
@@ -4230,6 +4403,10 @@ class SemanticAnalyzer {
         }
         const objectType = this.expressionType(expression.object);
         if (this.isStringType(objectType)) {
+            if (expression.name === 'length') {
+                this.markSemanticToken('property', expression.nameRange, ['readonly', 'defaultLibrary']);
+                return types_1.INT;
+            }
             const method = this.stringMethodSpec(expression.name);
             if (method) {
                 this.markSemanticToken('method', expression.nameRange, ['defaultLibrary']);
@@ -4239,12 +4416,29 @@ class SemanticAnalyzer {
             return types_1.ERROR_TYPE;
         }
         if (objectType.kind === 'array') {
+            if (expression.name === 'length') {
+                this.markSemanticToken('property', expression.nameRange, ['readonly', 'defaultLibrary']);
+                return types_1.INT;
+            }
             const method = this.arrayMethodSpec(objectType, expression.name);
             if (method) {
                 this.markSemanticToken('method', expression.nameRange, ['defaultLibrary']);
                 return (0, types_1.functionType)(method.parameters.map((param) => param.type), method.returnType);
             }
             this.reportUnknownArrayMethod(objectType, expression.name, expression.range);
+            return types_1.ERROR_TYPE;
+        }
+        if (objectType.kind === 'runtime-error') {
+            const property = this.runtimeErrorPropertySpec(objectType, expression.name);
+            if (property) {
+                this.markSemanticToken('property', expression.nameRange, ['readonly', 'defaultLibrary']);
+                return property.type;
+            }
+            if (expression.name === 'to_string') {
+                this.markSemanticToken('method', expression.nameRange, ['defaultLibrary']);
+                return (0, types_1.functionType)([], types_1.STRING);
+            }
+            this.diagnostics.error(expression.range, `type 'RuntimeError' has no member '${expression.name}'`);
             return types_1.ERROR_TYPE;
         }
         if (objectType.kind === 'class') {
@@ -4284,10 +4478,22 @@ class SemanticAnalyzer {
     isStringType(type) {
         return type.kind === 'primitive' && type.name === 'string';
     }
+    isBuiltinLengthProperty(type, name) {
+        return name === 'length' && (this.isStringType(type) || type.kind === 'array');
+    }
+    runtimeErrorPropertySpec(type, name) {
+        if (type.kind !== 'runtime-error')
+            return null;
+        if (name === 'message' || name === 'file') {
+            return { name, type: types_1.STRING, readonly: true };
+        }
+        if (name === 'line') {
+            return { name, type: types_1.INT, readonly: true };
+        }
+        return null;
+    }
     stringMethodSpec(name) {
         switch (name) {
-            case 'length':
-                return { name, parameters: [], returnType: types_1.INT };
             case 'contains':
             case 'find':
             case 'count':
@@ -4313,8 +4519,6 @@ class SemanticAnalyzer {
         const value = { name: 'value', type: type.elementType };
         const index = { name: 'index', type: types_1.INT };
         switch (name) {
-            case 'length':
-                return { name, parameters: [], returnType: types_1.INT };
             case 'contains':
                 return { name, parameters: [value], returnType: types_1.BOOL };
             case 'find':
@@ -4766,6 +4970,7 @@ function createDefaultStandardLibrary() {
     const sqliteResult = (0, types_1.qualified)('sqlite', 'Result');
     const sqliteValue = (0, types_1.qualified)('sqlite', 'Value');
     const typesInt64 = (0, types_1.qualified)('types', 'int64');
+    const typesUint64 = (0, types_1.qualified)('types', 'uint64');
     const audioMusic = (0, types_1.qualified)('audio', 'Music');
     const imageImage = (0, types_1.qualified)('image', 'Image');
     const imageStatic = (0, types_1.qualified)('image', 'Static');
@@ -4821,18 +5026,34 @@ function createDefaultStandardLibrary() {
     ]));
     registry.registerModule(moduleSpec('time', [
         functionSpec('sleep', [{ name: 'seconds', type: types_1.FLOAT }], types_1.VOID),
-        functionSpec('now', [], timeStamp),
-        functionSpec('from_unix', [{ name: 'seconds', type: types_1.INT }], timeStamp),
+        functionSpec('now', [
+            { name: 'timezone', type: types_1.STRING, defaultValue: '"UTC"' },
+        ], timeStamp, {
+            minArguments: 0,
+            documentation: 'Возвращает текущий момент в указанном IANA-часовом поясе; по умолчанию используется UTC.',
+        }),
+        functionSpec('from_unix', [
+            { name: 'seconds', type: types_1.INT },
+            { name: 'timezone', type: types_1.STRING, defaultValue: '"UTC"' },
+        ], timeStamp, {
+            minArguments: 1,
+            documentation: 'Создаёт метку из Unix-времени и отображает её в указанном IANA-часовом поясе.',
+        }),
     ], [], [
-        typeSpec('stamp', [], [
-            functionSpec('year', [], types_1.INT),
-            functionSpec('month', [], types_1.INT),
-            functionSpec('day', [], types_1.INT),
-            functionSpec('hour', [], types_1.INT),
-            functionSpec('minute', [], types_1.INT),
-            functionSpec('second', [], types_1.INT),
-            functionSpec('week_day', [], types_1.INT),
-            functionSpec('unix', [], types_1.INT),
+        typeSpec('stamp', [
+            propertySpec('year', types_1.INT, true, 'Год в часовом поясе метки.'),
+            propertySpec('month', types_1.INT, true, 'Номер месяца от 1 до 12 в часовом поясе метки.'),
+            propertySpec('day', types_1.INT, true, 'День месяца в часовом поясе метки.'),
+            propertySpec('hour', types_1.INT, true, 'Час от 0 до 23 в часовом поясе метки.'),
+            propertySpec('minute', types_1.INT, true, 'Минута от 0 до 59.'),
+            propertySpec('second', types_1.INT, true, 'Секунда от 0 до 59.'),
+            propertySpec('week_day', types_1.INT, true, 'День недели от 0 (воскресенье) до 6 (суббота).'),
+            propertySpec('unix', types_1.INT, true, 'Unix-время; не меняется при смене часового пояса.'),
+            propertySpec('timezone', types_1.STRING, true, 'Каноническое IANA-имя часового пояса.'),
+        ], [
+            functionSpec('in_timezone', [{ name: 'timezone', type: types_1.STRING }], timeStamp, {
+                documentation: 'Возвращает новую метку того же момента в другом IANA-часовом поясе.',
+            }),
             functionSpec('to_string', [], types_1.STRING),
         ]),
     ]));
@@ -4945,6 +5166,8 @@ function createDefaultStandardLibrary() {
             functionSpec('is_array', [], types_1.BOOL),
             functionSpec('to_string', [], types_1.STRING),
             functionSpec('to_int', [], types_1.INT),
+            functionSpec('to_int64', [], typesInt64),
+            functionSpec('to_uint64', [], typesUint64),
             functionSpec('to_float', [], types_1.FLOAT),
             functionSpec('to_bool', [], types_1.BOOL),
             functionSpec('to_object', [], jsonObject),
@@ -4961,8 +5184,9 @@ function createDefaultStandardLibrary() {
                 minArguments: 0,
             }),
         ], undefined, true),
-        typeSpec('Object', [], [
-            functionSpec('length', [], types_1.INT),
+        typeSpec('Object', [
+            propertySpec('length', types_1.INT, true, 'Количество ключей в объекте. Свойство доступно только для чтения.'),
+        ], [
             functionSpec('has', [{ name: 'key', type: types_1.STRING }], types_1.BOOL),
             functionSpec('get', [{ name: 'key', type: types_1.STRING }], jsonValue),
             functionSpec('add', [{ name: 'key', type: types_1.STRING }, { name: 'value', type: jsonValue }], types_1.VOID),
@@ -4970,8 +5194,9 @@ function createDefaultStandardLibrary() {
             functionSpec('remove', [{ name: 'key', type: types_1.STRING }], types_1.VOID),
             functionSpec('keys', [], (0, types_1.arrayType)(types_1.STRING, null, true)),
         ], jsonValue),
-        typeSpec('Array', [], [
-            functionSpec('length', [], types_1.INT),
+        typeSpec('Array', [
+            propertySpec('length', types_1.INT, true, 'Количество элементов в массиве. Свойство доступно только для чтения.'),
+        ], [
             functionSpec('at', [{ name: 'index', type: types_1.INT }], jsonValue),
             functionSpec('set', [{ name: 'index', type: types_1.INT }, { name: 'value', type: jsonValue }], types_1.VOID),
             functionSpec('add', [{ name: 'value', type: jsonValue }], types_1.VOID),
@@ -5440,6 +5665,17 @@ function createDefaultStandardLibrary() {
         { name: 'RED', type: types_1.COLOR },
         { name: 'GREEN', type: types_1.COLOR },
         { name: 'BLUE', type: types_1.COLOR },
+        { name: 'YELLOW', type: types_1.COLOR },
+        { name: 'CYAN', type: types_1.COLOR },
+        { name: 'MAGENTA', type: types_1.COLOR },
+        { name: 'GRAY', type: types_1.COLOR },
+        { name: 'LIGHT_GRAY', type: types_1.COLOR },
+        { name: 'DARK_RED', type: types_1.COLOR },
+        { name: 'DARK_GREEN', type: types_1.COLOR },
+        { name: 'DARK_BLUE', type: types_1.COLOR },
+        { name: 'OLIVE', type: types_1.COLOR },
+        { name: 'TEAL', type: types_1.COLOR },
+        { name: 'PURPLE', type: types_1.COLOR },
         { name: 'TRANSPARENT', type: types_1.COLOR },
     ], [typeSpec('Color')]));
     const typesNumericTypeNames = [
@@ -5449,8 +5685,12 @@ function createDefaultStandardLibrary() {
     const typesNumericTypeSpecs = typesNumericTypeNames.map((name) => {
         const ownType = (0, types_1.qualified)('types', name);
         return typeSpec(name, [], [
-            functionSpec('to_bin', [], types_1.STRING),
-            functionSpec('to_hex', [], types_1.STRING),
+            functionSpec('to_bin', [], types_1.STRING, {
+                documentation: 'Возвращает полное двоичное представление фиксированной ширины. Для float используется сырое IEEE-представление.',
+            }),
+            functionSpec('to_hex', [], types_1.STRING, {
+                documentation: 'Возвращает шестнадцатеричное представление всех битов типа в верхнем регистре.',
+            }),
             functionSpec('shift_left', [{ name: 'bits', type: types_1.INT }], ownType, {
                 documentation: 'Сдвигает биты влево, отбрасывая вышедшие за границу типа биты и заполняя освободившиеся позиции нулями. Отрицательное количество сдвигает вправо.',
             }),
@@ -5463,11 +5703,15 @@ function createDefaultStandardLibrary() {
         functionSpec('from_bin', [
             { name: 'bits', type: types_1.STRING },
             { name: 'type_name', type: types_1.STRING },
-        ], types_1.ANY_TYPE),
+        ], types_1.ANY_TYPE, {
+            documentation: 'Создаёт указанный types-тип из строки нулей и единиц фиксированной ширины.',
+        }),
         functionSpec('from_hex', [
             { name: 'hex', type: types_1.STRING },
             { name: 'type_name', type: types_1.STRING },
-        ], types_1.ANY_TYPE),
+        ], types_1.ANY_TYPE, {
+            documentation: 'Создаёт указанный types-тип из строки шестнадцатеричных цифр.',
+        }),
     ], [], typesNumericTypeSpecs));
     registry.registerGlobalFunction(functionSpec('div', [
         { name: 'left', type: types_1.INT },
@@ -5574,6 +5818,9 @@ var TokenKind;
     TokenKind["KwVoid"] = "KwVoid";
     TokenKind["KwIf"] = "KwIf";
     TokenKind["KwElse"] = "KwElse";
+    TokenKind["KwTry"] = "KwTry";
+    TokenKind["KwCatch"] = "KwCatch";
+    TokenKind["KwFinally"] = "KwFinally";
     TokenKind["KwWhile"] = "KwWhile";
     TokenKind["KwDo"] = "KwDo";
     TokenKind["KwFor"] = "KwFor";
@@ -5598,7 +5845,6 @@ var TokenKind;
     TokenKind["KwExtends"] = "KwExtends";
     TokenKind["KwPrivate"] = "KwPrivate";
     TokenKind["KwPublic"] = "KwPublic";
-    TokenKind["KwDestructor"] = "KwDestructor";
     TokenKind["LeftParen"] = "LeftParen";
     TokenKind["RightParen"] = "RightParen";
     TokenKind["LeftBrace"] = "LeftBrace";
@@ -5640,6 +5886,9 @@ exports.KEYWORDS = {
     void: TokenKind.KwVoid,
     if: TokenKind.KwIf,
     else: TokenKind.KwElse,
+    try: TokenKind.KwTry,
+    catch: TokenKind.KwCatch,
+    finally: TokenKind.KwFinally,
     while: TokenKind.KwWhile,
     do: TokenKind.KwDo,
     for: TokenKind.KwFor,
@@ -5664,7 +5913,6 @@ exports.KEYWORDS = {
     extends: TokenKind.KwExtends,
     private: TokenKind.KwPrivate,
     public: TokenKind.KwPublic,
-    destructor: TokenKind.KwDestructor,
 };
 function tokenDisplay(kind) {
     switch (kind) {
@@ -5689,7 +5937,7 @@ function tokenDisplay(kind) {
 "dist/src/core/types.js": function(require, module, exports) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ANY_VALUE_TYPES = exports.COLOR = exports.NULL_TYPE = exports.ANY_TYPE = exports.ERROR_TYPE = exports.VOID = exports.BOOL = exports.CHAR = exports.STRING = exports.FLOAT = exports.INT = void 0;
+exports.ANY_VALUE_TYPES = exports.COLOR = exports.RUNTIME_ERROR_VALUE = exports.NULL_TYPE = exports.ANY_TYPE = exports.ERROR_TYPE = exports.VOID = exports.BOOL = exports.CHAR = exports.STRING = exports.FLOAT = exports.INT = void 0;
 exports.primitive = primitive;
 exports.typeToString = typeToString;
 exports.sameType = sameType;
@@ -5712,6 +5960,7 @@ exports.VOID = { kind: 'primitive', name: 'void' };
 exports.ERROR_TYPE = { kind: 'error' };
 exports.ANY_TYPE = { kind: 'any' };
 exports.NULL_TYPE = { kind: 'null' };
+exports.RUNTIME_ERROR_VALUE = { kind: 'runtime-error' };
 exports.COLOR = { kind: 'qualified', moduleName: 'colors', name: 'Color' };
 exports.ANY_VALUE_TYPES = [exports.INT, exports.FLOAT, exports.STRING, exports.CHAR, exports.BOOL, exports.COLOR];
 function primitive(name) {
@@ -5737,6 +5986,8 @@ function typeToString(type) {
         return 'any';
     if (type.kind === 'null')
         return 'null';
+    if (type.kind === 'runtime-error')
+        return 'RuntimeError';
     if (type.kind === 'function') {
         return `function(${type.parameters.map(typeToString).join(', ')}): ${typeToString(type.returnType)}`;
     }
@@ -5759,6 +6010,8 @@ function sameType(left, right) {
     if (left.kind !== right.kind)
         return false;
     if (left.kind === 'null' && right.kind === 'null')
+        return true;
+    if (left.kind === 'runtime-error' && right.kind === 'runtime-error')
         return true;
     if (left.kind === 'function' && right.kind === 'function') {
         if (left.parameters.length !== right.parameters.length)
@@ -6186,6 +6439,8 @@ class IdylliumProject {
         const variable = index.variables.get(variableName);
         if (!variable)
             return [];
+        if (variable.runtimeError)
+            return runtimeErrorMemberCompletions();
         if (variable.typeName.kind === 'QualifiedTypeName') {
             if (this.stdlib.hasQualifiedType(variable.typeName.moduleName, variable.typeName.name)) {
                 return this.stdlib.listTypeMembers((0, types_1.qualified)(variable.typeName.moduleName, variable.typeName.name));
@@ -6225,7 +6480,11 @@ class IdylliumProject {
             const moduleFunction = this.stdlib.getModuleFunction(objectName, memberName);
             if (moduleFunction)
                 return [signatureFromFunctionSpec(moduleFunction)];
-            const userModuleFunction = index.userModules.getModule(objectName)?.functions.get(memberName);
+            const userModule = index.userModules.getModule(objectName);
+            const userModuleClass = userModule?.classes.get(memberName);
+            if (userModuleClass)
+                return [signatureFromUserClassConstructor(userModuleClass)];
+            const userModuleFunction = userModule?.functions.get(memberName);
             if (userModuleFunction)
                 return [signatureFromFunctionSpec(userModuleFunction)];
             const member = this.memberHoverItem(index, objectName, memberName);
@@ -6237,6 +6496,9 @@ class IdylliumProject {
         const localFunction = index.functions.get(normalized);
         if (localFunction)
             return [signatureFromFunctionDeclaration(localFunction)];
+        const localClass = index.localClasses.get(normalized);
+        if (localClass)
+            return [signatureFromLocalClassConstructor(localClass)];
         return [];
     }
     argumentNameCompletions(index, source, offset) {
@@ -6431,6 +6693,29 @@ function collectStatementVariables(statement, variables) {
             collectStatementVariables(statement.elseBranch, variables);
         return;
     }
+    if (statement.kind === 'TryStatement') {
+        collectStatementVariables(statement.tryBlock, variables);
+        if (statement.catchClause) {
+            if (statement.catchClause.name && statement.catchClause.nameRange) {
+                variables.set(statement.catchClause.name, {
+                    name: statement.catchClause.name,
+                    typeName: {
+                        kind: 'ClassTypeName',
+                        name: 'RuntimeError',
+                        nameRange: statement.catchClause.nameRange,
+                        range: statement.catchClause.nameRange,
+                    },
+                    range: statement.catchClause.nameRange,
+                    isConst: true,
+                    runtimeError: true,
+                });
+            }
+            collectStatementVariables(statement.catchClause.body, variables);
+        }
+        if (statement.finallyBlock)
+            collectStatementVariables(statement.finallyBlock, variables);
+        return;
+    }
     if (statement.kind === 'WhileStatement' || statement.kind === 'DoWhileStatement') {
         collectStatementVariables(statement.body, variables);
         return;
@@ -6442,6 +6727,14 @@ function collectStatementVariables(statement, variables) {
         if (statement.increment?.kind === 'VariableDeclaration')
             collectStatementVariables(statement.increment, variables);
     }
+}
+function runtimeErrorMemberCompletions() {
+    return [
+        { name: 'message', kind: 'property', detail: 'message: string (read-only)' },
+        { name: 'file', kind: 'property', detail: 'file: string (read-only)' },
+        { name: 'line', kind: 'property', detail: 'line: int (read-only)' },
+        { name: 'to_string', kind: 'method', detail: 'to_string(): string' },
+    ];
 }
 function collectLocalClasses(program) {
     const classes = new Map();
@@ -6539,7 +6832,7 @@ function userClassMemberCompletions(classSpec) {
 }
 function stringMemberCompletions() {
     return [
-        { name: 'length', kind: 'method', detail: 'length(): int' },
+        { name: 'length', kind: 'property', detail: 'length: int' },
         { name: 'contains', kind: 'method', detail: 'contains(text: string): bool' },
         { name: 'find', kind: 'method', detail: 'find(text: string): int' },
         { name: 'count', kind: 'method', detail: 'count(text: string): int' },
@@ -6556,7 +6849,7 @@ function stringMemberCompletions() {
 function arrayMemberCompletions(typeName) {
     const element = typeNameText(typeName.elementType);
     const items = [
-        { name: 'length', kind: 'method', detail: 'length(): int' },
+        { name: 'length', kind: 'property', detail: 'length: int' },
         { name: 'contains', kind: 'method', detail: `contains(value: ${element}): bool` },
         { name: 'find', kind: 'method', detail: `find(value: ${element}): int` },
         { name: 'count', kind: 'method', detail: `count(value: ${element}): int` },
@@ -6762,6 +7055,36 @@ function signatureFromFunctionDeclaration(declaration) {
         label: callableDetail(declaration.name, parameters.map((parameter) => parameter.label), typeNameText(declaration.returnType)),
         parameters,
         allowsNamedArguments: true,
+    };
+}
+function signatureFromLocalClassConstructor(declaration) {
+    const constructor = declaration.members.find((member) => (member.kind === 'ConstructorDeclaration'));
+    const parameters = constructor?.parameters.map((parameter) => ({
+        name: parameter.name,
+        label: parameterDetail(parameter),
+    })) ?? [];
+    return {
+        label: `${declaration.name}(${parameters.map((parameter) => parameter.label).join(', ')})`,
+        parameters,
+        allowsNamedArguments: true,
+    };
+}
+function signatureFromUserClassConstructor(classSpec) {
+    const constructor = classSpec.constructorSpec;
+    if (!constructor) {
+        return {
+            label: `${classSpec.name}()`,
+            parameters: [],
+            allowsNamedArguments: true,
+        };
+    }
+    const signature = signatureFromFunctionSpec({
+        ...constructor,
+        name: classSpec.name,
+    });
+    return {
+        ...signature,
+        label: `${classSpec.name}(${signature.parameters.map((parameter) => parameter.label).join(', ')})`,
     };
 }
 function parameterDetail(parameter) {
@@ -8193,10 +8516,14 @@ const font_metrics_service_1 = require("./font-metrics-service");
 class IdylliumRuntimeError extends Error {
     file;
     line;
-    constructor(file, line, message) {
-        super(`${file}:${line}: runtime error: ${message}`);
+    detail;
+    kind;
+    constructor(file, line, detail, kind = 'program') {
+        super(`${file}:${line}: runtime error: ${detail}`);
         this.file = file;
         this.line = line;
+        this.detail = detail;
+        this.kind = kind;
         this.name = 'IdylliumRuntimeError';
     }
 }
@@ -8283,64 +8610,125 @@ class IdylliumColor {
     }
 }
 exports.IdylliumColor = IdylliumColor;
+const timeZoneFormatters = new Map();
+const weekDayNumbers = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+};
 class IdylliumTimeStamp {
     unixSeconds;
-    constructor(unixSeconds) {
+    timezone;
+    components;
+    constructor(unixSeconds, timezone = 'UTC', file = 'time', line = 0) {
         this.unixSeconds = unixSeconds;
+        this.timezone = normalizeTimeZone(timezone, 'time.stamp timezone', file, line);
+        this.components = timeStampComponents(unixSeconds, this.timezone, file, line);
     }
-    static now() {
-        return new IdylliumTimeStamp(Math.floor(Date.now() / 1000));
+    static now(timezone, file, line) {
+        return new IdylliumTimeStamp(Math.floor(Date.now() / 1000), timezone, file, line);
     }
-    static fromUnix(seconds, file, line) {
-        return new IdylliumTimeStamp(integerNumber(seconds, 'time.from_unix() seconds', file, line));
+    static fromUnix(seconds, timezone, file, line) {
+        const unixSeconds = integerNumber(seconds, 'time.from_unix() seconds', file, line);
+        return new IdylliumTimeStamp(unixSeconds, timezone, file, line);
     }
-    year() {
-        return this.date().getUTCFullYear();
+    get year() {
+        return this.components.year;
     }
-    month() {
-        return this.date().getUTCMonth() + 1;
+    get month() {
+        return this.components.month;
     }
-    day() {
-        return this.date().getUTCDate();
+    get day() {
+        return this.components.day;
     }
-    hour() {
-        return this.date().getUTCHours();
+    get hour() {
+        return this.components.hour;
     }
-    minute() {
-        return this.date().getUTCMinutes();
+    get minute() {
+        return this.components.minute;
     }
-    second() {
-        return this.date().getUTCSeconds();
+    get second() {
+        return this.components.second;
     }
-    week_day() {
-        return this.date().getUTCDay();
+    get week_day() {
+        return this.components.weekDay;
     }
-    unix() {
+    get unix() {
         return this.unixSeconds;
+    }
+    in_timezone(timezone, file, line) {
+        return new IdylliumTimeStamp(this.unixSeconds, timezone, file, line);
     }
     to_string() {
         return [
-            this.year().toString().padStart(4, '0'),
+            this.year.toString().padStart(4, '0'),
             '-',
-            this.month().toString().padStart(2, '0'),
+            this.month.toString().padStart(2, '0'),
             '-',
-            this.day().toString().padStart(2, '0'),
+            this.day.toString().padStart(2, '0'),
             ' ',
-            this.hour().toString().padStart(2, '0'),
+            this.hour.toString().padStart(2, '0'),
             ':',
-            this.minute().toString().padStart(2, '0'),
+            this.minute.toString().padStart(2, '0'),
             ':',
-            this.second().toString().padStart(2, '0'),
+            this.second.toString().padStart(2, '0'),
         ].join('');
     }
     toString() {
         return this.to_string();
     }
-    date() {
-        return new Date(this.unixSeconds * 1000);
-    }
 }
 exports.IdylliumTimeStamp = IdylliumTimeStamp;
+function normalizeTimeZone(value, argumentName, file, line) {
+    const requested = stringArgument(value, argumentName, file, line);
+    try {
+        return new Intl.DateTimeFormat('en-US', { timeZone: requested }).resolvedOptions().timeZone;
+    }
+    catch {
+        throw new IdylliumRuntimeError(file, line, `${argumentName} is unknown, got ${JSON.stringify(requested)}`);
+    }
+}
+function timeStampComponents(unixSeconds, timezone, file, line) {
+    const date = new Date(unixSeconds * 1000);
+    if (!Number.isFinite(date.getTime())) {
+        throw new IdylliumRuntimeError(file, line, `time.stamp unix value is outside the supported date range, got ${unixSeconds}`);
+    }
+    let formatter = timeZoneFormatters.get(timezone);
+    if (!formatter) {
+        formatter = new Intl.DateTimeFormat('en-US-u-nu-latn', {
+            timeZone: timezone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            weekday: 'short',
+            hourCycle: 'h23',
+        });
+        timeZoneFormatters.set(timezone, formatter);
+    }
+    const values = new Map(formatter.formatToParts(date).map((part) => [part.type, part.value]));
+    const numberPart = (name) => Number.parseInt(values.get(name) ?? '', 10);
+    const weekDay = weekDayNumbers[values.get('weekday') ?? ''];
+    const components = {
+        year: numberPart('year'),
+        month: numberPart('month'),
+        day: numberPart('day'),
+        hour: numberPart('hour'),
+        minute: numberPart('minute'),
+        second: numberPart('second'),
+        weekDay,
+    };
+    if (Object.values(components).some((value) => !Number.isInteger(value))) {
+        throw new IdylliumRuntimeError(file, line, `time.stamp cannot represent unix value ${unixSeconds} in timezone '${timezone}'`);
+    }
+    return components;
+}
 class IdylliumArray {
     items;
     dynamic;
@@ -8358,6 +8746,14 @@ class IdylliumArray {
     static create(size, defaultFactory, dynamic) {
         const normalizedSize = Math.max(0, Math.trunc(size));
         return new IdylliumArray(Array.from({ length: normalizedSize }, () => defaultFactory()), dynamic, dynamic ? null : normalizedSize, defaultFactory);
+    }
+    static async createAsync(size, defaultFactory, dynamic) {
+        const normalizedSize = Math.max(0, Math.trunc(size));
+        const items = [];
+        for (let index = 0; index < normalizedSize; index += 1) {
+            items.push(await defaultFactory());
+        }
+        return new IdylliumArray(items, dynamic, dynamic ? null : normalizedSize, defaultFactory);
     }
     static from(values, dynamic, staticSize, defaultFactory) {
         return new IdylliumArray([...values], dynamic, dynamic ? null : staticSize, defaultFactory);
@@ -8379,7 +8775,7 @@ class IdylliumArray {
     set(index, value, file, line) {
         this.items[this.validIndex(index, file, line)] = value;
     }
-    length() {
+    get length() {
         return this.items.length;
     }
     contains(value) {
@@ -8409,11 +8805,11 @@ class IdylliumArray {
         this.expectDynamic('remove_at', file, line);
         this.items.splice(this.validIndex(index, file, line), 1);
     }
-    resize(size, file, line) {
+    async resize(size, file, line) {
         this.expectDynamic('resize', file, line);
         const normalizedSize = this.validSize(size, file, line);
         while (this.items.length < normalizedSize) {
-            this.items.push(this.defaultFactory());
+            this.items.push(await this.defaultFactory());
         }
         this.items.length = normalizedSize;
     }
@@ -8442,8 +8838,6 @@ class IdylliumArray {
     }
     callMethod(name, args, file, line) {
         switch (name) {
-            case 'length':
-                return this.length();
             case 'contains':
                 return this.contains(args[0]);
             case 'find':
@@ -8523,6 +8917,8 @@ function createJsonValue(value, file = 'json', line = 0) {
         return createJsonPrimitive('string', value);
     if (typeof value === 'boolean')
         return createJsonPrimitive('bool', value);
+    if (typeof value === 'bigint')
+        return createJsonPrimitive('int', value);
     if (typeof value === 'number') {
         const number = finiteNumber(value, 'json.Value() value', file, line);
         return createJsonPrimitive(Number.isInteger(number) ? 'int' : 'float', number);
@@ -8536,7 +8932,7 @@ function createJsonObject(entries = new Map()) {
         enumerable: false,
         configurable: true,
     });
-    obj.length = () => entries.size;
+    defineRuntimeGetter(obj, 'length', () => entries.size);
     obj.has = contextFunction((key, file, line) => entries.has(stringArgument(key, 'json.Object.has() key', file, line)));
     obj.get = contextFunction((key, file, line) => {
         const name = stringArgument(key, 'json.Object.get() key', file, line);
@@ -8575,7 +8971,7 @@ function createJsonArray(items = []) {
         enumerable: false,
         configurable: true,
     });
-    obj.length = () => items.length;
+    defineRuntimeGetter(obj, 'length', () => items.length);
     obj.at = contextFunction((index, file, line) => items[jsonArrayIndex(items, index, 'json.Array.at()', file, line)]);
     obj.set = contextFunction((index, value, file, line) => {
         items[jsonArrayIndex(items, index, 'json.Array.set()', file, line)] = expectJsonValue(value, 'json.Array.set() value', file, line);
@@ -8622,13 +9018,38 @@ function createJsonBase(typeName, kind) {
         throwJsonExpected(obj, 'string', file, line);
     });
     obj.to_int = contextFunction((file, line) => {
-        if (obj.__jsonKind === 'int')
-            return obj.__jsonValue;
-        throwJsonExpected(obj, 'int', file, line);
+        const integer = jsonIntegerValue(obj, 'int', file, line);
+        if (typeof integer === 'number' && Number.isSafeInteger(integer))
+            return integer;
+        if (typeof integer === 'bigint' && integer >= BigInt(Number.MIN_SAFE_INTEGER) && integer <= BigInt(Number.MAX_SAFE_INTEGER)) {
+            return Number(integer);
+        }
+        throw new IdylliumRuntimeError(file, line, 'json integer is outside the int range; use to_int64() or to_uint64()');
+    });
+    obj.to_int64 = contextFunction((file, line) => {
+        const integer = jsonIntegerAsBigInt(obj, 'int64', file, line);
+        const minimum = -(1n << 63n);
+        const maximum = (1n << 63n) - 1n;
+        if (integer < minimum || integer > maximum) {
+            throw new IdylliumRuntimeError(file, line, `json integer ${integer} is outside the types.int64 range`);
+        }
+        return integer;
+    });
+    obj.to_uint64 = contextFunction((file, line) => {
+        const integer = jsonIntegerAsBigInt(obj, 'uint64', file, line);
+        const maximum = (1n << 64n) - 1n;
+        if (integer < 0n || integer > maximum) {
+            throw new IdylliumRuntimeError(file, line, `json integer ${integer} is outside the types.uint64 range`);
+        }
+        return integer;
     });
     obj.to_float = contextFunction((file, line) => {
-        if (obj.__jsonKind === 'int' || obj.__jsonKind === 'float')
-            return obj.__jsonValue;
+        if (obj.__jsonKind === 'int' || obj.__jsonKind === 'float') {
+            const number = Number(obj.__jsonValue);
+            if (Number.isFinite(number))
+                return number;
+            throw new IdylliumRuntimeError(file, line, `json number ${String(obj.__jsonValue)} is outside the float range`);
+        }
         throwJsonExpected(obj, 'number', file, line);
     });
     obj.to_bool = contextFunction((file, line) => {
@@ -8651,7 +9072,7 @@ function createJsonBase(typeName, kind) {
         setJsonPrimitiveValue(obj, 'string', stringArgument(value, 'json.Value.set_string() value', file, line));
     });
     obj.set_int = contextFunction((value, file, line) => {
-        setJsonPrimitiveValue(obj, 'int', integerNumber(value, 'json.Value.set_int() value', file, line));
+        setJsonPrimitiveValue(obj, 'int', jsonIntegerArgument(value, 'json.Value.set_int() value', file, line));
     });
     obj.set_float = contextFunction((value, file, line) => {
         setJsonPrimitiveValue(obj, 'float', finiteNumber(value, 'json.Value.set_float() value', file, line));
@@ -8668,62 +9089,210 @@ function createJsonBase(typeName, kind) {
     obj.set_array = contextFunction((value, file, line) => {
         setJsonNestedValue(obj, 'array', expectJsonKind(value, 'array', 'json.Value.set_array() value', file, line));
     });
-    obj.to_json = () => jsonSerialize(obj, 0);
+    obj.to_json = contextFunction((file, line) => jsonSerialize(obj, 0, file, line));
     obj.to_pretty_json = contextFunction((indentOrFile, fileOrLine, maybeLine) => {
         const context = optionalNumberContext(indentOrFile, fileOrLine, maybeLine);
         const indent = context.value === undefined ? 2 : jsonIndent(context.value, context.file, context.line);
-        return jsonSerialize(obj, indent);
+        return jsonSerialize(obj, indent, context.file, context.line);
     });
-    obj.toString = () => jsonSerialize(obj, 0);
+    obj.toString = () => jsonSerialize(obj, 0, 'json', 0);
     return obj;
 }
 function parseJsonValue(text, file, line) {
     try {
-        return nativeToJsonRuntime(JSON.parse(text));
+        return new ExactJsonParser(text).parse();
     }
     catch (error) {
         throw new IdylliumRuntimeError(file, line, `json.parse() invalid JSON: ${errorMessage(error)}`);
     }
 }
-function nativeToJsonRuntime(value) {
-    if (value === null)
-        return createJsonValue();
-    if (typeof value === 'string' || typeof value === 'boolean' || typeof value === 'number')
-        return createJsonValue(value);
-    if (Array.isArray(value))
-        return createJsonArray(value.map(nativeToJsonRuntime));
-    if (isPlainObject(value)) {
+class ExactJsonParser {
+    source;
+    index = 0;
+    constructor(source) {
+        this.source = source;
+    }
+    parse() {
+        this.skipWhitespace();
+        if (this.index >= this.source.length)
+            this.fail('expected a JSON value');
+        const value = this.parseValue();
+        this.skipWhitespace();
+        if (this.index !== this.source.length)
+            this.fail(`unexpected character ${JSON.stringify(this.source[this.index])}`);
+        return value;
+    }
+    parseValue() {
+        this.skipWhitespace();
+        const character = this.source[this.index];
+        if (character === '"')
+            return createJsonValue(this.parseString());
+        if (character === '{')
+            return this.parseObject();
+        if (character === '[')
+            return this.parseArray();
+        if (character === 't')
+            return this.parseLiteral('true', createJsonValue(true));
+        if (character === 'f')
+            return this.parseLiteral('false', createJsonValue(false));
+        if (character === 'n')
+            return this.parseLiteral('null', createJsonValue());
+        if (character === '-' || (character >= '0' && character <= '9'))
+            return this.parseNumber();
+        if (character === undefined)
+            this.fail('expected a JSON value');
+        this.fail(`unexpected character ${JSON.stringify(character)}`);
+    }
+    parseObject() {
+        this.index++;
+        this.skipWhitespace();
         const entries = new Map();
-        for (const [key, item] of Object.entries(value)) {
-            entries.set(key, nativeToJsonRuntime(item));
+        if (this.consume('}'))
+            return createJsonObject(entries);
+        while (true) {
+            if (this.source[this.index] !== '"')
+                this.fail('expected a string key');
+            const key = this.parseString();
+            this.skipWhitespace();
+            if (!this.consume(':'))
+                this.fail("expected ':' after object key");
+            entries.set(key, this.parseValue());
+            this.skipWhitespace();
+            if (this.consume('}'))
+                return createJsonObject(entries);
+            if (!this.consume(','))
+                this.fail("expected ',' or '}' after object value");
+            this.skipWhitespace();
         }
-        return createJsonObject(entries);
     }
-    return createJsonValue();
-}
-function jsonRuntimeToNative(value) {
-    switch (value.__jsonKind) {
-        case 'object': {
-            if (isJsonRuntimeValue(value.__jsonValue))
-                return jsonRuntimeToNative(value.__jsonValue);
-            const result = {};
-            for (const [key, item] of jsonEntries(value)) {
-                result[key] = jsonRuntimeToNative(item);
+    parseArray() {
+        this.index++;
+        this.skipWhitespace();
+        const items = [];
+        if (this.consume(']'))
+            return createJsonArray(items);
+        while (true) {
+            items.push(this.parseValue());
+            this.skipWhitespace();
+            if (this.consume(']'))
+                return createJsonArray(items);
+            if (!this.consume(','))
+                this.fail("expected ',' or ']' after array value");
+            this.skipWhitespace();
+        }
+    }
+    parseString() {
+        const start = this.index;
+        this.index++;
+        while (this.index < this.source.length) {
+            const character = this.source[this.index];
+            if (character === '"') {
+                this.index++;
+                try {
+                    return JSON.parse(this.source.slice(start, this.index));
+                }
+                catch {
+                    this.fail('invalid string escape');
+                }
             }
-            return result;
+            if (character === '\\') {
+                this.index += 2;
+                continue;
+            }
+            if (character.charCodeAt(0) < 0x20)
+                this.fail('unescaped control character in string');
+            this.index++;
         }
-        case 'array':
-            if (isJsonRuntimeValue(value.__jsonValue))
-                return jsonRuntimeToNative(value.__jsonValue);
-            return jsonItems(value).map(jsonRuntimeToNative);
-        case 'null':
-            return null;
-        default:
-            return value.__jsonValue;
+        this.fail('unterminated string');
+    }
+    parseNumber() {
+        const match = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/u.exec(this.source.slice(this.index));
+        if (!match)
+            this.fail('invalid number');
+        const token = match[0];
+        this.index += token.length;
+        if (!/[.eE]/u.test(token)) {
+            const exact = BigInt(token);
+            if (exact >= BigInt(Number.MIN_SAFE_INTEGER) && exact <= BigInt(Number.MAX_SAFE_INTEGER)) {
+                return createJsonPrimitive('int', Number(exact));
+            }
+            return createJsonPrimitive('int', exact);
+        }
+        const number = Number(token);
+        if (!Number.isFinite(number))
+            this.fail(`number ${token} is outside the supported float range`);
+        return createJsonPrimitive(Number.isInteger(number) ? 'int' : 'float', number);
+    }
+    parseLiteral(text, value) {
+        if (!this.source.startsWith(text, this.index))
+            this.fail(`expected '${text}'`);
+        this.index += text.length;
+        return value;
+    }
+    consume(character) {
+        if (this.source[this.index] !== character)
+            return false;
+        this.index++;
+        return true;
+    }
+    skipWhitespace() {
+        while (this.index < this.source.length && /[\u0009\u000a\u000d\u0020]/u.test(this.source[this.index])) {
+            this.index++;
+        }
+    }
+    fail(message) {
+        const prefix = this.source.slice(0, this.index);
+        const line = prefix.split('\n').length;
+        const lastNewline = prefix.lastIndexOf('\n');
+        const column = this.index - lastNewline;
+        throw new Error(`${message} at line ${line}, column ${column}`);
     }
 }
-function jsonSerialize(value, indent) {
-    return JSON.stringify(jsonRuntimeToNative(value), null, indent);
+function jsonSerialize(value, indent, file, line) {
+    return jsonSerializeValue(value, indent, 0, new Set(), file, line);
+}
+function jsonSerializeValue(value, indent, depth, stack, file, line) {
+    if (value.__jsonKind === 'null')
+        return 'null';
+    if (value.__jsonKind === 'string')
+        return JSON.stringify(value.__jsonValue);
+    if (value.__jsonKind === 'bool')
+        return value.__jsonValue ? 'true' : 'false';
+    if (value.__jsonKind === 'int')
+        return String(value.__jsonValue);
+    if (value.__jsonKind === 'float') {
+        const serialized = JSON.stringify(value.__jsonValue);
+        if (serialized !== undefined)
+            return serialized;
+        throw new IdylliumRuntimeError(file, line, `cannot serialize JSON number ${String(value.__jsonValue)}`);
+    }
+    const nested = isJsonRuntimeValue(value.__jsonValue) ? value.__jsonValue : value;
+    if (stack.has(nested))
+        throw new IdylliumRuntimeError(file, line, 'cannot serialize cyclic JSON value');
+    stack.add(nested);
+    try {
+        if (value.__jsonKind === 'array') {
+            const items = jsonItems(nested).map((item) => jsonSerializeValue(item, indent, depth + 1, stack, file, line));
+            return jsonSerializeCollection('[', ']', items, indent, depth);
+        }
+        const entries = [...jsonEntries(nested)].map(([key, item]) => {
+            const separator = indent > 0 ? ': ' : ':';
+            return `${JSON.stringify(key)}${separator}${jsonSerializeValue(item, indent, depth + 1, stack, file, line)}`;
+        });
+        return jsonSerializeCollection('{', '}', entries, indent, depth);
+    }
+    finally {
+        stack.delete(nested);
+    }
+}
+function jsonSerializeCollection(open, close, items, indent, depth) {
+    if (items.length === 0)
+        return `${open}${close}`;
+    if (indent === 0)
+        return `${open}${items.join(',')}${close}`;
+    const innerPadding = ' '.repeat(indent * (depth + 1));
+    const outerPadding = ' '.repeat(indent * depth);
+    return `${open}\n${innerPadding}${items.join(`,\n${innerPadding}`)}\n${outerPadding}${close}`;
 }
 function isJsonRuntimeValue(value) {
     return isPlainObject(value)
@@ -8790,6 +9359,27 @@ function jsonKindText(value) {
     if (value.__jsonKind === 'int' || value.__jsonKind === 'float')
         return 'number';
     return value.__jsonKind;
+}
+function jsonIntegerValue(value, expected, file, line) {
+    if (value.__jsonKind !== 'int')
+        throwJsonExpected(value, expected, file, line);
+    const integer = value.__jsonValue;
+    if (typeof integer === 'bigint')
+        return integer;
+    if (typeof integer === 'number' && Number.isInteger(integer))
+        return integer;
+    throw new IdylliumRuntimeError(file, line, 'json integer contains an invalid runtime value');
+}
+function jsonIntegerAsBigInt(value, expected, file, line) {
+    const integer = jsonIntegerValue(value, expected, file, line);
+    return typeof integer === 'bigint' ? integer : BigInt(integer);
+}
+function jsonIntegerArgument(value, argumentName, file, line) {
+    if (typeof value === 'bigint')
+        return value;
+    if (typeof value === 'number' && Number.isFinite(value) && Number.isInteger(value))
+        return value;
+    throw new IdylliumRuntimeError(file, line, `${argumentName} must be int, got '${String(value)}'`);
 }
 function createSqliteValue(value = null, file = 'sqlite', line = 0) {
     if (isSqliteRuntimeValue(value))
@@ -9283,7 +9873,7 @@ function sqliteColumnConversion(state, column, file, line, convert) {
     }
     catch (error) {
         if (error instanceof IdylliumRuntimeError) {
-            const detail = error.message.replace(/^.*?:\d+: runtime error: /u, '');
+            const detail = error.detail;
             throw new IdylliumRuntimeError(file, line, detail.replace(/^sqlite value/u, `sqlite column '${column}'`));
         }
         throw error;
@@ -9661,6 +10251,7 @@ function contextFunction(fn) {
     callable.__idylliumPassContext = true;
     return callable;
 }
+IdylliumTimeStamp.prototype.in_timezone.__idylliumPassContext = true;
 function defaultRuntimeImageService() {
     const nodeProcess = typeof process === 'object' ? process : null;
     if (!nodeProcess?.versions?.node)
@@ -9895,6 +10486,9 @@ function createRuntime(options = {}) {
         create(size, defaultFactory, dynamic) {
             return IdylliumArray.create(size, defaultFactory, dynamic);
         },
+        createAsync(size, defaultFactory, dynamic) {
+            return IdylliumArray.createAsync(size, defaultFactory, dynamic);
+        },
         from(values, dynamic, staticSize, defaultFactory) {
             return IdylliumArray.from(values, dynamic, staticSize, defaultFactory);
         },
@@ -9984,6 +10578,13 @@ function createRuntime(options = {}) {
         core,
         array,
         types,
+        errors: {
+            catchValue(error) {
+                if (!(error instanceof IdylliumRuntimeError) || error.kind === 'cancelled')
+                    throw error;
+                return createRuntimeErrorValue(error);
+            },
+        },
         modules: {
             math: {
                 pi: Math.PI,
@@ -10078,8 +10679,14 @@ function createRuntime(options = {}) {
                     }
                     return waitForRuntimeDelay(duration * 1000, file, line);
                 }),
-                now: contextFunction(() => IdylliumTimeStamp.now()),
-                from_unix: contextFunction((seconds, file, line) => IdylliumTimeStamp.fromUnix(seconds, file, line)),
+                now: contextFunction((...rawArgs) => {
+                    const { values, file, line } = splitContextArgs(rawArgs);
+                    return IdylliumTimeStamp.now(values[0] ?? 'UTC', file, line);
+                }),
+                from_unix: contextFunction((...rawArgs) => {
+                    const { values, file, line } = splitContextArgs(rawArgs);
+                    return IdylliumTimeStamp.fromUnix(values[0], values[1] ?? 'UTC', file, line);
+                }),
             },
             file: {
                 exists: contextFunction((targetPath, file, line) => {
@@ -10203,7 +10810,7 @@ function createRuntime(options = {}) {
                 is_valid: contextFunction((text, file, line) => {
                     const source = stringArgument(text, 'json.is_valid() text', file, line);
                     try {
-                        JSON.parse(source);
+                        new ExactJsonParser(source).parse();
                         return true;
                     }
                     catch {
@@ -10234,6 +10841,17 @@ function createRuntime(options = {}) {
                 RED: IdylliumColor.RGB(255, 0, 0),
                 GREEN: IdylliumColor.RGB(0, 255, 0),
                 BLUE: IdylliumColor.RGB(0, 0, 255),
+                YELLOW: IdylliumColor.RGB(255, 255, 0),
+                CYAN: IdylliumColor.RGB(0, 255, 255),
+                MAGENTA: IdylliumColor.RGB(255, 0, 255),
+                GRAY: IdylliumColor.RGB(128, 128, 128),
+                LIGHT_GRAY: IdylliumColor.RGB(192, 192, 192),
+                DARK_RED: IdylliumColor.RGB(128, 0, 0),
+                DARK_GREEN: IdylliumColor.RGB(0, 128, 0),
+                DARK_BLUE: IdylliumColor.RGB(0, 0, 128),
+                OLIVE: IdylliumColor.RGB(128, 128, 0),
+                TEAL: IdylliumColor.RGB(0, 128, 128),
+                PURPLE: IdylliumColor.RGB(128, 0, 128),
                 TRANSPARENT: IdylliumColor.RGBA(0, 0, 0, 0),
             },
         },
@@ -10392,7 +11010,7 @@ function createRuntime(options = {}) {
             throw runtimeStoppedError(file, line);
     }
     function runtimeStoppedError(file, line) {
-        return new IdylliumRuntimeError(file || 'main.idyl', line || 1, 'program was stopped');
+        return new IdylliumRuntimeError(file || 'main.idyl', line || 1, 'program was stopped', 'cancelled');
     }
 }
 function expectArray(value, file, line) {
@@ -11330,7 +11948,7 @@ function formatForConsole(value, precision) {
     if (value instanceof IdylliumArray)
         return value.toInspectString();
     if (isJsonRuntimeValue(value))
-        return jsonSerialize(value, 0);
+        return jsonSerialize(value, 0, 'json', 0);
     if (typeof value === 'boolean')
         return value ? 'true' : 'false';
     if (typeof value === 'number' && precision !== null) {
@@ -11342,7 +11960,7 @@ function formatForInspect(value) {
     if (value instanceof IdylliumArray)
         return value.toInspectString();
     if (isJsonRuntimeValue(value))
-        return jsonSerialize(value, 0);
+        return jsonSerialize(value, 0, 'json', 0);
     if (typeof value === 'string')
         return JSON.stringify(value);
     if (typeof value === 'boolean')
@@ -11356,6 +11974,25 @@ function runtimeStat(filePath, sourceFile, line, mode) {
     catch (error) {
         throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${filePath}' for ${mode}: ${errorMessage(error)}`);
     }
+}
+function createRuntimeErrorValue(error) {
+    const file = publicRuntimeErrorFile(error.file);
+    const result = {
+        __idylliumType: 'RuntimeError',
+        to_string: () => `${file}:${error.line}: runtime error: ${error.detail}`,
+    };
+    defineRuntimeGetter(result, 'message', () => error.detail);
+    defineRuntimeGetter(result, 'file', () => file);
+    defineRuntimeGetter(result, 'line', () => error.line);
+    return result;
+}
+function publicRuntimeErrorFile(file) {
+    const normalized = file.replace(/\\/gu, '/');
+    if (normalized.startsWith('/workspace/'))
+        return normalized.slice('/workspace/'.length);
+    if (normalized.startsWith('workspace/'))
+        return normalized.slice('workspace/'.length);
+    return normalized;
 }
 function isPlainObject(value) {
     return typeof value === 'object' && value !== null && !Array.isArray(value);

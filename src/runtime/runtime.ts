@@ -48,9 +48,10 @@ export class IdylliumRuntimeError extends Error {
   constructor(
     readonly file: string,
     readonly line: number,
-    message: string,
+    readonly detail: string,
+    readonly kind: 'program' | 'cancelled' = 'program',
   ) {
-    super(`${file}:${line}: runtime error: ${message}`);
+    super(`${file}:${line}: runtime error: ${detail}`);
     this.name = 'IdylliumRuntimeError';
   }
 }
@@ -154,62 +155,99 @@ export class IdylliumColor {
   }
 }
 
+interface TimeStampComponents {
+  readonly year: number;
+  readonly month: number;
+  readonly day: number;
+  readonly hour: number;
+  readonly minute: number;
+  readonly second: number;
+  readonly weekDay: number;
+}
+
+const timeZoneFormatters = new Map<string, Intl.DateTimeFormat>();
+const weekDayNumbers: Readonly<Record<string, number>> = {
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
+};
+
 export class IdylliumTimeStamp {
-  constructor(private readonly unixSeconds: number) {}
+  readonly timezone: string;
+  private readonly components: TimeStampComponents;
 
-  static now(): IdylliumTimeStamp {
-    return new IdylliumTimeStamp(Math.floor(Date.now() / 1000));
+  constructor(
+    private readonly unixSeconds: number,
+    timezone: unknown = 'UTC',
+    file = 'time',
+    line = 0,
+  ) {
+    this.timezone = normalizeTimeZone(timezone, 'time.stamp timezone', file, line);
+    this.components = timeStampComponents(unixSeconds, this.timezone, file, line);
   }
 
-  static fromUnix(seconds: number, file: string, line: number): IdylliumTimeStamp {
-    return new IdylliumTimeStamp(integerNumber(seconds, 'time.from_unix() seconds', file, line));
+  static now(timezone: unknown, file: string, line: number): IdylliumTimeStamp {
+    return new IdylliumTimeStamp(Math.floor(Date.now() / 1000), timezone, file, line);
   }
 
-  year(): number {
-    return this.date().getUTCFullYear();
+  static fromUnix(seconds: unknown, timezone: unknown, file: string, line: number): IdylliumTimeStamp {
+    const unixSeconds = integerNumber(seconds, 'time.from_unix() seconds', file, line);
+    return new IdylliumTimeStamp(unixSeconds, timezone, file, line);
   }
 
-  month(): number {
-    return this.date().getUTCMonth() + 1;
+  get year(): number {
+    return this.components.year;
   }
 
-  day(): number {
-    return this.date().getUTCDate();
+  get month(): number {
+    return this.components.month;
   }
 
-  hour(): number {
-    return this.date().getUTCHours();
+  get day(): number {
+    return this.components.day;
   }
 
-  minute(): number {
-    return this.date().getUTCMinutes();
+  get hour(): number {
+    return this.components.hour;
   }
 
-  second(): number {
-    return this.date().getUTCSeconds();
+  get minute(): number {
+    return this.components.minute;
   }
 
-  week_day(): number {
-    return this.date().getUTCDay();
+  get second(): number {
+    return this.components.second;
   }
 
-  unix(): number {
+  get week_day(): number {
+    return this.components.weekDay;
+  }
+
+  get unix(): number {
     return this.unixSeconds;
+  }
+
+  in_timezone(timezone: unknown, file: string, line: number): IdylliumTimeStamp {
+    return new IdylliumTimeStamp(this.unixSeconds, timezone, file, line);
   }
 
   to_string(): string {
     return [
-      this.year().toString().padStart(4, '0'),
+      this.year.toString().padStart(4, '0'),
       '-',
-      this.month().toString().padStart(2, '0'),
+      this.month.toString().padStart(2, '0'),
       '-',
-      this.day().toString().padStart(2, '0'),
+      this.day.toString().padStart(2, '0'),
       ' ',
-      this.hour().toString().padStart(2, '0'),
+      this.hour.toString().padStart(2, '0'),
       ':',
-      this.minute().toString().padStart(2, '0'),
+      this.minute.toString().padStart(2, '0'),
       ':',
-      this.second().toString().padStart(2, '0'),
+      this.second.toString().padStart(2, '0'),
     ].join('');
   }
 
@@ -217,17 +255,70 @@ export class IdylliumTimeStamp {
     return this.to_string();
   }
 
-  private date(): Date {
-    return new Date(this.unixSeconds * 1000);
+}
+
+function normalizeTimeZone(value: unknown, argumentName: string, file: string, line: number): string {
+  const requested = stringArgument(value, argumentName, file, line);
+  try {
+    return new Intl.DateTimeFormat('en-US', { timeZone: requested }).resolvedOptions().timeZone;
+  } catch {
+    throw new IdylliumRuntimeError(file, line, `${argumentName} is unknown, got ${JSON.stringify(requested)}`);
   }
 }
+
+function timeStampComponents(
+  unixSeconds: number,
+  timezone: string,
+  file: string,
+  line: number,
+): TimeStampComponents {
+  const date = new Date(unixSeconds * 1000);
+  if (!Number.isFinite(date.getTime())) {
+    throw new IdylliumRuntimeError(file, line, `time.stamp unix value is outside the supported date range, got ${unixSeconds}`);
+  }
+
+  let formatter = timeZoneFormatters.get(timezone);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat('en-US-u-nu-latn', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      weekday: 'short',
+      hourCycle: 'h23',
+    });
+    timeZoneFormatters.set(timezone, formatter);
+  }
+
+  const values = new Map<string, string>(formatter.formatToParts(date).map((part) => [part.type, part.value]));
+  const numberPart = (name: string): number => Number.parseInt(values.get(name) ?? '', 10);
+  const weekDay = weekDayNumbers[values.get('weekday') ?? ''];
+  const components: TimeStampComponents = {
+    year: numberPart('year'),
+    month: numberPart('month'),
+    day: numberPart('day'),
+    hour: numberPart('hour'),
+    minute: numberPart('minute'),
+    second: numberPart('second'),
+    weekDay,
+  };
+  if (Object.values(components).some((value) => !Number.isInteger(value))) {
+    throw new IdylliumRuntimeError(file, line, `time.stamp cannot represent unix value ${unixSeconds} in timezone '${timezone}'`);
+  }
+  return components;
+}
+
+type IdylliumArrayDefaultFactory = () => unknown | Promise<unknown>;
 
 export class IdylliumArray {
   constructor(
     private readonly items: unknown[],
     private readonly dynamic: boolean,
     private readonly staticSize: number | null,
-    private readonly defaultFactory: () => unknown,
+    private readonly defaultFactory: IdylliumArrayDefaultFactory,
   ) {
     if (!dynamic && staticSize !== null && items.length !== staticSize) {
       throw new IdylliumRuntimeError('array', 0, `array initializer has ${items.length} elements, but static array requires ${staticSize}`);
@@ -244,11 +335,24 @@ export class IdylliumArray {
     );
   }
 
+  static async createAsync(
+    size: number,
+    defaultFactory: IdylliumArrayDefaultFactory,
+    dynamic: boolean,
+  ): Promise<IdylliumArray> {
+    const normalizedSize = Math.max(0, Math.trunc(size));
+    const items: unknown[] = [];
+    for (let index = 0; index < normalizedSize; index += 1) {
+      items.push(await defaultFactory());
+    }
+    return new IdylliumArray(items, dynamic, dynamic ? null : normalizedSize, defaultFactory);
+  }
+
   static from(
     values: unknown[],
     dynamic: boolean,
     staticSize: number | null,
-    defaultFactory: () => unknown,
+    defaultFactory: IdylliumArrayDefaultFactory,
   ): IdylliumArray {
     return new IdylliumArray([...values], dynamic, dynamic ? null : staticSize, defaultFactory);
   }
@@ -257,7 +361,7 @@ export class IdylliumArray {
     value: unknown,
     dynamic: boolean,
     staticSize: number | null,
-    defaultFactory: () => unknown,
+    defaultFactory: IdylliumArrayDefaultFactory,
     convertElement: (value: unknown) => unknown,
     targetType: string,
     file: string,
@@ -293,7 +397,7 @@ export class IdylliumArray {
     this.items[this.validIndex(index, file, line)] = value;
   }
 
-  length(): number {
+  get length(): number {
     return this.items.length;
   }
 
@@ -331,11 +435,11 @@ export class IdylliumArray {
     this.items.splice(this.validIndex(index, file, line), 1);
   }
 
-  resize(size: unknown, file: string, line: number): void {
+  async resize(size: unknown, file: string, line: number): Promise<void> {
     this.expectDynamic('resize', file, line);
     const normalizedSize = this.validSize(size, file, line);
     while (this.items.length < normalizedSize) {
-      this.items.push(this.defaultFactory());
+      this.items.push(await this.defaultFactory());
     }
     this.items.length = normalizedSize;
   }
@@ -369,8 +473,6 @@ export class IdylliumArray {
 
   callMethod(name: string, args: readonly unknown[], file: string, line: number): unknown {
     switch (name) {
-      case 'length':
-        return this.length();
       case 'contains':
         return this.contains(args[0]);
       case 'find':
@@ -463,6 +565,7 @@ function createJsonValue(value?: unknown, file = 'json', line = 0): JsonRuntimeV
   if (isJsonRuntimeValue(value)) return value;
   if (typeof value === 'string') return createJsonPrimitive('string', value);
   if (typeof value === 'boolean') return createJsonPrimitive('bool', value);
+  if (typeof value === 'bigint') return createJsonPrimitive('int', value);
   if (typeof value === 'number') {
     const number = finiteNumber(value, 'json.Value() value', file, line);
     return createJsonPrimitive(Number.isInteger(number) ? 'int' : 'float', number);
@@ -477,7 +580,7 @@ function createJsonObject(entries: Map<string, JsonRuntimeValue> = new Map()): J
     enumerable: false,
     configurable: true,
   });
-  obj.length = () => entries.size;
+  defineRuntimeGetter(obj, 'length', () => entries.size);
   obj.has = contextFunction((key: unknown, file: string, line: number) => entries.has(stringArgument(key, 'json.Object.has() key', file, line)));
   obj.get = contextFunction((key: unknown, file: string, line: number) => {
     const name = stringArgument(key, 'json.Object.get() key', file, line);
@@ -517,7 +620,7 @@ function createJsonArray(items: JsonRuntimeValue[] = []): JsonRuntimeValue {
     enumerable: false,
     configurable: true,
   });
-  obj.length = () => items.length;
+  defineRuntimeGetter(obj, 'length', () => items.length);
   obj.at = contextFunction((index: unknown, file: string, line: number) => items[jsonArrayIndex(items, index, 'json.Array.at()', file, line)]);
   obj.set = contextFunction((index: unknown, value: unknown, file: string, line: number) => {
     items[jsonArrayIndex(items, index, 'json.Array.set()', file, line)] = expectJsonValue(value, 'json.Array.set() value', file, line);
@@ -564,11 +667,36 @@ function createJsonBase(typeName: JsonRuntimeValue['__idylliumType'], kind: Json
     throwJsonExpected(obj, 'string', file, line);
   });
   obj.to_int = contextFunction((file: string, line: number) => {
-    if (obj.__jsonKind === 'int') return obj.__jsonValue as number;
-    throwJsonExpected(obj, 'int', file, line);
+    const integer = jsonIntegerValue(obj, 'int', file, line);
+    if (typeof integer === 'number' && Number.isSafeInteger(integer)) return integer;
+    if (typeof integer === 'bigint' && integer >= BigInt(Number.MIN_SAFE_INTEGER) && integer <= BigInt(Number.MAX_SAFE_INTEGER)) {
+      return Number(integer);
+    }
+    throw new IdylliumRuntimeError(file, line, 'json integer is outside the int range; use to_int64() or to_uint64()');
+  });
+  obj.to_int64 = contextFunction((file: string, line: number) => {
+    const integer = jsonIntegerAsBigInt(obj, 'int64', file, line);
+    const minimum = -(1n << 63n);
+    const maximum = (1n << 63n) - 1n;
+    if (integer < minimum || integer > maximum) {
+      throw new IdylliumRuntimeError(file, line, `json integer ${integer} is outside the types.int64 range`);
+    }
+    return integer;
+  });
+  obj.to_uint64 = contextFunction((file: string, line: number) => {
+    const integer = jsonIntegerAsBigInt(obj, 'uint64', file, line);
+    const maximum = (1n << 64n) - 1n;
+    if (integer < 0n || integer > maximum) {
+      throw new IdylliumRuntimeError(file, line, `json integer ${integer} is outside the types.uint64 range`);
+    }
+    return integer;
   });
   obj.to_float = contextFunction((file: string, line: number) => {
-    if (obj.__jsonKind === 'int' || obj.__jsonKind === 'float') return obj.__jsonValue as number;
+    if (obj.__jsonKind === 'int' || obj.__jsonKind === 'float') {
+      const number = Number(obj.__jsonValue);
+      if (Number.isFinite(number)) return number;
+      throw new IdylliumRuntimeError(file, line, `json number ${String(obj.__jsonValue)} is outside the float range`);
+    }
     throwJsonExpected(obj, 'number', file, line);
   });
   obj.to_bool = contextFunction((file: string, line: number) => {
@@ -588,7 +716,7 @@ function createJsonBase(typeName: JsonRuntimeValue['__idylliumType'], kind: Json
     setJsonPrimitiveValue(obj, 'string', stringArgument(value, 'json.Value.set_string() value', file, line));
   });
   obj.set_int = contextFunction((value: unknown, file: string, line: number) => {
-    setJsonPrimitiveValue(obj, 'int', integerNumber(value, 'json.Value.set_int() value', file, line));
+    setJsonPrimitiveValue(obj, 'int', jsonIntegerArgument(value, 'json.Value.set_int() value', file, line));
   });
   obj.set_float = contextFunction((value: unknown, file: string, line: number) => {
     setJsonPrimitiveValue(obj, 'float', finiteNumber(value, 'json.Value.set_float() value', file, line));
@@ -605,60 +733,201 @@ function createJsonBase(typeName: JsonRuntimeValue['__idylliumType'], kind: Json
   obj.set_array = contextFunction((value: unknown, file: string, line: number) => {
     setJsonNestedValue(obj, 'array', expectJsonKind(value, 'array', 'json.Value.set_array() value', file, line));
   });
-  obj.to_json = () => jsonSerialize(obj, 0);
+  obj.to_json = contextFunction((file: string, line: number) => jsonSerialize(obj, 0, file, line));
   obj.to_pretty_json = contextFunction((indentOrFile: number | string, fileOrLine: string | number, maybeLine?: number) => {
     const context = optionalNumberContext(indentOrFile, fileOrLine, maybeLine);
     const indent = context.value === undefined ? 2 : jsonIndent(context.value, context.file, context.line);
-    return jsonSerialize(obj, indent);
+    return jsonSerialize(obj, indent, context.file, context.line);
   });
-  obj.toString = () => jsonSerialize(obj, 0);
+  obj.toString = () => jsonSerialize(obj, 0, 'json', 0);
   return obj;
 }
 
 function parseJsonValue(text: string, file: string, line: number): JsonRuntimeValue {
   try {
-    return nativeToJsonRuntime(JSON.parse(text));
+    return new ExactJsonParser(text).parse();
   } catch (error) {
     throw new IdylliumRuntimeError(file, line, `json.parse() invalid JSON: ${errorMessage(error)}`);
   }
 }
 
-function nativeToJsonRuntime(value: unknown): JsonRuntimeValue {
-  if (value === null) return createJsonValue();
-  if (typeof value === 'string' || typeof value === 'boolean' || typeof value === 'number') return createJsonValue(value);
-  if (Array.isArray(value)) return createJsonArray(value.map(nativeToJsonRuntime));
-  if (isPlainObject(value)) {
+class ExactJsonParser {
+  private index = 0;
+
+  constructor(private readonly source: string) {}
+
+  parse(): JsonRuntimeValue {
+    this.skipWhitespace();
+    if (this.index >= this.source.length) this.fail('expected a JSON value');
+    const value = this.parseValue();
+    this.skipWhitespace();
+    if (this.index !== this.source.length) this.fail(`unexpected character ${JSON.stringify(this.source[this.index])}`);
+    return value;
+  }
+
+  private parseValue(): JsonRuntimeValue {
+    this.skipWhitespace();
+    const character = this.source[this.index];
+    if (character === '"') return createJsonValue(this.parseString());
+    if (character === '{') return this.parseObject();
+    if (character === '[') return this.parseArray();
+    if (character === 't') return this.parseLiteral('true', createJsonValue(true));
+    if (character === 'f') return this.parseLiteral('false', createJsonValue(false));
+    if (character === 'n') return this.parseLiteral('null', createJsonValue());
+    if (character === '-' || (character >= '0' && character <= '9')) return this.parseNumber();
+    if (character === undefined) this.fail('expected a JSON value');
+    this.fail(`unexpected character ${JSON.stringify(character)}`);
+  }
+
+  private parseObject(): JsonRuntimeValue {
+    this.index++;
+    this.skipWhitespace();
     const entries = new Map<string, JsonRuntimeValue>();
-    for (const [key, item] of Object.entries(value)) {
-      entries.set(key, nativeToJsonRuntime(item));
-    }
-    return createJsonObject(entries);
-  }
-  return createJsonValue();
-}
+    if (this.consume('}')) return createJsonObject(entries);
 
-function jsonRuntimeToNative(value: JsonRuntimeValue): unknown {
-  switch (value.__jsonKind) {
-    case 'object': {
-      if (isJsonRuntimeValue(value.__jsonValue)) return jsonRuntimeToNative(value.__jsonValue);
-      const result: Record<string, unknown> = {};
-      for (const [key, item] of jsonEntries(value)) {
-        result[key] = jsonRuntimeToNative(item);
+    while (true) {
+      if (this.source[this.index] !== '"') this.fail('expected a string key');
+      const key = this.parseString();
+      this.skipWhitespace();
+      if (!this.consume(':')) this.fail("expected ':' after object key");
+      entries.set(key, this.parseValue());
+      this.skipWhitespace();
+      if (this.consume('}')) return createJsonObject(entries);
+      if (!this.consume(',')) this.fail("expected ',' or '}' after object value");
+      this.skipWhitespace();
+    }
+  }
+
+  private parseArray(): JsonRuntimeValue {
+    this.index++;
+    this.skipWhitespace();
+    const items: JsonRuntimeValue[] = [];
+    if (this.consume(']')) return createJsonArray(items);
+
+    while (true) {
+      items.push(this.parseValue());
+      this.skipWhitespace();
+      if (this.consume(']')) return createJsonArray(items);
+      if (!this.consume(',')) this.fail("expected ',' or ']' after array value");
+      this.skipWhitespace();
+    }
+  }
+
+  private parseString(): string {
+    const start = this.index;
+    this.index++;
+    while (this.index < this.source.length) {
+      const character = this.source[this.index];
+      if (character === '"') {
+        this.index++;
+        try {
+          return JSON.parse(this.source.slice(start, this.index)) as string;
+        } catch {
+          this.fail('invalid string escape');
+        }
       }
-      return result;
+      if (character === '\\') {
+        this.index += 2;
+        continue;
+      }
+      if (character.charCodeAt(0) < 0x20) this.fail('unescaped control character in string');
+      this.index++;
     }
-    case 'array':
-      if (isJsonRuntimeValue(value.__jsonValue)) return jsonRuntimeToNative(value.__jsonValue);
-      return jsonItems(value).map(jsonRuntimeToNative);
-    case 'null':
-      return null;
-    default:
-      return value.__jsonValue;
+    this.fail('unterminated string');
+  }
+
+  private parseNumber(): JsonRuntimeValue {
+    const match = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/u.exec(this.source.slice(this.index));
+    if (!match) this.fail('invalid number');
+    const token = match[0];
+    this.index += token.length;
+
+    if (!/[.eE]/u.test(token)) {
+      const exact = BigInt(token);
+      if (exact >= BigInt(Number.MIN_SAFE_INTEGER) && exact <= BigInt(Number.MAX_SAFE_INTEGER)) {
+        return createJsonPrimitive('int', Number(exact));
+      }
+      return createJsonPrimitive('int', exact);
+    }
+
+    const number = Number(token);
+    if (!Number.isFinite(number)) this.fail(`number ${token} is outside the supported float range`);
+    return createJsonPrimitive(Number.isInteger(number) ? 'int' : 'float', number);
+  }
+
+  private parseLiteral(text: string, value: JsonRuntimeValue): JsonRuntimeValue {
+    if (!this.source.startsWith(text, this.index)) this.fail(`expected '${text}'`);
+    this.index += text.length;
+    return value;
+  }
+
+  private consume(character: string): boolean {
+    if (this.source[this.index] !== character) return false;
+    this.index++;
+    return true;
+  }
+
+  private skipWhitespace(): void {
+    while (this.index < this.source.length && /[\u0009\u000a\u000d\u0020]/u.test(this.source[this.index])) {
+      this.index++;
+    }
+  }
+
+  private fail(message: string): never {
+    const prefix = this.source.slice(0, this.index);
+    const line = prefix.split('\n').length;
+    const lastNewline = prefix.lastIndexOf('\n');
+    const column = this.index - lastNewline;
+    throw new Error(`${message} at line ${line}, column ${column}`);
   }
 }
 
-function jsonSerialize(value: JsonRuntimeValue, indent: number): string {
-  return JSON.stringify(jsonRuntimeToNative(value), null, indent);
+function jsonSerialize(value: JsonRuntimeValue, indent: number, file: string, line: number): string {
+  return jsonSerializeValue(value, indent, 0, new Set(), file, line);
+}
+
+function jsonSerializeValue(
+  value: JsonRuntimeValue,
+  indent: number,
+  depth: number,
+  stack: Set<JsonRuntimeValue>,
+  file: string,
+  line: number,
+): string {
+  if (value.__jsonKind === 'null') return 'null';
+  if (value.__jsonKind === 'string') return JSON.stringify(value.__jsonValue);
+  if (value.__jsonKind === 'bool') return value.__jsonValue ? 'true' : 'false';
+  if (value.__jsonKind === 'int') return String(value.__jsonValue);
+  if (value.__jsonKind === 'float') {
+    const serialized = JSON.stringify(value.__jsonValue);
+    if (serialized !== undefined) return serialized;
+    throw new IdylliumRuntimeError(file, line, `cannot serialize JSON number ${String(value.__jsonValue)}`);
+  }
+
+  const nested = isJsonRuntimeValue(value.__jsonValue) ? value.__jsonValue : value;
+  if (stack.has(nested)) throw new IdylliumRuntimeError(file, line, 'cannot serialize cyclic JSON value');
+  stack.add(nested);
+  try {
+    if (value.__jsonKind === 'array') {
+      const items = jsonItems(nested).map((item) => jsonSerializeValue(item, indent, depth + 1, stack, file, line));
+      return jsonSerializeCollection('[', ']', items, indent, depth);
+    }
+    const entries = [...jsonEntries(nested)].map(([key, item]) => {
+      const separator = indent > 0 ? ': ' : ':';
+      return `${JSON.stringify(key)}${separator}${jsonSerializeValue(item, indent, depth + 1, stack, file, line)}`;
+    });
+    return jsonSerializeCollection('{', '}', entries, indent, depth);
+  } finally {
+    stack.delete(nested);
+  }
+}
+
+function jsonSerializeCollection(open: string, close: string, items: readonly string[], indent: number, depth: number): string {
+  if (items.length === 0) return `${open}${close}`;
+  if (indent === 0) return `${open}${items.join(',')}${close}`;
+  const innerPadding = ' '.repeat(indent * (depth + 1));
+  const outerPadding = ' '.repeat(indent * depth);
+  return `${open}\n${innerPadding}${items.join(`,\n${innerPadding}`)}\n${outerPadding}${close}`;
 }
 
 function isJsonRuntimeValue(value: unknown): value is JsonRuntimeValue {
@@ -736,6 +1005,30 @@ function throwJsonExpected(value: JsonRuntimeValue, expected: string, file: stri
 function jsonKindText(value: JsonRuntimeValue): string {
   if (value.__jsonKind === 'int' || value.__jsonKind === 'float') return 'number';
   return value.__jsonKind;
+}
+
+function jsonIntegerValue(
+  value: JsonRuntimeValue,
+  expected: string,
+  file: string,
+  line: number,
+): number | bigint {
+  if (value.__jsonKind !== 'int') throwJsonExpected(value, expected, file, line);
+  const integer = value.__jsonValue;
+  if (typeof integer === 'bigint') return integer;
+  if (typeof integer === 'number' && Number.isInteger(integer)) return integer;
+  throw new IdylliumRuntimeError(file, line, 'json integer contains an invalid runtime value');
+}
+
+function jsonIntegerAsBigInt(value: JsonRuntimeValue, expected: string, file: string, line: number): bigint {
+  const integer = jsonIntegerValue(value, expected, file, line);
+  return typeof integer === 'bigint' ? integer : BigInt(integer);
+}
+
+function jsonIntegerArgument(value: unknown, argumentName: string, file: string, line: number): number | bigint {
+  if (typeof value === 'bigint') return value;
+  if (typeof value === 'number' && Number.isFinite(value) && Number.isInteger(value)) return value;
+  throw new IdylliumRuntimeError(file, line, `${argumentName} must be int, got '${String(value)}'`);
 }
 
 type SqliteRuntimeKind = 'null' | 'integer' | 'real' | 'text' | 'blob';
@@ -1376,7 +1669,7 @@ function sqliteColumnConversion<T>(
     return convert(value);
   } catch (error) {
     if (error instanceof IdylliumRuntimeError) {
-      const detail = error.message.replace(/^.*?:\d+: runtime error: /u, '');
+      const detail = error.detail;
       throw new IdylliumRuntimeError(file, line, detail.replace(/^sqlite value/u, `sqlite column '${column}'`));
     }
     throw error;
@@ -1861,6 +2154,8 @@ function contextFunction(fn: (...args: any[]) => unknown): ContextualRuntimeFunc
   return callable;
 }
 
+(IdylliumTimeStamp.prototype.in_timezone as ContextualRuntimeFunction).__idylliumPassContext = true;
+
 export interface IdylliumRuntime {
   readonly console: {
     write(...values: unknown[]): Promise<void>;
@@ -1883,12 +2178,13 @@ export interface IdylliumRuntime {
   };
   readonly array: {
     create(size: number, defaultFactory: () => unknown, dynamic: boolean): IdylliumArray;
-    from(values: unknown[], dynamic: boolean, staticSize: number | null, defaultFactory: () => unknown): IdylliumArray;
+    createAsync(size: number, defaultFactory: IdylliumArrayDefaultFactory, dynamic: boolean): Promise<IdylliumArray>;
+    from(values: unknown[], dynamic: boolean, staticSize: number | null, defaultFactory: IdylliumArrayDefaultFactory): IdylliumArray;
     convert(
       value: unknown,
       dynamic: boolean,
       staticSize: number | null,
-      defaultFactory: () => unknown,
+      defaultFactory: IdylliumArrayDefaultFactory,
       convertElement: (value: unknown) => unknown,
       targetType: string,
       file: string,
@@ -1907,6 +2203,9 @@ export interface IdylliumRuntime {
     to_hex(value: unknown, typeName: string): string;
     shift_left(value: unknown, typeName: string, bits: unknown, file: string, line: number): number | bigint;
     shift_right(value: unknown, typeName: string, bits: unknown, file: string, line: number): number | bigint;
+  };
+  readonly errors: {
+    catchValue(error: unknown): Record<string, unknown>;
   };
   readonly modules: {
     readonly math: Record<string, unknown>;
@@ -2175,11 +2474,18 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     create(size: number, defaultFactory: () => unknown, dynamic: boolean): IdylliumArray {
       return IdylliumArray.create(size, defaultFactory, dynamic);
     },
+    createAsync(
+      size: number,
+      defaultFactory: IdylliumArrayDefaultFactory,
+      dynamic: boolean,
+    ): Promise<IdylliumArray> {
+      return IdylliumArray.createAsync(size, defaultFactory, dynamic);
+    },
     from(
       values: unknown[],
       dynamic: boolean,
       staticSize: number | null,
-      defaultFactory: () => unknown,
+      defaultFactory: IdylliumArrayDefaultFactory,
     ): IdylliumArray {
       return IdylliumArray.from(values, dynamic, staticSize, defaultFactory);
     },
@@ -2187,7 +2493,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       value: unknown,
       dynamic: boolean,
       staticSize: number | null,
-      defaultFactory: () => unknown,
+      defaultFactory: IdylliumArrayDefaultFactory,
       convertElement: (value: unknown) => unknown,
       targetType: string,
       file: string,
@@ -2288,6 +2594,12 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     core,
     array,
     types,
+    errors: {
+      catchValue(error: unknown): RuntimeObject {
+        if (!(error instanceof IdylliumRuntimeError) || error.kind === 'cancelled') throw error;
+        return createRuntimeErrorValue(error);
+      },
+    },
     modules: {
       math: {
         pi: Math.PI,
@@ -2381,8 +2693,14 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
           }
           return waitForRuntimeDelay(duration * 1000, file, line);
         }),
-        now: contextFunction(() => IdylliumTimeStamp.now()),
-        from_unix: contextFunction((seconds: number, file: string, line: number) => IdylliumTimeStamp.fromUnix(seconds, file, line)),
+        now: contextFunction((...rawArgs: unknown[]) => {
+          const { values, file, line } = splitContextArgs(rawArgs);
+          return IdylliumTimeStamp.now(values[0] ?? 'UTC', file, line);
+        }),
+        from_unix: contextFunction((...rawArgs: unknown[]) => {
+          const { values, file, line } = splitContextArgs(rawArgs);
+          return IdylliumTimeStamp.fromUnix(values[0], values[1] ?? 'UTC', file, line);
+        }),
       },
       file: {
         exists: contextFunction((targetPath: string, file: string, line: number) => {
@@ -2511,7 +2829,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
         is_valid: contextFunction((text: unknown, file: string, line: number) => {
           const source = stringArgument(text, 'json.is_valid() text', file, line);
           try {
-            JSON.parse(source);
+            new ExactJsonParser(source).parse();
             return true;
           } catch {
             return false;
@@ -2545,6 +2863,17 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
         RED: IdylliumColor.RGB(255, 0, 0),
         GREEN: IdylliumColor.RGB(0, 255, 0),
         BLUE: IdylliumColor.RGB(0, 0, 255),
+        YELLOW: IdylliumColor.RGB(255, 255, 0),
+        CYAN: IdylliumColor.RGB(0, 255, 255),
+        MAGENTA: IdylliumColor.RGB(255, 0, 255),
+        GRAY: IdylliumColor.RGB(128, 128, 128),
+        LIGHT_GRAY: IdylliumColor.RGB(192, 192, 192),
+        DARK_RED: IdylliumColor.RGB(128, 0, 0),
+        DARK_GREEN: IdylliumColor.RGB(0, 128, 0),
+        DARK_BLUE: IdylliumColor.RGB(0, 0, 128),
+        OLIVE: IdylliumColor.RGB(128, 128, 0),
+        TEAL: IdylliumColor.RGB(0, 128, 128),
+        PURPLE: IdylliumColor.RGB(128, 0, 128),
         TRANSPARENT: IdylliumColor.RGBA(0, 0, 0, 0),
       },
     },
@@ -2704,7 +3033,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
   }
 
   function runtimeStoppedError(file: string, line: number): IdylliumRuntimeError {
-    return new IdylliumRuntimeError(file || 'main.idyl', line || 1, 'program was stopped');
+    return new IdylliumRuntimeError(file || 'main.idyl', line || 1, 'program was stopped', 'cancelled');
   }
 }
 
@@ -3748,7 +4077,7 @@ function validRange(length: number): string {
 
 function formatForConsole(value: unknown, precision: number | null): string {
   if (value instanceof IdylliumArray) return value.toInspectString();
-  if (isJsonRuntimeValue(value)) return jsonSerialize(value, 0);
+  if (isJsonRuntimeValue(value)) return jsonSerialize(value, 0, 'json', 0);
   if (typeof value === 'boolean') return value ? 'true' : 'false';
   if (typeof value === 'number' && precision !== null) {
     return Number(value.toFixed(precision)).toString();
@@ -3758,7 +4087,7 @@ function formatForConsole(value: unknown, precision: number | null): string {
 
 function formatForInspect(value: unknown): string {
   if (value instanceof IdylliumArray) return value.toInspectString();
-  if (isJsonRuntimeValue(value)) return jsonSerialize(value, 0);
+  if (isJsonRuntimeValue(value)) return jsonSerialize(value, 0, 'json', 0);
   if (typeof value === 'string') return JSON.stringify(value);
   if (typeof value === 'boolean') return value ? 'true' : 'false';
   return String(value);
@@ -3789,6 +4118,25 @@ interface RuntimeObjectState {
 
 type RuntimeObject = Record<string, unknown>;
 type RuntimePropertySetter = (value: unknown, file: string, line: number) => void;
+
+function createRuntimeErrorValue(error: IdylliumRuntimeError): RuntimeObject {
+  const file = publicRuntimeErrorFile(error.file);
+  const result: RuntimeObject = {
+    __idylliumType: 'RuntimeError',
+    to_string: () => `${file}:${error.line}: runtime error: ${error.detail}`,
+  };
+  defineRuntimeGetter(result, 'message', () => error.detail);
+  defineRuntimeGetter(result, 'file', () => file);
+  defineRuntimeGetter(result, 'line', () => error.line);
+  return result;
+}
+
+function publicRuntimeErrorFile(file: string): string {
+  const normalized = file.replace(/\\/gu, '/');
+  if (normalized.startsWith('/workspace/')) return normalized.slice('/workspace/'.length);
+  if (normalized.startsWith('workspace/')) return normalized.slice('workspace/'.length);
+  return normalized;
+}
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);

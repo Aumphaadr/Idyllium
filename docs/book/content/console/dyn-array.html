@@ -107,15 +107,15 @@ console.writeln(nums);
 
     <!-- Section 6 -->
     <div class="docs-section">
-      <h2>Текущая длина: метод <code>length()</code></h2>
+      <h2>Текущая длина: свойство <code>length</code></h2>
 
       <idyl-code-block><script type="text/plain">
 dyn_array<int> nums = [11, 22, 33, 44, 55];
-int L1 = nums.length();
+int L1 = nums.length;
 console.writeln("В массиве сейчас ", L1, " ячеек");
 
 nums.add(66);
-int L2 = nums.length();
+int L2 = nums.length;
 console.writeln("А теперь ", L2, " ячеек");
 </script></idyl-code-block>
 
@@ -133,7 +133,7 @@ dyn_array<int> nums = [81, 45, 33, 27, 90, 64];
 nums.add(333);
 nums.add(444);
 
-for (int i = 0; i < nums.length(); i = i + 1) {
+for (int i = 0; i < nums.length; i = i + 1) {
     console.writeln(nums[i]);
 }
 </script></idyl-code-block>

@@ -9,8 +9,8 @@
   const MIN_FONT_SIZE = 10;
   const MAX_FONT_SIZE = 32;
   const KEYWORDS = new Set([
-    'and', 'break', 'catch', 'class', 'const', 'constructor', 'continue', 'destructor', 'do', 'else', 'extends',
-    'false', 'for', 'function', 'if', 'not', 'or', 'parent', 'private', 'public', 'return', 'static',
+    'and', 'break', 'catch', 'class', 'const', 'constructor', 'continue', 'do', 'else', 'extends',
+    'false', 'finally', 'for', 'function', 'if', 'not', 'or', 'parent', 'private', 'public', 'return', 'static',
     'this', 'true', 'null', 'try', 'use', 'while', 'xor',
   ]);
   const BUILTIN_TYPES = new Set([

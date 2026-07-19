@@ -19,7 +19,7 @@ sqlite.Statement add_player = db.prepare(
 <div class="docs-section">
   <h2>Заполняем запрос в цикле</h2>
   <idyl-code-block><script type="text/plain">
-for (int i = 0; i < names.length(); i += 1) {
+for (int i = 0; i < names.length; i += 1) {
     add_player.clear_bindings();
     add_player.bind("name", names[i]);
     add_player.bind("level", levels[i]);

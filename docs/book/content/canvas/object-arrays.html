@@ -18,13 +18,13 @@ array<drawable.Rectangle, 5> blocks;
 
 void function redraw(gui.Canvas canvas) {
     canvas.fill(colors.RGB(20, 24, 32));
-    for (int i = 0; i < blocks.length(); i = i + 1) {
+    for (int i = 0; i < blocks.length; i = i + 1) {
         canvas.draw(blocks[i]);
     }
 }
 
 void function init(gui.Canvas canvas) {
-    for (int i = 0; i < blocks.length(); i = i + 1) {
+    for (int i = 0; i < blocks.length; i = i + 1) {
         blocks[i].x = 215;
         blocks[i].y = 47 + i * 40;
         blocks[i].width = 110;
@@ -37,7 +37,7 @@ void function init(gui.Canvas canvas) {
 
 void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
     if (e.key == "R") {
-        for (int i = 0; i < blocks.length(); i = i + 1) {
+        for (int i = 0; i < blocks.length; i = i + 1) {
             blocks[i].rotate(8);
         }
         redraw(canvas);

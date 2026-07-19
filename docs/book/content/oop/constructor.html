@@ -1,202 +1,166 @@
-<!-- Hero -->
-    
+<div class="docs-section">
+  <h2>Когда объектов становится много</h2>
+  <p>
+    Пока объект один, его свойства нетрудно заполнить вручную. Но представим
+    игру с тремя героями:
+  </p>
 
-    <!-- Section 1 -->
-    <div class="docs-section">
-      <h2>Антипример: класс без конструктора</h2>
-      <p>Представьте класс <code>Animal</code> с пятью свойствами:</p>
+  <idyl-code-block><script type="text/plain">
+Hero first;
+first.name = "Kaspar";
+first.hp = 500;
 
-      <idyl-code-block><script type="text/plain">
-class Animal {
-    string name;
-    string species;
-    int age;
-    float weight;
-    string color;
-}
+Hero second;
+second.name = "Raven";
+second.hp = 600;
 
-main() {
-    Animal animal1;
-    animal1.name = "Шарик";
-    animal1.species = "Собака";
-    animal1.age = 3;
-    animal1.weight = 12.5;
-    animal1.color = "рыжий";
+Hero third;
+third.name = "Aranthir";
+third.hp = 1000;
+  </script></idyl-code-block>
 
-    Animal animal2;
-    animal2.name = "Мурка";
-    animal2.species = "Кошка";
-    animal2.age = 2;
-    animal2.weight = 4.2;
-    animal2.color = "белый";
+  <p>
+    На каждого героя приходится одна и та же пачка присваиваний. Если у героя
+    появятся мана, уровень и инвентарь, пачка станет ещё длиннее. Хочется один
+    раз описать правильное создание героя, а затем только передавать данные.
+  </p>
+</div>
 
-    Animal animal3;
-    animal3.name = "Кеша";
-    animal3.species = "Попугай";
-    animal3.age = 1;
-    animal3.weight = 0.3;
-    animal3.color = "зелёный";
-}
-</script></idyl-code-block>
+<div class="docs-section">
+  <h2>Конструктор</h2>
+  <p>
+    <strong>Конструктор</strong> — особый метод, который запускается при создании
+    объекта. Его имя совпадает с именем класса:
+  </p>
 
-      <p>Три объекта — 15 строк кода только на заполнение свойств. Код становится громоздким и однотипным. Должен быть способ оптимизировать этот процесс.</p>
-      <p>И он есть!</p>
-    </div>
-
-    <!-- Section 2 -->
-    <div class="docs-section">
-      <h2>Конструктор — метод, вызываемый при создании объекта</h2>
-      <p><strong>Конструктор</strong> — это специальный метод, который автоматически срабатывает в момент создания объекта. Синтаксис: <code>constructor</code>, затем параметры, затем тело.</p>
-
-      <p>Для начала — конструктор, который просто выводит сообщение:</p>
-
-      <idyl-code-block><script type="text/plain">
+  <idyl-code-block><script type="text/plain">
 use console;
 
-class Animal {
-    constructor Animal() {
-        console.writeln("Создан новый объект Animal");
-    }
-}
-
-main() {
-    Animal a1;
-    Animal a2;
-    Animal a3;
-    Animal a4;
-}
-</script></idyl-code-block>
-
-      <idyl-output-block>Создан новый объект Animal
-Создан новый объект Animal
-Создан новый объект Animal
-Создан новый объект Animal</idyl-output-block>
-
-      <p>Конструктор вызывается 4 раза — по числу созданных объектов.</p>
-    </div>
-
-    <!-- Section 3 -->
-    <div class="docs-section">
-      <h2>Полезный конструктор</h2>
-      <p>Добавим в класс <code>Animal</code> конструктор с параметрами — чтобы инициализировать свойства прямо при создании:</p>
-
-      <idyl-code-block><script type="text/plain">
-class Animal {
+class Hero {
     string name;
-    string species;
-    int age;
-    float weight;
-    string color;
+    int hp;
 
-    constructor Animal(string ex_name, string ex_species, int ex_age, float ex_weight, string ex_color) {
+    constructor Hero(string ex_name, int ex_hp) {
         this.name = ex_name;
-        this.species = ex_species;
-        this.age = ex_age;
-        this.weight = ex_weight;
-        this.color = ex_color;
+        this.hp = ex_hp;
+    }
+
+    void function print() {
+        console.writeln(this.name, ": ", this.hp);
     }
 }
 
 main() {
-    Animal animal1("Шарик", "Собака", 3, 12.5, "рыжий");
-    Animal animal2("Мурка", "Кошка", 2, 4.2, "белый");
-    Animal animal3("Кеша", "Попугай", 1, 0.3, "зелёный");
+    Hero kaspar("Kaspar", 500);
+    kaspar.print();
 }
-</script></idyl-code-block>
+  </script></idyl-code-block>
 
-      <p>Инициализация трёх объектов сократилась с 18 строк до 3 строк! Код стал чище и понятнее.</p>
-    </div>
+  <idyl-output-block>Kaspar: 500</idyl-output-block>
 
-    <!-- Section 4 -->
-    <div class="docs-section">
-      <h2>Деструктор</h2>
-      <p><strong>Деструктор</strong> — это метод, который вызывается при уничтожении объекта. В Idyllium деструктор успешно срабатывает при удалении ячеек из динамического массива.</p>
-      <p>Синтаксис: <code>destructor ~ИмяКласса()</code>.</p>
+  <p>
+    Выражение <code>Hero kaspar("Kaspar", 500)</code> создаёт объект, после чего
+    конструктор раскладывает аргументы по его полям. Обращение к полям внутри
+    конструктора, как и внутри обычного метода, требует <code>this.</code>.
+  </p>
+</div>
 
-      <idyl-code-block><script type="text/plain">
-use console;
+<div class="docs-section">
+  <h2>Значение по умолчанию</h2>
+  <p>
+    Если большинство героев начинает со ста единиц здоровья, это значение
+    можно записать прямо в параметре конструктора:
+  </p>
 
-class Circle {
-    float radius;
+  <idyl-code-block><script type="text/plain">
+constructor Hero(string ex_name, int ex_hp = 100) {
+    this.name = ex_name;
+    this.hp = ex_hp;
+}
+
+main() {
+    Hero mira("Mira");       // hp станет равен 100
+    Hero boss("Boss", 900); // hp станет равен 900
+}
+  </script></idyl-code-block>
+
+  <p>
+    Параметры без значения по умолчанию идут первыми. Поэтому имя обязательно,
+    а здоровье можно не указывать.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Свежий объект прямо внутри выражения</h2>
+  <p>
+    Иногда имя для промежуточной переменной только мешает. Имя класса можно
+    вызвать как функцию: такой вызов создаст и вернёт новый объект.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+dyn_array<Hero> heroes;
+
+heroes.add(Hero("Kaspar", 500));
+heroes.add(Hero("Raven", 600));
+heroes.add(Hero(ex_hp=1000, ex_name="Aranthir"));
+  </script></idyl-code-block>
+
+  <p>
+    Каждый <code>Hero(...)</code> создаёт отдельного героя. Именованные аргументы
+    можно переставлять местами. Ключевое слово <code>new</code> не нужно: его в
+    синтаксисе Idyllium нет.
+  </p>
+
+  <p>Созданный объект разрешено использовать и в других выражениях:</p>
+
+  <idyl-code-block><script type="text/plain">
+Hero raven = Hero("Raven", 600);
+
+Hero function create_boss() {
+    return Hero("Aranthir", 1000);
+}
+
+    bool very_strong = Hero("Ornella", 750).hp > 700;
+  </script></idyl-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>Объект внутри объекта</h2>
+  <p>
+    Конструктор-выражение работает и в поле класса. Это удобно для композиции:
+    герой сразу получает собственный объект здоровья.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+class Health {
+    int hp;
+    int max_hp;
+
+    constructor Health(int maximum) {
+        this.hp = maximum;
+        this.max_hp = maximum;
+    }
+}
+
+class Hero {
     string name;
-
-    constructor Circle(string ex_name, float ex_radius) {
-        this.name = ex_name;
-        this.radius = ex_radius;
-    }
-
-    destructor ~Circle() {
-        console.writeln("Круг ", this.name, " уничтожен");
-    }
+    Health health = Health(100);
 }
+  </script></idyl-code-block>
 
-main() {
-    dyn_array<Circle> circles;
+  <p>
+    При создании двух героев каждый получит собственный <code>Health</code>.
+    Изменение здоровья одного героя не меняет здоровье другого.
+  </p>
+</div>
 
-    for (int i = 0; i < 5; i = i + 1) {
-        Circle tmp("Круг_" + to_string(i), 1.0);
-        circles.add(tmp);
-    }
-
-    console.writeln("Удаляем первый круг...");
-    circles.remove_at(0);
-
-    console.writeln("Удаляем ещё один...");
-    circles.remove_at(0);
-}
-</script></idyl-code-block>
-
-      <idyl-output-block>Удаляем первый круг...
-Круг Круг_0 уничтожен
-Удаляем ещё один...
-Круг Круг_1 уничтожен</idyl-output-block>
-
-      <p>Деструктор позволяет выполнить cleanup-действия — закрыть файлы, освободить ресурсы или просто сообщить об удалении объекта.</p>
-    </div>
-
-    <!-- Section 5 -->
-    <div class="docs-section">
-      <h2>Специальный метод to_string()</h2>
-      <p>Если добавить в класс метод <code>to_string()</code>, объекты этого класса можно будет выводить в консоль напрямую:</p>
-
-      <idyl-code-block><script type="text/plain">
-use console;
-
-class Cat {
-    string name;
-
-    constructor Cat(string ex_name) {
-        this.name = ex_name;
-    }
-
-    string function to_string() {
-        return "Cat(" + this.name + ")";
-    }
-}
-
-main() {
-    Cat cat1("Барсик");
-    Cat cat2("Мурка");
-
-    console.writeln(cat1);
-    console.writeln(cat2);
-}
-</script></idyl-code-block>
-
-      <idyl-output-block>Cat(Барсик)
-Cat(Мурка)</idyl-output-block>
-
-      <p>Метод <code>to_string()</code> вызывается автоматически, когда объект нужно представить в виде строки (например, при выводе в консоль или при конкатенации).</p>
-    </div>
-
-    <!-- Section 6 -->
-    <div class="docs-section">
-      <h2>Итог</h2>
-      <ul>
-        <li><strong>Конструктор</strong> — вызывается при создании объекта. Позволяет инициализировать свойства без лишнего кода.</li>
-        <li><strong>Деструктор</strong> — вызывается при уничтожении объекта. Полезен для освобождения ресурсов.</li>
-        <li><strong>to_string()</strong> — позволяет выводить объекты в консоль напрямую.</li>
-      </ul>
-    </div>
-
-    <!-- Lesson navigation -->
+<div class="docs-section">
+  <h2>Что запомнить</h2>
+  <ul>
+    <li>Конструктор описывает начальное состояние нового объекта.</li>
+    <li>Форма <code>Hero hero(...)</code> создаёт именованную переменную.</li>
+    <li>Форма <code>Hero(...)</code> возвращает свежий объект прямо в выражение.</li>
+    <li>Значения по умолчанию и именованные аргументы работают в обеих формах.</li>
+    <li>У класса без явного конструктора допустим вызов <code>Empty()</code>, но передавать ему аргументы нельзя.</li>
+  </ul>
+</div>

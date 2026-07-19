@@ -62,6 +62,45 @@ main() {
 </div>
 
 <div class="docs-section">
+  <h2>Очень большие целые числа</h2>
+  <p>
+    Обычного <code>int</code> хватает для возраста, уровня и количества монет.
+    Но идентификатор игрока или счётчик большого сервера иногда выходит далеко
+    за привычный диапазон. Для таких значений у библиотеки <code>types</code>
+    есть точные 64-битные типы.
+  </p>
+
+  <json-code-block><script type="text/plain">
+{
+    "player_id": 9007199254740993,
+    "maximum": 18446744073709551615
+}
+</script></json-code-block>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use json;
+use types;
+
+main() {
+    string data = "{\"player_id\":9007199254740993}";
+    json.Object player = json.parse(data).to_object();
+
+    types.uint64 player_id = player.get("player_id").to_uint64();
+    console.writeln(player_id);
+}
+</script></idyl-code-block>
+  <idyl-output-block>9007199254740993</idyl-output-block>
+
+  <p>
+    Методы <code>to_int64()</code> и <code>to_uint64()</code> проверяют границы
+    выбранного типа. При повторной записи через <code>to_json()</code> или
+    <code>to_pretty_json()</code> число останется JSON-числом без кавычек и не
+    потеряет ни одной цифры.
+  </p>
+</div>
+
+<div class="docs-section">
   <h2>Если тип заранее неизвестен</h2>
   <p>
     Иногда программа не уверена, что именно лежит в JSON. Тогда можно сначала

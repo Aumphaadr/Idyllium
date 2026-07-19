@@ -72,7 +72,7 @@ main() {
     <!-- Section 2 -->
     <div class="docs-section">
       <h2>Текущая временная метка: <code>time.now()</code></h2>
-      <p>Функция <code>time.now()</code> возвращает значение специального типа <code>time.stamp</code> — это полная временная метка:</p>
+      <p>Функция <code>time.now()</code> возвращает значение специального типа <code>time.stamp</code> — это полная временная метка. Без дополнительных аргументов она использует часовой пояс <code>UTC</code>:</p>
 
       <idyl-code-block><script type="text/plain">
 use console;
@@ -92,7 +92,7 @@ main() {
     <!-- Section 3 -->
     <div class="docs-section">
       <h2>Извлечение частей даты и времени</h2>
-      <p>У объекта типа <code>time.stamp</code> есть методы для получения отдельных компонентов:</p>
+      <p>У объекта типа <code>time.stamp</code> есть неизменяемые свойства для получения отдельных компонентов. Круглые скобки здесь не нужны: мы читаем состояние метки, а не приказываем ей выполнить действие.</p>
 
       <idyl-code-block><script type="text/plain">
 use console;
@@ -100,13 +100,13 @@ use time;
 
 main() {
     time.stamp t = time.now();
-    console.writeln("Год: ", t.year());
-    console.writeln("Месяц: ", t.month());
-    console.writeln("День: ", t.day());
-    console.writeln("Час: ", t.hour());
-    console.writeln("Минута: ", t.minute());
-    console.writeln("Секунда: ", t.second());
-    console.writeln("День недели: ", t.week_day());
+    console.writeln("Год: ", t.year);
+    console.writeln("Месяц: ", t.month);
+    console.writeln("День: ", t.day);
+    console.writeln("Час: ", t.hour);
+    console.writeln("Минута: ", t.minute);
+    console.writeln("Секунда: ", t.second);
+    console.writeln("День недели: ", t.week_day);
 }
 </script></idyl-code-block>
 
@@ -121,14 +121,41 @@ main() {
       <p>День недели возвращается как число от <code>0</code> (воскресенье) до <code>6</code> (суббота).</p>
     </div>
 
+    <div class="docs-section">
+      <h2>Один момент в разных часовых поясах</h2>
+      <p>UNIX-время обозначает один и тот же момент для всей планеты. Часовой пояс влияет только на то, какую дату и какое время увидит человек. Idyllium принимает стандартные IANA-имена зон: например, <code>Asia/Yekaterinburg</code>, <code>Europe/Moscow</code> или <code>America/New_York</code>.</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use time;
+
+main() {
+    time.stamp utc = time.from_unix(0);
+    time.stamp ekaterinburg = utc.in_timezone("Asia/Yekaterinburg");
+
+    console.writeln("UTC: ", utc);
+    console.writeln("Екатеринбург: ", ekaterinburg);
+    console.writeln("Зона: ", ekaterinburg.timezone);
+    console.writeln("Момент тот же: ", utc.unix == ekaterinburg.unix);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>UTC: 1970-01-01 00:00:00
+Екатеринбург: 1970-01-01 05:00:00
+Зона: Asia/Yekaterinburg
+Момент тот же: true</idyl-output-block>
+
+      <p>Метод <code>in_timezone()</code> не двигает время вперёд или назад. Он создаёт новую метку того же момента, но показывает её для другого места. Желаемую зону также можно сразу передать в <code>time.now("Asia/Yekaterinburg")</code> или <code>time.from_unix(n, "Asia/Yekaterinburg")</code>.</p>
+    </div>
+
     <!-- Section 4 -->
     <div class="docs-section">
-      <h2>UNIX-время: <code>.unix()</code></h2>
-      <p>Метод <code>.unix()</code> возвращает количество секунд, прошедших с начала эпохи UNIX (<code>1970-01-01 00:00:00 UTC</code>):</p>
+      <h2>UNIX-время: <code>.unix</code></h2>
+      <p>Свойство <code>.unix</code> возвращает количество секунд, прошедших с начала эпохи UNIX (<code>1970-01-01 00:00:00 UTC</code>):</p>
 
       <idyl-code-block><script type="text/plain">
 time.stamp t = time.now();
-int ts = t.unix();
+int ts = t.unix;
 console.writeln("UNIX-время: ", ts);
 </script></idyl-code-block>
 
@@ -149,7 +176,7 @@ use time;
 main() {
     time.stamp birth = time.from_unix(946684800); // 2000-01-01 00:00:00
     console.writeln("Дата: ", birth);
-    console.writeln("Год: ", birth.year());
+    console.writeln("Год: ", birth.year);
 }
 </script></idyl-code-block>
 

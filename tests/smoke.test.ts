@@ -556,7 +556,33 @@ test('time sleep can be stopped by abort signal', async () => {
   assert(result.runtimeError?.includes('program was stopped') === true, `expected stopped runtime error, got ${result.runtimeError}`);
 });
 
-test('time stamp methods run', async () => {
+test('try catch cannot swallow a stopped program', async () => {
+  const controller = new AbortController();
+  const resultPromise = runIdyllium(`
+    use console;
+    use time;
+
+    main() {
+      try {
+        console.write("start");
+        time.sleep(5);
+      } catch {
+        console.write(":caught");
+      } finally {
+        console.write(":finally");
+      }
+    }
+  `, { abortSignal: controller.signal }, { file: 'main.idyl' });
+
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  controller.abort();
+  const result = await resultPromise;
+  assert(!result.success, 'expected stopped program to escape catch');
+  assert(result.output === 'start:finally', `unexpected stopped output: ${JSON.stringify(result.output)}`);
+  assert(result.runtimeError?.includes('program was stopped') === true, `expected stopped runtime error, got ${result.runtimeError}`);
+});
+
+test('time stamp read-only properties run in UTC by default', async () => {
   const result = await runIdyllium([
     'use console;',
     'use time;',
@@ -565,18 +591,77 @@ test('time stamp methods run', async () => {
     '    time.stamp birth = time.from_unix(946684800);',
     '    console.write(',
     '        birth, ":",',
-    '        birth.year(), ":", birth.month(), ":", birth.day(), ":",',
-    '        birth.hour(), ":", birth.minute(), ":", birth.second(), ":",',
-    '        birth.week_day(), ":", birth.unix()',
+    '        birth.year, ":", birth.month, ":", birth.day, ":",',
+    '        birth.hour, ":", birth.minute, ":", birth.second, ":",',
+    '        birth.week_day, ":", birth.unix, ":", birth.timezone',
     '    );',
     '}',
   ].join('\n'), {}, { file: 'main.idyl' });
 
   assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
   assert(
-    result.output === '2000-01-01 00:00:00:2000:1:1:0:0:0:6:946684800',
+    result.output === '2000-01-01 00:00:00:2000:1:1:0:0:0:6:946684800:UTC',
     `unexpected time stamp output: ${JSON.stringify(result.output)}`,
   );
+});
+
+test('time stamps preserve their instant across IANA timezones and DST', async () => {
+  const result = await runIdyllium(`
+    use console;
+    use time;
+
+    main() {
+      time.stamp utc = time.from_unix(0);
+      time.stamp ekb = utc.in_timezone("Asia/Yekaterinburg");
+      time.stamp ny = time.from_unix(0, timezone="America/New_York");
+      time.stamp berlin_before = time.from_unix(1711845000, "Europe/Berlin");
+      time.stamp berlin_after = time.from_unix(1711848600, "Europe/Berlin");
+
+      console.writeln(utc, ":", utc.timezone, ":", utc.unix);
+      console.writeln(ekb, ":", ekb.timezone, ":", ekb.unix);
+      console.writeln(ny, ":", ny.timezone, ":", ny.unix);
+      console.writeln(berlin_before, " -> ", berlin_after);
+    }
+  `, {}, { file: 'main.idyl' });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === [
+      '1970-01-01 00:00:00:UTC:0',
+      '1970-01-01 05:00:00:Asia/Yekaterinburg:0',
+      '1969-12-31 19:00:00:America/New_York:0',
+      '2024-03-31 01:30:00 -> 2024-03-31 03:30:00',
+      '',
+    ].join('\n'),
+    `unexpected timezone output: ${JSON.stringify(result.output)}`,
+  );
+});
+
+test('time stamp timezone and read-only property diagnostics are readable', async () => {
+  await assertRuntimeFails(`
+    use time;
+    main() {
+      time.now("Mars/Olympus");
+    }
+  `, 'time.stamp timezone is unknown, got "Mars/Olympus"');
+
+  assertFails(`
+    use console;
+    use time;
+    main() {
+      time.stamp stamp = time.now();
+      stamp.year = 2000;
+    }
+  `, "property 'year' is read-only");
+
+  assertFails(`
+    use console;
+    use time;
+    main() {
+      time.stamp stamp = time.now();
+      console.writeln(stamp.year());
+    }
+  `, "type 'time.stamp' has no method 'year'");
 });
 
 test('file streams read and write relative to source file', async () => {
@@ -727,6 +812,66 @@ test('json module parses validates and extracts values', async () => {
   assert(result.output === 'true:Ada:12:true:two:true:London', `unexpected JSON output: ${JSON.stringify(result.output)}`);
 });
 
+test('json preserves exact 64-bit integers through parse and serialization', async () => {
+  const result = await runIdyllium([
+    'use console;',
+    'use json;',
+    'use types;',
+    '',
+    'main() {',
+    '    string text = "{\\"signed\\":9223372036854775807,\\"unsigned\\":18446744073709551615,\\"precise\\":9007199254740993}";',
+    '    console.write(json.is_valid(text), ":");',
+    '',
+    '    json.Object root = json.parse(text).to_object();',
+    '    types.int64 signed = root.get("signed").to_int64();',
+    '    types.uint64 unsigned = root.get("unsigned").to_uint64();',
+    '    types.uint64 precise = root.get("precise").to_uint64();',
+    '',
+    '    json.Object created;',
+    '    created.add("signed", json.Value(signed));',
+    '    created.add("unsigned", json.Value(unsigned));',
+    '    created.add("precise", json.Value(precise));',
+    '    string serialized = created.to_json();',
+    '    json.Object reparsed = json.parse(serialized).to_object();',
+    '',
+    '    console.write(signed, ":", unsigned, ":", precise, "\\n");',
+    '    console.writeln(serialized);',
+    '    console.write(reparsed.get("signed").to_int64(), ":");',
+    '    console.write(reparsed.get("unsigned").to_uint64(), ":");',
+    '    console.write(reparsed.get("precise").to_uint64());',
+    '}',
+  ].join('\n'));
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === [
+      'true:9223372036854775807:18446744073709551615:9007199254740993',
+      '{"signed":9223372036854775807,"unsigned":18446744073709551615,"precise":9007199254740993}',
+      '9223372036854775807:18446744073709551615:9007199254740993',
+    ].join('\n'),
+    `unexpected exact JSON integer output: ${JSON.stringify(result.output)}`,
+  );
+});
+
+test('exact json parser keeps standard JSON syntax checks', async () => {
+  const result = await runIdyllium([
+    'use console;',
+    'use json;',
+    '',
+    'main() {',
+    '    string valid = " { \\"text\\" : \\"line\\\\nК\\", \\"fraction\\" : 1.5, \\"power\\" : 1e2 } ";',
+    '    console.write(json.is_valid(valid), ":");',
+    '    console.write(json.parse(valid).to_object().get("power").to_int(), ":");',
+    '    console.write(json.is_valid("{\\"value\\":1,}"), ":");',
+    '    console.write(json.is_valid("{\\"value\\":01}"), ":");',
+    '    console.write(json.is_valid("[1 // comment]"));',
+    '}',
+  ].join('\n'));
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === 'true:100:false:false:false', `unexpected JSON syntax output: ${JSON.stringify(result.output)}`);
+});
+
 test('language null works with explicitly nullable library types', async () => {
   const result = await runIdyllium([
     'use console;',
@@ -865,6 +1010,25 @@ test('json module runtime errors are readable', async () => {
     '    values.at(3);',
     '}',
   ].join('\n'), 'main.idyl:6: runtime error: json array index 3 out of bounds (size 1, valid indices 0-0)');
+
+  await assertRuntimeFails([
+    'use json;',
+    '',
+    'main() {',
+    '    json.Value value = json.parse("18446744073709551615");',
+    '    int number = value.to_int();',
+    '}',
+  ].join('\n'), 'main.idyl:5: runtime error: json integer is outside the int range; use to_int64() or to_uint64()');
+
+  await assertRuntimeFails([
+    'use json;',
+    'use types;',
+    '',
+    'main() {',
+    '    json.Value value = json.parse("-1");',
+    '    types.uint64 number = value.to_uint64();',
+    '}',
+  ].join('\n'), 'main.idyl:6: runtime error: json integer -1 is outside the types.uint64 range');
 });
 
 test('file stream runtime errors are readable', async () => {
@@ -1274,12 +1438,84 @@ test('static and dynamic arrays run', async () => {
       values.remove_at(0);
       values.resize(4);
 
-      console.write(nums[1], ":", nums.length(), ":", values, ":", removed);
+      console.write(nums[1], ":", nums.length, ":", values, ":", removed);
     }
   `);
 
   assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
   assert(result.output === '25:3:[9, 2, 0, 0]:3', `unexpected output: ${JSON.stringify(result.output)}`);
+});
+
+test('string array and JSON lengths are read-only properties', async () => {
+  const result = await runIdyllium(`
+    use console;
+    use json;
+
+    main() {
+      string word = "Гусь";
+      dyn_array<int> values = [10, 20, 30];
+
+      json.Object player;
+      player.add("name", json.Value("Mira"));
+
+      json.Array inventory;
+      inventory.add(json.Value("Кирка"));
+      inventory.add(json.Value("Факел"));
+
+      console.write(word.length, ":", values.length, ":", player.length, ":", inventory.length);
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === '4:3:1:2', `unexpected length property output: ${JSON.stringify(result.output)}`);
+
+  assertFails(`
+    main() {
+      dyn_array<int> values = [1, 2];
+      values.length = 10;
+    }
+  `, "property 'length' is read-only");
+
+  assertFails(`
+    main() {
+      string text = "abc";
+      text.length = 10;
+    }
+  `, "property 'length' is read-only");
+
+  assertFails(`
+    use json;
+
+    main() {
+      json.Array values;
+      values.length = 10;
+    }
+  `, "property 'length' is read-only");
+});
+
+test('legacy collection length method calls are rejected', () => {
+  assertFails(`
+    main() {
+      dyn_array<int> values = [1, 2];
+      int count = values.length();
+    }
+  `, "has no method 'length'");
+
+  assertFails(`
+    main() {
+      string text = "abc";
+      int count = text.length();
+    }
+  `, "type 'string' has no method 'length'");
+
+  assertFails(`
+    use json;
+
+    main() {
+      json.Object value;
+      int count = value.length();
+    }
+  `, "type 'json.Object' has no method 'length'");
 });
 
 test('arrays use value semantics for assignments parameters and returns', async () => {
@@ -1314,7 +1550,7 @@ test('static and dynamic arrays convert by value in both directions', async () =
 
     array<int, 20> function repeat_to_20(dyn_array<int> arr) {
       dyn_array<int> tmp;
-      while (tmp.length() < 20) {
+      while (tmp.length < 20) {
         tmp.join(arr);
       }
       tmp.resize(20);
@@ -1548,7 +1784,7 @@ test('string methods and character indexing run', async () => {
       dyn_array<string> fruits = data.split(",");
 
       console.write(
-        bird.length(), ":", bird[2], ":",
+        bird.length, ":", bird[2], ":",
         word.to_upper(), ":", word.to_lower(), ":",
         "Кот и кот и ещё кот".replace("кот", "пёс"), ":",
         "aBcDeFgHiJk".substring(1, 3), ":",
@@ -2002,13 +2238,31 @@ test('colors constants are Color values', async () => {
     use colors;
 
     main() {
-      colors.Color text = colors.WHITE;
-      console.write(text);
+      console.writeln(colors.BLACK == colors.HEX("#000000"));
+      console.writeln(colors.WHITE == colors.HEX("#ffffff"));
+      console.writeln(colors.RED == colors.HEX("#ff0000"));
+      console.writeln(colors.GREEN == colors.HEX("#00ff00"));
+      console.writeln(colors.BLUE == colors.HEX("#0000ff"));
+      console.writeln(colors.YELLOW == colors.HEX("#ffff00"));
+      console.writeln(colors.CYAN == colors.HEX("#00ffff"));
+      console.writeln(colors.MAGENTA == colors.HEX("#ff00ff"));
+      console.writeln(colors.GRAY == colors.HEX("#808080"));
+      console.writeln(colors.LIGHT_GRAY == colors.HEX("#c0c0c0"));
+      console.writeln(colors.DARK_RED == colors.HEX("#800000"));
+      console.writeln(colors.DARK_GREEN == colors.HEX("#008000"));
+      console.writeln(colors.DARK_BLUE == colors.HEX("#000080"));
+      console.writeln(colors.OLIVE == colors.HEX("#808000"));
+      console.writeln(colors.TEAL == colors.HEX("#008080"));
+      console.writeln(colors.PURPLE == colors.HEX("#800080"));
+      console.writeln(colors.TRANSPARENT == colors.RGBA(0, 0, 0, 0.0));
     }
   `);
 
   assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
-  assert(result.output === '#ffffff', `unexpected output: ${JSON.stringify(result.output)}`);
+  assert(
+    result.output === `${'true\n'.repeat(17)}`,
+    `unexpected color constants output: ${JSON.stringify(result.output)}`,
+  );
 });
 
 test('colors.Color is a strict value type', () => {
@@ -2025,6 +2279,173 @@ test('colors.Color is a strict value type', () => {
       colors.Color c = colors.RGB(34, 145, 188);
     }
   `, "is not imported");
+});
+
+test('try catch exposes a structured runtime error', async () => {
+  const result = await runIdyllium(`
+    use console;
+
+    main() {
+      try {
+        console.writeln(10 / 0);
+      } catch (error) {
+        console.writeln(error.message);
+        console.writeln(error.file);
+        console.writeln(error.line);
+        console.writeln(error.to_string());
+      }
+    }
+  `, {}, { file: '/workspace/main.idyl' });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === [
+      'division by zero',
+      'main.idyl',
+      '6',
+      'main.idyl:6: runtime error: division by zero',
+      '',
+    ].join('\n'),
+    `unexpected catch output: ${JSON.stringify(result.output)}`,
+  );
+});
+
+test('catch without a binding handles runtime errors', async () => {
+  const result = await runIdyllium(`
+    use console;
+
+    main() {
+      try {
+        int value = to_int("кот");
+        console.writeln(value);
+      } catch {
+        console.writeln("fallback");
+      }
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === 'fallback\n', `unexpected catch output: ${JSON.stringify(result.output)}`);
+});
+
+test('finally runs after success and after a caught error', async () => {
+  const success = await runIdyllium(`
+    use console;
+
+    main() {
+      try {
+        console.write("try");
+      } finally {
+        console.write(":finally");
+      }
+    }
+  `);
+  assert(success.success, success.runtimeError ?? success.compilation.diagnosticsText);
+  assert(success.output === 'try:finally', `unexpected successful finally output: ${JSON.stringify(success.output)}`);
+
+  const caught = await runIdyllium(`
+    use console;
+
+    main() {
+      try {
+        console.write(1 / 0);
+      } catch {
+        console.write("caught");
+      } finally {
+        console.write(":finally");
+      }
+    }
+  `);
+  assert(caught.success, caught.runtimeError ?? caught.compilation.diagnosticsText);
+  assert(caught.output === 'caught:finally', `unexpected caught finally output: ${JSON.stringify(caught.output)}`);
+});
+
+test('try finally preserves an unhandled runtime error', async () => {
+  const result = await runIdyllium(`
+    use console;
+
+    main() {
+      try {
+        console.write(1 / 0);
+      } finally {
+        console.write("cleanup");
+      }
+    }
+  `, {}, { file: 'main.idyl' });
+
+  assert(!result.success, 'expected unhandled error to escape try/finally');
+  assert(result.output === 'cleanup', `expected finally output, got ${JSON.stringify(result.output)}`);
+  assert(result.runtimeError === 'main.idyl:6: runtime error: division by zero', `unexpected runtime error: ${result.runtimeError}`);
+});
+
+test('catch variables and fields are read-only and scoped', () => {
+  assertFails(`
+    main() {
+      try {
+        float value = 1 / 0;
+      } catch (error) {
+        error = error;
+      }
+    }
+  `, "cannot assign to constant 'error'");
+
+  assertFails(`
+    main() {
+      try {
+        float value = 1 / 0;
+      } catch (error) {
+        error.message = "changed";
+      }
+    }
+  `, "property 'message' is read-only");
+
+  assertFails(`
+    main() {
+      try {
+        float value = 1 / 0;
+      } catch (error) {
+      }
+      string message = error.message;
+    }
+  `, "'error' was not declared in this scope");
+});
+
+test('try grammar diagnostics are readable', () => {
+  assertFails(`
+    main() {
+      try {
+        int value = 1;
+      }
+    }
+  `, "'try' must be followed by 'catch' or 'finally'");
+
+  assertFails(`
+    main() {
+      catch {
+      }
+    }
+  `, "'catch' has no matching 'try'");
+});
+
+test('try catch satisfies return analysis when both paths return', async () => {
+  const result = await runIdyllium(`
+    use console;
+
+    int function divide_or_zero(int divisor) {
+      try {
+        return to_int(10 / divisor);
+      } catch {
+        return 0;
+      }
+    }
+
+    main() {
+      console.write(divide_or_zero(2), ":", divide_or_zero(0));
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === '5:0', `unexpected try return output: ${JSON.stringify(result.output)}`);
 });
 
 test('while and do-while loops run', async () => {
@@ -2777,18 +3198,236 @@ test('user module diagnostics are checked across files', () => {
   assert(cycle.diagnosticsText.includes('module import cycle detected: a -> b -> a'), `unexpected diagnostics:\n${cycle.diagnosticsText}`);
 });
 
-test('constructor calls are not expressions', () => {
-  assertFails(`
+test('constructor calls create independent values in arbitrary expressions', async () => {
+  const result = await runIdyllium(`
+    use console;
+
+    int function initial_score() {
+      return 7;
+    }
+
+    class Health {
+      int value = initial_score();
+
+      constructor Health(int bonus = 0) {
+        this.value += bonus;
+      }
+    }
+
     class Animal {
       string name;
+
+      constructor Animal(string ex_name) {
+        this.name = ex_name;
+      }
+
+      string function describe() {
+        return this.name;
+      }
     }
 
-    class Dog extends Animal {}
+    class Hero extends Animal {
+      Health health = Health(3);
+
+      constructor Hero(string ex_name, int hp = 100) {
+        parent(ex_name);
+        this.health.value = hp;
+      }
+
+      int function get_hp() {
+        return this.health.value;
+      }
+    }
+
+    class Empty {
+      int value = 42;
+    }
+
+    class CalculatedField {
+      int base = 9;
+      int doubled = this.double_base();
+
+      int function double_base() {
+        return this.base * 2;
+      }
+    }
+
+    Hero function create_hero() {
+      return Hero("Aranthir", 1000);
+    }
+
+    string function animal_name(Animal animal) {
+      return animal.describe();
+    }
 
     main() {
-      Animal animal = Dog("Рекс");
+      dyn_array<Hero> heroes;
+      heroes.add(Hero("Kaspar", 500));
+      heroes.add(Hero("Raven", 600));
+      heroes.add(Hero(hp=750, ex_name="Ornella"));
+
+      Hero copy = Hero("Kaspar", 500);
+      copy.health.value = 1;
+
+      dyn_array<Empty> empty_values;
+      empty_values.resize(2);
+
+      console.writeln(heroes[0].get_hp(), ":", copy.get_hp());
+      console.writeln(create_hero().get_hp());
+      console.writeln(Hero("Mira").get_hp());
+      console.writeln(animal_name(Hero("Liam", 90)));
+      console.writeln(Empty().value, ":", empty_values[0].value, ":", empty_values[1].value);
+      console.writeln(CalculatedField().doubled);
     }
-  `, "class 'Dog' cannot be called as a function");
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === '500:1\n1000\n100\nLiam\n42:42:42\n18\n',
+    `unexpected constructor-expression output: ${JSON.stringify(result.output)}`,
+  );
+});
+
+test('constructor expressions work for classes imported from user modules', async () => {
+  const result = await runIdyllium(`
+    use console;
+    use geometry;
+
+    main() {
+      dyn_array<geometry.Point> points;
+      points.add(geometry.Point(10, 20));
+      points.add(geometry.Point(y=7, x=5));
+      console.writeln(points[0].sum(), ":", geometry.Point(3, 4).sum(), ":", points[1].sum());
+    }
+  `, {}, {
+    file: 'main.idyl',
+    sources: {
+      'geometry.idyl': `
+        class Point {
+          int x;
+          int y;
+
+          constructor Point(int x, int y = 1) {
+            this.x = x;
+            this.y = y;
+          }
+
+          int function sum() {
+            return this.x + this.y;
+          }
+        }
+      `,
+    },
+  });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === '30:7:12\n', `unexpected module constructor output: ${JSON.stringify(result.output)}`);
+});
+
+test('constructor expression diagnostics cover arguments and private access', async () => {
+  const privateFactory = await runIdyllium(`
+    use console;
+
+    class Hero {
+      private:
+      int hp;
+
+      constructor Hero(int ex_hp) {
+        this.hp = ex_hp;
+      }
+
+      public:
+      static Hero function create(int hp) {
+        return Hero(hp);
+      }
+
+      int function get_hp() {
+        return this.hp;
+      }
+    }
+
+    main() {
+      Hero hero = Hero.create(77);
+      console.writeln(hero.get_hp());
+    }
+  `);
+  assert(privateFactory.success, privateFactory.runtimeError ?? privateFactory.compilation.diagnosticsText);
+  assert(privateFactory.output === '77\n', `unexpected private factory output: ${JSON.stringify(privateFactory.output)}`);
+
+  assertFails(`
+    class Hero {
+      private:
+      constructor Hero(int hp) {}
+
+      public:
+      static Hero function create(int hp) {
+        return Hero(hp);
+      }
+    }
+
+    main() {
+      Hero hero = Hero(100);
+    }
+  `, "constructor 'Hero' is private");
+
+  assertFails(`
+    class Empty {}
+
+    main() {
+      Empty value = Empty(1);
+    }
+  `, "'Empty' expects 0 arguments, got 1");
+
+  assertFails(`
+    class Hero {
+      constructor Hero(string name, int hp) {}
+    }
+
+    main() {
+      Hero value = Hero(name="Mira");
+    }
+  `, "'Hero' missing required argument 'hp'");
+});
+
+test('language service exposes constructor signatures and class semantic tokens', () => {
+  const source = `
+    use geometry;
+
+    class Hero {
+      constructor Hero(string name, int hp = 100) {}
+    }
+
+    main() {
+      Hero local = Hero(name="Mira");
+      geometry.Point point = geometry.Point(x=10, y=20);
+    }
+  `;
+  const project = new IdylliumProject({
+    entryFile: 'main.idyl',
+    files: {
+      'main.idyl': source,
+      'geometry.idyl': `
+        class Point {
+          constructor Point(int x, int y = 0) {}
+        }
+      `,
+    },
+  });
+
+  const localOffset = source.indexOf('Hero(name=') + 'Hero('.length;
+  const localSignature = project.signatureHelp({ file: 'main.idyl', offset: localOffset });
+  assert(!!localSignature?.signatures[0].label.includes('Hero(name: string, hp: int = ...)'), 'expected local constructor signature');
+
+  const moduleOffset = source.indexOf('geometry.Point(x=') + 'geometry.Point('.length;
+  const moduleSignature = project.signatureHelp({ file: 'main.idyl', offset: moduleOffset });
+  assert(!!moduleSignature?.signatures[0].label.includes('Point(x: int, [y: int])'), 'expected module constructor signature');
+
+  const constructorCallOffset = source.lastIndexOf('Hero(name=');
+  const classToken = project.semanticTokens('main.idyl').find((token) => (
+    token.kind === 'class'
+    && token.range.start.line === source.slice(0, constructorCallOffset).split('\n').length
+  ));
+  assert(!!classToken, 'expected constructor callee to be a class semantic token');
 });
 
 test('inline callback functions compile and run in headless gui runtime', async () => {
@@ -3819,6 +4458,32 @@ test('colors registry powers completions', () => {
   assert(completions.some((item) => item.name === 'Color' && item.kind === 'type'), 'expected colors.Color completion');
   assert(completions.some((item) => item.name === 'RGB'), 'expected colors.RGB completion');
   assert(completions.some((item) => item.name === 'WHITE'), 'expected colors.WHITE completion');
+  assert(completions.some((item) => item.name === 'MAGENTA'), 'expected colors.MAGENTA completion');
+  assert(completions.some((item) => item.name === 'DARK_GREEN'), 'expected colors.DARK_GREEN completion');
+  assert(completions.some((item) => item.name === 'LIGHT_GRAY'), 'expected colors.LIGHT_GRAY completion');
+});
+
+test('language service completes structured catch error members', () => {
+  const source = [
+    'main() {',
+    '    try {',
+    '        float value = 1 / 0;',
+    '    } catch (problem) {',
+    '        string message = problem.message;',
+    '    }',
+    '}',
+  ].join('\n');
+  const project = new IdylliumProject({
+    entryFile: '/workspace/main.idyl',
+    files: { '/workspace/main.idyl': source },
+  });
+  const offset = source.indexOf('problem.message') + 'problem.'.length;
+  const items = project.completions({ file: '/workspace/main.idyl', offset });
+
+  assert(items.some((item) => item.name === 'message' && item.kind === 'property'), 'expected RuntimeError.message completion');
+  assert(items.some((item) => item.name === 'file' && item.kind === 'property'), 'expected RuntimeError.file completion');
+  assert(items.some((item) => item.name === 'line' && item.kind === 'property'), 'expected RuntimeError.line completion');
+  assert(items.some((item) => item.name === 'to_string' && item.kind === 'method'), 'expected RuntimeError.to_string completion');
 });
 
 test('image registry powers resource completions', () => {
@@ -4007,6 +4672,7 @@ test('project API compiles files and powers user module completions', () => {
   });
   const arrayObjectCompletions = arrayObjectProject.completions({ file: 'main.idyl', offset: arrayObjectPrefix.length });
   assert(arrayObjectCompletions.some((item) => item.name === 'add' && item.detail === 'add(value: int): void'), 'expected values.add completion');
+  assert(arrayObjectCompletions.some((item) => item.name === 'length' && item.kind === 'property' && item.detail === 'length: int'), 'expected values.length property completion');
 
   const stringObjectPrefix = 'main() {\n  string text = "abc";\n  text.';
   const stringObjectProject = new IdylliumProject({
@@ -4017,6 +4683,7 @@ test('project API compiles files and powers user module completions', () => {
   });
   const stringObjectCompletions = stringObjectProject.completions({ file: 'main.idyl', offset: stringObjectPrefix.length });
   assert(stringObjectCompletions.some((item) => item.name === 'replace' && item.kind === 'method'), 'expected text.replace completion');
+  assert(stringObjectCompletions.some((item) => item.name === 'length' && item.kind === 'property' && item.detail === 'length: int'), 'expected text.length property completion');
 
   const consoleHoverSource = 'use console;\nmain() {\n  console.write("Hi");\n}';
   const consoleHoverProject = new IdylliumProject({

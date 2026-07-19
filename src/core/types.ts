@@ -35,6 +35,10 @@ export interface NullType {
   readonly kind: 'null';
 }
 
+export interface RuntimeErrorValueType {
+  readonly kind: 'runtime-error';
+}
+
 export interface FunctionType {
   readonly kind: 'function';
   readonly parameters: readonly TypeRef[];
@@ -42,7 +46,7 @@ export interface FunctionType {
   readonly minArguments?: number;
 }
 
-export type TypeRef = PrimitiveType | QualifiedType | ClassType | ArrayType | FunctionType | AnyType | NullType | ErrorType;
+export type TypeRef = PrimitiveType | QualifiedType | ClassType | ArrayType | FunctionType | AnyType | NullType | RuntimeErrorValueType | ErrorType;
 
 export const INT: PrimitiveType = { kind: 'primitive', name: 'int' };
 export const FLOAT: PrimitiveType = { kind: 'primitive', name: 'float' };
@@ -53,6 +57,7 @@ export const VOID: PrimitiveType = { kind: 'primitive', name: 'void' };
 export const ERROR_TYPE: ErrorType = { kind: 'error' };
 export const ANY_TYPE: AnyType = { kind: 'any' };
 export const NULL_TYPE: NullType = { kind: 'null' };
+export const RUNTIME_ERROR_VALUE: RuntimeErrorValueType = { kind: 'runtime-error' };
 export const COLOR: QualifiedType = { kind: 'qualified', moduleName: 'colors', name: 'Color' };
 
 export const ANY_VALUE_TYPES: readonly TypeRef[] = [INT, FLOAT, STRING, CHAR, BOOL, COLOR];
@@ -78,6 +83,7 @@ export function typeToString(type: TypeRef): string {
   if (type.kind === 'error') return '<error>';
   if (type.kind === 'any') return 'any';
   if (type.kind === 'null') return 'null';
+  if (type.kind === 'runtime-error') return 'RuntimeError';
   if (type.kind === 'function') {
     return `function(${type.parameters.map(typeToString).join(', ')}): ${typeToString(type.returnType)}`;
   }
@@ -95,6 +101,7 @@ export function sameType(left: TypeRef, right: TypeRef): boolean {
   if (left.kind === 'any' || right.kind === 'any') return true;
   if (left.kind !== right.kind) return false;
   if (left.kind === 'null' && right.kind === 'null') return true;
+  if (left.kind === 'runtime-error' && right.kind === 'runtime-error') return true;
   if (left.kind === 'function' && right.kind === 'function') {
     if (left.parameters.length !== right.parameters.length) return false;
     return left.parameters.every((param, index) => sameType(param, right.parameters[index]))

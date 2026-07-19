@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Урок 6: Конструктор и деструктор — Idyllium</title>
+  <title>Урок 6: Конструктор — Idyllium</title>
   <link rel="icon" type="image/png" href="../../favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="../../fonts/fonts.css">
@@ -48,8 +48,8 @@
         На главную
       </a>
       <div class="docs-lesson-tag">ООП • Урок 6</div>
-      <h1>Конструктор и деструктор</h1>
-      <p class="docs-subtitle">Как инициализировать объекты и освобождать ресурсы</p>
+      <h1>Конструктор</h1>
+      <p class="docs-subtitle">Как правильно инициализировать новый объект</p>
     </div>
 
     <!-- Section 1 -->
@@ -160,53 +160,6 @@ main() {
 
     <!-- Section 4 -->
     <div class="docs-section">
-      <h2>Деструктор</h2>
-      <p><strong>Деструктор</strong> — это метод, который вызывается при уничтожении объекта. В Idyllium деструктор успешно срабатывает при удалении ячеек из динамического массива.</p>
-      <p>Синтаксис: <code>destructor ~ИмяКласса()</code>.</p>
-
-      <idyl-code-block><script type="text/plain">
-use console;
-
-class Circle {
-    float radius;
-    string name;
-
-    constructor Circle(string ex_name, float ex_radius) {
-        this.name = ex_name;
-        this.radius = ex_radius;
-    }
-
-    destructor ~Circle() {
-        console.writeln("Круг ", this.name, " уничтожен");
-    }
-}
-
-main() {
-    dyn_array<Circle> circles;
-
-    for (int i = 0; i < 5; i = i + 1) {
-        Circle tmp("Круг_" + to_string(i), 1.0);
-        circles.add(tmp);
-    }
-
-    console.writeln("Удаляем первый круг...");
-    circles.remove_at(0);
-
-    console.writeln("Удаляем ещё один...");
-    circles.remove_at(0);
-}
-</script></idyl-code-block>
-
-      <idyl-output-block>Удаляем первый круг...
-Круг Круг_0 уничтожен
-Удаляем ещё один...
-Круг Круг_1 уничтожен</idyl-output-block>
-
-      <p>Деструктор позволяет выполнить cleanup-действия — закрыть файлы, освободить ресурсы или просто сообщить об удалении объекта.</p>
-    </div>
-
-    <!-- Section 5 -->
-    <div class="docs-section">
       <h2>Специальный метод to_string()</h2>
       <p>Если добавить в класс метод <code>to_string()</code>, объекты этого класса можно будет выводить в консоль напрямую:</p>
 
@@ -240,12 +193,11 @@ Cat(Мурка)</idyl-output-block>
       <p>Метод <code>to_string()</code> вызывается автоматически, когда объект нужно представить в виде строки (например, при выводе в консоль или при конкатенации).</p>
     </div>
 
-    <!-- Section 6 -->
+    <!-- Section 5 -->
     <div class="docs-section">
       <h2>Итог</h2>
       <ul>
         <li><strong>Конструктор</strong> — вызывается при создании объекта. Позволяет инициализировать свойства без лишнего кода.</li>
-        <li><strong>Деструктор</strong> — вызывается при уничтожении объекта. Полезен для освобождения ресурсов.</li>
         <li><strong>to_string()</strong> — позволяет выводить объекты в консоль напрямую.</li>
       </ul>
     </div>

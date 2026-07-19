@@ -1,0 +1,166 @@
+<div class="docs-section">
+  <h2>Когда объектов становится много</h2>
+  <p>
+    Пока объект один, его свойства нетрудно заполнить вручную. Но представим
+    игру с тремя героями:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+Hero first;
+first.name = "Kaspar";
+first.hp = 500;
+
+Hero second;
+second.name = "Raven";
+second.hp = 600;
+
+Hero third;
+third.name = "Aranthir";
+third.hp = 1000;
+  </script></idyl-code-block>
+
+  <p>
+    На каждого героя приходится одна и та же пачка присваиваний. Если у героя
+    появятся мана, уровень и инвентарь, пачка станет ещё длиннее. Хочется один
+    раз описать правильное создание героя, а затем только передавать данные.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Конструктор</h2>
+  <p>
+    <strong>Конструктор</strong> — особый метод, который запускается при создании
+    объекта. Его имя совпадает с именем класса:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Hero {
+    string name;
+    int hp;
+
+    constructor Hero(string ex_name, int ex_hp) {
+        this.name = ex_name;
+        this.hp = ex_hp;
+    }
+
+    void function print() {
+        console.writeln(this.name, ": ", this.hp);
+    }
+}
+
+main() {
+    Hero kaspar("Kaspar", 500);
+    kaspar.print();
+}
+  </script></idyl-code-block>
+
+  <idyl-output-block>Kaspar: 500</idyl-output-block>
+
+  <p>
+    Выражение <code>Hero kaspar("Kaspar", 500)</code> создаёт объект, после чего
+    конструктор раскладывает аргументы по его полям. Обращение к полям внутри
+    конструктора, как и внутри обычного метода, требует <code>this.</code>.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Значение по умолчанию</h2>
+  <p>
+    Если большинство героев начинает со ста единиц здоровья, это значение
+    можно записать прямо в параметре конструктора:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+constructor Hero(string ex_name, int ex_hp = 100) {
+    this.name = ex_name;
+    this.hp = ex_hp;
+}
+
+main() {
+    Hero mira("Mira");       // hp станет равен 100
+    Hero boss("Boss", 900); // hp станет равен 900
+}
+  </script></idyl-code-block>
+
+  <p>
+    Параметры без значения по умолчанию идут первыми. Поэтому имя обязательно,
+    а здоровье можно не указывать.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Свежий объект прямо внутри выражения</h2>
+  <p>
+    Иногда имя для промежуточной переменной только мешает. Имя класса можно
+    вызвать как функцию: такой вызов создаст и вернёт новый объект.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+dyn_array<Hero> heroes;
+
+heroes.add(Hero("Kaspar", 500));
+heroes.add(Hero("Raven", 600));
+heroes.add(Hero(ex_hp=1000, ex_name="Aranthir"));
+  </script></idyl-code-block>
+
+  <p>
+    Каждый <code>Hero(...)</code> создаёт отдельного героя. Именованные аргументы
+    можно переставлять местами. Ключевое слово <code>new</code> не нужно: его в
+    синтаксисе Idyllium нет.
+  </p>
+
+  <p>Созданный объект разрешено использовать и в других выражениях:</p>
+
+  <idyl-code-block><script type="text/plain">
+Hero raven = Hero("Raven", 600);
+
+Hero function create_boss() {
+    return Hero("Aranthir", 1000);
+}
+
+    bool very_strong = Hero("Ornella", 750).hp > 700;
+  </script></idyl-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>Объект внутри объекта</h2>
+  <p>
+    Конструктор-выражение работает и в поле класса. Это удобно для композиции:
+    герой сразу получает собственный объект здоровья.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+class Health {
+    int hp;
+    int max_hp;
+
+    constructor Health(int maximum) {
+        this.hp = maximum;
+        this.max_hp = maximum;
+    }
+}
+
+class Hero {
+    string name;
+    Health health = Health(100);
+}
+  </script></idyl-code-block>
+
+  <p>
+    При создании двух героев каждый получит собственный <code>Health</code>.
+    Изменение здоровья одного героя не меняет здоровье другого.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Что запомнить</h2>
+  <ul>
+    <li>Конструктор описывает начальное состояние нового объекта.</li>
+    <li>Форма <code>Hero hero(...)</code> создаёт именованную переменную.</li>
+    <li>Форма <code>Hero(...)</code> возвращает свежий объект прямо в выражение.</li>
+    <li>Значения по умолчанию и именованные аргументы работают в обеих формах.</li>
+    <li>У класса без явного конструктора допустим вызов <code>Empty()</code>, но передавать ему аргументы нельзя.</li>
+  </ul>
+</div>
