@@ -2029,36 +2029,62 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${filePath}' for reading: path is not a file`);
     }
 
-    let content: string;
-    let lines: string[];
+    let characters: string[];
     try {
-      content = fileSystem.readText(filePath);
-      lines = splitFileLines(content);
+      characters = Array.from(fileSystem.readText(filePath));
     } catch (error) {
       throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${filePath}' for reading: ${errorMessage(error)}`);
     }
 
-    let index = 0;
+    let offset = 0;
     let closed = false;
+    const readRemaining = () => {
+      const result = characters.slice(offset).join('');
+      offset = characters.length;
+      return result;
+    };
     const stream: Record<string, unknown> = {
       __idylliumType: 'file.istream',
       is_open: true,
+      read: contextFunction((...rawArgs: unknown[]) => {
+        const { values, file, line: callLine } = splitContextArgs(rawArgs);
+        expectOpen(!closed, 'istream.read()', file, callLine);
+        if (values.length === 0) return readRemaining();
+
+        const count = integerNumber(values[0], 'istream.read() count', file, callLine);
+        if (count < 0) {
+          throw new IdylliumRuntimeError(file, callLine, `istream.read() count must be non-negative, got ${count}`);
+        }
+        const end = Math.min(characters.length, offset + count);
+        const result = characters.slice(offset, end).join('');
+        offset = end;
+        return result;
+      }),
       read_line: contextFunction((file: string, callLine: number) => {
         expectOpen(!closed, 'istream.read_line()', file, callLine);
-        if (index >= lines.length) {
+        if (offset >= characters.length) {
           throw new IdylliumRuntimeError(file, callLine, 'istream.read_line() cannot read past end of file');
         }
-        return lines[index++];
+        let end = offset;
+        while (end < characters.length) {
+          const character = characters[end++];
+          if (character === '\n') break;
+          if (character === '\r') {
+            if (characters[end] === '\n') end++;
+            break;
+          }
+        }
+        const result = characters.slice(offset, end).join('');
+        offset = end;
+        return result;
       }),
       read_all: contextFunction((file: string, callLine: number) => {
         expectOpen(!closed, 'istream.read_all()', file, callLine);
-        const rest = lines.slice(index).join('');
-        index = lines.length;
-        return rest;
+        return readRemaining();
       }),
       has_next_line: contextFunction((file: string, callLine: number) => {
         expectOpen(!closed, 'istream.has_next_line()', file, callLine);
-        return index < lines.length;
+        return offset < characters.length;
       }),
       close: () => {
         closed = true;
@@ -2087,10 +2113,15 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     const stream: Record<string, unknown> = {
       __idylliumType: 'file.ostream',
       is_open: true,
+      write: contextFunction(async (...rawArgs: unknown[]) => {
+        const { values, file, line: callLine } = splitContextArgs(rawArgs);
+        expectOpen(!closed, 'ostream.write()', file, callLine);
+        fileSystem.appendText(filePath, await formatConsoleValues(values));
+      }),
       write_line: contextFunction(async (...rawArgs: unknown[]) => {
         const { values, file, line: callLine } = splitContextArgs(rawArgs);
         expectOpen(!closed, 'ostream.write_line()', file, callLine);
-        fileSystem.appendText(filePath, await formatConsoleValues(values));
+        fileSystem.appendText(filePath, `${await formatConsoleValues(values)}\n`);
       }),
       close: () => {
         closed = true;
@@ -3154,12 +3185,6 @@ function addMemoryDirectory(directories: Set<string>, directory: string): void {
   const parent = memoryDirname(normalized);
   if (parent !== normalized) addMemoryDirectory(directories, parent);
   directories.add(normalized);
-}
-
-function splitFileLines(source: string): string[] {
-  if (source.length === 0) return [];
-  const matches = source.match(/.*(?:\r\n|\n|$)/gu) ?? [];
-  return matches.filter((line, index) => line.length > 0 || index < matches.length - 1);
 }
 
 function splitContextArgs(args: readonly unknown[]): { values: readonly unknown[]; file: string; line: number } {
@@ -4855,17 +4880,17 @@ function attachDrawableGeometry(obj: RuntimeObject, typeName: string, state: Run
     };
     return collisionShapeContains(drawableCollisionShape(obj, `${typeName}.contains()`, file, line, state), point);
   });
-  obj.intersects = contextFunction((other: unknown, file: string, line: number) => {
+  obj.collides_with = contextFunction((other: unknown, file: string, line: number) => {
     if (!isDrawableObject(other)) {
       throw new IdylliumRuntimeError(
         file,
         line,
-        `${typeName}.intersects() expects drawable object, got '${runtimeTypeName(other)}'`,
+        `${typeName}.collides_with() expects drawable object, got '${runtimeTypeName(other)}'`,
       );
     }
     return collisionShapesIntersect(
-      drawableCollisionShape(obj, `${typeName}.intersects()`, file, line, state),
-      drawableCollisionShape(other, `${typeName}.intersects()`, file, line, state),
+      drawableCollisionShape(obj, `${typeName}.collides_with()`, file, line, state),
+      drawableCollisionShape(other, `${typeName}.collides_with()`, file, line, state),
     );
   });
 }

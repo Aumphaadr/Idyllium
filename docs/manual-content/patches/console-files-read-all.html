@@ -1,5 +1,5 @@
 <section class="docs-section">
-  <h2>Прочитать весь файл сразу: <code>read_all()</code></h2>
+  <h2>Прочитать весь файл или несколько символов</h2>
   <p>Построчное чтение удобно, когда файл похож на список: одна строка — один предмет, одна команда или одна запись.</p>
   <p>Но иногда файл хочется забрать целиком. Например, если внутри лежит большой текст, HTML-страница или JSON-данные. Для этого у <code>file.istream</code> есть метод <code>read_all()</code>.</p>
   <idyl-code-block><script type="text/plain">
@@ -14,7 +14,7 @@ main() {
     console.writeln(text);
 }
 </script></idyl-code-block>
-  <p>Метод <code>read_all()</code> читает всё, что осталось в файле от текущего места до конца. Если до него уже вызывали <code>read_line()</code>, то первые прочитанные строки повторно не вернутся.</p>
+  <p>Метод <code>read_all()</code> читает всё, что осталось в файле от текущего места до конца. Такой же результат даст вызов <code>read()</code> без аргументов. Если до него уже вызывали <code>read_line()</code>, то первые прочитанные строки повторно не вернутся.</p>
   <idyl-code-block><script type="text/plain">
 use console;
 use file;
@@ -33,4 +33,14 @@ main() {
 }
 </script></idyl-code-block>
   <p>Это поведение удобно: можно сначала отдельно прочитать заголовок, а потом забрать весь оставшийся текст одним действием.</p>
+  <p>А если нужно прочитать точное количество символов, передайте это количество в <code>read(count)</code>:</p>
+  <idyl-code-block><script type="text/plain">
+file.istream fin = file.open("word.txt", "read");
+
+string first = fin.read(3);
+string rest = fin.read();
+
+fin.close();
+  </script></idyl-code-block>
+  <p>Для файла со словом <code>котики</code> в <code>first</code> окажется <code>кот</code>, а в <code>rest</code> — <code>ики</code>. Считаются символы, а не байты, поэтому кириллица и эмодзи не ломают такое чтение. Если до конца файла осталось меньше символов, метод просто вернёт оставшийся текст.</p>
 </section>

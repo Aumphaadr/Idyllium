@@ -10,7 +10,7 @@
 </head>
 <body class="theme-dark">
   <header class="topbar">
-    <div class="brand">Idyllium <span class="idyllium-version">v1.1.0</span></div>
+    <div class="brand">Idyllium <span class="idyllium-version">v1.1.1</span></div>
     <div class="actions">
       <div id="file-app-menu-wrapper" class="app-menu-wrapper">
         <button id="file-app-menu-button" type="button" aria-expanded="false">Файл</button>
@@ -237,6 +237,7 @@
         <div id="asset-viewer" class="asset-viewer" hidden></div>
         <div id="csv-viewer" class="csv-viewer" hidden></div>
         <div id="json-viewer" class="json-viewer" hidden></div>
+        <div id="markdown-viewer" class="markdown-viewer" hidden></div>
         <div id="legacy-editor" class="legacy-editor" hidden>
           <div id="line-numbers" class="line-numbers" aria-hidden="true">1</div>
           <div class="editor-stack">
@@ -268,6 +269,8 @@
   </main>
 
   <script src="vendor/papaparse.min.js"></script>
+  <script src="vendor/marked.umd.js"></script>
+  <script src="vendor/purify.min.js"></script>
   <script src="monaco/vs/loader.js"></script>
   <script src="assets/idyllium-web-core.js"></script>
   <script src="app.js"></script>

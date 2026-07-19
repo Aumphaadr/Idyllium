@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-17T18:27:07.106Z",
+  "generatedAt": "2026-07-19T09:46:51.805Z",
   "sourceRoot": "packages/docs",
   "sections": [
     {
@@ -896,7 +896,7 @@
         {
           "id": "geometry-methods",
           "title": "Готовые геометрические проверки",
-          "subtitle": "contains(), intersects(), повороты и разные типы объектов",
+          "subtitle": "contains(), collides_with(), повороты и разные типы объектов",
           "file": "content/canvas/geometry-methods.html",
           "sourceFile": "docs/manual-content/canvas/geometry-methods.html",
           "status": "ready",

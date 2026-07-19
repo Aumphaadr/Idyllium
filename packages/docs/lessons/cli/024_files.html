@@ -110,14 +110,15 @@ file.ostream fout = file.open("output.txt", "write");
     <!-- Section 4 -->
     <div class="docs-section">
       <h2>Запись данных: выполнение</h2>
-      <p>После открытия файла можно записывать в него строки с помощью метода <code>write_line()</code>:</p>
+      <p>После открытия файла можно записывать в него строки с помощью методов <code>write_line()</code> и <code>write()</code>:</p>
       <idyl-code-block><script type="text/plain">
-fout.write_line("Привет, мир!", '\n');
-fout.write_line("Сейчас ", 2025, " год", '\n');
-fout.write_line("Файл создан с помощью Idyllium!");
+fout.write_line("Привет, мир!");
+fout.write("Сейчас ", 2025, " год");
+fout.write_line();
+fout.write("Файл создан с помощью Idyllium!");
 </script></idyl-code-block>
-      <p>Метод <code>write_line()</code> работает точно так же, как <code>console.write()</code> — принимает любое количество аргументов и собирает из них строку.</p>
-      <p>Перенос строки нужно указывать вручную (через <code>'\n'</code>), как и в консоли.</p>
+      <p>Оба метода принимают любое количество аргументов и собирают из них текст.</p>
+      <p><code>write_line()</code> после текста сам добавляет <code>'\n'</code>, как <code>console.writeln()</code>. Метод <code>write()</code> ничего не добавляет, как <code>console.write()</code>. Пустой вызов <code>write_line()</code> просто начинает новую строку.</p>
     </div>
 
     <!-- Section 5 -->
@@ -138,9 +139,9 @@ use file;
 
 main() {
     file.ostream fout = file.open("output.txt", "write");
-    fout.write_line("Привет, мир!", '\n');
-    fout.write_line("Сейчас ", 2025, " год", '\n');
-    fout.write_line("Файл создан с помощью Idyllium!");
+    fout.write_line("Привет, мир!");
+    fout.write_line("Сейчас ", 2025, " год");
+    fout.write("Файл создан с помощью Idyllium!");
     fout.close();
 }
 </script></idyl-code-block>

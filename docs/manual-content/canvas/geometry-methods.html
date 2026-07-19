@@ -8,7 +8,7 @@
   <p>
     Но переписывать одну и ту же геометрию в каждой игре не обязательно.
     У drawable-объектов есть готовые методы <code>contains()</code> и
-    <code>intersects()</code>.
+    <code>collides_with()</code>.
   </p>
 
   <h3>Находится ли точка внутри</h3>
@@ -34,12 +34,12 @@ if (button_shape.contains(e.x, e.y)) {
 
   <h3>Пересекаются ли два объекта</h3>
   <p>
-    Метод <code>intersects(other)</code> проверяет уже не точку, а другой
+    Метод <code>collides_with(other)</code> проверяет уже не точку, а другой
     drawable-объект.
   </p>
 
   <idyl-code-block><script type="text/plain">
-if (player.intersects(wall)) {
+if (player.collides_with(wall)) {
     player.fill_color = colors.RED;
 }
 </script></idyl-code-block>
@@ -55,7 +55,7 @@ bool function objects_touch(
     drawable.Drawable first,
     drawable.Drawable second
 ) {
-    return first.intersects(second);
+    return first.collides_with(second);
 }
 </script></idyl-code-block>
 
@@ -147,7 +147,7 @@ void function mouse_move(gui.Canvas canvas, gui.MouseEvent e) {
         target.border_color = colors.TRANSPARENT;
     }
 
-    if (target.intersects(probe)) {
+    if (target.collides_with(probe)) {
         target.fill_color = colors.RED;
     } else {
         target.fill_color = colors.RGB(34, 145, 188);
@@ -160,7 +160,7 @@ main() {
     gui.Window win;
     win.width = 600;
     win.height = 400;
-    win.title = "contains() и intersects()";
+    win.title = "contains() и collides_with()";
 
     gui.Canvas canvas;
     canvas.x = 20;

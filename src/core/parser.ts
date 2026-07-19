@@ -255,6 +255,15 @@ export class Parser {
       return this.parseBlock();
     }
 
+    if (this.check(TokenKind.KwElse)) {
+      const elseToken = this.advance();
+      this.error(
+        elseToken.range,
+        "'else' has no matching 'if'; without braces an if branch contains only one statement (wrap multiple statements in '{ ... }')",
+      );
+      return this.parseStatement();
+    }
+
     return this.parseExpressionStatement();
   }
 

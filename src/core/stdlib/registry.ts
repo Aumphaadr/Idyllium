@@ -437,6 +437,10 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     typeSpec('istream', [
       propertySpec('is_open', BOOL, true, 'Показывает, открыт ли поток.'),
     ], [
+      functionSpec('read', [{ name: 'count', type: INT }], STRING, {
+        minArguments: 0,
+        documentation: 'Читает count символов либо весь оставшийся текст, если count не указан.',
+      }),
       functionSpec('read_line', [], STRING),
       functionSpec('read_all', [], STRING),
       functionSpec('has_next_line', [], BOOL),
@@ -445,9 +449,15 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     typeSpec('ostream', [
       propertySpec('is_open', BOOL, true, 'Показывает, открыт ли поток.'),
     ], [
+      functionSpec('write', [], VOID, {
+        variadic: true,
+        variadicTypes: [ANY_TYPE],
+        documentation: 'Записывает значения без автоматического перевода строки.',
+      }),
       functionSpec('write_line', [], VOID, {
         variadic: true,
         variadicTypes: [ANY_TYPE],
+        documentation: 'Записывает значения и добавляет перевод строки.',
       }),
       functionSpec('close', [], VOID),
     ]),
@@ -770,6 +780,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     typeSpec('TextEdit', [
       ...positioned,
       ...visible,
+      ...changeable,
       ...colorRoles,
       propertySpec('text', STRING),
       propertySpec('placeholder', STRING),
@@ -832,7 +843,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...visible,
       ...changeable,
       propertySpec('selected_index', INT),
-      propertySpec('selected_text', STRING),
+      propertySpec('selected_text', STRING, true, 'Текст выбранного пункта; изменяется через selected_index.'),
     ], [
       functionSpec('add_item', [{ name: 'text', type: STRING }], VOID),
       functionSpec('clear_items', [], VOID),
@@ -889,8 +900,8 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ], BOOL, {
         documentation: 'Проверяет, находится ли мировая точка внутри объекта. Точка на границе считается находящейся внутри.',
       }),
-      functionSpec('intersects', [{ name: 'other', type: drawableDrawable }], BOOL, {
-        documentation: 'Проверяет пересечение с другим drawable-объектом. Касание границ считается пересечением.',
+      functionSpec('collides_with', [{ name: 'other', type: drawableDrawable }], BOOL, {
+        documentation: 'Проверяет коллизию с другим drawable-объектом. Касание границ считается коллизией.',
       }),
     ]),
     typeSpec('Rectangle', [

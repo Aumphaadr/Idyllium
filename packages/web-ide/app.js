@@ -133,6 +133,7 @@
   const assetViewer = document.getElementById('asset-viewer');
   const csvViewer = document.getElementById('csv-viewer');
   const jsonViewer = document.getElementById('json-viewer');
+  const markdownViewer = document.getElementById('markdown-viewer');
   const legacyEditor = document.getElementById('legacy-editor');
   const editor = document.getElementById('editor');
   const highlight = document.querySelector('#highlight code');
@@ -1236,6 +1237,8 @@
         showCsvTable(file, item.content || '');
       } else if (isJsonFile(file) && structuredViewModes.get(file) === 'tree') {
         showJsonTree(file, item.content || '');
+      } else if (isMarkdownFile(file) && structuredViewModes.get(file) === 'preview') {
+        showMarkdownPreview(file, item.content || '');
       }
     } else if (item && item.kind === 'asset') {
       showAssetViewer(file, item);
@@ -1269,6 +1272,10 @@
       jsonViewer.hidden = true;
       jsonViewer.replaceChildren();
     }
+    if (markdownViewer) {
+      markdownViewer.hidden = true;
+      markdownViewer.replaceChildren();
+    }
     if (monacoReady && monacoHost) {
       monacoHost.hidden = false;
       if (legacyEditor) legacyEditor.hidden = true;
@@ -1287,9 +1294,14 @@
     return /\.json$/iu.test(file);
   }
 
+  function isMarkdownFile(file) {
+    return /\.(?:md|markdown)$/iu.test(file);
+  }
+
   function structuredViewMode(file) {
     if (isCsvFile(file)) return 'table';
     if (isJsonFile(file)) return 'tree';
+    if (isMarkdownFile(file)) return 'preview';
     return '';
   }
 
@@ -1302,7 +1314,8 @@
       saveCurrentEditor();
       structuredViewModes.set(currentFile, structuredMode);
       if (structuredMode === 'table') showCsvTable(currentFile, item.content || '');
-      else showJsonTree(currentFile, item.content || '');
+      else if (structuredMode === 'tree') showJsonTree(currentFile, item.content || '');
+      else showMarkdownPreview(currentFile, item.content || '');
     } else {
       structuredViewModes.set(currentFile, 'text');
       showTextEditor();
@@ -1319,11 +1332,15 @@
     const structuredMode = structuredViewMode(currentFile);
     const available = Boolean(item && item.kind === 'text' && structuredMode);
     const mode = available ? structuredViewModes.get(currentFile) || 'text' : 'text';
-    const formatName = isCsvFile(currentFile) ? 'CSV' : 'JSON';
+    const formatName = isCsvFile(currentFile) ? 'CSV' : isJsonFile(currentFile) ? 'JSON' : 'Markdown';
 
     structuredViewToggle.hidden = !available;
     structuredViewToggle.setAttribute('aria-label', `Режим просмотра ${formatName}`);
-    structuredDataViewButton.textContent = structuredMode === 'table' ? 'Таблица' : 'Дерево';
+    structuredDataViewButton.textContent = structuredMode === 'table'
+      ? 'Таблица'
+      : structuredMode === 'tree'
+        ? 'Дерево'
+        : 'Просмотр';
     structuredTextViewButton.classList.toggle('active', mode === 'text');
     structuredDataViewButton.classList.toggle('active', mode === structuredMode);
     structuredTextViewButton.setAttribute('aria-pressed', String(mode === 'text'));
@@ -1342,6 +1359,10 @@
     if (jsonViewer) {
       jsonViewer.hidden = true;
       jsonViewer.replaceChildren();
+    }
+    if (markdownViewer) {
+      markdownViewer.hidden = true;
+      markdownViewer.replaceChildren();
     }
     if (!csvViewer) return;
 
@@ -1552,6 +1573,10 @@
       csvViewer.hidden = true;
       csvViewer.replaceChildren();
     }
+    if (markdownViewer) {
+      markdownViewer.hidden = true;
+      markdownViewer.replaceChildren();
+    }
     if (!jsonViewer) return;
 
     jsonViewer.hidden = false;
@@ -1602,6 +1627,122 @@
     scroll.className = 'json-tree-scroll';
     scroll.appendChild(tree);
     jsonViewer.appendChild(scroll);
+  }
+
+  function showMarkdownPreview(file, source) {
+    assetViewerGeneration++;
+    releaseAssetViewerResources();
+    if (monacoHost) monacoHost.hidden = true;
+    if (legacyEditor) legacyEditor.hidden = true;
+    if (assetViewer) {
+      assetViewer.hidden = true;
+      assetViewer.replaceChildren();
+    }
+    if (csvViewer) {
+      csvViewer.hidden = true;
+      csvViewer.replaceChildren();
+    }
+    if (jsonViewer) {
+      jsonViewer.hidden = true;
+      jsonViewer.replaceChildren();
+    }
+    if (!markdownViewer) return;
+
+    markdownViewer.hidden = false;
+    markdownViewer.replaceChildren();
+    renderMarkdownPreview(file, source);
+  }
+
+  function renderMarkdownPreview(file, source) {
+    if (!markdownViewer) return;
+    if (!window.marked || typeof window.marked.parse !== 'function'
+      || !window.DOMPurify || typeof window.DOMPurify.sanitize !== 'function') {
+      appendMarkdownMessage('Не удалось загрузить модуль просмотра Markdown');
+      return;
+    }
+    if (source.trim().length === 0) {
+      appendMarkdownMessage('Markdown-файл пуст');
+      return;
+    }
+
+    let rendered;
+    try {
+      rendered = window.marked.parse(source.replace(/^[\u200B-\u200F\uFEFF]/u, ''), {
+        async: false,
+        breaks: false,
+        gfm: true,
+      });
+    } catch (error) {
+      appendMarkdownMessage(`Markdown не удалось разобрать: ${error instanceof Error ? error.message : String(error)}`, true);
+      return;
+    }
+
+    const documentElement = document.createElement('article');
+    documentElement.className = 'markdown-document';
+    documentElement.innerHTML = window.DOMPurify.sanitize(String(rendered), {
+      FORBID_ATTR: ['style'],
+      FORBID_TAGS: ['style', 'script', 'iframe', 'object', 'embed', 'form'],
+      SANITIZE_NAMED_PROPS: true,
+      USE_PROFILES: { html: true },
+    });
+    prepareMarkdownLinks(documentElement, file);
+    prepareMarkdownImages(documentElement, file);
+    markdownViewer.appendChild(documentElement);
+  }
+
+  function appendMarkdownMessage(message, error = false) {
+    const element = document.createElement('div');
+    element.className = `markdown-empty${error ? ' markdown-error' : ''}`;
+    element.textContent = message;
+    markdownViewer.appendChild(element);
+  }
+
+  function prepareMarkdownLinks(documentElement, file) {
+    for (const link of documentElement.querySelectorAll('a[href]')) {
+      const href = link.getAttribute('href') || '';
+      if (/^(?:https?:|mailto:)/iu.test(href)) {
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        continue;
+      }
+      if (href.startsWith('#')) continue;
+      const target = markdownWorkspaceTarget(file, href);
+      if (!target || !files.has(target)) {
+        link.addEventListener('click', (event) => event.preventDefault());
+        link.title = 'Файл не найден в текущем проекте';
+        continue;
+      }
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        openFile(target);
+      });
+    }
+  }
+
+  function prepareMarkdownImages(documentElement, file) {
+    for (const image of documentElement.querySelectorAll('img[src]')) {
+      const source = image.getAttribute('src') || '';
+      if (/^(?:https?:|data:|blob:)/iu.test(source)) continue;
+      const target = markdownWorkspaceTarget(file, source);
+      const item = target ? files.get(target) : null;
+      if (!item || item.kind !== 'asset') continue;
+      const bytes = item.bytes instanceof Uint8Array ? item.bytes : assetBytes(item);
+      image.src = bytes.length > 0 ? bytesToDataUrl(target, bytes) : item.resourceUri || source;
+    }
+  }
+
+  function markdownWorkspaceTarget(file, reference) {
+    const pathOnly = String(reference).split(/[?#]/u, 1)[0];
+    if (!pathOnly) return '';
+    let decoded;
+    try {
+      decoded = decodeURIComponent(pathOnly);
+    } catch {
+      decoded = pathOnly;
+    }
+    if (decoded.startsWith('/')) return normalizeWorkspacePath(decoded);
+    const parent = shortFileName(parentPath(file));
+    return normalizeWorkspacePath(parent ? `${parent}/${decoded}` : decoded);
   }
 
   function createJsonToolbar(value, state) {
@@ -1848,6 +1989,10 @@
     if (jsonViewer) {
       jsonViewer.hidden = true;
       jsonViewer.replaceChildren();
+    }
+    if (markdownViewer) {
+      markdownViewer.hidden = true;
+      markdownViewer.replaceChildren();
     }
     if (!assetViewer) return;
 
@@ -2732,6 +2877,10 @@
     const name = String(file || '').toLowerCase();
     if (name.endsWith('.idyl')) return MONACO_LANGUAGE_ID;
     if (name.endsWith('.json')) return 'json';
+    if (name.endsWith('.xml')) return 'xml';
+    if (name.endsWith('.html') || name.endsWith('.htm')) return 'html';
+    if (name.endsWith('.css')) return 'css';
+    if (name.endsWith('.md') || name.endsWith('.markdown')) return 'markdown';
     return 'plaintext';
   }
 
@@ -5717,7 +5866,12 @@
       || name.endsWith('.txt')
       || name.endsWith('.csv')
       || name.endsWith('.json')
-      || name.endsWith('.md');
+      || name.endsWith('.md')
+      || name.endsWith('.markdown')
+      || name.endsWith('.xml')
+      || name.endsWith('.html')
+      || name.endsWith('.htm')
+      || name.endsWith('.css');
   }
 
   function unzipStoredEntries(bytes) {
@@ -5772,6 +5926,14 @@
 
   function mimeTypeForFile(fileName) {
     const name = fileName.toLowerCase();
+    if (name.endsWith('.idyl')) return 'text/x-idyllium';
+    if (name.endsWith('.txt')) return 'text/plain';
+    if (name.endsWith('.csv')) return 'text/csv';
+    if (name.endsWith('.json')) return 'application/json';
+    if (name.endsWith('.md') || name.endsWith('.markdown')) return 'text/markdown';
+    if (name.endsWith('.xml')) return 'application/xml';
+    if (name.endsWith('.html') || name.endsWith('.htm')) return 'text/html';
+    if (name.endsWith('.css')) return 'text/css';
     if (name.endsWith('.png')) return 'image/png';
     if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
     if (name.endsWith('.gif')) return 'image/gif';

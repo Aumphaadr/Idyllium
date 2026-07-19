@@ -4,7 +4,11 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: IdylliumNext 1.1.0.
+Current language target: IdylliumNext 1.1.1.
+
+This reference describes implemented behavior. Ideas from `BACKLOG.md` and
+exploratory files under `spec/some_*` are not language features until they are
+implemented and documented here.
 
 Important rule for AI assistants: Idyllium is a child-friendly educational
 language. Do not invent syntax. Do not replace Idyllium syntax with C++, C#,
@@ -64,8 +68,8 @@ User modules are ordinary `.idyl` files in the same project. If there is
 use helper;
 ```
 
-Then public top-level functions/classes in that module are accessed as
-`helper.name`.
+Then top-level variables, constants, functions, and classes from that module are
+accessed as `helper.name`.
 
 ## 3. Comments And Formatting
 
@@ -114,7 +118,14 @@ char letter = 'A';
 char line_break = '\n';
 ```
 
-Useful escapes include `\n`, `\t`, `\\`, `\"`, `\'`.
+Supported escapes are `\n`, `\t`, `\r`, `\e` (ESC), `\0`, `\\`, `\"`, and
+`\'`. Unknown escape sequences are compile errors.
+
+`null` is a language literal, but it is not a general-purpose primitive type.
+Only library value containers that explicitly support an absent value may
+receive or compare equal to it. Currently these are `json.Value` and
+`sqlite.Value`; ordinary variables, arrays, user-class objects, `json.Object`,
+and `json.Array` are not nullable.
 
 ## 5. Variables And Assignment
 
@@ -198,6 +209,7 @@ Common rules:
 - `float` cannot be assigned to `int` without `to_int()`.
 - Numbers are not silently converted to strings.
 - Strings are not silently converted to numbers.
+- `to_int(float_value)` truncates toward zero.
 
 ## 7. Operators
 
@@ -263,6 +275,8 @@ console.set_precision(3);
 
 `console.write(...)` prints values without an automatic newline.
 `console.writeln(...)` prints values and then a newline.
+`console.set_precision(digits)` controls float formatting and accepts an integer
+from `0` through `25`.
 
 Input:
 
@@ -296,6 +310,28 @@ if (score >= 90) {
     console.writeln("try again");
 }
 ```
+
+Braces may be omitted when a branch contains exactly one statement:
+
+```idyllium
+if (score >= 90)
+    console.writeln("excellent");
+else
+    console.writeln("try again");
+```
+
+Indentation does not change the grammar. Without braces, only the immediately
+following statement belongs to the branch:
+
+```idyllium
+if (ready)
+    console.writeln("start");
+console.writeln("always"); // outside the if
+```
+
+An `else` belongs to the nearest unfinished `if`. If another statement has
+already completed that `if`, the compiler reports that `else` has no matching
+`if` and recommends wrapping a multi-statement branch in `{ ... }`.
 
 `while`:
 
@@ -381,6 +417,10 @@ Arrays have value semantics. Assignment, a function argument, and a function ret
 create an independent array copy. Nested array containers are copied recursively;
 class and library objects stored in cells retain their object identity.
 
+Array `==` and `!=` comparisons are structural: lengths and corresponding cells
+are compared recursively. Library/class objects inside cells still follow their
+own equality semantics.
+
 Fixed and dynamic arrays are mutually convertible when their element types are
 compatible. The target type determines whether the copy is fixed or dynamic:
 
@@ -393,8 +433,19 @@ Converting `dyn_array<T>` to `array<T, N>` performs a runtime size check. A size
 mismatch is a readable runtime error; it never truncates or pads the array implicitly.
 Known mismatched sizes between two fixed arrays are compile-time errors.
 
-Global array helper functions exist in lessons and runtime, but prefer methods
-when writing new educational code.
+Numeric arrays also support global aggregate functions:
+
+```idyllium
+max(values)
+min(values)
+sum(values)
+avg(values)
+```
+
+`max`, `min`, and `sum` return an integer-like result for integer arrays and a
+float result for float arrays. `avg` always returns `float`. Empty arrays and
+non-numeric arrays are runtime errors. These are global functions, not array
+methods.
 
 When a string is printed as an element inside an array, it is shown with quotes
 and escaped control characters, for example:
@@ -480,6 +531,27 @@ int function add(int a, int b = 0) {
 }
 ```
 
+A default expression may refer to an earlier parameter. Default arguments work
+for functions, methods, and constructors:
+
+```idyllium
+int function add_twice(int first, int second = first) {
+    return first + second;
+}
+
+class Counter {
+    int value;
+
+    constructor Counter(int start = 5) {
+        this.value = start;
+    }
+
+    void function add(int amount = 1) {
+        this.value += amount;
+    }
+}
+```
+
 Named arguments:
 
 ```idyllium
@@ -500,6 +572,8 @@ Rules:
 - Positional arguments after named arguments are forbidden.
 - Passing the same parameter twice is forbidden.
 - Unknown argument names are forbidden.
+- Named arguments work for user functions, methods, constructors, and
+  non-variadic library calls.
 - Named arguments are not supported for variadic functions such as
   `console.write(...)`.
 
@@ -588,6 +662,16 @@ class Hero {
 }
 ```
 
+Inside an instance method or constructor, class fields and instance methods
+must be accessed through `this.`. A bare field name is treated as an ordinary
+local/global name and is therefore an error when no such name exists:
+
+```idyllium
+this.hp -= damage;      // correct: class field
+this.get_hp();          // correct: instance method
+hp -= damage;           // wrong: 'hp' is not a local variable
+```
+
 Object creation:
 
 ```idyllium
@@ -596,14 +680,16 @@ hero.hit(30);
 console.writeln(hero.get_hp());
 ```
 
-Constructors are used in declarations, not as general expressions. Prefer:
+Constructors are used in declarations, not as general expressions:
 
 ```idyllium
 Hero hero("Mira", 100);
 ```
 
-Do not generate constructor calls as standalone expressions unless a current
-spec example explicitly shows that pattern.
+There is no `new` expression, and constructor calls cannot be nested inside
+other expressions. A class with a zero-argument or all-default constructor may
+be initialized with empty parentheses, for example `Counter counter();`.
+Destructors are not implemented.
 
 ### Access Modifiers
 
@@ -762,7 +848,12 @@ float b = random.create_float(0.0, 1.0);
 random.set_seed(123);
 ```
 
-Invalid ranges are runtime errors. Do not silently swap or clamp ranges.
+`create_int(min, max)` includes both bounds, so `create_int(1, 10)` may return
+either `1` or `10`. `create_float(min, max)` includes `min` but excludes `max`.
+Integer ranges allow `min == max`; float ranges require `min < max`.
+`set_seed()` requires a non-negative integer and makes later results
+reproducible. Invalid ranges are runtime errors. Do not silently swap or clamp
+ranges.
 
 ## 19. Library `time`
 
@@ -784,6 +875,10 @@ console.writeln(now.unix());
 console.writeln(now.to_string());
 ```
 
+`time.stamp` uses UTC. `month()` returns `1..12`, and `week_day()` follows the
+usual `0..6` convention where `0` is Sunday. `time.sleep()` accepts a
+non-negative number of seconds and may be stopped by the IDE.
+
 ## 20. Library `file`
 
 ```idyllium
@@ -802,19 +897,34 @@ Read:
 
 ```idyllium
 file.istream fin = file.open("input.txt", "read");
-string first = fin.read_line();
+string prefix = fin.read(5);
+string line = fin.read_line();
 string rest = fin.read_all();
 fin.close();
 ```
+
+`read_line()` preserves the terminating `\n` or `\r\n` when one exists.
+`read(count)` reads at most `count` Unicode characters from the current stream
+position. The count must be a non-negative integer. `read()` without an
+argument and `read_all()` both read all remaining content. All read methods
+share one stream position. `read()` returns an empty string at end of file;
+`read_line()` past the final line and every operation on a closed stream are
+runtime errors.
 
 Write:
 
 ```idyllium
 file.ostream fout = file.open("output.txt", "write");
-fout.write_line("Hello");
-fout.write_line(10, " ", 20);
+fout.write("Score: ");
+fout.write_line(42);
+fout.write_line("Done");
 fout.close();
 ```
+
+`write(...)` writes exactly the supplied values. `write_line(...)` writes the
+supplied values and then appends `\n`, like `console.writeln(...)`.
+Opening in `"write"` mode creates or truncates the file. Its parent directory
+must already exist; use `file.create_directory(..., parents=true)` when needed.
 
 Common modes:
 
@@ -831,6 +941,9 @@ console.writeln(fout.is_open); // true
 fout.close();
 console.writeln(fout.is_open); // false
 ```
+
+Streams are opened through `file.open(path, mode)`. They do not have a public
+constructor such as `file.ostream("output.txt")`.
 
 Project file-system operations:
 
@@ -890,8 +1003,8 @@ Factories:
 ```idyllium
 colors.RGB(red, green, blue)           // int channels 0..255
 colors.RGBA(red, green, blue, alpha)   // alpha 0.0..1.0
-colors.HEX("#2291bc")
-colors.HSL(hue, saturation, lightness)
+colors.HEX("#2291bc")                  // RRGGBB or RRGGBBAA
+colors.HSL(hue, saturation, lightness) // 0..360, 0..100, 0..100
 ```
 
 Constants:
@@ -907,6 +1020,13 @@ colors.TRANSPARENT
 
 Invalid channel values are runtime errors. Do not silently clamp
 `colors.RGB(999, -20, 300)`.
+
+`colors.HEX()` accepts six or eight hexadecimal digits, with an optional `#`.
+Colors compare by RGBA channel values, not object identity:
+
+```idyllium
+colors.RGB(255, 0, 0) == colors.HEX("#ff0000")  // true
+```
 
 Use the property that names its role explicitly: `text_color`,
 `background_color`, `border_color`, or `foreground_color`. Color properties
@@ -955,6 +1075,10 @@ ordinary integer result, then assignment/call converts to the target type.
 values above 2^53. They use the same silent wraparound at typed boundaries.
 
 Float-to-integer-like assignment is forbidden without explicit `to_int()`.
+Values from `types` are accepted by ordinary numeric functions such as
+`math.sqrt()`. Arithmetic `/` still follows ordinary Idyllium rules and returns
+`float`; use global `div()` and `mod()` when integer division or remainder is
+required.
 
 Helpers:
 
@@ -1008,6 +1132,8 @@ json.Value(value)
 explicitly support an absent value. Currently `json.Value` and `sqlite.Value`
 support it; primitive types, user classes, `json.Object`, and `json.Array` do not.
 `json.Value()` without arguments also creates JSON null.
+Both `value == null` and `value.is_null()` are valid checks for a nullable
+`json.Value`; keeping `is_null()` is often clearer in teaching material.
 
 Create JSON:
 
@@ -1082,6 +1208,10 @@ to_json()
 to_pretty_json()
 to_pretty_json(indent)
 ```
+
+For JSON numbers, `is_int()` is true only for an integral value, while
+`is_float()` is true for either an integer or a non-integral number because both
+can be converted safely with `to_float()`.
 
 `json.Object` methods:
 
@@ -1235,6 +1365,7 @@ on_change
 x, y, width, height, visible
 text, placeholder
 text_color, background_color, border_color
+on_change
 ```
 
 `gui.ProgressBar`:
@@ -1242,10 +1373,11 @@ text_color, background_color, border_color
 ```idyllium
 x, y, width, height, visible
 value, min, max
-text_color, background_color, foreground_color, fill_color, border_color
+text_color, background_color, foreground_color, border_color
 ```
 
-Prefer `foreground_color` for the filled part.
+`background_color` is visible in the unfilled part and `foreground_color` in the
+filled part. The old `fill_color` alias has been removed.
 
 `gui.SpinBox`:
 
@@ -1296,6 +1428,9 @@ add_item(text)
 clear_items()
 on_change
 ```
+
+`selected_text` is read-only and follows `selected_index`. Change the selected
+item through `selected_index`; do not assign to `selected_text`.
 
 `gui.Modal`:
 
@@ -1434,10 +1569,10 @@ Base type:
 ```idyllium
 drawable.Drawable
 contains(float x, float y) -> bool
-intersects(drawable.Drawable other) -> bool
+collides_with(drawable.Drawable other) -> bool
 ```
 
-`contains()` includes the boundary. `intersects()` treats touching objects as
+`contains()` includes the boundary. `collides_with()` treats touching objects as
 an intersection and dispatches by the concrete runtime types.
 
 Rectangle, Circle, Sprite, and Text share this transform API:
@@ -1614,6 +1749,8 @@ runtime error before an image is loaded.
 `fonts.Font` is the canonical reusable font resource:
 
 ```idyllium
+use fonts;
+
 src: string       // read-only
 format: string    // read-only: "ttf", "otf", "woff", or "woff2"
 is_loaded: bool   // read-only
@@ -1632,15 +1769,21 @@ text: string
 x, y: float
 font_size: int
 text_color: colors.Color
+get_width() -> float
+get_height() -> float
 ```
 
 Text rendering and collision geometry support origin and rotation. Before
-calling `Text.contains()` or `Text.intersects()`, a custom font is optional:
+calling `Text.contains()` or `Text.collides_with()`, a custom font is optional:
 without one, Idyllium uses its bundled Source Code Pro. User-loaded TTF, OTF,
 WOFF and WOFF2 files are all supported. The runtime uses exact advance metrics
 and the single-line layout rectangle, not individual glyph outlines. Missing
 glyphs and multiline strings produce readable runtime errors instead of
 guessed bounds.
+
+`get_width()` and `get_height()` return the same single-line layout dimensions
+used by `contains()` and `collides_with()`. They are useful for backgrounds,
+alignment, and padding around text.
 
 ```idyllium
 fonts.Font heading_font;
@@ -1652,7 +1795,7 @@ heading.text = "New game";
 heading.font_size = 48;
 
 bool hovered = heading.contains(mouse_x, mouse_y);
-bool touched = heading.intersects(cursor_circle);
+bool touched = heading.collides_with(cursor_circle);
 ```
 
 Example:
@@ -1743,6 +1886,11 @@ use audio;
 
 `audio.Sound` is for short sound effects. Multiple `play()` calls may overlap.
 
+WAV and MP3 are the guaranteed teaching formats. OGG, AAC, and M4A may work
+when the browser or VSIX Chromium runtime provides the required codec, but
+portable Idyllium projects must not rely on them. Idyllium does not transcode
+audio files.
+
 Properties:
 
 ```idyllium
@@ -1762,7 +1910,9 @@ resume()
 stop()
 ```
 
-`pause()` and `stop()` affect all active copies of the same `Sound`.
+`pause()`, `resume()`, and `stop()` affect all active copies of the same
+`Sound`. `resume()` starts a new copy only when there is no paused copy to
+continue. `Sound` intentionally has no `loop` property.
 
 `audio.Music` is for long music files.
 
@@ -1787,6 +1937,26 @@ pause()
 resume()
 stop()
 ```
+
+`Music.position` is a seek position in seconds and must stay in
+`0.0..duration`. Assigning it issues a seek every time, even if the same value
+is assigned repeatedly. `play()` starts at the current position, `pause()`
+keeps it, `resume()` continues playback, and `stop()` resets it to `0.0`.
+
+`on_finished` runs after natural completion when `loop` is false. It accepts
+either a zero-argument callback or a callback receiving the current music:
+
+```idyllium
+void function next_track(audio.Music current) {
+    console.writeln("Finished: ", current.src);
+}
+
+music.on_finished = next_track;
+```
+
+When `loop` is true, playback restarts and `on_finished` is not emitted for
+each loop. Assigning a volume or position outside its valid range is a runtime
+error.
 
 Example:
 
@@ -1877,6 +2047,9 @@ is_open
 in_transaction
 ```
 
+Read-only state remains property syntax: use `db.path`, `db.is_open`, and
+`db.in_transaction`. Do not invent `db.get_path()` or `db.is_open()` methods.
+
 Methods:
 
 ```idyllium
@@ -1965,6 +2138,23 @@ first API.
 
 ## 29. Errors
 
+### Read-Only Library Properties
+
+Library objects may expose observable state as read-only properties. Read them
+with ordinary property syntax, but never assign to them:
+
+```idyllium
+console.writeln(fout.is_open);
+console.writeln(db.path);
+console.writeln(picture.width, "x", picture.height);
+
+fout.is_open = true;  // wrong: read-only property
+db.path = "other.db"; // wrong: read-only property
+```
+
+The API uses methods for actions and queries that need arguments, and
+properties for simple object state even when that state is read-only.
+
 Prefer examples that produce clear, precise errors. Good error style:
 
 ```text
@@ -1991,7 +2181,18 @@ int x = 23 / 10;          // likely wrong: / returns float-like division
 label.text = 42;          // wrong: no implicit int-to-string
 button.onclick = ...;     // wrong spelling; use on_click
 new Hero();               // wrong: no new keyword
+Hero("Mira", 100);        // wrong: constructors are declarations, not expressions
 Hero* hero;               // wrong: no pointers
+destructor Hero() {}      // wrong: destructors are not implemented
+json.NULL                 // removed: use the language literal null
+progress.fill_color = colors.RED; // removed: use foreground_color
+drawable.Font font;       // removed: use fonts.Font
+gui.Image picture;        // removed: use gui.ImageBox + image.Image
+drawable.Texture texture; // removed: use image.Image with Sprite.set_image()
+label.text_color = "#ff0000"; // wrong: use colors.HEX("#ff0000")
+file.ostream out("x.txt");     // wrong: use file.open("x.txt", "write")
+out.is_open = true;            // wrong: is_open is read-only
+db.get_path();                 // wrong: read the db.path property
 std::cout << "hi";        // wrong: not C++
 Console.WriteLine(...);   // wrong: not C#
 print("hi")               // wrong: not Python
@@ -2019,6 +2220,8 @@ When asked to generate Idyllium code:
 9. For educational explanations, prefer small steps and clear motivation.
 10. If syntax is uncertain, say so and ask for the project spec instead of
     inventing syntax.
+11. Treat `BACKLOG.md` and `spec/some_*` as design discussions, not implemented
+    syntax, unless the user explicitly asks to discuss those proposals.
 
 ## 32. Compact Program Templates
 
