@@ -40,6 +40,21 @@ true xor true   // → false
         <li><code>or</code> («ИЛИ») — <code>true</code>, если <strong>хотя бы с одной стороны</strong> <code>true</code>;</li>
         <li><code>xor</code> («исключающее ИЛИ») — <code>true</code>, если <strong>только с одной стороны</strong> <code>true</code>.</li>
       </ul>
+
+      <p>У <code>xor</code> всего четыре возможных случая. Их удобно собрать в таблицу:</p>
+      <table>
+        <thead>
+          <tr><th>Слева</th><th>Справа</th><th>Результат</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>false</code></td><td><code>false</code></td><td><code>false</code></td></tr>
+          <tr><td><code>false</code></td><td><code>true</code></td><td><code>true</code></td></tr>
+          <tr><td><code>true</code></td><td><code>false</code></td><td><code>true</code></td></tr>
+          <tr><td><code>true</code></td><td><code>true</code></td><td><code>false</code></td></tr>
+        </tbody>
+      </table>
+
+      <p>Все эти операции принимают именно логические значения. Числа, строки и массивы не превращаются в <code>bool</code> автоматически.</p>
     </div>
 
     <!-- Section 3 -->
@@ -83,6 +98,14 @@ if ((A > 100) xor (B > 100)) {
       <p>Перевод: «Если <code>A</code> больше 100 <strong>или</strong> <code>B</code> больше 100, но не оба — сообщить об этом».</p>
       <p>Это как по-русски: «Либо одно, либо другое. Но не всё сразу».</p>
       <p>Если обе переменные больше 100 — <code>xor</code> вернёт <code>false</code>, и сообщение не появится.</p>
+      <p>Если в одном выражении встретились разные логические операции, сначала выполняется <code>and</code>, затем <code>xor</code>, а после него <code>or</code>. Когда порядок должен сразу бросаться в глаза, его лучше показать круглыми скобками.</p>
+
+      <idyl-code-block><script type="text/plain">
+A or B xor C and D
+
+// То же самое с явно показанным порядком:
+A or (B xor (C and D))
+</script></idyl-code-block>
     </div>
 
     <!-- Section 6 -->

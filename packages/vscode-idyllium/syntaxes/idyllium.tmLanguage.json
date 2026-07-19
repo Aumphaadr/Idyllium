@@ -73,7 +73,7 @@
           "match": "\\b(use)\\s+([\\p{L}_][\\p{L}\\p{N}_]*)",
           "captures": {
             "1": { "name": "keyword.declaration.import.idyllium" },
-            "2": { "name": "support.module.idyllium" }
+            "2": { "name": "entity.name.namespace.idyllium" }
           }
         }
       ]
@@ -149,7 +149,7 @@
         {
           "match": "\\b([\\p{L}_][\\p{L}\\p{N}_]*)(\\.)([A-ZА-ЯЁ][\\p{L}\\p{N}_]*)(?=\\s+[\\p{L}_][\\p{L}\\p{N}_]*\\s*(?:[=;,)\\[]|$))",
           "captures": {
-            "1": { "name": "support.module.idyllium" },
+            "1": { "name": "entity.name.namespace.idyllium" },
             "2": { "name": "punctuation.accessor.idyllium" },
             "3": { "name": "entity.name.type.class.idyllium" }
           }
@@ -157,15 +157,15 @@
         {
           "match": "\\b(gui)\\s*(\\.)(Window|Widget|Button|Label|SpinBox|FloatSpinBox|LineEdit|CheckBox|RadioButton|ProgressBar|TextEdit|ComboBox|Slider|Frame|ImageBox|Timer|Modal|Canvas|KeyboardEvent|MouseEvent|MouseScrollEvent)\\b",
           "captures": {
-            "1": { "name": "support.module.idyllium" },
+            "1": { "name": "entity.name.namespace.idyllium" },
             "2": { "name": "punctuation.accessor.idyllium" },
             "3": { "name": "entity.name.type.class.idyllium" }
           }
         },
         {
-          "match": "\\b(drawable)\\s*(\\.)(Drawable|Rectangle|Circle|Line|Sprite|Font|Text)\\b",
+          "match": "\\b(drawable)\\s*(\\.)(Drawable|Rectangle|Circle|Line|Sprite|Text)\\b",
           "captures": {
-            "1": { "name": "support.module.idyllium" },
+            "1": { "name": "entity.name.namespace.idyllium" },
             "2": { "name": "punctuation.accessor.idyllium" },
             "3": { "name": "entity.name.type.class.idyllium" }
           }
@@ -173,15 +173,15 @@
         {
           "match": "\\b(fonts)\\s*(\\.)(Font)\\b",
           "captures": {
-            "1": { "name": "support.module.idyllium" },
+            "1": { "name": "entity.name.namespace.idyllium" },
             "2": { "name": "punctuation.accessor.idyllium" },
             "3": { "name": "entity.name.type.class.idyllium" }
           }
         },
         {
-          "match": "\\b(image)\\s*(\\.)(Image|Static|Animation)\\b",
+          "match": "\\b(image)\\s*(\\.)(Image|Static|Animation|Bitmap)\\b",
           "captures": {
-            "1": { "name": "support.module.idyllium" },
+            "1": { "name": "entity.name.namespace.idyllium" },
             "2": { "name": "punctuation.accessor.idyllium" },
             "3": { "name": "entity.name.type.class.idyllium" }
           }
@@ -189,7 +189,7 @@
         {
           "match": "\\b(colors)\\s*(\\.)(Color)\\b",
           "captures": {
-            "1": { "name": "support.module.idyllium" },
+            "1": { "name": "entity.name.namespace.idyllium" },
             "2": { "name": "punctuation.accessor.idyllium" },
             "3": { "name": "entity.name.type.class.idyllium" }
           }
@@ -197,7 +197,7 @@
         {
           "match": "\\b(colors)\\s*(\\.)(RED|GREEN|BLUE|WHITE|BLACK|TRANSPARENT)\\b",
           "captures": {
-            "1": { "name": "support.module.idyllium" },
+            "1": { "name": "entity.name.namespace.idyllium" },
             "2": { "name": "punctuation.accessor.idyllium" },
             "3": { "name": "constant.other.color.idyllium" }
           }
@@ -205,7 +205,7 @@
         {
           "match": "\\b(types)\\s*(\\.)(u?int(?:8|16|32|64)|float(?:32|64))\\b",
           "captures": {
-            "1": { "name": "support.module.idyllium" },
+            "1": { "name": "entity.name.namespace.idyllium" },
             "2": { "name": "punctuation.accessor.idyllium" },
             "3": { "name": "storage.type.numeric.idyllium" }
           }
@@ -213,15 +213,15 @@
         {
           "match": "\\b(time)\\s*(\\.)(stamp)\\b",
           "captures": {
-            "1": { "name": "support.module.idyllium" },
+            "1": { "name": "entity.name.namespace.idyllium" },
             "2": { "name": "punctuation.accessor.idyllium" },
             "3": { "name": "entity.name.type.class.idyllium" }
           }
         },
         {
-          "match": "\\b(file)\\s*(\\.)(istream|ostream|stream)\\b",
+          "match": "\\b(file)\\s*(\\.)(istream|ostream)\\b",
           "captures": {
-            "1": { "name": "support.module.idyllium" },
+            "1": { "name": "entity.name.namespace.idyllium" },
             "2": { "name": "punctuation.accessor.idyllium" },
             "3": { "name": "entity.name.type.class.idyllium" }
           }
@@ -229,7 +229,7 @@
         {
           "match": "\\b(json)\\s*(\\.)(Value|Object|Array)\\b",
           "captures": {
-            "1": { "name": "support.module.idyllium" },
+            "1": { "name": "entity.name.namespace.idyllium" },
             "2": { "name": "punctuation.accessor.idyllium" },
             "3": { "name": "entity.name.type.class.idyllium" }
           }
@@ -237,7 +237,7 @@
         {
           "match": "\\b(audio)\\s*(\\.)(Sound|Music)\\b",
           "captures": {
-            "1": { "name": "support.module.idyllium" },
+            "1": { "name": "entity.name.namespace.idyllium" },
             "2": { "name": "punctuation.accessor.idyllium" },
             "3": { "name": "entity.name.type.class.idyllium" }
           }
@@ -245,7 +245,7 @@
         {
           "match": "\\b(sqlite)\\s*(\\.)(Database|Statement|Result|Value)\\b",
           "captures": {
-            "1": { "name": "support.module.idyllium" },
+            "1": { "name": "entity.name.namespace.idyllium" },
             "2": { "name": "punctuation.accessor.idyllium" },
             "3": { "name": "entity.name.type.class.idyllium" }
           }
@@ -253,7 +253,7 @@
         {
           "match": "\\b(console|math|random|time|file|encoding|json|sqlite|gui|colors|types|drawable|image|audio|fonts)\\b",
           "captures": {
-            "1": { "name": "support.module.idyllium" }
+            "1": { "name": "entity.name.namespace.idyllium" }
           }
         },
         {

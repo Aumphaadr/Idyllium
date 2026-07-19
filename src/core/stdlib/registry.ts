@@ -5,6 +5,7 @@ export interface ParameterSpec {
   readonly type: TypeRef;
   readonly acceptedTypes?: readonly TypeRef[];
   readonly acceptedDescription?: string;
+  readonly exactType?: boolean;
   readonly defaultValue?: string;
 }
 
@@ -370,6 +371,14 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   registry.registerModule(moduleSpec('random', [
     functionSpec('create_int', [{ name: 'min', type: INT }, { name: 'max', type: INT }], INT),
     functionSpec('create_float', [{ name: 'min', type: FLOAT }, { name: 'max', type: FLOAT }], FLOAT),
+    functionSpec('choose_from', [{
+      name: 'collection',
+      type: ANY_TYPE,
+      acceptedTypes: [STRING, arrayType(ANY_TYPE, null, true)],
+      acceptedDescription: 'string or array',
+    }], ANY_TYPE, {
+      documentation: 'Выбирает случайный символ строки или случайный элемент массива.',
+    }),
     functionSpec('set_seed', [{ name: 'seed', type: INT }], VOID),
   ]));
 
@@ -482,13 +491,11 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
 
   registry.registerModule(moduleSpec('encoding', [
     functionSpec('list_encodings', [], arrayType(STRING, null, true)),
-    functionSpec('char_to_int', [
+    functionSpec('char_to_codepoint', [
       { name: 'character', type: CHAR },
-      { name: 'encoding', type: STRING },
     ], INT),
-    functionSpec('int_to_char', [
-      { name: 'code', type: INT },
-      { name: 'encoding', type: STRING },
+    functionSpec('codepoint_to_char', [
+      { name: 'codepoint', type: INT },
     ], CHAR),
     functionSpec('encode', [
       { name: 'text', type: STRING },
@@ -687,6 +694,50 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ], imageStatic),
       functionSpec('export_to_file', [{ name: 'path', type: STRING }], VOID),
     ], imageImage),
+    typeSpec('Bitmap', [
+      propertySpec('src', STRING, true),
+      propertySpec('width', INT, true),
+      propertySpec('height', INT, true),
+      propertySpec('format', STRING, true),
+      propertySpec('has_alpha', BOOL, true),
+      propertySpec('is_created', BOOL, true, 'Показывает, создан или загружен ли изменяемый растр.'),
+    ], [
+      functionSpec('create', [
+        { name: 'width', type: INT },
+        { name: 'height', type: INT },
+        { name: 'fill', type: COLOR, defaultValue: 'colors.TRANSPARENT' },
+      ], VOID, {
+        minArguments: 2,
+        documentation: 'Создаёт пустой изменяемый RGBA-растр указанного размера.',
+      }),
+      functionSpec('load_from_file', [{ name: 'path', type: STRING }], VOID, {
+        documentation: 'Загружает статичное растровое изображение для попиксельного изменения.',
+      }),
+      functionSpec('create_from_image', [{ name: 'source', type: imageStatic }], VOID, {
+        documentation: 'Создаёт независимую изменяемую копию image.Static.',
+      }),
+      functionSpec('get_pixel', [
+        { name: 'x', type: INT },
+        { name: 'y', type: INT },
+      ], COLOR),
+      functionSpec('set_pixel', [
+        { name: 'x', type: INT },
+        { name: 'y', type: INT },
+        { name: 'color', type: COLOR },
+      ], VOID),
+      functionSpec('fill', [{ name: 'color', type: COLOR }], VOID),
+      functionSpec('fill_rect', [
+        { name: 'x', type: INT },
+        { name: 'y', type: INT },
+        { name: 'width', type: INT },
+        { name: 'height', type: INT },
+        { name: 'color', type: COLOR },
+      ], VOID),
+      functionSpec('to_static', [], imageStatic, {
+        documentation: 'Создаёт неизменяемый snapshot для ImageBox, Sprite и переиспользования.',
+      }),
+      functionSpec('export_to_file', [{ name: 'path', type: STRING }], VOID),
+    ]),
     typeSpec('Animation', [
       propertySpec('frame_count', INT, true),
       propertySpec('frame_duration', FLOAT, true),
@@ -1036,7 +1087,40 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     { name: 'TEAL', type: COLOR },
     { name: 'PURPLE', type: COLOR },
     { name: 'TRANSPARENT', type: COLOR },
-  ], [typeSpec('Color')]));
+  ], [typeSpec('Color', [
+    propertySpec('red', INT, true, 'Красный канал от 0 до 255.'),
+    propertySpec('green', INT, true, 'Зелёный канал от 0 до 255.'),
+    propertySpec('blue', INT, true, 'Синий канал от 0 до 255.'),
+    propertySpec('alpha', FLOAT, true, 'Альфа-канал от 0.0 до 1.0.'),
+  ], [
+    functionSpec('with_red', [{ name: 'value', type: INT }], COLOR, {
+      documentation: 'Возвращает новый цвет с изменённым красным каналом.',
+    }),
+    functionSpec('with_green', [{ name: 'value', type: INT }], COLOR, {
+      documentation: 'Возвращает новый цвет с изменённым зелёным каналом.',
+    }),
+    functionSpec('with_blue', [{ name: 'value', type: INT }], COLOR, {
+      documentation: 'Возвращает новый цвет с изменённым синим каналом.',
+    }),
+    functionSpec('with_alpha', [{ name: 'value', type: FLOAT }], COLOR, {
+      documentation: 'Возвращает новый цвет с изменённым альфа-каналом.',
+    }),
+    functionSpec('with_rgb', [
+      { name: 'red', type: INT },
+      { name: 'green', type: INT },
+      { name: 'blue', type: INT },
+    ], COLOR, {
+      documentation: 'Возвращает новый цвет с указанными RGB-каналами и прежним alpha.',
+    }),
+    functionSpec('with_rgba', [
+      { name: 'red', type: INT },
+      { name: 'green', type: INT },
+      { name: 'blue', type: INT },
+      { name: 'alpha', type: FLOAT },
+    ], COLOR, {
+      documentation: 'Возвращает новый цвет с указанными RGBA-каналами.',
+    }),
+  ])]));
 
   const typesNumericTypeNames = [
     'int8', 'uint8', 'int16', 'uint16', 'int32',
@@ -1044,6 +1128,14 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   ] as const;
   const typesNumericTypeSpecs = typesNumericTypeNames.map((name) => {
     const ownType = qualified('types', name);
+    const maskName = name.endsWith('8')
+      ? 'uint8'
+      : name.endsWith('16')
+        ? 'uint16'
+        : name.endsWith('32')
+          ? 'uint32'
+          : 'uint64';
+    const maskType = qualified('types', maskName);
     return typeSpec(name, [], [
       functionSpec('to_bin', [], STRING, {
         documentation: 'Возвращает полное двоичное представление фиксированной ширины. Для float используется сырое IEEE-представление.',
@@ -1056,6 +1148,18 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       }),
       functionSpec('shift_right', [{ name: 'bits', type: INT }], ownType, {
         documentation: 'Логически сдвигает биты вправо без сохранения знака и заполняет освободившиеся позиции нулями. Отрицательное количество сдвигает влево.',
+      }),
+      functionSpec('bit_and', [{ name: 'mask', type: maskType, exactType: true }], ownType, {
+        documentation: `Оставляет биты, установленные и в значении, и в маске ${maskName}.`,
+      }),
+      functionSpec('bit_or', [{ name: 'mask', type: maskType, exactType: true }], ownType, {
+        documentation: `Устанавливает биты, присутствующие в значении или маске ${maskName}.`,
+      }),
+      functionSpec('bit_xor', [{ name: 'mask', type: maskType, exactType: true }], ownType, {
+        documentation: `Переключает биты, установленные в маске ${maskName}.`,
+      }),
+      functionSpec('bit_not', [], ownType, {
+        documentation: 'Инвертирует все биты ячейки фиксированной ширины.',
       }),
     ]);
   });

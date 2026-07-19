@@ -301,7 +301,7 @@ main() {
 use encoding;
 
 main() {
-    int code = encoding.char_to_int('A', "cp866");
+    dyn_array<int> bytes = encoding.encode("A", "cp866");
 }
 </script></idyl-code-block>
       <div class="error-message">main.idyl:4: runtime error: unknown encoding 'cp866'</div>

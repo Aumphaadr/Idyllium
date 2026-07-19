@@ -19,7 +19,7 @@ function main(): void {
     assert(result.success, `expected ${file} to compile, got:\n${result.diagnosticsText}`);
   }
 
-  assert(examples.length === 5, `expected 5 image draft examples, got ${examples.length}`);
+  assert(examples.length === 7, `expected 7 image draft examples, got ${examples.length}`);
   console.log(`image draft spec: ${examples.length} examples compile`);
 }
 

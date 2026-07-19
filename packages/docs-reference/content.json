@@ -51,7 +51,12 @@
         {
           "title": "Условия и циклы",
           "description": "Ветвление, повторение и управление текущим циклом.",
-          "code": "if   else\nwhile   do   for\nbreak   continue\nand   or   not"
+          "code": "if   else\nwhile   do   for\nbreak   continue\nand   xor   or   not"
+        },
+        {
+          "title": "Обработка ошибок выполнения",
+          "description": "try отмечает участок с ожидаемой runtime error, catch описывает запасное поведение, а finally выполняет обязательное завершающее действие. Разрешены формы try/catch, try/finally и try/catch/finally.",
+          "code": "try {\n    int value = to_int(text);\n} catch (error) {\n    console.writeln(error.message);\n} finally {\n    console.writeln(\"Попытка завершена\");\n}"
         },
         {
           "title": "Классы",
@@ -124,8 +129,13 @@
         },
         {
           "title": "Логические операторы",
-          "description": "and требует истинности обеих частей, or — хотя бы одной, not меняет true на false и наоборот.",
-          "code": "bool can_enter = has_ticket and not is_closed;\nbool needs_help = health < 20 or mana < 10;"
+          "description": "and требует истинности обеих частей, or — хотя бы одной, xor — истинности ровно одной части, not меняет true на false и наоборот. Операнды обязаны иметь тип bool.",
+          "code": "bool can_enter = has_ticket and not is_closed;\nbool one_direction = left_pressed xor right_pressed;\nbool needs_help = health < 20 or mana < 10;",
+          "notes": [
+            "Приоритет от высокого к низкому: not, сравнения, and, xor, or.",
+            "and и or выполняются с коротким замыканием. xor всегда вычисляет обе части слева направо ровно по одному разу.",
+            "Символьных аналогов &&, ||, ^ и ! в Idyllium нет."
+          ]
         },
         {
           "title": "Составное присваивание",
@@ -352,12 +362,13 @@
     },
     "random": {
       "title": "Случайные числа",
-      "description": "Псевдослучайные целые, дробные значения и воспроизводимые последовательности.",
+      "description": "Псевдослучайные целые, дробные значения, выбор элементов и воспроизводимые последовательности.",
       "notes": [
         "Минимальная граница диапазона не должна превышать максимальную.",
+        "`choose_from()` принимает непустую строку, статический или динамический массив. Для строки результат имеет тип `char`, для массива — тип его элемента.",
         "Одинаковый seed порождает одинаковую последовательность значений."
       ],
-      "example": "int die = random.create_int(1, 6);\nfloat chance = random.create_float(0.0, 1.0);\nrandom.set_seed(42);"
+      "example": "int die = random.create_int(1, 6);\nchar letter = random.choose_from(\"ABCDEF\");\narray<string, 3> names = [\"Liam\", \"Mira\", \"Raven\"];\nstring name = random.choose_from(names);\nrandom.set_seed(42);"
     },
     "time": {
       "title": "Время",
@@ -392,11 +403,22 @@
     },
     "encoding": {
       "title": "Кодировки",
-      "description": "Преобразование символов, строк и числовых кодов в разных кодировках.",
+      "description": "Работа с Unicode-кодовыми точками и строгие преобразования между текстом и байтами.",
       "notes": [
-        "Поддерживаются ascii, utf-8, windows-1251 и koi8-r."
+        "Поддерживаются ascii, utf-8, windows-1251 и koi8-r.",
+        "Кодовая точка Unicode не зависит от кодировки: у буквы 'б' это 1073, а её UTF-8-представление состоит из байтов [208, 177].",
+        "char_to_codepoint() принимает один символ; codepoint_to_char() принимает Unicode scalar value и отвергает суррогаты.",
+        "encode() выдаёт runtime error для символа, которого нет в выбранной однобайтовой кодировке.",
+        "decode() принимает только байты 0..255. Битая UTF-8-последовательность является runtime error; символ � молча не подставляется."
       ],
-      "example": "dyn_array<int> bytes = encoding.encode(\"Привет\", \"utf-8\");\nstring text = encoding.decode(bytes, \"utf-8\");"
+      "example": "int point = encoding.char_to_codepoint('б'); // 1073\nchar letter = encoding.codepoint_to_char(point); // 'б'\n\ndyn_array<int> bytes = encoding.encode(\"б\", \"utf-8\"); // [208, 177]\nstring text = encoding.decode(bytes, \"utf-8\"); // \"б\"",
+      "fullExamples": [
+        {
+          "title": "Строгое декодирование UTF-8",
+          "description": "Незавершённая двухбайтовая последовательность не превращается в символ замены.",
+          "code": "dyn_array<int> broken = [208];\nstring text = encoding.decode(broken, \"utf-8\");\n// runtime error: invalid UTF-8 at byte 0"
+        }
+      ]
     },
     "json": {
       "title": "JSON",
@@ -428,12 +450,20 @@
     },
     "image": {
       "title": "Изображения",
-      "description": "Переиспользуемые статичные и анимированные изображения для GUI и Canvas.",
+      "description": "Переиспользуемые изображения для GUI и Canvas, а также изменяемые растры с попиксельным доступом.",
       "notes": [
         "Картинка является ресурсом, а не виджетом или Canvas-объектом.",
-        "Один загруженный ресурс можно передать нескольким ImageBox и Sprite."
+        "Один загруженный ресурс можно передать нескольким ImageBox и Sprite.",
+        "`image.Bitmap` изменяется на месте. Для показа в ImageBox или Sprite сначала создайте неизменяемый снимок методом `to_static()`."
       ],
-      "example": "image.Static cat;\ncat.load_from_file(\"cat.png\");\nconsole.writeln(cat.width, \"x\", cat.height);"
+      "example": "image.Static cat;\ncat.load_from_file(\"cat.png\");\nconsole.writeln(cat.width, \"x\", cat.height);",
+      "fullExamples": [
+        {
+          "title": "Изменяемый растр",
+          "description": "Bitmap можно создать с нуля, загрузить из файла либо получить как независимую копию Static. Координата (0, 0) обозначает левый верхний пиксель.",
+          "code": "image.Bitmap bitmap;\nbitmap.create(320, 200, colors.TRANSPARENT);\nbitmap.fill_rect(20, 20, 100, 60, colors.BLUE);\nbitmap.set_pixel(25, 25, colors.WHITE);\n\ncolors.Color pixel = bitmap.get_pixel(25, 25);\nimage.Static frame = bitmap.to_static();\nframe.export_to_file(\"frame.png\");"
+        }
+      ]
     },
     "fonts": {
       "title": "Шрифты",
@@ -496,6 +526,7 @@
       "notes": [
         "Каналы RGB принимают целые значения от 0 до 255, alpha — дробное значение от 0.0 до 1.0.",
         "Выход за допустимый диапазон приводит к runtime error, значения не обрезаются автоматически.",
+        "Свойства `red`, `green`, `blue` и `alpha` доступны только для чтения. Методы `with_*()` создают новый цвет и не изменяют исходный.",
         "Готовая палитра содержит 16 непрозрачных цветов и `TRANSPARENT`. Существующий яркий `GREEN` равен `#00FF00`; более тёмный зелёный называется `DARK_GREEN`."
       ],
       "example": "colors.Color sky = colors.RGB(80, 170, 255);\ncolors.Color glass = colors.RGBA(80, 170, 255, 0.35);\ncolors.Color accent = colors.HEX(\"#50AAFF\");\nbutton.background_color = sky;",
@@ -504,6 +535,11 @@
           "title": "Готовая палитра",
           "description": "Первые восемь констант дают яркие цифровые цвета, следующие восемь — нейтральные и тёмные варианты.",
           "code": "colors.BLACK;   colors.WHITE;   colors.RED;      colors.GREEN;\ncolors.BLUE;    colors.YELLOW;  colors.CYAN;     colors.MAGENTA;\n\ncolors.GRAY;       colors.LIGHT_GRAY;  colors.DARK_RED;   colors.DARK_GREEN;\ncolors.DARK_BLUE;  colors.OLIVE;       colors.TEAL;       colors.PURPLE;\n\ncolors.TRANSPARENT;"
+        },
+        {
+          "title": "Чтение и замена каналов",
+          "description": "Методы возвращают отдельное значение Color, поэтому уже назначенные виджетам и Canvas-объектам цвета не меняются скрыто.",
+          "code": "colors.Color base = colors.RGBA(40, 120, 220, 0.75);\n\nconsole.writeln(base.red);   // 40\nconsole.writeln(base.alpha); // 0.75\n\ncolors.Color warmer = base.with_red(220);\ncolors.Color faded = base.with_alpha(0.25);\n\nconsole.writeln(base.red);   // по-прежнему 40"
         }
       ]
     },
@@ -516,6 +552,7 @@
         "При выходе целого значения за диапазон происходит циклическое переполнение без runtime error.",
         "to_bin() возвращает все биты фиксированной ячейки, to_hex() — столько HEX-цифр, сколько требуется типу.",
         "shift_left() и shift_right() заполняют новые биты нулями и молча теряют вышедшие за границу; отрицательный аргумент меняет направление.",
+        "bit_and(), bit_or(), bit_xor() принимают беззнаковую маску той же ширины; bit_not() инвертирует всю ячейку. Результат сохраняет тип получателя.",
         "Для float32 и float64 сдвигается сырое IEEE-представление, поэтому результат может стать бесконечностью, NaN или очень малым числом.",
         "Неявное преобразование float в целочисленный types-тип запрещено; сначала используйте to_int()."
       ],
@@ -530,6 +567,11 @@
           "title": "Логические битовые сдвиги",
           "description": "Знак не сохраняется, лишние биты теряются, большие сдвиги обнуляют ячейку.",
           "code": "types.uint8 value = types.from_bin(\"00101011\", \"uint8\");\n\nvalue.shift_right(3).to_bin();  // \"00000101\"\nvalue.shift_left(3).to_bin();   // \"01011000\"\nvalue.shift_left(12).to_bin();  // \"00000000\"\nvalue.shift_right(-3).to_bin(); // равно shift_left(3)"
+        },
+        {
+          "title": "Битовые маски",
+          "description": "Маска всегда имеет беззнаковый тип той же ширины: uint8 для int8/uint8, uint32 для float32 и так далее.",
+          "code": "types.uint8 flags = 173; // 10101101\ntypes.uint8 mask = 15;   // 00001111\n\nflags.bit_and(mask).to_bin(); // 00001101\nflags.bit_or(mask).to_bin();  // 10101111\nflags.bit_xor(mask).to_bin(); // 10100010\nflags.bit_not().to_bin();     // 01010010"
         },
         {
           "title": "Точные 64-битные границы",
@@ -600,6 +642,15 @@
         "Угол rotate() должен быть кратен 90 градусам."
       ],
       "example": "image.Static source;\nsource.load_from_file(\"cat.png\");\n\nimage.Static upside_down = source.scale(1, -1);\nimage.Static faded = source.with_opacity(0.3);\nimage.Static red = source.tint(colors.RED);"
+    },
+    "image.Bitmap": {
+      "description": "Изменяемый RGBA-растр для попиксельных алгоритмов, генерации картинок и экспорта.",
+      "notes": [
+        "Bitmap можно создать с нуля, загрузить из статичного растрового файла или скопировать из image.Static.",
+        "get_pixel() возвращает неизменяемый colors.Color; set_pixel(), fill() и fill_rect() изменяют Bitmap на месте.",
+        "ImageBox и Sprite не принимают Bitmap напрямую. Метод to_static() создаёт независимый снимок для отображения."
+      ],
+      "example": "image.Bitmap bitmap;\nbitmap.create(128, 128, colors.TRANSPARENT);\nbitmap.fill_rect(16, 16, 96, 96, colors.BLUE);\n\nimage.Static result = bitmap.to_static();\nresult.export_to_file(\"result.png\");"
     },
     "image.Animation": {
       "description": "Многокадровое GIF- или APNG-изображение. Может загружаться из файла или собираться из статичных кадров.",
@@ -745,9 +796,10 @@
       "description": "Строго типизированное значение цвета для GUI-виджетов, Canvas-объектов и преобразований изображений.",
       "notes": [
         "Color создаётся функциями RGB(), RGBA(), HSL(), HEX() или берётся из готовой константы.",
-        "Отдельные каналы объекта Color не редактируются напрямую. Для другого цвета создайте новое значение."
+        "Свойства red, green, blue и alpha доступны только для чтения.",
+        "Методы with_red(), with_green(), with_blue(), with_alpha(), with_rgb() и with_rgba() возвращают новое значение и не изменяют исходное."
       ],
-      "example": "colors.Color text = colors.RGB(34, 145, 188);\ncolors.Color overlay = colors.RGBA(34, 145, 188, 0.4);\ncolors.Color same = colors.HSL(197, 69, 44);\nlabel.text_color = text;"
+      "example": "colors.Color text = colors.RGB(34, 145, 188);\ncolors.Color overlay = text.with_alpha(0.4);\ncolors.Color warmer = text.with_red(180);\nconsole.writeln(text.red);\nlabel.text_color = text;"
     },
     "types.int8": {
       "description": "Знаковое 8-битное целое число: от -128 до 127.",
@@ -810,6 +862,7 @@
     "console.clear": "Очищает содержимое консоли и перемещает курсор в начало.",
     "math.pi": "Число π.",
     "math.e": "Число Эйлера.",
+    "random.choose_from": "Выбирает случайный символ непустой строки или случайный элемент непустого массива.",
     "random.set_seed": "Устанавливает seed генератора для воспроизводимой последовательности.",
     "file.exists": "Проверяет существование файла или каталога по указанному пути.",
     "file.is_file": "Проверяет, существует ли путь и является ли он файлом.",

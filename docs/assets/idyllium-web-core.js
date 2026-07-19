@@ -757,6 +757,9 @@ class JavaScriptGenerator {
         if (expression.operator === 'or') {
             return `(${left} || ${right})`;
         }
+        if (expression.operator === 'xor') {
+            return `(${left} !== ${right})`;
+        }
         return `$rt.core.binary(${JSON.stringify(expression.operator)}, ${left}, ${right}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
     }
     callExpression(expression) {
@@ -814,6 +817,13 @@ class JavaScriptGenerator {
             if (typesRuntimeName && (callee.name === 'shift_left' || callee.name === 'shift_right')) {
                 const [bits] = this.methodCallArgs(callee.name, expression.args, typeName);
                 return `$rt.types.${callee.name}(${this.expression(callee.object)}, ${JSON.stringify(typesRuntimeName)}, ${bits}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+            }
+            if (typesRuntimeName && (callee.name === 'bit_and' || callee.name === 'bit_or' || callee.name === 'bit_xor')) {
+                const [mask] = this.methodCallArgs(callee.name, expression.args, typeName);
+                return `$rt.types.${callee.name}(${this.expression(callee.object)}, ${JSON.stringify(typesRuntimeName)}, ${mask}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+            }
+            if (typesRuntimeName && callee.name === 'bit_not') {
+                return `$rt.types.bit_not(${this.expression(callee.object)}, ${JSON.stringify(typesRuntimeName)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
             }
             const args = this.methodCallArgs(callee.name, expression.args, typeName).join(', ');
             return `$rt.callMethod(${this.expression(callee.object)}, ${JSON.stringify(callee.name)}, [${args}], ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
@@ -1235,7 +1245,14 @@ class JavaScriptGenerator {
                 }
                 if (expression.callee.kind !== 'MemberExpression')
                     return null;
-                if (expression.callee.name !== 'shift_left' && expression.callee.name !== 'shift_right')
+                if (![
+                    'shift_left',
+                    'shift_right',
+                    'bit_and',
+                    'bit_or',
+                    'bit_xor',
+                    'bit_not',
+                ].includes(expression.callee.name))
                     return null;
                 const objectType = this.expressionTypeName(expression.callee.object);
                 return this.typesRuntimeName(objectType) ? objectType : null;
@@ -1766,6 +1783,11 @@ class Parser {
                 topLevelDeclarations.push(declaration);
                 continue;
             }
+            if (this.checkStatementStart()) {
+                const statement = this.parseStatement();
+                this.error(statement.range, "executable statements must be inside 'main()' or another function, not at top level");
+                continue;
+            }
             this.error(this.peek().range, `unexpected token ${(0, tokens_1.tokenDisplay)(this.peek().kind)} at top level`);
             this.advance();
         }
@@ -1916,6 +1938,9 @@ class Parser {
             return this.parseOrphanTryClause();
         }
         return this.parseExpressionStatement();
+    }
+    checkStatementStart() {
+        return this.check(tokens_1.TokenKind.KwIf, tokens_1.TokenKind.KwTry, tokens_1.TokenKind.KwWhile, tokens_1.TokenKind.KwDo, tokens_1.TokenKind.KwFor, tokens_1.TokenKind.KwBreak, tokens_1.TokenKind.KwContinue, tokens_1.TokenKind.KwReturn, tokens_1.TokenKind.LeftBrace, tokens_1.TokenKind.KwElse, tokens_1.TokenKind.KwCatch, tokens_1.TokenKind.KwFinally, tokens_1.TokenKind.IntLiteral, tokens_1.TokenKind.FloatLiteral, tokens_1.TokenKind.StringLiteral, tokens_1.TokenKind.CharLiteral, tokens_1.TokenKind.KwTrue, tokens_1.TokenKind.KwFalse, tokens_1.TokenKind.KwNull, tokens_1.TokenKind.LeftBracket, tokens_1.TokenKind.Identifier, tokens_1.TokenKind.KwDiv, tokens_1.TokenKind.KwMod, tokens_1.TokenKind.KwThis, tokens_1.TokenKind.LeftParen, tokens_1.TokenKind.Minus, tokens_1.TokenKind.KwNot);
     }
     parseVariableDeclaration() {
         const constToken = this.match(tokens_1.TokenKind.KwConst) ? this.previous() : null;
@@ -2299,8 +2324,17 @@ class Parser {
         return this.parseOr();
     }
     parseOr() {
-        let expression = this.parseAnd();
+        let expression = this.parseXor();
         while (this.match(tokens_1.TokenKind.KwOr)) {
+            const operator = this.previous();
+            const right = this.parseXor();
+            expression = this.binary(expression, operator, right);
+        }
+        return expression;
+    }
+    parseXor() {
+        let expression = this.parseAnd();
+        while (this.match(tokens_1.TokenKind.KwXor)) {
             const operator = this.previous();
             const right = this.parseAnd();
             expression = this.binary(expression, operator, right);
@@ -2536,6 +2570,8 @@ class Parser {
                 return '>=';
             case tokens_1.TokenKind.KwAnd:
                 return 'and';
+            case tokens_1.TokenKind.KwXor:
+                return 'xor';
             case tokens_1.TokenKind.KwOr:
                 return 'or';
             default:
@@ -3920,7 +3956,7 @@ class SemanticAnalyzer {
     binaryType(expression) {
         const left = this.expressionType(expression.left);
         const right = this.expressionType(expression.right);
-        if (['and', 'or'].includes(expression.operator)) {
+        if (['and', 'xor', 'or'].includes(expression.operator)) {
             if (!(0, types_1.sameType)(left, types_1.BOOL) || !(0, types_1.sameType)(right, types_1.BOOL)) {
                 this.diagnostics.error(expression.range, `operator '${expression.operator}' requires bool operands`);
             }
@@ -3963,6 +3999,9 @@ class SemanticAnalyzer {
         const specialMathType = this.specialMathCallType(expression);
         if (specialMathType)
             return specialMathType;
+        const specialRandomType = this.specialRandomCallType(expression);
+        if (specialRandomType)
+            return specialRandomType;
         const resolved = this.resolveCall(expression);
         if (!resolved) {
             for (const arg of expression.args)
@@ -4047,6 +4086,34 @@ class SemanticAnalyzer {
             return argTypes.every((type) => (0, types_1.isIntegerLike)(type)) ? types_1.INT : types_1.FLOAT;
         }
         return null;
+    }
+    specialRandomCallType(expression) {
+        const callee = expression.callee;
+        if (callee.kind !== 'MemberExpression' || callee.object.kind !== 'IdentifierExpression') {
+            return null;
+        }
+        if (callee.object.name !== 'random' || callee.name !== 'choose_from')
+            return null;
+        this.markSemanticToken('namespace', callee.object.range, ['defaultLibrary']);
+        this.markSemanticToken('function', callee.nameRange, ['defaultLibrary']);
+        if (!this.imports.has('random')) {
+            this.diagnostics.error(callee.object.range, "'random' is not imported (use 'use random;')");
+            return types_1.ERROR_TYPE;
+        }
+        const fn = this.stdlib.getModuleFunction('random', 'choose_from');
+        if (!fn)
+            return types_1.ERROR_TYPE;
+        this.checkArgumentList(expression.args, fn, expression.range);
+        const ordered = this.orderedArguments(expression.args, fn);
+        const argument = ordered[0];
+        if (!argument)
+            return types_1.ERROR_TYPE;
+        const collectionType = this.expressionType(argument.value);
+        if ((0, types_1.sameType)(collectionType, types_1.STRING))
+            return types_1.CHAR;
+        if (collectionType.kind === 'array')
+            return collectionType.elementType;
+        return types_1.ERROR_TYPE;
     }
     resolveCall(expression) {
         const callee = expression.callee;
@@ -4238,6 +4305,12 @@ class SemanticAnalyzer {
             const argType = this.expressionType(item.arg.value);
             const parameter = item.parameter;
             if (parameter) {
+                if (parameter.exactType) {
+                    if (!(0, types_1.sameType)(parameter.type, argType)) {
+                        this.diagnostics.error(item.arg.range, this.argumentTypeError(fn, item, `'${(0, types_1.typeToString)(parameter.type)}'`, argType));
+                    }
+                    continue;
+                }
                 if (parameter.acceptedTypes) {
                     const accepts = parameter.acceptedTypes.some((candidate) => this.canAssign(candidate, argType));
                     if (!accepts) {
@@ -5022,6 +5095,14 @@ function createDefaultStandardLibrary() {
     registry.registerModule(moduleSpec('random', [
         functionSpec('create_int', [{ name: 'min', type: types_1.INT }, { name: 'max', type: types_1.INT }], types_1.INT),
         functionSpec('create_float', [{ name: 'min', type: types_1.FLOAT }, { name: 'max', type: types_1.FLOAT }], types_1.FLOAT),
+        functionSpec('choose_from', [{
+                name: 'collection',
+                type: types_1.ANY_TYPE,
+                acceptedTypes: [types_1.STRING, (0, types_1.arrayType)(types_1.ANY_TYPE, null, true)],
+                acceptedDescription: 'string or array',
+            }], types_1.ANY_TYPE, {
+            documentation: 'Выбирает случайный символ строки или случайный элемент массива.',
+        }),
         functionSpec('set_seed', [{ name: 'seed', type: types_1.INT }], types_1.VOID),
     ]));
     registry.registerModule(moduleSpec('time', [
@@ -5131,13 +5212,11 @@ function createDefaultStandardLibrary() {
     ]));
     registry.registerModule(moduleSpec('encoding', [
         functionSpec('list_encodings', [], (0, types_1.arrayType)(types_1.STRING, null, true)),
-        functionSpec('char_to_int', [
+        functionSpec('char_to_codepoint', [
             { name: 'character', type: types_1.CHAR },
-            { name: 'encoding', type: types_1.STRING },
         ], types_1.INT),
-        functionSpec('int_to_char', [
-            { name: 'code', type: types_1.INT },
-            { name: 'encoding', type: types_1.STRING },
+        functionSpec('codepoint_to_char', [
+            { name: 'codepoint', type: types_1.INT },
         ], types_1.CHAR),
         functionSpec('encode', [
             { name: 'text', type: types_1.STRING },
@@ -5332,6 +5411,50 @@ function createDefaultStandardLibrary() {
             ], imageStatic),
             functionSpec('export_to_file', [{ name: 'path', type: types_1.STRING }], types_1.VOID),
         ], imageImage),
+        typeSpec('Bitmap', [
+            propertySpec('src', types_1.STRING, true),
+            propertySpec('width', types_1.INT, true),
+            propertySpec('height', types_1.INT, true),
+            propertySpec('format', types_1.STRING, true),
+            propertySpec('has_alpha', types_1.BOOL, true),
+            propertySpec('is_created', types_1.BOOL, true, 'Показывает, создан или загружен ли изменяемый растр.'),
+        ], [
+            functionSpec('create', [
+                { name: 'width', type: types_1.INT },
+                { name: 'height', type: types_1.INT },
+                { name: 'fill', type: types_1.COLOR, defaultValue: 'colors.TRANSPARENT' },
+            ], types_1.VOID, {
+                minArguments: 2,
+                documentation: 'Создаёт пустой изменяемый RGBA-растр указанного размера.',
+            }),
+            functionSpec('load_from_file', [{ name: 'path', type: types_1.STRING }], types_1.VOID, {
+                documentation: 'Загружает статичное растровое изображение для попиксельного изменения.',
+            }),
+            functionSpec('create_from_image', [{ name: 'source', type: imageStatic }], types_1.VOID, {
+                documentation: 'Создаёт независимую изменяемую копию image.Static.',
+            }),
+            functionSpec('get_pixel', [
+                { name: 'x', type: types_1.INT },
+                { name: 'y', type: types_1.INT },
+            ], types_1.COLOR),
+            functionSpec('set_pixel', [
+                { name: 'x', type: types_1.INT },
+                { name: 'y', type: types_1.INT },
+                { name: 'color', type: types_1.COLOR },
+            ], types_1.VOID),
+            functionSpec('fill', [{ name: 'color', type: types_1.COLOR }], types_1.VOID),
+            functionSpec('fill_rect', [
+                { name: 'x', type: types_1.INT },
+                { name: 'y', type: types_1.INT },
+                { name: 'width', type: types_1.INT },
+                { name: 'height', type: types_1.INT },
+                { name: 'color', type: types_1.COLOR },
+            ], types_1.VOID),
+            functionSpec('to_static', [], imageStatic, {
+                documentation: 'Создаёт неизменяемый snapshot для ImageBox, Sprite и переиспользования.',
+            }),
+            functionSpec('export_to_file', [{ name: 'path', type: types_1.STRING }], types_1.VOID),
+        ]),
         typeSpec('Animation', [
             propertySpec('frame_count', types_1.INT, true),
             propertySpec('frame_duration', types_1.FLOAT, true),
@@ -5677,13 +5800,54 @@ function createDefaultStandardLibrary() {
         { name: 'TEAL', type: types_1.COLOR },
         { name: 'PURPLE', type: types_1.COLOR },
         { name: 'TRANSPARENT', type: types_1.COLOR },
-    ], [typeSpec('Color')]));
+    ], [typeSpec('Color', [
+            propertySpec('red', types_1.INT, true, 'Красный канал от 0 до 255.'),
+            propertySpec('green', types_1.INT, true, 'Зелёный канал от 0 до 255.'),
+            propertySpec('blue', types_1.INT, true, 'Синий канал от 0 до 255.'),
+            propertySpec('alpha', types_1.FLOAT, true, 'Альфа-канал от 0.0 до 1.0.'),
+        ], [
+            functionSpec('with_red', [{ name: 'value', type: types_1.INT }], types_1.COLOR, {
+                documentation: 'Возвращает новый цвет с изменённым красным каналом.',
+            }),
+            functionSpec('with_green', [{ name: 'value', type: types_1.INT }], types_1.COLOR, {
+                documentation: 'Возвращает новый цвет с изменённым зелёным каналом.',
+            }),
+            functionSpec('with_blue', [{ name: 'value', type: types_1.INT }], types_1.COLOR, {
+                documentation: 'Возвращает новый цвет с изменённым синим каналом.',
+            }),
+            functionSpec('with_alpha', [{ name: 'value', type: types_1.FLOAT }], types_1.COLOR, {
+                documentation: 'Возвращает новый цвет с изменённым альфа-каналом.',
+            }),
+            functionSpec('with_rgb', [
+                { name: 'red', type: types_1.INT },
+                { name: 'green', type: types_1.INT },
+                { name: 'blue', type: types_1.INT },
+            ], types_1.COLOR, {
+                documentation: 'Возвращает новый цвет с указанными RGB-каналами и прежним alpha.',
+            }),
+            functionSpec('with_rgba', [
+                { name: 'red', type: types_1.INT },
+                { name: 'green', type: types_1.INT },
+                { name: 'blue', type: types_1.INT },
+                { name: 'alpha', type: types_1.FLOAT },
+            ], types_1.COLOR, {
+                documentation: 'Возвращает новый цвет с указанными RGBA-каналами.',
+            }),
+        ])]));
     const typesNumericTypeNames = [
         'int8', 'uint8', 'int16', 'uint16', 'int32',
         'uint32', 'int64', 'uint64', 'float32', 'float64',
     ];
     const typesNumericTypeSpecs = typesNumericTypeNames.map((name) => {
         const ownType = (0, types_1.qualified)('types', name);
+        const maskName = name.endsWith('8')
+            ? 'uint8'
+            : name.endsWith('16')
+                ? 'uint16'
+                : name.endsWith('32')
+                    ? 'uint32'
+                    : 'uint64';
+        const maskType = (0, types_1.qualified)('types', maskName);
         return typeSpec(name, [], [
             functionSpec('to_bin', [], types_1.STRING, {
                 documentation: 'Возвращает полное двоичное представление фиксированной ширины. Для float используется сырое IEEE-представление.',
@@ -5696,6 +5860,18 @@ function createDefaultStandardLibrary() {
             }),
             functionSpec('shift_right', [{ name: 'bits', type: types_1.INT }], ownType, {
                 documentation: 'Логически сдвигает биты вправо без сохранения знака и заполняет освободившиеся позиции нулями. Отрицательное количество сдвигает влево.',
+            }),
+            functionSpec('bit_and', [{ name: 'mask', type: maskType, exactType: true }], ownType, {
+                documentation: `Оставляет биты, установленные и в значении, и в маске ${maskName}.`,
+            }),
+            functionSpec('bit_or', [{ name: 'mask', type: maskType, exactType: true }], ownType, {
+                documentation: `Устанавливает биты, присутствующие в значении или маске ${maskName}.`,
+            }),
+            functionSpec('bit_xor', [{ name: 'mask', type: maskType, exactType: true }], ownType, {
+                documentation: `Переключает биты, установленные в маске ${maskName}.`,
+            }),
+            functionSpec('bit_not', [], ownType, {
+                documentation: 'Инвертирует все биты ячейки фиксированной ширины.',
             }),
         ]);
     });
@@ -5829,6 +6005,7 @@ var TokenKind;
     TokenKind["KwReturn"] = "KwReturn";
     TokenKind["KwConst"] = "KwConst";
     TokenKind["KwAnd"] = "KwAnd";
+    TokenKind["KwXor"] = "KwXor";
     TokenKind["KwOr"] = "KwOr";
     TokenKind["KwNot"] = "KwNot";
     TokenKind["KwTrue"] = "KwTrue";
@@ -5897,6 +6074,7 @@ exports.KEYWORDS = {
     return: TokenKind.KwReturn,
     const: TokenKind.KwConst,
     and: TokenKind.KwAnd,
+    xor: TokenKind.KwXor,
     or: TokenKind.KwOr,
     not: TokenKind.KwNot,
     true: TokenKind.KwTrue,
@@ -8597,6 +8775,24 @@ class IdylliumColor {
         }
         return IdylliumColor.RGB(Math.round((red + m) * 255), Math.round((green + m) * 255), Math.round((blue + m) * 255), file, line);
     }
+    callMethod(name, args, file, line) {
+        switch (name) {
+            case 'with_red':
+                return IdylliumColor.RGBA(channel(args[0], 'colors.Color.with_red() value', file, line), this.green, this.blue, this.alpha, file, line);
+            case 'with_green':
+                return IdylliumColor.RGBA(this.red, channel(args[0], 'colors.Color.with_green() value', file, line), this.blue, this.alpha, file, line);
+            case 'with_blue':
+                return IdylliumColor.RGBA(this.red, this.green, channel(args[0], 'colors.Color.with_blue() value', file, line), this.alpha, file, line);
+            case 'with_alpha':
+                return IdylliumColor.RGBA(this.red, this.green, this.blue, opacity(args[0], 'colors.Color.with_alpha() value', file, line), file, line);
+            case 'with_rgb':
+                return IdylliumColor.RGBA(channel(args[0], 'colors.Color.with_rgb() red', file, line), channel(args[1], 'colors.Color.with_rgb() green', file, line), channel(args[2], 'colors.Color.with_rgb() blue', file, line), this.alpha, file, line);
+            case 'with_rgba':
+                return IdylliumColor.RGBA(channel(args[0], 'colors.Color.with_rgba() red', file, line), channel(args[1], 'colors.Color.with_rgba() green', file, line), channel(args[2], 'colors.Color.with_rgba() blue', file, line), opacity(args[3], 'colors.Color.with_rgba() alpha', file, line), file, line);
+            default:
+                throw new IdylliumRuntimeError(file, line, `colors.Color has no method '${name}'`);
+        }
+    }
     toHex() {
         return `#${hex(this.red)}${hex(this.green)}${hex(this.blue)}`;
     }
@@ -10540,6 +10736,18 @@ function createRuntime(options = {}) {
         shift_right(value, typeName, bits, file, line) {
             return typesShift(value, typeName, bits, 'right', file, line);
         },
+        bit_and(value, typeName, mask, file, line) {
+            return typesBitwise(value, typeName, mask, 'and', file, line);
+        },
+        bit_or(value, typeName, mask, file, line) {
+            return typesBitwise(value, typeName, mask, 'or', file, line);
+        },
+        bit_xor(value, typeName, mask, file, line) {
+            return typesBitwise(value, typeName, mask, 'xor', file, line);
+        },
+        bit_not(value, typeName, file, line) {
+            return typesBitwise(value, typeName, null, 'not', file, line);
+        },
     };
     return {
         console: {
@@ -10663,6 +10871,22 @@ function createRuntime(options = {}) {
                         throw new IdylliumRuntimeError(file, line, `random.create_float() min must be less than max (got min ${low}, max ${high})`);
                     }
                     return randomUnit() * (high - low) + low;
+                }),
+                choose_from: contextFunction((collection, file, line) => {
+                    if (typeof collection === 'string') {
+                        const characters = Array.from(collection);
+                        if (characters.length === 0) {
+                            throw new IdylliumRuntimeError(file, line, 'random.choose_from() cannot choose from an empty string');
+                        }
+                        return characters[Math.floor(randomUnit() * characters.length)];
+                    }
+                    if (collection instanceof IdylliumArray) {
+                        if (collection.length === 0) {
+                            throw new IdylliumRuntimeError(file, line, 'random.choose_from() cannot choose from an empty array');
+                        }
+                        return collection.get(Math.floor(randomUnit() * collection.length), file, line);
+                    }
+                    throw new IdylliumRuntimeError(file, line, `random.choose_from() expects a string or array, got '${runtimeTypeName(collection)}'`);
                 }),
                 set_seed: contextFunction((seed, file, line) => {
                     const value = integerNumber(seed, 'random.set_seed() seed', file, line);
@@ -10801,8 +11025,8 @@ function createRuntime(options = {}) {
             },
             encoding: {
                 list_encodings: contextFunction(() => IdylliumArray.from(['ascii', 'utf-8', 'windows-1251', 'koi8-r'], true, null, () => '')),
-                char_to_int: contextFunction((character, encoding, file, line) => (encodingCharToInt(character, encoding, file, line))),
-                int_to_char: contextFunction((code, encoding, file, line) => (encodingIntToChar(code, encoding, file, line))),
+                char_to_codepoint: contextFunction((character, file, line) => (encodingCharToCodepoint(character, file, line))),
+                codepoint_to_char: contextFunction((codepoint, file, line) => (encodingCodepointToChar(codepoint, file, line))),
                 encode: contextFunction((text, encoding, file, line) => (IdylliumArray.from(encodingEncode(text, encoding, file, line), true, null, () => 0))),
                 decode: contextFunction((codes, encoding, file, line) => (encodingDecode(codes, encoding, file, line))),
             },
@@ -10899,6 +11123,9 @@ function createRuntime(options = {}) {
         callMethod(target, methodName, args, file, line) {
             throwIfRuntimeStopped(file, line);
             if (target instanceof IdylliumArray) {
+                return target.callMethod(methodName, args, file, line);
+            }
+            if (target instanceof IdylliumColor) {
                 return target.callMethod(methodName, args, file, line);
             }
             if (typeof target === 'string') {
@@ -11532,70 +11759,59 @@ function splitString(value, separator) {
     const parts = separator.length === 0 ? Array.from(value) : value.split(separator);
     return IdylliumArray.from(parts, true, null, () => '');
 }
-const WINDOWS_1251_ENCODING = buildSingleByteEncoding([
-    [0xA8, '\u0401'],
-    [0xB8, '\u0451'],
-    ...sequentialEntries(0xC0, '\u0410\u0411\u0412\u0413\u0414\u0415\u0416\u0417\u0418\u0419\u041A\u041B\u041C\u041D\u041E\u041F\u0420\u0421\u0422\u0423\u0424\u0425\u0426\u0427\u0428\u0429\u042A\u042B\u042C\u042D\u042E\u042F'),
-    ...sequentialEntries(0xE0, '\u0430\u0431\u0432\u0433\u0434\u0435\u0436\u0437\u0438\u0439\u043A\u043B\u043C\u043D\u043E\u043F\u0440\u0441\u0442\u0443\u0444\u0445\u0446\u0447\u0448\u0449\u044A\u044B\u044C\u044D\u044E\u044F'),
-]);
-const KOI8_R_ENCODING = buildSingleByteEncoding([
-    [0xA3, '\u0451'],
-    [0xB3, '\u0401'],
-    ...sequentialEntries(0xC0, '\u044E\u0430\u0431\u0446\u0434\u0435\u0444\u0433\u0445\u0438\u0439\u043A\u043B\u043C\u043D\u043E\u043F\u044F\u0440\u0441\u0442\u0443\u0436\u0432\u044C\u044B\u0437\u0448\u044D\u0449\u0447\u044A'),
-    ...sequentialEntries(0xE0, '\u042E\u0410\u0411\u0426\u0414\u0415\u0424\u0413\u0425\u0418\u0419\u041A\u041B\u041C\u041D\u041E\u041F\u042F\u0420\u0421\u0422\u0423\u0416\u0412\u042C\u042B\u0417\u0428\u042D\u0429\u0427\u042A'),
-]);
-function encodingCharToInt(character, encoding, file, line) {
-    const char = singleCharacter(character, 'encoding.char_to_int() character', file, line);
-    const name = normalizeEncoding(encoding, file, line);
-    if (name === 'ascii')
-        return asciiCode(char, file, line);
-    if (name === 'utf-8')
-        return char.codePointAt(0) ?? 0;
-    return singleByteCharToInt(char, name === 'windows-1251' ? WINDOWS_1251_ENCODING : KOI8_R_ENCODING, name, file, line);
+const WINDOWS_1251_ENCODING = buildSingleByteEncoding('windows-1251');
+const KOI8_R_ENCODING = buildSingleByteEncoding('koi8-r');
+function encodingCharToCodepoint(character, file, line) {
+    const char = singleCharacter(character, 'encoding.char_to_codepoint() character', file, line);
+    const codepoint = char.codePointAt(0) ?? 0;
+    if (!isUnicodeScalarValue(codepoint)) {
+        throw new IdylliumRuntimeError(file, line, `encoding.char_to_codepoint() character is not a Unicode scalar value`);
+    }
+    return codepoint;
 }
-function encodingIntToChar(code, encoding, file, line) {
-    const value = integerNumber(code, 'encoding.int_to_char() code', file, line);
-    const name = normalizeEncoding(encoding, file, line);
-    if (name === 'ascii') {
-        byteRange(value, 'encoding.int_to_char() code', 0, 127, file, line);
-        return String.fromCodePoint(value);
+function encodingCodepointToChar(codepoint, file, line) {
+    const value = integerNumber(codepoint, 'encoding.codepoint_to_char() codepoint', file, line);
+    if (!isUnicodeScalarValue(value)) {
+        throw new IdylliumRuntimeError(file, line, `encoding.codepoint_to_char() codepoint must be a Unicode scalar value between 0 and 1114111, got ${value}`);
     }
-    if (name === 'utf-8') {
-        if (value < 0 || value > 0x10FFFF) {
-            throw new IdylliumRuntimeError(file, line, `encoding.int_to_char() code must be between 0 and 1114111, got ${value}`);
-        }
-        return String.fromCodePoint(value);
-    }
-    return singleByteIntToChar(value, name === 'windows-1251' ? WINDOWS_1251_ENCODING : KOI8_R_ENCODING, name, file, line);
+    return String.fromCodePoint(value);
 }
 function encodingEncode(text, encoding, file, line) {
     const value = stringArgument(text, 'encoding.encode() text', file, line);
     const name = normalizeEncoding(encoding, file, line);
+    const characters = Array.from(value);
     if (name === 'ascii')
-        return Array.from(value).map((char) => asciiCode(char, file, line));
-    if (name === 'utf-8')
+        return characters.map((char, index) => asciiCode(char, file, line, index));
+    if (name === 'utf-8') {
+        for (let index = 0; index < characters.length; index++) {
+            const codepoint = characters[index].codePointAt(0) ?? 0;
+            if (!isUnicodeScalarValue(codepoint)) {
+                throw new IdylliumRuntimeError(file, line, `encoding.encode() invalid Unicode character at position ${index}`);
+            }
+        }
         return [...nodeBuffer.from(value, 'utf8')];
+    }
     const table = name === 'windows-1251' ? WINDOWS_1251_ENCODING : KOI8_R_ENCODING;
-    return Array.from(value).map((char) => singleByteCharToInt(char, table, name, file, line));
+    return characters.map((char, index) => singleByteCharToInt(char, table, name, file, line, index));
 }
 function encodingDecode(codes, encoding, file, line) {
     const array = expectArray(codes, file, line);
     const name = normalizeEncoding(encoding, file, line);
-    const bytes = array.values().map((code) => integerNumber(code, 'encoding.decode() code', file, line));
+    const bytes = array.values().map((code, index) => {
+        const value = integerNumber(code, `encoding.decode() byte at index ${index}`, file, line);
+        return byteRange(value, `encoding.decode() byte at index ${index}`, 0, 255, file, line);
+    });
     if (name === 'ascii') {
-        return bytes.map((code) => {
-            byteRange(code, 'encoding.decode() code', 0, 127, file, line);
+        return bytes.map((code, index) => {
+            byteRange(code, `encoding.decode() ASCII byte at index ${index}`, 0, 127, file, line);
             return String.fromCodePoint(code);
         }).join('');
     }
     if (name === 'utf-8') {
-        for (const code of bytes) {
-            byteRange(code, 'encoding.decode() code', 0, 255, file, line);
-        }
-        return nodeBuffer.from(bytes).toString('utf8');
+        return decodeUtf8Strict(bytes, file, line);
     }
     const table = name === 'windows-1251' ? WINDOWS_1251_ENCODING : KOI8_R_ENCODING;
-    return bytes.map((code) => singleByteIntToChar(code, table, name, file, line)).join('');
+    return bytes.map((code, index) => singleByteIntToChar(code, table, name, file, line, index)).join('');
 }
 function normalizeEncoding(value, file, line) {
     const name = stringArgument(value, 'encoding name', file, line).toLowerCase();
@@ -11617,29 +11833,26 @@ function singleCharacter(value, argumentName, file, line) {
     }
     return chars[0];
 }
-function asciiCode(char, file, line) {
+function asciiCode(char, file, line, position) {
     const code = char.codePointAt(0) ?? 0;
     if (code <= 127)
         return code;
-    throw new IdylliumRuntimeError(file, line, `character '${char}' is not valid ASCII`);
+    const suffix = position === undefined ? '' : ` at position ${position}`;
+    throw new IdylliumRuntimeError(file, line, `character '${char}' is not valid ASCII${suffix}`);
 }
-function singleByteCharToInt(char, table, encoding, file, line) {
-    const code = char.codePointAt(0) ?? 0;
-    if (code <= 127)
-        return code;
+function singleByteCharToInt(char, table, encoding, file, line, position) {
     const byte = table.charToByte.get(char);
     if (byte !== undefined)
         return byte;
-    throw new IdylliumRuntimeError(file, line, `character '${char}' is not valid ${encoding}`);
+    const suffix = position === undefined ? '' : ` at position ${position}`;
+    throw new IdylliumRuntimeError(file, line, `character '${char}' is not valid ${encoding}${suffix}`);
 }
-function singleByteIntToChar(code, table, encoding, file, line) {
-    byteRange(code, 'encoding code', 0, 255, file, line);
-    if (code <= 127)
-        return String.fromCodePoint(code);
+function singleByteIntToChar(code, table, encoding, file, line, position) {
     const char = table.byteToChar.get(code);
     if (char !== undefined)
         return char;
-    throw new IdylliumRuntimeError(file, line, `byte ${code} is not valid ${encoding}`);
+    const suffix = position === undefined ? '' : ` at index ${position}`;
+    throw new IdylliumRuntimeError(file, line, `byte ${code} is not valid ${encoding}${suffix}`);
 }
 function byteRange(value, argumentName, min, max, file, line) {
     if (value < min || value > max) {
@@ -11647,17 +11860,80 @@ function byteRange(value, argumentName, min, max, file, line) {
     }
     return value;
 }
-function buildSingleByteEncoding(entries) {
+function buildSingleByteEncoding(label) {
     const charToByte = new Map();
     const byteToChar = new Map();
-    for (const [byte, char] of entries) {
+    const decoder = new TextDecoder(label, { fatal: true });
+    for (let byte = 0; byte <= 255; byte++) {
+        const char = decoder.decode(Uint8Array.of(byte));
         charToByte.set(char, byte);
         byteToChar.set(byte, char);
     }
     return { charToByte, byteToChar };
 }
-function sequentialEntries(start, chars) {
-    return Array.from(chars).map((char, index) => [start + index, char]);
+function isUnicodeScalarValue(value) {
+    return value >= 0 && value <= 0x10FFFF && !(value >= 0xD800 && value <= 0xDFFF);
+}
+function decodeUtf8Strict(bytes, file, line) {
+    let result = '';
+    for (let index = 0; index < bytes.length;) {
+        const first = bytes[index];
+        if (first <= 0x7F) {
+            result += String.fromCodePoint(first);
+            index++;
+            continue;
+        }
+        let length = 0;
+        let codepoint = 0;
+        let secondMin = 0x80;
+        let secondMax = 0xBF;
+        if (first >= 0xC2 && first <= 0xDF) {
+            length = 2;
+            codepoint = first & 0x1F;
+        }
+        else if (first >= 0xE0 && first <= 0xEF) {
+            length = 3;
+            codepoint = first & 0x0F;
+            if (first === 0xE0)
+                secondMin = 0xA0;
+            if (first === 0xED)
+                secondMax = 0x9F;
+        }
+        else if (first >= 0xF0 && first <= 0xF4) {
+            length = 4;
+            codepoint = first & 0x07;
+            if (first === 0xF0)
+                secondMin = 0x90;
+            if (first === 0xF4)
+                secondMax = 0x8F;
+        }
+        else {
+            invalidUtf8(bytes, index, 'invalid leading byte', file, line);
+        }
+        if (index + length > bytes.length) {
+            invalidUtf8(bytes, index, 'incomplete sequence', file, line);
+        }
+        for (let offset = 1; offset < length; offset++) {
+            const byte = bytes[index + offset];
+            const min = offset === 1 ? secondMin : 0x80;
+            const max = offset === 1 ? secondMax : 0xBF;
+            if (byte < min || byte > max) {
+                invalidUtf8(bytes, index + offset, 'invalid continuation byte', file, line);
+            }
+            codepoint = (codepoint << 6) | (byte & 0x3F);
+        }
+        result += String.fromCodePoint(codepoint);
+        index += length;
+    }
+    return result;
+}
+function invalidUtf8(bytes, index, reason, file, line) {
+    const byte = bytes[index];
+    const suffix = byte === undefined ? '' : ` (${formatByte(byte)})`;
+    throw new IdylliumRuntimeError(file, line, `encoding.decode() invalid UTF-8 at byte ${index}${suffix}: ${reason}`);
+}
+function formatByte(value) {
+    return `0x${value.toString(16).toUpperCase().padStart(2, '0')}`;
 }
 const RUNTIME_TYPES = {
     int8: { kind: 'integer', bits: 8, signed: true },
@@ -11725,6 +12001,39 @@ function typesShift(value, typeName, bitCount, direction, file, line) {
     if (spec.kind === 'float')
         return floatFromBytes(binaryToBytes(shifted), name);
     return castTypesValue(BigInt(`0b${shifted}`), name);
+}
+function typesBitwise(value, typeName, mask, operator, file, line) {
+    const name = normalizeRuntimeTypesName(typeName, file, line);
+    const spec = RUNTIME_TYPES[name];
+    const valueBits = BigInt(`0b${typesToBin(value, name)}`);
+    const cellMask = (1n << BigInt(spec.bits)) - 1n;
+    let resultBits;
+    if (operator === 'not') {
+        resultBits = (~valueBits) & cellMask;
+    }
+    else {
+        const maskName = unsignedTypesName(spec.bits);
+        const normalizedMask = BigInt(`0b${typesToBin(mask, maskName)}`);
+        if (operator === 'and')
+            resultBits = valueBits & normalizedMask;
+        else if (operator === 'or')
+            resultBits = valueBits | normalizedMask;
+        else
+            resultBits = valueBits ^ normalizedMask;
+    }
+    const result = resultBits.toString(2).padStart(spec.bits, '0');
+    if (spec.kind === 'float')
+        return floatFromBytes(binaryToBytes(result), name);
+    return castTypesValue(resultBits, name);
+}
+function unsignedTypesName(bits) {
+    if (bits === 8)
+        return 'uint8';
+    if (bits === 16)
+        return 'uint16';
+    if (bits === 32)
+        return 'uint32';
+    return 'uint64';
 }
 function typesFromBin(bits, typeName, file, line) {
     const name = normalizeTypesName(typeName, file, line);
@@ -12499,6 +12808,8 @@ function initializeImageObject(obj, typeName, state) {
     obj.format = '';
     obj.has_alpha = false;
     obj.is_loaded = false;
+    if (typeName === 'Bitmap')
+        obj.is_created = false;
     if (typeName === 'Static') {
         obj.load_from_file = contextFunction(async (targetPath, file, line) => {
             const requestedPath = stringArgument(targetPath, 'Static.load_from_file() path', file, line);
@@ -12583,6 +12894,102 @@ function initializeImageObject(obj, typeName, state) {
             }
             catch (error) {
                 throw imageRuntimeError(file, line, `Static.export_to_file() cannot write '${requestedPath}'`, error);
+            }
+        });
+    }
+    if (typeName === 'Bitmap') {
+        obj.create = contextFunction((...rawArgs) => {
+            const { values, file, line } = splitContextArgs(rawArgs);
+            const width = integerNumber(values[0], 'Bitmap.create() width', file, line);
+            const height = integerNumber(values[1], 'Bitmap.create() height', file, line);
+            ensureImageSize(width, height, 'Bitmap.create()', file, line);
+            const fillColor = values.length >= 3
+                ? bitmapColor(values[2], 'Bitmap.create() fill', file, line)
+                : colorTransparent();
+            const raster = filledRaster(width, height, fillColor);
+            setBitmapRaster(obj, raster, '', 'rgba');
+        });
+        obj.load_from_file = contextFunction(async (targetPath, file, line) => {
+            const requestedPath = stringArgument(targetPath, 'Bitmap.load_from_file() path', file, line);
+            const resolvedPath = resolveImageInputPath(requestedPath, file, line, state, 'Bitmap.load_from_file()');
+            const bytes = readRuntimeBytes(state.fileSystem, resolvedPath, file, line, 'Bitmap.load_from_file()');
+            const format = (0, image_service_1.detectImageFormat)(bytes);
+            if (format === 'unknown') {
+                throw new IdylliumRuntimeError(file, line, `Bitmap.load_from_file() cannot decode '${requestedPath}': unsupported image format`);
+            }
+            const service = imageService(state, file, line);
+            try {
+                const decoded = await service.decodeStatic(bytes, format);
+                setBitmapRaster(obj, decoded, requestedPath, decoded.format, resolvedPath);
+            }
+            catch (error) {
+                throw imageRuntimeError(file, line, `Bitmap.load_from_file() cannot decode '${requestedPath}'`, error);
+            }
+        });
+        obj.create_from_image = contextFunction((sourceValue, file, line) => {
+            if (!isRuntimeObject(sourceValue) || sourceValue.__idylliumType !== 'image.Static') {
+                throw new IdylliumRuntimeError(file, line, `Bitmap.create_from_image() source must be image.Static, got '${runtimeTypeName(sourceValue)}'`);
+            }
+            const source = storedStaticImage(sourceValue, 'Bitmap.create_from_image()', file, line);
+            setBitmapRaster(obj, source.raster, String(sourceValue.src ?? ''), String(sourceValue.format ?? 'png'), String(sourceValue.resolved_path ?? ''));
+        });
+        obj.get_pixel = contextFunction((xValue, yValue, file, line) => {
+            const stored = storedBitmap(obj, 'Bitmap.get_pixel()', file, line);
+            const index = bitmapPixelIndex(stored.raster, xValue, yValue, 'Bitmap.get_pixel()', file, line);
+            return IdylliumColor.RGBA(stored.raster.pixels[index], stored.raster.pixels[index + 1], stored.raster.pixels[index + 2], stored.raster.pixels[index + 3] / 255, file, line);
+        });
+        obj.set_pixel = contextFunction((xValue, yValue, colorValue, file, line) => {
+            const stored = storedBitmap(obj, 'Bitmap.set_pixel()', file, line);
+            const index = bitmapPixelIndex(stored.raster, xValue, yValue, 'Bitmap.set_pixel()', file, line);
+            setBitmapPixel(stored, index, bitmapColor(colorValue, 'Bitmap.set_pixel() color', file, line));
+            obj.has_alpha = stored.alphaPixelCount > 0;
+        });
+        obj.fill = contextFunction((colorValue, file, line) => {
+            const stored = storedBitmap(obj, 'Bitmap.fill()', file, line);
+            const fillColor = bitmapColor(colorValue, 'Bitmap.fill() color', file, line);
+            const replacement = filledRaster(stored.raster.width, stored.raster.height, fillColor);
+            stored.raster.pixels.set(replacement.pixels);
+            stored.alphaPixelCount = fillColor.alpha < 1 ? stored.raster.width * stored.raster.height : 0;
+            obj.has_alpha = stored.alphaPixelCount > 0;
+        });
+        obj.fill_rect = contextFunction((xValue, yValue, widthValue, heightValue, colorValue, file, line) => {
+            const stored = storedBitmap(obj, 'Bitmap.fill_rect()', file, line);
+            const x = integerNumber(xValue, 'Bitmap.fill_rect() x', file, line);
+            const y = integerNumber(yValue, 'Bitmap.fill_rect() y', file, line);
+            const width = integerNumber(widthValue, 'Bitmap.fill_rect() width', file, line);
+            const height = integerNumber(heightValue, 'Bitmap.fill_rect() height', file, line);
+            if (x < 0 || y < 0 || width <= 0 || height <= 0) {
+                throw new IdylliumRuntimeError(file, line, `Bitmap.fill_rect() expects non-negative coordinates and positive size, got (${x}, ${y}, ${width}, ${height})`);
+            }
+            if (x + width > stored.raster.width || y + height > stored.raster.height) {
+                throw new IdylliumRuntimeError(file, line, `Bitmap.fill_rect() rectangle (${x}, ${y}, ${width}, ${height}) is outside bitmap bounds ${stored.raster.width}x${stored.raster.height}`);
+            }
+            const fillColor = bitmapColor(colorValue, 'Bitmap.fill_rect() color', file, line);
+            for (let row = y; row < y + height; row++) {
+                for (let column = x; column < x + width; column++) {
+                    setBitmapPixel(stored, (row * stored.raster.width + column) * 4, fillColor);
+                }
+            }
+            obj.has_alpha = stored.alphaPixelCount > 0;
+        });
+        obj.to_static = contextFunction(async (file, line) => {
+            const stored = storedBitmap(obj, 'Bitmap.to_static()', file, line);
+            return createGeneratedStaticImage(stored.raster, String(obj.src ?? ''), state, file, line);
+        });
+        obj.export_to_file = contextFunction(async (targetPath, file, line) => {
+            const stored = storedBitmap(obj, 'Bitmap.export_to_file()', file, line);
+            const requestedPath = stringArgument(targetPath, 'Bitmap.export_to_file() path', file, line);
+            const outputFormat = (0, image_service_1.imageFormatFromPath)(requestedPath);
+            if (!['png', 'jpeg', 'webp', 'gif'].includes(outputFormat)) {
+                throw new IdylliumRuntimeError(file, line, `Bitmap.export_to_file() cannot determine a supported format from '${requestedPath}'`);
+            }
+            const service = imageService(state, file, line);
+            try {
+                const bytes = await service.encodeStatic(stored.raster, outputFormat);
+                writeRuntimeImageBytes(requestedPath, bytes, outputFormat, state, file, line, 'Bitmap.export_to_file()');
+            }
+            catch (error) {
+                throw imageRuntimeError(file, line, `Bitmap.export_to_file() cannot write '${requestedPath}'`, error);
             }
         });
     }
@@ -12734,6 +13141,73 @@ function storedStaticImage(obj, methodName, file, line) {
     if (obj.is_loaded === true && stored?.raster)
         return stored;
     throw new IdylliumRuntimeError(file, line, `${methodName} cannot be used before load_from_file()`);
+}
+function storedBitmap(obj, methodName, file, line) {
+    const stored = obj.__imageBitmap;
+    if (obj.is_created === true && stored?.raster)
+        return stored;
+    throw new IdylliumRuntimeError(file, line, `${methodName} cannot be used before create(), load_from_file(), or create_from_image()`);
+}
+function setBitmapRaster(obj, source, src, format, resolvedPath = '') {
+    const raster = (0, image_service_1.cloneRaster)(source);
+    obj.__imageBitmap = {
+        raster,
+        alphaPixelCount: countAlphaPixels(raster),
+    };
+    obj.src = src;
+    obj.resolved_path = resolvedPath;
+    obj.resource_uri = '';
+    obj.width = raster.width;
+    obj.height = raster.height;
+    obj.format = format;
+    obj.has_alpha = (0, image_service_1.rasterHasAlpha)(raster);
+    obj.is_loaded = true;
+    obj.is_created = true;
+}
+function bitmapColor(value, argumentName, file, line) {
+    if (value instanceof IdylliumColor)
+        return value;
+    throw new IdylliumRuntimeError(file, line, `${argumentName} must be colors.Color`);
+}
+function filledRaster(width, height, color) {
+    const pixels = new Uint8Array(width * height * 4);
+    const alpha = Math.round(color.alpha * 255);
+    for (let index = 0; index < pixels.length; index += 4) {
+        pixels[index] = color.red;
+        pixels[index + 1] = color.green;
+        pixels[index + 2] = color.blue;
+        pixels[index + 3] = alpha;
+    }
+    return { width, height, pixels };
+}
+function bitmapPixelIndex(raster, xValue, yValue, methodName, file, line) {
+    const x = integerNumber(xValue, `${methodName} x`, file, line);
+    const y = integerNumber(yValue, `${methodName} y`, file, line);
+    if (x < 0 || y < 0 || x >= raster.width || y >= raster.height) {
+        throw new IdylliumRuntimeError(file, line, `${methodName} coordinates (${x}, ${y}) are outside bitmap bounds ${raster.width}x${raster.height}`);
+    }
+    return (y * raster.width + x) * 4;
+}
+function setBitmapPixel(stored, index, color) {
+    const oldHasAlpha = stored.raster.pixels[index + 3] < 255;
+    const alpha = Math.round(color.alpha * 255);
+    const newHasAlpha = alpha < 255;
+    if (oldHasAlpha && !newHasAlpha)
+        stored.alphaPixelCount -= 1;
+    if (!oldHasAlpha && newHasAlpha)
+        stored.alphaPixelCount += 1;
+    stored.raster.pixels[index] = color.red;
+    stored.raster.pixels[index + 1] = color.green;
+    stored.raster.pixels[index + 2] = color.blue;
+    stored.raster.pixels[index + 3] = alpha;
+}
+function countAlphaPixels(raster) {
+    let count = 0;
+    for (let index = 3; index < raster.pixels.length; index += 4) {
+        if (raster.pixels[index] < 255)
+            count += 1;
+    }
+    return count;
 }
 function storedAnimation(obj, methodName, file, line) {
     const stored = obj.__imageAnimation;

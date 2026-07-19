@@ -667,6 +667,9 @@ export class JavaScriptGenerator {
     if (expression.operator === 'or') {
       return `(${left} || ${right})`;
     }
+    if (expression.operator === 'xor') {
+      return `(${left} !== ${right})`;
+    }
     return `$rt.core.binary(${JSON.stringify(expression.operator)}, ${left}, ${right}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
   }
 
@@ -737,6 +740,13 @@ export class JavaScriptGenerator {
       if (typesRuntimeName && (callee.name === 'shift_left' || callee.name === 'shift_right')) {
         const [bits] = this.methodCallArgs(callee.name, expression.args, typeName);
         return `$rt.types.${callee.name}(${this.expression(callee.object)}, ${JSON.stringify(typesRuntimeName)}, ${bits}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+      }
+      if (typesRuntimeName && (callee.name === 'bit_and' || callee.name === 'bit_or' || callee.name === 'bit_xor')) {
+        const [mask] = this.methodCallArgs(callee.name, expression.args, typeName);
+        return `$rt.types.${callee.name}(${this.expression(callee.object)}, ${JSON.stringify(typesRuntimeName)}, ${mask}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+      }
+      if (typesRuntimeName && callee.name === 'bit_not') {
+        return `$rt.types.bit_not(${this.expression(callee.object)}, ${JSON.stringify(typesRuntimeName)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
       }
 
       const args = this.methodCallArgs(callee.name, expression.args, typeName).join(', ');
@@ -1204,7 +1214,14 @@ export class JavaScriptGenerator {
           };
         }
         if (expression.callee.kind !== 'MemberExpression') return null;
-        if (expression.callee.name !== 'shift_left' && expression.callee.name !== 'shift_right') return null;
+        if (![
+          'shift_left',
+          'shift_right',
+          'bit_and',
+          'bit_or',
+          'bit_xor',
+          'bit_not',
+        ].includes(expression.callee.name)) return null;
         const objectType = this.expressionTypeName(expression.callee.object);
         return this.typesRuntimeName(objectType) ? objectType : null;
       }

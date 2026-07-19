@@ -141,6 +141,67 @@ export class IdylliumColor {
     );
   }
 
+  callMethod(name: string, args: readonly unknown[], file: string, line: number): IdylliumColor {
+    switch (name) {
+      case 'with_red':
+        return IdylliumColor.RGBA(
+          channel(args[0], 'colors.Color.with_red() value', file, line),
+          this.green,
+          this.blue,
+          this.alpha,
+          file,
+          line,
+        );
+      case 'with_green':
+        return IdylliumColor.RGBA(
+          this.red,
+          channel(args[0], 'colors.Color.with_green() value', file, line),
+          this.blue,
+          this.alpha,
+          file,
+          line,
+        );
+      case 'with_blue':
+        return IdylliumColor.RGBA(
+          this.red,
+          this.green,
+          channel(args[0], 'colors.Color.with_blue() value', file, line),
+          this.alpha,
+          file,
+          line,
+        );
+      case 'with_alpha':
+        return IdylliumColor.RGBA(
+          this.red,
+          this.green,
+          this.blue,
+          opacity(args[0], 'colors.Color.with_alpha() value', file, line),
+          file,
+          line,
+        );
+      case 'with_rgb':
+        return IdylliumColor.RGBA(
+          channel(args[0], 'colors.Color.with_rgb() red', file, line),
+          channel(args[1], 'colors.Color.with_rgb() green', file, line),
+          channel(args[2], 'colors.Color.with_rgb() blue', file, line),
+          this.alpha,
+          file,
+          line,
+        );
+      case 'with_rgba':
+        return IdylliumColor.RGBA(
+          channel(args[0], 'colors.Color.with_rgba() red', file, line),
+          channel(args[1], 'colors.Color.with_rgba() green', file, line),
+          channel(args[2], 'colors.Color.with_rgba() blue', file, line),
+          opacity(args[3], 'colors.Color.with_rgba() alpha', file, line),
+          file,
+          line,
+        );
+      default:
+        throw new IdylliumRuntimeError(file, line, `colors.Color has no method '${name}'`);
+    }
+  }
+
   toHex(): string {
     return `#${hex(this.red)}${hex(this.green)}${hex(this.blue)}`;
   }
@@ -2203,6 +2264,10 @@ export interface IdylliumRuntime {
     to_hex(value: unknown, typeName: string): string;
     shift_left(value: unknown, typeName: string, bits: unknown, file: string, line: number): number | bigint;
     shift_right(value: unknown, typeName: string, bits: unknown, file: string, line: number): number | bigint;
+    bit_and(value: unknown, typeName: string, mask: unknown, file: string, line: number): number | bigint;
+    bit_or(value: unknown, typeName: string, mask: unknown, file: string, line: number): number | bigint;
+    bit_xor(value: unknown, typeName: string, mask: unknown, file: string, line: number): number | bigint;
+    bit_not(value: unknown, typeName: string, file: string, line: number): number | bigint;
   };
   readonly errors: {
     catchValue(error: unknown): Record<string, unknown>;
@@ -2555,6 +2620,18 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     shift_right(value: unknown, typeName: string, bits: unknown, file: string, line: number): number | bigint {
       return typesShift(value, typeName, bits, 'right', file, line);
     },
+    bit_and(value: unknown, typeName: string, mask: unknown, file: string, line: number): number | bigint {
+      return typesBitwise(value, typeName, mask, 'and', file, line);
+    },
+    bit_or(value: unknown, typeName: string, mask: unknown, file: string, line: number): number | bigint {
+      return typesBitwise(value, typeName, mask, 'or', file, line);
+    },
+    bit_xor(value: unknown, typeName: string, mask: unknown, file: string, line: number): number | bigint {
+      return typesBitwise(value, typeName, mask, 'xor', file, line);
+    },
+    bit_not(value: unknown, typeName: string, file: string, line: number): number | bigint {
+      return typesBitwise(value, typeName, null, 'not', file, line);
+    },
   };
 
   return {
@@ -2678,6 +2755,28 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
             throw new IdylliumRuntimeError(file, line, `random.create_float() min must be less than max (got min ${low}, max ${high})`);
           }
           return randomUnit() * (high - low) + low;
+        }),
+        choose_from: contextFunction((collection: unknown, file: string, line: number) => {
+          if (typeof collection === 'string') {
+            const characters = Array.from(collection);
+            if (characters.length === 0) {
+              throw new IdylliumRuntimeError(file, line, 'random.choose_from() cannot choose from an empty string');
+            }
+            return characters[Math.floor(randomUnit() * characters.length)];
+          }
+
+          if (collection instanceof IdylliumArray) {
+            if (collection.length === 0) {
+              throw new IdylliumRuntimeError(file, line, 'random.choose_from() cannot choose from an empty array');
+            }
+            return collection.get(Math.floor(randomUnit() * collection.length), file, line);
+          }
+
+          throw new IdylliumRuntimeError(
+            file,
+            line,
+            `random.choose_from() expects a string or array, got '${runtimeTypeName(collection)}'`,
+          );
         }),
         set_seed: contextFunction((seed: number, file: string, line: number) => {
           const value = integerNumber(seed, 'random.set_seed() seed', file, line);
@@ -2812,11 +2911,11 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       },
       encoding: {
         list_encodings: contextFunction(() => IdylliumArray.from(['ascii', 'utf-8', 'windows-1251', 'koi8-r'], true, null, () => '')),
-        char_to_int: contextFunction((character: string, encoding: string, file: string, line: number) => (
-          encodingCharToInt(character, encoding, file, line)
+        char_to_codepoint: contextFunction((character: string, file: string, line: number) => (
+          encodingCharToCodepoint(character, file, line)
         )),
-        int_to_char: contextFunction((code: number, encoding: string, file: string, line: number) => (
-          encodingIntToChar(code, encoding, file, line)
+        codepoint_to_char: contextFunction((codepoint: number, file: string, line: number) => (
+          encodingCodepointToChar(codepoint, file, line)
         )),
         encode: contextFunction((text: string, encoding: string, file: string, line: number) => (
           IdylliumArray.from(encodingEncode(text, encoding, file, line), true, null, () => 0)
@@ -2922,6 +3021,10 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     callMethod(target: unknown, methodName: string, args: readonly unknown[], file: string, line: number): unknown {
       throwIfRuntimeStopped(file, line);
       if (target instanceof IdylliumArray) {
+        return target.callMethod(methodName, args, file, line);
+      }
+
+      if (target instanceof IdylliumColor) {
         return target.callMethod(methodName, args, file, line);
       }
 
@@ -3611,79 +3714,71 @@ interface SingleByteEncoding {
   readonly byteToChar: ReadonlyMap<number, string>;
 }
 
-const WINDOWS_1251_ENCODING = buildSingleByteEncoding([
-  [0xA8, '\u0401'],
-  [0xB8, '\u0451'],
-  ...sequentialEntries(0xC0, '\u0410\u0411\u0412\u0413\u0414\u0415\u0416\u0417\u0418\u0419\u041A\u041B\u041C\u041D\u041E\u041F\u0420\u0421\u0422\u0423\u0424\u0425\u0426\u0427\u0428\u0429\u042A\u042B\u042C\u042D\u042E\u042F'),
-  ...sequentialEntries(0xE0, '\u0430\u0431\u0432\u0433\u0434\u0435\u0436\u0437\u0438\u0439\u043A\u043B\u043C\u043D\u043E\u043F\u0440\u0441\u0442\u0443\u0444\u0445\u0446\u0447\u0448\u0449\u044A\u044B\u044C\u044D\u044E\u044F'),
-]);
+const WINDOWS_1251_ENCODING = buildSingleByteEncoding('windows-1251');
+const KOI8_R_ENCODING = buildSingleByteEncoding('koi8-r');
 
-const KOI8_R_ENCODING = buildSingleByteEncoding([
-  [0xA3, '\u0451'],
-  [0xB3, '\u0401'],
-  ...sequentialEntries(0xC0, '\u044E\u0430\u0431\u0446\u0434\u0435\u0444\u0433\u0445\u0438\u0439\u043A\u043B\u043C\u043D\u043E\u043F\u044F\u0440\u0441\u0442\u0443\u0436\u0432\u044C\u044B\u0437\u0448\u044D\u0449\u0447\u044A'),
-  ...sequentialEntries(0xE0, '\u042E\u0410\u0411\u0426\u0414\u0415\u0424\u0413\u0425\u0418\u0419\u041A\u041B\u041C\u041D\u041E\u041F\u042F\u0420\u0421\u0422\u0423\u0416\u0412\u042C\u042B\u0417\u0428\u042D\u0429\u0427\u042A'),
-]);
-
-function encodingCharToInt(character: unknown, encoding: unknown, file: string, line: number): number {
-  const char = singleCharacter(character, 'encoding.char_to_int() character', file, line);
-  const name = normalizeEncoding(encoding, file, line);
-
-  if (name === 'ascii') return asciiCode(char, file, line);
-  if (name === 'utf-8') return char.codePointAt(0) ?? 0;
-  return singleByteCharToInt(char, name === 'windows-1251' ? WINDOWS_1251_ENCODING : KOI8_R_ENCODING, name, file, line);
+function encodingCharToCodepoint(character: unknown, file: string, line: number): number {
+  const char = singleCharacter(character, 'encoding.char_to_codepoint() character', file, line);
+  const codepoint = char.codePointAt(0) ?? 0;
+  if (!isUnicodeScalarValue(codepoint)) {
+    throw new IdylliumRuntimeError(file, line, `encoding.char_to_codepoint() character is not a Unicode scalar value`);
+  }
+  return codepoint;
 }
 
-function encodingIntToChar(code: unknown, encoding: unknown, file: string, line: number): string {
-  const value = integerNumber(code, 'encoding.int_to_char() code', file, line);
-  const name = normalizeEncoding(encoding, file, line);
-
-  if (name === 'ascii') {
-    byteRange(value, 'encoding.int_to_char() code', 0, 127, file, line);
-    return String.fromCodePoint(value);
+function encodingCodepointToChar(codepoint: unknown, file: string, line: number): string {
+  const value = integerNumber(codepoint, 'encoding.codepoint_to_char() codepoint', file, line);
+  if (!isUnicodeScalarValue(value)) {
+    throw new IdylliumRuntimeError(
+      file,
+      line,
+      `encoding.codepoint_to_char() codepoint must be a Unicode scalar value between 0 and 1114111, got ${value}`,
+    );
   }
-  if (name === 'utf-8') {
-    if (value < 0 || value > 0x10FFFF) {
-      throw new IdylliumRuntimeError(file, line, `encoding.int_to_char() code must be between 0 and 1114111, got ${value}`);
-    }
-    return String.fromCodePoint(value);
-  }
-
-  return singleByteIntToChar(value, name === 'windows-1251' ? WINDOWS_1251_ENCODING : KOI8_R_ENCODING, name, file, line);
+  return String.fromCodePoint(value);
 }
 
 function encodingEncode(text: unknown, encoding: unknown, file: string, line: number): number[] {
   const value = stringArgument(text, 'encoding.encode() text', file, line);
   const name = normalizeEncoding(encoding, file, line);
 
-  if (name === 'ascii') return Array.from(value).map((char) => asciiCode(char, file, line));
-  if (name === 'utf-8') return [...nodeBuffer.from(value, 'utf8')];
+  const characters = Array.from(value);
+  if (name === 'ascii') return characters.map((char, index) => asciiCode(char, file, line, index));
+  if (name === 'utf-8') {
+    for (let index = 0; index < characters.length; index++) {
+      const codepoint = characters[index].codePointAt(0) ?? 0;
+      if (!isUnicodeScalarValue(codepoint)) {
+        throw new IdylliumRuntimeError(file, line, `encoding.encode() invalid Unicode character at position ${index}`);
+      }
+    }
+    return [...nodeBuffer.from(value, 'utf8')];
+  }
 
   const table = name === 'windows-1251' ? WINDOWS_1251_ENCODING : KOI8_R_ENCODING;
-  return Array.from(value).map((char) => singleByteCharToInt(char, table, name, file, line));
+  return characters.map((char, index) => singleByteCharToInt(char, table, name, file, line, index));
 }
 
 function encodingDecode(codes: unknown, encoding: unknown, file: string, line: number): string {
   const array = expectArray(codes, file, line);
   const name = normalizeEncoding(encoding, file, line);
-  const bytes = array.values().map((code) => integerNumber(code, 'encoding.decode() code', file, line));
+  const bytes = array.values().map((code, index) => {
+    const value = integerNumber(code, `encoding.decode() byte at index ${index}`, file, line);
+    return byteRange(value, `encoding.decode() byte at index ${index}`, 0, 255, file, line);
+  });
 
   if (name === 'ascii') {
-    return bytes.map((code) => {
-      byteRange(code, 'encoding.decode() code', 0, 127, file, line);
+    return bytes.map((code, index) => {
+      byteRange(code, `encoding.decode() ASCII byte at index ${index}`, 0, 127, file, line);
       return String.fromCodePoint(code);
     }).join('');
   }
 
   if (name === 'utf-8') {
-    for (const code of bytes) {
-      byteRange(code, 'encoding.decode() code', 0, 255, file, line);
-    }
-    return nodeBuffer.from(bytes).toString('utf8');
+    return decodeUtf8Strict(bytes, file, line);
   }
 
   const table = name === 'windows-1251' ? WINDOWS_1251_ENCODING : KOI8_R_ENCODING;
-  return bytes.map((code) => singleByteIntToChar(code, table, name, file, line)).join('');
+  return bytes.map((code, index) => singleByteIntToChar(code, table, name, file, line, index)).join('');
 }
 
 function normalizeEncoding(value: unknown, file: string, line: number): RuntimeEncoding {
@@ -3704,26 +3799,39 @@ function singleCharacter(value: unknown, argumentName: string, file: string, lin
   return chars[0];
 }
 
-function asciiCode(char: string, file: string, line: number): number {
+function asciiCode(char: string, file: string, line: number, position?: number): number {
   const code = char.codePointAt(0) ?? 0;
   if (code <= 127) return code;
-  throw new IdylliumRuntimeError(file, line, `character '${char}' is not valid ASCII`);
+  const suffix = position === undefined ? '' : ` at position ${position}`;
+  throw new IdylliumRuntimeError(file, line, `character '${char}' is not valid ASCII${suffix}`);
 }
 
-function singleByteCharToInt(char: string, table: SingleByteEncoding, encoding: RuntimeEncoding, file: string, line: number): number {
-  const code = char.codePointAt(0) ?? 0;
-  if (code <= 127) return code;
+function singleByteCharToInt(
+  char: string,
+  table: SingleByteEncoding,
+  encoding: RuntimeEncoding,
+  file: string,
+  line: number,
+  position?: number,
+): number {
   const byte = table.charToByte.get(char);
   if (byte !== undefined) return byte;
-  throw new IdylliumRuntimeError(file, line, `character '${char}' is not valid ${encoding}`);
+  const suffix = position === undefined ? '' : ` at position ${position}`;
+  throw new IdylliumRuntimeError(file, line, `character '${char}' is not valid ${encoding}${suffix}`);
 }
 
-function singleByteIntToChar(code: number, table: SingleByteEncoding, encoding: RuntimeEncoding, file: string, line: number): string {
-  byteRange(code, 'encoding code', 0, 255, file, line);
-  if (code <= 127) return String.fromCodePoint(code);
+function singleByteIntToChar(
+  code: number,
+  table: SingleByteEncoding,
+  encoding: RuntimeEncoding,
+  file: string,
+  line: number,
+  position?: number,
+): string {
   const char = table.byteToChar.get(code);
   if (char !== undefined) return char;
-  throw new IdylliumRuntimeError(file, line, `byte ${code} is not valid ${encoding}`);
+  const suffix = position === undefined ? '' : ` at index ${position}`;
+  throw new IdylliumRuntimeError(file, line, `byte ${code} is not valid ${encoding}${suffix}`);
 }
 
 function byteRange(value: number, argumentName: string, min: number, max: number, file: string, line: number): number {
@@ -3733,18 +3841,80 @@ function byteRange(value: number, argumentName: string, min: number, max: number
   return value;
 }
 
-function buildSingleByteEncoding(entries: readonly (readonly [number, string])[]): SingleByteEncoding {
+function buildSingleByteEncoding(label: 'windows-1251' | 'koi8-r'): SingleByteEncoding {
   const charToByte = new Map<string, number>();
   const byteToChar = new Map<number, string>();
-  for (const [byte, char] of entries) {
+  const decoder = new TextDecoder(label, { fatal: true });
+  for (let byte = 0; byte <= 255; byte++) {
+    const char = decoder.decode(Uint8Array.of(byte));
     charToByte.set(char, byte);
     byteToChar.set(byte, char);
   }
   return { charToByte, byteToChar };
 }
 
-function sequentialEntries(start: number, chars: string): Array<readonly [number, string]> {
-  return Array.from(chars).map((char, index) => [start + index, char] as const);
+function isUnicodeScalarValue(value: number): boolean {
+  return value >= 0 && value <= 0x10FFFF && !(value >= 0xD800 && value <= 0xDFFF);
+}
+
+function decodeUtf8Strict(bytes: readonly number[], file: string, line: number): string {
+  let result = '';
+  for (let index = 0; index < bytes.length;) {
+    const first = bytes[index];
+    if (first <= 0x7F) {
+      result += String.fromCodePoint(first);
+      index++;
+      continue;
+    }
+
+    let length = 0;
+    let codepoint = 0;
+    let secondMin = 0x80;
+    let secondMax = 0xBF;
+    if (first >= 0xC2 && first <= 0xDF) {
+      length = 2;
+      codepoint = first & 0x1F;
+    } else if (first >= 0xE0 && first <= 0xEF) {
+      length = 3;
+      codepoint = first & 0x0F;
+      if (first === 0xE0) secondMin = 0xA0;
+      if (first === 0xED) secondMax = 0x9F;
+    } else if (first >= 0xF0 && first <= 0xF4) {
+      length = 4;
+      codepoint = first & 0x07;
+      if (first === 0xF0) secondMin = 0x90;
+      if (first === 0xF4) secondMax = 0x8F;
+    } else {
+      invalidUtf8(bytes, index, 'invalid leading byte', file, line);
+    }
+
+    if (index + length > bytes.length) {
+      invalidUtf8(bytes, index, 'incomplete sequence', file, line);
+    }
+    for (let offset = 1; offset < length; offset++) {
+      const byte = bytes[index + offset];
+      const min = offset === 1 ? secondMin : 0x80;
+      const max = offset === 1 ? secondMax : 0xBF;
+      if (byte < min || byte > max) {
+        invalidUtf8(bytes, index + offset, 'invalid continuation byte', file, line);
+      }
+      codepoint = (codepoint << 6) | (byte & 0x3F);
+    }
+
+    result += String.fromCodePoint(codepoint);
+    index += length;
+  }
+  return result;
+}
+
+function invalidUtf8(bytes: readonly number[], index: number, reason: string, file: string, line: number): never {
+  const byte = bytes[index];
+  const suffix = byte === undefined ? '' : ` (${formatByte(byte)})`;
+  throw new IdylliumRuntimeError(file, line, `encoding.decode() invalid UTF-8 at byte ${index}${suffix}: ${reason}`);
+}
+
+function formatByte(value: number): string {
+  return `0x${value.toString(16).toUpperCase().padStart(2, '0')}`;
 }
 
 type RuntimeTypesName = 'int8' | 'uint8' | 'int16' | 'uint16' | 'int32' | 'uint32' | 'int64' | 'uint64' | 'float32' | 'float64';
@@ -3835,6 +4005,42 @@ function typesShift(
 
   if (spec.kind === 'float') return floatFromBytes(binaryToBytes(shifted), name);
   return castTypesValue(BigInt(`0b${shifted}`), name);
+}
+
+function typesBitwise(
+  value: unknown,
+  typeName: string,
+  mask: unknown,
+  operator: 'and' | 'or' | 'xor' | 'not',
+  file: string,
+  line: number,
+): number | bigint {
+  const name = normalizeRuntimeTypesName(typeName, file, line);
+  const spec = RUNTIME_TYPES[name];
+  const valueBits = BigInt(`0b${typesToBin(value, name)}`);
+  const cellMask = (1n << BigInt(spec.bits)) - 1n;
+  let resultBits: bigint;
+
+  if (operator === 'not') {
+    resultBits = (~valueBits) & cellMask;
+  } else {
+    const maskName = unsignedTypesName(spec.bits);
+    const normalizedMask = BigInt(`0b${typesToBin(mask, maskName)}`);
+    if (operator === 'and') resultBits = valueBits & normalizedMask;
+    else if (operator === 'or') resultBits = valueBits | normalizedMask;
+    else resultBits = valueBits ^ normalizedMask;
+  }
+
+  const result = resultBits.toString(2).padStart(spec.bits, '0');
+  if (spec.kind === 'float') return floatFromBytes(binaryToBytes(result), name);
+  return castTypesValue(resultBits, name);
+}
+
+function unsignedTypesName(bits: number): RuntimeTypesName {
+  if (bits === 8) return 'uint8';
+  if (bits === 16) return 'uint16';
+  if (bits === 32) return 'uint32';
+  return 'uint64';
 }
 
 function typesFromBin(bits: unknown, typeName: unknown, file: string, line: number): number | bigint {
@@ -4690,6 +4896,11 @@ interface StoredStaticImage {
   readonly sourceBytes?: Uint8Array;
 }
 
+interface StoredBitmap {
+  readonly raster: RuntimeRasterImage;
+  alphaPixelCount: number;
+}
+
 interface StoredAnimation {
   readonly animation: RuntimeDecodedAnimation;
   readonly sourceBytes?: Uint8Array;
@@ -4704,6 +4915,7 @@ function initializeImageObject(obj: RuntimeObject, typeName: string, state: Runt
   obj.format = '';
   obj.has_alpha = false;
   obj.is_loaded = false;
+  if (typeName === 'Bitmap') obj.is_created = false;
 
   if (typeName === 'Static') {
     obj.load_from_file = contextFunction(async (targetPath: unknown, file: string, line: number) => {
@@ -4841,6 +5053,152 @@ function initializeImageObject(obj: RuntimeObject, typeName: string, state: Runt
         writeRuntimeImageBytes(requestedPath, bytes, outputFormat, state, file, line, 'Static.export_to_file()');
       } catch (error) {
         throw imageRuntimeError(file, line, `Static.export_to_file() cannot write '${requestedPath}'`, error);
+      }
+    });
+  }
+
+  if (typeName === 'Bitmap') {
+    obj.create = contextFunction((...rawArgs: unknown[]) => {
+      const { values, file, line } = splitContextArgs(rawArgs);
+      const width = integerNumber(values[0], 'Bitmap.create() width', file, line);
+      const height = integerNumber(values[1], 'Bitmap.create() height', file, line);
+      ensureImageSize(width, height, 'Bitmap.create()', file, line);
+      const fillColor = values.length >= 3
+        ? bitmapColor(values[2], 'Bitmap.create() fill', file, line)
+        : colorTransparent();
+      const raster = filledRaster(width, height, fillColor);
+      setBitmapRaster(obj, raster, '', 'rgba');
+    });
+
+    obj.load_from_file = contextFunction(async (targetPath: unknown, file: string, line: number) => {
+      const requestedPath = stringArgument(targetPath, 'Bitmap.load_from_file() path', file, line);
+      const resolvedPath = resolveImageInputPath(requestedPath, file, line, state, 'Bitmap.load_from_file()');
+      const bytes = readRuntimeBytes(state.fileSystem, resolvedPath, file, line, 'Bitmap.load_from_file()');
+      const format = detectImageFormat(bytes);
+      if (format === 'unknown') {
+        throw new IdylliumRuntimeError(file, line, `Bitmap.load_from_file() cannot decode '${requestedPath}': unsupported image format`);
+      }
+      const service = imageService(state, file, line);
+      try {
+        const decoded = await service.decodeStatic(bytes, format);
+        setBitmapRaster(obj, decoded, requestedPath, decoded.format, resolvedPath);
+      } catch (error) {
+        throw imageRuntimeError(file, line, `Bitmap.load_from_file() cannot decode '${requestedPath}'`, error);
+      }
+    });
+
+    obj.create_from_image = contextFunction((sourceValue: unknown, file: string, line: number) => {
+      if (!isRuntimeObject(sourceValue) || sourceValue.__idylliumType !== 'image.Static') {
+        throw new IdylliumRuntimeError(
+          file,
+          line,
+          `Bitmap.create_from_image() source must be image.Static, got '${runtimeTypeName(sourceValue)}'`,
+        );
+      }
+      const source = storedStaticImage(sourceValue, 'Bitmap.create_from_image()', file, line);
+      setBitmapRaster(
+        obj,
+        source.raster,
+        String(sourceValue.src ?? ''),
+        String(sourceValue.format ?? 'png'),
+        String(sourceValue.resolved_path ?? ''),
+      );
+    });
+
+    obj.get_pixel = contextFunction((xValue: unknown, yValue: unknown, file: string, line: number) => {
+      const stored = storedBitmap(obj, 'Bitmap.get_pixel()', file, line);
+      const index = bitmapPixelIndex(stored.raster, xValue, yValue, 'Bitmap.get_pixel()', file, line);
+      return IdylliumColor.RGBA(
+        stored.raster.pixels[index],
+        stored.raster.pixels[index + 1],
+        stored.raster.pixels[index + 2],
+        stored.raster.pixels[index + 3] / 255,
+        file,
+        line,
+      );
+    });
+
+    obj.set_pixel = contextFunction((
+      xValue: unknown,
+      yValue: unknown,
+      colorValue: unknown,
+      file: string,
+      line: number,
+    ) => {
+      const stored = storedBitmap(obj, 'Bitmap.set_pixel()', file, line);
+      const index = bitmapPixelIndex(stored.raster, xValue, yValue, 'Bitmap.set_pixel()', file, line);
+      setBitmapPixel(stored, index, bitmapColor(colorValue, 'Bitmap.set_pixel() color', file, line));
+      obj.has_alpha = stored.alphaPixelCount > 0;
+    });
+
+    obj.fill = contextFunction((colorValue: unknown, file: string, line: number) => {
+      const stored = storedBitmap(obj, 'Bitmap.fill()', file, line);
+      const fillColor = bitmapColor(colorValue, 'Bitmap.fill() color', file, line);
+      const replacement = filledRaster(stored.raster.width, stored.raster.height, fillColor);
+      stored.raster.pixels.set(replacement.pixels);
+      stored.alphaPixelCount = fillColor.alpha < 1 ? stored.raster.width * stored.raster.height : 0;
+      obj.has_alpha = stored.alphaPixelCount > 0;
+    });
+
+    obj.fill_rect = contextFunction((
+      xValue: unknown,
+      yValue: unknown,
+      widthValue: unknown,
+      heightValue: unknown,
+      colorValue: unknown,
+      file: string,
+      line: number,
+    ) => {
+      const stored = storedBitmap(obj, 'Bitmap.fill_rect()', file, line);
+      const x = integerNumber(xValue, 'Bitmap.fill_rect() x', file, line);
+      const y = integerNumber(yValue, 'Bitmap.fill_rect() y', file, line);
+      const width = integerNumber(widthValue, 'Bitmap.fill_rect() width', file, line);
+      const height = integerNumber(heightValue, 'Bitmap.fill_rect() height', file, line);
+      if (x < 0 || y < 0 || width <= 0 || height <= 0) {
+        throw new IdylliumRuntimeError(
+          file,
+          line,
+          `Bitmap.fill_rect() expects non-negative coordinates and positive size, got (${x}, ${y}, ${width}, ${height})`,
+        );
+      }
+      if (x + width > stored.raster.width || y + height > stored.raster.height) {
+        throw new IdylliumRuntimeError(
+          file,
+          line,
+          `Bitmap.fill_rect() rectangle (${x}, ${y}, ${width}, ${height}) is outside bitmap bounds ${stored.raster.width}x${stored.raster.height}`,
+        );
+      }
+      const fillColor = bitmapColor(colorValue, 'Bitmap.fill_rect() color', file, line);
+      for (let row = y; row < y + height; row++) {
+        for (let column = x; column < x + width; column++) {
+          setBitmapPixel(stored, (row * stored.raster.width + column) * 4, fillColor);
+        }
+      }
+      obj.has_alpha = stored.alphaPixelCount > 0;
+    });
+
+    obj.to_static = contextFunction(async (file: string, line: number) => {
+      const stored = storedBitmap(obj, 'Bitmap.to_static()', file, line);
+      return createGeneratedStaticImage(stored.raster, String(obj.src ?? ''), state, file, line);
+    });
+
+    obj.export_to_file = contextFunction(async (targetPath: unknown, file: string, line: number) => {
+      const stored = storedBitmap(obj, 'Bitmap.export_to_file()', file, line);
+      const requestedPath = stringArgument(targetPath, 'Bitmap.export_to_file() path', file, line);
+      const outputFormat = imageFormatFromPath(requestedPath);
+      if (!['png', 'jpeg', 'webp', 'gif'].includes(outputFormat)) {
+        throw new IdylliumRuntimeError(
+          file,
+          line,
+          `Bitmap.export_to_file() cannot determine a supported format from '${requestedPath}'`,
+        );
+      }
+      const service = imageService(state, file, line);
+      try {
+        const bytes = await service.encodeStatic(stored.raster, outputFormat);
+        writeRuntimeImageBytes(requestedPath, bytes, outputFormat, state, file, line, 'Bitmap.export_to_file()');
+      } catch (error) {
+        throw imageRuntimeError(file, line, `Bitmap.export_to_file() cannot write '${requestedPath}'`, error);
       }
     });
   }
@@ -5065,6 +5423,92 @@ function storedStaticImage(obj: RuntimeObject, methodName: string, file: string,
   const stored = obj.__imageStatic as StoredStaticImage | undefined;
   if (obj.is_loaded === true && stored?.raster) return stored;
   throw new IdylliumRuntimeError(file, line, `${methodName} cannot be used before load_from_file()`);
+}
+
+function storedBitmap(obj: RuntimeObject, methodName: string, file: string, line: number): StoredBitmap {
+  const stored = obj.__imageBitmap as StoredBitmap | undefined;
+  if (obj.is_created === true && stored?.raster) return stored;
+  throw new IdylliumRuntimeError(file, line, `${methodName} cannot be used before create(), load_from_file(), or create_from_image()`);
+}
+
+function setBitmapRaster(
+  obj: RuntimeObject,
+  source: RuntimeRasterImage,
+  src: string,
+  format: string,
+  resolvedPath = '',
+): void {
+  const raster = cloneRaster(source);
+  obj.__imageBitmap = {
+    raster,
+    alphaPixelCount: countAlphaPixels(raster),
+  } satisfies StoredBitmap;
+  obj.src = src;
+  obj.resolved_path = resolvedPath;
+  obj.resource_uri = '';
+  obj.width = raster.width;
+  obj.height = raster.height;
+  obj.format = format;
+  obj.has_alpha = rasterHasAlpha(raster);
+  obj.is_loaded = true;
+  obj.is_created = true;
+}
+
+function bitmapColor(value: unknown, argumentName: string, file: string, line: number): IdylliumColor {
+  if (value instanceof IdylliumColor) return value;
+  throw new IdylliumRuntimeError(file, line, `${argumentName} must be colors.Color`);
+}
+
+function filledRaster(width: number, height: number, color: IdylliumColor): RuntimeRasterImage {
+  const pixels = new Uint8Array(width * height * 4);
+  const alpha = Math.round(color.alpha * 255);
+  for (let index = 0; index < pixels.length; index += 4) {
+    pixels[index] = color.red;
+    pixels[index + 1] = color.green;
+    pixels[index + 2] = color.blue;
+    pixels[index + 3] = alpha;
+  }
+  return { width, height, pixels };
+}
+
+function bitmapPixelIndex(
+  raster: RuntimeRasterImage,
+  xValue: unknown,
+  yValue: unknown,
+  methodName: string,
+  file: string,
+  line: number,
+): number {
+  const x = integerNumber(xValue, `${methodName} x`, file, line);
+  const y = integerNumber(yValue, `${methodName} y`, file, line);
+  if (x < 0 || y < 0 || x >= raster.width || y >= raster.height) {
+    throw new IdylliumRuntimeError(
+      file,
+      line,
+      `${methodName} coordinates (${x}, ${y}) are outside bitmap bounds ${raster.width}x${raster.height}`,
+    );
+  }
+  return (y * raster.width + x) * 4;
+}
+
+function setBitmapPixel(stored: StoredBitmap, index: number, color: IdylliumColor): void {
+  const oldHasAlpha = stored.raster.pixels[index + 3] < 255;
+  const alpha = Math.round(color.alpha * 255);
+  const newHasAlpha = alpha < 255;
+  if (oldHasAlpha && !newHasAlpha) stored.alphaPixelCount -= 1;
+  if (!oldHasAlpha && newHasAlpha) stored.alphaPixelCount += 1;
+  stored.raster.pixels[index] = color.red;
+  stored.raster.pixels[index + 1] = color.green;
+  stored.raster.pixels[index + 2] = color.blue;
+  stored.raster.pixels[index + 3] = alpha;
+}
+
+function countAlphaPixels(raster: RuntimeRasterImage): number {
+  let count = 0;
+  for (let index = 3; index < raster.pixels.length; index += 4) {
+    if (raster.pixels[index] < 255) count += 1;
+  }
+  return count;
 }
 
 function storedAnimation(obj: RuntimeObject, methodName: string, file: string, line: number): StoredAnimation {
@@ -5898,7 +6342,7 @@ function runtimeTypeName(value: unknown): string {
   return String(value);
 }
 
-function channel(value: number, argumentName: string, file: string, line: number): number {
+function channel(value: unknown, argumentName: string, file: string, line: number): number {
   const number = integerNumber(value, argumentName, file, line);
   if (number < 0 || number > 255) {
     throw new IdylliumRuntimeError(file, line, `${argumentName} must be between 0 and 255, got ${number}`);
@@ -5906,7 +6350,7 @@ function channel(value: number, argumentName: string, file: string, line: number
   return number;
 }
 
-function opacity(value: number, argumentName: string, file: string, line: number): number {
+function opacity(value: unknown, argumentName: string, file: string, line: number): number {
   return rangeNumber(value, argumentName, 0, 1, file, line);
 }
 

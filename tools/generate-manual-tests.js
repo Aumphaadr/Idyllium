@@ -569,8 +569,8 @@ addStandalone('04_types_colors_encoding', 9, 'encoding_roundtrip', 'UTF-8 encodi
     string restored = encoding.decode(bytes, "utf-8");
     console.writeln(bytes);
     console.writeln(restored);
-    console.writeln(encoding.char_to_int('A', "utf-8"));
-    console.writeln(encoding.int_to_char(65, "utf-8"));
+    console.writeln(encoding.char_to_codepoint('A'));
+    console.writeln(encoding.codepoint_to_char(65));
 `, ['console', 'encoding']), ['Byte array appears; restored text is кот; then 65 and A.']);
 
 addStandalone('04_types_colors_encoding', 10, 'invalid_color', 'Invalid RGB range', 'expected-error', consoleProgram(`
