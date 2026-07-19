@@ -233,7 +233,7 @@ main() {
     <!-- Section 9 -->
     <div class="docs-section">
       <h2>Свойства, которых нет у виджета</h2>
-      <p>У каждого виджета свой набор свойств. Не все виджеты имеют <code>placeholder</code> или <code>font_size</code>.</p>
+      <p>У каждого виджета свой набор свойств. Например, <code>placeholder</code> нужен полю ввода, но не кнопке.</p>
 
       <idyl-code-block><script type="text/plain">
 use gui;
@@ -242,16 +242,18 @@ main() {
     gui.Window win;
     gui.Button btn;
     btn.placeholder = "Кнопка";  // ОШИБКА: у Button нет placeholder
-    btn.font_size = 20;          // ОШИБКА: у Button нет font_size
 }
 </script></idyl-code-block>
 
       <div class="error-message">
-        main.idyl:6: error: 'gui.Button' has no property 'placeholder'<br>
-        main.idyl:7: error: 'gui.Button' has no property 'font_size'
+        main.idyl:6: error: 'gui.Button' has no property 'placeholder'
       </div>
 
-      <p>Исправление: сверяйтесь со спецификацией виджета. У кнопки есть <code>text</code>, <code>enabled</code>, <code>on_click</code>, но нет <code>placeholder</code> или <code>font_size</code>.</p>
+      <p>
+        Исправление: сверяйтесь со спецификацией виджета. У кнопки есть
+        <code>text</code>, <code>font_size</code> и <code>on_click</code>, а
+        <code>placeholder</code> есть у <code>LineEdit</code> и <code>TextEdit</code>.
+      </p>
     </div>
 
     <!-- Section 10 -->

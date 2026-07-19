@@ -4490,6 +4490,9 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
     defineTrackedRuntimeProperty(obj, 'text_color', colorBlack());
     defineTrackedRuntimeProperty(obj, 'background_color', colorTransparent());
     defineTrackedRuntimeProperty(obj, 'font', null);
+    if (guiObjectUsesFontSize(typeName)) {
+      defineTrackedRuntimeProperty(obj, 'font_size', 13);
+    }
   }
 
   if (typeName === 'Window' || typeName === 'Frame') {
@@ -4550,7 +4553,6 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
 
   if (typeName === 'Label') {
     obj.text = '';
-    obj.font_size = 12;
     setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
     setTrackedRuntimePropertyDefault(obj, 'background_color', colorTransparent());
     obj.border_color = colorTransparent();
@@ -4582,7 +4584,6 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
   if (typeName === 'LineEdit') {
     obj.text = '';
     obj.placeholder = '';
-    obj.font_size = 12;
     obj.echo_mode = 'normal';
     setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
     setTrackedRuntimePropertyDefault(obj, 'background_color', colorWhite());
@@ -6006,6 +6007,21 @@ function isGuiWidget(typeName: string): boolean {
     || typeName === 'SpinBox'
     || typeName === 'FloatSpinBox'
     || typeName === 'Slider'
+    || typeName === 'CheckBox'
+    || typeName === 'RadioButton'
+    || typeName === 'ComboBox';
+}
+
+function guiObjectUsesFontSize(typeName: string): boolean {
+  return typeName === 'Window'
+    || typeName === 'Label'
+    || typeName === 'Button'
+    || typeName === 'Frame'
+    || typeName === 'LineEdit'
+    || typeName === 'TextEdit'
+    || typeName === 'ProgressBar'
+    || typeName === 'SpinBox'
+    || typeName === 'FloatSpinBox'
     || typeName === 'CheckBox'
     || typeName === 'RadioButton'
     || typeName === 'ComboBox';

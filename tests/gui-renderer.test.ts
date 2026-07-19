@@ -437,7 +437,8 @@ test('gui renderer inherits a loaded font from Window to child widgets', () => {
         width: 320,
         height: 180,
         title: 'Fonts',
-        __explicit_properties: ['font'],
+        font_size: 18,
+        __explicit_properties: ['font', 'font_size'],
         font: {
           type: 'fonts.Font',
           properties: {
@@ -456,7 +457,37 @@ test('gui renderer inherits a loaded font from Window to child widgets', () => {
           width: 220,
           height: 32,
           visible: true,
+          font_size: 13,
           text: 'Inherited font',
+        },
+        children: [],
+      }, {
+        id: 3,
+        type: 'gui.Button',
+        properties: {
+          x: 10,
+          y: 70,
+          width: 220,
+          height: 40,
+          visible: true,
+          font_size: 26,
+          text: 'Explicit size',
+          __explicit_properties: ['font_size'],
+        },
+        children: [],
+      }, {
+        id: 4,
+        type: 'gui.LineEdit',
+        properties: {
+          x: 10,
+          y: 125,
+          width: 220,
+          height: 36,
+          visible: true,
+          font_size: 13,
+          text: 'Inherited input size',
+          placeholder: '',
+          echo_mode: 'normal',
         },
         children: [],
       }],
@@ -466,9 +497,17 @@ test('gui renderer inherits a loaded font from Window to child widgets', () => {
   });
 
   const windowElement = findElement(harness.stage, (element) => element.tagName === 'section');
-  const label = findElement(harness.stage, (element) => String(element.className).includes('label'));
+  const label = findElement(harness.stage, (element) => element.dataset.widgetId === '2');
+  const button = findElement(harness.stage, (element) => element.dataset.widgetId === '3');
+  const lineEdit = findElement(harness.stage, (element) => element.dataset.widgetId === '4');
   assert(windowElement?.style.fontFamily === 'IdylliumFont1, sans-serif', `unexpected Window font: ${windowElement?.style.fontFamily}`);
+  assert(windowElement?.style.fontSize === '18px', `unexpected Window font size: ${windowElement?.style.fontSize}`);
   assert(label?.style.fontFamily === 'IdylliumFont1, sans-serif', `unexpected inherited Label font: ${label?.style.fontFamily}`);
+  assert(label?.style.fontSize === '18px', `unexpected inherited Label font size: ${label?.style.fontSize}`);
+  assert(button?.style.fontFamily === 'IdylliumFont1, sans-serif', `unexpected inherited Button font: ${button?.style.fontFamily}`);
+  assert(button?.style.fontSize === '26px', `unexpected explicit Button font size: ${button?.style.fontSize}`);
+  assert(lineEdit?.style.fontFamily === 'IdylliumFont1, sans-serif', `unexpected inherited LineEdit font: ${lineEdit?.style.fontFamily}`);
+  assert(lineEdit?.style.fontSize === '18px', `unexpected inherited LineEdit font size: ${lineEdit?.style.fontSize}`);
 });
 
 test('gui renderer uses fonts.Font for drawable.Text on Canvas', () => {

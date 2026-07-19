@@ -19,7 +19,7 @@ function main(): void {
     assert(result.success, `expected ${file} to compile, got:\n${result.diagnosticsText}`);
   }
 
-  assert(examples.length === 3, `expected 3 font draft examples, got ${examples.length}`);
+  assert(examples.length === 4, `expected 4 font draft examples, got ${examples.length}`);
   console.log(`font draft spec: ${examples.length} examples compile`);
 }
 

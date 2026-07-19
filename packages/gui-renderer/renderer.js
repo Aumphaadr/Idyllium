@@ -379,7 +379,6 @@
     el.type = mode === 'password' ? 'password' : 'text';
     el.value = stringValue(widget.properties.text, '');
     el.placeholder = stringValue(widget.properties.placeholder, '');
-    el.style.fontSize = positiveNumber(widget.properties.font_size, 13) + 'px';
     if (mode === 'no_echo') el.classList.add('no-echo');
     installControlFocus(el, widget.id);
     el.addEventListener('input', () => postGuiEvent(widget.id, 'change', { text: el.value }));
@@ -1261,10 +1260,25 @@
         delete next.font;
       }
     }
+
+    if (isExplicitProperty(props, 'font_size')) {
+      const fontSize = positiveNumber(props.font_size, 0);
+      if (fontSize > 0) {
+        next.font_size = fontSize;
+      } else {
+        delete next.font_size;
+      }
+    }
     return next;
   }
 
   function applyWidgetFont(el, props, inheritedColors) {
+    const explicitSize = isExplicitProperty(props, 'font_size');
+    const ownSize = positiveNumber(props.font_size, 0);
+    const inheritedSize = positiveNumber(inheritedColors.font_size, 0);
+    const fontSize = explicitSize ? ownSize : inheritedSize || ownSize;
+    if (fontSize > 0) el.style.fontSize = fontSize + 'px';
+
     const explicit = isExplicitProperty(props, 'font');
     const resource = explicit ? props.font : inheritedColors.font;
     if (!resource && !explicit) return;

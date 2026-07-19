@@ -1511,16 +1511,16 @@ border_color
 foreground_color   // ProgressBar fill color role
 ```
 
-`text_color`, `background_color`, and `font` are inherited by child widgets.
-An explicit child value overrides its parent. `font_size` remains a property of
-the text consumer, not of the font resource.
+`text_color`, `background_color`, `font`, and `font_size` are inherited by child
+widgets. An explicit child value overrides its parent. `font_size` belongs to a
+text-bearing widget, not to the font resource. Its default value is `13`.
 
 ### GUI Types
 
 `gui.Window`:
 
 ```idyllium
-x, y, width, height, title, text_color, background_color, font
+x, y, width, height, title, text_color, background_color, font, font_size
 add_child(child)
 show()
 ```
@@ -1538,7 +1538,7 @@ on_click
 
 ```idyllium
 x, y, width, height, visible
-text
+text, font_size
 text_color, background_color, border_color
 on_click
 ```
@@ -1547,7 +1547,7 @@ on_click
 
 ```idyllium
 x, y, width, height, visible
-title
+title, font_size
 background_color, border_color, border_width
 add_child(child)
 ```
@@ -1577,7 +1577,7 @@ on_change
 
 ```idyllium
 x, y, width, height, visible
-text, placeholder
+text, placeholder, font_size
 text_color, background_color, border_color
 on_change
 ```
@@ -1586,7 +1586,7 @@ on_change
 
 ```idyllium
 x, y, width, height, visible
-value, min, max
+value, min, max, font_size
 text_color, background_color, foreground_color, border_color
 ```
 
@@ -1597,7 +1597,7 @@ filled part. The old `fill_color` alias has been removed.
 
 ```idyllium
 x, y, width, height, visible
-value, min, max, step
+value, min, max, step, font_size
 on_change
 ```
 
@@ -1605,7 +1605,7 @@ on_change
 
 ```idyllium
 x, y, width, height, visible
-value, min, max, step
+value, min, max, step, font_size
 on_change
 ```
 
@@ -1621,7 +1621,7 @@ on_change
 
 ```idyllium
 x, y, width, height, visible
-text, is_checked
+text, is_checked, font_size
 on_change
 ```
 
@@ -1629,7 +1629,7 @@ on_change
 
 ```idyllium
 x, y, width, height, visible
-text, is_selected, group
+text, is_selected, group, font_size
 on_change
 ```
 
@@ -1637,7 +1637,7 @@ on_change
 
 ```idyllium
 x, y, width, height, visible
-selected_index, selected_text
+selected_index, selected_text, font_size
 add_item(text)
 clear_items()
 on_change
