@@ -89,4 +89,12 @@ main() {
 </script></idyl-code-block>
   <idyl-output-block>{"name":"Liam","level":7}
 Liam: 7</idyl-output-block>
+
+  <p>
+    Обратите внимание на две соседние строки. <code>player.to_json()</code> —
+    это метод <em>вашего</em> класса <code>Player</code>, он возвращает
+    <code>json.Object</code>. А <code>saved.to_json()</code> — встроенный метод
+    самого <code>json.Object</code>, который превращает объект в строку.
+    Имена совпадают, но это разные методы разных типов.
+  </p>
 </div>

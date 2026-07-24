@@ -64,6 +64,30 @@ main() {
 </div>
 
 <div class="docs-section">
+  <h2>Изменение значения</h2>
+  <p>
+    Метод <code>add()</code> создаёт новый ключ, а <code>set()</code> меняет
+    значение уже существующего.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use json;
+
+main() {
+    json.Object player;
+    player.add("name", json.Value("Liam"));
+    player.add("level", json.Value(7));
+
+    player.set("level", json.Value(8));
+
+    console.writeln(player.to_json());
+}
+</script></idyl-code-block>
+  <idyl-output-block>{"name":"Liam","level":8}</idyl-output-block>
+</div>
+
+<div class="docs-section">
   <h2>Удаление ключа</h2>
   <idyl-code-block><script type="text/plain">
 use console;

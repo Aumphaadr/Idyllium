@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Сборка и тесты
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Установка зависимостей
+        run: npm ci
+
+      - name: Тесты (компилятор, рантайм, спецификация учебника)
+        run: npm test
+
+      - name: Сборка сайта документации и WebIDE
+        run: npm run docs:site
+
+      - name: Проверка чистоты docs/ после пересборки
+        run: |
+          # Пересборка сайта из закоммиченных исходников не должна менять
+          # docs/ (кроме generatedAt-таймстампов) — иначе закоммиченный сайт
+          # разошёлся с исходниками и его забыли перегенерировать.
+          git checkout -- docs/book/lessons.json docs/reference/api.json 2>/dev/null || true
+          git diff --stat --exit-code docs/ || {
+            echo '::error::docs/ разошёлся с исходниками — запустите npm run docs:site и закоммитьте результат'
+            exit 1
+          }

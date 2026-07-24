@@ -18,6 +18,11 @@ export interface FunctionSpec {
   readonly variadicTypes?: readonly TypeRef[];
   readonly documentation?: string;
   readonly runtimeName?: string;
+  /**
+   * Функция печатает/преобразует значения в текст: объекты пользовательских
+   * классов допускаются только с публичным `string function to_string()`.
+   */
+  readonly printsValues?: boolean;
 }
 
 export interface ConstantSpec {
@@ -329,11 +334,13 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     functionSpec('write', [], VOID, {
       variadic: true,
       variadicTypes: [ANY_TYPE],
+      printsValues: true,
       documentation: 'Выводит значения подряд без автоматических пробелов и переноса строки.',
     }),
     functionSpec('writeln', [], VOID, {
       variadic: true,
       variadicTypes: [ANY_TYPE],
+      printsValues: true,
       documentation: 'Выводит значения подряд, затем переносит строку.',
     }),
     functionSpec('clear', [], VOID, {
@@ -346,7 +353,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   ]));
 
   registry.registerModule(moduleSpec('math', [
-    functionSpec('abs', [{ name: 'value', type: FLOAT }], FLOAT),
+    functionSpec('abs', [{ name: 'value', type: FLOAT }], FLOAT, {
+      documentation: 'Модуль числа. Тип результата повторяет аргумент: abs(int) даёт int, abs(float) — float.',
+    }),
     functionSpec('sqrt', [{ name: 'value', type: FLOAT }], FLOAT),
     functionSpec('round', [{ name: 'value', type: FLOAT }], INT),
     functionSpec('floor', [{ name: 'value', type: FLOAT }], INT),
@@ -372,8 +381,12 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   ]));
 
   registry.registerModule(moduleSpec('random', [
-    functionSpec('create_int', [{ name: 'min', type: INT }, { name: 'max', type: INT }], INT),
-    functionSpec('create_float', [{ name: 'min', type: FLOAT }, { name: 'max', type: FLOAT }], FLOAT),
+    functionSpec('create_int', [{ name: 'min', type: INT }, { name: 'max', type: INT }], INT, {
+      documentation: 'Случайное целое число от min до max; обе границы включены.',
+    }),
+    functionSpec('create_float', [{ name: 'min', type: FLOAT }, { name: 'max', type: FLOAT }], FLOAT, {
+      documentation: 'Случайное дробное число от min до max; обе границы включены (как в Python).',
+    }),
     functionSpec('choose_from', [{
       name: 'collection',
       type: ANY_TYPE,
@@ -394,11 +407,11 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       documentation: 'Возвращает текущий момент в указанном IANA-часовом поясе; по умолчанию используется UTC.',
     }),
     functionSpec('from_unix', [
-      { name: 'seconds', type: INT },
+      { name: 'seconds', type: FLOAT },
       { name: 'timezone', type: STRING, defaultValue: '"UTC"' },
     ], timeStamp, {
       minArguments: 1,
-      documentation: 'Создаёт метку из Unix-времени и отображает её в указанном IANA-часовом поясе.',
+      documentation: 'Создаёт метку из Unix-времени (секунды, можно с дробной частью — она станет миллисекундами) и отображает её в указанном IANA-часовом поясе.',
     }),
   ], [], [
     typeSpec('stamp', [
@@ -408,8 +421,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       propertySpec('hour', INT, true, 'Час от 0 до 23 в часовом поясе метки.'),
       propertySpec('minute', INT, true, 'Минута от 0 до 59.'),
       propertySpec('second', INT, true, 'Секунда от 0 до 59.'),
+      propertySpec('millisecond', INT, true, 'Миллисекунда от 0 до 999.'),
       propertySpec('week_day', INT, true, 'День недели от 0 (воскресенье) до 6 (суббота).'),
-      propertySpec('unix', INT, true, 'Unix-время; не меняется при смене часового пояса.'),
+      propertySpec('unix', INT, true, 'Unix-время в целых секундах; не меняется при смене часового пояса.'),
       propertySpec('timezone', STRING, true, 'Каноническое IANA-имя часового пояса.'),
     ], [
       functionSpec('in_timezone', [{ name: 'timezone', type: STRING }], timeStamp, {
@@ -481,11 +495,13 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       functionSpec('write', [], VOID, {
         variadic: true,
         variadicTypes: [ANY_TYPE],
+        printsValues: true,
         documentation: 'Записывает значения без автоматического перевода строки.',
       }),
       functionSpec('write_line', [], VOID, {
         variadic: true,
         variadicTypes: [ANY_TYPE],
+        printsValues: true,
         documentation: 'Записывает значения и добавляет перевод строки.',
       }),
       functionSpec('close', [], VOID),
@@ -954,13 +970,21 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ]),
     typeSpec('Timer', [
       propertySpec('interval', INT),
+      propertySpec('running', BOOL, true, 'Идёт ли отсчёт прямо сейчас. Меняется методами start(), stop() и restart().'),
       callbackPropertySpec('on_tick', [
         callbackSpec([]),
         callbackSpec([guiTimer]),
       ]),
     ], [
-      functionSpec('start', [], VOID),
-      functionSpec('stop', [], VOID),
+      functionSpec('start', [], VOID, {
+        documentation: 'Запускает таймер. После stop() продолжает отсчёт с места остановки (снятие с паузы).',
+      }),
+      functionSpec('stop', [], VOID, {
+        documentation: 'Ставит таймер на паузу: накопленное время сохраняется до следующего start().',
+      }),
+      functionSpec('restart', [], VOID, {
+        documentation: 'Запускает таймер заново: накопленное время сбрасывается, отсчёт идёт с нуля.',
+      }),
     ]),
     typeSpec('KeyboardEvent', [
       propertySpec('key', STRING, true),
@@ -1217,7 +1241,32 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   ], FLOAT));
   registry.registerGlobalFunction(functionSpec('to_string', [
     { name: 'value', type: ANY_TYPE },
-  ], STRING));
+  ], STRING, {
+    printsValues: true,
+    documentation: 'Преобразует значение в строку. Объект класса — только с публичным string function to_string().',
+  }));
+
+  // Агрегатные функции массивов. Точные типы результата выводит семантика
+  // (максимум/минимум/сумма повторяют тип элементов); записи в реестре питают
+  // автодополнение, hover и справочник.
+  const numericArrayParameter: ParameterSpec = {
+    name: 'values',
+    type: ANY_TYPE,
+    acceptedTypes: [arrayType(ANY_TYPE, null, true)],
+    acceptedDescription: 'numeric array',
+  };
+  registry.registerGlobalFunction(functionSpec('max', [numericArrayParameter], ANY_TYPE, {
+    documentation: 'Наибольший элемент числового массива. Тип результата повторяет тип элементов.',
+  }));
+  registry.registerGlobalFunction(functionSpec('min', [numericArrayParameter], ANY_TYPE, {
+    documentation: 'Наименьший элемент числового массива. Тип результата повторяет тип элементов.',
+  }));
+  registry.registerGlobalFunction(functionSpec('sum', [numericArrayParameter], ANY_TYPE, {
+    documentation: 'Сумма элементов числового массива. Тип результата повторяет тип элементов.',
+  }));
+  registry.registerGlobalFunction(functionSpec('avg', [numericArrayParameter], FLOAT, {
+    documentation: 'Среднее арифметическое элементов числового массива; всегда float.',
+  }));
 
   return registry;
 }

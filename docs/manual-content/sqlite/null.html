@@ -82,8 +82,20 @@ add_player.bind_null("nickname");
   <h2>Проверяем перед чтением</h2>
   <p>
     Вызов <code>get_string("nickname")</code> для SQL NULL завершится понятной
-    ошибкой: неизвестное прозвище нельзя превратить в строку. Сначала значение
-    проверяется.
+    ошибкой: неизвестное прозвище нельзя превратить в строку.
+  </p>
+  <idyl-code-block><script type="text/plain">
+sqlite.Result rows = db.execute(
+    "SELECT name, nickname FROM players"
+);
+rows.next(); // первая строка — Liam
+
+string nickname = rows.get_string("nickname");
+</script></idyl-code-block>
+  <idyl-error-block>main.idyl:6: runtime error: sqlite column 'nickname' is null, expected string</idyl-error-block>
+  <p>
+    Поэтому значение сначала проверяется методом <code>is_null()</code>, и
+    только потом читается.
   </p>
   <idyl-code-block><script type="text/plain">
 if (rows.is_null("nickname")) {
@@ -119,4 +131,54 @@ else {
     <code>to_float()</code>, <code>to_string()</code> и
     <code>to_bool()</code>.
   </p>
+</div>
+
+<div class="docs-section">
+  <h2>Полная программа</h2>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("nicknames.db");
+    db.execute(
+        "CREATE TABLE players (" +
+        "name TEXT NOT NULL, " +
+        "nickname TEXT" +
+        ")"
+    );
+
+    db.execute(
+        "INSERT INTO players (name, nickname) VALUES ('Mira', 'Star')"
+    );
+
+    sqlite.Statement add_player = db.prepare(
+        "INSERT INTO players (name, nickname) VALUES (:name, :nickname)"
+    );
+    add_player.bind("name", "Liam");
+    add_player.bind("nickname", null);
+    add_player.execute();
+    add_player.close();
+
+    sqlite.Result rows = db.execute(
+        "SELECT name, nickname FROM players ORDER BY name"
+    );
+
+    while (rows.next()) {
+        console.write(rows.get_string("name"), ": ");
+
+        if (rows.is_null("nickname")) {
+            console.writeln("прозвище не указано");
+        }
+        else {
+            console.writeln(rows.get_string("nickname"));
+        }
+    }
+
+    rows.close();
+    db.close();
+}
+</script></idyl-code-block>
+  <idyl-output-block>Liam: прозвище не указано
+Mira: Star</idyl-output-block>
 </div>

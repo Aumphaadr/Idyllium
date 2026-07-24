@@ -484,14 +484,23 @@ body.light-theme .docs-topbar {
   width: 100%;
   max-width: 100%;
   margin: 18px 0 20px;
-  display: block;
-  overflow-x: auto;
+  /* Обычная табличная раскладка: колонки растягиваются на всю ширину,
+     последний столбец дотягивается до края таблицы. */
+  display: table;
   border: 1px solid var(--border);
   border-collapse: collapse;
   background: var(--bg-panel);
   color: var(--text-soft);
   font-family: var(--font-mono);
   font-size: 0.9em;
+}
+
+@media (max-width: 700px) {
+  /* На узких экранах — прежнее поведение: горизонтальный скролл внутри блока. */
+  .docs-section table {
+    display: block;
+    overflow-x: auto;
+  }
 }
 
 .docs-section th,
@@ -802,32 +811,32 @@ body.light-theme .docs-topbar {
   overflow: hidden;
 }
 
+/* Режимы повторяют object-fit настоящего рендерера: fit=contain,
+   fill=cover, stretch=fill, original=натуральный размер с обрезкой. */
 .image-mode-demo img {
   display: block;
+  width: 100%;
+  height: 100%;
   max-width: none;
   max-height: none;
 }
 
 .image-mode-fit img {
-  width: auto;
-  height: 100%;
+  object-fit: contain;
 }
 
 .image-mode-fill img {
-  width: 100%;
-  height: auto;
+  object-fit: cover;
 }
 
 .image-mode-stretch img {
-  width: 100%;
-  height: 100%;
+  object-fit: fill;
 }
 
 .image-mode-original img {
   width: auto;
   height: auto;
-  max-width: none;
-  max-height: none;
+  object-fit: none;
 }
 
 .image-mode-demo span {
@@ -1270,4 +1279,21 @@ body.light-theme .docs-toc {
   .lesson-step.next {
     text-align: left;
   }
+}
+
+.canvas-sprite-surface[tabindex] {
+  cursor: pointer;
+}
+
+.canvas-sprite-surface[tabindex]:focus-visible {
+  outline: 2px solid var(--accent, #7aa2f7);
+  outline-offset: 2px;
+}
+
+/* Выделение текста в светлых «файловых» блоках уроков: глобальная
+   полупрозрачная заливка сливалась с их фоном. */
+.file::selection,
+.file *::selection {
+  background: rgba(38, 78, 160, 0.9);
+  color: #f4f7ff;
 }

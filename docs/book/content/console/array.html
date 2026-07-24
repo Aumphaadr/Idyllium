@@ -1,33 +1,40 @@
-<!-- Hero -->
-    
-
-    <!-- Section 1 -->
-    <div class="docs-section">
+<div class="docs-section">
       <h2>Проблема: много однотипных данных</h2>
       <p>Представим, что у вас есть семь чисел, и их нужно вывести:</p>
 
       <idyl-code-block><script type="text/plain">
-int a = 29;
-int b = 84;
-int c = 16;
-int d = 35;
-int e = 43;
-int f = 60;
-int g = 17;
+use console;
 
-console.writeln(a);
-console.writeln(b);
-console.writeln(c);
-console.writeln(d);
-console.writeln(e);
-console.writeln(f);
-console.writeln(g);
+main() {
+    int a = 29;
+    int b = 84;
+    int c = 16;
+    int d = 35;
+    int e = 43;
+    int f = 60;
+    int g = 17;
+
+    console.writeln(a);
+    console.writeln(b);
+    console.writeln(c);
+    console.writeln(d);
+    console.writeln(e);
+    console.writeln(f);
+    console.writeln(g);
+}
 </script></idyl-code-block>
 
-      <p>Этот код громоздкий, неудобный и не масштабируется. Если чисел будет 100 — никто не будет писать 100 переменных.</p>
+      <idyl-output-block>29
+84
+16
+35
+43
+60
+17</idyl-output-block>
+
+      <p>Работает — но код громоздкий, неудобный и не масштабируется. Если чисел будет 100 — никто не будет писать 100 переменных. Да и букв в алфавите на имена переменных всего 26!</p>
     </div>
 
-    <!-- Section 2 -->
     <div class="docs-section">
       <h2>Что такое массив?</h2>
       <p><strong>Массив</strong> — это набор ячеек памяти компьютера, предназначенных для хранения данных.</p>
@@ -35,7 +42,6 @@ console.writeln(g);
       <p>Разница в масштабе: переменная хранит одно значение, а массив — много значений (по одному в каждой ячейке).</p>
     </div>
 
-    <!-- Section 3 -->
     <div class="docs-section">
       <h2>Создание массива</h2>
       <p>В Idyllium массив объявляется следующим образом:</p>
@@ -54,7 +60,6 @@ array<int, 7> nums = [29, 84, 16, 35, 43, 60, 17];
       <p>Длина массива фиксирована и не может быть изменена после объявления.</p>
     </div>
 
-    <!-- Section 4 -->
     <div class="docs-section">
       <h2>Сходство с переменной</h2>
       <p>Синтаксис создания массива напоминает создание переменной:</p>
@@ -76,141 +81,223 @@ array<int, 7> nums = [29, 84, 16, 35, 43, 60, 17];
       <p>Массив — это расширенная форма переменной.</p>
     </div>
 
-    <!-- Section 5 -->
     <div class="docs-section">
       <h2>Сравнение с переменной: создание, редактирование, вывод</h2>
+      <p>Всё, что вы умеете делать с переменной, у массива работает поячеечно — а вывести можно даже весь массив разом:</p>
 
       <idyl-code-block><script type="text/plain">
-int A; // создание переменной, значение = 0
-array<int, 50> B; // создание массива из 50 нулей
+use console;
 
-int N = 38; // создание с указанием значения
-array<int, 4> P = [29, 84, 16, 35];
+main() {
+    int A; // создание переменной, значение = 0
+    array<int, 50> B; // создание массива из 50 нулей
 
-N = 51; // редактирование переменной
-P[0] = 72; // редактирование ячейки массива
+    int N = 38; // создание с указанием значения
+    array<int, 4> P = [29, 84, 16, 35];
 
-console.writeln(N); // вывод переменной
-console.writeln(P); // вывод всего массива
-console.writeln(P[2]); // вывод второй ячейки
-</script></idyl-code-block>
+    N = 51; // редактирование переменной
+    P[0] = 72; // редактирование ячейки массива
 
-      <idyl-output-block>51
-[29, 84, 16, 35]
-16</idyl-output-block>
-    </div>
-
-    <!-- Section 6 -->
-    <div class="docs-section">
-      <h2>Нумерация ячеек</h2>
-      <p>Ячейки массива нумеруются <strong>с нуля</strong>, как во всех современных языках программирования:</p>
-
-      <idyl-code-block><script type="text/plain">
-array<int, 6> K = [81, 45, 33, 27, 90, 64];
-
-console.write(K[0]); // 81
-console.write(K[1]); // 45
-console.write(K[2]); // 33
-console.write(K[3]); // 27
-console.write(K[4]); // 90
-console.write(K[5]); // 64
-console.write(K[6]); // ОШИБКА: нет шестой ячейки
-</script></idyl-code-block>
-
-      <p>Если в массиве 6 ячеек — они пронумерованы от <code>0</code> до <code>5</code>. Попытка обратиться к ячейке <code>6</code> вызовет ошибку выполнения.</p>
-    </div>
-
-    <!-- Section 7 -->
-    <div class="docs-section">
-      <h2>Преимущество: перебор циклом</h2>
-      <p>С переменными пришлось бы писать:</p>
-
-      <idyl-code-block><script type="text/plain">
-int a = 29;
-int b = 84;
-int c = 16;
-int d = 35;
-int e = 43;
-int f = 60;
-int g = 17;
-
-console.writeln(a);
-console.writeln(b);
-console.writeln(c);
-console.writeln(d);
-console.writeln(e);
-console.writeln(f);
-console.writeln(g);
-</script></idyl-code-block>
-
-      <p>С массивом — гораздо короче и легко масштабируется:</p>
-
-      <idyl-code-block><script type="text/plain">
-array<int, 7> nums = [29, 84, 16, 35, 43, 60, 17];
-for (int i = 0; i < 7; i = i + 1) {
-    console.writeln(nums[i]);
+    console.writeln(N); // вывод переменной
+    console.writeln(P); // вывод всего массива
+    console.writeln(P[2]); // вывод ячейки с индексом 2
 }
 </script></idyl-code-block>
 
-      <p>Если чисел будет 1000 — достаточно изменить лишь число в условии цикла.</p>
+      <idyl-output-block>51
+[72, 84, 16, 35]
+16</idyl-output-block>
+
+      <p>Обратите внимание: массив напечатался уже с новым значением <code>72</code> — редактирование ячейки сработало. А номер ячейки в квадратных скобках называется <strong>индексом</strong>. И тут есть подвох: <code>P[2]</code> — это вовсе не вторая ячейка…</p>
     </div>
 
-    <!-- Section 8 -->
     <div class="docs-section">
-      <h2>Массивы других типов</h2>
-      <p>Массивы не ограничены типом <code>int</code>. Можно создавать массивы любых типов:</p>
+      <h2>Нумерация ячеек</h2>
+      <p>Ячейки массива нумеруются <strong>с нуля</strong> — программисты вообще обожают считать с нуля. Поэтому <code>P[2]</code> из прошлой секции — третья по счёту ячейка:</p>
 
       <idyl-code-block><script type="text/plain">
-array<float, 5> fnums = [3.6, 2.14, 7.0, -5.91, 8.33];
-array<string, 3> tools = ["Кирка", "Топор", "Удочка"];
-array<bool, 4> check = [true, true, false, true];
+use console;
+
+main() {
+    array<int, 6> K = [81, 45, 33, 27, 90, 64];
+
+    console.writeln(K[0]);
+    console.writeln(K[1]);
+    console.writeln(K[2]);
+    console.writeln(K[3]);
+    console.writeln(K[4]);
+    console.writeln(K[5]);
+}
 </script></idyl-code-block>
+
+      <idyl-output-block>81
+45
+33
+27
+90
+64</idyl-output-block>
+
+      <p>Если в массиве 6 ячеек — они пронумерованы от <code>0</code> до <code>5</code>. А что будет, если попросить ячейку с индексом 6?</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    array<int, 6> K = [81, 45, 33, 27, 90, 64];
+
+    console.writeln(K[6]);
+}
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:6: runtime error: array index 6 out of bounds (size 6, valid indices 0-5)</idyl-error-block>
+
+      <p>Программа останавливается с ошибкой выполнения: шестого индекса не существует. Компилятор даже подсказывает, какие индексы допустимы.</p>
     </div>
 
-    <!-- Section 9 -->
+    <div class="docs-section">
+      <h2>Преимущество: перебор циклом</h2>
+      <p>Помните программу из начала урока — семь переменных и семь <code>writeln</code>? С массивом она сжимается до нескольких строк:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    array<int, 7> nums = [29, 84, 16, 35, 43, 60, 17];
+    for (int i = 0; i < 7; i += 1) {
+        console.writeln(nums[i]);
+    }
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>29
+84
+16
+35
+43
+60
+17</idyl-output-block>
+
+      <p>Счётчик цикла <code>i</code> пробегает индексы от 0 до 6, и <code>nums[i]</code> на каждой итерации — новая ячейка. Если чисел будет 1000 — достаточно изменить лишь число в условии цикла. Алфавит может спать спокойно.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Массивы других типов</h2>
+      <p>Массивы не ограничены типом <code>int</code>. Соберём рюкзак искателя приключений: названия инструментов, их вес и отметки «взято с собой»:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    array<string, 3> tools = ["Кирка", "Топор", "Удочка"];
+    array<float, 3> weight = [3.5, 4.2, 1.8];
+    array<bool, 3> in_bag = [true, true, false];
+
+    console.writeln("Инструменты: ", tools);
+    console.writeln("Вес (кг): ", weight);
+    console.writeln("Взято с собой: ", in_bag);
+    console.writeln(tools[2], " весит ", weight[2], " кг, но осталась дома...");
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Инструменты: ["Кирка", "Топор", "Удочка"]
+Вес (кг): [3.5, 4.2, 1.8]
+Взято с собой: [true, true, false]
+Удочка весит 1.8 кг, но осталась дома...</idyl-output-block>
+
+      <p>Три массива работают как таблица: ячейки с одинаковым индексом описывают один и тот же предмет.</p>
+    </div>
+
     <div class="docs-section">
       <h2>Итог: что нужно знать о массивах</h2>
 
       <idyl-code-block><script type="text/plain">
-// Создание с указанными значениями
-array<int, 5> P = [24, 91, 63, 50, 78];
+use console;
+use random;
 
-// Создание с дефолтными значениями (0.0 для float)
-array<float, 8> K;
+main() {
+    // Создание с указанными значениями
+    array<int, 5> P = [24, 91, 63, 50, 78];
 
-// Редактирование ячейки
-P[0] = 25;
+    // Создание с дефолтными значениями (0.0 для float)
+    array<float, 8> K;
 
-// Чтение значения из ячейки
-int A = P[1];
+    // Редактирование ячейки
+    P[0] = 25;
 
-// Заполнение циклом
-for (int i = 0; i < 8; i = i + 1) {
-    K[i] = random.create_float(-3, 3);
-}
+    // Чтение значения из ячейки
+    int A = P[1];
 
-// Вывод циклом
-for (int i = 0; i < 5; i = i + 1) {
-    console.writeln(P[i]);
+    // Заполнение циклом
+    for (int i = 0; i < 8; i += 1) {
+        K[i] = random.create_float(-3, 3);
+    }
+
+    // Вывод циклом
+    for (int i = 0; i < 5; i += 1) {
+        console.writeln(P[i]);
+    }
 }
 </script></idyl-code-block>
+
+      <idyl-output-block>25
+91
+63
+50
+78</idyl-output-block>
+
+      <p>Печатается массив <code>P</code> — уже с отредактированной нулевой ячейкой. Массив <code>K</code> мы заполнили случайными числами (не забудьте <code>use random;</code>), но выводить не стали — попробуйте дописать это сами.</p>
     </div>
 
-    <!-- Section 10 -->
     <div class="docs-section">
       <h2>Бонус: типичные ошибки</h2>
-      <p>Операции, которые работают с переменной, <strong>не работают со всем массивом сразу</strong>:</p>
+      <p>Операции, которые работают с переменной, <strong>не работают со всем массивом сразу</strong>. Попробуем сравнить массив с числом:</p>
 
       <idyl-code-block><script type="text/plain">
-array<int, 5> P = [78, 91, 63, 50, 24];
-if (P > 50) { // ОШИБКА: нельзя сравнивать массив с числом }
-if (P[0] > 50) { // OK: сравниваем ячейку (78 > 50) }
+use console;
 
-console.write(P + 4); // ОШИБКА: нельзя складывать массив и число
-console.write(P[1] + 4); // OK: выведется 95
+main() {
+    array<int, 5> P = [78, 91, 63, 50, 24];
+
+    if (P > 50) { // ОШИБКА: сравниваем весь массив с числом
+        console.writeln("Больше!");
+    }
+}
 </script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:6:9: error: comparison '>' requires numeric operands</idyl-error-block>
+
+      <p>Компилятор отказывается: «больше 50» может быть число, но не коробка с пятью числами. То же самое со сложением:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    array<int, 5> P = [78, 91, 63, 50, 24];
+
+    console.write(P + 4); // ОШИБКА: складываем весь массив с числом
+}
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:6:19: error: operator '+' cannot be applied to 'array<int, 5>' and 'int'</idyl-error-block>
+
+      <p>А вот с <strong>отдельной ячейкой</strong> обе операции работают отлично — ведь в ячейке лежит обычное число:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    array<int, 5> P = [78, 91, 63, 50, 24];
+
+    if (P[0] > 50) { // OK: сравниваем одну ячейку (78 > 50)
+        console.writeln("Больше!");
+    }
+
+    console.writeln(P[1] + 4); // OK: складываем одну ячейку (91 + 4)
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Больше!
+95</idyl-output-block>
 
       <p>Массив — это контейнер. Работать с данными нужно поэлементно — через перебор ячеек.</p>
     </div>
-
-    <!-- Lesson navigation -->

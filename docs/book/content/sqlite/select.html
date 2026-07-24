@@ -57,10 +57,16 @@ rows.close();
   <h2>Читаем все строки</h2>
   <p>
     Для неизвестного заранее количества строк отлично подходит цикл
-    <code>while</code>. Каждый вызов <code>next()</code> передвигается дальше, а
-    после последней строки возвращает <code>false</code>.
+    <code>while</code>. Прошлый <code>Result</code> уже закрыт, а вернуть его
+    курсор назад нельзя, поэтому вызываем <code>execute()</code> ещё раз и
+    получаем свежий результат. Каждый вызов <code>next()</code> передвигается
+    дальше, а после последней строки возвращает <code>false</code>.
   </p>
   <idyl-code-block><script type="text/plain">
+sqlite.Result rows = db.execute(
+    "SELECT name, level FROM players"
+);
+
 while (rows.next()) {
     console.writeln(
         rows.get_string("name"),
@@ -83,7 +89,11 @@ Nika: level 4</idyl-output-block>
     <code>get_bool()</code>. Во все методы передаётся название колонки.
   </p>
   <idyl-code-block><script type="text/plain">
-int id = rows.get_int("id");
+sqlite.Result rows = db.execute(
+    "SELECT name, level, is_active FROM players"
+);
+rows.next();
+
 string name = rows.get_string("name");
 int level = rows.get_int("level");
 bool active = rows.get_bool("is_active");

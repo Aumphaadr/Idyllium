@@ -1,0 +1,211 @@
+<div class="docs-section">
+  <h2>Антипример: незащищённое здоровье</h2>
+  <p>Представьте, что мы создаём класс <code>Hero</code> (герой) со свойством <code>hp</code> (здоровье). По задумке, здоровье должно быть в диапазоне от 0 до 100.</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Hero {
+    string name;
+    int hp;
+}
+
+main() {
+    Hero hero1;
+    hero1.name = "Воин";
+    hero1.hp = 40;
+
+    console.writeln(hero1.name, ": ", hero1.hp);
+
+    // Где-то в коде кто-то решил подлечиться
+    hero1.hp = hero1.hp + 75;  // 40 + 75 = 115
+
+    console.writeln(hero1.name, ": ", hero1.hp);
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Воин: 40
+Воин: 115</idyl-output-block>
+
+  <p>Проблема: здоровье превысило задуманный нами максимум (100). Ничто не мешает установить здоровье в 115, 200 или даже -10. Данные не защищены.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Инкапсуляция — защита данных</h2>
+  <p><strong>Инкапсуляция</strong> — это принцип ООП, при котором внутренние данные объекта скрыты от прямого доступа извне и могут изменяться только через специальные методы.</p>
+  <p>Это позволяет контролировать, как именно изменяются данные, и предотвращать невалидные состояния.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Модификаторы доступа: public и private</h2>
+  <p>В Idyllium доступ к свойствам и методам класса регулируется модификаторами <code>public</code> и <code>private</code>. Модификатор пишется отдельной строкой, а после него ставится двоеточие — как заголовок списка: всё, что написано ниже, относится к этому заголовку, пока не начнётся следующий.</p>
+  <ul>
+    <li><code>public</code> — доступно отовсюду (из любого места программы).</li>
+    <li><code>private</code> — доступно только внутри методов самого класса.</li>
+  </ul>
+  <table>
+    <thead>
+      <tr>
+        <th>Откуда обращаемся</th>
+        <th><code>public</code></th>
+        <th><code>private</code></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Изнутри класса: его методы и конструктор</td>
+        <td>можно</td>
+        <td>можно</td>
+      </tr>
+      <tr>
+        <td>Снаружи класса: <code>main()</code> и любой другой код</td>
+        <td>можно</td>
+        <td>нельзя — ошибка компиляции</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <idyl-code-block><script type="text/plain">
+class Hero {
+    private:
+    int hp;   // приватное свойство — доступно только внутри Hero
+
+    public:
+    string name;   // публичное свойство — доступно отовсюду
+
+    constructor Hero(string ex_name, int ex_hp) {
+        this.name = ex_name;
+        this.hp = ex_hp;
+    }
+
+    void function heal(int amount) {
+        this.hp = this.hp + amount;
+        if (this.hp > 100) {
+            this.hp = 100;
+        }
+    }
+
+    void function hit(int amount) {
+        this.hp = this.hp - amount;
+        if (this.hp < 0) {
+            this.hp = 0;
+        }
+    }
+
+    int function get_hp() {
+        return this.hp;
+    }
+}
+</script></idyl-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>Пример с защищённым здоровьем</h2>
+  <p>Теперь здоровье героя защищено. Изменять его можно только через методы <code>heal()</code> и <code>hit()</code>, которые следят за границами диапазона:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Hero {
+    private:
+    int hp;
+
+    public:
+    string name;
+
+    constructor Hero(string ex_name, int ex_hp) {
+        this.name = ex_name;
+        this.hp = ex_hp;
+    }
+
+    void function heal(int amount) {
+        this.hp = this.hp + amount;
+        if (this.hp > 100) {
+            this.hp = 100;
+            console.writeln("Здоровье восстановлено до максимума!");
+        }
+    }
+
+    void function hit(int amount) {
+        this.hp = this.hp - amount;
+        if (this.hp < 0) {
+            this.hp = 0;
+            console.writeln("Герой повержен!");
+        }
+    }
+
+    int function get_hp() {
+        return this.hp;
+    }
+}
+
+main() {
+    Hero hero1("Воин", 40);
+
+    console.writeln(hero1.name, ": ", hero1.get_hp());
+
+    hero1.heal(75);   // 40 + 75 = 115 → ограничивается 100
+    console.writeln(hero1.name, ": ", hero1.get_hp());
+
+    hero1.hit(30);    // 100 - 30 = 70
+    console.writeln(hero1.name, ": ", hero1.get_hp());
+
+    hero1.hit(100);   // 70 - 100 = -30 → ограничивается 0
+    console.writeln(hero1.name, ": ", hero1.get_hp());
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Воин: 40
+Здоровье восстановлено до максимума!
+Воин: 100
+Воин: 70
+Герой повержен!
+Воин: 0</idyl-output-block>
+
+  <p>Теперь здоровье героя всегда в диапазоне 0–100. Перехилить невозможно!</p>
+</div>
+
+<div class="docs-section">
+  <h2>Попытка доступа к приватному свойству</h2>
+  <p>Если попробовать обратиться к приватному свойству напрямую из <code>main()</code>, компилятор выдаст ошибку. Возьмём сокращённого героя, чтобы увидеть её целиком:</p>
+
+  <idyl-code-block><script type="text/plain">
+class Hero {
+    private:
+    int hp;
+}
+
+main() {
+    Hero hero1;
+    hero1.hp = 100;   // ОШИБКА!
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:8:5: error: member 'Hero.hp' is private and can only be used inside class 'Hero'</idyl-error-block>
+
+  <p>Компилятор называет свойство полным именем — <code>Hero.hp</code> — и прямо объясняет правило: пользоваться им можно только внутри класса <code>Hero</code>. Это защищает данные от случайного или намеренного повреждения извне.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Правила хорошего тона</h2>
+  <ul>
+    <li>Начинайте с <code>private</code> для всего, что опасно менять извне: у здоровья есть диапазон, у возраста — здравый смысл, у баланса — правила банка.</li>
+    <li>Для чтения приватного свойства создавайте публичный метод-геттер (<code>get_...</code>).</li>
+    <li>Для изменения — метод-сеттер (<code>set_...</code>) с проверкой корректности.</li>
+    <li>Свойство, которому любое значение не навредит, можно оставить публичным. В нашем примере <code>name</code> публичное: «неправильных» имён не бывает, а вот неправильное здоровье — бывает.</li>
+    <li>Публичными оставляйте только те методы, которые образуют интерфейс класса.</li>
+  </ul>
+  <p>Сомневаетесь — прячьте: открыть свойство потом легко, а спрятать то, чем уже пользуется полпрограммы, — трудно. Этот подход называется <strong>«скрытие реализации»</strong> и является основой надёжного объектно-ориентированного дизайна.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Итог</h2>
+  <ul>
+    <li><strong>Инкапсуляция</strong> — сокрытие внутренних данных объекта от внешнего мира.</li>
+    <li><code>public</code> — доступно везде.</li>
+    <li><code>private</code> — доступно только внутри методов класса.</li>
+    <li>Приватные свойства изменяются только через публичные методы, которые могут проверять корректность новых значений.</li>
+    <li>Прячьте в <code>private</code> всё, что опасно менять извне; безобидные свойства могут оставаться <code>public</code>.</li>
+    <li>Инкапсуляция защищает данные от неконтролируемых изменений.</li>
+  </ul>
+</div>

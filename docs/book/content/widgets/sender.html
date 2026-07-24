@@ -57,7 +57,7 @@ main() {
           </div>
         </div>
         <div class="coord-note">
-          🔘 Нажмите на любую кнопку — скроются все пять. Обработчик один, но он не знает, какая кнопка его вызвала.
+          🔘 Нажмите на любую кнопку — скроются все пять. У всех кнопок одна и та же функция-обработчик, и она не знает, какая именно кнопка её вызвала.
         </div>
       </div>
     </div>
@@ -110,7 +110,7 @@ main() {
             <button class="idyl-button" style="position: absolute; left: 20px; top: 80px; width: 150px;" id="senderBtn2">Кнопка 2</button>
             <button class="idyl-button" style="position: absolute; left: 20px; top: 110px; width: 150px;" id="senderBtn3">Кнопка 3</button>
             <button class="idyl-button" style="position: absolute; left: 20px; top: 140px; width: 150px;" id="senderBtn4">Кнопка 4</button>
-            <div style="position: absolute; left: 20px; top: 190px; color: #cdd6f4;" id="senderResult">Нажми на любую кнопку</div>
+            <div style="position: absolute; left: 20px; top: 200px; color: #cdd6f4;" id="senderResult">Нажми на любую кнопку</div>
           </div>
         </div>
         <div class="coord-note">
@@ -183,13 +183,80 @@ main() {
         </div>
       </div>
 
-      <p>Тип параметра <code>sender</code> должен соответствовать типу виджета, для которого пишется обработчик:</p>
-      <ul>
-        <li>Для кнопки: <code>void function(gui.Button sender)</code></li>
-        <li>Для поля ввода: <code>void function(gui.LineEdit sender)</code></li>
-        <li>Для слайдера: <code>void function(gui.Slider sender)</code></li>
-        <li>Для чекбокса: <code>void function(gui.CheckBox sender)</code></li>
-      </ul>
+      <p>Тип параметра <code>sender</code> должен соответствовать типу виджета, для которого пишется обработчик. Вот шпаргалка:</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Виджет</th>
+            <th>Событие</th>
+            <th>Сигнатура обработчика</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Кнопка <code>gui.Button</code></td>
+            <td><code>on_click</code></td>
+            <td><code>void function(gui.Button sender)</code></td>
+          </tr>
+          <tr>
+            <td>Поле ввода <code>gui.LineEdit</code></td>
+            <td><code>on_change</code></td>
+            <td><code>void function(gui.LineEdit sender)</code></td>
+          </tr>
+          <tr>
+            <td>Счётчик <code>gui.SpinBox</code></td>
+            <td><code>on_change</code></td>
+            <td><code>void function(gui.SpinBox sender)</code></td>
+          </tr>
+          <tr>
+            <td>Слайдер <code>gui.Slider</code></td>
+            <td><code>on_change</code></td>
+            <td><code>void function(gui.Slider sender)</code></td>
+          </tr>
+          <tr>
+            <td>Чекбокс <code>gui.CheckBox</code></td>
+            <td><code>on_change</code></td>
+            <td><code>void function(gui.CheckBox sender)</code></td>
+          </tr>
+          <tr>
+            <td>Список <code>gui.ComboBox</code></td>
+            <td><code>on_change</code></td>
+            <td><code>void function(gui.ComboBox sender)</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Типичная ошибка: не тот тип у <code>sender</code></h2>
+      <p>Компилятор строго следит за тем, чтобы тип <code>sender</code> совпадал с типом виджета. Если написать обработчик кнопки, а в скобках указать <code>gui.Label</code>, программа не скомпилируется:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+
+    gui.Button btn;
+    btn.text = "Нажми";
+
+    // ОШИБКА: событие вызывает кнопка, а sender объявлен как gui.Label
+    btn.on_click = void function(gui.Label sender) {
+        sender.text = "Нажато";
+    };
+
+    win.add_child(btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:10:20: error: callback property 'on_click' expects function(): void or function(gui.Button): void, got function(gui.Label): void</idyl-error-block>
+
+      <p>Сообщение длинное, но читается просто: <code>on_click</code> у кнопки ждёт функцию без параметров <strong>или</strong> функцию с параметром <code>gui.Button</code>, а получил функцию с параметром <code>gui.Label</code>. Исправление одно — указать в скобках тот тип, чей это обработчик.</p>
+      <div class="tip-box">
+        <strong>💡 Совет:</strong> если компилятор выдал сразу несколько сообщений — читайте первую строку. Именно в ней настоящая причина, а остальные часто лишь её эхо.
+      </div>
     </div>
 
     <!-- Lesson navigation -->

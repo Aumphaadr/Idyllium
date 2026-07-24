@@ -1,32 +1,29 @@
-<!-- Hero -->
-    
+<div class="docs-section">
+  <h2>Напоминание: переменные и функции</h2>
+  <p><strong>Переменные</strong> предназначены для хранения данных. <strong>Функции</strong> предназначены для выполнения действий.</p>
+  <p>У каждого из этих инструментов есть фундаментальное ограничение:</p>
+  <ul>
+    <li>Переменные могут хранить данные, но <strong>не могут ничего с ними делать</strong>.</li>
+    <li>Функции могут обрабатывать данные, но <strong>не могут их хранить</strong>.</li>
+  </ul>
+  <p>Переменные и функции взаимно дополняют друг друга — каждый делает то, чего не умеет другой.</p>
+</div>
 
-    <!-- Section 1 -->
-    <div class="docs-section">
-      <h2>Напоминание: переменные и функции</h2>
-      <p><strong>Переменные</strong> предназначены для хранения данных. <strong>Функции</strong> предназначены для выполнения действий.</p>
-      <p>У каждого из этих инструментов есть фундаментальное ограничение:</p>
-      <ul>
-        <li>Переменные могут хранить данные, но <strong>не могут ничего с ними делать</strong>.</li>
-        <li>Функции могут обрабатывать данные, но <strong>не могут их хранить</strong>.</li>
-      </ul>
-      <p>Переменные и функции взаимно дополняют друг друга — каждый делает то, чего не умеет другой.</p>
-    </div>
+<div class="docs-section">
+  <h2>Объекты объединяют данные и действия</h2>
+  <p>Ключевая фишка объектов в ООП — они <strong>умеют и хранить данные, и выполнять действия</strong>. Объекты объединяют в себе способности переменных и функций.</p>
+  <p>Как это происходит? Очень просто: внутри класса можно объявить как переменные, так и функции.</p>
 
-    <!-- Section 2 -->
-    <div class="docs-section">
-      <h2>Объекты объединяют данные и действия</h2>
-      <p>Ключевая фишка объектов в ООП — они <strong>умеют и хранить данные, и выполнять действия</strong>. Объекты объединяют в себе способности переменных и функций.</p>
-      <p>Как это происходит? Очень просто: внутри класса можно объявить как переменные, так и функции.</p>
-
-      <idyl-code-block><script type="text/plain">
+  <idyl-code-block><script type="text/plain">
 use console;
 
 class Cat {
+    // свойства (похожи на переменные)
     string name;
     string color;
     int age;
 
+    // методы (похожи на функции)
     void function meow() {
         console.writeln("Мяу!");
     }
@@ -34,38 +31,50 @@ class Cat {
 
 main() {
     Cat my_cat;
+
+    // заполнение свойств
     my_cat.name = "Барсик";
     my_cat.color = "рыжий";
     my_cat.age = 3;
 
+    // вызов методов
     my_cat.meow();
     my_cat.meow();
 }
 </script></idyl-code-block>
 
-      <idyl-output-block>Мяу!
+  <idyl-output-block>Мяу!
 Мяу!</idyl-output-block>
 
-      <p>Класс <code>Cat</code> <strong>определяет</strong> набор переменных (<code>name</code>, <code>color</code>, <code>age</code>) и функцию (<code>meow()</code>). Объект <code>my_cat</code> <strong>пользуется</strong> этими переменными и функцией.</p>
-    </div>
+  <p>Класс <code>Cat</code> <strong>определяет</strong> набор переменных (<code>name</code>, <code>color</code>, <code>age</code>) и функцию (<code>meow()</code>). Объект <code>my_cat</code> <strong>пользуется</strong> этими переменными и функцией.</p>
+</div>
 
-    <!-- Section 3 -->
-    <div class="docs-section">
-      <h2>Терминология: свойства и методы</h2>
-      <p>В контексте ООП используются специальные термины:</p>
-      <ul>
-        <li><strong>Свойство (поле)</strong> — это переменная, объявленная в теле класса.</li>
-        <li><strong>Метод</strong> — это функция, объявленная в теле класса.</li>
-      </ul>
-      <p>То есть, у класса <code>Cat</code> есть свойства <code>name</code>, <code>color</code>, <code>age</code> и метод <code>meow()</code>.</p>
-    </div>
+<div class="docs-section">
+  <h2>Терминология: свойства и методы</h2>
+  <p>В контексте ООП используются специальные термины:</p>
+  <ul>
+    <li><strong>Свойство (поле)</strong> — это переменная, объявленная в теле класса.</li>
+    <li><strong>Метод</strong> — это функция, объявленная в теле класса.</li>
+  </ul>
+  <p>То есть, у класса <code>Cat</code> есть свойства <code>name</code>, <code>color</code>, <code>age</code> и метод <code>meow()</code>.</p>
 
-    <!-- Section 4 -->
-    <div class="docs-section">
-      <h2>Пример: класс Brick</h2>
-      <p>Рассмотрим класс <code>Brick</code> (кирпич) со свойствами и методом:</p>
+  <p>Правило перевода простое — что было снаружи, то есть и внутри класса, только под новым именем:</p>
+  <table>
+    <thead>
+      <tr><th>Вне класса</th><th>Внутри класса</th><th>Задача</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>переменная</td><td><strong>свойство</strong> (поле)</td><td>хранить данные</td></tr>
+      <tr><td>функция</td><td><strong>метод</strong></td><td>выполнять действия</td></tr>
+    </tbody>
+  </table>
+</div>
 
-      <idyl-code-block><script type="text/plain">
+<div class="docs-section">
+  <h2>Пример: класс Brick</h2>
+  <p>Рассмотрим класс <code>Brick</code> (кирпич) со свойствами и методом:</p>
+
+  <idyl-code-block><script type="text/plain">
 use console;
 
 class Brick {
@@ -74,7 +83,7 @@ class Brick {
     string material;
 
     void function fall_on_head() {
-        console.writeln("Бам! На голову упал кирпич!");
+        console.writeln("Бам! На голову упал ", this.color, " кирпич!");
     }
 }
 
@@ -85,51 +94,53 @@ main() {
     b1.material = "керамика";
 
     Brick b2;
-    b2.color = "силикатный";
+    b2.color = "белый";
     b2.mass = 3.0;
-    b2.material = "известняк";
+    b2.material = "силикат";
 
     b1.fall_on_head();
+    b2.fall_on_head();
 }
 </script></idyl-code-block>
 
-      <idyl-output-block>Бам! На голову упал кирпич!</idyl-output-block>
-      <div class="warning-message">
-        main.idyl:24: warning: ⚠️ Падение кирпичей на голову является опасным для жизни и здоровья. Рекомендуем носить защитное снаряжение.
-      </div>
+  <idyl-output-block>Бам! На голову упал красный кирпич!
+Бам! На голову упал белый кирпич!</idyl-output-block>
 
-      <p>В этом примере:</p>
-      <ul>
-        <li>Свойства: <code>color</code>, <code>mass</code>, <code>material</code></li>
-        <li>Метод: <code>fall_on_head()</code></li>
-        <li>Создано два объекта (<code>b1</code> и <code>b2</code>) с разными характеристиками</li>
-        <li>Метод вызван только у первого кирпича</li>
-      </ul>
-    </div>
+  <p>В этом примере:</p>
+  <ul>
+    <li>Свойства: <code>color</code>, <code>mass</code>, <code>material</code></li>
+    <li>Метод: <code>fall_on_head()</code></li>
+    <li>Создано два объекта (<code>b1</code> и <code>b2</code>) с разными характеристиками</li>
+    <li>Один и тот же метод у каждого кирпича напечатал <strong>свой</strong> цвет</li>
+  </ul>
 
-    <!-- Section 5 -->
-    <div class="docs-section">
-      <h2>Важное замечание</h2>
-      <p>Свойства и методы объявляются <strong>в теле класса</strong>, а используются <strong>объектами этого класса</strong>.</p>
-      <p>Попытка обратиться к свойству или методу <strong>через сам класс</strong> (а не через объект) приведёт к ошибке компиляции:</p>
+  <p>Внутри метода встретилось новое слово — <code>this</code>. Так метод обращается к свойствам того объекта, у которого его вызвали: у <code>b1</code> это красный цвет, у <code>b2</code> — белый. Подробно про <code>this</code> — в следующем уроке.</p>
 
-      <idyl-code-block><script type="text/plain">
+  <p>И спокойствие: при написании этого урока ни одна голова не пострадала — наши кирпичи падают исключительно в консоли. Но на настоящей стройке всё-таки носите каску.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Важное замечание</h2>
+  <p>Свойства и методы объявляются <strong>в теле класса</strong>, а используются <strong>объектами этого класса</strong>.</p>
+  <p>Попытка вызвать метод <strong>через сам класс</strong> (а не через объект) приведёт к ошибке компиляции:</p>
+
+  <idyl-code-block><script type="text/plain">
 class Cat {
     string name;
+
     void function meow() { }
 }
 
 main() {
     Cat.meow();     // ОШИБКА!
-    string n = Cat.name;  // ОШИБКА!
 }
 </script></idyl-code-block>
 
-      <div class="warning-message">
-        main.idyl:8: error: 'meow' is not a static member of 'Cat'
-      </div>
+  <idyl-error-block>main.idyl:8:5: error: instance method 'Cat.meow' must be called on an object</idyl-error-block>
 
-      <p>Класс — это только <strong>чертёж</strong>. Чтобы что-то сделать, нужно создать <strong>объект</strong> (экземпляр) по этому чертежу.</p>
-    </div>
+  <p>Компилятор так и объясняет: метод <code>Cat.meow</code> нужно вызывать у объекта (<em>on an object</em>). То же самое со свойствами — если заменить эту строку на <code>string n = Cat.name;</code>, компилятор ответит:</p>
 
-    <!-- Lesson navigation -->
+  <idyl-error-block>main.idyl:8:16: error: instance field 'Cat.name' must be accessed through an object</idyl-error-block>
+
+  <p>Класс — это только <strong>чертёж</strong>. Чертёж кота не мяукает и не имеет имени. Чтобы что-то сделать, создайте по чертежу <strong>объект</strong> — и обращайтесь к нему.</p>
+</div>

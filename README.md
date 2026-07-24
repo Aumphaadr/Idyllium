@@ -1,5 +1,7 @@
 # 🌿 Idyllium
 
+[![CI](https://github.com/Aumphaadr/Idyllium/actions/workflows/ci.yml/badge.svg)](https://github.com/Aumphaadr/Idyllium/actions/workflows/ci.yml)
+
 > **Гармония синтаксиса. Простота понимания. Надёжность обучения.**
 
 **Idyllium** — это учебный язык программирования, созданный для того, чтобы учить думать, а не зубрить исключения.
@@ -57,7 +59,7 @@ string s = console.get_string();
 ```cpp
 int a = 10;
 int b = 3;
-float c = a / b;  // 3.33333, не 3!
+float c = a / b;  // 3.33333333, не 3!
 ```
 Деление всегда возвращает `float`. Для целочисленного деления есть `div()`.
 

@@ -11,19 +11,13 @@
 </style>
 
 <!-- Hero -->
-    
+
 
     <!-- Section 1 -->
     <div class="docs-section">
-      <h2>Что такое LineEdit?</h2>
-      <p><code>gui.LineEdit</code> — это однострочное текстовое поле, куда пользователь может вводить данные с клавиатуры.</p>
-      <p>Где он встречается:</p>
-      <ul>
-        <li>🔐 Формы входа (логин, пароль)</li>
-        <li>🔍 Поле поиска</li>
-        <li>📝 Ввод имени персонажа в игре</li>
-        <li>🏷️ Редактирование названия файла</li>
-      </ul>
+      <h2>Как спросить имя игрока?</h2>
+      <p>Кнопки, счётчики и ползунки хороши, когда пользователь выбирает из готовых вариантов. Но как спросить у игрока его имя? Кнопку «Меня зовут Оля» на всех не заготовишь.</p>
+      <p>Для свободного ввода в <code>gui</code> есть <code>gui.LineEdit</code> — однострочное текстовое поле, куда пользователь печатает с клавиатуры что угодно: имя, пароль, поисковый запрос.</p>
 
       <p>Вот простейший LineEdit:</p>
 
@@ -34,7 +28,7 @@ main() {
     gui.Window win;
     win.width = 300;
     win.height = 100;
-    win.title = "LineEdit";
+    win.title = "Знакомство";
 
     gui.LineEdit input;
     input.x = 20;
@@ -63,11 +57,10 @@ main() {
     <!-- Section 2 -->
     <div class="docs-section">
       <h2>Свойство <code>text</code> — получение введённого текста</h2>
-      <p>Чтобы прочитать то, что ввёл пользователь, используется свойство <code>text</code> (тип <code>string</code>):</p>
+      <p>Чтобы прочитать то, что ввёл пользователь, используется свойство <code>text</code> (тип <code>string</code>). Спросим имя по-настоящему — и поздороваемся:</p>
 
       <idyl-code-block><script type="text/plain">
 use gui;
-use console;
 
 main() {
     gui.Window win;
@@ -229,7 +222,6 @@ main() {
 
       <idyl-code-block><script type="text/plain">
 use gui;
-use console;
 
 main() {
     gui.Window win;
@@ -308,15 +300,28 @@ main() {
 
     <!-- Section 6 -->
     <div class="docs-section">
-      <h2>Виджет TextEdit — многострочное поле</h2>
-      <p><code>gui.TextEdit</code> — это многострочное текстовое поле. Оно работает так же, как <code>LineEdit</code>, но позволяет вводить текст с переносами строк.</p>
-      <p>Где он встречается:</p>
-      <ul>
-        <li>📝 Редактор заметок</li>
-        <li>💬 Поле ввода комментария или отзыва</li>
-        <li>📄 Редактирование файлов конфигурации</li>
-        <li>✍️ Написание писем или сообщений</li>
-      </ul>
+      <h2>Типичная ошибка: число в <code>text</code></h2>
+      <p>Свойство <code>text</code> — всегда строка, даже если внутри написаны одни цифры. Попытка записать в него число закончится знакомой ошибкой:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.LineEdit input;
+    input.text = 42;  // ОШИБКА!
+}
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:5:18: error: cannot assign 'int' value to 'string' variable</idyl-error-block>
+
+      <p>Лекарство то же, что и в уроке про Label: число сначала превращаем в строку — <code>input.text = to_string(42);</code>. А в обратную сторону помните: <code>input.text</code> вернёт вам <code>string</code>, даже если пользователь ввёл «42».</p>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>Многострочный братец: TextEdit</h2>
+      <p>Одна строка — это имя, пароль или поисковый запрос. А если нужно написать целую заметку, отзыв, письмо или отредактировать файл настроек? В одну строку такое не помещается.</p>
+      <p>Для длинных текстов есть <code>gui.TextEdit</code> — многострочное текстовое поле. Оно работает так же, как <code>LineEdit</code>, но позволяет вводить текст с переносами строк: Enter здесь не заканчивает ввод, а начинает новую строку.</p>
 
       <p>Вот простейший TextEdit:</p>
 
@@ -354,19 +359,20 @@ main() {
         </div>
       </div>
 
-      <p>У TextEdit те же свойства, что и у LineEdit:</p>
+      <h3>Те же свойства, что у LineEdit</h3>
+      <p>Ничего нового учить не придётся — у TextEdit те же свойства:</p>
       <ul>
         <li><code>text</code> — получение/установка текста</li>
         <li><code>placeholder</code> — подсказка (отображается, пока поле пустое)</li>
         <li><code>font_size</code> — размер шрифта</li>
         <li><code>on_change</code> — событие при изменении текста</li>
       </ul>
+      <p>Единственное, чего у TextEdit нет, — <code>echo_mode</code>: многострочные пароли никому не нужны.</p>
 
       <p>Пример с кнопкой, которая читает текст из TextEdit:</p>
 
       <idyl-code-block><script type="text/plain">
 use gui;
-use console;
 
 main() {
     gui.Window win;
@@ -426,6 +432,26 @@ main() {
       <div class="tip-box" style="margin-top: 1em;">
         <strong>💡 Важно:</strong> TextEdit поддерживает перенос строк. Свойство <code>text</code> будет содержать символы <code>\n</code> там, где пользователь нажал Enter.
       </div>
+    </div>
+
+    <!-- Section 8 -->
+    <div class="docs-section">
+      <h2>Шпаргалка: LineEdit и TextEdit</h2>
+      <p>Опорная таблица по обоим полям ввода:</p>
+
+      <table>
+        <thead>
+          <tr><th>Свойство/событие</th><th>Что делает</th><th>Есть у обоих?</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>text</code> (<code>string</code>)</td><td>введённый текст: можно читать и менять</td><td>да</td></tr>
+          <tr><td><code>placeholder</code> (<code>string</code>)</td><td>серая подсказка, пока поле пустое</td><td>да</td></tr>
+          <tr><td><code>font_size</code> (<code>int</code>)</td><td>размер шрифта в пикселях</td><td>да</td></tr>
+          <tr><td><code>text_color</code>, <code>background_color</code>, <code>border_color</code></td><td>цвета — как у других виджетов</td><td>да</td></tr>
+          <tr><td><code>echo_mode</code> (<code>string</code>)</td><td>режим отображения: <code>"normal"</code>, <code>"password"</code>, <code>"no_echo"</code></td><td>только у LineEdit</td></tr>
+          <tr><td><code>on_change</code></td><td>событие: текст изменился</td><td>да</td></tr>
+        </tbody>
+      </table>
     </div>
 
     <!-- Lesson navigation -->

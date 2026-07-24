@@ -1,0 +1,365 @@
+    <div class="docs-section">
+      <h2>Два условия сразу — как?</h2>
+      <p>На самую страшную горку в парке аттракционов — «Кракен» — пускают только тех, кому <strong>уже есть 10 лет</strong> и чей рост <strong>не меньше 140 см</strong>. Два условия сразу!</p>
+      <p>Оператор <code>if</code> из прошлых уроков проверяет одно сравнение. А как проверить оба? Писать <code>if</code> внутри <code>if</code>? Можно, но получится громоздко — а с тремя-четырьмя условиями превратится в лесенку до потолка.</p>
+      <p>В этом уроке появятся операции-«клеи»: <code>and</code>, <code>or</code>, <code>xor</code> и <code>not()</code>. Они склеивают несколько условий в одно — и контролёр «Кракена» поместится в одну строчку.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Операции — это преобразования</h2>
+      <p>Начнём с того, что <strong>все операции — это правила преобразования</strong>. Например, арифметические операторы берут числа и делают из них новое число:</p>
+
+      <idyl-code-block><script type="text/plain">
+15 + 17 // '+' берёт 15 и 17 → порождает 32
+44 - 16 // '-' берёт 44 и 16 → порождает 28
+11 * 13 // '*' берёт 11 и 13 → порождает 143
+</script></idyl-code-block>
+
+      <p>А теперь — операторы сравнения. Они тоже берут числа, но <strong>порождают не число, а логическое значение</strong>:</p>
+
+      <idyl-code-block><script type="text/plain">
+27 > 15  // '>' берёт 27 и 15 → порождает true
+43 < 12  // '<' берёт 43 и 12 → порождает false
+61 == 61 // '==' берёт 61 и 61 → порождает true
+</script></idyl-code-block>
+
+      <p>Результат операций сравнения — значение типа <code>bool</code>. Не верите, что сравнение действительно что-то «порождает»? Отдайте его прямо в <code>writeln</code> и посмотрите:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    console.writeln(15 + 17);
+    console.writeln(27 > 15);
+    console.writeln(43 < 12);
+    console.writeln(61 == 61);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>32
+true
+false
+true</idyl-output-block>
+
+      <p>Плюс породил число, а сравнения — самые настоящие <code>true</code> и <code>false</code>.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Логические операции</h2>
+      <p>Если операторы сравнения порождают <code>bool</code>, то логические операторы <strong>работают с уже готовыми логическими значениями</strong>. Правила просты:</p>
+      <ul>
+        <li><code>and</code> («И») — <code>true</code> только если <strong>с обеих сторон</strong> <code>true</code>;</li>
+        <li><code>or</code> («ИЛИ») — <code>true</code>, если <strong>хотя бы с одной стороны</strong> <code>true</code>;</li>
+        <li><code>xor</code> («исключающее ИЛИ») — <code>true</code>, если <strong>только с одной стороны</strong> <code>true</code>.</li>
+      </ul>
+
+      <p>Проверим все три прямо в программе:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    console.writeln(true and false);
+    console.writeln(false or true);
+    console.writeln(true xor true);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>false
+true
+false</idyl-output-block>
+
+      <p>Все эти операции принимают именно логические значения. Числа и строки не превращаются в <code>bool</code> автоматически:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    int coins = 120;
+
+    if (coins) {
+        console.writeln("Монеты есть!");
+    }
+}
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:6:9: error: if condition must be 'bool', got 'int'</idyl-error-block>
+
+      <p>Компилятор не собирается гадать, что вы имели в виду: «монет больше нуля»? «монеты не равны нулю»? Напишите сравнение явно — например, <code>coins > 0</code>.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Условия с 'and': пускают ли вас на «Кракен»?</h2>
+      <p>Вернёмся к горке из начала урока. Каждое из двух требований — обычное сравнение, а <code>and</code> склеивает их в одно условие:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    console.write("Сколько вам лет? ");
+    int age = console.get_int();
+    console.write("Какой у вас рост (в см)? ");
+    int height = console.get_int();
+
+    bool old_enough = age >= 10;
+    bool tall_enough = height >= 140;
+
+    if (old_enough and tall_enough) {
+        console.writeln("Проходите! Приятного визга на горке!");
+    } else {
+        console.writeln("Извините, на «Кракен» пока нельзя.");
+    }
+}
+</script></idyl-code-block>
+
+      <p>Каждое сравнение мы сохранили в свою переменную типа <code>bool</code> — а <code>and</code> взял два готовых логических значения и превратил их в одно. Проверим счастливчика ростом 150 см:</p>
+
+      <idyl-output-block>Сколько вам лет? <span class="user_input">12</span>
+Какой у вас рост (в см)? <span class="user_input">150</span>
+Проходите! Приятного визга на горке!</idyl-output-block>
+
+      <p>А теперь того же двенадцатилетнего, но ростом 130 см — одного <code>true</code> для <code>and</code> мало:</p>
+
+      <idyl-output-block>Сколько вам лет? <span class="user_input">12</span>
+Какой у вас рост (в см)? <span class="user_input">130</span>
+Извините, на «Кракен» пока нельзя.</idyl-output-block>
+
+      <p>Промежуточные переменные заводить не обязательно — сравнения можно склеить прямо в условии:</p>
+
+      <idyl-code-block><script type="text/plain">
+if (age >= 10 and height >= 140) {
+    console.writeln("Проходите! Приятного визга на горке!");
+}
+</script></idyl-code-block>
+
+      <p>У <code>and</code> четыре возможных случая, и лишь один из них даёт <code>true</code>:</p>
+      <table>
+        <thead>
+          <tr><th>Слева</th><th>Справа</th><th>Результат</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>false</code></td><td><code>false</code></td><td><code>false</code></td></tr>
+          <tr><td><code>false</code></td><td><code>true</code></td><td><code>false</code></td></tr>
+          <tr><td><code>true</code></td><td><code>false</code></td><td><code>false</code></td></tr>
+          <tr><td><code>true</code></td><td><code>true</code></td><td><code>true</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="docs-section">
+      <h2>Условия с 'or': отменят ли уроки?</h2>
+      <p>Уроки отменяют, если на улице сильный мороз <strong>или</strong> ураганный ветер. Достаточно любой из причин — а если случились обе сразу, тем более сидим дома:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    console.write("Температура на улице: ");
+    int temp = console.get_int();
+    console.write("Скорость ветра (м/с): ");
+    int wind = console.get_int();
+
+    if (temp < -20 or wind > 15) {
+        console.writeln("Уроки отменяются, сидим дома!");
+    } else {
+        console.writeln("Одевайтесь, в школу всё равно надо.");
+    }
+}
+</script></idyl-code-block>
+
+      <p>Мороз −25° — ветер уже не важен:</p>
+
+      <idyl-output-block>Температура на улице: <span class="user_input">-25</span>
+Скорость ветра (м/с): <span class="user_input">3</span>
+Уроки отменяются, сидим дома!</idyl-output-block>
+
+      <p>А вот −5° и лёгкий ветерок — оба условия ложны, и только тогда <code>or</code> выдаёт <code>false</code>:</p>
+
+      <idyl-output-block>Температура на улице: <span class="user_input">-5</span>
+Скорость ветра (м/с): <span class="user_input">4</span>
+Одевайтесь, в школу всё равно надо.</idyl-output-block>
+
+      <p>Таблица <code>or</code> — зеркальная к <code>and</code>: лишь один случай даёт <code>false</code>:</p>
+      <table>
+        <thead>
+          <tr><th>Слева</th><th>Справа</th><th>Результат</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>false</code></td><td><code>false</code></td><td><code>false</code></td></tr>
+          <tr><td><code>false</code></td><td><code>true</code></td><td><code>true</code></td></tr>
+          <tr><td><code>true</code></td><td><code>false</code></td><td><code>true</code></td></tr>
+          <tr><td><code>true</code></td><td><code>true</code></td><td><code>true</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="docs-section">
+      <h2>Условия с 'xor': лампа и два выключателя</h2>
+      <p>В длинных коридорах ставят <strong>два</strong> выключателя для одной лампы: один у двери, другой у дивана. Лампа горит, когда включён <strong>ровно один</strong> из них — щёлкните любым, и свет переключится. Это <code>xor</code> в чистом виде:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    console.write("Выключатель у двери включён? (1 — да, 0 — нет) ");
+    int first = console.get_int();
+    console.write("Выключатель у дивана включён? (1 — да, 0 — нет) ");
+    int second = console.get_int();
+
+    if (first == 1 xor second == 1) {
+        console.writeln("Лампа горит!");
+    } else {
+        console.writeln("Лампа не горит.");
+    }
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Выключатель у двери включён? (1 — да, 0 — нет) <span class="user_input">1</span>
+Выключатель у дивана включён? (1 — да, 0 — нет) <span class="user_input">0</span>
+Лампа горит!</idyl-output-block>
+
+      <p>Включим оба — и <code>xor</code> вернёт <code>false</code>:</p>
+
+      <idyl-output-block>Выключатель у двери включён? (1 — да, 0 — нет) <span class="user_input">1</span>
+Выключатель у дивана включён? (1 — да, 0 — нет) <span class="user_input">1</span>
+Лампа не горит.</idyl-output-block>
+
+      <p>Это как по-русски: «Либо одно, либо другое. Но не всё сразу».</p>
+      <p>У <code>xor</code> всего четыре возможных случая. Их удобно собрать в таблицу:</p>
+      <table>
+        <thead>
+          <tr><th>Слева</th><th>Справа</th><th>Результат</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>false</code></td><td><code>false</code></td><td><code>false</code></td></tr>
+          <tr><td><code>false</code></td><td><code>true</code></td><td><code>true</code></td></tr>
+          <tr><td><code>true</code></td><td><code>false</code></td><td><code>true</code></td></tr>
+          <tr><td><code>true</code></td><td><code>true</code></td><td><code>false</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="docs-section">
+      <h2>Порядок выполнения</h2>
+      <p>Если в одном выражении встретились разные логические операции, сначала выполняется <code>and</code>, затем <code>xor</code>, а после него <code>or</code>. Сравнения (<code>&gt;</code>, <code>==</code> и остальные) вычисляются ещё раньше — поэтому в примерах выше мы спокойно писали <code>first == 1 xor second == 1</code> без скобок.</p>
+
+      <idyl-code-block><script type="text/plain">
+A or B xor C and D
+
+// То же самое с явно показанным порядком:
+A or (B xor (C and D))
+</script></idyl-code-block>
+
+      <p>Проверим, что обе записи действительно дают одно и то же:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    bool A = true;
+    bool B = true;
+    bool C = true;
+    bool D = false;
+
+    console.writeln(A or B xor C and D);
+    console.writeln(A or (B xor (C and D)));
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>true
+true</idyl-output-block>
+
+      <p>Знать этот порядок полезно, но заучивать наизусть не обязательно: <strong>когда сомневаетесь — просто ставьте скобки</strong>. Тогда и компилятор, и вы сами через неделю прочитаете условие одинаково.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Операция 'not()' — инверсия</h2>
+      <p>В Idyllium операция «НЕ» реализована как <strong>функция</strong> — <code>not(выражение)</code>:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    bool is_raining = true;
+
+    console.writeln(not(is_raining));
+    console.writeln(not(not(is_raining)));
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>false
+true</idyl-output-block>
+
+      <p><code>not()</code> переворачивает значение, а двойное <code>not()</code> возвращает всё как было. Скобки чётко показывают, что именно инвертируется — никакой двусмысленности.</p>
+      <p>Таблица у <code>not()</code> самая короткая — аргумент-то один:</p>
+      <table>
+        <thead>
+          <tr><th>Аргумент</th><th>Результат</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>false</code></td><td><code>true</code></td></tr>
+          <tr><td><code>true</code></td><td><code>false</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="docs-section">
+      <h2>Аналогия с математикой</h2>
+      <p>Функция <code>not()</code> работает как унарный минус в арифметике:</p>
+
+      <idyl-code-block><script type="text/plain">
+int X = 5;
+int Y = -X; // -5
+int Z = -Y; // снова 5
+</script></idyl-code-block>
+
+      <p>Точно так же:</p>
+
+      <idyl-code-block><script type="text/plain">
+bool P = true;
+bool Q = not(P); // false
+bool R = not(Q); // снова true
+</script></idyl-code-block>
+
+      <p><code>not()</code> <strong>переключает</strong> значение: <code>true</code> ↔ <code>false</code>, как минус переключает знак числа.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Почему 'not' — функция, а не оператор?</h2>
+      <p>Представьте, что «не» можно было бы приписывать к условию просто так, без скобок: <em>не монет больше ста</em>. К чему относится это «не» — только к монетам или ко всему сравнению? Читатель такой записи вынужден гадать.</p>
+      <p>В Idyllium гадать не приходится: скобки <code>not()</code> обнимают ровно то, что инвертируется:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    console.write("Сколько у вас монет? ");
+    int coins = console.get_int();
+
+    if (not(coins > 100)) {
+        console.writeln("На меч не хватает. Копим дальше!");
+    }
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Сколько у вас монет? <span class="user_input">50</span>
+На меч не хватает. Копим дальше!</idyl-output-block>
+
+      <p><code>not(coins > 100)</code> читается однозначно: «неправда, что монет больше ста». Скобки — это не формальность. Это <strong>гарантия ясности</strong>: вы всегда видите, что именно отрицается, — а в спорных местах добавляете скобки и остальным операциям.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Итог: четыре логические операции</h2>
+      <table>
+        <thead>
+          <tr><th>Операция</th><th>Что означает</th><th>Пример</th><th>Результат</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>and</code></td><td>«И»: обе стороны должны быть <code>true</code></td><td><code>true and false</code></td><td><code>false</code></td></tr>
+          <tr><td><code>or</code></td><td>«ИЛИ»: хотя бы одна сторона <code>true</code></td><td><code>false or true</code></td><td><code>true</code></td></tr>
+          <tr><td><code>xor</code></td><td>«либо-либо»: ровно одна сторона <code>true</code></td><td><code>true xor true</code></td><td><code>false</code></td></tr>
+          <tr><td><code>not()</code></td><td>«НЕ»: переворачивает значение</td><td><code>not(true)</code></td><td><code>false</code></td></tr>
+        </tbody>
+      </table>
+      <p>Сравнения порождают <code>bool</code>, логические операции склеивают их в условия любой сложности — и всё это помещается в один <code>if</code>. Контролёр «Кракена» гордился бы вами.</p>
+    </div>

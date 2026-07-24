@@ -122,22 +122,6 @@ function collectGuiAssetPaths(windows, canvases, audio = []) {
   return result;
 }
 
-function guiPreviewIntervalMs(windows, canvases) {
-  const candidates = [];
-  const collectCanvas = (canvas) => {
-    const limit = Number(canvas && canvas.properties && canvas.properties.framerate_limit);
-    if (Number.isFinite(limit) && limit > 0) candidates.push(limit);
-  };
-  for (const canvas of canvases) collectCanvas(canvas);
-  const visitWidget = (widget) => {
-    if (widget.canvas) collectCanvas(widget.canvas);
-    for (const child of widget.children || []) visitWidget(child);
-  };
-  for (const win of windows) visitWidget(win);
-  const fps = Math.max(1, Math.min(60, candidates.length > 0 ? Math.max(...candidates) : 30));
-  return Math.max(16, Math.round(1000 / fps));
-}
-
 function htmlAttribute(value) {
   return String(value)
     .replaceAll('&', '&amp;')
@@ -149,7 +133,6 @@ function htmlAttribute(value) {
 module.exports = {
   buildGuiState,
   collectGuiAssetPaths,
-  guiPreviewIntervalMs,
   rendererAssetPaths,
   rendererRootDir,
   renderGuiWebviewHtml,

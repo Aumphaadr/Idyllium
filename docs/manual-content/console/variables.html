@@ -1,0 +1,288 @@
+<div class="docs-section">
+  <h2>Что такое переменная?</h2>
+  <p>
+    В прошлом уроке программа выводила только тот текст, который вы заранее
+    написали в коде. Но настоящие программы постоянно что-то запоминают и меняют:
+    счёт игрока, количество жизней, никнейм. Значит, данным нужно место, где они
+    будут храниться, пока программа работает. Для этого и придуманы переменные.
+  </p>
+  <p>Переменная — это <strong>ячейка в памяти компьютера</strong>, предназначенная для хранения данных.</p>
+  <p>У каждой переменной обязательно есть три атрибута:</p>
+  <ul>
+    <li><strong>Имя</strong> — как мы обращаемся к переменной в коде (например, <code>score</code>, <code>name</code>);</li>
+    <li><strong>Тип</strong> — какого рода данные она может хранить (число, текст и т.д.);</li>
+    <li><strong>Значение</strong> — то, что в ней сейчас лежит.</li>
+  </ul>
+</div>
+
+<div class="docs-section">
+  <h2>Создание переменных</h2>
+  <p>Рассмотрим простейший пример — учёт жизней и очков в игре:</p>
+
+  <idyl-code-block><script type="text/plain">
+// main.idyl
+use console;
+
+main() {
+    int lives = 3; // создание переменной с именем 'lives' и значением '3'
+    console.write(lives, '\n');
+
+    int score = 1500; // создание переменной с именем 'score' и значением '1500'
+    console.write(score, '\n');
+}
+</script></idyl-code-block>
+
+  <p>Результат выполнения:</p>
+
+  <idyl-output-block>3
+1500</idyl-output-block>
+
+  <p>Запись <code>int lives = 3;</code> читается так: «создать ячейку типа <code>int</code> (целое число) с именем <code>lives</code> и положить в неё значение 3».</p>
+  <p>Если передать переменную в функцию <code>console.write()</code> — она выведет именно <strong>значение</strong> этой переменной, а не её имя.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Типы данных в Idyllium</h2>
+  <p>Idyllium поддерживает пять базовых типов:</p>
+
+  <table>
+    <thead>
+      <tr><th>Тип</th><th>Что хранит</th><th>Примеры значений</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>int</code></td><td>целые числа</td><td><code>42</code>, <code>-7</code>, <code>0</code></td></tr>
+      <tr><td><code>float</code></td><td>числа с плавающей точкой (дробные)</td><td><code>3.14</code>, <code>-0.5</code>, <code>2.0</code></td></tr>
+      <tr><td><code>string</code></td><td>текст в двойных кавычках</td><td><code>"Привет"</code></td></tr>
+      <tr><td><code>char</code></td><td>одиночный символ в одинарных кавычках</td><td><code>'A'</code>, <code>'#'</code></td></tr>
+      <tr><td><code>bool</code></td><td>логические значения</td><td><code>true</code>, <code>false</code></td></tr>
+    </tbody>
+  </table>
+
+  <p>Пример объявления переменных разных типов:</p>
+
+  <idyl-code-block><script type="text/plain">
+// main.idyl
+use console;
+
+main() {
+    int diamonds = 42;
+    float speed = 16.3;
+    string motto = "И вообще, я крутой!";
+
+    console.write(diamonds, '\n');
+    console.write(speed, '\n');
+    console.write(motto, '\n');
+}
+</script></idyl-code-block>
+
+  <p>Результат выполнения:</p>
+
+  <idyl-output-block>42
+16.3
+И вообще, я крутой!</idyl-output-block>
+</div>
+
+<div class="docs-section">
+  <h2>Ошибки несоответствия типов</h2>
+  <p>
+    В Idyllium <strong>нельзя присвоить переменной значение, не подходящее по
+    типу</strong>. Сначала посмотрим на то, что компилятор разрешает:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+// main.idyl
+use console;
+
+main() {
+    int apples = 2;          // целое в int — можно
+    float price = 4.62;      // дробное во float — можно
+    float weight = 5;        // тоже можно: целое 5 превратится в 5.0
+    string question = "ЪЕЪ или ЪУЪ?";   // текст в string — можно
+    string request = "дайте 64 алмаза"; // и это можно
+
+    console.write(apples, '\n');
+    console.write(price, '\n');
+    console.write(weight, '\n');
+    console.write(question, '\n');
+    console.write(request, '\n');
+}
+</script></idyl-code-block>
+
+  <p>Результат выполнения:</p>
+
+  <idyl-output-block>2
+4.62
+5
+ЪЕЪ или ЪУЪ?
+дайте 64 алмаза</idyl-output-block>
+
+  <p>
+    Заметьте единственную поблажку: во <code>float</code> разрешается положить
+    целое число — оно спокойно превратится в 5.0. (А выводится <code>weight</code>
+    просто как <code>5</code>: дробная часть нулевая, и Idyllium её не показывает.)
+  </p>
+  <p>А теперь попробуем провернуть обратный трюк — положить дробное число в <code>int</code>:</p>
+
+  <idyl-code-block><script type="text/plain">
+// main.idyl
+use console;
+
+main() {
+    int lives = 1.7;
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:5:17: error: cannot assign 'float' value to 'int' variable</idyl-error-block>
+
+  <p>
+    Компилятор непреклонен: <code>1.7</code> — это <code>float</code>, а
+    <code>float</code>-значение в <code>int</code>-переменную не помещается.
+    И правда: что такое 1.7 жизни? Число в <code>string</code> тоже не спрячешь:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+// main.idyl
+use console;
+
+main() {
+    string nickname = 56692;
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:5:23: error: cannot assign 'int' value to 'string' variable</idyl-error-block>
+
+  <p>
+    Хотите, чтобы <code>56692</code> считался текстом, — возьмите его в кавычки:
+    <code>"56692"</code>. Это не ограничение — это защита. Компьютер не будет
+    пытаться угадать, что вы имели в виду.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Объявление и присваивание</h2>
+  <p>Есть два способа работать с переменной:</p>
+  <ul>
+    <li><strong>Инициализация</strong> — создание с одновременным присваиванием значения;</li>
+    <li><strong>Присваивание</strong> — изменение значения уже созданной переменной.</li>
+  </ul>
+
+  <idyl-code-block><script type="text/plain">
+// main.idyl
+use console;
+
+main() {
+    int coins;  // создаём переменную, но пока не кладём значение
+    coins = 20; // присваиваем значение
+
+    int gems = 30; // создаём и сразу присваиваем
+
+    console.write("Монет: ", coins, '\n');
+    console.write("Самоцветов: ", gems, '\n');
+}
+</script></idyl-code-block>
+
+  <p>Результат выполнения:</p>
+
+  <idyl-output-block>Монет: 20
+Самоцветов: 30</idyl-output-block>
+</div>
+
+<div class="docs-section">
+  <h2>Встраивание переменных в текст</h2>
+  <p>Функция <code>console.write()</code> не ставит пробелы автоматически между аргументами. Сравните:</p>
+
+  <idyl-code-block><script type="text/plain">
+// main.idyl
+use console;
+
+main() {
+    int food;
+    food = 5;
+    console.write("Кот сожрал", food, "кг корма!", '\n');
+}
+</script></idyl-code-block>
+
+  <p>Результат:</p>
+
+  <idyl-output-block>Кот сожрал5кг корма!</idyl-output-block>
+
+  <p>Число «прилипло» к словам. Чтобы этого избежать — добавьте пробелы в строки:</p>
+
+  <idyl-code-block><script type="text/plain">
+// main.idyl
+use console;
+
+main() {
+    int food = 5;
+    console.write("Кот сожрал ", food, " кг корма!", '\n');
+}
+</script></idyl-code-block>
+
+  <p>Теперь всё читаемо:</p>
+
+  <idyl-output-block>Кот сожрал 5 кг корма!</idyl-output-block>
+
+  <p>Это даёт вам полный контроль над форматом вывода — без сюрпризов.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Изменение значения переменной</h2>
+  <p>Переменная может менять своё значение в процессе работы программы:</p>
+
+  <idyl-code-block><script type="text/plain">
+// main.idyl
+use console;
+
+main() {
+    int money = 20000;
+    console.write("У вас ", money, " денег\n");
+
+    money = 25000;
+    console.write("У вас ", money, " денег\n");
+}
+</script></idyl-code-block>
+
+  <p>Вывод:</p>
+
+  <idyl-output-block>У вас 20000 денег
+У вас 25000 денег</idyl-output-block>
+
+  <p>Обратите внимание: при изменении значения <strong>не нужно указывать тип повторно</strong>. Достаточно написать <code>money = 25000;</code>. Тип уже зафиксирован при объявлении.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Порядок строк имеет значение</h2>
+  <p>В Idyllium <strong>переменную можно использовать только после её объявления</strong>. Попытка обратиться к переменной до того, как она создана, вызовет ошибку компиляции:</p>
+
+  <idyl-code-block><script type="text/plain">
+// main.idyl
+use console;
+
+main() {
+    console.write("Алмазов: ", diam, '\n');
+    int diam = 64;
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:5:32: error: 'diam' was not declared in this scope</idyl-error-block>
+
+  <p>
+    Компилятор жалуется: в строке 5 ему встретилось имя <code>diam</code>, о котором
+    он пока ничего не знает — ведь объявление переменной стоит строкой ниже.
+    Поменяем строки местами:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+// main.idyl
+use console;
+
+main() {
+    int diam = 64;
+    console.write("Алмазов: ", diam, '\n');
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Алмазов: 64</idyl-output-block>
+
+  <p>Это правило помогает избежать путаницы и учит писать код в логической последовательности: сначала — что у вас есть (объявление), потом — что вы с этим делаете (использование).</p>
+</div>

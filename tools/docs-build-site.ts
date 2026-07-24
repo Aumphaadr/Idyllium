@@ -103,11 +103,29 @@ const SECTION_ORDER = ['console', 'widgets', 'oop', 'canvas', 'json', 'sqlite', 
 const MANUAL_LESSONS: readonly ManualLesson[] = [
   {
     sectionId: 'console',
-    afterLessonId: 'variables',
+    // После циклов и time: ученик уже успел «нахвататься шишек» со случайно
+    // изменёнными переменными, а впереди массивы, где const-размеры сразу
+    // пригодятся. Раньше стоял после variables и выглядел «урезанной
+    // переменной без пользы». Урок time стоит сразу после циклов (владелец:
+    // пусть дети наиграются с time.sleep() в циклах), константы — за ним.
+    afterLessonId: 'time',
     id: 'constants',
     title: 'Именованные константы',
     subtitle: 'Значения, которым программа не даст случайно измениться',
     sourceFile: 'docs/manual-content/console/constants.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'console',
+    // Вторая половина бывшего урока types (пожелание владельца 2026-07-24):
+    // первый урок — ограниченные типы, переполнение, bin/hex; второй — сдвиги
+    // и битовые логические операции.
+    afterLessonId: 'types',
+    id: 'bit-operations',
+    title: 'Битовые операции',
+    subtitle: 'Сдвиги, маски и четыре логические операции над битами',
+    sourceFile: 'docs/manual-content/console/bit-operations.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -571,15 +589,65 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
   },
 ];
 
-const LESSON_EXTRAS: Record<string, string> = {
-  'cli/005_colors.html': 'docs/manual-content/patches/console-colors-extra.html',
-  'cli/009_increment.html': 'docs/manual-content/patches/console-increment-extra.html',
-  'cli/020_types.html': 'docs/manual-content/patches/console-types-shifts.html',
-  'cli/024_files.html': 'docs/manual-content/patches/console-files-read-all.html',
-};
+const LESSON_EXTRAS: Record<string, string> = {};
 
 const LESSON_REPLACEMENTS: Record<string, string> = {
   'cli/000_setup.html': 'docs/manual-content/console/setup.html',
+  'cli/001_hello.html': 'docs/manual-content/console/hello.html',
+  'cli/002_variables.html': 'docs/manual-content/console/variables.html',
+  'cli/003_input.html': 'docs/manual-content/console/input.html',
+  'cli/004_arithmetics.html': 'docs/manual-content/console/arithmetics.html',
+  'cli/005_colors.html': 'docs/manual-content/console/colors.html',
+  'cli/006_transforms.html': 'docs/manual-content/console/transforms.html',
+  'cli/007_math.html': 'docs/manual-content/console/math-basics.html',
+  'cli/008_if.html': 'docs/manual-content/console/if.html',
+  'cli/009_increment.html': 'docs/manual-content/console/increment.html',
+  'cli/010_random.html': 'docs/manual-content/console/random.html',
+  'cli/011_bool.html': 'docs/manual-content/console/bool.html',
+  'cli/012_loops.html': 'docs/manual-content/console/loops.html',
+  'cli/013_array.html': 'docs/manual-content/console/array.html',
+  'cli/014_char.html': 'docs/manual-content/console/char.html',
+  'cli/015_dyn_array.html': 'docs/manual-content/console/dyn-array.html',
+  'cli/016_arr_functions.html': 'docs/manual-content/console/arr-functions.html',
+  'cli/017_arr_methods.html': 'docs/manual-content/console/arr-methods.html',
+  'cli/018_string_methods.html': 'docs/manual-content/console/string-methods.html',
+  'cli/019_time.html': 'docs/manual-content/console/time.html',
+  'cli/020_types.html': 'docs/manual-content/console/types.html',
+  'cli/021_encoding.html': 'docs/manual-content/console/encoding.html',
+  'cli/022_functions.html': 'docs/manual-content/console/functions.html',
+  'cli/023_libs.html': 'docs/manual-content/console/libs.html',
+  'cli/024_files.html': 'docs/manual-content/console/files.html',
+  'cli/025_math.html': 'docs/manual-content/console/math-advanced.html',
+  'cli/026_matrix.html': 'docs/manual-content/console/matrix.html',
+  'cli/027_errors.html': 'docs/manual-content/console/errors.html',
+  'widgets/000_window.html': 'docs/manual-content/widgets/window.html',
+  'widgets/001_button.html': 'docs/manual-content/widgets/button.html',
+  'widgets/002_label.html': 'docs/manual-content/widgets/label.html',
+  'widgets/003_progressbar.html': 'docs/manual-content/widgets/progressbar.html',
+  'widgets/004_spinbox.html': 'docs/manual-content/widgets/spinbox.html',
+  'widgets/005_slider.html': 'docs/manual-content/widgets/slider.html',
+  'widgets/006_lineedit.html': 'docs/manual-content/widgets/lineedit.html',
+  'widgets/007_checkbox.html': 'docs/manual-content/widgets/checkbox.html',
+  'widgets/008_radiobutton.html': 'docs/manual-content/widgets/radiobutton.html',
+  'widgets/009_frame.html': 'docs/manual-content/widgets/frame.html',
+  'widgets/010_combobox.html': 'docs/manual-content/widgets/combobox.html',
+  'widgets/011_visibility.html': 'docs/manual-content/widgets/visibility.html',
+  'widgets/012_arrays.html': 'docs/manual-content/widgets/arrays.html',
+  'widgets/013_sender.html': 'docs/manual-content/widgets/sender.html',
+  'widgets/014_timer.html': 'docs/manual-content/widgets/timer.html',
+  'widgets/015_modal.html': 'docs/manual-content/widgets/modal.html',
+  'widgets/016_errors.html': 'docs/manual-content/widgets/errors.html',
+  'oop/000_intro.html': 'docs/manual-content/oop/intro.html',
+  'oop/001_classes.html': 'docs/manual-content/oop/classes.html',
+  'oop/002_fields_methods.html': 'docs/manual-content/oop/fields-methods.html',
+  'oop/003_this.html': 'docs/manual-content/oop/this.html',
+  'oop/004_modules.html': 'docs/manual-content/oop/modules.html',
+  'oop/005_arrays.html': 'docs/manual-content/oop/arrays.html',
+  'oop/007_composition.html': 'docs/manual-content/oop/composition.html',
+  'oop/008_inheritance.html': 'docs/manual-content/oop/inheritance.html',
+  'oop/010_encapsulation.html': 'docs/manual-content/oop/encapsulation.html',
+  'oop/011_static.html': 'docs/manual-content/oop/static.html',
+  'oop/012_errors.html': 'docs/manual-content/oop/errors.html',
   'oop/006_constructor.html': 'docs/manual-content/oop/constructor.html',
   'oop/009_polymorphism.html': 'docs/manual-content/oop/polymorphism.html',
 };
@@ -786,171 +854,20 @@ function lessonFragment(sourceFile: string, html: string): string {
     .map((style) => `<style data-lesson-style>\n${style}\n</style>`)
     .join('\n');
   const scripts = extractInlineScripts(normalized)
-    .map((script) => transformLessonScript(sourceFile, script))
     .map((script) => `<script data-lesson-script type="text/plain">\n${escapeScriptText(script)}\n</script>`)
     .join('\n');
   const main = extractMain(normalized);
-  const withoutHero = removeElementByClass(main, 'docs-hero');
+  // Стили переиздаются в шапке фрагмента; копии в теле удаляются, чтобы
+  // пересборка уже собранного фрагмента оставалась идемпотентной.
+  const withoutInlineStyles = main.replace(/<style\b[^>]*>[\s\S]*?<\/style>\s*/giu, '');
+  const withoutHero = removeElementByClass(withoutInlineStyles, 'docs-hero');
   const withoutOldNav = removeElementByClass(withoutHero, 'docs-lesson-nav');
   const cleaned = withoutOldNav
     .replace(/<script\s+src=["'][^"']*version\.js["'][^>]*>\s*<\/script>/giu, '')
     .trim();
-  const transformed = transformLesson(sourceFile, cleaned);
   const extra = readLessonExtra(sourceFile);
 
-  return `${styles}${styles ? '\n\n' : ''}${transformed}${extra ? `\n\n${extra}` : ''}${scripts ? `\n\n${scripts}` : ''}\n`;
-}
-
-function transformLesson(sourceFile: string, html: string): string {
-  if (sourceFile === 'widgets/002_label.html') {
-    return html
-      .replace(
-        '<p>Свойство <code>color</code> позволяет задать цвет текста в формате <strong>шестнадцатеричного кода</strong> (HEX). Например, <code>"#FF0000"</code> — красный, <code>"#00FF00"</code> — зелёный, <code>"#0000FF"</code> — синий.</p>',
-        '<p>Свойство <code>text_color</code> задаёт цвет текста. Сам цвет берётся из библиотеки <code>colors</code>: можно выбрать готовую константу или создать собственный цвет через <code>colors.RGB()</code>, <code>colors.HEX()</code> и другие функции.</p>',
-      )
-      .replace(
-        `use gui;
-
-main() {
-    gui.Window win;
-    win.width = 350;
-    win.height = 180;
-    win.title = "Цветные лейблы";`,
-        `use colors;
-use gui;
-
-main() {
-    gui.Window win;
-    win.width = 350;
-    win.height = 180;
-    win.title = "Цветные лейблы";`,
-      )
-      .replace('red.color = "#FF0000";', 'red.text_color = colors.RED;')
-      .replace('green.color = "#00FF00";', 'green.text_color = colors.GREEN;')
-      .replace('blue.color = "#0000FF";', 'blue.text_color = colors.BLUE;')
-      .replace(
-        '🎨 Цвет задаётся в формате <code>"#RRGGBB"</code>, где RR — красный, GG — зелёный, BB — синий (00–FF).',
-        '🎨 У лейбла меняется именно <code>text_color</code>. Строка с HEX-кодом сама цветом не считается: сначала превратите её через <code>colors.HEX()</code>.',
-      )
-      .replace(
-        /gui\.Window win;\n    win\.width = 400;\n    win\.height = 200;\n\n    gui\.Label label;\n    label\.x = 20;\n    label\.y = 20;\n    label\.text = "Широкая электрификация южных губерний";\n\n    gui\.Button btn;\n    btn\.x = 50;\n    btn\.y = 20;\n    btn\.text = "Нажми меня";/u,
-        `gui.Window win;
-    win.width = 430;
-    win.height = 180;
-    win.title = "Перекрытие";
-
-    gui.Label label;
-    label.x = 24;
-    label.y = 34;
-    label.text = "Длинный текст лейбла тянется вправо";
-
-    gui.Button btn;
-    btn.x = 205;
-    btn.y = 28;
-    btn.width = 150;
-    btn.height = 36;
-    btn.text = "Кнопка";`,
-      )
-      .replace(
-        /<div class="overlap-demo">\s*<div style="position: absolute; left: 20px; top: 20px; color: #cdd6f4; background: rgba\(0,0,0,0\.3\);">\s*Широкая электрификация южных губерний\s*<\/div>\s*<button style="position: absolute; left: 50px; top: 20px; padding: 8px 20px; background: linear-gradient\(135deg, #4a90d9 0%, #357abd 100%\); color: white; border: none; border-radius: 6px; cursor: pointer;">\s*Нажми меня\s*<\/button>\s*<div style="position: relative; min-height: 100px;"><\/div>\s*<\/div>/u,
-        `<div class="overlap-demo">
-        <div class="overlap-label">Длинный текст лейбла тянется вправо</div>
-        <button class="overlap-button">Кнопка</button>
-      </div>`,
-      )
-      .replace(
-        /В этом примере кнопка оказалась <strong>поверх<\/strong> лейбла, потому что была добавлена позже\./u,
-        'В этом примере кнопка частично закрывает лейбл, потому что была добавлена позже.',
-      );
-  }
-
-  if (sourceFile === 'widgets/005_slider.html') {
-    return html
-      .replace(/slider\.max = 200;/gu, 'slider.max = 300;')
-      .replace(/slider\.value = 100;/gu, 'slider.value = 150;')
-      .replace(/slider\.step = 20;/gu, 'slider.step = 50;')
-      .replace(/value="100" min="0" max="200" step="20"/gu, 'value="150" min="0" max="300" step="50"')
-      .replace(/Диапазон 0–200, шаг 20/gu, 'Диапазон 0–300, шаг 50')
-      .replace(/\[0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200\]/gu, '[0, 50, 100, 150, 200, 250, 300]');
-  }
-
-  if (sourceFile === 'widgets/006_lineedit.html') {
-    return html
-      .replace(/input\.font_size = 16;/gu, 'input.font_size = 20;')
-      .replace(/font-size: 16px;/gu, 'font-size: 20px;')
-      .replace(/Шрифт увеличен до 16 пикселей/gu, 'Шрифт увеличен до 20 пикселей');
-  }
-
-  if (sourceFile === 'widgets/009_frame.html') {
-    return html.replace(
-      /<div class="demo-content" style="min-height: 200px; position: relative;">\s*<fieldset class="idyl-frame" style="position: absolute; left: 20px; top: 20px; width: 350px; height: 220px;">/u,
-      '<div class="demo-content" style="min-height: 280px; position: relative;">\n            <fieldset class="idyl-frame" style="position: absolute; left: 20px; top: 20px; width: 350px; height: 220px;">',
-    );
-  }
-
-  return html;
-}
-
-function transformLessonScript(sourceFile: string, script: string): string {
-  if (sourceFile !== 'widgets/015_modal.html') return script;
-
-  return `document.addEventListener('DOMContentLoaded', () => {
-  const docsModal = window.idylliumDocs;
-
-  const alertDemoBtn = document.getElementById('alertDemoBtn');
-  if (alertDemoBtn && docsModal) {
-    alertDemoBtn.addEventListener('click', () => {
-      void docsModal.alert('Уведомление\\n\\nЭто простое информационное сообщение.');
-    });
-  }
-
-  const confirmDemoBtn = document.getElementById('confirmDemoBtn');
-  const confirmResult = document.getElementById('confirmResult');
-  if (confirmDemoBtn && confirmResult && docsModal) {
-    confirmDemoBtn.addEventListener('click', async () => {
-      const result = await docsModal.confirm('Вы уверены, что хотите продолжить?');
-      confirmResult.textContent = 'Результат: ' + (result ? 'Да' : 'Нет');
-    });
-  }
-
-  const inputDemoBtn = document.getElementById('inputDemoBtn');
-  const inputResult = document.getElementById('inputResult');
-  if (inputDemoBtn && inputResult && docsModal) {
-    inputDemoBtn.addEventListener('click', async () => {
-      const name = await docsModal.prompt('Как вас зовут?', 'Idyllium');
-      if (name === null || name === '') {
-        inputResult.textContent = 'Вы не ввели имя!';
-      } else {
-        inputResult.textContent = 'Привет, ' + name + '!';
-      }
-    });
-  }
-
-  const fullAlertBtn = document.getElementById('fullAlertBtn');
-  const fullConfirmBtn = document.getElementById('fullConfirmBtn');
-  const fullInputBtn = document.getElementById('fullInputBtn');
-  const fullResultLabel = document.getElementById('fullResultLabel');
-
-  if (fullAlertBtn && docsModal) {
-    fullAlertBtn.addEventListener('click', () => {
-      void docsModal.alert('Уведомление\\n\\nЭто простое информационное сообщение.');
-    });
-  }
-
-  if (fullConfirmBtn && fullResultLabel && docsModal) {
-    fullConfirmBtn.addEventListener('click', async () => {
-      const result = await docsModal.confirm('Вы уверены, что хотите продолжить?');
-      fullResultLabel.textContent = 'Вы нажали: ' + (result ? 'Да' : 'Нет');
-    });
-  }
-
-  if (fullInputBtn && fullResultLabel && docsModal) {
-    fullInputBtn.addEventListener('click', async () => {
-      const name = await docsModal.prompt('Как вас зовут?', 'Idyllium');
-      fullResultLabel.textContent = name === null ? 'Привет, !' : 'Привет, ' + name + '!';
-    });
-  }
-});`;
+  return `${styles}${styles ? '\n\n' : ''}${cleaned}${extra ? `\n\n${extra}` : ''}${scripts ? `\n\n${scripts}` : ''}\n`;
 }
 
 function readLessonExtra(sourceFile: string): string {
@@ -1056,22 +973,10 @@ function copyAssets(sourceRoot: string, outputRoot: string): void {
     path.join(sourceRoot, 'lessons', 'widgets', 'gui.css'),
     path.join(outputRoot, 'assets', 'gui.css'),
   );
-  copyFileIfExists(
-    path.resolve(process.cwd(), 'my_images', 'cat.png'),
-    path.join(outputRoot, 'assets', 'cat.png'),
-  );
-  copyFileIfExists(
-    path.resolve(process.cwd(), 'spec', 'some_images', 'walk.gif'),
-    path.join(outputRoot, 'assets', 'walk.gif'),
-  );
-  copyFileIfExists(
-    path.resolve(process.cwd(), 'spec', 'some_audio', 'click.wav'),
-    path.join(outputRoot, 'assets', 'click.wav'),
-  );
-  copyFileIfExists(
-    path.resolve(process.cwd(), 'spec', 'some_audio', 'theme.mp3'),
-    path.join(outputRoot, 'assets', 'theme.mp3'),
-  );
+  const bookAssetsRoot = path.resolve(process.cwd(), 'packages', 'docs', 'book-assets');
+  for (const asset of ['cat.png', 'walk.gif', 'click.wav', 'theme.mp3']) {
+    copyFileIfExists(path.join(bookAssetsRoot, asset), path.join(outputRoot, 'assets', asset));
+  }
 }
 
 function copyBookShell(outputRoot: string): void {

@@ -11,21 +11,15 @@
 </style>
 
 <!-- Hero -->
-    
+
 
     <!-- Section 1 -->
     <div class="docs-section">
-      <h2>Что такое Slider?</h2>
-      <p><code>gui.Slider</code> — это ползунок, который позволяет выбирать значение из непрерывного диапазона, перемещая ручку влево-вправо.</p>
-      <p>Где он встречается:</p>
-      <ul>
-        <li>🎚️ Регулятор громкости в плеере</li>
-        <li>🎨 Ползунок яркости/контрастности в фоторедакторах</li>
-        <li>🎮 Настройка чувствительности мыши</li>
-        <li>💰 Фильтр цен в интернет-магазине (от 1000 до 10000)</li>
-      </ul>
+      <h2>Ползунок вместо цифр</h2>
+      <p>Откройте настройки любой игры — там почти наверняка живёт регулятор громкости. Вводить громкость числом с клавиатуры было бы странно: хочется просто потянуть ручку влево-вправо и сразу услышать разницу. Так же устроены яркость в фоторедакторе и фильтр цен в интернет-магазине.</p>
+      <p>Для таких случаев в <code>gui</code> есть <code>gui.Slider</code> — ползунок, который выбирает значение из диапазона движением ручки.</p>
 
-      <p>Вот простейший Slider со значением 50:</p>
+      <p>Вот ползунок громкости, выставленный ровно на середину:</p>
 
       <idyl-code-block><script type="text/plain">
 use gui;
@@ -34,15 +28,15 @@ main() {
     gui.Window win;
     win.width = 300;
     win.height = 100;
-    win.title = "Slider";
+    win.title = "Громкость";
 
-    gui.Slider slider;
-    slider.x = 20;
-    slider.y = 30;
-    slider.width = 260;
-    slider.value = 50;
+    gui.Slider volume;
+    volume.x = 20;
+    volume.y = 30;
+    volume.width = 260;
+    volume.value = 50;
 
-    win.add_child(slider);
+    win.add_child(volume);
     win.show();
 }
 </script></idyl-code-block>
@@ -56,7 +50,7 @@ main() {
           </div>
         </div>
         <div class="coord-note">
-          🎚️ Ползунок посередине — значение 50. Попробуйте подвигать.
+          🎚️ Мы не задавали <code>min</code> и <code>max</code> — по умолчанию они равны 0 и 100, поэтому 50 — ровно середина. Попробуйте подвигать.
         </div>
       </div>
     </div>
@@ -64,13 +58,22 @@ main() {
     <!-- Section 2 -->
     <div class="docs-section">
       <h2>Основные свойства Slider</h2>
-      <p>Как и SpinBox, Slider имеет свойства для настройки диапазона:</p>
-      <ul>
-        <li><code>value</code> — текущее значение (<code>int</code>)</li>
-        <li><code>min</code> — минимальное значение (по умолчанию 0)</li>
-        <li><code>max</code> — максимальное значение (по умолчанию 100)</li>
-        <li><code>step</code> — шаг изменения при перемещении</li>
-      </ul>
+      <p>Как и SpinBox, Slider имеет свойства для настройки диапазона. Вот опорная таблица:</p>
+
+      <table>
+        <thead>
+          <tr><th>Свойство</th><th>Тип</th><th>По умолчанию</th><th>Что делает</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>value</code></td><td><code>int</code></td><td>—</td><td>текущее положение ручки</td></tr>
+          <tr><td><code>min</code></td><td><code>int</code></td><td><code>0</code></td><td>минимальное значение</td></tr>
+          <tr><td><code>max</code></td><td><code>int</code></td><td><code>100</code></td><td>максимальное значение</td></tr>
+          <tr><td><code>step</code></td><td><code>int</code></td><td>—</td><td>шаг, с которым двигается ручка</td></tr>
+          <tr><td><code>on_change</code></td><td>событие</td><td>—</td><td>срабатывает при каждом изменении значения</td></tr>
+        </tbody>
+      </table>
+
+      <p>Запомните пару 0 и 100: если <code>min</code> и <code>max</code> не задавать, Slider сам выберет именно их — как в примере выше. А когда диапазон нужен другой, задайте его явно:</p>
 
       <idyl-code-block><script type="text/plain">
 use gui;
@@ -113,7 +116,7 @@ main() {
     <!-- Section 3 -->
     <div class="docs-section">
       <h2>Событие <code>on_change</code></h2>
-      <p>Как и у SpinBox, у Slider есть событие <code>on_change</code>, которое срабатывает при каждом изменении значения:</p>
+      <p>Ползунок, который молчит о своём значении, — только половина дела. Как и у SpinBox, у Slider есть событие <code>on_change</code>, которое срабатывает при каждом изменении значения. Вернёмся к громкости и подключим подпись, чтобы она обновлялась, пока вы тянете ручку:</p>
 
       <idyl-code-block><script type="text/plain">
 use gui;
@@ -122,26 +125,26 @@ main() {
     gui.Window win;
     win.width = 350;
     win.height = 150;
-    win.title = "Отображение значения";
+    win.title = "Настройки звука";
 
-    gui.Slider slider;
-    slider.x = 20;
-    slider.y = 20;
-    slider.width = 260;
-    slider.min = 0;
-    slider.max = 100;
-    slider.value = 50;
+    gui.Slider volume;
+    volume.x = 20;
+    volume.y = 20;
+    volume.width = 260;
+    volume.min = 0;
+    volume.max = 100;
+    volume.value = 50;
 
     gui.Label label;
     label.x = 20;
     label.y = 70;
-    label.text = "Текущее значение: 50";
+    label.text = "Громкость: 50";
 
-    slider.on_change = void function() {
-        label.text = "Текущее значение: " + to_string(slider.value);
+    volume.on_change = void function() {
+        label.text = "Громкость: " + to_string(volume.value);
     };
 
-    win.add_child(slider);
+    win.add_child(volume);
     win.add_child(label);
     win.show();
 }
@@ -153,11 +156,11 @@ main() {
             <div style="position: absolute; left: 20px; top: 20px; width: 260px;">
               <input type="range" class="idyl-slider" style="width: 100%;" value="50" min="0" max="100" id="sliderDemo">
             </div>
-            <div style="position: absolute; left: 20px; top: 70px; color: #cdd6f4;" id="sliderLabelDemo">Текущее значение: 50</div>
+            <div style="position: absolute; left: 20px; top: 70px; color: #cdd6f4;" id="sliderLabelDemo">Громкость: 50</div>
           </div>
         </div>
         <div class="coord-note">
-          📊 Двигайте ползунок — значение отображается на лейбле в реальном времени.
+          📊 Двигайте ползунок — громкость отображается на лейбле в реальном времени.
         </div>
       </div>
     </div>
@@ -172,17 +175,37 @@ main() {
       </ul>
     </div>
 
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Типичная ошибка: строка вместо числа</h2>
+      <p>Значение ползунка — всегда число. Записать в <code>value</code> строку, даже такую «числовую», как <code>"50"</code>, не выйдет:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Slider slider;
+    slider.value = "50";  // ОШИБКА!
+}
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:5:20: error: cannot assign 'string' value to 'int' variable</idyl-error-block>
+
+      <p><code>"50"</code> в кавычках — это <code>string</code>, а <code>value</code> у Slider — <code>int</code>. Кавычки убрать — и компилятор доволен.</p>
+      <p>А вот за диапазоном компилятор не следит: код <code>slider.value = 500;</code> при <code>max = 300</code> спокойно проходит проверку. Компилятор проверяет типы, а не диапазоны, поэтому держать <code>value</code> в пределах <code>min</code> и <code>max</code> — забота программиста.</p>
+    </div>
+
     <!-- Lesson navigation -->
 
 <script data-lesson-script type="text/plain">
 // Интерактив для демо-примеров
   document.addEventListener('DOMContentLoaded', () => {
-    // Пример 3: отображение значения
+    // Пример 3: отображение громкости
     const sliderDemo = document.getElementById('sliderDemo');
     const sliderLabelDemo = document.getElementById('sliderLabelDemo');
     if (sliderDemo && sliderLabelDemo) {
       sliderDemo.addEventListener('input', () => {
-        sliderLabelDemo.textContent = 'Текущее значение: ' + sliderDemo.value;
+        sliderLabelDemo.textContent = 'Громкость: ' + sliderDemo.value;
       });
     }
   });

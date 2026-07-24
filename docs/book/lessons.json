@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-19T20:32:51.903Z",
+  "generatedAt": "2026-07-24T14:13:58.374Z",
   "sourceRoot": "packages/docs",
   "sections": [
     {
@@ -40,15 +40,6 @@
             "code-needs-review",
             "program-compile-failure"
           ]
-        },
-        {
-          "id": "constants",
-          "title": "Именованные константы",
-          "subtitle": "Значения, которым программа не даст случайно измениться",
-          "file": "content/console/constants.html",
-          "sourceFile": "docs/manual-content/console/constants.html",
-          "status": "ready",
-          "reviewFlags": []
         },
         {
           "id": "input",
@@ -157,6 +148,24 @@
           "reviewFlags": []
         },
         {
+          "id": "time",
+          "title": "Библиотека time",
+          "subtitle": "Работа со временем: от пауз до точных временных меток",
+          "file": "content/console/time.html",
+          "sourceFile": "cli/019_time.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "constants",
+          "title": "Именованные константы",
+          "subtitle": "Значения, которым программа не даст случайно измениться",
+          "file": "content/console/constants.html",
+          "sourceFile": "docs/manual-content/console/constants.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
           "id": "array",
           "title": "Массивы",
           "subtitle": "Как хранить много однотипных данных без сотни переменных",
@@ -219,20 +228,20 @@
           "reviewFlags": []
         },
         {
-          "id": "time",
-          "title": "Библиотека time",
-          "subtitle": "Работа со временем: от пауз до точных временных меток",
-          "file": "content/console/time.html",
-          "sourceFile": "cli/019_time.html",
-          "status": "ready",
-          "reviewFlags": []
-        },
-        {
           "id": "types",
           "title": "Библиотека types",
           "subtitle": "Как устроены числа «под капотом» — узнаем, чтобы не пугаться C++ и Java",
           "file": "content/console/types.html",
           "sourceFile": "cli/020_types.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "bit-operations",
+          "title": "Битовые операции",
+          "subtitle": "Сдвиги, маски и четыре логические операции над битами",
+          "file": "content/console/bit-operations.html",
+          "sourceFile": "docs/manual-content/console/bit-operations.html",
           "status": "ready",
           "reviewFlags": []
         },

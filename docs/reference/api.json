@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "languageVersion": "1.1.3",
-  "generatedAt": "2026-07-19T20:32:51.923Z",
+  "languageVersion": "1.2.0",
+  "generatedAt": "2026-07-24T14:13:58.395Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "language": [
     {
@@ -337,6 +337,25 @@
   ],
   "globals": [
     {
+      "name": "avg",
+      "signature": "avg(values: any): float",
+      "returnType": "float",
+      "parameters": [
+        {
+          "name": "values",
+          "type": "any",
+          "optional": false,
+          "defaultValue": "",
+          "acceptedTypes": [
+            "dyn_array<any>"
+          ],
+          "acceptedDescription": "numeric array"
+        }
+      ],
+      "variadic": false,
+      "documentation": "Среднее арифметическое элементов числового массива; всегда float."
+    },
+    {
       "name": "div",
       "signature": "div(left: int, right: int): int",
       "returnType": "int",
@@ -362,6 +381,44 @@
       "documentation": ""
     },
     {
+      "name": "max",
+      "signature": "max(values: any): any",
+      "returnType": "any",
+      "parameters": [
+        {
+          "name": "values",
+          "type": "any",
+          "optional": false,
+          "defaultValue": "",
+          "acceptedTypes": [
+            "dyn_array<any>"
+          ],
+          "acceptedDescription": "numeric array"
+        }
+      ],
+      "variadic": false,
+      "documentation": "Наибольший элемент числового массива. Тип результата повторяет тип элементов."
+    },
+    {
+      "name": "min",
+      "signature": "min(values: any): any",
+      "returnType": "any",
+      "parameters": [
+        {
+          "name": "values",
+          "type": "any",
+          "optional": false,
+          "defaultValue": "",
+          "acceptedTypes": [
+            "dyn_array<any>"
+          ],
+          "acceptedDescription": "numeric array"
+        }
+      ],
+      "variadic": false,
+      "documentation": "Наименьший элемент числового массива. Тип результата повторяет тип элементов."
+    },
+    {
       "name": "mod",
       "signature": "mod(left: int, right: int): int",
       "returnType": "int",
@@ -385,6 +442,25 @@
       ],
       "variadic": false,
       "documentation": ""
+    },
+    {
+      "name": "sum",
+      "signature": "sum(values: any): any",
+      "returnType": "any",
+      "parameters": [
+        {
+          "name": "values",
+          "type": "any",
+          "optional": false,
+          "defaultValue": "",
+          "acceptedTypes": [
+            "dyn_array<any>"
+          ],
+          "acceptedDescription": "numeric array"
+        }
+      ],
+      "variadic": false,
+      "documentation": "Сумма элементов числового массива. Тип результата повторяет тип элементов."
     },
     {
       "name": "to_float",
@@ -443,7 +519,7 @@
         }
       ],
       "variadic": false,
-      "documentation": ""
+      "documentation": "Преобразует значение в строку. Объект класса — только с публичным string function to_string()."
     }
   ],
   "modules": [
@@ -561,7 +637,7 @@
             }
           ],
           "variadic": false,
-          "documentation": ""
+          "documentation": "Модуль числа. Тип результата повторяет аргумент: abs(int) даёт int, abs(float) — float."
         },
         {
           "name": "acos",
@@ -912,7 +988,7 @@
             }
           ],
           "variadic": false,
-          "documentation": ""
+          "documentation": "Случайное дробное число от min до max; обе границы включены (как в Python)."
         },
         {
           "name": "create_int",
@@ -937,7 +1013,7 @@
             }
           ],
           "variadic": false,
-          "documentation": ""
+          "documentation": "Случайное целое число от min до max; обе границы включены."
         },
         {
           "name": "set_seed",
@@ -981,12 +1057,12 @@
       "functions": [
         {
           "name": "from_unix",
-          "signature": "from_unix(seconds: int, timezone: string = \"UTC\"): time.stamp",
+          "signature": "from_unix(seconds: float, timezone: string = \"UTC\"): time.stamp",
           "returnType": "time.stamp",
           "parameters": [
             {
               "name": "seconds",
-              "type": "int",
+              "type": "float",
               "optional": false,
               "defaultValue": "",
               "acceptedTypes": [],
@@ -1002,7 +1078,7 @@
             }
           ],
           "variadic": false,
-          "documentation": "Создаёт метку из Unix-времени и отображает её в указанном IANA-часовом поясе."
+          "documentation": "Создаёт метку из Unix-времени (секунды, можно с дробной частью — она станет миллисекундами) и отображает её в указанном IANA-часовом поясе."
         },
         {
           "name": "now",
@@ -1068,6 +1144,13 @@
               "callbacks": []
             },
             {
+              "name": "millisecond",
+              "type": "int",
+              "readonly": true,
+              "documentation": "Миллисекунда от 0 до 999.",
+              "callbacks": []
+            },
+            {
               "name": "minute",
               "type": "int",
               "readonly": true,
@@ -1099,7 +1182,7 @@
               "name": "unix",
               "type": "int",
               "readonly": true,
-              "documentation": "Unix-время; не меняется при смене часового пояса.",
+              "documentation": "Unix-время в целых секундах; не меняется при смене часового пояса.",
               "callbacks": []
             },
             {
@@ -1793,6 +1876,309 @@
               ],
               "variadic": false,
               "documentation": ""
+            },
+            {
+              "name": "is_array",
+              "signature": "is_array(): bool",
+              "returnType": "bool",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "is_bool",
+              "signature": "is_bool(): bool",
+              "returnType": "bool",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "is_float",
+              "signature": "is_float(): bool",
+              "returnType": "bool",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "is_int",
+              "signature": "is_int(): bool",
+              "returnType": "bool",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "is_null",
+              "signature": "is_null(): bool",
+              "returnType": "bool",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "is_object",
+              "signature": "is_object(): bool",
+              "returnType": "bool",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "is_string",
+              "signature": "is_string(): bool",
+              "returnType": "bool",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "set_array",
+              "signature": "set_array(value: json.Array): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "value",
+                  "type": "json.Array",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "set_bool",
+              "signature": "set_bool(value: bool): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "value",
+                  "type": "bool",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "set_float",
+              "signature": "set_float(value: float): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "value",
+                  "type": "float",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "set_int",
+              "signature": "set_int(value: int): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "value",
+                  "type": "int",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "set_null",
+              "signature": "set_null(): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "set_object",
+              "signature": "set_object(value: json.Object): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "value",
+                  "type": "json.Object",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "set_string",
+              "signature": "set_string(value: string): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "value",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "to_array",
+              "signature": "to_array(): json.Array",
+              "returnType": "json.Array",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "to_bool",
+              "signature": "to_bool(): bool",
+              "returnType": "bool",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "to_float",
+              "signature": "to_float(): float",
+              "returnType": "float",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "to_int",
+              "signature": "to_int(): int",
+              "returnType": "int",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "to_int64",
+              "signature": "to_int64(): types.int64",
+              "returnType": "types.int64",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "to_json",
+              "signature": "to_json(): string",
+              "returnType": "string",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "to_object",
+              "signature": "to_object(): json.Object",
+              "returnType": "json.Object",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "to_pretty_json",
+              "signature": "to_pretty_json(indent: int = 2): string",
+              "returnType": "string",
+              "parameters": [
+                {
+                  "name": "indent",
+                  "type": "int",
+                  "optional": true,
+                  "defaultValue": "2",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "to_string",
+              "signature": "to_string(): string",
+              "returnType": "string",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "to_uint64",
+              "signature": "to_uint64(): types.uint64",
+              "returnType": "types.uint64",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
             }
           ]
         },
@@ -1921,6 +2307,309 @@
               ],
               "variadic": false,
               "documentation": ""
+            },
+            {
+              "name": "is_array",
+              "signature": "is_array(): bool",
+              "returnType": "bool",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "is_bool",
+              "signature": "is_bool(): bool",
+              "returnType": "bool",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "is_float",
+              "signature": "is_float(): bool",
+              "returnType": "bool",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "is_int",
+              "signature": "is_int(): bool",
+              "returnType": "bool",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "is_null",
+              "signature": "is_null(): bool",
+              "returnType": "bool",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "is_object",
+              "signature": "is_object(): bool",
+              "returnType": "bool",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "is_string",
+              "signature": "is_string(): bool",
+              "returnType": "bool",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "set_array",
+              "signature": "set_array(value: json.Array): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "value",
+                  "type": "json.Array",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "set_bool",
+              "signature": "set_bool(value: bool): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "value",
+                  "type": "bool",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "set_float",
+              "signature": "set_float(value: float): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "value",
+                  "type": "float",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "set_int",
+              "signature": "set_int(value: int): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "value",
+                  "type": "int",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "set_null",
+              "signature": "set_null(): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "set_object",
+              "signature": "set_object(value: json.Object): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "value",
+                  "type": "json.Object",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "set_string",
+              "signature": "set_string(value: string): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "value",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "to_array",
+              "signature": "to_array(): json.Array",
+              "returnType": "json.Array",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "to_bool",
+              "signature": "to_bool(): bool",
+              "returnType": "bool",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "to_float",
+              "signature": "to_float(): float",
+              "returnType": "float",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "to_int",
+              "signature": "to_int(): int",
+              "returnType": "int",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "to_int64",
+              "signature": "to_int64(): types.int64",
+              "returnType": "types.int64",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "to_json",
+              "signature": "to_json(): string",
+              "returnType": "string",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "to_object",
+              "signature": "to_object(): json.Object",
+              "returnType": "json.Object",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "to_pretty_json",
+              "signature": "to_pretty_json(indent: int = 2): string",
+              "returnType": "string",
+              "parameters": [
+                {
+                  "name": "indent",
+                  "type": "int",
+                  "optional": true,
+                  "defaultValue": "2",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "to_string",
+              "signature": "to_string(): string",
+              "returnType": "string",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
+            },
+            {
+              "name": "to_uint64",
+              "signature": "to_uint64(): types.uint64",
+              "returnType": "types.uint64",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "",
+              "inherited": true,
+              "inheritedFrom": "json.Value"
             }
           ]
         },
@@ -2468,6 +3157,60 @@
               "readonly": true,
               "documentation": "true, если длительность всех кадров одинакова.",
               "callbacks": []
+            },
+            {
+              "name": "format",
+              "type": "string",
+              "readonly": true,
+              "documentation": "Формат, определённый по содержимому файла.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "image.Image"
+            },
+            {
+              "name": "has_alpha",
+              "type": "bool",
+              "readonly": true,
+              "documentation": "true, если изображение содержит прозрачные или полупрозрачные пиксели.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "image.Image"
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "readonly": true,
+              "documentation": "Фактическая высота изображения в пикселях.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "image.Image"
+            },
+            {
+              "name": "is_loaded",
+              "type": "bool",
+              "readonly": true,
+              "documentation": "true после успешной загрузки или создания ресурса.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "image.Image"
+            },
+            {
+              "name": "src",
+              "type": "string",
+              "readonly": true,
+              "documentation": "Путь, переданный в load_from_file().",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "image.Image"
+            },
+            {
+              "name": "width",
+              "type": "int",
+              "readonly": true,
+              "documentation": "Фактическая ширина изображения в пикселях.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "image.Image"
             }
           ],
           "methods": [
@@ -2907,7 +3650,62 @@
             "Угол rotate() должен быть кратен 90 градусам."
           ],
           "example": "image.Static source;\nsource.load_from_file(\"cat.png\");\n\nimage.Static upside_down = source.scale(1, -1);\nimage.Static faded = source.with_opacity(0.3);\nimage.Static red = source.tint(colors.RED);",
-          "properties": [],
+          "properties": [
+            {
+              "name": "format",
+              "type": "string",
+              "readonly": true,
+              "documentation": "Формат, определённый по содержимому файла.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "image.Image"
+            },
+            {
+              "name": "has_alpha",
+              "type": "bool",
+              "readonly": true,
+              "documentation": "true, если изображение содержит прозрачные или полупрозрачные пиксели.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "image.Image"
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "readonly": true,
+              "documentation": "Фактическая высота изображения в пикселях.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "image.Image"
+            },
+            {
+              "name": "is_loaded",
+              "type": "bool",
+              "readonly": true,
+              "documentation": "true после успешной загрузки или создания ресурса.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "image.Image"
+            },
+            {
+              "name": "src",
+              "type": "string",
+              "readonly": true,
+              "documentation": "Путь, переданный в load_from_file().",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "image.Image"
+            },
+            {
+              "name": "width",
+              "type": "int",
+              "readonly": true,
+              "documentation": "Фактическая ширина изображения в пикселях.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "image.Image"
+            }
+          ],
           "methods": [
             {
               "name": "crop",
@@ -3264,6 +4062,15 @@
               "readonly": false,
               "documentation": "",
               "callbacks": []
+            },
+            {
+              "name": "font",
+              "type": "fonts.Font",
+              "readonly": false,
+              "documentation": "Шрифт виджета. Если не задан явно, наследуется от Window или Frame.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
             }
           ],
           "methods": []
@@ -3389,6 +4196,33 @@
               "readonly": false,
               "documentation": "",
               "callbacks": []
+            },
+            {
+              "name": "background_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "font",
+              "type": "fonts.Font",
+              "readonly": false,
+              "documentation": "Шрифт виджета. Если не задан явно, наследуется от Window или Frame.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "text_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
             }
           ],
           "methods": [
@@ -3508,6 +4342,33 @@
               "readonly": false,
               "documentation": "",
               "callbacks": []
+            },
+            {
+              "name": "background_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "font",
+              "type": "fonts.Font",
+              "readonly": false,
+              "documentation": "Шрифт виджета. Если не задан явно, наследуется от Window или Frame.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "text_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
             }
           ],
           "methods": []
@@ -3582,6 +4443,33 @@
               "readonly": false,
               "documentation": "",
               "callbacks": []
+            },
+            {
+              "name": "background_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "font",
+              "type": "fonts.Font",
+              "readonly": false,
+              "documentation": "Шрифт виджета. Если не задан явно, наследуется от Window или Frame.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "text_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
             }
           ],
           "methods": [
@@ -3696,6 +4584,33 @@
               "readonly": false,
               "documentation": "",
               "callbacks": []
+            },
+            {
+              "name": "background_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "font",
+              "type": "fonts.Font",
+              "readonly": false,
+              "documentation": "Шрифт виджета. Если не задан явно, наследуется от Window или Frame.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "text_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
             }
           ],
           "methods": []
@@ -3777,6 +4692,24 @@
               "readonly": false,
               "documentation": "",
               "callbacks": []
+            },
+            {
+              "name": "font",
+              "type": "fonts.Font",
+              "readonly": false,
+              "documentation": "Шрифт виджета. Если не задан явно, наследуется от Window или Frame.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "text_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
             }
           ],
           "methods": [
@@ -3853,6 +4786,33 @@
               "readonly": false,
               "documentation": "",
               "callbacks": []
+            },
+            {
+              "name": "background_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "font",
+              "type": "fonts.Font",
+              "readonly": false,
+              "documentation": "Шрифт виджета. Если не задан явно, наследуется от Window или Frame.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "text_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
             }
           ],
           "methods": [
@@ -3980,6 +4940,15 @@
               "readonly": false,
               "documentation": "",
               "callbacks": []
+            },
+            {
+              "name": "font",
+              "type": "fonts.Font",
+              "readonly": false,
+              "documentation": "Шрифт виджета. Если не задан явно, наследуется от Window или Frame.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
             }
           ],
           "methods": []
@@ -4082,6 +5051,15 @@
               "readonly": false,
               "documentation": "",
               "callbacks": []
+            },
+            {
+              "name": "font",
+              "type": "fonts.Font",
+              "readonly": false,
+              "documentation": "Шрифт виджета. Если не задан явно, наследуется от Window или Frame.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
             }
           ],
           "methods": []
@@ -4340,6 +5318,15 @@
               "readonly": false,
               "documentation": "",
               "callbacks": []
+            },
+            {
+              "name": "font",
+              "type": "fonts.Font",
+              "readonly": false,
+              "documentation": "Шрифт виджета. Если не задан явно, наследуется от Window или Frame.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
             }
           ],
           "methods": []
@@ -4421,6 +5408,33 @@
               "readonly": false,
               "documentation": "",
               "callbacks": []
+            },
+            {
+              "name": "background_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "font",
+              "type": "fonts.Font",
+              "readonly": false,
+              "documentation": "Шрифт виджета. Если не задан явно, наследуется от Window или Frame.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "text_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
             }
           ],
           "methods": []
@@ -4502,6 +5516,33 @@
               "readonly": false,
               "documentation": "",
               "callbacks": []
+            },
+            {
+              "name": "background_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "font",
+              "type": "fonts.Font",
+              "readonly": false,
+              "documentation": "Шрифт виджета. Если не задан явно, наследуется от Window или Frame.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "text_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
             }
           ],
           "methods": []
@@ -4590,6 +5631,33 @@
               "readonly": false,
               "documentation": "",
               "callbacks": []
+            },
+            {
+              "name": "background_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "font",
+              "type": "fonts.Font",
+              "readonly": false,
+              "documentation": "Шрифт виджета. Если не задан явно, наследуется от Window или Frame.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "text_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
             }
           ],
           "methods": []
@@ -4685,6 +5753,15 @@
               "readonly": false,
               "documentation": "",
               "callbacks": []
+            },
+            {
+              "name": "font",
+              "type": "fonts.Font",
+              "readonly": false,
+              "documentation": "Шрифт виджета. Если не задан явно, наследуется от Window или Frame.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
             }
           ],
           "methods": []
@@ -4713,16 +5790,31 @@
                 "function(): void",
                 "function(gui.Timer): void"
               ]
+            },
+            {
+              "name": "running",
+              "type": "bool",
+              "readonly": true,
+              "documentation": "Идёт ли отсчёт прямо сейчас. Меняется методами start(), stop() и restart().",
+              "callbacks": []
             }
           ],
           "methods": [
+            {
+              "name": "restart",
+              "signature": "restart(): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "Запускает таймер заново: накопленное время сбрасывается, отсчёт идёт с нуля."
+            },
             {
               "name": "start",
               "signature": "start(): void",
               "returnType": "void",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Запускает таймер. После stop() продолжает отсчёт с места остановки (снятие с паузы)."
             },
             {
               "name": "stop",
@@ -4730,7 +5822,7 @@
               "returnType": "void",
               "parameters": [],
               "variadic": false,
-              "documentation": ""
+              "documentation": "Ставит таймер на паузу: накопленное время сохраняется до следующего start()."
             }
           ]
         },
@@ -5071,6 +6163,52 @@
               ],
               "variadic": false,
               "documentation": "Назначает локальную точку отсчёта; мировая позиция этой точки задаётся свойствами x и y."
+            },
+            {
+              "name": "collides_with",
+              "signature": "collides_with(other: drawable.Drawable): bool",
+              "returnType": "bool",
+              "parameters": [
+                {
+                  "name": "other",
+                  "type": "drawable.Drawable",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Проверяет коллизию с другим drawable-объектом. Касание границ считается коллизией.",
+              "inherited": true,
+              "inheritedFrom": "drawable.Drawable"
+            },
+            {
+              "name": "contains",
+              "signature": "contains(x: float, y: float): bool",
+              "returnType": "bool",
+              "parameters": [
+                {
+                  "name": "x",
+                  "type": "float",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "y",
+                  "type": "float",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Проверяет, находится ли мировая точка внутри объекта. Точка на границе считается находящейся внутри.",
+              "inherited": true,
+              "inheritedFrom": "drawable.Drawable"
             }
           ]
         },
@@ -5203,6 +6341,52 @@
               ],
               "variadic": false,
               "documentation": ""
+            },
+            {
+              "name": "collides_with",
+              "signature": "collides_with(other: drawable.Drawable): bool",
+              "returnType": "bool",
+              "parameters": [
+                {
+                  "name": "other",
+                  "type": "drawable.Drawable",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Проверяет коллизию с другим drawable-объектом. Касание границ считается коллизией.",
+              "inherited": true,
+              "inheritedFrom": "drawable.Drawable"
+            },
+            {
+              "name": "contains",
+              "signature": "contains(x: float, y: float): bool",
+              "returnType": "bool",
+              "parameters": [
+                {
+                  "name": "x",
+                  "type": "float",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "y",
+                  "type": "float",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Проверяет, находится ли мировая точка внутри объекта. Точка на границе считается находящейся внутри.",
+              "inherited": true,
+              "inheritedFrom": "drawable.Drawable"
             }
           ]
         },
@@ -5352,6 +6536,52 @@
               ],
               "variadic": false,
               "documentation": "Назначает локальную точку отсчёта; мировая позиция этой точки задаётся свойствами x и y."
+            },
+            {
+              "name": "collides_with",
+              "signature": "collides_with(other: drawable.Drawable): bool",
+              "returnType": "bool",
+              "parameters": [
+                {
+                  "name": "other",
+                  "type": "drawable.Drawable",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Проверяет коллизию с другим drawable-объектом. Касание границ считается коллизией.",
+              "inherited": true,
+              "inheritedFrom": "drawable.Drawable"
+            },
+            {
+              "name": "contains",
+              "signature": "contains(x: float, y: float): bool",
+              "returnType": "bool",
+              "parameters": [
+                {
+                  "name": "x",
+                  "type": "float",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "y",
+                  "type": "float",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Проверяет, находится ли мировая точка внутри объекта. Точка на границе считается находящейся внутри.",
+              "inherited": true,
+              "inheritedFrom": "drawable.Drawable"
             }
           ]
         },
@@ -5510,6 +6740,52 @@
               ],
               "variadic": false,
               "documentation": ""
+            },
+            {
+              "name": "collides_with",
+              "signature": "collides_with(other: drawable.Drawable): bool",
+              "returnType": "bool",
+              "parameters": [
+                {
+                  "name": "other",
+                  "type": "drawable.Drawable",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Проверяет коллизию с другим drawable-объектом. Касание границ считается коллизией.",
+              "inherited": true,
+              "inheritedFrom": "drawable.Drawable"
+            },
+            {
+              "name": "contains",
+              "signature": "contains(x: float, y: float): bool",
+              "returnType": "bool",
+              "parameters": [
+                {
+                  "name": "x",
+                  "type": "float",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "y",
+                  "type": "float",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Проверяет, находится ли мировая точка внутри объекта. Точка на границе считается находящейся внутри.",
+              "inherited": true,
+              "inheritedFrom": "drawable.Drawable"
             }
           ]
         },
@@ -5672,6 +6948,52 @@
               ],
               "variadic": false,
               "documentation": "Назначает локальную точку отсчёта; мировая позиция этой точки задаётся свойствами x и y."
+            },
+            {
+              "name": "collides_with",
+              "signature": "collides_with(other: drawable.Drawable): bool",
+              "returnType": "bool",
+              "parameters": [
+                {
+                  "name": "other",
+                  "type": "drawable.Drawable",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Проверяет коллизию с другим drawable-объектом. Касание границ считается коллизией.",
+              "inherited": true,
+              "inheritedFrom": "drawable.Drawable"
+            },
+            {
+              "name": "contains",
+              "signature": "contains(x: float, y: float): bool",
+              "returnType": "bool",
+              "parameters": [
+                {
+                  "name": "x",
+                  "type": "float",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "y",
+                  "type": "float",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Проверяет, находится ли мировая точка внутри объекта. Точка на границе считается находящейся внутри.",
+              "inherited": true,
+              "inheritedFrom": "drawable.Drawable"
             }
           ]
         }

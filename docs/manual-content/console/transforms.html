@@ -1,0 +1,207 @@
+<div class="docs-section">
+  <h2>Нельзя подменить тип</h2>
+  <p>Как вы уже знаете, Idyllium не разрешает присваивать переменной значение, не подходящее по типу:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    string S = 241;
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:4:16: error: cannot assign 'int' value to 'string' variable</idyl-error-block>
+
+  <p>Это не ограничение — это защита от хаоса. Но что, если вам <em>нужно</em> преобразовать число в строку или наоборот? Для этого в Idyllium есть три честные функции преобразования — с ними и познакомимся.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Функция <code>to_string()</code></h2>
+  <p>Функция <code>to_string()</code> превращает число в строку:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    string S = to_string(241);
+    console.writeln(S);
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>241</idyl-output-block>
+
+  <p>На экране — те же три цифры, но внутри программы всё изменилось: теперь в переменной <code>S</code> лежит строка <code>"241"</code>, а не число. Её можно использовать в операциях со строками — и сейчас вы увидите, какая это большая разница.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Что такое функция?</h2>
+  <p>Функция — это механизм, который <strong>превращает одни данные в другие</strong>.</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    int NA = 20;
+    int NB = 30;
+
+    string SA = to_string(NA); // из числа 20 порождается строка "20"
+    string SB = to_string(NB); // из числа 30 порождается строка "30"
+
+    console.writeln("Числовая сумма: ", NA + NB);
+    console.writeln("Строковая сумма: ", SA + SB);
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Числовая сумма: 50
+Строковая сумма: 2030</idyl-output-block>
+
+  <p>Обратите внимание: числовая сумма — это <code>20 + 30 = 50</code>. А вот для строк знак <code>+</code> означает не сложение, а склеивание строк — <strong>конкатенацию</strong>: <code>"20" + "30"</code> — это строка <code>"2030"</code>. Одни и те же данные, один и тот же знак <code>+</code> — а результат разный. Функция <code>to_string()</code> даёт вам контроль над тем, как данные будут интерпретироваться: как числа или как текст.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Обратное преобразование: <code>to_int()</code></h2>
+  <p>Положить строку в числовую переменную напрямую тоже нельзя — даже если внутри строки записано число:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    int A = "345";
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:4:13: error: cannot assign 'string' value to 'int' variable</idyl-error-block>
+
+  <p>Чтобы превратить строку в число, используйте <code>to_int()</code>:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    int B = to_int("345");
+    console.writeln(B + 5);
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>350</idyl-output-block>
+
+  <p>Функция <code>to_int("345")</code> порождает настоящее число <code>345</code>, которое сразу участвует в арифметике: <code>345 + 5 = 350</code>.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Преобразование в дробное число: <code>to_float()</code></h2>
+  <p>Со строками вида <code>"1.6"</code> история та же — напрямую в <code>float</code> их положить нельзя:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    float A = "1.6";
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:4:15: error: cannot assign 'string' value to 'float' variable</idyl-error-block>
+
+  <p>На помощь приходит <code>to_float()</code>:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    float B = to_float("1.6");
+    console.writeln(B);
+    console.writeln(B + 1);
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>1.6
+2.6</idyl-output-block>
+
+  <p>Функция <code>to_float("1.6")</code> порождает значение <code>1.6</code> типа <code>float</code> — с ним можно считать, как с любым дробным числом.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Практическое применение</h2>
+  <p>Преобразования особенно полезны, когда вы хотите динамически собирать управляющие последовательности — например, для цвета текста:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    console.writeln("Будем красить текст!");
+    console.writeln("Варианты:");
+    console.writeln("1) Красный");
+    console.writeln("2) Зелёный");
+    console.writeln("3) Жёлтый");
+    console.writeln("4) Синий");
+
+    console.write("Выбирайте: ");
+    int A = console.get_int();
+    int B = A + 30;
+
+    string S = to_string(B);
+    console.writeln("\e[" + S + "m", "Покрашено!", "\e[0m");
+}
+</script></idyl-code-block>
+
+  <p>Пример выполнения (пользователь выбрал вариант 2):</p>
+
+  <idyl-output-block>Будем красить текст!
+Варианты:
+1) Красный
+2) Зелёный
+3) Жёлтый
+4) Синий
+Выбирайте: <span class="user_input">2</span>
+<span class="color-green">Покрашено!</span></idyl-output-block>
+
+  <p>Смотрите, как это работает: пользователь выбрал <code>2</code>, программа прибавила 30 — получился код <code>32</code>, зелёный (загляните в таблицу цветов из прошлого урока). Число 32 превратилось в строку <code>"32"</code>, приклеилось между <code>"\e["</code> и <code>"m"</code> — и вышла готовая последовательность <code>"\e[32m"</code>. Без <code>to_string()</code> такой трюк был бы невозможен: нельзя склеить строку и число напрямую.</p>
+  <p>И обратите внимание на <code>"\e[0m"</code> в конце — сброс цвета, как советовал прошлый урок. Иначе зелёный «прилип» бы ко всему дальнейшему выводу.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Ошибки при преобразовании</h2>
+  <p>Функции преобразования работают <strong>только с корректными данными</strong>. Если внутри строки действительно записано число — всё пройдёт гладко:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    int A = to_int("570");
+    console.writeln(A + 30);
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>600</idyl-output-block>
+
+  <p>Но если числа в строке нет, чуда не произойдёт:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    int B = to_int("десять");
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:4: runtime error: 'to_int' cannot convert 'десять' to int</idyl-error-block>
+
+  <p>Ни «десять», ни «ъеъ ъуъ», ни любой другой текст числом не станут: <code>to_int()</code> и <code>to_float()</code> в таком случае завершатся с ошибкой выполнения. Это не баг — это защита от неверных допущений: лучше честно остановиться, чем молча превратить «десять» непонятно во что.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Итог: три функции преобразования</h2>
+
+  <table>
+    <thead>
+      <tr><th>Функция</th><th>Превращает</th><th>Пример</th><th>Результат</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>to_string(x)</code></td><td>число → строка</td><td><code>to_string(241)</code></td><td><code>"241"</code></td></tr>
+      <tr><td><code>to_int(s)</code></td><td>строка → целое число</td><td><code>to_int("345")</code></td><td><code>345</code></td></tr>
+      <tr><td><code>to_float(s)</code></td><td>строка → дробное число</td><td><code>to_float("1.6")</code></td><td><code>1.6</code></td></tr>
+    </tbody>
+  </table>
+
+  <p>Все преобразования — <strong>явные</strong>. Idyllium никогда не угадывает ваши намерения. Он требует, чтобы вы чётко сказали: «Хочу строку из числа» или «Хочу число из строки».</p>
+</div>

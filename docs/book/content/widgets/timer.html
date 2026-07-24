@@ -8,6 +8,14 @@
     .interactive-demo .coord-note {
       margin-top: 1em;
     }
+    .warning-message {
+      background: rgba(249, 226, 175, 0.12);
+      border-left: 3px solid #f9e2af;
+      padding: 0.75em 1em;
+      color: #f9e2af;
+      margin: 0.5em 0 1em 0;
+      border-radius: 0 6px 6px 0;
+    }
 </style>
 
 <!-- Hero -->
@@ -73,10 +81,10 @@ main() {
     <!-- Section 2 -->
     <div class="docs-section">
       <h2>Свойства таймера</h2>
-      <p>У таймера есть два основных свойства:</p>
+      <p>У таймера всего два свойства:</p>
       <ul>
         <li><code>interval</code> — интервал срабатывания в <strong>миллисекундах</strong> (1 секунда = 1000 мс)</li>
-        <li><code>running</code> — запущен ли таймер в данный момент (только для чтения)</li>
+        <li><code>on_tick</code> — событие «тик», о нём в следующей секции</li>
       </ul>
 
       <idyl-code-block><script type="text/plain">
@@ -99,17 +107,27 @@ timer.on_tick = void function() {
     // код, который выполняется каждые N миллисекунд
 };
 </script></idyl-code-block>
+
+      <p>Кстати, как и у виджетов, у <code>on_tick</code> есть вариант с параметром <code>sender</code> — <code>void function(gui.Timer sender)</code>. Через него таймер может управлять сам собой: например, остановить себя командой <code>sender.stop();</code>.</p>
     </div>
 
     <!-- Section 4 -->
     <div class="docs-section">
-      <h2>Методы таймера</h2>
-      <p>Таймер имеет три метода для управления:</p>
+      <h2>Методы и состояние таймера</h2>
+      <p>У таймера три метода управления и одно свойство-индикатор:</p>
       <ul>
-        <li><code>start()</code> — запускает таймер (если он ещё не запущен)</li>
-        <li><code>stop()</code> — останавливает таймер</li>
-        <li><code>restart()</code> — останавливает и запускает заново (полезно при изменении интервала)</li>
+        <li><code>start()</code> — запускает таймер; после остановки продолжает отсчёт с того места, где таймер замер</li>
+        <li><code>stop()</code> — ставит таймер на паузу: накопленное время сохраняется</li>
+        <li><code>restart()</code> — запускает таймер заново, отсчёт идёт с нуля (полезно при изменении интервала)</li>
+        <li><code>running</code> — запущен ли таймер в данный момент (только для чтения; изменить его напрямую нельзя — используйте методы)</li>
       </ul>
+
+      <p>Разница между <code>start()</code> и <code>restart()</code> — как у секундомера: «продолжить» и «сбросить и начать заново». Пара <code>stop()</code> + <code>start()</code> — это пауза, а не перезапуск: недосчитанные миллисекунды никуда не денутся. Если вы поменяли интервал и хотите честный новый отсчёт — нужен именно <code>restart()</code>:</p>
+
+      <idyl-code-block><script type="text/plain">
+timer.interval = 500;  // новый интервал
+timer.restart();       // отсчёт пойдёт заново, уже с новым интервалом
+</script></idyl-code-block>
 
       <p>Пример с кнопками запуска и остановки — секундомер:</p>
 
@@ -206,6 +224,7 @@ main() {
     };
 
     btn.on_click = void function(gui.Button sender) {
+        btn.text = "Жди 3 секунды...";
         timer.start();
     };
 
@@ -239,6 +258,100 @@ timer.start();
 </script></idyl-code-block>
 
       <p>Таймер живёт независимо от окон и продолжает работать, даже если все окна закрыты (пока работает программа).</p>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
+      <h2>Шпаргалка: всё, что умеет Timer</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Имя</th>
+            <th>Что это</th>
+            <th>Описание</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>interval</code></td>
+            <td>свойство (<code>int</code>)</td>
+            <td>интервал между срабатываниями в миллисекундах; можно менять в любой момент</td>
+          </tr>
+          <tr>
+            <td><code>on_tick</code></td>
+            <td>событие</td>
+            <td>функция, вызываемая каждые <code>interval</code> мс: <code>void function()</code> или <code>void function(gui.Timer sender)</code></td>
+          </tr>
+          <tr>
+            <td><code>start()</code></td>
+            <td>метод</td>
+            <td>запускает таймер</td>
+          </tr>
+          <tr>
+            <td><code>stop()</code></td>
+            <td>метод</td>
+            <td>останавливает таймер</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Это весь Timer целиком — два свойства и два метода. Перезапуск — это <code>stop()</code>, а следом <code>start()</code>.</p>
+    </div>
+
+    <!-- Section 8 -->
+    <div class="docs-section">
+      <h2>Типичные ошибки с таймером</h2>
+
+      <h3>«Молчаливая» ошибка: забыли <code>start()</code></h3>
+      <p>Самая коварная ошибка — та, о которой компилятор молчит. Таймер не запускается сам: если забыть <code>start()</code>, программа скомпилируется и окно откроется, но тиков не будет.</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 150;
+    win.title = "Молчаливый таймер";
+
+    gui.Label label;
+    label.x = 20;
+    label.y = 20;
+    label.text = "Жду...";
+
+    gui.Timer timer;
+    timer.interval = 1000;
+    timer.on_tick = void function() {
+        label.text = "Тик!";
+    };
+    // timer.start(); ← забыли!
+
+    win.add_child(label);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="warning-message">
+        Ошибок нет, окно открылось, а «Тик!» так и не появился: таймер создан и настроен, но его никто не запустил. Надпись «Жду...» будет ждать вечно.
+      </div>
+
+      <p>Если таймер «не работает» — первым делом проверьте, есть ли в программе вызов <code>timer.start()</code>.</p>
+
+      <h3>Ошибка компиляции: строка вместо числа</h3>
+      <p><code>interval</code> ждёт число миллисекунд (<code>int</code>). Если написать <code>"1000"</code> в кавычках, получится строка — и компилятор откажется:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Timer timer;
+    timer.interval = "1000";  // ОШИБКА: interval ждёт число, а не строку
+    timer.start();
+}
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:5:22: error: cannot assign 'string' value to 'int' variable</idyl-error-block>
+
+      <p>Исправление: уберите кавычки — <code>timer.interval = 1000;</code>.</p>
     </div>
 
     <!-- Lesson navigation -->

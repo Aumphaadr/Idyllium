@@ -1,0 +1,323 @@
+<style data-lesson-style>
+.file {
+      background-color: #b5bdd3;
+      border: 1px solid #8290b6;
+      padding: 1em;
+      border-radius: 0.5em;
+      font-family: 'Source Code Pro', monospace;
+      white-space: pre;
+      margin: 1em 0;
+      color: #0a0d14;
+    }
+</style>
+
+<div class="docs-section">
+  <h2>Зачем нужны файлы?</h2>
+  <p>До сих пор всё, что делала ваша программа, исчезало после её завершения. Чтобы сохранить данные надолго — их нужно записать в файл.</p>
+  <p>Файлы позволяют:</p>
+  <ul>
+    <li>Сохранять результаты работы (например, таблицу рекордов);</li>
+    <li>Загружать настройки или уровень игры;</li>
+    <li>Обмениваться данными между программами.</li>
+  </ul>
+</div>
+
+<div class="docs-section">
+  <h2>Библиотека <code>file</code></h2>
+  <p>Для работы с файлами в Idyllium используется встроенная библиотека <code>file</code>:</p>
+  <idyl-code-block><script type="text/plain">
+use file;
+</script></idyl-code-block>
+  <p>Она предоставляет два типа потоков:</p>
+  <ul>
+    <li><code>file.ostream</code> — для записи в файл (output stream);</li>
+    <li><code>file.istream</code> — для чтения из файла (input stream).</li>
+  </ul>
+</div>
+
+<div class="docs-section">
+  <h2>Открытие файла для записи</h2>
+  <p>Чтобы записывать данные в файл, нужно сначала открыть его функцией <code>file.open()</code>:</p>
+  <idyl-code-block><script type="text/plain">
+file.ostream fout = file.open("output.txt", "write");
+</script></idyl-code-block>
+  <p>Разберём:</p>
+  <ul>
+    <li><code>file.ostream</code> — тип объекта «поток вывода в файл»;</li>
+    <li><code>fout</code> — имя этого объекта (можно любое);</li>
+    <li><code>file.open()</code> — функция для открытия файла;</li>
+    <li><code>"output.txt"</code> — имя файла (создастся, если не существует);</li>
+    <li><code>"write"</code> — режим открытия: запись.</li>
+  </ul>
+</div>
+
+<div class="docs-section">
+  <h2>Запись данных: выполнение</h2>
+  <p>После открытия файла можно записывать в него строки с помощью методов <code>write_line()</code> и <code>write()</code>:</p>
+  <idyl-code-block><script type="text/plain">
+fout.write_line("Привет, мир!");
+fout.write("Рекорд: ", 9000, " очков");
+fout.write_line();
+fout.write("Файл создан с помощью Idyllium!");
+</script></idyl-code-block>
+  <p>Оба метода принимают любое количество аргументов и собирают из них текст.</p>
+  <p><code>write_line()</code> после текста сам добавляет <code>'\n'</code>, как <code>console.writeln()</code>. Метод <code>write()</code> ничего не добавляет, как <code>console.write()</code>. Пустой вызов <code>write_line()</code> просто начинает новую строку.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Завершение записи</h2>
+  <p>После завершения записи обязательно нужно закрыть файл:</p>
+  <idyl-code-block><script type="text/plain">
+fout.close();
+</script></idyl-code-block>
+  <p>Это гарантирует, что все данные будут записаны на диск и файл не останется «зависшим».</p>
+</div>
+
+<div class="docs-section">
+  <h2>Запись данных: полный пример</h2>
+  <idyl-code-block><script type="text/plain">
+use file;
+
+main() {
+    file.ostream fout = file.open("output.txt", "write");
+    fout.write_line("Привет, мир!");
+    fout.write_line("Рекорд: ", 9000, " очков");
+    fout.write("Файл создан с помощью Idyllium!");
+    fout.close();
+}
+</script></idyl-code-block>
+  <p>При выполнении данной программы появится файл <code>output.txt</code> со следующим содержимым:</p>
+  <div class="file">Привет, мир!
+Рекорд: 9000 очков
+Файл создан с помощью Idyllium!</div>
+</div>
+
+<div class="docs-section">
+  <h2>Открытие файла для чтения</h2>
+  <p>Чтобы прочитать файл, его нужно открыть в режиме <code>"read"</code>:</p>
+  <idyl-code-block><script type="text/plain">
+file.istream fin = file.open("input.txt", "read");
+</script></idyl-code-block>
+  <p>Здесь:</p>
+  <ul>
+    <li><code>file.istream</code> — тип «поток ввода из файла»;</li>
+    <li><code>fin</code> — имя объекта;</li>
+    <li><code>file.open()</code> — функция для открытия файла;</li>
+    <li><code>"input.txt"</code> — имя существующего файла;</li>
+    <li><code>"read"</code> — режим: чтение.</li>
+  </ul>
+  <p>Есть важное отличие от записи: файл для чтения <strong>должен уже существовать</strong>. Читать из пустоты не умеет даже Idyllium. Попробуем открыть файл, которого нет:</p>
+  <idyl-code-block><script type="text/plain">
+use file;
+
+main() {
+    file.istream fin = file.open("treasure.txt", "read");
+}
+</script></idyl-code-block>
+  <idyl-error-block>main.idyl:4: runtime error: file.open() cannot open 'treasure.txt' for reading: file does not exist</idyl-error-block>
+  <p>Вместо <code>/home/user/my_game</code> в сообщении будет полный путь к папке вашего проекта — так сразу видно, <em>где именно</em> программа искала пропавший файл.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Чтение файла построчно</h2>
+  <p>Возьмём файл с тремя строками:</p>
+  <div class="file">Кирка
+Топор
+Меч</div>
+  <p>Прочитаем его вручную:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+use file;
+
+main() {
+    file.istream fin = file.open("input.txt", "read");
+    string line1 = fin.read_line(); // "Кирка\n"
+    string line2 = fin.read_line(); // "Топор\n"
+    string line3 = fin.read_line(); // "Меч"
+    fin.close();
+
+    array<string, 3> t = [line1, line2, line3];
+    console.writeln(t);
+}
+</script></idyl-code-block>
+  <idyl-output-block>["Кирка\n", "Топор\n", "Меч"]</idyl-output-block>
+  <p>Здесь возникают две проблемы:</p>
+  <ol>
+    <li>Строки содержат символ <code>'\n'</code> (кроме последней);</li>
+    <li>Нельзя так читать файл, если количество строк заранее неизвестно.</li>
+  </ol>
+</div>
+
+<div class="docs-section">
+  <h2>Очистка строки: метод <code>.trim()</code></h2>
+  <p>Метод <code>.trim()</code> удаляет пробелы и управляющие символы (вроде <code>'\n'</code>, <code>'\t'</code>) <strong>только по краям строки</strong> — в начале и в конце. Всё, что внутри, остаётся нетронутым. Проверим:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    console.writeln("[", "  кот  ".trim(), "]");
+    console.writeln("[", "\t кот \n".trim(), "]");
+    console.writeln("[", "ко  т".trim(), "]");
+}
+</script></idyl-code-block>
+  <idyl-output-block>[кот]
+[кот]
+[ко  т]</idyl-output-block>
+  <p>Первые два кота избавились от «шубы» из пробелов, табуляций и переводов строк, а третий сохранил пробелы внутри себя — <code>.trim()</code> в середину строки не заглядывает.</p>
+  <p>Именно то, что нужно, чтобы очистить прочитанные из файла строки от хвостика <code>'\n'</code>:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    array<string, 3> raw = ["Кирка\n", "Топор\n", "Меч"];
+    array<string, 3> clean;
+
+    for (int i = 0; i < 3; i += 1) {
+        clean[i] = raw[i].trim();
+    }
+
+    console.writeln(clean);
+}
+</script></idyl-code-block>
+  <idyl-output-block>["Кирка", "Топор", "Меч"]</idyl-output-block>
+  <p>Теперь строки «чистые» и готовы к использованию.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Чтение файла неизвестной длины</h2>
+  <p>Метод <code>.has_next_line()</code> у объектов типа <code>istream</code> возвращает <code>true</code>, если в файле ещё есть строки:</p>
+  <idyl-code-block><script type="text/plain">
+while (fin.has_next_line()) {
+    string one_line = fin.read_line();
+}
+</script></idyl-code-block>
+  <p>Такой цикл прочитает файл целиком — независимо от количества строк.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Полный пример: чтение и очистка файла</h2>
+  <idyl-code-block><script type="text/plain">
+use console;
+use file;
+
+main() {
+    dyn_array<string> lines;
+
+    // 1. Открываем файл "input.txt" для чтения
+    file.istream fin = file.open("input.txt", "read");
+
+    // 2. Пока в файле есть строки — читаем их
+    while (fin.has_next_line()) {
+        string one_line = fin.read_line();
+        string fixed_line = one_line.trim();
+        lines.add(fixed_line);
+    }
+
+    // 3. Обязательно закрываем файл
+    fin.close();
+
+    console.writeln(lines);
+}
+</script></idyl-code-block>
+  <p>При входном файле:</p>
+  <div class="file">Кирка
+Топор
+Меч</div>
+  <p>Программа выведет:</p>
+  <idyl-output-block>["Кирка", "Топор", "Меч"]</idyl-output-block>
+  <p>Теперь вы можете читать любые текстовые файлы — сколько бы в них ни было строк.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Прочитать весь файл сразу: метод <code>read_all()</code></h2>
+  <p>Построчное чтение удобно, когда файл похож на список: одна строка — один предмет, одна команда или одна запись.</p>
+  <p>Но иногда файл хочется забрать целиком. Например, если внутри лежит большой текст, HTML-страница или JSON-данные. Для этого у <code>file.istream</code> есть метод <code>read_all()</code>. Возьмём файл <code>story.txt</code>:</p>
+  <div class="file">Дневник шахтёра
+День 1. Нашёл уголь.
+День 2. Нашёл алмазы!</div>
+  <idyl-code-block><script type="text/plain">
+use console;
+use file;
+
+main() {
+    file.istream fin = file.open("story.txt", "read");
+    string text = fin.read_all();
+    fin.close();
+
+    console.writeln(text);
+}
+</script></idyl-code-block>
+  <idyl-output-block>Дневник шахтёра
+День 1. Нашёл уголь.
+День 2. Нашёл алмазы!</idyl-output-block>
+  <p>Метод <code>read_all()</code> читает всё, что осталось в файле от текущего места до конца. Если до него уже вызывали <code>read_line()</code>, то первые прочитанные строки повторно не вернутся:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+use file;
+
+main() {
+    file.istream fin = file.open("story.txt", "read");
+
+    string title = fin.read_line();
+    string body = fin.read_all();
+
+    fin.close();
+
+    console.writeln("Заголовок: ", title.trim());
+    console.writeln("Остальной текст:");
+    console.writeln(body);
+}
+</script></idyl-code-block>
+  <idyl-output-block>Заголовок: Дневник шахтёра
+Остальной текст:
+День 1. Нашёл уголь.
+День 2. Нашёл алмазы!</idyl-output-block>
+  <p>Это поведение удобно: можно сначала отдельно прочитать заголовок, а потом забрать весь оставшийся текст одним действием.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Прочитать ровно несколько символов: <code>read(n)</code></h2>
+  <p>А если нужно точное количество символов, передайте его в метод <code>read()</code>. Вызов <code>read()</code> без аргумента работает как <code>read_all()</code> — забирает всё оставшееся. Для файла <code>word.txt</code> со словом:</p>
+  <div class="file">котики</div>
+  <idyl-code-block><script type="text/plain">
+use console;
+use file;
+
+main() {
+    file.istream fin = file.open("word.txt", "read");
+
+    string first = fin.read(3);
+    string rest = fin.read();
+
+    fin.close();
+
+    console.writeln("Первые три символа: ", first);
+    console.writeln("Остаток: ", rest);
+}
+</script></idyl-code-block>
+  <idyl-output-block>Первые три символа: кот
+Остаток: ики</idyl-output-block>
+  <p>Считаются символы, а не байты, поэтому кириллица и эмодзи не ломают такое чтение. Если до конца файла осталось меньше символов, чем вы попросили, метод просто вернёт оставшийся текст.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Итог: инструменты одной таблицей</h2>
+  <p>Режимов открытия в Idyllium ровно два — <code>"write"</code> для записи и <code>"read"</code> для чтения. А вот и все методы урока:</p>
+  <table>
+    <thead>
+      <tr><th>Инструмент</th><th>Что делает</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>file.open("out.txt", "write")</code></td><td>Открывает файл для записи, возвращает <code>file.ostream</code>. Создаёт файл, если его нет</td></tr>
+      <tr><td><code>fout.write(...)</code></td><td>Записывает аргументы в файл, ничего не добавляя</td></tr>
+      <tr><td><code>fout.write_line(...)</code></td><td>Записывает аргументы и добавляет <code>'\n'</code></td></tr>
+      <tr><td><code>file.open("in.txt", "read")</code></td><td>Открывает существующий файл для чтения, возвращает <code>file.istream</code></td></tr>
+      <tr><td><code>fin.read_line()</code></td><td>Читает одну строку (вместе с <code>'\n'</code>, если он есть)</td></tr>
+      <tr><td><code>fin.has_next_line()</code></td><td>Возвращает <code>true</code>, если в файле остались непрочитанные строки</td></tr>
+      <tr><td><code>fin.read_all()</code></td><td>Читает всё от текущего места до конца файла</td></tr>
+      <tr><td><code>fin.read(n)</code></td><td>Читает <code>n</code> символов; без аргумента — как <code>read_all()</code></td></tr>
+      <tr><td><code>fout.close()</code> / <code>fin.close()</code></td><td>Закрывает файл — обязательный финал любой работы с потоком</td></tr>
+      <tr><td><code>строка.trim()</code></td><td>Убирает пробелы и управляющие символы по краям строки</td></tr>
+    </tbody>
+  </table>
+</div>

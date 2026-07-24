@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: IdylliumNext 1.1.3.
+Current language target: IdylliumNext 1.2.0.
 
 This reference describes implemented behavior. Ideas from `BACKLOG.md` and
 exploratory files under `spec/some_*` are not language features until they are
@@ -191,6 +191,23 @@ main.idyl:2: error: constant 'answer' must have an initializer
 main.idyl:3: error: cannot assign to constant 'answer'
 ```
 
+A declaration without an initializer creates the value's default:
+
+```idyllium
+int count;        // 0
+float ratio;      // 0
+string name;      // ""
+char letter;      // '\0'
+bool ready;       // false
+array<int, 3> a;  // [0, 0, 0] — N default elements
+```
+
+A class-typed declaration (`Hero h;`) creates an object with default field
+values. If the class has a constructor callable without arguments (no
+parameters, or every parameter has a default), that constructor runs;
+a constructor with required parameters is NOT run by a bare declaration —
+the fields simply keep their type defaults.
+
 ## 6. Type Conversion
 
 Idyllium is strict about types.
@@ -258,6 +275,11 @@ if (not(is_ready)) {
 
 Use `and`, `or`, `xor`, `not`, not `&&`, `||`, `^`, `!`.
 
+Ordering comparisons `<`, `<=`, `>`, `>=` accept only numeric operands:
+comparing strings or chars with them is a compile error
+(`comparison '<' requires numeric operands`). Strings and chars support only
+`==` and `!=`.
+
 All logical operands must have type `bool`; Idyllium has no truthy/falsy
 conversion. Precedence from higher to lower is `not`, comparisons, `and`,
 `xor`, `or`. `and` and `or` short-circuit. `xor` evaluates both operands from
@@ -283,7 +305,9 @@ console.set_precision(3);
 `console.write(...)` prints values without an automatic newline.
 `console.writeln(...)` prints values and then a newline.
 `console.set_precision(digits)` controls float formatting and accepts an integer
-from `0` through `25`.
+from `0` through `25`. By default floats print with up to 8 fractional digits and
+trailing zeros are trimmed: `10 / 3` prints `3.33333333`, `0.1 + 0.2` prints `0.3`,
+`1.5` prints `1.5`.
 
 Input:
 
@@ -819,6 +843,23 @@ main() {
 The same idea powers library APIs such as `gui.Window.add_child(gui.Widget)`
 and `gui.Canvas.draw(drawable.Drawable)`.
 
+### Value And Reference Semantics (Memory Model)
+
+Verified behavior of assignment and parameter passing:
+
+- **Class objects are references.** `Hero b = a;` makes `b` and `a` the same
+  object: `b.hp = 5;` changes `a.hp` too. Passing an object to a function
+  passes the same object. `==` on objects compares identity (same object),
+  not field contents.
+- **Arrays are values.** `dyn_array<int> b = a;` creates a copy: `b[0] = 99;`
+  does not change `a[0]`. Passing an array to a function also copies it —
+  mutations inside the function are not visible to the caller. To let a
+  function modify shared data, wrap the array in a class object.
+- **Primitives (`int`, `float`, `string`, `char`, `bool`) are values.**
+  Strings are immutable; `s[0]` reads a `char` but cannot be assigned.
+- **`colors.Color` and `time.stamp` are immutable values** — their `with_*`
+  and `in_timezone` methods return new values.
+
 ## 16. User Modules
 
 If project has `math_tools.idyl`:
@@ -888,6 +929,12 @@ math.to_degrees(radians)
 
 Angles for trigonometric functions are in radians.
 
+Result types: `math.abs` keeps the argument's numeric type (`int` stays `int`,
+`float` stays `float`). `math.round`, `math.floor` and `math.ceil` return `int`
+when called with one argument and `float` when the optional digits argument is
+provided. `math.clamp` returns `int` when all three arguments are integers,
+otherwise `float`. The remaining math functions return `float`.
+
 ## 18. Library `random`
 
 ```idyllium
@@ -904,7 +951,8 @@ random.set_seed(123);
 ```
 
 `create_int(min, max)` includes both bounds, so `create_int(1, 10)` may return
-either `1` or `10`. `create_float(min, max)` includes `min` but excludes `max`.
+either `1` or `10`. `create_float(min, max)` also includes both bounds (like
+Python's `random.uniform`), though hitting `max` exactly is vanishingly rare.
 Integer ranges allow `min == max`; float ranges require `min < max`.
 `set_seed()` requires a non-negative integer and makes later results
 reproducible. Invalid ranges are runtime errors. Do not silently swap or clamp
@@ -927,6 +975,7 @@ console.writeln(now.day);
 console.writeln(now.hour);
 console.writeln(now.minute);
 console.writeln(now.second);
+console.writeln(now.millisecond);
 console.writeln(now.week_day);
 console.writeln(now.unix);
 console.writeln(now.timezone);
@@ -939,8 +988,11 @@ an optional IANA timezone such as `"Asia/Yekaterinburg"`, `"Europe/Berlin"`, or
 names are runtime errors. The host `Intl` implementation applies historical
 and daylight-saving transitions.
 
-The components `year`, `month`, `day`, `hour`, `minute`, `second`, `week_day`,
-`unix`, and `timezone` are read-only properties, not getter methods. Do not
+The components `year`, `month`, `day`, `hour`, `minute`, `second`,
+`millisecond`, `week_day`, `unix`, and `timezone` are read-only properties, not
+getter methods. `unix` is whole seconds; `millisecond` is `0..999`.
+`time.from_unix` accepts fractional seconds — the fraction becomes
+milliseconds (`time.from_unix(946684800.25)` gives `millisecond == 250`). Do not
 generate `stamp.year()` or `stamp.unix()`. `month` returns `1..12`, and
 `week_day` follows `0..6` with Sunday as `0`.
 
@@ -979,10 +1031,13 @@ Read:
 file.istream fin = file.open("input.txt", "read");
 string prefix = fin.read(5);
 string line = fin.read_line();
+bool more = fin.has_next_line();
 string rest = fin.read_all();
 fin.close();
 ```
 
+`has_next_line()` reports whether another `read_line()` call would succeed —
+the canonical loop is `while (fin.has_next_line()) { ... fin.read_line() ... }`.
 `read_line()` preserves the terminating `\n` or `\r\n` when one exists.
 `read(count)` reads at most `count` Unicode characters from the current stream
 position. The count must be a non-negative integer. `read()` without an
@@ -1633,6 +1688,10 @@ text, is_selected, group, font_size
 on_change
 ```
 
+Selecting a radio button deselects the other buttons of the same `group`, and
+`on_change` fires for every affected button: the newly selected one (with
+`is_selected == true`) and each deselected sibling (with `is_selected == false`).
+
 `gui.ComboBox`:
 
 ```idyllium
@@ -1661,10 +1720,15 @@ get_input_value()
 
 ```idyllium
 interval
+running
 on_tick
 start()
 stop()
+restart()
 ```
+
+`running` is a read-only flag. `stop()` pauses the timer and keeps the elapsed
+progress; `start()` resumes from that point; `restart()` starts over from zero.
 
 Example button:
 

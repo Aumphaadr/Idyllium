@@ -175,19 +175,19 @@ main() {
   <div class="gui-demo-container">
     <div class="gui-demo-window">
       <div class="demo-content" style="min-height: 190px; position: relative;">
-        <div class="image-mode-demo image-mode-fit" style="left: 20px;">
+        <div class="image-mode-demo image-mode-fit" style="left: 30px;">
           <img src="assets/cat.png" alt="Режим fit">
           <span>fit</span>
         </div>
-        <div class="image-mode-demo image-mode-fill" style="left: 180px;">
+        <div class="image-mode-demo image-mode-fill" style="left: 190px;">
           <img src="assets/cat.png" alt="Режим fill">
           <span>fill</span>
         </div>
-        <div class="image-mode-demo image-mode-stretch" style="left: 340px;">
+        <div class="image-mode-demo image-mode-stretch" style="left: 350px;">
           <img src="assets/cat.png" alt="Режим stretch">
           <span>stretch</span>
         </div>
-        <div class="image-mode-demo image-mode-original" style="left: 500px;">
+        <div class="image-mode-demo image-mode-original" style="left: 510px;">
           <img src="assets/cat.png" alt="Режим original">
           <span>original</span>
         </div>
@@ -199,6 +199,20 @@ main() {
       <code>original</code> показывает исходный размер.
     </div>
   </div>
+
+  <p>Соберём всё, что умеет <code>gui.ImageBox</code>, в одну таблицу:</p>
+
+  <table>
+    <thead>
+      <tr><th>Свойство или метод</th><th>Тип</th><th>Что делает</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>x</code>, <code>y</code></td><td><code>int</code></td><td>позиция виджета в окне</td></tr>
+      <tr><td><code>width</code>, <code>height</code></td><td><code>int</code></td><td>размер места, отведённого под картинку</td></tr>
+      <tr><td><code>resize_mode</code></td><td><code>string</code></td><td><code>"fit"</code>, <code>"fill"</code>, <code>"stretch"</code> или <code>"original"</code></td></tr>
+      <tr><td><code>set_image(картинка)</code></td><td>метод</td><td>помещает в виджет загруженный ресурс <code>image</code></td></tr>
+    </tbody>
+  </table>
 </div>
 
 <div class="docs-section">
@@ -293,19 +307,53 @@ main() {
 }
 </script></idyl-code-block>
 
-  <ul>
-    <li><code>scale(x, y)</code> меняет размер; отрицательное число ещё и отражает картинку по выбранной оси;</li>
-    <li><code>rotate(angle)</code> поворачивает на угол, кратный 90 градусам;</li>
-    <li><code>tint(color)</code> тонирует картинку выбранным цветом;</li>
-    <li><code>with_opacity(value)</code> задаёт прозрачность от <code>0.0</code> до <code>1.0</code>;</li>
-    <li><code>desaturate()</code> делает копию чёрно-белой, а аргумент позволяет ослабить эффект;</li>
-    <li><code>crop(x, y, width, height)</code> вырезает прямоугольный фрагмент;</li>
-    <li><code>export_to_file(path)</code> сохраняет результат в новый файл проекта.</li>
-  </ul>
+  <table>
+    <thead>
+      <tr><th>Метод</th><th>Что делает</th><th>Ограничение</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>scale(x, y)</code></td><td>меняет размер; отрицательное число ещё и отражает картинку по выбранной оси</td><td>множитель не может быть нулём</td></tr>
+      <tr><td><code>rotate(angle)</code></td><td>поворачивает картинку</td><td>угол кратен 90 градусам</td></tr>
+      <tr><td><code>tint(color)</code></td><td>тонирует картинку выбранным цветом</td><td>—</td></tr>
+      <tr><td><code>with_opacity(value)</code></td><td>задаёт прозрачность</td><td>от <code>0.0</code> до <code>1.0</code></td></tr>
+      <tr><td><code>desaturate(amount)</code></td><td>делает копию чёрно-белой; аргумент позволяет ослабить эффект</td><td>без аргумента — полностью чёрно-белая</td></tr>
+      <tr><td><code>crop(x, y, width, height)</code></td><td>вырезает прямоугольный фрагмент</td><td>фрагмент не выходит за границы картинки</td></tr>
+      <tr><td><code>export_to_file(path)</code></td><td>сохраняет результат в новый файл проекта</td><td>—</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="docs-section">
+  <h2>Типичная ошибка: невозможное преобразование</h2>
   <p>
-    Нулевой масштаб, угол вроде 45 градусов или обрезка за границами картинки
-    приводят к понятной runtime error. Idyllium не будет молча угадывать, что
-    программист хотел получить.
+    Ограничения из таблицы — не пустые слова. Idyllium не будет молча угадывать,
+    что программист хотел получить. Попробуем умножить размеры кота на ноль:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use image;
+
+main() {
+    image.Static cat;
+    cat.load_from_file("cat.png");
+    image.Static broken = cat.scale(0, 0);
+    console.writeln(broken.width);
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:7: runtime error: Static.scale() factors cannot be zero (got 0, 0)</idyl-error-block>
+
+  <p>
+    Картинка нулевого размера — это уже не картинка. А если в той же строке 7
+    попросить поворот <code>cat.rotate(45)</code>, ответ будет таким:
+  </p>
+
+  <idyl-error-block>main.idyl:7: runtime error: Static.rotate() angle must be divisible by 90, got 45</idyl-error-block>
+
+  <p>
+    Обе ошибки случаются во время работы программы, а не при компиляции: до
+    запуска Idyllium не знает, какое число окажется в скобках.
   </p>
 </div>
 
@@ -355,6 +403,11 @@ main() {
     </div>
   </div>
 
+  <p>
+    Чаще всего анимацию достаточно просто показать, но иногда программе хочется
+    заглянуть внутрь — например, узнать, сколько кадров в походке героя, или
+    вытащить один кадр для иконки.
+  </p>
   <p>
     Свойство <code>frame_count</code> сообщает количество кадров. Метод
     <code>get_frame(index)</code> достаёт отдельный кадр как

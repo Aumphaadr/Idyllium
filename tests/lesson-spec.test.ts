@@ -52,10 +52,10 @@ async function main(): Promise<void> {
   const root = process.cwd();
   const specRoot = path.join(root, 'spec/lessons');
   const manifestPath = path.join(specRoot, 'manifest.json');
-  const expectationsPath = path.join(specRoot, 'expectations.json');
+  const expectationsPath = path.join(root, 'tests/lesson-expectations.json');
 
   assert(fs.existsSync(manifestPath), 'missing spec/lessons/manifest.json; run npm run spec:extract');
-  assert(fs.existsSync(expectationsPath), 'missing spec/lessons/expectations.json');
+  assert(fs.existsSync(expectationsPath), 'missing tests/lesson-expectations.json');
 
   const manifest = readManifest(manifestPath);
   const expectations = readExpectations(expectationsPath);
@@ -73,6 +73,7 @@ async function main(): Promise<void> {
   let programs = 0;
   let runnablePrograms = 0;
   let acceptedRunnablePrograms = 0;
+  const rejectedRunnable: string[] = [];
   let nonStandalone = 0;
   let compileErrors = 0;
   let runtimeErrors = 0;
@@ -121,11 +122,17 @@ async function main(): Promise<void> {
         runnablePrograms++;
         const compiled = compileIdyllium(code, { file: example.codeFile });
         if (compiled.success) acceptedRunnablePrograms++;
+        else rejectedRunnable.push(`${example.id}: ${compiled.diagnosticsText.split('\n')[0]}`);
       }
     } else {
       nonStandalone++;
     }
   }
+
+  assert(
+    rejectedRunnable.length === 0,
+    `every standalone book program must compile; failing:\n${rejectedRunnable.join('\n')}`,
+  );
 
   const actualContentHash = sha256(manifest.examples.map((example) => `${example.id}:${example.sha256}`).join('\n'));
   assert(actualContentHash === manifest.contentSha256, 'manifest contentSha256 mismatch');

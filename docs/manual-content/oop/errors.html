@@ -1,0 +1,283 @@
+<style data-lesson-style>
+.tip-box {
+      background: rgba(137, 180, 250, 0.1);
+      border: 1px solid rgba(137, 180, 250, 0.3);
+      border-radius: 8px;
+      padding: 1em 1.25em;
+      margin: 1.5em 0;
+    }
+    .tip-box strong {
+      color: #89b4fa;
+    }
+</style>
+
+<div class="docs-section">
+  <h2>Как читать ошибки</h2>
+  <p>Этот урок — справочник самых частых ошибок при работе с классами и объектами. Все сообщения в нём настоящие: можете скопировать любой пример, запустить его и получить точно такой же текст.</p>
+  <p>Формат сообщений вы уже знаете по разделу «Консоль», напомним его на живом примере:</p>
+  <idyl-error-block>main.idyl:2:5: error: unknown class 'Cat'</idyl-error-block>
+  <p>Через двоеточия перечислены: файл, номер строки, номер символа в строке — а дальше описание того, что пошло не так. Компилятор показывает место ошибки с точностью до буквы.</p>
+  <div class="tip-box">
+    <strong>💡 Совет:</strong> если сообщений несколько — исправляйте первое. Одна опечатка часто порождает целую гроздь сообщений-«эха», и после исправления первого остальные исчезают сами. Дальше в уроке вы увидите такой пример.
+  </div>
+</div>
+
+<div class="docs-section">
+  <h2>Лишняя точка с запятой после класса</h2>
+  <p>В Idyllium после закрывающей фигурной скобки класса точка с запятой <strong>не нужна</strong>. Привычка ставить её приходит из других языков — например, в C++ без неё класс не скомпилируется.</p>
+
+  <idyl-code-block><script type="text/plain">
+class Cat {
+    string name;
+};   // ← эта точка с запятой не нужна
+
+main() {
+    Cat c;
+}
+</script></idyl-code-block>
+
+  <p>Одну случайную точку с запятой сразу после класса компилятор молча прощает — эта программа скомпилируется. Но не стоит полагаться на его доброту: в любом другом месте между классами и функциями «висячая» точка с запятой — уже ошибка. Например, после <code>main()</code>:</p>
+
+  <idyl-code-block><script type="text/plain">
+class Cat {
+    string name;
+}
+
+main() {
+    Cat c;
+};   // ← лишняя точка с запятой
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:7:2: error: unexpected token 'Semicolon' at top level</idyl-error-block>
+
+  <p>Исправление: уберите лишний символ. Точка с запятой нужна после команд внутри функций, а после <code>}</code> классов, функций и <code>main()</code> — нет.</p>
+</div>
+
+<div class="docs-section">
+  <h2>this в статическом методе</h2>
+  <p>Статический метод принадлежит классу, а не объекту, поэтому <code>this</code> и нестатические свойства ему недоступны.</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Cat {
+    string name;
+
+    static void function meow() {
+        console.writeln(this.name);   // ОШИБКА!
+    }
+}
+
+main() { }
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:7:25: error: 'this' cannot be used in a static method
+main.idyl:7:25: error: type '&lt;error&gt;' has no member 'name'</idyl-error-block>
+
+  <p>Вот и обещанная «гроздь»: сообщения два, но настоящая ошибка — первая. Раз <code>this</code> недоступен, компилятор уже не знает, у чего мы просим <code>name</code>, — отсюда вторая строка. Исправьте первую — исчезнут обе.</p>
+  <p>Исправление: либо сделайте метод нестатическим, либо передавайте нужные данные как параметры.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Обращение к приватному свойству извне</h2>
+  <p>Свойства, объявленные как <code>private</code>, доступны только внутри методов класса. Из <code>main()</code> или других классов к ним обратиться нельзя.</p>
+
+  <idyl-code-block><script type="text/plain">
+class BankAccount {
+    private:
+    int balance;
+}
+
+main() {
+    BankAccount acc;
+    acc.balance = 1000;   // ОШИБКА!
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:8:5: error: member 'BankAccount.balance' is private and can only be used inside class 'BankAccount'</idyl-error-block>
+
+  <p>Исправление: создайте публичные методы для работы с приватным свойством — например, <code>get_balance()</code> для чтения и <code>deposit()</code> с проверкой суммы для пополнения.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Печать объекта целиком</h2>
+  <p>Объект — это не текст, и Idyllium не берётся угадывать, как показать его на экране. Попытка отправить объект в <code>console.writeln()</code> — ошибка компиляции.</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Cat {
+    string name;
+}
+
+main() {
+    Cat cat;
+    cat.name = "Барсик";
+
+    console.writeln(cat);   // ОШИБКА!
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:11:21: error: cannot print object of class 'Cat' directly</idyl-error-block>
+
+  <p>Исправление: печатайте свойства по отдельности — <code>console.writeln(cat.name);</code> — или напишите в классе метод <code>info()</code>, который сам выводит всё, что нужно.</p>
+</div>
+
+<div class="docs-section">
+  <h2>parent() и ответственность</h2>
+  <p>Эта запись — особенная: сообщения об ошибке здесь не будет. Если в конструкторе потомка забыть вызвать <code>parent()</code>, программа скомпилируется и запустится:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Animal {
+    string name;
+    int hp;
+
+    constructor Animal() {
+        this.name = "Зверь";
+        this.hp = 100;
+    }
+}
+
+class Cat extends Animal {
+    int age;
+
+    constructor Cat() {
+        // забыли вызвать parent()
+        this.age = 3;
+    }
+}
+
+main() {
+    Cat cat;
+    console.writeln("Имя: ", cat.name);
+    console.writeln("Здоровье: ", cat.hp);
+    console.writeln("Возраст: ", cat.age);
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Имя: 
+Здоровье: 0
+Возраст: 3</idyl-output-block>
+
+  <p>Конструктор <code>Animal</code> так и не выполнился, поэтому поля родителя остались со значениями по умолчанию: пустая строка вместо имени и 0 вместо здоровья. Добавьте <code>parent();</code> первой строкой конструктора <code>Cat</code> — и вывод станет ожидаемым: <code>Имя: Зверь</code>, <code>Здоровье: 100</code>, <code>Возраст: 3</code>.</p>
+
+  <div class="tip-box">
+    <strong>💡 Территория человека.</strong> Idyllium сознательно не заставляет вызывать <code>parent()</code>: его можно забыть, вызвать не первым или даже дважды — компилятор промолчит. Компилятор ловит «тихие сюрпризы» машины, а логика программы — ответственность программиста. Поэтому заведите привычку: открыли конструктор потомка — первой строкой напишите <code>parent()</code>. Привычка надёжнее памяти.
+  </div>
+</div>
+
+<div class="docs-section">
+  <h2>Класс не найден (забыли подключить файл)</h2>
+  <p>Если класс объявлен в другом файле, его нужно подключить через <code>use</code>.</p>
+
+  <idyl-code-block><script type="text/plain">
+main() {
+    Cat c;   // Cat объявлен в cat.idyl, но файл не подключён
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:2:5: error: unknown class 'Cat'</idyl-error-block>
+
+  <p>Исправление: подключите файл и обращайтесь к классу по полному имени — с префиксом имени файла. Одного <code>use</code> недостаточно: без префикса компилятор выдаст ту же ошибку. Пусть рядом с программой лежит файл с классом:</p>
+
+  <idyl-code-block><script type="text/plain">
+// cat.idyl
+class Cat {
+    string name;
+}
+</script></idyl-code-block>
+
+  <idyl-code-block><script type="text/plain">
+use cat;
+
+main() {
+    cat.Cat c;
+}
+</script></idyl-code-block>
+
+  <p>Кстати, ошибка <code>unknown class</code> появляется и при простой опечатке в имени класса — проверьте написание, прежде чем искать проблему в файлах.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Циклическая зависимость файлов</h2>
+  <p>Нельзя, чтобы файл <code>a.idyl</code> подключал <code>b.idyl</code>, а <code>b.idyl</code> — обратно <code>a.idyl</code>. Такой круг компилятор разорвёт с ошибкой.</p>
+
+  <idyl-code-block><script type="text/plain">
+// a.idyl
+use b;
+
+main() {
+}
+</script></idyl-code-block>
+
+  <idyl-code-block><script type="text/plain">
+// b.idyl
+use a;
+
+class Helper {
+    int value;
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>a.idyl:2:1: error: module import cycle detected: b -&gt; a -&gt; b</idyl-error-block>
+
+  <p>Компилятор прямо рисует круг: <code>b</code> подключает <code>a</code>, тот — снова <code>b</code>, и так до бесконечности. Исправление: пересмотрите структуру проекта. Уберите один из <code>use</code> или вынесите общую часть в третий файл, который подключат оба.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Вызов метода «не с той стороны»</h2>
+  <p>Статические методы вызываются через класс, обычные — через объект. Перепутать стороны легко, но компилятор в обоих случаях подскажет, как надо.</p>
+  <p>Статический метод через объект:</p>
+
+  <idyl-code-block><script type="text/plain">
+class MathUtils {
+    static int function square(int x) {
+        return x * x;
+    }
+}
+
+main() {
+    MathUtils m;
+    int y = m.square(5);   // ОШИБКА!
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:9:13: error: static method 'MathUtils.square' must be called on class 'MathUtils'</idyl-error-block>
+
+  <p>И зеркальная ситуация — обычный метод через класс:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Cat {
+    void function meow() {
+        console.writeln("Мяу");
+    }
+}
+
+main() {
+    Cat.meow();   // ОШИБКА: meow — не статический!
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:10:5: error: instance method 'Cat.meow' must be called on an object</idyl-error-block>
+
+  <p>Исправление: статические методы вызывайте через класс — <code>MathUtils.square(5)</code>, обычные — через объект: <code>some_cat.meow()</code>.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Итог</h2>
+  <ul>
+    <li>После <code>}</code> класса точка с запятой не нужна; в других местах верхнего уровня она вызовет ошибку.</li>
+    <li>Статические методы не видят <code>this</code> и нестатические члены; вызывайте их через класс, а обычные методы — через объект.</li>
+    <li>Приватные свойства доступны только внутри класса — снаружи работайте через публичные методы.</li>
+    <li>Объект нельзя напечатать целиком — выводите свойства по отдельности или заведите метод <code>info()</code>.</li>
+    <li>Забытый <code>parent()</code> — не ошибка компиляции, а вопрос стиля: привычка вызывать <code>parent()</code> первой строкой конструктора потомка убережёт от пустых полей родителя.</li>
+    <li>Классы из других файлов подключайте через <code>use</code> и называйте по полному имени: <code>файл.Класс</code>.</li>
+    <li>Не допускайте циклов между файлами.</li>
+    <li>Если сообщений несколько — исправляйте первое: остальные часто лишь «эхо».</li>
+  </ul>
+  <p>Раздел про ООП на этом завершён. Впереди — рисование: там классы и объекты перестанут быть невидимыми жителями памяти и появятся на экране, а полиморфизм из недавних уроков покажет себя во всей красе.</p>
+</div>

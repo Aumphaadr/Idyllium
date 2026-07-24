@@ -7,6 +7,7 @@ import {
   FunctionSpec,
   ModuleSpec,
   PropertySpec,
+  StandardLibraryRegistry,
   TypeSpec,
   createDefaultStandardLibrary,
 } from '../src/core/stdlib/registry';
@@ -66,7 +67,7 @@ export function buildReferenceSite(outputRoot: string): void {
   const registry = createDefaultStandardLibrary();
   const moduleOrder = new Map(Object.keys(content.modules).map((name, index) => [name, index]));
   const modules = registry.listModuleSpecs()
-    .map((module) => serializeModule(module, content))
+    .map((module) => serializeModule(module, content, registry))
     .sort((left, right) => (
       (moduleOrder.get(left.name) ?? Number.MAX_SAFE_INTEGER)
       - (moduleOrder.get(right.name) ?? Number.MAX_SAFE_INTEGER)
@@ -93,7 +94,7 @@ export function buildReferenceSite(outputRoot: string): void {
   console.log(`reference generated: ${modules.length} modules, ${globals.length} global functions`);
 }
 
-function serializeModule(module: ModuleSpec, content: ReferenceContent) {
+function serializeModule(module: ModuleSpec, content: ReferenceContent, registry: StandardLibraryRegistry) {
   const moduleContent = content.modules[module.name] ?? {};
   return {
     name: module.name,
@@ -107,13 +108,55 @@ function serializeModule(module: ModuleSpec, content: ReferenceContent) {
     constants: sortByName([...module.constants.values()])
       .map((constant) => serializeConstant(module.name, constant, content)),
     types: sortByName([...module.types.values()])
-      .map((type) => serializeType(module.name, type, content)),
+      .map((type) => serializeType(module.name, type, content, registry)),
   };
 }
 
-function serializeType(moduleName: string, type: TypeSpec, content: ReferenceContent) {
+function serializeType(moduleName: string, type: TypeSpec, content: ReferenceContent, registry: StandardLibraryRegistry) {
   const qualifiedName = `${moduleName}.${type.name}`;
   const typeContent = content.types[qualifiedName] ?? {};
+
+  // Наследование выражается машинно: члены базовых типов сплющиваются в
+  // каждый тип с пометками inherited/inheritedFrom, чтобы потребителям
+  // api.json не приходилось резолвить цепочку baseType самостоятельно.
+  const ownProperties = sortByName([...type.properties.values()])
+    .map((property) => serializeProperty(qualifiedName, property, content));
+  const ownMethods = sortByName([...type.methods.values()])
+    .map((method) => serializeFunction(method, `${qualifiedName}.${method.name}`, content));
+  const seenProperties = new Set(type.properties.keys());
+  const seenMethods = new Set(type.methods.keys());
+  const inheritedProperties: Array<Record<string, unknown>> = [];
+  const inheritedMethods: Array<Record<string, unknown>> = [];
+
+  let base = type.baseType;
+  const visited = new Set<string>();
+  while (base) {
+    const baseQualified = `${base.moduleName}.${base.name}`;
+    if (visited.has(baseQualified)) break;
+    visited.add(baseQualified);
+    const baseSpec = registry.getQualifiedType(base.moduleName, base.name);
+    if (!baseSpec) break;
+    for (const property of sortByName([...baseSpec.properties.values()])) {
+      if (seenProperties.has(property.name)) continue;
+      seenProperties.add(property.name);
+      inheritedProperties.push({
+        ...serializeProperty(baseQualified, property, content),
+        inherited: true,
+        inheritedFrom: baseQualified,
+      });
+    }
+    for (const method of sortByName([...baseSpec.methods.values()])) {
+      if (seenMethods.has(method.name)) continue;
+      seenMethods.add(method.name);
+      inheritedMethods.push({
+        ...serializeFunction(method, `${baseQualified}.${method.name}`, content),
+        inherited: true,
+        inheritedFrom: baseQualified,
+      });
+    }
+    base = baseSpec.baseType;
+  }
+
   return {
     name: type.name,
     qualifiedName,
@@ -121,10 +164,8 @@ function serializeType(moduleName: string, type: TypeSpec, content: ReferenceCon
     description: typeContent.description ?? '',
     notes: typeContent.notes ?? [],
     example: typeContent.example ?? '',
-    properties: sortByName([...type.properties.values()])
-      .map((property) => serializeProperty(qualifiedName, property, content)),
-    methods: sortByName([...type.methods.values()])
-      .map((method) => serializeFunction(method, `${qualifiedName}.${method.name}`, content)),
+    properties: [...ownProperties, ...inheritedProperties],
+    methods: [...ownMethods, ...inheritedMethods],
   };
 }
 

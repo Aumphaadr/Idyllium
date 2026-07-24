@@ -1,6 +1,7 @@
-import { Program } from '../core/ast';
+import { Expression, Program } from '../core/ast';
 import { JavaScriptGenerator } from '../core/codegen';
 import { Diagnostic, DiagnosticBag, formatDiagnostics } from '../core/diagnostics';
+import { TypeRef } from '../core/types';
 import {
   LoadedModule,
   ModuleLoadOptions,
@@ -54,19 +55,23 @@ export function compileIdyllium(source: string, options: CompileOptions = {}): C
 
   const userModuleRegistry = buildUserModuleRegistry(modules, stdlib, diagnostics);
 
+  const nodeTypes = new Map<Expression, TypeRef>();
   if (ast && !diagnostics.hasErrors()) {
     for (const module of modules) {
       const semantics = new SemanticAnalyzer(stdlib, userModuleRegistry).analyze(module.ast);
       addDiagnostics(diagnostics, semantics.diagnostics);
+      for (const [node, type] of semantics.nodeTypes) nodeTypes.set(node, type);
     }
 
     const semantics = new SemanticAnalyzer(stdlib, userModuleRegistry).analyze(ast);
     addDiagnostics(diagnostics, semantics.diagnostics);
+    for (const [node, type] of semantics.nodeTypes) nodeTypes.set(node, type);
   }
 
   if (ast && !diagnostics.hasErrors()) {
     jsCode = new JavaScriptGenerator({
       userModuleNames: new Set(modules.map((module) => module.name)),
+      nodeTypes,
     }).generate(ast, { modules: modules.map((module) => ({ name: module.name, program: module.ast })) }).jsCode;
   }
 
@@ -117,8 +122,43 @@ export async function runIdyllium(
     return {
       success: false,
       output: runtime.getOutput(),
-      runtimeError: error instanceof Error ? error.message : String(error),
+      runtimeError: describeRuntimeError(error, compileOptions.file ?? 'main.idyl'),
       compilation,
     };
   }
+}
+
+/**
+ * Превращает произвольную ошибку исполнения в текст для ученика.
+ * Ошибки Idyllium уже несут `file:line`; сырые V8-ошибки (переполнение стека
+ * при бесконечной рекурсии) переводятся в формат Idyllium с подсказкой.
+ */
+export function describeRuntimeError(error: unknown, entryFile: string): string {
+  if (error instanceof RangeError && /call stack|stack size/iu.test(error.message)) {
+    const name = dominantStackFunction(error.stack);
+    const hint = name
+      ? `check the recursion in function '${name}' — it needs a stop condition`
+      : 'check for a recursion without a stop condition';
+    return `${entryFile}: runtime error: maximum call depth exceeded (${hint})`;
+  }
+  return error instanceof Error ? error.message : String(error);
+}
+
+function dominantStackFunction(stack: string | undefined): string | null {
+  const skipped = new Set(['eval', 'anonymous', 'Object', 'AsyncFunction', 'processTicksAndRejections', 'main']);
+  const counts = new Map<string, number>();
+  for (const match of String(stack ?? '').matchAll(/^\s*at ([A-Za-z_$][\w$]*) /gmu)) {
+    const name = match[1];
+    if (name.startsWith('__idyl') || skipped.has(name)) continue;
+    counts.set(name, (counts.get(name) ?? 0) + 1);
+  }
+  let best: string | null = null;
+  let bestCount = 1;
+  for (const [name, count] of counts) {
+    if (count > bestCount) {
+      best = name;
+      bestCount = count;
+    }
+  }
+  return best;
 }

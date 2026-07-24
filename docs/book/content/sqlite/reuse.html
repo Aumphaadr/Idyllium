@@ -71,3 +71,54 @@ find_players.bind("min_level", 5);
 find_players.bind("min_level", 10); // теперь минимум равен 10
 </script></idyl-code-block>
 </div>
+
+<div class="docs-section">
+  <h2>Полная программа</h2>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    array<string, 3> names = ["Liam", "Mira", "Nika"];
+    array<int, 3> levels = [7, 12, 4];
+
+    sqlite.Database db = sqlite.open("reuse_statement.db");
+    db.execute(
+        "CREATE TABLE players (name TEXT, level INTEGER)"
+    );
+
+    sqlite.Statement add_player = db.prepare(
+        "INSERT INTO players (name, level) VALUES (:name, :level)"
+    );
+
+    for (int i = 0; i < names.length; i += 1) {
+        add_player.clear_bindings();
+        add_player.bind("name", names[i]);
+        add_player.bind("level", levels[i]);
+        add_player.execute();
+    }
+
+    add_player.close();
+
+    sqlite.Result rows = db.execute(
+        "SELECT name, level FROM players"
+    );
+
+    while (rows.next()) {
+        console.writeln(
+            rows.get_string("name"), ": level ", rows.get_int("level")
+        );
+    }
+
+    rows.close();
+    db.close();
+}
+</script></idyl-code-block>
+  <idyl-output-block>Liam: level 7
+Mira: level 12
+Nika: level 4</idyl-output-block>
+  <p>
+    Один <code>prepare()</code> — и три строки в таблице. Когда игроков станет
+    три тысячи, программа не изменится: цикл просто сделает больше оборотов.
+  </p>
+</div>

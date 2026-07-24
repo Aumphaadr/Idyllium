@@ -1,6 +1,7 @@
 export {
   compileIdyllium,
   runIdyllium,
+  describeRuntimeError,
   CompileOptions,
   CompileResult,
   ModuleSource,
@@ -84,7 +85,10 @@ export {
   IdylliumSemanticToken,
   IdylliumSemanticTokenKind,
   IdylliumSemanticTokenModifier,
+  IDYLLIUM_SEMANTIC_TOKEN_TYPES,
+  IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS,
 } from './core/semantics';
+export { guiPreviewIntervalMs } from './runtime/gui-interval';
 export { JavaScriptGenerator } from './core/codegen';
 export { Diagnostic, formatDiagnostics } from './core/diagnostics';
 export { Token, TokenKind } from './core/tokens';

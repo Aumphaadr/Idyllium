@@ -67,6 +67,8 @@ export class Parser {
     while (!this.isAtEnd()) {
       if (this.check(TokenKind.KwClass)) {
         topLevelDeclarations.push(this.parseClassDeclaration());
+        // Необязательная ';' после класса — безвредная привычка из C++.
+        this.match(TokenKind.Semicolon);
         continue;
       }
 
@@ -395,6 +397,12 @@ export class Parser {
         continue;
       }
 
+      if (this.check(TokenKind.Identifier) && this.peek().lexeme === 'destructor') {
+        this.error(this.peek().range, 'destructors are not supported yet');
+        this.skipUnsupportedClassMember();
+        continue;
+      }
+
       if (this.checkTypeStart()) {
         const declaredType = this.parseTypeName();
         if (this.match(TokenKind.KwFunction)) {
@@ -513,11 +521,25 @@ export class Parser {
     };
   }
 
-  private synchronizeClassMember(): void {
-    while (!this.isAtEnd() && !this.check(TokenKind.Semicolon, TokenKind.RightBrace)) {
+  // Пропускает неподдерживаемое объявление в теле класса целиком:
+  // до ';' на верхнем уровне члена или до конца сбалансированного '{...}'.
+  private skipUnsupportedClassMember(): void {
+    let depth = 0;
+    while (!this.isAtEnd()) {
+      if (depth === 0 && this.check(TokenKind.Semicolon)) {
+        this.advance();
+        return;
+      }
+      if (this.check(TokenKind.RightBrace)) {
+        if (depth === 0) return;
+        depth -= 1;
+        this.advance();
+        if (depth === 0) return;
+        continue;
+      }
+      if (this.check(TokenKind.LeftBrace)) depth += 1;
       this.advance();
     }
-    if (this.check(TokenKind.Semicolon)) this.advance();
   }
 
   private parseExpressionStatement(): ExpressionStatement | AssignmentStatement {

@@ -26,7 +26,7 @@ interface LessonManifest {
   readonly examples: readonly LessonExample[];
 }
 
-const DEFAULT_SOURCE_ROOT = path.resolve(process.cwd(), 'packages/docs/lessons');
+const DEFAULT_SOURCE_ROOT = path.resolve(process.cwd(), 'docs/book/content');
 const DEFAULT_OUTPUT_ROOT = path.resolve(process.cwd(), 'spec/lessons');
 
 function main(): void {
@@ -38,6 +38,7 @@ function main(): void {
     throw new Error(`lesson source root does not exist: ${sourceRoot}`);
   }
 
+  fs.rmSync(examplesRoot, { recursive: true, force: true });
   fs.mkdirSync(examplesRoot, { recursive: true });
 
   const htmlFiles = listHtmlFiles(sourceRoot);
@@ -78,8 +79,6 @@ function main(): void {
     });
   }
 
-  appendFrozenExpectationExamples(outputRoot, examples);
-
   examples.sort((left, right) => left.id.localeCompare(right.id));
 
   const manifest: LessonManifest = {
@@ -100,49 +99,6 @@ function main(): void {
     console.log(`  ${section}: ${bySection[section]}`);
   }
   console.log(`manifest: ${path.join(outputRoot, 'manifest.json')}`);
-}
-
-function appendFrozenExpectationExamples(outputRoot: string, examples: LessonExample[]): void {
-  const expectationsFile = path.join(outputRoot, 'expectations.json');
-  if (!fs.existsSync(expectationsFile)) return;
-
-  const parsed = JSON.parse(fs.readFileSync(expectationsFile, 'utf8')) as {
-    examples?: Record<string, unknown>;
-  };
-  const knownIds = new Set(examples.map((example) => example.id));
-
-  for (const id of Object.keys(parsed.examples ?? {})) {
-    if (knownIds.has(id)) continue;
-
-    const parts = id.split('.');
-    const block = parts.pop();
-    if (!block || parts.length < 2) {
-      throw new Error(`cannot map frozen lesson expectation '${id}' to an example file`);
-    }
-
-    const codeFile = normalizePath(path.join('examples', ...parts, `${block}.idyl`));
-    const absoluteCodeFile = path.join(outputRoot, codeFile);
-    if (!fs.existsSync(absoluteCodeFile)) {
-      throw new Error(`expectation '${id}' has no HTML block or frozen example file: ${codeFile}`);
-    }
-
-    const code = fs.readFileSync(absoluteCodeFile, 'utf8').replace(/\r\n/g, '\n');
-    const classification = classify(code);
-    examples.push({
-      id,
-      section: parts[0],
-      lessonPath: `${parts.join('/')}.html`,
-      lessonTitle: `Frozen lesson example: ${parts.join('/')}`,
-      blockIndex: Number.parseInt(block, 10) || 1,
-      sourceLine: 1,
-      codeFile,
-      sha256: sha256(code),
-      form: classification.form,
-      expectation: classification.expectation,
-      tags: classification.tags,
-      reasons: [...classification.reasons, 'Frozen spec example referenced by expectations.json.'],
-    });
-  }
 }
 
 function readArg(name: string): string | null {

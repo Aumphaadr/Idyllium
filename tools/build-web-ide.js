@@ -35,6 +35,11 @@ fs.mkdirSync(outputAssetsDir, { recursive: true });
 for (const item of ['index.html', 'app.css', 'app.js']) {
   fs.copyFileSync(path.join(sourceWebDir, item), path.join(outputWebDir, item));
 }
+// Версия берётся из корневого package.json (единственный источник) и
+// подставляется в шапку IDE скриптом version.js через version.json.
+fs.copyFileSync(path.join(rootDir, 'packages', 'docs', 'version.js'), path.join(outputWebDir, 'version.js'));
+const rootPackageVersion = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8')).version;
+fs.writeFileSync(path.join(outputWebDir, 'version.json'), `${JSON.stringify({ version: rootPackageVersion }, null, 2)}\n`);
 if (fs.existsSync(sourceFontsDir)) {
   fs.cpSync(sourceFontsDir, outputFontsDir, { recursive: true });
 }

@@ -1,12 +1,10 @@
-<!-- Hero -->
-    
+<div class="docs-section">
+  <h2>Проблема: метод, которому не нужен объект</h2>
+  <p>До сих пор все методы, которые мы писали, вызывались у конкретного объекта. Но что, если метод не использует никакие свойства объекта? Например, метод <code>meow()</code> у кота — он просто выводит «Мяу», не обращаясь к <code>this.name</code> или другим свойствам.</p>
 
-    <!-- Section 1 -->
-    <div class="docs-section">
-      <h2>Проблема: метод, которому не нужен объект</h2>
-      <p>До сих пор все методы, которые мы писали, вызывались у конкретного объекта. Но что, если метод не использует никакие свойства объекта? Например, метод <code>meow()</code> у кота — он просто выводит «Мяу», не обращаясь к <code>this.name</code> или другим свойствам.</p>
+  <idyl-code-block><script type="text/plain">
+use console;
 
-      <idyl-code-block><script type="text/plain">
 class Cat {
     void function meow() {
         console.writeln("Мяу");
@@ -19,16 +17,17 @@ main() {
 }
 </script></idyl-code-block>
 
-      <p>Создавать объект только для того, чтобы вызвать метод, который не использует свойства объекта — нелогично и накладно.</p>
-    </div>
+  <idyl-output-block>Мяу</idyl-output-block>
 
-    <!-- Section 2 -->
-    <div class="docs-section">
-      <h2>Решение: статический метод</h2>
-      <p><strong>Статический метод</strong> — это метод, который принадлежит не конкретному объекту, а самому классу. Для его вызова не нужно создавать объект — достаточно обратиться к классу.</p>
-      <p>Синтаксис: ключевое слово <code>static</code> перед объявлением метода.</p>
+  <p>Программа работает, но создавать объект только для того, чтобы вызвать метод, который не использует свойства объекта — нелогично и накладно.</p>
+</div>
 
-      <idyl-code-block><script type="text/plain">
+<div class="docs-section">
+  <h2>Решение: статический метод</h2>
+  <p><strong>Статический метод</strong> — это метод, который принадлежит не конкретному объекту, а самому классу. Для его вызова не нужно создавать объект — достаточно обратиться к классу.</p>
+  <p>Синтаксис: ключевое слово <code>static</code> перед объявлением метода.</p>
+
+  <idyl-code-block><script type="text/plain">
 use console;
 
 class Cat {
@@ -42,17 +41,19 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-output-block>Мяу</idyl-output-block>
+  <idyl-output-block>Мяу</idyl-output-block>
 
-      <p>Метод вызван напрямую у класса <code>Cat</code>, без создания объекта.</p>
-    </div>
+  <p>Метод вызван напрямую у класса <code>Cat</code>, без создания объекта.</p>
+</div>
 
-    <!-- Section 3 -->
-    <div class="docs-section">
-      <h2>Ограничение статических методов</h2>
-      <p>Статический метод <strong>не имеет доступа к <code>this</code></strong>. Он не связан ни с каким конкретным объектом, поэтому не может обращаться к нестатическим свойствам и методам класса.</p>
+<div class="docs-section">
+  <h2>Ограничение статических методов</h2>
+  <p>Статический метод <strong>не имеет доступа к <code>this</code></strong>. Он не связан ни с каким конкретным объектом, поэтому не может обращаться к нестатическим свойствам и методам класса.</p>
+  <p>В примере ниже мы заодно задали полю значение прямо в классе: <code>string name = "Барсик";</code>. Так можно — это значение получит каждый новый объект класса.</p>
 
-      <idyl-code-block><script type="text/plain">
+  <idyl-code-block><script type="text/plain">
+use console;
+
 class Cat {
     string name = "Барсик";
 
@@ -62,24 +63,24 @@ class Cat {
 }
 </script></idyl-code-block>
 
-      <div class="error-message">
-        main.idyl:6: error: 'this' cannot be used in static method
-      </div>
+  <idyl-error-block>main.idyl:7:25: error: 'this' cannot be used in a static method
+main.idyl:7:25: error: type '&lt;error&gt;' has no member 'name'</idyl-error-block>
 
-      <p>Статические методы могут работать только с:</p>
-      <ul>
-        <li>своими локальными переменными</li>
-        <li>другими статическими методами</li>
-        <li>параметрами, переданными в метод</li>
-      </ul>
-    </div>
+  <p>Сообщений два, но настоящая ошибка — первая. Вторая — её «эхо»: раз <code>this</code> использовать нельзя, компилятор уже не понимает, у чего мы просим <code>name</code>. Когда сообщений несколько — читайте и исправляйте первое: остальные обычно исчезают вместе с ним.</p>
 
-    <!-- Section 4 -->
-    <div class="docs-section">
-      <h2>Практическое применение: вспомогательные функции</h2>
-      <p>Статические методы идеально подходят для функций, которые логически относятся к классу, но не требуют объекта. Например, математические утилиты, конвертеры, фабричные методы.</p>
+  <p>Статические методы могут работать только с:</p>
+  <ul>
+    <li>своими локальными переменными</li>
+    <li>другими статическими методами</li>
+    <li>параметрами, переданными в метод</li>
+  </ul>
+</div>
 
-      <idyl-code-block><script type="text/plain">
+<div class="docs-section">
+  <h2>Практическое применение: вспомогательные функции</h2>
+  <p>Статические методы идеально подходят для функций, которые логически относятся к классу, но не требуют объекта. Например, математические утилиты, конвертеры, фабричные методы.</p>
+
+  <idyl-code-block><script type="text/plain">
 use console;
 
 class MathUtils {
@@ -104,69 +105,65 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-output-block>Квадрат 5: 25
+  <idyl-output-block>Квадрат 5: 25
 Куб 5: 125
 5 чётное? false</idyl-output-block>
 
-      <p>Все эти методы не требуют создания объекта <code>MathUtils</code> — они вызываются напрямую у класса.</p>
-    </div>
+  <p>Все эти методы не требуют создания объекта <code>MathUtils</code> — они вызываются напрямую у класса.</p>
+</div>
 
-    <!-- Section 5 -->
-    <div class="docs-section">
-      <h2>Сравнение: статический vs обычный метод</h2>
-      <table style="width: 100%; border-collapse: collapse;">
-        <thead>
-          <tr><th style="border: 1px solid var(--border); padding: 8px; text-align: left;">Характеристика</th>
-          <th style="border: 1px solid var(--border); padding: 8px; text-align: left;">Обычный метод</th>
-          <th style="border: 1px solid var(--border); padding: 8px; text-align: left;">Статический метод</th>
-        </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style="border: 1px solid var(--border); padding: 8px;">Вызов</td>
-            <td style="border: 1px solid var(--border); padding: 8px;"><code>объект.метод()</code></td>
-            <td style="border: 1px solid var(--border); padding: 8px;"><code>Класс.метод()</code></td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid var(--border); padding: 8px;">Доступ к <code>this</code></td>
-            <td style="border: 1px solid var(--border); padding: 8px;">✅ есть</td>
-            <td style="border: 1px solid var(--border); padding: 8px;">❌ нет</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid var(--border); padding: 8px;">Доступ к нестатическим свойствам</td>
-            <td style="border: 1px solid var(--border); padding: 8px;">✅ есть (через <code>this</code>)</td>
-            <td style="border: 1px solid var(--border); padding: 8px;">❌ нет</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid var(--border); padding: 8px;">Нужен ли объект?</td>
-            <td style="border: 1px solid var(--border); padding: 8px;">✅ да</td>
-            <td style="border: 1px solid var(--border); padding: 8px;">❌ нет</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+<div class="docs-section">
+  <h2>Сравнение: статический vs обычный метод</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Характеристика</th>
+        <th>Обычный метод</th>
+        <th>Статический метод</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Вызов</td>
+        <td><code>объект.метод()</code></td>
+        <td><code>Класс.метод()</code></td>
+      </tr>
+      <tr>
+        <td>Доступ к <code>this</code></td>
+        <td>есть</td>
+        <td>нет</td>
+      </tr>
+      <tr>
+        <td>Доступ к нестатическим свойствам</td>
+        <td>есть (через <code>this</code>)</td>
+        <td>нет</td>
+      </tr>
+      <tr>
+        <td>Нужен ли объект?</td>
+        <td>да</td>
+        <td>нет</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
 
-    <!-- Section 6 -->
-    <div class="docs-section">
-      <h2>Когда использовать статические методы?</h2>
-      <ul>
-        <li>Метод не использует свойства объекта (не нужен <code>this</code>).</li>
-        <li>Метод выполняет вспомогательную функцию, логически связанную с классом.</li>
-        <li>Метод является «фабричным» — создаёт объекты определённым образом.</li>
-        <li>Метод не должен зависеть от состояния конкретного объекта.</li>
-      </ul>
-      <p>Если метод обращается к свойствам объекта — он <strong>не должен быть статическим</strong>.</p>
-    </div>
+<div class="docs-section">
+  <h2>Когда использовать статические методы?</h2>
+  <ul>
+    <li>Метод не использует свойства объекта (не нужен <code>this</code>).</li>
+    <li>Метод выполняет вспомогательную функцию, логически связанную с классом.</li>
+    <li>Метод является «фабричным» — создаёт объекты определённым образом.</li>
+    <li>Метод не должен зависеть от состояния конкретного объекта.</li>
+  </ul>
+  <p>Если метод обращается к свойствам объекта — он <strong>не должен быть статическим</strong>.</p>
+</div>
 
-    <!-- Section 7 -->
-    <div class="docs-section">
-      <h2>Итог</h2>
-      <ul>
-        <li><strong>Статический метод</strong> принадлежит классу, а не объекту.</li>
-        <li>Вызывается через имя класса: <code>ИмяКласса.метод()</code>.</li>
-        <li>Не имеет доступа к <code>this</code> и нестатическим членам класса.</li>
-        <li>Идеален для вспомогательных и утилитарных функций.</li>
-      </ul>
-    </div>
-
-    <!-- Lesson navigation -->
+<div class="docs-section">
+  <h2>Итог</h2>
+  <ul>
+    <li><strong>Статический метод</strong> принадлежит классу, а не объекту.</li>
+    <li>Вызывается через имя класса: <code>ИмяКласса.метод()</code>.</li>
+    <li>Не имеет доступа к <code>this</code> и нестатическим членам класса.</li>
+    <li>Идеален для вспомогательных и утилитарных функций.</li>
+  </ul>
+</div>

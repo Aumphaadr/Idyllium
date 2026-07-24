@@ -1,14 +1,15 @@
 <div class="docs-section">
-  <h2>Почему не просто <code>"#FF0000"</code>?</h2>
+  <h2>Программе не хватает красок</h2>
   <p>
-    В первых GUI-примерах цвет иногда задавался строкой вроде <code>"#FF0000"</code>.
-    Такой способ можно встретить в HTML и CSS, но для ученика он не самый дружелюбный:
-    нужно помнить решётку, шестнадцатеричные цифры и то, что две первые цифры отвечают
-    за красный, две следующие — за зелёный, а две последние — за синий.
+    Посмотрите на окна из прошлых уроков: серые кнопки, серые полоски, тёмный
+    текст. Всё работает — но выглядит так, будто краски ещё не завезли.
+    Пора это исправить и научить программу цветам.
   </p>
   <p>
-    Поэтому основной способ работы с цветом в Idyllium — библиотека <code>colors</code>.
-    Она позволяет создать цвет явно и читаемо.
+    За цвета в Idyllium отвечает библиотека <code>colors</code>. Цвет в ней —
+    отдельное значение типа <code>colors.Color</code>. Например, функция
+    <code>colors.RGB()</code> собирает цвет из трёх чисел от 0 до 255:
+    сколько в нём красного, зелёного и синего.
   </p>
 
   <idyl-code-block><script type="text/plain">
@@ -31,6 +32,18 @@ main() {
     win.show();
 }
 </script></idyl-code-block>
+
+  <div class="gui-demo-container">
+    <div class="gui-demo-window">
+      <div class="demo-content" style="min-height: 110px; position: relative;">
+        <div style="position: absolute; left: 30px; top: 35px; color: rgb(34, 145, 188);">Синий текст</div>
+      </div>
+    </div>
+    <div class="coord-note">
+      <code>RGB(34, 145, 188)</code> — немного красного, побольше зелёного и много
+      синего. Получается спокойный сине-голубой цвет.
+    </div>
+  </div>
 </div>
 
 <div class="docs-section">
@@ -45,7 +58,7 @@ main() {
 label1.text_color = colors.MAGENTA;
 button1.background_color = colors.DARK_BLUE;
 button1.border_color = colors.CYAN;
-frame1.background_color = colors.TRANSPARENT;
+label2.background_color = colors.TRANSPARENT;
 </script></idyl-code-block>
 
   <table>
@@ -89,6 +102,24 @@ main() {
 }
 </script></idyl-code-block>
 
+  <div class="gui-demo-container">
+    <div class="gui-demo-window">
+      <div class="demo-content" style="min-height: 120px; position: relative;">
+        <div style="position: absolute; left: 40px; top: 25px; width: 90px; height: 48px; border-radius: 8px; background: rgb(34, 145, 188);"></div>
+        <div style="position: absolute; left: 150px; top: 25px; width: 90px; height: 48px; border-radius: 8px; background: #2291bc;"></div>
+        <div style="position: absolute; left: 260px; top: 25px; width: 90px; height: 48px; border-radius: 8px; background: hsl(197, 69%, 44%);"></div>
+        <div style="position: absolute; left: 40px; top: 82px; width: 90px; text-align: center; color: #cdd6f4;"><code>c1</code></div>
+        <div style="position: absolute; left: 150px; top: 82px; width: 90px; text-align: center; color: #cdd6f4;"><code>c2</code></div>
+        <div style="position: absolute; left: 260px; top: 82px; width: 90px; text-align: center; color: #cdd6f4;"><code>c3</code></div>
+      </div>
+    </div>
+    <div class="coord-note">
+      Если покрасить этими тремя цветами три квадрата, разницы не увидеть:
+      <code>c1</code>, <code>c2</code> и <code>c3</code> — один и тот же цвет,
+      записанный тремя способами.
+    </div>
+  </div>
+
   <p>
     <code>RGB</code> удобно читать как «красный, зелёный, синий».
     <code>HEX</code> полезен, если цвет пришёл из графического редактора.
@@ -99,9 +130,10 @@ main() {
 <div class="docs-section">
   <h2>Цвет текста, фона и границы</h2>
   <p>
-    У виджета может быть несколько разных цветов. Поэтому свойство
-    <code>color</code> слишком туманное: непонятно, что именно оно красит.
-    В новом стиле мы называем вещи прямо:
+    У виджета может быть несколько разных цветов. Поэтому одно свойство
+    <code>color</code> было бы слишком туманным: непонятно, что именно оно
+    красит. В Idyllium у каждого цвета своё имя, и по нему сразу видно,
+    что он раскрашивает:
   </p>
 
   <idyl-code-block><script type="text/plain">
@@ -169,7 +201,7 @@ main() {
   <div class="gui-demo-container">
     <div class="gui-demo-window">
       <div class="demo-content" style="min-height: 110px; position: relative;">
-        <div class="idyl-progressbar" style="position: absolute; left: 35px; top: 50px; width: 340px; height: 24px; color: rgb(102, 14, 28); background: rgb(255, 232, 236); border-color: rgb(204, 88, 108);">
+        <div class="idyl-progressbar" style="position: absolute; left: 35px; top: 50px; width: 340px; height: 24px; color: rgb(102, 14, 28); background: rgb(255, 232, 236);">
           <div class="idyl-progressbar-fill" style="width: 65%; background: rgb(248, 150, 165);"></div>
           <div class="idyl-progressbar-label">65%</div>
         </div>
@@ -227,13 +259,13 @@ main() {
   <div class="gui-demo-container">
     <div class="gui-demo-window">
       <div class="demo-content" style="min-height: 190px; position: relative;">
-        <div style="position: absolute; left: 40px; top: 45px; color: #ff4f4f;">Я беру цвет у окна</div>
-        <div style="position: absolute; left: 40px; top: 90px; color: #ff4f4f;">Я тоже беру цвет у окна</div>
-        <div style="position: absolute; left: 40px; top: 135px; color: #4f8cff;">А я сам выбираю синий</div>
+        <div style="position: absolute; left: 40px; top: 45px; color: #FF0000;">Я беру цвет у окна</div>
+        <div style="position: absolute; left: 40px; top: 90px; color: #FF0000;">Я тоже беру цвет у окна</div>
+        <div style="position: absolute; left: 40px; top: 135px; color: #0000FF;">А я сам выбираю синий</div>
       </div>
     </div>
     <div class="coord-note">
-      Первые два лейбла не задают цвет сами. Поэтому они выглядят так, будто унаследовали настройку от окна.
+      Первые два лейбла не задают цвет сами, поэтому они унаследовали красный цвет окна.
     </div>
   </div>
 
@@ -242,4 +274,36 @@ main() {
     цвет от окна. Третий лейбл задаёт свой цвет, и его личная настройка важнее
     настройки родителя.
   </p>
+</div>
+
+<div class="docs-section">
+  <h2>Типичная ошибка: строка вместо цвета</h2>
+  <p>
+    Запись <code>"#FF0000"</code> можно встретить в интернете — так цвета
+    записывают в HTML и CSS. Но для Idyllium это просто строка, а не цвет.
+    Попытка положить её в цветовое свойство закончится ошибкой компиляции:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use gui;
+use colors;
+
+main() {
+    gui.Window win;
+    gui.Label label;
+    label.text_color = "#FF0000";  // ОШИБКА!
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:7:24: error: cannot assign 'string' value to 'colors.Color' variable</idyl-error-block>
+
+  <p>
+    Компилятор говорит прямо: свойству нужен <code>colors.Color</code>, а не
+    строка. Починить легко — превратите строку в настоящий цвет с помощью
+    <code>colors.HEX()</code>:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+label.text_color = colors.HEX("#FF0000");  // теперь это цвет
+</script></idyl-code-block>
 </div>

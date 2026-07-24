@@ -1,85 +1,170 @@
-<!-- Hero -->
-    
+<div class="docs-section">
+      <h2>Задача: сколько всего очков?</h2>
+      <p>У вас есть массив очков за семь уровней, и вы хотите узнать их сумму. После прошлых уроков вы уже умеете решать такое циклом:</p>
 
-    <!-- Section 1 -->
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    dyn_array<int> scores = [29, 84, 16, 35, 43, 60, 17];
+
+    int total = 0;
+    for (int i = 0; i < scores.length; i += 1) {
+        total += scores[i];
+    }
+    console.writeln("Сумма очков: ", total);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Сумма очков: 284</idyl-output-block>
+
+      <p>Работает! Но пять строк кода ради одной суммы — многовато. А теперь то же самое в одну строку:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    dyn_array<int> scores = [29, 84, 16, 35, 43, 60, 17];
+    console.writeln("Сумма очков: ", sum(scores));
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Сумма очков: 284</idyl-output-block>
+
+      <p>Никаких циклов, индексов и промежуточных переменных. Такой код короче, чище, и в нём просто негде ошибиться. Познакомимся с этим семейством функций поближе.</p>
+    </div>
+
     <div class="docs-section">
-      <h2>Что это за функции?</h2>
+      <h2>Четыре готовые функции</h2>
       <p>В Idyllium есть готовые функции для быстрого анализа числовых массивов:</p>
       <ul>
         <li><code>max(arr)</code> — возвращает наибольшее значение в массиве;</li>
         <li><code>min(arr)</code> — возвращает наименьшее значение;</li>
-        <li><code>sum(arr)</code> — возвращает сумму всех элементов;</li>
+        <li><code>sum(arr)</code> — возвращает сумму всех ячеек;</li>
         <li><code>avg(arr)</code> — возвращает среднее арифметическое.</li>
       </ul>
       <p>Эти функции работают <strong>и со статическими</strong> (<code>array</code>), <strong>и с динамическими</strong> (<code>dyn_array</code>) массивами.</p>
     </div>
 
-    <!-- Section 2 -->
     <div class="docs-section">
       <h2>Общий синтаксис</h2>
       <p>Функции принимают массив в качестве аргумента и возвращают результат:</p>
 
       <idyl-code-block><script type="text/plain">
-dyn_array<int> my_array = [29, 84, 16, 35, 43, 60, 17];
+use console;
 
-int maximum = max(my_array);
-int summa = sum(my_array);
+main() {
+    dyn_array<int> my_array = [29, 84, 16, 35, 43, 60, 17];
+
+    int maximum = max(my_array);
+    int summa = sum(my_array);
+
+    console.writeln("Максимум: ", maximum);
+    console.writeln("Сумма: ", summa);
+}
 </script></idyl-code-block>
 
-      <p>Всё, что нужно — передать имя массива. Никаких циклов, индексов и промежуточных переменных.</p>
+      <idyl-output-block>Максимум: 84
+Сумма: 284</idyl-output-block>
+
+      <p>Всё, что нужно, — передать функции имя массива.</p>
     </div>
 
-    <!-- Section 3 -->
     <div class="docs-section">
       <h2>Типы данных и совместимость</h2>
-      <p>Функции работают <strong>только с числовыми массивами</strong> — <code>int</code> или <code>float</code>. Попытка передать строковый или логический массив вызовет ошибку:</p>
+      <p>Функции работают <strong>только с числовыми массивами</strong> — <code>int</code> или <code>float</code>:</p>
 
       <idyl-code-block><script type="text/plain">
-// Работает:
-array<int, 4> nums = [10, 5, 8, 12];
-int m = max(nums); // OK
+use console;
 
-// Не работает:
-array<string, 2> words = ["кот", "собака"];
-string w = max(words); // Ошибка: max() не работает со строками
+main() {
+    array<int, 4> nums = [10, 5, 8, 12];
+    int m = max(nums);
+    console.writeln(m);
+}
 </script></idyl-code-block>
+
+      <idyl-output-block>12</idyl-output-block>
+
+      <p>А вот выяснять, кто «больше» — кот или собака, — функция отказывается. Попытка передать ей строковый массив приводит к ошибке компиляции:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    array<string, 2> words = ["кот", "собака"];
+    string w = max(words);
+}
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:5:20: error: 'max' expects a numeric array, got 'array&lt;string, 2&gt;'</idyl-error-block>
+
+      <p>Компилятор сообщает прямо: <code>max</code> ожидает числовой массив, а получил массив строк.</p>
     </div>
 
-    <!-- Section 4 -->
     <div class="docs-section">
       <h2>Тип возвращаемого значения</h2>
       <p>Функции <code>max()</code>, <code>min()</code> и <code>sum()</code> возвращают значение того же типа, что и ячейки массива:</p>
 
       <idyl-code-block><script type="text/plain">
-array<int, 3> A = [1, 2, 3];
-int s1 = sum(A);    // 6 (int)
-int mx1 = max(A);   // 3 (int)
+use console;
 
-array<float, 3> B = [1.5, 2.0, 3.5];
-float s2 = sum(B);  // 7.0 (float)
-float mx2 = max(B); // 3.5 (float)
+main() {
+    array<int, 3> a = [1, 2, 3];
+    int s1 = sum(a);
+    int mx1 = max(a);
+    console.writeln("Сумма: ", s1, ", максимум: ", mx1);
+
+    array<float, 3> b = [1.5, 2.25, 3.5];
+    float s2 = sum(b);
+    float mx2 = max(b);
+    console.writeln("Сумма: ", s2, ", максимум: ", mx2);
+}
 </script></idyl-code-block>
+
+      <idyl-output-block>Сумма: 6, максимум: 3
+Сумма: 7.25, максимум: 3.5</idyl-output-block>
+
+      <p>Целочисленный массив — целые результаты, дробный массив — дробные.</p>
     </div>
 
-    <!-- Section 5 -->
     <div class="docs-section">
       <h2>Особенность функции <code>avg()</code></h2>
-      <p>Среднее арифметическое вычисляется как <code>sum(arr) / arr.length</code>. Поскольку в Idyllium деление всегда даёт <code>float</code>, функция <code>avg()</code> <strong>всегда возвращает <code>float</code></strong>, даже если массив состоит из целых чисел:</p>
+      <p>Среднее арифметическое вычисляется как <code>sum(arr) / arr.length</code>. А вы помните: в Idyllium деление всегда даёт <code>float</code>. Поэтому <code>avg()</code> <strong>всегда возвращает <code>float</code></strong>, даже если массив состоит из целых чисел:</p>
 
       <idyl-code-block><script type="text/plain">
-array<int, 4> C = [10, 20, 30, 40];
-float a = avg(C); // 25.0 (float), а не 25 (int)
+use console;
 
-// Аналог вручную:
-float manual_avg = sum(C) / C.length; // то же самое
+main() {
+    array<int, 4> c = [10, 20, 30, 45];
+
+    float a = avg(c);
+    console.writeln("Среднее: ", a);
+
+    float manual_avg = sum(c) / c.length;
+    console.writeln("Вручную: ", manual_avg);
+}
 </script></idyl-code-block>
 
-      <p>Это сделано для точности: среднее может быть дробным, даже если все исходные числа — целые.</p>
+      <idyl-output-block>Среднее: 26.25
+Вручную: 26.25</idyl-output-block>
+
+      <p>Это сделано для точности: среднее может быть дробным, даже если все исходные числа — целые. Причём <code>float</code> вернётся в любом случае — даже когда среднее получилось ровным. Компилятор не даст записать его в <code>int</code>:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    array<int, 4> c = [10, 20, 30, 40];
+    int a = avg(c); // среднее ровно 25, но тип всё равно float
+}
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:5:13: error: cannot assign 'float' value to 'int' variable</idyl-error-block>
     </div>
 
-    <!-- Section 6 -->
     <div class="docs-section">
-      <h2>Примеры использования</h2>
+      <h2>Все четыре функции в деле</h2>
 
       <idyl-code-block><script type="text/plain">
 use console;
@@ -100,20 +185,18 @@ main() {
 Среднее: 87.8</idyl-output-block>
     </div>
 
-    <!-- Section 7 -->
     <div class="docs-section">
-      <h2>Почему это удобно?</h2>
-      <p>Без этих функций пришлось бы писать циклы вручную:</p>
-
-      <idyl-code-block><script type="text/plain">
-int total = 0;
-for (int i = 0; i < arr.length; i = i + 1) {
-    total = total + arr[i];
-}
-</script></idyl-code-block>
-
-      <p>А с функцией — достаточно одной строчки: <code>sum(arr)</code>.</p>
-      <p>Это делает код короче, чище и менее подверженным ошибкам.</p>
+      <h2>Итог</h2>
+      <table>
+        <thead>
+          <tr><th>Функция</th><th>Что возвращает</th><th>Тип результата</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>max(arr)</code></td><td>наибольшее значение</td><td>как у ячеек массива</td></tr>
+          <tr><td><code>min(arr)</code></td><td>наименьшее значение</td><td>как у ячеек массива</td></tr>
+          <tr><td><code>sum(arr)</code></td><td>сумму всех ячеек</td><td>как у ячеек массива</td></tr>
+          <tr><td><code>avg(arr)</code></td><td>среднее арифметическое</td><td>всегда <code>float</code></td></tr>
+        </tbody>
+      </table>
+      <p>Все четыре функции работают и с <code>array</code>, и с <code>dyn_array</code> — но только с числовыми: <code>int</code> или <code>float</code>.</p>
     </div>
-
-    <!-- Lesson navigation -->

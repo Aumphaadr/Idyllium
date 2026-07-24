@@ -13,6 +13,11 @@
     origin расположен именно там, а свойства <code>x</code> и <code>y</code>
     задают положение origin на Canvas.
   </p>
+  <p>
+    Ниже в уроке — короткие фрагменты: такие строки пишут внутри
+    <code>init</code> или <code>update</code>, а не на верхнем уровне файла.
+    Полная программа собрана в конце урока.
+  </p>
 
   <idyl-code-block><script type="text/plain">
 drawable.Rectangle box;
@@ -35,7 +40,8 @@ box.rotate(30); // Левый верхний угол останется в то
   <p>
     Координаты origin считаются относительно самого объекта. У прямоугольника
     шириной 100 и высотой 50 центр находится в локальной точке
-    <code>(50, 25)</code>.
+    <code>(50, 25)</code>. Этот фрагмент продолжает предыдущий:
+    <code>box</code> уже объявлен.
   </p>
 
   <idyl-code-block><script type="text/plain">
@@ -55,18 +61,25 @@ box.rotate(30); // Теперь в точке (300, 200) остаётся цен
 
   <h3>Точка на окружности</h3>
   <p>
-    Представим маленький круг справа от центра большой окружности. Расстояние
-    от центра окружности до маленького круга равно её радиусу. Значит, локальный
-    origin маленького круга нужно сместить влево на этот радиус.
+    Представим маленький круг справа от центра большой окружности. Напомним: у
+    круга <code>x</code> и <code>y</code> задают левый верхний угол его
+    квадратной рамки, а после <code>set_origin(radius, radius)</code> — центр.
+    Расстояние от центра окружности до маленького круга равно её радиусу.
+    Значит, локальный origin маленького круга нужно сместить влево на этот
+    радиус. Этот фрагмент — из полного примера в конце урока, все переменные
+    объявлены там.
   </p>
 
   <idyl-code-block><script type="text/plain">
-point.radius = 10;
-point.set_origin(point.radius - orbit.radius, point.radius);
-point.x = center_x;
-point.y = center_y;
+rotating_point.radius = 10;
+rotating_point.set_origin(
+    rotating_point.radius - orbit.radius,
+    rotating_point.radius
+);
+rotating_point.x = center_x;
+rotating_point.y = center_y;
 
-point.rotation = angle;
+rotating_point.rotation = angle;
 </script></idyl-code-block>
 
   <p>
@@ -79,7 +92,8 @@ point.rotation = angle;
   <p>
     Угол <code>rotation</code> хранится в градусах, а функции
     <code>math.sin()</code> и <code>math.cos()</code> принимают радианы. Это
-    единственное преобразование, которое нам понадобится.
+    единственное преобразование, которое нам понадобится. Фрагмент ниже — из
+    функции <code>place_points()</code> полного примера.
   </p>
 
   <idyl-code-block><script type="text/plain">

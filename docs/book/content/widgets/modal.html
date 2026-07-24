@@ -196,7 +196,11 @@ main() {
                 result.text = "Привет, " + name + "!";
             }
         };
-        
+
+        m.on_cancel = void function(gui.Modal modal) {
+            result.text = "Ввод отменён";
+        };
+
         m.show_input();
     };
 
@@ -206,6 +210,8 @@ main() {
 }
 </script></idyl-code-block>
 
+      <p>Обратите внимание: <code>on_confirm</code> срабатывает <strong>только</strong> при нажатии «Сохранить». Если пользователь нажал «Отмена» — вызывается <code>on_cancel</code>, а введённый текст никуда не попадает.</p>
+
       <div class="interactive-demo">
         <div class="gui-demo-window">
           <div class="demo-content" style="min-height: 150px; position: relative;">
@@ -214,7 +220,7 @@ main() {
           </div>
         </div>
         <div class="coord-note">
-          ✏️ Введите имя в появившемся диалоге — оно отобразится на лейбле.
+          ✏️ Введите имя в появившемся диалоге — оно отобразится на лейбле. Нажмёте «Отмена» — лейбл покажет «Ввод отменён».
         </div>
       </div>
 
@@ -237,7 +243,6 @@ main() {
 
       <idyl-code-block><script type="text/plain">
 use gui;
-use console;
 
 main() {
     gui.Window win;
@@ -334,9 +339,89 @@ main() {
 
     <!-- Section 6 -->
     <div class="docs-section">
+      <h2>Шпаргалка: три режима Modal</h2>
+      <p>Все три режима — это один и тот же <code>gui.Modal</code>, разница лишь в том, каким методом его показать и какие настройки при этом имеют смысл:</p>
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Alert</th>
+            <th>Confirm</th>
+            <th>Input</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Метод показа</td>
+            <td><code>show_alert()</code></td>
+            <td><code>show_confirm()</code></td>
+            <td><code>show_input()</code></td>
+          </tr>
+          <tr>
+            <td><code>title</code>, <code>message</code></td>
+            <td>✔</td>
+            <td>✔</td>
+            <td>✔</td>
+          </tr>
+          <tr>
+            <td><code>confirm_text</code></td>
+            <td>✔ (единственная кнопка)</td>
+            <td>✔</td>
+            <td>✔</td>
+          </tr>
+          <tr>
+            <td><code>cancel_text</code></td>
+            <td>—</td>
+            <td>✔</td>
+            <td>✔</td>
+          </tr>
+          <tr>
+            <td><code>on_confirm</code>, <code>on_cancel</code></td>
+            <td>—</td>
+            <td>✔</td>
+            <td>✔</td>
+          </tr>
+          <tr>
+            <td><code>get_input_value()</code></td>
+            <td>—</td>
+            <td>—</td>
+            <td>✔ (внутри <code>on_confirm</code>)</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Сигнатура обработчиков — <code>void function(gui.Modal modal)</code>: в параметре приходит само модальное окно.</p>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="docs-section">
       <h2>Важное замечание</h2>
       <p><strong>Modal не является виджетом</strong> в том смысле, что его не нужно добавлять через <code>win.add_child()</code>. Он создаётся и показывается динамически, а после закрытия уничтожается.</p>
       <p>Каждый раз при вызове <code>show_alert()</code>, <code>show_confirm()</code> или <code>show_input()</code> создаётся <strong>новое</strong> модальное окно. Его можно настроить через свойства и обработчики перед показом.</p>
+    </div>
+
+    <!-- Section 8 -->
+    <div class="docs-section">
+      <h2>Типичная ошибка: <code>add_child()</code> для Modal</h2>
+      <p>После семнадцати уроков рука сама тянется написать <code>win.add_child(...)</code> для всего подряд. Но Modal — не виджет, и компилятор это знает:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+
+    gui.Modal m;
+    m.message = "Привет!";
+    win.add_child(m);  // ОШИБКА: Modal — не виджет
+    m.show_alert();
+
+    win.show();
+}
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:8:19: error: 'add_child' argument 1 expects gui widget, got 'gui.Modal'</idyl-error-block>
+
+      <p>Исправление: просто уберите строку с <code>add_child</code> — модальному окну достаточно вызова <code>show_alert()</code> (или <code>show_confirm()</code>, <code>show_input()</code>).</p>
     </div>
 
     <!-- Lesson navigation -->
@@ -365,8 +450,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const inputResult = document.getElementById('inputResult');
   if (inputDemoBtn && inputResult && docsModal) {
     inputDemoBtn.addEventListener('click', async () => {
-      const name = await docsModal.prompt('Как вас зовут?', 'Idyllium');
-      if (name === null || name === '') {
+      const name = await docsModal.prompt('Как вас зовут?');
+      if (name === null) {
+        inputResult.textContent = 'Ввод отменён';
+      } else if (name === '') {
         inputResult.textContent = 'Вы не ввели имя!';
       } else {
         inputResult.textContent = 'Привет, ' + name + '!';
@@ -394,8 +481,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (fullInputBtn && fullResultLabel && docsModal) {
     fullInputBtn.addEventListener('click', async () => {
-      const name = await docsModal.prompt('Как вас зовут?', 'Idyllium');
-      fullResultLabel.textContent = name === null ? 'Привет, !' : 'Привет, ' + name + '!';
+      const name = await docsModal.prompt('Как вас зовут?');
+      if (name !== null) {
+        fullResultLabel.textContent = 'Привет, ' + name + '!';
+      }
     });
   }
 });

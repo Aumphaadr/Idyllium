@@ -1,9 +1,14 @@
 <div class="docs-section">
-  <h2>Шрифт — тоже ресурс</h2>
+  <h2>Шрифт — это рисунок букв</h2>
   <p>
-    Картинку мы сначала загружаем, а затем помещаем в <code>gui.ImageBox</code>.
-    Со шрифтом логика похожая: сначала создаём объект <code>fonts.Font</code>,
-    загружаем в него файл, а затем назначаем этот объект виджету.
+    В уроке про Label свойство <code>font_size</code> делало буквы больше или
+    меньше. Но сам рисунок букв при этом не менялся: какими были, такими и
+    оставались. А ведь у букв бывает характер — строгий, округлый, рукописный.
+    Этот рисунок хранится в отдельном файле — файле шрифта.
+  </p>
+  <p>
+    План такой: создаём объект <code>fonts.Font</code>, загружаем в него файл,
+    а затем назначаем этот объект виджету.
   </p>
   <p>
     Отдельно запоминать классы для TTF, OTF и WOFF не нужно. Один класс
@@ -24,9 +29,31 @@ main() {
 }
 </script></idyl-code-block>
 
+  <idyl-output-block>Файл: Lobster-Regular.ttf
+Формат: ttf
+Загружен: true</idyl-output-block>
+
   <p>
     Свойства <code>src</code>, <code>format</code> и <code>is_loaded</code> можно
-    читать, но нельзя подменять вручную. За их правдивость отвечает Idyllium.
+    только читать. Менять их вручную нельзя: Idyllium сам заполняет их, когда
+    загружает файл, — поэтому они всегда говорят правду.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Где взять шрифт</h2>
+  <p>
+    Прежде чем загружать файл, его нужно где-то раздобыть. В интернете много
+    бесплатных шрифтов — например, на сайте Google Fonts. Порядок простой:
+  </p>
+  <ul>
+    <li>выберите понравившийся шрифт и скачайте его — нужен файл с расширением <code>.ttf</code> или <code>.otf</code>;</li>
+    <li>положите файл в папку проекта, рядом с вашей программой;</li>
+    <li>если вы работаете в Web IDE — загрузите файл прямо в проект.</li>
+  </ul>
+  <p>
+    В примерах этого урока используется рукописный шрифт Lobster — он тоже
+    бесплатный, файл называется <code>Lobster-Regular.ttf</code>.
   </p>
 </div>
 
@@ -63,6 +90,25 @@ main() {
     win.show();
 }
 </script></idyl-code-block>
+
+  <div class="gui-demo-container">
+    <div class="gui-demo-window">
+      <div class="demo-content" style="min-height: 110px; position: relative;">
+        <div style="position: absolute; left: 25px; top: 40px; width: 390px; color: #cdd6f4; font-size: 26px;">Котики добрались до шрифтов</div>
+      </div>
+    </div>
+    <div class="gui-demo-window" style="margin-top: 1em;">
+      <div class="demo-content" style="min-height: 110px; position: relative;">
+        <div style="position: absolute; left: 25px; top: 40px; width: 390px; color: #cdd6f4; font-size: 26px; font-family: 'Lobster', cursive;">Котики добрались до шрифтов</div>
+      </div>
+    </div>
+    <div class="coord-note">
+      Сверху — как выглядела бы надпись без строки <code>title.font = lobster;</code>
+      (стандартный шрифт). Снизу — она же со своим шрифтом: в демо подключён
+      настоящий Lobster, ровно его вы увидите и у себя, когда запустите
+      программу с файлом шрифта.
+    </div>
+  </div>
 </div>
 
 <div class="docs-section">
@@ -70,50 +116,100 @@ main() {
   <p>
     Если надписей и кнопок много, повторять <code>font = lobster</code> у каждого
     виджета быстро надоест. Шрифт можно назначить окну: тогда его унаследуют все
-    дочерние виджеты, которые не выбрали собственный шрифт.
+    дочерние виджеты, которые не выбрали собственный шрифт. Это похоже на уже
+    знакомое наследование <code>text_color</code>.
   </p>
 
   <idyl-code-block><script type="text/plain">
-fonts.Font lobster;
-lobster.load_from_file("Lobster-Regular.ttf");
+use fonts;
+use gui;
 
-gui.Window win;
-win.font = lobster;
+main() {
+    fonts.Font lobster;
+    lobster.load_from_file("Lobster-Regular.ttf");
 
-gui.Label heading;
-heading.text = "Я наследую шрифт окна";
+    gui.Window win;
+    win.width = 420;
+    win.height = 200;
+    win.title = "Один шрифт на всех";
+    win.font = lobster;
 
-gui.Button button;
-button.text = "И я тоже";
+    gui.Label heading;
+    heading.text = "Я наследую шрифт окна";
+    heading.x = 30;
+    heading.y = 40;
 
-win.add_child(heading);
-win.add_child(button);
+    gui.Button button;
+    button.text = "И я тоже";
+    button.x = 30;
+    button.y = 100;
+    button.width = 150;
+
+    win.add_child(heading);
+    win.add_child(button);
+    win.show();
+}
 </script></idyl-code-block>
 
+  <div class="gui-demo-container">
+    <div class="gui-demo-window">
+      <div class="demo-content" style="min-height: 160px; position: relative;">
+        <div style="position: absolute; left: 30px; top: 40px; color: #cdd6f4; font-family: 'Lobster', cursive;">Я наследую шрифт окна</div>
+        <button class="idyl-button" style="position: absolute; left: 30px; top: 100px; width: 150px; font-family: 'Lobster', cursive;">И я тоже</button>
+      </div>
+    </div>
+    <div class="coord-note">
+      И надпись, и кнопка не выбирали шрифт сами — обе получили рукописный шрифт
+      от окна. (Рукописность в демо снова показана примерно.)
+    </div>
+  </div>
+
   <p>
-    Та же механика работает у <code>gui.Frame</code>. Шрифт фрейма передаётся его
-    потомкам и может заменить шрифт окна только внутри этого фрейма. Это похоже
-    на уже знакомое наследование <code>text_color</code>.
-  </p>
-  <p>
-    Размер тоже можно назначить сразу окну или фрейму через <code>font_size</code>.
-    Его унаследуют дочерние виджеты, пока какой-нибудь из них не задаст собственный
-    размер. Свойство доступно у надписей, кнопок, полей ввода, флажков,
-    переключателей, выпадающих списков, числовых полей и полос прогресса.
+    Размер тоже можно назначить сразу окну через <code>font_size</code>. Его
+    унаследуют дочерние виджеты, пока какой-нибудь из них не задаст собственный
+    размер.
   </p>
 </div>
 
 <div class="docs-section">
   <h2>Если в файле чего-то нет</h2>
   <p>
-    Если путь неверный или файл на самом деле не является поддерживаемым шрифтом,
-    программа завершится с понятной runtime error. Переименование случайного
-    файла в <code>.ttf</code> шрифтом его не сделает.
+    Если путь неверный или файла нет на месте, программа остановится с понятной
+    ошибкой выполнения. Вот что случится, если запустить первую программу урока,
+    забыв положить <code>Lobster-Regular.ttf</code> рядом с ней:
+  </p>
+
+  <idyl-error-block>main.idyl:6: runtime error: Font.load_from_file() cannot load 'Lobster-Regular.ttf': file does not exist</idyl-error-block>
+
+  <p>
+    Лечится просто: проверьте имя файла, расширение и папку. И помните:
+    переименование случайного файла в <code>.ttf</code> шрифтом его не сделает —
+    <code>Font</code> смотрит внутрь файла, а не на расширение.
   </p>
   <p>
     Бывает и другая ситуация: шрифт настоящий, но в нём нет некоторых русских
     букв или специальных символов. Тогда только отсутствующие символы будут
-    показаны запасным системным шрифтом. Поэтому перед уроком стоит проверить,
-    что выбранный файл действительно содержит кириллицу.
+    показаны запасным системным шрифтом. Поэтому, выбирая шрифт, проверьте,
+    что в нём есть кириллица.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Шпаргалка: свойства <code>fonts.Font</code></h2>
+
+  <table>
+    <thead>
+      <tr><th>Свойство</th><th>Тип</th><th>Что хранит</th><th>Доступ</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>src</code></td><td><code>string</code></td><td>путь к загруженному файлу</td><td>только чтение</td></tr>
+      <tr><td><code>format</code></td><td><code>string</code></td><td>формат: <code>"ttf"</code>, <code>"otf"</code>, <code>"woff"</code> или <code>"woff2"</code> — определяется по содержимому файла</td><td>только чтение</td></tr>
+      <tr><td><code>is_loaded</code></td><td><code>bool</code></td><td><code>true</code>, если шрифт успешно загружен</td><td>только чтение</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    А заполняет все эти свойства единственный метод —
+    <code>load_from_file(путь)</code>.
   </p>
 </div>

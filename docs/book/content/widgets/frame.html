@@ -10,24 +10,21 @@
     }
 </style>
 
-<!-- Hero -->
-    
+<div class="docs-section">
+  <h2>Что такое Frame?</h2>
+  <p>Когда в окне два виджета, всё понятно и так. Но когда их становится десять, окно превращается в кучу кнопок и полей — глазам не за что зацепиться. Хочется разложить виджеты по «коробочкам»: тут настройки звука, там данные игрока.</p>
+  <p>Такая коробочка есть: <code>gui.Frame</code> — это виджет-контейнер, который может содержать внутри себя другие виджеты. Он визуально выделяет область на окне (рамкой и заголовком) и позволяет группировать логически связанные элементы управления.</p>
+  <p>Где он встречается:</p>
+  <ul>
+    <li>⚙️ Панель настроек — группа «Параметры отображения»</li>
+    <li>🎮 Интерфейс игры — панель «Статистика персонажа»</li>
+    <li>📋 Форма регистрации — группа «Личные данные»</li>
+    <li>🎨 Графический редактор — панель «Инструменты рисования»</li>
+  </ul>
 
-    <!-- Section 1 -->
-    <div class="docs-section">
-      <h2>Что такое Frame?</h2>
-      <p><code>gui.Frame</code> — это виджет-контейнер, который может содержать внутри себя другие виджеты. Он визуально выделяет область на окне (рамкой и заголовком) и позволяет группировать логически связанные элементы управления.</p>
-      <p>Где он встречается:</p>
-      <ul>
-        <li>⚙️ Панель настроек — группа «Параметры отображения»</li>
-        <li>🎮 Интерфейс игры — панель «Статистика персонажа»</li>
-        <li>📋 Форма регистрации — группа «Личные данные»</li>
-        <li>🎨 Графический редактор — панель «Инструменты рисования»</li>
-      </ul>
+  <p>Вот простейший Frame с рамкой и заголовком:</p>
 
-      <p>Вот простейший Frame с рамкой и заголовком:</p>
-
-      <idyl-code-block><script type="text/plain">
+  <idyl-code-block><script type="text/plain">
 use gui;
 
 main() {
@@ -48,33 +45,32 @@ main() {
 }
 </script></idyl-code-block>
 
-      <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 150px; position: relative;">
-            <fieldset class="idyl-frame" style="position: absolute; left: 20px; top: 20px; width: 260px; height: 100px;">
-              <legend class="idyl-frame-title">Настройки</legend>
-              <div class="idyl-frame-content" style="height: 100%;"></div>
-            </fieldset>
-          </div>
-        </div>
-        <div class="coord-note">
-          🖼️ Рамка с заголовком. Пока пустая — внутри нет виджетов.
-        </div>
+  <div class="interactive-demo">
+    <div class="gui-demo-window">
+      <div class="demo-content" style="min-height: 150px; position: relative;">
+        <fieldset class="idyl-frame" style="position: absolute; left: 20px; top: 20px; width: 260px; height: 100px;">
+          <legend class="idyl-frame-title">Настройки</legend>
+          <div class="idyl-frame-content" style="height: 100%;"></div>
+        </fieldset>
       </div>
     </div>
+    <div class="coord-note">
+      🖼️ Рамка с заголовком. Пока пустая — внутри нет виджетов.
+    </div>
+  </div>
+</div>
 
-    <!-- Section 2 -->
-    <div class="docs-section">
-      <h2>Frame как контейнер</h2>
-      <p>Главная особенность <code>Frame</code> — он может содержать другие виджеты. Добавление происходит через метод <code>add_child()</code>, как и в случае с окном:</p>
+<div class="docs-section">
+  <h2>Frame как контейнер</h2>
+  <p>Главная особенность <code>Frame</code> — он может содержать другие виджеты. Добавление происходит через метод <code>add_child()</code>, как и в случае с окном. Обратите внимание на размеры: рамка 350×220 на позиции (20, 20) должна целиком помещаться в окно, поэтому окну нужны как минимум 390×260 — возьмём 420×290 с запасом:</p>
 
-      <idyl-code-block><script type="text/plain">
+  <idyl-code-block><script type="text/plain">
 use gui;
 
 main() {
     gui.Window win;
-    win.width = 350;
-    win.height = 200;
+    win.width = 420;
+    win.height = 290;
     win.title = "Настройки пользователя";
 
     gui.Frame frame;
@@ -116,36 +112,35 @@ main() {
 }
 </script></idyl-code-block>
 
-      <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 280px; position: relative;">
-            <fieldset class="idyl-frame" style="position: absolute; left: 20px; top: 20px; width: 350px; height: 220px;">
-              <legend class="idyl-frame-title">Личные данные</legend>
-              <div class="idyl-frame-content" style="position: relative; height: 100%;">
-                <div style="position: absolute; left: 15px; top: 30px; color: #cdd6f4;">Имя:</div>
-                <div style="position: absolute; left: 15px; top: 55px;">
-                  <input type="text" class="idyl-lineedit" style="width: 280px;">
-                </div>
-                <div style="position: absolute; left: 15px; top: 90px; color: #cdd6f4;">Город:</div>
-                <div style="position: absolute; left: 15px; top: 115px;">
-                  <input type="text" class="idyl-lineedit" style="width: 280px;">
-                </div>
-              </div>
-            </fieldset>
+  <div class="interactive-demo">
+    <div class="gui-demo-window">
+      <div class="demo-content" style="min-height: 270px; position: relative;">
+        <fieldset class="idyl-frame" style="position: absolute; left: 20px; top: 20px; width: 350px; height: 220px;">
+          <legend class="idyl-frame-title">Личные данные</legend>
+          <div class="idyl-frame-content" style="position: relative; height: 100%;">
+            <div style="position: absolute; left: 15px; top: 30px; color: #cdd6f4;">Имя:</div>
+            <div style="position: absolute; left: 15px; top: 55px;">
+              <input type="text" class="idyl-lineedit" style="width: 280px;">
+            </div>
+            <div style="position: absolute; left: 15px; top: 90px; color: #cdd6f4;">Город:</div>
+            <div style="position: absolute; left: 15px; top: 115px;">
+              <input type="text" class="idyl-lineedit" style="width: 280px;">
+            </div>
           </div>
-        </div>
-        <div class="coord-note">
-          📦 Виджеты внутри рамки. Координаты считаются <strong>относительно рамки</strong>, а не окна.
-        </div>
+        </fieldset>
       </div>
     </div>
+    <div class="coord-note">
+      📦 Виджеты внутри рамки. Координаты считаются <strong>относительно рамки</strong>, а не окна.
+    </div>
+  </div>
+</div>
 
-    <!-- Section 3 -->
-    <div class="docs-section">
-      <h2>Вложенность контейнеров</h2>
-      <p>Frame можно вкладывать друг в друга, создавая иерархию контейнеров:</p>
+<div class="docs-section">
+  <h2>Вложенность контейнеров</h2>
+  <p>Frame можно вкладывать друг в друга, создавая иерархию контейнеров:</p>
 
-      <idyl-code-block><script type="text/plain">
+  <idyl-code-block><script type="text/plain">
 use gui;
 
 main() {
@@ -182,28 +177,148 @@ main() {
 }
 </script></idyl-code-block>
 
-      <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 280px; position: relative;">
-            <fieldset class="idyl-frame" style="position: absolute; left: 20px; top: 20px; width: 360px; height: 260px;">
-              <legend class="idyl-frame-title">Основная рамка</legend>
-              <div class="idyl-frame-content" style="position: relative; height: 100%;">
-                <fieldset class="idyl-frame" style="position: absolute; left: 15px; top: 30px; width: 150px; height: 100px;">
-                  <legend class="idyl-frame-title">Блок 1</legend>
-                  <div class="idyl-frame-content"></div>
-                </fieldset>
-                <fieldset class="idyl-frame" style="position: absolute; left: 180px; top: 30px; width: 150px; height: 100px;">
-                  <legend class="idyl-frame-title">Блок 2</legend>
-                  <div class="idyl-frame-content"></div>
-                </fieldset>
-              </div>
+  <div class="interactive-demo">
+    <div class="gui-demo-window">
+      <div class="demo-content" style="min-height: 280px; position: relative;">
+        <fieldset class="idyl-frame" style="position: absolute; left: 20px; top: 20px; width: 360px; height: 250px;">
+          <legend class="idyl-frame-title">Основная рамка</legend>
+          <div class="idyl-frame-content" style="position: relative; height: 100%;">
+            <fieldset class="idyl-frame" style="position: absolute; left: 15px; top: 30px; width: 150px; height: 100px;">
+              <legend class="idyl-frame-title">Блок 1</legend>
+              <div class="idyl-frame-content"></div>
+            </fieldset>
+            <fieldset class="idyl-frame" style="position: absolute; left: 180px; top: 30px; width: 150px; height: 100px;">
+              <legend class="idyl-frame-title">Блок 2</legend>
+              <div class="idyl-frame-content"></div>
             </fieldset>
           </div>
-        </div>
-        <div class="coord-note">
-          🪆 Рамка внутри рамки. Координаты внутренней рамки — относительно внешней.
-        </div>
+        </fieldset>
       </div>
     </div>
+    <div class="coord-note">
+      🪆 Рамка внутри рамки. Координаты внутренней рамки — относительно внешней.
+    </div>
+  </div>
+</div>
 
-    <!-- Lesson navigation -->
+<div class="docs-section">
+  <h2>Наряжаем рамку</h2>
+  <p>Рамка не обязана быть серой и незаметной. У неё есть свой цвет фона, цвет границы и толщина границы — <code>background_color</code>, <code>border_color</code> и <code>border_width</code>. Цвета задаются так же, как в уроке про цвета: готовыми константами или через <code>colors.HEX()</code>:</p>
+
+  <idyl-code-block><script type="text/plain">
+use gui;
+use colors;
+
+main() {
+    gui.Window win;
+    win.width = 320;
+    win.height = 180;
+    win.title = "Стиль рамки";
+
+    gui.Frame frame;
+    frame.x = 20;
+    frame.y = 20;
+    frame.width = 280;
+    frame.height = 120;
+    frame.title = "Панель героя";
+    frame.background_color = colors.HEX("#1E2B3C");
+    frame.border_color = colors.TEAL;
+    frame.border_width = 3;
+
+    win.add_child(frame);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <div class="interactive-demo">
+    <div class="gui-demo-window">
+      <div class="demo-content" style="min-height: 160px; position: relative;">
+        <fieldset class="idyl-frame" style="position: absolute; left: 20px; top: 20px; width: 280px; height: 120px; background: #1E2B3C; border: 3px solid #008080;">
+          <legend class="idyl-frame-title">Панель героя</legend>
+          <div class="idyl-frame-content" style="height: 100%;"></div>
+        </fieldset>
+      </div>
+    </div>
+    <div class="coord-note">
+      🎨 Тёмно-синий фон, бирюзовая граница толщиной 3 пикселя. Такая панель сразу видна в игре.
+    </div>
+  </div>
+</div>
+
+<div class="docs-section">
+  <h2>Типичная ошибка: координаты «от окна»</h2>
+  <p>Самая коварная ловушка этого урока не вызывает никакой ошибки. Допустим, вы хотите поставить лейбл у верхнего края панели. Прикладываете линейку к <strong>окну</strong>: нужная точка — (40, 90). Пишете:</p>
+
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 340;
+    win.height = 200;
+    win.title = "Где мой лейбл?";
+
+    gui.Frame frame;
+    frame.x = 20;
+    frame.y = 60;
+    frame.width = 300;
+    frame.height = 120;
+    frame.title = "Панель";
+
+    gui.Label label;
+    // Хотим лейбл у верхнего края панели.
+    // От угла ОКНА эта точка - (40, 90)...
+    label.x = 40;
+    label.y = 90;
+    label.text = "Я должен быть выше!";
+
+    frame.add_child(label);
+    win.add_child(frame);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <div class="warning-message">
+    Программа компилируется без единой ошибки и спокойно запускается. Компилятор здесь не помощник: с точки зрения языка всё правильно. Просто виджет окажется не там, где вы ждали.
+  </div>
+
+  <p>Лейбл добавлен в <strong>рамку</strong>, значит его координаты отсчитываются от угла рамки. Реальная позиция на окне получается сложением: <code>20&nbsp;+&nbsp;40&nbsp;=&nbsp;60</code> по горизонтали и <code>60&nbsp;+&nbsp;90&nbsp;=&nbsp;150</code> по вертикали — лейбл уехал к нижнему краю панели:</p>
+
+  <div class="interactive-demo">
+    <div class="gui-demo-window">
+      <div class="demo-content" style="min-height: 200px; position: relative;">
+        <div style="position: absolute; left: 40px; top: 90px; padding: 2px 8px; border: 1px dashed #f38ba8; border-radius: 6px; color: #f38ba8; opacity: 0.85;">ожидал здесь</div>
+        <fieldset class="idyl-frame" style="position: absolute; left: 20px; top: 60px; width: 300px; height: 120px;">
+          <legend class="idyl-frame-title">Панель</legend>
+          <div class="idyl-frame-content" style="position: relative; height: 100%;">
+            <div style="position: absolute; left: 40px; top: 90px; color: #cdd6f4;">Я должен быть выше!</div>
+          </div>
+        </fieldset>
+      </div>
+    </div>
+    <div class="coord-note">
+      👀 Пунктиром — где лейбл ожидали. На самом деле он на (40, 90) <strong>от угла рамки</strong>, то есть на (60, 150) от угла окна.
+    </div>
+  </div>
+
+  <p>Лечится просто: раз лейбл живёт внутри рамки, измеряйте от её угла. Хотели точку (40, 90) окна при рамке на (20, 60)? Тогда <code>label.x = 20;</code> и <code>label.y = 30;</code>. Если виджет «уехал» — первым делом проверьте, от чьего угла вы его отсчитывали.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Опорная таблица</h2>
+
+  <table>
+    <thead>
+      <tr><th>Свойство или метод</th><th>Тип</th><th>Что делает</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>x</code>, <code>y</code></td><td><code>int</code></td><td>позиция рамки относительно её родителя — окна или другой рамки</td></tr>
+      <tr><td><code>width</code>, <code>height</code></td><td><code>int</code></td><td>размер рамки</td></tr>
+      <tr><td><code>title</code></td><td><code>string</code></td><td>заголовок на рамке</td></tr>
+      <tr><td><code>background_color</code></td><td><code>colors.Color</code></td><td>цвет фона</td></tr>
+      <tr><td><code>border_color</code></td><td><code>colors.Color</code></td><td>цвет границы</td></tr>
+      <tr><td><code>border_width</code></td><td><code>int</code></td><td>толщина границы в пикселях</td></tr>
+      <tr><td><code>add_child(виджет)</code></td><td>метод</td><td>кладёт виджет внутрь рамки; его координаты — от угла рамки</td></tr>
+    </tbody>
+  </table>
+</div>

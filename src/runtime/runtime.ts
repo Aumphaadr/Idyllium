@@ -240,23 +240,25 @@ const weekDayNumbers: Readonly<Record<string, number>> = {
 export class IdylliumTimeStamp {
   readonly timezone: string;
   private readonly components: TimeStampComponents;
+  private readonly epochMs: number;
 
   constructor(
-    private readonly unixSeconds: number,
+    unixSeconds: number,
     timezone: unknown = 'UTC',
     file = 'time',
     line = 0,
   ) {
+    this.epochMs = Math.round(unixSeconds * 1000);
     this.timezone = normalizeTimeZone(timezone, 'time.stamp timezone', file, line);
-    this.components = timeStampComponents(unixSeconds, this.timezone, file, line);
+    this.components = timeStampComponents(Math.floor(this.epochMs / 1000), this.timezone, file, line);
   }
 
   static now(timezone: unknown, file: string, line: number): IdylliumTimeStamp {
-    return new IdylliumTimeStamp(Math.floor(Date.now() / 1000), timezone, file, line);
+    return new IdylliumTimeStamp(Date.now() / 1000, timezone, file, line);
   }
 
   static fromUnix(seconds: unknown, timezone: unknown, file: string, line: number): IdylliumTimeStamp {
-    const unixSeconds = integerNumber(seconds, 'time.from_unix() seconds', file, line);
+    const unixSeconds = finiteNumber(seconds, 'time.from_unix() seconds', file, line);
     return new IdylliumTimeStamp(unixSeconds, timezone, file, line);
   }
 
@@ -289,11 +291,15 @@ export class IdylliumTimeStamp {
   }
 
   get unix(): number {
-    return this.unixSeconds;
+    return Math.floor(this.epochMs / 1000);
+  }
+
+  get millisecond(): number {
+    return this.epochMs - Math.floor(this.epochMs / 1000) * 1000;
   }
 
   in_timezone(timezone: unknown, file: string, line: number): IdylliumTimeStamp {
-    return new IdylliumTimeStamp(this.unixSeconds, timezone, file, line);
+    return new IdylliumTimeStamp(this.epochMs / 1000, timezone, file, line);
   }
 
   to_string(): string {
@@ -1259,7 +1265,7 @@ async function openSqliteDatabase(
       throw new Error('path is not a file');
     }
     if (!runtime.fileSystem.exists(parentPath) || !runtime.fileSystem.isDirectory(parentPath)) {
-      throw new Error(`parent directory does not exist: ${parentPath}`);
+      throw new Error(`parent directory does not exist: ${runtime.fileSystem.humanizePaths?.(parentPath) ?? parentPath}`);
     }
   } catch (error) {
     throw new IdylliumRuntimeError(file, line, `sqlite.open() cannot open '${requestedPath}': ${errorMessage(error)}`);
@@ -1851,6 +1857,8 @@ export interface RuntimeOptions {
 
 export interface RuntimeFileSystem {
   resolvePath(requestedPath: string, sourceFile: string): string;
+  /** Заменяет абсолютный корень проекта в тексте на относительную форму — для сообщений об ошибках. */
+  humanizePaths?(text: string): string;
   exists(filePath: string): boolean;
   isFile(filePath: string): boolean;
   isDirectory(filePath: string): boolean;
@@ -1906,6 +1914,10 @@ export function createMemoryRuntimeFileSystem(
     resolvePath(requestedPath: string, sourceFile: string): string {
       const sourceDirectory = sourceFile.trim() === '' ? normalizedCwd : memoryDirname(normalizeMemoryPath(sourceFile, normalizedCwd));
       return normalizeMemoryPath(requestedPath, sourceDirectory);
+    },
+    humanizePaths(text: string): string {
+      const prefix = normalizedCwd.endsWith('/') ? normalizedCwd : `${normalizedCwd}/`;
+      return text.split(prefix).join('').split(normalizedCwd).join('.');
     },
     exists(filePath: string): boolean {
       const normalized = normalizeMemoryPath(filePath, normalizedCwd);
@@ -2228,6 +2240,7 @@ export interface IdylliumRuntime {
     set_precision(file: string, line: number, digits: number): Promise<void>;
   };
   readonly core: {
+    tick(file: string, line: number): Promise<void> | null;
     binary(operator: string, left: unknown, right: unknown, file: string, line: number): unknown;
     negate(value: unknown): number | bigint;
     divide(left: unknown, right: unknown, file: string, line: number): number;
@@ -2235,7 +2248,7 @@ export interface IdylliumRuntime {
     mod(left: unknown, right: unknown, file: string, line: number): number | bigint;
     to_int(value: unknown, file: string, line: number): number | bigint;
     to_float(value: unknown, file: string, line: number): number;
-    to_string(value: unknown): string;
+    to_string(value: unknown): Promise<string>;
   };
   readonly array: {
     create(size: number, defaultFactory: () => unknown, dynamic: boolean): IdylliumArray;
@@ -2327,10 +2340,13 @@ function defaultRuntimeSqliteService(): RuntimeSqliteService | undefined {
 
 export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
   let output = '';
-  let precision: number | null = null;
+  // По умолчанию float печатается с точностью до 8 знаков после запятой
+  // (хвостовые нули отбрасываются); console.set_precision() меняет точность.
+  let precision: number | null = 8;
   let randomSeed: number | null = null;
   const input = [...(options.input ?? [])];
   const fileSystem = options.fileSystem ?? createNodeRuntimeFileSystem(options.projectRoot);
+  const humanizeFsPaths = (text: string): string => fileSystem.humanizePaths?.(text) ?? text;
   const runtimeObjects: RuntimeObjectState = {
     objects: [],
     audio: [],
@@ -2386,18 +2402,19 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
   }
 
   function createInputFile(filePath: string, sourceFile: string, line: number): Record<string, unknown> {
+    const shownPath = humanizeFsPaths(filePath);
     if (!fileSystem.exists(filePath)) {
-      throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${filePath}' for reading: file does not exist`);
+      throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for reading: file does not exist`);
     }
-    if (!runtimeIsFile(fileSystem, filePath, sourceFile, line, 'reading')) {
-      throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${filePath}' for reading: path is not a file`);
+    if (!runtimeIsFile(fileSystem, filePath, sourceFile, line, 'reading', shownPath)) {
+      throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for reading: path is not a file`);
     }
 
     let characters: string[];
     try {
       characters = Array.from(fileSystem.readText(filePath));
     } catch (error) {
-      throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${filePath}' for reading: ${errorMessage(error)}`);
+      throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for reading: ${humanizeFsPaths(errorMessage(error))}`);
     }
 
     let offset = 0;
@@ -2459,18 +2476,19 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
   }
 
   function createOutputFile(filePath: string, sourceFile: string, line: number): Record<string, unknown> {
+    const shownPath = humanizeFsPaths(filePath);
     const parent = runtimeDirname(filePath);
     if (!fileSystem.exists(parent)) {
-      throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${filePath}' for writing: directory does not exist`);
+      throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for writing: directory does not exist`);
     }
-    if (!runtimeIsDirectory(fileSystem, parent, sourceFile, line, 'writing')) {
-      throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${filePath}' for writing: parent path is not a directory`);
+    if (!runtimeIsDirectory(fileSystem, parent, sourceFile, line, 'writing', shownPath)) {
+      throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for writing: parent path is not a directory`);
     }
 
     try {
       fileSystem.writeText(filePath, '');
     } catch (error) {
-      throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${filePath}' for writing: ${errorMessage(error)}`);
+      throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for writing: ${humanizeFsPaths(errorMessage(error))}`);
     }
 
     let closed = false;
@@ -2495,7 +2513,53 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     return stream;
   }
 
+  // Кооперативная остановка циклов: щедрый быстрый путь (инкремент счётчика),
+  // раз в LOOP_TICK_CHECK_MASK+1 итераций — проверка сигнала, и не чаще
+  // LOOP_YIELD_INTERVAL_MS — уступка хосту, чтобы обработчик Stop успел
+  // выставить abort даже при полностью занятом цикле event loop.
+  const LOOP_TICK_CHECK_MASK = 1023;
+  const LOOP_YIELD_INTERVAL_MS = 25;
+  let loopTickCounter = 0;
+  let lastLoopYieldAt = Date.now();
+  let loopYieldChannel: { port1: { onmessage: (() => void) | null }; port2: { postMessage(value: unknown): void } } | null = null;
+  let pendingLoopYieldResolve: (() => void) | null = null;
+
+  function yieldToHost(): Promise<void> {
+    const scheduler = globalThis as {
+      setImmediate?: (callback: () => void) => void;
+      MessageChannel?: new () => NonNullable<typeof loopYieldChannel>;
+    };
+    if (typeof scheduler.setImmediate === 'function') {
+      const setImmediateFn = scheduler.setImmediate;
+      return new Promise<void>((resolve) => setImmediateFn(resolve));
+    }
+    if (typeof scheduler.MessageChannel === 'function') {
+      if (loopYieldChannel === null) {
+        loopYieldChannel = new scheduler.MessageChannel();
+        loopYieldChannel.port1.onmessage = () => {
+          const resolve = pendingLoopYieldResolve;
+          pendingLoopYieldResolve = null;
+          resolve?.();
+        };
+      }
+      return new Promise<void>((resolve) => {
+        pendingLoopYieldResolve = resolve;
+        loopYieldChannel?.port2.postMessage(null);
+      });
+    }
+    return new Promise<void>((resolve) => setTimeout(resolve, 0));
+  }
+
   const core = {
+    tick(file: string, line: number): Promise<void> | null {
+      loopTickCounter = (loopTickCounter + 1) | 0;
+      if ((loopTickCounter & LOOP_TICK_CHECK_MASK) !== 0) return null;
+      throwIfRuntimeStopped(file, line);
+      const now = Date.now();
+      if (now - lastLoopYieldAt < LOOP_YIELD_INTERVAL_MS) return null;
+      lastLoopYieldAt = now;
+      return yieldToHost().then(() => throwIfRuntimeStopped(file, line));
+    },
     binary(operator: string, left: unknown, right: unknown, file: string, line: number): unknown {
       return runtimeBinary(operator, left, right, file, line);
     },
@@ -2530,8 +2594,9 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       }
       throw new IdylliumRuntimeError(file, line, `'to_float' cannot convert '${String(value)}' to float`);
     },
-    to_string(value: unknown): string {
-      return formatForConsole(value, precision);
+    async to_string(value: unknown): Promise<string> {
+      // Как и console.write: у объекта с публичным to_string() вызывается он.
+      return formatConsoleValue(value);
     },
   };
 
@@ -2681,7 +2746,10 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       math: {
         pi: Math.PI,
         e: Math.E,
-        abs: contextFunction((value: number, file: string, line: number) => Math.abs(finiteNumber(value, 'math.abs() value', file, line))),
+        abs: contextFunction((value: number | bigint, file: string, line: number) => {
+          if (typeof value === 'bigint') return value < 0n ? -value : value;
+          return Math.abs(finiteNumber(value, 'math.abs() value', file, line));
+        }),
         sqrt: contextFunction((value: number, file: string, line: number) => {
           const number = finiteNumber(value, 'math.sqrt() value', file, line);
           if (number < 0) throw new IdylliumRuntimeError(file, line, `math.sqrt() expects a non-negative number, got ${number}`);
@@ -2754,7 +2822,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
           if (low >= high) {
             throw new IdylliumRuntimeError(file, line, `random.create_float() min must be less than max (got min ${low}, max ${high})`);
           }
-          return randomUnit() * (high - low) + low;
+          return randomUnitInclusive() * (high - low) + low;
         }),
         choose_from: contextFunction((collection: unknown, file: string, line: number) => {
           if (typeof collection === 'string') {
@@ -2812,7 +2880,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
           try {
             return fileSystem.exists(resolvedPath) && fileSystem.isFile(resolvedPath);
           } catch (error) {
-            throw new IdylliumRuntimeError(file, line, `file.is_file() cannot inspect '${requestedPath}': ${errorMessage(error)}`);
+            throw new IdylliumRuntimeError(file, line, `file.is_file() cannot inspect '${requestedPath}': ${humanizeFsPaths(errorMessage(error))}`);
           }
         }),
         is_directory: contextFunction((targetPath: string, file: string, line: number) => {
@@ -2821,7 +2889,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
           try {
             return fileSystem.exists(resolvedPath) && fileSystem.isDirectory(resolvedPath);
           } catch (error) {
-            throw new IdylliumRuntimeError(file, line, `file.is_directory() cannot inspect '${requestedPath}': ${errorMessage(error)}`);
+            throw new IdylliumRuntimeError(file, line, `file.is_directory() cannot inspect '${requestedPath}': ${humanizeFsPaths(errorMessage(error))}`);
           }
         }),
         create_directory: contextFunction((...rawArgs: unknown[]) => {
@@ -2836,7 +2904,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
           try {
             fileSystem.createDirectory(fileSystem.resolvePath(requestedPath, file), parents);
           } catch (error) {
-            throw new IdylliumRuntimeError(file, line, `file.create_directory() cannot create '${requestedPath}': ${errorMessage(error)}`);
+            throw new IdylliumRuntimeError(file, line, `file.create_directory() cannot create '${requestedPath}': ${humanizeFsPaths(errorMessage(error))}`);
           }
         }),
         list_directory: contextFunction((targetPath: string, file: string, line: number) => {
@@ -2848,7 +2916,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
             const names = fileSystem.listDirectory(fileSystem.resolvePath(requestedPath, file));
             return IdylliumArray.from([...names], true, null, () => '');
           } catch (error) {
-            throw new IdylliumRuntimeError(file, line, `file.list_directory() cannot inspect '${requestedPath}': ${errorMessage(error)}`);
+            throw new IdylliumRuntimeError(file, line, `file.list_directory() cannot inspect '${requestedPath}': ${humanizeFsPaths(errorMessage(error))}`);
           }
         }),
         copy: contextFunction((sourcePath: string, destinationPath: string, file: string, line: number) => {
@@ -2863,7 +2931,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
               fileSystem.resolvePath(destination, file),
             );
           } catch (error) {
-            throw new IdylliumRuntimeError(file, line, `file.copy() cannot copy '${source}' to '${destination}': ${errorMessage(error)}`);
+            throw new IdylliumRuntimeError(file, line, `file.copy() cannot copy '${source}' to '${destination}': ${humanizeFsPaths(errorMessage(error))}`);
           }
         }),
         rename: contextFunction((sourcePath: string, destinationPath: string, file: string, line: number) => {
@@ -2878,7 +2946,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
               fileSystem.resolvePath(destination, file),
             );
           } catch (error) {
-            throw new IdylliumRuntimeError(file, line, `file.rename() cannot rename '${source}' to '${destination}': ${errorMessage(error)}`);
+            throw new IdylliumRuntimeError(file, line, `file.rename() cannot rename '${source}' to '${destination}': ${humanizeFsPaths(errorMessage(error))}`);
           }
         }),
         remove: contextFunction((...rawArgs: unknown[]) => {
@@ -2893,7 +2961,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
           try {
             fileSystem.remove(fileSystem.resolvePath(requestedPath, file), recursive);
           } catch (error) {
-            throw new IdylliumRuntimeError(file, line, `file.remove() cannot remove '${requestedPath}': ${errorMessage(error)}`);
+            throw new IdylliumRuntimeError(file, line, `file.remove() cannot remove '${requestedPath}': ${humanizeFsPaths(errorMessage(error))}`);
           }
         }),
         open: contextFunction((targetPath: string, mode: string, file: string, line: number) => {
@@ -3085,16 +3153,32 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       const target = runtimeObjects.objects.find((item) => item.__idylliumObjectId === canvasId);
       if (!target) return;
 
+      const deselectedRadios = target.__idylliumType === 'gui.RadioButton' && eventName === 'change'
+        ? runtimeObjects.objects.filter((item) => (
+          item !== target && item.__idylliumType === 'gui.RadioButton' && item.is_selected === true
+        ))
+        : [];
+
       applyGuiEventPayload(target, eventName, payload, runtimeObjects);
       const callbackName = guiCallbackName(target, eventName);
-      if (!callbackName) return;
-      const callback = target[callbackName];
-      if (typeof callback !== 'function') return;
-      if (target.__idylliumType === 'gui.Canvas') {
-        await callback(target, guiEventObject(eventName, payload));
-        return;
+      if (callbackName) {
+        const callback = target[callbackName];
+        if (typeof callback === 'function') {
+          if (target.__idylliumType === 'gui.Canvas') {
+            await callback(target, guiEventObject(eventName, payload));
+            return;
+          }
+          await callback(target);
+        }
       }
-      await callback(target);
+
+      // Выбор радиокнопки снимает выбор с соседей по группе — их on_change
+      // тоже должен сработать (с is_selected == false).
+      for (const sibling of deselectedRadios) {
+        if (sibling.is_selected !== false) continue;
+        const siblingCallback = sibling.on_change;
+        if (typeof siblingCallback === 'function') await siblingCallback(sibling);
+      }
     },
   };
 
@@ -3102,6 +3186,14 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     if (randomSeed === null) return Math.random();
     randomSeed = (Math.imul(randomSeed, 1664525) + 1013904223) >>> 0;
     return randomSeed / 0x100000000;
+  }
+
+  // Для create_float: единичный интервал ВКЛЮЧАЯ 1.0, чтобы max был достижим
+  // (как в Python). Нельзя делить с create_int: там unit 1.0 дал бы выход за max.
+  function randomUnitInclusive(): number {
+    if (randomSeed === null) return Math.floor(Math.random() * 0x100000000) / 0xffffffff;
+    randomSeed = (Math.imul(randomSeed, 1664525) + 1013904223) >>> 0;
+    return randomSeed / 0xffffffff;
   }
 
   function waitForRuntimeDelay(milliseconds: number, file: string, line: number): Promise<void> {
@@ -3367,6 +3459,10 @@ function createNodeRuntimeFileSystem(projectRoot?: string): RuntimeFileSystem {
     assertNodeProjectPath(mutationRoot ?? process.cwd(), filePath, operation)
   );
   return {
+    humanizePaths(text: string): string {
+      const root = mutationRoot ?? process.cwd();
+      return text.split(`${root}${nodePath.sep}`).join('').split(root).join('.');
+    },
     resolvePath(requestedPath: string, sourceFile: string): string {
       if (!mutationRoot) {
         mutationRoot = sourceFile.trim() !== '' && nodePath.isAbsolute(sourceFile)
@@ -3464,11 +3560,12 @@ function runtimeIsFile(
   sourceFile: string,
   line: number,
   mode: 'reading' | 'writing',
+  displayPath: string = filePath,
 ): boolean {
   try {
     return fileSystem.isFile(filePath);
   } catch (error) {
-    throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${filePath}' for ${mode}: ${errorMessage(error)}`);
+    throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${displayPath}' for ${mode}: ${errorMessage(error)}`);
   }
 }
 
@@ -3478,11 +3575,12 @@ function runtimeIsDirectory(
   sourceFile: string,
   line: number,
   mode: 'reading' | 'writing',
+  displayPath: string = filePath,
 ): boolean {
   try {
     return fileSystem.isDirectory(filePath);
   } catch (error) {
-    throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${filePath}' for ${mode}: ${errorMessage(error)}`);
+    throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${displayPath}' for ${mode}: ${errorMessage(error)}`);
   }
 }
 
@@ -4286,7 +4384,11 @@ function formatForConsole(value: unknown, precision: number | null): string {
   if (isJsonRuntimeValue(value)) return jsonSerialize(value, 0, 'json', 0);
   if (typeof value === 'boolean') return value ? 'true' : 'false';
   if (typeof value === 'number' && precision !== null) {
-    return Number(value.toFixed(precision)).toString();
+    const rounded = Number(value.toFixed(precision));
+    // Ненулевое число, округлившееся в 0 (например 3e-36 при точности 8),
+    // показываем научной записью — иначе оно стало бы непечатаемым.
+    if (rounded === 0 && value !== 0) return String(value);
+    return rounded.toString();
   }
   return String(value);
 }
@@ -4539,14 +4641,23 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
 
   if (typeName === 'Timer') {
     obj.interval = 1000;
+    obj.running = false;
     obj.__running = false;
     obj.__elapsedMs = 0;
+    // start()/stop() — пауза и снятие с паузы (накопленные миллисекунды
+    // сохраняются), restart() — запуск заново с нуля.
     obj.start = () => {
       obj.__running = true;
-      obj.__elapsedMs = 0;
+      obj.running = true;
     };
     obj.stop = () => {
       obj.__running = false;
+      obj.running = false;
+    };
+    obj.restart = () => {
+      obj.__running = true;
+      obj.running = true;
+      obj.__elapsedMs = 0;
     };
     state.timers.push(obj);
   }

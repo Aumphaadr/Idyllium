@@ -114,7 +114,7 @@ main() {
   </p>
   <ul>
     <li><code>gui.Window.add_child()</code> принимает разные виджеты: <code>Button</code>, <code>Label</code>, <code>Slider</code> и другие.</li>
-    <li><code>canvas.draw()</code> должен принимать разные drawable-объекты: круги, прямоугольники, текст, спрайты.</li>
+    <li>А в будущем разделе про рисование этот же принцип позволит одной и той же функции выводить на экран самые разные объекты: круги, прямоугольники, текст, картинки.</li>
     <li>Ваши собственные функции тоже могут принимать родительский тип и работать со всеми его потомками.</li>
   </ul>
   <p>
@@ -147,4 +147,35 @@ draw_twice(Rectangle());
 Circle circle;
 Shape shape = circle;
 </script></idyl-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>Полиморфизм на одном экране</h2>
+  <p>Опорная таблица — всё, что позволяет делать полиморфизм:</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Что позволяет полиморфизм</th>
+        <th>Пример</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Хранить потомка в переменной родительского типа</td>
+        <td><code>Shape shape = circle;</code></td>
+      </tr>
+      <tr>
+        <td>Передавать потомка в функцию, которая ждёт родителя</td>
+        <td><code>draw_twice(rect);</code></td>
+      </tr>
+      <tr>
+        <td>Создавать потомка прямо в выражении</td>
+        <td><code>Shape shape = Circle();</code></td>
+      </tr>
+      <tr>
+        <td>Вызывать метод так, что выполнится версия настоящего объекта</td>
+        <td><code>shape.draw();</code> → «Рисуем круг»</td>
+      </tr>
+    </tbody>
+  </table>
 </div>

@@ -1,0 +1,336 @@
+<style data-lesson-style>
+.tip-box {
+      background: rgba(137, 180, 250, 0.1);
+      border: 1px solid rgba(137, 180, 250, 0.3);
+      border-radius: 8px;
+      padding: 1em 1.25em;
+      margin: 1.5em 0;
+    }
+    .tip-box strong {
+      color: #89b4fa;
+    }
+</style>
+
+    <div class="docs-section">
+      <h2>Два вида ошибок</h2>
+      <p>Ошибки — не признак плохого программиста. Ошибки — это нормальная часть работы: они случаются и у новичков, и у профессионалов, причём у профессионалов, пожалуй, даже чаще — просто они быстрее их находят. Весь секрет в умении читать сообщения об ошибках, а не пугаться их.</p>
+      <p>В Idyllium существует два вида ошибок:</p>
+      <ul>
+        <li><strong>Ошибки компиляции</strong> — обнаруживаются до запуска. Программа вообще не начнёт работать, пока вы их не исправите.</li>
+        <li><strong>Ошибки выполнения (runtime errors)</strong> — возникают во время работы программы. Компиляция проходит успешно, программа запускается, но на какой-то строке что-то идёт не так — и программа останавливается прямо там.</li>
+      </ul>
+      <p>Этот урок — справочник самых частых ошибок. Все сообщения в нём настоящие: можете скопировать любой пример, запустить его и получить точно такой же текст.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Как читать сообщения об ошибках</h2>
+      <p>Прежде чем разбирать ошибки по одной, научимся читать сами сообщения. Возьмём настоящую ошибку компиляции:</p>
+      <idyl-error-block>main.idyl:2:13: error: cannot assign 'string' value to 'int' variable</idyl-error-block>
+      <p>Сообщение состоит из частей, разделённых двоеточиями:</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Часть</th>
+            <th>Что означает</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>main.idyl</code></td>
+            <td>файл, в котором найдена проблема</td>
+          </tr>
+          <tr>
+            <td><code>2</code></td>
+            <td>номер строки</td>
+          </tr>
+          <tr>
+            <td><code>13</code></td>
+            <td>номер символа в строке — компилятор показывает место с точностью до буквы</td>
+          </tr>
+          <tr>
+            <td><code>error:</code></td>
+            <td>вид сообщения — ошибка компиляции</td>
+          </tr>
+          <tr>
+            <td><code>cannot assign...</code></td>
+            <td>описание: что именно пошло не так</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>Ошибка выполнения выглядит чуть иначе: у неё указан только номер строки (без номера символа), а вместо <code>error:</code> написано <code>runtime error:</code></p>
+      <idyl-error-block>main.idyl:3: runtime error: array index 5 out of bounds (size 3, valid indices 0-2)</idyl-error-block>
+      <p>Если вы работаете в Web IDE, перед именем файла будет видна ещё и папка проекта: <code>/workspace/main.idyl:2:13: error: ...</code> Смысл сообщения от этого не меняется.</p>
+      <div class="tip-box">
+        <strong>💡 Совет:</strong> если сообщений несколько — начинайте исправлять с первого. Одна опечатка часто порождает целую гроздь сообщений, и после исправления первого остальные исчезают сами.
+      </div>
+    </div>
+
+    <div class="docs-section">
+      <h2>Ошибки компиляции: типы данных</h2>
+
+      <h3>Несовместимый тип при объявлении переменной</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    int x = "hello";
+}
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:2:13: error: cannot assign 'string' value to 'int' variable</idyl-error-block>
+      <p>Переменной типа <code>int</code> нельзя присвоить строку. Используйте <code>to_int()</code> для преобразования.</p>
+
+      <h3>Несовместимый тип при присваивании</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    int x = 10;
+    x = 3.14;
+}
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:3:9: error: cannot assign 'float' value to 'int' variable</idyl-error-block>
+      <p>Переменная уже объявлена как <code>int</code> — в неё нельзя записать дробное число. Округлите его или объявите переменную как <code>float</code>.</p>
+
+      <h3>Переменная типа void</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    void x;
+}
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:2:5: error: cannot declare variable of type 'void'</idyl-error-block>
+      <p>Тип <code>void</code> означает «ничего» и используется только как тип возврата функций.</p>
+
+      <h3>Деление всегда возвращает float</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    int a = 10;
+    int b = 3;
+    int c = a / b;
+}
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:4:13: error: cannot assign 'float' value to 'int' variable</idyl-error-block>
+      <p>Оператор <code>/</code> всегда возвращает <code>float</code>, даже если делится нацело. Для целочисленного деления используйте <code>div(a, b)</code>.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Ошибки компиляции: необъявленные имена</h2>
+
+      <h3>Использование необъявленной переменной</h3>
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    console.write(x);
+}
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:4:19: error: 'x' was not declared in this scope</idyl-error-block>
+      <p>Переменная <code>x</code> не была создана. Объявите её перед использованием — и проверьте, нет ли опечатки в имени.</p>
+
+      <h3>Использование библиотеки без импорта</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    int x = math.abs(-5);
+}
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:2:13: error: 'math' is not imported (use 'use math;')</idyl-error-block>
+      <p>Библиотеку нужно подключить. Заботливый компилятор прямо в сообщении подсказывает как: добавьте <code>use math;</code> в начало файла.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Ошибки компиляции: условия и циклы</h2>
+
+      <h3>Условие должно быть типа bool</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    if (5) {
+        int x = 1;
+    }
+}
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:2:9: error: if condition must be 'bool', got 'int'</idyl-error-block>
+      <p>Условие в <code>if</code>, <code>while</code>, <code>for</code> должно быть логическим выражением. Используйте операторы сравнения: <code>5 > 0</code>, <code>x == 10</code> и т.д. У циклов сообщение то же, только вместо <code>if</code> в нём будет <code>while</code> или <code>for</code>.</p>
+
+      <h3>break и continue вне цикла</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    break;
+}
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:2:5: error: 'break' is only valid inside a loop</idyl-error-block>
+      <p>Операторы <code>break</code> и <code>continue</code> работают только внутри <code>while</code>, <code>do-while</code> и <code>for</code>.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Ошибки компиляции: функции</h2>
+
+      <h3>Функция не возвращает значение</h3>
+      <idyl-code-block><script type="text/plain">
+int function twice(int n) {
+    int result = n * 2;
+}
+
+main() { }
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:1:1: error: function with return type 'int' must return a value</idyl-error-block>
+      <p>Функция объявлена как <code>int</code>, но не содержит <code>return</code>. Это ошибка компиляции — программа не запустится, пока вы не добавите <code>return result;</code> в конец функции. Заметьте: компилятор указывает на строку 1 — на объявление самой функции.</p>
+
+      <h3>void-функция возвращает значение</h3>
+      <idyl-code-block><script type="text/plain">
+void function greet() {
+    return "Hello";
+}
+
+main() { }
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:2:12: error: void function cannot return a value</idyl-error-block>
+      <p>Функция объявлена как <code>void</code> — она не может возвращать значение. Уберите <code>return</code> или смените тип на <code>string</code>.</p>
+
+      <h3>Неправильное количество аргументов</h3>
+      <idyl-code-block><script type="text/plain">
+int function add(int a, int b) {
+    return a + b;
+}
+
+main() {
+    int x = add(1, 2, 3);
+}
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:6:13: error: 'add' expects 2 arguments, got 3</idyl-error-block>
+      <p>Функция <code>add</code> принимает 2 аргумента, а передано 3. Лишний придётся забрать обратно.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Ошибки компиляции: массивы</h2>
+
+      <h3>Неправильный размер массива</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    array<int, 5> nums = [1, 2, 3];
+}
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:2:26: error: array initializer has 3 elements, but 'array&lt;int, 5&gt;' requires 5
+main.idyl:2:26: error: cannot assign 'array&lt;int, 3&gt;' value to 'array&lt;int, 5&gt;' variable</idyl-error-block>
+      <p>Количество элементов в инициализаторе должно совпадать с размером массива. Обратите внимание: одна опечатка породила сразу два сообщения. Помните совет из начала урока? Исправьте первое — второе исчезнет вместе с ним.</p>
+
+      <h3>Метод динамического массива на статическом</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    array<int, 3> arr = [1, 2, 3];
+    arr.add(4);
+}
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:3:5: error: method 'add' is only available on 'dyn_array'</idyl-error-block>
+      <p>Статический массив имеет фиксированный размер — добавить в него элемент нельзя. Используйте <code>dyn_array&lt;int&gt;</code>, если размер должен меняться.</p>
+
+      <h3>Сравнение массива с числом</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    array<int, 3> arr = [1, 2, 3];
+    if (arr > 5) { }
+}
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:3:9: error: comparison '&gt;' requires numeric operands</idyl-error-block>
+      <p>Знак <code>&gt;</code> умеет сравнивать только числа, а <code>arr</code> — целый массив. Сравнивайте отдельные элементы: <code>arr[0] > 5</code>.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Ошибки компиляции: строки</h2>
+
+      <h3>Замена символа в строке</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    string word = "кот";
+    word[0] = 'м';
+}
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:3:5: error: string characters are read-only</idyl-error-block>
+      <p>Прочитать символ строки через <code>word[0]</code> можно, а вот записать — нет: символы строки предназначены только для чтения. Хотите «мот» вместо «кот» — соберите новую строку целиком, например через конкатенацию.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Ошибки выполнения</h2>
+      <p>Все ошибки ниже компилятор пропускает: с точки зрения типов программы безупречны. Проблема выясняется уже на ходу — поэтому и сообщение начинается с <code>runtime error</code>, а программа останавливается на указанной строке.</p>
+
+      <h3>Деление на ноль</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    int x = div(10, 0);
+}
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:2: runtime error: division by zero</idyl-error-block>
+      <p>Деление на ноль невозможно. Проверяйте делитель перед операцией.</p>
+
+      <h3>Выход за границы массива</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    array<int, 3> arr = [10, 20, 30];
+    int x = arr[5];
+}
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:3: runtime error: array index 5 out of bounds (size 3, valid indices 0-2)</idyl-error-block>
+      <p>Индекс 5 выходит за пределы массива из 3 элементов. Допустимые индексы: 0, 1, 2 — сообщение услужливо их перечисляет.</p>
+
+      <h3>Выход за границы строки</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    string s = "ABC";
+    char c = s[10];
+}
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:3: runtime error: string index 10 out of bounds (length 3, valid indices 0-2)</idyl-error-block>
+      <p>Со строками правило то же, что с массивами: индекс 10 выходит за пределы строки длиной 3.</p>
+
+      <h3>Некорректное преобразование</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    int x = to_int("abc");
+}
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:2: runtime error: 'to_int' cannot convert 'abc' to int</idyl-error-block>
+      <p>Строка «abc» не содержит число. Перед преобразованием проверяйте строку методом <code>.is_int()</code> — особенно если её ввёл пользователь.</p>
+
+      <h3>Корень из отрицательного числа</h3>
+      <idyl-code-block><script type="text/plain">
+use math;
+
+main() {
+    float x = math.sqrt(-4);
+}
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:4: runtime error: math.sqrt() expects a non-negative number, got -4</idyl-error-block>
+      <p>Квадратный корень из отрицательного числа не определён в вещественных числах.</p>
+
+      <h3>Файл не найден</h3>
+      <idyl-code-block><script type="text/plain">
+use file;
+
+main() {
+    file.istream f = file.open("data.txt", "read");
+}
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:4: runtime error: file.open() cannot open 'data.txt' for reading: file does not exist</idyl-error-block>
+      <p>Эта программа запущена в Web IDE — там проект живёт в папке <code>/workspace</code>, поэтому и программа, и файл показаны с полными путями. На компьютере путь поведёт в папку вашего проекта. Смысл один: файла <code>data.txt</code> рядом с программой нет. Создайте его перед чтением.</p>
+
+      <h3>Pop из пустого массива</h3>
+      <idyl-code-block><script type="text/plain">
+main() {
+    dyn_array<int> arr;
+    int x = arr.pop();
+}
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:3: runtime error: cannot pop from empty array</idyl-error-block>
+      <p>Массив пуст — нечего извлекать. Проверяйте <code>arr.length > 0</code> перед вызовом <code>pop()</code>.</p>
+
+      <h3>Неизвестная кодировка</h3>
+      <idyl-code-block><script type="text/plain">
+use encoding;
+
+main() {
+    dyn_array<int> bytes = encoding.encode("A", "cp866");
+}
+</script></idyl-code-block>
+      <idyl-error-block>main.idyl:4: runtime error: unknown encoding 'cp866'</idyl-error-block>
+      <p>Кодировка <code>cp866</code> не поддерживается. Вызовите <code>encoding.list_encodings()</code>, чтобы увидеть список доступных кодировок.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Заключение</h2>
+      <p>Не пытайтесь выучить этот каталог наизусть — просто возвращайтесь к нему, когда встретите незнакомое сообщение. Со временем вы будете читать ошибки так же спокойно, как подсказки навигатора: «через 200 метров поверните к строке 4».</p>
+      <p>А в следующем уроке мы научимся перехватывать ошибки выполнения прямо из программы — чтобы она не останавливалась, а действовала по запасному плану.</p>
+    </div>

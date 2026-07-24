@@ -170,6 +170,36 @@ test('cli run returns readable numeric input errors', async () => {
   );
 });
 
+test('piped stdin delivers every buffered line to console input', () => {
+  const fs: any = require('fs');
+  const os: any = require('os');
+  const childProcess: any = require('child_process');
+
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'idyllium-cli-stdin-'));
+  const programFile = path.join(dir, 'main.idyl');
+  fs.writeFileSync(programFile, [
+    'use console;',
+    '',
+    'main() {',
+    '    int a = console.get_int();',
+    '    int b = console.get_int();',
+    '    int c = console.get_int();',
+    '    console.write(a + b + c);',
+    '}',
+  ].join('\n'));
+
+  // Реальный stdin одним куском — регресс: readline.question терял строки после первой.
+  const result = childProcess.spawnSync(
+    process.execPath,
+    [path.join(process.cwd(), 'dist/src/cli.js'), 'run', programFile],
+    { input: '1\n2\n3\n', encoding: 'utf8', timeout: 30000 },
+  );
+  fs.rmSync(dir, { recursive: true, force: true });
+
+  assert(result.status === 0, `unexpected exit code ${result.status}, stderr:\n${result.stderr}`);
+  assert(result.stdout === '6', `unexpected stdout: ${JSON.stringify(result.stdout)}`);
+});
+
 async function main(): Promise<void> {
   for (const item of tests) {
     try {

@@ -166,6 +166,20 @@ input[type="range"].widget {
   padding: 0;
   border: 0;
   background: transparent;
+  accent-color: #2673d9;
+}
+/* Прямоугольная фокус-рамка вокруг range выезжает далеко за полоску —
+   вместо неё подсвечиваем сам маркер. */
+input[type="range"].widget:focus {
+  border: 0;
+  box-shadow: none;
+  outline: none;
+}
+input[type="range"].widget:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(38, 115, 217, 0.32);
+}
+input[type="range"].widget:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px rgba(38, 115, 217, 0.32);
 }
 .label {
   display: flex;
@@ -195,6 +209,9 @@ input[type="range"].widget {
 }
 .choice input {
   margin: 0;
+  /* Единый акцентный цвет вместо системного: галочки и точки в той же гамме,
+     что и фокус остальных виджетов. */
+  accent-color: #2673d9;
 }
 .progressbar {
   position: relative;
@@ -309,6 +326,15 @@ input[type="range"].widget {
   border-radius: 4px;
   box-sizing: border-box;
   font: 13px Arial, sans-serif;
+  background: #fff;
+  color: #111;
+  color-scheme: light;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.modal-input:focus {
+  outline: none;
+  border-color: #2673d9;
+  box-shadow: 0 0 0 2px rgba(38, 115, 217, 0.2);
 }
 .modal-actions {
   display: flex;

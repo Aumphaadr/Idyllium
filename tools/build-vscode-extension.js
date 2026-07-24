@@ -78,6 +78,16 @@ for (const item of fs.readdirSync(path.join(packagedSqlJsDir, 'dist'))) {
 fs.rmSync(packagedRendererDir, { recursive: true, force: true });
 fs.cpSync(rendererSourceDir, packagedRendererDir, { recursive: true });
 
+// Версия расширения всегда равна версии корневого package.json.
+const rootVersion = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8')).version;
+const extensionPackagePath = path.join(extensionDir, 'package.json');
+const extensionPackage = JSON.parse(fs.readFileSync(extensionPackagePath, 'utf8'));
+if (extensionPackage.version !== rootVersion) {
+  extensionPackage.version = rootVersion;
+  fs.writeFileSync(extensionPackagePath, `${JSON.stringify(extensionPackage, null, 2)}\n`);
+  console.log(`Extension version synced to ${rootVersion}`);
+}
+
 console.log(`Idyllium VS Code extension prepared at ${extensionDir}`);
 console.log(`Core copied to ${path.relative(rootDir, packagedCoreDir)}`);
 console.log(`GUI renderer copied to ${path.relative(rootDir, packagedRendererDir)}`);

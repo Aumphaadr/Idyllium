@@ -1,5 +1,5 @@
 <!-- Hero -->
-    
+
 
     <!-- Section 1 -->
     <div class="docs-section">
@@ -79,6 +79,66 @@ main() {
 
     <!-- Section 4 -->
     <div class="docs-section">
+      <h2>Объект — это ссылка</h2>
+      <p>Мы сказали, что <code>this</code> — <strong>ссылка</strong> на объект. Переменные типа класса вообще хранят не сам объект, а ссылку на него. Поэтому запись <code>Cat b = a;</code> не создаёт второго кота: обе переменные указывают на <strong>один и тот же</strong> объект. Изменим кота через <code>b</code> — увидим изменение и через <code>a</code>:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+class Cat {
+    string name;
+    int age;
+}
+
+main() {
+    Cat a;
+    a.name = "Барсик";
+    a.age = 3;
+
+    Cat b = a;      // b — не копия, а ссылка на тот же объект
+    b.age = 5;
+
+    console.writeln(a.age);
+    console.writeln(b.age);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>5
+5</idyl-output-block>
+
+      <p>Кот один, просто у него два «имени» — <code>a</code> и <code>b</code>. Запомните это: ссылки ещё не раз встретятся нам в уроках о массивах объектов и композиции.</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Типичная ошибка: поле без this</h2>
+      <p>Внутри метода к свойствам объекта нужно обращаться <strong>строго через <code>this</code></strong>. Если написать просто <code>name</code>, компилятор будет искать обычную переменную с таким именем — и не найдёт её:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+class Cat {
+    string name;
+
+    void function meow() {
+        console.writeln(name, " мяукнул!");
+    }
+}
+
+main() {
+    Cat cat1;
+    cat1.name = "Барсик";
+    cat1.meow();
+}
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:7:25: error: 'name' was not declared in this scope</idyl-error-block>
+
+      <p>Исправление: <code>this.name</code> вместо <code>name</code>.</p>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="docs-section">
       <h2>Проблема: вывод объекта на консоль</h2>
       <p>Что будет, если попробовать вывести объект напрямую?</p>
 
@@ -96,17 +156,15 @@ main() {
 }
 </script></idyl-code-block>
 
-      <div class="error-message">
-        main.idyl:10: error: cannot print object of class 'Cat' directly
-      </div>
+      <idyl-error-block>main.idyl:10:21: error: cannot print object of class 'Cat' directly</idyl-error-block>
 
-      <p>Компилятор не знает, как вывести объект <code>Cat</code> в консоль. Нужно объяснить это ему самостоятельно.</p>
+      <p>Компилятор не знает, как показать объект <code>Cat</code> в консоли, и отказывается это делать. Придётся объяснить ему самостоятельно.</p>
     </div>
 
-    <!-- Section 5 -->
+    <!-- Section 7 -->
     <div class="docs-section">
       <h2>Решение: метод info()</h2>
-      <p>Добавим в класс метод <code>info()</code>, который возвращает строковое представление объекта:</p>
+      <p>Добавим в класс метод <code>info()</code>, который печатает информацию об объекте в удобном виде:</p>
 
       <idyl-code-block><script type="text/plain">
 use console;
@@ -117,7 +175,7 @@ class Cat {
     string color;
 
     void function info() {
-        console.writeln("Кот по кличке ", this.name, ": ", this.age, " лет, цвет ", this.color);
+        console.writeln("Кот по кличке ", this.name, ": ", this.age, " года, цвет ", this.color);
     }
 }
 
@@ -129,7 +187,7 @@ main() {
 
     Cat cat2;
     cat2.name = "Мурзик";
-    cat2.age = 5;
+    cat2.age = 4;
     cat2.color = "белый";
 
     cat1.info();
@@ -137,20 +195,21 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-output-block>Кот по кличке Барсик: 3 лет, цвет рыжий
-Кот по кличке Мурзик: 5 лет, цвет белый</idyl-output-block>
+      <idyl-output-block>Кот по кличке Барсик: 3 года, цвет рыжий
+Кот по кличке Мурзик: 4 года, цвет белый</idyl-output-block>
 
       <p>Метод <code>info()</code> использует <code>this</code>, чтобы получить доступ к свойствам текущего объекта, и выводит удобочитаемую строку.</p>
     </div>
 
-    <!-- Section 6 -->
+    <!-- Section 8 -->
     <div class="docs-section">
       <h2>Итог</h2>
+      <p>Главная опора урока: <strong><code>this</code> — это тот объект, у которого вызвали метод</strong>.</p>
       <ul>
-        <li><code>this</code> — это ссылка на объект, вызвавший метод.</li>
-        <li>Через <code>this</code> можно обращаться к свойствам и методам текущего объекта.</li>
-        <li><code>this</code> неявно передаётся в каждый нестатический метод.</li>
-        <li>Вывести объект на консоль напрямую нельзя — нужно создать метод, который вернёт строковое представление (например, <code>info()</code>).</li>
+        <li>Через <code>this</code> метод обращается к свойствам и методам своего объекта.</li>
+        <li>К свойствам внутри метода обращаемся строго через <code>this</code>: просто <code>name</code> — ошибка компиляции.</li>
+        <li>Переменная типа класса хранит <strong>ссылку</strong> на объект: после <code>Cat b = a;</code> обе переменные указывают на одного кота.</li>
+        <li>Вывести объект на консоль напрямую нельзя — это ошибка компиляции. Вместо этого пишем метод вроде <code>info()</code>, который печатает данные объекта.</li>
       </ul>
     </div>
 

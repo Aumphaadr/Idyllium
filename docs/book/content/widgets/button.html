@@ -10,11 +10,7 @@
     }
 </style>
 
-<!-- Hero -->
-    
-
-    <!-- Section 1 -->
-    <div class="docs-section">
+<div class="docs-section">
       <h2>Создание кнопки (повторение)</h2>
       <p>Как мы уже знаем из прошлого урока, кнопка создаётся через объявление переменной типа <code>gui.Button</code>:</p>
 
@@ -56,7 +52,6 @@ main() {
       <p>Кнопка создана, отображается, нажимается — но на нажатие <strong>ничего не происходит</strong>. Почему? Потому что мы не сказали программе, <em>что именно</em> должно случиться при клике.</p>
     </div>
 
-    <!-- Section 2 -->
     <div class="docs-section">
       <h2>Обработка нажатия: свойство <code>on_click</code></h2>
       <p>Чтобы кнопка реагировала на нажатие, нужно присвоить её свойству <code>on_click</code> <strong>функцию</strong>. Эта функция будет вызываться каждый раз, когда пользователь нажимает на кнопку.</p>
@@ -113,7 +108,6 @@ main() {
       </div>
     </div>
 
-    <!-- Section 3 -->
     <div class="docs-section">
       <h2>Влияние на другие виджеты</h2>
       <p>Самое интересное — обработчик может менять <strong>любые</strong> виджеты, не только ту кнопку, на которую нажали.</p>
@@ -143,19 +137,19 @@ main() {
 
     // Правая кнопка
     gui.Button rightBtn;
-    rightBtn.text = "Нет, мой лейбл!";
+    rightBtn.text = "Нет, мой!";
     rightBtn.x = 250;
     rightBtn.y = 100;
     rightBtn.width = 120;
 
-    // Левая кнопка: устанавливает текст "Мой лейбл!"
+    // Левая кнопка пишет на лейбле: "Мой лейбл!"
     leftBtn.on_click = void function() {
         label.text = "Мой лейбл!";
     };
 
-    // Правая кнопка: устанавливает текст "Нет, мой лейбл!"
+    // Правая кнопка пишет на лейбле: "Нет, мой лейбл!"
     rightBtn.on_click = void function() {
-        label.text = "Нет, мой!";
+        label.text = "Нет, мой лейбл!";
     };
 
     win.add_child(label);
@@ -183,7 +177,7 @@ main() {
           </div>
         </div>
         <div class="coord-note">
-          🏆 Левая кнопка пишет «Мой лейбл!», правая — «Нет, мой!». Обе кнопки управляют одним и тем же виджетом <code>label</code>.
+          🏆 Левая кнопка пишет на лейбле «Мой лейбл!», правая отвечает: «Нет, мой лейбл!». Обе кнопки управляют одним и тем же виджетом <code>label</code>.
         </div>
       </div>
 
@@ -195,7 +189,55 @@ main() {
       </ul>
     </div>
 
-    <!-- Lesson navigation -->
+    <div class="docs-section">
+      <h2>Типичная ошибка: виджет объявлен после обработчика</h2>
+      <p>Правило «<code>label</code> объявлена <strong>до</strong> обработчиков» — не пустая формальность. Поменяем порядок и посмотрим, что скажет компилятор:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 200;
+    win.title = "Ошибка";
+
+    gui.Button btn;
+    btn.text = "Скажи привет";
+    btn.on_click = void function() {
+        label.text = "Привет!";  // label ещё не существует!
+    };
+
+    gui.Label label;
+    label.text = "???";
+
+    win.add_child(btn);
+    win.add_child(label);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:12:9: error: 'label' was not declared in this scope
+main.idyl:12:9: error: type '&lt;error&gt;' has no property 'text'</idyl-error-block>
+
+      <p>«<code>label</code> was not declared in this scope» означает: в тот момент, когда компилятор читает обработчик, переменной <code>label</code> ещё нет — она объявлена ниже. Второе сообщение — лишь эхо первого. Лекарство простое: <strong>объявляйте виджеты до обработчиков, которые к ним обращаются</strong>. Перенесите <code>gui.Label label;</code> выше <code>btn.on_click</code> — и программа скомпилируется.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Шпаргалка: свойства и события Button</h2>
+      <table>
+        <thead>
+          <tr><th>Свойство / событие</th><th>Тип</th><th>Что делает</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>text</code></td><td><code>string</code></td><td>надпись на кнопке</td></tr>
+          <tr><td><code>x</code>, <code>y</code></td><td><code>int</code></td><td>положение внутри окна</td></tr>
+          <tr><td><code>width</code>, <code>height</code></td><td><code>int</code></td><td>размеры кнопки в пикселях</td></tr>
+          <tr><td><code>on_click</code></td><td>событие</td><td>функция, которая автоматически вызывается при нажатии на кнопку</td></tr>
+        </tbody>
+      </table>
+      <p>В следующем уроке мы познакомимся поближе с тем, за кого сегодня сражались, — с виджетом <code>gui.Label</code>.</p>
+    </div>
 
 <script data-lesson-script type="text/plain">
 // Интерактив для демо-примеров

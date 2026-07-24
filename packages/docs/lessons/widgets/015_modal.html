@@ -410,70 +410,63 @@ main() {
 </footer>
 
 <script>
-  // Интерактив для демо-примеров
-  document.addEventListener('DOMContentLoaded', () => {
-    // Пример 2: Alert
-    const alertDemoBtn = document.getElementById('alertDemoBtn');
-    if (alertDemoBtn) {
-      alertDemoBtn.addEventListener('click', () => {
-        alert('Уведомление\n\nЭто простое информационное сообщение.');
-      });
-    }
+document.addEventListener('DOMContentLoaded', () => {
+  const docsModal = window.idylliumDocs;
 
-    // Пример 3: Confirm
-    const confirmDemoBtn = document.getElementById('confirmDemoBtn');
-    const confirmResult = document.getElementById('confirmResult');
-    if (confirmDemoBtn && confirmResult) {
-      confirmDemoBtn.addEventListener('click', () => {
-        const result = confirm('Вы уверены, что хотите продолжить?');
-        confirmResult.textContent = 'Результат: ' + (result ? 'Да' : 'Нет');
-      });
-    }
+  const alertDemoBtn = document.getElementById('alertDemoBtn');
+  if (alertDemoBtn && docsModal) {
+    alertDemoBtn.addEventListener('click', () => {
+      void docsModal.alert('Уведомление\n\nЭто простое информационное сообщение.');
+    });
+  }
 
-    // Пример 4: Input
-    const inputDemoBtn = document.getElementById('inputDemoBtn');
-    const inputResult = document.getElementById('inputResult');
-    if (inputDemoBtn && inputResult) {
-      inputDemoBtn.addEventListener('click', () => {
-        const name = prompt('Как вас зовут?');
-        if (name === null || name === '') {
-          inputResult.textContent = 'Вы не ввели имя!';
-        } else {
-          inputResult.textContent = 'Привет, ' + name + '!';
-        }
-      });
-    }
+  const confirmDemoBtn = document.getElementById('confirmDemoBtn');
+  const confirmResult = document.getElementById('confirmResult');
+  if (confirmDemoBtn && confirmResult && docsModal) {
+    confirmDemoBtn.addEventListener('click', async () => {
+      const result = await docsModal.confirm('Вы уверены, что хотите продолжить?');
+      confirmResult.textContent = 'Результат: ' + (result ? 'Да' : 'Нет');
+    });
+  }
 
-    // Пример 5: полный пример
-    const fullAlertBtn = document.getElementById('fullAlertBtn');
-    const fullConfirmBtn = document.getElementById('fullConfirmBtn');
-    const fullInputBtn = document.getElementById('fullInputBtn');
-    const fullResultLabel = document.getElementById('fullResultLabel');
+  const inputDemoBtn = document.getElementById('inputDemoBtn');
+  const inputResult = document.getElementById('inputResult');
+  if (inputDemoBtn && inputResult && docsModal) {
+    inputDemoBtn.addEventListener('click', async () => {
+      const name = await docsModal.prompt('Как вас зовут?', 'Idyllium');
+      if (name === null || name === '') {
+        inputResult.textContent = 'Вы не ввели имя!';
+      } else {
+        inputResult.textContent = 'Привет, ' + name + '!';
+      }
+    });
+  }
 
-    if (fullAlertBtn) {
-      fullAlertBtn.addEventListener('click', () => {
-        alert('Уведомление\n\nЭто простое информационное сообщение.');
-      });
-    }
+  const fullAlertBtn = document.getElementById('fullAlertBtn');
+  const fullConfirmBtn = document.getElementById('fullConfirmBtn');
+  const fullInputBtn = document.getElementById('fullInputBtn');
+  const fullResultLabel = document.getElementById('fullResultLabel');
 
-    if (fullConfirmBtn && fullResultLabel) {
-      fullConfirmBtn.addEventListener('click', () => {
-        const result = confirm('Вы уверены, что хотите продолжить?');
-        fullResultLabel.textContent = 'Вы нажали: ' + (result ? 'Да' : 'Нет');
-      });
-    }
+  if (fullAlertBtn && docsModal) {
+    fullAlertBtn.addEventListener('click', () => {
+      void docsModal.alert('Уведомление\n\nЭто простое информационное сообщение.');
+    });
+  }
 
-    if (fullInputBtn && fullResultLabel) {
-      fullInputBtn.addEventListener('click', () => {
-        const name = prompt('Как вас зовут?');
-        if (name === null || name === '') {
-          fullResultLabel.textContent = 'Привет, !';
-        } else {
-          fullResultLabel.textContent = 'Привет, ' + name + '!';
-        }
-      });
-    }
-  });
+  if (fullConfirmBtn && fullResultLabel && docsModal) {
+    fullConfirmBtn.addEventListener('click', async () => {
+      const result = await docsModal.confirm('Вы уверены, что хотите продолжить?');
+      fullResultLabel.textContent = 'Вы нажали: ' + (result ? 'Да' : 'Нет');
+    });
+  }
+
+  if (fullInputBtn && fullResultLabel && docsModal) {
+    fullInputBtn.addEventListener('click', async () => {
+      const name = await docsModal.prompt('Как вас зовут?', 'Idyllium');
+      fullResultLabel.textContent = name === null ? 'Привет, !' : 'Привет, ' + name + '!';
+    });
+  }
+});
 </script>
 <script src="../../version.js" defer></script>
 </body>

@@ -1,0 +1,227 @@
+<div class="docs-section">
+  <h2>Пора научить программу считать</h2>
+  <p>В прошлом уроке вы научили программу принимать данные от пользователя — и она даже сложила три стороны треугольника. Пришло время разобраться с арифметикой всерьёз: быстрые и безошибочные вычисления — это то, ради чего компьютеры вообще придумали.</p>
+  <p>В этом уроке — полный набор: сложение, вычитание, умножение, деление с одним важным сюрпризом и две специальные функции для целых чисел — <code>div</code> и <code>mod</code>.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Сложение, вычитание и умножение</h2>
+  <p>Начнём с подсчёта монет в игровом кошельке:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    int coins = 120 + 35; // было 120 монет, нашли клад с 35
+    int left = coins - 60; // купили щит за 60 монет
+    int reward = 25 * 3; // три квеста по 25 монет каждый
+
+    console.write("Монет в кошельке: ", coins, '\n');
+    console.write("Осталось после покупки щита: ", left, '\n');
+    console.write("Награда за три квеста: ", reward, '\n');
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Монет в кошельке: 155
+Осталось после покупки щита: 95
+Награда за три квеста: 75</idyl-output-block>
+
+  <p>Все три операции — <code>+</code>, <code>-</code>, <code>*</code> — безопасны для целых чисел: они никогда не создают дробную часть, поэтому их результат всегда совместим с типом <code>int</code>.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Деление — особый случай</h2>
+  <p>В Idyllium оператор <code>/</code> <strong>всегда</strong> возвращает <code>float</code>, даже если делятся два целых числа:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    int A = 37;
+    int B = 10;
+
+    float C = A / B;
+    console.write(C, '\n');
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>3.7</idyl-output-block>
+
+  <p>А теперь попробуем сохранить результат деления в переменную типа <code>int</code>:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    int A = 37;
+    int B = 10;
+
+    int D = A / B;
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:7:13: error: cannot assign 'float' value to 'int' variable</idyl-error-block>
+
+  <p>Компилятор останавливает программу ещё до запуска: результат деления — <code>float</code>, а в <code>int</code> дробное число не помещается.</p>
+  <p><strong>Важное правило:</strong> если в результате математической операции <em>теоретически может получиться дробное число</em> — результат будет иметь тип <code>float</code>.</p>
+  <p>Это означает, что даже в случае <code>10 / 5</code> (где результат — целое число 2) Idyllium всё равно вернёт <code>2.0</code> типа <code>float</code>. Так сделано ради <strong>единообразия</strong>: программа не пытается угадать, будет ли результат целым — она всегда возвращает дробное число при делении.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Операции между целыми и дробными числами</h2>
+  <p>Если в арифметической операции участвует хотя бы одно дробное число, результат всегда будет <code>float</code>:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    int A = 10;
+    float B = 2.5;
+
+    float C = A + B; // 'int' + 'float' → 'float'
+    console.write(C, '\n');
+
+    float D = A - B; // 'int' - 'float' → 'float'
+    console.write(D, '\n');
+
+    float E = A * B; // 'int' * 'float' → 'float'
+    console.write(E, '\n');
+
+    float F = A / B; // 'int' / 'float' → 'float'
+    console.write(F, '\n');
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>12.5
+7.5
+25
+4</idyl-output-block>
+
+  <p>Обратите внимание: даже в последнем случае (<code>10 / 2.5 = 4</code>) результат — целое число, но его тип всё равно <code>float</code> (выводится как <code>4</code>, но хранится как <code>4.0</code>). Это позволяет избежать неожиданных ошибок при последующих вычислениях.</p>
+  <p>Умножение устроено так же: <code>2.5 * 4</code> даст <code>10</code>, а <code>2.5 * 5</code> — <code>12.5</code>. Заранее не угадаешь, окажется ли итог целым, — поэтому тип результата всегда <code>float</code>, как только в операции появилось дробное число.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Целочисленное деление: функция <code>div</code></h2>
+  <p>Если вам нужно именно <strong>целое частное</strong> от деления, используйте функцию <code>div(a, b)</code>. Например, раскладываем конфеты по коробкам — в каждую помещается ровно 10 штук:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    int candies = 38;
+    int boxes = div(candies, 10);
+
+    console.write("Конфет: ", candies, '\n');
+    console.write("Полных коробок: ", boxes, '\n');
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Конфет: 38
+Полных коробок: 3</idyl-output-block>
+
+  <p>Функция <code>div</code> отбрасывает дробную часть и возвращает <strong>только целую часть частного</strong>: 38 / 10 = 3.8, целая часть — 3. Причём <code>div</code> не округляет «по-школьному», а именно отбрасывает хвост:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    console.write(div(38, 10), '\n');
+    console.write(div(39, 10), '\n');
+    console.write(div(40, 10), '\n');
+    console.write(div(41, 10), '\n');
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>3
+3
+4
+4</idyl-output-block>
+
+  <p><code>div(39, 10)</code> — это 3, хотя 3.9 — «почти четыре». Четвёрка появляется только тогда, когда набирается полный десяток. Поскольку результат всегда целый, его можно безопасно сохранить в переменную типа <code>int</code>.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Остаток от деления: функция <code>mod</code></h2>
+  <p>Три коробки собраны — а сколько конфет осталось без коробки? На этот вопрос отвечает функция <code>mod(a, b)</code>:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    int candies = 38;
+    int rest = mod(candies, 10);
+
+    console.write("Конфет без коробки: ", rest, '\n');
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Конфет без коробки: 8</idyl-output-block>
+
+  <p>Функция <code>mod</code> возвращает то, что «осталось» после целочисленного деления: 38 конфет — это 3 полные коробки и ещё 8 конфет сверху. Посмотрим на остатки у соседних чисел:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    console.write(mod(38, 10), '\n');
+    console.write(mod(39, 10), '\n');
+    console.write(mod(40, 10), '\n');
+    console.write(mod(41, 10), '\n');
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>8
+9
+0
+1</idyl-output-block>
+
+  <p>У числа 40 остаток равен нулю — оно делится на 10 нацело. Кстати, по остатку можно узнавать чётность: <code>mod(x, 2)</code> равен нулю у чётных чисел и единице у нечётных. Проверять такие условия автоматически вы научитесь чуть позже — в уроке про условный оператор.</p>
+  <p>Обе функции — <code>div</code> и <code>mod</code> — работают <strong>только с целыми числами</strong> и возвращают <code>int</code>, что делает их идеальными для задач, где дробные результаты не нужны.</p>
+</div>
+
+<div class="docs-section">
+  <h2><code>div</code> и <code>mod</code> отлично работают в паре</h2>
+  <p>Классическая задача: перевести минуты в часы и минуты. Целая часть от деления на 60 — это часы, а остаток — минуты:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    console.write("Введите количество минут: ");
+    int total = console.get_int();
+
+    int hours = div(total, 60);
+    int minutes = mod(total, 60);
+
+    console.write(total, " минут — это ", hours, " ч ", minutes, " мин", '\n');
+}
+</script></idyl-code-block>
+
+  <p>Пример выполнения:</p>
+
+  <idyl-output-block>Введите количество минут: <span class="user_input">125</span>
+125 минут — это 2 ч 5 мин</idyl-output-block>
+
+  <p>Ввод из прошлого урока и арифметика из этого сложились в настоящий инструмент: программа сама принимает данные и сама считает.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Шпаргалка: операции и типы результатов</h2>
+
+  <table>
+    <thead>
+      <tr><th>Операция</th><th>Что делает</th><th>Пример</th><th>Результат</th><th>Тип результата</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>+</code></td><td>сложение</td><td><code>7 + 5</code></td><td><code>12</code></td><td><code>int</code></td></tr>
+      <tr><td><code>-</code></td><td>вычитание</td><td><code>7 - 5</code></td><td><code>2</code></td><td><code>int</code></td></tr>
+      <tr><td><code>*</code></td><td>умножение</td><td><code>7 * 5</code></td><td><code>35</code></td><td><code>int</code></td></tr>
+      <tr><td><code>/</code></td><td>деление</td><td><code>37 / 10</code></td><td><code>3.7</code></td><td><code>float</code> — всегда!</td></tr>
+      <tr><td><code>div(a, b)</code></td><td>целая часть частного</td><td><code>div(37, 10)</code></td><td><code>3</code></td><td><code>int</code></td></tr>
+      <tr><td><code>mod(a, b)</code></td><td>остаток от деления</td><td><code>mod(37, 10)</code></td><td><code>7</code></td><td><code>int</code></td></tr>
+    </tbody>
+  </table>
+
+  <p>И помните: если в операции участвует хотя бы одно дробное число, результат тоже будет <code>float</code> — например, <code>7 + 2.5</code> даст <code>9.5</code>.</p>
+</div>
