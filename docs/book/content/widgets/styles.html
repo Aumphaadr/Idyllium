@@ -1,0 +1,275 @@
+<div class="docs-section">
+  <h2>Знакомьтесь: IdySS</h2>
+  <p>
+    Всё это время вы управляли внешностью виджетов через отдельные свойства:
+    <code>text_color</code>, <code>background_color</code>, <code>font_size</code>.
+    Сегодня вы получите второй инструмент — целый мини-язык стилей.
+  </p>
+  <p>
+    Он называется <strong>IdySS</strong> — <strong>Idyllium Style Sheets</strong>,
+    «стилевые листы Idyllium». Название неслучайно: во «взрослом» вебе внешностью
+    каждой страницы управляет язык <strong>CSS</strong> — Cascading Style Sheets.
+    IdySS — его младший родственник: та же запись «свойство: значение», те же
+    имена свойств. Освоив IdySS, вы уже наполовину читаете настоящий CSS.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Наклейка поверх виджета</h2>
+  <p>
+    У каждого виджета есть строковое свойство <code>style</code>. Внутри строки —
+    пары «свойство: значение», разделённые точкой с запятой:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 420;
+    win.height = 200;
+    win.title = "IdySS";
+
+    gui.Button btn;
+    btn.x = 40;
+    btn.y = 40;
+    btn.width = 200;
+    btn.height = 48;
+    btn.text = "Стильная кнопка";
+    btn.style = "background-color: teal; color: white; border-radius: 20px;";
+
+    win.add_child(btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <div class="gui-demo-container">
+    <div class="gui-demo-window">
+      <div class="demo-content" style="min-height: 120px; position: relative;">
+        <button class="idyl-button" style="position: absolute; left: 40px; top: 36px; width: 200px; height: 48px; background-color: #008080; color: white; border-radius: 20px; border: 1px solid rgba(0,0,0,0.25);">Стильная кнопка</button>
+      </div>
+    </div>
+    <div class="coord-note">
+      Одной строкой — фон, цвет текста и скруглённые углы, до которых
+      обычными свойствами вообще не добраться.
+    </div>
+  </div>
+
+  <p>
+    Думайте о <code>style</code> как о <strong>наклейке</strong> поверх виджета.
+    Правило одно и абсолютное: <strong>наклейка всегда сверху</strong>. Если на
+    ней написан цвет — виджет показывает цвет с наклейки, что бы ни лежало в
+    <code>text_color</code>:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use gui;
+use colors;
+
+main() {
+    gui.Window win;
+    win.title = "Наклейка сверху";
+
+    gui.Label sign;
+    sign.x = 30;
+    sign.y = 30;
+    sign.width = 220;
+    sign.height = 40;
+    sign.text = "Каким цветом я написан?";
+    sign.text_color = colors.RED;
+    sign.style = "color: blue;";  // наклейка побеждает: текст будет синим
+
+    win.add_child(sign);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <p>
+    А снять наклейку проще простого — присвойте пустую строку:
+    <code>sign.style = "";</code> — и виджет снова красный, как велит
+    <code>text_color</code>. Наклейка не передаётся дочерним виджетам: она
+    приклеена ровно к одному.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Словарь IdySS</h2>
+  <p>Вот все свойства, которые понимает наклейка:</p>
+
+  <table>
+    <thead>
+      <tr><th>Свойство</th><th>Значения</th><th>Что делает</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>color</code></td><td>цвет</td><td>цвет текста</td></tr>
+      <tr><td><code>background-color</code></td><td>цвет</td><td>цвет фона</td></tr>
+      <tr><td><code>background</code></td><td>градиент</td><td>градиентный фон (см. ниже)</td></tr>
+      <tr><td><code>border-color</code></td><td>цвет</td><td>цвет рамки</td></tr>
+      <tr><td><code>border-width</code></td><td><code>0</code>–<code>20</code> (px)</td><td>толщина рамки</td></tr>
+      <tr><td><code>border-style</code></td><td><code>solid</code> / <code>dashed</code> / <code>dotted</code> / <code>none</code></td><td>сплошная, штриховая, точечная рамка</td></tr>
+      <tr><td><code>border-radius</code></td><td><code>0</code>–<code>100</code> (px)</td><td>скругление углов</td></tr>
+      <tr><td><code>font-size</code></td><td><code>6</code>–<code>96</code> (px)</td><td>размер шрифта</td></tr>
+      <tr><td><code>font-weight</code></td><td><code>normal</code> / <code>bold</code></td><td>жирность</td></tr>
+      <tr><td><code>font-style</code></td><td><code>normal</code> / <code>italic</code></td><td>курсив</td></tr>
+      <tr><td><code>text-align</code></td><td><code>left</code> / <code>center</code> / <code>right</code></td><td>выравнивание текста</td></tr>
+      <tr><td><code>opacity</code></td><td><code>0.0</code>–<code>1.0</code></td><td>прозрачность всего виджета</td></tr>
+      <tr><td><code>padding</code></td><td><code>0</code>–<code>40</code> (px)</td><td>внутренний отступ</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    Пиксельные значения пишутся с <code>px</code> или без: <code>12px</code> и
+    <code>12</code> — одно и то же. Регистр не важен.
+  </p>
+  <p>
+    Цвет задаётся тремя способами: именем из знакомой палитры библиотеки
+    <code>colors</code>, только маленькими буквами и через дефис
+    (<code>red</code>, <code>dark-blue</code>, <code>light-gray</code>,
+    <code>transparent</code>); шестнадцатеричным кодом (<code>#FF8800</code>);
+    или каналами: <code>rgb(255, 136, 0)</code> и
+    <code>rgba(255, 136, 0, 0.5)</code> — последняя цифра прозрачность.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Язык, который молчит</h2>
+  <p>
+    Теперь самое важное отличие от всего, что вы видели в Idyllium. Сам Idyllium
+    строг: перепутали тип — получите ошибку компиляции, с номером строки и
+    объяснением. IdySS устроен как его взрослый родственник CSS:
+    <strong>об ошибках он не сообщает вообще</strong>. Опечатка? Свойство просто
+    не применится. Молча.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+
+    gui.Button btn;
+    btn.text = "Где мои углы?";
+
+    // стиль не применится из-за опечатки: 'tadius' вместо 'radius'
+    btn.style = "border-tadius: 10px;";
+
+    gui.Label label;
+    label.y = 60;
+    label.text = "А я почему не жёлтая?";
+
+    // стиль не применится из-за опечатки: 'ellow' вместо 'yellow'
+    label.style = "color: ellow;";
+
+    win.add_child(btn);
+    win.add_child(label);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <p>
+    Программа запустится, ошибок не будет — но углы останутся прямыми, а надпись
+    чёрной. Никакого красного текста, никакой подсказки: опечатки в стилях ищут
+    <strong>глазами</strong>. Добро пожаловать в настоящую веб-разработку —
+    именно так CSS ведёт себя с миллионами разработчиков каждый день.
+  </p>
+  <p>
+    Заметьте: строгость Idyllium никуда не делась и граница проходит ровно по
+    кавычкам. <code>btn.style = 42;</code> — это уже ошибка Idyllium (числу не
+    место в строковом свойстве), и компилятор честно её поймает.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Градиенты</h2>
+  <p>
+    Жемчужина IdySS — <strong>градиент</strong>: плавный переток одного цвета в
+    другой. Свойство <code>background</code> принимает
+    <code>linear-gradient(...)</code> — линейный переток в заданном направлении —
+    и <code>radial-gradient(...)</code> — переток из центра к краям:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 420;
+    win.height = 220;
+    win.title = "Градиенты";
+
+    gui.Label sunset;
+    sunset.x = 30;
+    sunset.y = 30;
+    sunset.width = 360;
+    sunset.height = 60;
+    sunset.text = "Закат";
+    sunset.style = "background: linear-gradient(to right, #FF8800, purple); color: white; text-align: center; border-radius: 10px;";
+
+    gui.Label lamp;
+    lamp.x = 30;
+    lamp.y = 110;
+    lamp.width = 360;
+    lamp.height = 60;
+    lamp.text = "Лампа";
+    lamp.style = "background: radial-gradient(yellow, dark-red); text-align: center; border-radius: 10px;";
+
+    win.add_child(sunset);
+    win.add_child(lamp);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <div class="gui-demo-container">
+    <div class="gui-demo-window">
+      <div class="demo-content" style="min-height: 170px; position: relative;">
+        <div style="position: absolute; left: 30px; top: 20px; width: 360px; height: 60px; background: linear-gradient(to right, #FF8800, #800080); color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center;">Закат</div>
+        <div style="position: absolute; left: 30px; top: 96px; width: 360px; height: 60px; background: radial-gradient(#FFFF00, #800000); color: #111; border-radius: 10px; display: flex; align-items: center; justify-content: center;">Лампа</div>
+      </div>
+    </div>
+    <div class="coord-note">Линейный переток слева направо и радиальный из центра.</div>
+  </div>
+
+  <p>Правила градиента:</p>
+  <ul>
+    <li>Направление у <code>linear-gradient</code> — <code>to right</code>, <code>to bottom</code>, <code>to top left</code> и т.п., либо угол: <code>45deg</code> (от 0 до 360). Без направления переток идёт сверху вниз.</li>
+    <li>Цветов — от двух до восьми, любыми знакомыми формами (имя, <code>#HEX</code>, <code>rgb</code>).</li>
+    <li>После цвета можно указать позицию в процентах: <code>linear-gradient(to right, red, yellow 20%, blue)</code> — жёлтый встанет на отметке 20% ширины.</li>
+    <li>Сплошной цвет в <code>background</code> не пишут — для него есть <code>background-color</code>.</li>
+  </ul>
+</div>
+
+<div class="docs-section">
+  <h2>Наклейку можно дописывать</h2>
+  <p>
+    <code>style</code> — обычная строка, поэтому <code>+=</code> дописывает пары в
+    конец. Если одно и то же свойство встретилось дважды, побеждает более
+    позднее — как в CSS:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+
+    gui.Label sign;
+    sign.text = "Итог: зелёный жирный";
+    sign.style = "color: red; font-weight: bold;";
+    sign.style += "color: green;";  // поздний color побеждает ранний
+
+    win.add_child(sign);
+    win.show();
+}
+</script></idyl-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>Итог</h2>
+  <ul>
+    <li><strong>IdySS</strong> (Idyllium Style Sheets) — мини-язык стилей, младший родственник веб-CSS: пары «свойство: значение» через точку с запятой в строке <code>style</code>.</li>
+    <li>Наклейка всегда сверху: свойство с наклейки побеждает одноимённое прямое свойство виджета. Пустая строка снимает наклейку.</li>
+    <li>Словарь из 13 свойств: цвета, рамки, скругления, шрифт, выравнивание, прозрачность, отступ и градиентный <code>background</code>.</li>
+    <li>IdySS молчит об ошибках: опечатка — и свойство просто не применилось. Ищите опечатки глазами, как настоящие веб-разработчики.</li>
+    <li>Строгость Idyllium остаётся снаружи кавычек: <code>style = 42;</code> — честная ошибка компиляции.</li>
+  </ul>
+</div>

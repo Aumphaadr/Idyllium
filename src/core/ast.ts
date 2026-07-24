@@ -183,7 +183,7 @@ export interface ClassDeclaration {
   readonly range: SourceRange;
 }
 
-export type ClassMember = ClassFieldDeclaration | ClassMethodDeclaration | ConstructorDeclaration;
+export type ClassMember = ClassFieldDeclaration | ClassMethodDeclaration | ClassEventDeclaration | ConstructorDeclaration;
 export type AccessModifier = 'public' | 'private';
 
 export interface ClassFieldDeclaration {
@@ -210,6 +210,15 @@ export interface ClassMethodDeclaration {
   readonly parameters: ParameterDeclaration[];
   readonly body: BlockStatement;
   readonly isStatic: boolean;
+  readonly access: AccessModifier;
+  readonly range: SourceRange;
+}
+
+export interface ClassEventDeclaration {
+  readonly kind: 'ClassEventDeclaration';
+  readonly name: string;
+  readonly nameRange: SourceRange;
+  readonly parameters: ParameterDeclaration[];
   readonly access: AccessModifier;
   readonly range: SourceRange;
 }

@@ -29,10 +29,11 @@ jobs:
       - name: Проверка чистоты docs/ после пересборки
         run: |
           # Пересборка сайта из закоммиченных исходников не должна менять
-          # docs/ (кроме generatedAt-таймстампов) — иначе закоммиченный сайт
-          # разошёлся с исходниками и его забыли перегенерировать.
-          git checkout -- docs/book/lessons.json docs/reference/api.json 2>/dev/null || true
-          git diff --stat --exit-code docs/ || {
+          # docs/ — иначе закоммиченный сайт разошёлся с исходниками и его
+          # забыли перегенерировать. Игнорируются только строки с
+          # generatedAt-таймстампами (-I), а не целые файлы: содержательный
+          # дрейф api.json и lessons.json теперь тоже ловится.
+          git diff -I '"generatedAt"' --stat --exit-code docs/ || {
             echo '::error::docs/ разошёлся с исходниками — запустите npm run docs:site и закоммитьте результат'
             exit 1
           }

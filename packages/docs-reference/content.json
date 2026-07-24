@@ -61,7 +61,7 @@
         {
           "title": "Классы",
           "description": "Объявление классов, конструкторы, наследование, доступ и обращение к текущему объекту.",
-          "code": "class   constructor\nextends   parent   this\npublic   private   static"
+          "code": "class   constructor   event\nextends   parent   this\npublic   private   static"
         },
         {
           "title": "Литерал null",
@@ -281,6 +281,11 @@
           "title": "public и private",
           "description": "Модификатор с двоеточием действует до следующего модификатора или конца класса.",
           "code": "class Wallet {\nprivate:\n    int money;\n\npublic:\n    constructor Wallet(int start) {\n        this.money = start;\n    }\n\n    int function balance() {\n        return this.money;\n    }\n}"
+        },
+        {
+          "title": "Свои события",
+          "description": "Слово event объявляет событие класса. Запускает его только сам класс (и наследники) обычным вызовом через this; снаружи на событие подписываются присваиванием — как на on_click у кнопки. Без подписчика запуск молча ничего не делает. Обработчик — функция без параметров, функция с полной сигнатурой события или метод другого объекта.",
+          "code": "class Hero {\n    int hp = 100;\n\n    event on_death(Hero victim);\n\n    void function hit(int damage) {\n        this.hp -= damage;\n        if (this.hp <= 0) {\n            this.on_death(this);\n        }\n    }\n}\n\nvoid function mourn(Hero victim) {\n    console.writeln(\"Герой пал: hp=\", victim.hp);\n}\n\nmain() {\n    Hero boss;\n    boss.on_death = mourn;\n    boss.hit(150);\n}"
         },
         {
           "title": "Наследование",

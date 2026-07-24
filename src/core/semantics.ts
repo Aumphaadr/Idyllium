@@ -6,6 +6,7 @@ import {
   CallArgument,
   CallExpression,
   ClassDeclaration,
+  ClassEventDeclaration,
   ClassFieldDeclaration,
   ClassMethodDeclaration,
   ContinueStatement,
@@ -126,8 +127,11 @@ interface UserClassInfo {
   readonly methods: Map<string, FunctionSpec>;
   readonly methodDeclarations: Map<string, ClassMethodDeclaration>;
   readonly methodAccess: Map<string, UserMethodAccess>;
+  readonly events: Map<string, FunctionSpec>;
+  readonly eventAccess: Map<string, UserMethodAccess>;
   readonly ownFields: Set<string>;
   readonly ownMethods: Set<string>;
+  readonly ownEvents: Set<string>;
   constructorSpec: FunctionSpec | null;
   constructorDeclaration: ConstructorDeclaration | null;
   constructorAccess: AccessModifier;
@@ -257,6 +261,19 @@ export class SemanticAnalyzer {
         });
       }
 
+      const events = new Map<string, FunctionSpec>();
+      const eventAccess = new Map<string, UserMethodAccess>();
+      for (const event of classSpec.events ?? []) {
+        events.set(event.name, event.spec);
+        eventAccess.set(event.name, {
+          name: event.name,
+          owner: event.owner,
+          access: event.access,
+          isStatic: false,
+          range: event.range,
+        });
+      }
+
       this.classes.set(classSpec.qualifiedName, {
         declaration: {
           kind: 'ClassDeclaration',
@@ -271,8 +288,11 @@ export class SemanticAnalyzer {
         methods,
         methodDeclarations: new Map(),
         methodAccess,
+        events,
+        eventAccess,
         ownFields: new Set(fields.keys()),
         ownMethods: new Set(methods.keys()),
+        ownEvents: new Set(events.keys()),
         constructorSpec: classSpec.constructorSpec,
         constructorDeclaration: null,
         constructorAccess: classSpec.constructorAccess,
@@ -378,8 +398,11 @@ export class SemanticAnalyzer {
       methods: new Map(),
       methodDeclarations: new Map(),
       methodAccess: new Map(),
+      events: new Map(),
+      eventAccess: new Map(),
       ownFields: new Set(),
       ownMethods: new Set(),
+      ownEvents: new Set(),
       constructorSpec: null,
       constructorDeclaration: null,
       constructorAccess: 'public',
@@ -417,6 +440,9 @@ export class SemanticAnalyzer {
         case 'ClassMethodDeclaration':
           this.registerClassMethod(info, member);
           break;
+        case 'ClassEventDeclaration':
+          this.registerClassEvent(info, member);
+          break;
         case 'ConstructorDeclaration':
           this.registerClassConstructor(info, member);
           break;
@@ -436,6 +462,11 @@ export class SemanticAnalyzer {
       if (declaration) info.methodDeclarations.set(name, declaration);
       const access = baseInfo.methodAccess.get(name);
       if (access) info.methodAccess.set(name, access);
+    }
+    for (const [name, event] of baseInfo.events) {
+      info.events.set(name, event);
+      const access = baseInfo.eventAccess.get(name);
+      if (access) info.eventAccess.set(name, access);
     }
   }
 
@@ -510,6 +541,38 @@ export class SemanticAnalyzer {
       range: declaration.range,
     });
     info.ownMethods.add(declaration.name);
+  }
+
+  private registerClassEvent(info: UserClassInfo, declaration: ClassEventDeclaration): void {
+    this.markSemanticToken('property', declaration.nameRange, ['declaration']);
+
+    if (info.fields.has(declaration.name) || info.methods.has(declaration.name) || info.events.has(declaration.name)) {
+      const inherited = !info.ownFields.has(declaration.name)
+        && !info.ownMethods.has(declaration.name)
+        && !info.ownEvents.has(declaration.name);
+      this.diagnostics.error(
+        declaration.range,
+        inherited
+          ? `event '${declaration.name}' conflicts with an inherited member`
+          : `class '${info.declaration.name}' already has member '${declaration.name}'`,
+      );
+      return;
+    }
+
+    const parameters = declaration.parameters.map((parameter) => this.resolveTypeName(parameter.paramType));
+    info.events.set(declaration.name, {
+      name: declaration.name,
+      parameters: parameters.map((type, index) => ({ name: declaration.parameters[index].name, type })),
+      returnType: VOID,
+    });
+    info.eventAccess.set(declaration.name, {
+      name: declaration.name,
+      owner: info.declaration.name,
+      access: declaration.access,
+      isStatic: false,
+      range: declaration.range,
+    });
+    info.ownEvents.add(declaration.name);
   }
 
   private registerClassConstructor(info: UserClassInfo, declaration: ConstructorDeclaration): void {
@@ -1041,6 +1104,25 @@ export class SemanticAnalyzer {
         return { type: runtimeErrorProperty.type, property: runtimeErrorProperty };
       }
       if (objectType.kind === 'class') {
+        const eventInfo = this.getClassEventInfo(objectType.name, target.name);
+        if (eventInfo) {
+          this.markSemanticToken('property', target.nameRange);
+          this.checkClassMemberAccess(eventInfo.access, target.range);
+          const parameterTypes = eventInfo.spec.parameters.map((parameter) => parameter.type);
+          // Синтетический PropertySpec включает валидацию как у колбэков
+          // виджетов: обработчик без параметров или с полной сигнатурой.
+          return {
+            type: ANY_TYPE,
+            property: {
+              name: target.name,
+              type: ANY_TYPE,
+              callbacks: [
+                { parameters: [], returnType: VOID },
+                ...(parameterTypes.length > 0 ? [{ parameters: parameterTypes, returnType: VOID }] : []),
+              ],
+            },
+          };
+        }
         const field = this.getClassField(objectType.name, target.name);
         if (!field) {
           this.diagnostics.error(target.range, `type '${typeToString(objectType)}' has no field '${target.name}'`);
@@ -1674,6 +1756,22 @@ export class SemanticAnalyzer {
         return null;
       }
       if (objectType.kind === 'class') {
+        const eventInfo = this.getClassEventInfo(objectType.name, callee.name);
+        if (eventInfo) {
+          this.markSemanticToken('property', callee.nameRange);
+          const context = this.classContexts.length > 0 ? this.classContexts[this.classContexts.length - 1] : null;
+          const firedOnThis = callee.object.kind === 'IdentifierExpression' && callee.object.name === 'this';
+          const insideOwner = context !== null && !context.isStatic
+            && (context.className === eventInfo.access.owner || this.classExtends(context.className, eventInfo.access.owner));
+          if (!firedOnThis || !insideOwner) {
+            this.diagnostics.error(
+              callee.range,
+              `event '${callee.name}' can only be fired inside class '${eventInfo.access.owner}' (through 'this')`,
+            );
+            return null;
+          }
+          return eventInfo.spec;
+        }
         this.markSemanticToken('method', callee.nameRange);
         const method = this.getClassMethodInfo(objectType.name, callee.name);
         if (method) {
@@ -2073,6 +2171,15 @@ export class SemanticAnalyzer {
     }
 
     if (objectType.kind === 'class') {
+      const eventInfo = this.getClassEventInfo(objectType.name, expression.name);
+      if (eventInfo) {
+        this.markSemanticToken('property', expression.nameRange);
+        this.diagnostics.error(
+          expression.range,
+          `event '${expression.name}' cannot be read as a value; assign a handler or fire it inside class '${eventInfo.access.owner}'`,
+        );
+        return ERROR_TYPE;
+      }
       const field = this.getClassField(objectType.name, expression.name);
       if (field) {
         this.markSemanticToken('property', expression.nameRange);
@@ -2212,6 +2319,15 @@ export class SemanticAnalyzer {
 
   private getClassField(className: string, fieldName: string): UserPropertySpec | null {
     return this.classes.get(className)?.fields.get(fieldName) ?? null;
+  }
+
+  private getClassEventInfo(className: string, eventName: string): { readonly spec: FunctionSpec; readonly access: UserMethodAccess } | null {
+    const info = this.classes.get(className);
+    if (!info) return null;
+    const spec = info.events.get(eventName);
+    const access = info.eventAccess.get(eventName);
+    if (!spec || !access) return null;
+    return { spec, access };
   }
 
   private getClassMethodInfo(className: string, methodName: string): { readonly spec: FunctionSpec; readonly access: UserMethodAccess } | null {

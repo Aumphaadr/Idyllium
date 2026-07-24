@@ -1,4 +1,4 @@
-import { compileIdyllium, runIdyllium, IdylliumLanguageService, IdylliumProject, compileProject, createRuntime, createMemoryRuntimeFileSystem, createNodeImageService, createDefaultStandardLibrary, formatIdyllium, runIdylliumInBrowser, IDYLLIUM_SEMANTIC_TOKEN_TYPES, IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS } from '../src';
+import { compileIdyllium, runIdyllium, IdylliumLanguageService, IdylliumProject, compileProject, createRuntime, createMemoryRuntimeFileSystem, createNodeImageService, createDefaultStandardLibrary, formatIdyllium, runIdylliumInBrowser, IDYLLIUM_SEMANTIC_TOKEN_TYPES, IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS, parseIdylliumStyle } from '../src';
 import { scaleRaster } from '../src/runtime/image-service';
 
 const fs: any = require('fs');
@@ -1031,6 +1031,272 @@ test('bare class declarations keep default field values', async () => {
   // Конструктор с обязательными параметрами при голом объявлении не вызывается
   // (поля — дефолтные), конструкторы без обязательных параметров — вызываются.
   assert(result.output === '[]:R2:hi', `unexpected bare declaration output: ${JSON.stringify(result.output)}`);
+});
+
+test('user class events fire handlers and stay silent without a subscriber', async () => {
+  const result = await runIdyllium([
+    'use console;',
+    '',
+    'class Hero {',
+    '    string name = "Босс";',
+    '    int hp = 100;',
+    '',
+    '    event on_death(Hero victim);',
+    '',
+    '    void function hit(int damage) {',
+    '        this.hp -= damage;',
+    '        if (this.hp <= 0) {',
+    '            this.on_death(this);',
+    '        }',
+    '    }',
+    '}',
+    '',
+    'class Animal {',
+    '    event on_sound(string text);',
+    '}',
+    '',
+    'class Dog extends Animal {',
+    '    void function bark() { this.on_sound("Гав"); }',
+    '}',
+    '',
+    'void function mourn(Hero victim) {',
+    '    console.writeln(victim.name, " пал: hp=", victim.hp);',
+    '}',
+    '',
+    'main() {',
+    '    Hero silent;',
+    '    silent.hit(200); // подписчика нет — событие молчит',
+    '',
+    '    Hero boss;',
+    '    boss.on_death = void function() { console.writeln("не я"); };',
+    '    boss.on_death = mourn; // поздняя подписка заменяет раннюю',
+    '    boss.hit(60);',
+    '    boss.hit(60);',
+    '',
+    '    Dog dog; // наследник запускает событие базового класса',
+    '    dog.on_sound = void function(string text) { console.writeln(text); };',
+    '    dog.bark();',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === 'Босс пал: hp=-20\nГав\n',
+    `unexpected event output: ${JSON.stringify(result.output)}`,
+  );
+});
+
+test('method references keep their object when stored as event handlers', async () => {
+  const result = await runIdyllium([
+    'use console;',
+    '',
+    'class Scoreboard {',
+    '    int deaths;',
+    '',
+    '    void function count(Hero victim) {',
+    '        this.deaths += 1;',
+    '        console.writeln("смертей: ", this.deaths);',
+    '    }',
+    '}',
+    '',
+    'class Hero {',
+    '    event on_death(Hero victim);',
+    '    void function die() { this.on_death(this); }',
+    '}',
+    '',
+    'main() {',
+    '    Scoreboard board;',
+    '    Hero first;',
+    '    Hero second;',
+    '    first.on_death = board.count;',
+    '    second.on_death = board.count;',
+    '    first.die();',
+    '    second.die();',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  // Метод, сохранённый как значение, не теряет свой объект: оба героя
+  // инкрементируют ОДНО табло (this.deaths привязан к board).
+  assert(
+    result.output === 'смертей: 1\nсмертей: 2\n',
+    `unexpected scoreboard output: ${JSON.stringify(result.output)}`,
+  );
+});
+
+test('IdySS style parser validates the dictionary and silently drops mistakes', () => {
+  // Опечатка в имени и цвет вне палитры — молчаливый отброс, валидное — остаётся.
+  assert(
+    JSON.stringify(parseIdylliumStyle('color: red; backround-color: dark-blue; background-color: pink;'))
+      === JSON.stringify([{ property: 'color', value: '#FF0000' }]),
+    'expected typo and non-palette color to be dropped silently',
+  );
+  // Формы цвета: палитра colors (green = #00FF00), HEX, rgb/rgba с диапазонами.
+  assert(
+    JSON.stringify(parseIdylliumStyle('color: green; border-color: rgba(0, 0, 0, 0.5); background-color: #A3F'))
+      === JSON.stringify([
+        { property: 'color', value: '#00FF00' },
+        { property: 'border-color', value: 'rgba(0, 0, 0, 0.5)' },
+        { property: 'background-color', value: '#a3f' },
+      ]),
+    'expected all three color forms to normalize',
+  );
+  assert(parseIdylliumStyle('background-color: rgb(999, 0, 0)').length === 0, 'expected out-of-range channel to drop the declaration');
+  // Пиксельные величины: px опционален, диапазоны жёсткие.
+  assert(
+    JSON.stringify(parseIdylliumStyle('border-radius: 12px; padding: 8; font-size: 200px; opacity: 1.5'))
+      === JSON.stringify([
+        { property: 'border-radius', value: '12px' },
+        { property: 'padding', value: '8px' },
+      ]),
+    'expected px normalization and range enforcement',
+  );
+  // Регистр имён/значений не важен, мусор между парами молчит.
+  assert(
+    JSON.stringify(parseIdylliumStyle('COLOR: RED; ;; color red; Font-Weight: BOLD'))
+      === JSON.stringify([
+        { property: 'color', value: '#FF0000' },
+        { property: 'font-weight', value: 'bold' },
+      ]),
+    'expected case-insensitive parsing and silent garbage skipping',
+  );
+  assert(parseIdylliumStyle('').length === 0 && parseIdylliumStyle('   ').length === 0, 'expected empty style to parse to nothing');
+  // Градиенты: строгое подмножество CSS, каждая остановка — через словарь цветов.
+  assert(
+    JSON.stringify(parseIdylliumStyle('background: linear-gradient(to right, red, blue)'))
+      === JSON.stringify([{ property: 'background', value: 'linear-gradient(to right, #FF0000, #0000FF)' }]),
+    'expected linear gradient with direction to normalize',
+  );
+  assert(
+    JSON.stringify(parseIdylliumStyle('background: linear-gradient(45deg, dark-blue, cyan 50%, white)'))
+      === JSON.stringify([{ property: 'background', value: 'linear-gradient(45deg, #000080, #00FFFF 50%, #FFFFFF)' }]),
+    'expected angle and percent stops to normalize',
+  );
+  assert(
+    JSON.stringify(parseIdylliumStyle('background: radial-gradient(yellow, dark-red)'))
+      === JSON.stringify([{ property: 'background', value: 'radial-gradient(#FFFF00, #800000)' }]),
+    'expected radial gradient to normalize',
+  );
+  for (const rejected of [
+    'background: linear-gradient(to right, red)',      // одна остановка
+    'background: linear-gradient(400deg, red, blue)',  // угол вне диапазона
+    'background: linear-gradient(to right, red, pink)',// цвет вне палитры
+    'background: url(evil.png)',                       // не градиент
+    'background: red',                                 // сплошной цвет — только background-color
+  ]) {
+    assert(parseIdylliumStyle(rejected).length === 0, `expected rejection: ${rejected}`);
+  }
+});
+
+test('widget style property ships validated declarations in the snapshot', async () => {
+  const result = await runWithInspectableRuntime([
+    'use gui;',
+    'use colors;',
+    'use console;',
+    '',
+    'main() {',
+    '    gui.Window win;',
+    '    gui.Label title;',
+    '    title.text = "x";',
+    '    title.text_color = colors.RED;',
+    '    title.style = "color: white; border-radius: 12px; backround-color: pink;";',
+    '',
+    '    gui.Button plain;',
+    '    plain.text = "y";',
+    '',
+    '    win.add_child(title);',
+    '    win.add_child(plain);',
+    '    win.show();',
+    '    console.write(title.style);',
+    '}',
+  ].join('\n'));
+
+  const [title, plain] = result.runtime.getWindows()[0].children;
+  // Строка читается ровно как присвоена (без нормализации)…
+  assert(
+    result.runtime.getOutput() === 'color: white; border-radius: 12px; backround-color: pink;',
+    `unexpected style read-back: ${JSON.stringify(result.runtime.getOutput())}`,
+  );
+  // …а в снапшот уезжают только провалидированные пары (опечатка отброшена).
+  assert(
+    JSON.stringify(title.properties.style_declarations) === JSON.stringify([
+      { property: 'color', value: '#FFFFFF' },
+      { property: 'border-radius', value: '12px' },
+    ]),
+    `unexpected declarations: ${JSON.stringify(title.properties.style_declarations)}`,
+  );
+  // Пустая наклейка не тащит в снапшот ничего.
+  assert(plain.properties.style === '', 'expected empty default style');
+  assert(!('style_declarations' in plain.properties), 'expected no declarations for empty style');
+});
+
+test('events of classes from user modules export and fire across files', async () => {
+  const clockModule = [
+    'use console;',
+    '',
+    'class Clock {',
+    '    int hour;',
+    '',
+    '    event on_alarm(int hour);',
+    '',
+    '    void function advance() {',
+    '        this.hour += 1;',
+    '        if (this.hour == 7) {',
+    '            this.on_alarm(this.hour);',
+    '        }',
+    '    }',
+    '}',
+  ].join('\n');
+
+  const result = await runIdyllium([
+    'use console;',
+    'use clocks;',
+    '',
+    'main() {',
+    '    clocks.Clock c;',
+    '    c.on_alarm = void function(int hour) {',
+    '        console.writeln("Подъём! Уже ", hour);',
+    '    };',
+    '    for (int i = 0; i < 8; i += 1) {',
+    '        c.advance();',
+    '    }',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl', sources: { 'clocks.idyl': clockModule } });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === 'Подъём! Уже 7\n', `unexpected module event output: ${JSON.stringify(result.output)}`);
+
+  const outside = compileIdyllium(
+    'use clocks;\nmain() {\n    clocks.Clock c;\n    c.on_alarm(7);\n}',
+    { file: 'main.idyl', sources: { 'clocks.idyl': clockModule } },
+  );
+  assert(!outside.success, 'expected firing a module event from outside to fail');
+  assert(
+    outside.diagnosticsText.includes("event 'on_alarm' can only be fired inside class 'clocks.Clock'"),
+    `unexpected module event diagnostic:\n${outside.diagnosticsText}`,
+  );
+});
+
+test('user event misuse produces readable diagnostics', () => {
+  assertFails(
+    'class H { event on_x; }\nmain() {\n    H h;\n    h.on_x();\n}',
+    "event 'on_x' can only be fired inside class 'H'",
+  );
+  assertFails(
+    'use console;\nclass H { event on_x; }\nmain() {\n    H h;\n    console.writeln(h.on_x);\n}',
+    "event 'on_x' cannot be read as a value",
+  );
+  assertFails(
+    'class H { event on_x(int a, int b); }\nvoid function bad(int only_one) {}\nmain() {\n    H h;\n    h.on_x = bad;\n}',
+    "callback property 'on_x' expects function(): void or function(int, int): void",
+  );
+  assertFails(
+    'class H { event on_x; }\nmain() {\n    H h;\n    h.on_x = 42;\n}',
+    "callback property 'on_x' expects a function, got 'int'",
+  );
+  assertFails('class H { event on_x(int a = 5); }\nmain() {}', 'event parameters cannot have default values');
+  assertFails('class H { static event on_x; }\nmain() {}', 'events cannot be static');
+  assertFails('class H { int on_x; event on_x; }\nmain() {}', "class 'H' already has member 'on_x'");
 });
 
 test('time stamp read-only properties run in UTC by default', async () => {

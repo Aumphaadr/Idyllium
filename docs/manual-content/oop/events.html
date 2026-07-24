@@ -1,0 +1,288 @@
+<div class="docs-section">
+  <h2>Кнопка, которую вы соберёте сами</h2>
+  <p>
+    Вспомните раздел «Виджеты»: вы писали <code>button.on_click = обработчик;</code> —
+    и кнопка сама решала, <em>когда</em> позвать ваш код. Вы подписывались на
+    событие, а запускал его кто-то другой. Всё это время механизм событий был
+    привилегией библиотечных классов. Пора сравняться с кнопкой: сегодня ваши
+    собственные классы научатся объявлять события и звонить в них.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Слово <code>event</code></h2>
+  <p>
+    Событие объявляется внутри класса словом <code>event</code>: имя и список
+    параметров, как у функции, — но без тела и без возвращаемого типа. Запускает
+    событие сам класс — обычным вызовом через <code>this.</code>:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Door {
+    bool is_open;
+
+    event on_opened;
+
+    void function open() {
+        if (not(this.is_open)) {
+            this.is_open = true;
+            this.on_opened();
+        }
+    }
+}
+
+main() {
+    Door door;
+    door.on_opened = void function() {
+        console.writeln("Скрип-скрип!");
+    };
+
+    door.open();
+    door.open(); // дверь уже открыта — события не будет
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Скрип-скрип!</idyl-output-block>
+
+  <p>
+    Знакомо, правда? Снаружи — то же присваивание, что у <code>on_click</code>.
+    Внутри — класс звонит в звонок <code>this.on_opened()</code>, когда посчитает
+    нужным. Дверь открылась один раз — и скрипнула один раз.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Звонок в пустом зале</h2>
+  <p>
+    А что, если на событие никто не подписался? <strong>Ничего.</strong> Запуск
+    события без подписчика — тишина, программа спокойно идёт дальше. Класс не
+    обязан знать, слушают ли его, — ровно так живут и кнопки:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Door {
+    event on_opened;
+
+    void function open() {
+        this.on_opened();
+        console.writeln("Дверь открыта");
+    }
+}
+
+main() {
+    Door silent_door;
+    silent_door.open(); // подписчика нет — событие молчит, программа живёт
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Дверь открыта</idyl-output-block>
+</div>
+
+<div class="docs-section">
+  <h2>События с данными</h2>
+  <p>
+    Параметры события — это посылка подписчику. Классический сюжет: герой
+    сообщает миру о своей гибели и передаёт себя — пусть слушатели сами решают,
+    что важно:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Hero {
+    string name;
+    int hp;
+
+    constructor Hero(string ex_name, int ex_hp) {
+        this.name = ex_name;
+        this.hp = ex_hp;
+    }
+
+    event on_death(Hero victim);
+
+    void function hit(int damage) {
+        this.hp -= damage;
+        if (this.hp <= 0) {
+            this.on_death(this);
+        }
+    }
+}
+
+void function mourn(Hero victim) {
+    console.writeln(victim.name, " пал в бою");
+}
+
+main() {
+    Hero boss("Дракон", 100);
+    boss.on_death = mourn;
+
+    boss.hit(60);
+    console.writeln("Бой продолжается...");
+    boss.hit(60);
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Бой продолжается...
+Дракон пал в бою</idyl-output-block>
+
+  <p>
+    Обработчик может принять либо <strong>все</strong> параметры события, либо
+    <strong>ни одного</strong> — если посылка не нужна, её можно не забирать:
+    <code>boss.on_death = void function() { ... };</code> тоже законно.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Обработчик со своей памятью</h2>
+  <p>
+    Обработчиком может быть и <strong>метод другого объекта</strong>. Это
+    открывает красивый приём: слушатель со своим состоянием. Табло считает
+    погибших — а герои даже не знают о его существовании:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Hero {
+    event on_death(Hero victim);
+
+    void function die() {
+        this.on_death(this);
+    }
+}
+
+class Scoreboard {
+    int deaths;
+
+    void function count(Hero victim) {
+        this.deaths += 1;
+        console.writeln("Счёт потерь: ", this.deaths);
+    }
+}
+
+main() {
+    Scoreboard board;
+
+    Hero first;
+    Hero second;
+    first.on_death = board.count;
+    second.on_death = board.count;
+
+    first.die();
+    second.die();
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Счёт потерь: 1
+Счёт потерь: 2</idyl-output-block>
+
+  <p>
+    Оба героя подписаны на <strong>один и тот же</strong> метод одного табло —
+    и <code>this.deaths</code> внутри <code>count</code> честно указывает на
+    табло, а не на героя. Метод помнит свой объект, куда бы его ни передали.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Правила подписки</h2>
+  <ul>
+    <li>У события <strong>один слот</strong>: новая подписка молча заменяет старую — как у <code>on_click</code>.</li>
+    <li>Снять подписчика отдельной командой нельзя (у кнопок её тоже нет); практический приём — подписать пустую инлайн-функцию.</li>
+    <li>Наклейка… то есть подписка не наследуется объектами: каждый объект подписывают отдельно.</li>
+    <li>События <strong>наследуются классами</strong>: наследник получает события базового класса и может запускать их из своих методов.</li>
+  </ul>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Animal {
+    event on_sound(string text);
+}
+
+class Dog extends Animal {
+    void function bark() {
+        this.on_sound("Гав-гав!");
+    }
+}
+
+main() {
+    Dog dog;
+    dog.on_sound = void function(string text) {
+        console.writeln(text);
+    };
+    dog.bark();
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Гав-гав!</idyl-output-block>
+</div>
+
+<div class="docs-section">
+  <h2>Чего события не позволяют</h2>
+  <p>
+    Запустить чужое событие <strong>снаружи</strong> класса нельзя — звонок
+    принадлежит классу, снаружи на него только подписываются. Компилятор на
+    страже:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+class Door {
+    event on_opened;
+}
+
+main() {
+    Door door;
+    door.on_opened(); // ОШИБКА: звонить может только сам класс
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:7:5: error: event 'on_opened' can only be fired inside class 'Door' (through 'this')</idyl-error-block>
+
+  <p>И прочитать событие как значение тоже не выйдет — оно не переменная:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Door {
+    event on_opened;
+}
+
+main() {
+    Door door;
+    console.writeln(door.on_opened); // ОШИБКА
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:9:21: error: event 'on_opened' cannot be read as a value; assign a handler or fire it inside class 'Door'</idyl-error-block>
+</div>
+
+<div class="docs-section">
+  <h2>Опорная таблица</h2>
+  <table>
+    <thead>
+      <tr><th>Действие</th><th>Как пишется</th><th>Кто может</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Объявить событие</td><td><code>event on_death(Hero victim);</code></td><td>класс, среди членов</td></tr>
+      <tr><td>Событие без данных</td><td><code>event on_win;</code></td><td>класс</td></tr>
+      <tr><td>Запустить</td><td><code>this.on_death(this);</code></td><td>только сам класс и наследники</td></tr>
+      <tr><td>Подписаться</td><td><code>boss.on_death = mourn;</code></td><td>кто угодно снаружи</td></tr>
+      <tr><td>Заменить подписку</td><td>ещё одно присваивание</td><td>кто угодно снаружи</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="docs-section">
+  <h2>Что запомнить</h2>
+  <ul>
+    <li><code>event</code> объявляет событие — звонок, в который класс звонит сам, когда происходит важное.</li>
+    <li>Запуск — только изнутри класса через <code>this.</code>; снаружи — только подписка присваиванием.</li>
+    <li>Без подписчика событие молчит, и это нормально: класс не знает, кто его слушает.</li>
+    <li>Обработчик — функция без параметров, функция с полной сигнатурой события или метод объекта-слушателя.</li>
+    <li>Именно так устроены все кнопки, слайдеры и таймеры, которыми вы пользовались. Теперь этот механизм — ваш.</li>
+  </ul>
+</div>

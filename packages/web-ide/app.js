@@ -9,7 +9,7 @@
   const MIN_FONT_SIZE = 10;
   const MAX_FONT_SIZE = 32;
   const KEYWORDS = new Set([
-    'and', 'break', 'catch', 'class', 'const', 'constructor', 'continue', 'do', 'else', 'extends',
+    'and', 'break', 'catch', 'class', 'const', 'constructor', 'continue', 'do', 'else', 'event', 'extends',
     'false', 'finally', 'for', 'function', 'if', 'not', 'or', 'parent', 'private', 'public', 'return', 'static',
     'this', 'true', 'null', 'try', 'use', 'while', 'xor',
   ]);
@@ -143,6 +143,11 @@
   const consoleInputSubmit = document.getElementById('console-input-submit');
   const status = document.getElementById('status');
   const guiFrame = document.getElementById('gui-frame');
+  // Превью — same-origin iframe: адресуем сообщения только своему origin
+  // ('null' остаётся для экзотических хостингов без origin).
+  const previewTargetOrigin = window.location.origin && window.location.origin !== 'null'
+    ? window.location.origin
+    : '*';
   const workspace = document.querySelector('.workspace');
   const runtimePane = document.querySelector('.runtime-pane');
   const runtimeRowResizer = document.getElementById('runtime-row-resizer');
@@ -326,6 +331,7 @@
   guiFrame.addEventListener('load', markGuiFrameReady);
 
   window.addEventListener('message', (event) => {
+    if (previewTargetOrigin !== '*' && event.origin !== previewTargetOrigin) return;
     const data = event.data;
     if (!data || data.type !== 'idylliumGuiEvent' || !data.message) return;
     if (data.message.type === 'rendererReady') {
@@ -4276,7 +4282,7 @@
       canvases: fullSnapshot.canvases,
       modals: fullSnapshot.modals,
       output: fullSnapshot.output,
-    }, '*');
+    }, previewTargetOrigin);
   }
 
   function setOutputText(text, className = '', options = {}) {
@@ -5835,7 +5841,7 @@
     guiFrame.contentWindow.postMessage({
       type: 'theme',
       theme: document.body.classList.contains('theme-light') ? 'light' : 'dark',
-    }, '*');
+    }, previewTargetOrigin);
   }
 
   function readFileAsDataUrl(file) {

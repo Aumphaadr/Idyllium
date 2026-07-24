@@ -389,6 +389,32 @@ export class Parser {
       }
 
       const isStatic = this.match(TokenKind.KwStatic);
+      if (this.check(TokenKind.KwEvent)) {
+        const eventToken = this.advance();
+        if (isStatic) {
+          this.error(eventToken.range, 'events cannot be static');
+        }
+        const name = this.consume(TokenKind.Identifier, 'expected event name');
+        let parameters: ParameterDeclaration[] = [];
+        if (this.match(TokenKind.LeftParen)) {
+          parameters = this.parseParameterList();
+        }
+        for (const parameter of parameters) {
+          if (parameter.defaultValue) {
+            this.error(parameter.range, 'event parameters cannot have default values');
+          }
+        }
+        const semicolon = this.consume(TokenKind.Semicolon, "expected ';' after event declaration");
+        members.push({
+          kind: 'ClassEventDeclaration',
+          name: name.lexeme,
+          nameRange: name.range,
+          parameters,
+          access: currentAccess,
+          range: { start: eventToken.range.start, end: semicolon.range.end },
+        });
+        continue;
+      }
       if (this.check(TokenKind.KwConstructor)) {
         if (isStatic) {
           this.error(this.previous().range, 'constructors cannot be static');

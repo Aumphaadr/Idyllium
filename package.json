@@ -1,6 +1,6 @@
 {
   "name": "idyllium",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "description": "Next-generation core for the Idyllium educational programming language",
   "main": "dist/src/index.js",
@@ -15,14 +15,12 @@
     "build:vscode": "npm run build && node tools/build-vscode-extension.js",
     "package:vscode": "npm run build:vscode && node tools/package-vscode-extension.js",
     "test": "npm run build && node dist/tools/extract-lesson-specs.js && node tools/run-tests.js",
-    "docs:inventory": "npm run build && node dist/tools/docs-inventory.js",
     "docs:site": "npm run build:web && node dist/tools/docs-build-site.js",
     "docs:serve": "npm run docs:site && node tools/serve-docs.js",
     "spec:extract": "npm run build && node dist/tools/extract-lesson-specs.js",
     "spec:check": "npm run spec:extract && node dist/tests/lesson-spec.test.js",
     "manual:generate": "node tools/generate-manual-tests.js",
-    "manual:check": "npm run build && node tools/check-manual-tests.js",
-    "docs:migrate": "npm run build && node dist/tools/docs-migrate.js"
+    "manual:check": "npm run build && node tools/check-manual-tests.js"
   },
   "keywords": [
     "idyllium",

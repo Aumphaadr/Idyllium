@@ -186,6 +186,7 @@
     const textColor = displayedWidgetColor(win.properties, 'text_color', {});
     if (textColor) root.style.color = textColor;
     applyWidgetFont(root, win.properties, {});
+    applyStyleDeclarations(root, win.properties);
 
     const title = document.createElement('div');
     title.className = 'titlebar';
@@ -589,7 +590,26 @@
     applyWidgetBox(el, widget.properties);
     applyWidgetColors(el, widget.properties, inheritedColors);
     applyWidgetFont(el, widget.properties, inheritedColors);
+    applyStyleDeclarations(el, widget.properties);
     return el;
+  }
+
+  // IdySS-наклейка: применяется ПОСЛЕДНИМ слоем поверх прямых свойств
+  // (каскад «наклейка сверху»). Пары уже провалидированы рантаймом —
+  // рендерер не разбирает строк и не видит произвольного CSS.
+  function applyStyleDeclarations(el, props) {
+    const declarations = props && props.style_declarations;
+    if (!Array.isArray(declarations)) return;
+    for (const item of declarations) {
+      if (!item || typeof item.property !== 'string' || typeof item.value !== 'string') continue;
+      el.style.setProperty(item.property, item.value);
+      if (item.property === 'text-align') {
+        // Label и Button — flex-контейнеры: text-align сам по себе их
+        // содержимое не двигает, зеркалим в justify-content.
+        const justify = { left: 'flex-start', center: 'center', right: 'flex-end' }[item.value];
+        if (justify) el.style.justifyContent = justify;
+      }
+    }
   }
 
   function renderCanvasWidget(widget) {

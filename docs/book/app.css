@@ -384,6 +384,54 @@ body.light-theme .docs-topbar {
 .docs-main {
   min-width: 0;
   padding: 34px clamp(22px, 4vw, 58px) 54px;
+  position: relative;
+}
+
+/* Индикатор загрузки урока: полупрозрачная вуаль поверх прежнего содержимого
+   с плашкой-спиннером. Появляется только если загрузка дольше 250 мс. */
+.lesson-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: min(26vh, 220px);
+  background: color-mix(in srgb, var(--bg-root) 55%, transparent);
+  backdrop-filter: blur(2px);
+  animation: lesson-loading-fade 0.25s ease-out;
+}
+
+.lesson-loading-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 22px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-panel);
+  color: var(--text-muted);
+  font-size: 15px;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.25);
+}
+
+.lesson-loading-spinner {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 50%;
+  border: 2.5px solid var(--accent-soft);
+  border-top-color: var(--accent);
+  animation: lesson-loading-spin 0.8s linear infinite;
+}
+
+@keyframes lesson-loading-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes lesson-loading-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .lesson-view {
@@ -812,9 +860,17 @@ body.light-theme .docs-topbar {
 }
 
 /* Режимы повторяют object-fit настоящего рендерера: fit=contain,
-   fill=cover, stretch=fill, original=натуральный размер с обрезкой. */
+   fill=cover, stretch=fill, original=натуральный размер с обрезкой.
+   ВАЖНО: картинка позиционируется абсолютно. Внутри grid с place-items
+   проценты высоты грид-элемента не резолвятся (трек auto → циклическая
+   зависимость → height:100% молча становится auto) — именно поэтому все
+   прежние CSS-имитации режимов выглядели одинаково обрезанными. У
+   абсолютного элемента проценты считаются от контейнера всегда. */
 .image-mode-demo img {
   display: block;
+  position: absolute;
+  left: 0;
+  top: 0;
   width: 100%;
   height: 100%;
   max-width: none;

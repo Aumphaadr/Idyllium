@@ -26,6 +26,7 @@ export interface UserModuleClassSpec {
   readonly baseName: string | null;
   readonly fields: readonly UserModuleFieldSpec[];
   readonly methods: readonly UserModuleMethodSpec[];
+  readonly events: readonly UserModuleMethodSpec[];
   readonly constructorSpec: FunctionSpec | null;
   readonly constructorAccess: AccessModifier;
   readonly range: SourceRange;

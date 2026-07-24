@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "languageVersion": "1.2.0",
-  "generatedAt": "2026-07-24T14:13:58.395Z",
+  "languageVersion": "1.2.1",
+  "generatedAt": "2026-07-24T19:39:33.051Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "language": [
     {
@@ -64,7 +64,7 @@
         {
           "title": "Классы",
           "description": "Объявление классов, конструкторы, наследование, доступ и обращение к текущему объекту.",
-          "code": "class   constructor\nextends   parent   this\npublic   private   static"
+          "code": "class   constructor   event\nextends   parent   this\npublic   private   static"
         },
         {
           "title": "Литерал null",
@@ -284,6 +284,11 @@
           "title": "public и private",
           "description": "Модификатор с двоеточием действует до следующего модификатора или конца класса.",
           "code": "class Wallet {\nprivate:\n    int money;\n\npublic:\n    constructor Wallet(int start) {\n        this.money = start;\n    }\n\n    int function balance() {\n        return this.money;\n    }\n}"
+        },
+        {
+          "title": "Свои события",
+          "description": "Слово event объявляет событие класса. Запускает его только сам класс (и наследники) обычным вызовом через this; снаружи на событие подписываются присваиванием — как на on_click у кнопки. Без подписчика запуск молча ничего не делает. Обработчик — функция без параметров, функция с полной сигнатурой события или метод другого объекта.",
+          "code": "class Hero {\n    int hp = 100;\n\n    event on_death(Hero victim);\n\n    void function hit(int damage) {\n        this.hp -= damage;\n        if (this.hp <= 0) {\n            this.on_death(this);\n        }\n    }\n}\n\nvoid function mourn(Hero victim) {\n    console.writeln(\"Герой пал: hp=\", victim.hp);\n}\n\nmain() {\n    Hero boss;\n    boss.on_death = mourn;\n    boss.hit(150);\n}"
         },
         {
           "title": "Наследование",
@@ -659,6 +664,23 @@
         {
           "name": "asin",
           "signature": "asin(value: float): float",
+          "returnType": "float",
+          "parameters": [
+            {
+              "name": "value",
+              "type": "float",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": ""
+        },
+        {
+          "name": "atan",
+          "signature": "atan(value: float): float",
           "returnType": "float",
           "parameters": [
             {
@@ -4022,6 +4044,13 @@
               ]
             },
             {
+              "name": "style",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
+              "callbacks": []
+            },
+            {
               "name": "text",
               "type": "string",
               "readonly": false,
@@ -4216,6 +4245,15 @@
               "inheritedFrom": "gui.Widget"
             },
             {
+              "name": "style",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
               "name": "text_color",
               "type": "colors.Color",
               "readonly": false,
@@ -4306,6 +4344,13 @@
               "type": "any",
               "readonly": false,
               "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "style",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
               "callbacks": []
             },
             {
@@ -4414,6 +4459,13 @@
               "type": "string",
               "readonly": true,
               "documentation": "Текст выбранного пункта. Свойство доступно только для чтения и изменяется через selected_index.",
+              "callbacks": []
+            },
+            {
+              "name": "style",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
               "callbacks": []
             },
             {
@@ -4551,6 +4603,13 @@
               "callbacks": []
             },
             {
+              "name": "style",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
+              "callbacks": []
+            },
+            {
               "name": "value",
               "type": "float",
               "readonly": false,
@@ -4659,6 +4718,13 @@
               "callbacks": []
             },
             {
+              "name": "style",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
+              "callbacks": []
+            },
+            {
               "name": "title",
               "type": "string",
               "readonly": false,
@@ -4757,6 +4823,13 @@
               "type": "string",
               "readonly": false,
               "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "style",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
               "callbacks": []
             },
             {
@@ -4900,6 +4973,13 @@
               ]
             },
             {
+              "name": "style",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
+              "callbacks": []
+            },
+            {
               "name": "text",
               "type": "string",
               "readonly": false,
@@ -5008,6 +5088,13 @@
               "type": "string",
               "readonly": false,
               "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "style",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
               "callbacks": []
             },
             {
@@ -5278,6 +5365,13 @@
               "callbacks": []
             },
             {
+              "name": "style",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
+              "callbacks": []
+            },
+            {
               "name": "text_color",
               "type": "colors.Color",
               "readonly": false,
@@ -5372,6 +5466,13 @@
               "type": "any",
               "readonly": false,
               "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "style",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
               "callbacks": []
             },
             {
@@ -5480,6 +5581,13 @@
               "type": "int",
               "readonly": false,
               "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "style",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
               "callbacks": []
             },
             {
@@ -5598,6 +5706,13 @@
               "callbacks": []
             },
             {
+              "name": "style",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
+              "callbacks": []
+            },
+            {
               "name": "value",
               "type": "int",
               "readonly": false,
@@ -5710,6 +5825,13 @@
               "type": "string",
               "readonly": false,
               "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "style",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
               "callbacks": []
             },
             {
@@ -5856,6 +5978,13 @@
               "callbacks": []
             },
             {
+              "name": "style",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
+              "callbacks": []
+            },
+            {
               "name": "text_color",
               "type": "colors.Color",
               "readonly": false,
@@ -5927,6 +6056,13 @@
               "type": "int",
               "readonly": false,
               "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "style",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
               "callbacks": []
             },
             {

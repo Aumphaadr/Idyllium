@@ -112,7 +112,7 @@
         },
         {
           "name": "keyword.declaration.idyllium",
-          "match": "\\b(?:function|constructor|static|public|private|const)\\b"
+          "match": "\\b(?:function|constructor|static|public|private|const|event)\\b"
         },
         {
           "name": "variable.language.this.idyllium",
