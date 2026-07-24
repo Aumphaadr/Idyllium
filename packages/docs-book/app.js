@@ -1,7 +1,7 @@
 (() => {
   const KEYWORDS = new Set([
     'use', 'if', 'else', 'while', 'do', 'for', 'break', 'continue', 'return', 'try', 'catch', 'finally', 'const',
-    'function', 'class', 'extends', 'this', 'constructor',
+    'function', 'class', 'extends', 'this', 'constructor', 'event',
     'public', 'private', 'static', 'parent', 'and', 'or', 'xor',
     'not', 'true', 'false', 'null',
   ]);
@@ -149,25 +149,60 @@
     return state.flatLessons.find((lesson) => lesson.sectionId === sectionId && lesson.id === lessonId) ?? null;
   }
 
+  let lessonLoadToken = 0;
+
   async function renderLesson(lesson) {
     clearLessonTimers();
     state.currentLesson = lesson;
     renderNavigation();
 
-    const response = await fetch(lesson.file, { cache: 'no-cache' });
-    if (!response.ok) {
-      throw new Error(`cannot load lesson: ${lesson.file}`);
-    }
+    // На медленном интернете страница-предшественница остаётся на экране,
+    // поэтому через 250 мс поверх появляется индикатор «урок грузится».
+    // На быстром соединении таймер не успевает сработать — никакого мигания.
+    const token = ++lessonLoadToken;
+    const loadingTimer = window.setTimeout(showLessonLoading, 250);
 
-    const content = await response.text();
-    const hero = renderHero(lesson);
-    const footer = renderLessonFooter(lesson);
-    els.view.innerHTML = `${hero}<div class="lesson-body">${content}</div>${footer}`;
-    executeLessonScripts();
-    document.title = `${lesson.title} — Idyllium`;
-    renderToc();
-    els.main.focus({ preventScroll: true });
-    window.scrollTo({ top: 0, behavior: 'auto' });
+    try {
+      const response = await fetch(lesson.file, { cache: 'no-cache' });
+      if (!response.ok) {
+        throw new Error(`cannot load lesson: ${lesson.file}`);
+      }
+
+      const content = await response.text();
+      // Пока грузился этот урок, пользователь мог кликнуть следующий —
+      // устаревший ответ молча отбрасывается.
+      if (token !== lessonLoadToken) return;
+
+      const hero = renderHero(lesson);
+      const footer = renderLessonFooter(lesson);
+      els.view.innerHTML = `${hero}<div class="lesson-body">${content}</div>${footer}`;
+      executeLessonScripts();
+      document.title = `${lesson.title} — Idyllium`;
+      renderToc();
+      els.main.focus({ preventScroll: true });
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    } finally {
+      window.clearTimeout(loadingTimer);
+      if (token === lessonLoadToken) hideLessonLoading();
+    }
+  }
+
+  function showLessonLoading() {
+    if (els.main.querySelector('.lesson-loading')) return;
+    const overlay = document.createElement('div');
+    overlay.className = 'lesson-loading';
+    overlay.innerHTML = `
+      <div class="lesson-loading-box" role="status" aria-live="polite">
+        <span class="lesson-loading-spinner" aria-hidden="true"></span>
+        <span>Загружаем урок…</span>
+      </div>
+    `;
+    els.main.appendChild(overlay);
+  }
+
+  function hideLessonLoading() {
+    const overlay = els.main.querySelector('.lesson-loading');
+    if (overlay) overlay.remove();
   }
 
   function executeLessonScripts() {
@@ -548,6 +583,33 @@
       return null;
     }
 
+    function significantToken(depth) {
+      let remaining = depth;
+      for (let i = tokens.length - 1; i >= 0; i--) {
+        if (tokens[i].category === 'plain') continue;
+        if (remaining === 0) return tokens[i];
+        remaining--;
+      }
+      return null;
+    }
+
+    // Имя с большой буквы — класснейм только в позиции класса, а не всегда:
+    // переменные вроде `int A` или `time.stamp N` больше не красятся как типы.
+    function isClassNamePosition() {
+      // Тип перед именем: `Hero kaspar(...)`, `Animal a;`, параметр `(Animal animal)`
+      if (/^\s+[a-zA-Z_\u0400-\u04FF][a-zA-Z0-9_\u0400-\u04FF]*\s*(?:[=;,)(\[]|$)/.test(source.slice(pos))) return true;
+      // Конструктор-выражение: `Hero("Raven", 600)`
+      if (peekNonWhitespace(pos) === '(') return true;
+      const lastTok = lastSignificantToken();
+      if (lastTok && (lastTok.text === 'extends' || lastTok.text === 'class')) return true;
+      // Параметр дженерика: `dyn_array<Hero>`
+      if (lastTok && lastTok.text === '<') {
+        const beforeAngle = significantToken(1);
+        if (beforeAngle && (beforeAngle.text === 'array' || beforeAngle.text === 'dyn_array')) return true;
+      }
+      return false;
+    }
+
     function tokenBeforeDot() {
       let dotFound = false;
       for (let i = tokens.length - 1; i >= 0; i--) {
@@ -643,7 +705,7 @@
           category = 'typeName';
         } else if (KEYWORDS.has(text)) {
           category = 'keyword';
-        } else if (userClasses.has(text) || isPascalCase(text)) {
+        } else if (userClasses.has(text) || (isPascalCase(text) && isClassNamePosition())) {
           category = 'className';
         } else if (nextChar === '(') {
           category = 'function';

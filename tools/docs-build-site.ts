@@ -18,12 +18,7 @@ interface OldLessonRef {
   readonly id: string;
   readonly file: string;
   readonly title: string;
-}
-
-interface InventoryLesson {
-  readonly lessonPath: string;
-  readonly subtitle: string;
-  readonly reviewFlags: readonly string[];
+  readonly subtitle?: string;
 }
 
 interface SiteManifest {
@@ -191,11 +186,35 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
   },
   {
     sectionId: 'widgets',
+    // IdySS-урок пораньше (владелец, 2026-07-24): после ImageBox и перед
+    // CheckBox — впереди ещё половина раздела, где стили можно применять.
+    afterLessonId: 'image',
+    id: 'styles',
+    title: 'Стили IdySS',
+    subtitle: 'Idyllium Style Sheets: наклейка style, словарь свойств и градиенты',
+    sourceFile: 'docs/manual-content/widgets/styles.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'widgets',
     afterLessonId: 'visibility',
     id: 'audio',
     title: 'Работа со звуками',
     subtitle: 'audio.Sound, audio.Music и первые звуки в GUI-приложении',
     sourceFile: 'docs/manual-content/widgets/audio.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'oop',
+    // «Сделай свою кнопку»: события в конце ООП, когда пройдены классы,
+    // методы, конструкторы и наследование; перед каталогом ошибок.
+    afterLessonId: 'static',
+    id: 'events',
+    title: 'Свои события',
+    subtitle: 'event, подписка и запуск: механизм кнопок теперь в ваших классах',
+    sourceFile: 'docs/manual-content/oop/events.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -649,6 +668,7 @@ const LESSON_REPLACEMENTS: Record<string, string> = {
   'oop/011_static.html': 'docs/manual-content/oop/static.html',
   'oop/012_errors.html': 'docs/manual-content/oop/errors.html',
   'oop/006_constructor.html': 'docs/manual-content/oop/constructor.html',
+  'examples/000_calc.html': 'docs/manual-content/examples/calc.html',
   'oop/009_polymorphism.html': 'docs/manual-content/oop/polymorphism.html',
 };
 
@@ -671,8 +691,7 @@ function main(): void {
   copyAssets(sourceRoot, bookRoot);
 
   const oldLessons = JSON.parse(fs.readFileSync(lessonsJsonPath, 'utf8')) as OldLessonsJson;
-  const inventory = readInventory();
-  const convertedSections = oldLessons.sections.map((section) => convertSection(section, lessonsRoot, bookRoot, inventory));
+  const convertedSections = oldLessons.sections.map((section) => convertSection(section, lessonsRoot, bookRoot));
   const manifest: SiteManifest = {
     version: 1,
     generatedAt: new Date().toISOString(),
@@ -694,7 +713,6 @@ function convertSection(
   oldSection: OldSection,
   lessonsRoot: string,
   outputRoot: string,
-  inventory: Map<string, InventoryLesson>,
 ): SiteSection {
   const meta = SECTION_RENAMES[oldSection.id] ?? { id: oldSection.id, title: oldSection.title, icon: oldSection.icon ?? 'section' };
   const usedSlugs = new Set<string>();
@@ -706,13 +724,15 @@ function convertSection(
     const sourcePath = path.join(lessonsRoot, sourceFile);
     const outputFile = `content/${meta.id}/${slug}.html`;
     const outputPath = path.join(outputRoot, outputFile);
-    const lessonInventory = inventory.get(sourceFile);
-    const reviewFlags = lessonInventory?.reviewFlags ?? [];
+    const reviewFlags: string[] = [];
     const status = 'ready';
-    const subtitle = lessonInventory?.subtitle ?? '';
+    const subtitle = lessonRef.subtitle ?? '';
 
+    const replacement = LESSON_REPLACEMENTS[sourceFile];
+    const hasSource = fs.existsSync(sourcePath)
+      || (replacement !== undefined && fs.existsSync(path.resolve(process.cwd(), replacement)));
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-    fs.writeFileSync(outputPath, fs.existsSync(sourcePath)
+    fs.writeFileSync(outputPath, hasSource
       ? lessonFragment(sourceFile, lessonSource(sourceFile, sourcePath))
       : missingLessonFragment(oldSection.title, lessonRef.title), 'utf8');
 
@@ -1079,18 +1099,6 @@ function prepareOutput(outputRoot: string): void {
     const target = path.join(resolvedOutput, managedPath);
     if (fs.existsSync(target)) fs.rmSync(target, { recursive: true, force: true });
   }
-}
-
-function readInventory(): Map<string, InventoryLesson> {
-  const inventoryPath = path.resolve(process.cwd(), 'docs/migration/lesson-inventory.json');
-  const result = new Map<string, InventoryLesson>();
-  if (!fs.existsSync(inventoryPath)) return result;
-
-  const inventory = JSON.parse(fs.readFileSync(inventoryPath, 'utf8'));
-  for (const lesson of inventory.lessons ?? []) {
-    result.set(normalizePath(lesson.lessonPath), lesson);
-  }
-  return result;
 }
 
 function uniqueSlug(sourceFile: string, title: string, usedSlugs: Set<string>): string {

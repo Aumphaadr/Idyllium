@@ -30,6 +30,7 @@ export {
   ConsoleIO,
 } from './runtime/runtime';
 export { createNodeImageService } from './runtime/node-image-service';
+export { parseIdylliumStyle, IdylliumStyleDeclaration } from './runtime/style';
 export {
   createRuntimeFontMetricsService,
   RuntimeFontMetricsService,

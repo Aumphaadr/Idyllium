@@ -1,7 +1,7 @@
 (() => {
   const KEYWORDS = new Set([
     'use', 'if', 'else', 'while', 'do', 'for', 'break', 'continue', 'return', 'try', 'catch', 'finally', 'const',
-    'function', 'class', 'extends', 'this', 'constructor',
+    'function', 'class', 'extends', 'this', 'constructor', 'event',
     'public', 'private', 'static', 'parent', 'and', 'or', 'xor',
     'not', 'true', 'false', 'null',
   ]);
@@ -676,6 +676,29 @@
       return source[index] ?? '';
     }
 
+    function significantToken(depth) {
+      let remaining = depth;
+      for (let i = tokens.length - 1; i >= 0; i--) {
+        if (tokens[i].category === 'plain') continue;
+        if (remaining === 0) return tokens[i];
+        remaining--;
+      }
+      return null;
+    }
+
+    // Имя с большой буквы — класснейм только в позиции класса, а не всегда.
+    function isClassNamePosition(position) {
+      if (/^\s+[a-zA-Z_\u0400-\u04FF][a-zA-Z0-9_\u0400-\u04FF]*\s*(?:[=;,)(\[]|$)/.test(source.slice(position))) return true;
+      if (nextNonWhitespace(position) === '(') return true;
+      const previous = lastSignificantToken();
+      if (previous && (previous.text === 'extends' || previous.text === 'class')) return true;
+      if (previous && previous.text === '<') {
+        const beforeAngle = significantToken(1);
+        if (beforeAngle && (beforeAngle.text === 'array' || beforeAngle.text === 'dyn_array')) return true;
+      }
+      return false;
+    }
+
     function lastSignificantToken() {
       for (let index = tokens.length - 1; index >= 0; index--) {
         if (tokens[index].category !== 'plain') return tokens[index];
@@ -775,7 +798,7 @@
           category = 'typeName';
         } else if (KEYWORDS.has(value)) {
           category = 'keyword';
-        } else if (userClasses.has(value) || isPascalCase(value)) {
+        } else if (userClasses.has(value) || (isPascalCase(value) && isClassNamePosition(position))) {
           category = 'className';
         } else if (next === '(') {
           category = 'function';

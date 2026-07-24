@@ -292,6 +292,10 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   const visible = [
     propertySpec('visible', BOOL),
   ];
+  const styleable = [
+    propertySpec('style', STRING, false,
+      'IdySS-строка стилей вида "color: red; border-radius: 8px;". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.'),
+  ];
   const changeable = [
     propertySpec('on_change', ANY_TYPE),
   ];
@@ -371,6 +375,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     functionSpec('tan', [{ name: 'radians', type: FLOAT }], FLOAT),
     functionSpec('asin', [{ name: 'value', type: FLOAT }], FLOAT),
     functionSpec('acos', [{ name: 'value', type: FLOAT }], FLOAT),
+    functionSpec('atan', [{ name: 'value', type: FLOAT }], FLOAT),
     functionSpec('log', [{ name: 'value', type: FLOAT }], FLOAT),
     functionSpec('log10', [{ name: 'value', type: FLOAT }], FLOAT),
     functionSpec('to_radians', [{ name: 'degrees', type: FLOAT }], FLOAT),
@@ -792,6 +797,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       propertySpec('font', fontsFont),
       ...fontSized,
       propertySpec('title', STRING),
+      ...styleable,
     ], [
       functionSpec('add_child', [guiChildParameter], VOID),
       functionSpec('show', [], VOID),
@@ -799,6 +805,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     typeSpec('Widget', [
       ...positioned,
       ...visible,
+      ...styleable,
       ...inheritableColorRoles,
       propertySpec('font', fontsFont),
     ]),
@@ -827,6 +834,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     typeSpec('Label', [
       ...positioned,
       ...visible,
+      ...styleable,
       ...colorRoles,
       ...fontSized,
       callbackPropertySpec('on_click', [
@@ -838,6 +846,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     typeSpec('Button', [
       ...positioned,
       ...visible,
+      ...styleable,
       ...colorRoles,
       ...fontSized,
       ...buttonClickable,
@@ -846,6 +855,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     typeSpec('Frame', [
       ...positioned,
       ...visible,
+      ...styleable,
       propertySpec('background_color', COLOR),
       propertySpec('border_color', COLOR),
       propertySpec('border_width', INT),
@@ -857,6 +867,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     typeSpec('ImageBox', [
       ...positioned,
       ...visible,
+      ...styleable,
       propertySpec('resize_mode', STRING),
     ], [
       functionSpec('set_image', [{ name: 'image', type: imageImage }], VOID),
@@ -864,6 +875,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     typeSpec('LineEdit', [
       ...positioned,
       ...visible,
+      ...styleable,
       ...changeable,
       ...colorRoles,
       ...fontSized,
@@ -874,6 +886,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     typeSpec('TextEdit', [
       ...positioned,
       ...visible,
+      ...styleable,
       ...changeable,
       ...colorRoles,
       ...fontSized,
@@ -883,6 +896,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     typeSpec('ProgressBar', [
       ...positioned,
       ...visible,
+      ...styleable,
       propertySpec('value', INT),
       propertySpec('min', INT),
       propertySpec('max', INT),
@@ -895,6 +909,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     typeSpec('SpinBox', [
       ...positioned,
       ...visible,
+      ...styleable,
       ...changeable,
       propertySpec('value', INT),
       propertySpec('min', INT),
@@ -905,6 +920,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     typeSpec('FloatSpinBox', [
       ...positioned,
       ...visible,
+      ...styleable,
       ...changeable,
       propertySpec('value', FLOAT),
       propertySpec('min', FLOAT),
@@ -915,6 +931,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     typeSpec('Slider', [
       ...positioned,
       ...visible,
+      ...styleable,
       ...changeable,
       propertySpec('value', INT),
       propertySpec('min', INT),
@@ -924,6 +941,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     typeSpec('CheckBox', [
       ...positioned,
       ...visible,
+      ...styleable,
       ...changeable,
       ...fontSized,
       propertySpec('text', STRING),
@@ -932,6 +950,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     typeSpec('RadioButton', [
       ...positioned,
       ...visible,
+      ...styleable,
       ...changeable,
       ...fontSized,
       propertySpec('text', STRING),
@@ -941,6 +960,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     typeSpec('ComboBox', [
       ...positioned,
       ...visible,
+      ...styleable,
       ...changeable,
       ...fontSized,
       propertySpec('selected_index', INT),

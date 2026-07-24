@@ -217,7 +217,7 @@
     },
     "console.functions.002": {
       "kind": "docs_only",
-      "reason": "Template-style lesson block uses placeholder variable 'выходные_данные' and must be normalized before executable checks."
+      "reason": "Псевдокод-схема из урока о функциях: русские placeholder-имена (аргументы/результат) намеренно не компилируются."
     },
     "console.functions.008": {
       "kind": "valid"
@@ -476,6 +476,20 @@
         "instance method 'Cat.meow' must be called on an object"
       ],
       "reason": "Migration 2026-07-24 (oop/canvas/json/sqlite): teaching example fails to compile with this message."
+    },
+    "oop.events.006": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "event 'on_opened' can only be fired inside class 'Door'"
+      ],
+      "reason": "Lesson «Свои события» (2026-07-24): teaching example fails to compile with this message."
+    },
+    "oop.events.007": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "event 'on_opened' cannot be read as a value"
+      ],
+      "reason": "Lesson «Свои события» (2026-07-24): teaching example fails to compile with this message."
     },
     "oop.fields-methods.001": {
       "kind": "valid"

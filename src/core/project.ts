@@ -294,6 +294,7 @@ function classSpecFromDeclaration(
   const qualifiedName = qualifiedUserClassName(moduleName, declaration.name);
   const fields: UserModuleFieldSpec[] = [];
   const methods: UserModuleMethodSpec[] = [];
+  const events: UserModuleMethodSpec[] = [];
   let constructorSpec: FunctionSpec | null = null;
   let constructorAccess: AccessModifier = 'public';
 
@@ -323,6 +324,24 @@ function classSpecFromDeclaration(
       });
     }
 
+    if (member.kind === 'ClassEventDeclaration') {
+      events.push({
+        name: member.name,
+        spec: {
+          name: member.name,
+          parameters: member.parameters.map((parameter) => ({
+            name: parameter.name,
+            type: resolveModuleExportType(parameter.paramType, moduleName, program, localClasses, stdlib, userModules, diagnostics),
+          })),
+          returnType: VOID,
+        },
+        owner: qualifiedName,
+        access: member.access,
+        isStatic: false,
+        range: member.range,
+      });
+    }
+
     if (member.kind === 'ConstructorDeclaration') {
       constructorSpec = {
         name: member.name,
@@ -343,6 +362,7 @@ function classSpecFromDeclaration(
     baseName: declaration.baseName ? qualifiedUserClassName(moduleName, declaration.baseName) : null,
     fields,
     methods,
+    events,
     constructorSpec,
     constructorAccess,
     range: declaration.range,

@@ -58,6 +58,8 @@ export class JavaScriptGenerator {
   private userClassNames = new Set<string>();
   private functionParameters = new Map<string, readonly ParameterDeclaration[]>();
   private classMethodParameters = new Map<string, readonly ParameterDeclaration[]>();
+  private classEventParameters = new Map<string, readonly ParameterDeclaration[]>();
+  private classBaseNames = new Map<string, string | null>();
   private classConstructorParameters = new Map<string, readonly ParameterDeclaration[]>();
   private moduleFunctionParameters = new Map<string, readonly ParameterDeclaration[]>();
   private moduleClassMethodParameters = new Map<string, readonly ParameterDeclaration[]>();
@@ -138,15 +140,21 @@ export class JavaScriptGenerator {
       .map((item) => item.name));
     this.functionParameters = new Map();
     this.classMethodParameters = new Map();
+    this.classEventParameters = new Map();
+    this.classBaseNames = new Map();
     this.classConstructorParameters = new Map();
     for (const declaration of program.declarations) {
       if (declaration.kind === 'FunctionDeclaration') {
         this.functionParameters.set(declaration.name, declaration.parameters);
       }
       if (declaration.kind !== 'ClassDeclaration') continue;
+      this.classBaseNames.set(declaration.name, declaration.baseName ?? null);
       for (const member of declaration.members) {
         if (member.kind === 'ClassMethodDeclaration') {
           this.classMethodParameters.set(this.classMemberKey(declaration.name, member.name), member.parameters);
+        }
+        if (member.kind === 'ClassEventDeclaration') {
+          this.classEventParameters.set(this.classMemberKey(declaration.name, member.name), member.parameters);
         }
         if (member.kind === 'ConstructorDeclaration') {
           this.classConstructorParameters.set(declaration.name, member.parameters);
@@ -255,7 +263,7 @@ export class JavaScriptGenerator {
         this.emitAssignment(statement, lines, indent);
         return;
       case 'ExpressionStatement':
-        lines.push(`${pad}${this.maybeAwait(statement.expression)};`);
+        lines.push(`${pad}${this.expression(statement.expression)};`);
         return;
     }
   }
@@ -324,6 +332,10 @@ export class JavaScriptGenerator {
     for (const member of declaration.members) {
       if (member.kind === 'ClassMethodDeclaration' && !member.isStatic) {
         this.emitInstanceMethod(declaration.name, member, lines, indent + 1);
+      }
+      if (member.kind === 'ClassEventDeclaration') {
+        // Событие без подписчика — null: запуск тогда молча ничего не делает.
+        lines.push(`${'  '.repeat(indent + 1)}self.${member.name} = null;`);
       }
     }
 
@@ -537,10 +549,6 @@ export class JavaScriptGenerator {
     return `$rt.core.binary(${JSON.stringify(binaryOperator)}, ${target}, ${value}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
   }
 
-  private maybeAwait(expression: Expression): string {
-    return this.expression(expression);
-  }
-
   private expression(expression: Expression): string {
     switch (expression.kind) {
       case 'LiteralExpression':
@@ -553,7 +561,10 @@ export class JavaScriptGenerator {
         }
         return JSON.stringify(expression.value);
       case 'IdentifierExpression':
-        if (expression.name === 'this') return this.classFieldInitializerDepth > 0 ? 'self' : 'this';
+        // 'this' всегда компилируется в лексический self фабрики/инициализатора
+        // класса: метод остаётся привязанным к своему объекту, даже когда его
+        // сохранили как значение (obj.method → колбэк) и вызвали отдельно.
+        if (expression.name === 'this') return 'self';
         if (this.userClassNames.has(expression.name)) return this.classObjectName(expression.name);
         return expression.name;
       case 'UnaryExpression':
@@ -665,6 +676,16 @@ export class JavaScriptGenerator {
 
     if (callee.kind === 'MemberExpression') {
       const receiverType = this.typeOf(callee.object);
+      if (receiverType?.kind === 'class') {
+        const eventParameters = this.lookupClassEventParameters(receiverType.name, callee.name);
+        if (eventParameters) {
+          // Семантика уже гарантировала запуск только изнутри класса через this.
+          const ordered = this.orderedCallArguments(expression.args, eventParameters.map((parameter) => parameter.name));
+          const args = ordered.map((arg) => (arg ? this.expression(arg.value) : 'undefined')).join(', ');
+          const target = this.expression(callee.object);
+          return `(${target}.${callee.name} ? ${target}.${callee.name}(${args}) : undefined)`;
+        }
+      }
       const typesRuntimeName = this.typesRuntimeNameOf(receiverType);
       if (typesRuntimeName && (callee.name === 'to_bin' || callee.name === 'to_hex')) {
         return `$rt.types.${callee.name}(${this.expression(callee.object)}, ${JSON.stringify(typesRuntimeName)})`;
@@ -891,6 +912,16 @@ export class JavaScriptGenerator {
     }
     if (type.kind === 'QualifiedTypeName' && this.userModuleNames.has(type.moduleName)) {
       return this.moduleClassConstructorParameters.get(`${type.moduleName}.${type.name}`)?.map((parameter) => parameter.name);
+    }
+    return undefined;
+  }
+
+  private lookupClassEventParameters(className: string, eventName: string): readonly ParameterDeclaration[] | undefined {
+    let current: string | null | undefined = className;
+    while (current) {
+      const parameters = this.classEventParameters.get(this.classMemberKey(current, eventName));
+      if (parameters) return parameters;
+      current = this.classBaseNames.get(current) ?? null;
     }
     return undefined;
   }

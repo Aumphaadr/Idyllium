@@ -12,6 +12,10 @@ export class Lexer {
   private index = 0;
   private line = 1;
   private column = 1;
+  // Абсолютный индекс начала текущего токена: sourceSlice() почти всегда
+  // режет от него, и кэш избавляет от O(n²)-сканирования исходника с нуля.
+  private tokenStart: SourceLocation | null = null;
+  private tokenStartIndex = 0;
 
   constructor(
     private readonly source: string,
@@ -39,6 +43,8 @@ export class Lexer {
 
   private scanToken(): void {
     const start = this.location();
+    this.tokenStart = start;
+    this.tokenStartIndex = this.index;
     const char = this.advance();
 
     switch (char) {
@@ -352,7 +358,11 @@ export class Lexer {
   }
 
   private sourceSlice(start: SourceLocation): string {
-    const absoluteStart = this.absoluteIndexFor(start);
+    const absoluteStart = this.tokenStart !== null
+      && start.line === this.tokenStart.line
+      && start.column === this.tokenStart.column
+      ? this.tokenStartIndex
+      : this.absoluteIndexFor(start);
     return this.source.slice(absoluteStart, this.index);
   }
 

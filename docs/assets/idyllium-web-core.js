@@ -199,6 +199,8 @@ class JavaScriptGenerator {
     userClassNames = new Set();
     functionParameters = new Map();
     classMethodParameters = new Map();
+    classEventParameters = new Map();
+    classBaseNames = new Map();
     classConstructorParameters = new Map();
     moduleFunctionParameters = new Map();
     moduleClassMethodParameters = new Map();
@@ -270,6 +272,8 @@ class JavaScriptGenerator {
             .map((item) => item.name));
         this.functionParameters = new Map();
         this.classMethodParameters = new Map();
+        this.classEventParameters = new Map();
+        this.classBaseNames = new Map();
         this.classConstructorParameters = new Map();
         for (const declaration of program.declarations) {
             if (declaration.kind === 'FunctionDeclaration') {
@@ -277,9 +281,13 @@ class JavaScriptGenerator {
             }
             if (declaration.kind !== 'ClassDeclaration')
                 continue;
+            this.classBaseNames.set(declaration.name, declaration.baseName ?? null);
             for (const member of declaration.members) {
                 if (member.kind === 'ClassMethodDeclaration') {
                     this.classMethodParameters.set(this.classMemberKey(declaration.name, member.name), member.parameters);
+                }
+                if (member.kind === 'ClassEventDeclaration') {
+                    this.classEventParameters.set(this.classMemberKey(declaration.name, member.name), member.parameters);
                 }
                 if (member.kind === 'ConstructorDeclaration') {
                     this.classConstructorParameters.set(declaration.name, member.parameters);
@@ -380,7 +388,7 @@ class JavaScriptGenerator {
                 this.emitAssignment(statement, lines, indent);
                 return;
             case 'ExpressionStatement':
-                lines.push(`${pad}${this.maybeAwait(statement.expression)};`);
+                lines.push(`${pad}${this.expression(statement.expression)};`);
                 return;
         }
     }
@@ -441,6 +449,10 @@ class JavaScriptGenerator {
         for (const member of declaration.members) {
             if (member.kind === 'ClassMethodDeclaration' && !member.isStatic) {
                 this.emitInstanceMethod(declaration.name, member, lines, indent + 1);
+            }
+            if (member.kind === 'ClassEventDeclaration') {
+                // Событие без подписчика — null: запуск тогда молча ничего не делает.
+                lines.push(`${'  '.repeat(indent + 1)}self.${member.name} = null;`);
             }
         }
         this.classFieldInitializerDepth += 1;
@@ -627,9 +639,6 @@ class JavaScriptGenerator {
         }
         return `$rt.core.binary(${JSON.stringify(binaryOperator)}, ${target}, ${value}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
     }
-    maybeAwait(expression) {
-        return this.expression(expression);
-    }
     expression(expression) {
         switch (expression.kind) {
             case 'LiteralExpression':
@@ -640,8 +649,11 @@ class JavaScriptGenerator {
                 }
                 return JSON.stringify(expression.value);
             case 'IdentifierExpression':
+                // 'this' всегда компилируется в лексический self фабрики/инициализатора
+                // класса: метод остаётся привязанным к своему объекту, даже когда его
+                // сохранили как значение (obj.method → колбэк) и вызвали отдельно.
                 if (expression.name === 'this')
-                    return this.classFieldInitializerDepth > 0 ? 'self' : 'this';
+                    return 'self';
                 if (this.userClassNames.has(expression.name))
                     return this.classObjectName(expression.name);
                 return expression.name;
@@ -739,6 +751,16 @@ class JavaScriptGenerator {
         }
         if (callee.kind === 'MemberExpression') {
             const receiverType = this.typeOf(callee.object);
+            if (receiverType?.kind === 'class') {
+                const eventParameters = this.lookupClassEventParameters(receiverType.name, callee.name);
+                if (eventParameters) {
+                    // Семантика уже гарантировала запуск только изнутри класса через this.
+                    const ordered = this.orderedCallArguments(expression.args, eventParameters.map((parameter) => parameter.name));
+                    const args = ordered.map((arg) => (arg ? this.expression(arg.value) : 'undefined')).join(', ');
+                    const target = this.expression(callee.object);
+                    return `(${target}.${callee.name} ? ${target}.${callee.name}(${args}) : undefined)`;
+                }
+            }
             const typesRuntimeName = this.typesRuntimeNameOf(receiverType);
             if (typesRuntimeName && (callee.name === 'to_bin' || callee.name === 'to_hex')) {
                 return `$rt.types.${callee.name}(${this.expression(callee.object)}, ${JSON.stringify(typesRuntimeName)})`;
@@ -927,6 +949,16 @@ class JavaScriptGenerator {
         }
         if (type.kind === 'QualifiedTypeName' && this.userModuleNames.has(type.moduleName)) {
             return this.moduleClassConstructorParameters.get(`${type.moduleName}.${type.name}`)?.map((parameter) => parameter.name);
+        }
+        return undefined;
+    }
+    lookupClassEventParameters(className, eventName) {
+        let current = className;
+        while (current) {
+            const parameters = this.classEventParameters.get(this.classMemberKey(current, eventName));
+            if (parameters)
+                return parameters;
+            current = this.classBaseNames.get(current) ?? null;
         }
         return undefined;
     }
@@ -1211,6 +1243,10 @@ class Lexer {
     index = 0;
     line = 1;
     column = 1;
+    // Абсолютный индекс начала текущего токена: sourceSlice() почти всегда
+    // режет от него, и кэш избавляет от O(n²)-сканирования исходника с нуля.
+    tokenStart = null;
+    tokenStartIndex = 0;
     constructor(source, file = 'main.idyl') {
         this.source = source;
         this.file = file;
@@ -1233,6 +1269,8 @@ class Lexer {
     }
     scanToken() {
         const start = this.location();
+        this.tokenStart = start;
+        this.tokenStartIndex = this.index;
         const char = this.advance();
         switch (char) {
             case '(':
@@ -1518,7 +1556,11 @@ class Lexer {
         };
     }
     sourceSlice(start) {
-        const absoluteStart = this.absoluteIndexFor(start);
+        const absoluteStart = this.tokenStart !== null
+            && start.line === this.tokenStart.line
+            && start.column === this.tokenStart.column
+            ? this.tokenStartIndex
+            : this.absoluteIndexFor(start);
         return this.source.slice(absoluteStart, this.index);
     }
     absoluteIndexFor(location) {
@@ -1839,6 +1881,32 @@ class Parser {
                 continue;
             }
             const isStatic = this.match(tokens_1.TokenKind.KwStatic);
+            if (this.check(tokens_1.TokenKind.KwEvent)) {
+                const eventToken = this.advance();
+                if (isStatic) {
+                    this.error(eventToken.range, 'events cannot be static');
+                }
+                const name = this.consume(tokens_1.TokenKind.Identifier, 'expected event name');
+                let parameters = [];
+                if (this.match(tokens_1.TokenKind.LeftParen)) {
+                    parameters = this.parseParameterList();
+                }
+                for (const parameter of parameters) {
+                    if (parameter.defaultValue) {
+                        this.error(parameter.range, 'event parameters cannot have default values');
+                    }
+                }
+                const semicolon = this.consume(tokens_1.TokenKind.Semicolon, "expected ';' after event declaration");
+                members.push({
+                    kind: 'ClassEventDeclaration',
+                    name: name.lexeme,
+                    nameRange: name.range,
+                    parameters,
+                    access: currentAccess,
+                    range: { start: eventToken.range.start, end: semicolon.range.end },
+                });
+                continue;
+            }
             if (this.check(tokens_1.TokenKind.KwConstructor)) {
                 if (isStatic) {
                     this.error(this.previous().range, 'constructors cannot be static');
@@ -2777,6 +2845,7 @@ function classSpecFromDeclaration(declaration, moduleName, program, localClasses
     const qualifiedName = (0, modules_1.qualifiedUserClassName)(moduleName, declaration.name);
     const fields = [];
     const methods = [];
+    const events = [];
     let constructorSpec = null;
     let constructorAccess = 'public';
     for (const member of declaration.members) {
@@ -2803,6 +2872,23 @@ function classSpecFromDeclaration(declaration, moduleName, program, localClasses
                 range: member.range,
             });
         }
+        if (member.kind === 'ClassEventDeclaration') {
+            events.push({
+                name: member.name,
+                spec: {
+                    name: member.name,
+                    parameters: member.parameters.map((parameter) => ({
+                        name: parameter.name,
+                        type: resolveModuleExportType(parameter.paramType, moduleName, program, localClasses, stdlib, userModules, diagnostics),
+                    })),
+                    returnType: types_1.VOID,
+                },
+                owner: qualifiedName,
+                access: member.access,
+                isStatic: false,
+                range: member.range,
+            });
+        }
         if (member.kind === 'ConstructorDeclaration') {
             constructorSpec = {
                 name: member.name,
@@ -2822,6 +2908,7 @@ function classSpecFromDeclaration(declaration, moduleName, program, localClasses
         baseName: declaration.baseName ? (0, modules_1.qualifiedUserClassName)(moduleName, declaration.baseName) : null,
         fields,
         methods,
+        events,
         constructorSpec,
         constructorAccess,
         range: declaration.range,
@@ -2979,6 +3066,18 @@ class SemanticAnalyzer {
                     range: method.range,
                 });
             }
+            const events = new Map();
+            const eventAccess = new Map();
+            for (const event of classSpec.events ?? []) {
+                events.set(event.name, event.spec);
+                eventAccess.set(event.name, {
+                    name: event.name,
+                    owner: event.owner,
+                    access: event.access,
+                    isStatic: false,
+                    range: event.range,
+                });
+            }
             this.classes.set(classSpec.qualifiedName, {
                 declaration: {
                     kind: 'ClassDeclaration',
@@ -2993,8 +3092,11 @@ class SemanticAnalyzer {
                 methods,
                 methodDeclarations: new Map(),
                 methodAccess,
+                events,
+                eventAccess,
                 ownFields: new Set(fields.keys()),
                 ownMethods: new Set(methods.keys()),
+                ownEvents: new Set(events.keys()),
                 constructorSpec: classSpec.constructorSpec,
                 constructorDeclaration: null,
                 constructorAccess: classSpec.constructorAccess,
@@ -3078,8 +3180,11 @@ class SemanticAnalyzer {
             methods: new Map(),
             methodDeclarations: new Map(),
             methodAccess: new Map(),
+            events: new Map(),
+            eventAccess: new Map(),
             ownFields: new Set(),
             ownMethods: new Set(),
+            ownEvents: new Set(),
             constructorSpec: null,
             constructorDeclaration: null,
             constructorAccess: 'public',
@@ -3117,6 +3222,9 @@ class SemanticAnalyzer {
                 case 'ClassMethodDeclaration':
                     this.registerClassMethod(info, member);
                     break;
+                case 'ClassEventDeclaration':
+                    this.registerClassEvent(info, member);
+                    break;
                 case 'ConstructorDeclaration':
                     this.registerClassConstructor(info, member);
                     break;
@@ -3137,6 +3245,12 @@ class SemanticAnalyzer {
             const access = baseInfo.methodAccess.get(name);
             if (access)
                 info.methodAccess.set(name, access);
+        }
+        for (const [name, event] of baseInfo.events) {
+            info.events.set(name, event);
+            const access = baseInfo.eventAccess.get(name);
+            if (access)
+                info.eventAccess.set(name, access);
         }
     }
     methodSignatureCanOverride(baseMethod, declaration) {
@@ -3202,6 +3316,32 @@ class SemanticAnalyzer {
             range: declaration.range,
         });
         info.ownMethods.add(declaration.name);
+    }
+    registerClassEvent(info, declaration) {
+        this.markSemanticToken('property', declaration.nameRange, ['declaration']);
+        if (info.fields.has(declaration.name) || info.methods.has(declaration.name) || info.events.has(declaration.name)) {
+            const inherited = !info.ownFields.has(declaration.name)
+                && !info.ownMethods.has(declaration.name)
+                && !info.ownEvents.has(declaration.name);
+            this.diagnostics.error(declaration.range, inherited
+                ? `event '${declaration.name}' conflicts with an inherited member`
+                : `class '${info.declaration.name}' already has member '${declaration.name}'`);
+            return;
+        }
+        const parameters = declaration.parameters.map((parameter) => this.resolveTypeName(parameter.paramType));
+        info.events.set(declaration.name, {
+            name: declaration.name,
+            parameters: parameters.map((type, index) => ({ name: declaration.parameters[index].name, type })),
+            returnType: types_1.VOID,
+        });
+        info.eventAccess.set(declaration.name, {
+            name: declaration.name,
+            owner: info.declaration.name,
+            access: declaration.access,
+            isStatic: false,
+            range: declaration.range,
+        });
+        info.ownEvents.add(declaration.name);
     }
     registerClassConstructor(info, declaration) {
         this.markSemanticToken('method', declaration.nameRange, ['declaration']);
@@ -3615,6 +3755,25 @@ class SemanticAnalyzer {
                 return { type: runtimeErrorProperty.type, property: runtimeErrorProperty };
             }
             if (objectType.kind === 'class') {
+                const eventInfo = this.getClassEventInfo(objectType.name, target.name);
+                if (eventInfo) {
+                    this.markSemanticToken('property', target.nameRange);
+                    this.checkClassMemberAccess(eventInfo.access, target.range);
+                    const parameterTypes = eventInfo.spec.parameters.map((parameter) => parameter.type);
+                    // Синтетический PropertySpec включает валидацию как у колбэков
+                    // виджетов: обработчик без параметров или с полной сигнатурой.
+                    return {
+                        type: types_1.ANY_TYPE,
+                        property: {
+                            name: target.name,
+                            type: types_1.ANY_TYPE,
+                            callbacks: [
+                                { parameters: [], returnType: types_1.VOID },
+                                ...(parameterTypes.length > 0 ? [{ parameters: parameterTypes, returnType: types_1.VOID }] : []),
+                            ],
+                        },
+                    };
+                }
                 const field = this.getClassField(objectType.name, target.name);
                 if (!field) {
                     this.diagnostics.error(target.range, `type '${(0, types_1.typeToString)(objectType)}' has no field '${target.name}'`);
@@ -4146,6 +4305,19 @@ class SemanticAnalyzer {
                 return null;
             }
             if (objectType.kind === 'class') {
+                const eventInfo = this.getClassEventInfo(objectType.name, callee.name);
+                if (eventInfo) {
+                    this.markSemanticToken('property', callee.nameRange);
+                    const context = this.classContexts.length > 0 ? this.classContexts[this.classContexts.length - 1] : null;
+                    const firedOnThis = callee.object.kind === 'IdentifierExpression' && callee.object.name === 'this';
+                    const insideOwner = context !== null && !context.isStatic
+                        && (context.className === eventInfo.access.owner || this.classExtends(context.className, eventInfo.access.owner));
+                    if (!firedOnThis || !insideOwner) {
+                        this.diagnostics.error(callee.range, `event '${callee.name}' can only be fired inside class '${eventInfo.access.owner}' (through 'this')`);
+                        return null;
+                    }
+                    return eventInfo.spec;
+                }
                 this.markSemanticToken('method', callee.nameRange);
                 const method = this.getClassMethodInfo(objectType.name, callee.name);
                 if (method) {
@@ -4471,6 +4643,12 @@ class SemanticAnalyzer {
             return types_1.ERROR_TYPE;
         }
         if (objectType.kind === 'class') {
+            const eventInfo = this.getClassEventInfo(objectType.name, expression.name);
+            if (eventInfo) {
+                this.markSemanticToken('property', expression.nameRange);
+                this.diagnostics.error(expression.range, `event '${expression.name}' cannot be read as a value; assign a handler or fire it inside class '${eventInfo.access.owner}'`);
+                return types_1.ERROR_TYPE;
+            }
             const field = this.getClassField(objectType.name, expression.name);
             if (field) {
                 this.markSemanticToken('property', expression.nameRange);
@@ -4594,6 +4772,16 @@ class SemanticAnalyzer {
     }
     getClassField(className, fieldName) {
         return this.classes.get(className)?.fields.get(fieldName) ?? null;
+    }
+    getClassEventInfo(className, eventName) {
+        const info = this.classes.get(className);
+        if (!info)
+            return null;
+        const spec = info.events.get(eventName);
+        const access = info.eventAccess.get(eventName);
+        if (!spec || !access)
+            return null;
+        return { spec, access };
     }
     getClassMethodInfo(className, methodName) {
         const info = this.classes.get(className);
@@ -4970,6 +5158,9 @@ function createDefaultStandardLibrary() {
     const visible = [
         propertySpec('visible', types_1.BOOL),
     ];
+    const styleable = [
+        propertySpec('style', types_1.STRING, false, 'IdySS-строка стилей вида "color: red; border-radius: 8px;". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.'),
+    ];
     const changeable = [
         propertySpec('on_change', types_1.ANY_TYPE),
     ];
@@ -5047,6 +5238,7 @@ function createDefaultStandardLibrary() {
         functionSpec('tan', [{ name: 'radians', type: types_1.FLOAT }], types_1.FLOAT),
         functionSpec('asin', [{ name: 'value', type: types_1.FLOAT }], types_1.FLOAT),
         functionSpec('acos', [{ name: 'value', type: types_1.FLOAT }], types_1.FLOAT),
+        functionSpec('atan', [{ name: 'value', type: types_1.FLOAT }], types_1.FLOAT),
         functionSpec('log', [{ name: 'value', type: types_1.FLOAT }], types_1.FLOAT),
         functionSpec('log10', [{ name: 'value', type: types_1.FLOAT }], types_1.FLOAT),
         functionSpec('to_radians', [{ name: 'degrees', type: types_1.FLOAT }], types_1.FLOAT),
@@ -5458,6 +5650,7 @@ function createDefaultStandardLibrary() {
             propertySpec('font', fontsFont),
             ...fontSized,
             propertySpec('title', types_1.STRING),
+            ...styleable,
         ], [
             functionSpec('add_child', [guiChildParameter], types_1.VOID),
             functionSpec('show', [], types_1.VOID),
@@ -5465,6 +5658,7 @@ function createDefaultStandardLibrary() {
         typeSpec('Widget', [
             ...positioned,
             ...visible,
+            ...styleable,
             ...inheritableColorRoles,
             propertySpec('font', fontsFont),
         ]),
@@ -5493,6 +5687,7 @@ function createDefaultStandardLibrary() {
         typeSpec('Label', [
             ...positioned,
             ...visible,
+            ...styleable,
             ...colorRoles,
             ...fontSized,
             callbackPropertySpec('on_click', [
@@ -5504,6 +5699,7 @@ function createDefaultStandardLibrary() {
         typeSpec('Button', [
             ...positioned,
             ...visible,
+            ...styleable,
             ...colorRoles,
             ...fontSized,
             ...buttonClickable,
@@ -5512,6 +5708,7 @@ function createDefaultStandardLibrary() {
         typeSpec('Frame', [
             ...positioned,
             ...visible,
+            ...styleable,
             propertySpec('background_color', types_1.COLOR),
             propertySpec('border_color', types_1.COLOR),
             propertySpec('border_width', types_1.INT),
@@ -5523,6 +5720,7 @@ function createDefaultStandardLibrary() {
         typeSpec('ImageBox', [
             ...positioned,
             ...visible,
+            ...styleable,
             propertySpec('resize_mode', types_1.STRING),
         ], [
             functionSpec('set_image', [{ name: 'image', type: imageImage }], types_1.VOID),
@@ -5530,6 +5728,7 @@ function createDefaultStandardLibrary() {
         typeSpec('LineEdit', [
             ...positioned,
             ...visible,
+            ...styleable,
             ...changeable,
             ...colorRoles,
             ...fontSized,
@@ -5540,6 +5739,7 @@ function createDefaultStandardLibrary() {
         typeSpec('TextEdit', [
             ...positioned,
             ...visible,
+            ...styleable,
             ...changeable,
             ...colorRoles,
             ...fontSized,
@@ -5549,6 +5749,7 @@ function createDefaultStandardLibrary() {
         typeSpec('ProgressBar', [
             ...positioned,
             ...visible,
+            ...styleable,
             propertySpec('value', types_1.INT),
             propertySpec('min', types_1.INT),
             propertySpec('max', types_1.INT),
@@ -5561,6 +5762,7 @@ function createDefaultStandardLibrary() {
         typeSpec('SpinBox', [
             ...positioned,
             ...visible,
+            ...styleable,
             ...changeable,
             propertySpec('value', types_1.INT),
             propertySpec('min', types_1.INT),
@@ -5571,6 +5773,7 @@ function createDefaultStandardLibrary() {
         typeSpec('FloatSpinBox', [
             ...positioned,
             ...visible,
+            ...styleable,
             ...changeable,
             propertySpec('value', types_1.FLOAT),
             propertySpec('min', types_1.FLOAT),
@@ -5581,6 +5784,7 @@ function createDefaultStandardLibrary() {
         typeSpec('Slider', [
             ...positioned,
             ...visible,
+            ...styleable,
             ...changeable,
             propertySpec('value', types_1.INT),
             propertySpec('min', types_1.INT),
@@ -5590,6 +5794,7 @@ function createDefaultStandardLibrary() {
         typeSpec('CheckBox', [
             ...positioned,
             ...visible,
+            ...styleable,
             ...changeable,
             ...fontSized,
             propertySpec('text', types_1.STRING),
@@ -5598,6 +5803,7 @@ function createDefaultStandardLibrary() {
         typeSpec('RadioButton', [
             ...positioned,
             ...visible,
+            ...styleable,
             ...changeable,
             ...fontSized,
             propertySpec('text', types_1.STRING),
@@ -5607,6 +5813,7 @@ function createDefaultStandardLibrary() {
         typeSpec('ComboBox', [
             ...positioned,
             ...visible,
+            ...styleable,
             ...changeable,
             ...fontSized,
             propertySpec('selected_index', types_1.INT),
@@ -6032,6 +6239,7 @@ var TokenKind;
     TokenKind["KwThis"] = "KwThis";
     TokenKind["KwStatic"] = "KwStatic";
     TokenKind["KwExtends"] = "KwExtends";
+    TokenKind["KwEvent"] = "KwEvent";
     TokenKind["KwPrivate"] = "KwPrivate";
     TokenKind["KwPublic"] = "KwPublic";
     TokenKind["LeftParen"] = "LeftParen";
@@ -6101,6 +6309,7 @@ exports.KEYWORDS = {
     this: TokenKind.KwThis,
     static: TokenKind.KwStatic,
     extends: TokenKind.KwExtends,
+    event: TokenKind.KwEvent,
     private: TokenKind.KwPrivate,
     public: TokenKind.KwPublic,
 };
@@ -8776,6 +8985,7 @@ const nodeBuffer = require('buffer').Buffer;
 const image_service_1 = require("./image-service");
 const drawable_geometry_1 = require("./drawable-geometry");
 const font_metrics_service_1 = require("./font-metrics-service");
+const style_1 = require("./style");
 class IdylliumRuntimeError extends Error {
     file;
     line;
@@ -10985,6 +11195,7 @@ function createRuntime(options = {}) {
                     const number = rangeNumber(value, 'math.acos() value', -1, 1, file, line);
                     return Math.acos(number);
                 }),
+                atan: contextFunction((value, file, line) => Math.atan(finiteNumber(value, 'math.atan() value', file, line))),
                 log: contextFunction((value, file, line) => {
                     const number = finiteNumber(value, 'math.log() value', file, line);
                     if (number <= 0)
@@ -12608,6 +12819,7 @@ function initializeGuiObject(obj, typeName, state) {
         obj.width = size.width;
         obj.height = size.height;
         obj.visible = true;
+        obj.style = ''; // IdySS-наклейка; пустая строка = наклейки нет
         defineTrackedRuntimeProperty(obj, 'text_color', colorBlack());
         defineTrackedRuntimeProperty(obj, 'background_color', colorTransparent());
         defineTrackedRuntimeProperty(obj, 'font', null);
@@ -13871,6 +14083,11 @@ function objectPropertiesSnapshot(value) {
             continue;
         result[key] = snapshotValue(item);
     }
+    if (typeof value.style === 'string' && value.style.trim() !== '') {
+        // IdySS: в браузер уезжают только провалидированные пары — рендерер
+        // строк не разбирает и произвольный CSS не видит.
+        result.style_declarations = (0, style_1.parseIdylliumStyle)(value.style);
+    }
     if (value.__explicitProperties instanceof Set && value.__explicitProperties.size > 0) {
         result.__explicit_properties = [...value.__explicitProperties].sort();
     }
@@ -14447,6 +14664,219 @@ function firstSqlKeyword(sql) {
     return /^[A-Za-z]+/u.exec(withoutLeadingComments)?.[0].toUpperCase() ?? '';
 }
 //# sourceMappingURL=sqlite-service.js.map
+},
+"dist/src/runtime/style.js": function(require, module, exports) {
+"use strict";
+// IdySS — стилевой мини-язык виджетов (путь QSS): строка вида
+// "color: red; border-radius: 12px;" разбирается в список проверенных пар.
+// Главный контракт: ошибки МОЛЧАТ. Неизвестное свойство или кривое значение
+// просто отбрасываются — как в настоящем CSS. Санитизация встроена в
+// конструкцию: в снапшот (и затем на element.style) попадают только пары,
+// прошедшие словарь и белые списки форм значений; произвольный CSS-текст
+// никогда никуда не вставляется.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.parseIdylliumStyle = parseIdylliumStyle;
+// Именованные цвета — РОВНО палитра библиотеки colors (green = #00FF00,
+// а не CSS-легаси): один словарь цветов на весь Idyllium.
+const NAMED_COLORS = {
+    black: '#000000',
+    white: '#FFFFFF',
+    red: '#FF0000',
+    'dark-red': '#800000',
+    green: '#00FF00',
+    'dark-green': '#008000',
+    blue: '#0000FF',
+    'dark-blue': '#000080',
+    yellow: '#FFFF00',
+    olive: '#808000',
+    cyan: '#00FFFF',
+    teal: '#008080',
+    magenta: '#FF00FF',
+    purple: '#800080',
+    gray: '#808080',
+    'light-gray': '#C0C0C0',
+    transparent: 'transparent',
+};
+const HEX_COLOR_RE = /^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/u;
+const RGB_RE = /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/u;
+const RGBA_RE = /^rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(0|1|0?\.\d+|1\.0+)\s*\)$/u;
+function colorValue(raw) {
+    const value = raw.toLowerCase();
+    const named = NAMED_COLORS[value];
+    if (named)
+        return named;
+    if (HEX_COLOR_RE.test(value))
+        return value;
+    const rgb = RGB_RE.exec(value);
+    if (rgb) {
+        const channels = [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])];
+        if (channels.some((channel) => channel > 255))
+            return null;
+        return `rgb(${channels.join(', ')})`;
+    }
+    const rgba = RGBA_RE.exec(value);
+    if (rgba) {
+        const channels = [Number(rgba[1]), Number(rgba[2]), Number(rgba[3])];
+        const alpha = Number(rgba[4]);
+        if (channels.some((channel) => channel > 255) || alpha > 1)
+            return null;
+        return `rgba(${channels.join(', ')}, ${alpha})`;
+    }
+    return null;
+}
+function pixelValue(min, max) {
+    return (raw) => {
+        const match = /^(\d{1,4})(px)?$/u.exec(raw);
+        if (!match)
+            return null;
+        const amount = Number(match[1]);
+        if (amount < min || amount > max)
+            return null;
+        return `${amount}px`;
+    };
+}
+function keywordValue(...allowed) {
+    return (raw) => {
+        const value = raw.toLowerCase();
+        return allowed.includes(value) ? value : null;
+    };
+}
+// Градиенты: строгое подмножество CSS — linear-gradient с направлением
+// «to сторона» или углом Ndeg и radial-gradient без параметров формы.
+// Каждая цветовая остановка проходит через общий валидатор цвета, поэтому
+// url(), var() и прочий посторонний CSS внутрь не просачиваются.
+const GRADIENT_DIRECTIONS = new Set([
+    'to top', 'to bottom', 'to left', 'to right',
+    'to top left', 'to top right', 'to bottom left', 'to bottom right',
+]);
+const GRADIENT_ANGLE_RE = /^(\d{1,3})deg$/u;
+const GRADIENT_STOP_PERCENT_RE = /^(\d{1,3})%$/u;
+function splitTopLevel(text) {
+    const parts = [];
+    let depth = 0;
+    let current = '';
+    for (const char of text) {
+        if (char === '(')
+            depth += 1;
+        if (char === ')')
+            depth -= 1;
+        if (char === ',' && depth === 0) {
+            parts.push(current.trim());
+            current = '';
+            continue;
+        }
+        current += char;
+    }
+    parts.push(current.trim());
+    return parts;
+}
+function gradientStop(raw) {
+    const pieces = raw.split(/\s+/u);
+    if (pieces.length === 1)
+        return colorValue(pieces[0]);
+    // rgb(...)/rgba(...) содержат пробелы после запятых — собираем цвет обратно
+    // и допускаем один процентный хвост.
+    const last = pieces[pieces.length - 1];
+    const percent = GRADIENT_STOP_PERCENT_RE.exec(last);
+    const colorText = percent ? pieces.slice(0, -1).join(' ') : pieces.join(' ');
+    const color = colorValue(colorText);
+    if (!color)
+        return null;
+    if (!percent)
+        return color;
+    if (Number(percent[1]) > 100)
+        return null;
+    return `${color} ${percent[1]}%`;
+}
+function gradientValue(raw) {
+    const match = /^(linear|radial)-gradient\((.+)\)$/u.exec(raw.trim().toLowerCase());
+    if (!match)
+        return null;
+    const kind = match[1];
+    const parts = splitTopLevel(match[2]);
+    if (parts.length < 2)
+        return null;
+    const normalized = [];
+    let stopsStart = 0;
+    if (kind === 'linear') {
+        const first = parts[0].replace(/\s+/gu, ' ');
+        const angle = GRADIENT_ANGLE_RE.exec(first);
+        if (GRADIENT_DIRECTIONS.has(first)) {
+            normalized.push(first);
+            stopsStart = 1;
+        }
+        else if (angle) {
+            if (Number(angle[1]) > 360)
+                return null;
+            normalized.push(`${angle[1]}deg`);
+            stopsStart = 1;
+        }
+    }
+    const stops = parts.slice(stopsStart);
+    if (stops.length < 2 || stops.length > 8)
+        return null;
+    for (const stop of stops) {
+        const value = gradientStop(stop);
+        if (value === null)
+            return null;
+        normalized.push(value);
+    }
+    return `${kind}-gradient(${normalized.join(', ')})`;
+}
+function opacityValue(raw) {
+    if (!/^(0|1|0?\.\d+|1\.0+)$/u.test(raw))
+        return null;
+    const amount = Number(raw);
+    if (!Number.isFinite(amount) || amount < 0 || amount > 1)
+        return null;
+    return String(amount);
+}
+// Словарь v1: свойство попадает сюда, только если его эффект мгновенно виден
+// и не ломает геометрию превью. Всё вне словаря молча игнорируется.
+const STYLE_PROPERTIES = {
+    color: colorValue,
+    'background-color': colorValue,
+    // Только градиентные формы; сплошной цвет — через background-color.
+    background: gradientValue,
+    'border-color': colorValue,
+    'border-width': pixelValue(0, 20),
+    'border-radius': pixelValue(0, 100),
+    'border-style': keywordValue('solid', 'dashed', 'dotted', 'none'),
+    'font-size': pixelValue(6, 96),
+    'font-weight': keywordValue('normal', 'bold'),
+    'font-style': keywordValue('normal', 'italic'),
+    'text-align': keywordValue('left', 'center', 'right'),
+    opacity: opacityValue,
+    padding: pixelValue(0, 40),
+};
+const parseCache = new Map();
+function parseIdylliumStyle(text) {
+    if (typeof text !== 'string' || text.trim() === '')
+        return [];
+    const cached = parseCache.get(text);
+    if (cached)
+        return cached;
+    const declarations = [];
+    for (const chunk of text.split(';')) {
+        const colonIndex = chunk.indexOf(':');
+        if (colonIndex < 0)
+            continue;
+        const property = chunk.slice(0, colonIndex).trim().toLowerCase();
+        const rawValue = chunk.slice(colonIndex + 1).trim();
+        const validator = STYLE_PROPERTIES[property];
+        if (!validator || rawValue === '')
+            continue;
+        const value = validator(rawValue);
+        if (value === null)
+            continue;
+        declarations.push({ property, value });
+    }
+    if (parseCache.size > 256)
+        parseCache.clear();
+    parseCache.set(text, declarations);
+    return declarations;
+}
+//# sourceMappingURL=style.js.map
 },
 "node_modules/@swc/helpers/cjs/_define_property.cjs": function(require, module, exports) {
 "use strict";
@@ -51227,7 +51657,7 @@ UPNG.encode.alphaMul = function(img, roundA) {
   };
   var cache = {};
   var builtins = createBuiltins();
-  var resolutions = {"dist/src/browser.js\u0000./core/semantics":"dist/src/core/semantics.js","dist/src/browser.js\u0000./language/formatter":"dist/src/language/formatter.js","dist/src/browser.js\u0000./language/project":"dist/src/language/project.js","dist/src/browser.js\u0000./runtime/browser-image-service":"dist/src/runtime/browser-image-service.js","dist/src/browser.js\u0000./runtime/browser-sqlite-service":"dist/src/runtime/browser-sqlite-service.js","dist/src/browser.js\u0000./runtime/gui-interval":"dist/src/runtime/gui-interval.js","dist/src/browser.js\u0000./runtime/run":"dist/src/runtime/run.js","dist/src/browser.js\u0000./runtime/runtime":"dist/src/runtime/runtime.js","dist/src/browser.js\u0000./runtime/sqlite-inspector":"dist/src/runtime/sqlite-inspector.js","dist/src/core/codegen.js\u0000./stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/core/codegen.js\u0000./types":"dist/src/core/types.js","dist/src/core/lexer.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/lexer.js\u0000./tokens":"dist/src/core/tokens.js","dist/src/core/parser.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/parser.js\u0000./tokens":"dist/src/core/tokens.js","dist/src/core/project.js\u0000./lexer":"dist/src/core/lexer.js","dist/src/core/project.js\u0000./modules":"dist/src/core/modules.js","dist/src/core/project.js\u0000./parser":"dist/src/core/parser.js","dist/src/core/project.js\u0000./types":"dist/src/core/types.js","dist/src/core/semantics.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/semantics.js\u0000./modules":"dist/src/core/modules.js","dist/src/core/semantics.js\u0000./stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/core/semantics.js\u0000./types":"dist/src/core/types.js","dist/src/core/stdlib/registry.js\u0000../types":"dist/src/core/types.js","dist/src/language/project.js\u0000../core/diagnostics":"dist/src/core/diagnostics.js","dist/src/language/project.js\u0000../core/project":"dist/src/core/project.js","dist/src/language/project.js\u0000../core/semantics":"dist/src/core/semantics.js","dist/src/language/project.js\u0000../core/stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/language/project.js\u0000../core/types":"dist/src/core/types.js","dist/src/language/project.js\u0000../runtime/run":"dist/src/runtime/run.js","dist/src/runtime/browser-image-service.js\u0000./image-service":"dist/src/runtime/image-service.js","dist/src/runtime/browser-sqlite-service.js\u0000./sqlite-service":"dist/src/runtime/sqlite-service.js","dist/src/runtime/browser-sqlite-service.js\u0000sql.js/dist/sql-wasm-browser.js":"node_modules/sql.js/dist/sql-wasm-browser.js","dist/src/runtime/font-metrics-service.js\u0000./default-font-metrics":"dist/src/runtime/default-font-metrics.js","dist/src/runtime/font-metrics-service.js\u0000fontkit":"node_modules/fontkit/dist/browser.cjs","dist/src/runtime/font-metrics-service.js\u0000pako":"node_modules/pako/index.js","dist/src/runtime/image-service.js\u0000gifenc":"node_modules/gifenc/dist/gifenc.js","dist/src/runtime/image-service.js\u0000gifuct-js":"node_modules/gifuct-js/lib/index.js","dist/src/runtime/image-service.js\u0000upng-js":"node_modules/upng-js/UPNG.js","dist/src/runtime/run.js\u0000../core/codegen":"dist/src/core/codegen.js","dist/src/runtime/run.js\u0000../core/diagnostics":"dist/src/core/diagnostics.js","dist/src/runtime/run.js\u0000../core/project":"dist/src/core/project.js","dist/src/runtime/run.js\u0000../core/semantics":"dist/src/core/semantics.js","dist/src/runtime/run.js\u0000../core/stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/runtime/run.js\u0000./runtime":"dist/src/runtime/runtime.js","dist/src/runtime/runtime.js\u0000./drawable-geometry":"dist/src/runtime/drawable-geometry.js","dist/src/runtime/runtime.js\u0000./font-metrics-service":"dist/src/runtime/font-metrics-service.js","dist/src/runtime/runtime.js\u0000./image-service":"dist/src/runtime/image-service.js","node_modules/@swc/helpers/cjs/_ts_decorate.cjs\u0000tslib":"node_modules/tslib/tslib.js","node_modules/brotli/dec/decode.js\u0000./bit_reader":"node_modules/brotli/dec/bit_reader.js","node_modules/brotli/dec/decode.js\u0000./context":"node_modules/brotli/dec/context.js","node_modules/brotli/dec/decode.js\u0000./dictionary":"node_modules/brotli/dec/dictionary.js","node_modules/brotli/dec/decode.js\u0000./huffman":"node_modules/brotli/dec/huffman.js","node_modules/brotli/dec/decode.js\u0000./prefix":"node_modules/brotli/dec/prefix.js","node_modules/brotli/dec/decode.js\u0000./streams":"node_modules/brotli/dec/streams.js","node_modules/brotli/dec/decode.js\u0000./transform":"node_modules/brotli/dec/transform.js","node_modules/brotli/dec/dictionary.js\u0000./dictionary-data":"node_modules/brotli/dec/dictionary-data.js","node_modules/brotli/dec/transform.js\u0000./dictionary":"node_modules/brotli/dec/dictionary.js","node_modules/brotli/decompress.js\u0000./dec/decode":"node_modules/brotli/dec/decode.js","node_modules/fontkit/dist/browser.cjs\u0000@swc/helpers/cjs/_define_property.cjs":"node_modules/@swc/helpers/cjs/_define_property.cjs","node_modules/fontkit/dist/browser.cjs\u0000@swc/helpers/cjs/_ts_decorate.cjs":"node_modules/@swc/helpers/cjs/_ts_decorate.cjs","node_modules/fontkit/dist/browser.cjs\u0000brotli/decompress.js":"node_modules/brotli/decompress.js","node_modules/fontkit/dist/browser.cjs\u0000clone":"node_modules/clone/clone.js","node_modules/fontkit/dist/browser.cjs\u0000dfa":"node_modules/dfa/index.js","node_modules/fontkit/dist/browser.cjs\u0000fast-deep-equal":"node_modules/fast-deep-equal/index.js","node_modules/fontkit/dist/browser.cjs\u0000restructure":"node_modules/restructure/dist/main.cjs","node_modules/fontkit/dist/browser.cjs\u0000tiny-inflate":"node_modules/tiny-inflate/index.js","node_modules/fontkit/dist/browser.cjs\u0000unicode-properties":"node_modules/unicode-properties/dist/main.cjs","node_modules/fontkit/dist/browser.cjs\u0000unicode-trie":"node_modules/unicode-trie/index.js","node_modules/gifuct-js/lib/index.js\u0000./deinterlace":"node_modules/gifuct-js/lib/deinterlace.js","node_modules/gifuct-js/lib/index.js\u0000./lzw":"node_modules/gifuct-js/lib/lzw.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser":"node_modules/js-binary-schema-parser/lib/index.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser/lib/parsers/uint8":"node_modules/js-binary-schema-parser/lib/parsers/uint8.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser/lib/schemas/gif":"node_modules/js-binary-schema-parser/lib/schemas/gif.js","node_modules/js-binary-schema-parser/lib/schemas/gif.js\u0000../":"node_modules/js-binary-schema-parser/lib/index.js","node_modules/js-binary-schema-parser/lib/schemas/gif.js\u0000../parsers/uint8":"node_modules/js-binary-schema-parser/lib/parsers/uint8.js","node_modules/pako/index.js\u0000./lib/deflate":"node_modules/pako/lib/deflate.js","node_modules/pako/index.js\u0000./lib/inflate":"node_modules/pako/lib/inflate.js","node_modules/pako/index.js\u0000./lib/utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/index.js\u0000./lib/zlib/constants":"node_modules/pako/lib/zlib/constants.js","node_modules/pako/lib/deflate.js\u0000./utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/deflate.js\u0000./utils/strings":"node_modules/pako/lib/utils/strings.js","node_modules/pako/lib/deflate.js\u0000./zlib/deflate":"node_modules/pako/lib/zlib/deflate.js","node_modules/pako/lib/deflate.js\u0000./zlib/messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/deflate.js\u0000./zlib/zstream":"node_modules/pako/lib/zlib/zstream.js","node_modules/pako/lib/deflate.js\u0000pako":"node_modules/pako/index.js","node_modules/pako/lib/inflate.js\u0000./utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/inflate.js\u0000./utils/strings":"node_modules/pako/lib/utils/strings.js","node_modules/pako/lib/inflate.js\u0000./zlib/constants":"node_modules/pako/lib/zlib/constants.js","node_modules/pako/lib/inflate.js\u0000./zlib/gzheader":"node_modules/pako/lib/zlib/gzheader.js","node_modules/pako/lib/inflate.js\u0000./zlib/inflate":"node_modules/pako/lib/zlib/inflate.js","node_modules/pako/lib/inflate.js\u0000./zlib/messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/inflate.js\u0000./zlib/zstream":"node_modules/pako/lib/zlib/zstream.js","node_modules/pako/lib/inflate.js\u0000pako":"node_modules/pako/index.js","node_modules/pako/lib/utils/strings.js\u0000./common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/deflate.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/deflate.js\u0000./adler32":"node_modules/pako/lib/zlib/adler32.js","node_modules/pako/lib/zlib/deflate.js\u0000./crc32":"node_modules/pako/lib/zlib/crc32.js","node_modules/pako/lib/zlib/deflate.js\u0000./messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/zlib/deflate.js\u0000./trees":"node_modules/pako/lib/zlib/trees.js","node_modules/pako/lib/zlib/inflate.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/inflate.js\u0000./adler32":"node_modules/pako/lib/zlib/adler32.js","node_modules/pako/lib/zlib/inflate.js\u0000./crc32":"node_modules/pako/lib/zlib/crc32.js","node_modules/pako/lib/zlib/inflate.js\u0000./inffast":"node_modules/pako/lib/zlib/inffast.js","node_modules/pako/lib/zlib/inflate.js\u0000./inftrees":"node_modules/pako/lib/zlib/inftrees.js","node_modules/pako/lib/zlib/inftrees.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/trees.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/unicode-properties/dist/main.cjs\u0000base64-js":"node_modules/base64-js/index.js","node_modules/unicode-properties/dist/main.cjs\u0000unicode-trie":"node_modules/unicode-trie/index.js","node_modules/unicode-trie/index.js\u0000./swap":"node_modules/unicode-trie/swap.js","node_modules/unicode-trie/index.js\u0000tiny-inflate":"node_modules/tiny-inflate/index.js","node_modules/upng-js/UPNG.js\u0000pako":"node_modules/pako/index.js"};
+  var resolutions = {"dist/src/browser.js\u0000./core/semantics":"dist/src/core/semantics.js","dist/src/browser.js\u0000./language/formatter":"dist/src/language/formatter.js","dist/src/browser.js\u0000./language/project":"dist/src/language/project.js","dist/src/browser.js\u0000./runtime/browser-image-service":"dist/src/runtime/browser-image-service.js","dist/src/browser.js\u0000./runtime/browser-sqlite-service":"dist/src/runtime/browser-sqlite-service.js","dist/src/browser.js\u0000./runtime/gui-interval":"dist/src/runtime/gui-interval.js","dist/src/browser.js\u0000./runtime/run":"dist/src/runtime/run.js","dist/src/browser.js\u0000./runtime/runtime":"dist/src/runtime/runtime.js","dist/src/browser.js\u0000./runtime/sqlite-inspector":"dist/src/runtime/sqlite-inspector.js","dist/src/core/codegen.js\u0000./stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/core/codegen.js\u0000./types":"dist/src/core/types.js","dist/src/core/lexer.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/lexer.js\u0000./tokens":"dist/src/core/tokens.js","dist/src/core/parser.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/parser.js\u0000./tokens":"dist/src/core/tokens.js","dist/src/core/project.js\u0000./lexer":"dist/src/core/lexer.js","dist/src/core/project.js\u0000./modules":"dist/src/core/modules.js","dist/src/core/project.js\u0000./parser":"dist/src/core/parser.js","dist/src/core/project.js\u0000./types":"dist/src/core/types.js","dist/src/core/semantics.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/semantics.js\u0000./modules":"dist/src/core/modules.js","dist/src/core/semantics.js\u0000./stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/core/semantics.js\u0000./types":"dist/src/core/types.js","dist/src/core/stdlib/registry.js\u0000../types":"dist/src/core/types.js","dist/src/language/project.js\u0000../core/diagnostics":"dist/src/core/diagnostics.js","dist/src/language/project.js\u0000../core/project":"dist/src/core/project.js","dist/src/language/project.js\u0000../core/semantics":"dist/src/core/semantics.js","dist/src/language/project.js\u0000../core/stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/language/project.js\u0000../core/types":"dist/src/core/types.js","dist/src/language/project.js\u0000../runtime/run":"dist/src/runtime/run.js","dist/src/runtime/browser-image-service.js\u0000./image-service":"dist/src/runtime/image-service.js","dist/src/runtime/browser-sqlite-service.js\u0000./sqlite-service":"dist/src/runtime/sqlite-service.js","dist/src/runtime/browser-sqlite-service.js\u0000sql.js/dist/sql-wasm-browser.js":"node_modules/sql.js/dist/sql-wasm-browser.js","dist/src/runtime/font-metrics-service.js\u0000./default-font-metrics":"dist/src/runtime/default-font-metrics.js","dist/src/runtime/font-metrics-service.js\u0000fontkit":"node_modules/fontkit/dist/browser.cjs","dist/src/runtime/font-metrics-service.js\u0000pako":"node_modules/pako/index.js","dist/src/runtime/image-service.js\u0000gifenc":"node_modules/gifenc/dist/gifenc.js","dist/src/runtime/image-service.js\u0000gifuct-js":"node_modules/gifuct-js/lib/index.js","dist/src/runtime/image-service.js\u0000upng-js":"node_modules/upng-js/UPNG.js","dist/src/runtime/run.js\u0000../core/codegen":"dist/src/core/codegen.js","dist/src/runtime/run.js\u0000../core/diagnostics":"dist/src/core/diagnostics.js","dist/src/runtime/run.js\u0000../core/project":"dist/src/core/project.js","dist/src/runtime/run.js\u0000../core/semantics":"dist/src/core/semantics.js","dist/src/runtime/run.js\u0000../core/stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/runtime/run.js\u0000./runtime":"dist/src/runtime/runtime.js","dist/src/runtime/runtime.js\u0000./drawable-geometry":"dist/src/runtime/drawable-geometry.js","dist/src/runtime/runtime.js\u0000./font-metrics-service":"dist/src/runtime/font-metrics-service.js","dist/src/runtime/runtime.js\u0000./image-service":"dist/src/runtime/image-service.js","dist/src/runtime/runtime.js\u0000./style":"dist/src/runtime/style.js","node_modules/@swc/helpers/cjs/_ts_decorate.cjs\u0000tslib":"node_modules/tslib/tslib.js","node_modules/brotli/dec/decode.js\u0000./bit_reader":"node_modules/brotli/dec/bit_reader.js","node_modules/brotli/dec/decode.js\u0000./context":"node_modules/brotli/dec/context.js","node_modules/brotli/dec/decode.js\u0000./dictionary":"node_modules/brotli/dec/dictionary.js","node_modules/brotli/dec/decode.js\u0000./huffman":"node_modules/brotli/dec/huffman.js","node_modules/brotli/dec/decode.js\u0000./prefix":"node_modules/brotli/dec/prefix.js","node_modules/brotli/dec/decode.js\u0000./streams":"node_modules/brotli/dec/streams.js","node_modules/brotli/dec/decode.js\u0000./transform":"node_modules/brotli/dec/transform.js","node_modules/brotli/dec/dictionary.js\u0000./dictionary-data":"node_modules/brotli/dec/dictionary-data.js","node_modules/brotli/dec/transform.js\u0000./dictionary":"node_modules/brotli/dec/dictionary.js","node_modules/brotli/decompress.js\u0000./dec/decode":"node_modules/brotli/dec/decode.js","node_modules/fontkit/dist/browser.cjs\u0000@swc/helpers/cjs/_define_property.cjs":"node_modules/@swc/helpers/cjs/_define_property.cjs","node_modules/fontkit/dist/browser.cjs\u0000@swc/helpers/cjs/_ts_decorate.cjs":"node_modules/@swc/helpers/cjs/_ts_decorate.cjs","node_modules/fontkit/dist/browser.cjs\u0000brotli/decompress.js":"node_modules/brotli/decompress.js","node_modules/fontkit/dist/browser.cjs\u0000clone":"node_modules/clone/clone.js","node_modules/fontkit/dist/browser.cjs\u0000dfa":"node_modules/dfa/index.js","node_modules/fontkit/dist/browser.cjs\u0000fast-deep-equal":"node_modules/fast-deep-equal/index.js","node_modules/fontkit/dist/browser.cjs\u0000restructure":"node_modules/restructure/dist/main.cjs","node_modules/fontkit/dist/browser.cjs\u0000tiny-inflate":"node_modules/tiny-inflate/index.js","node_modules/fontkit/dist/browser.cjs\u0000unicode-properties":"node_modules/unicode-properties/dist/main.cjs","node_modules/fontkit/dist/browser.cjs\u0000unicode-trie":"node_modules/unicode-trie/index.js","node_modules/gifuct-js/lib/index.js\u0000./deinterlace":"node_modules/gifuct-js/lib/deinterlace.js","node_modules/gifuct-js/lib/index.js\u0000./lzw":"node_modules/gifuct-js/lib/lzw.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser":"node_modules/js-binary-schema-parser/lib/index.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser/lib/parsers/uint8":"node_modules/js-binary-schema-parser/lib/parsers/uint8.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser/lib/schemas/gif":"node_modules/js-binary-schema-parser/lib/schemas/gif.js","node_modules/js-binary-schema-parser/lib/schemas/gif.js\u0000../":"node_modules/js-binary-schema-parser/lib/index.js","node_modules/js-binary-schema-parser/lib/schemas/gif.js\u0000../parsers/uint8":"node_modules/js-binary-schema-parser/lib/parsers/uint8.js","node_modules/pako/index.js\u0000./lib/deflate":"node_modules/pako/lib/deflate.js","node_modules/pako/index.js\u0000./lib/inflate":"node_modules/pako/lib/inflate.js","node_modules/pako/index.js\u0000./lib/utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/index.js\u0000./lib/zlib/constants":"node_modules/pako/lib/zlib/constants.js","node_modules/pako/lib/deflate.js\u0000./utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/deflate.js\u0000./utils/strings":"node_modules/pako/lib/utils/strings.js","node_modules/pako/lib/deflate.js\u0000./zlib/deflate":"node_modules/pako/lib/zlib/deflate.js","node_modules/pako/lib/deflate.js\u0000./zlib/messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/deflate.js\u0000./zlib/zstream":"node_modules/pako/lib/zlib/zstream.js","node_modules/pako/lib/deflate.js\u0000pako":"node_modules/pako/index.js","node_modules/pako/lib/inflate.js\u0000./utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/inflate.js\u0000./utils/strings":"node_modules/pako/lib/utils/strings.js","node_modules/pako/lib/inflate.js\u0000./zlib/constants":"node_modules/pako/lib/zlib/constants.js","node_modules/pako/lib/inflate.js\u0000./zlib/gzheader":"node_modules/pako/lib/zlib/gzheader.js","node_modules/pako/lib/inflate.js\u0000./zlib/inflate":"node_modules/pako/lib/zlib/inflate.js","node_modules/pako/lib/inflate.js\u0000./zlib/messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/inflate.js\u0000./zlib/zstream":"node_modules/pako/lib/zlib/zstream.js","node_modules/pako/lib/inflate.js\u0000pako":"node_modules/pako/index.js","node_modules/pako/lib/utils/strings.js\u0000./common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/deflate.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/deflate.js\u0000./adler32":"node_modules/pako/lib/zlib/adler32.js","node_modules/pako/lib/zlib/deflate.js\u0000./crc32":"node_modules/pako/lib/zlib/crc32.js","node_modules/pako/lib/zlib/deflate.js\u0000./messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/zlib/deflate.js\u0000./trees":"node_modules/pako/lib/zlib/trees.js","node_modules/pako/lib/zlib/inflate.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/inflate.js\u0000./adler32":"node_modules/pako/lib/zlib/adler32.js","node_modules/pako/lib/zlib/inflate.js\u0000./crc32":"node_modules/pako/lib/zlib/crc32.js","node_modules/pako/lib/zlib/inflate.js\u0000./inffast":"node_modules/pako/lib/zlib/inffast.js","node_modules/pako/lib/zlib/inflate.js\u0000./inftrees":"node_modules/pako/lib/zlib/inftrees.js","node_modules/pako/lib/zlib/inftrees.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/trees.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/unicode-properties/dist/main.cjs\u0000base64-js":"node_modules/base64-js/index.js","node_modules/unicode-properties/dist/main.cjs\u0000unicode-trie":"node_modules/unicode-trie/index.js","node_modules/unicode-trie/index.js\u0000./swap":"node_modules/unicode-trie/swap.js","node_modules/unicode-trie/index.js\u0000tiny-inflate":"node_modules/tiny-inflate/index.js","node_modules/upng-js/UPNG.js\u0000pako":"node_modules/pako/index.js"};
 
   function load(id) {
     if (cache[id]) return cache[id].exports;

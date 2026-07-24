@@ -43,6 +43,7 @@ import {
   RuntimeTextMetrics,
   createRuntimeFontMetricsService,
 } from './font-metrics-service';
+import { parseIdylliumStyle } from './style';
 
 export class IdylliumRuntimeError extends Error {
   constructor(
@@ -2794,6 +2795,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
           const number = rangeNumber(value, 'math.acos() value', -1, 1, file, line);
           return Math.acos(number);
         }),
+        atan: contextFunction((value: number, file: string, line: number) => Math.atan(finiteNumber(value, 'math.atan() value', file, line))),
         log: contextFunction((value: number, file: string, line: number) => {
           const number = finiteNumber(value, 'math.log() value', file, line);
           if (number <= 0) throw new IdylliumRuntimeError(file, line, `math.log() expects a positive number, got ${number}`);
@@ -4589,6 +4591,7 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
     obj.width = size.width;
     obj.height = size.height;
     obj.visible = true;
+    obj.style = ''; // IdySS-наклейка; пустая строка = наклейки нет
     defineTrackedRuntimeProperty(obj, 'text_color', colorBlack());
     defineTrackedRuntimeProperty(obj, 'background_color', colorTransparent());
     defineTrackedRuntimeProperty(obj, 'font', null);
@@ -6238,6 +6241,11 @@ function objectPropertiesSnapshot(value: RuntimeObject): Readonly<Record<string,
   for (const [key, item] of Object.entries(value)) {
     if (key.startsWith('__') || typeof item === 'function') continue;
     result[key] = snapshotValue(item);
+  }
+  if (typeof value.style === 'string' && value.style.trim() !== '') {
+    // IdySS: в браузер уезжают только провалидированные пары — рендерер
+    // строк не разбирает и произвольный CSS не видит.
+    result.style_declarations = parseIdylliumStyle(value.style);
   }
   if (value.__explicitProperties instanceof Set && value.__explicitProperties.size > 0) {
     result.__explicit_properties = [...value.__explicitProperties].sort();

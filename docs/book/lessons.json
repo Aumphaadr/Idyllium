@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-24T14:13:58.374Z",
+  "generatedAt": "2026-07-24T19:39:33.031Z",
   "sourceRoot": "packages/docs",
   "sections": [
     {
@@ -25,9 +25,7 @@
           "file": "content/console/hello.html",
           "sourceFile": "cli/001_hello.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "variables",
@@ -36,10 +34,7 @@
           "file": "content/console/variables.html",
           "sourceFile": "cli/002_variables.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review",
-            "program-compile-failure"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "input",
@@ -48,9 +43,7 @@
           "file": "content/console/input.html",
           "sourceFile": "cli/003_input.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "arithmetics",
@@ -59,10 +52,7 @@
           "file": "content/console/arithmetics.html",
           "sourceFile": "cli/004_arithmetics.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review",
-            "program-compile-failure"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "colors",
@@ -71,10 +61,7 @@
           "file": "content/console/colors.html",
           "sourceFile": "cli/005_colors.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review",
-            "review-console-colors-and-clear"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "transforms",
@@ -83,10 +70,7 @@
           "file": "content/console/transforms.html",
           "sourceFile": "cli/006_transforms.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review",
-            "program-compile-failure"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "math-basics",
@@ -104,9 +88,7 @@
           "file": "content/console/if.html",
           "sourceFile": "cli/008_if.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "increment",
@@ -115,10 +97,7 @@
           "file": "content/console/increment.html",
           "sourceFile": "cli/009_increment.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review",
-            "rewrite-increment-lesson-no-plus-plus"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "random",
@@ -172,9 +151,7 @@
           "file": "content/console/array.html",
           "sourceFile": "cli/013_array.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "char",
@@ -183,9 +160,7 @@
           "file": "content/console/char.html",
           "sourceFile": "cli/014_char.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "dyn-array",
@@ -194,9 +169,7 @@
           "file": "content/console/dyn-array.html",
           "sourceFile": "cli/015_dyn_array.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "arr-functions",
@@ -205,9 +178,7 @@
           "file": "content/console/arr-functions.html",
           "sourceFile": "cli/016_arr_functions.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "arr-methods",
@@ -252,9 +223,7 @@
           "file": "content/console/encoding.html",
           "sourceFile": "cli/021_encoding.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "functions",
@@ -263,9 +232,7 @@
           "file": "content/console/functions.html",
           "sourceFile": "cli/022_functions.html",
           "status": "ready",
-          "reviewFlags": [
-            "program-compile-failure"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "libs",
@@ -274,9 +241,7 @@
           "file": "content/console/libs.html",
           "sourceFile": "cli/023_libs.html",
           "status": "ready",
-          "reviewFlags": [
-            "program-compile-failure"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "files",
@@ -312,10 +277,7 @@
           "file": "content/console/matrix.html",
           "sourceFile": "cli/026_matrix.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review",
-            "program-compile-failure"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "recursion",
@@ -333,11 +295,7 @@
           "file": "content/console/errors.html",
           "sourceFile": "cli/027_errors.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review",
-            "program-compile-failure",
-            "teaching-errors"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "try-catch",
@@ -363,9 +321,7 @@
           "file": "content/widgets/window.html",
           "sourceFile": "widgets/000_window.html",
           "status": "ready",
-          "reviewFlags": [
-            "pre-canvas-widget-doc"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "button",
@@ -374,9 +330,7 @@
           "file": "content/widgets/button.html",
           "sourceFile": "widgets/001_button.html",
           "status": "ready",
-          "reviewFlags": [
-            "pre-canvas-widget-doc"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "label",
@@ -385,11 +339,7 @@
           "file": "content/widgets/label.html",
           "sourceFile": "widgets/002_label.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review",
-            "pre-canvas-widget-doc",
-            "program-compile-failure"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "progressbar",
@@ -398,11 +348,7 @@
           "file": "content/widgets/progressbar.html",
           "sourceFile": "widgets/003_progressbar.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review",
-            "pre-canvas-widget-doc",
-            "review-progressbar-colors"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "colors",
@@ -429,9 +375,7 @@
           "file": "content/widgets/spinbox.html",
           "sourceFile": "widgets/004_spinbox.html",
           "status": "ready",
-          "reviewFlags": [
-            "pre-canvas-widget-doc"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "slider",
@@ -440,9 +384,7 @@
           "file": "content/widgets/slider.html",
           "sourceFile": "widgets/005_slider.html",
           "status": "ready",
-          "reviewFlags": [
-            "pre-canvas-widget-doc"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "lineedit",
@@ -451,9 +393,7 @@
           "file": "content/widgets/lineedit.html",
           "sourceFile": "widgets/006_lineedit.html",
           "status": "ready",
-          "reviewFlags": [
-            "pre-canvas-widget-doc"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "image",
@@ -465,15 +405,22 @@
           "reviewFlags": []
         },
         {
+          "id": "styles",
+          "title": "Стили IdySS",
+          "subtitle": "Idyllium Style Sheets: наклейка style, словарь свойств и градиенты",
+          "file": "content/widgets/styles.html",
+          "sourceFile": "docs/manual-content/widgets/styles.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
           "id": "checkbox",
           "title": "Виджет CheckBox",
           "subtitle": "Флажок для выбора опции «вкл/выкл»",
           "file": "content/widgets/checkbox.html",
           "sourceFile": "widgets/007_checkbox.html",
           "status": "ready",
-          "reviewFlags": [
-            "pre-canvas-widget-doc"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "radiobutton",
@@ -482,9 +429,7 @@
           "file": "content/widgets/radiobutton.html",
           "sourceFile": "widgets/008_radiobutton.html",
           "status": "ready",
-          "reviewFlags": [
-            "pre-canvas-widget-doc"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "frame",
@@ -493,9 +438,7 @@
           "file": "content/widgets/frame.html",
           "sourceFile": "widgets/009_frame.html",
           "status": "ready",
-          "reviewFlags": [
-            "pre-canvas-widget-doc"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "combobox",
@@ -504,9 +447,7 @@
           "file": "content/widgets/combobox.html",
           "sourceFile": "widgets/010_combobox.html",
           "status": "ready",
-          "reviewFlags": [
-            "pre-canvas-widget-doc"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "visibility",
@@ -515,10 +456,7 @@
           "file": "content/widgets/visibility.html",
           "sourceFile": "widgets/011_visibility.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review",
-            "pre-canvas-widget-doc"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "audio",
@@ -536,10 +474,7 @@
           "file": "content/widgets/arrays.html",
           "sourceFile": "widgets/012_arrays.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review",
-            "pre-canvas-widget-doc"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "sender",
@@ -548,9 +483,7 @@
           "file": "content/widgets/sender.html",
           "sourceFile": "widgets/013_sender.html",
           "status": "ready",
-          "reviewFlags": [
-            "pre-canvas-widget-doc"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "timer",
@@ -559,9 +492,7 @@
           "file": "content/widgets/timer.html",
           "sourceFile": "widgets/014_timer.html",
           "status": "ready",
-          "reviewFlags": [
-            "pre-canvas-widget-doc"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "modal",
@@ -570,9 +501,7 @@
           "file": "content/widgets/modal.html",
           "sourceFile": "widgets/015_modal.html",
           "status": "ready",
-          "reviewFlags": [
-            "pre-canvas-widget-doc"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "errors",
@@ -581,12 +510,7 @@
           "file": "content/widgets/errors.html",
           "sourceFile": "widgets/016_errors.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review",
-            "pre-canvas-widget-doc",
-            "program-compile-failure",
-            "teaching-errors"
-          ]
+          "reviewFlags": []
         }
       ]
     },
@@ -603,9 +527,7 @@
           "file": "content/oop/intro.html",
           "sourceFile": "oop/000_intro.html",
           "status": "ready",
-          "reviewFlags": [
-            "program-compile-failure"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "classes",
@@ -623,10 +545,7 @@
           "file": "content/oop/fields-methods.html",
           "sourceFile": "oop/002_fields_methods.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review",
-            "program-compile-failure"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "this",
@@ -644,9 +563,7 @@
           "file": "content/oop/modules.html",
           "sourceFile": "oop/004_modules.html",
           "status": "ready",
-          "reviewFlags": [
-            "program-compile-failure"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "arrays",
@@ -655,10 +572,7 @@
           "file": "content/oop/arrays.html",
           "sourceFile": "oop/005_arrays.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review",
-            "program-compile-failure"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "constructor",
@@ -667,10 +581,7 @@
           "file": "content/oop/constructor.html",
           "sourceFile": "oop/006_constructor.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review",
-            "program-compile-failure"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "composition",
@@ -679,9 +590,7 @@
           "file": "content/oop/composition.html",
           "sourceFile": "oop/007_composition.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "inheritance",
@@ -699,10 +608,7 @@
           "file": "content/oop/polymorphism.html",
           "sourceFile": "oop/009_polymorphism.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review",
-            "program-compile-failure"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "encapsulation",
@@ -711,10 +617,7 @@
           "file": "content/oop/encapsulation.html",
           "sourceFile": "oop/010_encapsulation.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review",
-            "program-compile-failure"
-          ]
+          "reviewFlags": []
         },
         {
           "id": "static",
@@ -723,10 +626,16 @@
           "file": "content/oop/static.html",
           "sourceFile": "oop/011_static.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review",
-            "program-compile-failure"
-          ]
+          "reviewFlags": []
+        },
+        {
+          "id": "events",
+          "title": "Свои события",
+          "subtitle": "event, подписка и запуск: механизм кнопок теперь в ваших классах",
+          "file": "content/oop/events.html",
+          "sourceFile": "docs/manual-content/oop/events.html",
+          "status": "ready",
+          "reviewFlags": []
         },
         {
           "id": "errors",
@@ -735,11 +644,7 @@
           "file": "content/oop/errors.html",
           "sourceFile": "oop/012_errors.html",
           "status": "ready",
-          "reviewFlags": [
-            "code-needs-review",
-            "program-compile-failure",
-            "teaching-errors"
-          ]
+          "reviewFlags": []
         }
       ]
     },
@@ -1163,13 +1068,11 @@
         {
           "id": "calc",
           "title": "Калькулятор",
-          "subtitle": "",
+          "subtitle": "Готовый проект калькулятора: собираем всё выученное в одну программу",
           "file": "content/examples/calc.html",
           "sourceFile": "examples/000_calc.html",
           "status": "ready",
-          "reviewFlags": [
-            "missing-html-file"
-          ]
+          "reviewFlags": []
         }
       ]
     }

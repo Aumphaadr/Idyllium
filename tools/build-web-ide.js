@@ -330,7 +330,7 @@ function guiPreviewHtml() {
   const guiRenderer = require(path.join(rendererSourceDir, 'index.js'));
   return guiRenderer.renderGuiWebviewHtml({
     cssUri: 'gui-renderer/renderer.css',
-    hostBootstrap: "window.IdylliumGuiHost = { postMessage: function(message) { parent.postMessage({ type: 'idylliumGuiEvent', message: message }, '*'); } };",
+    hostBootstrap: "window.IdylliumGuiHost = { postMessage: function(message) { var target = window.location.origin && window.location.origin !== 'null' ? window.location.origin : '*'; parent.postMessage({ type: 'idylliumGuiEvent', message: message }, target); } };",
     nonce: 'idyllium-web',
     scriptUri: 'gui-renderer/renderer.js',
     state: { windows: [], canvases: [], modals: [], output: '' },

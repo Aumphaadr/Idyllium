@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: IdylliumNext 1.2.0.
+Current language target: IdylliumNext 1.2.1.
 
 This reference describes implemented behavior. Ideas from `BACKLOG.md` and
 exploratory files under `spec/some_*` are not language features until they are
@@ -228,6 +228,11 @@ Common rules:
 - Strings are not silently converted to numbers.
 - `to_int(float_value)` truncates toward zero.
 
+Ordinary `int` preserves the full signed 64-bit range exactly:
+`9223372036854775807` prints without losing digits, and arithmetic
+(`+ - *`, `div`, `mod`) stays exact within that range, including values above
+JavaScript's 2^53 limit. Do not rely on exactness beyond 64 bits.
+
 ## 7. Operators
 
 Arithmetic:
@@ -239,14 +244,23 @@ a * b
 a / b
 ```
 
-`/` is normal division and returns a float-like numeric result.
+`/` is normal division and always returns `float`, even for `10 / 5`. The
+general rule: when an operation could theoretically produce a fraction, its
+result type is `float`; as soon as one operand is `float`, the result is
+`float` (`2.5 * 4` is `10` of type `float`).
 
-Integer division and remainder:
+Integer division and remainder are global functions (there is no `%` operator
+and no `?:` ternary operator in Idyllium):
 
 ```idyllium
 int q = div(23, 10);  // 2
 int r = mod(23, 10);  // 3
 ```
+
+String concatenation uses `+`: `string + string`, `string + char`, and
+`char + string` all produce a new string. `char + char` is a compile error
+(convert one side with `to_string()`), and `"ab" * 3` string repetition does
+not exist.
 
 Comparisons:
 
@@ -307,7 +321,9 @@ console.set_precision(3);
 `console.set_precision(digits)` controls float formatting and accepts an integer
 from `0` through `25`. By default floats print with up to 8 fractional digits and
 trailing zeros are trimmed: `10 / 3` prints `3.33333333`, `0.1 + 0.2` prints `0.3`,
-`1.5` prints `1.5`.
+`1.5` prints `1.5`. A non-zero value that would round to `0` at the current
+precision falls back to exponential form instead: `3.009e-36`, never a
+misleading `0`.
 
 Input:
 
@@ -376,6 +392,22 @@ console.writeln("always"); // outside the if
 An `else` belongs to the nearest unfinished `if`. If another statement has
 already completed that `if`, the compiler reports that `else` has no matching
 `if` and recommends wrapping a multi-statement branch in `{ ... }`.
+
+`else if` chains parse naturally (an `else` whose statement is another `if`)
+and are valid:
+
+```idyllium
+if (score >= 90) {
+    console.writeln("excellent");
+} else if (score >= 60) {
+    console.writeln("good");
+} else {
+    console.writeln("try again");
+}
+```
+
+There is no `switch` statement and no `for (x in collection)` loop. Iterate
+collections by index: `for (int i = 0; i < items.length; i += 1)`.
 
 `while`:
 
@@ -763,7 +795,35 @@ class is expected. A class without an explicit constructor may be called with
 zero arguments, such as `Empty()`, but not with arguments. Constructor
 expressions are also valid in class field initializers.
 
-There is no `new` expression. Destructors are not implemented.
+There is no `new` expression. Declaring a destructor is a friendly compile
+error (`destructors are not supported yet`). A trailing semicolon after the
+class body (`};`) is accepted and ignored, so C++ habits do not break code.
+
+### Printing Objects: The `to_string()` Contract
+
+Passing a class object to `console.write`/`console.writeln` is a compile error
+(`cannot print object of class 'Cat' directly`) unless the class declares a
+public zero-argument method `string function to_string()`. With that method,
+the object prints through it:
+
+```idyllium
+class Point {
+    int x;
+    int y;
+
+    string function to_string() {
+        return "(" + to_string(this.x) + ", " + to_string(this.y) + ")";
+    }
+}
+
+main() {
+    Point p;
+    console.writeln(p); // (0, 0)
+}
+```
+
+Arrays of class objects are never printable directly — print elements in a
+loop instead.
 
 ### Access Modifiers
 
@@ -825,6 +885,67 @@ class Dog extends Animal {
     }
 }
 ```
+
+`parent(arguments)` inside a subclass constructor runs the base-class
+constructor. Rules:
+
+- Calling `parent()` is optional; without it, inherited fields keep their type
+  defaults (or the base field initializers).
+- The compiler does not force `parent()` to be the first statement; calling it
+  first is a style recommendation, because a later `parent()` call overwrites
+  fields assigned before it.
+
+### User Events
+
+A class may declare events with the `event` keyword and fire them from its
+own methods. Outside code subscribes by assignment, exactly like widget
+callbacks:
+
+```idyllium
+use console;
+
+class Hero {
+    int hp = 100;
+
+    event on_death(Hero victim);
+
+    void function hit(int damage) {
+        this.hp -= damage;
+        if (this.hp <= 0) {
+            this.on_death(this);
+        }
+    }
+}
+
+void function mourn(Hero victim) {
+    console.writeln("Hero died with hp ", victim.hp);
+}
+
+main() {
+    Hero boss;
+    boss.on_death = mourn;
+    boss.hit(150);
+}
+```
+
+Rules:
+
+- `event name(params);` declares an event member; `event name;` means no
+  parameters. Events have no return type and no parameter defaults.
+- Firing is a plain call through `this.` and is allowed only inside the
+  declaring class (or its subclasses). Firing from outside is a compile error.
+- Without a subscriber, firing is a silent no-op — same as unassigned
+  `on_click` on a widget.
+- A handler takes either no parameters or the full event signature. Handlers
+  can be named functions, inline functions, or object methods
+  (`hero.on_death = scoreboard.count;` keeps `this` of the scoreboard).
+- One subscriber per event: a new assignment replaces the previous handler.
+  Reading an event as a value is a compile error.
+- `static event` does not exist. Events work for classes imported from user
+  modules too: subscribe with `clocks.Clock`-typed objects the same way.
+
+Method references in general keep their object: `board.count` used as a
+callback value still updates `board` when invoked.
 
 Polymorphism is supported for class relations. A function expecting a base
 class may receive a subclass object:
@@ -921,6 +1042,7 @@ math.cos(radians)
 math.tan(radians)
 math.asin(value)
 math.acos(value)
+math.atan(value)
 math.log(value)
 math.log10(value)
 math.to_radians(degrees)
@@ -1570,6 +1692,51 @@ foreground_color   // ProgressBar fill color role
 widgets. An explicit child value overrides its parent. `font_size` belongs to a
 text-bearing widget, not to the font resource. Its default value is `13`.
 
+### The `style` Property (IdySS)
+
+Every visual widget and `gui.Window` has a `style: string` property — a
+CSS-like "sticker" applied on top of direct properties:
+
+```idyllium
+title.style = "color: white; background-color: dark-blue; border-radius: 12px;";
+```
+
+Rules of the sticker:
+
+- **Typos are silent.** An unknown property (`backround-color`) or an invalid
+  value (`opacity: 1.5`, `color: bananas`) is dropped without any error — like
+  real CSS. Idyllium's own type checks still apply to the assignment itself
+  (`label.style = 42;` is a compile error).
+- **The sticker always wins** over direct properties while it lists that role:
+  with `style = "color: blue;"` the widget shows blue text even if
+  `text_color` was set. Assigning `""` removes the sticker and direct
+  properties show again. Later declarations in one string beat earlier ones.
+- The sticker is **not inherited** by child widgets; reading `style` returns
+  exactly the assigned string.
+
+Supported properties (everything else is ignored): `color`,
+`background-color`, `border-color`, `border-width` (0-20), `border-radius`
+(0-100), `border-style` (`solid`/`dashed`/`dotted`/`none`), `font-size`
+(6-96), `font-weight` (`normal`/`bold`), `font-style` (`normal`/`italic`),
+`text-align` (`left`/`center`/`right`), `opacity` (0.0-1.0), `padding`
+(0-40). Pixel values accept `12px` or plain `12`.
+
+`background` accepts ONLY gradients (solid colors go through
+`background-color`): `linear-gradient([to right | 45deg,] color[, color...])`
+with 2-8 stops and `radial-gradient(color, color[, ...])`. Stops use the same
+color forms, optionally followed by a percent position
+(`yellow 20%`). Angles are `0..360deg`; directions are `to top/bottom/left/
+right` and corners like `to top right`. `url(...)` and any other `background`
+value are silently dropped.
+
+Color values: the 17 palette names of the `colors` library in kebab-case
+(`red`, `dark-blue`, `light-gray`, `transparent`; `green` is `#00FF00`),
+HEX (`#RGB`, `#RRGGBB`, `#RRGGBBAA`), and `rgb(r, g, b)` /
+`rgba(r, g, b, a)` with strict ranges. CSS-only names such as `pink` or
+`salmon` are NOT supported. There is no `font-family`, no geometry
+(`width`/`margin`/`position`), no shorthand `border: 2px solid red` — use the
+three separate border properties.
+
 ### GUI Types
 
 `gui.Window`:
@@ -1672,6 +1839,9 @@ value, min, max, step
 on_change
 ```
 
+Slider `on_change` fires on every marker movement while dragging, not only
+when the marker is released.
+
 `gui.CheckBox`:
 
 ```idyllium
@@ -1716,6 +1886,10 @@ show_input()
 get_input_value()
 ```
 
+`show_alert()` shows one OK button, `show_confirm()` adds a cancel button, and
+`show_input()` adds a text field whose value is read later with
+`get_input_value()`.
+
 `gui.Timer`:
 
 ```idyllium
@@ -1727,8 +1901,40 @@ stop()
 restart()
 ```
 
+`interval` is in milliseconds (`timer.interval = 1000;` ticks once per second).
 `running` is a read-only flag. `stop()` pauses the timer and keeps the elapsed
 progress; `start()` resumes from that point; `restart()` starts over from zero.
+
+### Widget Callback Signatures
+
+Widget event callbacks (`on_click`, `on_change`, `on_tick`, `on_confirm`,
+`on_cancel`) accept either a zero-argument function or a function with one
+parameter — the widget itself (the sender). Read the new state from the
+sender's properties:
+
+```idyllium
+void function volume_changed(gui.Slider sender) {
+    console.writeln("Volume: ", sender.value);
+}
+
+void function ticked() {
+    console.writeln("tick");
+}
+
+main() {
+    gui.Slider slider;
+    slider.on_change = volume_changed;
+
+    gui.Timer timer;
+    timer.interval = 500;
+    timer.on_tick = ticked;
+    timer.start();
+}
+```
+
+The callback does not receive the new value as a separate argument; there is
+no `(sender, value)` form for widgets. Only `gui.Canvas` callbacks receive an
+extra event or `delta_time` argument (see the Canvas section).
 
 Example button:
 
@@ -1826,6 +2032,13 @@ gui.MouseScrollEvent.x: int
 gui.MouseScrollEvent.y: int
 gui.MouseScrollEvent.delta: int
 ```
+
+`KeyboardEvent.key` values: single characters arrive uppercased (`"W"`,
+`"Д"`, `"7"`); special keys use browser names such as `"ArrowLeft"`,
+`"ArrowRight"`, `"ArrowUp"`, `"ArrowDown"`, `"Enter"`, `"Escape"`, and `" "`
+for the space bar. Compare with uppercase letters: `pressed_keys.contains("W")`,
+not `"w"`. `MouseScrollEvent.delta` is `1` for scrolling up and `-1` for
+scrolling down.
 
 Canvas callbacks:
 
@@ -2527,7 +2740,15 @@ i++;
 i--;
 if (a && b) {}
 if (!ok) {}
-int x = 23 / 10;          // likely wrong: / returns float-like division
+int r = n % 2;            // wrong: no % operator; use mod(n, 2)
+int m = a > b ? a : b;    // wrong: no ternary operator; use if/else
+switch (x) { ... }        // wrong: no switch; use if / else if
+for (item in items) {}    // wrong: no for-in; iterate by index
+string s = "ab" * 3;      // wrong: no string repetition
+char c = 'a' + 'b';       // wrong: char + char is an error
+string t = "x=" + 5;      // wrong: no implicit number-to-string; use to_string(5)
+console.writeln(`x=${x}`); // wrong: no template literals
+int x = 23 / 10;          // wrong: / always returns float
 label.text = 42;          // wrong: no implicit int-to-string
 button.onclick = ...;     // wrong spelling; use on_click
 new Hero();               // wrong: no new keyword; use Hero()
@@ -2548,8 +2769,9 @@ let x = 10;               // wrong: not JavaScript
 ```
 
 Do not invent dictionaries/maps, async/await, lambdas with arrow syntax,
-interfaces, generics for user classes, exceptions, namespaces, package imports,
-or operator overloading unless the current project spec explicitly adds them.
+interfaces, generics for user classes, `throw`/user exceptions, namespaces,
+package imports, or operator overloading unless the current project spec
+explicitly adds them.
 
 ## 31. Good AI Behavior For Idyllium Tasks
 
