@@ -1,10 +1,6 @@
-<!-- Hero -->
-    
-
-    <!-- Section 1 -->
-    <div class="docs-section">
-      <h2>Подключение библиотеки <code>random</code></h2>
-      <p>Для работы со случайными числами необходимо подключить библиотеку <code>random</code>:</p>
+<div class="docs-section">
+      <h2>Зачем программе сюрпризы?</h2>
+      <p>Бросить кубик, подкинуть монетку, вытянуть карту из колоды — половина игр держится на честном «кто знает, что выпадет?». Но компьютер сам по себе сюрпризов не любит: он всегда делает ровно то, что написано в программе. Чтобы добавить в программу непредсказуемости, в Idyllium есть библиотека <code>random</code>:</p>
 
       <idyl-code-block><script type="text/plain">
 use random;
@@ -13,7 +9,6 @@ use random;
       <p>После этого все функции из этой библиотеки вызываются по схеме: <code>random.название(аргументы)</code>.</p>
     </div>
 
-    <!-- Section 2 -->
     <div class="docs-section">
       <h2>Случайное целое число: <code>random.create_int()</code></h2>
       <p>Функция <code>random.create_int(min, max)</code> возвращает случайное целое число в диапазоне <strong>от <code>min</code> до <code>max</code> включительно</strong>:</p>
@@ -37,18 +32,19 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-output-block>42 78 15</idyl-output-block>
+      <p>Каждый запуск программы будет давать новую тройку чисел. У нас, например, выпало так:</p>
 
-      <p>Каждый запуск программы будет давать новую тройку чисел.</p>
+      <idyl-output-block>80 60 40</idyl-output-block>
+
+      <p>У вас числа будут свои — на то они и случайные. А бросок игрального кубика — это просто <code>random.create_int(1, 6)</code>.</p>
     </div>
 
-    <!-- Section 3 -->
     <div class="docs-section">
       <h2>Случайное дробное число: <code>random.create_float()</code></h2>
-      <p>Функция <code>random.create_float(min, max)</code> генерирует случайное число типа <code>float</code> в диапазоне от <code>min</code> до <code>max</code> включительно:</p>
+      <p>Функция <code>random.create_float(min, max)</code> генерирует случайное число типа <code>float</code>. Границы у неё такие же дружелюбные, как у <code>create_int()</code>: результат <strong>не меньше <code>min</code> и не больше <code>max</code></strong> — выпасть могут обе границы. Правда, поймать ровно <code>max</code> — большая удача: дробных чисел между границами невообразимо много, и шанс попасть точно в край исчезающе мал.</p>
 
       <idyl-code-block><script type="text/plain">
-float Q = random.create_float(1, 4); // число от 1.0 до 4.0
+float Q = random.create_float(1, 4); // число от 1.0 до 4.0 включительно
 </script></idyl-code-block>
 
       <p>Пример:</p>
@@ -66,46 +62,59 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-output-block>F = 2.8374629104857392
-G = 2.1295837461029384</idyl-output-block>
+      <p>У нас, например, получилось:</p>
 
-      <p>Как и в Python или JavaScript, числа генерируются с высокой точностью — до 15–16 знаков после точки.</p>
+      <idyl-output-block>F = 2.63066992
+G = 2.10073137</idyl-output-block>
+
+      <p>Внутри числа хранятся с высокой точностью — до 15–16 значащих цифр. А вот при выводе Idyllium по умолчанию показывает не больше 8 знаков после точки, чтобы результат было удобно читать. Если нужно больше знаков, вызовите <code>console.set_precision()</code>.</p>
     </div>
 
-    <!-- Section 4 -->
     <div class="docs-section">
       <h2>Округление случайного числа</h2>
-      <p>Если знаков после точки слишком много, можно округлить число с помощью функций из библиотеки <code>math</code>:</p>
+      <p>Если знаков после точки слишком много, можно округлить число с помощью функций из библиотеки <code>math</code> — не забудьте подключить и её:</p>
 
       <idyl-code-block><script type="text/plain">
-float raw = random.create_float(7, 8);
-console.writeln("Сырое случайное число: ", raw);
+use console;
+use math;
+use random;
 
-float res = math.floor(raw, 3); // округляем
-console.writeln("Округлено до 3 знаков: ", res);
+main() {
+    float raw = random.create_float(7, 8);
+    console.writeln("Сырое случайное число: ", raw);
+
+    float res = math.floor(raw, 3); // округляем вниз до 3 знаков
+    console.writeln("Округлено до 3 знаков: ", res);
+}
 </script></idyl-code-block>
 
-      <idyl-output-block>Сырое случайное число: 7.938472635192847
-Округлено до 3 знаков: 7.938</idyl-output-block>
+      <p>Например:</p>
+
+      <idyl-output-block>Сырое случайное число: 7.13176504
+Округлено до 3 знаков: 7.131</idyl-output-block>
     </div>
 
-    <!-- Section 5 -->
     <div class="docs-section">
       <h2>Случайный символ из строки</h2>
       <p>Функция <code>random.choose_from()</code> выбирает случайный символ из строки:</p>
 
       <idyl-code-block><script type="text/plain">
-string S = "ABCDEF";
-char some = random.choose_from(S);
-console.writeln("Случайный символ из S: ", some);
+use console;
+use random;
+
+main() {
+    string S = "АБВГД";
+    console.writeln("Случайная буква: ", random.choose_from(S));
+}
 </script></idyl-code-block>
 
-      <idyl-output-block>Случайный символ из S: D</idyl-output-block>
+      <p>Например:</p>
 
-      <p>Эта функция также работает с массивами — об этом мы поговорим позже, когда изучим массивы подробнее.</p>
+      <idyl-output-block>Случайная буква: Д</idyl-output-block>
+
+      <p>Каждый запуск — новая буква из пяти. Кстати, одиночный символ — это отдельный тип данных <code>char</code>; подробно о нём мы поговорим в одном из следующих уроков. А ещё <code>choose_from()</code> умеет выбирать случайный элемент массива — о массивах тоже позже.</p>
     </div>
 
-    <!-- Section 6 -->
     <div class="docs-section">
       <h2>Псевдослучайность и сиды</h2>
       <p>Компьютер не умеет генерировать по-настоящему случайные числа — только <strong>псевдослучайные</strong>. Это такие числа, которые выглядят случайными, но на самом деле полностью определяются начальным значением, называемым <strong>сидом</strong> (англ. <em>seed</em>).</p>
@@ -133,23 +142,22 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-output-block>83
-86
-77
+      <idyl-output-block>23
+27
+81
 
-83
-86
-77
+23
+27
+81
 
-83
-86
-77</idyl-output-block>
+23
+27
+81</idyl-output-block>
 
-      <p>Как видите, при сиде <code>0</code> всегда генерируется одна и та же последовательность. Это полезно для отладки и воспроизводимых экспериментов</p>
+      <p>Как видите, при сиде <code>0</code> всегда генерируется одна и та же последовательность. Это полезно для отладки и воспроизводимых экспериментов.</p>
       <p>Например, в Minecraft есть известный эксплойт RANDAR, основанный на предсказуемости генератора мира — и он работает именно потому, что мир строится на основе сида.</p>
     </div>
 
-    <!-- Section 7 -->
     <div class="docs-section">
       <h2>Смена сида — смена последовательности</h2>
       <p>В Idyllium сид генератора псевдослучайных чисел задаётся функцией <code>random.set_seed()</code>:</p>
@@ -171,24 +179,36 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-output-block>83
-86
-77
+      <idyl-output-block>23
+27
+81
 
-95
-11
-22</idyl-output-block>
+39
+56
+70</idyl-output-block>
 
-      <p>Сид <code>0</code> → последовательность 83, 86, 77...</p>
-      <p>Сид <code>400</code> → новая последовательность: 95, 11, 22...</p>
+      <p>Сид <code>0</code> → последовательность 23, 27, 81...</p>
+      <p>Сид <code>400</code> → новая последовательность: 39, 56, 70...</p>
     </div>
 
-    <!-- Section 8 -->
     <div class="docs-section">
       <h2>Важное предупреждение</h2>
-      <p>Библиотека <code>random</code> в Idyllium предназначена для разработки <strong>игр, симуляций и учебных проектов</strong>. Она не подходит для задач, где важна криптографическая надёжность — например, генерация паролей, токенов безопасности или алгоритмов шифрования.</p>
-      <p>Для криптографической надёжности используются специализированные генераторы, основанные на физических источниках случайности: к таким относятся шумы из атмосферы, радиоактивный распад, тепловые явления и др.</p>
-      <p>Но для броска кубика, случайного выбора карты или генерации макета лабиринта — возможностей библиотеки <code>random</code> в Idyllium будет достаточно.</p>
+      <p>Библиотека <code>random</code> в Idyllium предназначена для <strong>игр, симуляций и учебных проектов</strong>. Для защиты секретов — например, паролей — она не годится: вы только что своими глазами видели, насколько предсказуемы её числа. А вот для броска кубика, случайного выбора карты или генерации лабиринта — в самый раз.</p>
     </div>
 
-    <!-- Lesson navigation -->
+    <div class="docs-section">
+      <h2>Шпаргалка</h2>
+      <p>Все функции библиотеки <code>random</code> в одной таблице:</p>
+
+      <table>
+        <thead>
+          <tr><th>Функция</th><th>Что делает</th><th>Пример</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>random.create_int(min, max)</code></td><td>случайное целое; обе границы включены</td><td><code>random.create_int(1, 6)</code> — бросок кубика</td></tr>
+          <tr><td><code>random.create_float(min, max)</code></td><td>случайный <code>float</code>; обе границы включены</td><td><code>random.create_float(0, 1)</code></td></tr>
+          <tr><td><code>random.choose_from(s)</code></td><td>случайный символ строки (или элемент массива)</td><td><code>random.choose_from("АБВГД")</code></td></tr>
+          <tr><td><code>random.set_seed(n)</code></td><td>задаёт сид — стартовую точку генератора</td><td><code>random.set_seed(42)</code></td></tr>
+        </tbody>
+      </table>
+    </div>

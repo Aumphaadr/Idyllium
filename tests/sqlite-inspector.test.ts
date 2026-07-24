@@ -69,7 +69,11 @@ async function main(): Promise<void> {
   }
   assert(missingError.includes("has no table or view named 'missing_table'"), `unexpected missing-table error: ${missingError}`);
 
-  const fixtureBytes = new Uint8Array(fs.readFileSync(path.join(process.cwd(), 'spec/some_sqlite/preview.db')));
+  const fixtureSql = fs.readFileSync(path.join(process.cwd(), 'tests/fixtures/sqlite/preview.sql'), 'utf8');
+  const fixtureDatabase = await service.open();
+  fixtureDatabase.executeScript(fixtureSql);
+  const fixtureBytes = fixtureDatabase.export();
+  fixtureDatabase.close();
   const fixture = await inspectSqliteDatabase(service, fixtureBytes);
   assert(fixture.objectCount === 4, `unexpected preview.db object count: ${fixture.objectCount}`);
   assert(

@@ -1,0 +1,255 @@
+    <div class="docs-section">
+      <h2>Как найти Ключ в инвентаре?</h2>
+      <p>Представьте: в вашем инвентаре несколько десятков предметов. Есть ли среди них Ключ, без которого не открыть дверь в подземелье? Листать массив глазами — так себе план, особенно если предметов сотня. А ещё хорошо бы разложить всё по алфавиту и посчитать, сколько факелов осталось в запасе.</p>
+      <p>Всё это умеют <strong>методы массивов</strong> — команды, которые вызываются через точку после имени массива. С несколькими вы уже знакомы: <code>add()</code>, <code>remove_at()</code> и <code>resize()</code> из урока о динамических массивах. Сегодня познакомимся с остальными.</p>
+      <p>Методы удобно делить на три группы: одни только <em>смотрят</em> на массив, другие <em>переставляют</em> его ячейки, третьи <em>меняют их количество</em>.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Неизменяющие методы</h2>
+      <p>Эти методы не меняют содержимое массива — только отвечают на вопросы о нём. Они работают одинаково и с <code>array</code>, и с <code>dyn_array</code>.</p>
+    </div>
+
+    <div class="docs-section">
+      <h3><code>.contains(val)</code></h3>
+      <p>Проверяет, есть ли значение <code>val</code> в массиве, и возвращает <code>bool</code>:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    dyn_array<string> inventory = ["Кирка", "Факел", "Ключ", "Хлеб"];
+
+    console.writeln(inventory.contains("Ключ"));
+    console.writeln(inventory.contains("Алмаз"));
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>true
+false</idyl-output-block>
+
+      <p>Ключ на месте — дверь в подземелье будет открыта. А вот алмазами инвентарь пока похвастаться не может.</p>
+    </div>
+
+    <div class="docs-section">
+      <h3><code>.find(val)</code></h3>
+      <p>Возвращает индекс <strong>первого</strong> вхождения <code>val</code> — или <code>-1</code>, если такого значения в массиве нет:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    dyn_array<string> inventory = ["Кирка", "Факел", "Ключ", "Факел"];
+
+    console.writeln(inventory.find("Факел"));
+    console.writeln(inventory.find("Алмаз"));
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>1
+-1</idyl-output-block>
+
+      <p>Факела в массиве два, но <code>find()</code> сообщает только о первом — он лежит в ячейке с индексом 1. А <code>-1</code> — это условный сигнал «не найдено»: ячейки с таким индексом не бывает, поэтому его невозможно перепутать с настоящим результатом.</p>
+    </div>
+
+    <div class="docs-section">
+      <h3><code>.count(val)</code></h3>
+      <p>Считает, сколько раз значение <code>val</code> встречается в массиве:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    dyn_array<string> inventory = ["Факел", "Хлеб", "Факел", "Стрела", "Факел"];
+
+    int torches = inventory.count("Факел");
+    console.writeln("Факелов в запасе: ", torches);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Факелов в запасе: 3</idyl-output-block>
+
+      <p>Три факела — на небольшую пещеру хватит.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Методы, меняющие порядок</h2>
+      <p>Эти методы переставляют ячейки местами, но не меняют их количество. Поэтому они тоже доступны обоим видам массивов — и <code>array</code>, и <code>dyn_array</code>.</p>
+    </div>
+
+    <div class="docs-section">
+      <h3><code>.reverse()</code></h3>
+      <p>Разворачивает массив «задом наперёд». Например, превращает маршрут до замка в маршрут домой:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    dyn_array<string> route = ["Дом", "Шахта", "Река", "Замок"];
+    route.reverse();
+    console.writeln(route);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>["Замок", "Река", "Шахта", "Дом"]</idyl-output-block>
+    </div>
+
+    <div class="docs-section">
+      <h3><code>.sort()</code></h3>
+      <p>Сортирует массив по возрастанию — числа от меньшего к большему:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    dyn_array<int> scores = [90, 30, 70, 10, 50];
+    scores.sort();
+    console.writeln(scores);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>[10, 30, 50, 70, 90]</idyl-output-block>
+
+      <p>Строки сортируются по алфавиту — самое время навести порядок в инвентаре:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    dyn_array<string> inventory = ["Меч", "Кирка", "Алмаз", "Факел"];
+    inventory.sort();
+    console.writeln(inventory);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>["Алмаз", "Кирка", "Меч", "Факел"]</idyl-output-block>
+
+      <p>А чтобы отсортировать по убыванию, комбинируйте: сначала <code>.sort()</code>, потом <code>.reverse()</code>.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Методы, меняющие количество ячеек</h2>
+      <p>Эти методы добавляют или удаляют ячейки, поэтому работают <strong>только с <code>dyn_array</code></strong> — статический массив менять свой размер не умеет.</p>
+    </div>
+
+    <div class="docs-section">
+      <h3><code>.insert(i, val)</code></h3>
+      <p>Вставляет значение <code>val</code> в позицию <code>i</code>, а все ячейки правее сдвигаются. Знакомый вам метод <code>add()</code> умеет добавлять только в конец, а <code>insert()</code> — в любое место:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    dyn_array<string> queue = ["Аня", "Боря", "Вика"];
+    queue.insert(1, "Ян");
+    console.writeln(queue);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>["Аня", "Ян", "Боря", "Вика"]</idyl-output-block>
+
+      <p>Ян пролез в очередь на позицию 1 — Боря и Вика вежливо сдвинулись вправо. В жизни так делать не советуем, а в массивах — пожалуйста.</p>
+    </div>
+
+    <div class="docs-section">
+      <h3><code>.join(arr)</code></h3>
+      <p>Дописывает в конец массива все ячейки другого массива. Не путайте со склейкой строк — здесь <code>join</code> означает «присоединить один массив к другому»:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    dyn_array<string> backpack = ["Кирка", "Факел"];
+    dyn_array<string> chest = ["Алмаз", "Хлеб"];
+
+    backpack.join(chest);
+
+    console.writeln("Рюкзак: ", backpack);
+    console.writeln("Сундук: ", chest);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Рюкзак: ["Кирка", "Факел", "Алмаз", "Хлеб"]
+Сундук: ["Алмаз", "Хлеб"]</idyl-output-block>
+
+      <p>Содержимое сундука <em>скопировалось</em> в рюкзак — сам сундук остался нетронутым.</p>
+    </div>
+
+    <div class="docs-section">
+      <h3><code>.clear()</code></h3>
+      <p>Удаляет все ячейки разом — массив становится пустым:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    dyn_array<string> trash = ["Гнилая плоть", "Сломанная лопата", "Камешек"];
+    trash.clear();
+
+    console.writeln("Предметов в корзине: ", trash.length);
+    console.writeln(trash);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Предметов в корзине: 0
+[]</idyl-output-block>
+
+      <p>Пустой массив печатается как <code>[]</code> — скобки на месте, а внутри тишина.</p>
+    </div>
+
+    <div class="docs-section">
+      <h3><code>.pop()</code></h3>
+      <p>Удаляет последнюю ячейку и возвращает её значение — удобно, когда нужно достать верхний предмет из стопки:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    dyn_array<string> snacks = ["Хлеб", "Яблоко", "Печенька"];
+
+    string last = snacks.pop();
+
+    console.writeln("Достали: ", last);
+    console.writeln("Осталось: ", snacks);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Достали: Печенька
+Осталось: ["Хлеб", "Яблоко"]</idyl-output-block>
+
+      <p>А что, если запасы кончились и доставать больше нечего? Idyllium не станет выдумывать несуществующую печеньку — программа остановится с ошибкой:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    dyn_array<int> nums;
+    int last = nums.pop();
+}
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:5: runtime error: cannot pop from empty array</idyl-error-block>
+
+      <p>Поэтому перед вызовом <code>pop()</code> полезно убедиться, что <code>nums.length > 0</code>.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Сводная таблица методов</h2>
+      <table>
+        <thead>
+          <tr><th>Метод</th><th>Для каких массивов</th><th>Что делает</th><th>Что возвращает</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>contains(val)</code></td><td><code>array</code> и <code>dyn_array</code></td><td>проверяет наличие значения</td><td><code>bool</code></td></tr>
+          <tr><td><code>find(val)</code></td><td><code>array</code> и <code>dyn_array</code></td><td>ищет первое вхождение</td><td>индекс или <code>-1</code></td></tr>
+          <tr><td><code>count(val)</code></td><td><code>array</code> и <code>dyn_array</code></td><td>считает вхождения значения</td><td><code>int</code></td></tr>
+          <tr><td><code>reverse()</code></td><td><code>array</code> и <code>dyn_array</code></td><td>разворачивает массив задом наперёд</td><td>ничего</td></tr>
+          <tr><td><code>sort()</code></td><td><code>array</code> и <code>dyn_array</code></td><td>сортирует по возрастанию (строки — по алфавиту)</td><td>ничего</td></tr>
+          <tr><td><code>insert(i, val)</code></td><td>только <code>dyn_array</code></td><td>вставляет значение в позицию <code>i</code></td><td>ничего</td></tr>
+          <tr><td><code>join(arr)</code></td><td>только <code>dyn_array</code></td><td>дописывает другой массив в конец</td><td>ничего</td></tr>
+          <tr><td><code>clear()</code></td><td>только <code>dyn_array</code></td><td>удаляет все ячейки</td><td>ничего</td></tr>
+          <tr><td><code>pop()</code></td><td>только <code>dyn_array</code></td><td>удаляет последнюю ячейку</td><td>её значение</td></tr>
+        </tbody>
+      </table>
+      <p>Вместе с <code>add()</code>, <code>remove_at()</code> и <code>resize()</code> из урока о динамических массивах это полный набор инструментов для работы с массивами.</p>
+    </div>

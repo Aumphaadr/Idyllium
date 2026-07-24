@@ -62,8 +62,54 @@ main() {
 </script></idyl-code-block>
 
   <p>
+    Обратите внимание на порядок внутри <code>update()</code>: сначала
+    <code>canvas.fill(...)</code> заливает весь холст заново, и только потом
+    рисуются прямоугольники. Если убрать <code>fill</code>, старые кадры никуда
+    не денутся — за каждым прямоугольником потянется «шлейф» из его прежних
+    положений. Правило «сначала очисти, потом нарисуй» работает в каждом кадре.
+  </p>
+  <p>
+    У функции <code>update()</code> есть второй параметр —
+    <code>delta_time</code>. Это время кадра в секундах: сколько прошло с
+    прошлого вызова <code>update()</code>. Наши примеры пока шагают
+    фиксированно — на 2 пикселя за кадр, и этого достаточно. К
+    <code>delta_time</code> мы вернёмся, когда скорость движения станет
+    по-настоящему важна.
+  </p>
+  <p>
     Свойство <code>framerate_limit</code> ограничивает количество обновлений в
     секунду. Если поставить <code>60</code>, Canvas будет стараться обновляться
     не чаще шестидесяти раз в секунду.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Все события Canvas</h2>
+  <p>
+    Кроме <code>on_init</code> и <code>on_update</code> у Canvas есть события
+    клавиатуры и мыши — им посвящены следующие уроки. Вот вся восьмёрка одной
+    таблицей, чтобы возвращаться к ней как к шпаргалке:
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Событие</th><th>Сигнатура функции</th><th>Когда вызывается</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>on_init</code></td><td><code>void function(gui.Canvas canvas)</code></td><td>один раз при запуске</td></tr>
+      <tr><td><code>on_update</code></td><td><code>void function(gui.Canvas canvas, float delta_time)</code></td><td>каждый кадр</td></tr>
+      <tr><td><code>on_key_pressed</code></td><td><code>void function(gui.Canvas canvas, gui.KeyboardEvent e)</code></td><td>нажата клавиша</td></tr>
+      <tr><td><code>on_key_released</code></td><td><code>void function(gui.Canvas canvas, gui.KeyboardEvent e)</code></td><td>отпущена клавиша</td></tr>
+      <tr><td><code>on_mouse_pressed</code></td><td><code>void function(gui.Canvas canvas, gui.MouseEvent e)</code></td><td>нажата кнопка мыши</td></tr>
+      <tr><td><code>on_mouse_released</code></td><td><code>void function(gui.Canvas canvas, gui.MouseEvent e)</code></td><td>отпущена кнопка мыши</td></tr>
+      <tr><td><code>on_mouse_move</code></td><td><code>void function(gui.Canvas canvas, gui.MouseEvent e)</code></td><td>мышь движется над холстом</td></tr>
+      <tr><td><code>on_mouse_scroll</code></td><td><code>void function(gui.Canvas canvas, gui.MouseScrollEvent e)</code></td><td>прокручено колесо мыши</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    Во всех восьми случаях схема одна: вы пишете функцию с нужной сигнатурой и
+    присваиваете её свойству Canvas, как мы уже делали с
+    <code>canvas.on_init = init;</code>.
   </p>
 </div>

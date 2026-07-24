@@ -91,3 +91,53 @@ CREATE TABLE players (
     правило, которое мы ей задали.
   </p>
 </div>
+
+<div class="docs-section">
+  <h2>Полная программа</h2>
+  <p>
+    Соберём всё вместе: база сама выдаёт <code>id</code>, а ограничение
+    <code>UNIQUE</code> охраняет логины. Второй <code>INSERT</code> пытается
+    занять логин <code>alex_fox</code> ещё раз.
+  </p>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("unique_logins.db");
+    db.execute("DROP TABLE IF EXISTS players");
+    db.execute(
+        "CREATE TABLE players (" +
+        "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+        "name TEXT, " +
+        "login TEXT UNIQUE" +
+        ")"
+    );
+
+    sqlite.Statement add_player = db.prepare(
+        "INSERT INTO players (name, login) VALUES (:name, :login)"
+    );
+
+    add_player.bind("name", "Alex");
+    add_player.bind("login", "alex_fox");
+    sqlite.Result saved = add_player.execute();
+
+    if (saved.last_insert_id != null) {
+        console.writeln("Новый id: ", saved.last_insert_id.to_int64());
+    }
+    saved.close();
+
+    add_player.clear_bindings();
+    add_player.bind("name", "Alex");
+    add_player.bind("login", "alex_fox"); // логин уже занят
+    add_player.execute();
+}
+</script></idyl-code-block>
+  <idyl-output-block>Новый id: 1</idyl-output-block>
+  <idyl-error-block>main.idyl:31: runtime error: sqlite execution failed: UNIQUE constraint failed: players.login</idyl-error-block>
+  <p>
+    Первая вставка успела получить номер и напечатать его. Вторую база
+    остановила и прямо назвала нарушенное правило: <code>UNIQUE</code> в
+    колонке <code>players.login</code>.
+  </p>
+</div>

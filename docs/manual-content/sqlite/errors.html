@@ -90,11 +90,22 @@ main() {
 <div class="docs-section">
   <h2>Забыли next()</h2>
   <idyl-code-block><script type="text/plain">
-sqlite.Result rows = db.execute("SELECT name FROM players");
-string name = rows.get_string("name"); // runtime error
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("error_no_next.db");
+    db.execute("DROP TABLE IF EXISTS players");
+    db.execute("CREATE TABLE players (name TEXT NOT NULL)");
+    db.execute("INSERT INTO players VALUES ('Liam')");
+
+    sqlite.Result rows = db.execute("SELECT name FROM players");
+    string name = rows.get_string("name");
+}
 </script></idyl-code-block>
+  <idyl-error-block>main.idyl:10: runtime error: sqlite result has no current row; call next() first</idyl-error-block>
   <p>
-    Новый результат находится перед первой строкой. Getter разрешён только
+    Новый результат находится перед первой строкой, и ошибка сама подсказывает
+    решение: сначала вызвать <code>next()</code>. Getter разрешён только
     после того, как <code>next()</code> вернул <code>true</code>. Если он вернул
     <code>false</code>, строк нет и читать тоже нечего.
   </p>
@@ -103,10 +114,15 @@ string name = rows.get_string("name"); // runtime error
 <div class="docs-section">
   <h2>Попытались использовать закрытый объект</h2>
   <idyl-code-block><script type="text/plain">
-sqlite.Database db = sqlite.open("game.db");
-db.close();
-db.execute("SELECT 1"); // runtime error
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("error_closed.db");
+    db.close();
+    db.execute("SELECT 1");
+}
 </script></idyl-code-block>
+  <idyl-error-block>main.idyl:6: runtime error: sqlite database is already closed</idyl-error-block>
   <p>
     После <code>close()</code> объект больше не связан с ресурсом. Это относится
     к <code>sqlite.Database</code>, <code>sqlite.Statement</code> и
@@ -129,5 +145,20 @@ db.execute("SELECT 1"); // runtime error
     Читайте сообщение слева направо: файл и строка → вид ошибки → объект SQLite
     → конкретная причина. Как правило, в одной строке уже написано, какой
     параметр, колонка или тип привёл к проблеме.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Путь пройден</h2>
+  <p>
+    Это последний урок учебника. Дорога началась с одной строчки —
+    «Hello, World!» — а закончилась программами, которые хранят данные в
+    настоящей базе, задают ей вопросы и понимают её ответы. Теперь вы умеете
+    работать с переменными и циклами, функциями и файлами, JSON и таблицами
+    SQLite, а сообщения об ошибках читаете как подсказки, а не как приговор.
+    Этого достаточно, чтобы придумать и построить что-то своё: дневник, каталог
+    коллекции, игру с сохранениями — Лиам, Мира и Ника с удовольствием в ней
+    поселятся. Если что-то забудется, любой урок можно открыть заново: учебник
+    никуда не уходит. Хорошего кода!
   </p>
 </div>

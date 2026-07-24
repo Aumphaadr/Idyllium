@@ -4,21 +4,36 @@
     Для текста используется <code>drawable.Text</code>. Ему можно задать позицию,
     размер шрифта, цвет и сам текст. Без дополнительных настроек используется
     встроенный Source Code Pro. Если нужен конкретный шрифт, его можно загрузить
-    через общий ресурс <code>fonts.Font</code>. Тот же объект подходит и для
-    GUI-виджетов.
+    через общий ресурс <code>fonts.Font</code> — тот же объект подходит и для
+    GUI-виджетов. Возьмём рукописный Lobster, знакомый по уроку о шрифтах в
+    виджетах: его буквы совсем не похожи на встроенный шрифт, поэтому отличие
+    видно с первого взгляда.
   </p>
 
   <idyl-code-block><script type="text/plain">
+use drawable;
 use fonts;
 
 fonts.Font main_font;
-main_font.load_from_file("SourceCodePro-Regular.ttf");
-
 drawable.Text coordinates;
-coordinates.font = main_font;
-coordinates.font_size = 20;
-coordinates.text = "x=0, y=0";
+
+main() {
+    main_font.load_from_file("Lobster-Regular.ttf");
+
+    coordinates.font = main_font;
+    coordinates.font_size = 20;
+    coordinates.text = "x=0, y=0";
+}
 </script></idyl-code-block>
+
+  <p>
+    Эта маленькая программа ничего не рисует — она только загружает шрифт и
+    настраивает текст. Зато её можно запустить и убедиться, что файл шрифта
+    находится и читается без ошибок. Файл должен лежать в проекте рядом с
+    программой: если его нет, Idyllium честно скажет, что не смог его найти:
+  </p>
+
+  <idyl-error-block>main.idyl:8: runtime error: Font.load_from_file() cannot load 'Lobster-Regular.ttf': file does not exist</idyl-error-block>
 
   <p>
     <code>font</code> выбирает рисунок букв, а <code>font_size</code> — их размер.
@@ -65,7 +80,7 @@ void function on_mouse_move(gui.Canvas canvas, gui.MouseEvent e) {
 }
 
 main() {
-    main_font.load_from_file("SourceCodePro-Regular.ttf");
+    main_font.load_from_file("Lobster-Regular.ttf");
 
     gui.Window win;
     win.width = 500;
@@ -84,9 +99,9 @@ main() {
 }
 </script></idyl-code-block>
 
+
   <p>
-    Файл шрифта должен лежать в проекте рядом с программой. Если файла нет,
-    Idyllium честно скажет, что не смог его найти. Если файл существует, но не
-    является TTF, OTF, WOFF или WOFF2, ошибка тоже появится сразу.
+    Если файл существует, но не является TTF, OTF, WOFF или WOFF2, ошибка тоже
+    появится сразу.
   </p>
 </div>

@@ -148,6 +148,24 @@ main() {
     её конец. Это такая же честная ошибка, как выход за границы массива: лучше
     сразу узнать, что число неправильное, чем долго искать странное поведение.
   </p>
+
+  <idyl-code-block><script type="text/plain">
+use audio;
+
+main() {
+    audio.Music music;
+    music.load_from_file("theme.mp3");
+    music.position = 999;
+    music.play();
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:6: runtime error: Music.position must be between 0 and 120.05877551020546, got 999</idyl-error-block>
+
+  <p>
+    Длинное число в сообщении — это длительность <code>theme.mp3</code> в
+    секундах: перематывать можно только внутрь этого отрезка.
+  </p>
 </div>
 
 <div class="docs-section">
@@ -166,7 +184,7 @@ audio.Music intro;
 audio.Music theme;
 
 main() {
-    intro.load_from_file("click.wav");
+    intro.load_from_file("intro.mp3");
     intro.volume = 0.2;
 
     theme.load_from_file("theme.mp3");
@@ -191,6 +209,20 @@ main() {
 
 <div class="docs-section">
   <h2>Что выбрать для игры?</h2>
+  <table class="docs-table">
+    <thead>
+      <tr><th>Возможность</th><th><code>audio.Sound</code></th><th><code>audio.Music</code></th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Назначение</td><td>короткие эффекты</td><td>длинные фоновые треки</td></tr>
+      <tr><td><code>load_from_file()</code>, <code>play()</code>, <code>pause()</code>, <code>resume()</code>, <code>stop()</code></td><td>есть</td><td>есть</td></tr>
+      <tr><td><code>volume</code>, <code>src</code>, <code>duration</code>, <code>is_playing</code></td><td>есть</td><td>есть</td></tr>
+      <tr><td><code>loop</code> — повтор по кругу</td><td>—</td><td>есть</td></tr>
+      <tr><td><code>position</code> — перемотка</td><td>—</td><td>есть</td></tr>
+      <tr><td><code>on_finished</code> — событие конца</td><td>—</td><td>есть</td></tr>
+    </tbody>
+  </table>
+
   <p>
     Для игровых проектов обычно хватает простой схемы:
   </p>

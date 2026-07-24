@@ -6,6 +6,7 @@ declare const module: unknown;
 declare const process: {
   argv: string[];
   cwd(): string;
+  execPath: string;
   exitCode?: number;
   stdin: unknown;
   stdout: {

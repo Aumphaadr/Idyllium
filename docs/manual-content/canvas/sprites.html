@@ -73,16 +73,42 @@ main() {
   <div class="gui-demo-container">
     <div class="gui-demo-window">
       <div class="demo-content canvas-sprite-demo">
-        <div class="canvas-sprite-surface">
+        <div class="canvas-sprite-surface" data-wasd-demo tabindex="0">
           <img src="assets/cat.png" alt="Спрайт с картинкой кота">
-          <span>W A S D</span>
+          <span>кликните по полю — и W A S D</span>
         </div>
       </div>
     </div>
     <div class="coord-note">
       <code>move(dx, dy)</code> смещает спрайт относительно его текущей позиции.
+      Демо живое: щёлкните по тёмному полю и подвигайте кота клавишами.
     </div>
   </div>
+
+  <script data-lesson-script>
+    (function () {
+      const surface = document.querySelector('[data-wasd-demo]');
+      if (!surface) return;
+      const img = surface.querySelector('img');
+      let x = 0;
+      let y = 0;
+      surface.addEventListener('keydown', (event) => {
+        const key = event.key.toLowerCase();
+        let dx = 0;
+        let dy = 0;
+        if (key === 'a' || key === 'ф') dx = -15;
+        if (key === 'd' || key === 'в') dx = 15;
+        if (key === 'w' || key === 'ц') dy = -15;
+        if (key === 's' || key === 'ы') dy = 15;
+        if (dx === 0 && dy === 0) return;
+        event.preventDefault();
+        const bounds = surface.getBoundingClientRect();
+        x = Math.max(-bounds.width * 0.4, Math.min(bounds.width * 0.55, x + dx));
+        y = Math.max(-bounds.height * 0.36, Math.min(bounds.height * 0.6, y + dy));
+        img.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+      });
+    })();
+  </script>
 </div>
 
 <div class="docs-section">
@@ -90,25 +116,10 @@ main() {
   <p>
     Обратите внимание: файл загружается до показа окна. Когда выполнение
     переходит на следующую строку после <code>load_from_file()</code>, ресурс уже
-    готов к использованию.
+    готов: его можно сразу передать в <code>set_image()</code>, а внутри
+    <code>init</code> — сразу нарисовать спрайт через <code>canvas.draw()</code>.
+    Именно так устроен пример выше.
   </p>
-
-  <idyl-code-block><script type="text/plain">
-use drawable;
-use gui;
-use image;
-
-main() {
-    image.Static hero_picture;
-    hero_picture.load_from_file("cat.png");
-
-    drawable.Sprite hero;
-    hero.set_image(hero_picture);
-
-    gui.Canvas canvas;
-    canvas.draw(hero);
-}
-</script></idyl-code-block>
 
   <p>
     Добавлять <code>time.sleep()</code>, повторно вызывать
@@ -149,9 +160,33 @@ main() {
 </script></idyl-code-block>
 
   <p>
-    Метод <code>hero_picture.scale(2, 2)</code> решает другую задачу: он создаёт
-    новый ресурс с пересчитанными пикселями. Для обычного изменения размера
-    спрайта достаточно <code>set_scale()</code>.
+    Метод <code>scale()</code> у самой картинки решает другую задачу: он
+    пересчитывает пиксели и возвращает <strong>новую</strong> картинку — исходник
+    не меняется. Поэтому результат нужно сохранить в отдельную переменную. Это
+    видно даже без окна, в обычной консольной программе:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use image;
+
+main() {
+    image.Static cat;
+    cat.load_from_file("cat.png");
+
+    image.Static big = cat.scale(2, 2);
+
+    console.writeln("cat: ", cat.width, "x", cat.height);
+    console.writeln("big: ", big.width, "x", big.height);
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>cat: 112x100
+big: 224x200</idyl-output-block>
+
+  <p>
+    <code>big</code> вдвое больше, а <code>cat</code> остался прежнего размера.
+    Для обычного изменения размера спрайта достаточно <code>set_scale()</code>.
   </p>
 </div>
 

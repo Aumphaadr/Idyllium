@@ -1,10 +1,7 @@
-<!-- Hero -->
-    
-
-    <!-- Section 1 -->
-    <div class="docs-section">
-      <h2>Подключение библиотеки <code>math</code></h2>
-      <p>Для использования математических функций необходимо подключить библиотеку <code>math</code>:</p>
+<div class="docs-section">
+      <h2>Когда четырёх действий мало</h2>
+      <p>Вы уже умеете складывать, вычитать, умножать и делить — на калькулятор этого хватает. Но задачи быстро растут: как извлечь квадратный корень? Как округлить 4.6 банки краски до пяти настоящих? Не изобретать же всё это самим — в Idyllium есть библиотека <code>math</code>, коробка с готовыми математическими инструментами.</p>
+      <p>Чтобы открыть эту коробку, подключите библиотеку в начале программы:</p>
 
       <idyl-code-block><script type="text/plain">
 use math;
@@ -13,7 +10,6 @@ use math;
       <p>После этого все функции вызываются по схеме: <code>math.название(аргументы)</code>.</p>
     </div>
 
-    <!-- Section 2 -->
     <div class="docs-section">
       <h2>Модуль числа: <code>math.abs(n)</code></h2>
       <p>Функция <code>math.abs(n)</code> возвращает абсолютное значение (модуль) числа — то есть его расстояние от нуля, без знака:</p>
@@ -32,9 +28,31 @@ main() {
       <idyl-output-block>15
 42
 3.7</idyl-output-block>
+
+      <p>Зачем это нужно? Представьте игру «Угадай число»: программа загадала 37, а игрок назвал 50. Насколько он промахнулся? Обычное вычитание даст <code>-13</code>, но «промахнуться на минус тринадцать» звучит странно. Промах — это расстояние, а расстояние не бывает отрицательным:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use math;
+
+main() {
+    int secret = 37;
+
+    console.write("Угадайте число от 1 до 100: ");
+    int guess = console.get_int();
+
+    console.writeln("Вы промахнулись на ", math.abs(secret - guess), "!");
+    console.writeln("А без math.abs() было бы: ", secret - guess);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Угадайте число от 1 до 100: <span class="user_input">50</span>
+Вы промахнулись на 13!
+А без math.abs() было бы: -13</idyl-output-block>
+
+      <p>Приятная деталь: <code>math.abs()</code> бережно относится к типу числа. Передали <code>int</code> — получите <code>int</code>, передали <code>float</code> — получите <code>float</code>. Никаких неожиданных превращений.</p>
     </div>
 
-    <!-- Section 3 -->
     <div class="docs-section">
       <h2>Округление чисел: <code>round</code>, <code>floor</code>, <code>ceil</code></h2>
       <p>Библиотека <code>math</code> предоставляет три функции для округления:</p>
@@ -72,10 +90,28 @@ round(x, 2): 3.68
 floor(x, 2): 3.67
 ceil(x, 2): 3.68</idyl-output-block>
 
-      <p>Обратите внимание: все три функции принимают необязательный второй аргумент — количество знаков после запятой.</p>
+      <p>Обратите внимание: все три функции принимают необязательный второй аргумент — количество знаков после запятой. Без него результат получается типа <code>int</code>, а с ним — <code>float</code> (что логично: «3.68 знаков» — это всё ещё дробное число).</p>
+      <p>А зачем вообще округлять «вверх»? Классика ремонта: нужно покрасить стену площадью 23 квадратных метра, а одной банки краски хватает на 5 квадратных метров. Деление даёт 4.6 банки — но в магазине не продают шесть десятых банки! Придётся взять пять:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use math;
+
+main() {
+    float wall = 23.0; // площадь стены в квадратных метрах
+    float can = 5.0;   // одна банка краски красит 5 квадратных метров
+
+    console.writeln("Нужно банок (точно): ", wall / can);
+    console.writeln("Придётся купить: ", math.ceil(wall / can));
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Нужно банок (точно): 4.6
+Придётся купить: 5</idyl-output-block>
+
+      <p>Если бы мы взяли <code>floor()</code> — краски бы не хватило, а <code>round()</code> округлил бы 4.6 до 5 только по счастливому совпадению. Когда «недобор недопустим», честнее всего явно округлять вверх.</p>
     </div>
 
-    <!-- Section 4 -->
     <div class="docs-section">
       <h2>Возведение в степень: <code>math.pow(a, b)</code></h2>
       <p>Функция <code>math.pow(a, b)</code> возводит число <code>a</code> в степень <code>b</code>:</p>
@@ -94,9 +130,28 @@ main() {
       <idyl-output-block>256
 125
 0.25</idyl-output-block>
+
+      <p>Степени отлично описывают всё, что удваивается. Например, бактерия делится каждый час: была одна, стало две, потом четыре, восемь… Сколько их будет через сутки? Считать вручную — занятие на вечер, а <code>math.pow()</code> справится мгновенно:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use math;
+
+main() {
+    // Бактерия делится каждый час: была одна, стало две, потом четыре...
+    console.writeln("Через 3 часа: ", math.pow(2, 3));
+    console.writeln("Через 10 часов: ", math.pow(2, 10));
+    console.writeln("Через сутки: ", math.pow(2, 24));
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Через 3 часа: 8
+Через 10 часов: 1024
+Через сутки: 16777216</idyl-output-block>
+
+      <p>Почти семнадцать миллионов бактерий из одной за сутки. Вот почему стоит мыть руки.</p>
     </div>
 
-    <!-- Section 5 -->
     <div class="docs-section">
       <h2>Квадратный корень: <code>math.sqrt(n)</code></h2>
       <p>Функция <code>math.sqrt(n)</code> вычисляет квадратный корень из неотрицательного числа:</p>
@@ -113,13 +168,38 @@ main() {
 </script></idyl-code-block>
 
       <idyl-output-block>7
-1.4142135623731
+1.41421356
 0</idyl-output-block>
 
-      <p>Попытка извлечь корень из отрицательного числа вызовет ошибку выполнения — Idyllium не работает с комплексными числами на этом уровне.</p>
+      <p>Корень выручает, когда известна площадь квадрата, а нужна его сторона. Участок площадью 144 квадратных метра? Значит, забор с каждой стороны — по 12 метров:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use math;
+
+main() {
+    float field = 144.0; // площадь квадратного участка в кв. метрах
+
+    console.writeln("Длина одной стороны: ", math.sqrt(field), " м");
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Длина одной стороны: 12 м</idyl-output-block>
+
+      <p>А вот попытка извлечь корень из отрицательного числа закончится ошибкой выполнения — Idyllium не работает с комплексными числами на этом уровне:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use math;
+
+main() {
+    console.writeln(math.sqrt(-4));
+}
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:5: runtime error: math.sqrt() expects a non-negative number, got -4</idyl-error-block>
     </div>
 
-    <!-- Section 6 -->
     <div class="docs-section">
       <h2>Ограничение значения: <code>math.clamp(min, val, max)</code></h2>
       <p>Функция <code>math.clamp(min, val, max)</code> «зажимает» значение <code>val</code> в указанный диапазон: если <code>val</code> меньше <code>min</code> — вернёт <code>min</code>; если больше <code>max</code> — вернёт <code>max</code>; иначе — само <code>val</code>.</p>
@@ -148,4 +228,23 @@ main() {
       <p>Эта функция особенно полезна в играх, интерфейсах и сенсорных системах, где нужно ограничить значения в допустимом диапазоне.</p>
     </div>
 
-    <!-- Lesson navigation -->
+    <div class="docs-section">
+      <h2>Шпаргалка</h2>
+      <p>Все функции этого урока в одной таблице — возвращайтесь к ней, когда забудете название:</p>
+
+      <table>
+        <thead>
+          <tr><th>Функция</th><th>Что делает</th><th>Пример</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>math.abs(n)</code></td><td>модуль числа (убирает знак)</td><td><code>math.abs(-15)</code> → <code>15</code></td></tr>
+          <tr><td><code>math.round(n)</code></td><td>округляет к ближайшему целому</td><td><code>math.round(3.6789)</code> → <code>4</code></td></tr>
+          <tr><td><code>math.round(n, z)</code></td><td>округляет до <code>z</code> знаков после запятой</td><td><code>math.round(3.6789, 2)</code> → <code>3.68</code></td></tr>
+          <tr><td><code>math.floor(n)</code></td><td>округляет вниз</td><td><code>math.floor(3.6789)</code> → <code>3</code></td></tr>
+          <tr><td><code>math.ceil(n)</code></td><td>округляет вверх</td><td><code>math.ceil(3.6789)</code> → <code>4</code></td></tr>
+          <tr><td><code>math.pow(a, b)</code></td><td>возводит <code>a</code> в степень <code>b</code></td><td><code>math.pow(2, 8)</code> → <code>256</code></td></tr>
+          <tr><td><code>math.sqrt(n)</code></td><td>квадратный корень (<code>n</code> ≥ 0)</td><td><code>math.sqrt(49)</code> → <code>7</code></td></tr>
+          <tr><td><code>math.clamp(min, val, max)</code></td><td>зажимает <code>val</code> в диапазон</td><td><code>math.clamp(0, 15, 10)</code> → <code>10</code></td></tr>
+        </tbody>
+      </table>
+    </div>

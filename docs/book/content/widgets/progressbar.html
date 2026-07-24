@@ -13,22 +13,10 @@
     }
 </style>
 
-<!-- Hero -->
-    
-
-    <!-- Section 1 -->
-    <div class="docs-section">
+<div class="docs-section">
       <h2>Что такое ProgressBar?</h2>
-      <p><code>gui.ProgressBar</code> — это заполняемая полоска, которая наглядно показывает прогресс выполнения какого-либо процесса.</p>
-      <p>Вы наверняка видели такие в реальной жизни:</p>
-      <ul>
-        <li>📥 Загрузка файла в браузере — полоска заполняется от 0% до 100%</li>
-        <li>🎮 Шкала здоровья персонажа в игре</li>
-        <li>💾 Установка программы — «Осталось 3 секунды...»</li>
-        <li>⏳ Таймер обратного отсчёта в виде заполняющейся полоски</li>
-      </ul>
-
-      <p>Вот как выглядит простейший прогрессбар, заполненный на 24%:</p>
+      <p>Представьте: ваша игра загружает большой уровень, а на экране — тишина. Игрок не понимает: программа думает или зависла? Спасает заполняющаяся полоска — она честно показывает, сколько уже сделано и сколько осталось. Та же полоска пригодится и для шкалы здоровья героя.</p>
+      <p>В Idyllium такая полоска называется <code>gui.ProgressBar</code>. Вот как выглядит простейший прогрессбар, заполненный на 24%:</p>
 
       <idyl-code-block><script type="text/plain">
 use gui;
@@ -69,7 +57,6 @@ main() {
       </div>
     </div>
 
-    <!-- Section 2 -->
     <div class="docs-section">
       <h2>Стандартные свойства виджетов</h2>
       <p>Как и все виджеты в Idyllium, <code>ProgressBar</code> имеет стандартный набор свойств для позиционирования:</p>
@@ -91,10 +78,9 @@ pb.height = 30;  // высота 30 пикселей
       <p>Эти свойства есть у <strong>каждого</strong> виджета — от кнопки до выпадающего списка.</p>
     </div>
 
-    <!-- Section 3 -->
     <div class="docs-section">
       <h2>Свойство <code>value</code> — уровень заполнения</h2>
-      <p>Главное свойство прогрессбара — <code>value</code>. Оно имеет тип <code>int</code> и задаёт заполнение в процентах (от 0 до 100).</p>
+      <p>Главное свойство прогрессбара — <code>value</code>. Оно имеет тип <code>int</code>. Пока вы не трогали другие настройки, <code>value</code> — это просто проценты: от 0 (пусто) до 100 (полно).</p>
 
       <p>Три прогрессбара с разными значениями:</p>
 
@@ -166,7 +152,67 @@ main() {
       <p>Обратите внимание: процент заполнения отображается прямо на полоске — дополнительный лейбл не нужен.</p>
     </div>
 
-    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Своя шкала: <code>min</code> и <code>max</code></h2>
+      <p>Проценты — это только случай по умолчанию. На самом деле у прогрессбара есть ещё два свойства: <code>min</code> (начало шкалы, обычно 0) и <code>max</code> (конец шкалы, обычно 100). Значение <code>value</code> всегда живёт между ними.</p>
+      <p>Пусть у героя игры 200 очков здоровья. Тогда удобно задать шкалу от 0 до 200 и хранить в <code>value</code> настоящее здоровье, а не проценты:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 100;
+    win.title = "Здоровье героя";
+
+    gui.ProgressBar hp;
+    hp.x = 20;
+    hp.y = 20;
+    hp.width = 260;
+    hp.min = 0;
+    hp.max = 200;
+    hp.value = 150;
+
+    win.add_child(hp);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 100px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px; width: 260px;">
+              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
+                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 75%; border-radius: 4px;"></div>
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">75%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          ❤️ 150 очков из 200 — это три четверти шкалы, поэтому полоска заполнена на 75%. Надпись на полоске всегда показывает проценты.
+        </div>
+      </div>
+
+      <p>Соберём все свойства прогрессбара в одну таблицу:</p>
+
+      <table>
+        <thead>
+          <tr><th>Свойство</th><th>Тип</th><th>Что означает</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>value</code></td><td><code>int</code></td><td>уровень заполнения; всегда между <code>min</code> и <code>max</code></td></tr>
+          <tr><td><code>min</code></td><td><code>int</code></td><td>начало шкалы (по умолчанию 0)</td></tr>
+          <tr><td><code>max</code></td><td><code>int</code></td><td>конец шкалы (по умолчанию 100)</td></tr>
+          <tr><td><code>x</code>, <code>y</code></td><td><code>int</code></td><td>положение внутри окна</td></tr>
+          <tr><td><code>width</code>, <code>height</code></td><td><code>int</code></td><td>размеры полоски</td></tr>
+        </tbody>
+      </table>
+
+      <p>Пока <code>min = 0</code> и <code>max = 100</code>, значение <code>value</code> читается как обычные проценты.</p>
+    </div>
+
     <div class="docs-section">
       <h2>Динамическое изменение значения</h2>
       <p>Как и любые другие свойства, <code>value</code> можно менять во время работы программы. Вот пример, где кнопка устанавливает прогрессбару случайное значение:</p>
@@ -221,25 +267,40 @@ main() {
         </div>
       </div>
 
-      <p>Этот механизм можно использовать для:</p>
-      <ul>
-        <li>Отображения прогресса загрузки файлов</li>
-        <li>Индикации здоровья персонажа в игре</li>
-        <li>Визуализации таймера или обратного отсчёта</li>
-        <li>Любого другого процесса, где нужно показать, «сколько осталось»</li>
-      </ul>
+      <p>Точно так же шкала здоровья будет обновляться после каждого удара, а полоска загрузки — расти по мере скачивания файла.</p>
     </div>
 
-    <!-- Lesson navigation -->
+    <div class="docs-section">
+      <h2>Типичная ошибка: дробное значение</h2>
+      <p>Полоска заполнена наполовину — как это записать? Рука так и тянется к числу 0.5. Но <code>value</code> имеет тип <code>int</code>, и дробное число компилятор не пропустит:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    gui.ProgressBar pb;
+    pb.value = 0.5;  // ОШИБКА!
+}
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:6:16: error: cannot assign 'float' value to 'int' variable</idyl-error-block>
+
+      <p>Половина полоски — это не 0.5, а 50 из 100. Присвойте целое число:</p>
+
+      <idyl-code-block><script type="text/plain">
+pb.value = 50;  // вот теперь половина
+</script></idyl-code-block>
+    </div>
 
 <script data-lesson-script type="text/plain">
 // Интерактив для демо-примеров
   document.addEventListener('DOMContentLoaded', () => {
-    // Пример 4: случайный прогресс
+    // Пример: случайный прогресс
     const randomBtn = document.getElementById('randomProgressBtn');
     const progressFill = document.getElementById('randomProgressFill');
     const progressLabel = document.getElementById('randomProgressLabel');
-    
+
     if (randomBtn && progressFill && progressLabel) {
       randomBtn.addEventListener('click', () => {
         const r = Math.floor(Math.random() * 101);

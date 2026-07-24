@@ -1,3 +1,15 @@
+<style data-lesson-style>
+.interactive-demo {
+      background: rgba(137, 180, 250, 0.05);
+      border-radius: 12px;
+      padding: 1em;
+      margin: 1.5em 0;
+    }
+    .interactive-demo .coord-note {
+      margin-top: 1em;
+    }
+</style>
+
 <div class="docs-section">
   <h2>Звук по нажатию кнопки</h2>
   <p>
@@ -40,6 +52,17 @@ main() {
     win.show();
 }
 </script></idyl-code-block>
+
+  <div class="interactive-demo">
+    <div class="gui-demo-window">
+      <div class="demo-content" style="min-height: 130px; position: relative;">
+        <button class="idyl-button" style="position: absolute; left: 70px; top: 50px; width: 160px;" id="playClickBtn">Нажми меня</button>
+      </div>
+    </div>
+    <div class="coord-note">
+      🔊 Нажмите на кнопку — прозвучит настоящий щелчок, как в программе выше. Нажимайте быстро — звуки будут накладываться друг на друга.
+    </div>
+  </div>
 
   <p>
     Метод <code>load_from_file()</code> подгружает аудиофайл, а
@@ -95,6 +118,27 @@ main() {
     Idyllium не исправляет неправильную громкость молча. Если написать
     <code>click.volume = 4;</code>, программа получит runtime error, потому что
     <code>4</code> не входит в диапазон от <code>0.0</code> до <code>1.0</code>.
+    Проверим:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use audio;
+
+main() {
+    audio.Sound click;
+    click.load_from_file("click.wav");
+    click.volume = 4;
+    click.play();
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:6: runtime error: Sound.volume must be between 0 and 1, got 4</idyl-error-block>
+
+  <p>
+    Обратите внимание: это ошибка <strong>времени выполнения</strong>. Программа
+    успешно компилируется — компилятор видит, что <code>4</code> это число, и не
+    возражает. А вот при запуске Idyllium проверяет диапазон и честно
+    останавливается.
   </p>
 </div>
 
@@ -179,6 +223,189 @@ main() {
 </div>
 
 <div class="docs-section">
+  <h2>Музыка по кругу: свойство <code>loop</code></h2>
+  <p>
+    В играх фоновая музыка почти никогда не заканчивается: трек доиграл — и тут же
+    начался заново. Писать для этого специальный код не нужно. У
+    <code>audio.Music</code> есть свойство <code>loop</code> типа
+    <code>bool</code>: если поставить <code>loop = true</code>, музыка будет
+    играть по кругу, пока вы её не остановите.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use audio;
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 320;
+    win.height = 160;
+    win.title = "Фоновая музыка";
+
+    audio.Music theme;
+    theme.load_from_file("theme.mp3");
+    theme.loop = true;
+    theme.volume = 0.3;
+
+    gui.Button startBtn;
+    startBtn.text = "Включить музыку";
+    startBtn.x = 70;
+    startBtn.y = 50;
+    startBtn.width = 180;
+
+    startBtn.on_click = void function() {
+        theme.play();
+    };
+
+    win.add_child(startBtn);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <p>
+    Достаточно одной строчки <code>theme.loop = true;</code> — и мелодия
+    превращается в бесконечный фон для вашей игры. Громкость мы заодно убавили до
+    <code>0.3</code>: фоновая музыка не должна заглушать щелчки и сигналы.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Перемотка: <code>position</code> и <code>duration</code></h2>
+  <p>
+    Музыку можно перематывать. Свойство <code>position</code> — это текущая
+    позиция воспроизведения в секундах (дробное число от <code>0</code> до
+    <code>duration</code>). Его можно и читать («где мы сейчас?»), и записывать
+    («перемотай сюда!»). А <code>duration</code> — длительность всего файла в
+    секундах, оно только для чтения.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use audio;
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 460;
+    win.height = 180;
+    win.title = "Перемотка";
+
+    audio.Music music;
+    music.load_from_file("theme.mp3");
+
+    gui.Label info;
+    info.x = 30;
+    info.y = 110;
+    info.text = "";
+
+    gui.Button play_btn;
+    play_btn.text = "Старт";
+    play_btn.x = 30;
+    play_btn.y = 50;
+
+    gui.Button skip_btn;
+    skip_btn.text = "К 10-й секунде";
+    skip_btn.x = 150;
+    skip_btn.y = 50;
+    skip_btn.width = 150;
+
+    gui.Button where_btn;
+    where_btn.text = "Где я?";
+    where_btn.x = 320;
+    where_btn.y = 50;
+
+    play_btn.on_click = void function() {
+        music.play();
+    };
+
+    skip_btn.on_click = void function() {
+        music.position = 10.0;
+    };
+
+    where_btn.on_click = void function() {
+        info.text = to_string(music.position) + " из " + to_string(music.duration) + " сек.";
+    };
+
+    win.add_child(info);
+    win.add_child(play_btn);
+    win.add_child(skip_btn);
+    win.add_child(where_btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <p>
+    Кнопка «К 10-й секунде» записывает в <code>position</code> число
+    <code>10.0</code> — и музыка мгновенно перескакивает на десятую секунду.
+    Кнопка «Где я?» читает <code>position</code> и <code>duration</code> и
+    показывает их в лейбле.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Когда музыка закончилась: событие <code>on_finished</code></h2>
+  <p>
+    Как узнать, что трек доиграл до конца? У <code>audio.Music</code> есть
+    событие <code>on_finished</code> — оно срабатывает, когда музыка
+    естественным образом закончилась. Работает оно так же, как знакомые вам
+    <code>on_click</code> и <code>on_change</code>:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use audio;
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 360;
+    win.height = 160;
+    win.title = "Событие on_finished";
+
+    gui.Label status;
+    status.x = 30;
+    status.y = 30;
+    status.text = "Музыка ещё не играла";
+
+    audio.Music music;
+    music.load_from_file("theme.mp3");
+
+    music.on_finished = void function() {
+        status.text = "Музыка доиграла до конца!";
+    };
+
+    gui.Button play_btn;
+    play_btn.text = "Старт";
+    play_btn.x = 30;
+    play_btn.y = 70;
+
+    play_btn.on_click = void function() {
+        music.play();
+    };
+
+    win.add_child(status);
+    win.add_child(play_btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <p>
+    У обработчика есть и вторая форма — с параметром. Тогда Idyllium передаст в
+    функцию саму закончившуюся музыку:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+music.on_finished = void function(audio.Music current) {
+    status.text = "Доиграл файл: " + current.src;
+};
+</script></idyl-code-block>
+
+  <p>
+    Обе формы правильные — выбирайте ту, что удобнее. И маленькая тонкость: если
+    у музыки включён <code>loop = true</code>, событие <code>on_finished</code>
+    не сработает — трек ведь не заканчивается, а начинается заново.
+  </p>
+</div>
+
+<div class="docs-section">
   <h2>Sound или Music?</h2>
   <p>
     Простое правило такое:
@@ -191,4 +418,42 @@ main() {
     Если сомневаетесь, спросите себя: «Это щелчок или фоновая музыка?». Обычно
     ответ сразу становится понятным.
   </p>
+
+  <p>А вот вся звуковая библиотека в одной таблице:</p>
+
+  <table>
+    <thead>
+      <tr><th>Свойство или метод</th><th><code>Sound</code></th><th><code>Music</code></th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>load_from_file(путь)</code> — загрузить файл</td><td>✔</td><td>✔</td></tr>
+      <tr><td><code>play()</code>, <code>pause()</code>, <code>resume()</code>, <code>stop()</code></td><td>✔</td><td>✔</td></tr>
+      <tr><td><code>volume</code> — громкость от <code>0.0</code> до <code>1.0</code></td><td>✔</td><td>✔</td></tr>
+      <tr><td><code>src</code>, <code>duration</code>, <code>is_playing</code> — только чтение</td><td>✔</td><td>✔</td></tr>
+      <tr><td><code>loop</code> — играть по кругу</td><td>—</td><td>✔</td></tr>
+      <tr><td><code>position</code> — перемотка (в секундах)</td><td>—</td><td>✔</td></tr>
+      <tr><td><code>on_finished</code> — событие окончания</td><td>—</td><td>✔</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    Нижние три строчки — то, чем <code>Music</code> отличается от
+    <code>Sound</code>. Зато <code>Sound</code> умеет накладывать несколько копий
+    одного звука друг на друга — попробуйте быстро пощёлкать кнопкой из первого
+    примера.
+  </p>
 </div>
+
+<script data-lesson-script type="text/plain">
+// Интерактив для демо-примеров
+  document.addEventListener('DOMContentLoaded', () => {
+    // Пример 1: кнопка со звуком
+    const playClickBtn = document.getElementById('playClickBtn');
+    if (playClickBtn) {
+      playClickBtn.addEventListener('click', () => {
+        const s = new Audio('assets/click.wav');
+        s.play();
+      });
+    }
+  });
+</script>

@@ -48,6 +48,13 @@ CREATE TABLE players (
     FOREIGN KEY (guild_id) REFERENCES guilds(id)
 );
 </script></sql-code-block>
+  <p>
+    Честное предупреждение: сама SQLite по умолчанию <em>не</em> проверяет эту
+    связь. Вставка игрока с <code>guild_id</code> несуществующей гильдии пройдёт
+    молча — никакой ошибки не будет. <code>FOREIGN KEY</code> здесь —
+    договорённость для людей и инструментов: запись объясняет замысел, но
+    следить за его соблюдением остаётся программе.
+  </p>
 </div>
 
 <div class="docs-section">
@@ -123,4 +130,86 @@ while (rows.next()) {
     }
 }
 </script></idyl-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>Полная программа</h2>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("guilds.db");
+    db.execute("DROP TABLE IF EXISTS players");
+    db.execute("DROP TABLE IF EXISTS guilds");
+    db.execute(
+        "CREATE TABLE guilds (" +
+        "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+        "title TEXT UNIQUE" +
+        ")"
+    );
+    db.execute(
+        "CREATE TABLE players (" +
+        "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+        "name TEXT, " +
+        "guild_id INTEGER, " +
+        "FOREIGN KEY (guild_id) REFERENCES guilds(id)" +
+        ")"
+    );
+
+    db.execute("INSERT INTO guilds (title) VALUES ('Explorers')");
+    db.execute("INSERT INTO guilds (title) VALUES ('Night Owls')");
+    db.execute("INSERT INTO players (name, guild_id) VALUES ('Liam', 1)");
+    db.execute("INSERT INTO players (name, guild_id) VALUES ('Mira', 2)");
+    db.execute("INSERT INTO players (name, guild_id) VALUES ('Omar', 1)");
+    db.execute("INSERT INTO players (name, guild_id) VALUES ('Nika', NULL)");
+
+    console.writeln("JOIN:");
+    sqlite.Result members = db.execute(
+        "SELECT players.name, guilds.title AS guild " +
+        "FROM players " +
+        "JOIN guilds ON players.guild_id = guilds.id " +
+        "ORDER BY players.name"
+    );
+    while (members.next()) {
+        console.writeln(
+            members.get_string("name"), ": ", members.get_string("guild")
+        );
+    }
+    members.close();
+
+    console.writeln("LEFT JOIN:");
+    sqlite.Result everyone = db.execute(
+        "SELECT p.name, g.title AS guild " +
+        "FROM players AS p " +
+        "LEFT JOIN guilds AS g ON p.guild_id = g.id " +
+        "ORDER BY p.name"
+    );
+    while (everyone.next()) {
+        console.write(everyone.get_string("name"), ": ");
+
+        if (everyone.is_null("guild")) {
+            console.writeln("без гильдии");
+        }
+        else {
+            console.writeln(everyone.get_string("guild"));
+        }
+    }
+    everyone.close();
+    db.close();
+}
+</script></idyl-code-block>
+  <idyl-output-block>JOIN:
+Liam: Explorers
+Mira: Night Owls
+Omar: Explorers
+LEFT JOIN:
+Liam: Explorers
+Mira: Night Owls
+Nika: без гильдии
+Omar: Explorers</idyl-output-block>
+  <p>
+    Разница видна в одной строке: <code>JOIN</code> пропустил Нику, а
+    <code>LEFT JOIN</code> сохранил её — просто без гильдии.
+  </p>
 </div>

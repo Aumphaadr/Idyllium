@@ -1,0 +1,269 @@
+<style data-lesson-style>
+.demo-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 2em;
+    }
+    .demo-group {
+      background: rgba(137, 180, 250, 0.05);
+      border-radius: 8px;
+      padding: 1em;
+    }
+    .demo-group h3 {
+      margin-top: 0;
+      margin-bottom: 1em;
+      color: var(--accent);
+      font-size: 1.1rem;
+    }
+</style>
+
+    <div class="docs-section">
+      <h2>32 урока в чёрном окне — хватит!</h2>
+      <p>Весь раздел «Консоль» мы писали программы, которые живут в чёрном окне: печатают текст, читают ввод, считают. Это была отличная школа. Но настоящие программы вокруг нас выглядят иначе: у калькулятора есть кнопки, у игры — картинки и полоска здоровья, у мессенджера — поля ввода. Всё это называется <strong>графический интерфейс</strong> (по-английски GUI).</p>
+      <p>С этого урока мы начинаем делать настоящие окна — с кнопками, надписями и всем, что положено. И самое приятное: всё, что вы выучили в консоли — переменные, типы, <code>if</code>, циклы, функции, — работает здесь точно так же. Меняется только сцена.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Подключение библиотеки <code>gui</code></h2>
+      <p>Для работы с графическим интерфейсом необходимо подключить библиотеку <code>gui</code>:</p>
+      <idyl-code-block><script type="text/plain">
+use gui;
+</script></idyl-code-block>
+      <p>Библиотека <code>gui</code> предоставляет все виджеты: окна, кнопки, текстовые метки, поля ввода и многое другое.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Создание окна</h2>
+      <p>Создать окно так же просто, как создать переменную <code>int</code>:</p>
+
+      <div class="demo-group">
+        <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;  // создаём окно
+    win.show();      // показываем его
+}
+</script></idyl-code-block>
+
+        <div class="gui-demo-container" style="margin-top: 1em;">
+          <div class="gui-demo-window">
+            <div class="demo-content" style="min-height: 200px; display: flex; align-items: center; justify-content: center; color: var(--text-dim);">
+              🪟 Пустое окно (без виджетов)
+            </div>
+          </div>
+          <div class="coord-note">
+            💡 Программа создала окно и показала его. Пока внутри ничего нет.
+          </div>
+        </div>
+      </div>
+
+      <p>Разберём код:</p>
+      <ul>
+        <li><code>gui.Window</code> — это <strong>тип данных</strong> «окно». Аналогично <code>int</code> или <code>string</code>.</li>
+        <li><code>win</code> — это <strong>имя переменной</strong>. Вы можете назвать окно как угодно: <code>mainWindow</code>, <code>root</code>, <code>w</code>.</li>
+        <li><code>win.show()</code> — команда, которая <strong>показывает окно</strong> на экране. Без неё окно будет создано, но пользователь его не увидит.</li>
+      </ul>
+    </div>
+
+    <div class="docs-section">
+      <h2>Типичная ошибка: забыли <code>use gui;</code></h2>
+      <p>Первая ловушка, в которую попадает почти каждый: написать программу с окном, но забыть подключить библиотеку.</p>
+
+      <idyl-code-block><script type="text/plain">
+main() {
+    gui.Window win;
+    win.show();
+}
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:2:5: error: 'gui' is not imported (use 'use gui;')
+main.idyl:3:5: error: type '&lt;error&gt;' has no method 'show'</idyl-error-block>
+
+      <p>Компилятор пожаловался дважды, хотя ошибка одна: без <code>use gui;</code> он не знает, что такое <code>gui.Window</code>, — а из-за этого не понимает и строку с <code>show()</code>. Так бывает часто: одна ошибка тянет за собой хвост из других сообщений. Правило простое — <strong>чините первое сообщение</strong>. Здесь оно даже подсказывает решение прямо в скобках: <code>use gui;</code>. Добавьте эту строку в начало файла — и оба сообщения исчезнут.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Настройка окна: размеры и заголовок</h2>
+      <p>У окна можно менять свойства — ширину, высоту и текст в заголовке:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 500;        // ширина в пикселях
+    win.height = 400;       // высота в пикселях
+    win.title = "Моё первое окно";
+    win.show();
+}
+</script></idyl-code-block>
+
+      <p>Свойства <code>width</code> и <code>height</code> задаются в пикселях. Свойство <code>title</code> — строка, которая отображается в заголовке окна.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Добавляем кнопку</h2>
+      <p>Кнопка создаётся так же, как окно — через объявление переменной типа <code>gui.Button</code>:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 400;
+    win.height = 300;
+    win.title = "Окно с кнопкой";
+
+    gui.Button btn;         // создаём кнопку
+    btn.text = "Нажми меня";
+    btn.width = 120;
+    btn.height = 40;
+
+    win.add_child(btn);     // добавляем кнопку на окно
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="gui-demo-container" style="margin-top: 1em;">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 250px; position: relative;">
+            <button class="idyl-button" style="position: absolute; left: 0; top: 0; margin: 0; width: 120px; height: 40px;">
+              Нажми меня
+            </button>
+            <div style="position: absolute; bottom: 8px; left: 8px; font-size: 12px; color: var(--text-dim);">
+              (кнопка неактивна — это только демонстрация)
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          💡 Кнопка прижалась к левому верхнему углу: мы не сказали ей, где стоять, а координаты по умолчанию равны <code>(0, 0)</code>. Как расставлять виджеты по местам — в следующей секции.
+        </div>
+      </div>
+
+      <p>Ключевой момент — <strong><code>win.add_child(btn)</code></strong>. Без этой команды кнопка будет создана, но <strong>не появится на окне</strong>. Метод <code>add_child()</code> добавляет виджет внутрь окна. Это любимая ловушка начинающих: программа компилируется, окно открывается — а кнопки нет, потому что её забыли добавить.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Координаты виджетов</h2>
+      <p>Каждый виджет имеет координаты <code>x</code> и <code>y</code>, которые определяют его положение внутри окна. Начало координат <code>(0, 0)</code> — <strong>левый верхний угол</strong> окна.</p>
+      <p>Примеры ниже — <strong>фрагменты</strong>: кусочки кода внутри <code>main()</code>, где окно <code>win</code> уже создано и настроено, как в прошлой секции. Чтобы получить полную программу, вставьте фрагмент перед <code>win.show()</code>.</p>
+
+      <h3>Разные X, одинаковый Y</h3>
+      <idyl-code-block><script type="text/plain">
+gui.Button btn1;
+btn1.text = "x: 20, y: 50";
+btn1.x = 20;
+btn1.y = 50;
+
+gui.Button btn2;
+btn2.text = "x: 200, y: 50";
+btn2.x = 200;
+btn2.y = 50;
+
+win.add_child(btn1);
+win.add_child(btn2);
+</script></idyl-code-block>
+
+      <div class="gui-demo-container">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 120px; position: relative;">
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 50px;">x: 20, y: 50</button>
+            <button class="idyl-button" style="position: absolute; left: 200px; top: 50px;">x: 200, y: 50</button>
+          </div>
+        </div>
+        <div class="coord-note">
+          📍 <code>x=20</code> и <code>x=200</code> — кнопки на разном расстоянии от левого края, но на одной высоте (<code>y=50</code>).
+        </div>
+      </div>
+
+      <h3>Одинаковый X, разные Y</h3>
+      <idyl-code-block><script type="text/plain">
+gui.Button btn_up;
+btn_up.text = "x: 50, y: 30";
+btn_up.x = 50;
+btn_up.y = 30;
+
+gui.Button btn_down;
+btn_down.text = "x: 50, y: 100";
+btn_down.x = 50;
+btn_down.y = 100;
+
+win.add_child(btn_up);
+win.add_child(btn_down);
+</script></idyl-code-block>
+
+      <div class="gui-demo-container">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 170px; position: relative;">
+            <button class="idyl-button" style="position: absolute; left: 50px; top: 30px;">x: 50, y: 30</button>
+            <button class="idyl-button" style="position: absolute; left: 50px; top: 100px;">x: 50, y: 100</button>
+          </div>
+        </div>
+        <div class="coord-note">
+          📍 <code>y=30</code> и <code>y=100</code> — кнопки на разной высоте, но на одинаковом расстоянии от левого края (<code>x=50</code>).
+        </div>
+      </div>
+
+      <h3>Начало координат — левый верхний угол</h3>
+      <idyl-code-block><script type="text/plain">
+gui.Button corner_btn;
+corner_btn.text = "Угол";
+corner_btn.x = 0;
+corner_btn.y = 0;
+
+win.add_child(corner_btn);
+</script></idyl-code-block>
+
+      <div class="gui-demo-container">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 100px; position: relative;">
+            <button class="idyl-button" style="position: absolute; left: 0; top: 0; margin: 0;">Угол</button>
+          </div>
+        </div>
+        <div class="coord-note">
+          📍 Координаты <code>(0, 0)</code> — виджет прижат к левому верхнему углу окна. Именно поэтому кнопка без заданных координат оказывается в углу: <code>(0, 0)</code> — значение по умолчанию.
+        </div>
+      </div>
+    </div>
+
+    <div class="docs-section">
+      <h2>Шпаргалка: свойства окна и кнопки</h2>
+      <p>Соберём всё, чем мы сегодня пользовались, в одну опорную таблицу.</p>
+
+      <h3><code>gui.Window</code></h3>
+      <table>
+        <thead>
+          <tr><th>Свойство / метод</th><th>Тип</th><th>Что делает</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>width</code></td><td><code>int</code></td><td>ширина окна в пикселях</td></tr>
+          <tr><td><code>height</code></td><td><code>int</code></td><td>высота окна в пикселях</td></tr>
+          <tr><td><code>title</code></td><td><code>string</code></td><td>текст в заголовке окна</td></tr>
+          <tr><td><code>add_child(виджет)</code></td><td>метод</td><td>добавляет виджет внутрь окна</td></tr>
+          <tr><td><code>show()</code></td><td>метод</td><td>показывает окно на экране</td></tr>
+        </tbody>
+      </table>
+
+      <h3><code>gui.Button</code></h3>
+      <table>
+        <thead>
+          <tr><th>Свойство</th><th>Тип</th><th>Что делает</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>text</code></td><td><code>string</code></td><td>надпись на кнопке</td></tr>
+          <tr><td><code>x</code>, <code>y</code></td><td><code>int</code></td><td>положение внутри окна; по умолчанию <code>(0, 0)</code></td></tr>
+          <tr><td><code>width</code>, <code>height</code></td><td><code>int</code></td><td>размеры кнопки в пикселях</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="docs-section">
+      <h2>Другие виджеты</h2>
+      <p>Кнопка — только первый житель нашего окна. Впереди целый зоопарк виджетов: текстовые метки, счётчики, ползунки, выпадающие списки, галочки и полоски прогресса. Каждому мы посвятим отдельный урок — и все они добавляются в окно одинаково: создали, настроили, <code>add_child()</code>.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Что дальше?</h2>
+      <p>В следующем уроке мы научимся <strong>обрабатывать события</strong> — делать так, чтобы кнопки реагировали на нажатия, а поля ввода — на изменение значений.</p>
+    </div>

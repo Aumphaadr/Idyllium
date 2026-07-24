@@ -73,13 +73,18 @@ main() {
   </p>
 
   <idyl-code-block><script type="text/plain">
-constructor Hero(string ex_name, int ex_hp = 100) {
-    this.name = ex_name;
-    this.hp = ex_hp;
+class Hero {
+    string name;
+    int hp;
+
+    constructor Hero(string ex_name, int ex_hp = 100) {
+        this.name = ex_name;
+        this.hp = ex_hp;
+    }
 }
 
 main() {
-    Hero mira("Mira");       // hp станет равен 100
+    Hero mira("Mira");      // hp станет равен 100
     Hero boss("Boss", 900); // hp станет равен 900
 }
   </script></idyl-code-block>
@@ -120,7 +125,7 @@ Hero function create_boss() {
     return Hero("Aranthir", 1000);
 }
 
-    bool very_strong = Hero("Ornella", 750).hp > 700;
+bool very_strong = Hero("Ornella", 750).hp > 700;
   </script></idyl-code-block>
 </div>
 
@@ -152,6 +157,79 @@ class Hero {
     При создании двух героев каждый получит собственный <code>Health</code>.
     Изменение здоровья одного героя не меняет здоровье другого.
   </p>
+</div>
+
+<div class="docs-section">
+  <h2>Класс без конструктора</h2>
+  <p>
+    Конструктор — не обязанность. Класс без него тоже полноценный: объект
+    появляется с полями-«заготовками», которые заполняются позже. Обе формы
+    создания при этом работают.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Empty {
+    int value;
+}
+
+main() {
+    Empty first;
+    Empty second = Empty();
+
+    first.value = 7;
+    second.value = 9;
+
+    console.writeln(first.value, " ", second.value);
+}
+  </script></idyl-code-block>
+
+  <idyl-output-block>7 9</idyl-output-block>
+
+  <p>
+    А вот передать такому классу аргументы нельзя: конструктора нет, и
+    раскладывать их по полям некому.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+class Empty {
+    int value;
+}
+
+main() {
+    Empty broken = Empty(7);
+}
+  </script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:6:20: error: 'Empty' expects 0 arguments, got 1</idyl-error-block>
+</div>
+
+<div class="docs-section">
+  <h2>Опорная таблица</h2>
+  <table>
+    <thead>
+      <tr><th>Форма</th><th>Пример</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Объявление с конструктором</td>
+        <td><code>Hero kaspar("Kaspar", 500);</code></td>
+      </tr>
+      <tr>
+        <td>Конструктор-выражение</td>
+        <td><code>heroes.add(Hero("Raven", 600));</code></td>
+      </tr>
+      <tr>
+        <td>Значение по умолчанию</td>
+        <td><code>Hero mira("Mira"); // hp станет равен 100</code></td>
+      </tr>
+      <tr>
+        <td>Именованные аргументы</td>
+        <td><code>Hero(ex_hp=1000, ex_name="Aranthir")</code></td>
+      </tr>
+    </tbody>
+  </table>
 </div>
 
 <div class="docs-section">

@@ -16,25 +16,13 @@
       min-height: 150px;
       margin: 1em 0;
     }
-    .error-example {
-      margin: 1.5em 0;
-    }
-    .error-message {
-      background: rgba(243, 139, 168, 0.15);
-      border-left: 3px solid #f38ba8;
-      padding: 0.75em 1em;
-      font-family: 'Source Code Pro', monospace;
-      font-size: 0.85em;
-      color: #f38ba8;
-      margin: 0.5em 0 1em 0;
-      border-radius: 0 6px 6px 0;
-    }
 </style>
 
-<!-- Hero -->
-    
+<div class="docs-section">
+      <h2>Знакомьтесь: Label</h2>
+      <p>В прошлом уроке две кнопки устроили целую битву за текстовую метку — а мы с ней даже толком не познакомились. Исправляемся. <code>gui.Label</code> — это виджет-надпись: он ничего не нажимает и не вводит, а просто показывает текст. Счёт в игре, подсказка «Введите имя», результат броска кубика — везде, где программе нужно что-то сказать пользователю, работает лейбл.</p>
+    </div>
 
-    <!-- Section 1 -->
     <div class="docs-section">
       <h2>Координаты лейблов</h2>
       <p>Как и любой другой виджет, <code>gui.Label</code> имеет координаты <code>x</code> и <code>y</code>, которые определяют его положение внутри окна:</p>
@@ -77,7 +65,6 @@ main() {
       </div>
     </div>
 
-    <!-- Section 2 -->
     <div class="docs-section">
       <h2>Размер шрифта</h2>
       <p>Свойство <code>font_size</code> позволяет задать размер текста в пикселях:</p>
@@ -122,7 +109,6 @@ main() {
       </div>
     </div>
 
-    <!-- Section 3 -->
     <div class="docs-section">
       <h2>Динамическое изменение текста</h2>
       <p>Свойство <code>text</code> можно менять прямо во время работы программы — например, по нажатию кнопки:</p>
@@ -169,9 +155,8 @@ main() {
       </div>
     </div>
 
-    <!-- Section 4 -->
     <div class="docs-section">
-      <h2>А если попробовать число?</h2>
+      <h2>Типичная ошибка: а если попробовать число?</h2>
       <p>Свойство <code>text</code> ожидает строку (<code>string</code>). Попытка присвоить число приведёт к ошибке компиляции:</p>
 
       <idyl-code-block><script type="text/plain">
@@ -185,11 +170,9 @@ main() {
 }
 </script></idyl-code-block>
 
-      <div class="error-message" style="margin: 1em 0;">
-        main.idyl:7: cannot assign 'int' to 'string'
-      </div>
+      <idyl-error-block>main.idyl:7:18: error: cannot assign 'int' value to 'string' variable</idyl-error-block>
 
-      <p>Чтобы вывести число на лейбл, его нужно <strong>преобразовать в строку</strong> с помощью <code>to_string()</code>:</p>
+      <p>Компилятор точен: строка 7, позиция 18 — ровно то место, где число пытается пролезть в строковое свойство. Чтобы вывести число на лейбл, его нужно <strong>преобразовать в строку</strong> с помощью знакомого <code>to_string()</code>:</p>
 
       <idyl-code-block><script type="text/plain">
 use gui;
@@ -235,10 +218,9 @@ main() {
       </div>
     </div>
 
-    <!-- Section 5 -->
     <div class="docs-section">
       <h2>Цвет текста</h2>
-      <p>Свойство <code>text_color</code> задаёт цвет текста. Сам цвет берётся из библиотеки <code>colors</code>: можно выбрать готовую константу или создать собственный цвет через <code>colors.RGB()</code>, <code>colors.HEX()</code> и другие функции.</p>
+      <p>Свойство <code>text_color</code> задаёт цвет текста. Сам цвет берётся из библиотеки <code>colors</code>: можно выбрать готовую константу или создать собственный цвет через <code>colors.RGB()</code>, <code>colors.HEX()</code> и другие функции. Подробно о цветах — и обо всех готовых константах — поговорим через два урока, а пока нам хватит трёх самых простых: <code>RED</code>, <code>GREEN</code> и <code>BLUE</code>.</p>
 
       <idyl-code-block><script type="text/plain">
 use colors;
@@ -289,7 +271,6 @@ main() {
       </div>
     </div>
 
-    <!-- Section 6 -->
     <div class="docs-section">
       <h2>Взаимное перекрытие виджетов</h2>
       <p>Виджеты <strong>не умеют автоматически двигаться</strong>, когда другим виджетам не хватает места. Если координаты пересекаются — они будут накладываться друг на друга:</p>
@@ -348,7 +329,20 @@ win.add_child(label);  // label выше
       </div>
     </div>
 
-    <!-- Lesson navigation -->
+    <div class="docs-section">
+      <h2>Шпаргалка: свойства Label</h2>
+      <table>
+        <thead>
+          <tr><th>Свойство</th><th>Тип</th><th>Что делает</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>text</code></td><td><code>string</code></td><td>текст надписи; числа сначала превращайте в строку через <code>to_string()</code></td></tr>
+          <tr><td><code>x</code>, <code>y</code></td><td><code>int</code></td><td>положение внутри окна</td></tr>
+          <tr><td><code>font_size</code></td><td><code>int</code></td><td>размер текста в пикселях</td></tr>
+          <tr><td><code>text_color</code></td><td><code>colors.Color</code></td><td>цвет текста — константа или функция из библиотеки <code>colors</code></td></tr>
+        </tbody>
+      </table>
+    </div>
 
 <script data-lesson-script type="text/plain">
 // Интерактив для демо-примеров

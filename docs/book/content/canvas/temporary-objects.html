@@ -24,6 +24,10 @@ void function redraw(gui.Canvas canvas) {
     }
 }
 
+void function init(gui.Canvas canvas) {
+    redraw(canvas);
+}
+
 void function on_mouse_pressed(gui.Canvas canvas, gui.MouseEvent e) {
     if (e.mouse_button == "LEFT") {
         drawable.Circle tmp;
@@ -47,6 +51,7 @@ main() {
     canvas.y = 20;
     canvas.width = 420;
     canvas.height = 250;
+    canvas.on_init = init;
     canvas.on_mouse_pressed = on_mouse_pressed;
 
     win.add_child(canvas);
@@ -54,6 +59,15 @@ main() {
 }
 </script></idyl-code-block>
 
+  <p>
+    Обработчик <code>init</code> сразу заливает фон — без него тёмный цвет
+    появился бы только после первого клика, заметным «скачком».
+  </p>
+  <p>
+    <code>tmp</code> объявлен внутри блока <code>if</code> и живёт только там —
+    как любая переменная, объявленная в блоке. Поэтому на каждый клик создаётся
+    новый круг с этим же именем.
+  </p>
   <p>
     Если потом понадобится изменить третий круг, мы будем писать
     <code>circles[2]</code>, а не <code>tmp</code>. Имя <code>tmp</code> было

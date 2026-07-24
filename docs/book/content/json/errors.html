@@ -37,6 +37,21 @@ main() {
 }
 </script></idyl-code-block>
   <idyl-output-block>Файл сохранения повреждён</idyl-output-block>
+
+  <p>
+    А если отдать такой текст <code>json.parse()</code> без проверки, программа
+    упадёт и сама укажет место поломки — строку и колонку внутри JSON-текста:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use json;
+
+main() {
+    string text = "{ \"name\": \"Liam\", }"; // лишняя запятая
+    json.Value root = json.parse(text); // runtime error
+}
+</script></idyl-code-block>
+  <idyl-error-block>main.idyl:5: runtime error: json.parse() invalid JSON: expected a string key at line 1, column 19</idyl-error-block>
 </div>
 
 <div class="docs-section">
@@ -72,6 +87,24 @@ main() {
 }
 </script></idyl-code-block>
   <idyl-error-block>main.idyl:5: runtime error: json object has no key 'level'</idyl-error-block>
+
+  <p>
+    Той же ошибкой заканчиваются <code>set()</code> и <code>remove()</code>,
+    если такого ключа в объекте нет: изменять и удалять можно только то,
+    что существует.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use json;
+
+main() {
+    json.Object player;
+    player.add("name", json.Value("Liam"));
+
+    player.set("level", json.Value(8)); // runtime error
+}
+</script></idyl-code-block>
+  <idyl-error-block>main.idyl:7: runtime error: json object has no key 'level'</idyl-error-block>
 </div>
 
 <div class="docs-section">

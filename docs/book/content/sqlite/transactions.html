@@ -107,3 +107,51 @@ else {
     являются ошибками.
   </p>
 </div>
+
+<div class="docs-section">
+  <h2>Полная программа</h2>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("coin_transfer.db");
+    db.execute(
+        "CREATE TABLE players (name TEXT, coins INTEGER)"
+    );
+    db.execute("INSERT INTO players VALUES ('Liam', 300)");
+    db.execute("INSERT INTO players VALUES ('Mira', 120)");
+
+    db.begin_transaction();
+
+    db.execute(
+        "UPDATE players SET coins = coins - 75 WHERE name = 'Liam'"
+    );
+    db.execute(
+        "UPDATE players SET coins = coins + 75 WHERE name = 'Mira'"
+    );
+
+    db.commit();
+
+    sqlite.Result rows = db.execute(
+        "SELECT name, coins FROM players"
+    );
+
+    while (rows.next()) {
+        console.writeln(
+            rows.get_string("name"), ": ", rows.get_int("coins"), " монет"
+        );
+    }
+
+    rows.close();
+    db.close();
+}
+</script></idyl-code-block>
+  <idyl-output-block>Liam: 225 монет
+Mira: 195 монет</idyl-output-block>
+  <p>
+    Оба <code>UPDATE</code> выполнились между <code>begin_transaction()</code> и
+    <code>commit()</code>, поэтому перевод прошёл целиком: 75 монет ушли от
+    Лиама и пришли к Мире, не потерявшись по дороге.
+  </p>
+</div>

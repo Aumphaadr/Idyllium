@@ -1,27 +1,29 @@
-<!-- Hero -->
-    
-
-    <!-- Section 1 -->
-    <div class="docs-section">
+<div class="docs-section">
       <h2>Повторение: статические массивы</h2>
-      <p>Статический массив имеет фиксированное количество ячеек:</p>
+      <p>В прошлых уроках вы познакомились со статическими массивами. У них железное правило: сколько ячеек указали при объявлении — столько и будет. Ни больше, ни меньше:</p>
 
       <idyl-code-block><script type="text/plain">
-array<string, 3> pets;
-pets[0] = "Кошка";
-pets[1] = "Собака";
-pets[2] = "Черепаха";
-// pets[3] = "Хомяк"; // Ошибка: нет 3-й ячейки
-// pets[4] = "Рыбка"; // Ошибка: нет 4-й ячейки
+use console;
+
+main() {
+    array<string, 3> pets;
+    pets[0] = "Кошка";
+    pets[1] = "Собака";
+    pets[2] = "Черепаха";
+    // pets[3] = "Хомяк"; // Ошибка: ячейки с индексом 3 не существует!
+    console.writeln(pets);
+}
 </script></idyl-code-block>
 
-      <p>Заранее указать достаточное количество ячеек — невозможно, если размер данных неизвестен.</p>
+      <idyl-output-block>["Кошка", "Собака", "Черепаха"]</idyl-output-block>
+
+      <p>Кстати, обратите внимание, как консоль печатает массив строк: в квадратных скобках, и каждая строка — в кавычках.</p>
+      <p>Три ячейки — три питомца. Захотите завести хомяка — придётся переписывать программу. Заранее указать достаточное количество ячеек невозможно, если размер данных неизвестен.</p>
     </div>
 
-    <!-- Section 2 -->
     <div class="docs-section">
-      <h2>Проблема: если нужный размер неизвестен заранее</h2>
-      <p>Что делать, если количество данных неизвестно? Создать массив на 5000 ячеек, чтобы «точно хватило»?</p>
+      <h2>Проблема: нужный размер неизвестен заранее</h2>
+      <p>Что делать, если количество данных заранее неизвестно? Создать массив на 5000 ячеек, чтобы «уж точно хватило»?</p>
       <p>Это плохое решение:</p>
       <ul>
         <li>Кому-то понадобится ещё больше — и программу придётся переписывать.</li>
@@ -30,111 +32,135 @@ pets[2] = "Черепаха";
       <p>Вывод: нужен массив, у которого количество ячеек можно изменять <strong>во время выполнения программы</strong>.</p>
     </div>
 
-    <!-- Section 3 -->
     <div class="docs-section">
       <h2>Динамический массив</h2>
-      <p>В Idyllium такой массив существует — он называется <code>dyn_array</code> (от англ. <em>dynamic array</em>):</p>
+      <p>В Idyllium такой массив существует — он называется <code>dyn_array</code> (от англ. <em>dynamic array</em> — «динамический массив»):</p>
 
       <idyl-code-block><script type="text/plain">
-dyn_array<int> nums = [11, 22, 33];
+use console;
+
+main() {
+    dyn_array<int> nums = [11, 22, 33];
+    console.writeln(nums);
+}
 </script></idyl-code-block>
 
-      <p>Разберём:</p>
+      <idyl-output-block>[11, 22, 33]</idyl-output-block>
+
+      <p>Разберём объявление:</p>
       <ul>
         <li><code>dyn_array</code> — тип «динамический массив»;</li>
         <li><code>&lt;int&gt;</code> — тип данных в ячейках;</li>
         <li><code>nums</code> — имя массива;</li>
-        <li><code>[11, 22, 33]</code> — начальные ячейки (можно и без них).</li>
+        <li><code>[11, 22, 33]</code> — начальные ячейки (можно и без них — тогда массив родится пустым).</li>
       </ul>
-      <p>В отличие от <code>array</code>, длина такого массива не фиксирована.</p>
+      <p>Выглядит почти как <code>array</code>, но количество ячеек нигде не указано — и это не забывчивость. Длина такого массива не фиксирована: сейчас в нём три ячейки, а через минуту может быть тридцать.</p>
     </div>
 
-    <!-- Section 4 -->
     <div class="docs-section">
       <h2>Добавление ячеек: метод <code>add()</code></h2>
+      <p>Представьте таблицу очков: каждый пройденный уровень приносит новую запись, и никто заранее не знает, сколько уровней вы осилите сегодня. Метод <code>add(значение)</code> добавляет новую ячейку в конец массива:</p>
 
       <idyl-code-block><script type="text/plain">
-// создаём массив с тремя ячейками
-dyn_array<int> nums = [11, 22, 33];
+use console;
 
-nums.add(44); // добавляем 44 в конец
-nums.add(55); // добавляем 55 в конец
-nums.add(66); // добавляем 66 в конец
+main() {
+    // очки за первые три уровня
+    dyn_array<int> scores = [80, 95, 70];
 
-console.writeln(nums);
+    scores.add(120); // прошли четвёртый уровень
+    scores.add(45);  // пятый дался тяжело
+    scores.add(200); // зато шестой — блестяще!
+
+    console.writeln(scores);
+}
 </script></idyl-code-block>
 
-      <idyl-output-block>[11, 22, 33, 44, 55, 66]</idyl-output-block>
+      <idyl-output-block>[80, 95, 70, 120, 45, 200]</idyl-output-block>
 
-      <p>Метод <code>add(значение)</code> добавляет новую ячейку в конец массива с указанным значением.</p>
+      <p>Массив начал день с трёх ячеек, а закончил с шестью — и никакого переписывания программы.</p>
     </div>
 
-    <!-- Section 4.5 — Arrays of any type -->
     <div class="docs-section">
       <h2>Динамические массивы с любыми типами</h2>
-      <p><code>dyn_array</code> работает не только с числами, но и со строками, символами и даже логическими значениями.</p>
+      <p><code>dyn_array</code> работает не только с числами, но и со строками, символами и даже логическими значениями. Например, инвентарь:</p>
 
       <idyl-code-block><script type="text/plain">
-dyn_array<string> items = ["Верстак", "Кирка", "Меч"];
-console.writeln("Было: ", items);
+use console;
 
-items.add("Уголь");
-console.writeln("Стало: ", items);
+main() {
+    dyn_array<string> items = ["Верстак", "Кирка", "Меч"];
+    console.writeln("Было: ", items);
+
+    items.add("Уголь");
+    console.writeln("Стало: ", items);
+}
 </script></idyl-code-block>
 
-      <idyl-output-block>Было: [Верстак, Кирка, Меч]
-Стало: [Верстак, Кирка, Меч, Уголь]</idyl-output-block>
+      <idyl-output-block>Было: ["Верстак", "Кирка", "Меч"]
+Стало: ["Верстак", "Кирка", "Меч", "Уголь"]</idyl-output-block>
 
       <p>Как видите, принцип работы одинаков для любого типа данных — просто укажите нужный тип в угловых скобках: <code>dyn_array&lt;string&gt;</code>, <code>dyn_array&lt;float&gt;</code>, <code>dyn_array&lt;char&gt;</code> или даже <code>dyn_array&lt;bool&gt;</code>.</p>
     </div>
 
-    <!-- Section 5 -->
     <div class="docs-section">
       <h2>Удаление ячейки: метод <code>remove_at()</code></h2>
+      <p>Метод <code>remove_at(индекс)</code> удаляет ячейку с указанным индексом. Пора навести порядок в инвентаре — гнилая плоть там явно лишняя:</p>
 
       <idyl-code-block><script type="text/plain">
-dyn_array<int> nums = [11, 22, 33, 44, 55, 66, 77, 88];
+use console;
 
-nums.remove_at(2); // удаляем ячейку с индексом 2 (значение 33)
+main() {
+    dyn_array<string> inventory = ["Кирка", "Гнилая плоть", "Меч", "Факел"];
 
-console.writeln(nums);
+    inventory.remove_at(1); // выбрасываем гниль (индекс 1)
+
+    console.writeln(inventory);
+}
 </script></idyl-code-block>
 
-      <idyl-output-block>[11, 22, 44, 55, 66, 77, 88]</idyl-output-block>
+      <idyl-output-block>["Кирка", "Меч", "Факел"]</idyl-output-block>
 
-      <p>Ячейка с индексом 2 удаляется, а все последующие сдвигаются на одну позицию влево.</p>
+      <p>Ячейка с индексом 1 исчезла, а все последующие сдвинулись на одну позицию влево — дырок в массиве не бывает.</p>
     </div>
 
-    <!-- Section 6 -->
     <div class="docs-section">
       <h2>Текущая длина: свойство <code>length</code></h2>
+      <p>Раз длина массива постоянно меняется, нужен способ узнать её в любой момент. Это свойство <code>length</code> — обратите внимание, без скобок:</p>
 
       <idyl-code-block><script type="text/plain">
-dyn_array<int> nums = [11, 22, 33, 44, 55];
-int L1 = nums.length;
-console.writeln("В массиве сейчас ", L1, " ячеек");
+use console;
 
-nums.add(66);
-int L2 = nums.length;
-console.writeln("А теперь ", L2, " ячеек");
+main() {
+    dyn_array<string> inventory = ["Кирка", "Меч", "Факел", "Хлеб", "Лук"];
+    int count_before = inventory.length;
+    console.writeln("В инвентаре сейчас ", count_before, " предметов");
+
+    inventory.add("Щит");
+    int count_after = inventory.length;
+    console.writeln("А теперь ", count_after, " предметов");
+}
 </script></idyl-code-block>
 
-      <idyl-output-block>В массиве сейчас 5 ячеек
-А теперь 6 ячеек</idyl-output-block>
+      <idyl-output-block>В инвентаре сейчас 5 предметов
+А теперь 6 предметов</idyl-output-block>
     </div>
 
-    <!-- Section 7 -->
     <div class="docs-section">
       <h2>Перебор динамического массива</h2>
-      <p>Как и статический, динамический массив можно перебирать циклом — при этом число итераций определяется его текущей длиной:</p>
+      <p>Как и статический, динамический массив можно перебирать циклом — число итераций определяется его текущей длиной:</p>
 
       <idyl-code-block><script type="text/plain">
-dyn_array<int> nums = [81, 45, 33, 27, 90, 64];
-nums.add(333);
-nums.add(444);
+use console;
 
-for (int i = 0; i < nums.length; i = i + 1) {
-    console.writeln(nums[i]);
+main() {
+    dyn_array<int> scores = [81, 45, 33, 27, 90, 64];
+    scores.add(333);
+    scores.add(444);
+
+    for (int i = 0; i < scores.length; i += 1) {
+        console.writeln(scores[i]);
+    }
 }
 </script></idyl-code-block>
 
@@ -147,29 +173,79 @@ for (int i = 0; i < nums.length; i = i + 1) {
 333
 444</idyl-output-block>
 
-      <p>Цикл адаптируется автоматически — сколько ячеек, столько и итераций.</p>
+      <p>Цикл адаптируется автоматически — сколько ячеек, столько и итераций. Добавите ещё сотню очков — цикл напечатает и их, ни одной строчки менять не придётся.</p>
     </div>
 
-    <!-- Section 8 -->
     <div class="docs-section">
       <h2>Изменение размера: метод <code>resize()</code></h2>
-      <p>Метод <code>resize(N)</code> устанавливает новую длину массива — <code>N</code> ячеек:</p>
+      <p>Метод <code>resize(N)</code> устанавливает новую длину массива — ровно <code>N</code> ячеек:</p>
 
       <idyl-code-block><script type="text/plain">
-dyn_array<int> A = [24, 91, 63, 50, 78];
-A.resize(10); // увеличение до 10 ячеек
-console.writeln("A = ", A);
+use console;
 
-dyn_array<int> B = [81, 45, 33, 27, 90, 64, 15, 83];
-B.resize(5); // уменьшение до 5 ячеек
-console.writeln("B = ", B);
+main() {
+    // готовим таблицу очков сразу на 10 уровней
+    dyn_array<int> scores = [24, 91, 63, 50, 78];
+    scores.resize(10);
+    console.writeln("Больше: ", scores);
+
+    // а из попыток оставляем только первые пять
+    dyn_array<int> attempts = [81, 45, 33, 27, 90, 64, 15, 83];
+    attempts.resize(5);
+    console.writeln("Меньше: ", attempts);
+}
 </script></idyl-code-block>
 
-      <idyl-output-block>A = [24, 91, 63, 50, 78, 0, 0, 0, 0, 0]
-B = [81, 45, 33, 27, 90]</idyl-output-block>
+      <idyl-output-block>Больше: [24, 91, 63, 50, 78, 0, 0, 0, 0, 0]
+Меньше: [81, 45, 33, 27, 90]</idyl-output-block>
 
       <p>Если <code>resize()</code> увеличивает массив — новые ячейки заполняются дефолтными значениями (для <code>int</code> — это <code>0</code>).</p>
-      <p>Если <code>resize()</code> уменьшает массив — лишние ячейки безвозвратно удаляются.</p>
+      <p>Если <code>resize()</code> уменьшает массив — лишние ячейки безвозвратно удаляются. Осторожнее: никакой «корзины» у массива нет.</p>
     </div>
 
-    <!-- Lesson navigation -->
+    <div class="docs-section">
+      <h2>Что будет, если выйти за границы?</h2>
+      <p>Динамический массив умеет расти, но границы у него всё равно есть: обратиться можно только к существующим ячейкам — с индексами от <code>0</code> до <code>length - 1</code>. Попробуем заглянуть в ячейку, которой нет:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    dyn_array<string> inventory = ["Кирка", "Меч", "Факел"];
+    console.writeln(inventory[10]);
+}
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:5: runtime error: array index 10 out of bounds (size 3, valid indices 0-2)</idyl-error-block>
+
+      <p>Программа останавливается и честно объясняет: в массиве 3 ячейки, допустимые индексы — от 0 до 2, а вы попросили десятый. То же самое случится при попытке удалить несуществующую ячейку:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    dyn_array<int> nums = [11, 22, 33];
+    nums.remove_at(10);
+}
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:5: runtime error: array index 10 out of bounds (size 3, valid indices 0-2)</idyl-error-block>
+
+      <p>Массив не растянется сам, лишь бы выполнить вашу просьбу. Нужна новая ячейка — попросите об этом явно: <code>add()</code> или <code>resize()</code>.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Итог: инструменты динамического массива</h2>
+      <table>
+        <thead>
+          <tr><th>Инструмент</th><th>Что делает</th><th>Пример</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>add(v)</code></td><td>добавляет ячейку со значением <code>v</code> в конец</td><td><code>items.add("Уголь")</code></td></tr>
+          <tr><td><code>remove_at(i)</code></td><td>удаляет ячейку с индексом <code>i</code>, остальные сдвигаются влево</td><td><code>inventory.remove_at(1)</code></td></tr>
+          <tr><td><code>resize(n)</code></td><td>делает длину ровно <code>n</code>: лишнее удаляет, недостающее заполняет дефолтами</td><td><code>scores.resize(10)</code></td></tr>
+          <tr><td><code>length</code></td><td>свойство (без скобок!): текущее количество ячеек</td><td><code>inventory.length</code></td></tr>
+        </tbody>
+      </table>
+      <p>Это ещё не все таланты динамических массивов: вставлять ячейки в середину, очищать массив одним махом и доставать последнюю ячейку вы научитесь в уроке о методах массивов.</p>
+    </div>

@@ -44,6 +44,86 @@ main() {
 
   <p>
     Такой пример полезно запускать и щёлкать по разным местам Canvas. Сразу
-    видно, что координаты считаются от левого верхнего угла холста.
+    видно, что координаты считаются от левого верхнего угла холста. Щёлкните
+    левой кнопкой, затем правой — в консоли появится примерно такое:
+  </p>
+
+  <idyl-output-block>Нажата кнопка: LEFT
+Координаты: x=184, y=96
+Отпущена кнопка: LEFT
+Нажата кнопка: RIGHT
+Координаты: x=310, y=57
+Отпущена кнопка: RIGHT</idyl-output-block>
+
+  <p>
+    Числа у вас будут свои: это координаты той точки, куда вы щёлкнули.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Рисуем по клику</h2>
+  <p>
+    Числа в консоли — это хорошо, но координаты клика гораздо приятнее увидеть
+    прямо на холсте. Поставим в точку клика круг-маркер. Круг у нас один: при
+    каждом клике он просто переезжает на новое место, а его цвет подсказывает,
+    какой кнопкой щёлкнули.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use colors;
+use drawable;
+use gui;
+
+drawable.Circle marker;
+
+void function init(gui.Canvas canvas) {
+    canvas.fill(colors.RGB(20, 24, 32));
+
+    marker.radius = 16;
+    marker.set_origin(16, 16);
+}
+
+void function on_mouse_pressed(gui.Canvas canvas, gui.MouseEvent e) {
+    marker.x = e.x;
+    marker.y = e.y;
+
+    if (e.mouse_button == "LEFT") {
+        marker.fill_color = colors.RGB(255, 210, 80);
+    }
+    if (e.mouse_button == "RIGHT") {
+        marker.fill_color = colors.RGB(230, 92, 110);
+    }
+    if (e.mouse_button == "MIDDLE") {
+        marker.fill_color = colors.RGB(140, 255, 140);
+    }
+
+    canvas.fill(colors.RGB(20, 24, 32));
+    canvas.draw(marker);
+}
+
+main() {
+    gui.Window win;
+    win.width = 440;
+    win.height = 300;
+
+    gui.Canvas canvas;
+    canvas.x = 20;
+    canvas.y = 20;
+    canvas.width = 400;
+    canvas.height = 230;
+    canvas.on_init = init;
+    canvas.on_mouse_pressed = on_mouse_pressed;
+
+    win.add_child(canvas);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <p>
+    После каждого щелчка на тёмном холсте виден ровно один круг — в точке
+    последнего клика: жёлтый после левой кнопки, красный после правой, зелёный
+    после средней. Вызов <code>set_origin(16, 16)</code> переносит точку
+    отсчёта круга в его центр, поэтому круг встаёт центром точно под курсор —
+    подробнее о точке отсчёта поговорим в отдельном уроке.
   </p>
 </div>

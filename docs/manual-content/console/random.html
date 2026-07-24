@@ -1,0 +1,214 @@
+    <div class="docs-section">
+      <h2>Зачем программе сюрпризы?</h2>
+      <p>Бросить кубик, подкинуть монетку, вытянуть карту из колоды — половина игр держится на честном «кто знает, что выпадет?». Но компьютер сам по себе сюрпризов не любит: он всегда делает ровно то, что написано в программе. Чтобы добавить в программу непредсказуемости, в Idyllium есть библиотека <code>random</code>:</p>
+
+      <idyl-code-block><script type="text/plain">
+use random;
+</script></idyl-code-block>
+
+      <p>После этого все функции из этой библиотеки вызываются по схеме: <code>random.название(аргументы)</code>.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Случайное целое число: <code>random.create_int()</code></h2>
+      <p>Функция <code>random.create_int(min, max)</code> возвращает случайное целое число в диапазоне <strong>от <code>min</code> до <code>max</code> включительно</strong>:</p>
+
+      <idyl-code-block><script type="text/plain">
+int R = random.create_int(1, 20); // число от 1 до 20
+</script></idyl-code-block>
+
+      <p>Пример использования:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use random;
+
+main() {
+    int A = random.create_int(10, 99);
+    int B = random.create_int(10, 99);
+    int C = random.create_int(10, 99);
+
+    console.writeln(A, " ", B, " ", C);
+}
+</script></idyl-code-block>
+
+      <p>Каждый запуск программы будет давать новую тройку чисел. У нас, например, выпало так:</p>
+
+      <idyl-output-block>80 60 40</idyl-output-block>
+
+      <p>У вас числа будут свои — на то они и случайные. А бросок игрального кубика — это просто <code>random.create_int(1, 6)</code>.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Случайное дробное число: <code>random.create_float()</code></h2>
+      <p>Функция <code>random.create_float(min, max)</code> генерирует случайное число типа <code>float</code>. Границы у неё такие же дружелюбные, как у <code>create_int()</code>: результат <strong>не меньше <code>min</code> и не больше <code>max</code></strong> — выпасть могут обе границы. Правда, поймать ровно <code>max</code> — большая удача: дробных чисел между границами невообразимо много, и шанс попасть точно в край исчезающе мал.</p>
+
+      <idyl-code-block><script type="text/plain">
+float Q = random.create_float(1, 4); // число от 1.0 до 4.0 включительно
+</script></idyl-code-block>
+
+      <p>Пример:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use random;
+
+main() {
+    float F = random.create_float(2, 3);
+    float G = random.create_float(2, 3);
+
+    console.writeln("F = ", F);
+    console.writeln("G = ", G);
+}
+</script></idyl-code-block>
+
+      <p>У нас, например, получилось:</p>
+
+      <idyl-output-block>F = 2.63066992
+G = 2.10073137</idyl-output-block>
+
+      <p>Внутри числа хранятся с высокой точностью — до 15–16 значащих цифр. А вот при выводе Idyllium по умолчанию показывает не больше 8 знаков после точки, чтобы результат было удобно читать. Если нужно больше знаков, вызовите <code>console.set_precision()</code>.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Округление случайного числа</h2>
+      <p>Если знаков после точки слишком много, можно округлить число с помощью функций из библиотеки <code>math</code> — не забудьте подключить и её:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use math;
+use random;
+
+main() {
+    float raw = random.create_float(7, 8);
+    console.writeln("Сырое случайное число: ", raw);
+
+    float res = math.floor(raw, 3); // округляем вниз до 3 знаков
+    console.writeln("Округлено до 3 знаков: ", res);
+}
+</script></idyl-code-block>
+
+      <p>Например:</p>
+
+      <idyl-output-block>Сырое случайное число: 7.13176504
+Округлено до 3 знаков: 7.131</idyl-output-block>
+    </div>
+
+    <div class="docs-section">
+      <h2>Случайный символ из строки</h2>
+      <p>Функция <code>random.choose_from()</code> выбирает случайный символ из строки:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use random;
+
+main() {
+    string S = "АБВГД";
+    console.writeln("Случайная буква: ", random.choose_from(S));
+}
+</script></idyl-code-block>
+
+      <p>Например:</p>
+
+      <idyl-output-block>Случайная буква: Д</idyl-output-block>
+
+      <p>Каждый запуск — новая буква из пяти. Кстати, одиночный символ — это отдельный тип данных <code>char</code>; подробно о нём мы поговорим в одном из следующих уроков. А ещё <code>choose_from()</code> умеет выбирать случайный элемент массива — о массивах тоже позже.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Псевдослучайность и сиды</h2>
+      <p>Компьютер не умеет генерировать по-настоящему случайные числа — только <strong>псевдослучайные</strong>. Это такие числа, которые выглядят случайными, но на самом деле полностью определяются начальным значением, называемым <strong>сидом</strong> (англ. <em>seed</em>).</p>
+      <p>Если задать один и тот же сид, последовательность будет повторяться:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use random;
+
+main() {
+    random.set_seed(0);
+    console.writeln(random.create_int(0, 99));
+    console.writeln(random.create_int(0, 99));
+    console.writeln(random.create_int(0, 99), "\n");
+
+    random.set_seed(0);
+    console.writeln(random.create_int(0, 99));
+    console.writeln(random.create_int(0, 99));
+    console.writeln(random.create_int(0, 99), "\n");
+
+    random.set_seed(0);
+    console.writeln(random.create_int(0, 99));
+    console.writeln(random.create_int(0, 99));
+    console.writeln(random.create_int(0, 99));
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>23
+27
+81
+
+23
+27
+81
+
+23
+27
+81</idyl-output-block>
+
+      <p>Как видите, при сиде <code>0</code> всегда генерируется одна и та же последовательность. Это полезно для отладки и воспроизводимых экспериментов.</p>
+      <p>Например, в Minecraft есть известный эксплойт RANDAR, основанный на предсказуемости генератора мира — и он работает именно потому, что мир строится на основе сида.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Смена сида — смена последовательности</h2>
+      <p>В Idyllium сид генератора псевдослучайных чисел задаётся функцией <code>random.set_seed()</code>:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use random;
+
+main() {
+    random.set_seed(0);
+    console.writeln(random.create_int(0, 99));
+    console.writeln(random.create_int(0, 99));
+    console.writeln(random.create_int(0, 99), "\n");
+
+    random.set_seed(400); // сменили сид
+    console.writeln(random.create_int(0, 99));
+    console.writeln(random.create_int(0, 99));
+    console.writeln(random.create_int(0, 99));
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>23
+27
+81
+
+39
+56
+70</idyl-output-block>
+
+      <p>Сид <code>0</code> → последовательность 23, 27, 81...</p>
+      <p>Сид <code>400</code> → новая последовательность: 39, 56, 70...</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Важное предупреждение</h2>
+      <p>Библиотека <code>random</code> в Idyllium предназначена для <strong>игр, симуляций и учебных проектов</strong>. Для защиты секретов — например, паролей — она не годится: вы только что своими глазами видели, насколько предсказуемы её числа. А вот для броска кубика, случайного выбора карты или генерации лабиринта — в самый раз.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Шпаргалка</h2>
+      <p>Все функции библиотеки <code>random</code> в одной таблице:</p>
+
+      <table>
+        <thead>
+          <tr><th>Функция</th><th>Что делает</th><th>Пример</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>random.create_int(min, max)</code></td><td>случайное целое; обе границы включены</td><td><code>random.create_int(1, 6)</code> — бросок кубика</td></tr>
+          <tr><td><code>random.create_float(min, max)</code></td><td>случайный <code>float</code>; обе границы включены</td><td><code>random.create_float(0, 1)</code></td></tr>
+          <tr><td><code>random.choose_from(s)</code></td><td>случайный символ строки (или элемент массива)</td><td><code>random.choose_from("АБВГД")</code></td></tr>
+          <tr><td><code>random.set_seed(n)</code></td><td>задаёт сид — стартовую точку генератора</td><td><code>random.set_seed(42)</code></td></tr>
+        </tbody>
+      </table>
+    </div>

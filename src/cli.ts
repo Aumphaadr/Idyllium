@@ -123,7 +123,27 @@ function resolveFilePath(file: string, cwd: string): string {
 }
 
 function createNodeCliIO(): CliIO {
+  // Строки складываются в очередь по событию 'line': readline.question() терял
+  // ввод, пришедший одним куском (echo "1\n2" | idyllium run ...), — строки,
+  // эмитированные между вопросами, пропадали без слушателя.
   let input: any = null;
+  const bufferedLines: string[] = [];
+  const waiters: Array<(line: string) => void> = [];
+  let inputClosed = false;
+
+  const ensureInput = () => {
+    if (input) return;
+    input = readline.createInterface({ input: process.stdin });
+    input.on('line', (line: string) => {
+      const waiter = waiters.shift();
+      if (waiter) waiter(line);
+      else bufferedLines.push(line);
+    });
+    input.on('close', () => {
+      inputClosed = true;
+      while (waiters.length > 0) waiters.shift()?.('');
+    });
+  };
 
   return {
     cwd() {
@@ -142,14 +162,12 @@ function createNodeCliIO(): CliIO {
       process.stdout.write('\x1b[2J\x1b[H');
     },
     readLine() {
-      if (!input) {
-        input = readline.createInterface({
-          input: process.stdin,
-          output: process.stdout,
-        });
-      }
+      ensureInput();
+      const buffered = bufferedLines.shift();
+      if (buffered !== undefined) return Promise.resolve(buffered);
+      if (inputClosed) return Promise.resolve('');
       return new Promise<string>((resolve) => {
-        input.question('', (answer: string) => resolve(answer));
+        waiters.push(resolve);
       });
     },
     close() {

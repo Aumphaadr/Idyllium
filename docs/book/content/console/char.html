@@ -1,10 +1,7 @@
-<!-- Hero -->
-    
-
-    <!-- Section 1 -->
-    <div class="docs-section">
+<div class="docs-section">
       <h2>Типы <code>char</code> и <code>string</code></h2>
-      <p>В Idyllium существует два текстовых типа:</p>
+      <p>Строки вы храните и выводите уже давно. Но как заглянуть <strong>внутрь</strong> строки — вытащить из слова первую букву, проверить последнюю или разобрать его по буквам, как конструктор? Для одного символа в Idyllium есть отдельный тип — <code>char</code> (от английского <em>character</em> — «символ»).</p>
+      <p>Итого в Idyllium два текстовых типа:</p>
 
       <idyl-code-block><script type="text/plain">
 // Переменная типа 'char' может хранить один символ
@@ -19,9 +16,20 @@ string s = "Доступ разрешён!";
         <li>Одиночный символ обрамляется <strong>одинарными</strong> кавычками <code>' '</code>;</li>
         <li>Строка — <strong>двойными</strong> кавычками <code>" "</code>.</li>
       </ul>
+
+      <p>Чтобы не путаться, держите под рукой мини-шпаргалку:</p>
+      <table>
+        <thead>
+          <tr><th></th><th><code>char</code></th><th><code>string</code></th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Кавычки</td><td>одинарные <code>'А'</code></td><td>двойные <code>"Привет"</code></td></tr>
+          <tr><td>Сколько символов</td><td>ровно один</td><td>сколько угодно</td></tr>
+          <tr><td>Пример</td><td><code>char mark = '!';</code></td><td><code>string word = "Ура";</code></td></tr>
+        </tbody>
+      </table>
     </div>
 
-    <!-- Section 2 -->
     <div class="docs-section">
       <h2>Строка — это массив символов</h2>
       <p>Это очень похоже на отношение «переменная ↔ массив» для чисел:</p>
@@ -42,34 +50,57 @@ array<int, 5> m = [405, 163, 399, 785, 241];
       <p>Это означает: к отдельным символам строки можно обращаться по индексу, как к ячейкам массива.</p>
     </div>
 
-    <!-- Section 3 -->
     <div class="docs-section">
       <h2>Доступ к символам строки</h2>
-      <p>Как и у массива, у строки можно получить любой символ по его индексу:</p>
+      <p>Как и у массива, у строки можно получить любой символ по его индексу. Разберём гуся на буквы — и соберём обратно задом наперёд:</p>
 
       <idyl-code-block><script type="text/plain">
-string p = "Гусь";
+use console;
 
-char a = p[0]; // 'Г'
-char b = p[1]; // 'у'
-char c = p[2]; // 'с'
-char d = p[3]; // 'ь'
-char e = p[4]; // ОШИБКА: строки длиной 4 → индексы 0–3
+main() {
+    string p = "Гусь";
+
+    char a = p[0]; // 'Г'
+    char b = p[1]; // 'у'
+    char c = p[2]; // 'с'
+    char d = p[3]; // 'ь'
+
+    console.writeln(d, c, b, a);
+}
 </script></idyl-code-block>
 
-      <p>Строка ведёт себя как массив: индексация с нуля, выход за границы — ошибка.</p>
+      <idyl-output-block>ьсуГ</idyl-output-block>
+
+      <p>В слове «Гусь» четыре символа — значит, допустимые индексы: от <code>0</code> до <code>3</code>. А если запросить символ, которого нет, — например, десятый?</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    string p = "Гусь";
+
+    console.writeln(p[10]);
+}
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:6: runtime error: string index 10 out of bounds (length 4, valid indices 0-3)</idyl-error-block>
+
+      <p>Строка ведёт себя как массив: индексация с нуля, выход за границы — ошибка выполнения. Гусь не резиновый.</p>
     </div>
 
-    <!-- Section 4 -->
     <div class="docs-section">
       <h2>Посимвольный перебор</h2>
       <p>Можно вывести каждый символ строки по отдельности:</p>
 
       <idyl-code-block><script type="text/plain">
-string p = "Пингвин";
+use console;
 
-for (int i = 0; i < 7; i = i + 1) {
-    console.writeln(p[i]);
+main() {
+    string p = "Пингвин";
+
+    for (int i = 0; i < 7; i += 1) {
+        console.writeln(p[i]);
+    }
 }
 </script></idyl-code-block>
 
@@ -82,35 +113,41 @@ for (int i = 0; i < 7; i = i + 1) {
 н</idyl-output-block>
     </div>
 
-    <!-- Section 5 -->
     <div class="docs-section">
       <h2>Длина строки: свойство <code>length</code></h2>
       <p>Если длина строки заранее неизвестна, прочитайте свойство <code>length</code>:</p>
 
       <idyl-code-block><script type="text/plain">
-string Q = "Страус";
-int L = Q.length; // 6
-console.writeln("Птица: ", Q, ", длина: ", L, " символов");
+use console;
 
-string R = "Фламинго";
-int N = R.length; // 8
-console.writeln("Птица: ", R, ", длина: ", N, " символов");
+main() {
+    string Q = "Страус";
+    int L = Q.length; // 6
+    console.writeln("Птица: ", Q, ", длина: ", L, " символов");
+
+    string R = "Фламинго";
+    int N = R.length; // 8
+    console.writeln("Птица: ", R, ", длина: ", N, " символов");
+}
 </script></idyl-code-block>
 
       <idyl-output-block>Птица: Страус, длина: 6 символов
 Птица: Фламинго, длина: 8 символов</idyl-output-block>
     </div>
 
-    <!-- Section 6 -->
     <div class="docs-section">
       <h2>Цикл с неизвестной длиной строки</h2>
       <p>Свойство <code>length</code> содержит число — значит, его можно подставить в цикл:</p>
 
       <idyl-code-block><script type="text/plain">
-string T = "Журавль";
+use console;
 
-for (int i = 0; i < T.length; i = i + 1) {
-    console.writeln(T[i]);
+main() {
+    string T = "Журавль";
+
+    for (int i = 0; i < T.length; i += 1) {
+        console.writeln(T[i]);
+    }
 }
 </script></idyl-code-block>
 
@@ -125,20 +162,23 @@ for (int i = 0; i < T.length; i = i + 1) {
       <p>Такой цикл работает с любой строкой — независимо от её длины.</p>
     </div>
 
-    <!-- Section 7 -->
     <div class="docs-section">
       <h2>Конкатенация строк и символов</h2>
       <p>Строки и символы можно соединять с помощью оператора <code>+</code>:</p>
 
       <idyl-code-block><script type="text/plain">
-string noun = "пицца";
-string adj = "вкусная";
-char space = ' ';
-char mark = '!';
+use console;
 
-console.writeln(noun + adj);
-console.writeln(noun + space + adj);
-console.writeln(noun + space + adj + mark);
+main() {
+    string noun = "пицца";
+    string adj = "вкусная";
+    char space = ' ';
+    char mark = '!';
+
+    console.writeln(noun + adj);
+    console.writeln(noun + space + adj);
+    console.writeln(noun + space + adj + mark);
+}
 </script></idyl-code-block>
 
       <idyl-output-block>пиццавкусная
@@ -148,16 +188,43 @@ console.writeln(noun + space + adj + mark);
       <p>В отличие от чисел, от перемены мест слагаемых — сумма меняется:</p>
 
       <idyl-code-block><script type="text/plain">
-string res1 = noun + ' ' + adj; // "пицца вкусная"
-string res2 = adj + ' ' + noun; // "вкусная пицца"
+use console;
+
+main() {
+    string noun = "пицца";
+    string adj = "вкусная";
+
+    string res1 = noun + ' ' + adj;
+    string res2 = adj + ' ' + noun;
+
+    console.writeln(res1);
+    console.writeln(res2);
+}
 </script></idyl-code-block>
+
+      <idyl-output-block>пицца вкусная
+вкусная пицца</idyl-output-block>
     </div>
 
-    <!-- Section 8 -->
     <div class="docs-section">
       <h2>Экранированные символы</h2>
-      <p>Почему символ <code>'\n'</code> записан в <strong>одинарных</strong> кавычках, хотя выглядит как два символа?</p>
-      <p>Потому что <code>\</code> здесь не является отдельным символом — он экранирует букву <code>n</code>, превращая её в управляющий символ «новая строка».</p>
+      <p>Знакомый по прошлым урокам перенос строки <code>\n</code> — тоже символ. А раз символ, его можно положить в <code>char</code>:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    char newline = '\n';
+
+    console.write("Первая строка", newline, "Вторая строка", newline);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Первая строка
+Вторая строка</idyl-output-block>
+
+      <p>Стоп. Почему символ <code>'\n'</code> записан в <strong>одинарных</strong> кавычках, хотя выглядит как два символа?</p>
+      <p>Потому что <code>\</code> здесь не является отдельным символом — он экранирует букву <code>n</code>, превращая её в управляющий символ «новая строка». Вдвоём они обозначают <strong>один</strong> символ.</p>
       <p>То же касается:</p>
       <ul>
         <li><code>'\t'</code> — символ табуляции;</li>
@@ -166,5 +233,3 @@ string res2 = adj + ' ' + noun; // "вкусная пицца"
       </ul>
       <p>Экранирование позволяет вставлять в строку или символ управляющие последовательности и знаки пунктуации без путаницы.</p>
     </div>
-
-    <!-- Lesson navigation -->

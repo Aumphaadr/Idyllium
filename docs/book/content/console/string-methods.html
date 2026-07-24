@@ -1,98 +1,176 @@
-<!-- Hero -->
-    
+<div class="docs-section">
+      <h2>Пользователь вводит что попало</h2>
+      <p>Вы давно умеете спрашивать числа через <code>console.get_int()</code>. Но давайте честно: пользователь может ввести что угодно. Попросишь возраст — а в ответ прилетит <code>двенадцать</code>, <code>12 лет</code> или вообще <code>ЪУЪ</code>. Что тогда?</p>
 
-    <!-- Section 1 -->
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    console.write("Сколько вам лет: ");
+    int age = console.get_int();
+    console.writeln("Вам ", age);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Сколько вам лет: <span class="user_input">двенадцать</span></idyl-output-block>
+
+      <idyl-error-block>main.idyl:5: runtime error: cannot convert input to 'int' (expected integer, got "двенадцать")</idyl-error-block>
+
+      <p>Программа рухнула, даже не извинившись. Надёжная программа берёт ввод <strong>как строку</strong>, а потом сама проверяет: точно ли там число? Для таких проверок — и не только — у типа <code>string</code> есть целый набор методов:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    console.write("Сколько вам лет: ");
+    string answer = console.get_string();
+
+    if (answer.is_int()) {
+        int age = to_int(answer);
+        console.writeln("Отлично! Через год вам будет ", age + 1);
+    } else {
+        console.writeln("Хм, «", answer, "» — это не похоже на число.");
+    }
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Сколько вам лет: <span class="user_input">12</span>
+Отлично! Через год вам будет 13</idyl-output-block>
+
+      <p>А если ввести что-нибудь эдакое, программа не сломается, а вежливо переспросит:</p>
+
+      <idyl-output-block>Сколько вам лет: <span class="user_input">двенадцать</span>
+Хм, «двенадцать» — это не похоже на число.</idyl-output-block>
+
+      <p>Секрет — в методе <code>is_int()</code>. Сегодня разберём его и остальные методы строк. Чтобы не запутаться, сгруппируем их по типу результата: одни возвращают <code>bool</code>, другие — <code>int</code>, третьи — новую строку, а один — даже целый массив.</p>
+    </div>
+
     <div class="docs-section">
       <h2>Методы, возвращающие <code>bool</code></h2>
       <p>Эти методы отвечают на вопрос «да или нет».</p>
     </div>
 
-    <!-- Section 2 -->
     <div class="docs-section">
       <h3><code>.contains(c)</code></h3>
-      <p>Проверяет, есть ли подстрока или символ в строке:</p>
+      <p>Проверяет, есть ли в строке указанный символ или подстрока:</p>
 
       <idyl-code-block><script type="text/plain">
-string s = "Hello, World!";
-bool has_o = s.contains('o');      // true
-bool has_abc = s.contains("abc");   // false
+use console;
+
+main() {
+    string s = "Hello, World!";
+
+    console.writeln(s.contains('o'));
+    console.writeln(s.contains("abc"));
+}
 </script></idyl-code-block>
+
+      <idyl-output-block>true
+false</idyl-output-block>
+
+      <p>Символ <code>'o'</code> в строке есть, а подстроки <code>"abc"</code> — нет.</p>
     </div>
 
-    <!-- Section 3 -->
     <div class="docs-section">
       <h3><code>.is_int()</code> и <code>.is_float()</code></h3>
-      <p>Проверяют, можно ли строку безопасно преобразовать в число:</p>
+      <p>Проверяют, можно ли строку безопасно преобразовать в число. Именно эти методы спасли программу из начала урока:</p>
 
       <idyl-code-block><script type="text/plain">
-string a = "123";
-string b = "12.5";
-string c = "abc";
+use console;
 
-console.writeln(a.is_int());     // true
-console.writeln(b.is_float());  // true
-console.writeln(c.is_int());     // false
+main() {
+    string a = "123";
+    string b = "12.5";
+    string c = "abc";
+
+    console.writeln(a.is_int());
+    console.writeln(b.is_float());
+    console.writeln(c.is_int());
+}
 </script></idyl-code-block>
+
+      <idyl-output-block>true
+true
+false</idyl-output-block>
+
+      <p>Сначала проверьте строку — и только потом зовите <code>to_int()</code> или <code>to_float()</code>.</p>
     </div>
 
-    <!-- Section 4 -->
     <div class="docs-section">
       <h2>Методы, возвращающие <code>int</code></h2>
       <p>Эти методы работают с позициями и количеством.</p>
     </div>
 
-    <!-- Section 5 -->
     <div class="docs-section">
       <h3><code>.find(c)</code></h3>
-      <p>Возвращает индекс первого вхождения символа или подстроки, или <code>-1</code>, если не найдено:</p>
+      <p>Возвращает индекс первого вхождения символа или подстроки — или <code>-1</code>, если ничего не нашлось:</p>
 
       <idyl-code-block><script type="text/plain">
-string t = "Кот и собака";
-int idx1 = t.find('о');      // 1
-int idx2 = t.find("собака"); // 6
-int idx3 = t.find("рыба");   // -1
+use console;
+
+main() {
+    string t = "Кот и собака";
+
+    console.writeln(t.find('о'));
+    console.writeln(t.find("собака"));
+    console.writeln(t.find("рыба"));
+}
 </script></idyl-code-block>
+
+      <idyl-output-block>1
+6
+-1</idyl-output-block>
+
+      <p>Буква <code>'о'</code> впервые встречается в ячейке 1, подстрока <code>"собака"</code> начинается с ячейки 6 (не забывайте: символы строки нумеруются с нуля). А рыбы в строке нет — поэтому <code>-1</code>.</p>
     </div>
 
-    <!-- Section 6 -->
     <div class="docs-section">
       <h3><code>.count(c)</code></h3>
       <p>Считает, сколько раз встречается символ или подстрока:</p>
 
       <idyl-code-block><script type="text/plain">
-string u = "абракадабра";
-int a_count = u.count('а'); // 5
-int abra_count = u.count("абра"); // 2
+use console;
+
+main() {
+    string u = "абракадабра";
+
+    console.writeln(u.count('а'));
+    console.writeln(u.count("абра"));
+}
 </script></idyl-code-block>
+
+      <idyl-output-block>5
+2</idyl-output-block>
+
+      <p>Буква <code>'а'</code> встречается пять раз, а подстрока <code>"абра"</code> — дважды: в начале и в конце. Абракадабра!</p>
     </div>
 
-    <!-- Section 7 -->
     <div class="docs-section">
       <h2>Методы, возвращающие <code>string</code></h2>
-      <p>Эти методы создают новую строку на основе исходной.</p>
+      <p>Эти методы не переделывают исходную строку, а создают новую на её основе.</p>
     </div>
 
-    <!-- Section 8 -->
     <div class="docs-section">
       <h3><code>.to_upper()</code> и <code>.to_lower()</code></h3>
-      <p>Преобразуют все символы строки в верхний или нижний регистр:</p>
+      <p>Преобразуют все буквы строки в верхний или нижний регистр:</p>
 
       <idyl-code-block><script type="text/plain">
 use console;
 
 main() {
     string a = "Привет";
-    
-    console.writeln(a.to_upper()); // ПРИВЕТ
-    console.writeln(a.to_lower()); // привет
+
+    console.writeln(a.to_upper());
+    console.writeln(a.to_lower());
 }
 </script></idyl-code-block>
 
       <idyl-output-block>ПРИВЕТ
 привет</idyl-output-block>
+
+      <p>Пригодятся, когда регистр не должен влиять на результат: приведите ввод к нижнему регистру — и <code>«ДА»</code>, <code>«Да»</code> и <code>«да»</code> станут одним и тем же ответом.</p>
     </div>
 
-    <!-- Section 9 -->
     <div class="docs-section">
       <h3><code>.substring(start, count)</code></h3>
       <p>Возвращает часть строки, начиная с индекса <code>start</code> и длиной <code>count</code> символов:</p>
@@ -102,10 +180,10 @@ use console;
 
 main() {
     string a = "aBcDeFgHiJk";
-    
-    console.writeln(a.substring(1, 3)); // BcD
-    console.writeln(a.substring(3, 2)); // De
-    console.writeln(a.substring(5, 5)); // FgHiJ
+
+    console.writeln(a.substring(1, 3));
+    console.writeln(a.substring(3, 2));
+    console.writeln(a.substring(5, 5));
 }
 </script></idyl-code-block>
 
@@ -116,43 +194,68 @@ FgHiJ</idyl-output-block>
       <p><strong>Важно:</strong> второй аргумент — это <strong>количество символов</strong>, а не конечный индекс. Если <code>count</code> больше длины строки от <code>start</code>, метод вернёт символы до конца строки.</p>
     </div>
 
-    <!-- Section 10 -->
     <div class="docs-section">
       <h3><code>.replace(old, new)</code></h3>
       <p>Заменяет все вхождения подстроки <code>old</code> на <code>new</code>:</p>
 
       <idyl-code-block><script type="text/plain">
-string x = "Кот и кот и ещё кот";
-string y = x.replace("кот", "пёс");
-console.writeln(x);
-console.writeln(y);
+use console;
+
+main() {
+    string x = "Кот и кот и ещё кот";
+    string y = x.replace("кот", "пёс");
+
+    console.writeln(x);
+    console.writeln(y);
+}
 </script></idyl-code-block>
 
       <idyl-output-block>Кот и кот и ещё кот
 Кот и пёс и ещё пёс</idyl-output-block>
 
-      <p>Обратите внимание: первый <code>"Кот"</code> не был заменён из-за того, что функция является регистрозависимой.</p>
+      <p>Обратите внимание на два момента. Во-первых, исходная строка <code>x</code> не изменилась — <code>replace()</code> вернул новую строку. Во-вторых, первый <code>«Кот»</code> уцелел: метод различает большие и маленькие буквы, поэтому <code>"Кот"</code> с большой буквы под замену <code>"кот"</code> не попал.</p>
+      <p>В этом же семействе живёт метод <code>.trim()</code> — он возвращает строку без пробелов по краям: <code>"  привет  ".trim()</code> даст просто <code>"привет"</code>. Запомните, что он существует: всерьёз он понадобится в уроке про работу с файлами, где случайные пробелы на концах строк — обычное дело.</p>
     </div>
 
-    <!-- Section 11 -->
     <div class="docs-section">
       <h2>Метод, возвращающий массив</h2>
     </div>
 
-    <!-- Section 12 -->
     <div class="docs-section">
       <h3><code>.split(c)</code></h3>
       <p>Разбивает строку по разделителю и возвращает динамический массив строк:</p>
 
       <idyl-code-block><script type="text/plain">
-string data = "яблоко,банан,апельсин";
-dyn_array<string> fruits = data.split(",");
-console.writeln(fruits);
+use console;
+
+main() {
+    string data = "яблоко,банан,апельсин";
+    dyn_array<string> fruits = data.split(",");
+    console.writeln(fruits);
+}
 </script></idyl-code-block>
 
       <idyl-output-block>["яблоко", "банан", "апельсин"]</idyl-output-block>
 
-      <p>Метод особенно полезен при обработке CSV-подобных данных.</p>
+      <p>Метод особенно полезен, когда в одной строке записано сразу несколько значений через разделитель — например, список покупок через запятую. Одна команда — и у вас массив, с которым вы уже умеете работать.</p>
     </div>
 
-    <!-- Lesson navigation -->
+    <div class="docs-section">
+      <h2>Сводная таблица методов строк</h2>
+      <table>
+        <thead>
+          <tr><th>Метод</th><th>Что делает</th><th>Что возвращает</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>contains(c)</code></td><td>проверяет наличие символа или подстроки</td><td><code>bool</code></td></tr>
+          <tr><td><code>is_int()</code>, <code>is_float()</code></td><td>проверяют, можно ли превратить строку в число</td><td><code>bool</code></td></tr>
+          <tr><td><code>find(c)</code></td><td>ищет первое вхождение</td><td><code>int</code>: индекс или <code>-1</code></td></tr>
+          <tr><td><code>count(c)</code></td><td>считает вхождения</td><td><code>int</code></td></tr>
+          <tr><td><code>to_upper()</code>, <code>to_lower()</code></td><td>меняют регистр всех букв</td><td>новая <code>string</code></td></tr>
+          <tr><td><code>substring(start, count)</code></td><td>вырезает <code>count</code> символов начиная со <code>start</code></td><td>новая <code>string</code></td></tr>
+          <tr><td><code>replace(old, new)</code></td><td>заменяет все вхождения подстроки</td><td>новая <code>string</code></td></tr>
+          <tr><td><code>split(c)</code></td><td>режет строку по разделителю</td><td><code>dyn_array&lt;string&gt;</code></td></tr>
+        </tbody>
+      </table>
+      <p>И помните главное: исходную строку эти методы не трогают. Хотите сохранить результат — запишите его в переменную.</p>
+    </div>

@@ -14,7 +14,13 @@
   <h3>Находится ли точка внутри</h3>
   <p>
     Метод <code>contains(x, y)</code> получает координаты мировой точки и
-    возвращает <code>true</code> или <code>false</code>.
+    возвращает <code>true</code> или <code>false</code>. Точка ровно на границе
+    фигуры — уже внутри: <code>contains()</code> отвечает <code>true</code>.
+  </p>
+  <p>
+    Фрагмент ниже живёт внутри обработчика мыши: прямоугольник
+    <code>button_shape</code> объявлен заранее, а событие <code>e</code>
+    приходит параметром.
   </p>
 
   <idyl-code-block><script type="text/plain">
@@ -35,7 +41,9 @@ if (button_shape.contains(e.x, e.y)) {
   <h3>Пересекаются ли два объекта</h3>
   <p>
     Метод <code>collides_with(other)</code> проверяет уже не точку, а другой
-    drawable-объект.
+    drawable-объект. Этот фрагмент — тоже из обработчика, например из
+    <code>on_update</code>; <code>player</code> и <code>wall</code> объявлены
+    заранее.
   </p>
 
   <idyl-code-block><script type="text/plain">
@@ -51,6 +59,8 @@ if (player.collides_with(wall)) {
   </p>
 
   <idyl-code-block><script type="text/plain">
+use drawable;
+
 bool function objects_touch(
     drawable.Drawable first,
     drawable.Drawable second
@@ -72,6 +82,10 @@ bool function objects_touch(
     каждой отдельной буквы. Если шрифт явно не назначен, Idyllium использует
     встроенный Source Code Pro и знает его точные размеры.
   </p>
+  <p>
+    Код ниже — снова внутри обработчика мыши: текст можно объявить прямо там,
+    а <code>e</code> приходит параметром.
+  </p>
 
   <idyl-code-block><script type="text/plain">
 drawable.Text hint;
@@ -82,11 +96,16 @@ bool mouse_over_hint = hint.contains(e.x, e.y);
 </script></idyl-code-block>
 
   <p>
-    Свой шрифт назначается привычным способом. Геометрия поддерживает все те же
-    форматы, что и отрисовка: TTF, OTF, WOFF и WOFF2.
+    Свой шрифт назначается привычным способом — понадобится модуль
+    <code>fonts</code>. Геометрия поддерживает все те же форматы, что и
+    отрисовка: TTF, OTF, WOFF и WOFF2.
   </p>
 
   <idyl-code-block><script type="text/plain">
+// в начале файла:
+use fonts;
+
+// внутри обработчика:
 fonts.Font heading_font;
 heading_font.load_from_file("Lobster-Regular.ttf");
 
@@ -180,4 +199,23 @@ main() {
     равно существует и может участвовать в проверках, пока её размеры не равны
     нулю.
   </p>
+</div>
+
+<div class="docs-section">
+  <h2>Опорная таблица мини-серии</h2>
+  <p>
+    Геометрическая мини-серия закончена. Вот её итог одной таблицей:
+  </p>
+  <table class="docs-table">
+    <thead>
+      <tr><th>Что проверяем</th><th>Ручная формула (урок)</th><th>Готовый метод</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Точка в прямоугольнике</td><td>четыре сравнения с краями («Точка в прямоугольной области»)</td><td><code>rect.contains(x, y)</code></td></tr>
+      <tr><td>Точка в круге</td><td>расстояние до центра не больше радиуса («Точка в круглой области»)</td><td><code>ball.contains(x, y)</code></td></tr>
+      <tr><td>Круг и круг</td><td>расстояние между центрами не больше суммы радиусов («Круглые коллизии»)</td><td><code>a.collides_with(b)</code></td></tr>
+      <tr><td>Прямоугольник и прямоугольник</td><td>четыре опровержения («Прямоугольные коллизии»)</td><td><code>a.collides_with(b)</code></td></tr>
+      <tr><td>Повёрнутые фигуры, разные пары объектов</td><td>ручной формулы в уроках нет</td><td><code>contains()</code> и <code>collides_with()</code></td></tr>
+    </tbody>
+  </table>
 </div>

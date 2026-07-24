@@ -1,0 +1,312 @@
+<style data-lesson-style>
+.interactive-demo {
+      background: rgba(137, 180, 250, 0.05);
+      border-radius: 12px;
+      padding: 1em;
+      margin: 1.5em 0;
+    }
+    .interactive-demo .coord-note {
+      margin-top: 1em;
+    }
+    .progress-row {
+      margin: 1em 0;
+    }
+</style>
+
+    <div class="docs-section">
+      <h2>Что такое ProgressBar?</h2>
+      <p>Представьте: ваша игра загружает большой уровень, а на экране — тишина. Игрок не понимает: программа думает или зависла? Спасает заполняющаяся полоска — она честно показывает, сколько уже сделано и сколько осталось. Та же полоска пригодится и для шкалы здоровья героя.</p>
+      <p>В Idyllium такая полоска называется <code>gui.ProgressBar</code>. Вот как выглядит простейший прогрессбар, заполненный на 24%:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 100;
+    win.title = "Прогресс";
+
+    gui.ProgressBar pb;
+    pb.x = 20;
+    pb.y = 20;
+    pb.width = 260;
+    pb.value = 24;  // 24%
+
+    win.add_child(pb);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 100px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px; width: 260px;">
+              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
+                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); transition: width 0.3s ease; border-radius: 4px; width: 24%;"></div>
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); pointer-events: none;">
+                  24%
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          📊 ProgressBar наглядно показывает процент выполнения. Здесь — 24%.
+        </div>
+      </div>
+    </div>
+
+    <div class="docs-section">
+      <h2>Стандартные свойства виджетов</h2>
+      <p>Как и все виджеты в Idyllium, <code>ProgressBar</code> имеет стандартный набор свойств для позиционирования:</p>
+      <ul>
+        <li><code>x</code> — расстояние от левого края окна (в пикселях)</li>
+        <li><code>y</code> — расстояние от верхнего края окна (в пикселях)</li>
+        <li><code>width</code> — ширина виджета</li>
+        <li><code>height</code> — высота виджета</li>
+      </ul>
+
+      <idyl-code-block><script type="text/plain">
+gui.ProgressBar pb;
+pb.x = 20;       // отступ слева 20 пикселей
+pb.y = 30;       // отступ сверху 30 пикселей
+pb.width = 200;  // ширина 200 пикселей
+pb.height = 30;  // высота 30 пикселей
+</script></idyl-code-block>
+
+      <p>Эти свойства есть у <strong>каждого</strong> виджета — от кнопки до выпадающего списка.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Свойство <code>value</code> — уровень заполнения</h2>
+      <p>Главное свойство прогрессбара — <code>value</code>. Оно имеет тип <code>int</code>. Пока вы не трогали другие настройки, <code>value</code> — это просто проценты: от 0 (пусто) до 100 (полно).</p>
+
+      <p>Три прогрессбара с разными значениями:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 200;
+    win.title = "Разные значения";
+
+    // Пустой прогрессбар
+    gui.ProgressBar empty;
+    empty.x = 20;
+    empty.y = 20;
+    empty.width = 260;
+    empty.value = 0;
+
+    // Наполовину полный
+    gui.ProgressBar half;
+    half.x = 20;
+    half.y = 70;
+    half.width = 260;
+    half.value = 50;
+
+    // Полностью полный
+    gui.ProgressBar full;
+    full.x = 20;
+    full.y = 120;
+    full.width = 260;
+    full.value = 100;
+
+    win.add_child(empty);
+    win.add_child(half);
+    win.add_child(full);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 180px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px; width: 260px;">
+              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
+                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 0%; border-radius: 4px;"></div>
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">0%</div>
+              </div>
+            </div>
+            <div style="position: absolute; left: 20px; top: 70px; width: 260px;">
+              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
+                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 50%; border-radius: 4px;"></div>
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">50%</div>
+              </div>
+            </div>
+            <div style="position: absolute; left: 20px; top: 120px; width: 260px;">
+              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
+                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 100%; border-radius: 4px;"></div>
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">100%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          📊 <code>value = 0</code> — пусто, <code>value = 50</code> — половина, <code>value = 100</code> — полностью заполнено.
+        </div>
+      </div>
+
+      <p>Обратите внимание: процент заполнения отображается прямо на полоске — дополнительный лейбл не нужен.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Своя шкала: <code>min</code> и <code>max</code></h2>
+      <p>Проценты — это только случай по умолчанию. На самом деле у прогрессбара есть ещё два свойства: <code>min</code> (начало шкалы, обычно 0) и <code>max</code> (конец шкалы, обычно 100). Значение <code>value</code> всегда живёт между ними.</p>
+      <p>Пусть у героя игры 200 очков здоровья. Тогда удобно задать шкалу от 0 до 200 и хранить в <code>value</code> настоящее здоровье, а не проценты:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 100;
+    win.title = "Здоровье героя";
+
+    gui.ProgressBar hp;
+    hp.x = 20;
+    hp.y = 20;
+    hp.width = 260;
+    hp.min = 0;
+    hp.max = 200;
+    hp.value = 150;
+
+    win.add_child(hp);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 100px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px; width: 260px;">
+              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
+                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 75%; border-radius: 4px;"></div>
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">75%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          ❤️ 150 очков из 200 — это три четверти шкалы, поэтому полоска заполнена на 75%. Надпись на полоске всегда показывает проценты.
+        </div>
+      </div>
+
+      <p>Соберём все свойства прогрессбара в одну таблицу:</p>
+
+      <table>
+        <thead>
+          <tr><th>Свойство</th><th>Тип</th><th>Что означает</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>value</code></td><td><code>int</code></td><td>уровень заполнения; всегда между <code>min</code> и <code>max</code></td></tr>
+          <tr><td><code>min</code></td><td><code>int</code></td><td>начало шкалы (по умолчанию 0)</td></tr>
+          <tr><td><code>max</code></td><td><code>int</code></td><td>конец шкалы (по умолчанию 100)</td></tr>
+          <tr><td><code>x</code>, <code>y</code></td><td><code>int</code></td><td>положение внутри окна</td></tr>
+          <tr><td><code>width</code>, <code>height</code></td><td><code>int</code></td><td>размеры полоски</td></tr>
+        </tbody>
+      </table>
+
+      <p>Пока <code>min = 0</code> и <code>max = 100</code>, значение <code>value</code> читается как обычные проценты.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Динамическое изменение значения</h2>
+      <p>Как и любые другие свойства, <code>value</code> можно менять во время работы программы. Вот пример, где кнопка устанавливает прогрессбару случайное значение:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+use random;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 150;
+    win.title = "Случайный прогресс";
+
+    gui.ProgressBar pb;
+    pb.x = 20;
+    pb.y = 20;
+    pb.width = 310;
+    pb.value = 0;
+
+    gui.Button btn;
+    btn.text = "Случайное значение";
+    btn.x = 20;
+    btn.y = 80;
+    btn.width = 150;
+
+    btn.on_click = void function() {
+        int r = random.create_int(0, 100);
+        pb.value = r;
+    };
+
+    win.add_child(pb);
+    win.add_child(btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 150px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 20px; width: 310px;" id="randomProgressContainer">
+              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
+                <div id="randomProgressFill" style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 0%; border-radius: 4px;"></div>
+                <div id="randomProgressLabel" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">0%</div>
+              </div>
+            </div>
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 80px; width: 150px;" id="randomProgressBtn">Случайное значение</button>
+          </div>
+        </div>
+        <div class="coord-note">
+          🎲 Каждое нажатие кнопки генерирует случайное число от 0 до 100 и обновляет прогрессбар.
+        </div>
+      </div>
+
+      <p>Точно так же шкала здоровья будет обновляться после каждого удара, а полоска загрузки — расти по мере скачивания файла.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Типичная ошибка: дробное значение</h2>
+      <p>Полоска заполнена наполовину — как это записать? Рука так и тянется к числу 0.5. Но <code>value</code> имеет тип <code>int</code>, и дробное число компилятор не пропустит:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    gui.ProgressBar pb;
+    pb.value = 0.5;  // ОШИБКА!
+}
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:6:16: error: cannot assign 'float' value to 'int' variable</idyl-error-block>
+
+      <p>Половина полоски — это не 0.5, а 50 из 100. Присвойте целое число:</p>
+
+      <idyl-code-block><script type="text/plain">
+pb.value = 50;  // вот теперь половина
+</script></idyl-code-block>
+    </div>
+
+<script data-lesson-script type="text/plain">
+// Интерактив для демо-примеров
+  document.addEventListener('DOMContentLoaded', () => {
+    // Пример: случайный прогресс
+    const randomBtn = document.getElementById('randomProgressBtn');
+    const progressFill = document.getElementById('randomProgressFill');
+    const progressLabel = document.getElementById('randomProgressLabel');
+
+    if (randomBtn && progressFill && progressLabel) {
+      randomBtn.addEventListener('click', () => {
+        const r = Math.floor(Math.random() * 101);
+        progressFill.style.width = r + '%';
+        progressLabel.textContent = r + '%';
+      });
+    }
+  });
+</script>

@@ -1,6 +1,7 @@
 import {
   CompileResult,
   compileIdyllium,
+  describeRuntimeError,
 } from './runtime/run';
 import { formatIdyllium } from './language/formatter';
 import { IdylliumProject } from './language/project';
@@ -89,7 +90,7 @@ export async function runIdylliumInBrowser(options: BrowserRunOptions): Promise<
     return {
       success: false,
       output: prepared.runtime.getOutput(),
-      runtimeError: error instanceof Error ? error.message : String(error),
+      runtimeError: describeRuntimeError(error, normalizeBrowserPath(options.entryFile ?? '/workspace/main.idyl')),
       compilation: prepared.compilation,
       runtime: prepared.runtime,
       files: prepared.fileSystemSnapshot(),
@@ -163,6 +164,8 @@ export {
   formatIdyllium,
   IdylliumProject,
 };
+export { IDYLLIUM_SEMANTIC_TOKEN_TYPES, IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS } from './core/semantics';
+export { guiPreviewIntervalMs } from './runtime/gui-interval';
 
 function createMemoryRuntime(options: BrowserRunOptions, fileSystem: RuntimeFileSystem): IdylliumRuntime {
   return createRuntime({

@@ -1,8 +1,4 @@
-<!-- Hero -->
-    
-
-    <!-- Section 1 -->
-    <div class="docs-section">
+<div class="docs-section">
       <h2>Подключение библиотеки</h2>
       <p>Для работы с кодировками необходимо подключить библиотеку <code>encoding</code>:</p>
       <idyl-code-block><script type="text/plain">
@@ -10,7 +6,6 @@ use encoding;
 </script></idyl-code-block>
     </div>
 
-    <!-- Section 2 -->
     <div class="docs-section">
       <h2>Символ, номер и байты</h2>
       <p>Компьютер хранит данные числами. Чтобы буквы разных языков не спорили за номера, существует таблица Unicode. В ней у каждого символа есть постоянный номер, который называется <strong>кодовой точкой</strong>.</p>
@@ -32,13 +27,12 @@ use encoding;
       <p>Вот откуда берутся разные числа. <code>1071</code> описывает сам символ, а остальные значения описывают его запись в конкретной кодировке.</p>
     </div>
 
-    <!-- Section 3 -->
     <div class="docs-section">
       <h2>Поддерживаемые кодировки</h2>
       <p>Idyllium поддерживает четыре кодировки:</p>
       <ul>
-        <li><code>utf-8</code> — современная универсальная кодировка, способная хранить все символы Unicode;</li>
         <li><code>ascii</code> — маленькая кодировка с латиницей, цифрами и основными знаками, использующая значения от 0 до 127;</li>
+        <li><code>utf-8</code> — современная универсальная кодировка, способная хранить все символы Unicode;</li>
         <li><code>windows-1251</code> — однобайтовая кириллическая кодировка из старых Windows-программ;</li>
         <li><code>koi8-r</code> — ещё одна однобайтовая кириллическая кодировка, известная по Unix-системам.</li>
       </ul>
@@ -62,7 +56,6 @@ windows-1251
 koi8-r</idyl-output-block>
     </div>
 
-    <!-- Section 4 -->
     <div class="docs-section">
       <h2>Кодовая точка символа</h2>
       <p>Функция <code>encoding.char_to_codepoint()</code> получает один символ и возвращает его постоянный номер Unicode. Имя кодировки ей не нужно.</p>
@@ -93,7 +86,6 @@ console.writeln(letter);
       <idyl-output-block>Я</idyl-output-block>
     </div>
 
-    <!-- Section 5 -->
     <div class="docs-section">
       <h2>Превращаем текст в байты</h2>
       <p>Функция <code>encoding.encode(текст, кодировка)</code> превращает строку в динамический массив байтов. Теперь кодировка действительно имеет значение:</p>
@@ -122,7 +114,6 @@ KOI8-R: [241]</idyl-output-block>
       <p>В UTF-8 русской букве понадобилось два байта, а в старых кириллических кодировках хватило одного. Зато UTF-8 умеет хранить не только русский и английский, а весь Unicode.</p>
     </div>
 
-    <!-- Section 6 -->
     <div class="docs-section">
       <h2>Собираем текст из байтов</h2>
       <p><code>encoding.decode(байты, кодировка)</code> выполняет обратное преобразование. Важно указать ту же кодировку, которой пользовались при записи.</p>
@@ -147,36 +138,57 @@ main() {
       <p>Если прочитать старый файл не той кодировкой, числа будут истолкованы иначе. Так и появляются знаменитые «кракозябры».</p>
     </div>
 
-    <!-- Section 7 -->
     <div class="docs-section">
       <h2>Ошибки не прячутся</h2>
       <p>ASCII не знает русских букв. Idyllium не станет молча заменять неизвестный символ вопросительным знаком:</p>
 
       <idyl-code-block><script type="text/plain">
-dyn_array<int> bytes = encoding.encode("Ю", "ascii");
+use encoding;
+
+main() {
+    dyn_array<int> bytes = encoding.encode("Ю", "ascii");
+}
 </script></idyl-code-block>
-      <div class="error-message">main.idyl:1: runtime error: character 'Ю' is not valid ASCII at position 0</div>
+      <idyl-error-block>main.idyl:4: runtime error: character 'Ю' is not valid ASCII at position 0</idyl-error-block>
 
       <p>Повреждённые байты UTF-8 тоже дают ошибку. Например, байт <code>208</code> начинает двухбайтовый символ, но в массиве нет его продолжения:</p>
 
       <idyl-code-block><script type="text/plain">
-dyn_array<int> broken = [208];
-string text = encoding.decode(broken, "utf-8");
+use encoding;
+
+main() {
+    dyn_array<int> broken = [208];
+    string text = encoding.decode(broken, "utf-8");
+}
 </script></idyl-code-block>
-      <div class="error-message">main.idyl:2: runtime error: encoding.decode() invalid UTF-8 at byte 0 (0xD0): incomplete sequence</div>
+      <idyl-error-block>main.idyl:5: runtime error: encoding.decode() invalid UTF-8 at byte 0 (0xD0): incomplete sequence</idyl-error-block>
 
       <p>Наконец, имя кодировки тоже проверяется:</p>
 
       <idyl-code-block><script type="text/plain">
-encoding.encode("A", "cp866");
+use encoding;
+
+main() {
+    encoding.encode("A", "cp866");
+}
 </script></idyl-code-block>
-      <div class="error-message">main.idyl:1: runtime error: unknown encoding 'cp866'</div>
+      <idyl-error-block>main.idyl:4: runtime error: unknown encoding 'cp866'</idyl-error-block>
     </div>
 
-    <!-- Section 8 -->
     <div class="docs-section">
       <h2>Практическое применение: шифр Цезаря</h2>
-      <p>Кодовые точки позволяют выполнять с буквами простую математику. Сдвинем каждую латинскую букву на три позиции:</p>
+      <p>Кодовые точки позволяют выполнять с буквами простую математику. Сдвинем каждую латинскую букву на три позиции.</p>
+      <p>Числа <code>65</code>, <code>90</code>, <code>97</code> и <code>122</code> в программе — не магия, а границы латинских букв в таблице кодовых точек. Заглавные и строчные буквы идут в ней подряд, без пропусков:</p>
+
+      <table>
+        <thead>
+          <tr><th>Символы</th><th>Кодовые точки</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>'A'</code>–<code>'Z'</code> — заглавные латинские</td><td><code>65</code>–<code>90</code></td></tr>
+          <tr><td><code>'a'</code>–<code>'z'</code> — строчные латинские</td><td><code>97</code>–<code>122</code></td></tr>
+        </tbody>
+      </table>
 
       <idyl-code-block><script type="text/plain">
 use console;
@@ -207,7 +219,6 @@ main() {
 Зашифрованное: Khoor Zruog</idyl-output-block>
     </div>
 
-    <!-- Section 9 -->
     <div class="docs-section">
       <h2>Итог</h2>
       <ul>
@@ -218,6 +229,5 @@ main() {
         <li><code>encoding.list_encodings()</code> — список поддерживаемых кодировок.</li>
       </ul>
       <p>Запомните главное: кодовая точка описывает символ, а кодировка описывает его запись в байтах. Это похожие, но не одинаковые вещи.</p>
+      <p>И небольшой анонс: по-настоящему кодировки развернутся при работе с файлами — до неё осталось всего два урока.</p>
     </div>
-
-    <!-- Lesson navigation -->

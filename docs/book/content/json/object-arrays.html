@@ -9,8 +9,7 @@
   <json-code-block><script type="text/plain">
 [
     { "name": "Liam", "level": 7 },
-    { "name": "Mira", "level": 5 },
-    { "name": "Noah", "level": 9 }
+    { "name": "Mira", "level": 5 }
 ]
 </script></json-code-block>
 </div>
@@ -41,6 +40,50 @@ main() {
     console.writeln(players.to_pretty_json(4));
 }
 </script></idyl-code-block>
+  <idyl-output-block>[
+    {
+        "name": "Liam",
+        "level": 7
+    },
+    {
+        "name": "Mira",
+        "level": 5
+    }
+]</idyl-output-block>
+
+  <p>
+    Сохранить такой текст в JSON-файл вы уже умеете — точно так же, как мы
+    записывали <code>player.json</code> в уроке о первом объекте, а прочитать
+    его обратно — как в уроке о чтении JSON.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2><code>json.Value(объект)</code> — это ссылка</h2>
+  <p>
+    Вызов <code>json.Value(liam)</code> не делает копию объекта, а упаковывает
+    <strong>ссылку</strong> на него — вспомните врезку «Объект — это ссылка» из
+    урока об идентификаторе <code>this</code> в разделе ООП. Если изменить объект
+    после упаковки, изменение будет видно и внутри <code>json.Value</code>.
+    Именно поэтому в примере выше у каждого игрока своя переменная: одна общая
+    переменная положила бы в массив несколько ссылок на один и тот же объект.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use json;
+
+main() {
+    json.Object mira;
+    mira.add("level", json.Value(5));
+
+    json.Value packed = json.Value(mira);
+    mira.set("level", json.Value(6));
+
+    console.writeln(packed.to_json());
+}
+</script></idyl-code-block>
+  <idyl-output-block>{"level":6}</idyl-output-block>
 </div>
 
 <div class="docs-section">

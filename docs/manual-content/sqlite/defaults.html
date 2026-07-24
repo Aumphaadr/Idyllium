@@ -71,14 +71,64 @@ INSERT INTO players (name, level) VALUES ('Liam', 7);
   <h2>Те же команды из Idyllium</h2>
   <p>
     Это обычный SQL-текст, поэтому никакого нового метода библиотеки не
-    требуется.
+    требуется. Но у повторного запуска осталась последняя ловушка: сам
+    <code>INSERT</code> при каждом запуске добавлял бы ещё одну Миру. Поэтому
+    программа сначала спрашивает базу, есть ли уже такая запись, и вставляет
+    строку только один раз.
   </p>
   <idyl-code-block><script type="text/plain">
-db.execute(
-    "CREATE TABLE IF NOT EXISTS players (" +
-    "name TEXT, level INTEGER DEFAULT 1)"
-);
+use console;
+use sqlite;
 
-db.execute("INSERT INTO players (name) VALUES ('Mira')");
+main() {
+    sqlite.Database db = sqlite.open("village.db");
+    db.execute(
+        "CREATE TABLE IF NOT EXISTS players (" +
+        "name TEXT, " +
+        "level INTEGER DEFAULT 1, " +
+        "coins INTEGER DEFAULT 0" +
+        ")"
+    );
+
+    sqlite.Result found = db.execute(
+        "SELECT name FROM players WHERE name = 'Mira'"
+    );
+    bool mira_exists = found.next();
+    found.close();
+
+    if (mira_exists) {
+        console.writeln("Мира уже в базе");
+    }
+    else {
+        db.execute("INSERT INTO players (name) VALUES ('Mira')");
+        console.writeln("Мира добавлена");
+    }
+
+    sqlite.Result rows = db.execute(
+        "SELECT name, level, coins FROM players"
+    );
+
+    while (rows.next()) {
+        console.writeln(
+            rows.get_string("name"),
+            ": уровень ", rows.get_int("level"),
+            ", монет ", rows.get_int("coins")
+        );
+    }
+
+    rows.close();
+    db.close();
+}
 </script></idyl-code-block>
+  <p>Первый запуск:</p>
+  <idyl-output-block>Мира добавлена
+Mira: уровень 1, монет 0</idyl-output-block>
+  <p>Второй запуск:</p>
+  <idyl-output-block>Мира уже в базе
+Mira: уровень 1, монет 0</idyl-output-block>
+  <p>
+    Здесь <code>next()</code> работает проверкой: он вернёт <code>true</code>,
+    только если база нашла Миру. Такую программу можно запускать сколько угодно
+    раз — таблица не пересоздаётся, а Мира не задваивается.
+  </p>
 </div>

@@ -1,3 +1,16 @@
+<style data-lesson-style>
+.file {
+      background-color: #b5bdd3;
+      border: 1px solid #8290b6;
+      padding: 1em;
+      border-radius: 0.5em;
+      font-family: 'Source Code Pro', monospace;
+      white-space: pre;
+      margin: 1em 0;
+      color: #0a0d14;
+    }
+</style>
+
 <div class="docs-section">
   <h2>Зачем вспоминать файлы?</h2>
   <p>
@@ -58,6 +71,14 @@ main() {
     Можно хранить имена в одном файле, а уровни в другом.
   </p>
 
+  <p>Файл <code>names.txt</code>:</p>
+  <div class="file">Liam
+Mira</div>
+
+  <p>Файл <code>levels.txt</code>:</p>
+  <div class="file">7
+5</div>
+
   <idyl-code-block><script type="text/plain">
 use console;
 use file;
@@ -78,11 +99,13 @@ main() {
     }
     levels_file.close();
 
-    for (int i = 0; i < names.length; i = i + 1) {
+    for (int i = 0; i < names.length; i += 1) {
         console.writeln(names[i], ": ", levels[i]);
     }
 }
 </script></idyl-code-block>
+  <idyl-output-block>Liam: 7
+Mira: 5</idyl-output-block>
 
   <p>
     Для двух параметров такой подход ещё можно терпеть. Но если у игрока появятся

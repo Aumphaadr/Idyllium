@@ -31,7 +31,7 @@
     if (nextStateJson === stateJson) return;
     const generationChanged = nextState.generation !== state.generation;
     if (generationChanged) clearAudioEntries();
-    if (!generationChanged && patchLabelTextOnly(nextState, nextStateJson)) return;
+    if (!generationChanged && patchWidgetTextOnly(nextState, nextStateJson)) return;
     if (draggingControlId !== null) {
       deferredState = nextState;
       return;
@@ -107,12 +107,17 @@
     syncAudio(state.audio || []);
   }
 
-  function patchLabelTextOnly(nextState, nextStateJson) {
-    if (labelInsensitiveStateJson(state) !== labelInsensitiveStateJson(nextState)) return false;
+  // Если между снапшотами изменились только тексты (подпись Label или
+  // содержимое LineEdit/TextEdit), правим их на месте: полный перерендер
+  // пересоздаёт DOM и заставляет фокус поля ввода моргать на каждом символе.
+  const TEXT_PATCHABLE_TYPES = new Set(['gui.Label', 'gui.LineEdit', 'gui.TextEdit']);
+
+  function patchWidgetTextOnly(nextState, nextStateJson) {
+    if (textInsensitiveStateJson(state) !== textInsensitiveStateJson(nextState)) return false;
 
     const patches = [];
     const visit = (widget) => {
-      if (widget.type === 'gui.Label') {
+      if (TEXT_PATCHABLE_TYPES.has(widget.type)) {
         const element = findWidgetElement(widget.id);
         if (!element) return false;
         patches.push([element, stringValue(widget.properties && widget.properties.text, '')]);
@@ -126,17 +131,25 @@
     for (const win of nextState.windows || []) {
       if (!visit(win)) return false;
     }
-    for (const [element, text] of patches) element.textContent = text;
+    for (const [element, text] of patches) {
+      const tag = element.tagName ? element.tagName.toLowerCase() : '';
+      if (tag === 'input' || tag === 'textarea') {
+        // Эхо собственного ввода уже в DOM — не трогаем, чтобы не сбить курсор.
+        if (element.value !== text) element.value = text;
+      } else {
+        element.textContent = text;
+      }
+    }
     state = nextState;
     stateJson = nextStateJson;
     syncAudio(state.audio || []);
     return true;
   }
 
-  function labelInsensitiveStateJson(snapshot) {
+  function textInsensitiveStateJson(snapshot) {
     const normalizeWidget = (widget) => ({
       ...widget,
-      properties: widget.type === 'gui.Label'
+      properties: TEXT_PATCHABLE_TYPES.has(widget.type)
         ? { ...(widget.properties || {}), text: null }
         : widget.properties,
       children: (widget.children || []).map(normalizeWidget),
@@ -457,11 +470,21 @@
         el.setPointerCapture(event.pointerId);
       }
     });
+    // on_change приходит на каждое движение маркера (input), а не только при
+    // отпускании; повторная отправка того же значения гасится.
+    let lastSentValue = null;
+    const emitSliderChange = () => {
+      const value = Number(el.value);
+      if (value === lastSentValue) return;
+      lastSentValue = value;
+      postGuiEvent(widget.id, 'change', { value });
+    };
     el.addEventListener('input', () => {
       activeControl = controlState(el);
+      emitSliderChange();
     });
     el.addEventListener('change', () => {
-      postGuiEvent(widget.id, 'change', { value: Number(el.value) });
+      emitSliderChange();
       releaseDragControl(widget.id);
     });
     el.addEventListener('pointerup', () => {

@@ -1,0 +1,249 @@
+    <div class="docs-section">
+      <h2>Биты слушаются команд</h2>
+      <p>В прошлом уроке мы разглядели, как числа лежат в ячейках фиксированной ширины: биты, переполнения, двоичные и шестнадцатеричные шаблоны. Пришло время перестать подглядывать и начать командовать. У любого значения из библиотеки <code>types</code> есть инструменты, которые двигают и комбинируют его биты напрямую, — сегодня мы освоим их все.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Битовые сдвиги</h2>
+      <p>
+        Типы из библиотеки <code>types</code> хранят ровно столько битов, сколько
+        написано в названии типа. Эти биты можно грубо сдвинуть влево или вправо
+        методами <code>shift_left()</code> и <code>shift_right()</code>.
+      </p>
+      <p>
+        Представим <code>uint8</code> как восемь ячеек. При сдвиге вправо крайние
+        правые биты выпадают и теряются, а слева появляются нули:
+      </p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use types;
+
+main() {
+    types.uint8 value = types.from_bin("00101011", "uint8");
+    types.uint8 result = value.shift_right(3);
+
+    console.writeln(value.to_bin());
+    console.writeln(result.to_bin());
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>00101011
+00000101</idyl-output-block>
+
+      <p>
+        При сдвиге влево всё происходит зеркально: левые биты теряются, а справа
+        появляются нули. Библиотека не предупреждает о потере данных и не пытается
+        спасти знак числа.
+      </p>
+
+      <idyl-code-block><script type="text/plain">
+types.int8 value = types.from_bin("11000101", "int8");
+types.int8 result = value.shift_left(3);
+
+console.writeln(result.to_bin());
+console.writeln(result);
+</script></idyl-code-block>
+
+      <idyl-output-block>00101000
+40</idyl-output-block>
+
+      <p>
+        Сдвиг может превратить отрицательное число в положительное или наоборот.
+        Если сдвинуть ячейку на её полную ширину или ещё дальше, старых битов не
+        останется вообще:
+      </p>
+
+      <idyl-code-block><script type="text/plain">
+types.int8 positive = 64;   // 01000000
+types.int8 became_negative = positive.shift_left(1);
+
+types.uint8 old_value = 43; // 00101011
+types.uint8 erased = old_value.shift_left(12);
+
+console.writeln(became_negative);
+console.writeln(erased.to_bin());
+</script></idyl-code-block>
+
+      <idyl-output-block>-128
+00000000</idyl-output-block>
+
+      <p>
+        Отрицательное количество битов просто меняет направление. Поэтому
+        <code>shift_left(-3)</code> делает то же самое, что
+        <code>shift_right(3)</code>, и наоборот:
+      </p>
+
+      <idyl-code-block><script type="text/plain">
+types.uint8 value = types.from_bin("00101011", "uint8");
+
+console.writeln(value.shift_left(-3).to_bin());
+console.writeln(value.shift_right(-3).to_bin());
+</script></idyl-code-block>
+
+      <idyl-output-block>00000101
+01011000</idyl-output-block>
+    </div>
+
+    <div class="docs-section">
+      <h2>А дробные числа тоже можно?</h2>
+      <p>
+        Можно. <code>float32</code> и <code>float64</code> тоже состоят из битов:
+        среди них хранятся знак, порядок и мантисса. Сдвигу всё равно, какую роль
+        играл каждый бит. Он просто двигает ячейки, теряет крайние и добавляет нули.
+      </p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use types;
+
+main() {
+    types.float32 normal = 4.5;
+    types.float32 strange = normal.shift_left(3);
+
+    console.writeln(normal.to_bin());
+    console.writeln(strange.to_bin());
+    console.writeln(strange);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>01000000100100000000000000000000
+00000100100000000000000000000000
+3.009265538105056e-36</idyl-output-block>
+
+      <p>
+        Здесь нет математического смысла вроде «умножить на восемь». Мы залезли
+        внутрь машинного представления числа и передвинули его части. Получилось
+        безумие — значит, именно это безумие теперь и лежит в переменной.
+      </p>
+      <p>
+        Сдвиг на <code>0</code> ничего не меняет. Знак аргумента отвечает за
+        направление, а его модуль показывает, на сколько позиций сдвинутся биты.
+        Это правило одинаково работает и для целых, и для дробных типов.
+      </p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Битовое И: <code>bit_and()</code></h2>
+      <p>Кроме сдвигов, биты двух ячеек можно комбинировать. Метод <code>bit_and()</code> сравнивает значение с <strong>маской</strong> — вторым числом того же типа — и оставляет единицы только там, где они есть <strong>и в значении, и в маске</strong>. Все остальные позиции обнуляются.</p>
+      <p>Классическое применение — «вырезать» из ячейки нужный кусочек. Маска <code>00001111</code> оставляет только младшие четыре бита:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use types;
+
+main() {
+    types.uint8 value = types.from_bin("10110110", "uint8");
+    types.uint8 mask = types.from_bin("00001111", "uint8");
+    types.uint8 result = value.bit_and(mask);
+
+    console.writeln(result.to_bin());
+    console.writeln(result);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>00000110
+6</idyl-output-block>
+
+      <p>Старшая половина исчезла, младшая уцелела. Обратите внимание: маска обязана быть того же типа, что и значение, — <code>uint8</code> к <code>uint8</code>. Биты чужой ширины складывать «в столбик» нельзя.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Битовое ИЛИ: <code>bit_or()</code></h2>
+      <p>Метод <code>bit_or()</code> работает наоборот: единица остаётся там, где она есть <strong>хотя бы в одном</strong> из двух чисел. Это удобный способ принудительно «зажечь» нужные биты, не трогая остальные:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use types;
+
+main() {
+    types.uint8 value = types.from_bin("00100100", "uint8");
+    types.uint8 flag = types.from_bin("10000000", "uint8");
+    types.uint8 result = value.bit_or(flag);
+
+    console.writeln(result.to_bin());
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>10100100</idyl-output-block>
+
+      <p>Старший бит зажёгся, остальные не шелохнулись. Так, битами-«флажками» в одном байте можно хранить сразу восемь ответов «да/нет»: включён ли звук, открыт ли уровень, побеждён ли босс…</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Исключающее ИЛИ: <code>bit_xor()</code></h2>
+      <p>Метод <code>bit_xor()</code> оставляет единицу там, где биты двух чисел <strong>различаются</strong>. Позиции, где в маске стоит единица, переключаются на противоположные; где ноль — остаются как были.</p>
+      <p>У этой операции есть волшебное свойство: повторное применение той же маски возвращает всё как было. Получается игрушечный шифр:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use types;
+
+main() {
+    types.uint8 secret = 65;
+    types.uint8 key = types.from_bin("10110100", "uint8");
+
+    types.uint8 encrypted = secret.bit_xor(key);
+    types.uint8 decrypted = encrypted.bit_xor(key);
+
+    console.writeln("Зашифровано: ", encrypted);
+    console.writeln("Расшифровано: ", decrypted);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Зашифровано: 245
+Расшифровано: 65</idyl-output-block>
+
+      <p>Число <code>65</code> превратилось в неузнаваемое <code>245</code>, а второй поворот того же «ключа» честно вернул исходное. Настоящие шифры устроены сложнее, но исключающее ИЛИ трудится в самом сердце многих из них.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Инверсия: <code>bit_not()</code></h2>
+      <p>Последний метод четвёрки обходится без маски: <code>bit_not()</code> просто переворачивает все биты ячейки — нули становятся единицами, единицы нулями:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use types;
+
+main() {
+    types.uint8 value = types.from_bin("00101011", "uint8");
+    types.uint8 result = value.bit_not();
+
+    console.writeln(result.to_bin());
+    console.writeln(result);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>11010100
+212</idyl-output-block>
+
+      <p>Было <code>43</code>, стало <code>212</code> — вместе они дают ровно <code>255</code>, максимум ячейки <code>uint8</code>. Это не совпадение: инверсия и есть «всё, чего не хватало до полной ячейки».</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Опорная таблица</h2>
+      <table>
+        <thead>
+          <tr><th>Метод</th><th>Что делает с битами</th><th>Пример (uint8)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>shift_left(n)</code></td><td>двигает влево, теряет левые, добавляет нули справа</td><td><code>00101011 → 01011000</code> (n = 1)</td></tr>
+          <tr><td><code>shift_right(n)</code></td><td>двигает вправо, теряет правые, добавляет нули слева</td><td><code>00101011 → 00010101</code> (n = 1)</td></tr>
+          <tr><td><code>bit_and(mask)</code></td><td>единица там, где она в обоих числах</td><td><code>10110110 &amp; 00001111 → 00000110</code></td></tr>
+          <tr><td><code>bit_or(mask)</code></td><td>единица там, где она хотя бы в одном</td><td><code>00100100 | 10000000 → 10100100</code></td></tr>
+          <tr><td><code>bit_xor(mask)</code></td><td>единица там, где биты различаются</td><td><code>01000001 ^ 10110100 → 11110101</code></td></tr>
+          <tr><td><code>bit_not()</code></td><td>переворачивает все биты</td><td><code>00101011 → 11010100</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="docs-section">
+      <h2>Итог</h2>
+      <ul>
+        <li>Сдвиги <code>shift_left()</code> и <code>shift_right()</code> передвигают биты внутри ячейки — даже если в ней лежит дробное число.</li>
+        <li><code>bit_and()</code> вырезает биты маской, <code>bit_or()</code> зажигает их, <code>bit_xor()</code> переключает, а <code>bit_not()</code> переворачивает всю ячейку.</li>
+        <li>Маска всегда того же типа, что и значение: биты складываются «в столбик» только при одинаковой ширине ячеек.</li>
+        <li>Двойное исключающее ИЛИ возвращает исходное число — на этом фокусе держатся многие шифры.</li>
+      </ul>
+      <p>Теперь биты не просто видны вам насквозь — они выполняют ваши команды.</p>
+    </div>

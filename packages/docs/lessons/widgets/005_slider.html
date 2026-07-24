@@ -137,9 +137,9 @@ main() {
     slider.y = 30;
     slider.width = 260;
     slider.min = 0;
-    slider.max = 200;
-    slider.value = 100;
-    slider.step = 20;
+    slider.max = 300;
+    slider.value = 150;
+    slider.step = 50;
 
     win.add_child(slider);
     win.show();
@@ -150,13 +150,13 @@ main() {
         <div class="gui-demo-window">
           <div class="demo-content" style="min-height: 100px; position: relative;">
             <div style="position: absolute; left: 20px; top: 30px; width: 260px;">
-              <input type="range" class="idyl-slider" style="width: 100%;" value="100" min="0" max="200" step="20">
+              <input type="range" class="idyl-slider" style="width: 100%;" value="150" min="0" max="300" step="50">
             </div>
           </div>
         </div>
         <div class="coord-note">
-          🎯 Диапазон 0–200, шаг 20. Ползунок делает более резкие прыжки.<br>
-          Ему становятся доступны значения: [0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200].
+          🎯 Диапазон 0–300, шаг 50. Ползунок делает более резкие прыжки.<br>
+          Ему становятся доступны значения: [0, 50, 100, 150, 200, 250, 300].
         </div>
       </div>
     </div>

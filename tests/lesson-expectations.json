@@ -1,0 +1,740 @@
+{
+  "version": 1,
+  "examples": {
+    "canvas.modules.001": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "module 'scene' was not found"
+      ],
+      "reason": "Auto-migrated 2026-07-24: teaching example fails to compile with this diagnostic."
+    },
+    "console.arithmetics.003": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'float' value to 'int' variable"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "console.arr-functions.005": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'max' expects a numeric array, got 'array<string, 2>'"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "console.arr-functions.008": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'float' value to 'int' variable"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "console.array.010": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "comparison '>' requires numeric operands"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "console.array.011": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "operator '+' cannot be applied to 'array<int, 5>' and 'int'"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "console.bool.005": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "if condition must be 'bool', got 'int'"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "console.bool.006": {
+      "kind": "valid",
+      "reason": "Auto 2026-07-25: программе нужен интерактивный ввод; фиксируем только компиляцию."
+    },
+    "console.colors.005": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "expected ')' after arguments"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "console.constants.005": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "constant 'answer' must have an initializer"
+      ],
+      "reason": "Auto-migrated 2026-07-24: teaching example fails to compile with this diagnostic."
+    },
+    "console.constants.006": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign to constant 'answer'"
+      ],
+      "reason": "Auto-migrated 2026-07-24: teaching example fails to compile with this diagnostic."
+    },
+    "console.dyn-array.001": {
+      "kind": "valid",
+      "reason": "Auto 2026-07-25: маркер ошибки относится к прозе, программа работает."
+    },
+    "console.encoding.010": {
+      "kind": "valid"
+    },
+    "console.errors.001": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'string' value to 'int' variable"
+      ]
+    },
+    "console.errors.002": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'float' value to 'int' variable"
+      ]
+    },
+    "console.errors.003": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot declare variable of type 'void'"
+      ]
+    },
+    "console.errors.004": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'float' value to 'int' variable"
+      ]
+    },
+    "console.errors.005": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'x' was not declared in this scope"
+      ]
+    },
+    "console.errors.006": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'math' is not imported (use 'use math;')"
+      ]
+    },
+    "console.errors.007": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "if condition must be 'bool', got 'int'"
+      ]
+    },
+    "console.errors.008": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'break' is only valid inside a loop"
+      ]
+    },
+    "console.errors.009": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "function with return type 'int' must return a value"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "console.errors.010": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "void function cannot return a value"
+      ]
+    },
+    "console.errors.011": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'add' expects 2 arguments, got 3"
+      ]
+    },
+    "console.errors.012": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "array initializer has 3 elements, but 'array<int, 5>' requires 5"
+      ]
+    },
+    "console.errors.013": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "method 'add' is only available on 'dyn_array'"
+      ]
+    },
+    "console.errors.014": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "comparison '>' requires numeric operands"
+      ]
+    },
+    "console.errors.015": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "string characters are read-only"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "console.errors.016": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "division by zero"
+      ]
+    },
+    "console.errors.017": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "array index 5 out of bounds (size 3, valid indices 0-2)"
+      ]
+    },
+    "console.errors.019": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "'to_int' cannot convert 'abc' to int"
+      ]
+    },
+    "console.errors.020": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "math.sqrt() expects a non-negative number, got -4"
+      ]
+    },
+    "console.errors.021": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "file.open() cannot open",
+        "for reading: file does not exist"
+      ]
+    },
+    "console.errors.022": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "cannot pop from empty array"
+      ]
+    },
+    "console.errors.023": {
+      "kind": "docs_only",
+      "reason": "Encoding runtime error example is deferred until the encoding library is implemented."
+    },
+    "console.functions.002": {
+      "kind": "docs_only",
+      "reason": "Template-style lesson block uses placeholder variable 'выходные_данные' and must be normalized before executable checks."
+    },
+    "console.functions.008": {
+      "kind": "valid"
+    },
+    "console.functions.009": {
+      "kind": "valid"
+    },
+    "console.functions.010": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "parameter 'name' without default value cannot follow a parameter with default value"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "console.functions.011": {
+      "kind": "valid"
+    },
+    "console.hello.005": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "expected ';' after expression"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "console.if.010": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "expected ')' after if condition"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "console.increment.007": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'float' value to 'int' variable"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "console.libs.002": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "module 'draw' was not found"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "console.libs.005": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "module 'draw' was not found"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "console.transforms.001": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'int' value to 'string' variable"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "console.transforms.004": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'string' value to 'int' variable"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "console.transforms.006": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'string' value to 'float' variable"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "console.try-catch.001": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "division by zero"
+      ]
+    },
+    "console.try-catch.002": {
+      "kind": "valid"
+    },
+    "console.try-catch.003": {
+      "kind": "valid"
+    },
+    "console.try-catch.004": {
+      "kind": "valid"
+    },
+    "console.try-catch.005": {
+      "kind": "valid"
+    },
+    "console.variables.004": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'float' value to 'int' variable"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "console.variables.005": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'int' value to 'string' variable"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "console.variables.010": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'diam' was not declared in this scope"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "json.array-methods.003": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "runtime error: json array index 5 out of bounds (size 1, valid indices 0-0)"
+      ],
+      "reason": "Auto-migrated 2026-07-24: teaching example fails at runtime with this message."
+    },
+    "json.errors.002": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "runtime error: json.parse() invalid JSON: expected a string key"
+      ],
+      "reason": "Migration 2026-07-24: teaching example fails at runtime with this message."
+    },
+    "json.errors.003": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "runtime error: json object has no key 'level'"
+      ],
+      "reason": "Auto-migrated 2026-07-24: teaching example fails at runtime with this message."
+    },
+    "json.errors.004": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "runtime error: json object has no key 'level'"
+      ],
+      "reason": "Migration 2026-07-24: teaching example fails at runtime with this message."
+    },
+    "json.errors.005": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "runtime error: json value is string, expected int"
+      ],
+      "reason": "Auto-migrated 2026-07-24: teaching example fails at runtime with this message."
+    },
+    "json.errors.006": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "runtime error: json object already has key 'name'"
+      ],
+      "reason": "Auto-migrated 2026-07-24: teaching example fails at runtime with this message."
+    },
+    "json.errors.007": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "runtime error: json array index 5 out of bounds (size 3, valid indices 0-2)"
+      ],
+      "reason": "Auto-migrated 2026-07-24: teaching example fails at runtime with this message."
+    },
+    "json.first-object.003": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "runtime error: json object already has key 'name'"
+      ],
+      "reason": "Auto-migrated 2026-07-24: teaching example fails at runtime with this message."
+    },
+    "oop.classes.001": {
+      "kind": "valid"
+    },
+    "oop.classes.005": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot print object of class 'Car' directly"
+      ],
+      "reason": "Migration 2026-07-24 (oop/canvas/json/sqlite): teaching example fails to compile with this message."
+    },
+    "oop.constructor.008": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'Empty' expects 0 arguments, got 1"
+      ],
+      "reason": "Migration 2026-07-24 (oop/canvas/json/sqlite): teaching example fails to compile with this message."
+    },
+    "oop.encapsulation.001": {
+      "kind": "valid"
+    },
+    "oop.encapsulation.003": {
+      "kind": "valid"
+    },
+    "oop.encapsulation.004": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "member 'Hero.hp' is private and can only be used inside class 'Hero'"
+      ],
+      "reason": "Migration 2026-07-24 (oop/canvas/json/sqlite): teaching example fails to compile with this message."
+    },
+    "oop.errors.002": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "unexpected token 'Semicolon' at top level"
+      ],
+      "reason": "Migration 2026-07-24 (oop/canvas/json/sqlite): teaching example fails to compile with this message."
+    },
+    "oop.errors.003": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'this' cannot be used in a static method"
+      ],
+      "reason": "Migration 2026-07-24 (oop/canvas/json/sqlite): teaching example fails to compile with this message."
+    },
+    "oop.errors.004": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "member 'BankAccount.balance' is private and can only be used inside class 'BankAccount'"
+      ]
+    },
+    "oop.errors.005": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot print object of class 'Cat' directly"
+      ],
+      "reason": "Migration 2026-07-24 (oop/canvas/json/sqlite): teaching example fails to compile with this message."
+    },
+    "oop.errors.007": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "unknown class 'Cat'"
+      ],
+      "reason": "Migration 2026-07-24 (oop/canvas/json/sqlite): teaching example fails to compile with this message."
+    },
+    "oop.errors.009": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "module 'cat' was not found"
+      ],
+      "reason": "Migration 2026-07-24: multi-file example; standalone compile lacks the sibling module (book checker verifies it with materialized modules)."
+    },
+    "oop.errors.010": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "module 'b' was not found"
+      ],
+      "reason": "Migration 2026-07-24: multi-file example; standalone compile lacks the sibling module (book checker verifies it with materialized modules)."
+    },
+    "oop.errors.012": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "static method 'MathUtils.square' must be called on class 'MathUtils'"
+      ]
+    },
+    "oop.errors.013": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "instance method 'Cat.meow' must be called on an object"
+      ],
+      "reason": "Migration 2026-07-24 (oop/canvas/json/sqlite): teaching example fails to compile with this message."
+    },
+    "oop.fields-methods.001": {
+      "kind": "valid"
+    },
+    "oop.fields-methods.003": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "instance method 'Cat.meow' must be called on an object"
+      ],
+      "reason": "Migration 2026-07-24 (oop/canvas/json/sqlite): teaching example fails to compile with this message."
+    },
+    "oop.inheritance.003": {
+      "kind": "valid"
+    },
+    "oop.inheritance.004": {
+      "kind": "valid"
+    },
+    "oop.modules.002": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "module 'rect' was not found"
+      ],
+      "reason": "Migration 2026-07-24: multi-file example; standalone compile lacks the sibling module (book checker verifies it with materialized modules)."
+    },
+    "oop.modules.003": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "module 'rect' was not found"
+      ],
+      "reason": "Migration 2026-07-24: multi-file example; standalone compile lacks the sibling module (book checker verifies it with materialized modules)."
+    },
+    "oop.static.002": {
+      "kind": "valid"
+    },
+    "oop.static.003": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'this' cannot be used in a static method"
+      ],
+      "reason": "Migration 2026-07-24 (oop/canvas/json/sqlite): teaching example fails to compile with this message."
+    },
+    "oop.static.004": {
+      "kind": "valid"
+    },
+    "oop.this.001": {
+      "kind": "valid"
+    },
+    "oop.this.002": {
+      "kind": "valid"
+    },
+    "oop.this.004": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'name' was not declared in this scope"
+      ],
+      "reason": "Migration 2026-07-24 (oop/canvas/json/sqlite): teaching example fails to compile with this message."
+    },
+    "oop.this.005": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot print object of class 'Cat' directly"
+      ],
+      "reason": "The lesson deliberately prints an object without to_string() to show the diagnostic; printing class objects requires a public string to_string()."
+    },
+    "sqlite.errors.001": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "runtime error: sqlite statement has unbound parameter ':level'"
+      ],
+      "reason": "Auto-migrated 2026-07-24: teaching example fails at runtime with this message."
+    },
+    "sqlite.errors.002": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "runtime error: sqlite column 'name' is text, expected int"
+      ],
+      "reason": "Auto-migrated 2026-07-24: teaching example fails at runtime with this message."
+    },
+    "sqlite.errors.003": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "runtime error: sqlite result has no column 'score'"
+      ],
+      "reason": "Auto-migrated 2026-07-24: teaching example fails at runtime with this message."
+    },
+    "sqlite.errors.004": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "runtime error: sqlite result has no current row; call next() first"
+      ],
+      "reason": "Migration 2026-07-24: teaching example fails at runtime with this message."
+    },
+    "sqlite.errors.005": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "runtime error: sqlite database is already closed"
+      ],
+      "reason": "Migration 2026-07-24: teaching example fails at runtime with this message."
+    },
+    "sqlite.keys.002": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "UNIQUE constraint failed: players.login"
+      ],
+      "reason": "Migration 2026-07-24: teaching example fails at runtime with this message."
+    },
+    "widgets.arrays.006": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "method 'add' is only available on 'dyn_array'"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "widgets.button.004": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'label' was not declared in this scope"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "widgets.checkbox.004": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'string' value to 'bool' variable"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "widgets.colors.007": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'string' value to 'colors.Color' variable"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "widgets.combobox.004": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "property 'selected_text' is read-only"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "widgets.errors.003": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "callback property 'on_click' expects function(): void or function(gui.Button): void, got function(gui.Label): void"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "widgets.errors.004": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'int' value to 'string' variable"
+      ]
+    },
+    "widgets.errors.005": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'btn' was not declared in this scope"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "widgets.errors.007": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'add_child' argument 1 expects gui widget, got 'gui.Modal'"
+      ]
+    },
+    "widgets.errors.008": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "runtime error: array index 5 out of bounds (size 3, valid indices 0-2)"
+      ],
+      "reason": "Auto 2026-07-25: пример падает в рантайме с этим сообщением."
+    },
+    "widgets.errors.009": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "type 'gui.Button' has no property 'placeholder'"
+      ]
+    },
+    "widgets.errors.010": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "property 'selected_text' is read-only"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "widgets.label.004": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'int' value to 'string' variable"
+      ]
+    },
+    "widgets.label.006": {
+      "kind": "valid",
+      "reason": "Lesson now teaches text_color with the colors library; the removed string-based color API is rejected by the compiler (covered by smoke tests)."
+    },
+    "widgets.lineedit.006": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'int' value to 'string' variable"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "widgets.modal.005": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'add_child' argument 1 expects gui widget, got 'gui.Modal'"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "widgets.progressbar.006": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'float' value to 'int' variable"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "widgets.radiobutton.005": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'string' value to 'bool' variable"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "widgets.sender.004": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "callback property 'on_click' expects function(): void or function(gui.Button): void, got function(gui.Label): void"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "widgets.slider.004": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'string' value to 'int' variable"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "widgets.spinbox.005": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'float' value to 'int' variable"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "widgets.timer.009": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot assign 'string' value to 'int' variable"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "widgets.window.003": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "'gui' is not imported (use 'use gui;')"
+      ],
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    }
+  }
+}

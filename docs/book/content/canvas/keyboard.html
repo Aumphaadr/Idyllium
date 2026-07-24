@@ -1,3 +1,14 @@
+<style data-lesson-style>
+.warning-message {
+      background: rgba(249, 226, 175, 0.12);
+      border-left: 3px solid #f9e2af;
+      padding: 0.75em 1em;
+      color: #f9e2af;
+      margin: 0.5em 0 1em 0;
+      border-radius: 0 6px 6px 0;
+    }
+</style>
+
 <div class="docs-section">
   <h2>События клавиатуры</h2>
   <p>
@@ -30,7 +41,7 @@ void function init(gui.Canvas canvas) {
     player.height = 60;
     player.fill_color = colors.RGB(34, 145, 188);
     player.border_width = 5;
-    player.border_color = colors.RGBA(0, 0, 0, 0);
+    player.border_color = colors.TRANSPARENT;
     redraw(canvas);
 }
 
@@ -48,7 +59,7 @@ void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
 }
 
 void function on_key_released(gui.Canvas canvas, gui.KeyboardEvent e) {
-    player.border_color = colors.RGBA(0, 0, 0, 0);
+    player.border_color = colors.TRANSPARENT;
     redraw(canvas);
 }
 
@@ -70,4 +81,41 @@ main() {
     win.show();
 }
 </script></idyl-code-block>
+
+  <p>
+    Цвет <code>colors.TRANSPARENT</code> — полностью прозрачный: рамка у
+    прямоугольника есть, но её не видно.
+  </p>
+
+  <div class="tip-box">
+    <strong>💡 Важно:</strong> в <code>e.key</code> буква всегда приходит
+    ЗАГЛАВНОЙ, даже если Caps Lock выключен. Проверяйте <code>"R"</code>,
+    а не <code>"r"</code>.
+  </div>
+</div>
+
+<div class="docs-section">
+  <h2>Типичная ошибка: строчная буква в сравнении</h2>
+  <p>
+    Напишем условие со строчной буквой:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+if (e.key == "r") {
+    player.border_color = colors.RED;
+}
+</script></idyl-code-block>
+
+  <div class="warning-message">
+    Ошибок нет: программа компилируется и запускается. Но рамка никогда не
+    станет красной — в <code>e.key</code> приходит <code>"R"</code>, и условие
+    <code>e.key == "r"</code> не выполнится ни разу.
+  </div>
+
+  <p>
+    Это молчаливая ошибка: компилятор здесь не помощник, сравнивать строки
+    <code>"R"</code> и <code>"r"</code> — с точки зрения языка совершенно
+    законно. Если обработчик клавиши «не срабатывает», первым делом проверьте,
+    что буква в сравнении заглавная.
+  </p>
 </div>

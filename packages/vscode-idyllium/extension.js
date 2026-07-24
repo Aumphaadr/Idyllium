@@ -11,15 +11,21 @@ let diagnosticCollection;
 let refreshTimer = null;
 const activeRunKeys = new Set();
 const activeRunSessions = new Map();
-const semanticTokenTypes = ['namespace', 'class', 'function', 'method', 'property', 'variable', 'parameter'];
-const semanticTokenModifiers = ['declaration', 'readonly', 'static', 'defaultLibrary'];
-const semanticTokenLegend = new vscode.SemanticTokensLegend(semanticTokenTypes, semanticTokenModifiers);
+let semanticTokenLegend = new vscode.SemanticTokensLegend([], []);
+let loadedCore = null;
 
 function activate(context) {
   outputChannel = vscode.window.createOutputChannel('Idyllium');
   diagnosticCollection = vscode.languages.createDiagnosticCollection('idyllium');
 
   const core = loadIdylliumCore(context);
+  loadedCore = core;
+  if (core) {
+    semanticTokenLegend = new vscode.SemanticTokensLegend(
+      [...core.IDYLLIUM_SEMANTIC_TOKEN_TYPES],
+      [...core.IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS],
+    );
+  }
   if (!core) {
     outputChannel.appendLine('Idyllium core was not found. Run npm run build:vscode in the repository root.');
   }
@@ -605,7 +611,7 @@ function attachGuiSession(panel, result, channel, session) {
 }
 
 function guiPreviewIntervalMs(windows, canvases) {
-  return guiRenderer.guiPreviewIntervalMs(windows, canvases);
+  return loadedCore.guiPreviewIntervalMs(windows, canvases);
 }
 
 async function runActionWithSnapshotPump(action, sendSnapshot) {
@@ -745,7 +751,9 @@ async function executeIdylliumInExtension(core, runFile, files, document, option
       success: false,
       output: runtime.getOutput ? runtime.getOutput() : output,
       diagnosticsText: compilation.diagnosticsText,
-      runtimeError: error instanceof Error ? error.message : String(error),
+      runtimeError: core.describeRuntimeError
+        ? core.describeRuntimeError(error, runFile)
+        : (error instanceof Error ? error.message : String(error)),
       windows: runtime.getWindows ? runtime.getWindows() : [],
       canvases: runtime.getCanvases ? runtime.getCanvases() : [],
       audio: runtime.getAudio ? runtime.getAudio() : [],

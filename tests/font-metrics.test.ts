@@ -12,7 +12,7 @@ function close(actual: number, expected: number, message: string): void {
 }
 
 const service = createRuntimeFontMetricsService();
-const lobster = new Uint8Array(fs.readFileSync(path.join(process.cwd(), 'spec/some_fonts/Lobster-Regular.ttf')));
+const lobster = new Uint8Array(fs.readFileSync(path.join(process.cwd(), 'tests/fixtures/fonts/Lobster-Regular.ttf')));
 
 const latin = service.measure(lobster, 'Hello', 40);
 close(latin.width, 80.88, 'Lobster Latin advance width');

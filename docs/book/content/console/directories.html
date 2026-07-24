@@ -21,8 +21,9 @@ main() {
   <idyl-error-block>main.idyl:4: runtime error: file.open() cannot open 'saves/player.txt' for writing: directory does not exist</idyl-error-block>
 
   <p>
-    Файл <code>player.txt</code> создать можно, но сначала программе нужна папка
-    <code>saves</code>.
+    Вместо <code>/home/user/my_game</code> компилятор подставит полный путь к
+    папке вашего проекта. Файл <code>player.txt</code> создать можно, но сначала
+    программе нужна папка <code>saves</code>.
   </p>
 </div>
 
@@ -42,7 +43,12 @@ main() {
   </script></idyl-code-block>
 
   <p>
-    Метод <code>create_directory()</code> создаёт одну папку. Её родитель уже
+    Строка <code>"Liam;12"</code> — это имя игрока и его уровень, склеенные
+    через разделитель <code>';'</code>: знакомый вам метод <code>split()</code>
+    потом легко разберёт такую запись обратно на части.
+  </p>
+  <p>
+    Функция <code>create_directory()</code> создаёт одну папку. Её родитель уже
     должен существовать. Поэтому создать <code>game/saves/players</code> одним
     обычным вызовом не получится: сначала нет даже папки <code>game</code>.
   </p>
@@ -54,14 +60,28 @@ main() {
   <idyl-code-block><script type="text/plain">
 file.create_directory("game/saves/players", parents=true);
   </script></idyl-code-block>
+
+  <p>
+    И ещё один сюрприз: запустите программу с начала этой секции второй раз —
+    и она внезапно упадёт:
+  </p>
+
+  <idyl-error-block>main.idyl:4: runtime error: file.create_directory() cannot create 'saves': path already exists: /home/user/my_game/saves</idyl-error-block>
+
+  <p>
+    <code>create_directory()</code> отказывается создавать то, что уже
+    существует. Как узнать заранее, есть ли папка? Об этом — следующая секция.
+  </p>
 </div>
 
 <div class="docs-section">
   <h2>Что находится по этому пути?</h2>
   <p>
-    Метод <code>exists()</code> отвечает только на вопрос «что-нибудь здесь
+    Функция <code>exists()</code> отвечает только на вопрос «что-нибудь здесь
     есть?». Иногда этого недостаточно: файл нельзя открыть как папку, а в папку
-    нельзя записывать строки как в файл.
+    нельзя записывать строки как в файл. Поэтому рядом живут проверки
+    <code>is_directory()</code> и <code>is_file()</code>. Спросим про папку
+    <code>saves</code> из прошлой секции:
   </p>
 
   <idyl-code-block><script type="text/plain">
@@ -69,8 +89,6 @@ use console;
 use file;
 
 main() {
-    file.create_directory("saves");
-
     console.writeln(file.exists("saves"));
     console.writeln(file.is_directory("saves"));
     console.writeln(file.is_file("saves"));
@@ -82,35 +100,79 @@ true
 false</idyl-output-block>
 
   <p>
+    Заодно <code>exists()</code> чинит неприятность с повторным запуском:
+    создавайте папку, только если её ещё нет.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+if (not(file.exists("saves"))) {
+    file.create_directory("saves");
+}
+  </script></idyl-code-block>
+
+  <p>
     А <code>list_directory()</code> возвращает динамический массив с именами
     файлов и папок, лежащих непосредственно внутри указанной папки. Имена
     отсортированы, чтобы один и тот же проект не выдавал случайный порядок на
     разных компьютерах.
   </p>
+  <p>
+    Соберём всё вместе: программа готовит папку, кладёт в неё два сейва и
+    показывает содержимое. Запускать можно сколько угодно раз:
+  </p>
 
   <idyl-code-block><script type="text/plain">
-dyn_array<string> items = file.list_directory("saves");
-console.writeln(items);
+use console;
+use file;
+
+main() {
+    if (not(file.exists("saves"))) {
+        file.create_directory("saves");
+    }
+
+    file.ostream fout = file.open("saves/player.txt", "write");
+    fout.write_line("Liam;12");
+    fout.close();
+
+    fout = file.open("saves/world.txt", "write");
+    fout.write_line("Форт из брёвен");
+    fout.close();
+
+    dyn_array<string> items = file.list_directory("saves");
+    console.writeln(items);
+}
   </script></idyl-code-block>
+
+  <idyl-output-block>["player.txt", "world.txt"]</idyl-output-block>
 </div>
 
 <div class="docs-section">
   <h2>Копирование и переименование</h2>
   <p>
     <code>copy()</code> создаёт копию файла или целой папки вместе с её
-    содержимым. <code>rename()</code> меняет путь существующего объекта: этим
-    методом можно и переименовать, и перенести его в другую папку.
+    содержимым. <code>rename()</code> меняет путь существующего объекта: этой
+    функцией можно и переименовать его, и перенести в другую папку. А
+    <code>list_directory()</code> покажет, что получилось:
   </p>
 
   <idyl-code-block><script type="text/plain">
-file.copy("saves/player.txt", "saves/player_backup.txt");
-file.rename("saves/player_backup.txt", "saves/liam_backup.txt");
+use console;
+use file;
+
+main() {
+    file.copy("saves/player.txt", "saves/player_backup.txt");
+    file.rename("saves/player_backup.txt", "saves/liam_backup.txt");
+
+    console.writeln(file.list_directory("saves"));
+}
   </script></idyl-code-block>
 
+  <idyl-output-block>["liam_backup.txt", "player.txt", "world.txt"]</idyl-output-block>
+
   <p>
-    Оба метода откажутся работать, если путь назначения уже занят. Это защита
+    Обе функции откажутся работать, если путь назначения уже занят. Это защита
     от опечатки: программа не должна молча уничтожать старый файл только потому,
-    что ученик случайно указал его имя.
+    что вы случайно указали его имя.
   </p>
 </div>
 
@@ -146,17 +208,50 @@ file.remove("old_saves", recursive=true);
 <div class="docs-section">
   <h2>Поток ещё открыт?</h2>
   <p>
-    У входных и выходных потоков есть readonly-свойство <code>is_open</code>.
-    Оно равно <code>true</code> до вызова <code>close()</code> и
-    <code>false</code> после него.
+    Напоследок вернёмся ненадолго к потокам из прошлого урока. У входных и
+    выходных потоков есть свойство <code>is_open</code>. Как и свойства меток
+    времени, оно пишется без скобок: мы просто читаем состояние. Оно равно
+    <code>true</code> до вызова <code>close()</code> и <code>false</code> после
+    него, а записать в него ничего нельзя — переключает его только сам
+    <code>close()</code>.
   </p>
 
   <idyl-code-block><script type="text/plain">
-file.ostream fout = file.open("result.txt", "write");
-console.writeln(fout.is_open); // true
+use console;
+use file;
 
-fout.close();
-console.writeln(fout.is_open); // false
+main() {
+    file.ostream fout = file.open("result.txt", "write");
+    console.writeln(fout.is_open);
+
+    fout.close();
+    console.writeln(fout.is_open);
+}
   </script></idyl-code-block>
+
+  <idyl-output-block>true
+false</idyl-output-block>
+</div>
+
+<div class="docs-section">
+  <h2>Опорная таблица: файловая система под рукой</h2>
+  <table>
+    <thead>
+      <tr><th>Функция</th><th>Что делает</th><th>Пример</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>file.exists(путь)</code></td><td>Есть ли что-нибудь по этому пути</td><td><code>file.exists("saves")</code></td></tr>
+      <tr><td><code>file.is_file(путь)</code></td><td>Правда ли, что это файл</td><td><code>file.is_file("saves/player.txt")</code></td></tr>
+      <tr><td><code>file.is_directory(путь)</code></td><td>Правда ли, что это папка</td><td><code>file.is_directory("saves")</code></td></tr>
+      <tr><td><code>file.list_directory(путь)</code></td><td>Отсортированный список содержимого папки</td><td><code>file.list_directory("saves")</code></td></tr>
+      <tr><td><code>file.create_directory(путь)</code></td><td>Создаёт одну папку (родитель должен существовать)</td><td><code>file.create_directory("saves")</code></td></tr>
+      <tr><td><code>file.create_directory(путь, parents=true)</code></td><td>Создаёт папку вместе со всеми промежуточными</td><td><code>file.create_directory("game/saves", parents=true)</code></td></tr>
+      <tr><td><code>file.copy(откуда, куда)</code></td><td>Копирует файл или папку с содержимым</td><td><code>file.copy("a.txt", "b.txt")</code></td></tr>
+      <tr><td><code>file.rename(откуда, куда)</code></td><td>Переименовывает или переносит</td><td><code>file.rename("a.txt", "saves/a.txt")</code></td></tr>
+      <tr><td><code>file.remove(путь)</code></td><td>Удаляет файл или пустую папку</td><td><code>file.remove("old.txt")</code></td></tr>
+      <tr><td><code>file.remove(путь, recursive=true)</code></td><td>Удаляет папку со всем содержимым</td><td><code>file.remove("old_saves", recursive=true)</code></td></tr>
+      <tr><td><code>поток.is_open</code></td><td>Свойство потока: открыт ли он ещё</td><td><code>fout.is_open</code></td></tr>
+    </tbody>
+  </table>
 </div>
 

@@ -289,9 +289,10 @@ main() {
     <!-- Section 5 -->
     <div class="docs-section">
       <h2>Цвет текста</h2>
-      <p>Свойство <code>color</code> позволяет задать цвет текста в формате <strong>шестнадцатеричного кода</strong> (HEX). Например, <code>"#FF0000"</code> — красный, <code>"#00FF00"</code> — зелёный, <code>"#0000FF"</code> — синий.</p>
+      <p>Свойство <code>text_color</code> задаёт цвет текста. Сам цвет берётся из библиотеки <code>colors</code>: можно выбрать готовую константу или создать собственный цвет через <code>colors.RGB()</code>, <code>colors.HEX()</code> и другие функции.</p>
 
       <idyl-code-block><script type="text/plain">
+use colors;
 use gui;
 
 main() {
@@ -304,19 +305,19 @@ main() {
     red.text = "Красный текст";
     red.x = 50;
     red.y = 30;
-    red.color = "#FF0000";
+    red.text_color = colors.RED;
 
     gui.Label green;
     green.text = "Зелёный текст";
     green.x = 50;
     green.y = 70;
-    green.color = "#00FF00";
+    green.text_color = colors.GREEN;
 
     gui.Label blue;
     blue.text = "Синий текст";
     blue.x = 50;
     blue.y = 110;
-    blue.color = "#0000FF";
+    blue.text_color = colors.BLUE;
 
     win.add_child(red);
     win.add_child(green);
@@ -334,7 +335,7 @@ main() {
           </div>
         </div>
         <div class="coord-note">
-          🎨 Цвет задаётся в формате <code>"#RRGGBB"</code>, где RR — красный, GG — зелёный, BB — синий (00–FF).
+          🎨 У лейбла меняется именно <code>text_color</code>. Строка с HEX-кодом сама цветом не считается: сначала превратите её через <code>colors.HEX()</code>.
         </div>
       </div>
     </div>
@@ -349,18 +350,21 @@ use gui;
 
 main() {
     gui.Window win;
-    win.width = 400;
-    win.height = 200;
+    win.width = 430;
+    win.height = 180;
+    win.title = "Перекрытие";
 
     gui.Label label;
-    label.x = 20;
-    label.y = 20;
-    label.text = "Широкая электрификация южных губерний";
+    label.x = 24;
+    label.y = 34;
+    label.text = "Длинный текст лейбла тянется вправо";
 
     gui.Button btn;
-    btn.x = 50;
-    btn.y = 20;
-    btn.text = "Нажми меня";
+    btn.x = 205;
+    btn.y = 28;
+    btn.width = 150;
+    btn.height = 36;
+    btn.text = "Кнопка";
 
     win.add_child(label);
     win.add_child(btn);
@@ -369,16 +373,11 @@ main() {
 </script></idyl-code-block>
 
       <div class="overlap-demo">
-        <div style="position: absolute; left: 20px; top: 20px; color: #cdd6f4; background: rgba(0,0,0,0.3);">
-          Широкая электрификация южных губерний
-        </div>
-        <button style="position: absolute; left: 50px; top: 20px; padding: 8px 20px; background: linear-gradient(135deg, #4a90d9 0%, #357abd 100%); color: white; border: none; border-radius: 6px; cursor: pointer;">
-          Нажми меня
-        </button>
-        <div style="position: relative; min-height: 100px;"></div>
+        <div class="overlap-label">Длинный текст лейбла тянется вправо</div>
+        <button class="overlap-button">Кнопка</button>
       </div>
 
-      <p>В этом примере кнопка оказалась <strong>поверх</strong> лейбла, потому что была добавлена позже. Порядок добавления потомков (<code>add_child</code>) определяет, кто будет выше:</p>
+      <p>В этом примере кнопка частично закрывает лейбл, потому что была добавлена позже. Порядок добавления потомков (<code>add_child</code>) определяет, кто будет выше:</p>
 
       <ul>
         <li><strong>Первый добавленный</strong> — отрисовывается первым (оказывается <strong>снизу</strong>).</li>

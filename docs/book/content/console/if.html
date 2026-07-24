@@ -1,8 +1,4 @@
-<!-- Hero -->
-    
-
-    <!-- Section 1 -->
-    <div class="docs-section">
+<div class="docs-section">
       <h2>Практическая задача: покупка йогурта</h2>
       <p>Представим, что вы пишете программу, которая считает, сколько денег останется после покупки:</p>
 
@@ -30,7 +26,6 @@ main() {
       <p>Но что, если денег не хватит? Программа всё равно вычтет цену и покажет отрицательное число! Это нелогично. Нам нужно <strong>принять решение</strong>: покупать или нет.</p>
     </div>
 
-    <!-- Section 2 -->
     <div class="docs-section">
       <h2>Условный оператор: базовая форма</h2>
       <p>В Idyllium для принятия решений используется условный оператор:</p>
@@ -53,7 +48,6 @@ if (N > 50) {
       <p>Перевод на русский: «Если переменная N больше, чем 50, то вывести "ЪУЪ!"».</p>
     </div>
 
-    <!-- Section 3 -->
     <div class="docs-section">
       <h2>Защита от отрицательного баланса</h2>
 
@@ -83,7 +77,6 @@ main() {
       <p>Если денег недостаточно — программа ничего не выведет, потому что условие ложно.</p>
     </div>
 
-    <!-- Section 4 -->
     <div class="docs-section">
       <h2>Несколько условий подряд</h2>
       <p>Программа может содержать сколько угодно условных операторов:</p>
@@ -118,7 +111,6 @@ main() {
 Ваше число равно нулю!</idyl-output-block>
     </div>
 
-    <!-- Section 5 -->
     <div class="docs-section">
       <h2>Полная форма условного оператора</h2>
       <p>Иногда нужно выполнять одно действие, если условие истинно, и <em>другое</em> — если ложно:</p>
@@ -154,6 +146,8 @@ main() {
 }
 </script></idyl-code-block>
 
+      <p>Обратите внимание: условие изменилось с <code>&gt;</code> на <code>&gt;=</code> — теперь покупка удаётся, даже когда денег <em>ровно столько</em>, сколько стоит йогурт. В кошельке просто останется 0.</p>
+
       <p>Если денег достаточно:</p>
 
       <idyl-output-block>Сколько у вас денег: <span class="user_input">30</span>
@@ -167,7 +161,6 @@ main() {
 Вам не хватает денег для покупки!</idyl-output-block>
     </div>
 
-    <!-- Section 6 -->
     <div class="docs-section">
       <h2>Что такое условие?</h2>
       <p><strong>Условие</strong> — это выражение, которое является либо <strong>истинным</strong>, либо <strong>ложным</strong>.</p>
@@ -181,7 +174,6 @@ main() {
         <code>false</code> — ложь.</p>
     </div>
 
-    <!-- Section 7 -->
     <div class="docs-section">
       <h2>Тип данных <code>bool</code></h2>
       <p>В Idyllium есть специальный тип <code>bool</code> для хранения логических значений:</p>
@@ -206,7 +198,6 @@ true
 false</idyl-output-block>
     </div>
 
-    <!-- Section 8 -->
     <div class="docs-section">
       <h2>Операторы сравнения</h2>
       <p>Существует шесть операторов, которые порождают логические значения:</p>
@@ -224,30 +215,44 @@ false</idyl-output-block>
 use console;
 
 main() {
+    console.write("Введите число A: ");
     int A = console.get_int();
+
     if (A > 5) {
         console.writeln("A больше 5");
     }
+    if (A <= 11) {
+        console.writeln("A меньше или равно 11");
+    }
 
+    console.write("Введите число B: ");
     int B = console.get_int();
+
     if (B == 20) {
         console.writeln("B равно 20");
     }
-
-    int C = console.get_int();
-    if (C <= 11) {
-        console.writeln("C меньше или равно 11");
-    }
-
-    int D = console.get_int();
-    if (D != A) {
-        console.writeln("D не равно A");
+    if (B != A) {
+        console.writeln("B не равно A");
     }
 }
 </script></idyl-code-block>
+
+      <p>Введём 7 и 20 — сработают все четыре условия:</p>
+
+      <idyl-output-block>Введите число A: <span class="user_input">7</span>
+A больше 5
+A меньше или равно 11
+Введите число B: <span class="user_input">20</span>
+B равно 20
+B не равно A</idyl-output-block>
+
+      <p>А теперь введём 3 и 3 — и после второго вопроса программа промолчит: тройка не больше 5, не равна 20 и уж точно не отличается от самой себя:</p>
+
+      <idyl-output-block>Введите число A: <span class="user_input">3</span>
+A меньше или равно 11
+Введите число B: <span class="user_input">3</span></idyl-output-block>
     </div>
 
-    <!-- Section 9 -->
     <div class="docs-section">
       <h2>Оператор присваивания vs оператор сравнения</h2>
       <p>Важное различие:</p>
@@ -255,13 +260,27 @@ main() {
         <li><code>=</code> — оператор <strong>присваивания</strong>: берёт значение справа и записывает его в переменную слева;</li>
         <li><code>==</code> — оператор <strong>сравнения</strong>: проверяет, равны ли значения слева и справа, и возвращает <code>true</code>, если они равны.</li>
       </ul>
-      <p>Пример ошибки:</p>
+      <p>Пример ошибки — хотели проверить, что денег ровно сто, но вместо <code>==</code> написали <code>=</code>:</p>
 
       <idyl-code-block><script type="text/plain">
-if (money = 100) { // ОШИБКА! Это присваивание, а не сравнение }
+use console;
+
+main() {
+    int money = 50;
+
+    if (money = 100) { // хотели написать ==, а рука дрогнула
+        console.writeln("Ровно сто!");
+    }
+}
 </script></idyl-code-block>
 
+      <idyl-error-block>main.idyl:6:15: error: expected ')' after if condition
+main.idyl:6:15: error: expected expression, got 'Equal'
+main.idyl:6:17: error: expected ';' after expression
+main.idyl:6:20: error: expected ';' after expression
+main.idyl:6:20: error: expected expression, got 'RightParen'
+main.idyl:6:22: error: expected ';' after expression</idyl-error-block>
+
+      <p>Компилятор спотыкается прямо на знаке <code>=</code> и от растерянности жалуется сразу шесть раз. Не пугайтесь: читать всегда стоит первую строку. «expected ')' after if condition» означает, что присваивание внутри условия компилятор даже не признал за условие.</p>
       <p>Idyllium <strong>не разрешает</strong> использовать оператор присваивания внутри условия — это всегда ошибка компиляции. Так детская опечатка не превратится в серьёзный баг.</p>
     </div>
-
-    <!-- Lesson navigation -->

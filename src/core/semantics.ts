@@ -61,6 +61,8 @@ export interface SemanticResult {
   readonly success: boolean;
   readonly diagnostics: DiagnosticBag;
   readonly tokens: readonly IdylliumSemanticToken[];
+  /** Типы, вычисленные для узлов AST, — единственный источник типов для кодогена. */
+  readonly nodeTypes: ReadonlyMap<Expression, TypeRef>;
 }
 
 export type IdylliumSemanticTokenKind =
@@ -73,6 +75,16 @@ export type IdylliumSemanticTokenKind =
   | 'parameter';
 
 export type IdylliumSemanticTokenModifier = 'declaration' | 'readonly' | 'static' | 'defaultLibrary';
+
+// Единственный источник истины для легенды семантических токенов:
+// расширение VS Code и Web IDE строят свои легенды из этих массивов.
+export const IDYLLIUM_SEMANTIC_TOKEN_TYPES: readonly IdylliumSemanticTokenKind[] = [
+  'namespace', 'class', 'function', 'method', 'property', 'variable', 'parameter',
+];
+
+export const IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS: readonly IdylliumSemanticTokenModifier[] = [
+  'declaration', 'readonly', 'static', 'defaultLibrary',
+];
 
 export interface IdylliumSemanticToken {
   readonly kind: IdylliumSemanticTokenKind;
@@ -132,6 +144,7 @@ interface ClassContext {
 export class SemanticAnalyzer {
   private readonly diagnostics = new DiagnosticBag();
   private readonly semanticTokens: IdylliumSemanticToken[] = [];
+  private readonly nodeTypes = new Map<Expression, TypeRef>();
   private readonly imports = new Set<string>();
   private readonly userModules = new Set<string>();
   private readonly scopes: Array<Map<string, SymbolInfo>> = [new Map()];
@@ -208,6 +221,7 @@ export class SemanticAnalyzer {
       success: !this.diagnostics.hasErrors(),
       diagnostics: this.diagnostics,
       tokens: deduplicateSemanticTokens(this.semanticTokens),
+      nodeTypes: this.nodeTypes,
     };
   }
 
@@ -937,6 +951,9 @@ export class SemanticAnalyzer {
   private analyzeAssignment(statement: AssignmentStatement): void {
     const target = this.assignmentTargetInfo(statement.target);
     const targetType = target.type;
+    // Тип цели присваивания нужен кодогену (касты types.*, конверсия массивов),
+    // а через expressionType цель не проходит — фиксируем явно.
+    this.nodeTypes.set(statement.target, targetType);
     const valueType = this.expressionType(statement.value);
     const assignedType = statement.operator === '='
       ? valueType
@@ -1093,6 +1110,12 @@ export class SemanticAnalyzer {
   }
 
   private expressionType(expression: Expression): TypeRef {
+    const type = this.computeExpressionType(expression);
+    this.nodeTypes.set(expression, type);
+    return type;
+  }
+
+  private computeExpressionType(expression: Expression): TypeRef {
     switch (expression.kind) {
       case 'LiteralExpression':
         return expression.valueType === 'null' ? NULL_TYPE : primitive(expression.valueType);
@@ -1427,6 +1450,26 @@ export class SemanticAnalyzer {
       return INT;
     }
 
+    if (callee.name === 'abs') {
+      if (!this.imports.has('math')) {
+        this.diagnostics.error(callee.object.range, "'math' is not imported (use 'use math;')");
+        return ERROR_TYPE;
+      }
+
+      const fn: FunctionSpec = {
+        name: 'abs',
+        parameters: [{ name: 'value', type: FLOAT }],
+        returnType: FLOAT,
+      };
+      this.checkArgumentList(expression.args, fn, expression.range);
+      const ordered = this.orderedArguments(expression.args, fn);
+      const argument = ordered[0];
+      if (!argument) return ERROR_TYPE;
+
+      // Модуль числа сохраняет «целочисленность»: abs(int) — int, abs(float) — float.
+      return isIntegerLike(this.expressionType(argument.value)) ? INT : FLOAT;
+    }
+
     if (callee.name === 'clamp') {
       if (!this.imports.has('math')) {
         this.diagnostics.error(callee.object.range, "'math' is not imported (use 'use math;')");
@@ -1708,6 +1751,13 @@ export class SemanticAnalyzer {
 
     for (const item of resolved) {
       const argType = this.expressionType(item.arg.value);
+      if (fn.printsValues) {
+        const printableError = this.printableTypeError(argType);
+        if (printableError) {
+          this.diagnostics.error(item.arg.range, printableError);
+          continue;
+        }
+      }
       const parameter = item.parameter;
       if (parameter) {
         if (parameter.exactType) {
@@ -1747,6 +1797,51 @@ export class SemanticAnalyzer {
         );
       }
     }
+  }
+
+  // Печать значений: объект пользовательского класса можно печатать только при
+  // наличии публичного `string function to_string()` без параметров — аналог
+  // __str__ из Python. Массивы объектов не печатаются даже с to_string():
+  // инспекция массива синхронна и метод вызвать не может.
+  private printableTypeError(type: TypeRef): string | null {
+    if (type.kind === 'class') {
+      return this.classHasPublicToString(type.name)
+        ? null
+        : `cannot print object of class '${type.name}' directly`;
+    }
+    if (type.kind === 'qualified' && this.userModuleRegistry.hasModule(type.moduleName)) {
+      const classSpec = this.userModuleRegistry.getModule(type.moduleName)?.classes.get(type.name);
+      if (!classSpec) return null;
+      const method = classSpec.methods.find((item) => item.name === 'to_string');
+      const printable = method !== undefined
+        && !method.isStatic
+        && method.access === 'public'
+        && method.spec.parameters.length === 0
+        && sameType(method.spec.returnType, STRING);
+      return printable ? null : `cannot print object of class '${type.moduleName}.${type.name}' directly`;
+    }
+    if (type.kind === 'array') {
+      const element = type.elementType;
+      if (element.kind === 'class') {
+        return `cannot print an array of '${element.name}' objects directly`;
+      }
+      if (element.kind === 'qualified' && this.userModuleRegistry.hasModule(element.moduleName)) {
+        return `cannot print an array of '${element.moduleName}.${element.name}' objects directly`;
+      }
+      return this.printableTypeError(element);
+    }
+    return null;
+  }
+
+  private classHasPublicToString(className: string): boolean {
+    const info = this.classes.get(className);
+    if (!info) return false;
+    const spec = info.methods.get('to_string');
+    if (!spec || spec.parameters.length > 0) return false;
+    if (!sameType(spec.returnType, STRING)) return false;
+    const access = info.methodAccess.get('to_string');
+    if (access === undefined) return true;
+    return access.access === 'public' && !access.isStatic;
   }
 
   private resolveArguments(

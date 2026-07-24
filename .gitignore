@@ -22,3 +22,13 @@ Thumbs.db
 
 # Vite cache
 .vite/
+
+# Локальная кухня разработки — остаётся на компе, в репозиторий не попадает
+plan/
+spec/
+just_for_fun/
+from_docs_team/
+pdf_examples/
+my_images/
+Idyllium.code-workspace
+*.vsix

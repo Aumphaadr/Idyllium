@@ -1,4 +1,4 @@
-import { compileIdyllium, runIdyllium, IdylliumLanguageService, IdylliumProject, compileProject, createRuntime, createMemoryRuntimeFileSystem, createNodeImageService, createDefaultStandardLibrary, formatIdyllium, runIdylliumInBrowser } from '../src';
+import { compileIdyllium, runIdyllium, IdylliumLanguageService, IdylliumProject, compileProject, createRuntime, createMemoryRuntimeFileSystem, createNodeImageService, createDefaultStandardLibrary, formatIdyllium, runIdylliumInBrowser, IDYLLIUM_SEMANTIC_TOKEN_TYPES, IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS } from '../src';
 import { scaleRaster } from '../src/runtime/image-service';
 
 const fs: any = require('fs');
@@ -629,7 +629,7 @@ test('time and file modules run in headless runtime', async () => {
     'main() {',
     '    console.write(file.exists("001.idyl"), ":", file.exists("missing.idyl"));',
     '}',
-  ].join('\n'), {}, { file: 'spec/lessons/examples/cli/001_hello/001.idyl' });
+  ].join('\n'), {}, { file: 'spec/lessons/examples/console/hello/001.idyl' });
 
   assert(fileResult.success, fileResult.runtimeError ?? fileResult.compilation.diagnosticsText);
   assert(fileResult.output === 'true:false', `unexpected file.exists output: ${JSON.stringify(fileResult.output)}`);
@@ -680,6 +680,357 @@ test('try catch cannot swallow a stopped program', async () => {
   assert(!result.success, 'expected stopped program to escape catch');
   assert(result.output === 'start:finally', `unexpected stopped output: ${JSON.stringify(result.output)}`);
   assert(result.runtimeError?.includes('program was stopped') === true, `expected stopped runtime error, got ${result.runtimeError}`);
+});
+
+test('tight compute loop can be stopped by abort signal', async () => {
+  const controller = new AbortController();
+  const resultPromise = runIdyllium(`
+    main() {
+      int i = 0;
+      while (true) {
+        i = i + 1;
+      }
+    }
+  `, { abortSignal: controller.signal }, { file: 'main.idyl' });
+
+  await new Promise((resolve) => setTimeout(resolve, 40));
+  controller.abort();
+  const result = await resultPromise;
+  assert(!result.success, 'expected stopped tight loop to fail');
+  assert(result.runtimeError?.includes('program was stopped') === true, `expected stopped runtime error, got ${result.runtimeError}`);
+});
+
+test('try catch cannot swallow a stopped loop and all loop kinds stay abortable', async () => {
+  const controller = new AbortController();
+  const resultPromise = runIdyllium(`
+    use console;
+
+    main() {
+      int i = 0;
+      try {
+        do {
+          for (int j = 0; j < 1000000000; j = j + 1) {
+            i = i + 1;
+          }
+        } while (true);
+      } catch (problem) {
+        console.write("caught:", problem.message);
+      }
+    }
+  `, { abortSignal: controller.signal }, { file: 'main.idyl' });
+
+  await new Promise((resolve) => setTimeout(resolve, 40));
+  controller.abort();
+  const result = await resultPromise;
+  assert(!result.success, 'expected stopped nested loops to escape catch');
+  assert(!result.output.includes('caught'), `stop must not be catchable, got output ${JSON.stringify(result.output)}`);
+  assert(result.runtimeError?.includes('program was stopped') === true, `expected stopped runtime error, got ${result.runtimeError}`);
+});
+
+test('loops with tick checkpoints keep exact semantics', async () => {
+  const result = await runIdyllium([
+    'use console;',
+    '',
+    'main() {',
+    '    int total = 0;',
+    '    for (int i = 0; i < 5000; i = i + 1) {',
+    '        total = total + i;',
+    '    }',
+    '    int steps = 0;',
+    '    while (steps < 3000) {',
+    '        steps = steps + 1;',
+    '        if (steps == 2500) {',
+    '            break;',
+    '        }',
+    '    }',
+    '    do {',
+    '        steps = steps - 1;',
+    '    } while (steps > 2000);',
+    '    console.write(total, ":", steps);',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === '12497500:2000', `unexpected loop semantics output: ${JSON.stringify(result.output)}`);
+});
+
+test('semantic node types drive fixed-width casts in codegen', async () => {
+  const result = await runIdyllium([
+    'use console;',
+    'use types;',
+    '',
+    'types.uint8 function next_code(types.uint8 seed) {',
+    '    return seed + 3;',
+    '}',
+    '',
+    'class Counter {',
+    '    types.uint8 value;',
+    '',
+    '    void function bump(int amount) {',
+    '        this.value += amount;',
+    '    }',
+    '}',
+    '',
+    'main() {',
+    '    Counter c;',
+    '    c.value = 250;',
+    '    c.bump(10);',
+    '    console.write(c.value, ":");',
+    '    console.write(next_code(253).to_bin(), ":");',
+    '    array<types.uint8, 2> cells = [250, 5];',
+    '    cells[0] += 10;',
+    '    console.write(cells[0]);',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === '4:00000000:4', `unexpected fixed-width cast output: ${JSON.stringify(result.output)}`);
+});
+
+test('math.abs preserves integer typing and bigint precision', async () => {
+  const result = await runIdyllium([
+    'use console;',
+    'use math;',
+    '',
+    'main() {',
+    '    int a = math.abs(-5);',
+    '    float b = math.abs(-2.5);',
+    '    int big = math.abs(-9007199254740993);',
+    '    console.write(a, ":", b, ":", big, ":", math.abs(value = -7));',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === '5:2.5:9007199254740993:7',
+    `unexpected math.abs output: ${JSON.stringify(result.output)}`,
+  );
+
+  // Ненулевые числа, округляющиеся в 0 при дефолтной точности, печатаются
+  // научной записью, а не теряются как "0".
+  const tiny = await runIdyllium([
+    'use console;',
+    '',
+    'main() {',
+    '    float small = 1.5;',
+    '    small = small / 1000000000000.0;',
+    '    console.write(small, ":", 0.0);',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+  assert(tiny.success, tiny.runtimeError ?? tiny.compilation.diagnosticsText);
+  assert(tiny.output === '1.5e-12:0', `unexpected tiny float output: ${JSON.stringify(tiny.output)}`);
+
+  assertFails([
+    'use console;',
+    'use math;',
+    '',
+    'main() {',
+    '    int broken = math.abs(-2.5);',
+    '}',
+  ].join('\n'), "cannot assign 'float' value to 'int' variable");
+});
+
+test('file errors show project-relative paths', async () => {
+  await assertRuntimeFails([
+    'use file;',
+    '',
+    'main() {',
+    '    file.open("missing_input.txt", "read");',
+    '}',
+  ].join('\n'), "file.open() cannot open 'missing_input.txt' for reading: file does not exist");
+
+  const browserResult = await runIdylliumInBrowser({
+    entryFile: '/workspace/main.idyl',
+    files: {
+      '/workspace/main.idyl': [
+        'use file;',
+        '',
+        'main() {',
+        '    file.open("save.txt", "read");',
+        '}',
+      ].join('\n'),
+    },
+  });
+  assert(!browserResult.success, 'expected missing browser file to fail');
+  assert(
+    browserResult.runtimeError?.includes("cannot open 'save.txt' for reading") === true,
+    `expected relative path in browser file error, got ${browserResult.runtimeError}`,
+  );
+  assert(
+    browserResult.runtimeError?.includes("'/workspace/save.txt'") !== true,
+    `browser file error must not leak absolute paths, got ${browserResult.runtimeError}`,
+  );
+});
+
+test('infinite recursion reports a readable idyllium error', async () => {
+  const result = await runIdyllium([
+    'use console;',
+    '',
+    'int function boom(int n) {',
+    '    return boom(n + 1);',
+    '}',
+    '',
+    'main() {',
+    '    console.write(boom(0));',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+
+  assert(!result.success, 'expected infinite recursion to fail');
+  assert(
+    result.runtimeError?.includes('main.idyl: runtime error: maximum call depth exceeded') === true,
+    `expected idyllium-formatted recursion error, got ${result.runtimeError}`,
+  );
+  assert(
+    result.runtimeError?.includes("'boom'") === true,
+    `expected the recursive function name in the error, got ${result.runtimeError}`,
+  );
+});
+
+test('printing class objects requires a public to_string method', async () => {
+  assertFails([
+    'use console;',
+    '',
+    'class Cat {',
+    '    string name;',
+    '}',
+    '',
+    'main() {',
+    '    Cat cat;',
+    '    console.writeln(cat);',
+    '}',
+  ].join('\n'), "cannot print object of class 'Cat' directly");
+
+  assertFails([
+    'use console;',
+    '',
+    'class Cat {',
+    '    string name;',
+    '}',
+    '',
+    'main() {',
+    '    dyn_array<Cat> cats = [];',
+    '    console.writeln(cats);',
+    '}',
+  ].join('\n'), "cannot print an array of 'Cat' objects directly");
+
+  assertFails([
+    'use console;',
+    '',
+    'class Cat {',
+    'private:',
+    '    string function to_string() {',
+    '        return "x";',
+    '    }',
+    '}',
+    '',
+    'main() {',
+    '    Cat cat;',
+    '    console.writeln(cat);',
+    '}',
+  ].join('\n'), "cannot print object of class 'Cat' directly");
+
+  const result = await runIdyllium([
+    'use console;',
+    '',
+    'class Cat {',
+    '    string name;',
+    '',
+    '    string function to_string() {',
+    '        return "Cat(" + this.name + ")";',
+    '    }',
+    '}',
+    '',
+    'main() {',
+    '    Cat cat;',
+    '    cat.name = "Барсик";',
+    '    console.write(cat, ":", to_string(cat) + "!");',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === 'Cat(Барсик):Cat(Барсик)!', `unexpected to_string output: ${JSON.stringify(result.output)}`);
+});
+
+test('class declarations accept an optional trailing semicolon', () => {
+  assertCompiles([
+    'class Point {',
+    '    int x;',
+    '};',
+    '',
+    'main() {',
+    '    Point p;',
+    '    p.x = 1;',
+    '}',
+  ].join('\n'));
+});
+
+test('destructors produce a single friendly diagnostic', () => {
+  const compiled = compileIdyllium([
+    'class Hero {',
+    '    int hp;',
+    '',
+    '    destructor Hero() {',
+    '        int x = 1;',
+    '    }',
+    '}',
+    '',
+    'main() {',
+    '    Hero h;',
+    '    h.hp = 5;',
+    '}',
+  ].join('\n'), { file: 'main.idyl' });
+
+  assert(!compiled.success, 'expected destructor to be rejected');
+  assert(
+    compiled.diagnosticsText.includes('destructors are not supported yet'),
+    `expected friendly destructor diagnostic, got:\n${compiled.diagnosticsText}`,
+  );
+  assert(
+    !compiled.diagnosticsText.includes('unexpected token'),
+    `expected no raw parser cascade, got:\n${compiled.diagnosticsText}`,
+  );
+});
+
+test('bare class declarations keep default field values', async () => {
+  const result = await runIdyllium([
+    'use console;',
+    '',
+    'class Animal {',
+    '    string name;',
+    '',
+    '    constructor Animal(string ex_name) {',
+    '        this.name = ex_name;',
+    '    }',
+    '}',
+    '',
+    'class Robot {',
+    '    string label;',
+    '',
+    '    constructor Robot(string ex_label = "R2") {',
+    '        this.label = ex_label;',
+    '    }',
+    '}',
+    '',
+    'class Greeter {',
+    '    string text;',
+    '',
+    '    constructor Greeter() {',
+    '        this.text = "hi";',
+    '    }',
+    '}',
+    '',
+    'main() {',
+    '    Animal a;',
+    '    Robot r;',
+    '    Greeter g;',
+    '    console.write("[", a.name, "]:", r.label, ":", g.text);',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  // Конструктор с обязательными параметрами при голом объявлении не вызывается
+  // (поля — дефолтные), конструкторы без обязательных параметров — вызываются.
+  assert(result.output === '[]:R2:hi', `unexpected bare declaration output: ${JSON.stringify(result.output)}`);
 });
 
 test('time stamp read-only properties run in UTC by default', async () => {
@@ -1313,7 +1664,7 @@ test('browser runtime snapshots drawable asset resource uris', async () => {
       },
       '/workspace/cat.png': {
         content: '',
-        bytes: new Uint8Array(fs.readFileSync(path.join(process.cwd(), 'my_images/cat.png'))),
+        bytes: new Uint8Array(fs.readFileSync(path.join(process.cwd(), 'tests/fixtures/images/cat.png'))),
         resourceUri: 'blob:idyllium-cat',
       },
     },
@@ -1450,7 +1801,7 @@ test('image resources transform export and build animations', async () => {
         }
       `,
       '/workspace/cat.png': {
-        bytes: new Uint8Array(fs.readFileSync(path.join(process.cwd(), 'my_images/cat.png'))),
+        bytes: new Uint8Array(fs.readFileSync(path.join(process.cwd(), 'tests/fixtures/images/cat.png'))),
       },
     },
   });
@@ -1509,7 +1860,7 @@ test('image Bitmap edits pixels snapshots Static values and exports', async () =
         }
       `,
       '/workspace/cat.png': {
-        bytes: new Uint8Array(fs.readFileSync(path.join(process.cwd(), 'my_images/cat.png'))),
+        bytes: new Uint8Array(fs.readFileSync(path.join(process.cwd(), 'tests/fixtures/images/cat.png'))),
       },
     },
   });
@@ -4635,6 +4986,150 @@ test('gui timers tick during gui steps', async () => {
   assert(label().properties.text === '3', `expected stopped timer to stay at 3, got ${JSON.stringify(label())}`);
 });
 
+test('gui timer supports pause resume restart and the running flag', async () => {
+  const result = await runWithInspectableRuntime(`
+    use gui;
+
+    main() {
+      gui.Window win;
+      gui.Label label;
+      label.text = "init";
+      int ticks = 0;
+
+      gui.Timer timer;
+      timer.interval = 1000;
+
+      gui.Button control;
+      control.text = "control";
+      control.on_click = void function() {
+        if (timer.running) {
+          timer.stop();
+        } else {
+          timer.start();
+        }
+        label.text = to_string(ticks) + ":" + to_string(timer.running);
+      };
+
+      gui.Button reset;
+      reset.text = "reset";
+      reset.on_click = void function() {
+        timer.restart();
+        label.text = to_string(ticks) + ":" + to_string(timer.running);
+      };
+
+      timer.on_tick = void function() {
+        ticks += 1;
+        label.text = to_string(ticks) + ":" + to_string(timer.running);
+      };
+
+      timer.start();
+      win.add_child(label);
+      win.add_child(control);
+      win.add_child(reset);
+      win.show();
+    }
+  `);
+
+  const widget = (type: string, text?: string) => {
+    const found = result.runtime.getWindows()[0].children.find((item) => (
+      item.type === type && (text === undefined || item.properties.text === text)
+    ));
+    assert(found !== undefined, `expected widget ${type} ${text ?? ''}`);
+    return found;
+  };
+  const label = () => result.runtime.getWindows()[0].children.find((item) => item.type === 'gui.Label');
+
+  await result.runtime.stepGui(0.4);
+  assert(label()?.properties.text === 'init', 'expected no tick before the interval elapses');
+
+  await result.runtime.dispatchGuiEvent(widget('gui.Button', 'control').id, 'click', {});
+  assert(label()?.properties.text === '0:false', `expected stop to pause the timer, got ${JSON.stringify(label())}`);
+  assert(await result.runtime.stepGui(0.5) === false, 'expected a paused timer to keep GUI state unchanged');
+
+  await result.runtime.dispatchGuiEvent(widget('gui.Button', 'control').id, 'click', {});
+  assert(label()?.properties.text === '0:true', `expected start to resume the timer, got ${JSON.stringify(label())}`);
+  await result.runtime.stepGui(0.7);
+  assert(label()?.properties.text === '1:true', `expected resume to keep the 0.4s of progress, got ${JSON.stringify(label())}`);
+
+  await result.runtime.dispatchGuiEvent(widget('gui.Button', 'reset').id, 'click', {});
+  await result.runtime.stepGui(0.9);
+  assert(label()?.properties.text === '1:true', `expected restart to drop accumulated progress, got ${JSON.stringify(label())}`);
+  await result.runtime.stepGui(0.2);
+  assert(label()?.properties.text === '2:true', `expected the restarted timer to tick after a full interval, got ${JSON.stringify(label())}`);
+
+  assertFails(`
+    use gui;
+
+    main() {
+      gui.Timer timer;
+      timer.running = true;
+    }
+  `, "property 'running' is read-only");
+});
+
+test('radio button deselection fires on_change for group siblings', async () => {
+  const result = await runWithInspectableRuntime(`
+    use gui;
+
+    main() {
+      gui.Window win;
+      gui.Label label;
+      label.text = "";
+
+      gui.RadioButton first;
+      first.text = "first";
+      first.group = "letters";
+      first.is_selected = true;
+      first.on_change = void function() {
+        label.text = label.text + "first=" + to_string(first.is_selected) + ";";
+      };
+
+      gui.RadioButton second;
+      second.text = "second";
+      second.group = "letters";
+      second.on_change = void function() {
+        label.text = label.text + "second=" + to_string(second.is_selected) + ";";
+      };
+
+      win.add_child(label);
+      win.add_child(first);
+      win.add_child(second);
+      win.show();
+    }
+  `);
+
+  const widget = (type: string, text: string) => {
+    const found = result.runtime.getWindows()[0].children.find((item) => (
+      item.type === type && item.properties.text === text
+    ));
+    assert(found !== undefined, `expected widget ${type} ${text}`);
+    return found;
+  };
+  const label = () => result.runtime.getWindows()[0].children.find((item) => item.type === 'gui.Label');
+
+  await result.runtime.dispatchGuiEvent(widget('gui.RadioButton', 'second').id, 'change', { is_selected: true });
+  assert(
+    label()?.properties.text === 'second=true;first=false;',
+    `expected on_change for both the selected and deselected radio, got ${JSON.stringify(label())}`,
+  );
+  assert(widget('gui.RadioButton', 'first').properties.is_selected === false, 'expected first radio to be deselected');
+});
+
+test('time stamps carry milliseconds from fractional unix seconds', async () => {
+  const result = await runIdyllium([
+    'use console;',
+    'use time;',
+    '',
+    'main() {',
+    '    time.stamp t = time.from_unix(946684800.25);',
+    '    console.write(t.second, ":", t.millisecond, ":", t.unix, ":", t.in_timezone("Europe/Moscow").millisecond);',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === '0:250:946684800:250', `unexpected millisecond output: ${JSON.stringify(result.output)}`);
+});
+
 test('gui modals snapshot close and run callbacks', async () => {
   const result = await runWithInspectableRuntime(`
     use gui;
@@ -5383,6 +5878,70 @@ test('project API compiles files and powers user module completions', () => {
   const symbols = project.documentSymbols('rect.idyl');
   assert(symbols.some((item) => item.name === 'Rect' && item.kind === 'class'), 'expected Rect document symbol');
   assert(symbols.some((item) => item.name === 'getArea' && item.kind === 'method'), 'expected getArea document symbol');
+});
+
+test('single-source metadata stays in sync across packages', () => {
+  const root = process.cwd();
+  const rootPackage = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+  const extensionPackage = JSON.parse(
+    fs.readFileSync(path.join(root, 'packages/vscode-idyllium/package.json'), 'utf8'),
+  );
+
+  // Версия: единственный источник — корневой package.json.
+  assert(
+    extensionPackage.version === rootPackage.version,
+    `extension version ${extensionPackage.version} must match root ${rootPackage.version} (run npm run build:vscode)`,
+  );
+  const ideHtml = fs.readFileSync(path.join(root, 'packages/web-ide/index.html'), 'utf8');
+  assert(!/v\d+\.\d+\.\d+/u.test(ideHtml), 'web IDE index.html must not hardcode a version (version.js provides it)');
+  assert(ideHtml.includes('version.js'), 'web IDE index.html must load version.js');
+
+  // Легенда семантических токенов: package.json расширения соответствует ядру.
+  const scopes = extensionPackage.contributes?.semanticTokenScopes?.[0]?.scopes ?? {};
+  const baseKeys = new Set<string>();
+  for (const key of Object.keys(scopes)) {
+    const [type, modifier] = key.split('.', 2);
+    baseKeys.add(type);
+    if (modifier !== undefined) {
+      assert(
+        (IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS as readonly string[]).includes(modifier),
+        `semanticTokenScopes key '${key}' uses unknown modifier '${modifier}'`,
+      );
+    }
+  }
+  for (const type of IDYLLIUM_SEMANTIC_TOKEN_TYPES) {
+    assert(baseKeys.has(type), `semanticTokenScopes must map core token type '${type}'`);
+  }
+  for (const type of baseKeys) {
+    assert(
+      (IDYLLIUM_SEMANTIC_TOKEN_TYPES as readonly string[]).includes(type),
+      `semanticTokenScopes maps unknown token type '${type}'`,
+    );
+  }
+
+  // Копия gui-renderer в расширении байт-в-байт равна источнику.
+  const rendererSource = path.join(root, 'packages/gui-renderer');
+  const rendererCopy = path.join(root, 'packages/vscode-idyllium/gui-renderer');
+  const walk = (dir: string): string[] => {
+    const output: string[] = [];
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const absolute = path.join(dir, entry.name);
+      if (entry.isDirectory()) output.push(...walk(absolute));
+      else output.push(absolute);
+    }
+    return output;
+  };
+  const sourceFiles = walk(rendererSource).map((file: string) => path.relative(rendererSource, file)).sort();
+  const copyFiles = walk(rendererCopy).map((file: string) => path.relative(rendererCopy, file)).sort();
+  assert(
+    JSON.stringify(sourceFiles) === JSON.stringify(copyFiles),
+    `gui-renderer copies list different files (run npm run build:vscode):\n${sourceFiles.join(', ')}\nvs\n${copyFiles.join(', ')}`,
+  );
+  for (const relative of sourceFiles) {
+    const left = fs.readFileSync(path.join(rendererSource, relative));
+    const right = fs.readFileSync(path.join(rendererCopy, relative));
+    assert(left.equals(right), `gui-renderer copy differs from source: ${relative} (run npm run build:vscode)`);
+  }
 });
 
 test('VSIX themes distinguish namespaces from classes like Web IDE', () => {

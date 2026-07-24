@@ -1,10 +1,52 @@
-<!-- Hero -->
-    
+<div class="docs-section">
+      <h2>Зачем нужны циклы?</h2>
+      <p>Представим, что нужно вывести «Привет!» десять раз.</p>
+      <p>Без цикла — только копировать строку, пока рука не отвалится:</p>
 
-    <!-- Section 1 -->
+      <idyl-code-block><script type="text/plain">
+console.writeln("Привет!");
+console.writeln("Привет!");
+console.writeln("Привет!");
+console.writeln("Привет!");
+console.writeln("Привет!");
+console.writeln("Привет!");
+console.writeln("Привет!");
+console.writeln("Привет!");
+console.writeln("Привет!");
+console.writeln("Привет!");
+</script></idyl-code-block>
+
+      <p>А вот та же задача с циклом:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    for (int i = 0; i < 10; i += 1) {
+        console.writeln("Привет!");
+    }
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Привет!
+Привет!
+Привет!
+Привет!
+Привет!
+Привет!
+Привет!
+Привет!
+Привет!
+Привет!</idyl-output-block>
+
+      <p>Вывод одинаковый, а кода — три строчки вместо десяти. Не пугайтесь строки <code>for (...)</code> — к концу урока вы будете читать её свободно.</p>
+      <p>А если нужно повторить действие <strong>тысячу</strong>, <strong>миллион</strong> или <strong>столько, сколько скажет пользователь</strong> раз?</p>
+      <p>Без циклов — это невозможно. С циклами — тривиально. В Idyllium циклов три: <code>while</code>, <code>do-while</code> и <code>for</code>. Разберём каждый.</p>
+    </div>
+
     <div class="docs-section">
       <h2>Цикл <code>while</code> — «пока»</h2>
-      <p>Цикл <code>while</code> проверяет условие <strong>перед</strong> каждой итерацией. Если условие истинно — выполняет тело цикла. Если ложно — выходит из цикла.</p>
+      <p>Цикл <code>while</code> проверяет условие <strong>перед</strong> каждой итерацией — так называется одно повторение тела цикла. Если условие истинно — выполняет тело. Если ложно — выходит из цикла.</p>
 
       <idyl-code-block><script type="text/plain">
 use console;
@@ -13,7 +55,7 @@ main() {
     int count = 1;
     while (count <= 5) {
         console.writeln("Итерация ", count);
-        count = count + 1;
+        count += 1;
     }
 }
 </script></idyl-code-block>
@@ -27,7 +69,6 @@ main() {
       <p>Если условие изначально ложно — цикл не выполнится ни разу.</p>
     </div>
 
-    <!-- Section 2 -->
     <div class="docs-section">
       <h2>Цикл <code>do-while</code> — «сделай, потом проверь»</h2>
       <p>Цикл <code>do-while</code> сначала выполняет тело цикла, <strong>затем</strong> проверяет условие. Это гарантирует, что тело цикла выполнится как минимум один раз.</p>
@@ -46,10 +87,21 @@ main() {
 }
 </script></idyl-code-block>
 
+      <p>Пока пользователь промахивается, цикл снова и снова задаёт вопрос:</p>
+
+      <idyl-output-block>Угадайте число от 1 до 10: <span class="user_input">3</span>
+Угадайте число от 1 до 10: <span class="user_input">9</span>
+Угадайте число от 1 до 10: <span class="user_input">7</span>
+Правильно! Это 7!</idyl-output-block>
+
+      <p>А если угадать с первой попытки — тело всё равно выполнится один раз (иначе спрашивать было бы некому):</p>
+
+      <idyl-output-block>Угадайте число от 1 до 10: <span class="user_input">7</span>
+Правильно! Это 7!</idyl-output-block>
+
       <p>Такой цикл идеален, когда нужно запросить данные у пользователя <strong>хотя бы один раз</strong>.</p>
     </div>
 
-    <!-- Section 3 -->
     <div class="docs-section">
       <h2>Цикл <code>for</code> — полный контроль</h2>
       <p>Цикл <code>for</code> состоит из трёх частей:</p>
@@ -63,7 +115,7 @@ main() {
 use console;
 
 main() {
-    for (int i = 0; i < 3; i = i + 1) {
+    for (int i = 0; i < 3; i += 1) {
         console.writeln("i = ", i);
     }
 }
@@ -73,41 +125,9 @@ main() {
 i = 1
 i = 2</idyl-output-block>
 
-      <p>Эта структура делает цикл <code>for</code> идеальным для повторения действий <strong>известное количество раз</strong>.</p>
+      <p>Эта структура делает цикл <code>for</code> идеальным для повторения действий <strong>известное количество раз</strong>. Теперь строка из первой секции читается легко: «создай счётчик <code>i</code>, крути цикл, пока <code>i &lt; 10</code>, после каждой итерации прибавляй к <code>i</code> единицу».</p>
     </div>
 
-    <!-- Section 4 -->
-    <div class="docs-section">
-      <h2>Зачем нужны циклы?</h2>
-      <p>Представим, что нужно вывести «Привет!» десять раз.</p>
-      <p>Без цикла:</p>
-
-      <idyl-code-block><script type="text/plain">
-console.writeln("Привет!");
-console.writeln("Привет!");
-console.writeln("Привет!");
-console.writeln("Привет!");
-console.writeln("Привет!");
-console.writeln("Привет!");
-console.writeln("Привет!");
-console.writeln("Привет!");
-console.writeln("Привет!");
-console.writeln("Привет!");
-</script></idyl-code-block>
-
-      <p>С циклом:</p>
-
-      <idyl-code-block><script type="text/plain">
-for (int i = 0; i < 10; i = i + 1) {
-    console.writeln("Привет!");
-}
-</script></idyl-code-block>
-
-      <p>А если нужно повторить действие <strong>тысячу</strong>, <strong>миллион</strong> или <strong>столько, сколько скажет пользователь</strong> раз?</p>
-      <p>Без циклов — это невозможно. С циклами — тривиально.</p>
-    </div>
-
-    <!-- Section 5 -->
     <div class="docs-section">
       <h2>Оператор <code>break</code> — досрочный выход</h2>
       <p>Оператор <code>break</code> немедленно прерывает выполнение цикла и передаёт управление на следующую строчку <strong>после</strong> цикла.</p>
@@ -116,7 +136,7 @@ for (int i = 0; i < 10; i = i + 1) {
 use console;
 
 main() {
-    for (int i = 1; i <= 10; i = i + 1) {
+    for (int i = 1; i <= 10; i += 1) {
         if (i == 5) {
             break; // выйти из цикла
         }
@@ -135,7 +155,6 @@ main() {
       <p><code>break</code> особенно полезен, когда условие выхода становится известным внутри цикла.</p>
     </div>
 
-    <!-- Section 6 -->
     <div class="docs-section">
       <h2>Оператор <code>continue</code> — пропуск итерации</h2>
       <p>Оператор <code>continue</code> прерывает текущую итерацию цикла и переходит к следующей (проверке условия и, при необходимости, выполнению тела).</p>
@@ -144,7 +163,7 @@ main() {
 use console;
 
 main() {
-    for (int i = 1; i <= 5; i = i + 1) {
+    for (int i = 1; i <= 5; i += 1) {
         if (i == 3) {
             continue; // пропустить вывод тройки
         }
@@ -161,4 +180,17 @@ main() {
       <p>Здесь число 3 не выводится, потому что на этой итерации сработал <code>continue</code>.</p>
     </div>
 
-    <!-- Lesson navigation -->
+    <div class="docs-section">
+      <h2>Итог: какой цикл когда выбирать?</h2>
+      <table>
+        <thead>
+          <tr><th>Цикл</th><th>Когда выбирать</th><th>Пример задачи</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>while</code></td><td>Повторять, пока условие истинно; заранее неизвестно, сколько раз</td><td>Пока в кошельке есть монеты — покупать мороженое</td></tr>
+          <tr><td><code>do-while</code></td><td>То же самое, но тело должно выполниться хотя бы один раз</td><td>Спрашивать ответ, пока пользователь не угадает</td></tr>
+          <tr><td><code>for</code></td><td>Количество повторений известно заранее</td><td>Вывести «Привет!» ровно десять раз</td></tr>
+        </tbody>
+      </table>
+      <p>Если ошибётесь с выбором — ничего страшного: любую задачу можно решить любым из трёх циклов. Просто одним из них будет удобнее.</p>
+    </div>

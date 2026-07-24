@@ -27,8 +27,8 @@
     'float32', 'float64', 'int8', 'int16', 'int32', 'int64',
     'istream', 'ostream', 'stamp', 'stream', 'uint8', 'uint16', 'uint32', 'uint64',
   ]);
-  const SEMANTIC_TOKEN_TYPES = ['namespace', 'class', 'function', 'method', 'property', 'variable', 'parameter'];
-  const SEMANTIC_TOKEN_MODIFIERS = ['declaration', 'readonly', 'static', 'defaultLibrary'];
+  const SEMANTIC_TOKEN_TYPES = [...window.Idyllium.IDYLLIUM_SEMANTIC_TOKEN_TYPES];
+  const SEMANTIC_TOKEN_MODIFIERS = [...window.Idyllium.IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS];
   const CRC32_TABLE = buildCrc32Table();
   const PROJECT_DB_NAME = 'idyllium-web-ide';
   const PROJECT_DB_STORE = 'project';
@@ -4251,20 +4251,7 @@
   }
 
   function guiLoopIntervalMs(runtime) {
-    const candidates = [];
-    const collectCanvas = (canvas) => {
-      const limit = Number(canvas && canvas.properties && canvas.properties.framerate_limit);
-      if (Number.isFinite(limit) && limit > 0) candidates.push(limit);
-    };
-    for (const canvas of runtime.getCanvases()) collectCanvas(canvas);
-    const visitWidget = (widget) => {
-      if (!widget) return;
-      if (widget.canvas) collectCanvas(widget.canvas);
-      for (const child of widget.children || []) visitWidget(child);
-    };
-    for (const win of runtime.getWindows()) visitWidget(win);
-    const fps = Math.max(1, Math.min(60, candidates.length > 0 ? Math.max(...candidates) : 30));
-    return Math.max(16, Math.round(1000 / fps));
+    return window.Idyllium.guiPreviewIntervalMs(runtime.getWindows(), runtime.getCanvases());
   }
 
   function postEmptySnapshot() {

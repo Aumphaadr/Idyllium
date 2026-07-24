@@ -6,7 +6,7 @@
 "dist/src/browser.js": function(require, module, exports) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.IdylliumProject = exports.formatIdyllium = exports.compileIdyllium = void 0;
+exports.guiPreviewIntervalMs = exports.IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS = exports.IDYLLIUM_SEMANTIC_TOKEN_TYPES = exports.IdylliumProject = exports.formatIdyllium = exports.compileIdyllium = void 0;
 exports.runIdylliumInBrowser = runIdylliumInBrowser;
 exports.prepareIdylliumBrowserProgram = prepareIdylliumBrowserProgram;
 exports.inspectSqliteDatabaseInBrowser = inspectSqliteDatabaseInBrowser;
@@ -47,7 +47,7 @@ async function runIdylliumInBrowser(options) {
         return {
             success: false,
             output: prepared.runtime.getOutput(),
-            runtimeError: error instanceof Error ? error.message : String(error),
+            runtimeError: (0, run_1.describeRuntimeError)(error, normalizeBrowserPath(options.entryFile ?? '/workspace/main.idyl')),
             compilation: prepared.compilation,
             runtime: prepared.runtime,
             files: prepared.fileSystemSnapshot(),
@@ -105,6 +105,11 @@ function inspectSqliteDatabaseInBrowser(bytes) {
 function previewSqliteObjectInBrowser(bytes, name, limit) {
     return (0, sqlite_inspector_1.previewSqliteObject)(browserSqliteService, bytes, name, limit);
 }
+var semantics_1 = require("./core/semantics");
+Object.defineProperty(exports, "IDYLLIUM_SEMANTIC_TOKEN_TYPES", { enumerable: true, get: function () { return semantics_1.IDYLLIUM_SEMANTIC_TOKEN_TYPES; } });
+Object.defineProperty(exports, "IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS", { enumerable: true, get: function () { return semantics_1.IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS; } });
+var gui_interval_1 = require("./runtime/gui-interval");
+Object.defineProperty(exports, "guiPreviewIntervalMs", { enumerable: true, get: function () { return gui_interval_1.guiPreviewIntervalMs; } });
 function createMemoryRuntime(options, fileSystem) {
     return (0, runtime_1.createRuntime)({
         console: options.console,
@@ -192,7 +197,6 @@ const registry_1 = require("./stdlib/registry");
 class JavaScriptGenerator {
     importedModules = new Set();
     userClassNames = new Set();
-    classFields = new Map();
     functionParameters = new Map();
     classMethodParameters = new Map();
     classConstructorParameters = new Map();
@@ -200,15 +204,17 @@ class JavaScriptGenerator {
     moduleClassMethodParameters = new Map();
     moduleClassConstructorParameters = new Map();
     moduleClassNames = new Set();
-    moduleClassFields = new Map();
-    scopes = [new Map()];
-    currentClassNames = [];
     returnTypes = [];
     classFieldInitializerDepth = 0;
     userModuleNames;
+    nodeTypes;
     stdlib = (0, registry_1.createDefaultStandardLibrary)();
     constructor(options = {}) {
         this.userModuleNames = options.userModuleNames ?? new Set();
+        this.nodeTypes = options.nodeTypes ?? new Map();
+    }
+    typeOf(expression) {
+        return this.nodeTypes.get(expression) ?? null;
     }
     generate(program, options = {}) {
         const modules = options.modules ?? [];
@@ -262,23 +268,16 @@ class JavaScriptGenerator {
         this.userClassNames = new Set(program.declarations
             .filter((item) => item.kind === 'ClassDeclaration')
             .map((item) => item.name));
-        this.classFields = new Map();
         this.functionParameters = new Map();
         this.classMethodParameters = new Map();
         this.classConstructorParameters = new Map();
-        const ownClassFields = new Map();
         for (const declaration of program.declarations) {
             if (declaration.kind === 'FunctionDeclaration') {
                 this.functionParameters.set(declaration.name, declaration.parameters);
             }
             if (declaration.kind !== 'ClassDeclaration')
                 continue;
-            const fields = new Map();
             for (const member of declaration.members) {
-                if (member.kind === 'ClassFieldDeclaration') {
-                    for (const field of member.fields)
-                        fields.set(field.name, member.declaredType);
-                }
                 if (member.kind === 'ClassMethodDeclaration') {
                     this.classMethodParameters.set(this.classMemberKey(declaration.name, member.name), member.parameters);
                 }
@@ -286,32 +285,7 @@ class JavaScriptGenerator {
                     this.classConstructorParameters.set(declaration.name, member.parameters);
                 }
             }
-            ownClassFields.set(declaration.name, fields);
         }
-        const collectFields = (className, seen = new Set()) => {
-            if (this.classFields.has(className))
-                return this.classFields.get(className) ?? new Map();
-            if (seen.has(className))
-                return ownClassFields.get(className) ?? new Map();
-            seen.add(className);
-            const declaration = program.declarations.find((item) => (item.kind === 'ClassDeclaration' && item.name === className));
-            const fields = new Map();
-            if (declaration?.baseName) {
-                for (const [name, type] of collectFields(declaration.baseName, seen)) {
-                    fields.set(name, type);
-                }
-            }
-            for (const [name, type] of ownClassFields.get(className) ?? new Map()) {
-                fields.set(name, type);
-            }
-            this.classFields.set(className, fields);
-            return fields;
-        };
-        for (const className of ownClassFields.keys()) {
-            collectFields(className);
-        }
-        this.scopes = [new Map()];
-        this.currentClassNames = [];
         this.returnTypes = [];
     }
     prepareModuleSignatures(modules) {
@@ -319,10 +293,7 @@ class JavaScriptGenerator {
         this.moduleClassMethodParameters = new Map();
         this.moduleClassConstructorParameters = new Map();
         this.moduleClassNames = new Set();
-        this.moduleClassFields = new Map();
         for (const module of modules) {
-            const declarations = new Map();
-            const ownFields = new Map();
             for (const declaration of module.program.declarations) {
                 if (declaration.kind === 'FunctionDeclaration') {
                     this.moduleFunctionParameters.set(`${module.name}.${declaration.name}`, declaration.parameters);
@@ -331,13 +302,7 @@ class JavaScriptGenerator {
                 if (declaration.kind !== 'ClassDeclaration')
                     continue;
                 this.moduleClassNames.add(`${module.name}.${declaration.name}`);
-                declarations.set(declaration.name, declaration);
-                const fields = new Map();
                 for (const member of declaration.members) {
-                    if (member.kind === 'ClassFieldDeclaration') {
-                        for (const field of member.fields)
-                            fields.set(field.name, member.declaredType);
-                    }
                     if (member.kind === 'ClassMethodDeclaration') {
                         this.moduleClassMethodParameters.set(`${module.name}.${this.classMemberKey(declaration.name, member.name)}`, member.parameters);
                     }
@@ -345,29 +310,6 @@ class JavaScriptGenerator {
                         this.moduleClassConstructorParameters.set(`${module.name}.${declaration.name}`, member.parameters);
                     }
                 }
-                ownFields.set(declaration.name, fields);
-            }
-            const collectFields = (className, seen = new Set()) => {
-                const key = `${module.name}.${className}`;
-                const cached = this.moduleClassFields.get(key);
-                if (cached)
-                    return cached;
-                if (seen.has(className))
-                    return ownFields.get(className) ?? new Map();
-                seen.add(className);
-                const fields = new Map();
-                const declaration = declarations.get(className);
-                if (declaration?.baseName) {
-                    for (const [name, type] of collectFields(declaration.baseName, seen))
-                        fields.set(name, type);
-                }
-                for (const [name, type] of ownFields.get(className) ?? new Map())
-                    fields.set(name, type);
-                this.moduleClassFields.set(key, fields);
-                return fields;
-            };
-            for (const className of declarations.keys()) {
-                collectFields(className);
             }
         }
     }
@@ -389,11 +331,9 @@ class JavaScriptGenerator {
         }
     }
     emitBlock(block, lines, indent) {
-        this.pushScope();
         for (const statement of block.statements) {
             this.emitStatement(statement, lines, indent);
         }
-        this.popScope();
     }
     emitStatement(statement, lines, indent) {
         const pad = '  '.repeat(indent);
@@ -479,13 +419,11 @@ class JavaScriptGenerator {
         const pad = '  '.repeat(indent);
         const params = declaration.parameters.map((parameter) => parameter.name).join(', ');
         lines.push(`${pad}async function ${declaration.name}(${params}) {`);
-        this.pushScope();
         this.returnTypes.push(declaration.returnType);
         this.emitParameterDefaults(declaration.parameters, lines, indent + 1);
         this.emitParameterCasts(declaration.parameters, lines, indent + 1);
         this.emitBlock(declaration.body, lines, indent + 1);
         this.returnTypes.pop();
-        this.popScope();
         lines.push(`${pad}}`);
     }
     emitClassDeclaration(declaration, lines, indent) {
@@ -505,7 +443,6 @@ class JavaScriptGenerator {
                 this.emitInstanceMethod(declaration.name, member, lines, indent + 1);
             }
         }
-        this.currentClassNames.push(declaration.name);
         this.classFieldInitializerDepth += 1;
         for (const member of declaration.members) {
             if (member.kind === 'ClassFieldDeclaration') {
@@ -513,7 +450,6 @@ class JavaScriptGenerator {
             }
         }
         this.classFieldInitializerDepth -= 1;
-        this.currentClassNames.pop();
         lines.push(`${pad}  return self;`);
         lines.push(`${pad}}`);
         const constructor = declaration.members.find((member) => member.kind === 'ConstructorDeclaration');
@@ -554,43 +490,31 @@ class JavaScriptGenerator {
         const pad = '  '.repeat(indent);
         const params = declaration.parameters.map((parameter) => parameter.name).join(', ');
         lines.push(`${pad}self.${declaration.name} = async function(${params}) {`);
-        this.pushScope();
-        this.currentClassNames.push(className);
         this.returnTypes.push(declaration.returnType);
         this.emitParameterDefaults(declaration.parameters, lines, indent + 1);
         this.emitParameterCasts(declaration.parameters, lines, indent + 1);
         this.emitBlock(declaration.body, lines, indent + 1);
         this.returnTypes.pop();
-        this.currentClassNames.pop();
-        this.popScope();
         lines.push(`${pad}};`);
     }
     emitStaticMethod(className, declaration, lines, indent) {
         const pad = '  '.repeat(indent);
         const params = declaration.parameters.map((parameter) => parameter.name).join(', ');
         lines.push(`${pad}${this.classObjectName(className)}.${declaration.name} = async function(${params}) {`);
-        this.pushScope();
-        this.currentClassNames.push(className);
         this.returnTypes.push(declaration.returnType);
         this.emitParameterDefaults(declaration.parameters, lines, indent + 1);
         this.emitParameterCasts(declaration.parameters, lines, indent + 1);
         this.emitBlock(declaration.body, lines, indent + 1);
         this.returnTypes.pop();
-        this.currentClassNames.pop();
-        this.popScope();
         lines.push(`${pad}};`);
     }
     emitConstructorCall(className, declaration, lines, indent) {
         const pad = '  '.repeat(indent);
         const params = declaration.parameters.map((parameter) => parameter.name).join(', ');
         lines.push(`${pad}await (async function(${params}) {`);
-        this.pushScope();
-        this.currentClassNames.push(className);
         this.emitParameterDefaults(declaration.parameters, lines, indent + 1);
         this.emitParameterCasts(declaration.parameters, lines, indent + 1);
         this.emitBlock(declaration.body, lines, indent + 1);
-        this.currentClassNames.pop();
-        this.popScope();
         lines.push(`${pad}}).apply(self, __args);`);
     }
     emitAssignment(statement, lines, indent) {
@@ -600,25 +524,33 @@ class JavaScriptGenerator {
     emitWhileStatement(statement, lines, indent) {
         const pad = '  '.repeat(indent);
         lines.push(`${pad}while (${this.expression(statement.condition)}) {`);
+        this.emitLoopTick(statement.range, lines, indent + 1);
         this.emitStatementBody(statement.body, lines, indent + 1);
         lines.push(`${pad}}`);
     }
     emitDoWhileStatement(statement, lines, indent) {
         const pad = '  '.repeat(indent);
         lines.push(`${pad}do {`);
+        this.emitLoopTick(statement.range, lines, indent + 1);
         this.emitStatementBody(statement.body, lines, indent + 1);
         lines.push(`${pad}} while (${this.expression(statement.condition)});`);
     }
     emitForStatement(statement, lines, indent) {
         const pad = '  '.repeat(indent);
-        this.pushScope();
         const initializer = statement.initializer ? this.forClauseCode(statement.initializer) : '';
         const condition = statement.condition ? this.expression(statement.condition) : '';
         const increment = statement.increment ? this.forClauseCode(statement.increment) : '';
         lines.push(`${pad}for (${initializer}; ${condition}; ${increment}) {`);
+        this.emitLoopTick(statement.range, lines, indent + 1);
         this.emitStatementBody(statement.body, lines, indent + 1);
         lines.push(`${pad}}`);
-        this.popScope();
+    }
+    // Кооперативная точка остановки в начале каждой итерации: без неё тугой цикл
+    // нельзя прервать сигналом abort ни в WebIDE, ни в VS Code, ни по Ctrl+C.
+    emitLoopTick(range, lines, indent) {
+        const pad = '  '.repeat(indent);
+        const location = `${JSON.stringify(range.start.file)}, ${range.start.line}`;
+        lines.push(`${pad}{ const __idyl_tick = $rt.core.tick(${location}); if (__idyl_tick !== null) await __idyl_tick; }`);
     }
     emitBreakStatement(_statement, lines, indent) {
         const pad = '  '.repeat(indent);
@@ -656,38 +588,37 @@ class JavaScriptGenerator {
         const value = statement.initializer
             ? this.valueForType(rawValue, statement.declaredType, statement.initializer.range)
             : this.castForType(rawValue, statement.declaredType);
-        this.declareType(statement.name, statement.declaredType);
         return `${statement.isConst ? 'const' : 'let'} ${statement.name} = ${value}`;
     }
     assignmentCode(statement) {
-        const targetType = this.targetTypeName(statement.target);
+        const targetType = this.typeOf(statement.target);
         if (statement.operator === '=') {
             if (statement.target.kind === 'IndexExpression') {
-                const value = this.valueForType(this.expression(statement.value), targetType, statement.value.range);
+                const value = this.valueForOptionalTypeRef(this.expression(statement.value), targetType, statement.value.range);
                 return `$rt.array.set(${this.expression(statement.target.object)}, ${this.expression(statement.target.index)}, ${value}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
             }
             if (statement.target.kind === 'MemberExpression') {
-                const value = this.valueForType(this.expression(statement.value), targetType, statement.value.range);
+                const value = this.valueForOptionalTypeRef(this.expression(statement.value), targetType, statement.value.range);
                 return `$rt.setProperty(${this.expression(statement.target.object)}, ${JSON.stringify(statement.target.name)}, ${value}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
             }
-            return `${this.expression(statement.target)} = ${this.valueForType(this.expression(statement.value), targetType, statement.value.range)}`;
+            return `${this.expression(statement.target)} = ${this.valueForOptionalTypeRef(this.expression(statement.value), targetType, statement.value.range)}`;
         }
         if (statement.target.kind === 'IndexExpression') {
             const object = this.expression(statement.target.object);
             const index = this.expression(statement.target.index);
             const current = `$rt.array.get(${object}, ${index}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
             const rawValue = this.compoundAssignmentValue(statement.operator, current, this.expression(statement.value), statement.range);
-            const value = this.valueForType(rawValue, targetType, statement.range);
+            const value = this.valueForOptionalTypeRef(rawValue, targetType, statement.range);
             return `$rt.array.set(${object}, ${index}, ${value}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
         }
         const target = this.expression(statement.target);
         const value = this.expression(statement.value);
         const rawAssignedValue = this.compoundAssignmentValue(statement.operator, target, value, statement.range);
         if (statement.target.kind === 'MemberExpression') {
-            const assignedValue = this.valueForType(rawAssignedValue, targetType, statement.range);
+            const assignedValue = this.valueForOptionalTypeRef(rawAssignedValue, targetType, statement.range);
             return `$rt.setProperty(${this.expression(statement.target.object)}, ${JSON.stringify(statement.target.name)}, ${assignedValue}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
         }
-        return `${target} = ${this.valueForType(rawAssignedValue, targetType, statement.range)}`;
+        return `${target} = ${this.valueForOptionalTypeRef(rawAssignedValue, targetType, statement.range)}`;
     }
     compoundAssignmentValue(operator, target, value, range) {
         const binaryOperator = operator.slice(0, 1);
@@ -735,13 +666,11 @@ class JavaScriptGenerator {
     functionExpression(expression) {
         const params = expression.parameters.map((parameter) => parameter.name).join(', ');
         const lines = [`(async function(${params}) {`];
-        this.pushScope();
         this.returnTypes.push(expression.returnType);
         this.emitParameterDefaults(expression.parameters, lines, 1);
         this.emitParameterCasts(expression.parameters, lines, 1);
         this.emitBlock(expression.body, lines, 1);
         this.returnTypes.pop();
-        this.popScope();
         lines.push('})');
         return lines.join('\n');
     }
@@ -809,23 +738,23 @@ class JavaScriptGenerator {
             }
         }
         if (callee.kind === 'MemberExpression') {
-            const typeName = this.expressionTypeName(callee.object);
-            const typesRuntimeName = this.typesRuntimeName(typeName);
+            const receiverType = this.typeOf(callee.object);
+            const typesRuntimeName = this.typesRuntimeNameOf(receiverType);
             if (typesRuntimeName && (callee.name === 'to_bin' || callee.name === 'to_hex')) {
                 return `$rt.types.${callee.name}(${this.expression(callee.object)}, ${JSON.stringify(typesRuntimeName)})`;
             }
             if (typesRuntimeName && (callee.name === 'shift_left' || callee.name === 'shift_right')) {
-                const [bits] = this.methodCallArgs(callee.name, expression.args, typeName);
+                const [bits] = this.methodCallArgs(callee.name, expression.args, receiverType);
                 return `$rt.types.${callee.name}(${this.expression(callee.object)}, ${JSON.stringify(typesRuntimeName)}, ${bits}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
             }
             if (typesRuntimeName && (callee.name === 'bit_and' || callee.name === 'bit_or' || callee.name === 'bit_xor')) {
-                const [mask] = this.methodCallArgs(callee.name, expression.args, typeName);
+                const [mask] = this.methodCallArgs(callee.name, expression.args, receiverType);
                 return `$rt.types.${callee.name}(${this.expression(callee.object)}, ${JSON.stringify(typesRuntimeName)}, ${mask}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
             }
             if (typesRuntimeName && callee.name === 'bit_not') {
                 return `$rt.types.bit_not(${this.expression(callee.object)}, ${JSON.stringify(typesRuntimeName)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
             }
-            const args = this.methodCallArgs(callee.name, expression.args, typeName).join(', ');
+            const args = this.methodCallArgs(callee.name, expression.args, receiverType).join(', ');
             return `$rt.callMethod(${this.expression(callee.object)}, ${JSON.stringify(callee.name)}, [${args}], ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
         }
         return `${this.expression(callee)}(${this.callArgumentValues(expression.args, this.callableParameterNames(callee)).join(', ')})`;
@@ -874,13 +803,17 @@ class JavaScriptGenerator {
             return `await $rt.array.createAsync(${size}, async () => ${this.defaultValue(type.elementType, false)}, ${type.dynamic ? 'true' : 'false'})`;
         }
         if (type.kind === 'ClassTypeName') {
-            return runConstructor
+            // Конструктор при объявлении без аргументов вызывается, только если его
+            // можно вызвать без аргументов; иначе поля получают дефолтные значения.
+            const callable = this.zeroArgCallable(this.classConstructorParameters.get(type.name));
+            return runConstructor && callable
                 ? `await ${this.classCreateFactoryName(type.name)}()`
                 : `await ${this.classDefaultFactoryName(type.name)}()`;
         }
         if (type.kind === 'QualifiedTypeName') {
             if (this.userModuleNames.has(type.moduleName)) {
-                return runConstructor
+                const callable = this.zeroArgCallable(this.moduleClassConstructorParameters.get(`${type.moduleName}.${type.name}`));
+                return runConstructor && callable
                     ? `await $rt.modules.${type.moduleName}.${this.exportedClassCreateName(type.name)}()`
                     : `await $rt.modules.${type.moduleName}.${this.exportedClassDefaultName(type.name)}()`;
             }
@@ -921,7 +854,6 @@ class JavaScriptGenerator {
     emitParameterCasts(parameters, lines, indent) {
         const pad = '  '.repeat(indent);
         for (const parameter of parameters) {
-            this.declareType(parameter.name, parameter.paramType);
             const value = this.valueForType(parameter.name, parameter.paramType, parameter.range);
             if (value !== parameter.name) {
                 lines.push(`${pad}${parameter.name} = ${value};`);
@@ -1001,19 +933,16 @@ class JavaScriptGenerator {
     methodParameterNames(methodName, receiverType) {
         if (!receiverType)
             return undefined;
-        if (receiverType.kind === 'ClassTypeName') {
+        if (receiverType.kind === 'class') {
             return this.classMethodParameters.get(this.classMemberKey(receiverType.name, methodName))?.map((parameter) => parameter.name);
         }
-        if (receiverType.kind === 'QualifiedTypeName' && this.userModuleNames.has(receiverType.moduleName)) {
+        if (receiverType.kind === 'qualified' && this.userModuleNames.has(receiverType.moduleName)) {
             return this.moduleClassMethodParameters.get(`${receiverType.moduleName}.${this.classMemberKey(receiverType.name, methodName)}`)?.map((parameter) => parameter.name);
         }
-        if (receiverType.kind === 'ArrayTypeName') {
+        if (receiverType.kind === 'array') {
             return this.arrayMethodParameterNames(methodName);
         }
-        const typeRef = this.typeRefFromTypeName(receiverType);
-        if (!typeRef)
-            return this.stringMethodParameterNames(receiverType, methodName);
-        return this.stdlib.getTypeMethod(typeRef, methodName)?.parameters.map((parameter) => parameter.name)
+        return this.stdlib.getTypeMethod(receiverType, methodName)?.parameters.map((parameter) => parameter.name)
             ?? this.stringMethodParameterNames(receiverType, methodName);
     }
     arrayMethodParameterNames(methodName) {
@@ -1036,7 +965,7 @@ class JavaScriptGenerator {
         }
     }
     stringMethodParameterNames(receiverType, methodName) {
-        if (receiverType.kind !== 'PrimitiveTypeName' || receiverType.name !== 'string')
+        if (receiverType.kind !== 'primitive' || receiverType.name !== 'string')
             return undefined;
         switch (methodName) {
             case 'contains':
@@ -1053,22 +982,20 @@ class JavaScriptGenerator {
                 return [];
         }
     }
-    typeRefFromTypeName(type) {
-        if (type.kind === 'PrimitiveTypeName')
-            return (0, types_1.primitive)(type.name);
-        if (type.kind === 'QualifiedTypeName')
-            return (0, types_1.qualified)(type.moduleName, type.name);
-        if (type.kind === 'ArrayTypeName') {
-            const elementType = this.typeRefFromTypeName(type.elementType);
-            return elementType ? (0, types_1.arrayType)(elementType, type.size, type.dynamic) : null;
-        }
-        return null;
+    typesRuntimeNameOf(type) {
+        if (type?.kind !== 'qualified')
+            return null;
+        if (type.moduleName !== 'types')
+            return null;
+        return TYPE_RUNTIME_NAMES.has(type.name) ? type.name : null;
+    }
+    valueForOptionalTypeRef(value, type, range) {
+        return type ? this.valueForTypeRef(value, type, range) : value;
     }
     methodCallArgs(methodName, args, receiverType) {
         const orderedArgs = this.orderedCallArguments(args, this.methodParameterNames(methodName, receiverType));
-        if (receiverType?.kind !== 'ArrayTypeName') {
-            const typeRef = receiverType ? this.typeRefFromTypeName(receiverType) : null;
-            const method = typeRef ? this.stdlib.getTypeMethod(typeRef, methodName) : undefined;
+        if (receiverType?.kind !== 'array') {
+            const method = receiverType ? this.stdlib.getTypeMethod(receiverType, methodName) : undefined;
             return orderedArgs.map((arg, index) => {
                 if (!arg)
                     return 'undefined';
@@ -1079,12 +1006,12 @@ class JavaScriptGenerator {
         }
         if (methodName === 'add' || methodName === 'contains' || methodName === 'find' || methodName === 'count') {
             return orderedArgs.map((arg, index) => (index === 0 && arg
-                ? this.valueForType(this.expression(arg.value), receiverType.elementType, arg.value.range)
+                ? this.valueForTypeRef(this.expression(arg.value), receiverType.elementType, arg.value.range)
                 : arg ? this.expression(arg.value) : 'undefined'));
         }
         if (methodName === 'insert') {
             return orderedArgs.map((arg, index) => (index === 1 && arg
-                ? this.valueForType(this.expression(arg.value), receiverType.elementType, arg.value.range)
+                ? this.valueForTypeRef(this.expression(arg.value), receiverType.elementType, arg.value.range)
                 : arg ? this.expression(arg.value) : 'undefined'));
         }
         if (methodName === 'join') {
@@ -1093,20 +1020,18 @@ class JavaScriptGenerator {
                     return 'undefined';
                 if (index !== 0)
                     return this.expression(arg.value);
-                const targetType = {
-                    kind: 'ArrayTypeName',
-                    elementType: receiverType.elementType,
-                    size: null,
-                    dynamic: true,
-                    range: arg.value.range,
-                };
-                return this.valueForType(this.expression(arg.value), targetType, arg.value.range);
+                return this.valueForTypeRef(this.expression(arg.value), (0, types_1.arrayType)(receiverType.elementType, null, true), arg.value.range);
             });
         }
         return orderedArgs.map((arg) => (arg ? this.expression(arg.value) : 'undefined'));
     }
     classMemberKey(className, memberName) {
         return `${className}.${memberName}`;
+    }
+    zeroArgCallable(parameters) {
+        if (!parameters)
+            return true;
+        return parameters.every((parameter) => parameter.defaultValue !== null);
     }
     valueForType(value, type, range) {
         if (type?.kind === 'ArrayTypeName') {
@@ -1177,9 +1102,15 @@ class JavaScriptGenerator {
             return `$rt.types.cast(0, ${JSON.stringify(type.name)})`;
         }
         if (type.kind === 'qualified') {
+            if (this.userModuleNames.has(type.moduleName)) {
+                return `await $rt.modules.${type.moduleName}.${this.exportedClassDefaultName(type.name)}()`;
+            }
             if (type.moduleName === 'colors' && type.name === 'Color')
                 return '$rt.modules.colors.TRANSPARENT';
             return `$rt.createObject(${JSON.stringify(type.moduleName)}, ${JSON.stringify(type.name)})`;
+        }
+        if (type.kind === 'class') {
+            return `await ${this.classDefaultFactoryName(type.name)}()`;
         }
         if (type.kind === 'primitive') {
             if (type.name === 'string')
@@ -1204,95 +1135,6 @@ class JavaScriptGenerator {
         if (type.moduleName !== 'types')
             return null;
         return TYPE_RUNTIME_NAMES.has(type.name) ? type.name : null;
-    }
-    targetTypeName(expression) {
-        if (expression.kind === 'IndexExpression') {
-            const objectType = this.expressionTypeName(expression.object);
-            return objectType?.kind === 'ArrayTypeName' ? objectType.elementType : null;
-        }
-        return this.expressionTypeName(expression);
-    }
-    expressionTypeName(expression) {
-        switch (expression.kind) {
-            case 'IdentifierExpression':
-                return this.lookupType(expression.name);
-            case 'MemberExpression':
-                return this.memberTypeName(expression);
-            case 'IndexExpression': {
-                const objectType = this.expressionTypeName(expression.object);
-                return objectType?.kind === 'ArrayTypeName' ? objectType.elementType : null;
-            }
-            case 'CallExpression': {
-                if (expression.callee.kind === 'IdentifierExpression' && this.userClassNames.has(expression.callee.name)) {
-                    return {
-                        kind: 'ClassTypeName',
-                        name: expression.callee.name,
-                        nameRange: expression.callee.range,
-                        range: expression.callee.range,
-                    };
-                }
-                if (expression.callee.kind === 'MemberExpression'
-                    && expression.callee.object.kind === 'IdentifierExpression'
-                    && this.moduleClassNames.has(`${expression.callee.object.name}.${expression.callee.name}`)) {
-                    return {
-                        kind: 'QualifiedTypeName',
-                        moduleName: expression.callee.object.name,
-                        moduleNameRange: expression.callee.object.range,
-                        name: expression.callee.name,
-                        nameRange: expression.callee.nameRange,
-                        range: expression.callee.range,
-                    };
-                }
-                if (expression.callee.kind !== 'MemberExpression')
-                    return null;
-                if (![
-                    'shift_left',
-                    'shift_right',
-                    'bit_and',
-                    'bit_or',
-                    'bit_xor',
-                    'bit_not',
-                ].includes(expression.callee.name))
-                    return null;
-                const objectType = this.expressionTypeName(expression.callee.object);
-                return this.typesRuntimeName(objectType) ? objectType : null;
-            }
-            default:
-                return null;
-        }
-    }
-    memberTypeName(expression) {
-        if (expression.object.kind === 'IdentifierExpression' && expression.object.name === 'this') {
-            const className = this.currentClassNames[this.currentClassNames.length - 1] ?? null;
-            return className ? this.classFields.get(className)?.get(expression.name) ?? null : null;
-        }
-        const objectType = this.expressionTypeName(expression.object);
-        if (objectType?.kind === 'ClassTypeName') {
-            return this.classFields.get(objectType.name)?.get(expression.name) ?? null;
-        }
-        if (objectType?.kind === 'QualifiedTypeName' && this.userModuleNames.has(objectType.moduleName)) {
-            return this.moduleClassFields
-                .get(`${objectType.moduleName}.${objectType.name}`)
-                ?.get(expression.name) ?? null;
-        }
-        return null;
-    }
-    declareType(name, type) {
-        this.scopes[this.scopes.length - 1].set(name, type);
-    }
-    lookupType(name) {
-        for (let i = this.scopes.length - 1; i >= 0; i--) {
-            const type = this.scopes[i].get(name);
-            if (type)
-                return type;
-        }
-        return null;
-    }
-    pushScope() {
-        this.scopes.push(new Map());
-    }
-    popScope() {
-        this.scopes.pop();
     }
 }
 exports.JavaScriptGenerator = JavaScriptGenerator;
@@ -1758,6 +1600,8 @@ class Parser {
         while (!this.isAtEnd()) {
             if (this.check(tokens_1.TokenKind.KwClass)) {
                 topLevelDeclarations.push(this.parseClassDeclaration());
+                // Необязательная ';' после класса — безвредная привычка из C++.
+                this.match(tokens_1.TokenKind.Semicolon);
                 continue;
             }
             if (this.check(tokens_1.TokenKind.KwMain)) {
@@ -2002,6 +1846,11 @@ class Parser {
                 members.push(this.parseConstructorDeclaration(currentAccess));
                 continue;
             }
+            if (this.check(tokens_1.TokenKind.Identifier) && this.peek().lexeme === 'destructor') {
+                this.error(this.peek().range, 'destructors are not supported yet');
+                this.skipUnsupportedClassMember();
+                continue;
+            }
             if (this.checkTypeStart()) {
                 const declaredType = this.parseTypeName();
                 if (this.match(tokens_1.TokenKind.KwFunction)) {
@@ -2110,12 +1959,28 @@ class Parser {
             range: { start: paramType.range.start, end: (defaultValue ?? paramName).range.end },
         };
     }
-    synchronizeClassMember() {
-        while (!this.isAtEnd() && !this.check(tokens_1.TokenKind.Semicolon, tokens_1.TokenKind.RightBrace)) {
+    // Пропускает неподдерживаемое объявление в теле класса целиком:
+    // до ';' на верхнем уровне члена или до конца сбалансированного '{...}'.
+    skipUnsupportedClassMember() {
+        let depth = 0;
+        while (!this.isAtEnd()) {
+            if (depth === 0 && this.check(tokens_1.TokenKind.Semicolon)) {
+                this.advance();
+                return;
+            }
+            if (this.check(tokens_1.TokenKind.RightBrace)) {
+                if (depth === 0)
+                    return;
+                depth -= 1;
+                this.advance();
+                if (depth === 0)
+                    return;
+                continue;
+            }
+            if (this.check(tokens_1.TokenKind.LeftBrace))
+                depth += 1;
             this.advance();
         }
-        if (this.check(tokens_1.TokenKind.Semicolon))
-            this.advance();
     }
     parseExpressionStatement() {
         return this.parseAssignmentOrExpressionStatement(true);
@@ -3000,16 +2865,25 @@ function resolveModuleArrayType(typeName, moduleName, program, localClasses, std
 "dist/src/core/semantics.js": function(require, module, exports) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SemanticAnalyzer = void 0;
+exports.SemanticAnalyzer = exports.IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS = exports.IDYLLIUM_SEMANTIC_TOKEN_TYPES = void 0;
 const diagnostics_1 = require("./diagnostics");
 const modules_1 = require("./modules");
 const registry_1 = require("./stdlib/registry");
 const types_1 = require("./types");
+// Единственный источник истины для легенды семантических токенов:
+// расширение VS Code и Web IDE строят свои легенды из этих массивов.
+exports.IDYLLIUM_SEMANTIC_TOKEN_TYPES = [
+    'namespace', 'class', 'function', 'method', 'property', 'variable', 'parameter',
+];
+exports.IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS = [
+    'declaration', 'readonly', 'static', 'defaultLibrary',
+];
 class SemanticAnalyzer {
     stdlib;
     userModuleRegistry;
     diagnostics = new diagnostics_1.DiagnosticBag();
     semanticTokens = [];
+    nodeTypes = new Map();
     imports = new Set();
     userModules = new Set();
     scopes = [new Map()];
@@ -3073,6 +2947,7 @@ class SemanticAnalyzer {
             success: !this.diagnostics.hasErrors(),
             diagnostics: this.diagnostics,
             tokens: deduplicateSemanticTokens(this.semanticTokens),
+            nodeTypes: this.nodeTypes,
         };
     }
     registerImportedModuleClasses(moduleName) {
@@ -3675,6 +3550,9 @@ class SemanticAnalyzer {
     analyzeAssignment(statement) {
         const target = this.assignmentTargetInfo(statement.target);
         const targetType = target.type;
+        // Тип цели присваивания нужен кодогену (касты types.*, конверсия массивов),
+        // а через expressionType цель не проходит — фиксируем явно.
+        this.nodeTypes.set(statement.target, targetType);
         const valueType = this.expressionType(statement.value);
         const assignedType = statement.operator === '='
             ? valueType
@@ -3792,6 +3670,11 @@ class SemanticAnalyzer {
         return `function(${parameters.map(types_1.typeToString).join(', ')}): ${(0, types_1.typeToString)(returnType)}`;
     }
     expressionType(expression) {
+        const type = this.computeExpressionType(expression);
+        this.nodeTypes.set(expression, type);
+        return type;
+    }
+    computeExpressionType(expression) {
         switch (expression.kind) {
             case 'LiteralExpression':
                 return expression.valueType === 'null' ? types_1.NULL_TYPE : (0, types_1.primitive)(expression.valueType);
@@ -4062,6 +3945,24 @@ class SemanticAnalyzer {
             }
             return types_1.INT;
         }
+        if (callee.name === 'abs') {
+            if (!this.imports.has('math')) {
+                this.diagnostics.error(callee.object.range, "'math' is not imported (use 'use math;')");
+                return types_1.ERROR_TYPE;
+            }
+            const fn = {
+                name: 'abs',
+                parameters: [{ name: 'value', type: types_1.FLOAT }],
+                returnType: types_1.FLOAT,
+            };
+            this.checkArgumentList(expression.args, fn, expression.range);
+            const ordered = this.orderedArguments(expression.args, fn);
+            const argument = ordered[0];
+            if (!argument)
+                return types_1.ERROR_TYPE;
+            // Модуль числа сохраняет «целочисленность»: abs(int) — int, abs(float) — float.
+            return (0, types_1.isIntegerLike)(this.expressionType(argument.value)) ? types_1.INT : types_1.FLOAT;
+        }
         if (callee.name === 'clamp') {
             if (!this.imports.has('math')) {
                 this.diagnostics.error(callee.object.range, "'math' is not imported (use 'use math;')");
@@ -4303,6 +4204,13 @@ class SemanticAnalyzer {
         }
         for (const item of resolved) {
             const argType = this.expressionType(item.arg.value);
+            if (fn.printsValues) {
+                const printableError = this.printableTypeError(argType);
+                if (printableError) {
+                    this.diagnostics.error(item.arg.range, printableError);
+                    continue;
+                }
+            }
             const parameter = item.parameter;
             if (parameter) {
                 if (parameter.exactType) {
@@ -4327,6 +4235,54 @@ class SemanticAnalyzer {
                 this.diagnostics.error(item.arg.range, `'${fn.name}' does not accept argument of type '${(0, types_1.typeToString)(argType)}'`);
             }
         }
+    }
+    // Печать значений: объект пользовательского класса можно печатать только при
+    // наличии публичного `string function to_string()` без параметров — аналог
+    // __str__ из Python. Массивы объектов не печатаются даже с to_string():
+    // инспекция массива синхронна и метод вызвать не может.
+    printableTypeError(type) {
+        if (type.kind === 'class') {
+            return this.classHasPublicToString(type.name)
+                ? null
+                : `cannot print object of class '${type.name}' directly`;
+        }
+        if (type.kind === 'qualified' && this.userModuleRegistry.hasModule(type.moduleName)) {
+            const classSpec = this.userModuleRegistry.getModule(type.moduleName)?.classes.get(type.name);
+            if (!classSpec)
+                return null;
+            const method = classSpec.methods.find((item) => item.name === 'to_string');
+            const printable = method !== undefined
+                && !method.isStatic
+                && method.access === 'public'
+                && method.spec.parameters.length === 0
+                && (0, types_1.sameType)(method.spec.returnType, types_1.STRING);
+            return printable ? null : `cannot print object of class '${type.moduleName}.${type.name}' directly`;
+        }
+        if (type.kind === 'array') {
+            const element = type.elementType;
+            if (element.kind === 'class') {
+                return `cannot print an array of '${element.name}' objects directly`;
+            }
+            if (element.kind === 'qualified' && this.userModuleRegistry.hasModule(element.moduleName)) {
+                return `cannot print an array of '${element.moduleName}.${element.name}' objects directly`;
+            }
+            return this.printableTypeError(element);
+        }
+        return null;
+    }
+    classHasPublicToString(className) {
+        const info = this.classes.get(className);
+        if (!info)
+            return false;
+        const spec = info.methods.get('to_string');
+        if (!spec || spec.parameters.length > 0)
+            return false;
+        if (!(0, types_1.sameType)(spec.returnType, types_1.STRING))
+            return false;
+        const access = info.methodAccess.get('to_string');
+        if (access === undefined)
+            return true;
+        return access.access === 'public' && !access.isStatic;
     }
     resolveArguments(args, fn, range) {
         const resolved = [];
@@ -5055,11 +5011,13 @@ function createDefaultStandardLibrary() {
         functionSpec('write', [], types_1.VOID, {
             variadic: true,
             variadicTypes: [types_1.ANY_TYPE],
+            printsValues: true,
             documentation: 'Выводит значения подряд без автоматических пробелов и переноса строки.',
         }),
         functionSpec('writeln', [], types_1.VOID, {
             variadic: true,
             variadicTypes: [types_1.ANY_TYPE],
+            printsValues: true,
             documentation: 'Выводит значения подряд, затем переносит строку.',
         }),
         functionSpec('clear', [], types_1.VOID, {
@@ -5071,7 +5029,9 @@ function createDefaultStandardLibrary() {
         functionSpec('set_precision', [{ name: 'digits', type: types_1.INT }], types_1.VOID),
     ]));
     registry.registerModule(moduleSpec('math', [
-        functionSpec('abs', [{ name: 'value', type: types_1.FLOAT }], types_1.FLOAT),
+        functionSpec('abs', [{ name: 'value', type: types_1.FLOAT }], types_1.FLOAT, {
+            documentation: 'Модуль числа. Тип результата повторяет аргумент: abs(int) даёт int, abs(float) — float.',
+        }),
         functionSpec('sqrt', [{ name: 'value', type: types_1.FLOAT }], types_1.FLOAT),
         functionSpec('round', [{ name: 'value', type: types_1.FLOAT }], types_1.INT),
         functionSpec('floor', [{ name: 'value', type: types_1.FLOAT }], types_1.INT),
@@ -5096,8 +5056,12 @@ function createDefaultStandardLibrary() {
         { name: 'e', type: types_1.FLOAT, documentation: 'Число Эйлера.' },
     ]));
     registry.registerModule(moduleSpec('random', [
-        functionSpec('create_int', [{ name: 'min', type: types_1.INT }, { name: 'max', type: types_1.INT }], types_1.INT),
-        functionSpec('create_float', [{ name: 'min', type: types_1.FLOAT }, { name: 'max', type: types_1.FLOAT }], types_1.FLOAT),
+        functionSpec('create_int', [{ name: 'min', type: types_1.INT }, { name: 'max', type: types_1.INT }], types_1.INT, {
+            documentation: 'Случайное целое число от min до max; обе границы включены.',
+        }),
+        functionSpec('create_float', [{ name: 'min', type: types_1.FLOAT }, { name: 'max', type: types_1.FLOAT }], types_1.FLOAT, {
+            documentation: 'Случайное дробное число от min до max; обе границы включены (как в Python).',
+        }),
         functionSpec('choose_from', [{
                 name: 'collection',
                 type: types_1.ANY_TYPE,
@@ -5117,11 +5081,11 @@ function createDefaultStandardLibrary() {
             documentation: 'Возвращает текущий момент в указанном IANA-часовом поясе; по умолчанию используется UTC.',
         }),
         functionSpec('from_unix', [
-            { name: 'seconds', type: types_1.INT },
+            { name: 'seconds', type: types_1.FLOAT },
             { name: 'timezone', type: types_1.STRING, defaultValue: '"UTC"' },
         ], timeStamp, {
             minArguments: 1,
-            documentation: 'Создаёт метку из Unix-времени и отображает её в указанном IANA-часовом поясе.',
+            documentation: 'Создаёт метку из Unix-времени (секунды, можно с дробной частью — она станет миллисекундами) и отображает её в указанном IANA-часовом поясе.',
         }),
     ], [], [
         typeSpec('stamp', [
@@ -5131,8 +5095,9 @@ function createDefaultStandardLibrary() {
             propertySpec('hour', types_1.INT, true, 'Час от 0 до 23 в часовом поясе метки.'),
             propertySpec('minute', types_1.INT, true, 'Минута от 0 до 59.'),
             propertySpec('second', types_1.INT, true, 'Секунда от 0 до 59.'),
+            propertySpec('millisecond', types_1.INT, true, 'Миллисекунда от 0 до 999.'),
             propertySpec('week_day', types_1.INT, true, 'День недели от 0 (воскресенье) до 6 (суббота).'),
-            propertySpec('unix', types_1.INT, true, 'Unix-время; не меняется при смене часового пояса.'),
+            propertySpec('unix', types_1.INT, true, 'Unix-время в целых секундах; не меняется при смене часового пояса.'),
             propertySpec('timezone', types_1.STRING, true, 'Каноническое IANA-имя часового пояса.'),
         ], [
             functionSpec('in_timezone', [{ name: 'timezone', type: types_1.STRING }], timeStamp, {
@@ -5203,11 +5168,13 @@ function createDefaultStandardLibrary() {
             functionSpec('write', [], types_1.VOID, {
                 variadic: true,
                 variadicTypes: [types_1.ANY_TYPE],
+                printsValues: true,
                 documentation: 'Записывает значения без автоматического перевода строки.',
             }),
             functionSpec('write_line', [], types_1.VOID, {
                 variadic: true,
                 variadicTypes: [types_1.ANY_TYPE],
+                printsValues: true,
                 documentation: 'Записывает значения и добавляет перевод строки.',
             }),
             functionSpec('close', [], types_1.VOID),
@@ -5669,13 +5636,21 @@ function createDefaultStandardLibrary() {
         ]),
         typeSpec('Timer', [
             propertySpec('interval', types_1.INT),
+            propertySpec('running', types_1.BOOL, true, 'Идёт ли отсчёт прямо сейчас. Меняется методами start(), stop() и restart().'),
             callbackPropertySpec('on_tick', [
                 callbackSpec([]),
                 callbackSpec([guiTimer]),
             ]),
         ], [
-            functionSpec('start', [], types_1.VOID),
-            functionSpec('stop', [], types_1.VOID),
+            functionSpec('start', [], types_1.VOID, {
+                documentation: 'Запускает таймер. После stop() продолжает отсчёт с места остановки (снятие с паузы).',
+            }),
+            functionSpec('stop', [], types_1.VOID, {
+                documentation: 'Ставит таймер на паузу: накопленное время сохраняется до следующего start().',
+            }),
+            functionSpec('restart', [], types_1.VOID, {
+                documentation: 'Запускает таймер заново: накопленное время сбрасывается, отсчёт идёт с нуля.',
+            }),
         ]),
         typeSpec('KeyboardEvent', [
             propertySpec('key', types_1.STRING, true),
@@ -5928,7 +5903,31 @@ function createDefaultStandardLibrary() {
     ], types_1.FLOAT));
     registry.registerGlobalFunction(functionSpec('to_string', [
         { name: 'value', type: types_1.ANY_TYPE },
-    ], types_1.STRING));
+    ], types_1.STRING, {
+        printsValues: true,
+        documentation: 'Преобразует значение в строку. Объект класса — только с публичным string function to_string().',
+    }));
+    // Агрегатные функции массивов. Точные типы результата выводит семантика
+    // (максимум/минимум/сумма повторяют тип элементов); записи в реестре питают
+    // автодополнение, hover и справочник.
+    const numericArrayParameter = {
+        name: 'values',
+        type: types_1.ANY_TYPE,
+        acceptedTypes: [(0, types_1.arrayType)(types_1.ANY_TYPE, null, true)],
+        acceptedDescription: 'numeric array',
+    };
+    registry.registerGlobalFunction(functionSpec('max', [numericArrayParameter], types_1.ANY_TYPE, {
+        documentation: 'Наибольший элемент числового массива. Тип результата повторяет тип элементов.',
+    }));
+    registry.registerGlobalFunction(functionSpec('min', [numericArrayParameter], types_1.ANY_TYPE, {
+        documentation: 'Наименьший элемент числового массива. Тип результата повторяет тип элементов.',
+    }));
+    registry.registerGlobalFunction(functionSpec('sum', [numericArrayParameter], types_1.ANY_TYPE, {
+        documentation: 'Сумма элементов числового массива. Тип результата повторяет тип элементов.',
+    }));
+    registry.registerGlobalFunction(functionSpec('avg', [numericArrayParameter], types_1.FLOAT, {
+        documentation: 'Среднее арифметическое элементов числового массива; всегда float.',
+    }));
     return registry;
 }
 function moduleSpec(name, functions, constants = [], types = []) {
@@ -8226,6 +8225,38 @@ function requireRange(bytes, offset, length) {
 }
 //# sourceMappingURL=font-metrics-service.js.map
 },
+"dist/src/runtime/gui-interval.js": function(require, module, exports) {
+"use strict";
+// Единственный источник истины для частоты GUI-цикла превью.
+// Хосты (Web IDE, расширение VS Code) считают интервал кадра по снапшотам
+// окон и холстов: максимальный заявленный framerate_limit, зажатый в 1–60 fps,
+// но не чаще раза в 16 мс.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.guiPreviewIntervalMs = guiPreviewIntervalMs;
+function guiPreviewIntervalMs(windows, canvases) {
+    const candidates = [];
+    const collectCanvas = (canvas) => {
+        const limit = Number(canvas?.properties?.framerate_limit);
+        if (Number.isFinite(limit) && limit > 0)
+            candidates.push(limit);
+    };
+    for (const canvas of canvases)
+        collectCanvas(canvas);
+    const visitWidget = (widget) => {
+        if (!widget)
+            return;
+        if (widget.canvas)
+            collectCanvas(widget.canvas);
+        for (const child of widget.children ?? [])
+            visitWidget(child);
+    };
+    for (const win of windows)
+        visitWidget(win);
+    const fps = Math.max(1, Math.min(60, candidates.length > 0 ? Math.max(...candidates) : 30));
+    return Math.max(16, Math.round(1000 / fps));
+}
+//# sourceMappingURL=gui-interval.js.map
+},
 "dist/src/runtime/image-service.js": function(require, module, exports) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -8614,6 +8645,7 @@ function readUint32(bytes, offset) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.compileIdyllium = compileIdyllium;
 exports.runIdyllium = runIdyllium;
+exports.describeRuntimeError = describeRuntimeError;
 const codegen_1 = require("../core/codegen");
 const diagnostics_1 = require("../core/diagnostics");
 const project_1 = require("../core/project");
@@ -8632,17 +8664,23 @@ function compileIdyllium(source, options = {}) {
         (0, project_1.loadUserModules)(ast, file, options, stdlib, diagnostics, modules);
     }
     const userModuleRegistry = (0, project_1.buildUserModuleRegistry)(modules, stdlib, diagnostics);
+    const nodeTypes = new Map();
     if (ast && !diagnostics.hasErrors()) {
         for (const module of modules) {
             const semantics = new semantics_1.SemanticAnalyzer(stdlib, userModuleRegistry).analyze(module.ast);
             (0, project_1.addDiagnostics)(diagnostics, semantics.diagnostics);
+            for (const [node, type] of semantics.nodeTypes)
+                nodeTypes.set(node, type);
         }
         const semantics = new semantics_1.SemanticAnalyzer(stdlib, userModuleRegistry).analyze(ast);
         (0, project_1.addDiagnostics)(diagnostics, semantics.diagnostics);
+        for (const [node, type] of semantics.nodeTypes)
+            nodeTypes.set(node, type);
     }
     if (ast && !diagnostics.hasErrors()) {
         jsCode = new codegen_1.JavaScriptGenerator({
             userModuleNames: new Set(modules.map((module) => module.name)),
+            nodeTypes,
         }).generate(ast, { modules: modules.map((module) => ({ name: module.name, program: module.ast })) }).jsCode;
     }
     if (diagnostics.hasErrors()) {
@@ -8685,10 +8723,44 @@ async function runIdyllium(source, runtimeOptions = {}, compileOptions = {}) {
         return {
             success: false,
             output: runtime.getOutput(),
-            runtimeError: error instanceof Error ? error.message : String(error),
+            runtimeError: describeRuntimeError(error, compileOptions.file ?? 'main.idyl'),
             compilation,
         };
     }
+}
+/**
+ * Превращает произвольную ошибку исполнения в текст для ученика.
+ * Ошибки Idyllium уже несут `file:line`; сырые V8-ошибки (переполнение стека
+ * при бесконечной рекурсии) переводятся в формат Idyllium с подсказкой.
+ */
+function describeRuntimeError(error, entryFile) {
+    if (error instanceof RangeError && /call stack|stack size/iu.test(error.message)) {
+        const name = dominantStackFunction(error.stack);
+        const hint = name
+            ? `check the recursion in function '${name}' — it needs a stop condition`
+            : 'check for a recursion without a stop condition';
+        return `${entryFile}: runtime error: maximum call depth exceeded (${hint})`;
+    }
+    return error instanceof Error ? error.message : String(error);
+}
+function dominantStackFunction(stack) {
+    const skipped = new Set(['eval', 'anonymous', 'Object', 'AsyncFunction', 'processTicksAndRejections', 'main']);
+    const counts = new Map();
+    for (const match of String(stack ?? '').matchAll(/^\s*at ([A-Za-z_$][\w$]*) /gmu)) {
+        const name = match[1];
+        if (name.startsWith('__idyl') || skipped.has(name))
+            continue;
+        counts.set(name, (counts.get(name) ?? 0) + 1);
+    }
+    let best = null;
+    let bestCount = 1;
+    for (const [name, count] of counts) {
+        if (count > bestCount) {
+            best = name;
+            bestCount = count;
+        }
+    }
+    return best;
 }
 //# sourceMappingURL=run.js.map
 },
@@ -8830,19 +8902,19 @@ const weekDayNumbers = {
     Sat: 6,
 };
 class IdylliumTimeStamp {
-    unixSeconds;
     timezone;
     components;
+    epochMs;
     constructor(unixSeconds, timezone = 'UTC', file = 'time', line = 0) {
-        this.unixSeconds = unixSeconds;
+        this.epochMs = Math.round(unixSeconds * 1000);
         this.timezone = normalizeTimeZone(timezone, 'time.stamp timezone', file, line);
-        this.components = timeStampComponents(unixSeconds, this.timezone, file, line);
+        this.components = timeStampComponents(Math.floor(this.epochMs / 1000), this.timezone, file, line);
     }
     static now(timezone, file, line) {
-        return new IdylliumTimeStamp(Math.floor(Date.now() / 1000), timezone, file, line);
+        return new IdylliumTimeStamp(Date.now() / 1000, timezone, file, line);
     }
     static fromUnix(seconds, timezone, file, line) {
-        const unixSeconds = integerNumber(seconds, 'time.from_unix() seconds', file, line);
+        const unixSeconds = finiteNumber(seconds, 'time.from_unix() seconds', file, line);
         return new IdylliumTimeStamp(unixSeconds, timezone, file, line);
     }
     get year() {
@@ -8867,10 +8939,13 @@ class IdylliumTimeStamp {
         return this.components.weekDay;
     }
     get unix() {
-        return this.unixSeconds;
+        return Math.floor(this.epochMs / 1000);
+    }
+    get millisecond() {
+        return this.epochMs - Math.floor(this.epochMs / 1000) * 1000;
     }
     in_timezone(timezone, file, line) {
-        return new IdylliumTimeStamp(this.unixSeconds, timezone, file, line);
+        return new IdylliumTimeStamp(this.epochMs / 1000, timezone, file, line);
     }
     to_string() {
         return [
@@ -9705,7 +9780,7 @@ async function openSqliteDatabase(pathValue, file, line, runtime) {
             throw new Error('path is not a file');
         }
         if (!runtime.fileSystem.exists(parentPath) || !runtime.fileSystem.isDirectory(parentPath)) {
-            throw new Error(`parent directory does not exist: ${parentPath}`);
+            throw new Error(`parent directory does not exist: ${runtime.fileSystem.humanizePaths?.(parentPath) ?? parentPath}`);
         }
     }
     catch (error) {
@@ -10197,6 +10272,10 @@ function createMemoryRuntimeFileSystem(entries = {}, cwd = '/workspace') {
             const sourceDirectory = sourceFile.trim() === '' ? normalizedCwd : memoryDirname(normalizeMemoryPath(sourceFile, normalizedCwd));
             return normalizeMemoryPath(requestedPath, sourceDirectory);
         },
+        humanizePaths(text) {
+            const prefix = normalizedCwd.endsWith('/') ? normalizedCwd : `${normalizedCwd}/`;
+            return text.split(prefix).join('').split(normalizedCwd).join('.');
+        },
         exists(filePath) {
             const normalized = normalizeMemoryPath(filePath, normalizedCwd);
             return files.has(normalized) || directories.has(normalized);
@@ -10489,10 +10568,13 @@ function defaultRuntimeSqliteService() {
 }
 function createRuntime(options = {}) {
     let output = '';
-    let precision = null;
+    // По умолчанию float печатается с точностью до 8 знаков после запятой
+    // (хвостовые нули отбрасываются); console.set_precision() меняет точность.
+    let precision = 8;
     let randomSeed = null;
     const input = [...(options.input ?? [])];
     const fileSystem = options.fileSystem ?? createNodeRuntimeFileSystem(options.projectRoot);
+    const humanizeFsPaths = (text) => fileSystem.humanizePaths?.(text) ?? text;
     const runtimeObjects = {
         objects: [],
         audio: [],
@@ -10544,18 +10626,19 @@ function createRuntime(options = {}) {
         return parts.join('');
     }
     function createInputFile(filePath, sourceFile, line) {
+        const shownPath = humanizeFsPaths(filePath);
         if (!fileSystem.exists(filePath)) {
-            throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${filePath}' for reading: file does not exist`);
+            throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for reading: file does not exist`);
         }
-        if (!runtimeIsFile(fileSystem, filePath, sourceFile, line, 'reading')) {
-            throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${filePath}' for reading: path is not a file`);
+        if (!runtimeIsFile(fileSystem, filePath, sourceFile, line, 'reading', shownPath)) {
+            throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for reading: path is not a file`);
         }
         let characters;
         try {
             characters = Array.from(fileSystem.readText(filePath));
         }
         catch (error) {
-            throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${filePath}' for reading: ${errorMessage(error)}`);
+            throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for reading: ${humanizeFsPaths(errorMessage(error))}`);
         }
         let offset = 0;
         let closed = false;
@@ -10617,18 +10700,19 @@ function createRuntime(options = {}) {
         return stream;
     }
     function createOutputFile(filePath, sourceFile, line) {
+        const shownPath = humanizeFsPaths(filePath);
         const parent = runtimeDirname(filePath);
         if (!fileSystem.exists(parent)) {
-            throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${filePath}' for writing: directory does not exist`);
+            throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for writing: directory does not exist`);
         }
-        if (!runtimeIsDirectory(fileSystem, parent, sourceFile, line, 'writing')) {
-            throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${filePath}' for writing: parent path is not a directory`);
+        if (!runtimeIsDirectory(fileSystem, parent, sourceFile, line, 'writing', shownPath)) {
+            throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for writing: parent path is not a directory`);
         }
         try {
             fileSystem.writeText(filePath, '');
         }
         catch (error) {
-            throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${filePath}' for writing: ${errorMessage(error)}`);
+            throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for writing: ${humanizeFsPaths(errorMessage(error))}`);
         }
         let closed = false;
         const stream = {
@@ -10651,7 +10735,50 @@ function createRuntime(options = {}) {
         };
         return stream;
     }
+    // Кооперативная остановка циклов: щедрый быстрый путь (инкремент счётчика),
+    // раз в LOOP_TICK_CHECK_MASK+1 итераций — проверка сигнала, и не чаще
+    // LOOP_YIELD_INTERVAL_MS — уступка хосту, чтобы обработчик Stop успел
+    // выставить abort даже при полностью занятом цикле event loop.
+    const LOOP_TICK_CHECK_MASK = 1023;
+    const LOOP_YIELD_INTERVAL_MS = 25;
+    let loopTickCounter = 0;
+    let lastLoopYieldAt = Date.now();
+    let loopYieldChannel = null;
+    let pendingLoopYieldResolve = null;
+    function yieldToHost() {
+        const scheduler = globalThis;
+        if (typeof scheduler.setImmediate === 'function') {
+            const setImmediateFn = scheduler.setImmediate;
+            return new Promise((resolve) => setImmediateFn(resolve));
+        }
+        if (typeof scheduler.MessageChannel === 'function') {
+            if (loopYieldChannel === null) {
+                loopYieldChannel = new scheduler.MessageChannel();
+                loopYieldChannel.port1.onmessage = () => {
+                    const resolve = pendingLoopYieldResolve;
+                    pendingLoopYieldResolve = null;
+                    resolve?.();
+                };
+            }
+            return new Promise((resolve) => {
+                pendingLoopYieldResolve = resolve;
+                loopYieldChannel?.port2.postMessage(null);
+            });
+        }
+        return new Promise((resolve) => setTimeout(resolve, 0));
+    }
     const core = {
+        tick(file, line) {
+            loopTickCounter = (loopTickCounter + 1) | 0;
+            if ((loopTickCounter & LOOP_TICK_CHECK_MASK) !== 0)
+                return null;
+            throwIfRuntimeStopped(file, line);
+            const now = Date.now();
+            if (now - lastLoopYieldAt < LOOP_YIELD_INTERVAL_MS)
+                return null;
+            lastLoopYieldAt = now;
+            return yieldToHost().then(() => throwIfRuntimeStopped(file, line));
+        },
         binary(operator, left, right, file, line) {
             return runtimeBinary(operator, left, right, file, line);
         },
@@ -10687,8 +10814,9 @@ function createRuntime(options = {}) {
             }
             throw new IdylliumRuntimeError(file, line, `'to_float' cannot convert '${String(value)}' to float`);
         },
-        to_string(value) {
-            return formatForConsole(value, precision);
+        async to_string(value) {
+            // Как и console.write: у объекта с публичным to_string() вызывается он.
+            return formatConsoleValue(value);
         },
     };
     const array = {
@@ -10810,7 +10938,11 @@ function createRuntime(options = {}) {
             math: {
                 pi: Math.PI,
                 e: Math.E,
-                abs: contextFunction((value, file, line) => Math.abs(finiteNumber(value, 'math.abs() value', file, line))),
+                abs: contextFunction((value, file, line) => {
+                    if (typeof value === 'bigint')
+                        return value < 0n ? -value : value;
+                    return Math.abs(finiteNumber(value, 'math.abs() value', file, line));
+                }),
                 sqrt: contextFunction((value, file, line) => {
                     const number = finiteNumber(value, 'math.sqrt() value', file, line);
                     if (number < 0)
@@ -10883,7 +11015,7 @@ function createRuntime(options = {}) {
                     if (low >= high) {
                         throw new IdylliumRuntimeError(file, line, `random.create_float() min must be less than max (got min ${low}, max ${high})`);
                     }
-                    return randomUnit() * (high - low) + low;
+                    return randomUnitInclusive() * (high - low) + low;
                 }),
                 choose_from: contextFunction((collection, file, line) => {
                     if (typeof collection === 'string') {
@@ -10937,7 +11069,7 @@ function createRuntime(options = {}) {
                         return fileSystem.exists(resolvedPath) && fileSystem.isFile(resolvedPath);
                     }
                     catch (error) {
-                        throw new IdylliumRuntimeError(file, line, `file.is_file() cannot inspect '${requestedPath}': ${errorMessage(error)}`);
+                        throw new IdylliumRuntimeError(file, line, `file.is_file() cannot inspect '${requestedPath}': ${humanizeFsPaths(errorMessage(error))}`);
                     }
                 }),
                 is_directory: contextFunction((targetPath, file, line) => {
@@ -10947,7 +11079,7 @@ function createRuntime(options = {}) {
                         return fileSystem.exists(resolvedPath) && fileSystem.isDirectory(resolvedPath);
                     }
                     catch (error) {
-                        throw new IdylliumRuntimeError(file, line, `file.is_directory() cannot inspect '${requestedPath}': ${errorMessage(error)}`);
+                        throw new IdylliumRuntimeError(file, line, `file.is_directory() cannot inspect '${requestedPath}': ${humanizeFsPaths(errorMessage(error))}`);
                     }
                 }),
                 create_directory: contextFunction((...rawArgs) => {
@@ -10963,7 +11095,7 @@ function createRuntime(options = {}) {
                         fileSystem.createDirectory(fileSystem.resolvePath(requestedPath, file), parents);
                     }
                     catch (error) {
-                        throw new IdylliumRuntimeError(file, line, `file.create_directory() cannot create '${requestedPath}': ${errorMessage(error)}`);
+                        throw new IdylliumRuntimeError(file, line, `file.create_directory() cannot create '${requestedPath}': ${humanizeFsPaths(errorMessage(error))}`);
                     }
                 }),
                 list_directory: contextFunction((targetPath, file, line) => {
@@ -10976,7 +11108,7 @@ function createRuntime(options = {}) {
                         return IdylliumArray.from([...names], true, null, () => '');
                     }
                     catch (error) {
-                        throw new IdylliumRuntimeError(file, line, `file.list_directory() cannot inspect '${requestedPath}': ${errorMessage(error)}`);
+                        throw new IdylliumRuntimeError(file, line, `file.list_directory() cannot inspect '${requestedPath}': ${humanizeFsPaths(errorMessage(error))}`);
                     }
                 }),
                 copy: contextFunction((sourcePath, destinationPath, file, line) => {
@@ -10989,7 +11121,7 @@ function createRuntime(options = {}) {
                         fileSystem.copy(fileSystem.resolvePath(source, file), fileSystem.resolvePath(destination, file));
                     }
                     catch (error) {
-                        throw new IdylliumRuntimeError(file, line, `file.copy() cannot copy '${source}' to '${destination}': ${errorMessage(error)}`);
+                        throw new IdylliumRuntimeError(file, line, `file.copy() cannot copy '${source}' to '${destination}': ${humanizeFsPaths(errorMessage(error))}`);
                     }
                 }),
                 rename: contextFunction((sourcePath, destinationPath, file, line) => {
@@ -11002,7 +11134,7 @@ function createRuntime(options = {}) {
                         fileSystem.rename(fileSystem.resolvePath(source, file), fileSystem.resolvePath(destination, file));
                     }
                     catch (error) {
-                        throw new IdylliumRuntimeError(file, line, `file.rename() cannot rename '${source}' to '${destination}': ${errorMessage(error)}`);
+                        throw new IdylliumRuntimeError(file, line, `file.rename() cannot rename '${source}' to '${destination}': ${humanizeFsPaths(errorMessage(error))}`);
                     }
                 }),
                 remove: contextFunction((...rawArgs) => {
@@ -11018,7 +11150,7 @@ function createRuntime(options = {}) {
                         fileSystem.remove(fileSystem.resolvePath(requestedPath, file), recursive);
                     }
                     catch (error) {
-                        throw new IdylliumRuntimeError(file, line, `file.remove() cannot remove '${requestedPath}': ${errorMessage(error)}`);
+                        throw new IdylliumRuntimeError(file, line, `file.remove() cannot remove '${requestedPath}': ${humanizeFsPaths(errorMessage(error))}`);
                     }
                 }),
                 open: contextFunction((targetPath, mode, file, line) => {
@@ -11196,18 +11328,30 @@ function createRuntime(options = {}) {
             const target = runtimeObjects.objects.find((item) => item.__idylliumObjectId === canvasId);
             if (!target)
                 return;
+            const deselectedRadios = target.__idylliumType === 'gui.RadioButton' && eventName === 'change'
+                ? runtimeObjects.objects.filter((item) => (item !== target && item.__idylliumType === 'gui.RadioButton' && item.is_selected === true))
+                : [];
             applyGuiEventPayload(target, eventName, payload, runtimeObjects);
             const callbackName = guiCallbackName(target, eventName);
-            if (!callbackName)
-                return;
-            const callback = target[callbackName];
-            if (typeof callback !== 'function')
-                return;
-            if (target.__idylliumType === 'gui.Canvas') {
-                await callback(target, guiEventObject(eventName, payload));
-                return;
+            if (callbackName) {
+                const callback = target[callbackName];
+                if (typeof callback === 'function') {
+                    if (target.__idylliumType === 'gui.Canvas') {
+                        await callback(target, guiEventObject(eventName, payload));
+                        return;
+                    }
+                    await callback(target);
+                }
             }
-            await callback(target);
+            // Выбор радиокнопки снимает выбор с соседей по группе — их on_change
+            // тоже должен сработать (с is_selected == false).
+            for (const sibling of deselectedRadios) {
+                if (sibling.is_selected !== false)
+                    continue;
+                const siblingCallback = sibling.on_change;
+                if (typeof siblingCallback === 'function')
+                    await siblingCallback(sibling);
+            }
         },
     };
     function randomUnit() {
@@ -11215,6 +11359,14 @@ function createRuntime(options = {}) {
             return Math.random();
         randomSeed = (Math.imul(randomSeed, 1664525) + 1013904223) >>> 0;
         return randomSeed / 0x100000000;
+    }
+    // Для create_float: единичный интервал ВКЛЮЧАЯ 1.0, чтобы max был достижим
+    // (как в Python). Нельзя делить с create_int: там unit 1.0 дал бы выход за max.
+    function randomUnitInclusive() {
+        if (randomSeed === null)
+            return Math.floor(Math.random() * 0x100000000) / 0xffffffff;
+        randomSeed = (Math.imul(randomSeed, 1664525) + 1013904223) >>> 0;
+        return randomSeed / 0xffffffff;
     }
     function waitForRuntimeDelay(milliseconds, file, line) {
         const signal = options.abortSignal;
@@ -11452,6 +11604,10 @@ function createNodeRuntimeFileSystem(projectRoot) {
     let mutationRoot = projectRoot ? nodePath.resolve(projectRoot) : null;
     const mutationPath = (filePath, operation) => (assertNodeProjectPath(mutationRoot ?? process.cwd(), filePath, operation));
     return {
+        humanizePaths(text) {
+            const root = mutationRoot ?? process.cwd();
+            return text.split(`${root}${nodePath.sep}`).join('').split(root).join('.');
+        },
         resolvePath(requestedPath, sourceFile) {
             if (!mutationRoot) {
                 mutationRoot = sourceFile.trim() !== '' && nodePath.isAbsolute(sourceFile)
@@ -11548,20 +11704,20 @@ function createNodeRuntimeFileSystem(projectRoot) {
 function runtimeDirname(filePath) {
     return filePath.includes('\\') ? memoryDirname(filePath) : nodePath.dirname(filePath);
 }
-function runtimeIsFile(fileSystem, filePath, sourceFile, line, mode) {
+function runtimeIsFile(fileSystem, filePath, sourceFile, line, mode, displayPath = filePath) {
     try {
         return fileSystem.isFile(filePath);
     }
     catch (error) {
-        throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${filePath}' for ${mode}: ${errorMessage(error)}`);
+        throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${displayPath}' for ${mode}: ${errorMessage(error)}`);
     }
 }
-function runtimeIsDirectory(fileSystem, filePath, sourceFile, line, mode) {
+function runtimeIsDirectory(fileSystem, filePath, sourceFile, line, mode, displayPath = filePath) {
     try {
         return fileSystem.isDirectory(filePath);
     }
     catch (error) {
-        throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${filePath}' for ${mode}: ${errorMessage(error)}`);
+        throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${displayPath}' for ${mode}: ${errorMessage(error)}`);
     }
 }
 function normalizeMemoryPath(value, base = '/workspace') {
@@ -12274,7 +12430,12 @@ function formatForConsole(value, precision) {
     if (typeof value === 'boolean')
         return value ? 'true' : 'false';
     if (typeof value === 'number' && precision !== null) {
-        return Number(value.toFixed(precision)).toString();
+        const rounded = Number(value.toFixed(precision));
+        // Ненулевое число, округлившееся в 0 (например 3e-36 при точности 8),
+        // показываем научной записью — иначе оно стало бы непечатаемым.
+        if (rounded === 0 && value !== 0)
+            return String(value);
+        return rounded.toString();
     }
     return String(value);
 }
@@ -12495,14 +12656,23 @@ function initializeGuiObject(obj, typeName, state) {
     }
     if (typeName === 'Timer') {
         obj.interval = 1000;
+        obj.running = false;
         obj.__running = false;
         obj.__elapsedMs = 0;
+        // start()/stop() — пауза и снятие с паузы (накопленные миллисекунды
+        // сохраняются), restart() — запуск заново с нуля.
         obj.start = () => {
             obj.__running = true;
-            obj.__elapsedMs = 0;
+            obj.running = true;
         };
         obj.stop = () => {
             obj.__running = false;
+            obj.running = false;
+        };
+        obj.restart = () => {
+            obj.__running = true;
+            obj.running = true;
+            obj.__elapsedMs = 0;
         };
         state.timers.push(obj);
     }
@@ -51057,7 +51227,7 @@ UPNG.encode.alphaMul = function(img, roundA) {
   };
   var cache = {};
   var builtins = createBuiltins();
-  var resolutions = {"dist/src/browser.js\u0000./language/formatter":"dist/src/language/formatter.js","dist/src/browser.js\u0000./language/project":"dist/src/language/project.js","dist/src/browser.js\u0000./runtime/browser-image-service":"dist/src/runtime/browser-image-service.js","dist/src/browser.js\u0000./runtime/browser-sqlite-service":"dist/src/runtime/browser-sqlite-service.js","dist/src/browser.js\u0000./runtime/run":"dist/src/runtime/run.js","dist/src/browser.js\u0000./runtime/runtime":"dist/src/runtime/runtime.js","dist/src/browser.js\u0000./runtime/sqlite-inspector":"dist/src/runtime/sqlite-inspector.js","dist/src/core/codegen.js\u0000./stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/core/codegen.js\u0000./types":"dist/src/core/types.js","dist/src/core/lexer.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/lexer.js\u0000./tokens":"dist/src/core/tokens.js","dist/src/core/parser.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/parser.js\u0000./tokens":"dist/src/core/tokens.js","dist/src/core/project.js\u0000./lexer":"dist/src/core/lexer.js","dist/src/core/project.js\u0000./modules":"dist/src/core/modules.js","dist/src/core/project.js\u0000./parser":"dist/src/core/parser.js","dist/src/core/project.js\u0000./types":"dist/src/core/types.js","dist/src/core/semantics.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/semantics.js\u0000./modules":"dist/src/core/modules.js","dist/src/core/semantics.js\u0000./stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/core/semantics.js\u0000./types":"dist/src/core/types.js","dist/src/core/stdlib/registry.js\u0000../types":"dist/src/core/types.js","dist/src/language/project.js\u0000../core/diagnostics":"dist/src/core/diagnostics.js","dist/src/language/project.js\u0000../core/project":"dist/src/core/project.js","dist/src/language/project.js\u0000../core/semantics":"dist/src/core/semantics.js","dist/src/language/project.js\u0000../core/stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/language/project.js\u0000../core/types":"dist/src/core/types.js","dist/src/language/project.js\u0000../runtime/run":"dist/src/runtime/run.js","dist/src/runtime/browser-image-service.js\u0000./image-service":"dist/src/runtime/image-service.js","dist/src/runtime/browser-sqlite-service.js\u0000./sqlite-service":"dist/src/runtime/sqlite-service.js","dist/src/runtime/browser-sqlite-service.js\u0000sql.js/dist/sql-wasm-browser.js":"node_modules/sql.js/dist/sql-wasm-browser.js","dist/src/runtime/font-metrics-service.js\u0000./default-font-metrics":"dist/src/runtime/default-font-metrics.js","dist/src/runtime/font-metrics-service.js\u0000fontkit":"node_modules/fontkit/dist/browser.cjs","dist/src/runtime/font-metrics-service.js\u0000pako":"node_modules/pako/index.js","dist/src/runtime/image-service.js\u0000gifenc":"node_modules/gifenc/dist/gifenc.js","dist/src/runtime/image-service.js\u0000gifuct-js":"node_modules/gifuct-js/lib/index.js","dist/src/runtime/image-service.js\u0000upng-js":"node_modules/upng-js/UPNG.js","dist/src/runtime/run.js\u0000../core/codegen":"dist/src/core/codegen.js","dist/src/runtime/run.js\u0000../core/diagnostics":"dist/src/core/diagnostics.js","dist/src/runtime/run.js\u0000../core/project":"dist/src/core/project.js","dist/src/runtime/run.js\u0000../core/semantics":"dist/src/core/semantics.js","dist/src/runtime/run.js\u0000../core/stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/runtime/run.js\u0000./runtime":"dist/src/runtime/runtime.js","dist/src/runtime/runtime.js\u0000./drawable-geometry":"dist/src/runtime/drawable-geometry.js","dist/src/runtime/runtime.js\u0000./font-metrics-service":"dist/src/runtime/font-metrics-service.js","dist/src/runtime/runtime.js\u0000./image-service":"dist/src/runtime/image-service.js","node_modules/@swc/helpers/cjs/_ts_decorate.cjs\u0000tslib":"node_modules/tslib/tslib.js","node_modules/brotli/dec/decode.js\u0000./bit_reader":"node_modules/brotli/dec/bit_reader.js","node_modules/brotli/dec/decode.js\u0000./context":"node_modules/brotli/dec/context.js","node_modules/brotli/dec/decode.js\u0000./dictionary":"node_modules/brotli/dec/dictionary.js","node_modules/brotli/dec/decode.js\u0000./huffman":"node_modules/brotli/dec/huffman.js","node_modules/brotli/dec/decode.js\u0000./prefix":"node_modules/brotli/dec/prefix.js","node_modules/brotli/dec/decode.js\u0000./streams":"node_modules/brotli/dec/streams.js","node_modules/brotli/dec/decode.js\u0000./transform":"node_modules/brotli/dec/transform.js","node_modules/brotli/dec/dictionary.js\u0000./dictionary-data":"node_modules/brotli/dec/dictionary-data.js","node_modules/brotli/dec/transform.js\u0000./dictionary":"node_modules/brotli/dec/dictionary.js","node_modules/brotli/decompress.js\u0000./dec/decode":"node_modules/brotli/dec/decode.js","node_modules/fontkit/dist/browser.cjs\u0000@swc/helpers/cjs/_define_property.cjs":"node_modules/@swc/helpers/cjs/_define_property.cjs","node_modules/fontkit/dist/browser.cjs\u0000@swc/helpers/cjs/_ts_decorate.cjs":"node_modules/@swc/helpers/cjs/_ts_decorate.cjs","node_modules/fontkit/dist/browser.cjs\u0000brotli/decompress.js":"node_modules/brotli/decompress.js","node_modules/fontkit/dist/browser.cjs\u0000clone":"node_modules/clone/clone.js","node_modules/fontkit/dist/browser.cjs\u0000dfa":"node_modules/dfa/index.js","node_modules/fontkit/dist/browser.cjs\u0000fast-deep-equal":"node_modules/fast-deep-equal/index.js","node_modules/fontkit/dist/browser.cjs\u0000restructure":"node_modules/restructure/dist/main.cjs","node_modules/fontkit/dist/browser.cjs\u0000tiny-inflate":"node_modules/tiny-inflate/index.js","node_modules/fontkit/dist/browser.cjs\u0000unicode-properties":"node_modules/unicode-properties/dist/main.cjs","node_modules/fontkit/dist/browser.cjs\u0000unicode-trie":"node_modules/unicode-trie/index.js","node_modules/gifuct-js/lib/index.js\u0000./deinterlace":"node_modules/gifuct-js/lib/deinterlace.js","node_modules/gifuct-js/lib/index.js\u0000./lzw":"node_modules/gifuct-js/lib/lzw.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser":"node_modules/js-binary-schema-parser/lib/index.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser/lib/parsers/uint8":"node_modules/js-binary-schema-parser/lib/parsers/uint8.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser/lib/schemas/gif":"node_modules/js-binary-schema-parser/lib/schemas/gif.js","node_modules/js-binary-schema-parser/lib/schemas/gif.js\u0000../":"node_modules/js-binary-schema-parser/lib/index.js","node_modules/js-binary-schema-parser/lib/schemas/gif.js\u0000../parsers/uint8":"node_modules/js-binary-schema-parser/lib/parsers/uint8.js","node_modules/pako/index.js\u0000./lib/deflate":"node_modules/pako/lib/deflate.js","node_modules/pako/index.js\u0000./lib/inflate":"node_modules/pako/lib/inflate.js","node_modules/pako/index.js\u0000./lib/utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/index.js\u0000./lib/zlib/constants":"node_modules/pako/lib/zlib/constants.js","node_modules/pako/lib/deflate.js\u0000./utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/deflate.js\u0000./utils/strings":"node_modules/pako/lib/utils/strings.js","node_modules/pako/lib/deflate.js\u0000./zlib/deflate":"node_modules/pako/lib/zlib/deflate.js","node_modules/pako/lib/deflate.js\u0000./zlib/messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/deflate.js\u0000./zlib/zstream":"node_modules/pako/lib/zlib/zstream.js","node_modules/pako/lib/deflate.js\u0000pako":"node_modules/pako/index.js","node_modules/pako/lib/inflate.js\u0000./utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/inflate.js\u0000./utils/strings":"node_modules/pako/lib/utils/strings.js","node_modules/pako/lib/inflate.js\u0000./zlib/constants":"node_modules/pako/lib/zlib/constants.js","node_modules/pako/lib/inflate.js\u0000./zlib/gzheader":"node_modules/pako/lib/zlib/gzheader.js","node_modules/pako/lib/inflate.js\u0000./zlib/inflate":"node_modules/pako/lib/zlib/inflate.js","node_modules/pako/lib/inflate.js\u0000./zlib/messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/inflate.js\u0000./zlib/zstream":"node_modules/pako/lib/zlib/zstream.js","node_modules/pako/lib/inflate.js\u0000pako":"node_modules/pako/index.js","node_modules/pako/lib/utils/strings.js\u0000./common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/deflate.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/deflate.js\u0000./adler32":"node_modules/pako/lib/zlib/adler32.js","node_modules/pako/lib/zlib/deflate.js\u0000./crc32":"node_modules/pako/lib/zlib/crc32.js","node_modules/pako/lib/zlib/deflate.js\u0000./messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/zlib/deflate.js\u0000./trees":"node_modules/pako/lib/zlib/trees.js","node_modules/pako/lib/zlib/inflate.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/inflate.js\u0000./adler32":"node_modules/pako/lib/zlib/adler32.js","node_modules/pako/lib/zlib/inflate.js\u0000./crc32":"node_modules/pako/lib/zlib/crc32.js","node_modules/pako/lib/zlib/inflate.js\u0000./inffast":"node_modules/pako/lib/zlib/inffast.js","node_modules/pako/lib/zlib/inflate.js\u0000./inftrees":"node_modules/pako/lib/zlib/inftrees.js","node_modules/pako/lib/zlib/inftrees.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/trees.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/unicode-properties/dist/main.cjs\u0000base64-js":"node_modules/base64-js/index.js","node_modules/unicode-properties/dist/main.cjs\u0000unicode-trie":"node_modules/unicode-trie/index.js","node_modules/unicode-trie/index.js\u0000./swap":"node_modules/unicode-trie/swap.js","node_modules/unicode-trie/index.js\u0000tiny-inflate":"node_modules/tiny-inflate/index.js","node_modules/upng-js/UPNG.js\u0000pako":"node_modules/pako/index.js"};
+  var resolutions = {"dist/src/browser.js\u0000./core/semantics":"dist/src/core/semantics.js","dist/src/browser.js\u0000./language/formatter":"dist/src/language/formatter.js","dist/src/browser.js\u0000./language/project":"dist/src/language/project.js","dist/src/browser.js\u0000./runtime/browser-image-service":"dist/src/runtime/browser-image-service.js","dist/src/browser.js\u0000./runtime/browser-sqlite-service":"dist/src/runtime/browser-sqlite-service.js","dist/src/browser.js\u0000./runtime/gui-interval":"dist/src/runtime/gui-interval.js","dist/src/browser.js\u0000./runtime/run":"dist/src/runtime/run.js","dist/src/browser.js\u0000./runtime/runtime":"dist/src/runtime/runtime.js","dist/src/browser.js\u0000./runtime/sqlite-inspector":"dist/src/runtime/sqlite-inspector.js","dist/src/core/codegen.js\u0000./stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/core/codegen.js\u0000./types":"dist/src/core/types.js","dist/src/core/lexer.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/lexer.js\u0000./tokens":"dist/src/core/tokens.js","dist/src/core/parser.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/parser.js\u0000./tokens":"dist/src/core/tokens.js","dist/src/core/project.js\u0000./lexer":"dist/src/core/lexer.js","dist/src/core/project.js\u0000./modules":"dist/src/core/modules.js","dist/src/core/project.js\u0000./parser":"dist/src/core/parser.js","dist/src/core/project.js\u0000./types":"dist/src/core/types.js","dist/src/core/semantics.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/semantics.js\u0000./modules":"dist/src/core/modules.js","dist/src/core/semantics.js\u0000./stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/core/semantics.js\u0000./types":"dist/src/core/types.js","dist/src/core/stdlib/registry.js\u0000../types":"dist/src/core/types.js","dist/src/language/project.js\u0000../core/diagnostics":"dist/src/core/diagnostics.js","dist/src/language/project.js\u0000../core/project":"dist/src/core/project.js","dist/src/language/project.js\u0000../core/semantics":"dist/src/core/semantics.js","dist/src/language/project.js\u0000../core/stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/language/project.js\u0000../core/types":"dist/src/core/types.js","dist/src/language/project.js\u0000../runtime/run":"dist/src/runtime/run.js","dist/src/runtime/browser-image-service.js\u0000./image-service":"dist/src/runtime/image-service.js","dist/src/runtime/browser-sqlite-service.js\u0000./sqlite-service":"dist/src/runtime/sqlite-service.js","dist/src/runtime/browser-sqlite-service.js\u0000sql.js/dist/sql-wasm-browser.js":"node_modules/sql.js/dist/sql-wasm-browser.js","dist/src/runtime/font-metrics-service.js\u0000./default-font-metrics":"dist/src/runtime/default-font-metrics.js","dist/src/runtime/font-metrics-service.js\u0000fontkit":"node_modules/fontkit/dist/browser.cjs","dist/src/runtime/font-metrics-service.js\u0000pako":"node_modules/pako/index.js","dist/src/runtime/image-service.js\u0000gifenc":"node_modules/gifenc/dist/gifenc.js","dist/src/runtime/image-service.js\u0000gifuct-js":"node_modules/gifuct-js/lib/index.js","dist/src/runtime/image-service.js\u0000upng-js":"node_modules/upng-js/UPNG.js","dist/src/runtime/run.js\u0000../core/codegen":"dist/src/core/codegen.js","dist/src/runtime/run.js\u0000../core/diagnostics":"dist/src/core/diagnostics.js","dist/src/runtime/run.js\u0000../core/project":"dist/src/core/project.js","dist/src/runtime/run.js\u0000../core/semantics":"dist/src/core/semantics.js","dist/src/runtime/run.js\u0000../core/stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/runtime/run.js\u0000./runtime":"dist/src/runtime/runtime.js","dist/src/runtime/runtime.js\u0000./drawable-geometry":"dist/src/runtime/drawable-geometry.js","dist/src/runtime/runtime.js\u0000./font-metrics-service":"dist/src/runtime/font-metrics-service.js","dist/src/runtime/runtime.js\u0000./image-service":"dist/src/runtime/image-service.js","node_modules/@swc/helpers/cjs/_ts_decorate.cjs\u0000tslib":"node_modules/tslib/tslib.js","node_modules/brotli/dec/decode.js\u0000./bit_reader":"node_modules/brotli/dec/bit_reader.js","node_modules/brotli/dec/decode.js\u0000./context":"node_modules/brotli/dec/context.js","node_modules/brotli/dec/decode.js\u0000./dictionary":"node_modules/brotli/dec/dictionary.js","node_modules/brotli/dec/decode.js\u0000./huffman":"node_modules/brotli/dec/huffman.js","node_modules/brotli/dec/decode.js\u0000./prefix":"node_modules/brotli/dec/prefix.js","node_modules/brotli/dec/decode.js\u0000./streams":"node_modules/brotli/dec/streams.js","node_modules/brotli/dec/decode.js\u0000./transform":"node_modules/brotli/dec/transform.js","node_modules/brotli/dec/dictionary.js\u0000./dictionary-data":"node_modules/brotli/dec/dictionary-data.js","node_modules/brotli/dec/transform.js\u0000./dictionary":"node_modules/brotli/dec/dictionary.js","node_modules/brotli/decompress.js\u0000./dec/decode":"node_modules/brotli/dec/decode.js","node_modules/fontkit/dist/browser.cjs\u0000@swc/helpers/cjs/_define_property.cjs":"node_modules/@swc/helpers/cjs/_define_property.cjs","node_modules/fontkit/dist/browser.cjs\u0000@swc/helpers/cjs/_ts_decorate.cjs":"node_modules/@swc/helpers/cjs/_ts_decorate.cjs","node_modules/fontkit/dist/browser.cjs\u0000brotli/decompress.js":"node_modules/brotli/decompress.js","node_modules/fontkit/dist/browser.cjs\u0000clone":"node_modules/clone/clone.js","node_modules/fontkit/dist/browser.cjs\u0000dfa":"node_modules/dfa/index.js","node_modules/fontkit/dist/browser.cjs\u0000fast-deep-equal":"node_modules/fast-deep-equal/index.js","node_modules/fontkit/dist/browser.cjs\u0000restructure":"node_modules/restructure/dist/main.cjs","node_modules/fontkit/dist/browser.cjs\u0000tiny-inflate":"node_modules/tiny-inflate/index.js","node_modules/fontkit/dist/browser.cjs\u0000unicode-properties":"node_modules/unicode-properties/dist/main.cjs","node_modules/fontkit/dist/browser.cjs\u0000unicode-trie":"node_modules/unicode-trie/index.js","node_modules/gifuct-js/lib/index.js\u0000./deinterlace":"node_modules/gifuct-js/lib/deinterlace.js","node_modules/gifuct-js/lib/index.js\u0000./lzw":"node_modules/gifuct-js/lib/lzw.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser":"node_modules/js-binary-schema-parser/lib/index.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser/lib/parsers/uint8":"node_modules/js-binary-schema-parser/lib/parsers/uint8.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser/lib/schemas/gif":"node_modules/js-binary-schema-parser/lib/schemas/gif.js","node_modules/js-binary-schema-parser/lib/schemas/gif.js\u0000../":"node_modules/js-binary-schema-parser/lib/index.js","node_modules/js-binary-schema-parser/lib/schemas/gif.js\u0000../parsers/uint8":"node_modules/js-binary-schema-parser/lib/parsers/uint8.js","node_modules/pako/index.js\u0000./lib/deflate":"node_modules/pako/lib/deflate.js","node_modules/pako/index.js\u0000./lib/inflate":"node_modules/pako/lib/inflate.js","node_modules/pako/index.js\u0000./lib/utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/index.js\u0000./lib/zlib/constants":"node_modules/pako/lib/zlib/constants.js","node_modules/pako/lib/deflate.js\u0000./utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/deflate.js\u0000./utils/strings":"node_modules/pako/lib/utils/strings.js","node_modules/pako/lib/deflate.js\u0000./zlib/deflate":"node_modules/pako/lib/zlib/deflate.js","node_modules/pako/lib/deflate.js\u0000./zlib/messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/deflate.js\u0000./zlib/zstream":"node_modules/pako/lib/zlib/zstream.js","node_modules/pako/lib/deflate.js\u0000pako":"node_modules/pako/index.js","node_modules/pako/lib/inflate.js\u0000./utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/inflate.js\u0000./utils/strings":"node_modules/pako/lib/utils/strings.js","node_modules/pako/lib/inflate.js\u0000./zlib/constants":"node_modules/pako/lib/zlib/constants.js","node_modules/pako/lib/inflate.js\u0000./zlib/gzheader":"node_modules/pako/lib/zlib/gzheader.js","node_modules/pako/lib/inflate.js\u0000./zlib/inflate":"node_modules/pako/lib/zlib/inflate.js","node_modules/pako/lib/inflate.js\u0000./zlib/messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/inflate.js\u0000./zlib/zstream":"node_modules/pako/lib/zlib/zstream.js","node_modules/pako/lib/inflate.js\u0000pako":"node_modules/pako/index.js","node_modules/pako/lib/utils/strings.js\u0000./common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/deflate.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/deflate.js\u0000./adler32":"node_modules/pako/lib/zlib/adler32.js","node_modules/pako/lib/zlib/deflate.js\u0000./crc32":"node_modules/pako/lib/zlib/crc32.js","node_modules/pako/lib/zlib/deflate.js\u0000./messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/zlib/deflate.js\u0000./trees":"node_modules/pako/lib/zlib/trees.js","node_modules/pako/lib/zlib/inflate.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/inflate.js\u0000./adler32":"node_modules/pako/lib/zlib/adler32.js","node_modules/pako/lib/zlib/inflate.js\u0000./crc32":"node_modules/pako/lib/zlib/crc32.js","node_modules/pako/lib/zlib/inflate.js\u0000./inffast":"node_modules/pako/lib/zlib/inffast.js","node_modules/pako/lib/zlib/inflate.js\u0000./inftrees":"node_modules/pako/lib/zlib/inftrees.js","node_modules/pako/lib/zlib/inftrees.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/trees.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/unicode-properties/dist/main.cjs\u0000base64-js":"node_modules/base64-js/index.js","node_modules/unicode-properties/dist/main.cjs\u0000unicode-trie":"node_modules/unicode-trie/index.js","node_modules/unicode-trie/index.js\u0000./swap":"node_modules/unicode-trie/swap.js","node_modules/unicode-trie/index.js\u0000tiny-inflate":"node_modules/tiny-inflate/index.js","node_modules/upng-js/UPNG.js\u0000pako":"node_modules/pako/index.js"};
 
   function load(id) {
     if (cache[id]) return cache[id].exports;
