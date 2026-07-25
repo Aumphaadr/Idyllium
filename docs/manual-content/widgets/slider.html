@@ -189,7 +189,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:5:20: error: cannot assign 'string' value to 'int' variable</idyl-error-block>
+      <idyl-error-block>main.idyl:5:20: compile error: cannot assign 'string' value to 'int' variable</idyl-error-block>
 
       <p><code>"50"</code> в кавычках — это <code>string</code>, а <code>value</code> у Slider — <code>int</code>. Кавычки убрать — и компилятор доволен.</p>
       <p>А вот за диапазоном компилятор не следит: код <code>slider.value = 500;</code> при <code>max = 300</code> спокойно проходит проверку. Компилятор проверяет типы, а не диапазоны, поэтому держать <code>value</code> в пределах <code>min</code> и <code>max</code> — забота программиста.</p>

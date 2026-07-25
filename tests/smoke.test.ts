@@ -1124,6 +1124,103 @@ test('method references keep their object when stored as event handlers', async 
   );
 });
 
+test('extended encodings round-trip and reproduce classic mojibake', async () => {
+  const result = await runIdyllium([
+    'use console;',
+    'use encoding;',
+    '',
+    'main() {',
+    '    // Классика жанра: 1251-байты, прочитанные другими кодировками',
+    '    dyn_array<int> bytes = encoding.encode("Нормальный текст", "windows-1251");',
+    '    console.writeln(encoding.decode(bytes, "windows-1252"));',
+    '    console.writeln(encoding.decode(bytes, "cp866"));',
+    '',
+    '    // Round-trip всех новых кодировок',
+    '    console.writeln(encoding.decode(encoding.encode("Привет, DOS!", "cp866"), "cp866"));',
+    '    console.writeln(encoding.decode(encoding.encode("Iş günü", "windows-1254"), "windows-1254"));',
+    '    console.writeln(encoding.decode(encoding.encode("café £5", "windows-1252"), "windows-1252"));',
+    '',
+    '    // CP437: псевдографика с точными DOS-байтами',
+    '    dyn_array<int> box = encoding.encode("╔═╗", "cp437");',
+    '    console.writeln(box);',
+    '    console.writeln(encoding.decode(box, "ibm437")); // алиас',
+    '',
+    '    console.writeln(encoding.list_encodings().length);',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === 'Íîðìàëüíûé òåêñò\n═юЁьры№э√щ ЄхъёЄ\nПривет, DOS!\nIş günü\ncafé £5\n[201, 205, 187]\n╔═╗\n8\n',
+    `unexpected encoding output: ${JSON.stringify(result.output)}`,
+  );
+
+  // Кириллица в западной кодировке — честная ошибка, не молчаливый '?'
+  await assertRuntimeFails(
+    'use encoding;\nmain() {\n    encoding.encode("Ю", "windows-1252");\n}',
+    "is not valid windows-1252",
+  );
+});
+
+test('time.create builds stamps from calendar components', async () => {
+  const result = await runIdyllium([
+    'use console;',
+    'use time;',
+    '',
+    'main() {',
+    '    time.stamp meeting = time.create(2026, 9, 24, 18, 3);',
+    '    console.writeln(meeting, ":", meeting.week_day, ":", meeting.unix);',
+    '    console.writeln(time.create(2026, 9, 24)); // время по умолчанию — полночь',
+    '    console.writeln(time.create(2026, 9, 24, hour=18, minute=3)); // именованные',
+    '',
+    '    // Компоненты трактуются в указанной зоне: Екатеринбург на 5 часов восточнее UTC',
+    '    time.stamp ekb = time.create(2026, 9, 24, 18, 3, 0, 0, "Asia/Yekaterinburg");',
+    '    console.writeln(meeting.unix - ekb.unix);',
+    '',
+    '    console.writeln(time.create(2024, 2, 29)); // високосный год — дата существует',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === '2026-09-24 18:03:00:4:1790272980\n2026-09-24 00:00:00\n2026-09-24 18:03:00\n18000\n2024-02-29 00:00:00\n',
+    `unexpected time.create output: ${JSON.stringify(result.output)}`,
+  );
+
+  await assertRuntimeFails('use time;\nmain() {\n    time.create(2026, 2, 30);\n}', 'date 2026-02-30 does not exist');
+  await assertRuntimeFails('use time;\nmain() {\n    time.create(2026, 13, 1);\n}', 'month must be between 1 and 12, got 13');
+  await assertRuntimeFails('use time;\nmain() {\n    time.create(2026, 1, 1, 24);\n}', 'hour must be between 0 and 23, got 24');
+});
+
+test('encoding safe=false replaces broken data instead of failing', async () => {
+  const result = await runIdyllium([
+    'use console;',
+    'use encoding;',
+    '',
+    'main() {',
+    '    // 1251-байты, прочитанные как UTF-8 с отключённой страховкой',
+    '    dyn_array<int> bytes = encoding.encode("Нормальный текст", "windows-1251");',
+    '    console.writeln(encoding.decode(bytes, "utf-8", safe=false));',
+    '',
+    '    // Кириллица в ASCII: классические вопросики',
+    '    console.writeln(encoding.encode("Привет!", "ascii", safe=false));',
+    '    console.writeln(encoding.decode(encoding.encode("Ямб и хорей", "windows-1252", safe=false), "windows-1252"));',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === '\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\uFFFD \uFFFD\uFFFD\uFFFD\uFFFD\uFFFD\n[63, 63, 63, 63, 63, 63, 33]\n??? ? ?????\n',
+    `unexpected safe=false output: ${JSON.stringify(result.output)}`,
+  );
+
+  // Страховка по умолчанию включена: без safe=false — честная ошибка
+  await assertRuntimeFails(
+    'use encoding;\nmain() {\n    encoding.decode([208], "utf-8");\n}',
+    'invalid UTF-8',
+  );
+});
+
 test('IdySS style parser validates the dictionary and silently drops mistakes', () => {
   // Опечатка в имени и цвет вне палитры — молчаливый отброс, валидное — остаётся.
   assert(
@@ -2741,9 +2838,9 @@ test('encoding helpers run and report readable errors', async () => {
     use encoding;
 
     main() {
-      dyn_array<int> codes = encoding.encode("A", "cp866");
+      dyn_array<int> codes = encoding.encode("A", "cp1337");
     }
-  `, "unknown encoding 'cp866'");
+  `, "unknown encoding 'cp1337'");
 });
 
 test('encoding is strict and round-trips complete single-byte tables', async () => {

@@ -132,7 +132,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:7:25: error: 'name' was not declared in this scope</idyl-error-block>
+      <idyl-error-block>main.idyl:7:25: compile error: 'name' was not declared in this scope</idyl-error-block>
 
       <p>Исправление: <code>this.name</code> вместо <code>name</code>.</p>
     </div>
@@ -156,7 +156,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:10:21: error: cannot print object of class 'Cat' directly</idyl-error-block>
+      <idyl-error-block>main.idyl:10:21: compile error: cannot print object of class 'Cat' directly</idyl-error-block>
 
       <p>Компилятор не знает, как показать объект <code>Cat</code> в консоли, и отказывается это делать. Придётся объяснить ему самостоятельно.</p>
     </div>

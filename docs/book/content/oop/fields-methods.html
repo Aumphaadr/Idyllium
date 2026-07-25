@@ -136,11 +136,11 @@ main() {
 }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:8:5: error: instance method 'Cat.meow' must be called on an object</idyl-error-block>
+  <idyl-error-block>main.idyl:8:5: compile error: instance method 'Cat.meow' must be called on an object</idyl-error-block>
 
   <p>Компилятор так и объясняет: метод <code>Cat.meow</code> нужно вызывать у объекта (<em>on an object</em>). То же самое со свойствами — если заменить эту строку на <code>string n = Cat.name;</code>, компилятор ответит:</p>
 
-  <idyl-error-block>main.idyl:8:16: error: instance field 'Cat.name' must be accessed through an object</idyl-error-block>
+  <idyl-error-block>main.idyl:8:16: compile error: instance field 'Cat.name' must be accessed through an object</idyl-error-block>
 
   <p>Класс — это только <strong>чертёж</strong>. Чертёж кота не мяукает и не имеет имени. Чтобы что-то сделать, создайте по чертежу <strong>объект</strong> — и обращайтесь к нему.</p>
 </div>

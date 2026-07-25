@@ -135,9 +135,15 @@ async function main(): Promise<void> {
       if (reason) continue;
 
       // Ожидаемый output/error-блок может отделяться модульными блоками
-      // (программа → её модуль b.idyl → error-блок): перешагиваем их.
+      // (программа → её модуль b.idyl → error-блок): перешагиваем их. Но модуль
+      // с собственным main() — сам программа: он заберёт СВОЙ error-блок, и
+      // перешагивать через него нельзя (иначе предыдущий пример украдёт блок).
       let nextIndex = index + 1;
-      while (blocks[nextIndex]?.kind === 'code' && moduleFileName(blocks[nextIndex]) !== null) nextIndex += 1;
+      while (
+        blocks[nextIndex]?.kind === 'code'
+        && moduleFileName(blocks[nextIndex]) !== null
+        && !/\bmain\s*\(/u.test(unescapeHtml(blocks[nextIndex].inner))
+      ) nextIndex += 1;
       const next = blocks[nextIndex];
       const result = await runIdyllium(code, { fileSystem }, { file: 'main.idyl', sources: moduleSources });
 
@@ -167,6 +173,21 @@ async function main(): Promise<void> {
         continue;
       }
 
+      if (next?.kind === 'error') {
+        // Программа успешна, а урок обещает ошибку. Возможно, урок учит
+        // ситуации «соседнего файла НЕТ» — а мы его материализовали из
+        // sources. Перепроверяем в мире без модулей: совпало — засчитано.
+        checkedErrors += 1;
+        const expected = normalizeText(unescapeHtml(next.inner));
+        const bare = await runIdyllium(code, { fileSystem }, { file: 'main.idyl' });
+        const bareActual = normalizeText(
+          bare.compilation.success ? (bare.runtimeError ?? '') : bare.compilation.diagnosticsText,
+        );
+        if (bareActual !== expected) {
+          errorDiffs.push(`${relative}: error-block\n  в уроке : ${expected.split('\n').join(' | ')}\n  фактически: программа выполняется успешно, ошибки нет`);
+        }
+        continue;
+      }
       if (next?.kind !== 'output') continue;
       if (/<span\b/u.test(next.inner)) continue; // оформленный вывод (ANSI-цвета)
       checkedOutputs += 1;

@@ -29,12 +29,16 @@ use encoding;
 
     <div class="docs-section">
       <h2>Поддерживаемые кодировки</h2>
-      <p>Idyllium поддерживает четыре кодировки:</p>
+      <p>Idyllium поддерживает восемь кодировок:</p>
       <ul>
         <li><code>ascii</code> — маленькая кодировка с латиницей, цифрами и основными знаками, использующая значения от 0 до 127;</li>
         <li><code>utf-8</code> — современная универсальная кодировка, способная хранить все символы Unicode;</li>
         <li><code>windows-1251</code> — однобайтовая кириллическая кодировка из старых Windows-программ;</li>
-        <li><code>koi8-r</code> — ещё одна однобайтовая кириллическая кодировка, известная по Unix-системам.</li>
+        <li><code>koi8-r</code> — ещё одна однобайтовая кириллическая кодировка, известная по Unix-системам;</li>
+        <li><code>cp866</code> — кириллическая кодировка эпохи DOS: в ней же хранятся символы-«кирпичики» псевдографики;</li>
+        <li><code>cp437</code> — самая первая кодировка IBM PC: латиница, псевдографика и математические значки;</li>
+        <li><code>windows-1252</code> — западноевропейская кодировка Windows (именно через неё русский текст превращается в знаменитое «Íîðìàëüíûé òåêñò»);</li>
+        <li><code>windows-1254</code> — турецкая кодировка Windows, родня windows-1252.</li>
       </ul>
       <p>Список можно получить и прямо из программы:</p>
 
@@ -53,7 +57,11 @@ main() {
       <idyl-output-block>ascii
 utf-8
 windows-1251
-koi8-r</idyl-output-block>
+koi8-r
+cp866
+cp437
+windows-1252
+windows-1254</idyl-output-block>
     </div>
 
     <div class="docs-section">
@@ -135,7 +143,26 @@ main() {
       <idyl-output-block>Байты: [207, 240, 232, 226, 229, 242]
 Текст: Привет</idyl-output-block>
 
-      <p>Если прочитать старый файл не той кодировкой, числа будут истолкованы иначе. Так и появляются знаменитые «кракозябры».</p>
+      <p>Если прочитать старый файл не той кодировкой, числа будут истолкованы иначе. Так и появляются знаменитые «кракозябры» — теперь их можно вырастить самостоятельно, в лабораторных условиях:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use encoding;
+
+main() {
+    dyn_array<int> bytes = encoding.encode("Нормальный текст", "windows-1251");
+
+    console.writeln(encoding.decode(bytes, "windows-1252"));
+    console.writeln(encoding.decode(bytes, "cp866"));
+    console.writeln(encoding.decode(bytes, "koi8-r"));
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Íîðìàëüíûé òåêñò
+═юЁьры№э√щ ЄхъёЄ
+мНПЛЮКЭМШИ РЕЙЯР</idyl-output-block>
+
+      <p>Одни и те же байты — три разных бессмыслицы. Если вы когда-нибудь видели такое в старой программе или письме, теперь вы точно знаете, что произошло: текст сохранили в <code>windows-1251</code>, а прочитали чем-то другим.</p>
     </div>
 
     <div class="docs-section">
@@ -163,16 +190,39 @@ main() {
 </script></idyl-code-block>
       <idyl-error-block>main.idyl:5: runtime error: encoding.decode() invalid UTF-8 at byte 0 (0xD0): incomplete sequence</idyl-error-block>
 
+      <p>Но иногда хочется не падать, а посмотреть, во что превратятся битые данные — например, чтобы понять, какой кодировкой был записан загадочный файл. Для этого у <code>encode()</code> и <code>decode()</code> есть параметр <code>safe</code>. По умолчанию он равен <code>true</code> — страховка включена. Написав <code>safe=false</code>, вы буквально говорите: «Мне не нужна безопасность, я хочу увидеть, что произойдёт»:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use encoding;
+
+main() {
+    dyn_array<int> bytes = encoding.encode("Нормальный текст", "windows-1251");
+
+    // Страховка отключена: негодные байты станут ромбиками
+    console.writeln(encoding.decode(bytes, "utf-8", safe=false));
+
+    // При кодировании непредставимые символы станут вопросиками
+    dyn_array<int> lossy = encoding.encode("Ямб и хорей", "windows-1252", safe=false);
+    console.writeln(encoding.decode(lossy, "windows-1252"));
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>���������� �����
+??? ? ?????</idyl-output-block>
+
+      <p>Знакомьтесь: <code>�</code> — «символ замены» Unicode. Именно он появляется на месте каждого байта, который не удалось прочитать. А вопросики вместо русских букв — почерк старых Windows-программ: так они поступали с символами, которых нет в целевой кодировке. Теперь оба вида «поломанного» текста вы умеете не только узнавать, но и воспроизводить.</p>
+
       <p>Наконец, имя кодировки тоже проверяется:</p>
 
       <idyl-code-block><script type="text/plain">
 use encoding;
 
 main() {
-    encoding.encode("A", "cp866");
+    encoding.encode("A", "cp1337");
 }
 </script></idyl-code-block>
-      <idyl-error-block>main.idyl:4: runtime error: unknown encoding 'cp866'</idyl-error-block>
+      <idyl-error-block>main.idyl:4: runtime error: unknown encoding 'cp1337'</idyl-error-block>
     </div>
 
     <div class="docs-section">

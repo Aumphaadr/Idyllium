@@ -418,6 +418,19 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       minArguments: 1,
       documentation: 'Создаёт метку из Unix-времени (секунды, можно с дробной частью — она станет миллисекундами) и отображает её в указанном IANA-часовом поясе.',
     }),
+    functionSpec('create', [
+      { name: 'year', type: INT },
+      { name: 'month', type: INT },
+      { name: 'day', type: INT },
+      { name: 'hour', type: INT, defaultValue: '0' },
+      { name: 'minute', type: INT, defaultValue: '0' },
+      { name: 'second', type: INT, defaultValue: '0' },
+      { name: 'millisecond', type: INT, defaultValue: '0' },
+      { name: 'timezone', type: STRING, defaultValue: '"UTC"' },
+    ], timeStamp, {
+      minArguments: 3,
+      documentation: 'Создаёт метку с заданной датой и временем: time.create(2026, 9, 24, 18, 3). Компоненты трактуются в указанном IANA-часовом поясе (по умолчанию UTC); несуществующая дата — ошибка.',
+    }),
   ], [], [
     typeSpec('stamp', [
       propertySpec('year', INT, true, 'Год в часовом поясе метки.'),
@@ -524,11 +537,19 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     functionSpec('encode', [
       { name: 'text', type: STRING },
       { name: 'encoding', type: STRING },
-    ], arrayType(INT, null, true)),
+      { name: 'safe', type: BOOL, defaultValue: 'true' },
+    ], arrayType(INT, null, true), {
+      minArguments: 2,
+      documentation: 'Превращает строку в байты. safe=false заменяет непредставимые символы знаком вопроса вместо остановки с ошибкой.',
+    }),
     functionSpec('decode', [
       { name: 'codes', type: arrayType(INT, null, true) },
       { name: 'encoding', type: STRING },
-    ], STRING),
+      { name: 'safe', type: BOOL, defaultValue: 'true' },
+    ], STRING, {
+      minArguments: 2,
+      documentation: 'Собирает строку из байтов. safe=false заменяет негодные байты символом \u{FFFD} вместо остановки с ошибкой.',
+    }),
   ]));
 
   registry.registerModule(moduleSpec('json', [

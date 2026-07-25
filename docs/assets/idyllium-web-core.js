@@ -1219,7 +1219,10 @@ exports.DiagnosticBag = DiagnosticBag;
 function formatDiagnostic(diagnostic) {
     const { start } = diagnostic.range;
     const code = diagnostic.code ? ` ${diagnostic.code}` : '';
-    return `${start.file}:${start.line}:${start.column}: ${diagnostic.severity}${code}: ${diagnostic.message}`;
+    // Человеку ошибки компиляции показываются как «compile error» — чёткое
+    // противопоставление «runtime error». Внутренняя severity остаётся 'error'.
+    const label = diagnostic.severity === 'error' ? 'compile error' : diagnostic.severity;
+    return `${start.file}:${start.line}:${start.column}: ${label}${code}: ${diagnostic.message}`;
 }
 function formatDiagnostics(diagnostics) {
     return diagnostics.map(formatDiagnostic).join('\n');
@@ -5279,6 +5282,19 @@ function createDefaultStandardLibrary() {
             minArguments: 1,
             documentation: 'Создаёт метку из Unix-времени (секунды, можно с дробной частью — она станет миллисекундами) и отображает её в указанном IANA-часовом поясе.',
         }),
+        functionSpec('create', [
+            { name: 'year', type: types_1.INT },
+            { name: 'month', type: types_1.INT },
+            { name: 'day', type: types_1.INT },
+            { name: 'hour', type: types_1.INT, defaultValue: '0' },
+            { name: 'minute', type: types_1.INT, defaultValue: '0' },
+            { name: 'second', type: types_1.INT, defaultValue: '0' },
+            { name: 'millisecond', type: types_1.INT, defaultValue: '0' },
+            { name: 'timezone', type: types_1.STRING, defaultValue: '"UTC"' },
+        ], timeStamp, {
+            minArguments: 3,
+            documentation: 'Создаёт метку с заданной датой и временем: time.create(2026, 9, 24, 18, 3). Компоненты трактуются в указанном IANA-часовом поясе (по умолчанию UTC); несуществующая дата — ошибка.',
+        }),
     ], [], [
         typeSpec('stamp', [
             propertySpec('year', types_1.INT, true, 'Год в часовом поясе метки.'),
@@ -5383,11 +5399,19 @@ function createDefaultStandardLibrary() {
         functionSpec('encode', [
             { name: 'text', type: types_1.STRING },
             { name: 'encoding', type: types_1.STRING },
-        ], (0, types_1.arrayType)(types_1.INT, null, true)),
+            { name: 'safe', type: types_1.BOOL, defaultValue: 'true' },
+        ], (0, types_1.arrayType)(types_1.INT, null, true), {
+            minArguments: 2,
+            documentation: 'Превращает строку в байты. safe=false заменяет непредставимые символы знаком вопроса вместо остановки с ошибкой.',
+        }),
         functionSpec('decode', [
             { name: 'codes', type: (0, types_1.arrayType)(types_1.INT, null, true) },
             { name: 'encoding', type: types_1.STRING },
-        ], types_1.STRING),
+            { name: 'safe', type: types_1.BOOL, defaultValue: 'true' },
+        ], types_1.STRING, {
+            minArguments: 2,
+            documentation: 'Собирает строку из байтов. safe=false заменяет негодные байты символом \u{FFFD} вместо остановки с ошибкой.',
+        }),
     ]));
     registry.registerModule(moduleSpec('json', [
         functionSpec('is_valid', [{ name: 'text', type: types_1.STRING }], types_1.BOOL),
@@ -9127,6 +9151,45 @@ class IdylliumTimeStamp {
         const unixSeconds = finiteNumber(seconds, 'time.from_unix() seconds', file, line);
         return new IdylliumTimeStamp(unixSeconds, timezone, file, line);
     }
+    // time.create(год, месяц, день[, час, минута, секунда, миллисекунда, зона]):
+    // компоненты — местное время УКАЗАННОЙ зоны. Инстант ищется двухпроходной
+    // коррекцией смещения (стандартный приём для IANA-зон с переводами часов).
+    static create(values, file, line) {
+        const component = (index, name, min, max, fallback) => {
+            if (values[index] === undefined)
+                return fallback;
+            const value = integerNumber(values[index], `time.create() ${name}`, file, line);
+            return byteRange(value, `time.create() ${name}`, min, max, file, line);
+        };
+        const year = component(0, 'year', 1, 9999, 0);
+        const month = component(1, 'month', 1, 12, 0);
+        const isLeap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+        const monthDays = [31, isLeap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        const day = component(2, 'day', 1, 31, 0);
+        if (day > monthDays[month - 1]) {
+            const iso = `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            throw new IdylliumRuntimeError(file, line, `time.create() date ${iso} does not exist`);
+        }
+        const hour = component(3, 'hour', 0, 23, 0);
+        const minute = component(4, 'minute', 0, 59, 0);
+        const second = component(5, 'second', 0, 59, 0);
+        const millisecond = component(6, 'millisecond', 0, 999, 0);
+        const timezone = normalizeTimeZone(values[7] ?? 'UTC', 'time.create() timezone', file, line);
+        // Стеночное время как «UTC-заготовка» (setUTCFullYear — из-за причуды
+        // Date.UTC с годами 0–99).
+        const wall = new Date(Date.UTC(2000, month - 1, day, hour, minute, second, millisecond));
+        wall.setUTCFullYear(year);
+        const wallMs = wall.getTime();
+        const offsetAt = (instantMs) => {
+            const parts = timeStampComponents(Math.floor(instantMs / 1000), timezone, file, line);
+            const partsWall = new Date(Date.UTC(2000, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second));
+            partsWall.setUTCFullYear(parts.year);
+            return partsWall.getTime() - Math.floor(instantMs / 1000) * 1000;
+        };
+        const firstGuess = wallMs - offsetAt(wallMs);
+        const epochMs = wallMs - offsetAt(firstGuess);
+        return new IdylliumTimeStamp(epochMs / 1000, timezone, file, line);
+    }
     get year() {
         return this.components.year;
     }
@@ -11267,6 +11330,10 @@ function createRuntime(options = {}) {
                     const { values, file, line } = splitContextArgs(rawArgs);
                     return IdylliumTimeStamp.fromUnix(values[0], values[1] ?? 'UTC', file, line);
                 }),
+                create: contextFunction((...rawArgs) => {
+                    const { values, file, line } = splitContextArgs(rawArgs);
+                    return IdylliumTimeStamp.create(values, file, line);
+                }),
             },
             file: {
                 exists: contextFunction((targetPath, file, line) => {
@@ -11380,11 +11447,19 @@ function createRuntime(options = {}) {
                 from_hex: contextFunction((hex, typeName, file, line) => typesFromHex(hex, typeName, file, line)),
             },
             encoding: {
-                list_encodings: contextFunction(() => IdylliumArray.from(['ascii', 'utf-8', 'windows-1251', 'koi8-r'], true, null, () => '')),
+                list_encodings: contextFunction(() => IdylliumArray.from(['ascii', 'utf-8', 'windows-1251', 'koi8-r', 'cp866', 'cp437', 'windows-1252', 'windows-1254'], true, null, () => '')),
                 char_to_codepoint: contextFunction((character, file, line) => (encodingCharToCodepoint(character, file, line))),
                 codepoint_to_char: contextFunction((codepoint, file, line) => (encodingCodepointToChar(codepoint, file, line))),
-                encode: contextFunction((text, encoding, file, line) => (IdylliumArray.from(encodingEncode(text, encoding, file, line), true, null, () => 0))),
-                decode: contextFunction((codes, encoding, file, line) => (encodingDecode(codes, encoding, file, line))),
+                encode: contextFunction((...rawArgs) => {
+                    const { values, file, line } = splitContextArgs(rawArgs);
+                    const safe = values[2] === undefined ? true : booleanArgument(values[2], 'encoding.encode() safe', file, line);
+                    return IdylliumArray.from(encodingEncode(values[0], values[1], safe, file, line), true, null, () => 0);
+                }),
+                decode: contextFunction((...rawArgs) => {
+                    const { values, file, line } = splitContextArgs(rawArgs);
+                    const safe = values[2] === undefined ? true : booleanArgument(values[2], 'encoding.decode() safe', file, line);
+                    return encodingDecode(values[0], values[1], safe, file, line);
+                }),
             },
             json: {
                 is_valid: contextFunction((text, file, line) => {
@@ -12139,8 +12214,20 @@ function splitString(value, separator) {
     const parts = separator.length === 0 ? Array.from(value) : value.split(separator);
     return IdylliumArray.from(parts, true, null, () => '');
 }
-const WINDOWS_1251_ENCODING = buildSingleByteEncoding('windows-1251');
-const KOI8_R_ENCODING = buildSingleByteEncoding('koi8-r');
+// Верхняя половина CP437 (байты 0x80–0xFF) из эталонного кодека;
+// нижняя половина совпадает с ASCII.
+const CP437_HIGH_HALF = 'ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜ¢£¥₧ƒáíóúñÑªº¿⌐¬½¼¡«»░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞φε∩≡±≥≤⌠⌡÷≈°∙·√ⁿ²■\u00A0';
+// Однобайтовые таблицы. Всё, кроме CP437, строится из WHATWG TextDecoder
+// (стандартные лейблы, одинаковые в браузере и Node); CP437 в WHATWG-стандарт
+// не входит — его верхняя половина зашита литералом из эталонного кодека.
+const SINGLE_BYTE_ENCODINGS = new Map([
+    ['windows-1251', buildSingleByteEncoding('windows-1251')],
+    ['koi8-r', buildSingleByteEncoding('koi8-r')],
+    ['cp866', buildSingleByteEncoding('ibm866')],
+    ['windows-1252', buildSingleByteEncoding('windows-1252')],
+    ['windows-1254', buildSingleByteEncoding('windows-1254')],
+    ['cp437', buildCp437Encoding()],
+]);
 function encodingCharToCodepoint(character, file, line) {
     const char = singleCharacter(character, 'encoding.char_to_codepoint() character', file, line);
     const codepoint = char.codePointAt(0) ?? 0;
@@ -12156,25 +12243,46 @@ function encodingCodepointToChar(codepoint, file, line) {
     }
     return String.fromCodePoint(value);
 }
-function encodingEncode(text, encoding, file, line) {
+// Байт классической замены при encode с safe=false: знак вопроса — именно
+// его подставляли Windows-программы вместо непредставимых символов.
+const REPLACEMENT_BYTE = 63;
+function encodingEncode(text, encoding, safe, file, line) {
     const value = stringArgument(text, 'encoding.encode() text', file, line);
     const name = normalizeEncoding(encoding, file, line);
     const characters = Array.from(value);
-    if (name === 'ascii')
-        return characters.map((char, index) => asciiCode(char, file, line, index));
+    if (name === 'ascii') {
+        return characters.map((char, index) => {
+            const code = char.codePointAt(0) ?? 0;
+            if (code <= 127)
+                return code;
+            if (!safe)
+                return REPLACEMENT_BYTE;
+            return asciiCode(char, file, line, index);
+        });
+    }
     if (name === 'utf-8') {
         for (let index = 0; index < characters.length; index++) {
             const codepoint = characters[index].codePointAt(0) ?? 0;
             if (!isUnicodeScalarValue(codepoint)) {
+                if (!safe) {
+                    characters[index] = '?';
+                    continue;
+                }
                 throw new IdylliumRuntimeError(file, line, `encoding.encode() invalid Unicode character at position ${index}`);
             }
         }
-        return [...nodeBuffer.from(value, 'utf8')];
+        return [...nodeBuffer.from(characters.join(''), 'utf8')];
     }
-    const table = name === 'windows-1251' ? WINDOWS_1251_ENCODING : KOI8_R_ENCODING;
-    return characters.map((char, index) => singleByteCharToInt(char, table, name, file, line, index));
+    const table = SINGLE_BYTE_ENCODINGS.get(name);
+    if (!table)
+        throw new IdylliumRuntimeError(file, line, `unknown encoding '${name}'`);
+    return characters.map((char, index) => {
+        if (!safe && !table.charToByte.has(char))
+            return REPLACEMENT_BYTE;
+        return singleByteCharToInt(char, table, name, file, line, index);
+    });
 }
-function encodingDecode(codes, encoding, file, line) {
+function encodingDecode(codes, encoding, safe, file, line) {
     const array = expectArray(codes, file, line);
     const name = normalizeEncoding(encoding, file, line);
     const bytes = array.values().map((code, index) => {
@@ -12183,14 +12291,18 @@ function encodingDecode(codes, encoding, file, line) {
     });
     if (name === 'ascii') {
         return bytes.map((code, index) => {
+            if (code > 127 && !safe)
+                return '\uFFFD';
             byteRange(code, `encoding.decode() ASCII byte at index ${index}`, 0, 127, file, line);
             return String.fromCodePoint(code);
         }).join('');
     }
     if (name === 'utf-8') {
-        return decodeUtf8Strict(bytes, file, line);
+        return decodeUtf8(bytes, safe, file, line);
     }
-    const table = name === 'windows-1251' ? WINDOWS_1251_ENCODING : KOI8_R_ENCODING;
+    const table = SINGLE_BYTE_ENCODINGS.get(name);
+    if (!table)
+        throw new IdylliumRuntimeError(file, line, `unknown encoding '${name}'`);
     return bytes.map((code, index) => singleByteIntToChar(code, table, name, file, line, index)).join('');
 }
 function normalizeEncoding(value, file, line) {
@@ -12203,6 +12315,14 @@ function normalizeEncoding(value, file, line) {
         return 'windows-1251';
     if (name === 'koi8-r' || name === 'koi8r')
         return 'koi8-r';
+    if (name === 'cp866' || name === 'ibm866' || name === 'dos866')
+        return 'cp866';
+    if (name === 'cp437' || name === 'ibm437' || name === 'dos437')
+        return 'cp437';
+    if (name === 'windows-1252' || name === 'cp1252' || name === 'win1252')
+        return 'windows-1252';
+    if (name === 'windows-1254' || name === 'cp1254' || name === 'win1254')
+        return 'windows-1254';
     throw new IdylliumRuntimeError(file, line, `unknown encoding '${value}'`);
 }
 function singleCharacter(value, argumentName, file, line) {
@@ -12251,10 +12371,22 @@ function buildSingleByteEncoding(label) {
     }
     return { charToByte, byteToChar };
 }
+function buildCp437Encoding() {
+    const charToByte = new Map();
+    const byteToChar = new Map();
+    const high = Array.from(CP437_HIGH_HALF);
+    for (let byte = 0; byte <= 255; byte++) {
+        const char = byte < 0x80 ? String.fromCharCode(byte) : high[byte - 0x80];
+        if (!charToByte.has(char))
+            charToByte.set(char, byte);
+        byteToChar.set(byte, char);
+    }
+    return { charToByte, byteToChar };
+}
 function isUnicodeScalarValue(value) {
     return value >= 0 && value <= 0x10FFFF && !(value >= 0xD800 && value <= 0xDFFF);
 }
-function decodeUtf8Strict(bytes, file, line) {
+function decodeUtf8(bytes, safe, file, line) {
     let result = '';
     for (let index = 0; index < bytes.length;) {
         const first = bytes[index];
@@ -12288,19 +12420,41 @@ function decodeUtf8Strict(bytes, file, line) {
                 secondMax = 0x8F;
         }
         else {
+            // safe=false: негодный байт превращается в один символ замены,
+            // разбор продолжается со следующего байта.
+            if (!safe) {
+                result += '\uFFFD';
+                index++;
+                continue;
+            }
             invalidUtf8(bytes, index, 'invalid leading byte', file, line);
         }
         if (index + length > bytes.length) {
+            if (!safe) {
+                result += '\uFFFD';
+                index++;
+                continue;
+            }
             invalidUtf8(bytes, index, 'incomplete sequence', file, line);
         }
+        let broken = false;
         for (let offset = 1; offset < length; offset++) {
             const byte = bytes[index + offset];
             const min = offset === 1 ? secondMin : 0x80;
             const max = offset === 1 ? secondMax : 0xBF;
             if (byte < min || byte > max) {
+                if (!safe) {
+                    broken = true;
+                    break;
+                }
                 invalidUtf8(bytes, index + offset, 'invalid continuation byte', file, line);
             }
             codepoint = (codepoint << 6) | (byte & 0x3F);
+        }
+        if (broken) {
+            result += '\uFFFD';
+            index++;
+            continue;
         }
         result += String.fromCodePoint(codepoint);
         index += length;

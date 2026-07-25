@@ -419,7 +419,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:8:19: error: 'add_child' argument 1 expects gui widget, got 'gui.Modal'</idyl-error-block>
+      <idyl-error-block>main.idyl:8:19: compile error: 'add_child' argument 1 expects gui widget, got 'gui.Modal'</idyl-error-block>
 
       <p>Исправление: просто уберите строку с <code>add_child</code> — модальному окну достаточно вызова <code>show_alert()</code> (или <code>show_confirm()</code>, <code>show_input()</code>).</p>
     </div>

@@ -264,7 +264,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:6:9: error: comparison '>' requires numeric operands</idyl-error-block>
+      <idyl-error-block>main.idyl:6:9: compile error: comparison '>' requires numeric operands</idyl-error-block>
 
       <p>Компилятор отказывается: «больше 50» может быть число, но не коробка с пятью числами. То же самое со сложением:</p>
 
@@ -278,7 +278,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:6:19: error: operator '+' cannot be applied to 'array<int, 5>' and 'int'</idyl-error-block>
+      <idyl-error-block>main.idyl:6:19: compile error: operator '+' cannot be applied to 'array<int, 5>' and 'int'</idyl-error-block>
 
       <p>А вот с <strong>отдельной ячейкой</strong> обе операции работают отлично — ведь в ячейке лежит обычное число:</p>
 

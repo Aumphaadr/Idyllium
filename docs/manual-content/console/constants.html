@@ -115,7 +115,7 @@ main() {
     const int answer;
 }
   </script></idyl-code-block>
-  <idyl-error-block>main.idyl:2:15: error: constant 'answer' must have an initializer</idyl-error-block>
+  <idyl-error-block>main.idyl:2:15: compile error: constant 'answer' must have an initializer</idyl-error-block>
 
   <p>
     Повторное присваивание тоже запрещено. Это не просьба и не предупреждение:
@@ -128,7 +128,7 @@ main() {
     answer = 64;
 }
   </script></idyl-code-block>
-  <idyl-error-block>main.idyl:3:5: error: cannot assign to constant 'answer'</idyl-error-block>
+  <idyl-error-block>main.idyl:3:5: compile error: cannot assign to constant 'answer'</idyl-error-block>
 </div>
 
 <div class="docs-section">

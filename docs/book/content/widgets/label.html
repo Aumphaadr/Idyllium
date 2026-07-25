@@ -170,7 +170,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:7:18: error: cannot assign 'int' value to 'string' variable</idyl-error-block>
+      <idyl-error-block>main.idyl:7:18: compile error: cannot assign 'int' value to 'string' variable</idyl-error-block>
 
       <p>Компилятор точен: строка 7, позиция 18 — ровно то место, где число пытается пролезть в строковое свойство. Чтобы вывести число на лейбл, его нужно <strong>преобразовать в строку</strong> с помощью знакомого <code>to_string()</code>:</p>
 
