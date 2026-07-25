@@ -2388,6 +2388,9 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
   // (хвостовые нули отбрасываются); console.set_precision() меняет точность.
   let precision: number | null = 8;
   let randomSeed: number | null = null;
+  // Собственное 32-битное состояние mulberry32; set_seed() сбрасывает его
+  // вместе с LCG, чтобы прогоны с сидом были воспроизводимы.
+  let mulberryState: number | null = null;
   const input = [...(options.input ?? [])];
   const fileSystem = options.fileSystem ?? createNodeRuntimeFileSystem(options.projectRoot);
   const humanizeFsPaths = (text: string): string => fileSystem.humanizePaths?.(text) ?? text;
@@ -2895,6 +2898,19 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
           const value = integerNumber(seed, 'random.set_seed() seed', file, line);
           if (value < 0) throw new IdylliumRuntimeError(file, line, `random.set_seed() seed must be non-negative, got ${value}`);
           randomSeed = value >>> 0;
+          mulberryState = value >>> 0;
+        }),
+        mulberry32: contextFunction(() => {
+          if (mulberryState === null) {
+            mulberryState = Math.floor(Math.random() * 0x100000000) >>> 0;
+          }
+          // Классический mulberry32 (Tommy Ettinger, public domain) — тот самый
+          // «математический огород», который городят в языках без готового random.
+          mulberryState = (mulberryState + 0x6D2B79F5) >>> 0;
+          let t = mulberryState;
+          t = Math.imul(t ^ (t >>> 15), t | 1);
+          t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+          return (t ^ (t >>> 14)) >>> 0;
         }),
       },
       time: {
@@ -3023,6 +3039,19 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
         }),
       },
       types: {
+        INT8_MIN: -128,
+        INT8_MAX: 127,
+        UINT8_MAX: 255,
+        INT16_MIN: -32768,
+        INT16_MAX: 32767,
+        UINT16_MAX: 65535,
+        INT32_MIN: -2147483648,
+        INT32_MAX: 2147483647,
+        UINT32_MAX: 4294967295,
+        // 64-битные границы — BigInt: обычный int Idyllium хранит их точно.
+        INT64_MIN: -9223372036854775808n,
+        INT64_MAX: 9223372036854775807n,
+        UINT64_MAX: 18446744073709551615n,
         from_bin: contextFunction((bits: string, typeName: string, file: string, line: number) => typesFromBin(bits, typeName, file, line)),
         from_hex: contextFunction((hex: string, typeName: string, file: string, line: number) => typesFromHex(hex, typeName, file, line)),
       },

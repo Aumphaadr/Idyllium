@@ -392,6 +392,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     functionSpec('create_float', [{ name: 'min', type: FLOAT }, { name: 'max', type: FLOAT }], FLOAT, {
       documentation: 'Случайное дробное число от min до max; обе границы включены (как в Python).',
     }),
+    functionSpec('mulberry32', [], INT, {
+      documentation: 'Классический генератор mulberry32: целое от 0 до 4294967295. Подчиняется random.set_seed().',
+    }),
     functionSpec('choose_from', [{
       name: 'collection',
       type: ANY_TYPE,
@@ -1254,7 +1257,20 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], ANY_TYPE, {
       documentation: 'Создаёт указанный types-тип из строки шестнадцатеричных цифр.',
     }),
-  ], [], typesNumericTypeSpecs));
+  ], [
+    { name: 'INT8_MIN', type: INT, documentation: 'Минимум int8: -128.' },
+    { name: 'INT8_MAX', type: INT, documentation: 'Максимум int8: 127.' },
+    { name: 'UINT8_MAX', type: INT, documentation: 'Максимум uint8: 255.' },
+    { name: 'INT16_MIN', type: INT, documentation: 'Минимум int16: -32768.' },
+    { name: 'INT16_MAX', type: INT, documentation: 'Максимум int16: 32767.' },
+    { name: 'UINT16_MAX', type: INT, documentation: 'Максимум uint16: 65535.' },
+    { name: 'INT32_MIN', type: INT, documentation: 'Минимум int32: -2147483648.' },
+    { name: 'INT32_MAX', type: INT, documentation: 'Максимум int32: 2147483647.' },
+    { name: 'UINT32_MAX', type: INT, documentation: 'Максимум uint32: 4294967295.' },
+    { name: 'INT64_MIN', type: INT, documentation: 'Минимум int64: -9223372036854775808.' },
+    { name: 'INT64_MAX', type: INT, documentation: 'Максимум int64: 9223372036854775807.' },
+    { name: 'UINT64_MAX', type: INT, documentation: 'Максимум uint64: 18446744073709551615.' },
+  ], typesNumericTypeSpecs));
 
   registry.registerGlobalFunction(functionSpec('div', [
     { name: 'left', type: INT },

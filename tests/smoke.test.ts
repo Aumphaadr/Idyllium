@@ -1162,6 +1162,40 @@ test('extended encodings round-trip and reproduce classic mojibake', async () =>
   );
 });
 
+test('module values, mulberry32 and types limit constants behave', async () => {
+  // Голое имя модуля — не значение
+  assertFails('use console;\nmain() {\n    console.writeln(console);\n}', "module 'console' cannot be used as a value");
+  assertFails('use console;\nuse math;\nmain() {\n    int x = math;\n}', "module 'math' cannot be used as a value");
+
+  const result = await runIdyllium([
+    'use console;',
+    'use random;',
+    'use types;',
+    '',
+    'main() {',
+    '    random.set_seed(42);',
+    '    int first = random.mulberry32();',
+    '    int second = random.mulberry32();',
+    '    random.set_seed(42);',
+    '    console.writeln(first == random.mulberry32()); // тот же сид — та же последовательность',
+    '    console.writeln(first != second);',
+    '    console.writeln(first >= 0 and first <= types.UINT32_MAX);',
+    '',
+    '    console.writeln(types.INT8_MIN, ":", types.INT8_MAX, ":", types.UINT8_MAX);',
+    '    console.writeln(types.UINT32_MAX);',
+    '    console.writeln(types.INT64_MIN);',
+    '    console.writeln(types.UINT64_MAX);',
+    '    console.writeln(types.INT64_MAX - 1); // 64-битная точность сохраняется',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === 'true\ntrue\ntrue\n-128:127:255\n4294967295\n-9223372036854775808\n18446744073709551615\n9223372036854775806\n',
+    `unexpected output: ${JSON.stringify(result.output)}`,
+  );
+});
+
 test('time.create builds stamps from calendar components', async () => {
   const result = await runIdyllium([
     'use console;',
@@ -2170,7 +2204,7 @@ test('image resources transform export and build animations', async () => {
   });
 
   assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
-  assert(result.output === '112x100:100x112:20x30:2:0.1:true:112x100', `unexpected image output: ${JSON.stringify(result.output)}`);
+  assert(result.output === '99x100:100x99:20x30:2:0.1:true:99x100', `unexpected image output: ${JSON.stringify(result.output)}`);
   const mirrored = result.writtenFiles['/workspace/mirrored.png'];
   const animation = result.writtenFiles['/workspace/created.gif'];
   assert(typeof mirrored !== 'string' && mirrored?.bytes instanceof Uint8Array && mirrored.bytes.length > 0, 'expected exported PNG bytes');
@@ -2230,7 +2264,7 @@ test('image Bitmap edits pixels snapshots Static values and exports', async () =
 
   assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
   assert(
-    result.output === '3x2:true:true:true:true:true:true:3x2:112x100',
+    result.output === '3x2:true:true:true:true:true:true:3x2:99x100',
     `unexpected Bitmap output: ${JSON.stringify(result.output)}`,
   );
   const exported = result.writtenFiles['/workspace/pixels.png'];

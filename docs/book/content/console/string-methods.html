@@ -214,7 +214,27 @@ main() {
 Кот и пёс и ещё пёс</idyl-output-block>
 
       <p>Обратите внимание на два момента. Во-первых, исходная строка <code>x</code> не изменилась — <code>replace()</code> вернул новую строку. Во-вторых, первый <code>«Кот»</code> уцелел: метод различает большие и маленькие буквы, поэтому <code>"Кот"</code> с большой буквы под замену <code>"кот"</code> не попал.</p>
-      <p>В этом же семействе живёт метод <code>.trim()</code> — он возвращает строку без пробелов по краям: <code>"  привет  ".trim()</code> даст просто <code>"привет"</code>. Запомните, что он существует: всерьёз он понадобится в уроке про работу с файлами, где случайные пробелы на концах строк — обычное дело.</p>
+    </div>
+
+    <div class="docs-section">
+      <h3><code>.trim()</code></h3>
+      <p>Возвращает строку без пробельных символов по краям — само слово <em>trim</em> означает «подстричь». Внутри строки пробелы не трогаются:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    string raw = "   Привет, мир!   ";
+
+    console.writeln("[", raw, "]");
+    console.writeln("[", raw.trim(), "]");
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>[   Привет, мир!   ]
+[Привет, мир!]</idyl-output-block>
+
+      <p>Главный поставщик лишних пробелов — человек за клавиатурой: случайный пробел перед именем, пробел-хвост после числа. Привычка «подстригать» ввод <code>trim()</code>-ом спасает от загадочных багов вида «ввёл правильный ответ, а программа не согласна». А когда доберётесь до работы с файлами, <code>trim()</code> станет постоянным спутником: у строк, прочитанных из файла, на конце часто висит невидимый символ переноса.</p>
     </div>
 
     <div class="docs-section">
@@ -254,6 +274,7 @@ main() {
           <tr><td><code>to_upper()</code>, <code>to_lower()</code></td><td>меняют регистр всех букв</td><td>новая <code>string</code></td></tr>
           <tr><td><code>substring(start, count)</code></td><td>вырезает <code>count</code> символов начиная со <code>start</code></td><td>новая <code>string</code></td></tr>
           <tr><td><code>replace(old, new)</code></td><td>заменяет все вхождения подстроки</td><td>новая <code>string</code></td></tr>
+          <tr><td><code>trim()</code></td><td>убирает пробелы по краям</td><td>новая <code>string</code></td></tr>
           <tr><td><code>split(c)</code></td><td>режет строку по разделителю</td><td><code>dyn_array&lt;string&gt;</code></td></tr>
         </tbody>
       </table>

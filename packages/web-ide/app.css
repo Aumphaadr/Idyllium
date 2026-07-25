@@ -1,6 +1,6 @@
 :root {
-  --ui-font: "Salma Pro", Inter, Segoe UI, Arial, sans-serif;
-  --ui-font-narrow: "Salma Pro Narrow", "Salma Pro", Inter, Segoe UI, Arial, sans-serif;
+  --ui-font: "Geologica", Inter, Segoe UI, Arial, sans-serif;
+  --ui-font-narrow: "Geologica", Inter, Segoe UI, Arial, sans-serif;
   --mono-font: "Source Code Pro", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --editor-font-size: 16px;
   --editor-line-height: 25px;
@@ -11,17 +11,9 @@
 }
 
 @font-face {
-  font-family: "Salma Pro";
-  src: url("fonts/Salma Pro Med.woff2") format("woff2");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Salma Pro Narrow";
-  src: url("fonts/Salma Pro Med Narrow.woff2") format("woff2");
-  font-weight: 500;
+  font-family: "Geologica";
+  src: url("fonts/Geologica-Variable.ttf") format("truetype-variations");
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
