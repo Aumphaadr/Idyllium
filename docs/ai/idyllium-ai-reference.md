@@ -1077,7 +1077,8 @@ either `1` or `10`. `create_float(min, max)` also includes both bounds (like
 Python's `random.uniform`), though hitting `max` exactly is vanishingly rare.
 Integer ranges allow `min == max`; float ranges require `min < max`.
 `set_seed()` requires a non-negative integer and makes later results
-reproducible. Invalid ranges are runtime errors. Do not silently swap or clamp
+reproducible (it also seeds `random.mulberry32()`, a classic raw generator
+that takes no arguments and returns an integer from `0` to `4294967295`). Invalid ranges are runtime errors. Do not silently swap or clamp
 ranges. `choose_from()` accepts a non-empty string, `array<T, N>`, or
 `dyn_array<T>`. It returns `char` for a string and `T` for an array. Choosing
 from an empty collection is a runtime error.
@@ -1410,6 +1411,10 @@ Exact integer ranges:
 | `types.uint64` | 0 | 18446744073709551615 |
 
 `types.float32` uses IEEE-754 binary32; `types.float64` uses binary64.
+
+The exact type limits are available as module constants: `types.INT8_MIN`,
+`types.INT8_MAX`, `types.UINT8_MAX`, and likewise for 16/32/64 bits up to
+`types.UINT64_MAX` (18446744073709551615, preserved exactly).
 
 Integer overflow wraps without runtime errors:
 

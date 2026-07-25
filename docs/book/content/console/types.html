@@ -83,6 +83,22 @@ main() {
         </tbody>
       </table>
       <p>Буква <code>u</code> — от англ. <em>unsigned</em> («беззнаковый»).</p>
+      <p>Запоминать эти громадные числа не нужно: границы каждого типа встроены в библиотеку как константы — <code>types.INT8_MIN</code>, <code>types.INT8_MAX</code>, <code>types.UINT8_MAX</code> и так далее до <code>types.UINT64_MAX</code>:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use types;
+
+main() {
+    console.writeln("int8: от ", types.INT8_MIN, " до ", types.INT8_MAX);
+    console.writeln("uint32: до ", types.UINT32_MAX);
+    console.writeln("uint64: до ", types.UINT64_MAX);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>int8: от -128 до 127
+uint32: до 4294967295
+uint64: до 18446744073709551615</idyl-output-block>
 
       <p>Если значение не помещается в диапазон — оно «оборачивается» по правилам модульной арифметики. Звучит солидно, но вы давно это умеете: стрелка часов после 12 снова показывает 1 — это она и есть. Посмотрим на обороты в деле:</p>
 

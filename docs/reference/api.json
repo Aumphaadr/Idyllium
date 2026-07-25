@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "languageVersion": "1.2.2",
-  "generatedAt": "2026-07-25T10:16:03.609Z",
+  "languageVersion": "1.2.3",
+  "generatedAt": "2026-07-25T18:19:49.189Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "language": [
     {
@@ -1036,6 +1036,14 @@
           ],
           "variadic": false,
           "documentation": "Случайное целое число от min до max; обе границы включены."
+        },
+        {
+          "name": "mulberry32",
+          "signature": "mulberry32(): int",
+          "returnType": "int",
+          "parameters": [],
+          "variadic": false,
+          "documentation": "Классический генератор mulberry32: целое от 0 до 4294967295. Подчиняется random.set_seed()."
         },
         {
           "name": "set_seed",
@@ -7738,7 +7746,68 @@
           "documentation": "Преобразует строку шестнадцатеричных цифр в указанный types-тип."
         }
       ],
-      "constants": [],
+      "constants": [
+        {
+          "name": "INT16_MAX",
+          "type": "int",
+          "documentation": "Максимум int16: 32767."
+        },
+        {
+          "name": "INT16_MIN",
+          "type": "int",
+          "documentation": "Минимум int16: -32768."
+        },
+        {
+          "name": "INT32_MAX",
+          "type": "int",
+          "documentation": "Максимум int32: 2147483647."
+        },
+        {
+          "name": "INT32_MIN",
+          "type": "int",
+          "documentation": "Минимум int32: -2147483648."
+        },
+        {
+          "name": "INT64_MAX",
+          "type": "int",
+          "documentation": "Максимум int64: 9223372036854775807."
+        },
+        {
+          "name": "INT64_MIN",
+          "type": "int",
+          "documentation": "Минимум int64: -9223372036854775808."
+        },
+        {
+          "name": "INT8_MAX",
+          "type": "int",
+          "documentation": "Максимум int8: 127."
+        },
+        {
+          "name": "INT8_MIN",
+          "type": "int",
+          "documentation": "Минимум int8: -128."
+        },
+        {
+          "name": "UINT16_MAX",
+          "type": "int",
+          "documentation": "Максимум uint16: 65535."
+        },
+        {
+          "name": "UINT32_MAX",
+          "type": "int",
+          "documentation": "Максимум uint32: 4294967295."
+        },
+        {
+          "name": "UINT64_MAX",
+          "type": "int",
+          "documentation": "Максимум uint64: 18446744073709551615."
+        },
+        {
+          "name": "UINT8_MAX",
+          "type": "int",
+          "documentation": "Максимум uint8: 255."
+        }
+      ],
       "types": [
         {
           "name": "float32",

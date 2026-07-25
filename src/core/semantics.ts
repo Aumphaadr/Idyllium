@@ -1346,13 +1346,18 @@ export class SemanticAnalyzer {
       this.markSemanticToken('namespace', range, ['defaultLibrary']);
       if (!this.imports.has(name)) {
         this.diagnostics.error(range, `'${name}' is not imported (use 'use ${name};')`);
+      } else {
+        // Голое имя модуля как значение (например, console.writeln(console))
+        // раньше молча утекало в JS и печатало «[object console]».
+        this.diagnostics.error(range, `module '${name}' cannot be used as a value`);
       }
       return ERROR_TYPE;
     }
 
     if (this.userModules.has(name)) {
       this.markSemanticToken('namespace', range);
-      return ANY_TYPE;
+      this.diagnostics.error(range, `module '${name}' cannot be used as a value`);
+      return ERROR_TYPE;
     }
 
     if (this.classes.has(name)) {

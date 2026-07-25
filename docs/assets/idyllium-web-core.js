@@ -3961,11 +3961,17 @@ class SemanticAnalyzer {
             if (!this.imports.has(name)) {
                 this.diagnostics.error(range, `'${name}' is not imported (use 'use ${name};')`);
             }
+            else {
+                // Голое имя модуля как значение (например, console.writeln(console))
+                // раньше молча утекало в JS и печатало «[object console]».
+                this.diagnostics.error(range, `module '${name}' cannot be used as a value`);
+            }
             return types_1.ERROR_TYPE;
         }
         if (this.userModules.has(name)) {
             this.markSemanticToken('namespace', range);
-            return types_1.ANY_TYPE;
+            this.diagnostics.error(range, `module '${name}' cannot be used as a value`);
+            return types_1.ERROR_TYPE;
         }
         if (this.classes.has(name)) {
             this.markSemanticToken('class', range);
@@ -5257,6 +5263,9 @@ function createDefaultStandardLibrary() {
         functionSpec('create_float', [{ name: 'min', type: types_1.FLOAT }, { name: 'max', type: types_1.FLOAT }], types_1.FLOAT, {
             documentation: 'Случайное дробное число от min до max; обе границы включены (как в Python).',
         }),
+        functionSpec('mulberry32', [], types_1.INT, {
+            documentation: 'Классический генератор mulberry32: целое от 0 до 4294967295. Подчиняется random.set_seed().',
+        }),
         functionSpec('choose_from', [{
                 name: 'collection',
                 type: types_1.ANY_TYPE,
@@ -6107,7 +6116,20 @@ function createDefaultStandardLibrary() {
         ], types_1.ANY_TYPE, {
             documentation: 'Создаёт указанный types-тип из строки шестнадцатеричных цифр.',
         }),
-    ], [], typesNumericTypeSpecs));
+    ], [
+        { name: 'INT8_MIN', type: types_1.INT, documentation: 'Минимум int8: -128.' },
+        { name: 'INT8_MAX', type: types_1.INT, documentation: 'Максимум int8: 127.' },
+        { name: 'UINT8_MAX', type: types_1.INT, documentation: 'Максимум uint8: 255.' },
+        { name: 'INT16_MIN', type: types_1.INT, documentation: 'Минимум int16: -32768.' },
+        { name: 'INT16_MAX', type: types_1.INT, documentation: 'Максимум int16: 32767.' },
+        { name: 'UINT16_MAX', type: types_1.INT, documentation: 'Максимум uint16: 65535.' },
+        { name: 'INT32_MIN', type: types_1.INT, documentation: 'Минимум int32: -2147483648.' },
+        { name: 'INT32_MAX', type: types_1.INT, documentation: 'Максимум int32: 2147483647.' },
+        { name: 'UINT32_MAX', type: types_1.INT, documentation: 'Максимум uint32: 4294967295.' },
+        { name: 'INT64_MIN', type: types_1.INT, documentation: 'Минимум int64: -9223372036854775808.' },
+        { name: 'INT64_MAX', type: types_1.INT, documentation: 'Максимум int64: 9223372036854775807.' },
+        { name: 'UINT64_MAX', type: types_1.INT, documentation: 'Максимум uint64: 18446744073709551615.' },
+    ], typesNumericTypeSpecs));
     registry.registerGlobalFunction(functionSpec('div', [
         { name: 'left', type: types_1.INT },
         { name: 'right', type: types_1.INT },
@@ -10845,6 +10867,9 @@ function createRuntime(options = {}) {
     // (хвостовые нули отбрасываются); console.set_precision() меняет точность.
     let precision = 8;
     let randomSeed = null;
+    // Собственное 32-битное состояние mulberry32; set_seed() сбрасывает его
+    // вместе с LCG, чтобы прогоны с сидом были воспроизводимы.
+    let mulberryState = null;
     const input = [...(options.input ?? [])];
     const fileSystem = options.fileSystem ?? createNodeRuntimeFileSystem(options.projectRoot);
     const humanizeFsPaths = (text) => fileSystem.humanizePaths?.(text) ?? text;
@@ -11312,6 +11337,19 @@ function createRuntime(options = {}) {
                     if (value < 0)
                         throw new IdylliumRuntimeError(file, line, `random.set_seed() seed must be non-negative, got ${value}`);
                     randomSeed = value >>> 0;
+                    mulberryState = value >>> 0;
+                }),
+                mulberry32: contextFunction(() => {
+                    if (mulberryState === null) {
+                        mulberryState = Math.floor(Math.random() * 0x100000000) >>> 0;
+                    }
+                    // Классический mulberry32 (Tommy Ettinger, public domain) — тот самый
+                    // «математический огород», который городят в языках без готового random.
+                    mulberryState = (mulberryState + 0x6D2B79F5) >>> 0;
+                    let t = mulberryState;
+                    t = Math.imul(t ^ (t >>> 15), t | 1);
+                    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+                    return (t ^ (t >>> 14)) >>> 0;
                 }),
             },
             time: {
@@ -11443,6 +11481,19 @@ function createRuntime(options = {}) {
                 }),
             },
             types: {
+                INT8_MIN: -128,
+                INT8_MAX: 127,
+                UINT8_MAX: 255,
+                INT16_MIN: -32768,
+                INT16_MAX: 32767,
+                UINT16_MAX: 65535,
+                INT32_MIN: -2147483648,
+                INT32_MAX: 2147483647,
+                UINT32_MAX: 4294967295,
+                // 64-битные границы — BigInt: обычный int Idyllium хранит их точно.
+                INT64_MIN: -9223372036854775808n,
+                INT64_MAX: 9223372036854775807n,
+                UINT64_MAX: 18446744073709551615n,
                 from_bin: contextFunction((bits, typeName, file, line) => typesFromBin(bits, typeName, file, line)),
                 from_hex: contextFunction((hex, typeName, file, line) => typesFromHex(hex, typeName, file, line)),
             },
