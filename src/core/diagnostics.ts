@@ -58,7 +58,10 @@ export class DiagnosticBag {
 export function formatDiagnostic(diagnostic: Diagnostic): string {
   const { start } = diagnostic.range;
   const code = diagnostic.code ? ` ${diagnostic.code}` : '';
-  return `${start.file}:${start.line}:${start.column}: ${diagnostic.severity}${code}: ${diagnostic.message}`;
+  // Человеку ошибки компиляции показываются как «compile error» — чёткое
+  // противопоставление «runtime error». Внутренняя severity остаётся 'error'.
+  const label = diagnostic.severity === 'error' ? 'compile error' : diagnostic.severity;
+  return `${start.file}:${start.line}:${start.column}: ${label}${code}: ${diagnostic.message}`;
 }
 
 export function formatDiagnostics(diagnostics: readonly Diagnostic[]): string {

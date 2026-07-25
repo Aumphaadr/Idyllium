@@ -132,7 +132,7 @@ main() {
 }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:5:17: error: cannot assign 'float' value to 'int' variable</idyl-error-block>
+  <idyl-error-block>main.idyl:5:17: compile error: cannot assign 'float' value to 'int' variable</idyl-error-block>
 
   <p>
     Компилятор непреклонен: <code>1.7</code> — это <code>float</code>, а
@@ -149,7 +149,7 @@ main() {
 }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:5:23: error: cannot assign 'int' value to 'string' variable</idyl-error-block>
+  <idyl-error-block>main.idyl:5:23: compile error: cannot assign 'int' value to 'string' variable</idyl-error-block>
 
   <p>
     Хотите, чтобы <code>56692</code> считался текстом, — возьмите его в кавычки:
@@ -264,7 +264,7 @@ main() {
 }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:5:32: error: 'diam' was not declared in this scope</idyl-error-block>
+  <idyl-error-block>main.idyl:5:32: compile error: 'diam' was not declared in this scope</idyl-error-block>
 
   <p>
     Компилятор жалуется: в строке 5 ему встретилось имя <code>diam</code>, о котором

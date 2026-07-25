@@ -251,7 +251,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:10:20: error: callback property 'on_click' expects function(): void or function(gui.Button): void, got function(gui.Label): void</idyl-error-block>
+      <idyl-error-block>main.idyl:10:20: compile error: callback property 'on_click' expects function(): void or function(gui.Button): void, got function(gui.Label): void</idyl-error-block>
 
       <p>Сообщение длинное, но читается просто: <code>on_click</code> у кнопки ждёт функцию без параметров <strong>или</strong> функцию с параметром <code>gui.Button</code>, а получил функцию с параметром <code>gui.Label</code>. Исправление одно — указать в скобках тот тип, чей это обработчик.</p>
       <div class="tip-box">

@@ -217,8 +217,8 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:12:9: error: 'label' was not declared in this scope
-main.idyl:12:9: error: type '&lt;error&gt;' has no property 'text'</idyl-error-block>
+      <idyl-error-block>main.idyl:12:9: compile error: 'label' was not declared in this scope
+main.idyl:12:9: compile error: type '&lt;error&gt;' has no property 'text'</idyl-error-block>
 
       <p>«<code>label</code> was not declared in this scope» означает: в тот момент, когда компилятор читает обработчик, переменной <code>label</code> ещё нет — она объявлена ниже. Второе сообщение — лишь эхо первого. Лекарство простое: <strong>объявляйте виджеты до обработчиков, которые к ним обращаются</strong>. Перенесите <code>gui.Label label;</code> выше <code>btn.on_click</code> — и программа скомпилируется.</p>
     </div>

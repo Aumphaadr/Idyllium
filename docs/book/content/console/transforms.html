@@ -10,7 +10,7 @@ main() {
 }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:4:16: error: cannot assign 'int' value to 'string' variable</idyl-error-block>
+  <idyl-error-block>main.idyl:4:16: compile error: cannot assign 'int' value to 'string' variable</idyl-error-block>
 
   <p>Это не ограничение — это защита от хаоса. Но что, если вам <em>нужно</em> преобразовать число в строку или наоборот? Для этого в Idyllium есть три честные функции преобразования — с ними и познакомимся.</p>
 </div>
@@ -70,7 +70,7 @@ main() {
 }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:4:13: error: cannot assign 'string' value to 'int' variable</idyl-error-block>
+  <idyl-error-block>main.idyl:4:13: compile error: cannot assign 'string' value to 'int' variable</idyl-error-block>
 
   <p>Чтобы превратить строку в число, используйте <code>to_int()</code>:</p>
 
@@ -100,7 +100,7 @@ main() {
 }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:4:15: error: cannot assign 'string' value to 'float' variable</idyl-error-block>
+  <idyl-error-block>main.idyl:4:15: compile error: cannot assign 'string' value to 'float' variable</idyl-error-block>
 
   <p>На помощь приходит <code>to_float()</code>:</p>
 

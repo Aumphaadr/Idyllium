@@ -79,7 +79,7 @@
       "kind": "valid",
       "reason": "Auto 2026-07-25: маркер ошибки относится к прозе, программа работает."
     },
-    "console.encoding.010": {
+    "console.encoding.012": {
       "kind": "valid"
     },
     "console.errors.001": {
@@ -212,8 +212,11 @@
       ]
     },
     "console.errors.023": {
-      "kind": "docs_only",
-      "reason": "Encoding runtime error example is deferred until the encoding library is implemented."
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "unknown encoding 'cp1337'"
+      ],
+      "reason": "Каталог ошибок: несуществующее имя кодировки — учебная runtime-ошибка (2026-07-24, было устаревшее docs_only времён нереализованного encoding)."
     },
     "console.functions.002": {
       "kind": "docs_only",

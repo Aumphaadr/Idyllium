@@ -187,8 +187,8 @@ Rules for named constants:
 Readable diagnostics include:
 
 ```text
-main.idyl:2: error: constant 'answer' must have an initializer
-main.idyl:3: error: cannot assign to constant 'answer'
+main.idyl:2: compile error: constant 'answer' must have an initializer
+main.idyl:3: compile error: cannot assign to constant 'answer'
 ```
 
 A declaration without an initializer creates the value's default:
@@ -1090,6 +1090,7 @@ use time;
 time.sleep(1.5);
 time.stamp now = time.now();
 time.stamp past = time.from_unix(0, "Asia/Yekaterinburg");
+time.stamp meeting = time.create(2026, 9, 24, 18, 3);
 
 console.writeln(now.year);
 console.writeln(now.month);
@@ -1129,6 +1130,13 @@ console.writeln(utc); // 1970-01-01 00:00:00
 console.writeln(ekb); // 1970-01-01 05:00:00
 console.writeln(utc.unix == ekb.unix); // true
 ```
+
+`time.create(year, month, day, hour = 0, minute = 0, second = 0,
+millisecond = 0, timezone = "UTC")` builds a stamp from calendar components
+interpreted in the given IANA timezone. Ranges are strict (month 1-12, hour
+0-23, ...) and non-existent dates are runtime errors
+(`time.create() date 2026-02-30 does not exist`); leap years are handled.
+Named arguments read well: `time.create(2026, 9, 24, hour=18, minute=3)`.
 
 `time.sleep()` accepts a non-negative number of seconds and may be stopped by
 the IDE.
@@ -1247,18 +1255,31 @@ Canonical encoding names returned by `encoding.list_encodings()`:
 - `"utf-8"`
 - `"windows-1251"`
 - `"koi8-r"`
+- `"cp866"` (DOS Cyrillic with box-drawing characters)
+- `"cp437"` (original IBM PC: Latin, box drawing, math symbols)
+- `"windows-1252"` (Western European)
+- `"windows-1254"` (Turkish)
 
-Input also accepts the aliases `"utf8"`, `"cp1251"`, `"win1251"`, and
-`"koi8r"`. A Unicode code point is independent of its encoded byte sequence:
+Input also accepts the aliases `"utf8"`, `"cp1251"`, `"win1251"`, `"koi8r"`,
+`"ibm866"`, `"dos866"`, `"ibm437"`, `"dos437"`, `"cp1252"`, `"win1252"`,
+`"cp1254"`, and `"win1254"`. A Unicode code point is independent of its encoded byte sequence:
 `б` is code point `1073`, but its UTF-8 bytes are `[208, 177]`.
 
 `char_to_codepoint()` accepts exactly one Unicode character.
 `codepoint_to_char()` accepts Unicode scalar values `0..1114111`, excluding
 the surrogate range `55296..57343`. An unknown encoding name, an integer
 outside byte range `0..255`, an unrepresentable character, or malformed UTF-8
-is a runtime error. Decoding is strict and never silently inserts the Unicode
-replacement character `�`. Windows-1251 and KOI8-R use complete 256-byte
-tables.
+is a runtime error. All single-byte encodings use complete 256-byte tables.
+
+`encode()` and `decode()` take an optional `safe` parameter (default `true`).
+By default conversion is strict and never silently inserts the Unicode
+replacement character `�`. With `safe=false` the student explicitly opts out
+of the safety net: undecodable bytes become `�` and unrepresentable
+characters encode to `?` (byte 63) instead of raising a runtime error:
+
+```idyllium
+string mojibake = encoding.decode(bytes, "utf-8", safe=false);
+```
 
 ## 22. Library `colors`
 
@@ -2723,7 +2744,7 @@ Prefer examples that produce clear, precise errors. Good error style:
 ```text
 main.idyl:5: runtime error: array index 5 out of bounds (size 3, valid indices 0-2)
 main.idyl:7: runtime error: cannot convert input to 'int' (expected integer, got "abc")
-main.idyl:10: error: cannot assign 'string' value to 'int' variable
+main.idyl:10: compile error: cannot assign 'string' value to 'int' variable
 ```
 
 When generating teaching materials, include both:

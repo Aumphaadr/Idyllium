@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "languageVersion": "1.2.1",
-  "generatedAt": "2026-07-24T19:39:33.051Z",
+  "languageVersion": "1.2.2",
+  "generatedAt": "2026-07-25T10:16:03.609Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "language": [
     {
@@ -1078,6 +1078,79 @@
       ],
       "functions": [
         {
+          "name": "create",
+          "signature": "create(year: int, month: int, day: int, hour: int = 0, minute: int = 0, second: int = 0, millisecond: int = 0, timezone: string = \"UTC\"): time.stamp",
+          "returnType": "time.stamp",
+          "parameters": [
+            {
+              "name": "year",
+              "type": "int",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            },
+            {
+              "name": "month",
+              "type": "int",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            },
+            {
+              "name": "day",
+              "type": "int",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            },
+            {
+              "name": "hour",
+              "type": "int",
+              "optional": true,
+              "defaultValue": "0",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            },
+            {
+              "name": "minute",
+              "type": "int",
+              "optional": true,
+              "defaultValue": "0",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            },
+            {
+              "name": "second",
+              "type": "int",
+              "optional": true,
+              "defaultValue": "0",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            },
+            {
+              "name": "millisecond",
+              "type": "int",
+              "optional": true,
+              "defaultValue": "0",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            },
+            {
+              "name": "timezone",
+              "type": "string",
+              "optional": true,
+              "defaultValue": "\"UTC\"",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Создаёт метку с заданной датой и временем: time.create(2026, 9, 24, 18, 3). Компоненты трактуются в указанном IANA-часовом поясе (по умолчанию UTC); несуществующая дата — ошибка."
+        },
+        {
           "name": "from_unix",
           "signature": "from_unix(seconds: float, timezone: string = \"UTC\"): time.stamp",
           "returnType": "time.stamp",
@@ -1632,7 +1705,7 @@
         },
         {
           "name": "decode",
-          "signature": "decode(codes: dyn_array<int>, encoding: string): string",
+          "signature": "decode(codes: dyn_array<int>, encoding: string, safe: bool = true): string",
           "returnType": "string",
           "parameters": [
             {
@@ -1650,14 +1723,22 @@
               "defaultValue": "",
               "acceptedTypes": [],
               "acceptedDescription": ""
+            },
+            {
+              "name": "safe",
+              "type": "bool",
+              "optional": true,
+              "defaultValue": "true",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
             }
           ],
           "variadic": false,
-          "documentation": ""
+          "documentation": "Собирает строку из байтов. safe=false заменяет негодные байты символом � вместо остановки с ошибкой."
         },
         {
           "name": "encode",
-          "signature": "encode(text: string, encoding: string): dyn_array<int>",
+          "signature": "encode(text: string, encoding: string, safe: bool = true): dyn_array<int>",
           "returnType": "dyn_array<int>",
           "parameters": [
             {
@@ -1675,10 +1756,18 @@
               "defaultValue": "",
               "acceptedTypes": [],
               "acceptedDescription": ""
+            },
+            {
+              "name": "safe",
+              "type": "bool",
+              "optional": true,
+              "defaultValue": "true",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
             }
           ],
           "variadic": false,
-          "documentation": ""
+          "documentation": "Превращает строку в байты. safe=false заменяет непредставимые символы знаком вопроса вместо остановки с ошибкой."
         },
         {
           "name": "list_encodings",

@@ -236,7 +236,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:5:18: error: cannot assign 'float' value to 'int' variable</idyl-error-block>
+      <idyl-error-block>main.idyl:5:18: compile error: cannot assign 'float' value to 'int' variable</idyl-error-block>
 
       <p>Свойство <code>value</code> у SpinBox — типа <code>int</code>, а <code>0.5</code> — это <code>float</code>. Компилятор такое не пропустит — и правильно сделает: половины игрока не бывает.</p>
       <p>Если значение <em>должно</em> быть дробным — это не повод воевать с компилятором. Просто возьмите <code>gui.FloatSpinBox</code>: у него <code>value</code>, <code>min</code>, <code>max</code> и <code>step</code> как раз типа <code>float</code>.</p>

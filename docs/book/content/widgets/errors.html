@@ -104,7 +104,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:8:20: error: callback property 'on_click' expects function(): void or function(gui.Button): void, got function(gui.Label): void</idyl-error-block>
+      <idyl-error-block>main.idyl:8:20: compile error: callback property 'on_click' expects function(): void or function(gui.Button): void, got function(gui.Label): void</idyl-error-block>
 
       <p>Сообщение длинное, но полезное: компилятор перечисляет, какие сигнатуры он готов принять для <code>on_click</code>, и какую получил. Исправление: указывайте в параметре <code>sender</code> тип того виджета, чей это обработчик.</p>
     </div>
@@ -124,7 +124,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:6:18: error: cannot assign 'int' value to 'string' variable</idyl-error-block>
+      <idyl-error-block>main.idyl:6:18: compile error: cannot assign 'int' value to 'string' variable</idyl-error-block>
 
       <p>Знакомое сообщение, правда? Оно то же самое, что и при работе с обычными переменными: <code>text</code> — строка, а <code>42</code> — число. Исправление: <code>label.text = to_string(42);</code></p>
     </div>
@@ -151,8 +151,8 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:7:5: error: 'btn' was not declared in this scope
-main.idyl:7:5: error: type '&lt;error&gt;' has no property 'on_click'</idyl-error-block>
+      <idyl-error-block>main.idyl:7:5: compile error: 'btn' was not declared in this scope
+main.idyl:7:5: compile error: type '&lt;error&gt;' has no property 'on_click'</idyl-error-block>
 
       <p>Обратите внимание: сообщений два, а причина одна. Компилятор не нашёл переменную <code>btn</code> — и второе сообщение лишь эхо первого (загадочный тип <code>&lt;error&gt;</code> — это компилятор разводит руками). Исправление: объявляйте виджет до его использования в обработчиках.</p>
     </div>
@@ -206,7 +206,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:6:19: error: 'add_child' argument 1 expects gui widget, got 'gui.Modal'</idyl-error-block>
+      <idyl-error-block>main.idyl:6:19: compile error: 'add_child' argument 1 expects gui widget, got 'gui.Modal'</idyl-error-block>
 
       <p>Исправление: модальные окна создаются и показываются динамически, без <code>add_child()</code> — достаточно <code>show_alert()</code>, <code>show_confirm()</code> или <code>show_input()</code>.</p>
     </div>
@@ -255,7 +255,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:6:5: error: type 'gui.Button' has no property 'placeholder'</idyl-error-block>
+      <idyl-error-block>main.idyl:6:5: compile error: type 'gui.Button' has no property 'placeholder'</idyl-error-block>
 
       <p>
         Исправление: сверяйтесь со справочником виджета. У кнопки есть
@@ -285,7 +285,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:9:5: error: property 'selected_text' is read-only</idyl-error-block>
+      <idyl-error-block>main.idyl:9:5: compile error: property 'selected_text' is read-only</idyl-error-block>
 
       <p>Исправление: выбирайте пункт по номеру — <code>combo.selected_index = 1;</code> — а <code>selected_text</code> используйте только для чтения.</p>
     </div>
@@ -305,8 +305,8 @@ main() {
         <tbody>
           <tr>
             <td>Ошибка компиляции</td>
-            <td><code>main.idyl:строка:колонка: error: ...</code></td>
-            <td><code>main.idyl:6:18: error: cannot assign 'int' value to 'string' variable</code></td>
+            <td><code>main.idyl:строка:колонка: compile error: ...</code></td>
+            <td><code>main.idyl:6:18: compile error: cannot assign 'int' value to 'string' variable</code></td>
           </tr>
           <tr>
             <td>Ошибка выполнения</td>

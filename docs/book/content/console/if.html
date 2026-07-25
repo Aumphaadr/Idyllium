@@ -274,12 +274,12 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:6:15: error: expected ')' after if condition
-main.idyl:6:15: error: expected expression, got 'Equal'
-main.idyl:6:17: error: expected ';' after expression
-main.idyl:6:20: error: expected ';' after expression
-main.idyl:6:20: error: expected expression, got 'RightParen'
-main.idyl:6:22: error: expected ';' after expression</idyl-error-block>
+      <idyl-error-block>main.idyl:6:15: compile error: expected ')' after if condition
+main.idyl:6:15: compile error: expected expression, got 'Equal'
+main.idyl:6:17: compile error: expected ';' after expression
+main.idyl:6:20: compile error: expected ';' after expression
+main.idyl:6:20: compile error: expected expression, got 'RightParen'
+main.idyl:6:22: compile error: expected ';' after expression</idyl-error-block>
 
       <p>Компилятор спотыкается прямо на знаке <code>=</code> и от растерянности жалуется сразу шесть раз. Не пугайтесь: читать всегда стоит первую строку. «expected ')' after if condition» означает, что присваивание внутри условия компилятор даже не признал за условие.</p>
       <p>Idyllium <strong>не разрешает</strong> использовать оператор присваивания внутри условия — это всегда ошибка компиляции. Так детская опечатка не превратится в серьёзный баг.</p>

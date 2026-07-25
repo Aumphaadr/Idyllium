@@ -240,7 +240,7 @@ main() {
 }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:7:5: error: event 'on_opened' can only be fired inside class 'Door' (through 'this')</idyl-error-block>
+  <idyl-error-block>main.idyl:7:5: compile error: event 'on_opened' can only be fired inside class 'Door' (through 'this')</idyl-error-block>
 
   <p>И прочитать событие как значение тоже не выйдет — оно не переменная:</p>
 
@@ -257,7 +257,7 @@ main() {
 }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:9:21: error: event 'on_opened' cannot be read as a value; assign a handler or fire it inside class 'Door'</idyl-error-block>
+  <idyl-error-block>main.idyl:9:21: compile error: event 'on_opened' cannot be read as a value; assign a handler or fire it inside class 'Door'</idyl-error-block>
 </div>
 
 <div class="docs-section">

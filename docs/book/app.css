@@ -393,16 +393,18 @@ body.light-theme .docs-topbar {
   position: absolute;
   inset: 0;
   z-index: 30;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: min(26vh, 220px);
   background: color-mix(in srgb, var(--bg-root) 55%, transparent);
   backdrop-filter: blur(2px);
   animation: lesson-loading-fade 0.25s ease-out;
 }
 
+/* Плашка прикована к центру ВЬЮПОРТА (position: fixed): читатель у кнопок
+   «предыдущий/следующий урок» внизу длинной страницы тоже её увидит. */
 .lesson-loading-box {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
   gap: 12px;

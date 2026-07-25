@@ -60,7 +60,7 @@ main() {
 }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:7:13: error: cannot assign 'float' value to 'int' variable</idyl-error-block>
+  <idyl-error-block>main.idyl:7:13: compile error: cannot assign 'float' value to 'int' variable</idyl-error-block>
 
   <p>Компилятор останавливает программу ещё до запуска: результат деления — <code>float</code>, а в <code>int</code> дробное число не помещается.</p>
   <p><strong>Важное правило:</strong> если в результате математической операции <em>теоретически может получиться дробное число</em> — результат будет иметь тип <code>float</code>.</p>

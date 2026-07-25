@@ -101,13 +101,13 @@ main() {
     draw.line(10);
 }
 </script></idyl-code-block>
-  <idyl-error-block>main.idyl:2:1: error: module 'draw' was not found</idyl-error-block>
+  <idyl-error-block>main.idyl:2:1: compile error: module 'draw' was not found</idyl-error-block>
   <p>Проверьте, что файл лежит в той же папке и его имя совпадает с именем в <code>use</code> буква в букву.</p>
 
   <p><strong>Расширение в <code>use</code>.</strong> Написать <code>use draw.idyl;</code> — первые грабли каждого, кто создаёт библиотеку. Компилятор спотыкается о точку и выдаёт целый ворох ошибок:</p>
-  <idyl-error-block>main.idyl:2:9: error: expected ';' after use declaration
-main.idyl:2:9: error: unexpected token 'Dot' at top level
-main.idyl:2:10: error: executable statements must be inside 'main()' or another function, not at top level</idyl-error-block>
+  <idyl-error-block>main.idyl:2:9: compile error: expected ';' after use declaration
+main.idyl:2:9: compile error: unexpected token 'Dot' at top level
+main.idyl:2:10: compile error: executable statements must be inside 'main()' or another function, not at top level</idyl-error-block>
   <p>Лекарство простое: в <code>use</code> расширение не пишется никогда — ни для системных библиотек, ни для ваших.</p>
 </div>
 

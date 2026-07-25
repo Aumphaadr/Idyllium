@@ -144,6 +144,41 @@ main() {
     </div>
 
     <div class="docs-section">
+      <h2>Метка с нужной датой: <code>time.create()</code></h2>
+      <p>А если нужен не текущий момент, а конкретный? Скажем, «24 сентября 2026 года, 18:03» — начало турнира. Функция <code>time.create()</code> собирает метку прямо из составляющих: год, месяц, день, а дальше — по желанию — час, минута и секунда:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use time;
+
+main() {
+    time.stamp tournament = time.create(2026, 9, 24, 18, 3);
+    console.writeln("Начало: ", tournament);
+    console.writeln("День недели: ", tournament.week_day);
+
+    time.stamp birthday = time.create(2026, 12, 31);
+    console.writeln("Без времени — полночь: ", birthday);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Начало: 2026-09-24 18:03:00
+День недели: 4
+Без времени — полночь: 2026-12-31 00:00:00</idyl-output-block>
+
+      <p>Указывать можно только то, что нужно: пропущенные час, минута и секунда считаются нулями. А ещё <code>time.create()</code> строго следит за календарём — несуществующую дату она не пропустит:</p>
+
+      <idyl-code-block><script type="text/plain">
+use time;
+
+main() {
+    time.stamp broken = time.create(2026, 2, 30); // в феврале нет 30-го!
+}
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:4: runtime error: time.create() date 2026-02-30 does not exist</idyl-error-block>
+    </div>
+
+    <div class="docs-section">
       <h2>Создание метки из UNIX-времени: <code>time.from_unix(n)</code></h2>
       <p>Работает и обратное превращение: если у вас есть UNIX-время, вы можете создать из него полноценную метку:</p>
 

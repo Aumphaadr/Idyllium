@@ -15,7 +15,7 @@
   <h2>Как читать ошибки</h2>
   <p>Этот урок — справочник самых частых ошибок при работе с классами и объектами. Все сообщения в нём настоящие: можете скопировать любой пример, запустить его и получить точно такой же текст.</p>
   <p>Формат сообщений вы уже знаете по разделу «Консоль», напомним его на живом примере:</p>
-  <idyl-error-block>main.idyl:2:5: error: unknown class 'Cat'</idyl-error-block>
+  <idyl-error-block>main.idyl:2:5: compile error: unknown class 'Cat'</idyl-error-block>
   <p>Через двоеточия перечислены: файл, номер строки, номер символа в строке — а дальше описание того, что пошло не так. Компилятор показывает место ошибки с точностью до буквы.</p>
   <div class="tip-box">
     <strong>💡 Совет:</strong> если сообщений несколько — исправляйте первое. Одна опечатка часто порождает целую гроздь сообщений-«эха», и после исправления первого остальные исчезают сами. Дальше в уроке вы увидите такой пример.
@@ -48,7 +48,7 @@ main() {
 };   // ← лишняя точка с запятой
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:7:2: error: unexpected token 'Semicolon' at top level</idyl-error-block>
+  <idyl-error-block>main.idyl:7:2: compile error: unexpected token 'Semicolon' at top level</idyl-error-block>
 
   <p>Исправление: уберите лишний символ. Точка с запятой нужна после команд внутри функций, а после <code>}</code> классов, функций и <code>main()</code> — нет.</p>
 </div>
@@ -71,8 +71,8 @@ class Cat {
 main() { }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:7:25: error: 'this' cannot be used in a static method
-main.idyl:7:25: error: type '&lt;error&gt;' has no member 'name'</idyl-error-block>
+  <idyl-error-block>main.idyl:7:25: compile error: 'this' cannot be used in a static method
+main.idyl:7:25: compile error: type '&lt;error&gt;' has no member 'name'</idyl-error-block>
 
   <p>Вот и обещанная «гроздь»: сообщения два, но настоящая ошибка — первая. Раз <code>this</code> недоступен, компилятор уже не знает, у чего мы просим <code>name</code>, — отсюда вторая строка. Исправьте первую — исчезнут обе.</p>
   <p>Исправление: либо сделайте метод нестатическим, либо передавайте нужные данные как параметры.</p>
@@ -94,7 +94,7 @@ main() {
 }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:8:5: error: member 'BankAccount.balance' is private and can only be used inside class 'BankAccount'</idyl-error-block>
+  <idyl-error-block>main.idyl:8:5: compile error: member 'BankAccount.balance' is private and can only be used inside class 'BankAccount'</idyl-error-block>
 
   <p>Исправление: создайте публичные методы для работы с приватным свойством — например, <code>get_balance()</code> для чтения и <code>deposit()</code> с проверкой суммы для пополнения.</p>
 </div>
@@ -118,7 +118,7 @@ main() {
 }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:11:21: error: cannot print object of class 'Cat' directly</idyl-error-block>
+  <idyl-error-block>main.idyl:11:21: compile error: cannot print object of class 'Cat' directly</idyl-error-block>
 
   <p>Исправление: печатайте свойства по отдельности — <code>console.writeln(cat.name);</code> — или напишите в классе метод <code>info()</code>, который сам выводит всё, что нужно.</p>
 </div>
@@ -178,7 +178,7 @@ main() {
 }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:2:5: error: unknown class 'Cat'</idyl-error-block>
+  <idyl-error-block>main.idyl:2:5: compile error: unknown class 'Cat'</idyl-error-block>
 
   <p>Исправление: подключите файл и обращайтесь к классу по полному имени — с префиксом имени файла. Одного <code>use</code> недостаточно: без префикса компилятор выдаст ту же ошибку. Пусть рядом с программой лежит файл с классом:</p>
 
@@ -221,7 +221,7 @@ class Helper {
 }
 </script></idyl-code-block>
 
-  <idyl-error-block>a.idyl:2:1: error: module import cycle detected: b -&gt; a -&gt; b</idyl-error-block>
+  <idyl-error-block>a.idyl:2:1: compile error: module import cycle detected: b -&gt; a -&gt; b</idyl-error-block>
 
   <p>Компилятор прямо рисует круг: <code>b</code> подключает <code>a</code>, тот — снова <code>b</code>, и так до бесконечности. Исправление: пересмотрите структуру проекта. Уберите один из <code>use</code> или вынесите общую часть в третий файл, который подключат оба.</p>
 </div>
@@ -244,7 +244,7 @@ main() {
 }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:9:13: error: static method 'MathUtils.square' must be called on class 'MathUtils'</idyl-error-block>
+  <idyl-error-block>main.idyl:9:13: compile error: static method 'MathUtils.square' must be called on class 'MathUtils'</idyl-error-block>
 
   <p>И зеркальная ситуация — обычный метод через класс:</p>
 
@@ -262,7 +262,7 @@ main() {
 }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:10:5: error: instance method 'Cat.meow' must be called on an object</idyl-error-block>
+  <idyl-error-block>main.idyl:10:5: compile error: instance method 'Cat.meow' must be called on an object</idyl-error-block>
 
   <p>Исправление: статические методы вызывайте через класс — <code>MathUtils.square(5)</code>, обычные — через объект: <code>some_cat.meow()</code>.</p>
 </div>
