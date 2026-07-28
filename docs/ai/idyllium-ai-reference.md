@@ -452,6 +452,16 @@ array<int, 3> numbers = [10, 20, 30];
 console.writeln(numbers[0]);
 ```
 
+The size is an integer literal or a named integer constant (including a
+constant computed from other constants); plain variables are rejected at
+compile time:
+
+```idyllium
+const int SIZE = 6;
+array<int, SIZE> cells;          // ok
+// int n = 6; array<int, n> bad; // compile error: must be a 'const'
+```
+
 Dynamic arrays:
 
 ```idyllium

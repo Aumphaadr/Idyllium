@@ -98,6 +98,8 @@ interface SymbolInfo {
   readonly range: SourceRange;
   readonly kind: 'variable' | 'parameter' | 'function';
   readonly readonly: boolean;
+  /** Значение целочисленной константы, если оно вычислимо на компиляции. */
+  constantValue?: number;
 }
 
 interface AssignmentTargetInfo {
@@ -154,6 +156,9 @@ export class SemanticAnalyzer {
   private readonly scopes: Array<Map<string, SymbolInfo>> = [new Map()];
   private readonly functions = new Map<string, FunctionDeclaration>();
   private readonly classes = new Map<string, UserClassInfo>();
+  // Значения файловых int-констант: собираются до анализа сигнатур, чтобы
+  // array<int, L> работал в параметрах функций и полях классов.
+  private readonly fileConstants = new Map<string, number>();
   private readonly returnTypes: TypeRef[] = [];
   private readonly classContexts: ClassContext[] = [];
   private loopDepth = 0;
@@ -179,6 +184,8 @@ export class SemanticAnalyzer {
         }
       }
     }
+
+    this.collectFileConstants(program);
 
     for (const declaration of program.declarations) {
       if (declaration.kind === 'ClassDeclaration') {
@@ -900,6 +907,15 @@ export class SemanticAnalyzer {
     }
 
     this.declare(statement.name, declaredType, kind, statement.range, statement.isConst);
+
+    // Целочисленная константа с вычислимым значением пригодна как размер
+    // массива: array<int, L>.
+    if (statement.isConst && statement.initializer
+      && declaredType.kind === 'primitive' && declaredType.name === 'int') {
+      const value = this.foldConstInt(statement.initializer);
+      const symbol = this.currentScope().get(statement.name);
+      if (value !== null && symbol) symbol.constantValue = value;
+    }
   }
 
   private analyzeConstructorArguments(statement: VariableDeclaration, declaredType: TypeRef): void {
@@ -948,6 +964,45 @@ export class SemanticAnalyzer {
     };
   }
 
+  // Сворачивает константное int-выражение: литералы, ссылки на константы,
+  // унарный минус и + - * (деление всегда float — не участвует).
+  private foldConstInt(expression: Expression): number | null {
+    if (expression.kind === 'LiteralExpression') {
+      return expression.valueType === 'int' && typeof expression.value === 'number'
+        ? expression.value
+        : null;
+    }
+    if (expression.kind === 'IdentifierExpression') {
+      const symbol = this.lookup(expression.name);
+      if (symbol?.constantValue !== undefined) return symbol.constantValue;
+      return this.fileConstants.get(expression.name) ?? null;
+    }
+    if (expression.kind === 'UnaryExpression' && expression.operator === '-') {
+      const operand = this.foldConstInt(expression.operand);
+      return operand === null ? null : -operand;
+    }
+    if (expression.kind === 'BinaryExpression') {
+      const left = this.foldConstInt(expression.left);
+      const right = this.foldConstInt(expression.right);
+      if (left === null || right === null) return null;
+      if (expression.operator === '+') return left + right;
+      if (expression.operator === '-') return left - right;
+      if (expression.operator === '*') return left * right;
+      return null;
+    }
+    return null;
+  }
+
+  private collectFileConstants(program: Program): void {
+    for (const declaration of program.declarations) {
+      if (declaration.kind !== 'VariableDeclaration' || !declaration.isConst) continue;
+      if (declaration.declaredType.kind !== 'PrimitiveTypeName' || declaration.declaredType.name !== 'int') continue;
+      if (!declaration.initializer) continue;
+      const value = this.foldConstInt(declaration.initializer);
+      if (value !== null) this.fileConstants.set(declaration.name, value);
+    }
+  }
+
   private resolveTypeName(typeName: TypeName): TypeRef {
     if (typeName.kind === 'PrimitiveTypeName') {
       return primitive(typeName.name);
@@ -957,6 +1012,28 @@ export class SemanticAnalyzer {
       const elementType = this.resolveTypeName(typeName.elementType);
       if (sameType(elementType, VOID)) {
         this.diagnostics.error(typeName.elementType.range, "array element type cannot be 'void'");
+      }
+      if (!typeName.dynamic && typeName.sizeName !== null && typeName.size === null) {
+        // Размер задан именованной константой: array<int, L>
+        const sizeRange = typeName.sizeRange ?? typeName.range;
+        const symbol = this.lookup(typeName.sizeName);
+        const value = symbol?.constantValue ?? this.fileConstants.get(typeName.sizeName);
+        if (value === undefined) {
+          if (symbol) {
+            this.diagnostics.error(
+              sizeRange,
+              `array size '${typeName.sizeName}' must be an integer constant declared with 'const'`,
+            );
+          } else {
+            this.diagnostics.error(sizeRange, `array size constant '${typeName.sizeName}' was not declared`);
+          }
+        } else if (value < 0) {
+          this.diagnostics.error(sizeRange, `array size constant '${typeName.sizeName}' must be non-negative, got ${value}`);
+        } else {
+          this.markSemanticToken('variable', sizeRange, ['readonly']);
+          // Кодоген читает то же поле size — вписываем разрешённое значение.
+          typeName.size = value;
+        }
       }
       if (!typeName.dynamic && (typeName.size === null || typeName.size < 0)) {
         this.diagnostics.error(typeName.range, 'array size must be a non-negative integer');

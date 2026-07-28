@@ -1162,6 +1162,48 @@ test('extended encodings round-trip and reproduce classic mojibake', async () =>
   );
 });
 
+test('named constants work as fixed array sizes', async () => {
+  const result = await runIdyllium([
+    'use console;',
+    '',
+    'const int ROWS = 3;',
+    'const int COLS = 4;',
+    'const int TOTAL = ROWS * COLS; // константа из констант',
+    '',
+    'array<int, TOTAL> flat;',
+    '',
+    'int function cell_count(array<int, TOTAL> data) {',
+    '    return data.length;',
+    '}',
+    '',
+    'class Board {',
+    '    array<int, COLS> row;',
+    '}',
+    '',
+    'main() {',
+    '    const int L = 6;',
+    '    array<int, L> K = [81, 45, 33, 27, 90, 64];',
+    '',
+    '    Board b;',
+    '    array<array<int, COLS>, ROWS> grid;',
+    '    console.write(K[0], ":", K[5], ":", cell_count(flat), ":", b.row.length, ":", grid.length);',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === '81:64:12:4:3', `unexpected output: ${JSON.stringify(result.output)}`);
+
+  assertFails(
+    'main() {\n    int n = 6;\n    array<int, n> bad;\n}',
+    "array size 'n' must be an integer constant declared with 'const'",
+  );
+  assertFails('main() {\n    array<int, MISSING> bad;\n}', "array size constant 'MISSING' was not declared");
+  assertFails(
+    'main() {\n    const int L = 6;\n    array<int, L> K = [1, 2, 3];\n}',
+    "array initializer has 3 elements, but 'array<int, 6>' requires 6",
+  );
+});
+
 test('class methods see file-level constants and globals', async () => {
   const result = await runIdyllium([
     'use console;',

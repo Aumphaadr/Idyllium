@@ -1095,12 +1095,21 @@ export class Parser {
       const elementType = this.parseTypeName();
       let size: number | null = null;
 
+      let sizeName: string | null = null;
+      let sizeRange: SourceRange | null = null;
       if (dynamic) {
         this.consume(TokenKind.Greater, "expected '>' after dyn_array element type");
       } else {
         this.consume(TokenKind.Comma, "expected ',' after array element type");
-        const sizeToken = this.consume(TokenKind.IntLiteral, 'expected array size');
-        size = typeof sizeToken.literal === 'number' ? sizeToken.literal : 0;
+        if (this.check(TokenKind.Identifier)) {
+          // Размер именованной константой: array<int, L>
+          const nameToken = this.advance();
+          sizeName = nameToken.lexeme;
+          sizeRange = nameToken.range;
+        } else {
+          const sizeToken = this.consume(TokenKind.IntLiteral, 'expected array size (an integer or a named constant)');
+          size = typeof sizeToken.literal === 'number' ? sizeToken.literal : 0;
+        }
         this.consume(TokenKind.Greater, "expected '>' after array size");
       }
 
@@ -1108,6 +1117,8 @@ export class Parser {
         kind: 'ArrayTypeName',
         elementType,
         size,
+        sizeName,
+        sizeRange,
         dynamic,
         range: { start: start.range.start, end: this.previous().range.end },
       } satisfies ArrayTypeNameNode;
