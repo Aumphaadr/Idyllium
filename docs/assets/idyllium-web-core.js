@@ -3015,13 +3015,16 @@ class SemanticAnalyzer {
             }
         }
         for (const declaration of program.declarations) {
-            if (declaration.kind === 'ClassDeclaration') {
-                this.analyzeClassDeclaration(declaration);
-            }
-        }
-        for (const declaration of program.declarations) {
             if (declaration.kind === 'VariableDeclaration') {
                 this.analyzeVariableDeclaration(declaration, 'variable');
+            }
+        }
+        // Тела методов и конструкторов анализируются ПОСЛЕ объявления файловых
+        // переменных и констант: методы классов, как и глобальные функции,
+        // должны видеть const W = 60 и прочие top-level символы.
+        for (const declaration of program.declarations) {
+            if (declaration.kind === 'ClassDeclaration') {
+                this.analyzeClassDeclaration(declaration);
             }
         }
         for (const declaration of program.declarations) {
