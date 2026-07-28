@@ -29,14 +29,14 @@
       ],
       "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
     },
-    "console.array.010": {
+    "console.array.011": {
       "kind": "compile_error",
       "diagnosticIncludes": [
         "comparison '>' requires numeric operands"
       ],
       "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
     },
-    "console.array.011": {
+    "console.array.012": {
       "kind": "compile_error",
       "diagnosticIncludes": [
         "operator '+' cannot be applied to 'array<int, 5>' and 'int'"

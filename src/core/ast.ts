@@ -28,7 +28,12 @@ export interface ClassTypeNameNode {
 export interface ArrayTypeNameNode {
   readonly kind: 'ArrayTypeName';
   readonly elementType: TypeName;
-  readonly size: number | null;
+  /** Числовой размер. Для формы `array<int, L>` семантика вписывает сюда
+   *  разрешённое значение именованной константы. */
+  size: number | null;
+  /** Имя константы из `array<int, L>`; null для числового литерала. */
+  readonly sizeName: string | null;
+  readonly sizeRange: SourceRange | null;
   readonly dynamic: boolean;
   readonly range: SourceRange;
 }
