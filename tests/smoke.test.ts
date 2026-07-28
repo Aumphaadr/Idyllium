@@ -1162,6 +1162,36 @@ test('extended encodings round-trip and reproduce classic mojibake', async () =>
   );
 });
 
+test('class methods see file-level constants and globals', async () => {
+  const result = await runIdyllium([
+    'use console;',
+    '',
+    'const int W = 60;',
+    'int visits = 0;',
+    '',
+    'class Dungeon {',
+    '    dyn_array<int> cells;',
+    '',
+    '    constructor Dungeon() {',
+    '        this.cells.resize(W); // константа в конструкторе',
+    '    }',
+    '',
+    '    int function width() {',
+    '        visits += 1;         // глобальная переменная в методе',
+    '        return W;            // константа в методе',
+    '    }',
+    '}',
+    '',
+    'main() {',
+    '    Dungeon d;',
+    '    console.write(d.width(), ":", d.cells.length, ":", visits);',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === '60:60:1', `unexpected output: ${JSON.stringify(result.output)}`);
+});
+
 test('module values, mulberry32 and types limit constants behave', async () => {
   // Голое имя модуля — не значение
   assertFails('use console;\nmain() {\n    console.writeln(console);\n}', "module 'console' cannot be used as a value");
