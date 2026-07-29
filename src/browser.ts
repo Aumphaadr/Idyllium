@@ -174,6 +174,16 @@ function createMemoryRuntime(options: BrowserRunOptions, fileSystem: RuntimeFile
     fileSystem,
     imageService: createBrowserImageService(),
     sqliteService: browserSqliteService,
+    urlOpener: {
+      open(address: string): void {
+        // Браузер может заблокировать всплывающее окно — тогда честно
+        // сообщаем об этом, а не делаем вид, что ссылка открылась.
+        const opened = (globalThis as any).open?.(address, '_blank', 'noopener,noreferrer');
+        if (!opened) {
+          throw new Error('the browser blocked opening a new tab; allow pop-ups for this page');
+        }
+      },
+    },
   });
 }
 

@@ -235,6 +235,15 @@ button:disabled:active {
   background: var(--panel);
 }
 
+.brand a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand a:hover {
+  text-decoration: underline;
+}
+
 .brand {
   display: inline-flex;
   align-items: baseline;

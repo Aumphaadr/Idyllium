@@ -295,6 +295,10 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   const styleable = [
     propertySpec('style', STRING, false,
       'IdySS-строка стилей вида "color: red; border-radius: 8px;". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.'),
+    propertySpec('style_hover', STRING, false,
+      'IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.'),
+    propertySpec('style_active', STRING, false,
+      'IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.'),
   ];
   const changeable = [
     propertySpec('on_change', ANY_TYPE),
@@ -551,6 +555,45 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     }),
     functionSpec('sha256_bytes', [hashDataParameter], arrayType(INT, null, true), {
       documentation: 'Тот же SHA-256, но в виде массива из 32 байтов.',
+    }),
+  ]));
+
+  registry.registerModule(moduleSpec('url', [
+    functionSpec('open', [{ name: 'address', type: STRING }], VOID, {
+      documentation: 'Открывает адрес в браузере. Поддерживаются только http и https. Работает в Web IDE, VS Code и консольном режиме.',
+    }),
+    functionSpec('scheme', [{ name: 'address', type: STRING }], STRING, {
+      documentation: 'Протокол адреса без двоеточия: "https".',
+    }),
+    functionSpec('host', [{ name: 'address', type: STRING }], STRING, {
+      documentation: 'Имя сайта: "www.youtube.com".',
+    }),
+    functionSpec('path', [{ name: 'address', type: STRING }], STRING, {
+      documentation: 'Путь после имени сайта: "/watch".',
+    }),
+    functionSpec('query', [{ name: 'address', type: STRING }], STRING, {
+      documentation: 'Строка параметров без "?": "v=dQw4w9WgXcQ&t=43".',
+    }),
+    functionSpec('fragment', [{ name: 'address', type: STRING }], STRING, {
+      documentation: 'Часть адреса после "#" (якорь), без самой решётки.',
+    }),
+    functionSpec('port', [{ name: 'address', type: STRING }], INT, {
+      documentation: 'Номер порта; если он не указан, возвращается стандартный для протокола (80 или 443).',
+    }),
+    functionSpec('query_value', [
+      { name: 'address', type: STRING },
+      { name: 'name', type: STRING },
+    ], STRING, {
+      documentation: 'Значение параметра из строки запроса; пустая строка, если параметра нет.',
+    }),
+    functionSpec('encode', [{ name: 'text', type: STRING }], STRING, {
+      documentation: 'Процентное кодирование текста для вставки в адрес: "Привет" превращается в "%D0%9F%D1%80%D0%B8%D0%B2%D0%B5%D1%82".',
+    }),
+    functionSpec('decode', [{ name: 'text', type: STRING }], STRING, {
+      documentation: 'Обратное преобразование процентного кодирования.',
+    }),
+    functionSpec('is_valid', [{ name: 'address', type: STRING }], BOOL, {
+      documentation: 'Проверяет, можно ли разобрать строку как адрес.',
     }),
   ]));
 
@@ -846,6 +889,8 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       propertySpec('font', fontsFont),
       ...fontSized,
       propertySpec('title', STRING),
+      propertySpec('theme', STRING, false,
+        'Тема оформления окна и всех его виджетов: "default", "idyllium", "dracula", "breeze", "oxygen". Самый низкий приоритет — прямые свойства виджета и IdySS перекрывают тему.'),
       ...styleable,
     ], [
       functionSpec('add_child', [guiChildParameter], VOID),
@@ -884,6 +929,8 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...visible,
       ...styleable,
+      propertySpec('href', STRING, false,
+        'Адрес ссылки. Непустой href превращает надпись в кликабельную ссылку: подчёркивание, курсор-рука, открытие в новой вкладке.'),
       ...colorRoles,
       ...fontSized,
       callbackPropertySpec('on_click', [
@@ -1017,6 +1064,24 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], [
       functionSpec('add_item', [{ name: 'text', type: STRING }], VOID),
       functionSpec('clear_items', [], VOID),
+    ], guiWidget),
+    typeSpec('TabWidget', [
+      ...positioned,
+      ...visible,
+      ...styleable,
+      ...changeable,
+      ...fontSized,
+      propertySpec('selected_index', INT, false, 'Номер открытой вкладки, начиная с 0.'),
+      propertySpec('selected_title', STRING, true, 'Заголовок открытой вкладки; меняется через selected_index.'),
+      propertySpec('tab_count', INT, true, 'Сколько вкладок сейчас создано.'),
+    ], [
+      functionSpec('add_tab', [
+        { name: 'title', type: STRING },
+        { name: 'content', type: guiChildParameter.type, acceptedTypes: guiChildParameter.acceptedTypes, acceptedDescription: guiChildParameter.acceptedDescription },
+      ], VOID, {
+        documentation: 'Добавляет вкладку с заголовком и виджетом-содержимым (обычно gui.Frame с наполнением).',
+      }),
+      functionSpec('clear_tabs', [], VOID, { documentation: 'Удаляет все вкладки.' }),
     ], guiWidget),
     typeSpec('Modal', [
       propertySpec('title', STRING),

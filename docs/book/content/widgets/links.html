@@ -1,0 +1,273 @@
+<div class="docs-section">
+  <h2>Программа выходит в интернет</h2>
+  <p>
+    Пока что все ваши окна жили сами по себе. Но приложения умеют и большее —
+    отправлять пользователя на сайт: в справку, в репозиторий проекта, на
+    страницу с обновлениями. Сегодня вы научите этому и свои программы.
+  </p>
+  <p>
+    Инструментов будет два: <strong>надпись-ссылка</strong> (виджет
+    <code>gui.Label</code> со свойством <code>href</code>) и <strong>библиотека
+    <code>url</code></strong>, которая умеет открывать адреса и разбирать их на
+    части.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Надпись, на которую можно нажать</h2>
+  <p>
+    Отдельного виджета для ссылок в Idyllium нет — он и не нужен. У обычного
+    <code>gui.Label</code> есть свойство <code>href</code>: как только вы
+    запишете туда адрес, надпись превратится в настоящую ссылку. Она сама
+    подчеркнётся, курсор станет «рукой», а по клику откроется новая вкладка:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 420;
+    win.height = 150;
+    win.title = "Ссылки";
+
+    gui.Label link;
+    link.x = 20;
+    link.y = 30;
+    link.width = 360;
+    link.height = 26;
+    link.text = "Репозиторий Idyllium на GitHub";
+    link.href = "https://github.com/Aumphaadr/Idyllium";
+
+    win.add_child(link);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <div class="gui-demo-container">
+    <div class="gui-demo-window">
+      <div class="demo-content" style="min-height: 90px; position: relative;">
+        <span style="position: absolute; left: 20px; top: 24px; color: #1a6fc4; text-decoration: underline; cursor: pointer;">Репозиторий Idyllium на GitHub</span>
+      </div>
+    </div>
+    <div class="coord-note">
+      Слово <code>href</code> пришло из HTML — языка веб-страниц. Там ссылки
+      описывают точно так же, и теперь вы узнаете их в чужом коде.
+    </div>
+  </div>
+
+  <p>
+    Ссылка остаётся обычной надписью, поэтому её можно приодеть уже знакомым
+    <code>style</code> — в том числе задать вид при наведении:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.theme = "idyllium";
+
+    gui.Label link;
+    link.x = 20;
+    link.y = 30;
+    link.width = 360;
+    link.height = 26;
+    link.text = "Документация Idyllium";
+    link.href = "https://aumphaadr.github.io/Idyllium/";
+
+    link.style = "color: #87bfff; font-weight: bold;";
+    link.style_hover = "color: white;";
+
+    win.add_child(link);
+    win.show();
+}
+</script></idyl-code-block>
+</div>
+
+<div class="docs-section">
+  <h2>Кнопка, которая открывает адрес</h2>
+  <p>
+    Ссылкой может быть не только надпись. Библиотека <code>url</code> умеет
+    открывать адрес по команде — а значит, это можно поручить любому событию,
+    например нажатию кнопки:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use gui;
+use url;
+
+void function surprise() {
+    url.open("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+}
+
+main() {
+    gui.Window win;
+    win.width = 320;
+    win.height = 140;
+    win.title = "Сюрприз";
+
+    gui.Button btn;
+    btn.x = 60;
+    btn.y = 40;
+    btn.width = 200;
+    btn.height = 44;
+    btn.text = "Не нажимать!";
+    btn.on_click = surprise;
+
+    win.add_child(btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <p>
+    Кнопка с надписью «Не нажимать!» — древняя как мир шутка, и вы только что
+    вооружились самым знаменитым её вариантом. Только не увлекайтесь:
+    <strong>уводить человека на посторонний сайт без предупреждения — дурной
+    тон</strong>. Хорошая программа честно пишет, куда именно ведёт кнопка.
+  </p>
+  <p>
+    Открывается адрес одинаково во всех трёх местах, где живёт Idyllium: в
+    Web IDE появится новая вкладка, в расширении VS Code — окно системного
+    браузера, а консольная программа попросит открыть браузер саму
+    операционную систему. Разрешены только адреса <code>http</code> и
+    <code>https</code>: открывать файлы на компьютере программа не может — и это
+    не ограничение, а забота о безопасности.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use url;
+
+main() {
+    url.open("file:///home/user/секреты.txt"); // ОШИБКА: так нельзя
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:4: runtime error: url.open() supports only http and https addresses, got 'file'</idyl-error-block>
+</div>
+
+<div class="docs-section">
+  <h2>Адрес под микроскопом</h2>
+  <p>
+    Адрес только выглядит сплошной строкой — на самом деле он состоит из частей,
+    у каждой своё имя и назначение. Библиотека <code>url</code> умеет доставать
+    их поимённо:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use url;
+
+main() {
+    string address = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=43";
+
+    console.writeln("Протокол: ", url.scheme(address));
+    console.writeln("Сайт:     ", url.host(address));
+    console.writeln("Путь:     ", url.path(address));
+    console.writeln("Запрос:   ", url.query(address));
+    console.writeln("Порт:     ", url.port(address));
+
+    // Отдельный параметр запроса — по имени
+    console.writeln("Видео:    ", url.query_value(address, "v"));
+    console.writeln("Секунда:  ", url.query_value(address, "t"));
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Протокол: https
+Сайт:     www.youtube.com
+Путь:     /watch
+Запрос:   v=dQw4w9WgXcQ&t=43
+Порт:     443
+Видео:    dQw4w9WgXcQ
+Секунда:  43</idyl-output-block>
+
+  <p>
+    Обратите внимание на порт: в адресе его нет, а программа ответила
+    <code>443</code>. Это стандартный порт для <code>https</code> — тот самый,
+    куда браузер и пойдёт, даже если номер не написан. У <code>http</code>
+    стандартный порт — <code>80</code>.
+  </p>
+  <p>
+    Если строка вообще не похожа на адрес, программа честно об этом скажет.
+    А заранее проверить строку поможет <code>url.is_valid()</code>:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use url;
+
+main() {
+    console.writeln(url.is_valid("https://example.com"));
+    console.writeln(url.is_valid("просто текст"));
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>true
+false</idyl-output-block>
+</div>
+
+<div class="docs-section">
+  <h2>Русские слова в адресе</h2>
+  <p>
+    Попробуйте поискать что-нибудь в интернете и посмотрите на адресную строку:
+    русские слова в ней превращаются в череду процентов и цифр. Это не поломка,
+    а <strong>процентное кодирование</strong>: в адресах разрешён узкий набор
+    символов, и всё остальное записывается кодами байтов — теми самыми, о
+    которых вы читали в уроке про кодировки.
+  </p>
+  <p>
+    Собирая адрес из кусочков, пропускайте текст через
+    <code>url.encode()</code> — иначе адрес окажется испорченным:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use url;
+
+main() {
+    string query = url.encode("идиллия язык");
+    string search = "https://www.google.com/search?q=" + query;
+
+    console.writeln(search);
+    console.writeln(url.decode(query));
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>https://www.google.com/search?q=%D0%B8%D0%B4%D0%B8%D0%BB%D0%BB%D0%B8%D1%8F%20%D1%8F%D0%B7%D1%8B%D0%BA
+идиллия язык</idyl-output-block>
+
+  <p>
+    Заметьте: пробел превратился в <code>%20</code>, а каждая русская буква — в
+    два кода, потому что в UTF-8 она занимает два байта. Обратно строку
+    возвращает <code>url.decode()</code>.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Опорная таблица</h2>
+  <table>
+    <thead>
+      <tr><th>Что нужно</th><th>Как сделать</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Надпись-ссылка</td><td><code>label.href = "https://...";</code></td></tr>
+      <tr><td>Открыть адрес из кода</td><td><code>url.open("https://...");</code></td></tr>
+      <tr><td>Протокол, сайт, путь</td><td><code>url.scheme()</code>, <code>url.host()</code>, <code>url.path()</code></td></tr>
+      <tr><td>Параметр запроса</td><td><code>url.query_value(адрес, "имя")</code></td></tr>
+      <tr><td>Текст в адрес и обратно</td><td><code>url.encode()</code>, <code>url.decode()</code></td></tr>
+      <tr><td>Проверить строку</td><td><code>url.is_valid(строка)</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="docs-section">
+  <h2>Что запомнить</h2>
+  <ul>
+    <li>Свойство <code>href</code> превращает обычный <code>gui.Label</code> в кликабельную ссылку; отдельного виджета для этого нет.</li>
+    <li><code>url.open()</code> открывает адрес в браузере одинаково в Web IDE, VS Code и консоли.</li>
+    <li>Разрешены только <code>http</code> и <code>https</code> — файлы на компьютере программа открывать не может.</li>
+    <li>Адрес состоит из частей: протокол, сайт, путь, запрос, якорь — и каждую можно достать отдельно.</li>
+    <li>Русский текст попадает в адрес только через <code>url.encode()</code>.</li>
+    <li>Уводить пользователя на посторонний сайт без предупреждения — дурной тон.</li>
+  </ul>
+</div>

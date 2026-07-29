@@ -86,6 +86,7 @@ export function buildReferenceSite(outputRoot: string): void {
     languageVersion: String(packageJson.version ?? '1.1.3'),
     generatedAt: new Date().toISOString(),
     overview: content.overview,
+    general: (content as any).general ?? [],
     language: content.language ?? [],
     globals,
     modules,

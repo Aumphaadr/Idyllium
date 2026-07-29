@@ -1162,6 +1162,133 @@ test('extended encodings round-trip and reproduce classic mojibake', async () =>
   );
 });
 
+test('url library parses addresses and opens them through the host', async () => {
+  const opened: string[] = [];
+  const result = await runIdyllium([
+    'use console;',
+    'use url;',
+    '',
+    'string ADDRESS = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=43";',
+    '',
+    'main() {',
+    '    console.writeln(url.scheme(ADDRESS));',
+    '    console.writeln(url.host(ADDRESS));',
+    '    console.writeln(url.path(ADDRESS));',
+    '    console.writeln(url.query(ADDRESS));',
+    '    console.writeln(url.query_value(ADDRESS, "v"));',
+    '    console.writeln(url.query_value(ADDRESS, "нет-такого"));',
+    '    console.writeln(url.port(ADDRESS));            // порт не написан — стандартный для https',
+    '    console.writeln(url.port("http://example.com:8080/"));',
+    '    console.writeln(url.fragment("https://example.com/page#часть"));',
+    '    console.writeln(url.encode("Идиллия"));',
+    '    console.writeln(url.decode("%D0%98%D0%B4%D0%B8%D0%BB%D0%BB%D0%B8%D1%8F"));',
+    '    console.writeln(url.is_valid(ADDRESS), ":", url.is_valid("просто текст"));',
+    '',
+    '    url.open(ADDRESS);',
+    '}',
+  ].join('\n'), { urlOpener: { open(address: string) { opened.push(address); } } }, { file: 'main.idyl' });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === [
+      'https',
+      'www.youtube.com',
+      '/watch',
+      'v=dQw4w9WgXcQ&t=43',
+      'dQw4w9WgXcQ',
+      '',
+      '443',
+      '8080',
+      'часть',
+      '%D0%98%D0%B4%D0%B8%D0%BB%D0%BB%D0%B8%D1%8F',
+      'Идиллия',
+      'true:false',
+      '',
+    ].join('\n'),
+    `unexpected url output: ${JSON.stringify(result.output)}`,
+  );
+  assert(
+    opened.length === 1 && opened[0] === 'https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=43',
+    `expected the host opener to receive the address, got ${JSON.stringify(opened)}`,
+  );
+
+  // Только http/https: локальные файлы и javascript: по клику недопустимы
+  await assertRuntimeFails(
+    'use url;\nmain() {\n    url.open("file:///etc/passwd");\n}',
+    "url.open() supports only http and https addresses, got 'file'",
+  );
+  await assertRuntimeFails(
+    'use url;\nmain() {\n    url.scheme("это не адрес");\n}',
+    'url.scheme() got an address it cannot understand',
+  );
+});
+
+test('gui themes, link labels, state styles and TabWidget work', async () => {
+  const result = await runWithInspectableRuntime([
+    'use console;',
+    'use gui;',
+    '',
+    'void function tab_changed(gui.TabWidget sender) {',
+    '    console.write(sender.selected_index, ":", sender.selected_title);',
+    '}',
+    '',
+    'main() {',
+    '    gui.Window win;',
+    '    win.theme = "idyllium";',
+    '',
+    '    gui.Label link;',
+    '    link.text = "Idyllium на GitHub";',
+    '    link.href = "https://github.com/Aumphaadr/Idyllium";',
+    '',
+    '    gui.Button btn;',
+    '    btn.text = "Наведи";',
+    '    btn.style = "background-color: teal;";',
+    '    btn.style_hover = "background-color: dark-blue;";',
+    '    btn.style_active = "opacity: 0.5; backround-color: pink;"; // опечатка молчит',
+    '',
+    '    gui.Frame first;',
+    '    gui.Frame second;',
+    '',
+    '    gui.TabWidget tabs;',
+    '    tabs.add_tab("Обзор", first);',
+    '    tabs.add_tab("Настройки", second);',
+    '    tabs.on_change = tab_changed;',
+    '',
+    '    win.add_child(link);',
+    '    win.add_child(btn);',
+    '    win.add_child(tabs);',
+    '    win.show();',
+    '}',
+  ].join('\n'));
+
+  const win = result.runtime.getWindows()[0];
+  assert(win.properties.theme === 'idyllium', `unexpected theme: ${JSON.stringify(win.properties.theme)}`);
+
+  const [link, btn, tabs] = win.children;
+  assert(link.properties.href === 'https://github.com/Aumphaadr/Idyllium', 'expected label href in snapshot');
+
+  // hover/active едут провалидированными парами; опечатка отброшена
+  assert(
+    JSON.stringify(btn.properties.style_hover_declarations) === JSON.stringify([{ property: 'background-color', value: '#000080' }]),
+    `unexpected hover declarations: ${JSON.stringify(btn.properties.style_hover_declarations)}`,
+  );
+  assert(
+    JSON.stringify(btn.properties.style_active_declarations) === JSON.stringify([{ property: 'opacity', value: '0.5' }]),
+    `unexpected active declarations: ${JSON.stringify(btn.properties.style_active_declarations)}`,
+  );
+
+  assert(tabs.type === 'gui.TabWidget', `unexpected widget type: ${tabs.type}`);
+  assert(
+    JSON.stringify(tabs.properties.tab_titles) === JSON.stringify(['Обзор', 'Настройки']),
+    `unexpected tab titles: ${JSON.stringify(tabs.properties.tab_titles)}`,
+  );
+  assert(tabs.children.length === 2, 'expected two tab pages as children');
+  assert(tabs.properties.tab_count === 2, 'expected tab_count to follow add_tab');
+
+  await result.runtime.dispatchGuiEvent(tabs.id, 'change', { selected_index: 1 });
+  assert(result.runtime.getOutput() === '1:Настройки', `unexpected tab change output: ${JSON.stringify(result.runtime.getOutput())}`);
+});
+
 test('hash library matches reference digests', async () => {
   const result = await runIdyllium([
     'use console;',

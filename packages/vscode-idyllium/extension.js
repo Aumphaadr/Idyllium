@@ -712,6 +712,12 @@ async function executeIdylliumInExtension(core, runFile, files, document, option
   const runtime = core.createRuntime({
     projectRoot: path.dirname(runFile),
     abortSignal: options.abortSignal,
+    urlOpener: {
+      async open(address) {
+        const opened = await vscode.env.openExternal(vscode.Uri.parse(address));
+        if (!opened) throw new Error('VS Code could not open the address');
+      },
+    },
     console: options.console ?? {
       write(text) {
         output += String(text);

@@ -15,6 +15,10 @@
   const fontCache = new Map();
   const imageCache = new Map();
   const modalInputValues = new Map();
+  // Правила :hover/:active из IdySS-стилей — собираются при рендере и
+  // выгружаются одним <style> в конце (объявлены здесь из-за TDZ).
+  let idyssStateRules = [];
+  let idyssStateCounter = 0;
   const stage = document.getElementById('stage');
   const summary = document.getElementById('summary');
   stage.tabIndex = 0;
@@ -105,6 +109,7 @@
 
     restoreActiveControl();
     syncAudio(state.audio || []);
+    flushStateStyleRules();
   }
 
   // Если между снапшотами изменились только тексты (подпись Label или
@@ -179,10 +184,15 @@
     const inheritedColors = childInheritedColors(win.properties, {});
     const titleHeight = 28;
     const root = document.createElement('section');
-    root.className = 'window';
+    // Тема — самый нижний слой оформления: задаёт CSS-переменные, поверх
+    // которых ложатся прямые свойства виджетов и IdySS-наклейки.
+    const theme = stringValue(win.properties.theme, 'default').trim().toLowerCase();
+    const KNOWN_THEMES = ['default', 'idyllium', 'dracula', 'breeze', 'oxygen'];
+    root.className = 'window theme-' + (KNOWN_THEMES.includes(theme) ? theme : 'default');
     root.style.width = width + 'px';
     root.style.height = (height + titleHeight) + 'px';
-    root.style.background = displayedWidgetColor(win.properties, 'background_color', {}) || '#ffffff';
+    const windowBackground = displayedWidgetColor(win.properties, 'background_color', {});
+    if (windowBackground) root.style.background = windowBackground;
     const textColor = displayedWidgetColor(win.properties, 'text_color', {});
     if (textColor) root.style.color = textColor;
     applyWidgetFont(root, win.properties, {});
@@ -314,6 +324,7 @@
     if (widget.type === 'gui.ProgressBar') return renderProgressBar(widget, inheritedColors);
     if (widget.type === 'gui.Frame') return renderFrame(widget, inheritedColors);
     if (widget.type === 'gui.ImageBox') return renderImageBox(widget, inheritedColors);
+    if (widget.type === 'gui.TabWidget') return renderTabWidget(widget, inheritedColors);
     if (widget.type === 'gui.Label') return renderLabel(widget, inheritedColors);
 
     return renderPlaceholder(widget, inheritedColors);
@@ -373,7 +384,17 @@
   }
 
   function renderLabel(widget, inheritedColors) {
-    const el = baseWidget('div', widget, 'label', inheritedColors);
+    const href = stringValue(widget.properties.href, '').trim();
+    // Непустой href превращает надпись в настоящую ссылку <a>: системный
+    // курсор, поведение и открытие в новой вкладке. on_click тоже работает.
+    const el = href
+      ? baseWidget('a', widget, 'label label-link', inheritedColors)
+      : baseWidget('div', widget, 'label', inheritedColors);
+    if (href) {
+      el.href = href;
+      el.target = '_blank';
+      el.rel = 'noopener noreferrer';
+    }
     el.textContent = stringValue(widget.properties.text, '');
     el.addEventListener('click', () => postGuiEvent(widget.id, 'click', {}));
     return el;
@@ -577,6 +598,33 @@
     return el;
   }
 
+  function renderTabWidget(widget, inheritedColors) {
+    const el = baseWidget('div', widget, 'tabwidget', inheritedColors);
+    const childColors = childInheritedColors(widget.properties || {}, inheritedColors);
+    const titles = Array.isArray(widget.properties.tab_titles) ? widget.properties.tab_titles : [];
+    const children = widget.children || [];
+    const selected = Math.min(Math.max(numberValue(widget.properties.selected_index, 0), 0), Math.max(children.length - 1, 0));
+
+    const bar = document.createElement('div');
+    bar.className = 'tabbar';
+    titles.forEach((title, index) => {
+      const tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'tab' + (index === selected ? ' tab-selected' : '');
+      tab.textContent = String(title);
+      tab.addEventListener('click', () => postGuiEvent(widget.id, 'change', { selected_index: index }));
+      bar.appendChild(tab);
+    });
+    el.appendChild(bar);
+
+    const page = document.createElement('div');
+    page.className = 'tabpage';
+    const content = children[selected];
+    if (content) page.appendChild(renderWidget(content, widget.id, childColors));
+    el.appendChild(page);
+    return el;
+  }
+
   function renderPlaceholder(widget, inheritedColors) {
     const el = baseWidget('div', widget, 'placeholder', inheritedColors);
     el.textContent = widget.type.replace(/^gui\\./, '');
@@ -599,17 +647,60 @@
   // рендерер не разбирает строк и не видит произвольного CSS.
   function applyStyleDeclarations(el, props) {
     const declarations = props && props.style_declarations;
-    if (!Array.isArray(declarations)) return;
-    for (const item of declarations) {
-      if (!item || typeof item.property !== 'string' || typeof item.value !== 'string') continue;
-      el.style.setProperty(item.property, item.value);
-      if (item.property === 'text-align') {
-        // Label и Button — flex-контейнеры: text-align сам по себе их
-        // содержимое не двигает, зеркалим в justify-content.
-        const justify = { left: 'flex-start', center: 'center', right: 'flex-end' }[item.value];
-        if (justify) el.style.justifyContent = justify;
+    if (Array.isArray(declarations)) {
+      for (const item of declarations) {
+        if (!item || typeof item.property !== 'string' || typeof item.value !== 'string') continue;
+        el.style.setProperty(item.property, item.value);
+        if (item.property === 'text-align') {
+          // Label и Button — flex-контейнеры: text-align сам по себе их
+          // содержимое не двигает, зеркалим в justify-content.
+          const justify = { left: 'flex-start', center: 'center', right: 'flex-end' }[item.value];
+          if (justify) el.style.justifyContent = justify;
+        }
       }
     }
+    applyStateStyleDeclarations(el, props);
+  }
+
+  // style_hover / style_active: inline-стили не умеют :hover, поэтому из
+  // провалидированных пар собираются настоящие CSS-правила в один <style>.
+  // !important нужен, чтобы при наведении перебить inline-базу.
+  function applyStateStyleDeclarations(el, props) {
+    const hover = props && props.style_hover_declarations;
+    const active = props && props.style_active_declarations;
+    if (!Array.isArray(hover) && !Array.isArray(active)) return;
+
+    idyssStateCounter += 1;
+    const marker = 'idyss-state-' + idyssStateCounter;
+    el.classList.add(marker);
+    for (const [pseudo, declarations] of [[':hover', hover], [':active', active]]) {
+      if (!Array.isArray(declarations) || declarations.length === 0) continue;
+      const body = declarations
+        .filter((item) => item && typeof item.property === 'string' && typeof item.value === 'string')
+        .map((item) => item.property + ': ' + item.value + ' !important;')
+        .join(' ');
+      if (body) idyssStateRules.push('.' + marker + pseudo + ' { ' + body + ' }');
+    }
+  }
+
+  function flushStateStyleRules() {
+    // В облегчённой DOM тестов нет document.head — тогда правила просто
+    // не выгружаются: снапшот и обработчики от этого не зависят.
+    const head = document.head;
+    if (!head || typeof head.appendChild !== 'function') {
+      idyssStateRules = [];
+      idyssStateCounter = 0;
+      return;
+    }
+    let styleEl = document.getElementById('idyss-state-styles');
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = 'idyss-state-styles';
+      head.appendChild(styleEl);
+    }
+    styleEl.textContent = idyssStateRules.join('\n');
+    idyssStateRules = [];
+    idyssStateCounter = 0;
   }
 
   function renderCanvasWidget(widget) {

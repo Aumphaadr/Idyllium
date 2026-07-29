@@ -130,11 +130,11 @@ input.widget,
 textarea.widget,
 select.widget,
 button.widget {
-  border: 1px solid rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--w-border, rgba(0, 0, 0, 0.28));
   padding: 4px 7px;
-  background: #fff;
-  color: #111;
-  border-radius: 4px;
+  background: var(--w-control-bg, #fff);
+  color: var(--w-control-text, #111);
+  border-radius: var(--w-radius, 4px);
   outline: none;
   transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease, transform 80ms ease;
 }
@@ -142,14 +142,14 @@ input.widget:focus,
 textarea.widget:focus,
 select.widget:focus,
 button.widget:focus {
-  border-color: #2673d9;
-  box-shadow: 0 0 0 2px rgba(38, 115, 217, 0.2);
+  border-color: var(--w-accent, #2673d9);
+  box-shadow: 0 0 0 2px var(--w-accent-soft, rgba(38, 115, 217, 0.2));
 }
 button.widget {
   cursor: pointer;
 }
 button.widget:hover {
-  background: #f7f7f7;
+  background: var(--w-control-hover, #f7f7f7);
 }
 button.widget:active {
   transform: translateY(1px);
@@ -357,4 +357,134 @@ input[type="range"].widget:focus-visible::-moz-range-thumb {
   border-color: #1d5fbf;
   background: #2673d9;
   color: #fff;
+}
+
+.widget.label-link {
+  color: #1a6fc4;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.widget.label-link:hover {
+  color: #0d5aa8;
+}
+
+/* ─── Темы окна (gui.Window.theme) ───────────────────────────────────────
+   Тема задаёт только переменные: прямые свойства виджетов и IdySS-наклейки
+   применяются позже и всегда побеждают. Тема default ничего не переопределяет
+   и оставляет исторический светлый вид. */
+
+.window.theme-idyllium {
+  --w-window-bg: #151020;
+  --w-window-text: #f2eaf7;
+  --w-titlebar-bg: #1c1629;
+  --w-border: #342846;
+  --w-control-bg: linear-gradient(180deg, #241d34, #1c1629);
+  --w-control-text: #f2eaf7;
+  --w-control-hover: #2c2440;
+  --w-accent: #87bfff;
+  --w-accent-soft: rgba(135, 191, 255, 0.28);
+  --w-radius: 7px;
+}
+
+.window.theme-dracula {
+  --w-window-bg: #282a36;
+  --w-window-text: #f8f8f2;
+  --w-titlebar-bg: #21222c;
+  --w-border: #44475a;
+  --w-control-bg: #44475a;
+  --w-control-text: #f8f8f2;
+  --w-control-hover: #565a71;
+  --w-accent: #bd93f9;
+  --w-accent-soft: rgba(189, 147, 249, 0.32);
+  --w-radius: 6px;
+}
+
+.window.theme-breeze {
+  --w-window-bg: #eff0f1;
+  --w-window-text: #232629;
+  --w-titlebar-bg: #d8dadc;
+  --w-border: #bdc3c7;
+  --w-control-bg: #fcfcfc;
+  --w-control-text: #232629;
+  --w-control-hover: #e8f2fb;
+  --w-accent: #3daee9;
+  --w-accent-soft: rgba(61, 174, 233, 0.3);
+  --w-radius: 3px;
+}
+
+.window.theme-oxygen {
+  --w-window-bg: #f0efee;
+  --w-window-text: #2b2b2b;
+  --w-titlebar-bg: #dcdbda;
+  --w-border: #b3b0ad;
+  --w-control-bg: linear-gradient(180deg, #fdfdfd, #eceae8);
+  --w-control-text: #2b2b2b;
+  --w-control-hover: #f6f3ef;
+  --w-accent: #f67400;
+  --w-accent-soft: rgba(246, 116, 0, 0.28);
+  --w-radius: 8px;
+}
+
+.window {
+  background: var(--w-window-bg, #ffffff);
+  color: var(--w-window-text, inherit);
+}
+
+.window .titlebar {
+  background: var(--w-titlebar-bg, inherit);
+  color: var(--w-window-text, inherit);
+  border-bottom-color: var(--w-border, currentColor);
+}
+
+.window .widget.label {
+  color: var(--w-window-text, inherit);
+}
+
+/* TabWidget: полоса вкладок сверху, страница под ней. Содержимое вкладки
+   позиционируется внутри страницы, поэтому она — контейнер для absolute. */
+.widget.tabwidget {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--w-border, rgba(0, 0, 0, 0.28));
+  border-radius: var(--w-radius, 4px);
+  background: var(--w-control-bg, #fff);
+  overflow: hidden;
+}
+
+.widget.tabwidget .tabbar {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  padding: 4px 4px 0;
+  border-bottom: 1px solid var(--w-border, rgba(0, 0, 0, 0.28));
+  background: var(--w-titlebar-bg, rgba(0, 0, 0, 0.05));
+}
+
+.widget.tabwidget .tab {
+  padding: 4px 12px;
+  border: 1px solid var(--w-border, rgba(0, 0, 0, 0.28));
+  border-bottom: 0;
+  border-radius: var(--w-radius, 4px) var(--w-radius, 4px) 0 0;
+  background: transparent;
+  color: var(--w-control-text, #111);
+  font: inherit;
+  cursor: pointer;
+}
+
+.widget.tabwidget .tab:hover {
+  background: var(--w-control-hover, rgba(0, 0, 0, 0.06));
+}
+
+.widget.tabwidget .tab-selected {
+  background: var(--w-control-bg, #fff);
+  border-bottom: 1px solid var(--w-control-bg, #fff);
+  margin-bottom: -1px;
+  font-weight: 700;
+}
+
+.widget.tabwidget .tabpage {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
 }
