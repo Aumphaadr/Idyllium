@@ -7,6 +7,7 @@ declare const process: {
   argv: string[];
   cwd(): string;
   execPath: string;
+  platform: string;
   exitCode?: number;
   stdin: unknown;
   stdout: {

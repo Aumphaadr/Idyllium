@@ -1,8 +1,84 @@
 {
   "version": 1,
-  "languageVersion": "1.2.5",
-  "generatedAt": "2026-07-29T17:41:25.551Z",
+  "languageVersion": "1.2.6",
+  "generatedAt": "2026-07-29T19:20:05.467Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
+  "general": [
+    {
+      "id": "philosophy",
+      "title": "Философия языка",
+      "description": "Принципы, из которых выведены все решения Idyllium. Если поведение языка кажется неожиданным, ответ почти всегда находится здесь.",
+      "sections": [
+        {
+          "title": "Ошибается человек — проблема человека. Ошибается машина — проблема языка",
+          "description": "Главный принцип. Язык обязан быть предсказуемым: если программа делает не то, что написано, это дефект Idyllium, а не «особенность». Отсюда точная целочисленная арифметика без тихой потери разрядов, строгие проверки границ и явные, читаемые ошибки. А вот последствия сознательных решений человека язык не исправляет: не вызвали parent() — часть полей осталась с дефолтами, и это нормально.",
+          "code": "int big = 123456789;\nconsole.writeln(big * big * big); // 1881676371789154860897069 — все цифры верны"
+        },
+        {
+          "title": "Никаких неявных превращений",
+          "description": "Число не станет строкой само, строка не станет числом, дробное не влезет в int молча. Преобразования пишутся явно — to_int(), to_float(), to_string(). Ученик всегда видит место, где меняется смысл данных.",
+          "code": "int age = 12;\n// label.text = age;         // ошибка компиляции\nlabel.text = to_string(age);  // явно и понятно"
+        },
+        {
+          "title": "Деление — как в школе",
+          "description": "Оператор / всегда возвращает float, даже когда делятся два целых: 10 / 5 даёт 2.0. Программа не гадает, будет ли результат целым. Нужно целочисленное деление — есть div() и mod().",
+          "code": "float part = 23 / 10;  // 2.3\nint whole = div(23, 10); // 2\nint rest = mod(23, 10);  // 3"
+        },
+        {
+          "title": "Текст — это текст",
+          "description": "Строка состоит из символов, а не из байтов: length у «Привет» равна шести, индексация даёт буквы, а не куски UTF-8. Работа с байтами существует, но она отдельная и явная — библиотека encoding.",
+          "code": "string word = \"Привет\";\nconsole.writeln(word.length); // 6\nconsole.writeln(word[0]);     // П"
+        },
+        {
+          "title": "Ошибки читаемы и переводимы",
+          "description": "Сообщение об ошибке всегда содержит файл, строку и человеческое объяснение — без адресов памяти и внутренних терминов реализации. Ошибки компиляции помечены compile error, ошибки времени выполнения — runtime error.",
+          "code": "main.idyl:7:13: compile error: cannot assign 'float' value to 'int' variable\nmain.idyl:5: runtime error: array index 5 out of bounds (size 3, valid indices 0-2)"
+        },
+        {
+          "title": "Объекты — обычные вещи, а не указатели",
+          "description": "В Idyllium нет new, нет разыменования, нет ручного удаления. Объект создаётся объявлением или вызовом класса как функции, живёт, пока используется, и исчезает сам. Виджеты, картинки, базы данных — такие же обычные объекты.",
+          "code": "Hero kaspar(\"Каспар\", 500);\nHero raven = Hero(\"Ворон\", 600);   // конструктор-выражение\n// Hero* pointer;                  // такого в языке нет"
+        },
+        {
+          "title": "Ничего лишнего в синтаксисе",
+          "description": "Нет операторов ++ и --, нет тернарного ?:, нет switch, нет %-остатка. Каждая такая конструкция — ещё одна форма записи того, что уже выражается словами и понятнее читается. Меньше форм — меньше поводов ошибиться и меньше материала для заучивания.",
+          "code": "count += 1;              // вместо count++\nif (a > b) { m = a; } else { m = b; }  // вместо m = a > b ? a : b\nint rest = mod(n, 2);    // вместо n % 2"
+        }
+      ]
+    },
+    {
+      "id": "exceptions",
+      "title": "Сознательные отступления",
+      "description": "Места, где Idyllium намеренно нарушает собственные правила — и почему это оправдано. Каждое отступление изолировано в отдельной библиотеке или языке-сателлите, чтобы «строгий мир» оставался строгим.",
+      "sections": [
+        {
+          "title": "Библиотека types: молчаливое переполнение",
+          "description": "Обычные числа Idyllium точны. Но ячейки фиксированной ширины из types ведут себя как в C: uint8 после 255 обнуляется, отрицательное значение оборачивается, и компилятор не возмущается. Отступление сделано ради понимания: только так можно показать, как числа действительно живут в памяти. Изолировано целиком внутри types — обычный int этим не заражается.",
+          "code": "types.uint8 n = 255;\nn = n + 1;   // 0, и это правильно\n\nint safe = 255;\nsafe = safe + 1;  // 256 — обычные числа не переполняются"
+        },
+        {
+          "title": "Библиотека encoding: байты вместо символов",
+          "description": "Idyllium настаивает, что текст — это символы. Библиотека encoding сознательно спускает ученика на уровень байтов, где «Привет» превращается в набор чисел, а неверная кодировка рождает «Íîðìàëüíûé òåêñò». Отступление нужно, чтобы кракозябры перестали быть магией. Строгость при этом сохранена: битые данные — ошибка, а мягкий режим включается явным safe=false.",
+          "code": "dyn_array<int> bytes = encoding.encode(\"Привет\", \"windows-1251\");\nconsole.writeln(encoding.decode(bytes, \"windows-1252\")); // Íîðìàëüíûé òåêñò"
+        },
+        {
+          "title": "IdySS: язык, который молчит об ошибках",
+          "description": "Свойство style принимает строку на стилевом языке-сателлите (Idyllium Style Sheets). Внутри кавычек строгость Idyllium заканчивается: опечатка в имени свойства или негодное значение просто не применяются — ни ошибки компиляции, ни runtime error, ровно как в настоящем CSS. Отступление педагогическое: ученик получает мощь веб-стилизации и вместе с ней понимание её цены. Граница проходит по кавычкам: style = 42 — обычная ошибка типов.",
+          "code": "btn.style = \"border-tadius: 10px;\";  // опечатка: молча не применится\n// btn.style = 42;                    // а это уже ошибка компиляции"
+        },
+        {
+          "title": "Библиотека random: предсказуемая случайность",
+          "description": "Функции random выдают псевдослучайные числа, а set_seed() делает последовательность полностью воспроизводимой — то есть «случайность» здесь управляемая. Это не недостаток, а условие обучения: одинаковый сид даёт одинаковый результат, и задачу можно проверить. Библиотека прямо предупреждает: для паролей и секретов такие числа не годятся.",
+          "code": "random.set_seed(42);\nconsole.writeln(random.create_int(1, 100)); // всегда одно и то же число"
+        },
+        {
+          "title": "Точка входа main() без типа",
+          "description": "Классическая форма main() { } не указывает возвращаемый тип, хотя всё остальное в языке типизировано строго. Это уступка первым урокам: ребёнок пишет первую программу, ещё не зная слова «функция». Как только функции пройдены, доступна полная форма int function main().",
+          "code": "main() {\n    console.writeln(\"Начало\");\n}\n\n// после урока о функциях:\nint function main() {\n    return 0;\n}"
+        }
+      ]
+    }
+  ],
   "language": [
     {
       "id": "program",
@@ -4148,6 +4224,20 @@
               "callbacks": []
             },
             {
+              "name": "style_active",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_hover",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
               "name": "text",
               "type": "string",
               "readonly": false,
@@ -4351,6 +4441,24 @@
               "inheritedFrom": "gui.Widget"
             },
             {
+              "name": "style_active",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "style_hover",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
               "name": "text_color",
               "type": "colors.Color",
               "readonly": false,
@@ -4448,6 +4556,20 @@
               "type": "string",
               "readonly": false,
               "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
+              "callbacks": []
+            },
+            {
+              "name": "style_active",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_hover",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.",
               "callbacks": []
             },
             {
@@ -4563,6 +4685,20 @@
               "type": "string",
               "readonly": false,
               "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
+              "callbacks": []
+            },
+            {
+              "name": "style_active",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_hover",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.",
               "callbacks": []
             },
             {
@@ -4707,6 +4843,20 @@
               "callbacks": []
             },
             {
+              "name": "style_active",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_hover",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
               "name": "value",
               "type": "float",
               "readonly": false,
@@ -4822,6 +4972,20 @@
               "callbacks": []
             },
             {
+              "name": "style_active",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_hover",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
               "name": "title",
               "type": "string",
               "readonly": false,
@@ -4927,6 +5091,20 @@
               "type": "string",
               "readonly": false,
               "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
+              "callbacks": []
+            },
+            {
+              "name": "style_active",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_hover",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.",
               "callbacks": []
             },
             {
@@ -5060,6 +5238,13 @@
               "callbacks": []
             },
             {
+              "name": "href",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Адрес ссылки. Непустой href превращает надпись в кликабельную ссылку: подчёркивание, курсор-рука, открытие в новой вкладке.",
+              "callbacks": []
+            },
+            {
               "name": "on_click",
               "type": "any",
               "readonly": false,
@@ -5074,6 +5259,20 @@
               "type": "string",
               "readonly": false,
               "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
+              "callbacks": []
+            },
+            {
+              "name": "style_active",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_hover",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.",
               "callbacks": []
             },
             {
@@ -5192,6 +5391,20 @@
               "type": "string",
               "readonly": false,
               "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
+              "callbacks": []
+            },
+            {
+              "name": "style_active",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_hover",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.",
               "callbacks": []
             },
             {
@@ -5469,6 +5682,20 @@
               "callbacks": []
             },
             {
+              "name": "style_active",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_hover",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
               "name": "text_color",
               "type": "colors.Color",
               "readonly": false,
@@ -5570,6 +5797,20 @@
               "type": "string",
               "readonly": false,
               "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
+              "callbacks": []
+            },
+            {
+              "name": "style_active",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_hover",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.",
               "callbacks": []
             },
             {
@@ -5685,6 +5926,20 @@
               "type": "string",
               "readonly": false,
               "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
+              "callbacks": []
+            },
+            {
+              "name": "style_active",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_hover",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.",
               "callbacks": []
             },
             {
@@ -5810,6 +6065,20 @@
               "callbacks": []
             },
             {
+              "name": "style_active",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_hover",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
               "name": "value",
               "type": "int",
               "readonly": false,
@@ -5875,6 +6144,171 @@
           "methods": []
         },
         {
+          "name": "TabWidget",
+          "qualifiedName": "gui.TabWidget",
+          "baseType": "gui.Widget",
+          "description": "",
+          "notes": [],
+          "example": "",
+          "properties": [
+            {
+              "name": "font_size",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "on_change",
+              "type": "any",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "selected_index",
+              "type": "int",
+              "readonly": false,
+              "documentation": "Номер открытой вкладки, начиная с 0.",
+              "callbacks": []
+            },
+            {
+              "name": "selected_title",
+              "type": "string",
+              "readonly": true,
+              "documentation": "Заголовок открытой вкладки; меняется через selected_index.",
+              "callbacks": []
+            },
+            {
+              "name": "style",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
+              "callbacks": []
+            },
+            {
+              "name": "style_active",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_hover",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "tab_count",
+              "type": "int",
+              "readonly": true,
+              "documentation": "Сколько вкладок сейчас создано.",
+              "callbacks": []
+            },
+            {
+              "name": "visible",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "width",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "x",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "y",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "background_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "font",
+              "type": "fonts.Font",
+              "readonly": false,
+              "documentation": "Шрифт виджета. Если не задан явно, наследуется от Window или Frame.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "text_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            }
+          ],
+          "methods": [
+            {
+              "name": "add_tab",
+              "signature": "add_tab(title: string, content: gui.Widget): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "title",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "content",
+                  "type": "gui.Widget",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [
+                    "gui.Widget"
+                  ],
+                  "acceptedDescription": "виджет gui"
+                }
+              ],
+              "variadic": false,
+              "documentation": "Добавляет вкладку с заголовком и виджетом-содержимым (обычно gui.Frame с наполнением)."
+            },
+            {
+              "name": "clear_tabs",
+              "signature": "clear_tabs(): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "Удаляет все вкладки."
+            }
+          ]
+        },
+        {
           "name": "TextEdit",
           "qualifiedName": "gui.TextEdit",
           "baseType": "gui.Widget",
@@ -5929,6 +6363,20 @@
               "type": "string",
               "readonly": false,
               "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
+              "callbacks": []
+            },
+            {
+              "name": "style_active",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_hover",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.",
               "callbacks": []
             },
             {
@@ -6082,6 +6530,20 @@
               "callbacks": []
             },
             {
+              "name": "style_active",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_hover",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
               "name": "text_color",
               "type": "colors.Color",
               "readonly": false,
@@ -6163,10 +6625,31 @@
               "callbacks": []
             },
             {
+              "name": "style_active",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_hover",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
               "name": "text_color",
               "type": "colors.Color",
               "readonly": false,
               "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "theme",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Тема оформления окна и всех его виджетов: \"default\", \"idyllium\", \"dracula\", \"breeze\", \"oxygen\". Самый низкий приоритет — прямые свойства виджета и IdySS перекрывают тему.",
               "callbacks": []
             },
             {
@@ -9778,6 +10261,213 @@
           ]
         }
       ]
+    },
+    {
+      "name": "url",
+      "title": "url",
+      "description": "Стандартная библиотека url.",
+      "notes": [],
+      "example": "",
+      "fullExamples": [],
+      "functions": [
+        {
+          "name": "decode",
+          "signature": "decode(text: string): string",
+          "returnType": "string",
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Обратное преобразование процентного кодирования."
+        },
+        {
+          "name": "encode",
+          "signature": "encode(text: string): string",
+          "returnType": "string",
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Процентное кодирование текста для вставки в адрес: \"Привет\" превращается в \"%D0%9F%D1%80%D0%B8%D0%B2%D0%B5%D1%82\"."
+        },
+        {
+          "name": "fragment",
+          "signature": "fragment(address: string): string",
+          "returnType": "string",
+          "parameters": [
+            {
+              "name": "address",
+              "type": "string",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Часть адреса после \"#\" (якорь), без самой решётки."
+        },
+        {
+          "name": "host",
+          "signature": "host(address: string): string",
+          "returnType": "string",
+          "parameters": [
+            {
+              "name": "address",
+              "type": "string",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Имя сайта: \"www.youtube.com\"."
+        },
+        {
+          "name": "is_valid",
+          "signature": "is_valid(address: string): bool",
+          "returnType": "bool",
+          "parameters": [
+            {
+              "name": "address",
+              "type": "string",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Проверяет, можно ли разобрать строку как адрес."
+        },
+        {
+          "name": "open",
+          "signature": "open(address: string): void",
+          "returnType": "void",
+          "parameters": [
+            {
+              "name": "address",
+              "type": "string",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Открывает адрес в браузере. Поддерживаются только http и https. Работает в Web IDE, VS Code и консольном режиме."
+        },
+        {
+          "name": "path",
+          "signature": "path(address: string): string",
+          "returnType": "string",
+          "parameters": [
+            {
+              "name": "address",
+              "type": "string",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Путь после имени сайта: \"/watch\"."
+        },
+        {
+          "name": "port",
+          "signature": "port(address: string): int",
+          "returnType": "int",
+          "parameters": [
+            {
+              "name": "address",
+              "type": "string",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Номер порта; если он не указан, возвращается стандартный для протокола (80 или 443)."
+        },
+        {
+          "name": "query",
+          "signature": "query(address: string): string",
+          "returnType": "string",
+          "parameters": [
+            {
+              "name": "address",
+              "type": "string",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Строка параметров без \"?\": \"v=dQw4w9WgXcQ&t=43\"."
+        },
+        {
+          "name": "query_value",
+          "signature": "query_value(address: string, name: string): string",
+          "returnType": "string",
+          "parameters": [
+            {
+              "name": "address",
+              "type": "string",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Значение параметра из строки запроса; пустая строка, если параметра нет."
+        },
+        {
+          "name": "scheme",
+          "signature": "scheme(address: string): string",
+          "returnType": "string",
+          "parameters": [
+            {
+              "name": "address",
+              "type": "string",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Протокол адреса без двоеточия: \"https\"."
+        }
+      ],
+      "constants": [],
+      "types": []
     }
   ]
 }

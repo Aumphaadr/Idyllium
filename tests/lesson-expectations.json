@@ -697,6 +697,13 @@
       ],
       "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
     },
+    "widgets.links.004": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "url.open() supports only http and https addresses, got 'file'"
+      ],
+      "reason": "Урок «Гиперссылки» (2026-07-26): учебный пример запрета чужих схем в url.open()."
+    },
     "widgets.modal.005": {
       "kind": "compile_error",
       "diagnosticIncludes": [

@@ -46,7 +46,7 @@ main() {
   <div class="gui-demo-container">
     <div class="gui-demo-window">
       <div class="demo-content" style="min-height: 120px; position: relative;">
-        <button class="idyl-button" style="position: absolute; left: 40px; top: 36px; width: 200px; height: 48px; background-color: #008080; color: white; border-radius: 20px; border: 1px solid rgba(0,0,0,0.25);">Стильная кнопка</button>
+        <button class="idyl-button" style="position: absolute; left: 40px; top: 36px; width: 200px; height: 48px; background: #008080; color: white; border-radius: 20px; border: 1px solid rgba(0,0,0,0.25);">Стильная кнопка</button>
       </div>
     </div>
     <div class="coord-note">
@@ -197,21 +197,21 @@ main() {
     win.height = 220;
     win.title = "Градиенты";
 
-    gui.Label sunset;
+    gui.Button sunset;
     sunset.x = 30;
     sunset.y = 30;
     sunset.width = 360;
     sunset.height = 60;
     sunset.text = "Закат";
-    sunset.style = "background: linear-gradient(to right, #FF8800, purple); color: white; text-align: center; border-radius: 10px;";
+    sunset.style = "background: linear-gradient(to right, #FF8800, purple); color: white; border-radius: 10px;";
 
-    gui.Label lamp;
+    gui.Button lamp;
     lamp.x = 30;
     lamp.y = 110;
     lamp.width = 360;
     lamp.height = 60;
     lamp.text = "Лампа";
-    lamp.style = "background: radial-gradient(yellow, dark-red); text-align: center; border-radius: 10px;";
+    lamp.style = "background: radial-gradient(yellow, dark-red); border-radius: 10px;";
 
     win.add_child(sunset);
     win.add_child(lamp);
@@ -222,8 +222,8 @@ main() {
   <div class="gui-demo-container">
     <div class="gui-demo-window">
       <div class="demo-content" style="min-height: 170px; position: relative;">
-        <div style="position: absolute; left: 30px; top: 20px; width: 360px; height: 60px; background: linear-gradient(to right, #FF8800, #800080); color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center;">Закат</div>
-        <div style="position: absolute; left: 30px; top: 96px; width: 360px; height: 60px; background: radial-gradient(#FFFF00, #800000); color: #111; border-radius: 10px; display: flex; align-items: center; justify-content: center;">Лампа</div>
+        <button class="idyl-button" style="position: absolute; left: 30px; top: 20px; width: 360px; height: 60px; background: linear-gradient(to right, #FF8800, #800080); color: white; border-radius: 10px;">Закат</button>
+        <button class="idyl-button" style="position: absolute; left: 30px; top: 96px; width: 360px; height: 60px; background: radial-gradient(#FFFF00, #800000); color: #111; border-radius: 10px;">Лампа</button>
       </div>
     </div>
     <div class="coord-note">Линейный переток слева направо и радиальный из центра.</div>

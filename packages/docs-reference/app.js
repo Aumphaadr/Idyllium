@@ -145,11 +145,14 @@
     els.nav.innerHTML = `
       <div class="nav-heading">Общее</div>
       <a class="nav-link ${route.length === 0 ? 'active' : ''}" href="#/">Обзор</a>
-      <a class="nav-link ${route[0] === 'globals' ? 'active' : ''}" href="#/globals">Встроенные функции</a>
+      ${(state.api.general || []).map((page) => `
+        <a class="nav-link nav-language ${route[0] === 'general' && route[1] === page.id ? 'active' : ''}" href="#/general/${encodePart(page.id)}">${escapeHtml(page.title)}</a>
+      `).join('')}
       <div class="nav-heading">Язык</div>
       ${state.api.language.map((page) => `
         <a class="nav-link nav-language ${route[0] === 'language' && route[1] === page.id ? 'active' : ''}" href="#/language/${encodePart(page.id)}">${escapeHtml(page.title)}</a>
       `).join('')}
+      <a class="nav-link nav-language ${route[0] === 'globals' ? 'active' : ''}" href="#/globals">Встроенные функции</a>
       <div class="nav-heading">Библиотеки</div>
       ${moduleLinks}
     `;
@@ -162,6 +165,14 @@
 
     if (parts.length === 0) {
       renderOverview();
+    } else if (parts[0] === 'general') {
+      const page = (state.api.general || []).find((item) => item.id === parts[1]);
+      if (page) {
+        renderLanguagePage(page, 'Общее');
+        title = page.title;
+      } else {
+        renderNotFound(parts.join('.'));
+      }
     } else if (parts[0] === 'language') {
       const page = state.languagePages.get(parts[1]);
       if (page) {
@@ -268,13 +279,13 @@
     `;
   }
 
-  function renderLanguagePage(page) {
+  function renderLanguagePage(page, sectionLabel = 'Язык') {
     els.view.innerHTML = `
-      ${breadcrumbs([{ label: 'Документация', href: '#/' }, { label: 'Язык' }, { label: page.title }])}
+      ${breadcrumbs([{ label: 'Документация', href: '#/' }, { label: sectionLabel }, { label: page.title }])}
       <header class="api-header">
         <div class="api-header-row">
           <h1>${escapeHtml(page.title)}</h1>
-          <span class="kind-badge">язык</span>
+          <span class="kind-badge">${escapeHtml(sectionLabel === 'Язык' ? 'язык' : 'общее')}</span>
         </div>
         <p class="api-description">${inlineCodeHtml(page.description)}</p>
       </header>

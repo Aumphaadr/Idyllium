@@ -1292,6 +1292,35 @@ characters encode to `?` (byte 63) instead of raising a runtime error:
 string mojibake = encoding.decode(bytes, "utf-8", safe=false);
 ```
 
+## 21a. Library `url`
+
+```idyllium
+use url;
+
+string address = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=43";
+
+url.open(address);                      // opens the system browser
+url.scheme(address);                    // "https"
+url.host(address);                      // "www.youtube.com"
+url.path(address);                      // "/watch"
+url.query(address);                     // "v=dQw4w9WgXcQ&t=43"
+url.fragment("https://a.io/p#top");     // "top"
+url.port(address);                      // 443 (default port when omitted)
+url.query_value(address, "v");          // "dQw4w9WgXcQ"
+url.encode("идиллия");                  // percent-encoded text
+url.decode("%D0%B8...");                // back to readable text
+url.is_valid("просто текст");           // false
+```
+
+`url.open()` works the same in all three hosts: a new tab in Web IDE, the
+system browser from the VS Code extension, and the OS opener (`xdg-open`,
+`open`, `start`) in the CLI. Only `http` and `https` are accepted — `file:`,
+`javascript:` and `data:` raise a runtime error, and so does a failure to
+launch a browser (for example on a headless server). `path()` and `fragment()`
+return human-readable text (percent-escapes decoded); `query()` stays raw
+because it is a compound string — use `query_value()` for a single parameter.
+There are no network requests in this library: it only parses and opens.
+
 ## 21b. Library `hash`
 
 ```idyllium
@@ -1773,6 +1802,9 @@ Rules of the sticker:
   properties show again. Later declarations in one string beat earlier ones.
 - The sticker is **not inherited** by child widgets; reading `style` returns
   exactly the assigned string.
+- `style_hover` and `style_active` hold stickers that apply while the pointer
+  is over the widget or while it is pressed. Same dictionary, same silence
+  about typos.
 
 Supported properties (everything else is ignored): `color`,
 `background-color`, `border-color`, `border-width` (0-20), `border-radius`
@@ -1802,19 +1834,27 @@ three separate border properties.
 `gui.Window`:
 
 ```idyllium
-x, y, width, height, title, text_color, background_color, font, font_size
+x, y, width, height, title, theme, text_color, background_color, font, font_size
 add_child(child)
 show()
 ```
+
+`theme` is a string: `"default"` (plain light look), `"idyllium"` (the dark
+look used by the textbook), `"dracula"`, `"breeze"`, `"oxygen"`. A theme is the
+lowest styling layer: direct widget properties and IdySS stickers always win.
+Unknown names fall back to `"default"`.
 
 `gui.Label`:
 
 ```idyllium
 x, y, width, height, visible
-text, font_size
+text, href, font_size
 text_color, background_color, border_color
 on_click
 ```
+
+A non-empty `href` turns the label into a real hyperlink (underlined, opens in
+a new tab). There is no separate LinkLabel widget.
 
 `gui.Button`:
 
@@ -1934,6 +1974,21 @@ on_change
 
 `selected_text` is read-only and follows `selected_index`. Change the selected
 item through `selected_index`; do not assign to `selected_text`.
+
+`gui.TabWidget`:
+
+```idyllium
+x, y, width, height, visible
+selected_index, selected_title, tab_count, font_size
+add_tab(title, content)
+clear_tabs()
+on_change
+```
+
+`add_tab(title, content)` takes a title and one widget as the page (usually a
+`gui.Frame` filled with children). `selected_title` and `tab_count` are
+read-only; switch pages through `selected_index`. `on_change` fires when the
+user clicks another tab.
 
 `gui.Modal`:
 

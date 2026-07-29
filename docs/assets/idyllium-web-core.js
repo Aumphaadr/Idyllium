@@ -117,6 +117,16 @@ function createMemoryRuntime(options, fileSystem) {
         fileSystem,
         imageService: (0, browser_image_service_1.createBrowserImageService)(),
         sqliteService: browserSqliteService,
+        urlOpener: {
+            open(address) {
+                // Браузер может заблокировать всплывающее окно — тогда честно
+                // сообщаем об этом, а не делаем вид, что ссылка открылась.
+                const opened = globalThis.open?.(address, '_blank', 'noopener,noreferrer');
+                if (!opened) {
+                    throw new Error('the browser blocked opening a new tab; allow pop-ups for this page');
+                }
+            },
+        },
     });
 }
 function browserRunSuccess(runtime, compilation, files, writtenFiles) {
@@ -5265,6 +5275,8 @@ function createDefaultStandardLibrary() {
     ];
     const styleable = [
         propertySpec('style', types_1.STRING, false, 'IdySS-строка стилей вида "color: red; border-radius: 8px;". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.'),
+        propertySpec('style_hover', types_1.STRING, false, 'IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.'),
+        propertySpec('style_active', types_1.STRING, false, 'IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.'),
     ];
     const changeable = [
         propertySpec('on_change', types_1.ANY_TYPE),
@@ -5514,6 +5526,44 @@ function createDefaultStandardLibrary() {
         }),
         functionSpec('sha256_bytes', [hashDataParameter], (0, types_1.arrayType)(types_1.INT, null, true), {
             documentation: 'Тот же SHA-256, но в виде массива из 32 байтов.',
+        }),
+    ]));
+    registry.registerModule(moduleSpec('url', [
+        functionSpec('open', [{ name: 'address', type: types_1.STRING }], types_1.VOID, {
+            documentation: 'Открывает адрес в браузере. Поддерживаются только http и https. Работает в Web IDE, VS Code и консольном режиме.',
+        }),
+        functionSpec('scheme', [{ name: 'address', type: types_1.STRING }], types_1.STRING, {
+            documentation: 'Протокол адреса без двоеточия: "https".',
+        }),
+        functionSpec('host', [{ name: 'address', type: types_1.STRING }], types_1.STRING, {
+            documentation: 'Имя сайта: "www.youtube.com".',
+        }),
+        functionSpec('path', [{ name: 'address', type: types_1.STRING }], types_1.STRING, {
+            documentation: 'Путь после имени сайта: "/watch".',
+        }),
+        functionSpec('query', [{ name: 'address', type: types_1.STRING }], types_1.STRING, {
+            documentation: 'Строка параметров без "?": "v=dQw4w9WgXcQ&t=43".',
+        }),
+        functionSpec('fragment', [{ name: 'address', type: types_1.STRING }], types_1.STRING, {
+            documentation: 'Часть адреса после "#" (якорь), без самой решётки.',
+        }),
+        functionSpec('port', [{ name: 'address', type: types_1.STRING }], types_1.INT, {
+            documentation: 'Номер порта; если он не указан, возвращается стандартный для протокола (80 или 443).',
+        }),
+        functionSpec('query_value', [
+            { name: 'address', type: types_1.STRING },
+            { name: 'name', type: types_1.STRING },
+        ], types_1.STRING, {
+            documentation: 'Значение параметра из строки запроса; пустая строка, если параметра нет.',
+        }),
+        functionSpec('encode', [{ name: 'text', type: types_1.STRING }], types_1.STRING, {
+            documentation: 'Процентное кодирование текста для вставки в адрес: "Привет" превращается в "%D0%9F%D1%80%D0%B8%D0%B2%D0%B5%D1%82".',
+        }),
+        functionSpec('decode', [{ name: 'text', type: types_1.STRING }], types_1.STRING, {
+            documentation: 'Обратное преобразование процентного кодирования.',
+        }),
+        functionSpec('is_valid', [{ name: 'address', type: types_1.STRING }], types_1.BOOL, {
+            documentation: 'Проверяет, можно ли разобрать строку как адрес.',
         }),
     ]));
     registry.registerModule(moduleSpec('encoding', [
@@ -5802,6 +5852,7 @@ function createDefaultStandardLibrary() {
             propertySpec('font', fontsFont),
             ...fontSized,
             propertySpec('title', types_1.STRING),
+            propertySpec('theme', types_1.STRING, false, 'Тема оформления окна и всех его виджетов: "default", "idyllium", "dracula", "breeze", "oxygen". Самый низкий приоритет — прямые свойства виджета и IdySS перекрывают тему.'),
             ...styleable,
         ], [
             functionSpec('add_child', [guiChildParameter], types_1.VOID),
@@ -5840,6 +5891,7 @@ function createDefaultStandardLibrary() {
             ...positioned,
             ...visible,
             ...styleable,
+            propertySpec('href', types_1.STRING, false, 'Адрес ссылки. Непустой href превращает надпись в кликабельную ссылку: подчёркивание, курсор-рука, открытие в новой вкладке.'),
             ...colorRoles,
             ...fontSized,
             callbackPropertySpec('on_click', [
@@ -5973,6 +6025,24 @@ function createDefaultStandardLibrary() {
         ], [
             functionSpec('add_item', [{ name: 'text', type: types_1.STRING }], types_1.VOID),
             functionSpec('clear_items', [], types_1.VOID),
+        ], guiWidget),
+        typeSpec('TabWidget', [
+            ...positioned,
+            ...visible,
+            ...styleable,
+            ...changeable,
+            ...fontSized,
+            propertySpec('selected_index', types_1.INT, false, 'Номер открытой вкладки, начиная с 0.'),
+            propertySpec('selected_title', types_1.STRING, true, 'Заголовок открытой вкладки; меняется через selected_index.'),
+            propertySpec('tab_count', types_1.INT, true, 'Сколько вкладок сейчас создано.'),
+        ], [
+            functionSpec('add_tab', [
+                { name: 'title', type: types_1.STRING },
+                { name: 'content', type: guiChildParameter.type, acceptedTypes: guiChildParameter.acceptedTypes, acceptedDescription: guiChildParameter.acceptedDescription },
+            ], types_1.VOID, {
+                documentation: 'Добавляет вкладку с заголовком и виджетом-содержимым (обычно gui.Frame с наполнением).',
+            }),
+            functionSpec('clear_tabs', [], types_1.VOID, { documentation: 'Удаляет все вкладки.' }),
         ], guiWidget),
         typeSpec('Modal', [
             propertySpec('title', types_1.STRING),
@@ -11084,6 +11154,20 @@ function contextFunction(fn) {
     return callable;
 }
 IdylliumTimeStamp.prototype.in_timezone.__idylliumPassContext = true;
+function defaultRuntimeUrlOpener() {
+    const nodeProcess = typeof process === 'object' ? process : null;
+    if (!nodeProcess?.versions?.node)
+        return undefined;
+    try {
+        // Node-специфичный child_process держим вне браузерного бандла;
+        // browser.ts и расширение VS Code внедряют свои открывалки.
+        const dynamicRequire = eval('require');
+        return dynamicRequire('./node-url-opener').createNodeUrlOpener();
+    }
+    catch {
+        return undefined;
+    }
+}
 function defaultRuntimeImageService() {
     const nodeProcess = typeof process === 'object' ? process : null;
     if (!nodeProcess?.versions?.node)
@@ -11745,6 +11829,63 @@ function createRuntime(options = {}) {
                 UINT64_MAX: 18446744073709551615n,
                 from_bin: contextFunction((bits, typeName, file, line) => typesFromBin(bits, typeName, file, line)),
                 from_hex: contextFunction((hex, typeName, file, line) => typesFromHex(hex, typeName, file, line)),
+            },
+            url: {
+                open: contextFunction(async (address, file, line) => {
+                    const target = urlAddress(address, 'url.open()', file, line);
+                    const scheme = target.protocol.replace(/:$/u, '');
+                    // Только http/https: file:// открыл бы локальные файлы, а
+                    // javascript:/data: исполнили бы посторонний код по клику.
+                    if (scheme !== 'http' && scheme !== 'https') {
+                        throw new IdylliumRuntimeError(file, line, `url.open() supports only http and https addresses, got '${scheme}'`);
+                    }
+                    const opener = options.urlOpener ?? defaultRuntimeUrlOpener();
+                    if (!opener) {
+                        throw new IdylliumRuntimeError(file, line, 'url.open() is not supported by this runtime');
+                    }
+                    try {
+                        await opener.open(target.href);
+                    }
+                    catch (error) {
+                        throw new IdylliumRuntimeError(file, line, String(error?.message ?? error));
+                    }
+                }),
+                scheme: contextFunction((address, file, line) => (urlAddress(address, 'url.scheme()', file, line).protocol.replace(/:$/u, ''))),
+                host: contextFunction((address, file, line) => (urlAddress(address, 'url.host()', file, line).hostname)),
+                path: contextFunction((address, file, line) => (readableUrlPart(urlAddress(address, 'url.path()', file, line).pathname))),
+                query: contextFunction((address, file, line) => (urlAddress(address, 'url.query()', file, line).search.replace(/^\?/u, ''))),
+                fragment: contextFunction((address, file, line) => (readableUrlPart(urlAddress(address, 'url.fragment()', file, line).hash.replace(/^#/u, '')))),
+                port: contextFunction((address, file, line) => {
+                    const parsed = urlAddress(address, 'url.port()', file, line);
+                    if (parsed.port !== '')
+                        return Number.parseInt(parsed.port, 10);
+                    // Порт не написан — сообщаем стандартный для протокола, а не 0:
+                    // так честнее отвечает на вопрос «куда пойдёт запрос».
+                    if (parsed.protocol === 'https:')
+                        return 443;
+                    if (parsed.protocol === 'http:')
+                        return 80;
+                    return 0;
+                }),
+                query_value: contextFunction((address, name, file, line) => {
+                    const parsed = urlAddress(address, 'url.query_value()', file, line);
+                    const key = stringArgument(name, 'url.query_value() name', file, line);
+                    return parsed.searchParams.get(key) ?? '';
+                }),
+                encode: contextFunction((text, file, line) => (encodeURIComponent(stringArgument(text, 'url.encode() text', file, line)))),
+                decode: contextFunction((text, file, line) => {
+                    const value = stringArgument(text, 'url.decode() text', file, line);
+                    try {
+                        return decodeURIComponent(value);
+                    }
+                    catch {
+                        throw new IdylliumRuntimeError(file, line, `url.decode() got a broken percent-encoded string: ${JSON.stringify(value)}`);
+                    }
+                }),
+                is_valid: contextFunction((address, file, line) => {
+                    const value = stringArgument(address, 'url.is_valid() address', file, line);
+                    return parseUrlOrNull(value) !== null;
+                }),
             },
             hash: {
                 crc32: contextFunction((data, file, line) => (0, hash_1.hashCrc32)(hashInputBytes(data, 'hash.crc32()', file, line))),
@@ -12563,6 +12704,35 @@ const SINGLE_BYTE_ENCODINGS = new Map([
     ['windows-1254', buildSingleByteEncoding('windows-1254')],
     ['cp437', buildCp437Encoding()],
 ]);
+// Разбор адреса общий для всех функций url: единый источник ошибки, если
+// строка не похожа на адрес.
+function parseUrlOrNull(value) {
+    try {
+        return new URL(value);
+    }
+    catch {
+        return null;
+    }
+}
+// Путь и якорь читает человек, поэтому проценты разворачиваем обратно в
+// буквы: /wiki/%D0%98... снова становится /wiki/Идиллия. Строка запроса
+// остаётся сырой — её разбирает query_value.
+function readableUrlPart(value) {
+    try {
+        return decodeURIComponent(value);
+    }
+    catch {
+        return value;
+    }
+}
+function urlAddress(address, functionName, file, line) {
+    const value = stringArgument(address, `${functionName} address`, file, line);
+    const parsed = parseUrlOrNull(value);
+    if (!parsed) {
+        throw new IdylliumRuntimeError(file, line, `${functionName} got an address it cannot understand: ${JSON.stringify(value)}`);
+    }
+    return parsed;
+}
 // Вход хеш-функций: строка (берём её UTF-8-байты) или массив байтов 0..255.
 function hashInputBytes(data, functionName, file, line) {
     if (typeof data === 'string')
@@ -13321,6 +13491,8 @@ function initializeGuiObject(obj, typeName, state) {
         obj.height = size.height;
         obj.visible = true;
         obj.style = ''; // IdySS-наклейка; пустая строка = наклейки нет
+        obj.style_hover = '';
+        obj.style_active = '';
         defineTrackedRuntimeProperty(obj, 'text_color', colorBlack());
         defineTrackedRuntimeProperty(obj, 'background_color', colorTransparent());
         defineTrackedRuntimeProperty(obj, 'font', null);
@@ -13340,6 +13512,7 @@ function initializeGuiObject(obj, typeName, state) {
     }
     if (typeName === 'Window') {
         obj.title = '';
+        obj.theme = 'default';
         setTrackedRuntimePropertyDefault(obj, 'background_color', colorWhite());
         obj.show = async () => {
             obj.__shown = true;
@@ -13391,6 +13564,7 @@ function initializeGuiObject(obj, typeName, state) {
     }
     if (typeName === 'Label') {
         obj.text = '';
+        obj.href = '';
         setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
         setTrackedRuntimePropertyDefault(obj, 'background_color', colorTransparent());
         obj.border_color = colorTransparent();
@@ -13400,6 +13574,32 @@ function initializeGuiObject(obj, typeName, state) {
         setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
         setTrackedRuntimePropertyDefault(obj, 'background_color', colorLightGray());
         obj.border_color = colorGray();
+    }
+    if (typeName === 'TabWidget') {
+        obj.__children = [];
+        obj.__tabTitles = [];
+        obj.selected_index = 0;
+        obj.selected_title = '';
+        obj.tab_count = 0;
+        obj.add_tab = contextFunction((title, content, file, line) => {
+            const tabTitle = stringArgument(title, 'TabWidget.add_tab() title', file, line);
+            if (!isRuntimeObject(content)) {
+                throw new IdylliumRuntimeError(file, line, `TabWidget.add_tab() expects gui widget as content, got '${runtimeTypeName(content)}'`);
+            }
+            content.__parent = obj;
+            obj.__children.push(content);
+            obj.__tabTitles.push(tabTitle);
+            obj.tab_count = obj.__tabTitles.length;
+            const index = integerNumber(obj.selected_index, 'TabWidget.selected_index', file, line);
+            obj.selected_title = obj.__tabTitles[index] ?? obj.__tabTitles[0] ?? '';
+        });
+        obj.clear_tabs = contextFunction(() => {
+            obj.__children = [];
+            obj.__tabTitles = [];
+            obj.tab_count = 0;
+            obj.selected_index = 0;
+            obj.selected_title = '';
+        });
     }
     if (typeName === 'Frame') {
         obj.title = '';
@@ -13503,6 +13703,8 @@ function defaultGuiWidgetSize(typeName) {
             return { width: 120, height: 32 };
         case 'Frame':
             return { width: 220, height: 140 };
+        case 'TabWidget':
+            return { width: 320, height: 200 };
         case 'ImageBox':
             return { width: 160, height: 120 };
         case 'LineEdit':
@@ -14468,6 +14670,7 @@ function isGuiWidget(typeName) {
         || typeName === 'Label'
         || typeName === 'Button'
         || typeName === 'Frame'
+        || typeName === 'TabWidget'
         || typeName === 'ImageBox'
         || typeName === 'LineEdit'
         || typeName === 'TextEdit'
@@ -14484,6 +14687,7 @@ function guiObjectUsesFontSize(typeName) {
         || typeName === 'Label'
         || typeName === 'Button'
         || typeName === 'Frame'
+        || typeName === 'TabWidget'
         || typeName === 'LineEdit'
         || typeName === 'TextEdit'
         || typeName === 'ProgressBar'
@@ -14584,10 +14788,19 @@ function objectPropertiesSnapshot(value) {
             continue;
         result[key] = snapshotValue(item);
     }
+    if (Array.isArray(value.__tabTitles)) {
+        result.tab_titles = [...value.__tabTitles];
+    }
     if (typeof value.style === 'string' && value.style.trim() !== '') {
         // IdySS: в браузер уезжают только провалидированные пары — рендерер
         // строк не разбирает и произвольный CSS не видит.
         result.style_declarations = (0, style_1.parseIdylliumStyle)(value.style);
+    }
+    if (typeof value.style_hover === 'string' && value.style_hover.trim() !== '') {
+        result.style_hover_declarations = (0, style_1.parseIdylliumStyle)(value.style_hover);
+    }
+    if (typeof value.style_active === 'string' && value.style_active.trim() !== '') {
+        result.style_active_declarations = (0, style_1.parseIdylliumStyle)(value.style_active);
     }
     if (value.__explicitProperties instanceof Set && value.__explicitProperties.size > 0) {
         result.__explicit_properties = [...value.__explicitProperties].sort();
@@ -14707,6 +14920,13 @@ function applyGuiEventPayload(target, eventName, payload, state) {
         case 'gui.ComboBox':
             target.selected_index = eventNumber(payload.selected_index);
             return;
+        case 'gui.TabWidget': {
+            const index = eventNumber(payload.selected_index);
+            target.selected_index = index;
+            const titles = Array.isArray(target.__tabTitles) ? target.__tabTitles : [];
+            target.selected_title = titles[index] ?? '';
+            return;
+        }
         default:
             return;
     }

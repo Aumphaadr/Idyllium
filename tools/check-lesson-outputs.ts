@@ -121,6 +121,9 @@ async function main(): Promise<void> {
       seeded[path.join(lessonDir, name)] = entry;
     }
     const fileSystem = createMemoryRuntimeFileSystem(seeded, lessonDir);
+    // url.open() в примере не должен открывать браузер разработчика:
+    // подменяем открывалку на пустую.
+    const urlOpener = { open(): void {} };
     const moduleSources = collectModuleSources(parseBlocks(html));
 
     // Пересчитываем блоки после каждой правки: --fix смещает позиции.
@@ -145,7 +148,7 @@ async function main(): Promise<void> {
         && !/\bmain\s*\(/u.test(unescapeHtml(blocks[nextIndex].inner))
       ) nextIndex += 1;
       const next = blocks[nextIndex];
-      const result = await runIdyllium(code, { fileSystem }, { file: 'main.idyl', sources: moduleSources });
+      const result = await runIdyllium(code, { fileSystem, urlOpener }, { file: 'main.idyl', sources: moduleSources });
 
       if (!result.compilation.success) {
         if (next?.kind === 'error') {
@@ -179,7 +182,7 @@ async function main(): Promise<void> {
         // sources. Перепроверяем в мире без модулей: совпало — засчитано.
         checkedErrors += 1;
         const expected = normalizeText(unescapeHtml(next.inner));
-        const bare = await runIdyllium(code, { fileSystem }, { file: 'main.idyl' });
+        const bare = await runIdyllium(code, { fileSystem, urlOpener }, { file: 'main.idyl' });
         const bareActual = normalizeText(
           bare.compilation.success ? (bare.runtimeError ?? '') : bare.compilation.diagnosticsText,
         );

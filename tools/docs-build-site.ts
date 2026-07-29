@@ -198,6 +198,18 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
   },
   {
     sectionId: 'widgets',
+    // Гиперссылки после стилей: ссылку сразу приятно приодеть через IdySS,
+    // а url.open() даёт первый выход программы во внешний мир.
+    afterLessonId: 'styles',
+    id: 'links',
+    title: 'Гиперссылки',
+    subtitle: 'Надпись-ссылка, url.open() и разбор адреса на части',
+    sourceFile: 'docs/manual-content/widgets/links.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'widgets',
     afterLessonId: 'visibility',
     id: 'audio',
     title: 'Работа со звуками',

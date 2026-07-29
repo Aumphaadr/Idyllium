@@ -57,7 +57,8 @@ async function main(): Promise<void> {
     const codePath = path.join(specRoot, example.codeFile);
     const code = fs.readFileSync(codePath, 'utf8');
     const fileSystem = createMemoryRuntimeFileSystem({ [codePath]: code }, path.dirname(codePath));
-    const result = await runIdyllium(code, { fileSystem }, { file: codePath });
+    // Книжная программа не должна открывать браузер на машине разработчика.
+    const result = await runIdyllium(code, { fileSystem, urlOpener: { open() {} } }, { file: codePath });
     assert(
       result.success,
       `book program ${example.id} failed at runtime:\n${result.runtimeError ?? result.compilation.diagnosticsText}`,
