@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-28T11:12:57.865Z",
+  "generatedAt": "2026-07-29T17:41:25.529Z",
   "sourceRoot": "packages/docs",
   "sections": [
     {
@@ -1036,6 +1036,15 @@
           "subtitle": "PRIMARY KEY, AUTOINCREMENT и UNIQUE",
           "file": "content/sqlite/keys.html",
           "sourceFile": "docs/manual-content/sqlite/keys.html",
+          "status": "ready",
+          "reviewFlags": []
+        },
+        {
+          "id": "hashing",
+          "title": "Хеширование",
+          "subtitle": "Отпечатки данных, контрольные суммы и пароли, которых никто не знает",
+          "file": "content/sqlite/hashing.html",
+          "sourceFile": "docs/manual-content/sqlite/hashing.html",
           "status": "ready",
           "reviewFlags": []
         },

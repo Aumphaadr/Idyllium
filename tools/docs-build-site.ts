@@ -590,6 +590,19 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
   },
   {
     sectionId: 'sqlite',
+    // Хеши — в поздний курс (решение владельца, 2026-07-26): к этому моменту
+    // у ученика есть encoding, files, types и базы — можно рассказывать
+    // всерьёз, с исторической вставкой про сломанные MD5/SHA-1.
+    afterLessonId: 'keys',
+    id: 'hashing',
+    title: 'Хеширование',
+    subtitle: 'Отпечатки данных, контрольные суммы и пароли, которых никто не знает',
+    sourceFile: 'docs/manual-content/sqlite/hashing.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'sqlite',
     id: 'joins',
     title: 'Связи между таблицами',
     subtitle: 'FOREIGN KEY, JOIN, псевдонимы таблиц и LEFT JOIN',

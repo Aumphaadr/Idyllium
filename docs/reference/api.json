@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "languageVersion": "1.2.4",
-  "generatedAt": "2026-07-28T11:12:57.886Z",
+  "languageVersion": "1.2.5",
+  "generatedAt": "2026-07-29T17:41:25.551Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "language": [
     {
@@ -9020,6 +9020,118 @@
           ]
         }
       ]
+    },
+    {
+      "name": "hash",
+      "title": "hash",
+      "description": "Стандартная библиотека hash.",
+      "notes": [],
+      "example": "",
+      "fullExamples": [],
+      "functions": [
+        {
+          "name": "adler32",
+          "signature": "adler32(data: any): int",
+          "returnType": "int",
+          "parameters": [
+            {
+              "name": "data",
+              "type": "any",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [
+                "string",
+                "dyn_array<int>"
+              ],
+              "acceptedDescription": "string or byte array"
+            }
+          ],
+          "variadic": false,
+          "documentation": "Контрольная сумма Adler-32 (из zlib): целое от 0 до 4294967295."
+        },
+        {
+          "name": "crc32",
+          "signature": "crc32(data: any): int",
+          "returnType": "int",
+          "parameters": [
+            {
+              "name": "data",
+              "type": "any",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [
+                "string",
+                "dyn_array<int>"
+              ],
+              "acceptedDescription": "string or byte array"
+            }
+          ],
+          "variadic": false,
+          "documentation": "Контрольная сумма CRC-32 (как в ZIP и PNG): целое от 0 до 4294967295. Строка хешируется как её UTF-8-байты."
+        },
+        {
+          "name": "fnv1a",
+          "signature": "fnv1a(data: any): int",
+          "returnType": "int",
+          "parameters": [
+            {
+              "name": "data",
+              "type": "any",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [
+                "string",
+                "dyn_array<int>"
+              ],
+              "acceptedDescription": "string or byte array"
+            }
+          ],
+          "variadic": false,
+          "documentation": "Хеш FNV-1a (32 бита): целое от 0 до 4294967295. Простой и быстрый, легко повторить вручную."
+        },
+        {
+          "name": "sha256",
+          "signature": "sha256(data: any): string",
+          "returnType": "string",
+          "parameters": [
+            {
+              "name": "data",
+              "type": "any",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [
+                "string",
+                "dyn_array<int>"
+              ],
+              "acceptedDescription": "string or byte array"
+            }
+          ],
+          "variadic": false,
+          "documentation": "Криптографический хеш SHA-256: строка из 64 шестнадцатеричных цифр в нижнем регистре (как sha256sum и git)."
+        },
+        {
+          "name": "sha256_bytes",
+          "signature": "sha256_bytes(data: any): dyn_array<int>",
+          "returnType": "dyn_array<int>",
+          "parameters": [
+            {
+              "name": "data",
+              "type": "any",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [
+                "string",
+                "dyn_array<int>"
+              ],
+              "acceptedDescription": "string or byte array"
+            }
+          ],
+          "variadic": false,
+          "documentation": "Тот же SHA-256, но в виде массива из 32 байтов."
+        }
+      ],
+      "constants": [],
+      "types": []
     },
     {
       "name": "sqlite",

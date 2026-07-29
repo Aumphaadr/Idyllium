@@ -228,10 +228,10 @@ Common rules:
 - Strings are not silently converted to numbers.
 - `to_int(float_value)` truncates toward zero.
 
-Ordinary `int` preserves the full signed 64-bit range exactly:
-`9223372036854775807` prints without losing digits, and arithmetic
-(`+ - *`, `div`, `mod`) stays exact within that range, including values above
-JavaScript's 2^53 limit. Do not rely on exactness beyond 64 bits.
+Ordinary `int` arithmetic is exact: `+ - *`, `div`, and `mod` never lose
+integer precision, including values above JavaScript's 2^53 limit and beyond
+64 bits (`123456789 * 123456789 * 123456789` prints all 25 digits). Fixed
+overflow wrap-around exists only in the `types` library.
 
 ## 7. Operators
 
@@ -1291,6 +1291,30 @@ characters encode to `?` (byte 63) instead of raising a runtime error:
 ```idyllium
 string mojibake = encoding.decode(bytes, "utf-8", safe=false);
 ```
+
+## 21b. Library `hash`
+
+```idyllium
+use hash;
+
+int checksum = hash.crc32("Idyllium");        // 0..4294967295
+int fast = hash.fnv1a("Idyllium");
+int adler = hash.adler32("Idyllium");
+string digest = hash.sha256("Idyllium");      // 64 lowercase hex chars
+dyn_array<int> raw = hash.sha256_bytes("Idyllium"); // 32 bytes
+```
+
+Every function accepts a `string` (hashed as its UTF-8 bytes) or a byte array
+(`array<int, N>` / `dyn_array<int>`, values `0..255`); other argument types are
+compile errors and out-of-range bytes are runtime errors. Results are stable
+across CLI, Web IDE, and the VS Code extension — the algorithms are implemented
+inside Idyllium, not delegated to WebCrypto.
+
+`crc32` is the IEEE/ZIP/PNG checksum, `adler32` is the zlib checksum, `fnv1a`
+is FNV-1a 32-bit, and `sha256` is FIPS 180-4 SHA-256. There is intentionally no
+`md5` or `sha1` (both are broken) and no password-hashing primitive: teaching
+material should say plainly that a fast hash alone is not enough for storing
+passwords (salt + slow KDFs like bcrypt/Argon2 are the real answer).
 
 ## 22. Library `colors`
 
