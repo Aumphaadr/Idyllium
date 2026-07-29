@@ -44,6 +44,7 @@ import {
   createRuntimeFontMetricsService,
 } from './font-metrics-service';
 import { parseIdylliumStyle } from './style';
+import { hashAdler32, hashCrc32, hashFnv1a, hashSha256Bytes, hashSha256Hex } from './hash';
 
 export class IdylliumRuntimeError extends Error {
   constructor(
@@ -2336,6 +2337,7 @@ export interface IdylliumRuntime {
     readonly file: Record<string, unknown>;
     readonly types: Record<string, unknown>;
     readonly encoding: Record<string, unknown>;
+    readonly hash: Record<string, unknown>;
     readonly json: Record<string, unknown>;
     readonly sqlite: Record<string, unknown>;
     readonly audio: Record<string, unknown>;
@@ -3055,6 +3057,15 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
         from_bin: contextFunction((bits: string, typeName: string, file: string, line: number) => typesFromBin(bits, typeName, file, line)),
         from_hex: contextFunction((hex: string, typeName: string, file: string, line: number) => typesFromHex(hex, typeName, file, line)),
       },
+      hash: {
+        crc32: contextFunction((data: unknown, file: string, line: number) => hashCrc32(hashInputBytes(data, 'hash.crc32()', file, line))),
+        fnv1a: contextFunction((data: unknown, file: string, line: number) => hashFnv1a(hashInputBytes(data, 'hash.fnv1a()', file, line))),
+        adler32: contextFunction((data: unknown, file: string, line: number) => hashAdler32(hashInputBytes(data, 'hash.adler32()', file, line))),
+        sha256: contextFunction((data: unknown, file: string, line: number) => hashSha256Hex(hashInputBytes(data, 'hash.sha256()', file, line))),
+        sha256_bytes: contextFunction((data: unknown, file: string, line: number) => (
+          IdylliumArray.from(hashSha256Bytes(hashInputBytes(data, 'hash.sha256_bytes()', file, line)), true, null, () => 0)
+        )),
+      },
       encoding: {
         list_encodings: contextFunction(() => IdylliumArray.from(
           ['ascii', 'utf-8', 'windows-1251', 'koi8-r', 'cp866', 'cp437', 'windows-1252', 'windows-1254'],
@@ -3376,17 +3387,44 @@ function runtimeNegate(value: unknown): number | bigint {
 
 function runtimeAdd(left: number | bigint, right: number | bigint): number | bigint {
   const integers = exactIntegerPair(left, right);
-  return integers ? integers[0] + integers[1] : Number(left) + Number(right);
+  if (integers) return exactIntegerResult(integers[0] + integers[1]);
+  const raw = Number(left) + Number(right);
+  if (integerPrecisionLost(left, right, raw)) {
+    return exactIntegerResult(BigInt(left as number) + BigInt(right as number));
+  }
+  return raw;
+}
+
+// Целочисленный результат за пределами 2^53 пересчитывается через BigInt:
+// int обязан оставаться точным, а double тут молча врёт в младших разрядах.
+function integerPrecisionLost(left: number | bigint, right: number | bigint, raw: number): boolean {
+  return typeof left === 'number' && typeof right === 'number'
+    && Number.isInteger(left) && Number.isInteger(right)
+    && !Number.isSafeInteger(raw);
+}
+
+function exactIntegerResult(result: bigint): number | bigint {
+  return result >= -9007199254740991n && result <= 9007199254740991n ? Number(result) : result;
 }
 
 function runtimeSubtract(left: number | bigint, right: number | bigint): number | bigint {
   const integers = exactIntegerPair(left, right);
-  return integers ? integers[0] - integers[1] : Number(left) - Number(right);
+  if (integers) return exactIntegerResult(integers[0] - integers[1]);
+  const raw = Number(left) - Number(right);
+  if (integerPrecisionLost(left, right, raw)) {
+    return exactIntegerResult(BigInt(left as number) - BigInt(right as number));
+  }
+  return raw;
 }
 
 function runtimeMultiply(left: number | bigint, right: number | bigint): number | bigint {
   const integers = exactIntegerPair(left, right);
-  return integers ? integers[0] * integers[1] : Number(left) * Number(right);
+  if (integers) return exactIntegerResult(integers[0] * integers[1]);
+  const raw = Number(left) * Number(right);
+  if (integerPrecisionLost(left, right, raw)) {
+    return exactIntegerResult(BigInt(left as number) * BigInt(right as number));
+  }
+  return raw;
 }
 
 function runtimeDivide(left: unknown, right: unknown, file: string, line: number): number {
@@ -3912,6 +3950,22 @@ const SINGLE_BYTE_ENCODINGS: ReadonlyMap<string, SingleByteEncoding> = new Map([
   ['windows-1254', buildSingleByteEncoding('windows-1254')],
   ['cp437', buildCp437Encoding()],
 ]);
+
+// Вход хеш-функций: строка (берём её UTF-8-байты) или массив байтов 0..255.
+function hashInputBytes(data: unknown, functionName: string, file: string, line: number): number[] {
+  if (typeof data === 'string') return [...nodeBuffer.from(data, 'utf8')];
+  if (data instanceof IdylliumArray) {
+    return data.values().map((value, index) => {
+      const byte = integerNumber(value, `${functionName} byte at index ${index}`, file, line);
+      return byteRange(byte, `${functionName} byte at index ${index}`, 0, 255, file, line);
+    });
+  }
+  throw new IdylliumRuntimeError(
+    file,
+    line,
+    `${functionName} expects a string or a byte array, got '${runtimeTypeName(data)}'`,
+  );
+}
 
 function encodingCharToCodepoint(character: unknown, file: string, line: number): number {
   const char = singleCharacter(character, 'encoding.char_to_codepoint() character', file, line);

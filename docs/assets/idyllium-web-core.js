@@ -5493,6 +5493,29 @@ function createDefaultStandardLibrary() {
             functionSpec('close', [], types_1.VOID),
         ]),
     ]));
+    const hashDataParameter = {
+        name: 'data',
+        type: types_1.ANY_TYPE,
+        acceptedTypes: [types_1.STRING, (0, types_1.arrayType)(types_1.INT, null, true)],
+        acceptedDescription: 'string or byte array',
+    };
+    registry.registerModule(moduleSpec('hash', [
+        functionSpec('crc32', [hashDataParameter], types_1.INT, {
+            documentation: 'Контрольная сумма CRC-32 (как в ZIP и PNG): целое от 0 до 4294967295. Строка хешируется как её UTF-8-байты.',
+        }),
+        functionSpec('fnv1a', [hashDataParameter], types_1.INT, {
+            documentation: 'Хеш FNV-1a (32 бита): целое от 0 до 4294967295. Простой и быстрый, легко повторить вручную.',
+        }),
+        functionSpec('adler32', [hashDataParameter], types_1.INT, {
+            documentation: 'Контрольная сумма Adler-32 (из zlib): целое от 0 до 4294967295.',
+        }),
+        functionSpec('sha256', [hashDataParameter], types_1.STRING, {
+            documentation: 'Криптографический хеш SHA-256: строка из 64 шестнадцатеричных цифр в нижнем регистре (как sha256sum и git).',
+        }),
+        functionSpec('sha256_bytes', [hashDataParameter], (0, types_1.arrayType)(types_1.INT, null, true), {
+            documentation: 'Тот же SHA-256, но в виде массива из 32 байтов.',
+        }),
+    ]));
     registry.registerModule(moduleSpec('encoding', [
         functionSpec('list_encodings', [], (0, types_1.arrayType)(types_1.STRING, null, true)),
         functionSpec('char_to_codepoint', [
@@ -8608,6 +8631,135 @@ function guiPreviewIntervalMs(windows, canvases) {
 }
 //# sourceMappingURL=gui-interval.js.map
 },
+"dist/src/runtime/hash.js": function(require, module, exports) {
+"use strict";
+// Библиотека hash: базовые «отпечатки» данных. Все алгоритмы реализованы
+// здесь целиком и одинаково работают в CLI, WebIDE и VS Code — WebCrypto
+// сознательно не используется (crypto.subtle недоступен на insecure-origin,
+// а результат обязан совпадать во всех трёх клиентах).
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.hashCrc32 = hashCrc32;
+exports.hashFnv1a = hashFnv1a;
+exports.hashAdler32 = hashAdler32;
+exports.hashSha256Bytes = hashSha256Bytes;
+exports.hashSha256Hex = hashSha256Hex;
+// CRC-32 (IEEE 802.3, полином 0xEDB88320) — тот же, что в ZIP и PNG.
+const CRC32_TABLE = buildCrc32Table();
+function buildCrc32Table() {
+    const table = new Uint32Array(256);
+    for (let index = 0; index < 256; index++) {
+        let value = index;
+        for (let bit = 0; bit < 8; bit++) {
+            value = value & 1 ? (value >>> 1) ^ 0xEDB88320 : value >>> 1;
+        }
+        table[index] = value >>> 0;
+    }
+    return table;
+}
+function hashCrc32(bytes) {
+    let crc = 0xFFFFFFFF;
+    for (const byte of bytes) {
+        crc = (crc >>> 8) ^ CRC32_TABLE[(crc ^ byte) & 0xFF];
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+// FNV-1a (32 бита) — самый простой «честный» хеш; ученик пишет его руками
+// на types.uint32 и сверяет с этой функцией.
+function hashFnv1a(bytes) {
+    let hash = 0x811C9DC5;
+    for (const byte of bytes) {
+        hash = (hash ^ byte) >>> 0;
+        hash = Math.imul(hash, 0x01000193) >>> 0;
+    }
+    return hash >>> 0;
+}
+// Adler-32 (RFC 1950) — быстрая контрольная сумма из zlib.
+function hashAdler32(bytes) {
+    let low = 1;
+    let high = 0;
+    for (const byte of bytes) {
+        low = (low + byte) % 65521;
+        high = (high + low) % 65521;
+    }
+    return ((high * 65536) + low) >>> 0;
+}
+const SHA256_K = new Uint32Array([
+    0x428A2F98, 0x71374491, 0xB5C0FBCF, 0xE9B5DBA5, 0x3956C25B, 0x59F111F1, 0x923F82A4, 0xAB1C5ED5,
+    0xD807AA98, 0x12835B01, 0x243185BE, 0x550C7DC3, 0x72BE5D74, 0x80DEB1FE, 0x9BDC06A7, 0xC19BF174,
+    0xE49B69C1, 0xEFBE4786, 0x0FC19DC6, 0x240CA1CC, 0x2DE92C6F, 0x4A7484AA, 0x5CB0A9DC, 0x76F988DA,
+    0x983E5152, 0xA831C66D, 0xB00327C8, 0xBF597FC7, 0xC6E00BF3, 0xD5A79147, 0x06CA6351, 0x14292967,
+    0x27B70A85, 0x2E1B2138, 0x4D2C6DFC, 0x53380D13, 0x650A7354, 0x766A0ABB, 0x81C2C92E, 0x92722C85,
+    0xA2BFE8A1, 0xA81A664B, 0xC24B8B70, 0xC76C51A3, 0xD192E819, 0xD6990624, 0xF40E3585, 0x106AA070,
+    0x19A4C116, 0x1E376C08, 0x2748774C, 0x34B0BCB5, 0x391C0CB3, 0x4ED8AA4A, 0x5B9CCA4F, 0x682E6FF3,
+    0x748F82EE, 0x78A5636F, 0x84C87814, 0x8CC70208, 0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2,
+]);
+function rotateRight(value, shift) {
+    return ((value >>> shift) | (value << (32 - shift))) >>> 0;
+}
+/** SHA-256 (FIPS 180-4) — возвращает 32 байта дайджеста. */
+function hashSha256Bytes(bytes) {
+    const state = new Uint32Array([
+        0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
+        0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
+    ]);
+    // Паддинг: байт 0x80, нули, затем длина в битах (64 бита, big-endian).
+    const bitLength = bytes.length * 8;
+    const padded = [...bytes, 0x80];
+    while (padded.length % 64 !== 56)
+        padded.push(0);
+    const high = Math.floor(bitLength / 0x100000000);
+    const low = bitLength >>> 0;
+    padded.push((high >>> 24) & 0xFF, (high >>> 16) & 0xFF, (high >>> 8) & 0xFF, high & 0xFF);
+    padded.push((low >>> 24) & 0xFF, (low >>> 16) & 0xFF, (low >>> 8) & 0xFF, low & 0xFF);
+    const schedule = new Uint32Array(64);
+    for (let offset = 0; offset < padded.length; offset += 64) {
+        for (let index = 0; index < 16; index++) {
+            const base = offset + index * 4;
+            schedule[index] = ((padded[base] << 24) | (padded[base + 1] << 16) | (padded[base + 2] << 8) | padded[base + 3]) >>> 0;
+        }
+        for (let index = 16; index < 64; index++) {
+            const s0 = rotateRight(schedule[index - 15], 7) ^ rotateRight(schedule[index - 15], 18) ^ (schedule[index - 15] >>> 3);
+            const s1 = rotateRight(schedule[index - 2], 17) ^ rotateRight(schedule[index - 2], 19) ^ (schedule[index - 2] >>> 10);
+            schedule[index] = (schedule[index - 16] + s0 + schedule[index - 7] + s1) >>> 0;
+        }
+        let [a, b, c, d, e, f, g, h] = state;
+        for (let index = 0; index < 64; index++) {
+            const S1 = rotateRight(e, 6) ^ rotateRight(e, 11) ^ rotateRight(e, 25);
+            const choose = (e & f) ^ (~e & g);
+            const temp1 = (h + S1 + choose + SHA256_K[index] + schedule[index]) >>> 0;
+            const S0 = rotateRight(a, 2) ^ rotateRight(a, 13) ^ rotateRight(a, 22);
+            const majority = (a & b) ^ (a & c) ^ (b & c);
+            const temp2 = (S0 + majority) >>> 0;
+            h = g;
+            g = f;
+            f = e;
+            e = (d + temp1) >>> 0;
+            d = c;
+            c = b;
+            b = a;
+            a = (temp1 + temp2) >>> 0;
+        }
+        state[0] = (state[0] + a) >>> 0;
+        state[1] = (state[1] + b) >>> 0;
+        state[2] = (state[2] + c) >>> 0;
+        state[3] = (state[3] + d) >>> 0;
+        state[4] = (state[4] + e) >>> 0;
+        state[5] = (state[5] + f) >>> 0;
+        state[6] = (state[6] + g) >>> 0;
+        state[7] = (state[7] + h) >>> 0;
+    }
+    const digest = [];
+    for (const word of state) {
+        digest.push((word >>> 24) & 0xFF, (word >>> 16) & 0xFF, (word >>> 8) & 0xFF, word & 0xFF);
+    }
+    return digest;
+}
+/** Тот же SHA-256 в виде 64 hex-символов нижнего регистра (как sha256sum и git). */
+function hashSha256Hex(bytes) {
+    return hashSha256Bytes(bytes).map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+//# sourceMappingURL=hash.js.map
+},
 "dist/src/runtime/image-service.js": function(require, module, exports) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -9128,6 +9280,7 @@ const image_service_1 = require("./image-service");
 const drawable_geometry_1 = require("./drawable-geometry");
 const font_metrics_service_1 = require("./font-metrics-service");
 const style_1 = require("./style");
+const hash_1 = require("./hash");
 class IdylliumRuntimeError extends Error {
     file;
     line;
@@ -11593,6 +11746,13 @@ function createRuntime(options = {}) {
                 from_bin: contextFunction((bits, typeName, file, line) => typesFromBin(bits, typeName, file, line)),
                 from_hex: contextFunction((hex, typeName, file, line) => typesFromHex(hex, typeName, file, line)),
             },
+            hash: {
+                crc32: contextFunction((data, file, line) => (0, hash_1.hashCrc32)(hashInputBytes(data, 'hash.crc32()', file, line))),
+                fnv1a: contextFunction((data, file, line) => (0, hash_1.hashFnv1a)(hashInputBytes(data, 'hash.fnv1a()', file, line))),
+                adler32: contextFunction((data, file, line) => (0, hash_1.hashAdler32)(hashInputBytes(data, 'hash.adler32()', file, line))),
+                sha256: contextFunction((data, file, line) => (0, hash_1.hashSha256Hex)(hashInputBytes(data, 'hash.sha256()', file, line))),
+                sha256_bytes: contextFunction((data, file, line) => (IdylliumArray.from((0, hash_1.hashSha256Bytes)(hashInputBytes(data, 'hash.sha256_bytes()', file, line)), true, null, () => 0))),
+            },
             encoding: {
                 list_encodings: contextFunction(() => IdylliumArray.from(['ascii', 'utf-8', 'windows-1251', 'koi8-r', 'cp866', 'cp437', 'windows-1252', 'windows-1254'], true, null, () => '')),
                 char_to_codepoint: contextFunction((character, file, line) => (encodingCharToCodepoint(character, file, line))),
@@ -11892,15 +12052,43 @@ function runtimeNegate(value) {
 }
 function runtimeAdd(left, right) {
     const integers = exactIntegerPair(left, right);
-    return integers ? integers[0] + integers[1] : Number(left) + Number(right);
+    if (integers)
+        return exactIntegerResult(integers[0] + integers[1]);
+    const raw = Number(left) + Number(right);
+    if (integerPrecisionLost(left, right, raw)) {
+        return exactIntegerResult(BigInt(left) + BigInt(right));
+    }
+    return raw;
+}
+// Целочисленный результат за пределами 2^53 пересчитывается через BigInt:
+// int обязан оставаться точным, а double тут молча врёт в младших разрядах.
+function integerPrecisionLost(left, right, raw) {
+    return typeof left === 'number' && typeof right === 'number'
+        && Number.isInteger(left) && Number.isInteger(right)
+        && !Number.isSafeInteger(raw);
+}
+function exactIntegerResult(result) {
+    return result >= -9007199254740991n && result <= 9007199254740991n ? Number(result) : result;
 }
 function runtimeSubtract(left, right) {
     const integers = exactIntegerPair(left, right);
-    return integers ? integers[0] - integers[1] : Number(left) - Number(right);
+    if (integers)
+        return exactIntegerResult(integers[0] - integers[1]);
+    const raw = Number(left) - Number(right);
+    if (integerPrecisionLost(left, right, raw)) {
+        return exactIntegerResult(BigInt(left) - BigInt(right));
+    }
+    return raw;
 }
 function runtimeMultiply(left, right) {
     const integers = exactIntegerPair(left, right);
-    return integers ? integers[0] * integers[1] : Number(left) * Number(right);
+    if (integers)
+        return exactIntegerResult(integers[0] * integers[1]);
+    const raw = Number(left) * Number(right);
+    if (integerPrecisionLost(left, right, raw)) {
+        return exactIntegerResult(BigInt(left) * BigInt(right));
+    }
+    return raw;
 }
 function runtimeDivide(left, right, file, line) {
     const dividend = runtimeNumber(left, 'division left operand', file, line);
@@ -12375,6 +12563,18 @@ const SINGLE_BYTE_ENCODINGS = new Map([
     ['windows-1254', buildSingleByteEncoding('windows-1254')],
     ['cp437', buildCp437Encoding()],
 ]);
+// Вход хеш-функций: строка (берём её UTF-8-байты) или массив байтов 0..255.
+function hashInputBytes(data, functionName, file, line) {
+    if (typeof data === 'string')
+        return [...nodeBuffer.from(data, 'utf8')];
+    if (data instanceof IdylliumArray) {
+        return data.values().map((value, index) => {
+            const byte = integerNumber(value, `${functionName} byte at index ${index}`, file, line);
+            return byteRange(byte, `${functionName} byte at index ${index}`, 0, 255, file, line);
+        });
+    }
+    throw new IdylliumRuntimeError(file, line, `${functionName} expects a string or a byte array, got '${runtimeTypeName(data)}'`);
+}
 function encodingCharToCodepoint(character, file, line) {
     const char = singleCharacter(character, 'encoding.char_to_codepoint() character', file, line);
     const codepoint = char.codePointAt(0) ?? 0;
@@ -51958,7 +52158,7 @@ UPNG.encode.alphaMul = function(img, roundA) {
   };
   var cache = {};
   var builtins = createBuiltins();
-  var resolutions = {"dist/src/browser.js\u0000./core/semantics":"dist/src/core/semantics.js","dist/src/browser.js\u0000./language/formatter":"dist/src/language/formatter.js","dist/src/browser.js\u0000./language/project":"dist/src/language/project.js","dist/src/browser.js\u0000./runtime/browser-image-service":"dist/src/runtime/browser-image-service.js","dist/src/browser.js\u0000./runtime/browser-sqlite-service":"dist/src/runtime/browser-sqlite-service.js","dist/src/browser.js\u0000./runtime/gui-interval":"dist/src/runtime/gui-interval.js","dist/src/browser.js\u0000./runtime/run":"dist/src/runtime/run.js","dist/src/browser.js\u0000./runtime/runtime":"dist/src/runtime/runtime.js","dist/src/browser.js\u0000./runtime/sqlite-inspector":"dist/src/runtime/sqlite-inspector.js","dist/src/core/codegen.js\u0000./stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/core/codegen.js\u0000./types":"dist/src/core/types.js","dist/src/core/lexer.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/lexer.js\u0000./tokens":"dist/src/core/tokens.js","dist/src/core/parser.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/parser.js\u0000./tokens":"dist/src/core/tokens.js","dist/src/core/project.js\u0000./lexer":"dist/src/core/lexer.js","dist/src/core/project.js\u0000./modules":"dist/src/core/modules.js","dist/src/core/project.js\u0000./parser":"dist/src/core/parser.js","dist/src/core/project.js\u0000./types":"dist/src/core/types.js","dist/src/core/semantics.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/semantics.js\u0000./modules":"dist/src/core/modules.js","dist/src/core/semantics.js\u0000./stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/core/semantics.js\u0000./types":"dist/src/core/types.js","dist/src/core/stdlib/registry.js\u0000../types":"dist/src/core/types.js","dist/src/language/project.js\u0000../core/diagnostics":"dist/src/core/diagnostics.js","dist/src/language/project.js\u0000../core/project":"dist/src/core/project.js","dist/src/language/project.js\u0000../core/semantics":"dist/src/core/semantics.js","dist/src/language/project.js\u0000../core/stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/language/project.js\u0000../core/types":"dist/src/core/types.js","dist/src/language/project.js\u0000../runtime/run":"dist/src/runtime/run.js","dist/src/runtime/browser-image-service.js\u0000./image-service":"dist/src/runtime/image-service.js","dist/src/runtime/browser-sqlite-service.js\u0000./sqlite-service":"dist/src/runtime/sqlite-service.js","dist/src/runtime/browser-sqlite-service.js\u0000sql.js/dist/sql-wasm-browser.js":"node_modules/sql.js/dist/sql-wasm-browser.js","dist/src/runtime/font-metrics-service.js\u0000./default-font-metrics":"dist/src/runtime/default-font-metrics.js","dist/src/runtime/font-metrics-service.js\u0000fontkit":"node_modules/fontkit/dist/browser.cjs","dist/src/runtime/font-metrics-service.js\u0000pako":"node_modules/pako/index.js","dist/src/runtime/image-service.js\u0000gifenc":"node_modules/gifenc/dist/gifenc.js","dist/src/runtime/image-service.js\u0000gifuct-js":"node_modules/gifuct-js/lib/index.js","dist/src/runtime/image-service.js\u0000upng-js":"node_modules/upng-js/UPNG.js","dist/src/runtime/run.js\u0000../core/codegen":"dist/src/core/codegen.js","dist/src/runtime/run.js\u0000../core/diagnostics":"dist/src/core/diagnostics.js","dist/src/runtime/run.js\u0000../core/project":"dist/src/core/project.js","dist/src/runtime/run.js\u0000../core/semantics":"dist/src/core/semantics.js","dist/src/runtime/run.js\u0000../core/stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/runtime/run.js\u0000./runtime":"dist/src/runtime/runtime.js","dist/src/runtime/runtime.js\u0000./drawable-geometry":"dist/src/runtime/drawable-geometry.js","dist/src/runtime/runtime.js\u0000./font-metrics-service":"dist/src/runtime/font-metrics-service.js","dist/src/runtime/runtime.js\u0000./image-service":"dist/src/runtime/image-service.js","dist/src/runtime/runtime.js\u0000./style":"dist/src/runtime/style.js","node_modules/@swc/helpers/cjs/_ts_decorate.cjs\u0000tslib":"node_modules/tslib/tslib.js","node_modules/brotli/dec/decode.js\u0000./bit_reader":"node_modules/brotli/dec/bit_reader.js","node_modules/brotli/dec/decode.js\u0000./context":"node_modules/brotli/dec/context.js","node_modules/brotli/dec/decode.js\u0000./dictionary":"node_modules/brotli/dec/dictionary.js","node_modules/brotli/dec/decode.js\u0000./huffman":"node_modules/brotli/dec/huffman.js","node_modules/brotli/dec/decode.js\u0000./prefix":"node_modules/brotli/dec/prefix.js","node_modules/brotli/dec/decode.js\u0000./streams":"node_modules/brotli/dec/streams.js","node_modules/brotli/dec/decode.js\u0000./transform":"node_modules/brotli/dec/transform.js","node_modules/brotli/dec/dictionary.js\u0000./dictionary-data":"node_modules/brotli/dec/dictionary-data.js","node_modules/brotli/dec/transform.js\u0000./dictionary":"node_modules/brotli/dec/dictionary.js","node_modules/brotli/decompress.js\u0000./dec/decode":"node_modules/brotli/dec/decode.js","node_modules/fontkit/dist/browser.cjs\u0000@swc/helpers/cjs/_define_property.cjs":"node_modules/@swc/helpers/cjs/_define_property.cjs","node_modules/fontkit/dist/browser.cjs\u0000@swc/helpers/cjs/_ts_decorate.cjs":"node_modules/@swc/helpers/cjs/_ts_decorate.cjs","node_modules/fontkit/dist/browser.cjs\u0000brotli/decompress.js":"node_modules/brotli/decompress.js","node_modules/fontkit/dist/browser.cjs\u0000clone":"node_modules/clone/clone.js","node_modules/fontkit/dist/browser.cjs\u0000dfa":"node_modules/dfa/index.js","node_modules/fontkit/dist/browser.cjs\u0000fast-deep-equal":"node_modules/fast-deep-equal/index.js","node_modules/fontkit/dist/browser.cjs\u0000restructure":"node_modules/restructure/dist/main.cjs","node_modules/fontkit/dist/browser.cjs\u0000tiny-inflate":"node_modules/tiny-inflate/index.js","node_modules/fontkit/dist/browser.cjs\u0000unicode-properties":"node_modules/unicode-properties/dist/main.cjs","node_modules/fontkit/dist/browser.cjs\u0000unicode-trie":"node_modules/unicode-trie/index.js","node_modules/gifuct-js/lib/index.js\u0000./deinterlace":"node_modules/gifuct-js/lib/deinterlace.js","node_modules/gifuct-js/lib/index.js\u0000./lzw":"node_modules/gifuct-js/lib/lzw.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser":"node_modules/js-binary-schema-parser/lib/index.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser/lib/parsers/uint8":"node_modules/js-binary-schema-parser/lib/parsers/uint8.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser/lib/schemas/gif":"node_modules/js-binary-schema-parser/lib/schemas/gif.js","node_modules/js-binary-schema-parser/lib/schemas/gif.js\u0000../":"node_modules/js-binary-schema-parser/lib/index.js","node_modules/js-binary-schema-parser/lib/schemas/gif.js\u0000../parsers/uint8":"node_modules/js-binary-schema-parser/lib/parsers/uint8.js","node_modules/pako/index.js\u0000./lib/deflate":"node_modules/pako/lib/deflate.js","node_modules/pako/index.js\u0000./lib/inflate":"node_modules/pako/lib/inflate.js","node_modules/pako/index.js\u0000./lib/utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/index.js\u0000./lib/zlib/constants":"node_modules/pako/lib/zlib/constants.js","node_modules/pako/lib/deflate.js\u0000./utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/deflate.js\u0000./utils/strings":"node_modules/pako/lib/utils/strings.js","node_modules/pako/lib/deflate.js\u0000./zlib/deflate":"node_modules/pako/lib/zlib/deflate.js","node_modules/pako/lib/deflate.js\u0000./zlib/messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/deflate.js\u0000./zlib/zstream":"node_modules/pako/lib/zlib/zstream.js","node_modules/pako/lib/deflate.js\u0000pako":"node_modules/pako/index.js","node_modules/pako/lib/inflate.js\u0000./utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/inflate.js\u0000./utils/strings":"node_modules/pako/lib/utils/strings.js","node_modules/pako/lib/inflate.js\u0000./zlib/constants":"node_modules/pako/lib/zlib/constants.js","node_modules/pako/lib/inflate.js\u0000./zlib/gzheader":"node_modules/pako/lib/zlib/gzheader.js","node_modules/pako/lib/inflate.js\u0000./zlib/inflate":"node_modules/pako/lib/zlib/inflate.js","node_modules/pako/lib/inflate.js\u0000./zlib/messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/inflate.js\u0000./zlib/zstream":"node_modules/pako/lib/zlib/zstream.js","node_modules/pako/lib/inflate.js\u0000pako":"node_modules/pako/index.js","node_modules/pako/lib/utils/strings.js\u0000./common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/deflate.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/deflate.js\u0000./adler32":"node_modules/pako/lib/zlib/adler32.js","node_modules/pako/lib/zlib/deflate.js\u0000./crc32":"node_modules/pako/lib/zlib/crc32.js","node_modules/pako/lib/zlib/deflate.js\u0000./messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/zlib/deflate.js\u0000./trees":"node_modules/pako/lib/zlib/trees.js","node_modules/pako/lib/zlib/inflate.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/inflate.js\u0000./adler32":"node_modules/pako/lib/zlib/adler32.js","node_modules/pako/lib/zlib/inflate.js\u0000./crc32":"node_modules/pako/lib/zlib/crc32.js","node_modules/pako/lib/zlib/inflate.js\u0000./inffast":"node_modules/pako/lib/zlib/inffast.js","node_modules/pako/lib/zlib/inflate.js\u0000./inftrees":"node_modules/pako/lib/zlib/inftrees.js","node_modules/pako/lib/zlib/inftrees.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/trees.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/unicode-properties/dist/main.cjs\u0000base64-js":"node_modules/base64-js/index.js","node_modules/unicode-properties/dist/main.cjs\u0000unicode-trie":"node_modules/unicode-trie/index.js","node_modules/unicode-trie/index.js\u0000./swap":"node_modules/unicode-trie/swap.js","node_modules/unicode-trie/index.js\u0000tiny-inflate":"node_modules/tiny-inflate/index.js","node_modules/upng-js/UPNG.js\u0000pako":"node_modules/pako/index.js"};
+  var resolutions = {"dist/src/browser.js\u0000./core/semantics":"dist/src/core/semantics.js","dist/src/browser.js\u0000./language/formatter":"dist/src/language/formatter.js","dist/src/browser.js\u0000./language/project":"dist/src/language/project.js","dist/src/browser.js\u0000./runtime/browser-image-service":"dist/src/runtime/browser-image-service.js","dist/src/browser.js\u0000./runtime/browser-sqlite-service":"dist/src/runtime/browser-sqlite-service.js","dist/src/browser.js\u0000./runtime/gui-interval":"dist/src/runtime/gui-interval.js","dist/src/browser.js\u0000./runtime/run":"dist/src/runtime/run.js","dist/src/browser.js\u0000./runtime/runtime":"dist/src/runtime/runtime.js","dist/src/browser.js\u0000./runtime/sqlite-inspector":"dist/src/runtime/sqlite-inspector.js","dist/src/core/codegen.js\u0000./stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/core/codegen.js\u0000./types":"dist/src/core/types.js","dist/src/core/lexer.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/lexer.js\u0000./tokens":"dist/src/core/tokens.js","dist/src/core/parser.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/parser.js\u0000./tokens":"dist/src/core/tokens.js","dist/src/core/project.js\u0000./lexer":"dist/src/core/lexer.js","dist/src/core/project.js\u0000./modules":"dist/src/core/modules.js","dist/src/core/project.js\u0000./parser":"dist/src/core/parser.js","dist/src/core/project.js\u0000./types":"dist/src/core/types.js","dist/src/core/semantics.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/semantics.js\u0000./modules":"dist/src/core/modules.js","dist/src/core/semantics.js\u0000./stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/core/semantics.js\u0000./types":"dist/src/core/types.js","dist/src/core/stdlib/registry.js\u0000../types":"dist/src/core/types.js","dist/src/language/project.js\u0000../core/diagnostics":"dist/src/core/diagnostics.js","dist/src/language/project.js\u0000../core/project":"dist/src/core/project.js","dist/src/language/project.js\u0000../core/semantics":"dist/src/core/semantics.js","dist/src/language/project.js\u0000../core/stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/language/project.js\u0000../core/types":"dist/src/core/types.js","dist/src/language/project.js\u0000../runtime/run":"dist/src/runtime/run.js","dist/src/runtime/browser-image-service.js\u0000./image-service":"dist/src/runtime/image-service.js","dist/src/runtime/browser-sqlite-service.js\u0000./sqlite-service":"dist/src/runtime/sqlite-service.js","dist/src/runtime/browser-sqlite-service.js\u0000sql.js/dist/sql-wasm-browser.js":"node_modules/sql.js/dist/sql-wasm-browser.js","dist/src/runtime/font-metrics-service.js\u0000./default-font-metrics":"dist/src/runtime/default-font-metrics.js","dist/src/runtime/font-metrics-service.js\u0000fontkit":"node_modules/fontkit/dist/browser.cjs","dist/src/runtime/font-metrics-service.js\u0000pako":"node_modules/pako/index.js","dist/src/runtime/image-service.js\u0000gifenc":"node_modules/gifenc/dist/gifenc.js","dist/src/runtime/image-service.js\u0000gifuct-js":"node_modules/gifuct-js/lib/index.js","dist/src/runtime/image-service.js\u0000upng-js":"node_modules/upng-js/UPNG.js","dist/src/runtime/run.js\u0000../core/codegen":"dist/src/core/codegen.js","dist/src/runtime/run.js\u0000../core/diagnostics":"dist/src/core/diagnostics.js","dist/src/runtime/run.js\u0000../core/project":"dist/src/core/project.js","dist/src/runtime/run.js\u0000../core/semantics":"dist/src/core/semantics.js","dist/src/runtime/run.js\u0000../core/stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/runtime/run.js\u0000./runtime":"dist/src/runtime/runtime.js","dist/src/runtime/runtime.js\u0000./drawable-geometry":"dist/src/runtime/drawable-geometry.js","dist/src/runtime/runtime.js\u0000./font-metrics-service":"dist/src/runtime/font-metrics-service.js","dist/src/runtime/runtime.js\u0000./hash":"dist/src/runtime/hash.js","dist/src/runtime/runtime.js\u0000./image-service":"dist/src/runtime/image-service.js","dist/src/runtime/runtime.js\u0000./style":"dist/src/runtime/style.js","node_modules/@swc/helpers/cjs/_ts_decorate.cjs\u0000tslib":"node_modules/tslib/tslib.js","node_modules/brotli/dec/decode.js\u0000./bit_reader":"node_modules/brotli/dec/bit_reader.js","node_modules/brotli/dec/decode.js\u0000./context":"node_modules/brotli/dec/context.js","node_modules/brotli/dec/decode.js\u0000./dictionary":"node_modules/brotli/dec/dictionary.js","node_modules/brotli/dec/decode.js\u0000./huffman":"node_modules/brotli/dec/huffman.js","node_modules/brotli/dec/decode.js\u0000./prefix":"node_modules/brotli/dec/prefix.js","node_modules/brotli/dec/decode.js\u0000./streams":"node_modules/brotli/dec/streams.js","node_modules/brotli/dec/decode.js\u0000./transform":"node_modules/brotli/dec/transform.js","node_modules/brotli/dec/dictionary.js\u0000./dictionary-data":"node_modules/brotli/dec/dictionary-data.js","node_modules/brotli/dec/transform.js\u0000./dictionary":"node_modules/brotli/dec/dictionary.js","node_modules/brotli/decompress.js\u0000./dec/decode":"node_modules/brotli/dec/decode.js","node_modules/fontkit/dist/browser.cjs\u0000@swc/helpers/cjs/_define_property.cjs":"node_modules/@swc/helpers/cjs/_define_property.cjs","node_modules/fontkit/dist/browser.cjs\u0000@swc/helpers/cjs/_ts_decorate.cjs":"node_modules/@swc/helpers/cjs/_ts_decorate.cjs","node_modules/fontkit/dist/browser.cjs\u0000brotli/decompress.js":"node_modules/brotli/decompress.js","node_modules/fontkit/dist/browser.cjs\u0000clone":"node_modules/clone/clone.js","node_modules/fontkit/dist/browser.cjs\u0000dfa":"node_modules/dfa/index.js","node_modules/fontkit/dist/browser.cjs\u0000fast-deep-equal":"node_modules/fast-deep-equal/index.js","node_modules/fontkit/dist/browser.cjs\u0000restructure":"node_modules/restructure/dist/main.cjs","node_modules/fontkit/dist/browser.cjs\u0000tiny-inflate":"node_modules/tiny-inflate/index.js","node_modules/fontkit/dist/browser.cjs\u0000unicode-properties":"node_modules/unicode-properties/dist/main.cjs","node_modules/fontkit/dist/browser.cjs\u0000unicode-trie":"node_modules/unicode-trie/index.js","node_modules/gifuct-js/lib/index.js\u0000./deinterlace":"node_modules/gifuct-js/lib/deinterlace.js","node_modules/gifuct-js/lib/index.js\u0000./lzw":"node_modules/gifuct-js/lib/lzw.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser":"node_modules/js-binary-schema-parser/lib/index.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser/lib/parsers/uint8":"node_modules/js-binary-schema-parser/lib/parsers/uint8.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser/lib/schemas/gif":"node_modules/js-binary-schema-parser/lib/schemas/gif.js","node_modules/js-binary-schema-parser/lib/schemas/gif.js\u0000../":"node_modules/js-binary-schema-parser/lib/index.js","node_modules/js-binary-schema-parser/lib/schemas/gif.js\u0000../parsers/uint8":"node_modules/js-binary-schema-parser/lib/parsers/uint8.js","node_modules/pako/index.js\u0000./lib/deflate":"node_modules/pako/lib/deflate.js","node_modules/pako/index.js\u0000./lib/inflate":"node_modules/pako/lib/inflate.js","node_modules/pako/index.js\u0000./lib/utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/index.js\u0000./lib/zlib/constants":"node_modules/pako/lib/zlib/constants.js","node_modules/pako/lib/deflate.js\u0000./utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/deflate.js\u0000./utils/strings":"node_modules/pako/lib/utils/strings.js","node_modules/pako/lib/deflate.js\u0000./zlib/deflate":"node_modules/pako/lib/zlib/deflate.js","node_modules/pako/lib/deflate.js\u0000./zlib/messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/deflate.js\u0000./zlib/zstream":"node_modules/pako/lib/zlib/zstream.js","node_modules/pako/lib/deflate.js\u0000pako":"node_modules/pako/index.js","node_modules/pako/lib/inflate.js\u0000./utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/inflate.js\u0000./utils/strings":"node_modules/pako/lib/utils/strings.js","node_modules/pako/lib/inflate.js\u0000./zlib/constants":"node_modules/pako/lib/zlib/constants.js","node_modules/pako/lib/inflate.js\u0000./zlib/gzheader":"node_modules/pako/lib/zlib/gzheader.js","node_modules/pako/lib/inflate.js\u0000./zlib/inflate":"node_modules/pako/lib/zlib/inflate.js","node_modules/pako/lib/inflate.js\u0000./zlib/messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/inflate.js\u0000./zlib/zstream":"node_modules/pako/lib/zlib/zstream.js","node_modules/pako/lib/inflate.js\u0000pako":"node_modules/pako/index.js","node_modules/pako/lib/utils/strings.js\u0000./common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/deflate.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/deflate.js\u0000./adler32":"node_modules/pako/lib/zlib/adler32.js","node_modules/pako/lib/zlib/deflate.js\u0000./crc32":"node_modules/pako/lib/zlib/crc32.js","node_modules/pako/lib/zlib/deflate.js\u0000./messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/zlib/deflate.js\u0000./trees":"node_modules/pako/lib/zlib/trees.js","node_modules/pako/lib/zlib/inflate.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/inflate.js\u0000./adler32":"node_modules/pako/lib/zlib/adler32.js","node_modules/pako/lib/zlib/inflate.js\u0000./crc32":"node_modules/pako/lib/zlib/crc32.js","node_modules/pako/lib/zlib/inflate.js\u0000./inffast":"node_modules/pako/lib/zlib/inffast.js","node_modules/pako/lib/zlib/inflate.js\u0000./inftrees":"node_modules/pako/lib/zlib/inftrees.js","node_modules/pako/lib/zlib/inftrees.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/trees.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/unicode-properties/dist/main.cjs\u0000base64-js":"node_modules/base64-js/index.js","node_modules/unicode-properties/dist/main.cjs\u0000unicode-trie":"node_modules/unicode-trie/index.js","node_modules/unicode-trie/index.js\u0000./swap":"node_modules/unicode-trie/swap.js","node_modules/unicode-trie/index.js\u0000tiny-inflate":"node_modules/tiny-inflate/index.js","node_modules/upng-js/UPNG.js\u0000pako":"node_modules/pako/index.js"};
 
   function load(id) {
     if (cache[id]) return cache[id].exports;

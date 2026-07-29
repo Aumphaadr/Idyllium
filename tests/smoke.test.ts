@@ -1162,6 +1162,101 @@ test('extended encodings round-trip and reproduce classic mojibake', async () =>
   );
 });
 
+test('hash library matches reference digests', async () => {
+  const result = await runIdyllium([
+    'use console;',
+    'use encoding;',
+    'use hash;',
+    '',
+    'main() {',
+    '    console.writeln(hash.crc32("hello"));',
+    '    console.writeln(hash.fnv1a("hello"));',
+    '    console.writeln(hash.adler32("hello"));',
+    '    console.writeln(hash.sha256("hello"));',
+    '    console.writeln(hash.sha256("")); // пустой вход — известный дайджест',
+    '    console.writeln(hash.crc32("Привет"));',
+    '    console.writeln(hash.sha256("Привет")); // юникод хешируется как UTF-8',
+    '',
+    '    dyn_array<int> raw = [1, 2, 3];',
+    '    console.writeln(hash.crc32(raw), ":", hash.adler32(raw));',
+    '    console.writeln(hash.sha256_bytes("hello").length);',
+    '    // строка и её UTF-8-байты дают одинаковый отпечаток',
+    '    console.writeln(hash.crc32("hello") == hash.crc32(encoding.encode("hello", "utf-8")));',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === [
+      '907060870',
+      '1335831723',
+      '103547413',
+      '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824',
+      'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+      '2833953177',
+      'dd679c0b9fd408a04148aa7d30c9df393f67b7227f65693fffe0ed6d0f0ade59',
+      '1438416925:851975',
+      '32',
+      'true',
+      '',
+    ].join('\n'),
+    `unexpected hash output: ${JSON.stringify(result.output)}`,
+  );
+
+  // Рукописный FNV-1a из будущего урока обязан совпадать с библиотечным
+  const handmade = await runIdyllium([
+    'use console;',
+    'use encoding;',
+    'use hash;',
+    'use types;',
+    '',
+    'int function fnv1a_by_hand(string text) {',
+    '    types.uint32 h = 2166136261;',
+    '    dyn_array<int> bytes = encoding.encode(text, "utf-8");',
+    '    for (int i = 0; i < bytes.length; i += 1) {',
+    '        types.uint32 b = bytes[i];',
+    '        h = h.bit_xor(b);',
+    '        h = h * 16777619;',
+    '    }',
+    '    return h;',
+    '}',
+    '',
+    'main() {',
+    '    console.write(fnv1a_by_hand("Привет") == hash.fnv1a("Привет"));',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+  assert(handmade.success, handmade.runtimeError ?? handmade.compilation.diagnosticsText);
+  assert(handmade.output === 'true', `handmade FNV-1a must match the library: ${JSON.stringify(handmade.output)}`);
+
+  await assertRuntimeFails(
+    'use hash;\nmain() {\n    dyn_array<int> b = [300];\n    hash.crc32(b);\n}',
+    'byte at index 0 must be between 0 and 255',
+  );
+  assertFails('use hash;\nmain() {\n    hash.crc32(42);\n}', "expects string or byte array, got 'int'");
+});
+
+test('integer arithmetic stays exact beyond the double limit', async () => {
+  const result = await runIdyllium([
+    'use console;',
+    '',
+    'main() {',
+    '    int a = 2166136261;',
+    '    console.writeln(a * 16777619); // ~3.6e16: раньше double тихо врал на единицу',
+    '',
+    '    int big = 123456789;',
+    '    console.writeln(big * big * big); // за пределами 64 бит — тоже точно',
+    '',
+    '    console.writeln(9007199254740993 - 1 + 1); // граница 2^53',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === '36342608889142559\n1881676371789154860897069\n9007199254740993\n',
+    `unexpected exact arithmetic output: ${JSON.stringify(result.output)}`,
+  );
+});
+
 test('named constants work as fixed array sizes', async () => {
   const result = await runIdyllium([
     'use console;',

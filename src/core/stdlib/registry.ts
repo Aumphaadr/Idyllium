@@ -529,6 +529,31 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ]),
   ]));
 
+  const hashDataParameter = {
+    name: 'data',
+    type: ANY_TYPE,
+    acceptedTypes: [STRING, arrayType(INT, null, true)],
+    acceptedDescription: 'string or byte array',
+  } as const;
+
+  registry.registerModule(moduleSpec('hash', [
+    functionSpec('crc32', [hashDataParameter], INT, {
+      documentation: 'Контрольная сумма CRC-32 (как в ZIP и PNG): целое от 0 до 4294967295. Строка хешируется как её UTF-8-байты.',
+    }),
+    functionSpec('fnv1a', [hashDataParameter], INT, {
+      documentation: 'Хеш FNV-1a (32 бита): целое от 0 до 4294967295. Простой и быстрый, легко повторить вручную.',
+    }),
+    functionSpec('adler32', [hashDataParameter], INT, {
+      documentation: 'Контрольная сумма Adler-32 (из zlib): целое от 0 до 4294967295.',
+    }),
+    functionSpec('sha256', [hashDataParameter], STRING, {
+      documentation: 'Криптографический хеш SHA-256: строка из 64 шестнадцатеричных цифр в нижнем регистре (как sha256sum и git).',
+    }),
+    functionSpec('sha256_bytes', [hashDataParameter], arrayType(INT, null, true), {
+      documentation: 'Тот же SHA-256, но в виде массива из 32 байтов.',
+    }),
+  ]));
+
   registry.registerModule(moduleSpec('encoding', [
     functionSpec('list_encodings', [], arrayType(STRING, null, true)),
     functionSpec('char_to_codepoint', [
