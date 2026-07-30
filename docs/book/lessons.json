@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-30T10:48:49.805Z",
+  "generatedAt": "2026-07-30T18:46:25.490Z",
   "sourceRoot": "packages/docs",
   "sections": [
     {
@@ -16,7 +16,8 @@
           "file": "content/console/setup.html",
           "sourceFile": "cli/000_setup.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "hello",
@@ -25,7 +26,8 @@
           "file": "content/console/hello.html",
           "sourceFile": "cli/001_hello.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "variables",
@@ -34,7 +36,8 @@
           "file": "content/console/variables.html",
           "sourceFile": "cli/002_variables.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": true
         },
         {
           "id": "input",
@@ -43,7 +46,8 @@
           "file": "content/console/input.html",
           "sourceFile": "cli/003_input.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": true
         },
         {
           "id": "arithmetics",
@@ -52,7 +56,8 @@
           "file": "content/console/arithmetics.html",
           "sourceFile": "cli/004_arithmetics.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": true
         },
         {
           "id": "colors",
@@ -61,7 +66,8 @@
           "file": "content/console/colors.html",
           "sourceFile": "cli/005_colors.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "transforms",
@@ -70,7 +76,8 @@
           "file": "content/console/transforms.html",
           "sourceFile": "cli/006_transforms.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "math-basics",
@@ -79,7 +86,8 @@
           "file": "content/console/math-basics.html",
           "sourceFile": "cli/007_math.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "if",
@@ -88,7 +96,8 @@
           "file": "content/console/if.html",
           "sourceFile": "cli/008_if.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": true
         },
         {
           "id": "increment",
@@ -97,7 +106,8 @@
           "file": "content/console/increment.html",
           "sourceFile": "cli/009_increment.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "random",
@@ -106,7 +116,8 @@
           "file": "content/console/random.html",
           "sourceFile": "cli/010_random.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": true
         },
         {
           "id": "bool",
@@ -115,7 +126,8 @@
           "file": "content/console/bool.html",
           "sourceFile": "cli/011_bool.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "loops",
@@ -124,7 +136,8 @@
           "file": "content/console/loops.html",
           "sourceFile": "cli/012_loops.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "time",
@@ -133,7 +146,8 @@
           "file": "content/console/time.html",
           "sourceFile": "cli/019_time.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "constants",
@@ -142,7 +156,8 @@
           "file": "content/console/constants.html",
           "sourceFile": "docs/manual-content/console/constants.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "array",
@@ -151,7 +166,8 @@
           "file": "content/console/array.html",
           "sourceFile": "cli/013_array.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "char",
@@ -160,7 +176,8 @@
           "file": "content/console/char.html",
           "sourceFile": "cli/014_char.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "dyn-array",
@@ -169,7 +186,8 @@
           "file": "content/console/dyn-array.html",
           "sourceFile": "cli/015_dyn_array.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "arr-functions",
@@ -178,7 +196,8 @@
           "file": "content/console/arr-functions.html",
           "sourceFile": "cli/016_arr_functions.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "arr-methods",
@@ -187,7 +206,8 @@
           "file": "content/console/arr-methods.html",
           "sourceFile": "cli/017_arr_methods.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "string-methods",
@@ -196,7 +216,8 @@
           "file": "content/console/string-methods.html",
           "sourceFile": "cli/018_string_methods.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "types",
@@ -205,7 +226,8 @@
           "file": "content/console/types.html",
           "sourceFile": "cli/020_types.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "bit-operations",
@@ -214,7 +236,8 @@
           "file": "content/console/bit-operations.html",
           "sourceFile": "docs/manual-content/console/bit-operations.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "encoding",
@@ -223,7 +246,8 @@
           "file": "content/console/encoding.html",
           "sourceFile": "cli/021_encoding.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "functions",
@@ -232,7 +256,8 @@
           "file": "content/console/functions.html",
           "sourceFile": "cli/022_functions.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "libs",
@@ -241,7 +266,8 @@
           "file": "content/console/libs.html",
           "sourceFile": "cli/023_libs.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "files",
@@ -250,7 +276,8 @@
           "file": "content/console/files.html",
           "sourceFile": "cli/024_files.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "directories",
@@ -259,7 +286,8 @@
           "file": "content/console/directories.html",
           "sourceFile": "docs/manual-content/console/directories.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "math-advanced",
@@ -268,7 +296,8 @@
           "file": "content/console/math-advanced.html",
           "sourceFile": "cli/025_math.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "matrix",
@@ -277,7 +306,8 @@
           "file": "content/console/matrix.html",
           "sourceFile": "cli/026_matrix.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "recursion",
@@ -286,7 +316,8 @@
           "file": "content/console/recursion.html",
           "sourceFile": "docs/manual-content/console/recursion.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "errors",
@@ -295,7 +326,8 @@
           "file": "content/console/errors.html",
           "sourceFile": "cli/027_errors.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "try-catch",
@@ -304,7 +336,8 @@
           "file": "content/console/try-catch.html",
           "sourceFile": "docs/manual-content/console/try-catch.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         }
       ]
     },
@@ -321,7 +354,8 @@
           "file": "content/widgets/window.html",
           "sourceFile": "widgets/000_window.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "button",
@@ -330,7 +364,8 @@
           "file": "content/widgets/button.html",
           "sourceFile": "widgets/001_button.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "label",
@@ -339,7 +374,8 @@
           "file": "content/widgets/label.html",
           "sourceFile": "widgets/002_label.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "progressbar",
@@ -348,7 +384,8 @@
           "file": "content/widgets/progressbar.html",
           "sourceFile": "widgets/003_progressbar.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "colors",
@@ -357,7 +394,8 @@
           "file": "content/widgets/colors.html",
           "sourceFile": "docs/manual-content/widgets/colors.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "fonts",
@@ -366,7 +404,8 @@
           "file": "content/widgets/fonts.html",
           "sourceFile": "docs/manual-content/widgets/fonts.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "spinbox",
@@ -375,7 +414,8 @@
           "file": "content/widgets/spinbox.html",
           "sourceFile": "widgets/004_spinbox.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "slider",
@@ -384,7 +424,8 @@
           "file": "content/widgets/slider.html",
           "sourceFile": "widgets/005_slider.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "lineedit",
@@ -393,7 +434,8 @@
           "file": "content/widgets/lineedit.html",
           "sourceFile": "widgets/006_lineedit.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "image",
@@ -402,7 +444,8 @@
           "file": "content/widgets/image.html",
           "sourceFile": "docs/manual-content/widgets/image.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "styles",
@@ -411,7 +454,8 @@
           "file": "content/widgets/styles.html",
           "sourceFile": "docs/manual-content/widgets/styles.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "links",
@@ -420,7 +464,8 @@
           "file": "content/widgets/links.html",
           "sourceFile": "docs/manual-content/widgets/links.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "checkbox",
@@ -429,7 +474,8 @@
           "file": "content/widgets/checkbox.html",
           "sourceFile": "widgets/007_checkbox.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "radiobutton",
@@ -438,7 +484,8 @@
           "file": "content/widgets/radiobutton.html",
           "sourceFile": "widgets/008_radiobutton.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "frame",
@@ -447,7 +494,8 @@
           "file": "content/widgets/frame.html",
           "sourceFile": "widgets/009_frame.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "combobox",
@@ -456,7 +504,8 @@
           "file": "content/widgets/combobox.html",
           "sourceFile": "widgets/010_combobox.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "visibility",
@@ -465,7 +514,8 @@
           "file": "content/widgets/visibility.html",
           "sourceFile": "widgets/011_visibility.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "audio",
@@ -474,7 +524,18 @@
           "file": "content/widgets/audio.html",
           "sourceFile": "docs/manual-content/widgets/audio.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "tabwidget",
+          "title": "Вкладки",
+          "subtitle": "gui.TabWidget: add_tab, selected_index и много виджетов на одном месте",
+          "file": "content/widgets/tabwidget.html",
+          "sourceFile": "docs/manual-content/widgets/tabwidget.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "arrays",
@@ -483,7 +544,8 @@
           "file": "content/widgets/arrays.html",
           "sourceFile": "widgets/012_arrays.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "sender",
@@ -492,7 +554,8 @@
           "file": "content/widgets/sender.html",
           "sourceFile": "widgets/013_sender.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "timer",
@@ -501,7 +564,8 @@
           "file": "content/widgets/timer.html",
           "sourceFile": "widgets/014_timer.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "modal",
@@ -510,7 +574,8 @@
           "file": "content/widgets/modal.html",
           "sourceFile": "widgets/015_modal.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "errors",
@@ -519,7 +584,8 @@
           "file": "content/widgets/errors.html",
           "sourceFile": "widgets/016_errors.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         }
       ]
     },
@@ -536,7 +602,8 @@
           "file": "content/oop/intro.html",
           "sourceFile": "oop/000_intro.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "classes",
@@ -545,7 +612,8 @@
           "file": "content/oop/classes.html",
           "sourceFile": "oop/001_classes.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "fields-methods",
@@ -554,7 +622,8 @@
           "file": "content/oop/fields-methods.html",
           "sourceFile": "oop/002_fields_methods.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "this",
@@ -563,7 +632,8 @@
           "file": "content/oop/this.html",
           "sourceFile": "oop/003_this.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "modules",
@@ -572,7 +642,8 @@
           "file": "content/oop/modules.html",
           "sourceFile": "oop/004_modules.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "arrays",
@@ -581,7 +652,8 @@
           "file": "content/oop/arrays.html",
           "sourceFile": "oop/005_arrays.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "constructor",
@@ -590,7 +662,8 @@
           "file": "content/oop/constructor.html",
           "sourceFile": "oop/006_constructor.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "composition",
@@ -599,7 +672,8 @@
           "file": "content/oop/composition.html",
           "sourceFile": "oop/007_composition.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "inheritance",
@@ -608,7 +682,8 @@
           "file": "content/oop/inheritance.html",
           "sourceFile": "oop/008_inheritance.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "polymorphism",
@@ -617,7 +692,8 @@
           "file": "content/oop/polymorphism.html",
           "sourceFile": "oop/009_polymorphism.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "encapsulation",
@@ -626,7 +702,8 @@
           "file": "content/oop/encapsulation.html",
           "sourceFile": "oop/010_encapsulation.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "static",
@@ -635,7 +712,8 @@
           "file": "content/oop/static.html",
           "sourceFile": "oop/011_static.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "events",
@@ -644,7 +722,8 @@
           "file": "content/oop/events.html",
           "sourceFile": "docs/manual-content/oop/events.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "errors",
@@ -653,7 +732,8 @@
           "file": "content/oop/errors.html",
           "sourceFile": "oop/012_errors.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         }
       ]
     },
@@ -670,7 +750,8 @@
           "file": "content/canvas/intro.html",
           "sourceFile": "docs/manual-content/canvas/intro.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "drawable",
@@ -679,7 +760,8 @@
           "file": "content/canvas/drawable.html",
           "sourceFile": "docs/manual-content/canvas/drawable.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "update",
@@ -688,7 +770,8 @@
           "file": "content/canvas/update.html",
           "sourceFile": "docs/manual-content/canvas/update.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "keyboard",
@@ -697,7 +780,8 @@
           "file": "content/canvas/keyboard.html",
           "sourceFile": "docs/manual-content/canvas/keyboard.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "pressed-keys",
@@ -706,7 +790,8 @@
           "file": "content/canvas/pressed-keys.html",
           "sourceFile": "docs/manual-content/canvas/pressed-keys.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "mouse-buttons",
@@ -715,7 +800,8 @@
           "file": "content/canvas/mouse-buttons.html",
           "sourceFile": "docs/manual-content/canvas/mouse-buttons.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "mouse-motion",
@@ -724,7 +810,8 @@
           "file": "content/canvas/mouse-motion.html",
           "sourceFile": "docs/manual-content/canvas/mouse-motion.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "modules",
@@ -733,7 +820,8 @@
           "file": "content/canvas/modules.html",
           "sourceFile": "docs/manual-content/canvas/modules.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "text",
@@ -742,7 +830,8 @@
           "file": "content/canvas/text.html",
           "sourceFile": "docs/manual-content/canvas/text.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "sprites",
@@ -751,7 +840,8 @@
           "file": "content/canvas/sprites.html",
           "sourceFile": "docs/manual-content/canvas/sprites.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "object-arrays",
@@ -760,7 +850,8 @@
           "file": "content/canvas/object-arrays.html",
           "sourceFile": "docs/manual-content/canvas/object-arrays.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "origin",
@@ -769,7 +860,8 @@
           "file": "content/canvas/origin.html",
           "sourceFile": "docs/manual-content/canvas/origin.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "temporary-objects",
@@ -778,7 +870,8 @@
           "file": "content/canvas/temporary-objects.html",
           "sourceFile": "docs/manual-content/canvas/temporary-objects.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "audio",
@@ -787,7 +880,8 @@
           "file": "content/canvas/audio.html",
           "sourceFile": "docs/manual-content/canvas/audio.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "rectangle-hit-test",
@@ -796,7 +890,8 @@
           "file": "content/canvas/rectangle-hit-test.html",
           "sourceFile": "docs/manual-content/canvas/rectangle-hit-test.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "circle-hit-test",
@@ -805,7 +900,8 @@
           "file": "content/canvas/circle-hit-test.html",
           "sourceFile": "docs/manual-content/canvas/circle-hit-test.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "circle-collisions",
@@ -814,7 +910,8 @@
           "file": "content/canvas/circle-collisions.html",
           "sourceFile": "docs/manual-content/canvas/circle-collisions.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "rectangle-collisions",
@@ -823,7 +920,8 @@
           "file": "content/canvas/rectangle-collisions.html",
           "sourceFile": "docs/manual-content/canvas/rectangle-collisions.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "geometry-methods",
@@ -832,7 +930,8 @@
           "file": "content/canvas/geometry-methods.html",
           "sourceFile": "docs/manual-content/canvas/geometry-methods.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         }
       ]
     },
@@ -849,7 +948,8 @@
           "file": "content/json/intro.html",
           "sourceFile": "docs/manual-content/json/intro.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "first-object",
@@ -858,7 +958,8 @@
           "file": "content/json/first-object.html",
           "sourceFile": "docs/manual-content/json/first-object.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "reading",
@@ -867,7 +968,8 @@
           "file": "content/json/reading.html",
           "sourceFile": "docs/manual-content/json/reading.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "arrays",
@@ -876,7 +978,8 @@
           "file": "content/json/arrays.html",
           "sourceFile": "docs/manual-content/json/arrays.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "nested-objects",
@@ -885,7 +988,8 @@
           "file": "content/json/nested-objects.html",
           "sourceFile": "docs/manual-content/json/nested-objects.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "object-arrays",
@@ -894,7 +998,8 @@
           "file": "content/json/object-arrays.html",
           "sourceFile": "docs/manual-content/json/object-arrays.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "array-methods",
@@ -903,7 +1008,8 @@
           "file": "content/json/array-methods.html",
           "sourceFile": "docs/manual-content/json/array-methods.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "object-methods",
@@ -912,7 +1018,8 @@
           "file": "content/json/object-methods.html",
           "sourceFile": "docs/manual-content/json/object-methods.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "oop",
@@ -921,7 +1028,8 @@
           "file": "content/json/oop.html",
           "sourceFile": "docs/manual-content/json/oop.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "errors",
@@ -930,7 +1038,8 @@
           "file": "content/json/errors.html",
           "sourceFile": "docs/manual-content/json/errors.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         }
       ]
     },
@@ -947,7 +1056,8 @@
           "file": "content/sqlite/intro.html",
           "sourceFile": "docs/manual-content/sqlite/intro.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "changes",
@@ -956,7 +1066,8 @@
           "file": "content/sqlite/changes.html",
           "sourceFile": "docs/manual-content/sqlite/changes.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "select",
@@ -965,7 +1076,8 @@
           "file": "content/sqlite/select.html",
           "sourceFile": "docs/manual-content/sqlite/select.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "parameters",
@@ -974,7 +1086,8 @@
           "file": "content/sqlite/parameters.html",
           "sourceFile": "docs/manual-content/sqlite/parameters.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "filters",
@@ -983,7 +1096,8 @@
           "file": "content/sqlite/filters.html",
           "sourceFile": "docs/manual-content/sqlite/filters.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "null",
@@ -992,7 +1106,8 @@
           "file": "content/sqlite/null.html",
           "sourceFile": "docs/manual-content/sqlite/null.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "reuse",
@@ -1001,7 +1116,8 @@
           "file": "content/sqlite/reuse.html",
           "sourceFile": "docs/manual-content/sqlite/reuse.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "transactions",
@@ -1010,7 +1126,8 @@
           "file": "content/sqlite/transactions.html",
           "sourceFile": "docs/manual-content/sqlite/transactions.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "scripts",
@@ -1019,7 +1136,8 @@
           "file": "content/sqlite/scripts.html",
           "sourceFile": "docs/manual-content/sqlite/scripts.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "select-tools",
@@ -1028,7 +1146,8 @@
           "file": "content/sqlite/select-tools.html",
           "sourceFile": "docs/manual-content/sqlite/select-tools.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "defaults",
@@ -1037,7 +1156,8 @@
           "file": "content/sqlite/defaults.html",
           "sourceFile": "docs/manual-content/sqlite/defaults.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "keys",
@@ -1046,7 +1166,8 @@
           "file": "content/sqlite/keys.html",
           "sourceFile": "docs/manual-content/sqlite/keys.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "hashing",
@@ -1055,7 +1176,8 @@
           "file": "content/sqlite/hashing.html",
           "sourceFile": "docs/manual-content/sqlite/hashing.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "joins",
@@ -1064,7 +1186,8 @@
           "file": "content/sqlite/joins.html",
           "sourceFile": "docs/manual-content/sqlite/joins.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "errors",
@@ -1073,7 +1196,8 @@
           "file": "content/sqlite/errors.html",
           "sourceFile": "docs/manual-content/sqlite/errors.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         }
       ]
     },
@@ -1090,7 +1214,8 @@
           "file": "content/examples/calc.html",
           "sourceFile": "examples/000_calc.html",
           "status": "ready",
-          "reviewFlags": []
+          "reviewFlags": [],
+          "hasTasks": false
         }
       ]
     }

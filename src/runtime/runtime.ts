@@ -4996,8 +4996,23 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
     obj.__children = [];
     obj.__tabTitles = [];
     obj.selected_index = 0;
-    obj.selected_title = '';
     obj.tab_count = 0;
+    // Заголовок всегда вычисляется из selected_index. Хранить его отдельным
+    // полем нельзя: тогда присваивание selected_index из программы оставляло
+    // бы selected_title от прежней вкладки.
+    Object.defineProperty(obj, 'selected_title', {
+      enumerable: true,
+      configurable: true,
+      get() {
+        const titles = obj.__tabTitles as string[];
+        const index = obj.selected_index;
+        if (typeof index !== 'number' || !Number.isFinite(index)) return '';
+        return titles[Math.trunc(index)] ?? '';
+      },
+      set(_value: unknown) {
+        // Только чтение: заголовок задают add_tab() и selected_index.
+      },
+    });
     obj.add_tab = contextFunction((title: unknown, content: unknown, file: string, line: number) => {
       const tabTitle = stringArgument(title, 'TabWidget.add_tab() title', file, line);
       if (!isRuntimeObject(content)) {
@@ -5007,15 +5022,12 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
       (obj.__children as RuntimeObject[]).push(content);
       (obj.__tabTitles as string[]).push(tabTitle);
       obj.tab_count = (obj.__tabTitles as string[]).length;
-      const index = integerNumber(obj.selected_index, 'TabWidget.selected_index', file, line);
-      obj.selected_title = (obj.__tabTitles as string[])[index] ?? (obj.__tabTitles as string[])[0] ?? '';
     });
     obj.clear_tabs = contextFunction(() => {
       obj.__children = [];
       obj.__tabTitles = [];
       obj.tab_count = 0;
       obj.selected_index = 0;
-      obj.selected_title = '';
     });
   }
 
@@ -6734,13 +6746,10 @@ function applyGuiEventPayload(
     case 'gui.ComboBox':
       target.selected_index = eventNumber(payload.selected_index);
       return;
-    case 'gui.TabWidget': {
-      const index = eventNumber(payload.selected_index);
-      target.selected_index = index;
-      const titles = Array.isArray(target.__tabTitles) ? target.__tabTitles as string[] : [];
-      target.selected_title = titles[index] ?? '';
+    case 'gui.TabWidget':
+      // selected_title — вычисляемое свойство, отдельно синхронизировать не надо.
+      target.selected_index = eventNumber(payload.selected_index);
       return;
-    }
     default:
       return;
   }

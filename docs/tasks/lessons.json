@@ -1,0 +1,1223 @@
+{
+  "version": 1,
+  "generatedAt": "2026-07-30T18:46:25.490Z",
+  "sourceRoot": "docs/manual-content/tasks",
+  "sections": [
+    {
+      "id": "console",
+      "title": "Консоль",
+      "icon": "terminal",
+      "status": "ready",
+      "lessons": [
+        {
+          "id": "setup",
+          "title": "Установка Idyllium",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/setup.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "hello",
+          "title": "Первая программа",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/hello.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "variables",
+          "title": "Переменные и типы данных",
+          "subtitle": "Практикум к уроку «Переменные и типы данных»",
+          "file": "content/console/variables.html",
+          "sourceFile": "docs/manual-content/tasks/console/variables.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": true
+        },
+        {
+          "id": "input",
+          "title": "Ввод данных",
+          "subtitle": "Практикум к уроку «Ввод данных»",
+          "file": "content/console/input.html",
+          "sourceFile": "docs/manual-content/tasks/console/input.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": true
+        },
+        {
+          "id": "arithmetics",
+          "title": "Арифметика",
+          "subtitle": "Практикум к уроку «Арифметика»",
+          "file": "content/console/arithmetics.html",
+          "sourceFile": "docs/manual-content/tasks/console/arithmetics.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": true
+        },
+        {
+          "id": "colors",
+          "title": "Улучшенный вывод текста",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/colors.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "transforms",
+          "title": "Преобразования данных",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/transforms.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "math-basics",
+          "title": "Базовые математические функции",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/math-basics.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "if",
+          "title": "Условный оператор и тип bool",
+          "subtitle": "Практикум к уроку «Условный оператор и тип bool»",
+          "file": "content/console/if.html",
+          "sourceFile": "docs/manual-content/tasks/console/if.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": true
+        },
+        {
+          "id": "increment",
+          "title": "Инкремент и декремент",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/increment.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "random",
+          "title": "Случайные числа",
+          "subtitle": "Практикум к уроку «Случайные числа»",
+          "file": "content/console/random.html",
+          "sourceFile": "docs/manual-content/tasks/console/random.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": true
+        },
+        {
+          "id": "bool",
+          "title": "Логические операции",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/bool.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "loops",
+          "title": "Циклы",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/loops.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "time",
+          "title": "Библиотека time",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/time.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "constants",
+          "title": "Именованные константы",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/constants.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "array",
+          "title": "Массивы",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/array.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "char",
+          "title": "Тип char как элемент строки",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/char.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "dyn-array",
+          "title": "Динамические массивы",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/dyn-array.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "arr-functions",
+          "title": "Функции для работы с массивами",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/arr-functions.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "arr-methods",
+          "title": "Методы массивов",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/arr-methods.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "string-methods",
+          "title": "Методы строк",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/string-methods.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "types",
+          "title": "Библиотека types",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/types.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "bit-operations",
+          "title": "Битовые операции",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/bit-operations.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "encoding",
+          "title": "Библиотека encoding",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/encoding.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "functions",
+          "title": "Создание собственных функций",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/functions.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "libs",
+          "title": "Создание собственных библиотек",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/libs.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "files",
+          "title": "Работа с файлами",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/files.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "directories",
+          "title": "Файлы и папки проекта",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/directories.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "math-advanced",
+          "title": "Продвинутые инструменты math",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/math-advanced.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "matrix",
+          "title": "Двумерные массивы",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/matrix.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "recursion",
+          "title": "Рекурсия",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/recursion.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "errors",
+          "title": "Типичные ошибки",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/errors.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "try-catch",
+          "title": "Обработка ошибок",
+          "subtitle": "Задания готовятся",
+          "file": "content/console/try-catch.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        }
+      ]
+    },
+    {
+      "id": "widgets",
+      "title": "Виджеты",
+      "icon": "widgets",
+      "status": "ready",
+      "lessons": [
+        {
+          "id": "window",
+          "title": "Первое графическое приложение",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/window.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "button",
+          "title": "Кнопки и события",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/button.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "label",
+          "title": "Виджет Label",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/label.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "progressbar",
+          "title": "Виджет ProgressBar",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/progressbar.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "colors",
+          "title": "Цвета виджетов",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/colors.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "fonts",
+          "title": "Шрифты в GUI",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/fonts.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "spinbox",
+          "title": "Виджеты SpinBox и FloatSpinBox",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/spinbox.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "slider",
+          "title": "Виджет Slider",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/slider.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "lineedit",
+          "title": "Виджет LineEdit",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/lineedit.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "image",
+          "title": "Картинки в GUI",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/image.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "styles",
+          "title": "Стили IdySS",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/styles.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "links",
+          "title": "Гиперссылки",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/links.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "checkbox",
+          "title": "Виджет CheckBox",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/checkbox.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "radiobutton",
+          "title": "Виджет RadioButton",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/radiobutton.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "frame",
+          "title": "Виджет Frame",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/frame.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "combobox",
+          "title": "Виджет ComboBox",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/combobox.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "visibility",
+          "title": "Видимость виджетов",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/visibility.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "audio",
+          "title": "Работа со звуками",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/audio.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "tabwidget",
+          "title": "Вкладки",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/tabwidget.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "arrays",
+          "title": "Массивы виджетов",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/arrays.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "sender",
+          "title": "Отправители",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/sender.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "timer",
+          "title": "Объект Timer",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/timer.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "modal",
+          "title": "Модальные окна",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/modal.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "errors",
+          "title": "Типичные ошибки",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/errors.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        }
+      ]
+    },
+    {
+      "id": "oop",
+      "title": "ООП",
+      "icon": "classes",
+      "status": "ready",
+      "lessons": [
+        {
+          "id": "intro",
+          "title": "Введение в ООП",
+          "subtitle": "Задания готовятся",
+          "file": "content/oop/intro.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "classes",
+          "title": "Создание класса",
+          "subtitle": "Задания готовятся",
+          "file": "content/oop/classes.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "fields-methods",
+          "title": "Свойства и методы",
+          "subtitle": "Задания готовятся",
+          "file": "content/oop/fields-methods.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "this",
+          "title": "Идентификатор this",
+          "subtitle": "Задания готовятся",
+          "file": "content/oop/this.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "modules",
+          "title": "Разбиение проекта по файлам",
+          "subtitle": "Задания готовятся",
+          "file": "content/oop/modules.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "arrays",
+          "title": "Массивы объектов",
+          "subtitle": "Задания готовятся",
+          "file": "content/oop/arrays.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "constructor",
+          "title": "Конструктор",
+          "subtitle": "Задания готовятся",
+          "file": "content/oop/constructor.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "composition",
+          "title": "Композиция",
+          "subtitle": "Задания готовятся",
+          "file": "content/oop/composition.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "inheritance",
+          "title": "Наследование",
+          "subtitle": "Задания готовятся",
+          "file": "content/oop/inheritance.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "polymorphism",
+          "title": "Полиморфизм",
+          "subtitle": "Задания готовятся",
+          "file": "content/oop/polymorphism.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "encapsulation",
+          "title": "Инкапсуляция",
+          "subtitle": "Задания готовятся",
+          "file": "content/oop/encapsulation.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "static",
+          "title": "Статические методы",
+          "subtitle": "Задания готовятся",
+          "file": "content/oop/static.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "events",
+          "title": "Свои события",
+          "subtitle": "Задания готовятся",
+          "file": "content/oop/events.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "errors",
+          "title": "Типичные ошибки",
+          "subtitle": "Задания готовятся",
+          "file": "content/oop/errors.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        }
+      ]
+    },
+    {
+      "id": "canvas",
+      "title": "Canvas",
+      "icon": "canvas",
+      "status": "ready",
+      "lessons": [
+        {
+          "id": "intro",
+          "title": "Первый Canvas",
+          "subtitle": "Задания готовятся",
+          "file": "content/canvas/intro.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "drawable",
+          "title": "Drawable-объекты",
+          "subtitle": "Задания готовятся",
+          "file": "content/canvas/drawable.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "update",
+          "title": "Однократные и повторяющиеся действия",
+          "subtitle": "Задания готовятся",
+          "file": "content/canvas/update.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "keyboard",
+          "title": "События клавиатуры",
+          "subtitle": "Задания готовятся",
+          "file": "content/canvas/keyboard.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "pressed-keys",
+          "title": "Плавное движение",
+          "subtitle": "Задания готовятся",
+          "file": "content/canvas/pressed-keys.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "mouse-buttons",
+          "title": "Кнопки мыши",
+          "subtitle": "Задания готовятся",
+          "file": "content/canvas/mouse-buttons.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "mouse-motion",
+          "title": "Движение мыши и колесо",
+          "subtitle": "Задания готовятся",
+          "file": "content/canvas/mouse-motion.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "modules",
+          "title": "Разделение проекта на файлы",
+          "subtitle": "Задания готовятся",
+          "file": "content/canvas/modules.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "text",
+          "title": "Шрифт и текст",
+          "subtitle": "Задания готовятся",
+          "file": "content/canvas/text.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "sprites",
+          "title": "Картинки и спрайты",
+          "subtitle": "Задания готовятся",
+          "file": "content/canvas/sprites.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "object-arrays",
+          "title": "Массивы объектов",
+          "subtitle": "Задания готовятся",
+          "file": "content/canvas/object-arrays.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "origin",
+          "title": "Точка отсчёта и вращение",
+          "subtitle": "Задания готовятся",
+          "file": "content/canvas/origin.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "temporary-objects",
+          "title": "Временные объекты",
+          "subtitle": "Задания готовятся",
+          "file": "content/canvas/temporary-objects.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "audio",
+          "title": "Звуки и музыка",
+          "subtitle": "Задания готовятся",
+          "file": "content/canvas/audio.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "rectangle-hit-test",
+          "title": "Точка в прямоугольной области",
+          "subtitle": "Задания готовятся",
+          "file": "content/canvas/rectangle-hit-test.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "circle-hit-test",
+          "title": "Точка в круглой области",
+          "subtitle": "Задания готовятся",
+          "file": "content/canvas/circle-hit-test.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "circle-collisions",
+          "title": "Круглые коллизии",
+          "subtitle": "Задания готовятся",
+          "file": "content/canvas/circle-collisions.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "rectangle-collisions",
+          "title": "Прямоугольные коллизии",
+          "subtitle": "Задания готовятся",
+          "file": "content/canvas/rectangle-collisions.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "geometry-methods",
+          "title": "Готовые геометрические проверки",
+          "subtitle": "Задания готовятся",
+          "file": "content/canvas/geometry-methods.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        }
+      ]
+    },
+    {
+      "id": "json",
+      "title": "JSON",
+      "icon": "json",
+      "status": "ready",
+      "lessons": [
+        {
+          "id": "intro",
+          "title": "Работа с файлами: повторение",
+          "subtitle": "Задания готовятся",
+          "file": "content/json/intro.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "first-object",
+          "title": "Первый JSON-объект",
+          "subtitle": "Задания готовятся",
+          "file": "content/json/first-object.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "reading",
+          "title": "Чтение JSON-данных",
+          "subtitle": "Задания готовятся",
+          "file": "content/json/reading.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "arrays",
+          "title": "JSON-массивы",
+          "subtitle": "Задания готовятся",
+          "file": "content/json/arrays.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "nested-objects",
+          "title": "Вложенные объекты",
+          "subtitle": "Задания готовятся",
+          "file": "content/json/nested-objects.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "object-arrays",
+          "title": "Массивы объектов",
+          "subtitle": "Задания готовятся",
+          "file": "content/json/object-arrays.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "array-methods",
+          "title": "Методы массивов",
+          "subtitle": "Задания готовятся",
+          "file": "content/json/array-methods.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "object-methods",
+          "title": "Методы объектов",
+          "subtitle": "Задания готовятся",
+          "file": "content/json/object-methods.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "oop",
+          "title": "JSON и ООП",
+          "subtitle": "Задания готовятся",
+          "file": "content/json/oop.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "errors",
+          "title": "Типичные ошибки",
+          "subtitle": "Задания готовятся",
+          "file": "content/json/errors.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        }
+      ]
+    },
+    {
+      "id": "sqlite",
+      "title": "SQLite",
+      "icon": "database",
+      "status": "ready",
+      "lessons": [
+        {
+          "id": "intro",
+          "title": "Первая база данных",
+          "subtitle": "Задания готовятся",
+          "file": "content/sqlite/intro.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "changes",
+          "title": "Таблицы и первые записи",
+          "subtitle": "Задания готовятся",
+          "file": "content/sqlite/changes.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "select",
+          "title": "Чтение строк",
+          "subtitle": "Задания готовятся",
+          "file": "content/sqlite/select.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "parameters",
+          "title": "Безопасные параметры",
+          "subtitle": "Задания готовятся",
+          "file": "content/sqlite/parameters.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "filters",
+          "title": "Поиск и фильтрация",
+          "subtitle": "Задания готовятся",
+          "file": "content/sqlite/filters.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "null",
+          "title": "Неизвестные значения и null",
+          "subtitle": "Задания готовятся",
+          "file": "content/sqlite/null.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "reuse",
+          "title": "Много записей одним запросом",
+          "subtitle": "Задания готовятся",
+          "file": "content/sqlite/reuse.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "transactions",
+          "title": "Всё или ничего",
+          "subtitle": "Задания готовятся",
+          "file": "content/sqlite/transactions.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "scripts",
+          "title": "SQL в отдельном файле",
+          "subtitle": "Задания готовятся",
+          "file": "content/sqlite/scripts.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "select-tools",
+          "title": "Все строки и краткая статистика",
+          "subtitle": "Задания готовятся",
+          "file": "content/sqlite/select-tools.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "defaults",
+          "title": "Повторный запуск и значения по умолчанию",
+          "subtitle": "Задания готовятся",
+          "file": "content/sqlite/defaults.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "keys",
+          "title": "Ключи и уникальные значения",
+          "subtitle": "Задания готовятся",
+          "file": "content/sqlite/keys.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "hashing",
+          "title": "Хеширование",
+          "subtitle": "Задания готовятся",
+          "file": "content/sqlite/hashing.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "joins",
+          "title": "Связи между таблицами",
+          "subtitle": "Задания готовятся",
+          "file": "content/sqlite/joins.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "errors",
+          "title": "Типичные ошибки",
+          "subtitle": "Задания готовятся",
+          "file": "content/sqlite/errors.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        }
+      ]
+    },
+    {
+      "id": "examples",
+      "title": "Примеры задач",
+      "icon": "examples",
+      "status": "ready",
+      "lessons": [
+        {
+          "id": "calc",
+          "title": "Калькулятор",
+          "subtitle": "Задания готовятся",
+          "file": "content/examples/calc.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        }
+      ]
+    }
+  ]
+}

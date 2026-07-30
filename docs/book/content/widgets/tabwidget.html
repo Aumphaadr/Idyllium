@@ -1,0 +1,457 @@
+<style data-lesson-style>
+.interactive-demo {
+      background: rgba(137, 180, 250, 0.05);
+      border-radius: 12px;
+      padding: 1em;
+      margin: 1.5em 0;
+    }
+    .interactive-demo .coord-note {
+      margin-top: 1em;
+    }
+    /* Мини-копия виджета вкладок из GUI Preview. */
+    .tabs-demo {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-panel);
+    }
+    .tabs-demo-bar {
+      display: flex;
+      flex: none;
+      gap: 2px;
+      padding: 4px 4px 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-panel-2);
+    }
+    .tabs-demo-tab {
+      padding: 4px 12px;
+      border: 1px solid var(--border);
+      border-bottom: 0;
+      border-radius: 6px 6px 0 0;
+      background: transparent;
+      color: var(--text-main);
+      font: 13px var(--font-sans);
+      cursor: pointer;
+    }
+    .tabs-demo-tab.selected {
+      margin-bottom: -1px;
+      border-bottom: 1px solid var(--bg-panel);
+      background: var(--bg-panel);
+      font-weight: 700;
+    }
+    .tabs-demo-page {
+      position: relative;
+      flex: 1;
+      padding: 14px;
+      color: var(--text-main);
+      font: 13px/1.5 var(--font-sans);
+    }
+    .tabs-demo-page[hidden] {
+      display: none;
+    }
+</style>
+
+<div class="docs-section">
+  <h2>Окно кончилось, а виджеты не кончились</h2>
+  <p>
+    Соберите мысленно окно настроек игры. Громкость, язык, сложность, управление,
+    имя игрока, полноэкранный режим, скорость мыши… Виджетов набирается два
+    десятка, и все они честно требуют места. Окно приходится растягивать, пока
+    оно не перестанет помещаться на экране.
+  </p>
+  <p>
+    Выход придумали давно, и вы наверняка им пользовались: разложить виджеты по
+    <strong>вкладкам</strong>. Одно и то же место окна показывает то одну группу
+    виджетов, то другую — а переключает их полоска заголовков сверху. В Idyllium
+    такой виджет называется <code>gui.TabWidget</code>.
+  </p>
+  <p>
+    Работает он не так, как остальные виджеты. У кнопки есть <code>text</code>,
+    у поля ввода — <code>text</code>, а у виджета вкладок содержимого нет вовсе:
+    его задача — <strong>показывать другие виджеты</strong>. Именно поэтому он
+    появляется в учебнике только сейчас, когда вы уже умеете собирать группы
+    виджетов внутри <code>gui.Frame</code>.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Первые две вкладки</h2>
+  <p>
+    Собирается виджет вкладок в три хода: создаём рамку с наполнением, создаём
+    сам <code>gui.TabWidget</code>, отдаём ему рамку методом
+    <code>add_tab()</code>. И так для каждой вкладки.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 420;
+    win.height = 220;
+    win.title = "Настройки";
+
+    // Содержимое первой вкладки
+    gui.Frame page_sound;
+    page_sound.x = 8;
+    page_sound.y = 8;
+    page_sound.width = 370;
+    page_sound.height = 110;
+    page_sound.title = "Звук";
+
+    gui.CheckBox music;
+    music.x = 16;
+    music.y = 28;
+    music.width = 200;
+    music.text = "Играть музыку";
+    music.is_checked = true;
+    page_sound.add_child(music);
+
+    // Содержимое второй вкладки
+    gui.Frame page_player;
+    page_player.x = 8;
+    page_player.y = 8;
+    page_player.width = 370;
+    page_player.height = 110;
+    page_player.title = "Игрок";
+
+    gui.LineEdit nickname;
+    nickname.x = 16;
+    nickname.y = 28;
+    nickname.width = 200;
+    nickname.height = 28;
+    nickname.text = "Мира";
+    page_player.add_child(nickname);
+
+    // Сам виджет вкладок
+    gui.TabWidget tabs;
+    tabs.x = 10;
+    tabs.y = 10;
+    tabs.width = 400;
+    tabs.height = 170;
+    tabs.add_tab("Звук", page_sound);
+    tabs.add_tab("Игрок", page_player);
+
+    win.add_child(tabs);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <div class="interactive-demo">
+    <div class="gui-demo-window">
+      <div class="demo-content" style="min-height: 190px; position: relative;">
+        <div class="tabs-demo" id="tabsDemoBasic" style="position: absolute; left: 10px; top: 10px; width: 400px; height: 170px;">
+          <div class="tabs-demo-bar">
+            <button class="tabs-demo-tab selected" type="button" data-tab="0">Звук</button>
+            <button class="tabs-demo-tab" type="button" data-tab="1">Игрок</button>
+          </div>
+          <div class="tabs-demo-page" data-page="0">
+            <strong>Звук</strong><br>
+            ☑ Играть музыку
+          </div>
+          <div class="tabs-demo-page" data-page="1" hidden>
+            <strong>Игрок</strong><br>
+            Ник: <code>Мира</code>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="coord-note">
+      🗂 Попробуйте пощёлкать по заголовкам — в настоящей программе вкладки
+      переключаются точно так же.
+    </div>
+  </div>
+
+  <p>
+    Обратите внимание на две вещи. Во-первых, <code>win.add_child(tabs)</code>
+    вызывается <strong>только для виджета вкладок</strong>. Рамки
+    <code>page_sound</code> и <code>page_player</code> в окно не добавляются:
+    их уже забрал себе <code>add_tab()</code>. Во-вторых, порядок вкладок — это
+    порядок вызовов <code>add_tab()</code>: первый вызов даёт вкладку номер
+    <code>0</code>, второй — номер <code>1</code>.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Координаты внутри вкладки</h2>
+  <p>
+    Виджет вкладок — такой же родитель, как рамка. Значит, координаты его
+    содержимого отсчитываются <strong>от левого верхнего угла страницы вкладки</strong>,
+    а не от угла окна. Страница начинается сразу под полоской заголовков.
+  </p>
+  <p>
+    На практике это означает: если ваша рамка «уехала» за границу вкладки —
+    вычитайте координаты не окна, а самой вкладки. Небольшой отступ
+    (<code>x = 8</code>, <code>y = 8</code>) обычно выглядит опрятнее, чем
+    прижатый к краю ноль.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+// Рамка стоит в 8 пикселях от края СТРАНИЦЫ ВКЛАДКИ,
+// а не в 8 пикселях от края окна
+gui.Frame page;
+page.x = 8;
+page.y = 8;
+page.width = 370;
+page.height = 110;
+</script></idyl-code-block>
+
+  <p>
+    Класть во вкладку можно не только рамку: <code>add_tab()</code> принимает
+    любой виджет. Но рамка удобнее всех — в неё помещается сколько угодно
+    других виджетов, и у неё есть заголовок.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Какая вкладка сейчас открыта</h2>
+  <p>У виджета вкладок три свойства, и все они про «что происходит прямо сейчас»:</p>
+
+  <table>
+    <thead>
+      <tr><th>Свойство</th><th>Тип</th><th>Что означает</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>selected_index</code></td><td><code>int</code>, чтение и запись</td><td>номер открытой вкладки, считая с нуля</td></tr>
+      <tr><td><code>selected_title</code></td><td><code>string</code>, только чтение</td><td>заголовок открытой вкладки</td></tr>
+      <tr><td><code>tab_count</code></td><td><code>int</code>, только чтение</td><td>сколько вкладок создано</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    <code>selected_index</code> можно не только читать, но и <strong>записывать</strong>:
+    так программа открывает нужную вкладку сама, не дожидаясь пользователя.
+    Заголовок при этом пересчитывается автоматически.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use gui;
+
+main() {
+    gui.Frame page_sound;
+    gui.Frame page_player;
+
+    gui.TabWidget tabs;
+    tabs.add_tab("Звук", page_sound);
+    tabs.add_tab("Игрок", page_player);
+
+    console.writeln("Всего вкладок: ", tabs.tab_count);
+    console.writeln("Открыта: ", tabs.selected_title);
+
+    tabs.selected_index = 1;      // открываем вторую вкладку из программы
+    console.writeln("Теперь открыта: ", tabs.selected_title);
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Всего вкладок: 2
+Открыта: Звук
+Теперь открыта: Игрок</idyl-output-block>
+
+  <p>
+    Пока не вызван ни один <code>add_tab()</code>, вкладок нет:
+    <code>tab_count</code> равен нулю, а <code>selected_title</code> — пустая
+    строка. Это не ошибка, просто честный ответ «показывать нечего».
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Событие <code>on_change</code></h2>
+  <p>
+    Виджет вкладок умеет сообщать, что пользователь переключился. Событие
+    называется <code>on_change</code> и срабатывает каждый раз, когда открывается
+    другая вкладка:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 420;
+    win.height = 240;
+    win.title = "Где я нахожусь";
+
+    gui.Frame page_map;
+    page_map.x = 8;
+    page_map.y = 8;
+    page_map.width = 370;
+    page_map.height = 100;
+    page_map.title = "Карта";
+
+    gui.Frame page_bag;
+    page_bag.x = 8;
+    page_bag.y = 8;
+    page_bag.width = 370;
+    page_bag.height = 100;
+    page_bag.title = "Рюкзак";
+
+    gui.TabWidget tabs;
+    tabs.x = 10;
+    tabs.y = 10;
+    tabs.width = 400;
+    tabs.height = 160;
+    tabs.add_tab("Карта", page_map);
+    tabs.add_tab("Рюкзак", page_bag);
+
+    gui.Label status;
+    status.x = 12;
+    status.y = 185;
+    status.width = 396;
+    status.text = "Открыто: Карта";
+
+    tabs.on_change = void function() {
+        status.text = "Открыто: " + tabs.selected_title;
+    };
+
+    win.add_child(tabs);
+    win.add_child(status);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <div class="interactive-demo">
+    <div class="gui-demo-window">
+      <div class="demo-content" style="min-height: 215px; position: relative;">
+        <div class="tabs-demo" id="tabsDemoEvent" style="position: absolute; left: 10px; top: 10px; width: 400px; height: 160px;">
+          <div class="tabs-demo-bar">
+            <button class="tabs-demo-tab selected" type="button" data-tab="0">Карта</button>
+            <button class="tabs-demo-tab" type="button" data-tab="1">Рюкзак</button>
+          </div>
+          <div class="tabs-demo-page" data-page="0">
+            <strong>Карта</strong><br>
+            Здесь была бы карта уровня.
+          </div>
+          <div class="tabs-demo-page" data-page="1" hidden>
+            <strong>Рюкзак</strong><br>
+            Верёвка, факел, три монеты.
+          </div>
+        </div>
+        <div class="idyl-label" id="tabsDemoStatus" style="position: absolute; left: 12px; top: 185px; width: 396px;">
+          Открыто: Карта
+        </div>
+      </div>
+    </div>
+    <div class="coord-note">
+      🔔 Надпись внизу обновляет <code>on_change</code>. Переключите вкладку — и
+      увидите, как это работает.
+    </div>
+  </div>
+
+  <p>
+    Внутри <code>on_change</code> обычно спрашивают именно
+    <code>selected_title</code> или <code>selected_index</code>: сам виджет уже
+    знает, куда переключился, а событие лишь сообщает, что пора это узнать.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Убрать всё разом: <code>clear_tabs()</code></h2>
+  <p>
+    Метод <code>clear_tabs()</code> удаляет все вкладки вместе с их содержимым.
+    После него <code>tab_count</code> снова равен нулю, а
+    <code>selected_index</code> возвращается к нулю.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use gui;
+
+main() {
+    gui.Frame page;
+
+    gui.TabWidget tabs;
+    tabs.add_tab("Единственная", page);
+    console.writeln("До очистки: ", tabs.tab_count);
+
+    tabs.clear_tabs();
+    console.writeln("После очистки: ", tabs.tab_count);
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>До очистки: 1
+После очистки: 0</idyl-output-block>
+
+  <p>
+    Пригождается это редко — например, когда программа перестраивает набор
+    вкладок под выбранный режим. Убирать вкладки по одной Idyllium не умеет:
+    либо все, либо никакие.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Типичная ошибка: содержимое добавили дважды</h2>
+  <p>
+    Самая частая поломка выглядит так: рамку отдали виджету вкладок <em>и</em>
+    добавили в окно.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+gui.TabWidget tabs;
+tabs.add_tab("Звук", page_sound);
+
+win.add_child(tabs);
+win.add_child(page_sound);   // ← лишняя строка
+</script></idyl-code-block>
+
+  <p>
+    Компилятор промолчит: с точки зрения языка всё законно. А вот на экране
+    рамка появится ещё раз — поверх вкладок, в координатах окна. Запомните
+    правило: <strong>что отдано во вкладку, то в окно не добавляют</strong>.
+  </p>
+  <p>
+    Вторая ловушка — забыть <code>win.add_child(tabs)</code>. Тогда вкладки
+    собраны честно и правильно, но окно о них не знает, и на экране пусто. Это
+    та же ловушка, что и с кнопкой в самом первом уроке раздела.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Шпаргалка по <code>gui.TabWidget</code></h2>
+  <table>
+    <thead>
+      <tr><th>Что</th><th>Вид</th><th>Зачем</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>add_tab(заголовок, виджет)</code></td><td>метод</td><td>добавить вкладку с содержимым</td></tr>
+      <tr><td><code>clear_tabs()</code></td><td>метод</td><td>удалить все вкладки сразу</td></tr>
+      <tr><td><code>selected_index</code></td><td>свойство <code>int</code>, чтение и запись</td><td>номер открытой вкладки, с нуля</td></tr>
+      <tr><td><code>selected_title</code></td><td>свойство <code>string</code>, только чтение</td><td>заголовок открытой вкладки</td></tr>
+      <tr><td><code>tab_count</code></td><td>свойство <code>int</code>, только чтение</td><td>сколько вкладок создано</td></tr>
+      <tr><td><code>on_change</code></td><td>событие</td><td>сработает при переключении вкладки</td></tr>
+      <tr><td><code>x</code>, <code>y</code>, <code>width</code>, <code>height</code></td><td>свойства <code>int</code></td><td>место и размер, как у любого виджета</td></tr>
+      <tr><td><code>is_visible</code></td><td>свойство <code>bool</code></td><td>спрятать или показать весь виджет целиком</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    Виджет вкладок красится темой окна и понимает <code>style</code> так же, как
+    остальные виджеты, — отдельных правил для него запоминать не нужно.
+  </p>
+</div>
+
+<script data-lesson-script type="text/plain">
+document.addEventListener('DOMContentLoaded', () => {
+    const wire = (rootId, statusId) => {
+      const root = document.getElementById(rootId);
+      if (!root) return;
+      const status = statusId ? document.getElementById(statusId) : null;
+      const tabs = [...root.querySelectorAll('.tabs-demo-tab')];
+      const pages = [...root.querySelectorAll('.tabs-demo-page')];
+
+      tabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+          const index = tab.dataset.tab;
+          tabs.forEach((item) => item.classList.toggle('selected', item === tab));
+          pages.forEach((page) => { page.hidden = page.dataset.page !== index; });
+          if (status) status.textContent = 'Открыто: ' + tab.textContent.trim();
+        });
+      });
+    };
+
+    wire('tabsDemoBasic', null);
+    wire('tabsDemoEvent', 'tabsDemoStatus');
+  });
+</script>

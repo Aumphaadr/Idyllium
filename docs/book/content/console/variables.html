@@ -42,6 +42,27 @@ main() {
 </div>
 
 <div class="docs-section">
+  <h2>Занятые имена</h2>
+  <p>Имя переменной вы придумываете сами — но не любое слово свободно. Часть слов язык держит за собой: из них он строит саму программу (<code>int</code>, <code>if</code>, <code>return</code>) или называет свои библиотеки и встроенные функции (<code>console</code>, <code>math</code>, <code>to_string</code>).</p>
+  <p>Попробуйте назвать переменную именем библиотеки:</p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    int console = 5;
+    console.write(console, '\n');
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:4:5: compile error: variable 'console' conflicts with a standard library module
+main.idyl:5:19: compile error: module 'console' cannot be used as a value</idyl-error-block>
+
+  <p>Программа отказалась — и правильно сделала. Иначе слово <code>console</code> в четвёртой строке означало бы вашу переменную, а в пятой — библиотеку вывода, и выбирать между ними пришлось бы не вам, а компилятору. Такие догадки за спиной программиста — источник ошибок, которые потом ищешь часами.</p>
+  <p>Правило простое: берите <strong>своё</strong> имя, осмысленное и незанятое — <code>lives</code>, <code>score</code>, <code>player_name</code>. А если язык вдруг заупрямился, значит это слово он уже носит сам: придумайте другое.</p>
+</div>
+
+<div class="docs-section">
   <h2>Типы данных в Idyllium</h2>
   <p>Idyllium поддерживает пять базовых типов:</p>
 

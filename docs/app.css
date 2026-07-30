@@ -2316,12 +2316,30 @@ summary.json-node-line:hover {
 
 .asset-font-toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
+  gap: 8px 18px;
   min-height: 32px;
   margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--border);
+}
+
+.asset-font-caps-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font: 600 12px var(--ui-font);
+  cursor: pointer;
+  user-select: none;
+}
+
+.asset-font-caps-input {
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 
 .asset-font-size-label {
@@ -2369,6 +2387,11 @@ summary.json-node-line:hover {
   font-size: var(--asset-font-size);
   line-height: 1.35;
   overflow-wrap: anywhere;
+  text-transform: lowercase;
+}
+
+.asset-font-preview.caps-on .asset-font-sample-text {
+  text-transform: uppercase;
 }
 
 .asset-font-note {

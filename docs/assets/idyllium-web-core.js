@@ -3144,6 +3144,8 @@ class SemanticAnalyzer {
             this.diagnostics.error(declaration.range, `function '${declaration.name}' is already declared`);
             return;
         }
+        if (!this.checkReservedName(declaration.name, 'function', declaration.nameRange))
+            return;
         this.functions.set(declaration.name, declaration);
         const parameters = declaration.parameters.map((parameter) => this.resolveTypeName(parameter.paramType));
         const returnType = this.resolveTypeName(declaration.returnType);
@@ -3204,6 +3206,10 @@ class SemanticAnalyzer {
         }
         if (this.stdlib.hasModule(declaration.name)) {
             this.diagnostics.error(declaration.range, `class '${declaration.name}' conflicts with a standard library module`);
+            return;
+        }
+        if (this.stdlib.getGlobalFunction(declaration.name)) {
+            this.diagnostics.error(declaration.range, `class '${declaration.name}' conflicts with a built-in function`);
             return;
         }
         this.classes.set(declaration.name, {
@@ -4150,6 +4156,11 @@ class SemanticAnalyzer {
     }
     callType(expression) {
         if (expression.callee.kind === 'IdentifierExpression' && this.isArrayGlobalFunction(expression.callee.name)) {
+            if (this.shadowsBuiltInFunction(expression.callee.name, expression.callee.range)) {
+                for (const arg of expression.args)
+                    this.expressionType(arg.value);
+                return types_1.ERROR_TYPE;
+            }
             this.markSemanticToken('function', expression.callee.range, ['defaultLibrary']);
             return this.arrayGlobalFunctionType(expression.callee.name, expression);
         }
@@ -4299,6 +4310,8 @@ class SemanticAnalyzer {
             }
             const global = this.stdlib.getGlobalFunction(callee.name);
             if (global) {
+                if (this.shadowsBuiltInFunction(callee.name, callee.range))
+                    return null;
                 this.markSemanticToken('function', callee.range, ['defaultLibrary']);
                 return global;
             }
@@ -4984,7 +4997,42 @@ class SemanticAnalyzer {
             this.diagnostics.error(range, `'${name}' is already declared in this scope`);
             return;
         }
+        if (!this.checkReservedName(name, kind, range))
+            return;
         scope.set(name, { type, kind, range, readonly });
+    }
+    // Имя библиотеки занимать под своё нельзя никому: запись `console.write`
+    // разбирается как обращение к модулю, поэтому слово `console` означало бы
+    // сразу две вещи — и выбирал бы между ними не ученик, а компилятор.
+    //
+    // А вот имена встроенных функций закрыты только для своих функций и классов:
+    // объявив `function to_string(...)`, ученик молча подменил бы встроенную.
+    // Переменной же назваться `sum` или `max` никто не мешает — обращение к
+    // переменной и вызов функции различаются синтаксисом, и если ученик всё-таки
+    // попробует вызвать заслонённое имя, компилятор скажет об этом прямо.
+    /**
+     * Переменной назваться `sum` или `max` можно — имена встроенных функций для
+     * переменных не закрыты. Но раз имя занято, вызывать по нему встроенную уже
+     * нельзя: иначе `sum(nums)` тихо звал бы встроенную поверх переменной,
+     * которую ученик только что завёл. Компилятор говорит об этом прямо.
+     */
+    shadowsBuiltInFunction(name, range) {
+        const symbol = this.lookup(name);
+        if (!symbol || symbol.type.kind === 'function')
+            return false;
+        this.diagnostics.error(range, `${symbol.kind} '${name}' hides the built-in function '${name}'`);
+        return true;
+    }
+    checkReservedName(name, kind, range) {
+        if (this.stdlib.hasModule(name)) {
+            this.diagnostics.error(range, `${kind} '${name}' conflicts with a standard library module`);
+            return false;
+        }
+        if (kind === 'function' && this.stdlib.getGlobalFunction(name)) {
+            this.diagnostics.error(range, `${kind} '${name}' conflicts with a built-in function`);
+            return false;
+        }
+        return true;
     }
     lookup(name) {
         for (let i = this.scopes.length - 1; i >= 0; i--) {
@@ -13579,8 +13627,24 @@ function initializeGuiObject(obj, typeName, state) {
         obj.__children = [];
         obj.__tabTitles = [];
         obj.selected_index = 0;
-        obj.selected_title = '';
         obj.tab_count = 0;
+        // Заголовок всегда вычисляется из selected_index. Хранить его отдельным
+        // полем нельзя: тогда присваивание selected_index из программы оставляло
+        // бы selected_title от прежней вкладки.
+        Object.defineProperty(obj, 'selected_title', {
+            enumerable: true,
+            configurable: true,
+            get() {
+                const titles = obj.__tabTitles;
+                const index = obj.selected_index;
+                if (typeof index !== 'number' || !Number.isFinite(index))
+                    return '';
+                return titles[Math.trunc(index)] ?? '';
+            },
+            set(_value) {
+                // Только чтение: заголовок задают add_tab() и selected_index.
+            },
+        });
         obj.add_tab = contextFunction((title, content, file, line) => {
             const tabTitle = stringArgument(title, 'TabWidget.add_tab() title', file, line);
             if (!isRuntimeObject(content)) {
@@ -13590,15 +13654,12 @@ function initializeGuiObject(obj, typeName, state) {
             obj.__children.push(content);
             obj.__tabTitles.push(tabTitle);
             obj.tab_count = obj.__tabTitles.length;
-            const index = integerNumber(obj.selected_index, 'TabWidget.selected_index', file, line);
-            obj.selected_title = obj.__tabTitles[index] ?? obj.__tabTitles[0] ?? '';
         });
         obj.clear_tabs = contextFunction(() => {
             obj.__children = [];
             obj.__tabTitles = [];
             obj.tab_count = 0;
             obj.selected_index = 0;
-            obj.selected_title = '';
         });
     }
     if (typeName === 'Frame') {
@@ -14920,13 +14981,10 @@ function applyGuiEventPayload(target, eventName, payload, state) {
         case 'gui.ComboBox':
             target.selected_index = eventNumber(payload.selected_index);
             return;
-        case 'gui.TabWidget': {
-            const index = eventNumber(payload.selected_index);
-            target.selected_index = index;
-            const titles = Array.isArray(target.__tabTitles) ? target.__tabTitles : [];
-            target.selected_title = titles[index] ?? '';
+        case 'gui.TabWidget':
+            // selected_title — вычисляемое свойство, отдельно синхронизировать не надо.
+            target.selected_index = eventNumber(payload.selected_index);
             return;
-        }
         default:
             return;
     }
