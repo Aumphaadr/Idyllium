@@ -103,7 +103,10 @@ export class JavaScriptGenerator {
       this.emitBlock(program.main.body, lines, 2);
       this.returnTypes.pop();
       lines.push('  }');
-      lines.push('  await main();');
+      // void-овая main ничего не возвращает — и генерируется как прежде.
+      lines.push(this.isVoidType(program.main.returnType)
+        ? '  await main();'
+        : '  $rt.core.setExitValue(await main());');
     }
 
     lines.push('};');
@@ -304,15 +307,39 @@ export class JavaScriptGenerator {
     lines.push(`${pad}}`);
   }
 
+  /**
+   * Обёртка учёта глубины вокруг тела пользовательской функции.
+   * Строка входа стоит ДО try: если предел превышен, кадр не состоялся и его
+   * finally выполняться не должен — рантайм в этом случае правит счётчик сам.
+   */
+  private isVoidType(type: TypeName): boolean {
+    return type.kind === 'PrimitiveTypeName' && type.name === 'void';
+  }
+
+  private emitCallGuardOpen(lines: string[], indent: number, name: string, range: SourceRange): void {
+    const pad = '  '.repeat(indent);
+    const file = JSON.stringify(range.start.file);
+    lines.push(`${pad}const __idylYield = $rt.core.enterCall(${JSON.stringify(name)}, ${file}, ${range.start.line});`);
+    lines.push(`${pad}if (__idylYield) await __idylYield;`);
+    lines.push(`${pad}try {`);
+  }
+
+  private emitCallGuardClose(lines: string[], indent: number): void {
+    const pad = '  '.repeat(indent);
+    lines.push(`${pad}} finally { $rt.core.leaveCall(); }`);
+  }
+
   private emitFunctionDeclaration(declaration: FunctionDeclaration, lines: string[], indent: number): void {
     const pad = '  '.repeat(indent);
     const params = declaration.parameters.map((parameter) => parameter.name).join(', ');
     lines.push(`${pad}async function ${declaration.name}(${params}) {`);
+    this.emitCallGuardOpen(lines, indent + 1, declaration.name, declaration.nameRange ?? declaration.range);
     this.returnTypes.push(declaration.returnType);
-    this.emitParameterDefaults(declaration.parameters, lines, indent + 1);
-    this.emitParameterCasts(declaration.parameters, lines, indent + 1);
-    this.emitBlock(declaration.body, lines, indent + 1);
+    this.emitParameterDefaults(declaration.parameters, lines, indent + 2);
+    this.emitParameterCasts(declaration.parameters, lines, indent + 2);
+    this.emitBlock(declaration.body, lines, indent + 2);
     this.returnTypes.pop();
+    this.emitCallGuardClose(lines, indent + 1);
     lines.push(`${pad}}`);
   }
 
@@ -390,11 +417,13 @@ export class JavaScriptGenerator {
     const pad = '  '.repeat(indent);
     const params = declaration.parameters.map((parameter) => parameter.name).join(', ');
     lines.push(`${pad}self.${declaration.name} = async function(${params}) {`);
+    this.emitCallGuardOpen(lines, indent + 1, `${className}.${declaration.name}`, declaration.nameRange ?? declaration.range);
     this.returnTypes.push(declaration.returnType);
-    this.emitParameterDefaults(declaration.parameters, lines, indent + 1);
-    this.emitParameterCasts(declaration.parameters, lines, indent + 1);
-    this.emitBlock(declaration.body, lines, indent + 1);
+    this.emitParameterDefaults(declaration.parameters, lines, indent + 2);
+    this.emitParameterCasts(declaration.parameters, lines, indent + 2);
+    this.emitBlock(declaration.body, lines, indent + 2);
     this.returnTypes.pop();
+    this.emitCallGuardClose(lines, indent + 1);
     lines.push(`${pad}};`);
   }
 
@@ -402,11 +431,13 @@ export class JavaScriptGenerator {
     const pad = '  '.repeat(indent);
     const params = declaration.parameters.map((parameter) => parameter.name).join(', ');
     lines.push(`${pad}${this.classObjectName(className)}.${declaration.name} = async function(${params}) {`);
+    this.emitCallGuardOpen(lines, indent + 1, `${className}.${declaration.name}`, declaration.nameRange ?? declaration.range);
     this.returnTypes.push(declaration.returnType);
-    this.emitParameterDefaults(declaration.parameters, lines, indent + 1);
-    this.emitParameterCasts(declaration.parameters, lines, indent + 1);
-    this.emitBlock(declaration.body, lines, indent + 1);
+    this.emitParameterDefaults(declaration.parameters, lines, indent + 2);
+    this.emitParameterCasts(declaration.parameters, lines, indent + 2);
+    this.emitBlock(declaration.body, lines, indent + 2);
     this.returnTypes.pop();
+    this.emitCallGuardClose(lines, indent + 1);
     lines.push(`${pad}};`);
   }
 
@@ -414,9 +445,11 @@ export class JavaScriptGenerator {
     const pad = '  '.repeat(indent);
     const params = declaration.parameters.map((parameter) => parameter.name).join(', ');
     lines.push(`${pad}await (async function(${params}) {`);
-    this.emitParameterDefaults(declaration.parameters, lines, indent + 1);
-    this.emitParameterCasts(declaration.parameters, lines, indent + 1);
-    this.emitBlock(declaration.body, lines, indent + 1);
+    this.emitCallGuardOpen(lines, indent + 1, `${className}.constructor`, declaration.range);
+    this.emitParameterDefaults(declaration.parameters, lines, indent + 2);
+    this.emitParameterCasts(declaration.parameters, lines, indent + 2);
+    this.emitBlock(declaration.body, lines, indent + 2);
+    this.emitCallGuardClose(lines, indent + 1);
     lines.push(`${pad}}).apply(self, __args);`);
   }
 
@@ -589,11 +622,13 @@ export class JavaScriptGenerator {
   private functionExpression(expression: Extract<Expression, { kind: 'FunctionExpression' }>): string {
     const params = expression.parameters.map((parameter) => parameter.name).join(', ');
     const lines = [`(async function(${params}) {`];
+    this.emitCallGuardOpen(lines, 1, 'function', expression.range);
     this.returnTypes.push(expression.returnType);
-    this.emitParameterDefaults(expression.parameters, lines, 1);
-    this.emitParameterCasts(expression.parameters, lines, 1);
-    this.emitBlock(expression.body, lines, 1);
+    this.emitParameterDefaults(expression.parameters, lines, 2);
+    this.emitParameterCasts(expression.parameters, lines, 2);
+    this.emitBlock(expression.body, lines, 2);
     this.returnTypes.pop();
+    this.emitCallGuardClose(lines, 1);
     lines.push('})');
     return lines.join('\n');
   }

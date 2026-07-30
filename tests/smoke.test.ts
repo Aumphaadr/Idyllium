@@ -1,4 +1,4 @@
-import { compileIdyllium, runIdyllium, IdylliumLanguageService, IdylliumProject, compileProject, createRuntime, createMemoryRuntimeFileSystem, createNodeImageService, createDefaultStandardLibrary, formatIdyllium, runIdylliumInBrowser, IDYLLIUM_SEMANTIC_TOKEN_TYPES, IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS, parseIdylliumStyle } from '../src';
+import { IDYLLIUM_VERSION, compileIdyllium, runIdyllium, IdylliumLanguageService, IdylliumProject, compileProject, createRuntime, createMemoryRuntimeFileSystem, createNodeImageService, createDefaultStandardLibrary, formatIdyllium, runIdylliumInBrowser, IDYLLIUM_SEMANTIC_TOKEN_TYPES, IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS, parseIdylliumStyle } from '../src';
 import { scaleRaster } from '../src/runtime/image-service';
 
 const fs: any = require('fs');
@@ -876,14 +876,59 @@ test('infinite recursion reports a readable idyllium error', async () => {
   ].join('\n'), {}, { file: 'main.idyl' });
 
   assert(!result.success, 'expected infinite recursion to fail');
+  // Сообщение — обычная runtime error с номером строки, а не перевод RangeError.
   assert(
-    result.runtimeError?.includes('main.idyl: runtime error: maximum call depth exceeded') === true,
+    result.runtimeError?.includes('main.idyl:3: runtime error: recursion depth limit of 20000 exceeded') === true,
     `expected idyllium-formatted recursion error, got ${result.runtimeError}`,
   );
   assert(
     result.runtimeError?.includes("'boom'") === true,
     `expected the recursive function name in the error, got ${result.runtimeError}`,
   );
+});
+
+test('recursion goes far past the physical JS stack', async () => {
+  // Больше физического предела (~5200 кадров): счётчик глубины периодически
+  // уступает управление, и цепочка вызовов разворачивается в кучу.
+  const result = await runIdyllium([
+    'use console;',
+    '',
+    'int function dive(int n) {',
+    '    if (n <= 0) { return 0; }',
+    '    return 1 + dive(n - 1);',
+    '}',
+    '',
+    'main() {',
+    '    console.write(dive(19000));',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+
+  assert(result.success, `expected deep recursion to succeed, got ${result.runtimeError}`);
+  assert(result.output === '19000', `unexpected output: ${JSON.stringify(result.output)}`);
+});
+
+test('recursion depth limit is catchable and adjustable', async () => {
+  const caught = await runIdyllium([
+    'use console;',
+    'use system;',
+    '',
+    'int function boom(int n) {',
+    '    return boom(n + 1);',
+    '}',
+    '',
+    'main() {',
+    '    system.set_recursion_depth(100);',
+    '    try {',
+    '        console.writeln(boom(0));',
+    '    } catch (error) {',
+    '        console.writeln("caught");',
+    '    }',
+    '    console.writeln(system.recursion_depth());',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+
+  assert(caught.success, `expected the program to survive, got ${caught.runtimeError}`);
+  assert(caught.output === 'caught\n100\n', `unexpected output: ${JSON.stringify(caught.output)}`);
 });
 
 test('printing class objects requires a public to_string method', async () => {
@@ -7089,6 +7134,115 @@ test('TabWidget selected_title follows selected_index', async () => {
     result.output === '2 Первая\nВторая\n0 []\n',
     `unexpected output: ${JSON.stringify(result.output)}`,
   );
+});
+
+
+test('IDYLLIUM_VERSION matches package.json', () => {
+  // Рантайм собирается и в браузер, где package.json недоступен, поэтому
+  // версия продублирована константой. Тест сторожит расхождение.
+  const packagePath = path.resolve(process.cwd(), 'package.json');
+  const declared = String(JSON.parse(fs.readFileSync(packagePath, 'utf8')).version);
+  assert(
+    IDYLLIUM_VERSION === declared,
+    `IDYLLIUM_VERSION is ${IDYLLIUM_VERSION}, package.json says ${declared}`,
+  );
+});
+
+test('system module reports platform, version and recursion limit', async () => {
+  const result = await runIdyllium([
+    'use console;',
+    'use system;',
+    '',
+    'main() {',
+    '    console.writeln(system.platform());',
+    '    console.writeln(system.version());',
+    '    console.writeln(system.recursion_depth());',
+    '}',
+  ].join('\n'), { platform: 'cli' }, { file: 'main.idyl' });
+
+  assert(result.success, `expected success, got ${result.runtimeError}`);
+  assert(
+    result.output === `cli\n${IDYLLIUM_VERSION}\n20000\n`,
+    `unexpected output: ${JSON.stringify(result.output)}`,
+  );
+});
+
+test('system.set_recursion_depth rejects values outside the allowed range', async () => {
+  const result = await runIdyllium([
+    'use system;',
+    '',
+    'main() {',
+    '    system.set_recursion_depth(5);',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+
+  assert(!result.success, 'expected a runtime error');
+  assert(
+    result.runtimeError?.includes('expects a value between 10 and 200000') === true,
+    `unexpected error: ${result.runtimeError}`,
+  );
+});
+
+test('system.exit ends the program and is not catchable', async () => {
+  const result = await runIdyllium([
+    'use console;',
+    'use system;',
+    '',
+    'main() {',
+    '    try {',
+    '        console.writeln("before");',
+    '        system.exit(3);',
+    '        console.writeln("unreachable");',
+    '    } catch (error) {',
+    '        console.writeln("must not be caught");',
+    '    }',
+    '    console.writeln("also unreachable");',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+
+  assert(result.success, `system.exit is not a crash, got ${result.runtimeError}`);
+  assert(result.output === 'before\n', `unexpected output: ${JSON.stringify(result.output)}`);
+  assert(result.exitCode === 3, `expected exit code 3, got ${result.exitCode}`);
+  assert(result.exitText === '3', `expected exit text "3", got ${result.exitText}`);
+});
+
+test('main return value becomes the exit value of any type', async () => {
+  const voidMain = await runIdyllium('main() {}', {}, { file: 'main.idyl' });
+  assert(voidMain.exitText === null, `void main must not report an exit value, got ${voidMain.exitText}`);
+  assert(voidMain.exitCode === null, 'void main must not report an exit code');
+
+  const intMain = await runIdyllium('int function main() { return 7; }', {}, { file: 'main.idyl' });
+  assert(intMain.exitText === '7', `expected "7", got ${intMain.exitText}`);
+  assert(intMain.exitCode === 7, `expected 7, got ${intMain.exitCode}`);
+
+  // Строку берём в кавычки, иначе «завершилась с кодом готово» спотыкается.
+  const stringMain = await runIdyllium('string function main() { return "готово"; }', {}, { file: 'main.idyl' });
+  assert(stringMain.exitText === '"готово"', `expected quoted string, got ${stringMain.exitText}`);
+  assert(stringMain.exitCode === null, 'a string result has no process exit code');
+});
+
+test('gui window close removes it from the program', async () => {
+  const { runtime } = await runWithInspectableRuntime([
+    'use gui;',
+    '',
+    'main() {',
+    '    gui.Window win;',
+    '    gui.Button quit;',
+    '    quit.text = "Выход";',
+    '    quit.on_click = void function() { win.close(); };',
+    '    win.add_child(quit);',
+    '    win.show();',
+    '}',
+  ].join('\n'));
+
+  assert(runtime.getWindows().length === 1, 'expected one window before the click');
+  assert(runtime.hasGui(), 'expected the program to hold a GUI');
+
+  const button = runtime.getWindows()[0].children[0];
+  await runtime.dispatchGuiEvent(button.id, 'click', {});
+
+  assert(runtime.getWindows().length === 0, 'expected the window to be gone after close()');
+  assert(!runtime.hasGui(), 'expected the program to finish once the last window closed');
 });
 
 void runTests();

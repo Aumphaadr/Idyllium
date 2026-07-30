@@ -812,6 +812,8 @@ body.light-theme .docs-topbar {
 .color-magenta { color: #f0a6ff; }
 .color-cyan { color: #89ddff; }
 .color-reset { color: var(--text-main); }
+/* «Светлый чёрный» \e[90m — им же среда печатает служебные строки. */
+.color-bright-black { color: var(--text-muted); }
 
 .interactive-demo,
 .demo-group,

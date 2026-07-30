@@ -3637,20 +3637,28 @@
       currentRuntime = prepared.runtime;
       currentRuntimeFileSnapshot = prepared.writtenFilesSnapshot;
       startOutputSync();
+      // system.exit() — не авария: программа сама попросила закончить.
+      let exitedEarly = false;
       await runRuntimeActionWithSnapshotPump(async () => {
-        await prepared.run();
+        try {
+          await prepared.run();
+        } catch (error) {
+          if (error?.kind !== 'exit') throw error;
+          exitedEarly = true;
+        }
       });
       if (runId !== runSequence) return;
       syncRuntimeFilesFromSnapshot();
       syncRuntimeOutput();
       sendRuntimeSnapshot();
-      if (runtimeHasGui(currentRuntime)) {
+      if (runtimeHasGui(currentRuntime) && !exitedEarly) {
         startGuiLoop();
         setRunControls(false, true);
       } else {
         stopOutputSync();
         postEmptySnapshot();
         if (!output.textContent) output.textContent = 'Программа Idyllium успешно завершилась.';
+        await appendExitLine(currentRuntime);
         runAbortController = null;
         setRunControls(false);
       }
@@ -4255,11 +4263,15 @@
   function finishCompletedRuntime() {
     stopOutputSync();
     stopGuiLoop();
+    const finishedRuntime = currentRuntime;
     currentRuntime = null;
     currentRuntimeFileSnapshot = null;
     runAbortController = null;
     setRunControls(false);
     if (!output.textContent) output.textContent = 'Программа Idyllium успешно завершилась.';
+    // Для оконной программы «завершилась» наступает только сейчас, когда
+    // закрылось последнее окно, — код завершения печатается здесь.
+    void appendExitLine(finishedRuntime);
     setStatus('Готово');
     postEmptySnapshot();
   }
@@ -4322,6 +4334,15 @@
     span.className = className;
     span.textContent = text;
     output.appendChild(span);
+  }
+
+  // Служебная строка о коде завершения: печатает её среда, а не программа,
+  // поэтому в вывод программы она не попадает.
+  async function appendExitLine(runtime) {
+    if (!runtime || typeof runtime.getExitText !== 'function') return;
+    const text = await runtime.getExitText();
+    if (text === null) return;
+    appendOutput(`[Программа завершилась с кодом ${text}]`, 'output-muted');
   }
 
   function appendOutput(text, className = '', options = {}) {

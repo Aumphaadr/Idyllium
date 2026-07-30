@@ -740,9 +740,27 @@ int function main() {
 }
 ```
 
-`main` may return any normal Idyllium type, but its returned value is currently
-ignored by Web IDE/GUI preview. A program may contain only one `main`.
-`main` must not take parameters.
+`main` may return any normal Idyllium type. A program may contain only one
+`main`, and `main` must not take parameters.
+
+The returned value is the program's **exit value**. It is printed by the host
+after the program finishes — never by the program itself, so it does not appear
+in the console output, in redirected files, or in lesson output blocks:
+
+```text
+[Программа завершилась с кодом 0]
+```
+
+- A `void` `main` prints nothing.
+- The value is rendered by the same rules as `console.write()`, so a class with
+  a public `to_string()` prints through it. Strings are quoted:
+  `[Программа завершилась с кодом "готово"]`.
+- In the CLI an `int` result also becomes the process exit code, wrapped into
+  `[0, 255]`; when wrapping changes the number, the message names both:
+  `[Программа завершилась с кодом 1000 (процесс вернул 232)]`. Other types leave
+  the process code at 0.
+- For a GUI program the message appears when the last window closes, not when
+  `main` returns.
 
 ## 14. Inline Callback Functions
 
@@ -1058,6 +1076,37 @@ main() {
     geometry.Point p;
 }
 ```
+
+## 16a. Library `system`
+
+```idyllium
+system.set_recursion_depth(depth)   // void
+system.recursion_depth()            // int
+system.exit(code = 0)               // void, never returns
+system.platform()                   // "cli" | "web" | "vscode"
+system.version()                    // "1.2.7"
+```
+
+**Recursion depth.** Idyllium counts call depth itself instead of relying on the
+JavaScript stack, so the limit is the same in every host. The default is 20000
+nested calls; `set_recursion_depth()` accepts 10…200000 and raises a runtime
+error outside that range. Exceeding the limit is an ordinary runtime error with
+`file:line`, catchable by `try/catch`:
+
+```text
+main.idyl:3: runtime error: recursion depth limit of 20000 exceeded in function 'boom'
+```
+
+The upper bound is about memory, not stack: a suspended call frame costs roughly
+a kilobyte, so 200000 frames is around 190 MB.
+
+**`system.exit(code)`** stops the program immediately from anywhere, running
+`finally` blocks on the way out, and supplies the same exit value as a `return`
+from `main`. It is deliberately **not** catchable by `try/catch` — ending the
+program is the program's own decision, not an error to recover from.
+
+**`system.platform()`** matters because hosts differ: the Web IDE has a virtual
+file system, `url.open()` opens a tab there, and audio needs a user gesture.
 
 ## 17. Library `math`
 
@@ -1874,7 +1923,12 @@ three separate border properties.
 x, y, width, height, title, theme, text_color, background_color, font, font_size
 add_child(child)
 show()
+close()
 ```
+
+`close()` removes the window from the program. When the last window closes the
+program has no GUI left and the host finishes it — that is how an «Выход»
+button is written.
 
 `theme` is a string: `"default"` (plain light look), `"idyllium"` and
 `"dracula"` (dark), `"breeze"` and `"oxygen"` (light KDE-flavoured). The theme

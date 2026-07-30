@@ -51,11 +51,37 @@ export class IdylliumRuntimeError extends Error {
     readonly file: string,
     readonly line: number,
     readonly detail: string,
-    readonly kind: 'program' | 'cancelled' = 'program',
+    readonly kind: 'program' | 'cancelled' | 'exit' = 'program',
   ) {
     super(`${file}:${line}: runtime error: ${detail}`);
     this.name = 'IdylliumRuntimeError';
   }
+}
+
+/**
+ * Версия языка, видимая программе через system.version().
+ * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
+ * потому что рантайм собирается и в браузер, где package.json недоступен.
+ */
+export const IDYLLIUM_VERSION = '1.2.7';
+
+/** Где выполняется программа, если хост не сказал явно. */
+function defaultRuntimePlatform(): string {
+  const nodeProcess = typeof process === 'object' ? process as { versions?: { node?: string } } : null;
+  return nodeProcess?.versions?.node ? 'cli' : 'web';
+}
+
+/** Предел глубины вызовов по умолчанию; меняется system.set_recursion_depth(). */
+export const DEFAULT_RECURSION_DEPTH = 20000;
+export const MIN_RECURSION_DEPTH = 10;
+// Верхняя граница — по памяти, а не по стеку: кадр Idyllium стоит около
+// килобайта, так что 200000 кадров это ~190 МБ. Больше вкладка браузера
+// уже не переживёт, и честнее отказать заранее.
+export const MAX_RECURSION_DEPTH = 200000;
+
+export function clampRecursionDepth(value: number): number {
+  if (!Number.isFinite(value)) return DEFAULT_RECURSION_DEPTH;
+  return Math.min(MAX_RECURSION_DEPTH, Math.max(MIN_RECURSION_DEPTH, Math.trunc(value)));
 }
 
 export class IdylliumColor {
@@ -1900,6 +1926,10 @@ export interface RuntimeOptions {
   /** Открывалка ссылок: WebIDE и VS Code внедряют свою, CLI берёт системную. */
   readonly urlOpener?: RuntimeUrlOpener;
   readonly abortSignal?: RuntimeAbortSignal;
+  /** Стартовый предел глубины вызовов; программа может поменять его через system. */
+  readonly maxRecursionDepth?: number;
+  /** Где выполняется программа: 'cli' | 'web' | 'vscode'. Видно из system.platform(). */
+  readonly platform?: string;
 }
 
 export interface RuntimeUrlOpener {
@@ -2300,6 +2330,9 @@ export interface IdylliumRuntime {
     to_int(value: unknown, file: string, line: number): number | bigint;
     to_float(value: unknown, file: string, line: number): number;
     to_string(value: unknown): Promise<string>;
+    enterCall(name: string, file: string, line: number): Promise<void> | null;
+    leaveCall(): void;
+    setExitValue(value: unknown): void;
   };
   readonly array: {
     create(size: number, defaultFactory: () => unknown, dynamic: boolean): IdylliumArray;
@@ -2337,6 +2370,7 @@ export interface IdylliumRuntime {
     catchValue(error: unknown): Record<string, unknown>;
   };
   readonly modules: {
+    readonly system: Record<string, unknown>;
     readonly math: Record<string, unknown>;
     readonly random: Record<string, unknown>;
     readonly time: Record<string, unknown>;
@@ -2358,6 +2392,8 @@ export interface IdylliumRuntime {
   callModuleFunction(moduleName: string, functionName: string, args: readonly unknown[], file: string, line: number): unknown;
   callMethod(target: unknown, methodName: string, args: readonly unknown[], file: string, line: number): unknown;
   getOutput(): string;
+  getExitText(): Promise<string | null>;
+  getExitCode(): number | null;
   getAudio(): readonly IdylliumAudioSnapshot[];
   getCanvases(): readonly IdylliumCanvasSnapshot[];
   getWindows(): readonly IdylliumWindowSnapshot[];
@@ -2590,6 +2626,27 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
   const LOOP_YIELD_INTERVAL_MS = 25;
   let loopTickCounter = 0;
   let lastLoopYieldAt = Date.now();
+
+  // ─── Глубина вызовов ──────────────────────────────────────────────────
+  // Idyllium считает глубину сам, а не полагается на стек JavaScript: тот
+  // кончается на разной отметке в Node и в браузере, разворачивается с мусором
+  // от V8 в stderr и не ловится try/catch. Свой счётчик делает предел
+  // свойством языка и превращает переполнение в обычную runtime error.
+  //
+  // Уступка раз в CALL_YIELD_MASK+1 кадров глубины — не оптимизация, а
+  // единственное, что вообще позволяет уйти за физический стек: приостановка
+  // async-функции разворачивает всю цепочку вызовов в кучу, и спуск
+  // продолжается с почти пустого стека. Программа, не уходящая глубже 511
+  // кадров (то есть любая обычная), это условие ни разу не выполнит.
+  const CALL_YIELD_MASK = 511;
+  const MICROTASK_YIELD = Promise.resolve();
+  let callDepth = 0;
+  let maxCallDepth = clampRecursionDepth(options.maxRecursionDepth ?? DEFAULT_RECURSION_DEPTH);
+  let lastCallYieldAt = Date.now();
+
+  // Результат main(): показывается хостом после завершения программы.
+  let exitValue: unknown = undefined;
+  let hasExitValue = false;
   let loopYieldChannel: { port1: { onmessage: (() => void) | null }; port2: { postMessage(value: unknown): void } } | null = null;
   let pendingLoopYieldResolve: (() => void) | null = null;
 
@@ -2666,6 +2723,40 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     async to_string(value: unknown): Promise<string> {
       // Как и console.write: у объекта с публичным to_string() вызывается он.
       return formatConsoleValue(value);
+    },
+    /**
+     * Вход в пользовательскую функцию. Возвращает промис, если пора уступить
+     * управление (кодогенерация тогда его ждёт), и null на быстром пути.
+     */
+    enterCall(name: string, file: string, line: number): Promise<void> | null {
+      callDepth++;
+      if (callDepth > maxCallDepth) {
+        // Кадр не состоялся — его finally не выполнится, счётчик правим сами.
+        callDepth--;
+        throw new IdylliumRuntimeError(
+          file,
+          line,
+          `recursion depth limit of ${maxCallDepth} exceeded in function '${name}'`,
+        );
+      }
+      if ((callDepth & CALL_YIELD_MASK) !== 0) return null;
+
+      throwIfRuntimeStopped(file, line);
+      const now = Date.now();
+      if (now - lastCallYieldAt < LOOP_YIELD_INTERVAL_MS) {
+        // Дешёвая уступка микрозадаче: стек разворачивается, хост не дышит.
+        return MICROTASK_YIELD;
+      }
+      lastCallYieldAt = now;
+      // Изредка уступаем по-настоящему, чтобы кнопка «Стоп» успела сработать.
+      return yieldToHost().then(() => throwIfRuntimeStopped(file, line));
+    },
+    leaveCall(): void {
+      if (callDepth > 0) callDepth--;
+    },
+    setExitValue(value: unknown): void {
+      exitValue = value;
+      hasExitValue = true;
     },
   };
 
@@ -2807,11 +2898,35 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     types,
     errors: {
       catchValue(error: unknown): RuntimeObject {
-        if (!(error instanceof IdylliumRuntimeError) || error.kind === 'cancelled') throw error;
+        if (!(error instanceof IdylliumRuntimeError) || error.kind !== 'program') throw error;
         return createRuntimeErrorValue(error);
       },
     },
     modules: {
+      system: {
+        set_recursion_depth: contextFunction((value: unknown, file: string, line: number) => {
+          const requested = integerNumber(value, 'system.set_recursion_depth()', file, line);
+          if (requested < MIN_RECURSION_DEPTH || requested > MAX_RECURSION_DEPTH) {
+            throw new IdylliumRuntimeError(
+              file,
+              line,
+              `system.set_recursion_depth() expects a value between ${MIN_RECURSION_DEPTH} and ${MAX_RECURSION_DEPTH}, got ${requested}`,
+            );
+          }
+          maxCallDepth = requested;
+        }),
+        recursion_depth: () => maxCallDepth,
+        exit: contextFunction((code: unknown, file: string, line: number) => {
+          const value = code === undefined ? 0 : integerNumber(code, 'system.exit()', file, line);
+          exitValue = value;
+          hasExitValue = true;
+          // Особый род ошибки: разворачивает стек, выполняя finally, но не
+          // ловится ученическим try/catch — иначе выход можно было бы отменить.
+          throw new IdylliumRuntimeError(file, line, `program exited with code ${value}`, 'exit');
+        }),
+        platform: () => String(options.platform ?? defaultRuntimePlatform()),
+        version: () => IDYLLIUM_VERSION,
+      },
       math: {
         pi: Math.PI,
         e: Math.E,
@@ -3292,6 +3407,21 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     },
     getOutput(): string {
       return output;
+    },
+    /** Текст результата main() (или system.exit()); null — программа ничего не вернула. */
+    async getExitText(): Promise<string | null> {
+      if (!hasExitValue) return null;
+      const text = await formatConsoleValue(exitValue);
+      // Строку берём в кавычки: «завершилась с кодом готово» спотыкается,
+      // «с кодом "готово"» читается.
+      return typeof exitValue === 'string' ? JSON.stringify(exitValue) : text;
+    },
+    /** Целый код завершения, если он был целым; иначе null. */
+    getExitCode(): number | null {
+      if (!hasExitValue) return null;
+      if (typeof exitValue === 'number' && Number.isInteger(exitValue)) return exitValue;
+      if (typeof exitValue === 'bigint') return Number(exitValue);
+      return null;
     },
     getAudio(): readonly IdylliumAudioSnapshot[] {
       return runtimeObjects.audio.map(audioSnapshot);
@@ -4931,6 +5061,13 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
       for (const child of obj.__children as RuntimeObject[] ?? []) {
         await initializeGuiChild(child);
       }
+    };
+    // Закрытое окно исчезает из снимка. Когда закрылось последнее, у программы
+    // не остаётся GUI — и хост завершает её так же, как консольную.
+    obj.close = () => {
+      obj.__shown = false;
+      const index = state.windows.indexOf(obj);
+      if (index !== -1) state.windows.splice(index, 1);
     };
     state.windows.push(obj);
   }

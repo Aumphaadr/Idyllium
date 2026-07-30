@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "languageVersion": "1.2.6",
-  "generatedAt": "2026-07-30T18:46:25.523Z",
+  "languageVersion": "1.2.7",
+  "generatedAt": "2026-07-30T20:31:35.427Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "general": [
     {
@@ -102,7 +102,7 @@
         },
         {
           "title": "Функция main()",
-          "description": "Сокращённая запись main() считается void-функцией. Допустима и полная форма с любым возвращаемым типом; main не принимает аргументы и может быть только одна.",
+          "description": "Сокращённая запись main() считается void-функцией. Допустима и полная форма с любым возвращаемым типом; main не принимает аргументы и может быть только одна. Возвращённое значение — код завершения: среда печатает его серой строкой после работы программы («[Программа завершилась с кодом 0]»), а в CLI целый код становится ещё и кодом возврата процесса. У void-овой main такой строки нет. Досрочно завершить программу с тем же кодом умеет system.exit().",
           "code": "int function main() {\n    return 0;\n}"
         },
         {
@@ -6707,6 +6707,14 @@
               "documentation": ""
             },
             {
+              "name": "close",
+              "signature": "close(): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "Закрывает окно. Когда закрыто последнее окно, программа завершается."
+            },
+            {
               "name": "show",
               "signature": "show(): void",
               "returnType": "void",
@@ -10266,6 +10274,76 @@
           ]
         }
       ]
+    },
+    {
+      "name": "system",
+      "title": "system",
+      "description": "Стандартная библиотека system.",
+      "notes": [],
+      "example": "",
+      "fullExamples": [],
+      "functions": [
+        {
+          "name": "exit",
+          "signature": "exit(code: int = 0): void",
+          "returnType": "void",
+          "parameters": [
+            {
+              "name": "code",
+              "type": "int",
+              "optional": false,
+              "defaultValue": "0",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Немедленно завершает программу с указанным кодом."
+        },
+        {
+          "name": "platform",
+          "signature": "platform(): string",
+          "returnType": "string",
+          "parameters": [],
+          "variadic": false,
+          "documentation": "Где выполняется программа: \"cli\", \"web\" или \"vscode\"."
+        },
+        {
+          "name": "recursion_depth",
+          "signature": "recursion_depth(): int",
+          "returnType": "int",
+          "parameters": [],
+          "variadic": false,
+          "documentation": "Текущий предел глубины вложенных вызовов."
+        },
+        {
+          "name": "set_recursion_depth",
+          "signature": "set_recursion_depth(depth: int): void",
+          "returnType": "void",
+          "parameters": [
+            {
+              "name": "depth",
+              "type": "int",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Задаёт предел глубины вложенных вызовов (по умолчанию 20000, допустимо от 10 до 200000)."
+        },
+        {
+          "name": "version",
+          "signature": "version(): string",
+          "returnType": "string",
+          "parameters": [],
+          "variadic": false,
+          "documentation": "Версия Idyllium, например \"1.2.7\"."
+        }
+      ],
+      "constants": [],
+      "types": []
     },
     {
       "name": "url",

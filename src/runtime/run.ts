@@ -13,7 +13,7 @@ import {
 import { SemanticAnalyzer } from '../core/semantics';
 import { StandardLibraryRegistry, createDefaultStandardLibrary } from '../core/stdlib/registry';
 import { Token } from '../core/tokens';
-import { RuntimeOptions, createRuntime } from './runtime';
+import { IdylliumRuntimeError, RuntimeOptions, createRuntime } from './runtime';
 
 export type { ModuleSource } from '../core/project';
 
@@ -36,6 +36,10 @@ export interface RunResult {
   readonly output: string;
   readonly runtimeError: string | null;
   readonly compilation: CompileResult;
+  /** Текст результата main() или system.exit(); null — программа ничего не вернула. */
+  readonly exitText: string | null;
+  /** Целый код завершения, если он был целым; иначе null. */
+  readonly exitCode: number | null;
 }
 
 export function compileIdyllium(source: string, options: CompileOptions = {}): CompileResult {
@@ -102,6 +106,8 @@ export async function runIdyllium(
       output: '',
       runtimeError: null,
       compilation,
+      exitText: null,
+      exitCode: null,
     };
   }
 
@@ -117,13 +123,28 @@ export async function runIdyllium(
       output: runtime.getOutput(),
       runtimeError: null,
       compilation,
+      exitText: await runtime.getExitText(),
+      exitCode: runtime.getExitCode(),
     };
   } catch (error) {
+    // system.exit() — не авария, а обычное завершение: программа сама так решила.
+    if (error instanceof IdylliumRuntimeError && error.kind === 'exit') {
+      return {
+        success: true,
+        output: runtime.getOutput(),
+        runtimeError: null,
+        compilation,
+        exitText: await runtime.getExitText(),
+        exitCode: runtime.getExitCode(),
+      };
+    }
     return {
       success: false,
       output: runtime.getOutput(),
       runtimeError: describeRuntimeError(error, compileOptions.file ?? 'main.idyl'),
       compilation,
+      exitText: null,
+      exitCode: null,
     };
   }
 }
