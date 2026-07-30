@@ -36,6 +36,31 @@
 
   const SQL_TYPES = new Set(['BLOB', 'INTEGER', 'REAL', 'TEXT']);
 
+  // Одна и та же оболочка обслуживает учебник (/book/) и задачник (/tasks/).
+  // Отличаются они только подписями и направлением перекрёстной ссылки.
+  const MODE = document.body?.dataset.docsMode === 'tasks' ? 'tasks' : 'book';
+  const UI = MODE === 'tasks'
+    ? {
+      titleSuffix: 'Задачник Idyllium',
+      loading: 'Загружаем задачи...',
+      fatal: 'Задачник не загрузился',
+      kicker: 'Задачи к уроку',
+      crossLabel: 'Открыть урок',
+      crossBase: '../book/',
+      prevLabel: 'Предыдущая тема',
+      nextLabel: 'Следующая тема',
+    }
+    : {
+      titleSuffix: 'Idyllium',
+      loading: 'Загружаем урок...',
+      fatal: 'Учебник не загрузился',
+      kicker: 'Урок',
+      crossLabel: 'Открыть задачи',
+      crossBase: '../tasks/',
+      prevLabel: 'Предыдущий урок',
+      nextLabel: 'Следующий урок',
+    };
+
   const state = {
     manifest: null,
     flatLessons: [],
@@ -177,7 +202,7 @@
       const footer = renderLessonFooter(lesson);
       els.view.innerHTML = `${hero}<div class="lesson-body">${content}</div>${footer}`;
       executeLessonScripts();
-      document.title = `${lesson.title} — Idyllium`;
+      document.title = `${lesson.title} — ${UI.titleSuffix}`;
       renderToc();
       els.main.focus({ preventScroll: true });
       window.scrollTo({ top: 0, behavior: 'auto' });
@@ -194,7 +219,7 @@
     overlay.innerHTML = `
       <div class="lesson-loading-box" role="status" aria-live="polite">
         <span class="lesson-loading-spinner" aria-hidden="true"></span>
-        <span>Загружаем урок…</span>
+        <span>${UI.loading}</span>
       </div>
     `;
     els.main.appendChild(overlay);
@@ -354,12 +379,23 @@
         <div class="lesson-kicker">
           <span>${escapeHtml(lesson.sectionTitle)}</span>
           <span>/</span>
-          <span>Урок ${lesson.number}</span>
+          <span>${UI.kicker} ${lesson.number}</span>
         </div>
         <h1>${escapeHtml(lesson.title)}</h1>
         ${subtitle}
+        ${renderCrossLink(lesson)}
       </header>
     `;
+  }
+
+  // Учебник ведёт на задачи по этой же теме, задачник — обратно на урок.
+  // Пока практикум не написан, кнопка честно говорит об этом и никуда не ведёт.
+  function renderCrossLink(lesson) {
+    const target = `${UI.crossBase}#/${lesson.sectionId}/${lesson.id}`;
+    if (MODE === 'book' && lesson.hasTasks !== true) {
+      return '<span class="lesson-cross-link is-pending">Задачи готовятся</span>';
+    }
+    return `<a class="lesson-cross-link" href="${target}">${UI.crossLabel}</a>`;
   }
 
   function renderLessonFooter(lesson) {
@@ -369,8 +405,8 @@
 
     return `
       <nav class="lesson-footer" aria-label="Переход между уроками">
-        ${prev ? lessonStep(prev, 'Предыдущий урок', 'prev') : '<span></span>'}
-        ${next ? lessonStep(next, 'Следующий урок', 'next') : '<span></span>'}
+        ${prev ? lessonStep(prev, UI.prevLabel, 'prev') : '<span></span>'}
+        ${next ? lessonStep(next, UI.nextLabel, 'next') : '<span></span>'}
       </nav>
     `;
   }
@@ -509,7 +545,7 @@
     console.error(error);
     els.view.innerHTML = `
       <div class="error-card">
-        <h1>Учебник не загрузился</h1>
+        <h1>${escapeHtml(UI.fatal)}</h1>
         <p>${escapeHtml(String(error?.message ?? error))}</p>
       </div>
     `;

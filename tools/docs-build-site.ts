@@ -44,6 +44,8 @@ interface SiteLesson {
   readonly sourceFile: string;
   readonly status: 'ready' | 'needs-review' | 'planned' | 'missing-source';
   readonly reviewFlags: readonly string[];
+  /** Есть ли для темы испечённый практикум в «Задачнике». */
+  hasTasks?: boolean;
 }
 
 interface ManualLesson {
@@ -70,6 +72,7 @@ const MANAGED_PATHS = [
   'gui-renderer',
   'gui-preview.html',
   'book',
+  'tasks',
   'reference',
   'ide',
   'docs',
@@ -215,6 +218,20 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     title: 'Работа со звуками',
     subtitle: 'audio.Sound, audio.Music и первые звуки в GUI-приложении',
     sourceFile: 'docs/manual-content/widgets/audio.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'widgets',
+    // Вкладки после звуков и перед массивами виджетов (владелец, 2026-07-30):
+    // к этому моменту уже пройден gui.Frame, без которого класть во вкладку
+    // нечего, а массивы виджетов идут следом и вкладок ещё не требуют.
+    // Якорь 'audio' объявлен выше — иначе урок уехал бы в начало раздела.
+    afterLessonId: 'audio',
+    id: 'tabwidget',
+    title: 'Вкладки',
+    subtitle: 'gui.TabWidget: add_tab, selected_index и много виджетов на одном месте',
+    sourceFile: 'docs/manual-content/widgets/tabwidget.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -724,6 +741,11 @@ function main(): void {
     sections: orderedSections(withManualLessons(convertedSections, bookRoot)),
   };
 
+  // «Задачник» строится по той же карте, что и учебник: одинаковые разделы,
+  // одинаковые перечни тем. Заодно проставляет hasTasks в манифест учебника —
+  // по нему урок решает, вести ли кнопке «Открыть задачи» на живую страницу.
+  buildTasksSite(path.join(siteRoot, 'tasks'), manifest);
+
   fs.writeFileSync(path.join(bookRoot, 'lessons.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
   buildReferenceSite(path.join(siteRoot, 'reference'));
 
@@ -732,6 +754,139 @@ function main(): void {
   console.log(`book generated: ${manifest.sections.length} sections, ${lessonCount} lessons`);
   console.log(`needs review: ${needsReview}`);
   console.log(`site output: ${siteRoot}`);
+}
+
+const TASKS_SOURCE_ROOT = 'docs/manual-content/tasks';
+
+/**
+ * Собирает «Задачник» — сайт-близнец учебника по адресу /tasks/.
+ *
+ * Оболочка не копируется, а ссылается на файлы учебника (../book/app.js и
+ * компанию): разметка страницы у них одна и та же, и разъезжаться ей незачем.
+ * Содержимое берётся из docs/manual-content/tasks/<раздел>/<урок>.html —
+ * обычных HTML-фрагментов, которые правятся руками так же, как уроки.
+ */
+function buildTasksSite(tasksRoot: string, manifest: SiteManifest): void {
+  fs.mkdirSync(tasksRoot, { recursive: true });
+
+  const sections: SiteSection[] = [];
+  let ready = 0;
+
+  for (const section of manifest.sections) {
+    const lessons: SiteLesson[] = [];
+
+    for (const lesson of section.lessons) {
+      const sourceFile = `${TASKS_SOURCE_ROOT}/${section.id}/${lesson.id}.html`;
+      const sourcePath = path.resolve(process.cwd(), sourceFile);
+      const hasTasks = fs.existsSync(sourcePath);
+
+      const outputFile = `content/${section.id}/${lesson.id}.html`;
+      const outputPath = path.join(tasksRoot, outputFile);
+      fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+      fs.writeFileSync(outputPath, hasTasks
+        ? fs.readFileSync(sourcePath, 'utf8')
+        : pendingTasksFragment(section.id, lesson.id, lesson.title), 'utf8');
+
+      (lesson as { hasTasks?: boolean }).hasTasks = hasTasks;
+      if (hasTasks) ready++;
+
+      lessons.push({
+        id: lesson.id,
+        title: lesson.title,
+        subtitle: hasTasks ? `Практикум к уроку «${lesson.title}»` : 'Задания готовятся',
+        file: outputFile,
+        sourceFile: hasTasks ? sourceFile : '',
+        status: hasTasks ? 'ready' : 'planned',
+        reviewFlags: [],
+        hasTasks,
+      });
+    }
+
+    sections.push({ id: section.id, title: section.title, icon: section.icon, status: 'ready', lessons });
+  }
+
+  const tasksManifest: SiteManifest = {
+    version: 1,
+    generatedAt: manifest.generatedAt,
+    sourceRoot: TASKS_SOURCE_ROOT,
+    sections,
+  };
+
+  fs.writeFileSync(path.join(tasksRoot, 'lessons.json'), `${JSON.stringify(tasksManifest, null, 2)}\n`, 'utf8');
+  fs.writeFileSync(path.join(tasksRoot, 'index.html'), tasksShell(), 'utf8');
+
+  const total = sections.reduce((sum, section) => sum + section.lessons.length, 0);
+  console.log(`tasks generated: ${ready} practicums out of ${total} topics`);
+}
+
+function pendingTasksFragment(sectionId: string, lessonId: string, lessonTitle: string): string {
+  return `<div class="docs-section docs-placeholder">
+  <h2>Задания готовятся</h2>
+  <p>Практикум по теме <strong>${escapeHtml(lessonTitle)}</strong> ещё не составлен.</p>
+  <p>Пока его нет, вернитесь к <a href="../book/#/${escapeHtml(sectionId)}/${escapeHtml(lessonId)}">уроку</a>: примеры оттуда полезно повторить руками и переделать под себя.</p>
+</div>
+`;
+}
+
+function tasksShell(): string {
+  return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Idyllium - Задачник</title>
+  <link rel="icon" type="image/png" href="../book/favicon.png">
+  <link rel="stylesheet" href="../book/fonts/fonts.css">
+  <link rel="stylesheet" href="../book/assets/gui.css">
+  <link rel="stylesheet" href="../book/app.css">
+  <script src="../book/version.js" defer></script>
+  <script src="../book/app.js" defer></script>
+</head>
+<body data-docs-mode="tasks">
+  <header class="docs-topbar">
+    <div class="topbar-left">
+      <button class="icon-button menu-toggle" id="menu-toggle" type="button" title="Показать навигацию">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <a class="brand" href="../">
+        <span class="brand-mark">I</span>
+        <span class="brand-text">Idyllium</span>
+        <span class="idyllium-version">v</span>
+      </a>
+      <span class="topbar-badge">Задачник</span>
+    </div>
+    <nav class="topbar-actions" aria-label="Основные действия">
+      <a class="topbar-link" href="../">Открыть IDE</a>
+      <a class="topbar-link" href="../book/">Учебник</a>
+      <a class="topbar-link" href="../reference/">Документация</a>
+      <button class="topbar-link" id="theme-toggle" type="button">Светлая тема</button>
+    </nav>
+  </header>
+
+  <div class="docs-shell">
+    <aside class="docs-sidebar" id="docs-sidebar">
+      <div class="sidebar-head">
+        <label class="search-box">
+          <span>Поиск</span>
+          <input id="lesson-search" type="search" autocomplete="off" placeholder="Найти тему">
+        </label>
+      </div>
+      <nav class="lesson-nav" id="lesson-nav" aria-label="Темы"></nav>
+    </aside>
+
+    <main class="docs-main" id="docs-main" tabindex="-1">
+      <article class="lesson-view" id="lesson-view">
+        <div class="loading-card">Загрузка задачника...</div>
+      </article>
+    </main>
+
+    <aside class="docs-toc" id="docs-toc" aria-label="Разделы страницы"></aside>
+  </div>
+</body>
+</html>
+`;
 }
 
 function convertSection(
@@ -1093,10 +1248,11 @@ function writeSite404(outputRoot: string): void {
 <body>
   <main>
     <h1>Страница не найдена</h1>
-    <p>Можно вернуться в IDE, открыть учебник или воспользоваться справочником.</p>
+    <p>Можно вернуться в IDE, открыть учебник, задачник или справочник.</p>
     <nav>
       <a data-site-path="">Открыть IDE</a>
       <a data-site-path="book/">Учебник</a>
+      <a data-site-path="tasks/">Задачник</a>
       <a data-site-path="reference/">Документация</a>
     </nav>
   </main>

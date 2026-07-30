@@ -15,6 +15,53 @@
       color: var(--accent);
       font-size: 1.1rem;
     }
+    /* Витрина тем: пять мини-окошек с палитрой соответствующей темы. */
+    .theme-gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
+      gap: 14px;
+    }
+    .theme-card {
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .theme-card-window {
+      display: grid;
+      gap: 8px;
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--t-border);
+      border-radius: 8px;
+      background: var(--t-bg);
+      color: var(--t-text);
+    }
+    .theme-card-text {
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .theme-card-button {
+      padding: 6px 10px;
+      border: 1px solid var(--t-border);
+      border-radius: 4px;
+      background: var(--t-button);
+      color: var(--t-button-text);
+      font-size: 12px;
+      text-align: center;
+    }
+    .theme-card-bar {
+      overflow: hidden;
+      height: 10px;
+      border: 1px solid var(--t-border);
+      border-radius: 999px;
+    }
+    .theme-card-bar span {
+      display: block;
+      width: 65%;
+      height: 100%;
+      background: var(--t-accent);
+    }
 </style>
 
     <div class="docs-section">
@@ -100,6 +147,100 @@ main() {
 </script></idyl-code-block>
 
       <p>Свойства <code>width</code> и <code>height</code> задаются в пикселях. Свойство <code>title</code> — строка, которая отображается в заголовке окна.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Внешний вид окна: свойство <code>theme</code></h2>
+      <p>Запустите пример выше — и окно получится белым, с серыми кнопками. Это <strong>тема по умолчанию</strong>: намеренно скучная, чтобы не спорить с вашими собственными цветами.</p>
+      <p>Но окно умеет выглядеть и иначе. У <code>gui.Window</code> есть свойство <code>theme</code> — одна строка, которая перекрашивает <strong>сразу все виджеты внутри окна</strong>:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 400;
+    win.height = 200;
+    win.title = "Тёмное окно";
+    win.theme = "dracula";     // ← одна строка меняет весь вид
+
+    gui.Button btn;
+    btn.x = 20;
+    btn.y = 20;
+    btn.width = 160;
+    btn.height = 36;
+    btn.text = "Нажми меня";
+
+    win.add_child(btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <p>Всего тем пять. Вот как выглядит одна и та же пара «надпись + кнопка» в каждой из них:</p>
+
+      <div class="gui-demo-container">
+        <div class="theme-gallery">
+          <div class="theme-card" style="--t-bg: #ffffff; --t-text: #111111; --t-border: rgba(0, 0, 0, 0.28); --t-button: #efefef; --t-button-text: #111111; --t-accent: #2673d9;">
+            <div class="theme-card-window">
+              <div class="theme-card-text">Привет!</div>
+              <div class="theme-card-button">Кнопка</div>
+              <div class="theme-card-bar"><span></span></div>
+            </div>
+            <code>"default"</code>
+          </div>
+          <div class="theme-card" style="--t-bg: #151020; --t-text: #f2eaf7; --t-border: #3d3154; --t-button: #2a2240; --t-button-text: #f2eaf7; --t-accent: #87bfff;">
+            <div class="theme-card-window">
+              <div class="theme-card-text">Привет!</div>
+              <div class="theme-card-button">Кнопка</div>
+              <div class="theme-card-bar"><span></span></div>
+            </div>
+            <code>"idyllium"</code>
+          </div>
+          <div class="theme-card" style="--t-bg: #282a36; --t-text: #f8f8f2; --t-border: #6272a4; --t-button: #44475a; --t-button-text: #f8f8f2; --t-accent: #bd93f9;">
+            <div class="theme-card-window">
+              <div class="theme-card-text">Привет!</div>
+              <div class="theme-card-button">Кнопка</div>
+              <div class="theme-card-bar"><span></span></div>
+            </div>
+            <code>"dracula"</code>
+          </div>
+          <div class="theme-card" style="--t-bg: #eff0f1; --t-text: #232629; --t-border: #bdc3c7; --t-button: #fcfcfc; --t-button-text: #232629; --t-accent: #3daee9;">
+            <div class="theme-card-window">
+              <div class="theme-card-text">Привет!</div>
+              <div class="theme-card-button">Кнопка</div>
+              <div class="theme-card-bar"><span></span></div>
+            </div>
+            <code>"breeze"</code>
+          </div>
+          <div class="theme-card" style="--t-bg: #f0efee; --t-text: #2b2b2b; --t-border: #b3b0ad; --t-button: #fdfdfd; --t-button-text: #2b2b2b; --t-accent: #2980b9;">
+            <div class="theme-card-window">
+              <div class="theme-card-text">Привет!</div>
+              <div class="theme-card-button">Кнопка</div>
+              <div class="theme-card-bar"><span></span></div>
+            </div>
+            <code>"oxygen"</code>
+          </div>
+        </div>
+        <div class="coord-note">
+          🎨 Тема задаётся один раз у окна. Все виджеты внутри — кнопки, поля, галочки, полоски — подхватывают её сами.
+        </div>
+      </div>
+
+      <p>Тема — это <strong>самый нижний слой оформления</strong>. Если вы позже скажете кнопке «будь красной», красной она и станет: ваше личное указание всегда сильнее темы. Тема отвечает только за то, что вы <em>не</em> указали.</p>
+
+      <p>Незнакомое название темы ошибкой не считается — окно просто останется в теме по умолчанию:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.theme = "неоновый";   // такой темы нет — будет "default"
+    win.show();
+}
+</script></idyl-code-block>
+
+      <p>Примеры в этом учебнике нарисованы в тёмных тонах, чтобы не резать глаза на тёмной странице. У вас же программа запустится в теме <code>"default"</code>, пока вы не напишете <code>win.theme</code> сами — так что не пугайтесь, если ваше окно выглядит скромнее картинки.</p>
     </div>
 
     <div class="docs-section">
@@ -240,6 +381,7 @@ win.add_child(corner_btn);
           <tr><td><code>width</code></td><td><code>int</code></td><td>ширина окна в пикселях</td></tr>
           <tr><td><code>height</code></td><td><code>int</code></td><td>высота окна в пикселях</td></tr>
           <tr><td><code>title</code></td><td><code>string</code></td><td>текст в заголовке окна</td></tr>
+          <tr><td><code>theme</code></td><td><code>string</code></td><td>оформление всех виджетов окна: <code>"default"</code>, <code>"idyllium"</code>, <code>"dracula"</code>, <code>"breeze"</code>, <code>"oxygen"</code></td></tr>
           <tr><td><code>add_child(виджет)</code></td><td>метод</td><td>добавляет виджет внутрь окна</td></tr>
           <tr><td><code>show()</code></td><td>метод</td><td>показывает окно на экране</td></tr>
         </tbody>

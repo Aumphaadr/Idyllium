@@ -312,21 +312,28 @@
     "console.try-catch.005": {
       "kind": "valid"
     },
-    "console.variables.004": {
+    "console.variables.002": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "variable 'console' conflicts with a standard library module"
+      ],
+      "reason": "Урок «Занятые имена» (2026-07-30): пример нарочно занимает имя библиотеки."
+    },
+    "console.variables.005": {
       "kind": "compile_error",
       "diagnosticIncludes": [
         "cannot assign 'float' value to 'int' variable"
       ],
       "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
     },
-    "console.variables.005": {
+    "console.variables.006": {
       "kind": "compile_error",
       "diagnosticIncludes": [
         "cannot assign 'int' value to 'string' variable"
       ],
       "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
     },
-    "console.variables.010": {
+    "console.variables.011": {
       "kind": "compile_error",
       "diagnosticIncludes": [
         "'diam' was not declared in this scope"

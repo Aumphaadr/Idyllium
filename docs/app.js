@@ -2710,6 +2710,29 @@
 
     label.appendChild(range);
     label.appendChild(value);
+
+    // Caps Lock: с галочкой смотрим на заглавные буквы шрифта, без неё — на
+    // строчные. Регистр меняется через CSS, поэтому исходный текст панграмм
+    // остаётся нетронутым.
+    const caps = document.createElement('label');
+    caps.className = 'asset-font-caps-label';
+
+    const capsInput = document.createElement('input');
+    capsInput.type = 'checkbox';
+    capsInput.className = 'asset-font-caps-input';
+    capsInput.setAttribute('aria-label', 'Показывать заглавные буквы');
+
+    const capsText = document.createElement('span');
+    capsText.textContent = 'Caps Lock';
+
+    capsInput.addEventListener('change', () => {
+      content.classList.toggle('caps-on', capsInput.checked);
+    });
+
+    caps.appendChild(capsInput);
+    caps.appendChild(capsText);
+
+    toolbar.appendChild(caps);
     toolbar.appendChild(label);
     content.appendChild(toolbar);
 

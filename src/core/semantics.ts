@@ -320,6 +320,8 @@ export class SemanticAnalyzer {
       return;
     }
 
+    if (!this.checkReservedName(declaration.name, 'function', declaration.nameRange)) return;
+
     this.functions.set(declaration.name, declaration);
     const parameters = declaration.parameters.map((parameter) => this.resolveTypeName(parameter.paramType));
     const returnType = this.resolveTypeName(declaration.returnType);
@@ -399,6 +401,11 @@ export class SemanticAnalyzer {
 
     if (this.stdlib.hasModule(declaration.name)) {
       this.diagnostics.error(declaration.range, `class '${declaration.name}' conflicts with a standard library module`);
+      return;
+    }
+
+    if (this.stdlib.getGlobalFunction(declaration.name)) {
+      this.diagnostics.error(declaration.range, `class '${declaration.name}' conflicts with a built-in function`);
       return;
     }
 
@@ -1531,6 +1538,10 @@ export class SemanticAnalyzer {
 
   private callType(expression: CallExpression): TypeRef {
     if (expression.callee.kind === 'IdentifierExpression' && this.isArrayGlobalFunction(expression.callee.name)) {
+      if (this.shadowsBuiltInFunction(expression.callee.name, expression.callee.range)) {
+        for (const arg of expression.args) this.expressionType(arg.value);
+        return ERROR_TYPE;
+      }
       this.markSemanticToken('function', expression.callee.range, ['defaultLibrary']);
       return this.arrayGlobalFunctionType(expression.callee.name, expression);
     }
@@ -1709,6 +1720,7 @@ export class SemanticAnalyzer {
 
       const global = this.stdlib.getGlobalFunction(callee.name);
       if (global) {
+        if (this.shadowsBuiltInFunction(callee.name, callee.range)) return null;
         this.markSemanticToken('function', callee.range, ['defaultLibrary']);
         return global;
       }
@@ -2515,7 +2527,42 @@ export class SemanticAnalyzer {
       this.diagnostics.error(range, `'${name}' is already declared in this scope`);
       return;
     }
+    if (!this.checkReservedName(name, kind, range)) return;
     scope.set(name, { type, kind, range, readonly });
+  }
+
+  // Имя библиотеки занимать под своё нельзя никому: запись `console.write`
+  // разбирается как обращение к модулю, поэтому слово `console` означало бы
+  // сразу две вещи — и выбирал бы между ними не ученик, а компилятор.
+  //
+  // А вот имена встроенных функций закрыты только для своих функций и классов:
+  // объявив `function to_string(...)`, ученик молча подменил бы встроенную.
+  // Переменной же назваться `sum` или `max` никто не мешает — обращение к
+  // переменной и вызов функции различаются синтаксисом, и если ученик всё-таки
+  // попробует вызвать заслонённое имя, компилятор скажет об этом прямо.
+  /**
+   * Переменной назваться `sum` или `max` можно — имена встроенных функций для
+   * переменных не закрыты. Но раз имя занято, вызывать по нему встроенную уже
+   * нельзя: иначе `sum(nums)` тихо звал бы встроенную поверх переменной,
+   * которую ученик только что завёл. Компилятор говорит об этом прямо.
+   */
+  private shadowsBuiltInFunction(name: string, range: SourceRange): boolean {
+    const symbol = this.lookup(name);
+    if (!symbol || symbol.type.kind === 'function') return false;
+    this.diagnostics.error(range, `${symbol.kind} '${name}' hides the built-in function '${name}'`);
+    return true;
+  }
+
+  private checkReservedName(name: string, kind: SymbolInfo['kind'], range: SourceRange): boolean {
+    if (this.stdlib.hasModule(name)) {
+      this.diagnostics.error(range, `${kind} '${name}' conflicts with a standard library module`);
+      return false;
+    }
+    if (kind === 'function' && this.stdlib.getGlobalFunction(name)) {
+      this.diagnostics.error(range, `${kind} '${name}' conflicts with a built-in function`);
+      return false;
+    }
+    return true;
   }
 
   private lookup(name: string): SymbolInfo | null {

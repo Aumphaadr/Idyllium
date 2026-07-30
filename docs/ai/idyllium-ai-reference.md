@@ -208,6 +208,43 @@ parameters, or every parameter has a default), that constructor runs;
 a constructor with required parameters is NOT run by a bare declaration —
 the fields simply keep their type defaults.
 
+### Reserved Names
+
+Standard library module names are reserved for every declaration —
+variables, parameters, functions and classes:
+
+```text
+audio colors console drawable encoding file fonts gui hash image json
+math random sqlite time types url
+```
+
+```idyllium
+int console = 5;   // compile error: variable 'console' conflicts with
+                   // a standard library module
+```
+
+The reason is unavoidable ambiguity: `console.write(...)` is parsed as module
+access, so the same word would mean two things at once.
+
+Built-in global function names (`to_int`, `to_float`, `to_string`, `max`,
+`min`, `sum`, `avg`; `div` and `mod` are already keywords) are reserved for
+**functions and classes only**:
+
+```idyllium
+int function to_string(int value) { return value; }
+// compile error: function 'to_string' conflicts with a built-in function
+```
+
+A variable may take such a name — `int sum = a + b;` is legal and common in
+teaching code. But once the name is taken in that scope, calling the built-in
+through it is a compile error rather than a silent fallback:
+
+```idyllium
+int sum = 100;
+console.writeln(sum(nums));
+// compile error: variable 'sum' hides the built-in function 'sum'
+```
+
 ## 6. Type Conversion
 
 Idyllium is strict about types.
@@ -1991,8 +2028,11 @@ on_change
 
 `add_tab(title, content)` takes a title and one widget as the page (usually a
 `gui.Frame` filled with children). `selected_title` and `tab_count` are
-read-only; switch pages through `selected_index`. `on_change` fires when the
-user clicks another tab.
+read-only; switch pages through `selected_index`, and `selected_title` follows
+it — it is derived from the index, not stored separately. `on_change` fires
+when the user clicks another tab. Coordinates of the page content are measured
+from the tab page, not from the window. A widget given to `add_tab()` must NOT
+also be passed to `add_child()`: it would then be drawn twice.
 
 `gui.Modal`:
 

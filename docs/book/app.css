@@ -474,9 +474,108 @@ body.light-theme .docs-topbar {
   line-height: 1.55;
 }
 
+/* Перекрёстная ссылка учебник ↔ задачник в шапке страницы. */
+.lesson-cross-link {
+  display: inline-block;
+  margin-top: 18px;
+  padding: 9px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.lesson-cross-link:hover {
+  background: var(--accent);
+  color: var(--bg-root);
+}
+
+.lesson-cross-link.is-pending {
+  border-color: var(--border);
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.lesson-cross-link.is-pending:hover {
+  background: none;
+  color: var(--text-muted);
+}
+
 .lesson-body {
   display: grid;
   gap: 22px;
+}
+
+/* ─── Задачник ───────────────────────────────────────────────────────────
+   Испечённые практикумы пользуются разметкой уроков, но добавляют свои
+   рамки: заголовок задания, блок «для преподавателя» и выноску-заметку. */
+
+.lesson-body .task-group {
+  margin-top: 26px;
+  color: var(--text-soft);
+  font-size: 17px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.lesson-body .task-item {
+  margin: 28px 0 0;
+  padding-left: 14px;
+  border-left: 3px solid var(--accent);
+  color: var(--text-main);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.task-teacher {
+  padding: 14px 18px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: var(--bg-panel-2);
+  color: var(--text-soft);
+  font-size: 15px;
+}
+
+.task-teacher > :first-child {
+  margin-top: 0;
+}
+
+.task-teacher > :last-child {
+  margin-bottom: 0;
+}
+
+.task-note {
+  margin: 0;
+  padding: 12px 18px;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  background: var(--bg-panel-2);
+  color: var(--text-soft);
+}
+
+.task-note > :first-child {
+  margin-top: 0;
+}
+
+.task-note > :last-child {
+  margin-bottom: 0;
+}
+
+.task-pre {
+  overflow-x: auto;
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-panel);
+  color: var(--text-soft);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.55;
 }
 
 .docs-section {
@@ -808,15 +907,35 @@ body.light-theme .docs-topbar {
   color: var(--text-main) !important;
 }
 
+/* Повторяет .progressbar из gui-renderer: демо в учебнике должно выглядеть
+   ровно так же, как настоящий виджет в GUI Preview. */
 .idyl-progressbar {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
   border-radius: 999px;
-  border-color: var(--border);
   background: var(--bg-panel-2);
+  font-family: var(--font-sans);
+  font-size: 13px;
 }
 
 .idyl-progressbar-fill {
+  height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, #87bfff, #8bd58f);
+}
+
+.idyl-progressbar-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 600;
+  pointer-events: none;
 }
 
 .idyl-frame {

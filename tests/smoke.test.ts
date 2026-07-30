@@ -7016,4 +7016,79 @@ async function runTests(): Promise<void> {
   }
 }
 
+test('library names are reserved, built-in function names only for functions', () => {
+  // Имя библиотеки занимать нельзя: иначе `console` значило бы сразу две вещи.
+  assertFails(`
+    use console;
+
+    main() {
+      int console = 5;
+    }
+  `, "variable 'console' conflicts with a standard library module");
+
+  assertFails(`
+    void function gui() {}
+
+    main() {}
+  `, "function 'gui' conflicts with a standard library module");
+
+  // Своя функция не должна молча подменять встроенную.
+  assertFails(`
+    int function to_string(int value) { return value; }
+
+    main() {}
+  `, "function 'to_string' conflicts with a built-in function");
+
+  // А переменной назваться `sum` или `max` можно — это удобные школьные имена.
+  assertCompiles(`
+    use console;
+
+    main() {
+      int sum = 20 + 30;
+      int max = 7;
+      console.writeln(sum, " ", max);
+    }
+  `);
+
+  // Но раз имя занято переменной, вызвать по нему встроенную уже нельзя.
+  assertFails(`
+    use console;
+
+    main() {
+      dyn_array<int> nums;
+      nums.add(3);
+      int sum = 100;
+      console.writeln(sum(nums));
+    }
+  `, "variable 'sum' hides the built-in function 'sum'");
+});
+
+test('TabWidget selected_title follows selected_index', async () => {
+  const result = await runIdyllium(`
+    use console;
+    use gui;
+
+    main() {
+      gui.Frame first;
+      gui.Frame second;
+
+      gui.TabWidget tabs;
+      tabs.add_tab("Первая", first);
+      tabs.add_tab("Вторая", second);
+
+      console.writeln(tabs.tab_count, " ", tabs.selected_title);
+      tabs.selected_index = 1;
+      console.writeln(tabs.selected_title);
+      tabs.clear_tabs();
+      console.writeln(tabs.tab_count, " [", tabs.selected_title, "]");
+    }
+  `, {}, { file: 'main.idyl' });
+
+  assert(result.success, `expected success, got: ${result.runtimeError ?? result.output}`);
+  assert(
+    result.output === '2 Первая\nВторая\n0 []\n',
+    `unexpected output: ${JSON.stringify(result.output)}`,
+  );
+});
+
 void runTests();
