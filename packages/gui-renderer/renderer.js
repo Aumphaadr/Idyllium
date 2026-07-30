@@ -15,6 +15,7 @@
   const fontCache = new Map();
   const imageCache = new Map();
   const modalInputValues = new Map();
+  const KNOWN_WINDOW_THEMES = ['default', 'idyllium', 'dracula', 'breeze', 'oxygen'];
   // Правила :hover/:active из IdySS-стилей — собираются при рендере и
   // выгружаются одним <style> в конце (объявлены здесь из-за TDZ).
   let idyssStateRules = [];
@@ -187,8 +188,7 @@
     // Тема — самый нижний слой оформления: задаёт CSS-переменные, поверх
     // которых ложатся прямые свойства виджетов и IdySS-наклейки.
     const theme = stringValue(win.properties.theme, 'default').trim().toLowerCase();
-    const KNOWN_THEMES = ['default', 'idyllium', 'dracula', 'breeze', 'oxygen'];
-    root.className = 'window theme-' + (KNOWN_THEMES.includes(theme) ? theme : 'default');
+    root.className = 'window theme-' + (KNOWN_WINDOW_THEMES.includes(theme) ? theme : 'default');
     root.style.width = width + 'px';
     root.style.height = (height + titleHeight) + 'px';
     const windowBackground = displayedWidgetColor(win.properties, 'background_color', {});
@@ -229,10 +229,16 @@
     return root;
   }
 
+  function windowThemeClass() {
+    const theme = stringValue(state.windows[0]?.properties?.theme, 'default').trim().toLowerCase();
+    return 'theme-' + (KNOWN_WINDOW_THEMES.includes(theme) ? theme : 'default');
+  }
+
   function renderModal(modal) {
     const props = modal.properties || {};
     const overlay = document.createElement('div');
-    overlay.className = 'modal-backdrop';
+    // Диалог живёт вне окна, но принадлежит той же программе — тема общая.
+    overlay.className = 'modal-backdrop ' + windowThemeClass();
 
     const dialog = document.createElement('section');
     dialog.className = 'modal-dialog';
@@ -573,7 +579,10 @@
     const fill = document.createElement('div');
     fill.className = 'progressbar-fill';
     fill.style.width = percent + '%';
-    fill.style.backgroundColor = color(widget.properties.foreground_color, '#0066cc');
+    // Цвет заливки — только явный: иначе его задаёт акцент темы через CSS.
+    if (isExplicitProperty(widget.properties, 'foreground_color')) {
+      fill.style.backgroundColor = color(widget.properties.foreground_color, '');
+    }
     el.appendChild(fill);
 
     const label = document.createElement('div');
@@ -1371,7 +1380,9 @@
       el.style.backgroundColor = backgroundColor;
     }
 
-    if (props.border_color) el.style.borderColor = color(props.border_color, 'transparent');
+    if (isExplicitProperty(props, 'border_color')) {
+      el.style.borderColor = color(props.border_color, 'transparent');
+    }
     if (props.border_width !== undefined) el.style.borderWidth = positiveNumber(props.border_width, 0) + 'px';
   }
 
@@ -1422,11 +1433,15 @@
     el.style.fontFamily = family === 'sans-serif' ? 'sans-serif' : family + ', sans-serif';
   }
 
+  // Цвет попадает в inline-стиль ТОЛЬКО если его задал ученик (или он
+  // унаследован от родителя, которому его задали). Дефолтные значения
+  // (чёрный текст, белый фон окна) инлайном не пишутся — их даёт тема через
+  // CSS-переменные, иначе никакая тема не смогла бы их перебить.
   function displayedWidgetColor(props, name, inheritedColors) {
     const inherited = inheritedColors[name];
     if (isExplicitProperty(props, name)) return color(props[name], inherited || '');
     if (inherited) return inherited;
-    return color(props[name], '');
+    return '';
   }
 
   function isExplicitProperty(props, name) {

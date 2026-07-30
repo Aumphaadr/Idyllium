@@ -4982,14 +4982,14 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
     obj.href = '';
     setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
     setTrackedRuntimePropertyDefault(obj, 'background_color', colorTransparent());
-    obj.border_color = colorTransparent();
+    defineTrackedRuntimeProperty(obj, 'border_color', colorTransparent());
   }
 
   if (typeName === 'Button') {
     obj.text = '';
     setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
     setTrackedRuntimePropertyDefault(obj, 'background_color', colorLightGray());
-    obj.border_color = colorGray();
+    defineTrackedRuntimeProperty(obj, 'border_color', colorGray());
   }
 
   if (typeName === 'TabWidget') {
@@ -5023,7 +5023,7 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
     obj.title = '';
     setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
     setTrackedRuntimePropertyDefault(obj, 'background_color', colorVeryLightGray());
-    obj.border_color = colorGray();
+    defineTrackedRuntimeProperty(obj, 'border_color', colorGray());
     obj.border_width = 1;
   }
 
@@ -5041,7 +5041,7 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
     obj.echo_mode = 'normal';
     setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
     setTrackedRuntimePropertyDefault(obj, 'background_color', colorWhite());
-    obj.border_color = colorGray();
+    defineTrackedRuntimeProperty(obj, 'border_color', colorGray());
   }
 
   if (typeName === 'TextEdit') {
@@ -5049,7 +5049,7 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
     obj.placeholder = '';
     setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
     setTrackedRuntimePropertyDefault(obj, 'background_color', colorWhite());
-    obj.border_color = colorGray();
+    defineTrackedRuntimeProperty(obj, 'border_color', colorGray());
   }
 
   if (typeName === 'ProgressBar') {
@@ -5059,7 +5059,7 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
     setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
     setTrackedRuntimePropertyDefault(obj, 'background_color', colorVeryLightGray());
     setTrackedRuntimePropertyDefault(obj, 'foreground_color', colorBlue());
-    obj.border_color = colorGray();
+    defineTrackedRuntimeProperty(obj, 'border_color', colorGray());
   }
 
   if (typeName === 'SpinBox' || typeName === 'Slider') {
@@ -5198,7 +5198,7 @@ function initializeDrawableObject(obj: RuntimeObject, typeName: string, state: R
     obj.height = 0;
     obj.fill_color = colorTransparent();
     obj.border_width = 0;
-    obj.border_color = colorTransparent();
+    defineTrackedRuntimeProperty(obj, 'border_color', colorTransparent());
     attachPositionMove(obj, 'Rectangle');
     attachDrawableTransform(obj, 'Rectangle');
   }
@@ -5209,7 +5209,7 @@ function initializeDrawableObject(obj: RuntimeObject, typeName: string, state: R
     obj.radius = 0;
     obj.fill_color = colorTransparent();
     obj.border_width = 0;
-    obj.border_color = colorTransparent();
+    defineTrackedRuntimeProperty(obj, 'border_color', colorTransparent());
     attachPositionMove(obj, 'Circle');
     attachDrawableTransform(obj, 'Circle');
   }

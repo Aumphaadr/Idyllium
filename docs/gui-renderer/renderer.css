@@ -57,8 +57,8 @@ body.theme-light {
   position: relative;
   overflow: hidden;
   border: 1px solid var(--preview-window-border, var(--border));
-  background: #fff;
-  color: #111;
+  background: var(--w-window-bg);
+  color: var(--w-window-text);
   box-shadow: 0 6px 22px var(--preview-window-shadow, rgba(0, 0, 0, 0.18));
 }
 .titlebar {
@@ -68,9 +68,9 @@ body.theme-light {
   justify-content: space-between;
   gap: 10px;
   padding: 0 7px 0 10px;
-  border-bottom: 1px solid var(--preview-titlebar-border, rgba(0, 0, 0, 0.16));
-  background: var(--preview-titlebar-bg, rgba(245, 245, 245, 0.92));
-  color: var(--preview-titlebar-text, #111);
+  border-bottom: 1px solid var(--w-titlebar-border);
+  background: var(--w-titlebar-bg);
+  color: var(--w-titlebar-text);
   font-weight: 600;
   box-sizing: border-box;
 }
@@ -130,11 +130,11 @@ input.widget,
 textarea.widget,
 select.widget,
 button.widget {
-  border: 1px solid var(--w-border, rgba(0, 0, 0, 0.28));
+  border: 1px solid var(--w-border);
   padding: 4px 7px;
-  background: var(--w-control-bg, #fff);
-  color: var(--w-control-text, #111);
-  border-radius: var(--w-radius, 4px);
+  background: var(--w-control-bg);
+  color: var(--w-control-text);
+  border-radius: var(--w-radius);
   outline: none;
   transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease, transform 80ms ease;
 }
@@ -142,22 +142,22 @@ input.widget:focus,
 textarea.widget:focus,
 select.widget:focus,
 button.widget:focus {
-  border-color: var(--w-accent, #2673d9);
-  box-shadow: 0 0 0 2px var(--w-accent-soft, rgba(38, 115, 217, 0.2));
+  border-color: var(--w-accent);
+  box-shadow: 0 0 0 2px var(--w-accent-soft);
 }
 button.widget {
   cursor: pointer;
 }
 button.widget:hover {
-  background: var(--w-control-hover, #f7f7f7);
+  background: var(--w-control-hover);
 }
 button.widget:active {
   transform: translateY(1px);
 }
 input[type="number"].widget {
-  color: #111;
-  background: #fff;
-  color-scheme: light;
+  color: var(--w-control-text);
+  background: var(--w-control-bg);
+  color-scheme: var(--w-color-scheme);
 }
 textarea.widget {
   resize: none;
@@ -166,7 +166,7 @@ input[type="range"].widget {
   padding: 0;
   border: 0;
   background: transparent;
-  accent-color: #2673d9;
+  accent-color: var(--w-accent);
 }
 /* Прямоугольная фокус-рамка вокруг range выезжает далеко за полоску —
    вместо неё подсвечиваем сам маркер. */
@@ -176,53 +176,61 @@ input[type="range"].widget:focus {
   outline: none;
 }
 input[type="range"].widget:focus-visible::-webkit-slider-thumb {
-  box-shadow: 0 0 0 3px rgba(38, 115, 217, 0.32);
+  box-shadow: 0 0 0 3px var(--w-accent-soft);
 }
 input[type="range"].widget:focus-visible::-moz-range-thumb {
-  box-shadow: 0 0 0 3px rgba(38, 115, 217, 0.32);
+  box-shadow: 0 0 0 3px var(--w-accent-soft);
 }
 .label {
   display: flex;
   align-items: center;
   white-space: pre-wrap;
 }
+button.widget.button,
 .button {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(0, 0, 0, 0.25);
-  background: #efefef;
-  color: #111;
+  border: 1px solid var(--w-border);
+  background: var(--w-button-bg);
+  color: var(--w-button-text);
 }
 .frame {
-  border: 1px solid rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--w-border);
   margin: 0;
   padding: 0;
-  background: rgba(0, 0, 0, 0.035);
+  background: var(--w-frame-bg);
+  color: var(--w-window-text);
+}
+
+.frame > legend {
+  color: var(--w-window-text);
+  padding: 0 4px;
 }
 .choice {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 2px 4px;
-  color: #111;
+  color: var(--w-window-text);
 }
 .choice input {
   margin: 0;
   /* Единый акцентный цвет вместо системного: галочки и точки в той же гамме,
      что и фокус остальных виджетов. */
-  accent-color: #2673d9;
+  accent-color: var(--w-accent);
 }
 .progressbar {
   position: relative;
-  border: 1px solid rgba(0, 0, 0, 0.25);
-  background: rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--w-border);
+  background: var(--w-track);
+  color: var(--w-window-text);
   border-radius: 999px;
   overflow: hidden;
 }
 .progressbar-fill {
   height: 100%;
-  background: #0066cc;
+  background: var(--w-accent);
   border-radius: inherit;
 }
 .progressbar-label {
@@ -235,7 +243,7 @@ input[type="range"].widget:focus-visible::-moz-range-thumb {
   font-family: inherit;
   font-size: inherit;
   font-weight: 600;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+  text-shadow: 0 1px 0 var(--w-label-shadow);
   pointer-events: none;
 }
 .image-widget {
@@ -251,9 +259,9 @@ input[type="range"].widget:focus-visible::-moz-range-thumb {
 .image-placeholder {
   align-items: center;
   justify-content: center;
-  border: 1px dashed rgba(0, 0, 0, 0.22);
-  background: rgba(0, 0, 0, 0.035);
-  color: rgba(0, 0, 0, 0.6);
+  border: 1px dashed var(--w-border);
+  background: var(--w-frame-bg);
+  color: var(--w-muted);
   font: 12px Arial, sans-serif;
   text-align: center;
   padding: 6px;
@@ -280,9 +288,9 @@ input[type="range"].widget:focus-visible::-moz-range-thumb {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px dashed rgba(0, 0, 0, 0.35);
-  color: rgba(0, 0, 0, 0.65);
-  background: rgba(0, 0, 0, 0.04);
+  border: 1px dashed var(--w-border);
+  color: var(--w-muted);
+  background: var(--w-frame-bg);
 }
 .modal-backdrop {
   position: fixed;
@@ -297,18 +305,18 @@ input[type="range"].widget:focus-visible::-moz-range-thumb {
 }
 .modal-dialog {
   width: min(420px, 100%);
-  border: 1px solid rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--w-border);
   border-radius: 8px;
   box-shadow: 0 18px 52px rgba(0, 0, 0, 0.34);
-  background: #fff;
-  color: #111;
+  background: var(--w-window-bg);
+  color: var(--w-window-text);
   overflow: hidden;
 }
 .modal-title {
   margin: 0;
   padding: 14px 16px 10px;
   font: 600 16px Arial, sans-serif;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  border-bottom: 1px solid var(--w-border);
 }
 .modal-message {
   margin: 0;
@@ -322,12 +330,12 @@ input[type="range"].widget:focus-visible::-moz-range-thumb {
   width: calc(100% - 32px);
   margin: 0 16px 14px;
   padding: 7px 9px;
-  border: 1px solid rgba(0, 0, 0, 0.28);
-  border-radius: 4px;
+  border: 1px solid var(--w-border);
+  border-radius: var(--w-radius);
   box-sizing: border-box;
   font: 13px Arial, sans-serif;
-  background: #fff;
-  color: #111;
+  background: var(--w-control-bg);
+  color: var(--w-control-text);
   color-scheme: light;
   transition: border-color 120ms ease, box-shadow 120ms ease;
 }
@@ -341,104 +349,32 @@ input[type="range"].widget:focus-visible::-moz-range-thumb {
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 16px 14px;
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--w-frame-bg);
 }
 .modal-button {
   min-width: 72px;
-  border: 1px solid rgba(0, 0, 0, 0.26);
-  border-radius: 4px;
+  border: 1px solid var(--w-border);
+  border-radius: var(--w-radius);
   padding: 6px 12px;
-  background: #fff;
-  color: #111;
+  background: var(--w-button-bg);
+  color: var(--w-button-text);
   cursor: pointer;
   font: 13px Arial, sans-serif;
 }
 .modal-button.primary {
-  border-color: #1d5fbf;
-  background: #2673d9;
-  color: #fff;
+  border-color: var(--w-accent);
+  background: var(--w-accent);
+  color: var(--w-accent-text);
 }
 
 .widget.label-link {
-  color: #1a6fc4;
+  color: var(--w-link);
   text-decoration: underline;
   cursor: pointer;
 }
 
 .widget.label-link:hover {
-  color: #0d5aa8;
-}
-
-/* ─── Темы окна (gui.Window.theme) ───────────────────────────────────────
-   Тема задаёт только переменные: прямые свойства виджетов и IdySS-наклейки
-   применяются позже и всегда побеждают. Тема default ничего не переопределяет
-   и оставляет исторический светлый вид. */
-
-.window.theme-idyllium {
-  --w-window-bg: #151020;
-  --w-window-text: #f2eaf7;
-  --w-titlebar-bg: #1c1629;
-  --w-border: #342846;
-  --w-control-bg: linear-gradient(180deg, #241d34, #1c1629);
-  --w-control-text: #f2eaf7;
-  --w-control-hover: #2c2440;
-  --w-accent: #87bfff;
-  --w-accent-soft: rgba(135, 191, 255, 0.28);
-  --w-radius: 7px;
-}
-
-.window.theme-dracula {
-  --w-window-bg: #282a36;
-  --w-window-text: #f8f8f2;
-  --w-titlebar-bg: #21222c;
-  --w-border: #44475a;
-  --w-control-bg: #44475a;
-  --w-control-text: #f8f8f2;
-  --w-control-hover: #565a71;
-  --w-accent: #bd93f9;
-  --w-accent-soft: rgba(189, 147, 249, 0.32);
-  --w-radius: 6px;
-}
-
-.window.theme-breeze {
-  --w-window-bg: #eff0f1;
-  --w-window-text: #232629;
-  --w-titlebar-bg: #d8dadc;
-  --w-border: #bdc3c7;
-  --w-control-bg: #fcfcfc;
-  --w-control-text: #232629;
-  --w-control-hover: #e8f2fb;
-  --w-accent: #3daee9;
-  --w-accent-soft: rgba(61, 174, 233, 0.3);
-  --w-radius: 3px;
-}
-
-.window.theme-oxygen {
-  --w-window-bg: #f0efee;
-  --w-window-text: #2b2b2b;
-  --w-titlebar-bg: #dcdbda;
-  --w-border: #b3b0ad;
-  --w-control-bg: linear-gradient(180deg, #fdfdfd, #eceae8);
-  --w-control-text: #2b2b2b;
-  --w-control-hover: #f6f3ef;
-  --w-accent: #f67400;
-  --w-accent-soft: rgba(246, 116, 0, 0.28);
-  --w-radius: 8px;
-}
-
-.window {
-  background: var(--w-window-bg, #ffffff);
-  color: var(--w-window-text, inherit);
-}
-
-.window .titlebar {
-  background: var(--w-titlebar-bg, inherit);
-  color: var(--w-window-text, inherit);
-  border-bottom-color: var(--w-border, currentColor);
-}
-
-.window .widget.label {
-  color: var(--w-window-text, inherit);
+  color: var(--w-link-hover);
 }
 
 /* TabWidget: полоса вкладок сверху, страница под ней. Содержимое вкладки
@@ -446,9 +382,10 @@ input[type="range"].widget:focus-visible::-moz-range-thumb {
 .widget.tabwidget {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--w-border, rgba(0, 0, 0, 0.28));
-  border-radius: var(--w-radius, 4px);
-  background: var(--w-control-bg, #fff);
+  border: 1px solid var(--w-border);
+  border-radius: var(--w-radius);
+  background: var(--w-window-bg);
+  color: var(--w-window-text);
   overflow: hidden;
 }
 
@@ -457,28 +394,28 @@ input[type="range"].widget:focus-visible::-moz-range-thumb {
   flex: none;
   gap: 2px;
   padding: 4px 4px 0;
-  border-bottom: 1px solid var(--w-border, rgba(0, 0, 0, 0.28));
-  background: var(--w-titlebar-bg, rgba(0, 0, 0, 0.05));
+  border-bottom: 1px solid var(--w-border);
+  background: var(--w-titlebar-bg);
 }
 
 .widget.tabwidget .tab {
   padding: 4px 12px;
-  border: 1px solid var(--w-border, rgba(0, 0, 0, 0.28));
+  border: 1px solid var(--w-border);
   border-bottom: 0;
-  border-radius: var(--w-radius, 4px) var(--w-radius, 4px) 0 0;
+  border-radius: var(--w-radius) var(--w-radius) 0 0;
   background: transparent;
-  color: var(--w-control-text, #111);
+  color: var(--w-window-text);
   font: inherit;
   cursor: pointer;
 }
 
 .widget.tabwidget .tab:hover {
-  background: var(--w-control-hover, rgba(0, 0, 0, 0.06));
+  background: var(--w-control-hover);
 }
 
 .widget.tabwidget .tab-selected {
-  background: var(--w-control-bg, #fff);
-  border-bottom: 1px solid var(--w-control-bg, #fff);
+  background: var(--w-window-bg);
+  border-bottom: 1px solid var(--w-window-bg);
   margin-bottom: -1px;
   font-weight: 700;
 }
@@ -488,3 +425,145 @@ input[type="range"].widget:focus-visible::-moz-range-thumb {
   flex: 1;
   overflow: hidden;
 }
+
+/* ─── Темы окна (gui.Window.theme) ───────────────────────────────────────
+   Тема — САМЫЙ НИЖНИЙ слой оформления: она задаёт только CSS-переменные.
+   Поверх них ложатся прямые свойства виджета (text_color и прочие попадают
+   в inline-стиль, только если их ЗАДАЛ ученик) и IdySS-наклейки.
+   Базовый набор ниже — это тема default: прежний светлый вид. */
+
+.window,
+.modal-backdrop {
+  color-scheme: var(--w-color-scheme);
+  --w-window-bg: #ffffff;
+  --w-window-text: #111111;
+  --w-titlebar-bg: rgba(245, 245, 245, 0.92);
+  --w-titlebar-text: #111111;
+  --w-titlebar-border: rgba(0, 0, 0, 0.16);
+  --w-border: rgba(0, 0, 0, 0.28);
+  --w-control-bg: #ffffff;
+  --w-control-text: #111111;
+  --w-control-hover: #f7f7f7;
+  --w-button-bg: #efefef;
+  --w-button-text: #111111;
+  --w-frame-bg: rgba(0, 0, 0, 0.035);
+  --w-track: rgba(0, 0, 0, 0.08);
+  --w-accent: #2673d9;
+  --w-accent-soft: rgba(38, 115, 217, 0.28);
+  --w-accent-text: #ffffff;
+  --w-muted: rgba(0, 0, 0, 0.6);
+  --w-link: #1a6fc4;
+  --w-link-hover: #0d5aa8;
+  --w-label-shadow: rgba(255, 255, 255, 0.6);
+  --w-color-scheme: light;
+  --w-radius: 4px;
+}
+
+/* Тёмная тема учебника: та же гамма, что у страниц с уроками. */
+.window.theme-idyllium,
+.modal-backdrop.theme-idyllium {
+  --w-window-bg: #151020;
+  --w-window-text: #f2eaf7;
+  --w-titlebar-bg: #1c1629;
+  --w-titlebar-text: #f2eaf7;
+  --w-titlebar-border: #342846;
+  --w-border: #3d3154;
+  --w-control-bg: #1f1830;
+  --w-control-text: #f2eaf7;
+  --w-control-hover: #2c2440;
+  --w-button-bg: linear-gradient(180deg, #2a2240, #211a33);
+  --w-button-text: #f2eaf7;
+  --w-frame-bg: rgba(135, 191, 255, 0.06);
+  --w-track: rgba(135, 191, 255, 0.14);
+  --w-accent: #87bfff;
+  --w-accent-soft: rgba(135, 191, 255, 0.32);
+  --w-accent-text: #0c0515;
+  --w-muted: #a396b8;
+  --w-link: #9fd0ff;
+  --w-link-hover: #ffffff;
+  --w-label-shadow: rgba(0, 0, 0, 0.55);
+  --w-color-scheme: dark;
+  --w-radius: 7px;
+}
+
+/* Dracula — тоже тёмная, но своя палитра. */
+.window.theme-dracula,
+.modal-backdrop.theme-dracula {
+  --w-window-bg: #282a36;
+  --w-window-text: #f8f8f2;
+  --w-titlebar-bg: #21222c;
+  --w-titlebar-text: #f8f8f2;
+  --w-titlebar-border: #191a21;
+  --w-border: #6272a4;
+  --w-control-bg: #21222c;
+  --w-control-text: #f8f8f2;
+  --w-control-hover: #44475a;
+  --w-button-bg: #44475a;
+  --w-button-text: #f8f8f2;
+  --w-frame-bg: rgba(98, 114, 164, 0.16);
+  --w-track: #191a21;
+  --w-accent: #bd93f9;
+  --w-accent-soft: rgba(189, 147, 249, 0.34);
+  --w-accent-text: #282a36;
+  --w-muted: #9aa4c8;
+  --w-link: #8be9fd;
+  --w-link-hover: #ffffff;
+  --w-label-shadow: rgba(0, 0, 0, 0.55);
+  --w-color-scheme: dark;
+  --w-radius: 6px;
+}
+
+/* Breeze — светлая, плоская, с фирменной небесной подсветкой KDE. */
+.window.theme-breeze,
+.modal-backdrop.theme-breeze {
+  --w-window-bg: #eff0f1;
+  --w-window-text: #232629;
+  --w-titlebar-bg: #d8dadc;
+  --w-titlebar-text: #232629;
+  --w-titlebar-border: #bdc3c7;
+  --w-border: #bdc3c7;
+  --w-control-bg: #fcfcfc;
+  --w-control-text: #232629;
+  --w-control-hover: #e8f2fb;
+  --w-button-bg: #fcfcfc;
+  --w-button-text: #232629;
+  --w-frame-bg: rgba(61, 174, 233, 0.07);
+  --w-track: #d0d4d7;
+  --w-accent: #3daee9;
+  --w-accent-soft: rgba(61, 174, 233, 0.32);
+  --w-accent-text: #ffffff;
+  --w-muted: #7f8c8d;
+  --w-link: #2980b9;
+  --w-link-hover: #1c6395;
+  --w-label-shadow: rgba(255, 255, 255, 0.7);
+  --w-color-scheme: light;
+  --w-radius: 3px;
+}
+
+/* Oxygen — классика KDE: тёплые серые, объёмные кнопки, крупные скругления. */
+.window.theme-oxygen,
+.modal-backdrop.theme-oxygen {
+  --w-window-bg: #f0efee;
+  --w-window-text: #2b2b2b;
+  --w-titlebar-bg: linear-gradient(180deg, #e6e4e1, #d5d2ce);
+  --w-titlebar-text: #2b2b2b;
+  --w-titlebar-border: #b3b0ad;
+  --w-border: #b3b0ad;
+  --w-control-bg: #fdfdfd;
+  --w-control-text: #2b2b2b;
+  --w-control-hover: #f6f3ef;
+  --w-button-bg: linear-gradient(180deg, #fdfdfd, #e6e3e0);
+  --w-button-text: #2b2b2b;
+  --w-frame-bg: rgba(0, 0, 0, 0.045);
+  --w-track: #d8d4d0;
+  --w-accent: #2980b9;
+  --w-accent-soft: rgba(41, 128, 185, 0.3);
+  --w-accent-text: #ffffff;
+  --w-muted: #6f6b67;
+  --w-link: #2b6ea8;
+  --w-link-hover: #1d557f;
+  --w-label-shadow: rgba(255, 255, 255, 0.75);
+  --w-color-scheme: light;
+  --w-radius: 8px;
+}
+
