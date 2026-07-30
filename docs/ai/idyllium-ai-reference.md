@@ -1839,10 +1839,14 @@ add_child(child)
 show()
 ```
 
-`theme` is a string: `"default"` (plain light look), `"idyllium"` (the dark
-look used by the textbook), `"dracula"`, `"breeze"`, `"oxygen"`. A theme is the
-lowest styling layer: direct widget properties and IdySS stickers always win.
-Unknown names fall back to `"default"`.
+`theme` is a string: `"default"` (plain light look), `"idyllium"` and
+`"dracula"` (dark), `"breeze"` and `"oxygen"` (light KDE-flavoured). The theme
+covers the whole window — titlebar, frames, buttons, inputs, checkboxes,
+sliders, progress bars, tabs and modal dialogs. It is the lowest styling layer:
+a colour the student assigns (`text_color`, `background_color`,
+`border_color`, `foreground_color`) and IdySS stickers always win over it,
+while untouched colours follow the theme. Unknown names fall back to
+`"default"`.
 
 `gui.Label`:
 

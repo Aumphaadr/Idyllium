@@ -13567,13 +13567,13 @@ function initializeGuiObject(obj, typeName, state) {
         obj.href = '';
         setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
         setTrackedRuntimePropertyDefault(obj, 'background_color', colorTransparent());
-        obj.border_color = colorTransparent();
+        defineTrackedRuntimeProperty(obj, 'border_color', colorTransparent());
     }
     if (typeName === 'Button') {
         obj.text = '';
         setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
         setTrackedRuntimePropertyDefault(obj, 'background_color', colorLightGray());
-        obj.border_color = colorGray();
+        defineTrackedRuntimeProperty(obj, 'border_color', colorGray());
     }
     if (typeName === 'TabWidget') {
         obj.__children = [];
@@ -13605,7 +13605,7 @@ function initializeGuiObject(obj, typeName, state) {
         obj.title = '';
         setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
         setTrackedRuntimePropertyDefault(obj, 'background_color', colorVeryLightGray());
-        obj.border_color = colorGray();
+        defineTrackedRuntimeProperty(obj, 'border_color', colorGray());
         obj.border_width = 1;
     }
     if (typeName === 'ImageBox') {
@@ -13621,14 +13621,14 @@ function initializeGuiObject(obj, typeName, state) {
         obj.echo_mode = 'normal';
         setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
         setTrackedRuntimePropertyDefault(obj, 'background_color', colorWhite());
-        obj.border_color = colorGray();
+        defineTrackedRuntimeProperty(obj, 'border_color', colorGray());
     }
     if (typeName === 'TextEdit') {
         obj.text = '';
         obj.placeholder = '';
         setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
         setTrackedRuntimePropertyDefault(obj, 'background_color', colorWhite());
-        obj.border_color = colorGray();
+        defineTrackedRuntimeProperty(obj, 'border_color', colorGray());
     }
     if (typeName === 'ProgressBar') {
         obj.value = 0;
@@ -13637,7 +13637,7 @@ function initializeGuiObject(obj, typeName, state) {
         setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
         setTrackedRuntimePropertyDefault(obj, 'background_color', colorVeryLightGray());
         setTrackedRuntimePropertyDefault(obj, 'foreground_color', colorBlue());
-        obj.border_color = colorGray();
+        defineTrackedRuntimeProperty(obj, 'border_color', colorGray());
     }
     if (typeName === 'SpinBox' || typeName === 'Slider') {
         obj.value = 0;
@@ -13765,7 +13765,7 @@ function initializeDrawableObject(obj, typeName, state) {
         obj.height = 0;
         obj.fill_color = colorTransparent();
         obj.border_width = 0;
-        obj.border_color = colorTransparent();
+        defineTrackedRuntimeProperty(obj, 'border_color', colorTransparent());
         attachPositionMove(obj, 'Rectangle');
         attachDrawableTransform(obj, 'Rectangle');
     }
@@ -13775,7 +13775,7 @@ function initializeDrawableObject(obj, typeName, state) {
         obj.radius = 0;
         obj.fill_color = colorTransparent();
         obj.border_width = 0;
-        obj.border_color = colorTransparent();
+        defineTrackedRuntimeProperty(obj, 'border_color', colorTransparent());
         attachPositionMove(obj, 'Circle');
         attachDrawableTransform(obj, 'Circle');
     }

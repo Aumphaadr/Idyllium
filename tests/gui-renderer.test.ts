@@ -424,6 +424,54 @@ test('gui renderer displays nested image resources in ImageBox', () => {
   assert(image.style.objectFit === 'cover', `unexpected ImageBox object-fit: ${image.style.objectFit}`);
 });
 
+test('themes reach widgets: only explicit colors go inline', () => {
+  const harness = createRendererHarness();
+
+  harness.sendSnapshot({
+    generation: 1,
+    audio: [],
+    windows: [{
+      id: 1,
+      type: 'gui.Window',
+      properties: { width: 320, height: 200, title: 'Тема', theme: 'idyllium' },
+      children: [{
+        id: 2,
+        type: 'gui.Label',
+        properties: { x: 10, y: 10, width: 200, height: 24, visible: true, text: 'От темы', text_color: '#000000' },
+        children: [],
+      }, {
+        id: 3,
+        type: 'gui.Label',
+        properties: {
+          x: 10, y: 40, width: 200, height: 24, visible: true, text: 'Явный',
+          text_color: '#ff0000', __explicit_properties: ['text_color'],
+        },
+        children: [],
+      }],
+    }],
+    canvases: [],
+    modals: [],
+  });
+
+  const root = findElement(harness.stage, (element) => String(element.className).startsWith('window '));
+  assert(root !== null, 'expected a window element');
+  assert(
+    String(root.className).includes('theme-idyllium'),
+    `expected the theme class on the window, got ${JSON.stringify(root.className)}`,
+  );
+
+  const [fromTheme, explicit] = [2, 3].map((id) => findElement(
+    harness.stage,
+    (element) => element.dataset && element.dataset.widgetId === String(id),
+  ));
+
+  // Дефолтный чёрный НЕ должен попадать в inline-стиль: иначе тёмная тема
+  // никогда не смогла бы перекрасить текст (был именно такой баг).
+  assert(fromTheme !== null && !fromTheme.style.color, `default text_color must stay out of inline styles, got ${fromTheme?.style.color}`);
+  // А заданный учеником цвет по-прежнему сильнее темы.
+  assert(explicit !== null && explicit.style.color === '#ff0000', `explicit text_color must win, got ${explicit?.style.color}`);
+});
+
 test('gui renderer inherits a loaded font from Window to child widgets', () => {
   const harness = createRendererHarness();
 
