@@ -112,6 +112,7 @@ var gui_interval_1 = require("./runtime/gui-interval");
 Object.defineProperty(exports, "guiPreviewIntervalMs", { enumerable: true, get: function () { return gui_interval_1.guiPreviewIntervalMs; } });
 function createMemoryRuntime(options, fileSystem) {
     return (0, runtime_1.createRuntime)({
+        platform: 'web',
         console: options.console,
         input: options.input,
         fileSystem,
@@ -248,7 +249,10 @@ class JavaScriptGenerator {
             this.emitBlock(program.main.body, lines, 2);
             this.returnTypes.pop();
             lines.push('  }');
-            lines.push('  await main();');
+            // void-овая main ничего не возвращает — и генерируется как прежде.
+            lines.push(this.isVoidType(program.main.returnType)
+                ? '  await main();'
+                : '  $rt.core.setExitValue(await main());');
         }
         lines.push('};');
         return { jsCode: lines.join('\n') };
@@ -433,15 +437,36 @@ class JavaScriptGenerator {
         }
         lines.push(`${pad}}`);
     }
+    /**
+     * Обёртка учёта глубины вокруг тела пользовательской функции.
+     * Строка входа стоит ДО try: если предел превышен, кадр не состоялся и его
+     * finally выполняться не должен — рантайм в этом случае правит счётчик сам.
+     */
+    isVoidType(type) {
+        return type.kind === 'PrimitiveTypeName' && type.name === 'void';
+    }
+    emitCallGuardOpen(lines, indent, name, range) {
+        const pad = '  '.repeat(indent);
+        const file = JSON.stringify(range.start.file);
+        lines.push(`${pad}const __idylYield = $rt.core.enterCall(${JSON.stringify(name)}, ${file}, ${range.start.line});`);
+        lines.push(`${pad}if (__idylYield) await __idylYield;`);
+        lines.push(`${pad}try {`);
+    }
+    emitCallGuardClose(lines, indent) {
+        const pad = '  '.repeat(indent);
+        lines.push(`${pad}} finally { $rt.core.leaveCall(); }`);
+    }
     emitFunctionDeclaration(declaration, lines, indent) {
         const pad = '  '.repeat(indent);
         const params = declaration.parameters.map((parameter) => parameter.name).join(', ');
         lines.push(`${pad}async function ${declaration.name}(${params}) {`);
+        this.emitCallGuardOpen(lines, indent + 1, declaration.name, declaration.nameRange ?? declaration.range);
         this.returnTypes.push(declaration.returnType);
-        this.emitParameterDefaults(declaration.parameters, lines, indent + 1);
-        this.emitParameterCasts(declaration.parameters, lines, indent + 1);
-        this.emitBlock(declaration.body, lines, indent + 1);
+        this.emitParameterDefaults(declaration.parameters, lines, indent + 2);
+        this.emitParameterCasts(declaration.parameters, lines, indent + 2);
+        this.emitBlock(declaration.body, lines, indent + 2);
         this.returnTypes.pop();
+        this.emitCallGuardClose(lines, indent + 1);
         lines.push(`${pad}}`);
     }
     emitClassDeclaration(declaration, lines, indent) {
@@ -512,31 +537,37 @@ class JavaScriptGenerator {
         const pad = '  '.repeat(indent);
         const params = declaration.parameters.map((parameter) => parameter.name).join(', ');
         lines.push(`${pad}self.${declaration.name} = async function(${params}) {`);
+        this.emitCallGuardOpen(lines, indent + 1, `${className}.${declaration.name}`, declaration.nameRange ?? declaration.range);
         this.returnTypes.push(declaration.returnType);
-        this.emitParameterDefaults(declaration.parameters, lines, indent + 1);
-        this.emitParameterCasts(declaration.parameters, lines, indent + 1);
-        this.emitBlock(declaration.body, lines, indent + 1);
+        this.emitParameterDefaults(declaration.parameters, lines, indent + 2);
+        this.emitParameterCasts(declaration.parameters, lines, indent + 2);
+        this.emitBlock(declaration.body, lines, indent + 2);
         this.returnTypes.pop();
+        this.emitCallGuardClose(lines, indent + 1);
         lines.push(`${pad}};`);
     }
     emitStaticMethod(className, declaration, lines, indent) {
         const pad = '  '.repeat(indent);
         const params = declaration.parameters.map((parameter) => parameter.name).join(', ');
         lines.push(`${pad}${this.classObjectName(className)}.${declaration.name} = async function(${params}) {`);
+        this.emitCallGuardOpen(lines, indent + 1, `${className}.${declaration.name}`, declaration.nameRange ?? declaration.range);
         this.returnTypes.push(declaration.returnType);
-        this.emitParameterDefaults(declaration.parameters, lines, indent + 1);
-        this.emitParameterCasts(declaration.parameters, lines, indent + 1);
-        this.emitBlock(declaration.body, lines, indent + 1);
+        this.emitParameterDefaults(declaration.parameters, lines, indent + 2);
+        this.emitParameterCasts(declaration.parameters, lines, indent + 2);
+        this.emitBlock(declaration.body, lines, indent + 2);
         this.returnTypes.pop();
+        this.emitCallGuardClose(lines, indent + 1);
         lines.push(`${pad}};`);
     }
     emitConstructorCall(className, declaration, lines, indent) {
         const pad = '  '.repeat(indent);
         const params = declaration.parameters.map((parameter) => parameter.name).join(', ');
         lines.push(`${pad}await (async function(${params}) {`);
-        this.emitParameterDefaults(declaration.parameters, lines, indent + 1);
-        this.emitParameterCasts(declaration.parameters, lines, indent + 1);
-        this.emitBlock(declaration.body, lines, indent + 1);
+        this.emitCallGuardOpen(lines, indent + 1, `${className}.constructor`, declaration.range);
+        this.emitParameterDefaults(declaration.parameters, lines, indent + 2);
+        this.emitParameterCasts(declaration.parameters, lines, indent + 2);
+        this.emitBlock(declaration.body, lines, indent + 2);
+        this.emitCallGuardClose(lines, indent + 1);
         lines.push(`${pad}}).apply(self, __args);`);
     }
     emitAssignment(statement, lines, indent) {
@@ -688,11 +719,13 @@ class JavaScriptGenerator {
     functionExpression(expression) {
         const params = expression.parameters.map((parameter) => parameter.name).join(', ');
         const lines = [`(async function(${params}) {`];
+        this.emitCallGuardOpen(lines, 1, 'function', expression.range);
         this.returnTypes.push(expression.returnType);
-        this.emitParameterDefaults(expression.parameters, lines, 1);
-        this.emitParameterCasts(expression.parameters, lines, 1);
-        this.emitBlock(expression.body, lines, 1);
+        this.emitParameterDefaults(expression.parameters, lines, 2);
+        this.emitParameterCasts(expression.parameters, lines, 2);
+        this.emitBlock(expression.body, lines, 2);
         this.returnTypes.pop();
+        this.emitCallGuardClose(lines, 1);
         lines.push('})');
         return lines.join('\n');
     }
@@ -5363,6 +5396,23 @@ function createDefaultStandardLibrary() {
     const imageImage = (0, types_1.qualified)('image', 'Image');
     const imageStatic = (0, types_1.qualified)('image', 'Static');
     const fontsFont = (0, types_1.qualified)('fonts', 'Font');
+    registry.registerModule(moduleSpec('system', [
+        functionSpec('set_recursion_depth', [{ name: 'depth', type: types_1.INT }], types_1.VOID, {
+            documentation: 'Задаёт предел глубины вложенных вызовов (по умолчанию 20000, допустимо от 10 до 200000).',
+        }),
+        functionSpec('recursion_depth', [], types_1.INT, {
+            documentation: 'Текущий предел глубины вложенных вызовов.',
+        }),
+        functionSpec('exit', [{ name: 'code', type: types_1.INT, defaultValue: '0' }], types_1.VOID, {
+            documentation: 'Немедленно завершает программу с указанным кодом.',
+        }),
+        functionSpec('platform', [], types_1.STRING, {
+            documentation: 'Где выполняется программа: "cli", "web" или "vscode".',
+        }),
+        functionSpec('version', [], types_1.STRING, {
+            documentation: 'Версия Idyllium, например "1.2.7".',
+        }),
+    ]));
     registry.registerModule(moduleSpec('console', [
         functionSpec('write', [], types_1.VOID, {
             variadic: true,
@@ -5905,6 +5955,9 @@ function createDefaultStandardLibrary() {
         ], [
             functionSpec('add_child', [guiChildParameter], types_1.VOID),
             functionSpec('show', [], types_1.VOID),
+            functionSpec('close', [], types_1.VOID, {
+                documentation: 'Закрывает окно. Когда закрыто последнее окно, программа завершается.',
+            }),
         ]),
         typeSpec('Widget', [
             ...positioned,
@@ -9325,6 +9378,8 @@ async function runIdyllium(source, runtimeOptions = {}, compileOptions = {}) {
             output: '',
             runtimeError: null,
             compilation,
+            exitText: null,
+            exitCode: null,
         };
     }
     const runtime = (0, runtime_1.createRuntime)(runtimeOptions);
@@ -9338,14 +9393,29 @@ async function runIdyllium(source, runtimeOptions = {}, compileOptions = {}) {
             output: runtime.getOutput(),
             runtimeError: null,
             compilation,
+            exitText: await runtime.getExitText(),
+            exitCode: runtime.getExitCode(),
         };
     }
     catch (error) {
+        // system.exit() — не авария, а обычное завершение: программа сама так решила.
+        if (error instanceof runtime_1.IdylliumRuntimeError && error.kind === 'exit') {
+            return {
+                success: true,
+                output: runtime.getOutput(),
+                runtimeError: null,
+                compilation,
+                exitText: await runtime.getExitText(),
+                exitCode: runtime.getExitCode(),
+            };
+        }
         return {
             success: false,
             output: runtime.getOutput(),
             runtimeError: describeRuntimeError(error, compileOptions.file ?? 'main.idyl'),
             compilation,
+            exitText: null,
+            exitCode: null,
         };
     }
 }
@@ -9388,7 +9458,8 @@ function dominantStackFunction(stack) {
 "dist/src/runtime/runtime.js": function(require, module, exports) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.IdylliumArray = exports.IdylliumTimeStamp = exports.IdylliumColor = exports.IdylliumRuntimeError = void 0;
+exports.IdylliumArray = exports.IdylliumTimeStamp = exports.IdylliumColor = exports.MAX_RECURSION_DEPTH = exports.MIN_RECURSION_DEPTH = exports.DEFAULT_RECURSION_DEPTH = exports.IDYLLIUM_VERSION = exports.IdylliumRuntimeError = void 0;
+exports.clampRecursionDepth = clampRecursionDepth;
 exports.createMemoryRuntimeFileSystem = createMemoryRuntimeFileSystem;
 exports.createRuntime = createRuntime;
 const nodeFs = require('fs');
@@ -9414,6 +9485,29 @@ class IdylliumRuntimeError extends Error {
     }
 }
 exports.IdylliumRuntimeError = IdylliumRuntimeError;
+/**
+ * Версия языка, видимая программе через system.version().
+ * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
+ * потому что рантайм собирается и в браузер, где package.json недоступен.
+ */
+exports.IDYLLIUM_VERSION = '1.2.7';
+/** Где выполняется программа, если хост не сказал явно. */
+function defaultRuntimePlatform() {
+    const nodeProcess = typeof process === 'object' ? process : null;
+    return nodeProcess?.versions?.node ? 'cli' : 'web';
+}
+/** Предел глубины вызовов по умолчанию; меняется system.set_recursion_depth(). */
+exports.DEFAULT_RECURSION_DEPTH = 20000;
+exports.MIN_RECURSION_DEPTH = 10;
+// Верхняя граница — по памяти, а не по стеку: кадр Idyllium стоит около
+// килобайта, так что 200000 кадров это ~190 МБ. Больше вкладка браузера
+// уже не переживёт, и честнее отказать заранее.
+exports.MAX_RECURSION_DEPTH = 200000;
+function clampRecursionDepth(value) {
+    if (!Number.isFinite(value))
+        return exports.DEFAULT_RECURSION_DEPTH;
+    return Math.min(exports.MAX_RECURSION_DEPTH, Math.max(exports.MIN_RECURSION_DEPTH, Math.trunc(value)));
+}
 class IdylliumColor {
     red;
     green;
@@ -11422,6 +11516,25 @@ function createRuntime(options = {}) {
     const LOOP_YIELD_INTERVAL_MS = 25;
     let loopTickCounter = 0;
     let lastLoopYieldAt = Date.now();
+    // ─── Глубина вызовов ──────────────────────────────────────────────────
+    // Idyllium считает глубину сам, а не полагается на стек JavaScript: тот
+    // кончается на разной отметке в Node и в браузере, разворачивается с мусором
+    // от V8 в stderr и не ловится try/catch. Свой счётчик делает предел
+    // свойством языка и превращает переполнение в обычную runtime error.
+    //
+    // Уступка раз в CALL_YIELD_MASK+1 кадров глубины — не оптимизация, а
+    // единственное, что вообще позволяет уйти за физический стек: приостановка
+    // async-функции разворачивает всю цепочку вызовов в кучу, и спуск
+    // продолжается с почти пустого стека. Программа, не уходящая глубже 511
+    // кадров (то есть любая обычная), это условие ни разу не выполнит.
+    const CALL_YIELD_MASK = 511;
+    const MICROTASK_YIELD = Promise.resolve();
+    let callDepth = 0;
+    let maxCallDepth = clampRecursionDepth(options.maxRecursionDepth ?? exports.DEFAULT_RECURSION_DEPTH);
+    let lastCallYieldAt = Date.now();
+    // Результат main(): показывается хостом после завершения программы.
+    let exitValue = undefined;
+    let hasExitValue = false;
     let loopYieldChannel = null;
     let pendingLoopYieldResolve = null;
     function yieldToHost() {
@@ -11496,6 +11609,37 @@ function createRuntime(options = {}) {
         async to_string(value) {
             // Как и console.write: у объекта с публичным to_string() вызывается он.
             return formatConsoleValue(value);
+        },
+        /**
+         * Вход в пользовательскую функцию. Возвращает промис, если пора уступить
+         * управление (кодогенерация тогда его ждёт), и null на быстром пути.
+         */
+        enterCall(name, file, line) {
+            callDepth++;
+            if (callDepth > maxCallDepth) {
+                // Кадр не состоялся — его finally не выполнится, счётчик правим сами.
+                callDepth--;
+                throw new IdylliumRuntimeError(file, line, `recursion depth limit of ${maxCallDepth} exceeded in function '${name}'`);
+            }
+            if ((callDepth & CALL_YIELD_MASK) !== 0)
+                return null;
+            throwIfRuntimeStopped(file, line);
+            const now = Date.now();
+            if (now - lastCallYieldAt < LOOP_YIELD_INTERVAL_MS) {
+                // Дешёвая уступка микрозадаче: стек разворачивается, хост не дышит.
+                return MICROTASK_YIELD;
+            }
+            lastCallYieldAt = now;
+            // Изредка уступаем по-настоящему, чтобы кнопка «Стоп» успела сработать.
+            return yieldToHost().then(() => throwIfRuntimeStopped(file, line));
+        },
+        leaveCall() {
+            if (callDepth > 0)
+                callDepth--;
+        },
+        setExitValue(value) {
+            exitValue = value;
+            hasExitValue = true;
         },
     };
     const array = {
@@ -11608,12 +11752,32 @@ function createRuntime(options = {}) {
         types,
         errors: {
             catchValue(error) {
-                if (!(error instanceof IdylliumRuntimeError) || error.kind === 'cancelled')
+                if (!(error instanceof IdylliumRuntimeError) || error.kind !== 'program')
                     throw error;
                 return createRuntimeErrorValue(error);
             },
         },
         modules: {
+            system: {
+                set_recursion_depth: contextFunction((value, file, line) => {
+                    const requested = integerNumber(value, 'system.set_recursion_depth()', file, line);
+                    if (requested < exports.MIN_RECURSION_DEPTH || requested > exports.MAX_RECURSION_DEPTH) {
+                        throw new IdylliumRuntimeError(file, line, `system.set_recursion_depth() expects a value between ${exports.MIN_RECURSION_DEPTH} and ${exports.MAX_RECURSION_DEPTH}, got ${requested}`);
+                    }
+                    maxCallDepth = requested;
+                }),
+                recursion_depth: () => maxCallDepth,
+                exit: contextFunction((code, file, line) => {
+                    const value = code === undefined ? 0 : integerNumber(code, 'system.exit()', file, line);
+                    exitValue = value;
+                    hasExitValue = true;
+                    // Особый род ошибки: разворачивает стек, выполняя finally, но не
+                    // ловится ученическим try/catch — иначе выход можно было бы отменить.
+                    throw new IdylliumRuntimeError(file, line, `program exited with code ${value}`, 'exit');
+                }),
+                platform: () => String(options.platform ?? defaultRuntimePlatform()),
+                version: () => exports.IDYLLIUM_VERSION,
+            },
             math: {
                 pi: Math.PI,
                 e: Math.E,
@@ -12069,6 +12233,25 @@ function createRuntime(options = {}) {
         },
         getOutput() {
             return output;
+        },
+        /** Текст результата main() (или system.exit()); null — программа ничего не вернула. */
+        async getExitText() {
+            if (!hasExitValue)
+                return null;
+            const text = await formatConsoleValue(exitValue);
+            // Строку берём в кавычки: «завершилась с кодом готово» спотыкается,
+            // «с кодом "готово"» читается.
+            return typeof exitValue === 'string' ? JSON.stringify(exitValue) : text;
+        },
+        /** Целый код завершения, если он был целым; иначе null. */
+        getExitCode() {
+            if (!hasExitValue)
+                return null;
+            if (typeof exitValue === 'number' && Number.isInteger(exitValue))
+                return exitValue;
+            if (typeof exitValue === 'bigint')
+                return Number(exitValue);
+            return null;
         },
         getAudio() {
             return runtimeObjects.audio.map(audioSnapshot);
@@ -13567,6 +13750,14 @@ function initializeGuiObject(obj, typeName, state) {
             for (const child of obj.__children ?? []) {
                 await initializeGuiChild(child);
             }
+        };
+        // Закрытое окно исчезает из снимка. Когда закрылось последнее, у программы
+        // не остаётся GUI — и хост завершает её так же, как консольную.
+        obj.close = () => {
+            obj.__shown = false;
+            const index = state.windows.indexOf(obj);
+            if (index !== -1)
+                state.windows.splice(index, 1);
         };
         state.windows.push(obj);
     }

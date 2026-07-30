@@ -338,6 +338,24 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   const imageStatic = qualified('image', 'Static');
   const fontsFont = qualified('fonts', 'Font');
 
+  registry.registerModule(moduleSpec('system', [
+    functionSpec('set_recursion_depth', [{ name: 'depth', type: INT }], VOID, {
+      documentation: 'Задаёт предел глубины вложенных вызовов (по умолчанию 20000, допустимо от 10 до 200000).',
+    }),
+    functionSpec('recursion_depth', [], INT, {
+      documentation: 'Текущий предел глубины вложенных вызовов.',
+    }),
+    functionSpec('exit', [{ name: 'code', type: INT, defaultValue: '0' }], VOID, {
+      documentation: 'Немедленно завершает программу с указанным кодом.',
+    }),
+    functionSpec('platform', [], STRING, {
+      documentation: 'Где выполняется программа: "cli", "web" или "vscode".',
+    }),
+    functionSpec('version', [], STRING, {
+      documentation: 'Версия Idyllium, например "1.2.7".',
+    }),
+  ]));
+
   registry.registerModule(moduleSpec('console', [
     functionSpec('write', [], VOID, {
       variadic: true,
@@ -895,6 +913,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], [
       functionSpec('add_child', [guiChildParameter], VOID),
       functionSpec('show', [], VOID),
+      functionSpec('close', [], VOID, {
+        documentation: 'Закрывает окно. Когда закрыто последнее окно, программа завершается.',
+      }),
     ]),
     typeSpec('Widget', [
       ...positioned,

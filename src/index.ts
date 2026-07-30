@@ -10,6 +10,8 @@ export {
 export { runCli, CliIO } from './cli';
 
 export {
+  IDYLLIUM_VERSION,
+  DEFAULT_RECURSION_DEPTH,
   createRuntime,
   createMemoryRuntimeFileSystem,
   IdylliumRuntime,

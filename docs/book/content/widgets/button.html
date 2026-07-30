@@ -224,6 +224,55 @@ main.idyl:12:9: compile error: type '&lt;error&gt;' has no property 'text'</idyl
     </div>
 
     <div class="docs-section">
+      <h2>Кнопка «Выход»: <code>win.close()</code></h2>
+      <p>
+        Раз кнопка умеет менять другие виджеты, пусть научится и закрывать окно.
+        У <code>gui.Window</code> для этого есть метод <code>close()</code>:
+      </p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 140;
+    win.title = "Прощание";
+
+    gui.Label bye;
+    bye.x = 20;
+    bye.y = 20;
+    bye.width = 260;
+    bye.text = "Нажмите кнопку, чтобы закрыть окно";
+
+    gui.Button quit;
+    quit.x = 20;
+    quit.y = 60;
+    quit.width = 120;
+    quit.height = 34;
+    quit.text = "Выход";
+    quit.on_click = void function() {
+        win.close();
+    };
+
+    win.add_child(bye);
+    win.add_child(quit);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <p>
+        Когда закрывается <strong>последнее</strong> окно программы, работать
+        ей больше не с чем — и она завершается сама. Это и есть обычный способ
+        сделать в приложении кнопку «Выход».
+      </p>
+      <p>
+        Заметьте: <code>close()</code> вызывается у <strong>окна</strong>, а не
+        у кнопки. Кнопка — лишь повод; закрывается то, что содержит её.
+      </p>
+    </div>
+
+    <div class="docs-section">
       <h2>Шпаргалка: свойства и события Button</h2>
       <table>
         <thead>
@@ -234,6 +283,15 @@ main.idyl:12:9: compile error: type '&lt;error&gt;' has no property 'text'</idyl
           <tr><td><code>x</code>, <code>y</code></td><td><code>int</code></td><td>положение внутри окна</td></tr>
           <tr><td><code>width</code>, <code>height</code></td><td><code>int</code></td><td>размеры кнопки в пикселях</td></tr>
           <tr><td><code>on_click</code></td><td>событие</td><td>функция, которая автоматически вызывается при нажатии на кнопку</td></tr>
+        </tbody>
+      </table>
+      <p>И один метод у окна, который сегодня пригодился:</p>
+      <table>
+        <thead>
+          <tr><th>Метод</th><th>Что делает</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>окно.close()</code></td><td>закрывает окно; когда закрыто последнее, программа завершается</td></tr>
         </tbody>
       </table>
       <p>В следующем уроке мы познакомимся поближе с тем, за кого сегодня сражались, — с виджетом <code>gui.Label</code>.</p>

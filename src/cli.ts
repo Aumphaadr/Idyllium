@@ -88,7 +88,25 @@ async function runCommand(args: readonly string[], io: CliIO): Promise<number> {
     return 1;
   }
 
+  // Код завершения принадлежит среде, а не программе: он идёт в stderr, чтобы
+  // `idyllium run prog.idyl > out.txt` не подмешивал служебную строку в файл.
+  // Серый — тот же «светлый чёрный» \e[90m, о котором рассказывает урок 06.
+  if (result.exitText !== null) {
+    const processCode = exitCodeForProcess(result.exitCode);
+    const suffix = result.exitCode !== null && result.exitCode !== processCode
+      ? ` (процесс вернул ${processCode})`
+      : '';
+    io.stderr(`\u001b[90m[Программа завершилась с кодом ${result.exitText}${suffix}]\u001b[0m\n`);
+    return processCode;
+  }
+
   return 0;
+}
+
+/** POSIX хранит код возврата в одном байте; всё, что не влезло, честно называется в сообщении. */
+function exitCodeForProcess(code: number | null): number {
+  if (code === null) return 0;
+  return ((Math.trunc(code) % 256) + 256) % 256;
 }
 
 function singleFileArgument(command: string, args: readonly string[], io: CliIO): string | null {

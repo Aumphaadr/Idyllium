@@ -391,6 +391,7 @@ async function runCurrentFile(core, target) {
     }
 
     runTerminal.write('\nIdyllium program finished successfully.\n');
+    await writeExitLine(runTerminal, result.runtime);
     scheduleDiagnosticsRefresh(core, 0);
   } finally {
     finishRunSession(session);
@@ -585,6 +586,7 @@ function attachGuiSession(panel, result, channel, session) {
   });
 
   const intervalMs = guiPreviewIntervalMs(result.windows, result.canvases);
+  const hadGui = typeof runtime.hasGui === 'function' && runtime.hasGui();
   const timer = setInterval(() => {
     if (session?.signal.aborted) {
       panel.dispose();
@@ -597,6 +599,15 @@ function attachGuiSession(panel, result, channel, session) {
       if (!runtime.stepGui) return;
       const changed = await runtime.stepGui(delta);
       if (changed !== false) sendSnapshot();
+      // Программа закрыла последнее окно (win.close()) — показывать больше
+      // нечего, панель закрывается так же, как заканчивается консольная
+      // программа. Так же ведёт себя WebIDE. Условие hadGui нужно, чтобы
+      // «Запустить с GUI» на программе вовсе без окон не захлопывало панель
+      // на первом же тике, как было до сих пор.
+      if (hadGui && typeof runtime.hasGui === 'function' && !runtime.hasGui()) {
+        await writeExitLineToChannel(runtime);
+        panel.dispose();
+      }
     }, false);
   }, intervalMs);
 
@@ -675,6 +686,24 @@ function guiWebviewState(webview, windows, canvases, modals, output, audio = [])
   }, windows, canvases, modals, output, audio);
 }
 
+// То же сообщение, но для GUI-программ: у них конец наступает, когда закрылось
+// последнее окно, и печатать его надо в канал вывода, а не в терминал.
+async function writeExitLineToChannel(runtime) {
+  if (!runtime || typeof runtime.getExitText !== 'function') return;
+  const text = await runtime.getExitText();
+  if (text === null) return;
+  outputChannel.appendLine(`[Программа завершилась с кодом ${text}]`);
+}
+
+// Служебная строка о коде завершения: печатает её среда, а не программа.
+// Терминал настоящий, поэтому серый берётся обычным ANSI (\e[90m).
+async function writeExitLine(runTerminal, runtime) {
+  if (!runtime || typeof runtime.getExitText !== 'function') return;
+  const text = await runtime.getExitText();
+  if (text === null) return;
+  runTerminal.write(`\u001b[90m[Программа завершилась с кодом ${text}]\u001b[0m\n`);
+}
+
 async function executeIdylliumInExtension(core, runFile, files, document, options = {}) {
   const sources = {};
   for (const [file, source] of files) {
@@ -710,6 +739,7 @@ async function executeIdylliumInExtension(core, runFile, files, document, option
 
   let output = '';
   const runtime = core.createRuntime({
+    platform: 'vscode',
     projectRoot: path.dirname(runFile),
     abortSignal: options.abortSignal,
     urlOpener: {
@@ -740,7 +770,12 @@ async function executeIdylliumInExtension(core, runFile, files, document, option
     const AsyncFunction = Object.getPrototypeOf(async function idle() {}).constructor;
     const factory = new AsyncFunction(compilation.jsCode);
     const program = await factory();
-    await program(runtime);
+    try {
+      await program(runtime);
+    } catch (error) {
+      // system.exit() — не авария, а обычное завершение по просьбе программы.
+      if (error?.kind !== 'exit') throw error;
+    }
     return {
       success: true,
       output: runtime.getOutput ? runtime.getOutput() : output,

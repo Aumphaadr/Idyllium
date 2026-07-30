@@ -169,6 +169,7 @@ export { guiPreviewIntervalMs } from './runtime/gui-interval';
 
 function createMemoryRuntime(options: BrowserRunOptions, fileSystem: RuntimeFileSystem): IdylliumRuntime {
   return createRuntime({
+    platform: 'web',
     console: options.console,
     input: options.input,
     fileSystem,

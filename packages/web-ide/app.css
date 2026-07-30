@@ -2634,6 +2634,11 @@ summary.json-node-line:hover {
   color: #f38ba8;
 }
 
+/* Служебные строки среды (код завершения) — приглушённо, как «светлый чёрный». */
+.output-muted {
+  color: var(--muted);
+}
+
 .ansi-bold {
   font-weight: 700;
 }
