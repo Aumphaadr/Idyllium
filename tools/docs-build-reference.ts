@@ -92,7 +92,81 @@ export function buildReferenceSite(outputRoot: string): void {
     modules,
   };
   fs.writeFileSync(path.join(outputRoot, 'api.json'), `${JSON.stringify(api, null, 2)}\n`, 'utf8');
-  console.log(`reference generated: ${modules.length} modules, ${globals.length} global functions`);
+
+  const pages = bakeReferencePages(outputRoot, path.join(packageRoot, 'index.html'), api);
+  console.log(`reference generated: ${modules.length} modules, ${globals.length} global functions, ${pages} clean URLs`);
+}
+
+/**
+ * Печёт настоящую страницу на каждый маршрут справочника: /reference/gui,
+ * /reference/gui/Window, /reference/language/keywords и т.д. Члены типов
+ * (методы, свойства) отдельных страниц не получают — они живут во фрагменте
+ * (#close), для которого решётка и придумана.
+ */
+function bakeReferencePages(
+  outputRoot: string,
+  shellPath: string,
+  api: {
+    readonly general: readonly { readonly id: string; readonly title: string; readonly description: string }[];
+    readonly language: readonly { readonly id: string; readonly title: string; readonly description: string }[];
+    readonly modules: readonly {
+      readonly name: string;
+      readonly title: string;
+      readonly description: string;
+      readonly types: readonly { readonly name: string; readonly qualifiedName: string; readonly description: string }[];
+    }[];
+  },
+): number {
+  const shell = fs.readFileSync(shellPath, 'utf8');
+  const routes: Array<{ readonly parts: readonly string[]; readonly title: string; readonly description: string }> = [
+    { parts: ['globals'], title: 'Встроенные функции', description: 'Глобальные функции Idyllium: преобразования типов и работа с массивами.' },
+  ];
+  for (const page of api.general) routes.push({ parts: ['general', page.id], title: page.title, description: page.description });
+  for (const page of api.language) routes.push({ parts: ['language', page.id], title: page.title, description: page.description });
+  for (const module of api.modules) {
+    routes.push({ parts: [module.name], title: `Библиотека ${module.name}`, description: module.description });
+    for (const type of module.types) {
+      routes.push({ parts: [module.name, type.name], title: type.qualifiedName, description: type.description });
+    }
+  }
+
+  let written = 0;
+  const writePage = (parts: readonly string[], depth: number, title: string, description: string) => {
+    const base = depth > 0 ? '../'.repeat(depth) : './';
+    const meta = description ? `\n  <meta name="description" content="${escapeAttribute(description)}">` : '';
+    const page = shell
+      .replace('<head>', `<head>\n  <base href="${base}">`)
+      .replace(/<title>[^<]*<\/title>/u, `<title>${escapeAttribute(title)} — Документация Idyllium</title>${meta}`);
+    const outputPath = path.join(outputRoot, ...parts);
+    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+    fs.writeFileSync(outputPath, page, 'utf8');
+    written++;
+  };
+
+  for (const route of routes) {
+    const dir = route.parts.slice(0, -1);
+    const leaf = route.parts[route.parts.length - 1];
+    writePage([...dir, `${leaf}.html`], dir.length, route.title, route.description);
+  }
+
+  // У модуля с типами рядом лежит одноимённый каталог (gui.html и gui/…).
+  // Какое из правил GitHub Pages победит для «/reference/gui» — файл или
+  // редирект в каталог — не документировано, поэтому страница модуля печётся
+  // и вторым экземпляром как gui/index.html: оба исхода ведут к ней.
+  for (const module of api.modules) {
+    if (module.types.length === 0) continue;
+    writePage([module.name, 'index.html'], 1, `Библиотека ${module.name}`, module.description);
+  }
+
+  return written;
+}
+
+function escapeAttribute(value: string): string {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 function serializeModule(module: ModuleSpec, content: ReferenceContent, registry: StandardLibraryRegistry) {
