@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-01T08:00:07.063Z",
+  "generatedAt": "2026-08-01T10:30:23.441Z",
   "sourceRoot": "docs/manual-content/tasks",
   "sections": [
     {
@@ -22,12 +22,12 @@
         {
           "id": "hello",
           "title": "Первая программа",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Первая программа»",
           "file": "content/console/hello.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/hello.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "variables",
@@ -72,22 +72,22 @@
         {
           "id": "transforms",
           "title": "Преобразования данных",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Преобразования данных»",
           "file": "content/console/transforms.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/transforms.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "math-basics",
           "title": "Базовые математические функции",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Базовые математические функции»",
           "file": "content/console/math-basics.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/math-basics.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "if",
@@ -122,52 +122,52 @@
         {
           "id": "bool",
           "title": "Логические операции",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Логические операции»",
           "file": "content/console/bool.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/bool.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "loops",
           "title": "Циклы",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Циклы»",
           "file": "content/console/loops.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/loops.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "time",
           "title": "Библиотека time",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Библиотека time»",
           "file": "content/console/time.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/time.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "constants",
           "title": "Именованные константы",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Именованные константы»",
           "file": "content/console/constants.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/constants.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "array",
           "title": "Массивы",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Массивы»",
           "file": "content/console/array.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/array.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "char",
@@ -182,12 +182,12 @@
         {
           "id": "dyn-array",
           "title": "Динамические массивы",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Динамические массивы»",
           "file": "content/console/dyn-array.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/dyn-array.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "arr-functions",

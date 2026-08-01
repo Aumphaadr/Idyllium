@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-01T08:00:07.063Z",
+  "generatedAt": "2026-08-01T10:30:23.441Z",
   "sourceRoot": "packages/docs",
   "sections": [
     {
@@ -27,7 +27,7 @@
           "sourceFile": "cli/001_hello.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "variables",
@@ -77,7 +77,7 @@
           "sourceFile": "cli/006_transforms.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "math-basics",
@@ -87,7 +87,7 @@
           "sourceFile": "cli/007_math.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "if",
@@ -127,7 +127,7 @@
           "sourceFile": "cli/011_bool.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "loops",
@@ -137,7 +137,7 @@
           "sourceFile": "cli/012_loops.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "time",
@@ -147,7 +147,7 @@
           "sourceFile": "cli/019_time.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "constants",
@@ -157,7 +157,7 @@
           "sourceFile": "docs/manual-content/console/constants.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "array",
@@ -167,7 +167,7 @@
           "sourceFile": "cli/013_array.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "char",
@@ -187,7 +187,7 @@
           "sourceFile": "cli/015_dyn_array.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "arr-functions",
