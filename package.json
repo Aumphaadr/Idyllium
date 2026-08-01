@@ -20,7 +20,8 @@
     "spec:extract": "npm run build && node dist/tools/extract-lesson-specs.js",
     "spec:check": "npm run spec:extract && node dist/tests/lesson-spec.test.js",
     "manual:generate": "node tools/generate-manual-tests.js",
-    "manual:check": "npm run build && node tools/check-manual-tests.js"
+    "manual:check": "npm run build && node tools/check-manual-tests.js",
+    "release": "npm run docs:site && npm run package:vscode && node dist/tools/extract-lesson-specs.js && node tools/run-tests.js"
   },
   "keywords": [
     "idyllium",

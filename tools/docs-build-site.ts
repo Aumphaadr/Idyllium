@@ -884,7 +884,6 @@ function tasksShell(): string {
   <title>Idyllium - Задачник</title>
   <link rel="icon" type="image/png" href="../book/favicon.png">
   <link rel="stylesheet" href="../book/fonts/fonts.css">
-  <link rel="stylesheet" href="../book/assets/gui.css">
   <link rel="stylesheet" href="../book/app.css">
   <script src="../book/version.js" defer></script>
   <script src="../book/app.js" defer></script>
