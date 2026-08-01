@@ -32,6 +32,26 @@
 
   const els = {};
 
+  // Корень справочника (…/reference/). Испечённые страницы несут <base>,
+  // поэтому document.baseURI указывает сюда с любой глубины. Маршрут — это
+  // путь (/reference/gui/Window), а член типа — настоящий фрагмент (#close).
+  const ROOT_PATH = new URL('.', document.baseURI).pathname;
+
+  function routeUrl(...parts) {
+    return ROOT_PATH + parts.map(encodePart).join('/');
+  }
+
+  function typeUrl(moduleName, typeName) {
+    return routeUrl(moduleName, typeName);
+  }
+
+  function requestedMemberFromHash() {
+    const raw = location.hash.replace(/^#/u, '');
+    // Старые адреса вида #/module/… обрабатывает редирект, а не подсветка.
+    if (!raw || raw.startsWith('/')) return undefined;
+    return decodeURIComponent(raw);
+  }
+
   document.addEventListener('DOMContentLoaded', init);
 
   async function init() {
@@ -53,13 +73,63 @@
       state.languagePages = new Map(state.api.language.map((page) => [page.id, page]));
       state.searchEntries = buildSearchEntries(state.api);
       els.version.textContent = `v${state.api.languageVersion}`;
+      // Сохранённые адреса эпохи решётки живут вечно: тихий переезд на чистый
+      // путь. Карта нужна уже загруженной — тип и функцию различает api.json.
+      if (redirectLegacyHashRoute()) return;
       renderNavigation();
       renderRoute();
     } catch (error) {
       renderFatalError(error);
     }
 
+    window.addEventListener('popstate', renderRoute);
+    // Смена фрагмента (клик по члену на той же странице) — тоже перерисовка:
+    // нужный член получает подсветку и прокрутку.
     window.addEventListener('hashchange', renderRoute);
+  }
+
+  function redirectLegacyHashRoute() {
+    if (!location.hash.startsWith('#/')) return false;
+    const parts = decodeURIComponent(location.hash.slice(2)).split('/').filter(Boolean);
+
+    let target = ROOT_PATH;
+    if (parts.length > 0) {
+      if (parts[0] === 'general' || parts[0] === 'language') {
+        target = routeUrl(parts[0], parts[1] ?? '');
+      } else if (parts[0] === 'globals') {
+        target = routeUrl('globals') + (parts[1] ? `#${encodePart(parts[1])}` : '');
+      } else {
+        const module = state.modules.get(parts[0]);
+        const isType = module?.types.some((type) => type.name === parts[1]) === true;
+        if (parts.length >= 3 || (parts.length === 2 && isType)) {
+          target = typeUrl(parts[0], parts[1]) + (parts[2] ? `#${encodePart(parts[2])}` : '');
+        } else if (parts.length === 2) {
+          target = routeUrl(parts[0]) + `#${encodePart(parts[1])}`;
+        } else {
+          target = routeUrl(parts[0]);
+        }
+      }
+    }
+
+    location.replace(target);
+    return true;
+  }
+
+  // Переход по внутренней ссылке без перезагрузки страницы. Модифицированные
+  // клики (Ctrl, средняя кнопка) не трогаем. Смену одного лишь фрагмента на
+  // той же странице оставляем браузеру — hashchange перерисует сам.
+  function interceptRouteNavigation(event, link) {
+    if (event.defaultPrevented || event.button !== 0) return false;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return false;
+
+    const url = new URL(link.href, location.href);
+    if (url.origin !== location.origin || !url.pathname.startsWith(ROOT_PATH)) return false;
+    if (url.pathname === location.pathname && url.hash) return false;
+
+    event.preventDefault();
+    history.pushState(null, '', `${url.pathname}${url.hash}`);
+    renderRoute();
+    return true;
   }
 
   function bindShellEvents() {
@@ -88,6 +158,9 @@
         void copyText(copyButton, copyButton.dataset.copy || '');
         return;
       }
+
+      const link = event.target.closest('a[href]');
+      if (link && interceptRouteNavigation(event, link)) return;
 
       if (
         document.body.classList.contains('sidebar-open')
@@ -132,10 +205,10 @@
       const moduleActive = route[0] === module.name;
       const types = module.types.map((type) => {
         const active = moduleActive && route[1] === type.name;
-        return `<a class="nav-link nav-type ${active ? 'active' : ''}" href="#/${encodePart(module.name)}/${encodePart(type.name)}">${escapeHtml(type.name)}</a>`;
+        return `<a class="nav-link nav-type ${active ? 'active' : ''}" href="${typeUrl(module.name, type.name)}">${escapeHtml(type.name)}</a>`;
       }).join('');
       return `
-        <a class="nav-link nav-module ${moduleActive && route.length === 1 ? 'active' : ''}" href="#/${encodePart(module.name)}">
+        <a class="nav-link nav-module ${moduleActive && route.length === 1 ? 'active' : ''}" href="${routeUrl(module.name)}">
           <span>${escapeHtml(module.name)}</span>
         </a>
         ${types}
@@ -144,15 +217,15 @@
 
     els.nav.innerHTML = `
       <div class="nav-heading">Общее</div>
-      <a class="nav-link ${route.length === 0 ? 'active' : ''}" href="#/">Обзор</a>
+      <a class="nav-link ${route.length === 0 ? 'active' : ''}" href="${ROOT_PATH}">Обзор</a>
       ${(state.api.general || []).map((page) => `
-        <a class="nav-link nav-language ${route[0] === 'general' && route[1] === page.id ? 'active' : ''}" href="#/general/${encodePart(page.id)}">${escapeHtml(page.title)}</a>
+        <a class="nav-link nav-language ${route[0] === 'general' && route[1] === page.id ? 'active' : ''}" href="${routeUrl('general', page.id)}">${escapeHtml(page.title)}</a>
       `).join('')}
       <div class="nav-heading">Язык</div>
       ${state.api.language.map((page) => `
-        <a class="nav-link nav-language ${route[0] === 'language' && route[1] === page.id ? 'active' : ''}" href="#/language/${encodePart(page.id)}">${escapeHtml(page.title)}</a>
+        <a class="nav-link nav-language ${route[0] === 'language' && route[1] === page.id ? 'active' : ''}" href="${routeUrl('language', page.id)}">${escapeHtml(page.title)}</a>
       `).join('')}
-      <a class="nav-link nav-language ${route[0] === 'globals' ? 'active' : ''}" href="#/globals">Встроенные функции</a>
+      <a class="nav-link nav-language ${route[0] === 'globals' ? 'active' : ''}" href="${routeUrl('globals')}">Встроенные функции</a>
       <div class="nav-heading">Библиотеки</div>
       ${moduleLinks}
     `;
@@ -182,7 +255,7 @@
         renderNotFound(parts.join('.'));
       }
     } else if (parts[0] === 'globals') {
-      renderGlobals(parts[1]);
+      renderGlobals(requestedMemberFromHash());
       title = 'Встроенные функции';
     } else {
       const module = state.modules.get(parts[0]);
@@ -191,10 +264,12 @@
       } else {
         const type = module.types.find((item) => item.name === parts[1]);
         if (type) {
-          renderType(module, type, parts[2]);
+          renderType(module, type, requestedMemberFromHash());
           title = type.qualifiedName;
+        } else if (parts.length > 1) {
+          renderNotFound(parts.join('.'));
         } else {
-          renderModule(module, parts[1]);
+          renderModule(module, requestedMemberFromHash());
           title = module.name;
         }
       }
@@ -233,14 +308,14 @@
         <h2>Структура файла Idyllium</h2>
         <p class="api-section-intro">Минимальная программа подключает нужную библиотеку и начинает выполнение с <code>main()</code>.</p>
         ${firstProgram?.code ? codeSample(firstProgram.code, firstProgram.language) : ''}
-        <p class="section-link"><a href="#/language/program">Подробнее о структуре программы</a></p>
+        <p class="section-link"><a href="${routeUrl('language', 'program')}">Подробнее о структуре программы</a></p>
       </section>
 
       <section class="api-section">
         <h2>Основы языка</h2>
         <div class="language-list">
           ${api.language.map((page) => `
-            <a class="language-row" href="#/language/${encodePart(page.id)}">
+            <a class="language-row" href="${routeUrl('language', page.id)}">
               <strong>${escapeHtml(page.title)}</strong>
               <span>${escapeHtml(page.description)}</span>
             </a>
@@ -261,7 +336,7 @@
         <h2>Библиотеки</h2>
         <div class="module-list">
           ${api.modules.map((module) => `
-            <a class="module-row" href="#/${encodePart(module.name)}">
+            <a class="module-row" href="${routeUrl(module.name)}">
               <code>use ${escapeHtml(module.name)};</code>
               <span><strong>${escapeHtml(module.title)}</strong><br>${escapeHtml(module.description)}</span>
             </a>
@@ -281,7 +356,7 @@
 
   function renderLanguagePage(page, sectionLabel = 'Язык') {
     els.view.innerHTML = `
-      ${breadcrumbs([{ label: 'Документация', href: '#/' }, { label: sectionLabel }, { label: page.title }])}
+      ${breadcrumbs([{ label: 'Документация', href: ROOT_PATH }, { label: sectionLabel }, { label: page.title }])}
       <header class="api-header">
         <div class="api-header-row">
           <h1>${escapeHtml(page.title)}</h1>
@@ -303,7 +378,7 @@
   function renderGlobals(requestedMember) {
     const globals = state.api.globals;
     els.view.innerHTML = `
-      ${breadcrumbs([{ label: 'Документация', href: '#/' }, { label: 'Встроенные функции' }])}
+      ${breadcrumbs([{ label: 'Документация', href: ROOT_PATH }, { label: 'Встроенные функции' }])}
       <header class="api-header">
         <div class="api-header-row">
           <h1>Встроенные функции</h1>
@@ -322,7 +397,7 @@
 
   function renderModule(module, requestedMember) {
     els.view.innerHTML = `
-      ${breadcrumbs([{ label: 'Документация', href: '#/' }, { label: module.name }])}
+      ${breadcrumbs([{ label: 'Документация', href: ROOT_PATH }, { label: module.name }])}
       <header class="api-header">
         <div class="api-header-row">
           <h1 class="api-qualified-name">${escapeHtml(module.name)}</h1>
@@ -362,7 +437,7 @@
         <h2>Типы</h2>
         <div class="type-list">
           ${module.types.map((type) => `
-            <a class="type-row" href="#/${encodePart(module.name)}/${encodePart(type.name)}">
+            <a class="type-row" href="${typeUrl(module.name, type.name)}">
               <code>${escapeHtml(type.qualifiedName)}</code>
               <span>${inlineCodeHtml(type.description || 'Библиотечный тип Idyllium.')}</span>
             </a>
@@ -400,13 +475,13 @@
     const properties = collectProperties(type);
     const methods = collectMethods(type);
     const baseLink = type.baseType
-      ? `<p class="extends-line">Наследует: <a href="#/${typeRoute(type.baseType)}">${escapeHtml(type.baseType)}</a></p>`
+      ? `<p class="extends-line">Наследует: <a href="${ROOT_PATH}${typeRoute(type.baseType)}">${escapeHtml(type.baseType)}</a></p>`
       : '';
 
     els.view.innerHTML = `
       ${breadcrumbs([
-        { label: 'Документация', href: '#/' },
-        { label: module.name, href: `#/${encodePart(module.name)}` },
+        { label: 'Документация', href: ROOT_PATH },
+        { label: module.name, href: routeUrl(module.name) },
         { label: type.name },
       ])}
       <header class="api-header">
@@ -945,7 +1020,7 @@
       {
         kind: 'язык',
         label: 'Встроенные функции',
-        href: '#/globals',
+        href: routeUrl('globals'),
         searchText: 'встроенные функции globals',
       },
     ];
@@ -954,31 +1029,31 @@
       entries.push(searchEntry(
         'язык',
         page.title,
-        `#/language/${encodePart(page.id)}`,
+        routeUrl('language', page.id),
         `${page.description} ${page.sections.map((section) => section.title).join(' ')}`,
       ));
     }
 
     for (const global of api.globals) {
-      entries.push(searchEntry('функция', global.name, `#/globals/${encodePart(global.name)}`, `global ${global.signature}`));
+      entries.push(searchEntry('функция', global.name, `${routeUrl('globals')}#${encodePart(global.name)}`, `global ${global.signature}`));
     }
 
     for (const module of api.modules) {
-      entries.push(searchEntry('библиотека', module.name, `#/${encodePart(module.name)}`, `${module.title} ${module.description}`));
+      entries.push(searchEntry('библиотека', module.name, routeUrl(module.name), `${module.title} ${module.description}`));
       for (const fn of module.functions) {
-        entries.push(searchEntry('функция', `${module.name}.${fn.name}`, `#/${encodePart(module.name)}/${encodePart(fn.name)}`, fn.signature));
+        entries.push(searchEntry('функция', `${module.name}.${fn.name}`, `${routeUrl(module.name)}#${encodePart(fn.name)}`, fn.signature));
       }
       for (const constant of module.constants) {
-        entries.push(searchEntry('константа', `${module.name}.${constant.name}`, `#/${encodePart(module.name)}/${encodePart(constant.name)}`, constant.type));
+        entries.push(searchEntry('константа', `${module.name}.${constant.name}`, `${routeUrl(module.name)}#${encodePart(constant.name)}`, constant.type));
       }
       for (const type of module.types) {
-        const typeHref = `#/${encodePart(module.name)}/${encodePart(type.name)}`;
+        const typeHref = typeUrl(module.name, type.name);
         entries.push(searchEntry('тип', type.qualifiedName, typeHref, type.description));
         for (const property of type.properties) {
-          entries.push(searchEntry('свойство', `${type.qualifiedName}.${property.name}`, `${typeHref}/${encodePart(property.name)}`, property.documentation));
+          entries.push(searchEntry('свойство', `${type.qualifiedName}.${property.name}`, `${typeHref}#${encodePart(property.name)}`, property.documentation));
         }
         for (const method of type.methods) {
-          entries.push(searchEntry('метод', `${type.qualifiedName}.${method.name}`, `${typeHref}/${encodePart(method.name)}`, method.signature));
+          entries.push(searchEntry('метод', `${type.qualifiedName}.${method.name}`, `${typeHref}#${encodePart(method.name)}`, method.signature));
         }
       }
     }
@@ -1049,8 +1124,13 @@
   }
 
   function routeParts() {
-    const raw = decodeURIComponent(location.hash.replace(/^#\/?/u, ''));
-    return raw.split('/').filter(Boolean);
+    let path = decodeURIComponent(location.pathname);
+    if (!path.startsWith(ROOT_PATH)) return [];
+    // Прямой заход мог прийти и как /gui, и как /gui.html, и со слэшем.
+    path = path.slice(ROOT_PATH.length).replace(/\.html$/u, '').replace(/\/+$/u, '');
+    // Каталог модуля мог открыться и как /gui, и как /gui/ — после среза
+    // index.html оба дают одинаковые части маршрута.
+    return path.replace(/\/index$/u, '').split('/').filter(Boolean);
   }
 
   function memberId(kind, name) {

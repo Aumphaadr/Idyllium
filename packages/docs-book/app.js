@@ -51,7 +51,7 @@
       nextLabel: 'Следующая тема',
     }
     : {
-      titleSuffix: 'Idyllium',
+      titleSuffix: 'Учебник Idyllium',
       loading: 'Загружаем урок...',
       fatal: 'Учебник не загрузился',
       kicker: 'Урок',
@@ -60,6 +60,12 @@
       prevLabel: 'Предыдущий урок',
       nextLabel: 'Следующий урок',
     };
+
+  // Корень раздела (…/book/ или …/tasks/). На испечённых страницах уроков
+  // стоит <base href="../">, поэтому document.baseURI всегда указывает сюда —
+  // и относительные fetch («lessons.json», «content/…») работают с любой
+  // глубины. Адрес урока — настоящий путь без решётки: /book/console/setup.
+  const ROOT_PATH = new URL('.', document.baseURI).pathname;
 
   const state = {
     manifest: null,
@@ -87,6 +93,10 @@
     applySavedTheme();
     bindShellEvents();
 
+    // Сохранённые адреса эпохи решётки (/book/#/console/setup) живут вечно:
+    // молча переезжаем на чистый путь.
+    if (redirectLegacyHashRoute()) return;
+
     try {
       state.manifest = await fetchJson('lessons.json');
       state.flatLessons = flattenLessons(state.manifest);
@@ -96,7 +106,30 @@
       renderFatalError(error);
     }
 
-    window.addEventListener('hashchange', openCurrentRoute);
+    window.addEventListener('popstate', openCurrentRoute);
+  }
+
+  function redirectLegacyHashRoute() {
+    const raw = decodeURIComponent(location.hash.replace(/^#\/?/, ''));
+    const [sectionId, lessonId] = raw.split('/').filter(Boolean);
+    if (!sectionId || !lessonId) return false;
+    location.replace(lessonUrl(sectionId, lessonId));
+    return true;
+  }
+
+  function lessonUrl(sectionId, lessonId) {
+    return `${ROOT_PATH}${encodeURIComponent(sectionId)}/${encodeURIComponent(lessonId)}`;
+  }
+
+  // Переход по внутренней ссылке без перезагрузки: адрес меняет pushState,
+  // урок подгружается как раньше. Модифицированные клики (Ctrl, средняя
+  // кнопка) не трогаем — пусть браузер честно откроет новую вкладку.
+  function interceptRouteNavigation(event, url) {
+    if (event.defaultPrevented || event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    if (`${location.pathname}${location.hash}` !== url) history.pushState(null, '', url);
+    void openCurrentRoute();
   }
 
   function bindShellEvents() {
@@ -121,6 +154,7 @@
 
       if (link.classList.contains('nav-lesson') || link.classList.contains('lesson-step')) {
         document.body.classList.remove('sidebar-open');
+        interceptRouteNavigation(event, link.getAttribute('href'));
         return;
       }
 
@@ -133,9 +167,8 @@
 
       const oldLessonRoute = routeForOldHtmlLink(link.getAttribute('href'));
       if (oldLessonRoute) {
-        event.preventDefault();
-        location.hash = oldLessonRoute;
         document.body.classList.remove('sidebar-open');
+        interceptRouteNavigation(event, oldLessonRoute);
       }
     });
   }
@@ -155,17 +188,20 @@
     const lesson = findLesson(route.sectionId, route.lessonId) ?? state.flatLessons[0];
     if (!lesson) return;
 
-    if (!location.hash || lesson.sectionId !== route.sectionId || lesson.id !== route.lessonId) {
-      location.replace(`${location.pathname}${location.search}#/${lesson.sectionId}/${lesson.id}`);
-      return;
+    // Кривой или пустой маршрут тихо выправляется на канонический адрес.
+    if (lesson.sectionId !== route.sectionId || lesson.id !== route.lessonId) {
+      history.replaceState(null, '', lessonUrl(lesson.sectionId, lesson.id));
     }
 
     await renderLesson(lesson);
   }
 
   function parseRoute() {
-    const raw = decodeURIComponent(location.hash.replace(/^#\/?/, ''));
-    const [sectionId, lessonId] = raw.split('/').filter(Boolean);
+    let path = decodeURIComponent(location.pathname);
+    if (!path.startsWith(ROOT_PATH)) return {};
+    // Прямой заход мог прийти и как /setup, и как /setup.html, и со слэшем.
+    path = path.slice(ROOT_PATH.length).replace(/\.html$/, '').replace(/\/+$/, '');
+    const [sectionId, lessonId] = path.split('/').filter(Boolean);
     return { sectionId, lessonId };
   }
 
@@ -391,7 +427,7 @@
   // Учебник ведёт на задачи по этой же теме, задачник — обратно на урок.
   // Пока практикум не написан, кнопка честно говорит об этом и никуда не ведёт.
   function renderCrossLink(lesson) {
-    const target = `${UI.crossBase}#/${lesson.sectionId}/${lesson.id}`;
+    const target = `${UI.crossBase}${lesson.sectionId}/${lesson.id}`;
     if (MODE === 'book' && lesson.hasTasks !== true) {
       return '<span class="lesson-cross-link is-pending">Задачи готовятся</span>';
     }
@@ -413,7 +449,7 @@
 
   function lessonStep(lesson, label, direction) {
     return `
-      <a class="lesson-step ${direction}" href="#/${lesson.sectionId}/${lesson.id}">
+      <a class="lesson-step ${direction}" href="${lessonUrl(lesson.sectionId, lesson.id)}">
         <small>${label}</small>
         <span>${escapeHtml(lesson.title)}</span>
       </a>
@@ -460,7 +496,7 @@
   function navLesson(section, lesson, current) {
     const active = current && current.sectionId === section.id && current.id === lesson.id;
     return `
-      <a class="nav-lesson ${active ? 'active' : ''}" href="#/${section.id}/${lesson.id}">
+      <a class="nav-lesson ${active ? 'active' : ''}" href="${lessonUrl(section.id, lesson.id)}">
         <span class="lesson-number">${String(lesson.number).padStart(2, '0')}</span>
         <span class="lesson-label">${escapeHtml(lesson.title)}</span>
       </a>
@@ -510,7 +546,7 @@
     const baseParts = currentSource.split('/').slice(0, -1);
     const target = normalizePath([...baseParts, href].join('/'));
     const lesson = state.flatLessons.find((item) => item.sourceFile === target);
-    return lesson ? `#/${lesson.sectionId}/${lesson.id}` : null;
+    return lesson ? lessonUrl(lesson.sectionId, lesson.id) : null;
   }
 
   function normalizePath(value) {

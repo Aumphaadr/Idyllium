@@ -7245,4 +7245,55 @@ test('gui window close removes it from the program', async () => {
   assert(!runtime.hasGui(), 'expected the program to finish once the last window closed');
 });
 
+
+test('clean URLs are baked for every book, tasks and reference route', () => {
+  // Чистые адреса (/book/console/setup) работают только потому, что сборка
+  // печёт настоящий файл на каждый маршрут. Тест сторожит выпадение страниц.
+  const docsRoot = path.resolve(process.cwd(), 'docs');
+
+  for (const site of ['book', 'tasks']) {
+    const manifestPath = path.join(docsRoot, site, 'lessons.json');
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    for (const section of manifest.sections) {
+      for (const lesson of section.lessons) {
+        const pagePath = path.join(docsRoot, site, section.id, `${lesson.id}.html`);
+        assert(fs.existsSync(pagePath), `missing baked page: ${site}/${section.id}/${lesson.id}.html`);
+        const page = fs.readFileSync(pagePath, 'utf8');
+        assert(page.includes('<base href="../">'), `baked page lacks <base>: ${pagePath}`);
+        assert(page.includes(`<title>${lesson.title}`), `baked page lacks lesson title: ${pagePath}`);
+      }
+    }
+  }
+
+  // Справочник: у модуля с типами страница испечена дважды (gui.html и
+  // gui/index.html) — какое правило GitHub Pages победит для /reference/gui,
+  // не документировано, а оба исхода должны вести на страницу модуля.
+  const api = JSON.parse(fs.readFileSync(path.join(docsRoot, 'reference', 'api.json'), 'utf8'));
+  for (const module of api.modules) {
+    assert(
+      fs.existsSync(path.join(docsRoot, 'reference', `${module.name}.html`)),
+      `missing reference module page: ${module.name}.html`,
+    );
+    if (module.types.length > 0) {
+      assert(
+        fs.existsSync(path.join(docsRoot, 'reference', module.name, 'index.html')),
+        `missing duplicate module page: ${module.name}/index.html`,
+      );
+    }
+    for (const type of module.types) {
+      assert(
+        fs.existsSync(path.join(docsRoot, 'reference', module.name, `${type.name}.html`)),
+        `missing reference type page: ${module.name}/${type.name}.html`,
+      );
+    }
+  }
+  for (const page of api.language) {
+    assert(
+      fs.existsSync(path.join(docsRoot, 'reference', 'language', `${page.id}.html`)),
+      `missing language page: language/${page.id}.html`,
+    );
+  }
+  assert(fs.existsSync(path.join(docsRoot, 'reference', 'globals.html')), 'missing globals.html');
+});
+
 void runTests();

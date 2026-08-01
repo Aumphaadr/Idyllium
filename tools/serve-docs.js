@@ -141,6 +141,20 @@ function handleRequest(request, response) {
       return;
     }
 
+    // Как GitHub Pages: /book/console/setup отдаёт setup.html — чистые URL
+    // уроков работают и на локальном сервере.
+    if (!path.extname(filePath)) {
+      const htmlCandidate = `${filePath}.html`;
+      fs.stat(htmlCandidate, (htmlError, htmlStat) => {
+        if (!htmlError && htmlStat.isFile()) {
+          sendFile(htmlCandidate, method, response, false);
+          return;
+        }
+        sendFile(path.join(root, 'index.html'), method, response, true);
+      });
+      return;
+    }
+
     const fallback = path.join(root, 'index.html');
     sendFile(fallback, method, response, true);
   });

@@ -747,6 +747,11 @@ function main(): void {
   buildTasksSite(path.join(siteRoot, 'tasks'), manifest);
 
   fs.writeFileSync(path.join(bookRoot, 'lessons.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+
+  const bookShell = fs.readFileSync(path.resolve(process.cwd(), 'packages', 'docs-book', 'index.html'), 'utf8');
+  const bookPages = bakeCleanUrlPages(bookShell, bookRoot, manifest, 'Учебник Idyllium');
+  console.log(`book clean URLs: ${bookPages} pages`);
+
   buildReferenceSite(path.join(siteRoot, 'reference'));
 
   const lessonCount = manifest.sections.reduce((sum, section) => sum + section.lessons.length, 0);
@@ -814,16 +819,58 @@ function buildTasksSite(tasksRoot: string, manifest: SiteManifest): void {
 
   fs.writeFileSync(path.join(tasksRoot, 'lessons.json'), `${JSON.stringify(tasksManifest, null, 2)}\n`, 'utf8');
   fs.writeFileSync(path.join(tasksRoot, 'index.html'), tasksShell(), 'utf8');
+  const tasksPages = bakeCleanUrlPages(tasksShell(), tasksRoot, tasksManifest, 'Задачник Idyllium');
+  console.log(`tasks clean URLs: ${tasksPages} pages`);
 
   const total = sections.reduce((sum, section) => sum + section.lessons.length, 0);
   console.log(`tasks generated: ${ready} practicums out of ${total} topics`);
+}
+
+/**
+ * Печёт настоящую страницу на каждый урок: <root>/<раздел>/<урок>.html.
+ *
+ * GitHub Pages отдаёт «file.html» и по адресу без расширения, поэтому
+ * /book/console/setup — реальный файл, HTTP 200, без решётки и без слэша
+ * на конце. Внутри страницы <base href="../"> — все относительные пути
+ * оболочки (lessons.json, content/…, app.js) продолжают работать, а
+ * заголовок и описание урока достаются поисковикам без исполнения JS.
+ */
+function bakeCleanUrlPages(
+  shellHtml: string,
+  siteDir: string,
+  manifest: SiteManifest,
+  titleSuffix: string,
+): number {
+  // Разделы делят каталог с файлами оболочки — имена не должны столкнуться.
+  const reserved = new Set(['content', 'assets', 'fonts', 'monaco', 'vendor', 'index', 'app']);
+  let count = 0;
+
+  for (const section of manifest.sections) {
+    if (reserved.has(section.id)) {
+      throw new Error(`section id '${section.id}' clashes with a shell file — cannot bake clean URLs`);
+    }
+    for (const lesson of section.lessons) {
+      const title = `${lesson.title} — ${titleSuffix}`;
+      const description = lesson.subtitle ? `\n  <meta name="description" content="${escapeHtml(lesson.subtitle)}">` : '';
+      const page = shellHtml
+        .replace('<head>', '<head>\n  <base href="../">')
+        .replace(/<title>[^<]*<\/title>/u, `<title>${escapeHtml(title)}</title>${description}`);
+
+      const outputPath = path.join(siteDir, section.id, `${lesson.id}.html`);
+      fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+      fs.writeFileSync(outputPath, page, 'utf8');
+      count++;
+    }
+  }
+
+  return count;
 }
 
 function pendingTasksFragment(sectionId: string, lessonId: string, lessonTitle: string): string {
   return `<div class="docs-section docs-placeholder">
   <h2>Задания готовятся</h2>
   <p>Практикум по теме <strong>${escapeHtml(lessonTitle)}</strong> ещё не составлен.</p>
-  <p>Пока его нет, вернитесь к <a href="../book/#/${escapeHtml(sectionId)}/${escapeHtml(lessonId)}">уроку</a>: примеры оттуда полезно повторить руками и переделать под себя.</p>
+  <p>Пока его нет, вернитесь к <a href="../book/${escapeHtml(sectionId)}/${escapeHtml(lessonId)}">уроку</a>: примеры оттуда полезно повторить руками и переделать под себя.</p>
 </div>
 `;
 }
