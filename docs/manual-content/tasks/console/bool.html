@@ -1,0 +1,264 @@
+<div class="docs-section">
+  <h2>Блок 1. <code>and</code> — нужны оба</h2>
+  <p><code>and</code> даёт <code>true</code>, только когда <strong>обе</strong> стороны <code>true</code>. Идеален, когда одно действие разрешено лишь при выполнении сразу двух условий.</p>
+  <h3 class="task-group">Практика с преподавателем</h3>
+  <h4 class="task-item">Задание 1. Детский билет в зоопарк</h4>
+  <p>Детский билет положен тем, кому от 3 до 7 лет включительно. Это сразу два условия — «не меньше 3» <strong>и</strong> «не больше 7». Наберите:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    console.write("Возраст: ");
+    int age = console.get_int();
+    if (age >= 3 and age <= 7) {
+        console.writeln("Детский билет.");
+    } else {
+        console.writeln("Обычный билет.");
+    }
+}
+</script></idyl-code-block>
+  <idyl-output-block>Возраст: 5
+Детский билет.</idyl-output-block>
+  <idyl-output-block>Возраст: 9
+Обычный билет.</idyl-output-block>
+  <p>Двумя отдельными <code>if</code> тут не обойтись: нужно одно решение по обоим краям сразу. <code>and</code> склеивает два сравнения в одно условие.</p>
+  <h3 class="task-group">Самостоятельная практика</h3>
+  <h4 class="task-item">Задание 2. Приём в секцию</h4>
+  <p>В спортивную секцию берут ребят от 8 до 12 лет включительно. Программа спрашивает возраст и либо зачисляет, либо вежливо отказывает. Диапазон — снова <code>and</code> двух сравнений.</p>
+  <idyl-output-block>Возраст: 10
+Добро пожаловать в секцию!</idyl-output-block>
+  <idyl-output-block>Возраст: 14
+Извини, ты уже перерос эту группу.</idyl-output-block>
+  <h4 class="task-item">Задание 3. Сейф на два ключа</h4>
+  <p>Сейф открывается, только когда повёрнуты <strong>оба</strong> ключа. Программа спрашивает про каждый ключ (1 — повёрнут, 0 — нет) и открывает сейф лишь при двух единицах.</p>
+  <idyl-output-block>Первый ключ повёрнут? (1/0) 1
+Второй ключ повёрнут? (1/0) 1
+Щёлк. Сейф открыт.</idyl-output-block>
+  <idyl-output-block>Первый ключ повёрнут? (1/0) 1
+Второй ключ повёрнут? (1/0) 0
+Одного ключа мало.</idyl-output-block>
+  <h4 class="task-item">Задание 4. Лифт тронется</h4>
+  <p>Лифт поедет, только если двери закрыты <strong>и</strong> вес не превышает 400 кг. Программа спрашивает, закрыты ли двери (1/0), и вес пассажиров, а потом решает — ехать или ждать.</p>
+  <idyl-output-block>Двери закрыты? (1/0) 1
+Вес в кабине (кг): 320
+Поехали!</idyl-output-block>
+  <idyl-output-block>Двери закрыты? (1/0) 1
+Вес в кабине (кг): 450
+Стоп: перегруз.</idyl-output-block>
+  <h4 class="task-item">Задание 5. Число вместо условия</h4>
+  <p>Программисты узнают правила, нарочно ломая. Напишите условие, «забыв» про сравнение, — просто с числом:</p>
+  <idyl-code-block><script type="text/plain">
+    int coins = 120;
+    if (coins) {
+        console.writeln("Монеты есть!");
+    }
+</script></idyl-code-block>
+  <p>Запустите — программа откажется. Прочитайте её замечание: она не берётся угадывать, что значит «если монеты». Почините: замените <code>coins</code> на честное сравнение <code>coins &gt; 0</code>. Вывод: условию нужен <code>bool</code>, а не число.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Блок 2. <code>or</code> — хватит одного</h2>
+  <p><code>or</code> даёт <code>true</code>, если <code>true</code> <strong>хотя бы одна</strong> сторона (можно и обе). Годится, когда сработать должно от любой из нескольких причин.</p>
+  <h3 class="task-group">Практика с преподавателем</h3>
+  <h4 class="task-item">Задание 6. Бесплатный вход</h4>
+  <p>В музей пускают даром малышей (младше 7) <strong>или</strong> ветеранов. Достаточно одной из льгот. Наберите:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    console.write("Возраст: ");
+    int age = console.get_int();
+    console.write("Ветеран? (1/0) ");
+    int veteran = console.get_int();
+    if (age < 7 or veteran == 1) {
+        console.writeln("Проходите бесплатно!");
+    } else {
+        console.writeln("Билет стоит 300 монет.");
+    }
+}
+</script></idyl-code-block>
+  <idyl-output-block>Возраст: 5
+Ветеран? (1/0) 0
+Проходите бесплатно!</idyl-output-block>
+  <idyl-output-block>Возраст: 30
+Ветеран? (1/0) 0
+Билет стоит 300 монет.</idyl-output-block>
+  <h4 class="task-item">Задание 7. Промокод</h4>
+  <p>Скидка по промокоду срабатывает, если сумма заказа не меньше 1000 <strong>или</strong> это первый заказ покупателя. Программа спрашивает сумму и «первый ли заказ» (1/0) и решает, дать ли скидку.</p>
+  <idyl-output-block>Сумма заказа: 450
+Первый заказ? (1/0) 1
+Скидка ваша!</idyl-output-block>
+  <idyl-output-block>Сумма заказа: 450
+Первый заказ? (1/0) 0
+Скидки не будет.</idyl-output-block>
+  <h4 class="task-item">Задание 8. Пожарная тревога</h4>
+  <p>Сирена включается, если сработал датчик дыма (1/0) <strong>или</strong> температура перевалила за 60°. Хватит любого признака. Программа спрашивает оба показателя и решает, выть ли сирене.</p>
+  <idyl-output-block>Дым? (1/0) 0
+Температура: 75
+ТРЕВОГА! Все на выход!</idyl-output-block>
+  <idyl-output-block>Дым? (1/0) 0
+Температура: 22
+Всё спокойно.</idyl-output-block>
+  <h4 class="task-item">Задание 9. Лужа на дороге</h4>
+  <p>Лужа появится, если ночью шёл дождь <strong>или</strong> таял снег — причина не важна, важен мокрый асфальт. Программа спрашивает про дождь (1/0) и про таяние (1/0) и предупреждает, будет ли лужа.</p>
+  <idyl-output-block>Дождь ночью? (1/0) 0
+Таял снег? (1/0) 1
+Осторожно, лужа!</idyl-output-block>
+  <p>Заметьте: двумя независимыми <code>if</code> тут вышло бы двойное предупреждение, если верны обе причины. <code>or</code> выдаёт ровно одно решение.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Блок 3. <code>xor</code> — ровно одно</h2>
+  <p><code>xor</code> («исключающее ИЛИ») даёт <code>true</code>, когда истинна <strong>ровно одна</strong> сторона. Обе сразу — уже <code>false</code>. Это про «либо-либо, но не всё вместе».</p>
+  <h3 class="task-group">Практика с преподавателем</h3>
+  <h4 class="task-item">Задание 10. Створки ворот</h4>
+  <p>У ворот две створки с датчиками. Тревога звучит, если открыта <strong>ровно одна</strong> створка (кто-то пролез в щель). Обе открыты — это штатный проезд, обе закрыты — тоже покой. Наберите:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    console.write("Левая створка открыта? (1/0) ");
+    int left = console.get_int();
+    console.write("Правая створка открыта? (1/0) ");
+    int right = console.get_int();
+    if (left == 1 xor right == 1) {
+        console.writeln("Тревога: приоткрыта одна створка!");
+    } else {
+        console.writeln("Всё в порядке.");
+    }
+}
+</script></idyl-code-block>
+  <idyl-output-block>Левая створка открыта? (1/0) 1
+Правая створка открыта? (1/0) 0
+Тревога: приоткрыта одна створка!</idyl-output-block>
+  <idyl-output-block>Левая створка открыта? (1/0) 1
+Правая створка открыта? (1/0) 1
+Всё в порядке.</idyl-output-block>
+  <h3 class="task-group">Самостоятельная практика</h3>
+  <h4 class="task-item">Задание 11. Честная дуэль</h4>
+  <p>Дуэль честна, если вооружён <strong>ровно один</strong> из бойцов: оба с мечами — не по правилам, оба безоружны — не бой, а разговор. Программа спрашивает про каждого (1 — вооружён, 0 — нет).</p>
+  <idyl-output-block>Первый вооружён? (1/0) 1
+Второй вооружён? (1/0) 0
+Дуэль честна!</idyl-output-block>
+  <idyl-output-block>Первый вооружён? (1/0) 1
+Второй вооружён? (1/0) 1
+Так нельзя: вооружены оба.</idyl-output-block>
+  <h4 class="task-item">Задание 12. Два пульта</h4>
+  <p>Приставку включают одним из двух пультов. Она заработает, если нажата кнопка <strong>ровно на одном</strong>: две сразу — сигналы конфликтуют, ни одной — ничего не происходит. Программа спрашивает про обе кнопки (1/0).</p>
+  <idyl-output-block>Кнопка на первом пульте? (1/0) 0
+Кнопка на втором пульте? (1/0) 1
+Приставка включилась.</idyl-output-block>
+  <h4 class="task-item">Задание 13. Спор экспертов</h4>
+  <p>Двое судей голосуют «да» (1) или «нет» (0). Спор возникает, когда их мнения разошлись — то есть «да» сказал ровно один. Программа спрашивает оба голоса и сообщает, спорят судьи или согласны.</p>
+  <idyl-output-block>Голос первого судьи (1/0): 1
+Голос второго судьи (1/0): 0
+Судьи спорят!</idyl-output-block>
+  <idyl-output-block>Голос первого судьи (1/0): 1
+Голос второго судьи (1/0): 1
+Судьи единодушны.</idyl-output-block>
+</div>
+
+<div class="docs-section">
+  <h2>Блок 4. <code>not()</code> и всё вместе</h2>
+  <p><code>not(x)</code> переворачивает логическое значение: <code>true</code> становится <code>false</code>, и наоборот. Это <strong>функция</strong> — то, что переворачивается, всегда в скобках. Заодно в этом блоке соберём операции вместе.</p>
+  <h3 class="task-group">Практика с преподавателем</h3>
+  <h4 class="task-item">Задание 14. Гулять или дома</h4>
+  <p>Соберём «шторм» из двух примет, а потом одним <code>not()</code> перевернём: гулять идём, когда шторма <strong>нет</strong>. Наберите:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    console.write("Скорость ветра (м/с): ");
+    int wind = console.get_int();
+    console.write("Дождь? (1/0) ");
+    int rain = console.get_int();
+
+    bool storm = wind > 15 or rain == 1;
+    if (not(storm)) {
+        console.writeln("Погода тихая — идём гулять!");
+    } else {
+        console.writeln("Шторм: сидим дома.");
+    }
+}
+</script></idyl-code-block>
+  <idyl-output-block>Скорость ветра (м/с): 5
+Дождь? (1/0) 0
+Погода тихая — идём гулять!</idyl-output-block>
+  <idyl-output-block>Скорость ветра (м/с): 20
+Дождь? (1/0) 0
+Шторм: сидим дома.</idyl-output-block>
+  <p><code>storm</code> собран из <code>or</code>, а <code>not(storm)</code> перевернул готовое значение целиком — вот зачем скобки: они обнимают ровно то, что инвертируется.</p>
+  <h3 class="task-group">Самостоятельная практика</h3>
+  <h4 class="task-item">Задание 15. Не сдал</h4>
+  <p>Тест сдан, если баллов не меньше 60. Сохраните это в <code>bool passed</code>, а потом через <code>not(passed)</code> объявите тем, кто <strong>не</strong> сдал, о пересдаче. (Тем, кто сдал, программа может промолчать.)</p>
+  <idyl-output-block>Баллов за тест: 45
+Не сдал. Пересдача в пятницу.</idyl-output-block>
+  <idyl-output-block>Баллов за тест: 80</idyl-output-block>
+  <h4 class="task-item">Задание 16. Строгий контролёр</h4>
+  <p>На аттракцион пускают, если рост не меньше 140 <strong>или</strong> рядом взрослый, — <strong>и</strong> при этом ты не простужен. Программа спрашивает рост, «есть ли взрослый» (1/0) и «простужен ли» (1/0). Не жалейте скобок: <code>(рост ИЛИ взрослый) И не простужен</code>.</p>
+  <idyl-output-block>Рост (см): 130
+Взрослый рядом? (1/0) 1
+Простужен? (1/0) 0
+Проходите, счастливого полёта!</idyl-output-block>
+  <idyl-output-block>Рост (см): 150
+Взрослый рядом? (1/0) 0
+Простужен? (1/0) 1
+Сначала выздоравливай.</idyl-output-block>
+  <h4 class="task-item">Задание 17. Неправда, что оба</h4>
+  <p>На складе тревога, если <strong>неправда, что</strong> пропуск в порядке <strong>и</strong> смена рабочая — то есть хоть что-то из двух не так. Программа спрашивает «пропуск действителен?» (1/0) и «рабочая смена?» (1/0) и решает: <code>not(пропуск И смена)</code>.</p>
+  <idyl-output-block>Пропуск действителен? (1/0) 1
+Рабочая смена? (1/0) 0
+Тревога: посторонний на складе!</idyl-output-block>
+  <idyl-output-block>Пропуск действителен? (1/0) 1
+Рабочая смена? (1/0) 1
+Проход разрешён.</idyl-output-block>
+  <p>Перевернуть тут одним сравнением не выйдет: <code>not()</code> накрывает <strong>целую связку</strong> <code>and</code>, а не одно условие.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Блок 5. Со звёздочкой</h2>
+  <h4 class="task-item task-star">Задание 18 ⭐. Собери таблицу истинности</h4>
+  <p>Проверьте <code>xor</code> по-научному. Соберите крошечную программу, которая печатает все четыре случая (значения задавайте прямо в коде — <code>true</code> и <code>false</code>):</p>
+  <idyl-code-block><script type="text/plain">
+    console.writeln(false xor false);
+    console.writeln(false xor true);
+    console.writeln(true xor false);
+    console.writeln(true xor true);
+</script></idyl-code-block>
+  <p>Запишите ответы в таблицу и сравните с <code>or</code>. В какой одной строке <code>xor</code> и <code>or</code> расходятся? Именно она и делает «исключающее ИЛИ» исключающим.</p>
+  <table>
+    <thead>
+      <tr><th>Слева</th><th>Справа</th><th><code>xor</code></th><th><code>or</code></th></tr>
+    </thead>
+    <tbody>
+      <tr><td>false</td><td>false</td><td>?</td><td>?</td></tr>
+      <tr><td>false</td><td>true</td><td>?</td><td>?</td></tr>
+      <tr><td>true</td><td>false</td><td>?</td><td>?</td></tr>
+      <tr><td>true</td><td>true</td><td>?</td><td>?</td></tr>
+    </tbody>
+  </table>
+  <h4 class="task-item task-star">Задание 19 ⭐. Кто вперёд</h4>
+  <p>Когда операции стоят рядом без скобок, порядок такой: сначала <code>and</code>, потом <code>xor</code>, потом <code>or</code>. Возьмите три значения и предскажите ответ <strong>до</strong> запуска:</p>
+  <idyl-code-block><script type="text/plain">
+    bool A = true;
+    bool B = true;
+    bool C = false;
+    console.writeln(A or B and C);
+</script></idyl-code-block>
+  <p>Что посчитается первым — <code>A or B</code> или <code>B and C</code>? Запишите свою догадку, потом запустите. А теперь поставьте скобки вокруг <code>A or B</code> (<code>(A or B) and C</code>) и запустите снова — ответ изменился? (Должен: без скобок выходит <code>true</code>, со скобками — <code>false</code>.) Мораль: <strong>сомневаешься — ставь скобки</strong>, и никто (даже ты через неделю) не прочитает условие иначе.</p>
+  <h4 class="task-item task-star">Задание 20 ⭐. Почему <code>not</code> со скобками и как у соседей</h4>
+  <p>Попробуйте написать «не» без скобок, как слово:</p>
+  <idyl-code-block><script type="text/plain">
+    int coins = 50;
+    if (not coins > 100) {
+        console.writeln("мало");
+    }
+</script></idyl-code-block>
+  <p>Запустите — язык откажется и объяснит почему. <code>not</code> — функция, ей нужны скобки вокруг <strong>всего</strong>, что переворачиваешь: <code>not(coins &gt; 100)</code> — «неправда, что монет больше ста».</p>
+  <p>А у соседей по цеху иначе:</p>
+  <ul>
+    <li>в <strong>Python</strong> «не» пишут словом-приставкой без скобок: <code>not coins &gt; 100</code>; «и»/«или» — тоже слова <code>and</code>/<code>or</code>; а вот <code>xor</code>-слова нет — берут <code>!=</code> или значок <code>^</code>;</li>
+    <li>в <strong>C++, Java и JavaScript</strong> «и»/«или»/«не» — это значки <code>&amp;&amp;</code>, <code>||</code>, <code>!</code> (например, <code>!(coins &gt; 100)</code>); отдельного <code>xor</code> для условий тоже нет.</li>
+  </ul>
+  <p>Idyllium выбрал слова (<code>and</code>, <code>or</code>, <code>xor</code>, <code>not</code>) — их легко читать вслух, — а «не» сделал функцией со скобками, чтобы никто не гадал, что именно отрицается.</p>
+</div>

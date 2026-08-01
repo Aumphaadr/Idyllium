@@ -1,5 +1,153 @@
-<div class="docs-section docs-placeholder">
-  <h2>Задания готовятся</h2>
-  <p>Практикум по теме <strong>Преобразования данных</strong> ещё не составлен.</p>
-  <p>Пока его нет, вернитесь к <a href="../book/console/transforms">уроку</a>: примеры оттуда полезно повторить руками и переделать под себя.</p>
+<div class="docs-section">
+  <h2>Блок 1. <code>to_string</code>: число превращаем в текст</h2>
+  <h3 class="task-group">Практика с преподавателем</h3>
+  <h4 class="task-item">Задание 1. Один плюс, два смысла</h4>
+  <p>Знак <code>+</code> ведёт себя по-разному с числами и со строками. Наберите:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    int NA = 20;
+    int NB = 30;
+    console.writeln("Числовая сумма: ", NA + NB);
+    console.writeln("Строковая сумма: ", to_string(NA) + to_string(NB));
+}
+</script></idyl-code-block>
+  <idyl-output-block>Числовая сумма: 50
+Строковая сумма: 2030</idyl-output-block>
+  <p><code>20 + 30</code> для чисел — это сложение, <code>50</code>. А <code>to_string</code> превратил числа в строки <code>&quot;20&quot;</code> и <code>&quot;30&quot;</code>, и для строк <code>+</code> означает уже <strong>склейку</strong> (конкатенацию): <code>&quot;20&quot; + &quot;30&quot;</code> = <code>&quot;2030&quot;</code>. Одни данные, один знак — а результат разный. <code>to_string</code> даёт вам контроль, как трактовать данные: как числа или как текст.</p>
+  <h4 class="task-item">Задание 2. Собрать одну строку</h4>
+  <p>Иногда нужно не просто вывести, а <strong>склеить</strong> текст и число в одну строку-значение. Напрямую нельзя — язык откажется соединять текст и число. Спасает <code>to_string</code>. Наберите:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    int level = 5;
+    string label = "Уровень " + to_string(level);
+    console.writeln(label);
+}
+</script></idyl-code-block>
+  <idyl-output-block>Уровень 5</idyl-output-block>
+  <p>Число <code>5</code> стало строкой <code>&quot;5&quot;</code> и приклеилось к <code>&quot;Уровень &quot;</code>. Теперь <code>label</code> — цельная строка, её можно хранить, склеивать дальше, красить.</p>
+  <h3 class="task-group">Самостоятельная практика</h3>
+  <h4 class="task-item">Задание 3. Игровой ник</h4>
+  <p>Программа собирает игровой ник из прозвища и номера: спрашивает прозвище (строкой) и номер (числом), склеивает их в одну строку и выводит. Номер — число, поэтому без <code>to_string</code> не склеить.</p>
+  <idyl-output-block>Прозвище: Дракон
+Номер: 42
+Твой ник: Дракон42</idyl-output-block>
+  <h4 class="task-item">Задание 4. Штрихкод</h4>
+  <p>Программа собирает артикул товара: спрашивает букву-категорию (строка) и три числа (код склада, полку, место), склеивает всё в одну строку через <code>to_string</code> и выводит.</p>
+  <idyl-output-block>Категория: A
+Склад: 7
+Полка: 12
+Место: 3
+Артикул: A-7-12-3</idyl-output-block>
+  <h4 class="task-item">Задание 5. Забыли перевести</h4>
+  <p>Поставьте опыт. Заведите число-счёт и попробуйте склеить его с текстом <strong>напрямую</strong>, без <code>to_string</code>:</p>
+  <idyl-code-block><script type="text/plain">
+    int score = 100;
+    string msg = "Очки: " + score;
+</script></idyl-code-block>
+  <p>Запустите — программа откажется ещё до старта. Прочитайте замечание: склеивать текст и число напрямую нельзя. Почините — оберните <code>score</code> в <code>to_string(...)</code> — и всё соберётся. Запомните: хочешь число внутри строки — переведи его явно.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Блок 2. <code>to_int</code> и <code>to_float</code>: текст превращаем в число</h2>
+  <p>Обратная дорога: если число записано <strong>в виде текста</strong> (строкой), посчитать с ним нельзя, пока не переведёшь обратно в число. Для этого — <code>to_int</code> (в целое) и <code>to_float</code> (в дробное).</p>
+  <h3 class="task-group">Практика с преподавателем</h3>
+  <h4 class="task-item">Задание 6. Из текста в число</h4>
+  <p>Наберите:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    int n = to_int("345");
+    console.writeln("Число плюс пять: ", n + 5);
+
+    float x = to_float("1.6");
+    console.writeln("Дробь плюс один: ", x + 1);
+}
+</script></idyl-code-block>
+  <idyl-output-block>Число плюс пять: 350
+Дробь плюс один: 2.6</idyl-output-block>
+  <p><code>to_int(&quot;345&quot;)</code> породил настоящее число <code>345</code> — и оно сразу пошло в арифметику. <code>to_float(&quot;1.6&quot;)</code> сделал то же с дробным. Кавычки исчезли, осталось число.</p>
+  <h3 class="task-group">Самостоятельная практика</h3>
+  <h4 class="task-item">Задание 7. Счёт со старой записки</h4>
+  <p>В старой записке счёт матча записан строкой — <code>&quot;250&quot;</code>. Программа берёт эту строку, переводит в число через <code>to_int</code> и прибавляет бонус 50 очков.</p>
+  <idyl-output-block>Итоговый счёт: 300</idyl-output-block>
+  <h4 class="task-item">Задание 8. Ценник в два клика</h4>
+  <p>Цена на ценнике записана строкой — <code>&quot;19.99&quot;</code>. Программа переводит её в <code>float</code> через <code>to_float</code> и считает стоимость двух таких товаров (умножает на 2).</p>
+  <idyl-output-block>Два товара обойдутся в 39.98 монет.</idyl-output-block>
+  <h4 class="task-item">Задание 9. Склеить или сложить</h4>
+  <p>Программа заводит две строки-числа — <code>&quot;20&quot;</code> и <code>&quot;30&quot;</code> — и показывает оба действия рядом: сначала склеивает их знаком <code>+</code> как строки, потом переводит обе в числа через <code>to_int</code> и складывает. Сравните результаты.</p>
+  <idyl-output-block>Склейка строк: 2030
+Сумма чисел: 50</idyl-output-block>
+  <p>Один и тот же <code>+</code>: для строк — склейка, а после <code>to_int</code> — уже настоящее сложение. Вот зачем нужны явные преобразования.</p>
+  <h4 class="task-item">Задание 10. Число, которого нет</h4>
+  <p>Функции-переводчики честны: если в строке нет числа, они не выдумывают его, а честно останавливаются. Проверьте:</p>
+  <idyl-code-block><script type="text/plain">
+    int n = to_int("десять");
+    console.writeln(n);
+</script></idyl-code-block>
+  <p>Запустите и прочитайте ошибку выполнения. Слово «десять» — это не цифры <code>10</code>, и <code>to_int</code> отказывается гадать. (Проверить заранее, число ли в строке, мы пока не умеем — этому научит урок про условия. Сейчас просто наблюдаем, как язык честно спотыкается.)</p>
+  <h4 class="task-item">Задание 11. Дробь в целую дверь</h4>
+  <p>Ещё опыт на строгость. Попробуйте перевести строку с точкой через <code>to_int</code>:</p>
+  <idyl-code-block><script type="text/plain">
+    int n = to_int("3.14");
+</script></idyl-code-block>
+  <p>Запустите. <code>to_int</code> ждёт <strong>целое</strong>, а <code>&quot;3.14&quot;</code> — дробное, и он отказывается. Почините двумя способами и сравните: либо возьмите строку без точки (<code>&quot;3&quot;</code>), либо, если дробь нужна по-настоящему, переводите через <code>to_float</code>. Разным числам — разные переводчики.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Блок 3. Собираем строки динамически</h2>
+  <p>Самая вкусная сила преобразований — собирать строки, которых заранее не существовало. Например, код цвета из урока про краски: сам код — число, а управляющая последовательность — строка. Склеить их поможет <code>to_string</code>.</p>
+  <h3 class="task-group">Практика с преподавателем</h3>
+  <h4 class="task-item">Задание 12. Краска по выбору</h4>
+  <p>Соберём код цвета на лету. Коды цветов: 31 — красный, 32 — зелёный, 33 — жёлтый, 34 — синий. Наберите:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    console.write("Выберите цвет (1 красный, 2 зелёный, 3 жёлтый, 4 синий): ");
+    int choice = console.get_int();
+    int code = choice + 30;
+    string seq = "\e[" + to_string(code) + "m";
+    console.writeln(seq, "Покрашено!", "\e[0m");
+}
+</script></idyl-code-block>
+  <idyl-output-block>Выберите цвет (1 красный, 2 зелёный, 3 жёлтый, 4 синий): 2
+Покрашено!      (зелёными буквами)</idyl-output-block>
+  <p>Пользователь выбрал <code>2</code>, программа прибавила 30 → код <code>32</code> (зелёный), <code>to_string</code> сделал из него строку <code>&quot;32&quot;</code>, та склеилась между <code>&quot;\e[&quot;</code> и <code>&quot;m&quot;</code> — вышла готовая последовательность <code>&quot;\e[32m&quot;</code>. Без <code>to_string</code> так собрать было бы нельзя. И не забудьте <code>&quot;\e[0m&quot;</code> в конце — сброс, иначе цвет «потечёт» дальше.</p>
+  <h3 class="task-group">Самостоятельная практика</h3>
+  <h4 class="task-item">Задание 13. Прямой код цвета</h4>
+  <p>Теперь без арифметики: программа спрашивает код цвета сразу (число от 31 до 36), собирает из него последовательность <code>&quot;\e[&quot; + to_string(код) + &quot;m&quot;</code> и печатает этим цветом слово «Радуга».</p>
+  <idyl-output-block>Код цвета (31-36): 35
+Радуга      (фиолетовыми буквами)</idyl-output-block>
+  <h4 class="task-item">Задание 14. Цветной ярлык</h4>
+  <p>Программа спрашивает название команды (строка) и её номер (число), а потом печатает ярлык вида «Команда №N: имя» — жёлтым цветом (код 33). Здесь пригодятся сразу оба приёма: <code>to_string</code> для номера в тексте и готовая строка цвета.</p>
+  <idyl-output-block>Название команды: Молнии
+Номер команды: 7
+Команда №7: Молнии      (жёлтыми буквами)</idyl-output-block>
+</div>
+
+<div class="docs-section">
+  <h2>Блок 4. Со звёздочкой</h2>
+  <h4 class="task-item task-star">Задание 15 ⭐. Почему 5 и 3 дают 53</h4>
+  <p>Загадка на понимание. Как думаете, что выведет эта строка — <code>8</code> или <code>53</code>?</p>
+  <idyl-code-block><script type="text/plain">
+    console.writeln(to_string(5) + to_string(3));
+</script></idyl-code-block>
+  <p>Запустите и объясните результат. Числа <code>5</code> и <code>3</code> мы <strong>сначала</strong> превратили в строки <code>&quot;5&quot;</code> и <code>&quot;3&quot;</code>, а строки <code>+</code> не складывает, а склеивает. Чтобы получить <code>8</code>, преобразовывать не нужно вовсе — просто <code>5 + 3</code>. Мораль: <code>to_string</code> меняет не только вид числа, но и смысл знака <code>+</code>.</p>
+  <h4 class="task-item task-star">Задание 16 ⭐. Туда и обратно</h4>
+  <p>Программа спрашивает число, превращает его в строку через <code>to_string</code>, приклеивает к ней восклицательный знак (<code>&quot;!&quot;</code>), выводит эту «украшенную» строку, а затем переводит <strong>исходное</strong> число обратно… впрочем, проверьте сами, что будет, если к «числу с восклицательным знаком» применить <code>to_int</code>. Сделайте вывод, почему украшенную строку числом уже не вернуть.</p>
+  <idyl-output-block>Введите число: 7
+Украшенная строка: 7!</idyl-output-block>
+  <h4 class="task-item task-star">Задание 17 ⭐. Как это делают в других языках</h4>
+  <p>В Idyllium преобразования <strong>явные</strong>: хочешь число в строке — скажи <code>to_string</code>, хочешь число из строки — скажи <code>to_int</code>. А у соседей по цеху правила разные:</p>
+  <ul>
+    <li><strong>Python</strong> строг, как и мы: <code>&quot;Очки: &quot; + 100</code> — сразу ошибка, нужно писать <code>&quot;Очки: &quot; + str(100)</code> (это их <code>to_string</code>), а обратно — <code>int(&quot;100&quot;)</code>;</li>
+    <li><strong>JavaScript</strong> наоборот, чересчур покладист: <code>&quot;Очки: &quot; + 100</code> он молча превратит в <code>&quot;Очки: 100&quot;</code>, но за эту доброту берёт коварством — <code>&quot;5&quot; + 3</code> даёт <code>&quot;53&quot;</code> (склейка!), а <code>&quot;5&quot; - 3</code> вдруг <code>2</code> (вычитание чисел). Угадай, что имелось в виду!</li>
+    <li><strong>C++</strong> требует особых приёмов (<code>std::to_string</code>, <code>std::stoi</code>).</li>
+  </ul>
+  <p>Idyllium выбрал ясность Python: пусть на одну функцию больше, зато никаких «молчаливых» превращений, из-за которых <code>&quot;5&quot; + 3</code> внезапно оказывается текстом. Вы всегда видите, где число становится текстом и наоборот.</p>
 </div>
