@@ -852,8 +852,11 @@ function bakeCleanUrlPages(
     for (const lesson of section.lessons) {
       const title = `${lesson.title} — ${titleSuffix}`;
       const description = lesson.subtitle ? `\n  <meta name="description" content="${escapeHtml(lesson.subtitle)}">` : '';
+      if (!shellHtml.includes('<base href="./">')) {
+        throw new Error('shell must carry <base href="./"> — baked pages retarget it to "../"');
+      }
       const page = shellHtml
-        .replace('<head>', '<head>\n  <base href="../">')
+        .replace('<base href="./">', '<base href="../">')
         .replace(/<title>[^<]*<\/title>/u, `<title>${escapeHtml(title)}</title>${description}`);
 
       const outputPath = path.join(siteDir, section.id, `${lesson.id}.html`);
@@ -879,6 +882,7 @@ function tasksShell(): string {
   return `<!DOCTYPE html>
 <html lang="ru">
 <head>
+  <base href="./">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Idyllium - Задачник</title>

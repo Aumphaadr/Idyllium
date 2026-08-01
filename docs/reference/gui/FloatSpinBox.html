@@ -1,6 +1,9 @@
 <!doctype html>
 <html lang="ru">
 <head>
+  <!-- База прибита гвоздями: после pushState на /раздел/урок относительные
+       пути (content/…, app.js, ../reference/) продолжают считаться от корня
+       раздела, а не от нового адреса. -->
   <base href="../">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
