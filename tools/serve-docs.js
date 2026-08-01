@@ -155,8 +155,11 @@ function handleRequest(request, response) {
       return;
     }
 
-    const fallback = path.join(root, 'index.html');
-    sendFile(fallback, method, response, true);
+    // Пропавший ресурс с расширением — честный 404, как на GitHub Pages.
+    // Прежний фолбэк в корневой index.html маскировал битые пути: fetch
+    // получал WebIDE с кодом 200 вместо ошибки.
+    response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    response.end('Not found');
   });
 }
 

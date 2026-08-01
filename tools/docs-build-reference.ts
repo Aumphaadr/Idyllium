@@ -134,8 +134,11 @@ function bakeReferencePages(
   const writePage = (parts: readonly string[], depth: number, title: string, description: string) => {
     const base = depth > 0 ? '../'.repeat(depth) : './';
     const meta = description ? `\n  <meta name="description" content="${escapeAttribute(description)}">` : '';
+    if (!shell.includes('<base href="./">')) {
+      throw new Error('reference shell must carry <base href="./"> — baked pages retarget it');
+    }
     const page = shell
-      .replace('<head>', `<head>\n  <base href="${base}">`)
+      .replace('<base href="./">', `<base href="${base}">`)
       .replace(/<title>[^<]*<\/title>/u, `<title>${escapeAttribute(title)} — Документация Idyllium</title>${meta}`);
     const outputPath = path.join(outputRoot, ...parts);
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });

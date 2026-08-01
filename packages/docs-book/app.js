@@ -106,7 +106,17 @@
       renderFatalError(error);
     }
 
-    window.addEventListener('popstate', openCurrentRoute);
+    window.addEventListener('popstate', () => void safeOpenCurrentRoute());
+  }
+
+  // Ошибка навигации после первичной загрузки не должна тонуть в консоли:
+  // пользователь видит ту же карточку, что и при ошибке загрузки.
+  async function safeOpenCurrentRoute() {
+    try {
+      await openCurrentRoute();
+    } catch (error) {
+      renderFatalError(error);
+    }
   }
 
   function redirectLegacyHashRoute() {
@@ -129,7 +139,7 @@
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     if (`${location.pathname}${location.hash}` !== url) history.pushState(null, '', url);
-    void openCurrentRoute();
+    void safeOpenCurrentRoute();
   }
 
   function bindShellEvents() {
