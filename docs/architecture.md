@@ -1,6 +1,6 @@
 # Architecture
 
-IdylliumNext is split into editor-neutral layers.
+Idyllium is split into editor-neutral layers.
 
 ## Core
 
