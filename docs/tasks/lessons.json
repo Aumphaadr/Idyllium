@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-01T10:30:23.441Z",
+  "generatedAt": "2026-08-02T21:47:32.266Z",
   "sourceRoot": "docs/manual-content/tasks",
   "sections": [
     {
@@ -62,12 +62,12 @@
         {
           "id": "colors",
           "title": "Улучшенный вывод текста",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Улучшенный вывод текста»",
           "file": "content/console/colors.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/colors.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "transforms",
@@ -102,12 +102,12 @@
         {
           "id": "increment",
           "title": "Инкремент и декремент",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Инкремент и декремент»",
           "file": "content/console/increment.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/increment.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "random",
@@ -172,12 +172,12 @@
         {
           "id": "char",
           "title": "Тип char как элемент строки",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Тип char как элемент строки»",
           "file": "content/console/char.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/char.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "dyn-array",
@@ -192,132 +192,132 @@
         {
           "id": "arr-functions",
           "title": "Функции для работы с массивами",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Функции для работы с массивами»",
           "file": "content/console/arr-functions.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/arr-functions.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "arr-methods",
           "title": "Методы массивов",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Методы массивов»",
           "file": "content/console/arr-methods.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/arr-methods.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "string-methods",
           "title": "Методы строк",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Методы строк»",
           "file": "content/console/string-methods.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/string-methods.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "types",
           "title": "Библиотека types",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Библиотека types»",
           "file": "content/console/types.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/types.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "bit-operations",
           "title": "Битовые операции",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Битовые операции»",
           "file": "content/console/bit-operations.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/bit-operations.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "encoding",
           "title": "Библиотека encoding",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Библиотека encoding»",
           "file": "content/console/encoding.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/encoding.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "functions",
           "title": "Создание собственных функций",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Создание собственных функций»",
           "file": "content/console/functions.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/functions.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "libs",
           "title": "Создание собственных библиотек",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Создание собственных библиотек»",
           "file": "content/console/libs.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/libs.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "files",
           "title": "Работа с файлами",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Работа с файлами»",
           "file": "content/console/files.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/files.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "directories",
           "title": "Файлы и папки проекта",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Файлы и папки проекта»",
           "file": "content/console/directories.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/directories.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "math-advanced",
           "title": "Продвинутые инструменты math",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Продвинутые инструменты math»",
           "file": "content/console/math-advanced.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/math-advanced.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "matrix",
           "title": "Двумерные массивы",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Двумерные массивы»",
           "file": "content/console/matrix.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/matrix.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "recursion",
           "title": "Рекурсия",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Рекурсия»",
           "file": "content/console/recursion.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/recursion.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "errors",
@@ -332,12 +332,12 @@
         {
           "id": "try-catch",
           "title": "Обработка ошибок",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Обработка ошибок»",
           "file": "content/console/try-catch.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/try-catch.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         }
       ]
     },
@@ -360,12 +360,12 @@
         {
           "id": "button",
           "title": "Кнопки и события",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Кнопки и события»",
           "file": "content/widgets/button.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/button.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "label",

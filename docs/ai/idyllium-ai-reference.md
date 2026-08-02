@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: IdylliumNext 1.2.1.
+Current language target: Idyllium 1.2.7.
 
 This reference describes implemented behavior. Ideas from `BACKLOG.md` and
 exploratory files under `spec/some_*` are not language features until they are
@@ -163,6 +163,8 @@ age--;  // wrong: no -- in Idyllium
 Named constants use `const` before the type:
 
 ```idyllium
+use console;
+
 const int MAX_LEVEL = 100;
 
 main() {
@@ -646,6 +648,8 @@ say_hello("Mira");
 Default arguments:
 
 ```idyllium
+use console;
+
 void function print_num(int num = 0) {
     console.writeln(num);
 }
@@ -688,6 +692,8 @@ class Counter {
 Named arguments:
 
 ```idyllium
+use console;
+
 int function sub(int left, int right) {
     return left - right;
 }
@@ -726,6 +732,8 @@ int function factorial(int n) {
 Pedagogical short form:
 
 ```idyllium
+use console;
+
 main() {
     console.writeln("Start");
 }
@@ -734,6 +742,8 @@ main() {
 After functions are introduced, typed `main` is allowed:
 
 ```idyllium
+use console;
+
 int function main() {
     console.writeln("Done");
     return 0;
@@ -776,6 +786,8 @@ button.on_click = void function() {
 Or assign a named function:
 
 ```idyllium
+use gui;
+
 void function handle_click(gui.Button sender) {
     sender.text = "Clicked";
 }
@@ -872,6 +884,8 @@ public zero-argument method `string function to_string()`. With that method,
 the object prints through it:
 
 ```idyllium
+use console;
+
 class Point {
     int x;
     int y;
@@ -912,6 +926,8 @@ class Hero {
 ### Static Methods
 
 ```idyllium
+use console;
+
 class Cat {
     static void function meow() {
         console.writeln("Мяу");
@@ -1016,6 +1032,31 @@ Polymorphism is supported for class relations. A function expecting a base
 class may receive a subclass object:
 
 ```idyllium
+use console;
+
+// Animal and Dog are the classes from the inheritance example above.
+class Animal {
+    string name;
+
+    constructor Animal(string ex_name) {
+        this.name = ex_name;
+    }
+
+    void function speak() {
+        console.writeln("...");
+    }
+}
+
+class Dog extends Animal {
+    constructor Dog(string ex_name) {
+        parent(ex_name);
+    }
+
+    void function speak() {
+        console.writeln(this.name, ": woof");
+    }
+}
+
 void function make_sound(Animal animal) {
     animal.speak();
 }
@@ -1562,8 +1603,10 @@ Exact integer ranges:
 `types.float32` uses IEEE-754 binary32; `types.float64` uses binary64.
 
 The exact type limits are available as module constants: `types.INT8_MIN`,
-`types.INT8_MAX`, `types.UINT8_MAX`, and likewise for 16/32/64 bits up to
-`types.UINT64_MAX` (18446744073709551615, preserved exactly).
+`types.INT8_MIN`/`types.INT8_MAX`, `types.UINT8_MAX`, `types.INT16_MIN`/`types.INT16_MAX`,
+`types.UINT16_MAX`, `types.INT32_MIN`/`types.INT32_MAX`, `types.UINT32_MAX`,
+`types.INT64_MIN`/`types.INT64_MAX`, `types.UINT64_MAX` (18446744073709551615,
+preserved exactly).
 
 Integer overflow wraps without runtime errors:
 
@@ -2126,6 +2169,9 @@ parameter — the widget itself (the sender). Read the new state from the
 sender's properties:
 
 ```idyllium
+use console;
+use gui;
+
 void function volume_changed(gui.Slider sender) {
     console.writeln("Volume: ", sender.value);
 }
@@ -2904,9 +2950,12 @@ not written in source. The binding and the properties `message`, `file`, and
 `line` are read-only; `to_string()` returns a normalized line such as
 `main.idyl:7: runtime error: division by zero`.
 
-Only normal Idyllium runtime errors are catchable. A compile error prevents the
-program from starting, internal JavaScript faults are implementation defects,
-and IDE cancellation must pass through `catch`. JavaScript still enters
+Only normal Idyllium runtime errors are catchable. That includes the recursion
+depth limit (see the `system` library). A compile error prevents the program
+from starting, internal JavaScript faults are implementation defects,
+`system.exit()` deliberately passes through `catch` (ending the program is the
+program's own decision, not an error), and IDE cancellation must pass through
+`catch` as well. JavaScript still enters
 `finally` while cancellation unwinds the stack, but arbitrary Idyllium runtime
 calls are not guaranteed after the host has stopped the program.
 
@@ -2964,6 +3013,7 @@ console.writeln(`x=${x}`); // wrong: no template literals
 int x = 23 / 10;          // wrong: / always returns float
 label.text = 42;          // wrong: no implicit int-to-string
 button.onclick = ...;     // wrong spelling; use on_click
+int console = 5;          // wrong: library names are reserved for the library
 new Hero();               // wrong: no new keyword; use Hero()
 Hero* hero;               // wrong: no pointers
 json.NULL                 // removed: use the language literal null
@@ -3000,10 +3050,14 @@ When asked to generate Idyllium code:
 7. For GUI/Canvas, create widgets/objects as normal variables, set properties,
    then call `add_child`, `draw`, or assign callbacks.
 8. For modules, access imported user module symbols through `module.name`.
-9. For educational explanations, prefer small steps and clear motivation.
-10. If syntax is uncertain, say so and ask for the project spec instead of
+9. Never reuse a standard library module name (`console`, `math`, `gui`, …)
+   for a variable, function, or class — the compiler rejects it. Built-in
+   function names (`to_string`, `sum`, …) are additionally rejected for
+   functions and classes; see Reserved Names.
+10. For educational explanations, prefer small steps and clear motivation.
+11. If syntax is uncertain, say so and ask for the project spec instead of
     inventing syntax.
-11. Treat `BACKLOG.md` and `spec/some_*` as design discussions, not implemented
+12. Treat `BACKLOG.md` and `spec/some_*` as design discussions, not implemented
     syntax, unless the user explicitly asks to discuss those proposals.
 
 ## 32. Compact Program Templates

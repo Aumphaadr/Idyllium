@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-01T10:30:23.441Z",
+  "generatedAt": "2026-08-02T21:47:32.266Z",
   "sourceRoot": "packages/docs",
   "sections": [
     {
@@ -67,7 +67,7 @@
           "sourceFile": "cli/005_colors.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "transforms",
@@ -107,7 +107,7 @@
           "sourceFile": "cli/009_increment.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "random",
@@ -177,7 +177,7 @@
           "sourceFile": "cli/014_char.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "dyn-array",
@@ -197,7 +197,7 @@
           "sourceFile": "cli/016_arr_functions.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "arr-methods",
@@ -207,7 +207,7 @@
           "sourceFile": "cli/017_arr_methods.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "string-methods",
@@ -217,7 +217,7 @@
           "sourceFile": "cli/018_string_methods.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "types",
@@ -227,7 +227,7 @@
           "sourceFile": "cli/020_types.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "bit-operations",
@@ -237,7 +237,7 @@
           "sourceFile": "docs/manual-content/console/bit-operations.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "encoding",
@@ -247,7 +247,7 @@
           "sourceFile": "cli/021_encoding.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "functions",
@@ -257,7 +257,7 @@
           "sourceFile": "cli/022_functions.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "libs",
@@ -267,7 +267,7 @@
           "sourceFile": "cli/023_libs.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "files",
@@ -277,7 +277,7 @@
           "sourceFile": "cli/024_files.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "directories",
@@ -287,7 +287,7 @@
           "sourceFile": "docs/manual-content/console/directories.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "math-advanced",
@@ -297,7 +297,7 @@
           "sourceFile": "cli/025_math.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "matrix",
@@ -307,7 +307,7 @@
           "sourceFile": "cli/026_matrix.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "recursion",
@@ -317,7 +317,7 @@
           "sourceFile": "docs/manual-content/console/recursion.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "errors",
@@ -337,7 +337,7 @@
           "sourceFile": "docs/manual-content/console/try-catch.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         }
       ]
     },
@@ -365,7 +365,7 @@
           "sourceFile": "widgets/001_button.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "label",

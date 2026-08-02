@@ -1,5 +1,463 @@
-<div class="docs-section docs-placeholder">
-  <h2>Задания готовятся</h2>
-  <p>Практикум по теме <strong>Создание собственных функций</strong> ещё не составлен.</p>
-  <p>Пока его нет, вернитесь к <a href="../book/console/functions">уроку</a>: примеры оттуда полезно повторить руками и переделать под себя.</p>
+<div class="docs-section">
+  <h2>Блок 1. Боль и избавление</h2>
+  <h3 class="task-group">Практика с преподавателем</h3>
+  <h4 class="task-item">Задание 1. Четыре раза одно и то же</h4>
+  <p>Задача: вывести сумму цифр четырёх чисел. Мы умеем — циклом с <code>div</code> и <code>mod</code>. Наберите <strong>целиком, ничего не сокращая</strong>:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    int a = 352;
+    int sa = 0;
+    while (a > 0) {
+        sa += mod(a, 10);
+        a = div(a, 10);
+    }
+    console.writeln("Сумма цифр 352: ", sa);
+
+    int b = 47;
+    int sb = 0;
+    while (b > 0) {
+        sb += mod(b, 10);
+        b = div(b, 10);
+    }
+    console.writeln("Сумма цифр 47: ", sb);
+
+    int c = 1000;
+    int sc = 0;
+    while (c > 0) {
+        sc += mod(c, 10);
+        c = div(c, 10);
+    }
+    console.writeln("Сумма цифр 1000: ", sc);
+
+    int d = 999;
+    int sd = 0;
+    while (d > 0) {
+        sd += mod(d, 10);
+        d = div(d, 10);
+    }
+    console.writeln("Сумма цифр 999: ", sd);
+}
+</script></idyl-code-block>
+  <idyl-output-block>Сумма цифр 352: 10
+Сумма цифр 47: 11
+Сумма цифр 1000: 1
+Сумма цифр 999: 27</idyl-output-block>
+  <p>Работает. Но признайтесь: <strong>один</strong> такой цикл выглядел нормально, а <strong>четыре одинаковых</strong> — уже тоска: четыре копии, четыре пары имён, четыре шанса опечататься. А если чисел будет двадцать?</p>
+  <h4 class="task-item">Задание 2. Тот же результат — без копий</h4>
+  <p>Теперь волшебство. Опишем вычисление <strong>один раз</strong> — как собственную функцию — и просто позовём её четырежды:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+int function digit_sum(int number) {
+    int res = 0;
+    while (number > 0) {
+        res += mod(number, 10);
+        number = div(number, 10);
+    }
+    return res;
+}
+
+main() {
+    console.writeln("Сумма цифр 352: ", digit_sum(352));
+    console.writeln("Сумма цифр 47: ", digit_sum(47));
+    console.writeln("Сумма цифр 1000: ", digit_sum(1000));
+    console.writeln("Сумма цифр 999: ", digit_sum(999));
+}
+</script></idyl-code-block>
+  <p>Вывод — <strong>в точности тот же</strong>. А теперь пересчитайте строки обеих программ (правила отступов одинаковые — сравнение честное): версия с функцией почти вдвое короче, и каждое новое число теперь стоит <strong>одну строку вызова</strong>, а не семь строк цикла. Двадцатое число? Ещё одна строка, а не ещё семь.</p>
+  <p>Разберём анатомию: <code>int function digit_sum(int number)</code> — тип результата, слово <code>function</code>, имя и параметр; в теле — знакомый цикл; <code>return res;</code> — «вот мой ответ». А в <code>main</code> остались только вызовы: <code>digit_sum(352)</code> — функция приняла 352, превратила в 10 и вернула. <strong>Функция — механизм для превращения одних данных в другие</strong>: вход → превращение → выход. Параметр <code>number</code> живёт только внутри функции — в <code>main</code> его нет.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Блок 2. Функция готова — допишите <code>main</code></h2>
+  <p>Функции ниже уже написаны и отлажены. Ваша работа — только <code>main</code>: позвать их с нужными данными.</p>
+  <h4 class="task-item">Задание 3. Распродажа</h4>
+  <p>Магазин скидывает четверть цены, функция готова:</p>
+  <idyl-code-block><script type="text/plain">
+int function sale_price(int price) {
+    return price - div(price, 4);
+}
+</script></idyl-code-block>
+  <p>Напишите <code>main</code>: спросите цену товара, выведите цену по акции (вызовом!), а второй строкой — сколько по той же акции стоил бы товар за 1000.</p>
+  <idyl-output-block>Цена товара: 2500
+По акции: 1875
+А товар за 1000 стоил бы: 750</idyl-output-block>
+  <h4 class="task-item">Задание 4. Перемножитель</h4>
+  <p>Функция перемножает все ячейки массива (такой готовой в языке нет — а у вас теперь есть):</p>
+  <idyl-code-block><script type="text/plain">
+int function mul_all(dyn_array<int> some_arr) {
+    int res = 1;
+    for (int i = 0; i < some_arr.length; i += 1) {
+        res = res * some_arr[i];
+    }
+    return res;
+}
+</script></idyl-code-block>
+  <p>Напишите <code>main</code>: заведите массив из трёх бросков кубика <code>[2, 3, 4]</code> и массив «три семёрки» — и выведите произведение каждого через вызовы.</p>
+  <idyl-output-block>Произведение бросков: 24
+Три семёрки: 343</idyl-output-block>
+  <h4 class="task-item">Задание 5. Пропуск на горку</h4>
+  <p>Готова функция-контролёр:</p>
+  <idyl-code-block><script type="text/plain">
+bool function can_ride(int height) {
+    return height >= 140;
+}
+</script></idyl-code-block>
+  <p>Напишите <code>main</code>: спросите рост, вызовите функцию и по её ответу (<code>if</code>) пустите на горку или вежливо откажите.</p>
+  <idyl-output-block>Твой рост (см): 150
+Проходи, катайся!</idyl-output-block>
+  <idyl-output-block>Твой рост (см): 120
+Подрасти чуть-чуть — и добро пожаловать.</idyl-output-block>
+</div>
+
+<div class="docs-section">
+  <h2>Блок 3. <code>main</code> готов — допишите тело</h2>
+  <p>Теперь наоборот: <code>main</code> уже написан и вызывает функцию — а её тело пустое. Ваша работа — только внутренности. Менять <code>main</code> нельзя!</p>
+  <h4 class="task-item">Задание 6. Мастерская ковров</h4>
+  <p>Мастерская ткёт квадратные ковры и печатает прайс по площади:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+int function square(int n) {
+    // ваш код: верните n, умноженное на само себя
+}
+
+main() {
+    console.writeln("Прайс мастерской ковров:");
+    for (int i = 1; i <= 5; i += 1) {
+        console.writeln("Ковёр ", i, "×", i, " — ", square(i), " кв. м");
+    }
+}
+</script></idyl-code-block>
+  <idyl-output-block>Прайс мастерской ковров:
+Ковёр 1×1 — 1 кв. м
+Ковёр 2×2 — 4 кв. м
+Ковёр 3×3 — 9 кв. м
+Ковёр 4×4 — 16 кв. м
+Ковёр 5×5 — 25 кв. м</idyl-output-block>
+  <h4 class="task-item">Задание 7. Оценка в журнал</h4>
+  <p>Учитель ставит в журнал среднее между контрольной и домашкой:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+float function avg2(float a, float b) {
+    // ваш код: верните среднее арифметическое a и b
+}
+
+main() {
+    console.write("Оценка за контрольную: ");
+    float test = console.get_float();
+    console.write("Оценка за домашку: ");
+    float homework = console.get_float();
+    console.writeln("В журнал пойдёт: ", avg2(test, homework));
+}
+</script></idyl-code-block>
+  <idyl-output-block>Оценка за контрольную: 5
+Оценка за домашку: 4
+В журнал пойдёт: 4.5</idyl-output-block>
+  <h4 class="task-item">Задание 8. Прыжки в длину</h4>
+  <p>У каждого спортсмена две попытки, в зачёт идёт лучшая:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+int function max2(int a, int b) {
+    // ваш код: верните большее из двух (понадобится if)
+}
+
+main() {
+    console.writeln("Аня: в зачёте ", max2(310, 285), " см");
+    console.writeln("Боря: в зачёте ", max2(298, 340), " см");
+    console.writeln("Витя: в зачёте ", max2(315, 315), " см");
+}
+</script></idyl-code-block>
+  <idyl-output-block>Аня: в зачёте 310 см
+Боря: в зачёте 340 см
+Витя: в зачёте 315 см</idyl-output-block>
+  <h4 class="task-item">Задание 9. Поровну на двоих</h4>
+  <p>Делятся ли конфеты на двоих без обид и ножа?</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+bool function is_even(int n) {
+    // ваш код: верните true для чётного (вспомните mod)
+}
+
+main() {
+    console.writeln("10 конфет на двоих поровну: ", is_even(10));
+    console.writeln("7 конфет на двоих поровну: ", is_even(7));
+    console.writeln("0 конфет на двоих поровну: ", is_even(0));
+}
+</script></idyl-code-block>
+  <idyl-output-block>10 конфет на двоих поровну: true
+7 конфет на двоих поровну: false
+0 конфет на двоих поровну: true</idyl-output-block>
+</div>
+
+<div class="docs-section">
+  <h2>Блок 4. Пишете всё — но роли расписаны</h2>
+  <p>Теперь и функция, и <code>main</code> — ваши. Что делает кто — сказано прямо в задании: не смешивайте роли.</p>
+  <h4 class="task-item">Задание 10. Счётчик цифр</h4>
+  <p><strong>Функция</strong> <code>digit_count(n)</code> возвращает, сколько цифр в числе (цикл с <code>div</code>, как в задании 1, только считаем шаги). <strong><code>main</code></strong> спрашивает число и выводит ответ.</p>
+  <idyl-output-block>Число: 50600
+Цифр в числе: 5</idyl-output-block>
+  <h4 class="task-item">Задание 11. Термометр-переводчик</h4>
+  <p><strong>Функция</strong> <code>to_fahrenheit(celsius)</code> переводит градусы Цельсия в Фаренгейты (<code>c * 9 / 5 + 32</code>, тип <code>float</code>). <strong><code>main</code></strong> спрашивает температуру, выводит перевод — и отдельной строкой перевод нуля.</p>
+  <idyl-output-block>Температура в Цельсиях: 25
+25°C = 77°F
+А ноль — это 32°F</idyl-output-block>
+  <h4 class="task-item">Задание 12. Пожарная лестница</h4>
+  <p>Пожарным нужно понять, хватит ли лестницы: она упирается в землю с отступом от стены и должна дотянуться до окна. <strong>Функция</strong> <code>ladder_length(offset, height)</code> возвращает нужную длину лестницы по отступу и высоте окна (Пифагор: <code>math.sqrt</code> от суммы квадратов). <strong><code>main</code></strong> спрашивает оба числа и печатает ответ.</p>
+  <idyl-output-block>Отступ от стены (м): 3
+Высота окна (м): 4
+Нужна лестница: 5 м</idyl-output-block>
+  <h4 class="task-item">Задание 13. Время по-человечески</h4>
+  <p><strong>Функция</strong> <code>format_time(minutes)</code> возвращает <strong>строку</strong> вида «2 ч 25 мин» (<code>div</code>, <code>mod</code> и <code>to_string</code> со склейкой). <strong><code>main</code></strong> спрашивает минуты, выводит перевод — и вторую строку про 200 минут.</p>
+  <idyl-output-block>Минут: 145
+Это 2 ч 25 мин
+А 200 минут — это 3 ч 20 мин</idyl-output-block>
+  <p>Заметьте: функции умеют возвращать не только числа — строка такой же полноправный результат.</p>
+  <h4 class="task-item">Задание 14. Размах</h4>
+  <p><strong>Функция</strong> <code>range_of(nums)</code> принимает массив и возвращает размах — разницу максимума и минимума (агрегаты в помощь). <strong><code>main</code></strong> собирает пять температур с ввода в массив и докладывает размах.</p>
+  <idyl-output-block>Температура дня 1: 19
+Температура дня 2: 24
+Температура дня 3: 17
+Температура дня 4: 28
+Температура дня 5: 22
+Размах недели: 11</idyl-output-block>
+  <h4 class="task-item">Задание 15. Крепкий ли пароль</h4>
+  <p><strong>Функция</strong> <code>is_strong(password)</code> возвращает <code>bool</code>: пароль хорош, если в нём не меньше 8 символов <strong>и</strong> есть хоть одна цифра (<code>length</code>, <code>contains</code>, логика). <strong><code>main</code></strong> спрашивает пароль и объявляет вердикт.</p>
+  <idyl-output-block>Придумайте пароль: дракон2026
+Надёжный!</idyl-output-block>
+  <idyl-output-block>Придумайте пароль: кот
+Слабоват: нужно 8+ символов и хотя бы одна цифра.</idyl-output-block>
+  <h4 class="task-item">Задание 16. Горсть кубиков</h4>
+  <p><strong>Функция</strong> <code>dice_sum(count)</code> бросает <code>count</code> кубиков (<code>random</code> прямо внутри функции!) и возвращает их сумму. <strong><code>main</code></strong> выводит результат броска трёх кубиков и десяти.</p>
+  <idyl-output-block>Три кубика: 11
+Десять кубиков: 28</idyl-output-block>
+  <p>(Суммы случайные — у вас свои. Обратите внимание: случайность спрятана <strong>внутри</strong> функции — снаружи просто «дай сумму горсти».)</p>
+  <h4 class="task-item">Задание 17. Перевёртыш на службе</h4>
+  <p><strong>Функция</strong> <code>is_palindrome(word)</code> возвращает <code>bool</code>: слово читается одинаково в обе стороны? (Внутри — знакомый разворот накопителем из темы про символы и сравнение.) <strong><code>main</code></strong> спрашивает слово и отвечает.</p>
+  <idyl-output-block>Слово: шалаш
+Палиндром!</idyl-output-block>
+</div>
+
+<div class="docs-section">
+  <h2>Блок 5. Архитектор</h2>
+  <p>Здесь расписаны только <strong>результаты</strong>. Какие функции создать, как их назвать, что им принимать и возвращать — решаете вы. Одно требование: повторяющиеся вычисления обязаны жить в функциях, а не копироваться.</p>
+  <h4 class="task-item">Задание 18. Сводка по отрядам</h4>
+  <p>Три отряда сдали результаты стрельб: <code>[42, 38, 50]</code>, <code>[29, 44, 31]</code>, <code>[48, 47, 49]</code>. Для каждого отряда выведите одну строку со средним и лучшим результатом. Строки должны печататься одинаковым кодом — а каким способом этого добиться, вы уже понимаете.</p>
+  <idyl-output-block>Отряд 1: среднее 43.33333333, лучший 50
+Отряд 2: среднее 34.66666667, лучший 44
+Отряд 3: среднее 48, лучший 49</idyl-output-block>
+  <h4 class="task-item">Задание 19. Паспорт числа</h4>
+  <p>Программа спрашивает число и печатает его «паспорт»: сумму цифр, количество цифр и чётность. Каждый факт добывается отдельным механизмом — проектируйте.</p>
+  <idyl-output-block>Число: 2026
+--- Паспорт ---
+Сумма цифр: 10
+Цифр: 4
+Чётное: true</idyl-output-block>
+</div>
+
+<div class="docs-section">
+  <h2>Часть II. void-функции</h2>
+  <p>Не всякой функции есть что возвращать. Иногда нужно просто <strong>сделать</strong> — напечатать, нарисовать, объявить. Для этого тип <code>void</code> («пустота»): без <code>return</code>, а вызов — как отдельная команда.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Блок 6. Действие без результата</h2>
+  <h3 class="task-group">Практика с преподавателем</h3>
+  <h4 class="task-item">Задание 20. Линия по заказу</h4>
+  <p>Наберите:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+void function draw_line(int L) {
+    string res = "";
+    for (int i = 0; i < L; i += 1) {
+        res = res + '-';
+    }
+    console.writeln(res);
+}
+
+main() {
+    draw_line(5);
+    draw_line(12);
+}
+</script></idyl-code-block>
+  <idyl-output-block>-----
+------------</idyl-output-block>
+  <p><code>draw_line(5)</code> приняла пятёрку, вывела линию — и <strong>ничего не вернула</strong>: её вызов стоит отдельной командой, без всякого <code>int A =</code>. Это и есть void: действие вместо результата.</p>
+  <h4 class="task-item">Задание 21. Строка чека</h4>
+  <p>void-функция готова:</p>
+  <idyl-code-block><script type="text/plain">
+void function receipt_line(string name, int price) {
+    console.writeln(name, "\t", price, " монет");
+}
+</script></idyl-code-block>
+  <p>Напишите <code>main</code>: спросите товар и цену, напечатайте заголовок «--- Чек ---», строку купленного товара (вызовом!) и строку «Пакет, 5 монет» — тоже вызовом.</p>
+  <idyl-output-block>Товар: Молоко
+Цена: 75
+--- Чек ---
+Молоко	75 монет
+Пакет	5 монет</idyl-output-block>
+  <h4 class="task-item">Задание 22. Кричалка</h4>
+  <p><code>main</code> готов, тело — ваше (менять <code>main</code> нельзя):</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+void function shout(string word, int times) {
+    // ваш код: вывести word с восклицательным знаком times раз, каждый раз с новой строки
+}
+
+main() {
+    shout("Гол", 3);
+    shout("Ура", 2);
+}
+</script></idyl-code-block>
+  <idyl-output-block>Гол!
+Гол!
+Гол!
+Ура!
+Ура!</idyl-output-block>
+  <h4 class="task-item">Задание 23. Текст в рамке</h4>
+  <p><strong>Функция</strong> <code>framed(text)</code> печатает текст в рамке из звёздочек: линия по ширине текста плюс четыре символа, затем <code>* текст *</code>, затем снова линия. <strong><code>main</code></strong> демонстрирует рамку на двух разных надписях.</p>
+  <idyl-output-block>********
+* Меню *
+********
+****************
+* Глава первая *
+****************</idyl-output-block>
+  <p>Рамка сама подстраивается под длину — в этом вся соль (<code>length</code> в помощь).</p>
+  <h4 class="task-item">Задание 24. Полоса прогресса</h4>
+  <p><strong>Функция</strong> <code>progress_bar(percent)</code> рисует полосу загрузки из десяти делений и работает для <strong>любого</strong> процента по такой спецификации:</p>
+  <ul>
+    <li>вызов <code>progress_bar(20)</code> выводит <code>[##--------] 20%</code>;</li>
+    <li>вызов <code>progress_bar(30)</code> выводит <code>[###-------] 30%</code>;</li>
+    <li>вызов <code>progress_bar(40)</code> выводит <code>[####------] 40%</code> — и так далее;</li>
+    <li>если процент не делится на 10 — число решёток округляется <strong>вниз</strong>: <code>progress_bar(17)</code> выводит <code>[#---------] 17%</code>.</li>
+  </ul>
+  <p><strong><code>main</code></strong> спрашивает процент загрузки и показывает полосу. Преподаватель проверит на своих числах — полоса обязана сойтись для каждого.</p>
+  <idyl-output-block>Процент загрузки: 30
+[###-------] 30%</idyl-output-block>
+  <idyl-output-block>Процент загрузки: 17
+[#---------] 17%</idyl-output-block>
+  <h4 class="task-item">Задание 25. Открытка</h4>
+  <p>Соберите программу-открытку: заголовок в рамке, тёплое пожелание, подпись — что и как разложить по void-функциям, решаете сами. Требование одно: <code>main</code> должен читаться как <strong>план</strong> открытки (три-четыре вызова), а не как простыня кода.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Блок 7. Грань между <code>int</code> и <code>void</code></h2>
+  <h4 class="task-item">Задание 26. Пустота в коробку</h4>
+  <p>Поломка-предсказание. Попробуйте сохранить «результат» void-функции:</p>
+  <idyl-code-block><script type="text/plain">
+    int A = draw_line(5);
+</script></idyl-code-block>
+  <p><strong>Сначала предскажите</strong>, потом запустите и прочитайте отказ. У void-функции нет результата — и класть в коробку нечего: пустоту не присвоишь.</p>
+  <h4 class="task-item">Задание 27. Забытый return</h4>
+  <p>Ещё поломка. Напишите int-функцию и «забудьте» вернуть ответ:</p>
+  <idyl-code-block><script type="text/plain">
+int function square(int n) {
+    int res = n * n;
+}
+</script></idyl-code-block>
+  <p>Запустите и прочитайте отказ. Пообещал вернуть <code>int</code> — верни: компилятор следит за обещаниями ещё до запуска. Почините одной строкой.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Блок 8. Именованные аргументы, умолчания и настоящий main</h2>
+  <h3 class="task-group">Практика с преподавателем</h3>
+  <h4 class="task-item">Задание 28. По имени надёжнее</h4>
+  <p>Наберите:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+int function rectangle_area(int width, int height) {
+    return width * height;
+}
+
+main() {
+    console.writeln(rectangle_area(5, 3));
+    console.writeln(rectangle_area(height=3, width=5));
+}
+</script></idyl-code-block>
+  <idyl-output-block>15
+15</idyl-output-block>
+  <p>Во втором вызове аргументы идут в <strong>обратном</strong> порядке — но имена не дают их перепутать. Правила: сначала позиционные, потом именованные; после первого именованного возврата к позиционным нет; один параметр дважды не передаётся.</p>
+  <h4 class="task-item">Задание 29. Место в зале</h4>
+  <p><strong>Функция</strong> <code>seat(int row, int place)</code> возвращает строку вида «ряд 7, место 12». <strong><code>main</code></strong> печатает один билет позиционным вызовом, а второй — именованным, нарочно передав <code>place</code> раньше <code>row</code>. Убедитесь, что путаницы не случилось.</p>
+  <idyl-output-block>Билет: ряд 7, место 12
+Билет: ряд 3, место 1</idyl-output-block>
+  <h4 class="task-item">Задание 30. Пицца по умолчанию</h4>
+  <p><strong>Функция</strong> <code>void pizza(string size, string cheese = &quot;обычный&quot;)</code> печатает заказ: «Пицца размер, сыр такой-то». <strong><code>main</code></strong> делает три заказа: со стандартным сыром, с «пармезаном», и именованным вызовом в перепутанном порядке.</p>
+  <idyl-output-block>Пицца большая, сыр обычный
+Пицца средняя, сыр пармезан
+Пицца детская, сыр моцарелла</idyl-output-block>
+  <h4 class="task-item">Задание 31. Линия с характером</h4>
+  <p>Доработайте <code>draw_line</code> из задания 20: добавьте второй параметр <code>char symbol = &#39;-&#39;</code> — символ линии с умолчанием. Старые вызовы <code>draw_line(10)</code> должны работать как раньше, а новые — уметь и <code>draw_line(10, &#39;=&#39;)</code>, и именованный <code>draw_line(symbol=&#39;*&#39;, length=5)</code>.</p>
+  <idyl-output-block>----------
+==========
+*****</idyl-output-block>
+  <p>Вот зачем умолчания: функция стала гибче, а <strong>ни один старый вызов не сломался</strong>.</p>
+  <h4 class="task-item">Задание 32. Умолчание не на месте</h4>
+  <p>Поломка. Объявите параметры в «неправильном» порядке — дефолтный раньше обязательного:</p>
+  <idyl-code-block><script type="text/plain">
+void function bad(string greeting = "Привет", string name) {
+</script></idyl-code-block>
+  <p>Запустите и прочитайте отказ. Почему так нельзя? Представьте вызов <code>bad(&quot;Мира&quot;)</code> — кому досталась бы «Мира»: приветствию или имени? Компилятор запрещает неоднозначность на корню: обязательные — вперёд, умолчания — в хвост.</p>
+  <h4 class="task-item">Задание 33. main выходит из тени</h4>
+  <p>С первого урока <code>main() { … }</code> был «просто заклинанием» — а это сокращение от настоящей функции! Запишите полную форму:</p>
+  <idyl-code-block><script type="text/plain">
+int function main() {
+    console.writeln("Работаю...");
+    return 0;
+}
+</script></idyl-code-block>
+  <p>Запустите и разглядите <strong>серую строку</strong> после вывода — код завершения. Смените <code>return 0</code> на <code>return 7</code> и запустите снова. Ноль — всемирная договорённость «всё хорошо», любое другое число — «что-то пошло не так»: по этому коду о судьбе вашей программы узнают другие программы.</p>
+  <idyl-output-block>Работаю...
+[Программа завершилась с кодом 0]</idyl-output-block>
+  <h4 class="task-item">Задание 34. Аварийный выход</h4>
+  <p><strong>Функция</strong> <code>check_age(age)</code> печатает «Возраст принят», но если возраст отрицательный — сообщает об ошибке и немедленно останавливает всю программу: <code>system.exit(1)</code> (не забудьте <code>use system;</code>). <strong><code>main</code></strong> проверяет 12, затем −5, затем печатает прощальную строку. Дойдёт ли до неё дело?</p>
+  <idyl-output-block>Возраст принят: 12
+Возраст не бывает отрицательным.
+[Программа завершилась с кодом 1]</idyl-output-block>
+  <p><code>system.exit</code> — стоп-кран: дёргать только при настоящей аварии, когда продолжать бессмысленно.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Со звёздочкой</h2>
+  <h4 class="task-item task-star">Задание 35 ⭐. Функция зовёт функцию</h4>
+  <p>Постройте <code>sum_of_squares(a, b)</code> — сумму квадратов двух чисел, — <strong>не расписывая</strong> умножения: внутри неё пусть трудится ваша же <code>square</code> из задания 6. Проверьте на 3 и 4.</p>
+  <idyl-output-block>25</idyl-output-block>
+  <p>Функции складываются из функций, как конструктор, — на этом стоит всё большое программирование.</p>
+  <h4 class="task-item task-star">Задание 36 ⭐. Викторина на конвейере</h4>
+  <p>Соберите викторину, где каждый вопрос — один вызов. <strong>Функция</strong> <code>int ask(string question, int answer)</code>: задаёт вопрос, принимает ответ, хвалит или поправляет — и <strong>возвращает</strong> 1 балл за верный ответ, 0 за неверный. <strong><code>main</code></strong>: три-четыре вызова <code>score += ask(...)</code> и итог. Заметьте, какая мощь: новый вопрос — одна строка.</p>
+  <idyl-output-block>Сколько будет 6 умножить на 7? 42
+Верно!
+Сколько бит в байте? 5
+Мимо, правильно: 8
+Итог: 1 из 2</idyl-output-block>
+  <h4 class="task-item task-star">Задание 37 ⭐. Санитар кода</h4>
+  <p>Перед вами чужой <code>main</code>-монстр — работает верно, но копипаста в три слоя (рядом с ним в файле уже лежит ваша <code>max2</code> из задания 8 — она нужна и монстру, и вам):</p>
+  <idyl-code-block><script type="text/plain">
+main() {
+    console.writeln("=====");
+    console.writeln("Счёт Ани: ", 40 + 50 + 20, " (лучший: ", max2(max2(40, 50), 20), ")");
+    console.writeln("=====");
+    console.writeln("Счёт Бори: ", 30 + 30 + 90, " (лучший: ", max2(max2(30, 30), 90), ")");
+    console.writeln("=====");
+    console.writeln("Счёт Вити: ", 60 + 10 + 55, " (лучший: ", max2(max2(60, 10), 55), ")");
+    console.writeln("=====");
+}
+</script></idyl-code-block>
+  <p>Отрефакторьте: придумайте функции так, чтобы <code>main</code> сжался до четырёх-пяти читаемых строк, а <strong>вывод не изменился ни на символ</strong>. Проверка честная: запустите обе версии и сравните вывод глазами. Это ремесло называется рефакторингом — переделка устройства без изменения поведения, — и им взрослые программисты заняты половину рабочего времени.</p>
+  <h4 class="task-item">Минутка из внешнего мира. Функции — везде, main — почти везде</h4>
+  <p><em>Это не задание — делать ничего не нужно. Просто любопытное из большого мира, читается за минуту.</em></p>
+  <ul>
+    <li>В <strong>Python</strong> функцию объявляют словом <code>def</code>, а тип не пишут вовсе: <code>def digit_sum(number):</code>. В <strong>JavaScript</strong> — словом <code>function</code> (знакомо!) или стрелочкой <code>=&gt;</code>. В <strong>C++</strong> — почти как у нас, только без слова <code>function</code>: <code>int digit_sum(int number)</code>.</li>
+    <li>Точка входа <code>main</code> — тоже мировая традиция: C++, Java, C#, Go начинают программу именно с неё, и возвращает она тот же код завершения, что вы видели в задании 33. А вот Python живёт без обязательного <code>main</code> — код выполняется просто сверху вниз, как наши самые первые программы.</li>
+    <li>Именованные аргументы и умолчания — фирменная гордость Python (<code>greet(name=&quot;Мира&quot;)</code>); в C++ есть только умолчания, а JavaScript не умеет ни того, ни другого — там выкручиваются, передавая объект.</li>
+  </ul>
+  <p>Так что выученное сегодня — не местный диалект, а общий язык ремесла: <code>def</code>, <code>function</code> или стрелка — механизм превращения данных везде один.</p>
 </div>
