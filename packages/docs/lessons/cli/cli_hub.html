@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Консольное программирование на Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+  <style>
+    .docs-nav-categories {
+      background: rgba(137, 180, 250, 0.08);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--border);
+    }
+    .docs-nav-categories h3 {
+      margin-top: 0;
+      margin-bottom: 0.75rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+    }
+    .docs-category-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .docs-category-links a {
+      padding: 0.4rem 0.9rem;
+      border-radius: 20px;
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+      border: 1px solid var(--border);
+    }
+    .docs-category-links a:hover,
+    .docs-category-links a.current {
+      background: var(--accent);
+      color: #1e1e2e;
+      border-color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Консольное программирование</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <h1>📟 Консольное программирование</h1>
+      <p class="docs-subtitle">27 уроков — от «Hello, World!» до двумерных массивов и типичных ошибок</p>
+    </div>
+
+    <!-- Category Navigation -->
+    <div class="docs-nav-categories">
+      <h3>📚 КАТЕГОРИИ</h3>
+      <div class="docs-category-links">
+        <a href="cli_hub.html" class="current">Консольное программирование</a>
+        <a href="../widgets/widgets_hub.html">Графические виджеты</a>
+        <a href="../oop/oop_hub.html">ООП в Idyllium</a>
+        <a href="../examples/examples_hub.html">Примеры задач</a>
+      </div>
+    </div>
+
+    <!-- Lessons Grid -->
+    <div class="docs-lessons-grid">
+
+      <!-- Урок 000 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 000</div>
+        <h2>Установка Idyllium</h2>
+        <p>Ничего устанавливать не нужно — просто откройте IDE. Но если очень хочется, читайте про VS Code extension в будущем.</p>
+        <a href="000_setup.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 001 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 001</div>
+        <h2>Первая программа</h2>
+        <p>Напишите классический "Hello, World!" и изучите базовый синтаксис вывода данных в консоль.</p>
+        <a href="001_hello.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 002 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 002</div>
+        <h2>Переменные и типы данных</h2>
+        <p>Познакомьтесь с основными типами: целые числа, дробные числа и строки. Научитесь объявлять переменные и присваивать им значения.</p>
+        <a href="002_variables.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 003 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 003</div>
+        <h2>Ввод данных</h2>
+        <p>Научитесь получать данные от пользователя с помощью функций <code>console.get_int()</code>, <code>get_float()</code> и <code>get_string()</code>.</p>
+        <a href="003_input.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 004 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 004</div>
+        <h2>Арифметика</h2>
+        <p>Освойте операции сложения, вычитания, умножения и деления. Поймите, почему результат деления всегда <code>float</code>, и как использовать <code>div()</code> и <code>mod()</code>.</p>
+        <a href="004_arithmetics.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 005 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 005</div>
+        <h2>Улучшенный вывод текста</h2>
+        <p>Управляйте форматом вывода: переходите на новую строку с <code>'\n'</code>, используйте табуляцию <code>'\t'</code> и окрашивайте текст с помощью ANSI-последовательностей.</p>
+        <a href="005_colors.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 006 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 006</div>
+        <h2>Преобразования данных</h2>
+        <p>Научитесь преобразовывать числа в строки и обратно с помощью функций <code>to_int()</code>, <code>to_float()</code> и <code>to_string()</code>.</p>
+        <a href="006_transforms.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 007 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 007</div>
+        <h2>Базовые математические функции</h2>
+        <p>Используйте библиотеку <code>math</code>: округляйте числа, вычисляйте модуль, степень и корень, ограничивайте значения с помощью <code>clamp()</code>.</p>
+        <a href="007_math.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 008 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 008</div>
+        <h2>Условный оператор и тип bool</h2>
+        <p>Научитесь принимать решения в программе с помощью <code>if</code> и <code>else</code>. Поймите, что такое логическое значение и как его получить.</p>
+        <a href="008_if.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 009 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 009</div>
+        <h2>Инкремент и декремент</h2>
+        <p>Изменяйте значение переменной самой собой: увеличивайте, уменьшайте, умножайте или применяйте функции — всё это через простое присваивание.</p>
+        <a href="009_increment.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 010 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 010</div>
+        <h2>Случайные числа</h2>
+        <p>Генерируйте случайные целые и дробные числа, выбирайте символы из строки и задавайте сид для воспроизводимости.</p>
+        <a href="010_random.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 011 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 011</div>
+        <h2>Логические операции</h2>
+        <p>Комбинируйте условия с помощью <code>and</code>, <code>or</code> и <code>xor</code>. Используйте <code>not()</code> для инверсии логических значений.</p>
+        <a href="011_bool.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 012 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 012</div>
+        <h2>Циклы</h2>
+        <p>Повторяйте действия с помощью <code>while</code>, <code>for</code> и <code>do-while</code>. Управляйте выполнением циклов с помощью <code>break</code> и <code>continue</code>.</p>
+        <a href="012_loops.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 013 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 013</div>
+        <h2>Массивы</h2>
+        <p>Создавайте массивы фиксированной длины, обращайтесь к их элементам по индексу и не выходите за границы — Idyllium вас об этом предупредит.</p>
+        <a href="013_array.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 014 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 014</div>
+        <h2>Тип char как элемент строки</h2>
+        <p>Работайте со строками как с последовательностями символов. Изучите конкатенацию, посимвольный перебор и методы строк.</p>
+        <a href="014_char.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 015 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 015</div>
+        <h2>Динамические массивы</h2>
+        <p>Создавайте массивы, которые могут менять размер: добавляйте и удаляйте элементы, узнавайте их количество.</p>
+        <a href="015_dyn_array.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 016 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 016</div>
+        <h2>Функции для работы с массивами</h2>
+        <p>Находите максимум, минимум, среднее и сумму элементов массива с помощью встроенных функций.</p>
+        <a href="016_arr_functions.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 017 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 017</div>
+        <h2>Методы массивов</h2>
+        <p>Используйте методы <code>contains</code>, <code>find</code>, <code>reverse</code> и <code>sort</code> для работы с содержимым массивов.</p>
+        <a href="017_arr_methods.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 018 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 018</div>
+        <h2>Методы строк</h2>
+        <p>Преобразовывайте строки: меняйте регистр, проверяйте наличие подстрок, разбивайте строки на части.</p>
+        <a href="018_string_methods.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 019 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 019</div>
+        <h2>Библиотека time</h2>
+        <p>Работайте со временем: приостанавливайте программу, получайте текущую дату и время, извлекайте отдельные компоненты даты.</p>
+        <a href="019_time.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 020 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 020</div>
+        <h2>Библиотека types</h2>
+        <p>Изучите специализированные типы данных: <code>int8</code>, <code>int16</code>, <code>uint32</code> и другие. Конвертируйте числа в двоичную и шестнадцатеричную форму.</p>
+        <a href="020_types.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 021 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 021</div>
+        <h2>Библиотека encoding</h2>
+        <p>Превращайте символы в числа и обратно, работайте с разными кодировками: UTF-8, Windows-1251, KOI8-R и другими.</p>
+        <a href="021_encoding.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 022 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 022</div>
+        <h2>Создание собственных функций</h2>
+        <p>Пишите свои функции: процедуры (void) и функции, возвращающие результат. Учитесь передавать аргументы и возвращать значения.</p>
+        <a href="022_functions.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 023 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 023</div>
+        <h2>Создание собственных библиотек</h2>
+        <p>Объединяйте функции в библиотеки и подключайте их в других программах. Организуйте код логически и повторно используйте его.</p>
+        <a href="023_libs.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 024 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 024</div>
+        <h2>Работа с файлами</h2>
+        <p>Записывайте данные в файлы и читайте их обратно. Используйте типы <code>file.ostream</code> и <code>file.istream</code> для управления потоками ввода/вывода.</p>
+        <a href="024_files.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 025 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 025</div>
+        <h2>Продвинутые инструменты math</h2>
+        <p>Используйте тригонометрию (<code>sin</code>, <code>cos</code>, <code>tan</code>), логарифмы и константы <code>math.pi</code> и <code>math.e</code> для сложных вычислений.</p>
+        <a href="025_math.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 026 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 026</div>
+        <h2>Двумерные массивы</h2>
+        <p>Создавайте таблицы данных с помощью массивов массивов. Работайте со строками и столбцами, перебирайте элементы.</p>
+        <a href="026_matrix.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+      <!-- Урок 027 -->
+      <div class="docs-lesson-card">
+        <div class="docs-lesson-number">Урок 027</div>
+        <h2>Типичные ошибки</h2>
+        <p>Справочник ошибок компиляции и выполнения — с примерами и пояснениями. Учитесь понимать, что пошло не так.</p>
+        <a href="027_errors.html" class="docs-lesson-btn">Открыть →</a>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

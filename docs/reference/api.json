@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "languageVersion": "1.2.8",
-  "generatedAt": "2026-08-03T09:34:39.800Z",
+  "languageVersion": "1.2.9",
+  "generatedAt": "2026-08-03T11:46:46.817Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "general": [
     {
@@ -4225,6 +4225,13 @@
               "callbacks": []
             },
             {
+              "name": "enabled",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.",
+              "callbacks": []
+            },
+            {
               "name": "font_size",
               "type": "int",
               "readonly": false,
@@ -4287,7 +4294,7 @@
               "name": "visible",
               "type": "bool",
               "readonly": false,
-              "documentation": "",
+              "documentation": "Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.",
               "callbacks": []
             },
             {
@@ -4331,6 +4338,13 @@
           "notes": [],
           "example": "gui.Canvas canvas;\ncanvas.width = 640;\ncanvas.height = 360;\ncanvas.framerate_limit = 60;\ncanvas.on_update = update;",
           "properties": [
+            {
+              "name": "enabled",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.",
+              "callbacks": []
+            },
             {
               "name": "framerate_limit",
               "type": "int",
@@ -4421,7 +4435,7 @@
               "name": "visible",
               "type": "bool",
               "readonly": false,
-              "documentation": "",
+              "documentation": "Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.",
               "callbacks": []
             },
             {
@@ -4556,6 +4570,13 @@
           "example": "gui.CheckBox sound;\nsound.text = \"Включить звук\";\nsound.is_checked = true;",
           "properties": [
             {
+              "name": "enabled",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.",
+              "callbacks": []
+            },
+            {
               "name": "font_size",
               "type": "int",
               "readonly": false,
@@ -4615,7 +4636,7 @@
               "name": "visible",
               "type": "bool",
               "readonly": false,
-              "documentation": "",
+              "documentation": "Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.",
               "callbacks": []
             },
             {
@@ -4678,6 +4699,13 @@
           "example": "gui.ComboBox quality;\nquality.add_item(\"Низкое\");\nquality.add_item(\"Высокое\");\nquality.selected_index = 1;",
           "properties": [
             {
+              "name": "enabled",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.",
+              "callbacks": []
+            },
+            {
               "name": "font_size",
               "type": "int",
               "readonly": false,
@@ -4737,7 +4765,7 @@
               "name": "visible",
               "type": "bool",
               "readonly": false,
-              "documentation": "",
+              "documentation": "Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.",
               "callbacks": []
             },
             {
@@ -4826,6 +4854,13 @@
           "example": "gui.FloatSpinBox opacity;\nopacity.min = 0.0;\nopacity.max = 1.0;\nopacity.step = 0.1;\nopacity.value = 0.7;",
           "properties": [
             {
+              "name": "enabled",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.",
+              "callbacks": []
+            },
+            {
               "name": "font_size",
               "type": "int",
               "readonly": false,
@@ -4899,7 +4934,7 @@
               "name": "visible",
               "type": "bool",
               "readonly": false,
-              "documentation": "",
+              "documentation": "Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.",
               "callbacks": []
             },
             {
@@ -4983,6 +5018,13 @@
               "callbacks": []
             },
             {
+              "name": "enabled",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.",
+              "callbacks": []
+            },
+            {
               "name": "font_size",
               "type": "int",
               "readonly": false,
@@ -5028,7 +5070,7 @@
               "name": "visible",
               "type": "bool",
               "readonly": false,
-              "documentation": "",
+              "documentation": "Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.",
               "callbacks": []
             },
             {
@@ -5105,6 +5147,13 @@
           "example": "gui.ImageBox preview;\npreview.width = 240;\npreview.height = 160;\npreview.resize_mode = \"fit\";\npreview.set_image(picture);",
           "properties": [
             {
+              "name": "enabled",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.",
+              "callbacks": []
+            },
+            {
               "name": "height",
               "type": "int",
               "readonly": false,
@@ -5143,7 +5192,7 @@
               "name": "visible",
               "type": "bool",
               "readonly": false,
-              "documentation": "",
+              "documentation": "Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.",
               "callbacks": []
             },
             {
@@ -5256,6 +5305,13 @@
               "callbacks": []
             },
             {
+              "name": "enabled",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.",
+              "callbacks": []
+            },
+            {
               "name": "font_size",
               "type": "int",
               "readonly": false,
@@ -5325,7 +5381,7 @@
               "name": "visible",
               "type": "bool",
               "readonly": false,
-              "documentation": "",
+              "documentation": "Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.",
               "callbacks": []
             },
             {
@@ -5388,6 +5444,13 @@
               "type": "string",
               "readonly": false,
               "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "enabled",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.",
               "callbacks": []
             },
             {
@@ -5457,7 +5520,7 @@
               "name": "visible",
               "type": "bool",
               "readonly": false,
-              "documentation": "",
+              "documentation": "Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.",
               "callbacks": []
             },
             {
@@ -5672,6 +5735,13 @@
               "callbacks": []
             },
             {
+              "name": "enabled",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.",
+              "callbacks": []
+            },
+            {
               "name": "font_size",
               "type": "int",
               "readonly": false,
@@ -5745,7 +5815,7 @@
               "name": "visible",
               "type": "bool",
               "readonly": false,
-              "documentation": "",
+              "documentation": "Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.",
               "callbacks": []
             },
             {
@@ -5789,6 +5859,13 @@
           "notes": [],
           "example": "gui.RadioButton easy;\neasy.text = \"Легко\";\neasy.group = \"difficulty\";\neasy.is_selected = true;",
           "properties": [
+            {
+              "name": "enabled",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.",
+              "callbacks": []
+            },
             {
               "name": "font_size",
               "type": "int",
@@ -5856,7 +5933,7 @@
               "name": "visible",
               "type": "bool",
               "readonly": false,
-              "documentation": "",
+              "documentation": "Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.",
               "callbacks": []
             },
             {
@@ -5918,6 +5995,13 @@
           "notes": [],
           "example": "gui.Slider volume;\nvolume.min = 0;\nvolume.max = 100;\nvolume.step = 5;\nvolume.value = 60;",
           "properties": [
+            {
+              "name": "enabled",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.",
+              "callbacks": []
+            },
             {
               "name": "height",
               "type": "int",
@@ -5985,7 +6069,7 @@
               "name": "visible",
               "type": "bool",
               "readonly": false,
-              "documentation": "",
+              "documentation": "Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.",
               "callbacks": []
             },
             {
@@ -6047,6 +6131,13 @@
           "notes": [],
           "example": "gui.SpinBox lives;\nlives.min = 1;\nlives.max = 9;\nlives.value = 3;",
           "properties": [
+            {
+              "name": "enabled",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.",
+              "callbacks": []
+            },
             {
               "name": "font_size",
               "type": "int",
@@ -6121,7 +6212,7 @@
               "name": "visible",
               "type": "bool",
               "readonly": false,
-              "documentation": "",
+              "documentation": "Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.",
               "callbacks": []
             },
             {
@@ -6183,6 +6274,13 @@
           "notes": [],
           "example": "",
           "properties": [
+            {
+              "name": "enabled",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.",
+              "callbacks": []
+            },
             {
               "name": "font_size",
               "type": "int",
@@ -6250,7 +6348,7 @@
               "name": "visible",
               "type": "bool",
               "readonly": false,
-              "documentation": "",
+              "documentation": "Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.",
               "callbacks": []
             },
             {
@@ -6363,6 +6461,13 @@
               "callbacks": []
             },
             {
+              "name": "enabled",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.",
+              "callbacks": []
+            },
+            {
               "name": "font_size",
               "type": "int",
               "readonly": false,
@@ -6429,7 +6534,7 @@
               "name": "visible",
               "type": "bool",
               "readonly": false,
-              "documentation": "",
+              "documentation": "Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.",
               "callbacks": []
             },
             {
@@ -6541,6 +6646,13 @@
               "callbacks": []
             },
             {
+              "name": "enabled",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.",
+              "callbacks": []
+            },
+            {
               "name": "font",
               "type": "fonts.Font",
               "readonly": false,
@@ -6586,7 +6698,7 @@
               "name": "visible",
               "type": "bool",
               "readonly": false,
-              "documentation": "",
+              "documentation": "Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.",
               "callbacks": []
             },
             {
@@ -10366,7 +10478,7 @@
           "returnType": "string",
           "parameters": [],
           "variadic": false,
-          "documentation": "Версия Idyllium, например \"1.2.8\"."
+          "documentation": "Версия Idyllium, например \"1.2.9\"."
         }
       ],
       "constants": [],

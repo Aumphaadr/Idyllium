@@ -1,0 +1,7 @@
+use console;
+use math;
+main() {
+    console.write("Вчера: "); int y = console.get_int();
+    console.write("Сегодня: "); int t = console.get_int();
+    console.writeln("Изменилась на ", math.abs(y - t), " градусов.");
+}

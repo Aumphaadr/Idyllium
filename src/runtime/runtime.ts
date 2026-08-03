@@ -63,7 +63,7 @@ export class IdylliumRuntimeError extends Error {
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-export const IDYLLIUM_VERSION = '1.2.8';
+export const IDYLLIUM_VERSION = '1.2.9';
 
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform(): string {
@@ -3462,6 +3462,10 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       throwIfRuntimeStopped('', 0);
       const target = runtimeObjects.objects.find((item) => item.__idylliumObjectId === canvasId);
       if (!target) return;
+      // Выключенный виджет не принимает событий. Рендерер блокирует их на
+      // экране; эта проверка — вторая линия обороны на случай гонки «клик
+      // пришёл в тот же момент, когда программа выключила виджет».
+      if (target.enabled === false) return;
 
       const deselectedRadios = target.__idylliumType === 'gui.RadioButton' && eventName === 'change'
         ? runtimeObjects.objects.filter((item) => (
@@ -5030,6 +5034,7 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
     obj.width = size.width;
     obj.height = size.height;
     obj.visible = true;
+    obj.enabled = true;
     obj.style = ''; // IdySS-наклейка; пустая строка = наклейки нет
     obj.style_hover = '';
     obj.style_active = '';

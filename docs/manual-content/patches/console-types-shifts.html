@@ -1,0 +1,110 @@
+<section class="docs-section">
+  <h2>Битовые сдвиги</h2>
+  <p>
+    Типы из библиотеки <code>types</code> хранят ровно столько битов, сколько
+    написано в названии типа. Эти биты можно грубо сдвинуть влево или вправо
+    методами <code>shift_left()</code> и <code>shift_right()</code>.
+  </p>
+  <p>
+    Представим <code>uint8</code> как восемь ячеек. При сдвиге вправо крайние
+    правые биты выпадают и теряются, а слева появляются нули:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use types;
+
+main() {
+    types.uint8 value = types.from_bin("00101011", "uint8");
+    types.uint8 result = value.shift_right(3);
+
+    console.writeln(value.to_bin());
+    console.writeln(result.to_bin());
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>00101011
+00000101</idyl-output-block>
+
+  <p>
+    При сдвиге влево всё происходит зеркально: левые биты теряются, а справа
+    появляются нули. Библиотека не предупреждает о потере данных и не пытается
+    спасти знак числа.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+types.int8 value = types.from_bin("11000101", "int8");
+types.int8 result = value.shift_left(3);
+
+console.writeln(result.to_bin()); // 00101000
+console.writeln(result);          // 40
+</script></idyl-code-block>
+
+  <p>
+    Сдвиг может превратить отрицательное число в положительное или наоборот.
+    Если сдвинуть ячейку на её полную ширину или ещё дальше, старых битов не
+    останется вообще:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+types.int8 positive = 64;                   // 01000000
+types.int8 became_negative = positive.shift_left(1);
+
+types.uint8 old_value = 43;                 // 00101011
+types.uint8 erased = old_value.shift_left(12);
+
+console.writeln(became_negative);            // -128
+console.writeln(erased.to_bin());            // 00000000
+</script></idyl-code-block>
+
+  <p>
+    Отрицательное количество битов просто меняет направление. Поэтому
+    <code>shift_left(-3)</code> делает то же самое, что
+    <code>shift_right(3)</code>, и наоборот:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+types.uint8 value = types.from_bin("00101011", "uint8");
+
+console.writeln(value.shift_left(-3).to_bin());  // 00000101
+console.writeln(value.shift_right(-3).to_bin()); // 01011000
+</script></idyl-code-block>
+</section>
+
+<section class="docs-section">
+  <h2>А дробные числа тоже можно?</h2>
+  <p>
+    Можно. <code>float32</code> и <code>float64</code> тоже состоят из битов:
+    среди них хранятся знак, порядок и мантисса. Сдвигу всё равно, какую роль
+    играл каждый бит. Он просто двигает ячейки, теряет крайние и добавляет нули.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use types;
+
+main() {
+    types.float32 normal = 4.5;
+    types.float32 strange = normal.shift_left(3);
+
+    console.writeln(normal.to_bin());
+    console.writeln(strange.to_bin());
+    console.writeln(strange);
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>01000000100100000000000000000000
+00000100100000000000000000000000
+3.009265538105056e-36</idyl-output-block>
+
+  <p>
+    Здесь нет математического смысла вроде «умножить на восемь». Мы залезли
+    внутрь машинного представления числа и передвинули его части. Получилось
+    безумие — значит, именно это безумие теперь и лежит в переменной.
+  </p>
+  <p>
+    Сдвиг на <code>0</code> ничего не меняет. Знак аргумента отвечает за
+    направление, а его модуль показывает, на сколько позиций сдвинутся биты.
+    Это правило одинаково работает и для целых, и для дробных типов.
+  </p>
+</section>

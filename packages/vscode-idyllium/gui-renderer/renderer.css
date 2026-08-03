@@ -123,6 +123,14 @@ body.theme-light {
   box-sizing: border-box;
   overflow: hidden;
 }
+/* Выключенный виджет (enabled == false): приглушён и не принимает ни мыши,
+   ни наведения. pointer-events закрывает и содержимое контейнеров; насколько
+   гасить и обесцвечивать — решает тема через свои переменные. */
+.widget.disabled {
+  pointer-events: none;
+  opacity: var(--w-disabled-opacity, 0.55);
+  filter: grayscale(var(--w-disabled-grayscale, 70%));
+}
 .widget.control {
   font: 13px Arial, sans-serif;
 }
@@ -457,6 +465,8 @@ button.widget.button,
   --w-label-shadow: rgba(255, 255, 255, 0.6);
   --w-color-scheme: light;
   --w-radius: 4px;
+  --w-disabled-opacity: 0.55;
+  --w-disabled-grayscale: 70%;
 }
 
 /* Тёмная тема учебника: та же гамма, что у страниц с уроками. */
@@ -484,6 +494,9 @@ button.widget.button,
   --w-label-shadow: rgba(0, 0, 0, 0.55);
   --w-color-scheme: dark;
   --w-radius: 7px;
+  /* На тёмном фиолетовом серость выглядит грязно: гасим сильнее, обесцвечиваем мягче. */
+  --w-disabled-opacity: 0.45;
+  --w-disabled-grayscale: 55%;
 }
 
 /* Dracula — тоже тёмная, но своя палитра. */
@@ -511,6 +524,9 @@ button.widget.button,
   --w-label-shadow: rgba(0, 0, 0, 0.55);
   --w-color-scheme: dark;
   --w-radius: 6px;
+  /* Контрастная тёмная палитра переживает чуть большее обесцвечивание. */
+  --w-disabled-opacity: 0.45;
+  --w-disabled-grayscale: 60%;
 }
 
 /* Breeze — светлая, плоская, с фирменной небесной подсветкой KDE. */
@@ -538,6 +554,9 @@ button.widget.button,
   --w-label-shadow: rgba(255, 255, 255, 0.7);
   --w-color-scheme: light;
   --w-radius: 3px;
+  /* Плоский светлый Breeze: гасим слабо, но выцветание почти полное — как в KDE. */
+  --w-disabled-opacity: 0.6;
+  --w-disabled-grayscale: 85%;
 }
 
 /* Oxygen — классика KDE: тёплые серые, объёмные кнопки, крупные скругления. */
@@ -565,5 +584,8 @@ button.widget.button,
   --w-label-shadow: rgba(255, 255, 255, 0.75);
   --w-color-scheme: light;
   --w-radius: 8px;
+  /* Тёплый объёмный Oxygen: умеренное гашение, тёплые тона слегка сохраняем. */
+  --w-disabled-opacity: 0.55;
+  --w-disabled-grayscale: 75%;
 }
 

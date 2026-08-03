@@ -130,6 +130,70 @@ main() {
       </div>
     </div>
 
+    <!-- Section 2b: enabled -->
+    <div class="docs-section">
+      <h2>Свойство <code>enabled</code> — на месте, но выключен</h2>
+      <p>Прятать виджет — не всегда правильно. Вспомните любой установщик: кнопка «Далее» никуда не исчезает, пока вы не поставили галочку «Принимаю условия», — она стоит на месте, но <strong>серая и не нажимается</strong>. Так интерфейс честно сообщает: «действие существует, но пока недоступно».</p>
+      <p>Для этого у каждого виджета есть второе свойство-переключатель — <code>enabled</code> (тоже <code>bool</code>). Если <code>enabled = false</code>, виджет остаётся на экране, но выключается: рисуется приглушённо-серым (точный оттенок подбирает текущая тема окна), не реагирует ни на мышь, ни на клавиатуру, и его события не срабатывают.</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 350;
+    win.height = 160;
+    win.title = "Согласие с правилами";
+
+    gui.CheckBox agree;
+    agree.text = "Я прочитал правила игры";
+    agree.x = 20;
+    agree.y = 25;
+    agree.width = 250;
+
+    gui.Button start;
+    start.text = "Начать игру";
+    start.x = 20;
+    start.y = 75;
+    start.width = 150;
+    start.enabled = false;  // пока правила не прочитаны — кнопка спит
+
+    agree.on_change = void function() {
+        start.enabled = agree.is_checked;
+    };
+
+    start.on_click = void function() {
+        start.text = "Поехали!";
+    };
+
+    win.add_child(agree);
+    win.add_child(start);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 130px; position: relative;">
+            <label style="position: absolute; left: 20px; top: 25px; color: #cdd6f4; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="enabledDemoAgree"> Я прочитал правила игры
+            </label>
+            <button class="idyl-button" style="position: absolute; left: 20px; top: 75px; width: 150px;" id="enabledDemoStart" disabled>Начать игру</button>
+          </div>
+        </div>
+        <div class="coord-note">
+          🔒 Кнопка на месте, но выключена. Поставьте галочку — кнопка оживёт; снимите — снова уснёт. Нажать спящую не выйдет при всём желании.
+        </div>
+      </div>
+
+      <p>Обратите внимание на строку <code>start.enabled = agree.is_checked;</code> — состояние галочки напрямую становится состоянием кнопки, без всяких <code>if</code>. И на порядок событий: обработчик <code>on_click</code> у выключенной кнопки существует, но не вызывается — событие до неё просто не доходит.</p>
+      <p>С контейнерами <code>enabled</code> ведёт себя так же, как <code>visible</code>: выключили <code>Frame</code> — выключилось и всё его содержимое, до последней кнопки.</p>
+
+      <div class="tip-box" style="margin-top: 1em;">
+        <strong>💡 Запомнить пару:</strong> <code>visible = false</code> — виджета <em>не видно</em>, <code>enabled = false</code> — виджет <em>видно, но он выключен</em>. Прячьте то, чего сейчас не должно существовать для пользователя; выключайте то, что существует, но пока недоступно. И у обоих одна и та же коварная черта: «выключил — и забыл включить» компилятор не поймает.
+      </div>
+    </div>
+
     <!-- Section 3 -->
     <div class="docs-section">
       <h2>Скрытие контейнеров (Frame)</h2>
@@ -272,6 +336,18 @@ label.visible = false;  // спрятали при старте...
       });
       showBtn.addEventListener('click', () => {
         demoLabel.style.display = '';
+      });
+    }
+
+    // Пример 2b: enabled по галочке
+    const enabledDemoAgree = document.getElementById('enabledDemoAgree');
+    const enabledDemoStart = document.getElementById('enabledDemoStart');
+    if (enabledDemoAgree && enabledDemoStart) {
+      enabledDemoAgree.addEventListener('change', () => {
+        enabledDemoStart.disabled = !enabledDemoAgree.checked;
+      });
+      enabledDemoStart.addEventListener('click', () => {
+        enabledDemoStart.textContent = 'Поехали!';
       });
     }
 

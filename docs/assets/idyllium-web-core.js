@@ -5351,8 +5351,10 @@ function createDefaultStandardLibrary() {
         propertySpec('width', types_1.INT),
         propertySpec('height', types_1.INT),
     ];
-    const visible = [
-        propertySpec('visible', types_1.BOOL),
+    // Базовое состояние виджета: видимость и доступность.
+    const widgetState = [
+        propertySpec('visible', types_1.BOOL, false, 'Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.'),
+        propertySpec('enabled', types_1.BOOL, false, 'Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.'),
     ];
     const styleable = [
         propertySpec('style', types_1.STRING, false, 'IdySS-строка стилей вида "color: red; border-radius: 8px;". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.'),
@@ -5410,7 +5412,7 @@ function createDefaultStandardLibrary() {
             documentation: 'Где выполняется программа: "cli", "web" или "vscode".',
         }),
         functionSpec('version', [], types_1.STRING, {
-            documentation: 'Версия Idyllium, например "1.2.8".',
+            documentation: 'Версия Idyllium, например "1.2.9".',
         }),
     ]));
     registry.registerModule(moduleSpec('console', [
@@ -5961,14 +5963,14 @@ function createDefaultStandardLibrary() {
         ]),
         typeSpec('Widget', [
             ...positioned,
-            ...visible,
+            ...widgetState,
             ...styleable,
             ...inheritableColorRoles,
             propertySpec('font', fontsFont),
         ]),
         typeSpec('Canvas', [
             ...positioned,
-            ...visible,
+            ...widgetState,
             propertySpec('framerate_limit', types_1.INT),
             callbackPropertySpec('on_init', [callbackSpec([guiCanvas])]),
             callbackPropertySpec('on_key_pressed', [callbackSpec([guiCanvas, guiKeyboardEvent])]),
@@ -5990,7 +5992,7 @@ function createDefaultStandardLibrary() {
         ], guiWidget),
         typeSpec('Label', [
             ...positioned,
-            ...visible,
+            ...widgetState,
             ...styleable,
             propertySpec('href', types_1.STRING, false, 'Адрес ссылки. Непустой href превращает надпись в кликабельную ссылку: подчёркивание, курсор-рука, открытие в новой вкладке.'),
             ...colorRoles,
@@ -6003,7 +6005,7 @@ function createDefaultStandardLibrary() {
         ], [], guiWidget),
         typeSpec('Button', [
             ...positioned,
-            ...visible,
+            ...widgetState,
             ...styleable,
             ...colorRoles,
             ...fontSized,
@@ -6012,7 +6014,7 @@ function createDefaultStandardLibrary() {
         ], [], guiWidget),
         typeSpec('Frame', [
             ...positioned,
-            ...visible,
+            ...widgetState,
             ...styleable,
             propertySpec('background_color', types_1.COLOR),
             propertySpec('border_color', types_1.COLOR),
@@ -6024,7 +6026,7 @@ function createDefaultStandardLibrary() {
         ], guiWidget),
         typeSpec('ImageBox', [
             ...positioned,
-            ...visible,
+            ...widgetState,
             ...styleable,
             propertySpec('resize_mode', types_1.STRING),
         ], [
@@ -6032,7 +6034,7 @@ function createDefaultStandardLibrary() {
         ], guiWidget),
         typeSpec('LineEdit', [
             ...positioned,
-            ...visible,
+            ...widgetState,
             ...styleable,
             ...changeable,
             ...colorRoles,
@@ -6043,7 +6045,7 @@ function createDefaultStandardLibrary() {
         ], [], guiWidget),
         typeSpec('TextEdit', [
             ...positioned,
-            ...visible,
+            ...widgetState,
             ...styleable,
             ...changeable,
             ...colorRoles,
@@ -6053,7 +6055,7 @@ function createDefaultStandardLibrary() {
         ], [], guiWidget),
         typeSpec('ProgressBar', [
             ...positioned,
-            ...visible,
+            ...widgetState,
             ...styleable,
             propertySpec('value', types_1.INT),
             propertySpec('min', types_1.INT),
@@ -6066,7 +6068,7 @@ function createDefaultStandardLibrary() {
         ], [], guiWidget),
         typeSpec('SpinBox', [
             ...positioned,
-            ...visible,
+            ...widgetState,
             ...styleable,
             ...changeable,
             propertySpec('value', types_1.INT),
@@ -6077,7 +6079,7 @@ function createDefaultStandardLibrary() {
         ], [], guiWidget),
         typeSpec('FloatSpinBox', [
             ...positioned,
-            ...visible,
+            ...widgetState,
             ...styleable,
             ...changeable,
             propertySpec('value', types_1.FLOAT),
@@ -6088,7 +6090,7 @@ function createDefaultStandardLibrary() {
         ], [], guiWidget),
         typeSpec('Slider', [
             ...positioned,
-            ...visible,
+            ...widgetState,
             ...styleable,
             ...changeable,
             propertySpec('value', types_1.INT),
@@ -6098,7 +6100,7 @@ function createDefaultStandardLibrary() {
         ], [], guiWidget),
         typeSpec('CheckBox', [
             ...positioned,
-            ...visible,
+            ...widgetState,
             ...styleable,
             ...changeable,
             ...fontSized,
@@ -6107,7 +6109,7 @@ function createDefaultStandardLibrary() {
         ], [], guiWidget),
         typeSpec('RadioButton', [
             ...positioned,
-            ...visible,
+            ...widgetState,
             ...styleable,
             ...changeable,
             ...fontSized,
@@ -6117,7 +6119,7 @@ function createDefaultStandardLibrary() {
         ], [], guiWidget),
         typeSpec('ComboBox', [
             ...positioned,
-            ...visible,
+            ...widgetState,
             ...styleable,
             ...changeable,
             ...fontSized,
@@ -6129,7 +6131,7 @@ function createDefaultStandardLibrary() {
         ], guiWidget),
         typeSpec('TabWidget', [
             ...positioned,
-            ...visible,
+            ...widgetState,
             ...styleable,
             ...changeable,
             ...fontSized,
@@ -9490,7 +9492,7 @@ exports.IdylliumRuntimeError = IdylliumRuntimeError;
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-exports.IDYLLIUM_VERSION = '1.2.8';
+exports.IDYLLIUM_VERSION = '1.2.9';
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform() {
     const nodeProcess = typeof process === 'object' ? process : null;
@@ -12293,6 +12295,11 @@ function createRuntime(options = {}) {
             const target = runtimeObjects.objects.find((item) => item.__idylliumObjectId === canvasId);
             if (!target)
                 return;
+            // Выключенный виджет не принимает событий. Рендерер блокирует их на
+            // экране; эта проверка — вторая линия обороны на случай гонки «клик
+            // пришёл в тот же момент, когда программа выключила виджет».
+            if (target.enabled === false)
+                return;
             const deselectedRadios = target.__idylliumType === 'gui.RadioButton' && eventName === 'change'
                 ? runtimeObjects.objects.filter((item) => (item !== target && item.__idylliumType === 'gui.RadioButton' && item.is_selected === true))
                 : [];
@@ -13721,6 +13728,7 @@ function initializeGuiObject(obj, typeName, state) {
         obj.width = size.width;
         obj.height = size.height;
         obj.visible = true;
+        obj.enabled = true;
         obj.style = ''; // IdySS-наклейка; пустая строка = наклейки нет
         obj.style_hover = '';
         obj.style_active = '';

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 4: Разбиение проекта по файлам — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Объектно-ориентированное программирование</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">ООП • Урок 4</div>
+      <h1>Разбиение проекта по файлам</h1>
+      <p class="docs-subtitle">Как не заблудиться в собственном коде</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Проблема: один файл — один хаос</h2>
+      <p>Когда в проекте появляется хотя бы два-три класса, файл с кодом раздувается до сотен строк. В нём становится трудно ориентироваться, искать ошибки и вносить изменения.</p>
+      <p>Решение очевидно: <strong>разбить код на несколько файлов</strong>. Каждый класс — в свой файл.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Пример: класс Rectangle</h2>
+      <p>Создадим файл <code>rect.idyl</code> с классом <code>Rect</code> (прямоугольник):</p>
+
+      <idyl-code-block><script type="text/plain">
+// rect.idyl
+
+class Rect {
+    float width;
+    float height;
+
+    float function getArea() {
+        return this.width * this.height;
+    }
+
+    void function scaleX(float factor) {
+        this.width = this.width * factor;
+    }
+
+    void function scaleY(float factor) {
+        this.height = this.height * factor;
+    }
+}
+</script></idyl-code-block>
+
+      <p>Класс <code>Rect</code> хранит ширину и высоту, умеет вычислять площадь и масштабироваться по каждой оси.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Главный файл: main.idyl</h2>
+      <p>А теперь посмотрим, как выглядит <code>main.idyl</code> — главный файл программы, который использует этот класс:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use rect;   // подключаем rect.idyl
+
+main() {
+    rect.Rect r1;           // создаём прямоугольник
+    r1.width = 20;          // задаём ширину
+    r1.height = 30;         // задаём высоту
+
+    console.writeln("Площадь равна: ", r1.getArea());
+
+    r1.scaleX(1.3);         // масштабируем по оси X в 1.3 раза
+    console.writeln("После масштабирования: ", r1.getArea());
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Площадь равна: 600
+После масштабирования: 780</idyl-output-block>
+
+      <p>Обратите внимание, как читается <code>main()</code>:</p>
+      <ul>
+        <li>создать прямоугольник</li>
+        <li>задать ширину</li>
+        <li>задать высоту</li>
+        <li>вывести площадь</li>
+        <li>масштабировать по оси X в 1.3 раза</li>
+        <li>снова вывести площадь</li>
+      </ul>
+      <p>Это одно из правил хорошего тона: <strong>основные файлы проекта должны читаться как инструкция</strong> — ясно, понятно, без лишних деталей.</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Реальный проект: несколько классов</h2>
+      <p>Представьте, что мы разрабатываем игру, в которой игрок управляет парком грузовиков для доставки грузов по разным городам. Проект наверняка будет состоять из нескольких файлов:</p>
+      <ul>
+        <li><code>cargo.idyl</code> — класс «Груз»</li>
+        <li><code>truck.idyl</code> — класс «Грузовик»</li>
+        <li><code>city.idyl</code> — класс «Город»</li>
+        <li><code>quest.idyl</code> — класс «Задание»</li>
+        <li><code>ui.idyl</code> — визуальный интерфейс</li>
+        <li><code>saveload.idyl</code> — сохранение и загрузка</li>
+        <li><code>main.idyl</code> — управление всем процессом (запуск игры, связывание частей)</li>
+      </ul>
+      <p>Каждый файл отвечает за свою часть функциональности. Искать ошибки в таком проекте — одно удовольствие:</p>
+      <ul>
+        <li>Попадаются задания «доставить из Тюмени в Тюмень»? Ищи ошибку в <code>quest.idyl</code>.</li>
+        <li>Грузовики спокойно едут с пустым топливным баком? Следует подправить <code>truck.idyl</code>.</li>
+        <li>Не работают настройки звука? Возможно, есть смысл посмотреть <code>ui.idyl</code>.</li>
+        <li>После сохранения что-то пропадает? Ошибка наверняка в <code>saveload.idyl</code>.</li>
+      </ul>
+      <p>Искать ошибки в маленьких файлах с понятными названиями — <strong>гораздо удобнее</strong>, чем пытаться найти их в одной огромной, неупорядоченной кодовой базе.</p>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Правила хорошего тона</h2>
+      <ul>
+        <li><strong>Один класс — один файл.</strong> Имя файла должно совпадать с именем класса (в нижнем регистре).</li>
+        <li><strong>Имя файла — подсказка о содержимом.</strong> Глядя на <code>truck.idyl</code>, сразу понятно, что там про грузовики.</li>
+        <li><strong>main.idyl должен быть коротким и читаемым.</strong> Вся сложная логика — в других файлах.</li>
+        <li><strong>Подключайте файлы через <code>use имя_файла_без_расширения</code>.</strong> Например, <code>use rect;</code> подключает <code>rect.idyl</code>.</li>
+      </ul>
+      <p>Эти правила помогут вам (и тем, кто будет читать ваш код) не утонуть в деталях и быстро находить нужные места.</p>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn prev" href="003_this.html">
+        <span>← Предыдущий урок</span>
+        <strong>Урок 3: Идентификатор this</strong>
+      </a>
+      <a class="docs-nav-btn next" href="005_arrays.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 5: Массивы объектов</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

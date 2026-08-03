@@ -1,0 +1,19 @@
+use console;
+use random;
+use math;
+
+main() {
+    float t = random.create_float(35.5, 42.0);
+    console.writeln("Температура: ", math.floor(t, 1), " C");
+    if (t < 36.0) {
+        console.writeln("Переохлаждение!");
+    }
+    else {
+        if (t > 37.5) {
+            console.writeln("Температура высокая!");
+        }
+        else {
+            console.writeln("Температура в норме.");
+        }
+    }
+}
