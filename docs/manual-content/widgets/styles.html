@@ -1,3 +1,22 @@
+<style data-lesson-style>
+.idyss-hover-demo {
+      border: none;
+      border-radius: 10px;
+      background-color: #2673d9;
+      color: white;
+      font-family: var(--font-sans);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .idyss-hover-demo:hover {
+      background-color: #3d8bff;
+    }
+    .idyss-hover-demo:active {
+      background-color: #123c73;
+    }
+</style>
+
 <div class="docs-section">
   <h2>Знакомьтесь: IdySS</h2>
   <p>
@@ -264,11 +283,79 @@ main() {
 </div>
 
 <div class="docs-section">
+  <h2>Наклейки для настроений: <code>style_hover</code> и <code>style_active</code></h2>
+  <p>
+    До сих пор наклейка была одна на все случаи жизни. Но у виджета бывают
+    <em>настроения</em>: на него навели курсор, его зажали мышью. Настоящие
+    кнопки в настоящих программах на это реагируют — подсвечиваются под
+    курсором, темнеют при нажатии. В IdySS для этого есть ещё две наклейки:
+  </p>
+  <ul>
+    <li><code>style</code> — обычный вид, действует всегда;</li>
+    <li><code>style_hover</code> — добавляется, пока курсор <strong>наведён</strong> на виджет;</li>
+    <li><code>style_active</code> — добавляется, пока виджет <strong>зажат</strong> мышью.</li>
+  </ul>
+
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 320;
+    win.height = 130;
+    win.title = "Живая кнопка";
+
+    gui.Button btn;
+    btn.x = 20;
+    btn.y = 20;
+    btn.width = 180;
+    btn.height = 44;
+    btn.text = "Наведи и нажми";
+    btn.style = "background-color: #2673D9; color: white; border-radius: 10px;";
+    btn.style_hover = "background-color: #3D8BFF;";
+    btn.style_active = "background-color: #123C73;";
+
+    win.add_child(btn);
+    win.show();
+}
+</script></idyl-code-block>
+
+  <div class="interactive-demo">
+    <div class="gui-demo-window">
+      <div class="demo-content" style="min-height: 90px; position: relative;">
+        <button class="idyss-hover-demo" type="button" style="position: absolute; left: 20px; top: 20px; width: 180px; height: 44px;">
+          Наведи и нажми
+        </button>
+      </div>
+    </div>
+    <div class="coord-note">
+      ✨ Это живое демо: подведите курсор — кнопка посветлеет, зажмите —
+      потемнеет. Ровно так работает и настоящая программа.
+    </div>
+  </div>
+
+  <p>
+    Правила простые. Наклейка-настроение <strong>дописывается поверх</strong>
+    обычной на время состояния: в примере выше при наведении меняется только
+    фон, а белый текст и скругление из <code>style</code> никуда не деваются.
+    Настроение прошло — виджет вернулся к обычному виду сам. Словарь тот же —
+    те самые 13 свойств, и молчание об опечатках то же самое.
+  </p>
+  <p>
+    И маленький секрет мастерства: у зажатой кнопки фон обычно делают
+    <em>темнее</em> обычного, а у наведённой — <em>светлее</em>. Так палец и
+    глаз соглашаются друг с другом: «подсветилась — можно жать, потемнела —
+    нажатие засчитано».
+  </p>
+</div>
+
+<div class="docs-section">
   <h2>Итог</h2>
   <ul>
     <li><strong>IdySS</strong> (Idyllium Style Sheets) — мини-язык стилей, младший родственник веб-CSS: пары «свойство: значение» через точку с запятой в строке <code>style</code>.</li>
     <li>Наклейка всегда сверху: свойство с наклейки побеждает одноимённое прямое свойство виджета. Пустая строка снимает наклейку.</li>
     <li>Словарь из 13 свойств: цвета, рамки, скругления, шрифт, выравнивание, прозрачность, отступ и градиентный <code>background</code>.</li>
+    <li>Три наклейки на виджет: <code>style</code> — всегда, <code>style_hover</code> — под курсором, <code>style_active</code> — пока зажат. Наклейки-настроения дописываются поверх обычной и снимаются сами.</li>
     <li>IdySS молчит об ошибках: опечатка — и свойство просто не применилось. Ищите опечатки глазами, как настоящие веб-разработчики.</li>
     <li>Строгость Idyllium остаётся снаружи кавычек: <code>style = 42;</code> — честная ошибка компиляции.</li>
   </ul>

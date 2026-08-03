@@ -310,6 +310,33 @@
       ]
     },
     {
+      "id": "idyss",
+      "title": "Стили IdySS",
+      "description": "Idyllium Style Sheets: мини-язык оформления виджетов — строки style, style_hover и style_active.",
+      "sections": [
+        {
+          "title": "Три наклейки на виджет",
+          "description": "IdySS-строка — пары «свойство: значение» через точку с запятой, как в упрощённом CSS. У каждого виджета три такие строки: style действует всегда, style_hover — пока курсор наведён, style_active — пока виджет зажат мышью. Наклейки-состояния дописываются поверх обычной на время состояния и снимаются сами; пустая строка снимает наклейку совсем.",
+          "code": "gui.Button btn;\nbtn.style = \"background-color: #2673D9; color: white; border-radius: 10px;\";\nbtn.style_hover = \"background-color: #3D8BFF;\";\nbtn.style_active = \"background-color: #123C73;\";"
+        },
+        {
+          "title": "Словарь свойств (версия 1)",
+          "description": "Ровно 13 свойств; всё вне словаря молча игнорируется. Пиксельные значения принимаются с «px» и без, регистр не важен.",
+          "code": "color              цвет текста\nbackground-color   цвет фона\nbackground         только градиенты: linear-gradient(...), radial-gradient(...)\nborder-color       цвет рамки\nborder-width       0–20 (px)\nborder-style       solid | dashed | dotted | none\nborder-radius      0–100 (px)\nfont-size          6–96 (px)\nfont-weight        normal | bold\nfont-style         normal | italic\ntext-align         left | center | right\nopacity            0.0–1.0\npadding            0–40 (px)"
+        },
+        {
+          "title": "Значения цветов",
+          "description": "Три формы: имя из палитры библиотеки colors — маленькими буквами и через дефис (red, dark-blue, light-gray, transparent); шестнадцатеричный код (#FF8800); каналы rgb(255, 136, 0) и rgba(255, 136, 0, 0.5), где последнее число — прозрачность.",
+          "code": "label.style = \"color: dark-blue; background-color: #FFE8EC;\";\npanel.style = \"background: linear-gradient(to right, #FF8800, purple);\";"
+        },
+        {
+          "title": "Приоритет и молчание об ошибках",
+          "description": "Слои оформления снизу вверх: тема окна (gui.Window.theme) → прямые свойства виджета (text_color, background_color, …) → IdySS-наклейка. Свойство с наклейки побеждает одноимённое прямое свойство. Об опечатках IdySS сознательно молчит, как настоящий CSS: неизвестное свойство или негодное значение просто не применяется, программа не падает. Строгость Idyllium остаётся снаружи кавычек: style = 42; — ошибка компиляции.",
+          "code": "// 'tadius' вместо 'radius' — свойство молча пропущено,\n// остальная наклейка работает\nbtn.style = \"border-tadius: 12px; color: white;\";"
+        }
+      ]
+    },
+    {
       "id": "errors",
       "title": "Обработка ошибок",
       "description": "Конструкция `try/catch/finally` обрабатывает ожидаемые runtime errors и помогает явно освобождать ресурсы.",
