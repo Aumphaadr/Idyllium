@@ -63,7 +63,7 @@ export class IdylliumRuntimeError extends Error {
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-export const IDYLLIUM_VERSION = '1.2.9';
+export const IDYLLIUM_VERSION = '1.3.0';
 
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform(): string {
@@ -3462,10 +3462,12 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       throwIfRuntimeStopped('', 0);
       const target = runtimeObjects.objects.find((item) => item.__idylliumObjectId === canvasId);
       if (!target) return;
-      // Выключенный виджет не принимает событий. Рендерер блокирует их на
-      // экране; эта проверка — вторая линия обороны на случай гонки «клик
-      // пришёл в тот же момент, когда программа выключила виджет».
-      if (target.enabled === false) return;
+      // Выключенный или скрытый виджет не принимает событий — как и содержимое
+      // выключенного/скрытого контейнера (учебник и справочник обещают каскад).
+      // Рендерер блокирует это на экране; здесь — вторая линия обороны на
+      // случай гонки «клик пришёл в тот же момент, когда программа выключила
+      // виджет».
+      if (widgetEventsBlocked(target)) return;
 
       const deselectedRadios = target.__idylliumType === 'gui.RadioButton' && eventName === 'change'
         ? runtimeObjects.objects.filter((item) => (
@@ -5192,6 +5194,7 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
   if (typeName === 'LineEdit') {
     obj.text = '';
     obj.placeholder = '';
+    defineTrackedRuntimeProperty(obj, 'placeholder_color', colorGray());
     obj.echo_mode = 'normal';
     setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
     setTrackedRuntimePropertyDefault(obj, 'background_color', colorWhite());
@@ -5201,6 +5204,7 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
   if (typeName === 'TextEdit') {
     obj.text = '';
     obj.placeholder = '';
+    defineTrackedRuntimeProperty(obj, 'placeholder_color', colorGray());
     setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
     setTrackedRuntimePropertyDefault(obj, 'background_color', colorWhite());
     defineTrackedRuntimeProperty(obj, 'border_color', colorGray());
@@ -5210,6 +5214,7 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
     obj.value = 0;
     obj.min = 0;
     obj.max = 100;
+    obj.orientation = 'horizontal';
     setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
     setTrackedRuntimePropertyDefault(obj, 'background_color', colorVeryLightGray());
     setTrackedRuntimePropertyDefault(obj, 'foreground_color', colorBlue());
@@ -5221,6 +5226,10 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
     obj.min = 0;
     obj.max = 100;
     obj.step = 1;
+  }
+
+  if (typeName === 'Slider') {
+    obj.orientation = 'horizontal';
   }
 
   if (typeName === 'FloatSpinBox') {
@@ -6895,6 +6904,22 @@ function applyGuiEventPayload(
     default:
       return;
   }
+}
+
+/**
+ * Событие не доходит до виджета, если выключен или скрыт он сам либо любой
+ * из его контейнеров-предков. Modal и Window в цепочке безвредны: у них нет
+ * enabled/visible, а undefined !== false.
+ */
+function widgetEventsBlocked(target: RuntimeObject): boolean {
+  let current: RuntimeObject | undefined = target;
+  const seen = new Set<RuntimeObject>();
+  while (current && !seen.has(current)) {
+    if (current.enabled === false || current.visible === false) return true;
+    seen.add(current);
+    current = isRuntimeObject(current.__parent) ? current.__parent : undefined;
+  }
+  return false;
 }
 
 function selectRadioButton(target: RuntimeObject, state: RuntimeObjectState): void {

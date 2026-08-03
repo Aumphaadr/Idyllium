@@ -1,0 +1,22 @@
+{
+  "hero": {
+    "name": "Мира",
+    "class": "маг",
+    "level": 12,
+    "health": 340,
+    "coins": 1250,
+    "position": { "world": "Изумрудный лес", "x": 18, "y": 7 }
+  },
+  "inventory": [
+    { "title": "Зелье от прокрастинации", "count": 3, "equipped": false },
+    { "title": "Карманный телепорт домой", "count": 1, "equipped": true },
+    { "title": "Стикеры с лягушками", "count": 12, "equipped": false },
+    { "title": "Щит от токсичных комментариев", "count": 1, "equipped": true }
+  ],
+  "friends": ["Кай", "Лея", "Ника"],
+  "settings": {
+    "music": true,
+    "volume": 60,
+    "difficulty": "нормально"
+  }
+}

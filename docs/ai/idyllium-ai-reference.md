@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: Idyllium 1.2.9.
+Current language target: Idyllium 1.3.0.
 
 This reference describes implemented behavior. Ideas from `BACKLOG.md` and
 exploratory files under `spec/some_*` are not language features until they are
@@ -1125,7 +1125,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, never returns
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.2.9"
+system.version()                    // "1.3.0"
 ```
 
 **Recursion depth.** Idyllium counts call depth itself instead of relying on the
@@ -2037,7 +2037,7 @@ Resize modes are `"fit"`, `"fill"`, `"stretch"`, and `"original"`.
 
 ```idyllium
 x, y, width, height, visible, enabled
-text, placeholder, font_size, echo_mode
+text, placeholder, placeholder_color, font_size, echo_mode
 text_color, background_color, border_color
 on_change
 ```
@@ -2046,7 +2046,7 @@ on_change
 
 ```idyllium
 x, y, width, height, visible, enabled
-text, placeholder, font_size
+text, placeholder, placeholder_color, font_size
 text_color, background_color, border_color
 on_change
 ```
@@ -2055,7 +2055,7 @@ on_change
 
 ```idyllium
 x, y, width, height, visible, enabled
-value, min, max, font_size
+value, min, max, orientation, font_size
 text_color, background_color, foreground_color, border_color
 ```
 
@@ -2082,9 +2082,14 @@ on_change
 
 ```idyllium
 x, y, width, height, visible, enabled
-value, min, max, step
+value, min, max, step, orientation
 on_change
 ```
+
+`orientation` is `"horizontal"` (default) or `"vertical"`; a vertical slider
+grows bottom-to-top (minimum at the bottom). Unknown values silently fall back
+to horizontal, like an unknown window theme. `gui.ProgressBar` has the same
+property with the same rules — a vertical bar fills bottom-to-top.
 
 SpinBox, FloatSpinBox and Slider share the defaults `value = 0`, `min = 0`,
 `max = 100`, `step = 1`. Assigning `value` outside `min..max` from code is NOT
@@ -2098,6 +2103,10 @@ non-numeric text reverts to the last committed value instead of becoming 0.
 While the user is still typing, the program receives nothing — `on_change`
 fires with the clamped value only on commit (arrows and the wheel commit
 immediately).
+
+`placeholder_color` (a `colors.Color`) tints the placeholder hint of
+`gui.LineEdit`/`gui.TextEdit`. Like every widget colour, only an explicitly
+assigned value is applied — otherwise the window theme picks the shade.
 
 Slider `on_change` fires on every marker movement while dragging, not only
 when the marker is released.

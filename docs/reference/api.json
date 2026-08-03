@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "languageVersion": "1.2.9",
-  "generatedAt": "2026-08-03T11:46:46.817Z",
+  "languageVersion": "1.3.0",
+  "generatedAt": "2026-08-03T20:49:12.224Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "general": [
     {
@@ -5482,6 +5482,13 @@
               "callbacks": []
             },
             {
+              "name": "placeholder_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "Цвет текста-подсказки (placeholder). Не задан — цвет подбирает тема окна.",
+              "callbacks": []
+            },
+            {
               "name": "style",
               "type": "string",
               "readonly": false,
@@ -5777,6 +5784,13 @@
               "callbacks": []
             },
             {
+              "name": "orientation",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Ориентация: \"horizontal\" (по умолчанию) или \"vertical\". Незнакомое значение молча считается \"horizontal\" — как незнакомая тема окна.",
+              "callbacks": []
+            },
+            {
               "name": "style",
               "type": "string",
               "readonly": false,
@@ -6028,6 +6042,13 @@
               "type": "any",
               "readonly": false,
               "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "orientation",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Ориентация: \"horizontal\" (по умолчанию) или \"vertical\". Незнакомое значение молча считается \"horizontal\" — как незнакомая тема окна.",
               "callbacks": []
             },
             {
@@ -6493,6 +6514,13 @@
               "type": "string",
               "readonly": false,
               "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "placeholder_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "Цвет текста-подсказки (placeholder). Не задан — цвет подбирает тема окна.",
               "callbacks": []
             },
             {
@@ -10478,7 +10506,7 @@
           "returnType": "string",
           "parameters": [],
           "variadic": false,
-          "documentation": "Версия Idyllium, например \"1.2.9\"."
+          "documentation": "Версия Idyllium, например \"1.3.0\"."
         }
       ],
       "constants": [],

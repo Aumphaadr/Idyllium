@@ -73,6 +73,7 @@ const MANAGED_PATHS = [
   'gui-preview.html',
   'book',
   'tasks',
+  'handouts',
   'reference',
   'ide',
   'docs',
@@ -748,6 +749,8 @@ function main(): void {
 
   fs.writeFileSync(path.join(bookRoot, 'lessons.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
 
+  buildHandoutsPage(path.join(siteRoot, 'handouts'));
+
   const bookShell = fs.readFileSync(path.resolve(process.cwd(), 'packages', 'docs-book', 'index.html'), 'utf8');
   const bookPages = bakeCleanUrlPages(bookShell, bookRoot, manifest, 'Учебник Idyllium');
   console.log(`book clean URLs: ${bookPages} pages`);
@@ -869,6 +872,117 @@ function bakeCleanUrlPages(
   return count;
 }
 
+/**
+ * Раздатка: страница с ассетами для заданий и кнопками скачивания.
+ *
+ * Живёт по нарочно непубличному адресу /handouts/ — в навигацию площадок не
+ * выводится (только скромные ссылки из сайдбаров задачника и учебника) и
+ * закрыта от поисковиков noindex-ом. Файлы и опись лежат в
+ * packages/docs/handouts; страница генерируется отсюда целиком.
+ */
+function buildHandoutsPage(outputRoot: string): void {
+  const sourceRoot = path.resolve(process.cwd(), 'packages', 'docs', 'handouts');
+  const manifest = JSON.parse(fs.readFileSync(path.join(sourceRoot, 'handouts.json'), 'utf8')) as {
+    readonly groups: readonly {
+      readonly title: string;
+      readonly items: readonly { readonly file: string; readonly note: string; readonly license?: string }[];
+    }[];
+  };
+
+  fs.mkdirSync(path.join(outputRoot, 'files'), { recursive: true });
+  for (const entry of fs.readdirSync(sourceRoot)) {
+    if (entry === 'handouts.json') continue;
+    fs.copyFileSync(path.join(sourceRoot, entry), path.join(outputRoot, 'files', entry));
+  }
+
+  const sizeLabel = (bytes: number): string => {
+    if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1).replace('.', ',')} МБ`;
+    if (bytes >= 1024) return `${Math.round(bytes / 1024)} КБ`;
+    return `${bytes} Б`;
+  };
+
+  const groupsHtml = manifest.groups.map((group) => {
+    const rows = group.items.map((item) => {
+      const filePath = path.join(sourceRoot, item.file);
+      if (!fs.existsSync(filePath)) throw new Error(`handout is missing: ${item.file}`);
+      const size = sizeLabel(fs.statSync(filePath).size);
+      const href = `files/${encodeURIComponent(item.file)}`;
+      const license = item.license
+        ? ` <a class="license" href="files/${encodeURIComponent(item.license)}" download>лицензия</a>`
+        : '';
+      const preview = /\.(png|gif|jpe?g)$/iu.test(item.file)
+        ? `<img class="thumb" src="${href}" alt="" loading="lazy">`
+        : `<span class="thumb thumb-icon">${/\.(mp3|wav)$/iu.test(item.file) ? '♪' : /\.ttf$/iu.test(item.file) ? 'Aa' : '📄'}</span>`;
+      return `      <li>
+        ${preview}
+        <div class="meta">
+          <div class="name">${escapeHtml(item.file)} <span class="size">${size}</span>${license}</div>
+          <div class="note">${escapeHtml(item.note)}</div>
+        </div>
+        <a class="download" href="${href}" download>Скачать</a>
+      </li>`;
+    }).join('\n');
+    return `    <section>
+      <h2>${escapeHtml(group.title)}</h2>
+      <ul>
+${rows}
+      </ul>
+    </section>`;
+  }).join('\n');
+
+  const page = `<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Файлы для заданий — Idyllium</title>
+  <link rel="icon" type="image/png" href="../book/favicon.png">
+  <link rel="stylesheet" href="../book/fonts/fonts.css">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 34px 20px 60px; background: #0c0515; color: #f2eaf7;
+      font: 17px/1.6 "Geologica", system-ui, sans-serif; }
+    main { max-width: 860px; margin: 0 auto; }
+    h1 { margin: 0 0 6px; font-size: 34px; }
+    .lead { margin: 0 0 30px; color: #c9bdd6; }
+    h2 { margin: 34px 0 12px; padding: 8px 16px; border-left: 4px solid #87bfff;
+      border-radius: 10px; background: linear-gradient(90deg, rgba(135, 191, 255, 0.12), transparent 82%);
+      font-size: 21px; }
+    ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    li { display: flex; align-items: center; gap: 14px; padding: 10px 14px;
+      border: 1px solid #342846; border-radius: 12px; background: #151020; }
+    .thumb { width: 56px; height: 56px; flex: none; object-fit: contain;
+      border-radius: 8px; background: #100b1a; }
+    .thumb-icon { display: grid; place-items: center; color: #87bfff; font-size: 24px; font-weight: 700; }
+    .meta { min-width: 0; flex: 1; }
+    .name { font-weight: 700; overflow-wrap: anywhere; }
+    .size { margin-left: 6px; color: #8e819d; font-size: 13px; font-weight: 400; }
+    .license { margin-left: 8px; color: #8e819d; font-size: 13px; }
+    .note { color: #c9bdd6; font-size: 15px; }
+    .download { flex: none; padding: 8px 16px; border: 1px solid #87bfff; border-radius: 999px;
+      color: #87bfff; font-weight: 800; font-size: 14px; text-decoration: none; }
+    .download:hover { background: #87bfff; color: #0c0515; }
+    .footnote { margin-top: 36px; color: #8e819d; font-size: 14px; }
+    .footnote a { color: #87bfff; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Файлы для заданий</h1>
+    <p class="lead">Раздатка задачника: картинки, звуки, шрифты и данные, которые просят скачать задания. Кладите скачанный файл рядом с программой (в Web IDE — загрузите в проект).</p>
+${groupsHtml}
+    <p class="footnote">Музыка — Kevin MacLeod (<a href="https://incompetech.com" rel="noopener">incompetech.com</a>), лицензия CC BY 4.0. Шрифты — SIL Open Font License (текст лицензии рядом с каждым шрифтом). Остальные материалы созданы командой Idyllium.</p>
+  </main>
+</body>
+</html>
+`;
+  fs.writeFileSync(path.join(outputRoot, 'index.html'), page, 'utf8');
+
+  const total = manifest.groups.reduce((sum, group) => sum + group.items.length, 0);
+  console.log(`handouts generated: ${total} files`);
+}
+
 function pendingTasksFragment(sectionId: string, lessonId: string, lessonTitle: string): string {
   return `<div class="docs-section docs-placeholder">
   <h2>Задания готовятся</h2>
@@ -924,6 +1038,7 @@ function tasksShell(): string {
         </label>
       </div>
       <nav class="lesson-nav" id="lesson-nav" aria-label="Темы"></nav>
+      <a class="sidebar-handouts" href="../handouts/">📦 Файлы для заданий</a>
     </aside>
 
     <main class="docs-main" id="docs-main" tabindex="-1">
@@ -1219,10 +1334,6 @@ function copyAssets(sourceRoot: string, outputRoot: string): void {
   copyDirectory(path.join(sourceRoot, 'fonts'), path.join(outputRoot, 'fonts'));
 
   fs.mkdirSync(path.join(outputRoot, 'assets'), { recursive: true });
-  copyFileIfExists(
-    path.join(sourceRoot, 'lessons', 'widgets', 'gui.css'),
-    path.join(outputRoot, 'assets', 'gui.css'),
-  );
   const bookAssetsRoot = path.resolve(process.cwd(), 'packages', 'docs', 'book-assets');
   for (const asset of ['cat.png', 'walk.gif', 'click.wav', 'theme.mp3']) {
     copyFileIfExists(path.join(bookAssetsRoot, asset), path.join(outputRoot, 'assets', asset));

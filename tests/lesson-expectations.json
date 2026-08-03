@@ -697,7 +697,7 @@
       "kind": "valid",
       "reason": "Lesson now teaches text_color with the colors library; the removed string-based color API is rejected by the compiler (covered by smoke tests)."
     },
-    "widgets.lineedit.006": {
+    "widgets.lineedit.007": {
       "kind": "compile_error",
       "diagnosticIncludes": [
         "cannot assign 'int' value to 'string' variable"

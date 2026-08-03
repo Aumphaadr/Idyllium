@@ -1098,6 +1098,7 @@ function toVsCompletionKind(kind) {
     case 'method':
       return vscode.CompletionItemKind.Method;
     case 'parameter':
+    case 'variable':
       return vscode.CompletionItemKind.Variable;
     default:
       return vscode.CompletionItemKind.Text;

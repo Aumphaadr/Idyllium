@@ -3011,6 +3011,8 @@ function resolveModuleArrayType(typeName, moduleName, program, localClasses, std
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SemanticAnalyzer = exports.IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS = exports.IDYLLIUM_SEMANTIC_TOKEN_TYPES = void 0;
+exports.stringMemberMethodSpec = stringMemberMethodSpec;
+exports.arrayMemberMethodSpec = arrayMemberMethodSpec;
 const diagnostics_1 = require("./diagnostics");
 const modules_1 = require("./modules");
 const registry_1 = require("./stdlib/registry");
@@ -3801,15 +3803,32 @@ class SemanticAnalyzer {
             return (0, types_1.arrayType)(elementType, typeName.size, typeName.dynamic);
         }
         if (typeName.kind === 'ClassTypeName') {
-            this.markSemanticToken('class', typeName.nameRange);
             if (!this.classes.has(typeName.name)) {
+                // Не красим неизвестное имя как класс: чаще всего это недописанный
+                // идентификатор, который парсер принял за тип объявления.
                 this.diagnostics.error(typeName.range, `unknown class '${typeName.name}'`);
                 return types_1.ERROR_TYPE;
             }
+            this.markSemanticToken('class', typeName.nameRange);
             return (0, types_1.classType)(typeName.name);
         }
-        this.markSemanticToken('namespace', typeName.moduleNameRange, this.stdlib.hasModule(typeName.moduleName) ? ['defaultLibrary'] : []);
-        this.markSemanticToken('class', typeName.nameRange, this.stdlib.hasModule(typeName.moduleName) ? ['defaultLibrary'] : []);
+        // Красим только реально существующие модули и типы: недописанная строка
+        // вида `win.them` тоже попадает сюда как «квалифицированный тип», и
+        // безусловная раскраска превращала обычные имена в зелёные имена классов.
+        const isStdlibModule = this.stdlib.hasModule(typeName.moduleName);
+        const userModuleSpec = this.userModuleRegistry.getModule(typeName.moduleName);
+        const isKnownModule = isStdlibModule || userModuleSpec !== undefined || this.userModules.has(typeName.moduleName);
+        const isKnownType = isStdlibModule
+            ? this.stdlib.hasQualifiedType(typeName.moduleName, typeName.name)
+            : userModuleSpec
+                ? userModuleSpec.classes.has(typeName.name)
+                : this.userModules.has(typeName.moduleName);
+        if (isKnownModule) {
+            this.markSemanticToken('namespace', typeName.moduleNameRange, isStdlibModule ? ['defaultLibrary'] : []);
+        }
+        if (isKnownType) {
+            this.markSemanticToken('class', typeName.nameRange, isStdlibModule ? ['defaultLibrary'] : []);
+        }
         if (!this.imports.has(typeName.moduleName)) {
             this.diagnostics.error(typeName.range, `'${typeName.moduleName}' is not imported (use 'use ${typeName.moduleName};')`);
             return types_1.ERROR_TYPE;
@@ -4861,59 +4880,10 @@ class SemanticAnalyzer {
         return null;
     }
     stringMethodSpec(name) {
-        switch (name) {
-            case 'contains':
-            case 'find':
-            case 'count':
-                return { name, parameters: [{ name: 'text', type: types_1.ANY_TYPE }], returnType: name === 'contains' ? types_1.BOOL : types_1.INT };
-            case 'is_int':
-            case 'is_float':
-                return { name, parameters: [], returnType: types_1.BOOL };
-            case 'to_upper':
-            case 'to_lower':
-            case 'trim':
-                return { name, parameters: [], returnType: types_1.STRING };
-            case 'substring':
-                return { name, parameters: [{ name: 'start', type: types_1.INT }, { name: 'length', type: types_1.INT }], returnType: types_1.STRING };
-            case 'replace':
-                return { name, parameters: [{ name: 'old_text', type: types_1.STRING }, { name: 'new_text', type: types_1.STRING }], returnType: types_1.STRING };
-            case 'split':
-                return { name, parameters: [{ name: 'separator', type: types_1.STRING }], returnType: (0, types_1.arrayType)(types_1.STRING, null, true) };
-            default:
-                return null;
-        }
+        return stringMemberMethodSpec(name);
     }
     arrayMethodSpec(type, name) {
-        const value = { name: 'value', type: type.elementType };
-        const index = { name: 'index', type: types_1.INT };
-        switch (name) {
-            case 'contains':
-                return { name, parameters: [value], returnType: types_1.BOOL };
-            case 'find':
-                return { name, parameters: [value], returnType: types_1.INT };
-            case 'count':
-                return { name, parameters: [value], returnType: types_1.INT };
-            case 'reverse':
-            case 'sort':
-                return { name, parameters: [], returnType: types_1.VOID };
-            case 'add':
-                return type.dynamic ? { name, parameters: [value], returnType: types_1.VOID } : null;
-            case 'remove_at':
-            case 'resize':
-                return type.dynamic ? { name, parameters: [{ name: 'size', type: types_1.INT }], returnType: types_1.VOID } : null;
-            case 'insert':
-                return type.dynamic ? { name, parameters: [index, value], returnType: types_1.VOID } : null;
-            case 'join':
-                return type.dynamic
-                    ? { name, parameters: [{ name: 'other', type: (0, types_1.arrayType)(type.elementType, null, true) }], returnType: types_1.VOID }
-                    : null;
-            case 'clear':
-                return type.dynamic ? { name, parameters: [], returnType: types_1.VOID } : null;
-            case 'pop':
-                return type.dynamic ? { name, parameters: [], returnType: type.elementType } : null;
-            default:
-                return null;
-        }
+        return arrayMemberMethodSpec(type, name);
     }
     reportUnknownArrayMethod(type, name, range) {
         if (!type.dynamic && this.isDynamicArrayOnlyMethod(name)) {
@@ -5130,6 +5100,64 @@ function deduplicateSemanticTokens(tokens) {
 function requiredParameterCount(parameters) {
     const firstDefault = parameters.findIndex((parameter) => parameter.defaultValue !== null);
     return firstDefault < 0 ? parameters.length : firstDefault;
+}
+/** Типизированные спеки встроенных методов строк — источник истины и для
+ *  анализатора, и для языкового сервиса (автодополнение, ховер). */
+function stringMemberMethodSpec(name) {
+    switch (name) {
+        case 'contains':
+        case 'find':
+        case 'count':
+            return { name, parameters: [{ name: 'text', type: types_1.ANY_TYPE }], returnType: name === 'contains' ? types_1.BOOL : types_1.INT };
+        case 'is_int':
+        case 'is_float':
+            return { name, parameters: [], returnType: types_1.BOOL };
+        case 'to_upper':
+        case 'to_lower':
+        case 'trim':
+            return { name, parameters: [], returnType: types_1.STRING };
+        case 'substring':
+            return { name, parameters: [{ name: 'start', type: types_1.INT }, { name: 'length', type: types_1.INT }], returnType: types_1.STRING };
+        case 'replace':
+            return { name, parameters: [{ name: 'old_text', type: types_1.STRING }, { name: 'new_text', type: types_1.STRING }], returnType: types_1.STRING };
+        case 'split':
+            return { name, parameters: [{ name: 'separator', type: types_1.STRING }], returnType: (0, types_1.arrayType)(types_1.STRING, null, true) };
+        default:
+            return null;
+    }
+}
+/** Типизированные спеки встроенных методов массивов (см. stringMemberMethodSpec). */
+function arrayMemberMethodSpec(type, name) {
+    const value = { name: 'value', type: type.elementType };
+    const index = { name: 'index', type: types_1.INT };
+    switch (name) {
+        case 'contains':
+            return { name, parameters: [value], returnType: types_1.BOOL };
+        case 'find':
+            return { name, parameters: [value], returnType: types_1.INT };
+        case 'count':
+            return { name, parameters: [value], returnType: types_1.INT };
+        case 'reverse':
+        case 'sort':
+            return { name, parameters: [], returnType: types_1.VOID };
+        case 'add':
+            return type.dynamic ? { name, parameters: [value], returnType: types_1.VOID } : null;
+        case 'remove_at':
+        case 'resize':
+            return type.dynamic ? { name, parameters: [{ name: 'size', type: types_1.INT }], returnType: types_1.VOID } : null;
+        case 'insert':
+            return type.dynamic ? { name, parameters: [index, value], returnType: types_1.VOID } : null;
+        case 'join':
+            return type.dynamic
+                ? { name, parameters: [{ name: 'other', type: (0, types_1.arrayType)(type.elementType, null, true) }], returnType: types_1.VOID }
+                : null;
+        case 'clear':
+            return type.dynamic ? { name, parameters: [], returnType: types_1.VOID } : null;
+        case 'pop':
+            return type.dynamic ? { name, parameters: [], returnType: type.elementType } : null;
+        default:
+            return null;
+    }
 }
 //# sourceMappingURL=semantics.js.map
 },
@@ -5412,7 +5440,7 @@ function createDefaultStandardLibrary() {
             documentation: 'Где выполняется программа: "cli", "web" или "vscode".',
         }),
         functionSpec('version', [], types_1.STRING, {
-            documentation: 'Версия Idyllium, например "1.2.9".',
+            documentation: 'Версия Idyllium, например "1.3.0".',
         }),
     ]));
     registry.registerModule(moduleSpec('console', [
@@ -6041,6 +6069,7 @@ function createDefaultStandardLibrary() {
             ...fontSized,
             propertySpec('text', types_1.STRING),
             propertySpec('placeholder', types_1.STRING),
+            propertySpec('placeholder_color', types_1.COLOR, false, 'Цвет текста-подсказки (placeholder). Не задан — цвет подбирает тема окна.'),
             propertySpec('echo_mode', types_1.STRING),
         ], [], guiWidget),
         typeSpec('TextEdit', [
@@ -6052,6 +6081,7 @@ function createDefaultStandardLibrary() {
             ...fontSized,
             propertySpec('text', types_1.STRING),
             propertySpec('placeholder', types_1.STRING),
+            propertySpec('placeholder_color', types_1.COLOR, false, 'Цвет текста-подсказки (placeholder). Не задан — цвет подбирает тема окна.'),
         ], [], guiWidget),
         typeSpec('ProgressBar', [
             ...positioned,
@@ -6065,6 +6095,7 @@ function createDefaultStandardLibrary() {
             propertySpec('foreground_color', types_1.COLOR),
             propertySpec('border_color', types_1.COLOR),
             ...fontSized,
+            propertySpec('orientation', types_1.STRING, false, 'Ориентация: "horizontal" (по умолчанию) или "vertical". Незнакомое значение молча считается "horizontal" — как незнакомая тема окна.'),
         ], [], guiWidget),
         typeSpec('SpinBox', [
             ...positioned,
@@ -6097,6 +6128,7 @@ function createDefaultStandardLibrary() {
             propertySpec('min', types_1.INT),
             propertySpec('max', types_1.INT),
             propertySpec('step', types_1.INT),
+            propertySpec('orientation', types_1.STRING, false, 'Ориентация: "horizontal" (по умолчанию) или "vertical". Незнакомое значение молча считается "horizontal" — как незнакомая тема окна.'),
         ], [], guiWidget),
         typeSpec('CheckBox', [
             ...positioned,
@@ -6964,16 +6996,23 @@ class IdylliumProject {
         const argumentCompletions = this.argumentNameCompletions(index, source, request.offset);
         if (argumentCompletions.length > 0)
             return argumentCompletions;
-        const memberMatch = /([A-Za-z_][A-Za-z0-9_]*)\.\s*$/.exec(prefix);
-        if (memberMatch) {
-            const moduleName = memberMatch[1];
-            const stdlibMembers = this.stdlib.listModuleMembers(moduleName);
-            if (stdlibMembers.length > 0)
-                return stdlibMembers;
-            const userModuleMembers = this.listUserModuleMembers(index, moduleName);
-            if (userModuleMembers.length > 0)
-                return userModuleMembers;
-            return this.listVariableMembers(index, moduleName);
+        const dotMatch = /\.\s*$/u.exec(prefix);
+        if (dotMatch) {
+            const segments = postfixChainBeforeDot(prefix, dotMatch.index);
+            if (!segments)
+                return [];
+            if (segments.length === 1 && segments[0].kind === 'name') {
+                const objectName = segments[0].text;
+                const stdlibMembers = this.stdlib.listModuleMembers(objectName);
+                if (stdlibMembers.length > 0)
+                    return stdlibMembers;
+                const userModuleMembers = this.listUserModuleMembers(index, objectName);
+                if (userModuleMembers.length > 0)
+                    return userModuleMembers;
+                return this.listVariableMembers(index, objectName);
+            }
+            const chainType = this.resolveChainType(index, segments);
+            return chainType ? this.membersForType(index, chainType) : [];
         }
         if (/\buse\s+[A-Za-z_0-9]*$/.test(prefix)) {
             return [
@@ -6984,6 +7023,26 @@ class IdylliumProject {
         return [
             ...this.stdlib.listModules(),
             ...this.listProjectModules(),
+            ...this.stdlib.listGlobalFunctions().map((fn) => ({
+                name: fn.name,
+                kind: 'function',
+                detail: signatureDetail(fn),
+            })),
+            ...[...index.functions.values()].map((fn) => ({
+                name: fn.name,
+                kind: 'function',
+                detail: callableDetail(fn.name, fn.parameters.map((parameter) => parameter.name), typeNameText(fn.returnType)),
+            })),
+            ...[...index.localClasses.values()].map((declaration) => ({
+                name: declaration.name,
+                kind: 'type',
+                detail: `class ${declaration.name}`,
+            })),
+            ...[...index.variables.values()].map((variable) => ({
+                name: variable.name,
+                kind: 'variable',
+                detail: `${variable.isConst ? 'const ' : ''}${variable.name}: ${typeNameText(variable.typeName)}`,
+            })),
             { name: 'main', kind: 'function', detail: 'main()' },
             { name: 'int', kind: 'type', detail: 'type int' },
             { name: 'float', kind: 'type', detail: 'type float' },
@@ -7001,7 +7060,7 @@ class IdylliumProject {
         const index = this.index(file);
         const member = memberContext(source, word.start);
         if (member) {
-            const item = this.memberHoverItem(index, member.objectName, word.text);
+            const item = this.memberHoverItem(index, member.segments, word.text);
             if (item)
                 return hoverFromWord(source, file, word, item.detail);
         }
@@ -7052,7 +7111,10 @@ class IdylliumProject {
         const index = this.index(file);
         const member = memberContext(source, word.start);
         if (member) {
-            return this.memberDefinition(index, member.objectName, word.text);
+            if (member.segments.length === 1 && member.segments[0].kind === 'name') {
+                return this.memberDefinition(index, member.segments[0].text, word.text);
+            }
+            return null;
         }
         const useModule = useModuleNameAtWord(source, word);
         if (useModule) {
@@ -7178,36 +7240,203 @@ class IdylliumProject {
             return [];
         if (variable.runtimeError)
             return runtimeErrorMemberCompletions();
-        if (variable.typeName.kind === 'QualifiedTypeName') {
-            if (this.stdlib.hasQualifiedType(variable.typeName.moduleName, variable.typeName.name)) {
-                return this.stdlib.listTypeMembers((0, types_1.qualified)(variable.typeName.moduleName, variable.typeName.name));
+        return this.membersForType(index, typeRefFromTypeName(variable.typeName));
+    }
+    membersForType(index, type) {
+        if (type.kind === 'runtime-error')
+            return runtimeErrorMemberCompletions();
+        if (type.kind === 'primitive' && type.name === 'string')
+            return stringMemberCompletions();
+        if (type.kind === 'array')
+            return arrayMemberCompletions(type);
+        if (type.kind === 'qualified') {
+            if (this.stdlib.hasQualifiedType(type.moduleName, type.name)) {
+                return this.stdlib.listTypeMembers((0, types_1.qualified)(type.moduleName, type.name));
             }
-            const module = index.userModules.getModule(variable.typeName.moduleName);
-            const classSpec = module?.classes.get(variable.typeName.name);
+            const classSpec = index.userModules.getModule(type.moduleName)?.classes.get(type.name);
             if (classSpec)
                 return userClassMemberCompletions(classSpec);
+            return [];
         }
-        if (variable.typeName.kind === 'ClassTypeName') {
-            const classDeclaration = index.localClasses.get(variable.typeName.name);
+        if (type.kind === 'class') {
+            const classDeclaration = index.localClasses.get(type.name);
             if (classDeclaration)
                 return localClassMemberCompletions(classDeclaration);
         }
-        if (variable.typeName.kind === 'ArrayTypeName') {
-            return arrayMemberCompletions(variable.typeName);
-        }
-        if (variable.typeName.kind === 'PrimitiveTypeName' && variable.typeName.name === 'string') {
-            return stringMemberCompletions();
-        }
         return [];
     }
-    memberHoverItem(index, objectName, memberName) {
-        const stdlibMember = this.stdlib.listModuleMembers(objectName).find((item) => item.name === memberName);
-        if (stdlibMember)
-            return stdlibMember;
-        const userModuleMember = this.listUserModuleMembers(index, objectName).find((item) => item.name === memberName);
-        if (userModuleMember)
-            return userModuleMember;
-        return this.listVariableMembers(index, objectName).find((item) => item.name === memberName) ?? null;
+    /** Тип выражения перед завершающей точкой: `sm[0].`, `f(1).`, `a.b(x)[i].`. */
+    resolveChainType(index, segments) {
+        const first = segments[0];
+        if (!first)
+            return null;
+        let type = null;
+        let cursor = 1;
+        if (first.kind === 'literal') {
+            type = first.type;
+        }
+        else if (first.kind !== 'name') {
+            return null;
+        }
+        else {
+            const rootName = first.text;
+            const variable = index.variables.get(rootName);
+            if (variable) {
+                type = variable.runtimeError ? types_1.RUNTIME_ERROR_VALUE : typeRefFromTypeName(variable.typeName);
+            }
+            else if (this.stdlib.hasModule(rootName) || index.userModules.hasModule(rootName)) {
+                const member = segments[cursor];
+                if (!member || member.kind !== 'name')
+                    return null;
+                const hasCall = segments[cursor + 1]?.kind === 'call';
+                const resolved = this.moduleMemberChainType(index, rootName, member.text, hasCall);
+                if (!resolved)
+                    return null;
+                type = resolved.type;
+                cursor += resolved.consumedCall ? 2 : 1;
+            }
+            else if (segments[cursor]?.kind === 'call') {
+                const localFunction = index.functions.get(rootName);
+                const localClass = index.localClasses.get(rootName);
+                const globalFunction = this.stdlib.getGlobalFunction(rootName);
+                if (localFunction)
+                    type = typeRefFromTypeName(localFunction.returnType);
+                else if (localClass)
+                    type = (0, types_1.classType)(rootName);
+                else if (globalFunction)
+                    type = globalFunction.returnType;
+                else
+                    return null;
+                cursor++;
+            }
+            else {
+                return null;
+            }
+        }
+        while (cursor < segments.length) {
+            if (!type)
+                return null;
+            const segment = segments[cursor];
+            if (segment.kind === 'index') {
+                if (type.kind === 'array')
+                    type = type.elementType;
+                else if (type.kind === 'primitive' && type.name === 'string')
+                    type = types_1.CHAR;
+                else
+                    return null;
+                cursor++;
+                continue;
+            }
+            if (segment.kind === 'name') {
+                if (segments[cursor + 1]?.kind === 'call') {
+                    type = this.chainMethodReturnType(index, type, segment.text);
+                    cursor += 2;
+                }
+                else {
+                    type = this.chainPropertyType(index, type, segment.text);
+                    cursor++;
+                }
+                continue;
+            }
+            // Вызов сразу после вызова/индекса (`f()()`) не поддерживаем.
+            return null;
+        }
+        return type;
+    }
+    moduleMemberChainType(index, moduleName, memberName, hasCall) {
+        const stdlibModule = this.stdlib.getModule(moduleName);
+        if (stdlibModule) {
+            const constant = stdlibModule.constants.get(memberName);
+            if (constant)
+                return { type: constant.type, consumedCall: false };
+            const fn = stdlibModule.functions.get(memberName);
+            if (fn)
+                return hasCall ? { type: fn.returnType, consumedCall: true } : null;
+            if (stdlibModule.types.has(memberName)) {
+                return hasCall ? { type: (0, types_1.qualified)(moduleName, memberName), consumedCall: true } : null;
+            }
+            return null;
+        }
+        const userModule = index.userModules.getModule(moduleName);
+        if (!userModule)
+            return null;
+        const constant = userModule.constants.get(memberName);
+        if (constant)
+            return { type: constant.type, consumedCall: false };
+        const fn = userModule.functions.get(memberName);
+        if (fn)
+            return hasCall ? { type: fn.returnType, consumedCall: true } : null;
+        if (userModule.classes.has(memberName)) {
+            return hasCall ? { type: (0, types_1.qualified)(moduleName, memberName), consumedCall: true } : null;
+        }
+        return null;
+    }
+    chainMethodReturnType(index, type, name) {
+        if (type.kind === 'primitive' && type.name === 'string') {
+            return (0, semantics_1.stringMemberMethodSpec)(name)?.returnType ?? null;
+        }
+        if (type.kind === 'array') {
+            return (0, semantics_1.arrayMemberMethodSpec)(type, name)?.returnType ?? null;
+        }
+        if (type.kind === 'qualified') {
+            const stdlibMethod = this.stdlib.getTypeMethod((0, types_1.qualified)(type.moduleName, type.name), name);
+            if (stdlibMethod)
+                return stdlibMethod.returnType;
+            const classSpec = index.userModules.getModule(type.moduleName)?.classes.get(type.name);
+            const method = classSpec?.methods.find((item) => item.name === name && item.access === 'public' && !item.isStatic);
+            return method ? method.spec.returnType : null;
+        }
+        if (type.kind === 'class') {
+            const declaration = index.localClasses.get(type.name);
+            for (const member of declaration?.members ?? []) {
+                if (member.kind === 'ClassMethodDeclaration' && member.name === name && member.access === 'public' && !member.isStatic) {
+                    return typeRefFromTypeName(member.returnType);
+                }
+            }
+        }
+        return null;
+    }
+    chainPropertyType(index, type, name) {
+        if (type.kind === 'primitive' && type.name === 'string')
+            return name === 'length' ? types_1.INT : null;
+        if (type.kind === 'array')
+            return name === 'length' ? types_1.INT : null;
+        if (type.kind === 'qualified') {
+            const stdlibProperty = this.stdlib.getTypeProperty((0, types_1.qualified)(type.moduleName, type.name), name);
+            if (stdlibProperty)
+                return stdlibProperty.type;
+            const classSpec = index.userModules.getModule(type.moduleName)?.classes.get(type.name);
+            const field = classSpec?.fields.find((item) => item.name === name && item.access === 'public');
+            return field ? field.type : null;
+        }
+        if (type.kind === 'class') {
+            const declaration = index.localClasses.get(type.name);
+            for (const member of declaration?.members ?? []) {
+                if (member.kind !== 'ClassFieldDeclaration' || member.access !== 'public')
+                    continue;
+                for (const field of member.fields) {
+                    if (field.name === name)
+                        return typeRefFromTypeName(member.declaredType);
+                }
+            }
+        }
+        return null;
+    }
+    memberHoverItem(index, segments, memberName) {
+        if (segments.length === 1 && segments[0].kind === 'name') {
+            const objectName = segments[0].text;
+            const stdlibMember = this.stdlib.listModuleMembers(objectName).find((item) => item.name === memberName);
+            if (stdlibMember)
+                return stdlibMember;
+            const userModuleMember = this.listUserModuleMembers(index, objectName).find((item) => item.name === memberName);
+            if (userModuleMember)
+                return userModuleMember;
+            return this.listVariableMembers(index, objectName).find((item) => item.name === memberName) ?? null;
+        }
+        const chainType = this.resolveChainType(index, segments);
+        if (!chainType)
+            return null;
+        return this.membersForType(index, chainType).find((item) => item.name === memberName) ?? null;
     }
     signatureCandidates(index, calleeText) {
         const normalized = calleeText.replace(/\s+/gu, '');
@@ -7224,7 +7453,7 @@ class IdylliumProject {
             const userModuleFunction = userModule?.functions.get(memberName);
             if (userModuleFunction)
                 return [signatureFromFunctionSpec(userModuleFunction)];
-            const member = this.memberHoverItem(index, objectName, memberName);
+            const member = this.memberHoverItem(index, [{ kind: 'name', text: objectName }], memberName);
             return member && member.kind === 'method' ? [signatureFromDetail(member.detail)] : [];
         }
         const globalFunction = this.stdlib.getGlobalFunction(normalized);
@@ -7583,8 +7812,8 @@ function stringMemberCompletions() {
         { name: 'trim', kind: 'method', detail: 'trim(): string' },
     ];
 }
-function arrayMemberCompletions(typeName) {
-    const element = typeNameText(typeName.elementType);
+function arrayMemberCompletions(type) {
+    const element = (0, types_1.typeToString)(type.elementType);
     const items = [
         { name: 'length', kind: 'property', detail: 'length: int' },
         { name: 'contains', kind: 'method', detail: `contains(value: ${element}): bool` },
@@ -7593,7 +7822,7 @@ function arrayMemberCompletions(typeName) {
         { name: 'reverse', kind: 'method', detail: 'reverse(): void' },
         { name: 'sort', kind: 'method', detail: 'sort(): void' },
     ];
-    if (typeName.dynamic) {
+    if (type.dynamic) {
         items.push({ name: 'add', kind: 'method', detail: `add(value: ${element}): void` }, { name: 'remove_at', kind: 'method', detail: 'remove_at(index: int): void' }, { name: 'resize', kind: 'method', detail: 'resize(size: int): void' }, { name: 'insert', kind: 'method', detail: `insert(index: int, value: ${element}): void` }, { name: 'join', kind: 'method', detail: `join(other: dyn_array<${element}>): void` }, { name: 'clear', kind: 'method', detail: 'clear(): void' }, { name: 'pop', kind: 'method', detail: `pop(): ${element}` });
     }
     return items.sort((left, right) => left.name.localeCompare(right.name));
@@ -7977,16 +8206,97 @@ function memberContext(source, wordStart) {
         dot--;
     if (source[dot] !== '.')
         return null;
-    let end = dot;
-    let start = end;
-    while (start > 0 && /\s/u.test(source[start - 1]))
-        start--;
-    end = start;
-    while (start > 0 && isIdentifierChar(source[start - 1]))
-        start--;
-    if (start === end)
+    const segments = postfixChainBeforeDot(source, dot);
+    return segments ? { segments } : null;
+}
+/** Разбирает постфиксную цепочку слева от точки на позиции dotOffset:
+ *  `sm[0].` -> [name sm, index], `encoding.decode(x).` -> [name encoding,
+ *  name decode, call]. Возвращает null, если перед точкой не цепочка. */
+function postfixChainBeforeDot(source, dotOffset) {
+    const segments = [];
+    let i = dotOffset - 1;
+    const skipSpaces = () => {
+        while (i >= 0 && /\s/u.test(source[i]))
+            i--;
+    };
+    // Идём назад к открывающей кавычке (позиция i стоит на закрывающей).
+    const skipStringBackwards = () => {
+        const quote = source[i];
+        i--;
+        while (i >= 0 && !(source[i] === quote && source[i - 1] !== '\\'))
+            i--;
+    };
+    for (;;) {
+        skipSpaces();
+        if (i < 0)
+            return null;
+        const char = source[i];
+        if (char === ')' || char === ']') {
+            const open = char === ')' ? '(' : '[';
+            let depth = 0;
+            while (i >= 0) {
+                const current = source[i];
+                if (current === '"' || current === "'") {
+                    skipStringBackwards();
+                }
+                else if (current === char) {
+                    depth++;
+                }
+                else if (current === open) {
+                    depth--;
+                    if (depth === 0)
+                        break;
+                }
+                i--;
+            }
+            if (i < 0)
+                return null;
+            i--;
+            segments.unshift({ kind: char === ')' ? 'call' : 'index' });
+            continue;
+        }
+        if (char === '"' || char === "'") {
+            // Литерал может быть только корнем цепочки: `"a,b".split(",").`.
+            skipStringBackwards();
+            if (i < 0)
+                return null;
+            segments.unshift({ kind: 'literal', type: char === '"' ? types_1.STRING : types_1.CHAR });
+            break;
+        }
+        if (isIdentifierChar(char)) {
+            let start = i;
+            while (start > 0 && isIdentifierChar(source[start - 1]))
+                start--;
+            const text = source.slice(start, i + 1);
+            if (!/^[\p{L}_]/u.test(text))
+                return null;
+            segments.unshift({ kind: 'name', text });
+            i = start - 1;
+            skipSpaces();
+            if (i >= 0 && source[i] === '.') {
+                i--;
+                continue;
+            }
+            break;
+        }
         return null;
-    return { objectName: source.slice(start, end) };
+    }
+    const first = segments[0];
+    return first && (first.kind === 'name' || first.kind === 'literal') ? segments : null;
+}
+/** Синтаксическое имя типа -> семантический TypeRef (без разрешения констант
+ *  размера: для автодополнения размер массива не важен). */
+function typeRefFromTypeName(typeName) {
+    switch (typeName.kind) {
+        case 'PrimitiveTypeName':
+            return { kind: 'primitive', name: typeName.name };
+        case 'QualifiedTypeName':
+            return (0, types_1.qualified)(typeName.moduleName, typeName.name);
+        case 'ClassTypeName':
+            return (0, types_1.classType)(typeName.name);
+        case 'ArrayTypeName':
+            return (0, types_1.arrayType)(typeRefFromTypeName(typeName.elementType), typeName.size, typeName.dynamic);
+    }
 }
 function useModuleNameAtWord(source, word) {
     const lineStart = source.lastIndexOf('\n', word.start - 1) + 1;
@@ -9492,7 +9802,7 @@ exports.IdylliumRuntimeError = IdylliumRuntimeError;
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-exports.IDYLLIUM_VERSION = '1.2.9';
+exports.IDYLLIUM_VERSION = '1.3.0';
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform() {
     const nodeProcess = typeof process === 'object' ? process : null;
@@ -12295,10 +12605,12 @@ function createRuntime(options = {}) {
             const target = runtimeObjects.objects.find((item) => item.__idylliumObjectId === canvasId);
             if (!target)
                 return;
-            // Выключенный виджет не принимает событий. Рендерер блокирует их на
-            // экране; эта проверка — вторая линия обороны на случай гонки «клик
-            // пришёл в тот же момент, когда программа выключила виджет».
-            if (target.enabled === false)
+            // Выключенный или скрытый виджет не принимает событий — как и содержимое
+            // выключенного/скрытого контейнера (учебник и справочник обещают каскад).
+            // Рендерер блокирует это на экране; здесь — вторая линия обороны на
+            // случай гонки «клик пришёл в тот же момент, когда программа выключила
+            // виджет».
+            if (widgetEventsBlocked(target))
                 return;
             const deselectedRadios = target.__idylliumType === 'gui.RadioButton' && eventName === 'change'
                 ? runtimeObjects.objects.filter((item) => (item !== target && item.__idylliumType === 'gui.RadioButton' && item.is_selected === true))
@@ -13878,6 +14190,7 @@ function initializeGuiObject(obj, typeName, state) {
     if (typeName === 'LineEdit') {
         obj.text = '';
         obj.placeholder = '';
+        defineTrackedRuntimeProperty(obj, 'placeholder_color', colorGray());
         obj.echo_mode = 'normal';
         setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
         setTrackedRuntimePropertyDefault(obj, 'background_color', colorWhite());
@@ -13886,6 +14199,7 @@ function initializeGuiObject(obj, typeName, state) {
     if (typeName === 'TextEdit') {
         obj.text = '';
         obj.placeholder = '';
+        defineTrackedRuntimeProperty(obj, 'placeholder_color', colorGray());
         setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
         setTrackedRuntimePropertyDefault(obj, 'background_color', colorWhite());
         defineTrackedRuntimeProperty(obj, 'border_color', colorGray());
@@ -13894,6 +14208,7 @@ function initializeGuiObject(obj, typeName, state) {
         obj.value = 0;
         obj.min = 0;
         obj.max = 100;
+        obj.orientation = 'horizontal';
         setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
         setTrackedRuntimePropertyDefault(obj, 'background_color', colorVeryLightGray());
         setTrackedRuntimePropertyDefault(obj, 'foreground_color', colorBlue());
@@ -13904,6 +14219,9 @@ function initializeGuiObject(obj, typeName, state) {
         obj.min = 0;
         obj.max = 100;
         obj.step = 1;
+    }
+    if (typeName === 'Slider') {
+        obj.orientation = 'horizontal';
     }
     if (typeName === 'FloatSpinBox') {
         obj.value = 0;
@@ -15187,6 +15505,22 @@ function applyGuiEventPayload(target, eventName, payload, state) {
         default:
             return;
     }
+}
+/**
+ * Событие не доходит до виджета, если выключен или скрыт он сам либо любой
+ * из его контейнеров-предков. Modal и Window в цепочке безвредны: у них нет
+ * enabled/visible, а undefined !== false.
+ */
+function widgetEventsBlocked(target) {
+    let current = target;
+    const seen = new Set();
+    while (current && !seen.has(current)) {
+        if (current.enabled === false || current.visible === false)
+            return true;
+        seen.add(current);
+        current = isRuntimeObject(current.__parent) ? current.__parent : undefined;
+    }
+    return false;
 }
 function selectRadioButton(target, state) {
     const group = typeof target.group === 'string' ? target.group : '';

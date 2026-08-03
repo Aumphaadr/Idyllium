@@ -7296,4 +7296,209 @@ test('clean URLs are baked for every book, tasks and reference route', () => {
   assert(fs.existsSync(path.join(docsRoot, 'reference', 'globals.html')), 'missing globals.html');
 });
 
+
+test('disabled and hidden containers block events for their children', async () => {
+  const { runtime } = await runWithInspectableRuntime([
+    'use console;',
+    'use gui;',
+    '',
+    'main() {',
+    '    gui.Window win;',
+    '',
+    '    gui.Frame off_box;',
+    '    off_box.enabled = false;',
+    '    gui.Button in_off;',
+    '    in_off.text = "в выключенной рамке";',
+    '    in_off.on_click = void function() { console.writeln("клик в выключенной"); };',
+    '    off_box.add_child(in_off);',
+    '',
+    '    gui.Frame ghost_box;',
+    '    ghost_box.visible = false;',
+    '    gui.Button in_ghost;',
+    '    in_ghost.text = "в скрытой рамке";',
+    '    in_ghost.on_click = void function() { console.writeln("клик в скрытой"); };',
+    '    ghost_box.add_child(in_ghost);',
+    '',
+    '    gui.Button alive;',
+    '    alive.text = "живая";',
+    '    alive.on_click = void function() { console.writeln("клик в живую"); };',
+    '',
+    '    win.add_child(off_box);',
+    '    win.add_child(ghost_box);',
+    '    win.add_child(alive);',
+    '    win.show();',
+    '}',
+  ].join('\n'));
+
+  const win = runtime.getWindows()[0];
+  const inOff = win.children[0].children[0];
+  const inGhost = win.children[1].children[0];
+  const alive = win.children[2];
+
+  await runtime.dispatchGuiEvent(inOff.id, 'click', {});
+  await runtime.dispatchGuiEvent(inGhost.id, 'click', {});
+  await runtime.dispatchGuiEvent(alive.id, 'click', {});
+
+  // Учебник и справочник обещают: выключенный/скрытый контейнер глушит
+  // события всего содержимого; живой виджет работает как обычно.
+  assert(
+    runtime.getOutput() === 'клик в живую\n',
+    `unexpected output: ${JSON.stringify(runtime.getOutput())}`,
+  );
+});
+
+
+test('orientation and placeholder_color are wired through runtime and snapshot', async () => {
+  const { runtime } = await runWithInspectableRuntime([
+    'use colors;',
+    'use console;',
+    'use gui;',
+    '',
+    'main() {',
+    '    gui.Window win;',
+    '',
+    '    gui.Slider s;',
+    '    console.writeln(s.orientation);',
+    '    s.orientation = "vertical";',
+    '',
+    '    gui.ProgressBar p;',
+    '    p.orientation = "vertical";',
+    '',
+    '    gui.LineEdit named;',
+    '    named.placeholder = "Имя";',
+    '    named.placeholder_color = colors.RED;',
+    '',
+    '    gui.LineEdit plain;',
+    '',
+    '    win.add_child(s);',
+    '    win.add_child(p);',
+    '    win.add_child(named);',
+    '    win.add_child(plain);',
+    '    win.show();',
+    '}',
+  ].join('\n'));
+
+  assert(runtime.getOutput() === 'horizontal\n', `expected default horizontal, got ${JSON.stringify(runtime.getOutput())}`);
+
+  const [slider, bar, named, plain] = runtime.getWindows()[0].children as any[];
+  assert(slider.properties.orientation === 'vertical', 'slider orientation must reach the snapshot');
+  assert(bar.properties.orientation === 'vertical', 'progressbar orientation must reach the snapshot');
+  // Правило тем: в inline уходит только явно заданный цвет подсказки.
+  assert(
+    (named.properties.__explicit_properties ?? []).includes('placeholder_color'),
+    'explicit placeholder_color must be marked in the snapshot',
+  );
+  assert(
+    !(plain.properties.__explicit_properties ?? []).includes('placeholder_color'),
+    'untouched placeholder_color must stay non-explicit (theme owns it)',
+  );
+});
+
+
+test('handouts page is baked with every manifest file present', () => {
+  const docsRoot = path.resolve(process.cwd(), 'docs');
+  const manifest = JSON.parse(fs.readFileSync(
+    path.resolve(process.cwd(), 'packages', 'docs', 'handouts', 'handouts.json'), 'utf8'));
+  const page = fs.readFileSync(path.join(docsRoot, 'handouts', 'index.html'), 'utf8');
+  assert(page.includes('noindex'), 'handouts page must be closed from search engines');
+  for (const group of manifest.groups) {
+    for (const item of group.items) {
+      assert(
+        fs.existsSync(path.join(docsRoot, 'handouts', 'files', item.file)),
+        `handout file missing from the site: ${item.file}`,
+      );
+      assert(page.includes(encodeURIComponent(item.file)), `handout not listed on the page: ${item.file}`);
+    }
+  }
+});
+
+test('completions resolve postfix chains: array cells, call results, literals', () => {
+  const complete = (source: string) => {
+    const project = new IdylliumProject({ entryFile: 'main.idyl', files: { 'main.idyl': source } });
+    return project.completions({ file: 'main.idyl', offset: source.length });
+  };
+  const has = (items: ReturnType<typeof complete>, name: string) => items.some((item) => item.name === name);
+
+  // Ячейка массива видит члены типа элемента.
+  const cell = complete('main() {\n    array<string, 3> sm;\n    sm[0].');
+  assert(has(cell, 'to_upper') && has(cell, 'length'), 'array cell must expose string members');
+
+  // Ячейка матрицы: первый индекс — методы массива, второй — методы строки.
+  const row = complete('main() {\n    array<array<string, 2>, 2> m;\n    m[0].');
+  assert(has(row, 'sort') && !has(row, 'add'), 'matrix row must expose fixed-array members');
+  const deepCell = complete('main() {\n    array<array<string, 2>, 2> m;\n    m[0][1].');
+  assert(has(deepCell, 'split'), 'matrix cell must expose string members');
+
+  // Результат вызова функции модуля.
+  const decoded = complete('use encoding;\nmain() {\n    dyn_array<int> utf;\n    string x = encoding.decode(utf, "windows-1251").');
+  assert(has(decoded, 'to_upper'), 'module function result must expose string members');
+
+  // Результат метода строки + индекс поверх него.
+  const splitResult = complete('main() {\n    string s = "a;b";\n    s.split(";").');
+  assert(has(splitResult, 'add') && has(splitResult, 'pop'), 'split result must expose dyn_array members');
+  const splitCell = complete('main() {\n    string s = "a;b";\n    s.split(";")[0].');
+  assert(has(splitCell, 'trim'), 'split result cell must expose string members');
+
+  // Результат локальной функции и строковый литерал в корне цепочки.
+  const local = complete('\nstring function greet() {\n    return "hi";\n}\n\nmain() {\n    greet().');
+  assert(has(local, 'to_lower'), 'local function result must expose string members');
+  const literal = complete('main() {\n    "a,b".split(",").');
+  assert(has(literal, 'add'), 'string literal chain must expose dyn_array members');
+
+  // Одиночные имена работают как раньше.
+  const plain = complete('main() {\n    string s = "ab";\n    s.');
+  assert(has(plain, 'split'), 'plain string variable must keep member completions');
+
+  // Ховер по члену цепочки.
+  const hoverSource = 'main() {\n    array<string, 3> sm;\n    int n = sm[0].length;\n}\n';
+  const hoverProject = new IdylliumProject({ entryFile: 'main.idyl', files: { 'main.idyl': hoverSource } });
+  const hover = hoverProject.hover({ file: 'main.idyl', offset: hoverSource.indexOf('.length') + 2 });
+  assert(hover !== null && hover.detail.includes('int'), `expected chain member hover, got ${hover?.detail}`);
+});
+
+test('completions offer local variables, functions, and global builtins by name', () => {
+  const source = 'int function double_it(int x) {\n    return x * 2;\n}\n\nmain() {\n    int very_long_name = 25;\n    very_';
+  const project = new IdylliumProject({ entryFile: 'main.idyl', files: { 'main.idyl': source } });
+  const items = project.completions({ file: 'main.idyl', offset: source.length });
+
+  const variable = items.find((item) => item.name === 'very_long_name');
+  assert(variable !== undefined, 'variable name must be offered');
+  assert(variable!.kind === 'variable' && variable!.detail.includes('int'), `unexpected variable item: ${variable!.kind} / ${variable!.detail}`);
+  assert(
+    items.some((item) => item.name === 'double_it' && item.kind === 'function'),
+    'local function must be offered',
+  );
+  assert(items.some((item) => item.name === 'sum'), 'global builtin functions must be offered');
+});
+
+test('unfinished identifiers are not painted as class names by semantic tokens', () => {
+  const tokensFor = (source: string) => {
+    const project = new IdylliumProject({ entryFile: 'main.idyl', files: { 'main.idyl': source } });
+    return project.semanticTokens('main.idyl');
+  };
+
+  // Недописанное имя в начале строки: `wi` + `win` со следующей строки
+  // разбираются как объявление с классовым типом `wi` — краситься не должно.
+  const midWord = tokensFor('use gui;\n\nmain() {\n    gui.Window win;\n    win.width = 400;\n    wi\n    win.theme = "idyllium";\n}\n');
+  assert(
+    !midWord.some((token) => token.range.start.line === 6 && token.kind === 'class'),
+    'unfinished identifier must not be a class token',
+  );
+
+  // Недописанный член после точки: `win.them` выглядит как квалифицированный
+  // тип — ни class, ни namespace ставить нельзя.
+  const midMember = tokensFor('use gui;\n\nmain() {\n    gui.Window win;\n    win.them\n}\n');
+  assert(
+    !midMember.some((token) => token.range.start.line === 5 && (token.kind === 'class' || token.kind === 'namespace')),
+    'unfinished member must not be class/namespace tokens',
+  );
+
+  // Настоящий тип по-прежнему красится.
+  const valid = tokensFor('use gui;\n\nmain() {\n    gui.Window win;\n    win.title = "ok";\n}\n');
+  assert(
+    valid.some((token) => token.range.start.line === 4 && token.kind === 'class'),
+    'valid gui.Window must keep its class token',
+  );
+});
+
 void runTests();

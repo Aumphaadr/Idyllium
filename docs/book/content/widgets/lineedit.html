@@ -208,6 +208,39 @@ main() {
           🎨 Шрифт увеличен до 20 пикселей, видна серая подсказка-плейсхолдер.
         </div>
       </div>
+
+      <p>
+        Серый цвет подсказки подбирает тема окна, но его можно назначить и
+        самому — свойством <code>placeholder_color</code>:
+      </p>
+
+      <idyl-code-block><script type="text/plain">
+use colors;
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 400;
+    win.height = 120;
+
+    gui.LineEdit name;
+    name.x = 20;
+    name.y = 20;
+    name.width = 310;
+    name.height = 34;
+    name.placeholder = "Обязательное поле!";
+    name.placeholder_color = colors.RED;
+
+    win.add_child(name);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <p>
+        Как и остальные цвета виджетов, назначенный вручную
+        <code>placeholder_color</code> сильнее темы; не задали — тема выберет
+        оттенок сама.
+      </p>
     </div>
 
     <!-- Section 5 -->

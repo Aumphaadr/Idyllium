@@ -1,0 +1,130 @@
+{
+  "groups": [
+    {
+      "title": "Картинки",
+      "items": [
+        {
+          "file": "cat.png",
+          "note": "Кот для уроков про картинки и ImageBox"
+        },
+        {
+          "file": "red_stickman.png",
+          "note": "Красный человечек — спрайт для Canvas"
+        },
+        {
+          "file": "cow_rotator.jpeg",
+          "note": "Корова для заданий про повороты и трансформации"
+        },
+        {
+          "file": "travolta.jpeg",
+          "note": "Растерянный Траволта — для заданий про режимы растяжения"
+        },
+        {
+          "file": "meme_left.jpeg",
+          "note": "Левая половинка мема — собери из двух ImageBox"
+        },
+        {
+          "file": "meme_right.jpeg",
+          "note": "Правая половинка мема"
+        }
+      ]
+    },
+    {
+      "title": "Анимации",
+      "items": [
+        {
+          "file": "walk.gif",
+          "note": "Анимация ходьбы, 10 кадров — для image.Animation"
+        },
+        {
+          "file": "green_stickman.gif",
+          "note": "Зелёный человечек, 2 кадра"
+        }
+      ]
+    },
+    {
+      "title": "Звуки и музыка",
+      "items": [
+        {
+          "file": "click.wav",
+          "note": "Короткий щелчок — для audio.Sound"
+        },
+        {
+          "file": "Mesmerizing Galaxy.mp3",
+          "note": "Спокойный космический фон (Kevin MacLeod, incompetech.com)"
+        },
+        {
+          "file": "Surf Shimmy.mp3",
+          "note": "Бодрый сёрф-рок (Kevin MacLeod, incompetech.com)"
+        },
+        {
+          "file": "Rising.mp3",
+          "note": "Нарастающий эмбиент (Kevin MacLeod, incompetech.com)"
+        }
+      ]
+    },
+    {
+      "title": "Шрифты",
+      "items": [
+        {
+          "file": "Comfortaa-Variable.ttf",
+          "note": "Округлый Comfortaa с кириллицей (SIL OFL)",
+          "license": "Comfortaa-OFL.txt"
+        },
+        {
+          "file": "Lora-Variable.ttf",
+          "note": "Книжная антиква Lora (SIL OFL)",
+          "license": "Lora-OFL.txt"
+        },
+        {
+          "file": "Lora-Italic-Variable.ttf",
+          "note": "Lora, курсивное начертание (SIL OFL)",
+          "license": "Lora-OFL.txt"
+        },
+        {
+          "file": "Lobster-Regular.ttf",
+          "note": "Рукописный Lobster с кириллицей (SIL OFL)",
+          "license": "Lobster-OFL.txt"
+        },
+        {
+          "file": "BlackOpsOne-Regular.ttf",
+          "note": "Black Ops One — нарочно БЕЗ кириллицы: показать, что русские буквы есть не у всех шрифтов (SIL OFL)",
+          "license": "BlackOpsOne-OFL.txt"
+        }
+      ]
+    },
+    {
+      "title": "Данные",
+      "items": [
+        {
+          "file": "guild.db",
+          "note": "Готовая база SQLite: гильдия из 10 игроков, 20 предметов и 24 покупок со связями — для SELECT, WHERE, JOIN и агрегатов"
+        },
+        {
+          "file": "save.json",
+          "note": "Сейв игры: герой с вложенной позицией, инвентарь-массив, настройки — для уроков про чтение JSON"
+        },
+        {
+          "file": "broken_save.json",
+          "note": "Нарочно сломанный сейв (комментарий и лишние запятые) — почините файл, не трогая программу"
+        },
+        {
+          "file": "broken_letter.txt",
+          "note": "Письмо, испорченное двойной перекодировкой (кракозябры вида «РџСЂРёРІРµС‚») — почините его через encoding и прочтите тайну"
+        },
+        {
+          "file": "scores.txt",
+          "note": "Таблица рекордов «имя;очки» — чтение файла, split, to_int и поиск чемпиона"
+        },
+        {
+          "file": "numbers.txt",
+          "note": "Сто чисел по одному в строке — суммы, максимумы и подсчёт чётных"
+        },
+        {
+          "file": "game_items.txt",
+          "note": "Список из 20 шуточных игровых предметов — для заданий про файлы и массивы"
+        }
+      ]
+    }
+  ]
+}
