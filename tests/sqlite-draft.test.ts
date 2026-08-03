@@ -56,6 +56,10 @@ async function runWithMemoryFiles(
 }
 
 async function main(): Promise<void> {
+  if (!fs.existsSync(path.join(process.cwd(), ROOT))) {
+    console.log('sqlite draft: spec kitchen not present, skipping (local-only fixtures)');
+    return;
+  }
   const root = process.cwd();
   const specRoot = path.join(root, ROOT);
   const files = collectIdylliumFiles(specRoot);

@@ -9,6 +9,10 @@ function assert(condition: boolean, message: string): void {
 
 function main(): void {
   const root = path.join(process.cwd(), 'spec/some_images');
+  if (!fs.existsSync(root)) {
+    console.log('image draft: spec kitchen not present, skipping (local-only fixtures)');
+    return;
+  }
   const examples = fs.readdirSync(root)
     .filter((name: string) => name.endsWith('.idyl'))
     .sort();
