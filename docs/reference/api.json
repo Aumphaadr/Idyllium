@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "languageVersion": "1.2.7",
-  "generatedAt": "2026-08-02T21:47:32.308Z",
+  "languageVersion": "1.2.8",
+  "generatedAt": "2026-08-03T08:50:22.998Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "general": [
     {
@@ -10339,7 +10339,7 @@
           "returnType": "string",
           "parameters": [],
           "variadic": false,
-          "documentation": "Версия Idyllium, например \"1.2.7\"."
+          "documentation": "Версия Idyllium, например \"1.2.8\"."
         }
       ],
       "constants": [],

@@ -446,17 +446,55 @@
     el.step = String(step);
     el.value = String(numberValue(widget.properties.value, 0));
     installControlFocus(el, widget.id);
-    const emitChange = () => postGuiEvent(widget.id, 'change', { value: Number(el.value) });
-    el.addEventListener('change', emitChange);
-    el.addEventListener('input', emitChange);
-    el.addEventListener('wheel', (event) => {
-      const value = spinBoxWheelValue(el.value, min, max, step, event.deltaY < 0, widget.type === 'gui.FloatSpinBox');
+
+    const floating = widget.type === 'gui.FloatSpinBox';
+    // Границы сторожат ВСЕ пути ввода одинаково: стрелки и колесо — как
+    // раньше, а набранное с клавиатуры число зажимается при подтверждении
+    // (blur или Enter), как в настоящих тулкитах. Программное присваивание
+    // value вне диапазона это не трогает — из кода границы сознательно
+    // не проверяются (порядок настройки свойств свободный).
+    let committedValue = numberValue(widget.properties.value, 0);
+    const emit = (value) => {
+      committedValue = value;
+      postGuiEvent(widget.id, 'change', { value });
+    };
+
+    // Пока пользователь печатает, поле не трогаем (иначе нельзя набрать «15»
+    // при min = 10 — промежуточную «1» тут же переписал бы клэмп), но в
+    // программу уходит уже зажатое значение.
+    el.addEventListener('input', () => {
+      const typed = spinBoxTypedValue(el.value, min, max, floating);
+      if (typed !== null) emit(typed);
+    });
+
+    // Подтверждение (blur/Enter): поле приводится к зажатому значению; пустой
+    // или нечисловой ввод откатывается к последнему подтверждённому — раньше
+    // он молча превращался в 0.
+    el.addEventListener('change', () => {
+      const typed = spinBoxTypedValue(el.value, min, max, floating);
+      const value = typed === null ? committedValue : typed;
       el.value = String(value);
       activeControl = controlState(el);
-      emitChange();
+      emit(value);
+    });
+
+    el.addEventListener('wheel', (event) => {
+      const value = spinBoxWheelValue(el.value, min, max, step, event.deltaY < 0, floating);
+      el.value = String(value);
+      activeControl = controlState(el);
+      emit(value);
       event.preventDefault();
     }, { passive: false });
     return el;
+  }
+
+  /** Число из набранного текста, зажатое в [min, max]; null — ввод не число. */
+  function spinBoxTypedValue(rawValue, min, max, floating) {
+    if (String(rawValue).trim() === '') return null;
+    const parsed = Number(rawValue);
+    if (!Number.isFinite(parsed)) return null;
+    const clamped = clampNumber(parsed, min, max);
+    return floating ? clamped : Math.trunc(clamped);
   }
 
   function spinBoxWheelValue(rawValue, min, max, step, increase, floating) {
