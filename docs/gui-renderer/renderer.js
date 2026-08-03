@@ -7,6 +7,10 @@
   let stateJson = JSON.stringify(state);
   let activeCanvasId = null;
   let activeControl = null;
+  // Поле SpinBox, которое пользователь сейчас набирает с клавиатуры.
+  // Пока набор не подтверждён (blur/Enter), его текст принадлежит
+  // пользователю: перерисовки по снимкам не смеют его переписывать.
+  let editingSpinBox = null;
   let deferredState = null;
   let draggingControlId = null;
   const audioEntries = new Map();
@@ -36,6 +40,7 @@
     if (nextStateJson === stateJson) return;
     const generationChanged = nextState.generation !== state.generation;
     if (generationChanged) clearAudioEntries();
+    if (generationChanged) editingSpinBox = null;
     if (!generationChanged && patchWidgetTextOnly(nextState, nextStateJson)) return;
     if (draggingControlId !== null) {
       deferredState = nextState;
@@ -448,29 +453,31 @@
     installControlFocus(el, widget.id);
 
     const floating = widget.type === 'gui.FloatSpinBox';
-    // Границы сторожат ВСЕ пути ввода одинаково: стрелки и колесо — как
-    // раньше, а набранное с клавиатуры число зажимается при подтверждении
-    // (blur или Enter), как в настоящих тулкитах. Программное присваивание
-    // value вне диапазона это не трогает — из кода границы сознательно
-    // не проверяются (порядок настройки свойств свободный).
+    // Поле, которое пользователь сейчас набирает, — его собственность: пока
+    // печать не подтверждена, программа ничего не получает, а перерисовки по
+    // снимкам сохраняют набранный текст (см. editingSpinBox выше). Иначе
+    // промежуточная «3» при min = 20 зажималась бы до 20 прямо под пальцами,
+    // и набрать «35» было бы физически невозможно.
+    if (editingSpinBox && editingSpinBox.widgetId === widget.id) {
+      el.value = editingSpinBox.text;
+    }
+
     let committedValue = numberValue(widget.properties.value, 0);
     const emit = (value) => {
       committedValue = value;
       postGuiEvent(widget.id, 'change', { value });
     };
 
-    // Пока пользователь печатает, поле не трогаем (иначе нельзя набрать «15»
-    // при min = 10 — промежуточную «1» тут же переписал бы клэмп), но в
-    // программу уходит уже зажатое значение.
     el.addEventListener('input', () => {
-      const typed = spinBoxTypedValue(el.value, min, max, floating);
-      if (typed !== null) emit(typed);
+      editingSpinBox = { widgetId: widget.id, text: el.value };
     });
 
-    // Подтверждение (blur/Enter): поле приводится к зажатому значению; пустой
-    // или нечисловой ввод откатывается к последнему подтверждённому — раньше
-    // он молча превращался в 0.
+    // Подтверждение (blur, Enter, шаг стрелками): набранное зажимается в
+    // [min, max], дробь в целом SpinBox усекается, пустой или нечисловой
+    // ввод откатывается к последнему подтверждённому значению — раньше он
+    // молча превращался в 0. Только здесь значение уходит в программу.
     el.addEventListener('change', () => {
+      editingSpinBox = null;
       const typed = spinBoxTypedValue(el.value, min, max, floating);
       const value = typed === null ? committedValue : typed;
       el.value = String(value);
@@ -478,7 +485,16 @@
       emit(value);
     });
 
+    // Blur без изменения значения не даёт события change — подчищаем сами.
+    el.addEventListener('blur', () => {
+      if (editingSpinBox && editingSpinBox.widgetId === widget.id) {
+        editingSpinBox = null;
+        el.value = String(committedValue);
+      }
+    });
+
     el.addEventListener('wheel', (event) => {
+      editingSpinBox = null;
       const value = spinBoxWheelValue(el.value, min, max, step, event.deltaY < 0, floating);
       el.value = String(value);
       activeControl = controlState(el);
@@ -881,6 +897,8 @@
 
   function restoreActiveControl() {
     if (!activeControl) return;
+    // Лёгкий DOM тестов не умеет querySelector — как и с document.head выше.
+    if (typeof stage.querySelector !== 'function') return;
     const el = stage.querySelector('[data-focus-widget-id="' + activeControl.widgetId + '"]')
       || stage.querySelector('[data-widget-id="' + activeControl.widgetId + '"]');
     if (!el || typeof el.focus !== 'function') return;

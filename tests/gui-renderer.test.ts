@@ -337,56 +337,80 @@ test('gui renderer changes SpinBox with the mouse wheel', () => {
   );
 });
 
-test('gui renderer clamps typed SpinBox input on commit', () => {
+test('gui renderer clamps typed SpinBox input on commit only', () => {
   const harness = createRendererHarness();
-  harness.sendSnapshot({
+  const snapshot = (title: string) => ({
     generation: 1,
     audio: [],
     windows: [{
       id: 1,
       type: 'gui.Window',
-      properties: { width: 320, height: 180, title: 'SpinBox' },
+      properties: { width: 320, height: 180, title },
       children: [{
         id: 2,
         type: 'gui.SpinBox',
-        properties: { x: 10, y: 20, width: 120, height: 32, visible: true, min: 10, max: 100, step: 1, value: 50 },
+        properties: { x: 10, y: 20, width: 120, height: 32, visible: true, min: 20, max: 100, step: 1, value: 50 },
         children: [],
       }],
     }],
     canvases: [],
     modals: [],
   });
+  harness.sendSnapshot(snapshot('SpinBox'));
 
-  const spinBox = findElement(harness.stage, (element) => element.tagName === 'input' && element.type === 'number');
+  const findSpinBox = () => findElement(harness.stage, (element) => element.tagName === 'input' && element.type === 'number');
+  const changeEvents = (): any[] => harness.postedMessages
+    .filter((message: any) => message?.type === 'guiEvent' && message.eventName === 'change');
+
+  let spinBox = findSpinBox();
   assert(spinBox !== null, 'expected SpinBox input');
 
-  const lastChange = () => [...harness.postedMessages].reverse()
-    .find((message: any) => message?.type === 'guiEvent' && message.eventName === 'change') as any;
-
-  // Промежуточная «1» при наборе «15»: в программу уходит зажатое значение,
-  // но само поле не переписывается — иначе набрать «15» было бы невозможно.
-  spinBox.value = '1';
+  // Печать не отправляется в программу и не переписывается: промежуточная
+  // «3» при min = 20 остаётся в поле как есть (сценарий владельца: набрать 35).
+  spinBox.value = '3';
   spinBox.dispatch('input', {});
-  assert(lastChange()?.payload?.value === 10, `expected clamped 10, got ${JSON.stringify(lastChange())}`);
-  assert(spinBox.value === '1', `field must keep the typed text while editing, got ${spinBox.value}`);
+  assert(changeEvents().length === 0, `typing must not emit, got ${JSON.stringify(changeEvents())}`);
+  assert(spinBox.value === '3', `field must keep typed text, got ${spinBox.value}`);
 
-  // Подтверждение числа за границей: и поле, и программа получают max.
-  spinBox.value = '999';
+  // Пришедший посреди печати снимок (таймер, чужое событие) не смеет
+  // переписать набранное.
+  harness.sendSnapshot(snapshot('SpinBox tick'));
+  spinBox = findSpinBox();
+  assert(spinBox !== null, 'expected SpinBox input after rebuild');
+  assert(spinBox.value === '3', `rebuild must preserve the text being typed, got ${spinBox.value}`);
+
+  // Допечатали до «35» и подтвердили: значение в диапазоне уходит как есть.
+  spinBox.value = '35';
+  spinBox.dispatch('input', {});
   spinBox.dispatch('change', {});
-  assert(lastChange()?.payload?.value === 100, `expected clamped 100, got ${JSON.stringify(lastChange())}`);
+  assert(changeEvents().at(-1)?.payload?.value === 35, `expected committed 35, got ${JSON.stringify(changeEvents())}`);
+  assert(spinBox.value === '35', `field must show committed value, got ${spinBox.value}`);
+
+  // Подтверждение числа за границей зажимается в диапазон.
+  spinBox.value = '999';
+  spinBox.dispatch('input', {});
+  spinBox.dispatch('change', {});
+  assert(changeEvents().at(-1)?.payload?.value === 100, `expected clamped 100, got ${JSON.stringify(changeEvents())}`);
   assert(spinBox.value === '100', `field must be normalized on commit, got ${spinBox.value}`);
 
-  // Пустой/нечисловой ввод откатывается к последнему подтверждённому,
-  // а не превращается молча в 0.
+  // Пустой ввод откатывается к последнему подтверждённому, а не к нулю.
   spinBox.value = '';
+  spinBox.dispatch('input', {});
   spinBox.dispatch('change', {});
-  assert(lastChange()?.payload?.value === 100, `expected revert to 100, got ${JSON.stringify(lastChange())}`);
+  assert(changeEvents().at(-1)?.payload?.value === 100, `expected revert to 100, got ${JSON.stringify(changeEvents())}`);
   assert(spinBox.value === '100', `field must revert on invalid input, got ${spinBox.value}`);
 
-  // Дробь в целом SpinBox усечётся при подтверждении.
+  // Дробь в целом SpinBox усекается при подтверждении.
   spinBox.value = '55.7';
+  spinBox.dispatch('input', {});
   spinBox.dispatch('change', {});
-  assert(lastChange()?.payload?.value === 55, `expected truncated 55, got ${JSON.stringify(lastChange())}`);
+  assert(changeEvents().at(-1)?.payload?.value === 55, `expected truncated 55, got ${JSON.stringify(changeEvents())}`);
+
+  // Blur без подтверждённого изменения возвращает последнее значение.
+  spinBox.value = '7';
+  spinBox.dispatch('input', {});
+  spinBox.dispatch('blur', {});
+  assert(spinBox.value === '55', `blur without change must revert, got ${spinBox.value}`);
 });
 
 test('gui renderer updates timer labels without replacing controls', () => {
