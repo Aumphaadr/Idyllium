@@ -2086,6 +2086,9 @@ deliberate, because the property setup order is free (`value = 150` followed by
 arrows and the mouse wheel stop at the edges, and a number typed into a
 SpinBox is clamped into `min..max` when committed (blur or Enter); empty or
 non-numeric text reverts to the last committed value instead of becoming 0.
+While the user is still typing, the program receives nothing — `on_change`
+fires with the clamped value only on commit (arrows and the wheel commit
+immediately).
 
 Slider `on_change` fires on every marker movement while dragging, not only
 when the marker is released.
