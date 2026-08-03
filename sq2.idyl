@@ -1,9 +1,0 @@
-use console;
-use math;
-main() {
-    console.write("До какого числа считать корни: ");
-    int n = console.get_int();
-    for (int i = 0; i <= n; i += 1) {
-        console.writeln(i, " -> ", math.sqrt(i));
-    }
-}

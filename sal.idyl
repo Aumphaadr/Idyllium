@@ -1,7 +1,0 @@
-use console;
-main() {
-    console.write("С какого числа отсчёт: ");
-    int n = console.get_int();
-    while (n >= 1) { console.writeln(n); n -= 1; }
-    console.writeln("Залп!");
-}

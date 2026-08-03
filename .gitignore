@@ -32,3 +32,4 @@ pdf_examples/
 my_images/
 Idyllium.code-workspace
 *.vsix
+for_claude/

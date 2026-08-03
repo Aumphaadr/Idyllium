@@ -10,6 +10,10 @@ function assert(condition: boolean, message: string): void {
 async function main(): Promise<void> {
   const root = process.cwd();
   const specRoot = path.join(root, 'spec/some_constants');
+  if (!fs.existsSync(specRoot)) {
+    console.log('constants draft: spec kitchen not present, skipping (local-only fixtures)');
+    return;
+  }
   const bindingsFile = path.join(specRoot, '01_bindings.idyl');
   const bindingsSource = fs.readFileSync(bindingsFile, 'utf8');
   const bindings = await runIdyllium(bindingsSource, {}, { file: bindingsFile });
