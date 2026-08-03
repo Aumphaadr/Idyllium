@@ -1001,6 +1001,7 @@
     if (kind === 'type') return monaco.languages.CompletionItemKind.Class;
     if (kind === 'property') return monaco.languages.CompletionItemKind.Property;
     if (kind === 'parameter') return monaco.languages.CompletionItemKind.Variable;
+    if (kind === 'variable') return monaco.languages.CompletionItemKind.Variable;
     return monaco.languages.CompletionItemKind.Text;
   }
 

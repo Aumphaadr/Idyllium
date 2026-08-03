@@ -1049,24 +1049,34 @@ export class SemanticAnalyzer {
     }
 
     if (typeName.kind === 'ClassTypeName') {
-      this.markSemanticToken('class', typeName.nameRange);
       if (!this.classes.has(typeName.name)) {
+        // Не красим неизвестное имя как класс: чаще всего это недописанный
+        // идентификатор, который парсер принял за тип объявления.
         this.diagnostics.error(typeName.range, `unknown class '${typeName.name}'`);
         return ERROR_TYPE;
       }
+      this.markSemanticToken('class', typeName.nameRange);
       return classType(typeName.name);
     }
 
-    this.markSemanticToken(
-      'namespace',
-      typeName.moduleNameRange,
-      this.stdlib.hasModule(typeName.moduleName) ? ['defaultLibrary'] : [],
-    );
-    this.markSemanticToken(
-      'class',
-      typeName.nameRange,
-      this.stdlib.hasModule(typeName.moduleName) ? ['defaultLibrary'] : [],
-    );
+    // Красим только реально существующие модули и типы: недописанная строка
+    // вида `win.them` тоже попадает сюда как «квалифицированный тип», и
+    // безусловная раскраска превращала обычные имена в зелёные имена классов.
+    const isStdlibModule = this.stdlib.hasModule(typeName.moduleName);
+    const userModuleSpec = this.userModuleRegistry.getModule(typeName.moduleName);
+    const isKnownModule = isStdlibModule || userModuleSpec !== undefined || this.userModules.has(typeName.moduleName);
+    const isKnownType = isStdlibModule
+      ? this.stdlib.hasQualifiedType(typeName.moduleName, typeName.name)
+      : userModuleSpec
+        ? userModuleSpec.classes.has(typeName.name)
+        : this.userModules.has(typeName.moduleName);
+
+    if (isKnownModule) {
+      this.markSemanticToken('namespace', typeName.moduleNameRange, isStdlibModule ? ['defaultLibrary'] : []);
+    }
+    if (isKnownType) {
+      this.markSemanticToken('class', typeName.nameRange, isStdlibModule ? ['defaultLibrary'] : []);
+    }
 
     if (!this.imports.has(typeName.moduleName)) {
       this.diagnostics.error(typeName.range, `'${typeName.moduleName}' is not imported (use 'use ${typeName.moduleName};')`);
@@ -2339,61 +2349,11 @@ export class SemanticAnalyzer {
   }
 
   private stringMethodSpec(name: string): FunctionSpec | null {
-    switch (name) {
-      case 'contains':
-      case 'find':
-      case 'count':
-        return { name, parameters: [{ name: 'text', type: ANY_TYPE }], returnType: name === 'contains' ? BOOL : INT };
-      case 'is_int':
-      case 'is_float':
-        return { name, parameters: [], returnType: BOOL };
-      case 'to_upper':
-      case 'to_lower':
-      case 'trim':
-        return { name, parameters: [], returnType: STRING };
-      case 'substring':
-        return { name, parameters: [{ name: 'start', type: INT }, { name: 'length', type: INT }], returnType: STRING };
-      case 'replace':
-        return { name, parameters: [{ name: 'old_text', type: STRING }, { name: 'new_text', type: STRING }], returnType: STRING };
-      case 'split':
-        return { name, parameters: [{ name: 'separator', type: STRING }], returnType: arrayType(STRING, null, true) };
-      default:
-        return null;
-    }
+    return stringMemberMethodSpec(name);
   }
 
   private arrayMethodSpec(type: Extract<TypeRef, { kind: 'array' }>, name: string): FunctionSpec | null {
-    const value = { name: 'value', type: type.elementType };
-    const index = { name: 'index', type: INT };
-
-    switch (name) {
-      case 'contains':
-        return { name, parameters: [value], returnType: BOOL };
-      case 'find':
-        return { name, parameters: [value], returnType: INT };
-      case 'count':
-        return { name, parameters: [value], returnType: INT };
-      case 'reverse':
-      case 'sort':
-        return { name, parameters: [], returnType: VOID };
-      case 'add':
-        return type.dynamic ? { name, parameters: [value], returnType: VOID } : null;
-      case 'remove_at':
-      case 'resize':
-        return type.dynamic ? { name, parameters: [{ name: 'size', type: INT }], returnType: VOID } : null;
-      case 'insert':
-        return type.dynamic ? { name, parameters: [index, value], returnType: VOID } : null;
-      case 'join':
-        return type.dynamic
-          ? { name, parameters: [{ name: 'other', type: arrayType(type.elementType, null, true) }], returnType: VOID }
-          : null;
-      case 'clear':
-        return type.dynamic ? { name, parameters: [], returnType: VOID } : null;
-      case 'pop':
-        return type.dynamic ? { name, parameters: [], returnType: type.elementType } : null;
-      default:
-        return null;
-    }
+    return arrayMemberMethodSpec(type, name);
   }
 
   private reportUnknownArrayMethod(type: Extract<TypeRef, { kind: 'array' }>, name: string, range: SourceRange): void {
@@ -2636,4 +2596,65 @@ function deduplicateSemanticTokens(tokens: readonly IdylliumSemanticToken[]): Id
 function requiredParameterCount(parameters: readonly ParameterDeclaration[]): number {
   const firstDefault = parameters.findIndex((parameter) => parameter.defaultValue !== null);
   return firstDefault < 0 ? parameters.length : firstDefault;
+}
+
+/** Типизированные спеки встроенных методов строк — источник истины и для
+ *  анализатора, и для языкового сервиса (автодополнение, ховер). */
+export function stringMemberMethodSpec(name: string): FunctionSpec | null {
+  switch (name) {
+    case 'contains':
+    case 'find':
+    case 'count':
+      return { name, parameters: [{ name: 'text', type: ANY_TYPE }], returnType: name === 'contains' ? BOOL : INT };
+    case 'is_int':
+    case 'is_float':
+      return { name, parameters: [], returnType: BOOL };
+    case 'to_upper':
+    case 'to_lower':
+    case 'trim':
+      return { name, parameters: [], returnType: STRING };
+    case 'substring':
+      return { name, parameters: [{ name: 'start', type: INT }, { name: 'length', type: INT }], returnType: STRING };
+    case 'replace':
+      return { name, parameters: [{ name: 'old_text', type: STRING }, { name: 'new_text', type: STRING }], returnType: STRING };
+    case 'split':
+      return { name, parameters: [{ name: 'separator', type: STRING }], returnType: arrayType(STRING, null, true) };
+    default:
+      return null;
+  }
+}
+
+/** Типизированные спеки встроенных методов массивов (см. stringMemberMethodSpec). */
+export function arrayMemberMethodSpec(type: Extract<TypeRef, { kind: 'array' }>, name: string): FunctionSpec | null {
+  const value = { name: 'value', type: type.elementType };
+  const index = { name: 'index', type: INT };
+
+  switch (name) {
+    case 'contains':
+      return { name, parameters: [value], returnType: BOOL };
+    case 'find':
+      return { name, parameters: [value], returnType: INT };
+    case 'count':
+      return { name, parameters: [value], returnType: INT };
+    case 'reverse':
+    case 'sort':
+      return { name, parameters: [], returnType: VOID };
+    case 'add':
+      return type.dynamic ? { name, parameters: [value], returnType: VOID } : null;
+    case 'remove_at':
+    case 'resize':
+      return type.dynamic ? { name, parameters: [{ name: 'size', type: INT }], returnType: VOID } : null;
+    case 'insert':
+      return type.dynamic ? { name, parameters: [index, value], returnType: VOID } : null;
+    case 'join':
+      return type.dynamic
+        ? { name, parameters: [{ name: 'other', type: arrayType(type.elementType, null, true) }], returnType: VOID }
+        : null;
+    case 'clear':
+      return type.dynamic ? { name, parameters: [], returnType: VOID } : null;
+    case 'pop':
+      return type.dynamic ? { name, parameters: [], returnType: type.elementType } : null;
+    default:
+      return null;
+  }
 }

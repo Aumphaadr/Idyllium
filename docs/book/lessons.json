@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-03T11:46:46.736Z",
+  "generatedAt": "2026-08-03T20:49:12.109Z",
   "sourceRoot": "packages/docs",
   "sections": [
     {
@@ -375,7 +375,7 @@
           "sourceFile": "widgets/002_label.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "progressbar",
@@ -385,7 +385,7 @@
           "sourceFile": "widgets/003_progressbar.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "colors",
@@ -395,7 +395,7 @@
           "sourceFile": "docs/manual-content/widgets/colors.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "fonts",
@@ -405,7 +405,7 @@
           "sourceFile": "docs/manual-content/widgets/fonts.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "spinbox",
@@ -415,7 +415,7 @@
           "sourceFile": "widgets/004_spinbox.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "slider",
@@ -425,7 +425,7 @@
           "sourceFile": "widgets/005_slider.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "lineedit",
@@ -435,7 +435,7 @@
           "sourceFile": "widgets/006_lineedit.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "image",
@@ -445,7 +445,7 @@
           "sourceFile": "docs/manual-content/widgets/image.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "styles",
@@ -455,7 +455,7 @@
           "sourceFile": "docs/manual-content/widgets/styles.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "links",
@@ -465,7 +465,7 @@
           "sourceFile": "docs/manual-content/widgets/links.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "checkbox",
@@ -475,7 +475,7 @@
           "sourceFile": "widgets/007_checkbox.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "radiobutton",
@@ -485,7 +485,7 @@
           "sourceFile": "widgets/008_radiobutton.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "frame",
@@ -495,7 +495,7 @@
           "sourceFile": "widgets/009_frame.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "combobox",

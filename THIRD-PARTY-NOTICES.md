@@ -17,6 +17,10 @@ Idyllium распространяется по лицензии [MIT](LICENSE). 
 | Geologica | Monotype (The Geologica Project Authors) | [packages/docs/fonts/Geologica-OFL.txt](packages/docs/fonts/Geologica-OFL.txt) |
 | Source Code Pro | Adobe (Reserved Font Name «Source») | [packages/docs/fonts/SourceCodePro-LICENSE.txt](packages/docs/fonts/SourceCodePro-LICENSE.txt), [COPYRIGHT](packages/docs/fonts/SourceCodePro-COPYRIGHT.txt) |
 | Lobster | Impallari Type (The Lobster Project Authors) | [packages/docs/fonts/Lobster-OFL.txt](packages/docs/fonts/Lobster-OFL.txt) |
+| Comfortaa (раздатка) | Johan Aakerlund (The Comfortaa Project Authors) | [packages/docs/handouts/Comfortaa-OFL.txt](packages/docs/handouts/Comfortaa-OFL.txt) |
+| Lora (раздатка) | Cyreal (The Lora Project Authors) | [packages/docs/handouts/Lora-OFL.txt](packages/docs/handouts/Lora-OFL.txt) |
+| Black Ops One (раздатка) | James Grieshaber (The Black Ops One Project Authors) | [packages/docs/handouts/BlackOpsOne-OFL.txt](packages/docs/handouts/BlackOpsOne-OFL.txt) |
+| Lobster (раздатка) | Impallari Type (The Lobster Project Authors) | [packages/docs/handouts/Lobster-OFL.txt](packages/docs/handouts/Lobster-OFL.txt) |
 
 Копии шрифтов и лицензий также лежат рядом со своими потребителями:
 `packages/gui-renderer/fonts/` (Source Code Pro для превью GUI) и
@@ -27,6 +31,9 @@ Idyllium распространяется по лицензии [MIT](LICENSE). 
 | Файл | Произведение | Автор | Лицензия |
 |---|---|---|---|
 | `packages/docs/book-assets/theme.mp3` | «Mesmerizing Galaxy» (файл переименован, содержимое без изменений) | Kevin MacLeod ([incompetech.com](https://incompetech.com/music/royalty-free/music.html)) | [Creative Commons: By Attribution 4.0](http://creativecommons.org/licenses/by/4.0/) |
+| `packages/docs/handouts/Mesmerizing Galaxy.mp3` | «Mesmerizing Galaxy» (копия для раздатки) | Kevin MacLeod ([incompetech.com](https://incompetech.com/music/royalty-free/music.html)) | [Creative Commons: By Attribution 4.0](http://creativecommons.org/licenses/by/4.0/) |
+| `packages/docs/handouts/Surf Shimmy.mp3` | «Surf Shimmy» | Kevin MacLeod ([incompetech.com](https://incompetech.com/music/royalty-free/music.html)) | [Creative Commons: By Attribution 4.0](http://creativecommons.org/licenses/by/4.0/) |
+| `packages/docs/handouts/Rising.mp3` | «Rising» | Kevin MacLeod ([incompetech.com](https://incompetech.com/music/royalty-free/music.html)) | [Creative Commons: By Attribution 4.0](http://creativecommons.org/licenses/by/4.0/) |
 
 Обязательная атрибуция в формате автора:
 

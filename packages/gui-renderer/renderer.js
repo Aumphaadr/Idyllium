@@ -340,6 +340,13 @@
     if (el.tagName === 'A') el.tabIndex = -1;
   }
 
+  // Цвет подсказки-плейсхолдера. В inline уходит только явно заданный цвет
+  // (правило тем: дефолт — дело темы через var(--w-muted) в renderer.css).
+  function applyPlaceholderColor(el, props) {
+    if (!isExplicitProperty(props, 'placeholder_color')) return;
+    el.style.setProperty('--w-placeholder-explicit', color(props.placeholder_color, ''));
+  }
+
   function renderWidgetElement(widget, parentId = 0, inheritedColors = {}) {
     if (widget.type === 'gui.Canvas' && widget.canvas) {
       return renderCanvasWidget(widget);
@@ -446,6 +453,7 @@
     el.type = mode === 'password' ? 'password' : 'text';
     el.value = stringValue(widget.properties.text, '');
     el.placeholder = stringValue(widget.properties.placeholder, '');
+    applyPlaceholderColor(el, widget.properties);
     if (mode === 'no_echo') el.classList.add('no-echo');
     installControlFocus(el, widget.id);
     el.addEventListener('input', () => postGuiEvent(widget.id, 'change', { text: el.value }));
@@ -456,6 +464,7 @@
     const el = baseWidget('textarea', widget, 'control', inheritedColors);
     el.value = stringValue(widget.properties.text, '');
     el.placeholder = stringValue(widget.properties.placeholder, '');
+    applyPlaceholderColor(el, widget.properties);
     installControlFocus(el, widget.id);
     el.addEventListener('input', () => postGuiEvent(widget.id, 'change', { text: el.value }));
     return el;
@@ -560,6 +569,10 @@
   function renderSlider(widget, inheritedColors) {
     const el = baseWidget('input', widget, 'control', inheritedColors);
     el.type = 'range';
+    // Вертикаль включается классом; незнакомое значение — как горизонталь.
+    if (stringValue(widget.properties.orientation, 'horizontal') === 'vertical') {
+      el.classList.add('vertical');
+    }
     el.min = String(numberValue(widget.properties.min, 0));
     el.max = String(numberValue(widget.properties.max, 100));
     el.step = String(numberValue(widget.properties.step, 1));
@@ -651,9 +664,13 @@
     const max = numberValue(widget.properties.max, 100);
     const value = numberValue(widget.properties.value, 0);
     const percent = max <= min ? 0 : Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
+    const vertical = stringValue(widget.properties.orientation, 'horizontal') === 'vertical';
+    if (vertical) el.classList.add('vertical');
     const fill = document.createElement('div');
     fill.className = 'progressbar-fill';
-    fill.style.width = percent + '%';
+    // Горизонталь растёт слева направо, вертикаль — снизу вверх.
+    if (vertical) fill.style.height = percent + '%';
+    else fill.style.width = percent + '%';
     // Цвет заливки — только явный: иначе его задаёт акцент темы через CSS.
     if (isExplicitProperty(widget.properties, 'foreground_color')) {
       fill.style.backgroundColor = color(widget.properties.foreground_color, '');

@@ -166,10 +166,30 @@ function createFakeElement(tagName: string): any {
     getBoundingClientRect() {
       return { left: 0, top: 0, width: 100, height: 100 };
     },
+    // Честный classList поверх className: рендерер вешает состояния
+    // (.vertical, .disabled) классами, и тесты должны их видеть.
     classList: {
-      add() {},
-      remove() {},
-      toggle() {},
+      add(...names: string[]) {
+        const set = new Set(String(element.className || '').split(' ').filter(Boolean));
+        for (const name of names) set.add(name);
+        element.className = [...set].join(' ');
+      },
+      remove(...names: string[]) {
+        const set = new Set(String(element.className || '').split(' ').filter(Boolean));
+        for (const name of names) set.delete(name);
+        element.className = [...set].join(' ');
+      },
+      toggle(name: string, force?: boolean) {
+        const set = new Set(String(element.className || '').split(' ').filter(Boolean));
+        const has = set.has(name);
+        const next = force ?? !has;
+        if (next) set.add(name); else set.delete(name);
+        element.className = [...set].join(' ');
+        return next;
+      },
+      contains(name: string) {
+        return String(element.className || '').split(' ').filter(Boolean).includes(name);
+      },
     },
   };
   return element;
@@ -411,6 +431,47 @@ test('gui renderer clamps typed SpinBox input on commit only', () => {
   spinBox.dispatch('input', {});
   spinBox.dispatch('blur', {});
   assert(spinBox.value === '55', `blur without change must revert, got ${spinBox.value}`);
+});
+
+test('gui renderer renders vertical slider and bottom-up progressbar', () => {
+  const harness = createRendererHarness();
+  harness.sendSnapshot({
+    generation: 1,
+    audio: [],
+    windows: [{
+      id: 1,
+      type: 'gui.Window',
+      properties: { width: 320, height: 240, title: 'Вертикали' },
+      children: [
+        {
+          id: 2,
+          type: 'gui.Slider',
+          properties: { x: 10, y: 10, width: 30, height: 160, visible: true, min: 0, max: 100, step: 1, value: 50, orientation: 'vertical' },
+          children: [],
+        },
+        {
+          id: 3,
+          type: 'gui.ProgressBar',
+          properties: { x: 60, y: 10, width: 24, height: 160, visible: true, min: 0, max: 100, value: 40, orientation: 'vertical' },
+          children: [],
+        },
+      ],
+    }],
+    canvases: [],
+    modals: [],
+  });
+
+  const slider = findElement(harness.stage, (element) => element.tagName === 'input' && element.type === 'range');
+  assert(slider !== null, 'expected Slider input');
+  assert(String(slider.className).split(' ').includes('vertical'), 'vertical slider must carry the class');
+
+  const bar = findElement(harness.stage, (element) => element.className && String(element.className).includes('progressbar') && !String(element.className).includes('fill') && !String(element.className).includes('label'));
+  assert(bar !== null, 'expected ProgressBar');
+  assert(String(bar.className).split(' ').includes('vertical'), 'vertical progressbar must carry the class');
+  const fill = findElement(harness.stage, (element) => String(element.className).includes('progressbar-fill'));
+  assert(fill !== null, 'expected fill');
+  assert(fill.style.height === '40%', `vertical fill grows by height, got ${JSON.stringify(fill.style.height)}`);
+  assert(!fill.style.width, `vertical fill must not set width, got ${JSON.stringify(fill.style.width)}`);
 });
 
 test('gui renderer updates timer labels without replacing controls', () => {

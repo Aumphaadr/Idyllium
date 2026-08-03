@@ -134,6 +134,27 @@ body.theme-light {
 .widget.control {
   font: 13px Arial, sans-serif;
 }
+/* Подсказка в пустом поле: по умолчанию красится темой, явный
+   placeholder_color побеждает. */
+.widget.control::placeholder {
+  color: var(--w-placeholder-explicit, var(--w-muted));
+  opacity: 1;
+}
+/* Вертикальный Slider: стандартный способ (Chromium 129+, вся тройка сред
+   на нём). direction: rtl кладёт минимум вниз — как у физических приборов. */
+input.widget.control.vertical {
+  writing-mode: vertical-lr;
+  direction: rtl;
+}
+/* Вертикальный ProgressBar: заливка прижата к низу и растёт вверх. */
+.progressbar.vertical {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.progressbar.vertical .progressbar-fill {
+  width: 100%;
+}
 input.widget,
 textarea.widget,
 select.widget,

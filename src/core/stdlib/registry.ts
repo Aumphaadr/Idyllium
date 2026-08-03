@@ -61,7 +61,7 @@ export interface ModuleSpec {
 
 export interface CompletionItem {
   readonly name: string;
-  readonly kind: 'module' | 'function' | 'constant' | 'type' | 'property' | 'method' | 'parameter';
+  readonly kind: 'module' | 'function' | 'constant' | 'type' | 'property' | 'method' | 'parameter' | 'variable';
   readonly detail: string;
 }
 
@@ -356,7 +356,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       documentation: 'Где выполняется программа: "cli", "web" или "vscode".',
     }),
     functionSpec('version', [], STRING, {
-      documentation: 'Версия Idyllium, например "1.2.9".',
+      documentation: 'Версия Idyllium, например "1.3.0".',
     }),
   ]));
 
@@ -1002,6 +1002,8 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...fontSized,
       propertySpec('text', STRING),
       propertySpec('placeholder', STRING),
+      propertySpec('placeholder_color', COLOR, false,
+        'Цвет текста-подсказки (placeholder). Не задан — цвет подбирает тема окна.'),
       propertySpec('echo_mode', STRING),
     ], [], guiWidget),
     typeSpec('TextEdit', [
@@ -1013,6 +1015,8 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...fontSized,
       propertySpec('text', STRING),
       propertySpec('placeholder', STRING),
+      propertySpec('placeholder_color', COLOR, false,
+        'Цвет текста-подсказки (placeholder). Не задан — цвет подбирает тема окна.'),
     ], [], guiWidget),
     typeSpec('ProgressBar', [
       ...positioned,
@@ -1026,6 +1030,8 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       propertySpec('foreground_color', COLOR),
       propertySpec('border_color', COLOR),
       ...fontSized,
+      propertySpec('orientation', STRING, false,
+        'Ориентация: "horizontal" (по умолчанию) или "vertical". Незнакомое значение молча считается "horizontal" — как незнакомая тема окна.'),
     ], [], guiWidget),
     typeSpec('SpinBox', [
       ...positioned,
@@ -1058,6 +1064,8 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       propertySpec('min', INT),
       propertySpec('max', INT),
       propertySpec('step', INT),
+      propertySpec('orientation', STRING, false,
+        'Ориентация: "horizontal" (по умолчанию) или "vertical". Незнакомое значение молча считается "horizontal" — как незнакомая тема окна.'),
     ], [], guiWidget),
     typeSpec('CheckBox', [
       ...positioned,

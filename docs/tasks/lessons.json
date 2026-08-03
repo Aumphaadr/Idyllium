@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-03T11:46:46.736Z",
+  "generatedAt": "2026-08-03T20:49:12.109Z",
   "sourceRoot": "docs/manual-content/tasks",
   "sections": [
     {
@@ -370,132 +370,132 @@
         {
           "id": "label",
           "title": "Виджет Label",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Виджет Label»",
           "file": "content/widgets/label.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/label.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "progressbar",
           "title": "Виджет ProgressBar",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Виджет ProgressBar»",
           "file": "content/widgets/progressbar.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/progressbar.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "colors",
           "title": "Цвета виджетов",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Цвета виджетов»",
           "file": "content/widgets/colors.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/colors.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "fonts",
           "title": "Шрифты в GUI",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Шрифты в GUI»",
           "file": "content/widgets/fonts.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/fonts.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "spinbox",
           "title": "Виджеты SpinBox и FloatSpinBox",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Виджеты SpinBox и FloatSpinBox»",
           "file": "content/widgets/spinbox.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/spinbox.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "slider",
           "title": "Виджет Slider",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Виджет Slider»",
           "file": "content/widgets/slider.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/slider.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "lineedit",
           "title": "Виджет LineEdit",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Виджет LineEdit»",
           "file": "content/widgets/lineedit.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/lineedit.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "image",
           "title": "Картинки в GUI",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Картинки в GUI»",
           "file": "content/widgets/image.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/image.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "styles",
           "title": "Стили IdySS",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Стили IdySS»",
           "file": "content/widgets/styles.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/styles.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "links",
           "title": "Гиперссылки",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Гиперссылки»",
           "file": "content/widgets/links.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/links.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "checkbox",
           "title": "Виджет CheckBox",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Виджет CheckBox»",
           "file": "content/widgets/checkbox.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/checkbox.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "radiobutton",
           "title": "Виджет RadioButton",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Виджет RadioButton»",
           "file": "content/widgets/radiobutton.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/radiobutton.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "frame",
           "title": "Виджет Frame",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Виджет Frame»",
           "file": "content/widgets/frame.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/frame.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "combobox",
