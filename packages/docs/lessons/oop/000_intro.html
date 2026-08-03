@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 0: Введение в ООП — Idyllium</title>
+  <link rel="icon" type="image/png" href="../../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="../../fonts/fonts.css">
+  <link rel="stylesheet" href="../docs.css">
+  <script src="../components.js" defer></script>
+</head>
+<body>
+
+<!-- ═══ Header ══════════════════════════════════════════════════════════ -->
+<header class="docs-header">
+  <div class="docs-header-left">
+    <a class="docs-logo" href="../docs.html">IDYLLIUM <span class="idyllium-version">v</span></a>
+    <span class="docs-header-badge">Объектно-ориентированное программирование</span>
+  </div>
+  <div class="docs-header-right">
+    <a class="docs-header-link" href="../docs.html">Уроки</a>
+    <a class="docs-back-btn" href="../../index.html">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 2L3 6.5L8 11" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Открыть IDE
+    </a>
+  </div>
+</header>
+
+<!-- ═══ Layout ══════════════════════════════════════════════════════════ -->
+<div class="docs-layout">
+
+  <!-- Sidebar Web Component — loads navigation from lessons.json -->
+  <idyl-sidebar src="../lessons.json"></idyl-sidebar>
+
+  <!-- ── Main content ─────────────────────────────────────────────── -->
+  <main class="docs-main">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <a class="docs-lesson-back-btn" href="../docs.html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M10 6H2M2 6L5 3M2 6L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        На главную
+      </a>
+      <div class="docs-lesson-tag">ООП • Урок 0</div>
+      <h1>Введение в ООП</h1>
+      <p class="docs-subtitle">От переменных и функций — к собственным типам данных</p>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="docs-section">
+      <h2>Переменные — хранение данных</h2>
+      <p><strong>Переменная</strong> — это ячейка в оперативной памяти компьютера, предназначенная для хранения данных. У каждой переменной есть имя (чтобы к ней обращаться) и тип (чтобы знать, какие данные она может хранить).</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    int age = 25;           // целое число
+    string name = "Анна";   // строка
+    float price = 19.99;    // дробное число
+
+    console.writeln("Имя: ", name, ", Возраст: ", age, ", Цена: ", price);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Имя: Анна, Возраст: 25, Цена: 19.99</idyl-output-block>
+      <div class="warning-message">main.idyl:6: warning: ⚠️ Внимание! Хотя технически код корректен, мы вынуждены напомнить: торговля людьми — уголовно наказуемое преступление.</div>
+
+      <p>Переменные позволяют программе <strong>запоминать</strong> данные и <strong>использовать</strong> их в разных частях кода.</p>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="docs-section">
+      <h2>Функции — выполнение действий</h2>
+      <p><strong>Функция</strong> — это блок кода, предназначенный для выполнения действий при вызове по имени. Функции позволяют не писать один и тот же код много раз, а переиспользовать его.</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+// Функция, которая приветствует пользователя по имени
+void function greet(string person_name) {
+    console.writeln("Привет, ", person_name, "!");
+}
+
+main() {
+    greet("Анна");
+    greet("Пётр");
+    greet("Мария");
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Привет, Анна!
+Привет, Пётр!
+Привет, Мария!</idyl-output-block>
+
+      <p>Функции помогают <strong>организовывать код</strong> и <strong>избегать повторений</strong>. Одну функцию можно вызвать много раз с разными аргументами.</p>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="docs-section">
+      <h2>Сложные типы данных</h2>
+      <p>Вы уже знакомы с примитивными типами: <code>int</code>, <code>float</code>, <code>string</code>, <code>char</code>, <code>bool</code>. Но в программировании существуют и <strong>сложные типы данных</strong>. Например, в библиотеке <code>gui</code> есть такие типы, как <code>gui.Button</code> (кнопка) или <code>gui.Label</code> (текстовая метка).</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    int money;           // примитивный тип
+    gui.Button btn;      // сложный тип (кнопка)
+    gui.Label label;     // сложный тип (лейбл)
+}
+</script></idyl-code-block>
+
+      <p>Обратите внимание на <strong>схожесть синтаксиса</strong>: и примитивные, и сложные типы объявляются одинаково — сначала указывается тип, потом имя переменной.</p>
+      <p>Кнопка или лейбл — это уже готовые типы, которые кто-то разработал для нас. Но что, если мы хотим создать <strong>свой собственный тип данных</strong>?</p>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="docs-section">
+      <h2>Создание своих типов данных — классы</h2>
+      <p>В программировании собственный тип данных называется <strong>классом</strong> (англ. <em>class</em>). Класс описывает, какие данные будет хранить объект и какие действия он сможет выполнять.</p>
+      <p>Представьте, что мы хотим создать тип <code>Cat</code> (кот). Кот имеет:</p>
+      <ul>
+        <li>данные: имя (<code>name</code>), цвет (<code>color</code>), возраст (<code>age</code>)</li>
+        <li>действия: мяукать (<code>meow()</code>), спать (<code>sleep()</code>)</li>
+      </ul>
+
+      <p>Вот как мог бы выглядеть код с использованием такого класса (предположим, что класс <code>Cat</code> уже кто-то создал):</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    Cat my_cat;              // создаём объект типа Cat
+    my_cat.name = "Барсик";  // задаём имя
+    my_cat.color = "рыжий";  // задаём цвет
+    my_cat.age = 3;          // задаём возраст
+    my_cat.meow();           // вызываем действие — мяукнуть
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Мяу! Меня зовут Барсик</idyl-output-block>
+
+      <p>Если класс <code>Cat</code> разработан один раз, то в программе можно создавать <strong>множество котов</strong> — точно так же, как вы создавали множество переменных типа <code>int</code>:</p>
+
+      <idyl-code-block><script type="text/plain">
+Cat cat1;
+Cat cat2;
+Cat cat3;
+// или массив:
+array<Cat, 10> cats;
+</script></idyl-code-block>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="docs-section">
+      <h2>Что даёт ООП?</h2>
+      <p><strong>Объектно-ориентированное программирование (ООП)</strong> — это парадигма, в которой программа строится из <strong>объектов</strong>, каждый из которых объединяет данные и действия над этими данными.</p>
+      <p>Основные преимущества ООП:</p>
+      <ul>
+        <li><strong>Моделирование реального мира</strong> — объекты программы соответствуют реальным сущностям (кот, машина, банковский счёт).</li>
+        <li><strong>Переиспользование кода</strong> — написанный класс можно использовать в разных проектах.</li>
+        <li><strong>Удобство поддержки</strong> — изменения в одном классе не ломают другие части программы.</li>
+        <li><strong>Совместимость с промышленными языками</strong> — C++, Java, C#, Python и JavaScript поддерживают ООП, и вы уже будете понимать его основы.</li>
+      </ul>
+    </div>
+
+    <!-- Lesson navigation -->
+    <nav class="docs-lesson-nav">
+      <a class="docs-nav-btn next" href="001_classes.html">
+        <span>Следующий урок →</span>
+        <strong>Урок 1: Создание класса</strong>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<footer class="docs-footer">
+  Idyllium Documentation · Maintaining just for lulz · <span class="copyright">©</span>2025–∞
+</footer>
+
+<script src="../../version.js" defer></script>
+</body>
+</html>

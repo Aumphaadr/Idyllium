@@ -320,6 +320,27 @@
   }
 
   function renderWidget(widget, parentId = 0, inheritedColors = {}) {
+    const el = renderWidgetElement(widget, parentId, inheritedColors);
+    applyEnabledState(el, widget.properties);
+    return el;
+  }
+
+  // enabled == false: приглушённо-серый вид и pointer-events даёт CSS-класс
+  // .disabled (его вешает applyWidgetBox), а здесь выключается клавиатура:
+  // нативный disabled у форм-элементов — включая содержимое контейнеров,
+  // у которых выключили их самих (к этому моменту дети уже в DOM-поддереве).
+  function applyEnabledState(el, props) {
+    if (!props || props.enabled !== false) return;
+    if (typeof el.matches === 'function' && el.matches('button, input, textarea, select')) {
+      el.disabled = true;
+    }
+    const controls = el.querySelectorAll ? el.querySelectorAll('button, input, textarea, select') : [];
+    for (const control of controls) control.disabled = true;
+    el.setAttribute('aria-disabled', 'true');
+    if (el.tagName === 'A') el.tabIndex = -1;
+  }
+
+  function renderWidgetElement(widget, parentId = 0, inheritedColors = {}) {
     if (widget.type === 'gui.Canvas' && widget.canvas) {
       return renderCanvasWidget(widget);
     }
@@ -1418,6 +1439,7 @@
     el.style.width = width + 'px';
     el.style.height = height + 'px';
     if (props.visible === false) el.style.display = 'none';
+    if (props.enabled === false) el.classList.add('disabled');
   }
 
   function applyWidgetColors(el, props, inheritedColors) {

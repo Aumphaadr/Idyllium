@@ -289,8 +289,12 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     propertySpec('width', INT),
     propertySpec('height', INT),
   ];
-  const visible = [
-    propertySpec('visible', BOOL),
+  // Базовое состояние виджета: видимость и доступность.
+  const widgetState = [
+    propertySpec('visible', BOOL, false,
+      'Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.'),
+    propertySpec('enabled', BOOL, false,
+      'Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.'),
   ];
   const styleable = [
     propertySpec('style', STRING, false,
@@ -352,7 +356,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       documentation: 'Где выполняется программа: "cli", "web" или "vscode".',
     }),
     functionSpec('version', [], STRING, {
-      documentation: 'Версия Idyllium, например "1.2.8".',
+      documentation: 'Версия Idyllium, например "1.2.9".',
     }),
   ]));
 
@@ -919,14 +923,14 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ]),
     typeSpec('Widget', [
       ...positioned,
-      ...visible,
+      ...widgetState,
       ...styleable,
       ...inheritableColorRoles,
       propertySpec('font', fontsFont),
     ]),
     typeSpec('Canvas', [
       ...positioned,
-      ...visible,
+      ...widgetState,
       propertySpec('framerate_limit', INT),
       callbackPropertySpec('on_init', [callbackSpec([guiCanvas])]),
       callbackPropertySpec('on_key_pressed', [callbackSpec([guiCanvas, guiKeyboardEvent])]),
@@ -948,7 +952,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], guiWidget),
     typeSpec('Label', [
       ...positioned,
-      ...visible,
+      ...widgetState,
       ...styleable,
       propertySpec('href', STRING, false,
         'Адрес ссылки. Непустой href превращает надпись в кликабельную ссылку: подчёркивание, курсор-рука, открытие в новой вкладке.'),
@@ -962,7 +966,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], [], guiWidget),
     typeSpec('Button', [
       ...positioned,
-      ...visible,
+      ...widgetState,
       ...styleable,
       ...colorRoles,
       ...fontSized,
@@ -971,7 +975,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], [], guiWidget),
     typeSpec('Frame', [
       ...positioned,
-      ...visible,
+      ...widgetState,
       ...styleable,
       propertySpec('background_color', COLOR),
       propertySpec('border_color', COLOR),
@@ -983,7 +987,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], guiWidget),
     typeSpec('ImageBox', [
       ...positioned,
-      ...visible,
+      ...widgetState,
       ...styleable,
       propertySpec('resize_mode', STRING),
     ], [
@@ -991,7 +995,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], guiWidget),
     typeSpec('LineEdit', [
       ...positioned,
-      ...visible,
+      ...widgetState,
       ...styleable,
       ...changeable,
       ...colorRoles,
@@ -1002,7 +1006,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], [], guiWidget),
     typeSpec('TextEdit', [
       ...positioned,
-      ...visible,
+      ...widgetState,
       ...styleable,
       ...changeable,
       ...colorRoles,
@@ -1012,7 +1016,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], [], guiWidget),
     typeSpec('ProgressBar', [
       ...positioned,
-      ...visible,
+      ...widgetState,
       ...styleable,
       propertySpec('value', INT),
       propertySpec('min', INT),
@@ -1025,7 +1029,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], [], guiWidget),
     typeSpec('SpinBox', [
       ...positioned,
-      ...visible,
+      ...widgetState,
       ...styleable,
       ...changeable,
       propertySpec('value', INT),
@@ -1036,7 +1040,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], [], guiWidget),
     typeSpec('FloatSpinBox', [
       ...positioned,
-      ...visible,
+      ...widgetState,
       ...styleable,
       ...changeable,
       propertySpec('value', FLOAT),
@@ -1047,7 +1051,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], [], guiWidget),
     typeSpec('Slider', [
       ...positioned,
-      ...visible,
+      ...widgetState,
       ...styleable,
       ...changeable,
       propertySpec('value', INT),
@@ -1057,7 +1061,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], [], guiWidget),
     typeSpec('CheckBox', [
       ...positioned,
-      ...visible,
+      ...widgetState,
       ...styleable,
       ...changeable,
       ...fontSized,
@@ -1066,7 +1070,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], [], guiWidget),
     typeSpec('RadioButton', [
       ...positioned,
-      ...visible,
+      ...widgetState,
       ...styleable,
       ...changeable,
       ...fontSized,
@@ -1076,7 +1080,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], [], guiWidget),
     typeSpec('ComboBox', [
       ...positioned,
-      ...visible,
+      ...widgetState,
       ...styleable,
       ...changeable,
       ...fontSized,
@@ -1088,7 +1092,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], guiWidget),
     typeSpec('TabWidget', [
       ...positioned,
-      ...visible,
+      ...widgetState,
       ...styleable,
       ...changeable,
       ...fontSized,

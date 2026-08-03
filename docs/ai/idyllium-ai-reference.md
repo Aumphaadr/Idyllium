@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: Idyllium 1.2.8.
+Current language target: Idyllium 1.2.9.
 
 This reference describes implemented behavior. Ideas from `BACKLOG.md` and
 exploratory files under `spec/some_*` are not language features until they are
@@ -1125,7 +1125,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, never returns
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.2.8"
+system.version()                    // "1.2.9"
 ```
 
 **Recursion depth.** Idyllium counts call depth itself instead of relying on the
@@ -1892,10 +1892,19 @@ y: int
 width: int
 height: int
 visible: bool
+enabled: bool
 text_color: colors.Color
 background_color: colors.Color
 font: fonts.Font
 ```
+
+`visible = false` hides the widget (it stays in memory, receives no events).
+`enabled = false` keeps the widget on screen but disables it: it is rendered
+dimmed/grayed by the current window theme, ignores mouse and keyboard, and its
+callbacks do not fire. Both default to `true`. Disabling or hiding a container
+(`Frame`, `TabWidget`) applies to all of its children. Neither state is an
+error: "disabled and never re-enabled" is silent, like "hidden and never
+re-shown".
 
 Common color properties:
 
@@ -1985,7 +1994,7 @@ while untouched colours follow the theme. Unknown names fall back to
 `gui.Label`:
 
 ```idyllium
-x, y, width, height, visible
+x, y, width, height, visible, enabled
 text, href, font_size
 text_color, background_color, border_color
 on_click
@@ -1997,7 +2006,7 @@ a new tab). There is no separate LinkLabel widget.
 `gui.Button`:
 
 ```idyllium
-x, y, width, height, visible
+x, y, width, height, visible, enabled
 text, font_size
 text_color, background_color, border_color
 on_click
@@ -2006,7 +2015,7 @@ on_click
 `gui.Frame`:
 
 ```idyllium
-x, y, width, height, visible
+x, y, width, height, visible, enabled
 title, font_size
 background_color, border_color, border_width
 add_child(child)
@@ -2015,7 +2024,7 @@ add_child(child)
 `gui.ImageBox`:
 
 ```idyllium
-x, y, width, height, visible
+x, y, width, height, visible, enabled
 resize_mode
 set_image(image: image.Image)
 ```
@@ -2027,7 +2036,7 @@ Resize modes are `"fit"`, `"fill"`, `"stretch"`, and `"original"`.
 `gui.LineEdit`:
 
 ```idyllium
-x, y, width, height, visible
+x, y, width, height, visible, enabled
 text, placeholder, font_size, echo_mode
 text_color, background_color, border_color
 on_change
@@ -2036,7 +2045,7 @@ on_change
 `gui.TextEdit`:
 
 ```idyllium
-x, y, width, height, visible
+x, y, width, height, visible, enabled
 text, placeholder, font_size
 text_color, background_color, border_color
 on_change
@@ -2045,7 +2054,7 @@ on_change
 `gui.ProgressBar`:
 
 ```idyllium
-x, y, width, height, visible
+x, y, width, height, visible, enabled
 value, min, max, font_size
 text_color, background_color, foreground_color, border_color
 ```
@@ -2056,7 +2065,7 @@ filled part. The old `fill_color` alias has been removed.
 `gui.SpinBox`:
 
 ```idyllium
-x, y, width, height, visible
+x, y, width, height, visible, enabled
 value, min, max, step, font_size
 on_change
 ```
@@ -2064,7 +2073,7 @@ on_change
 `gui.FloatSpinBox`:
 
 ```idyllium
-x, y, width, height, visible
+x, y, width, height, visible, enabled
 value, min, max, step, font_size
 on_change
 ```
@@ -2072,7 +2081,7 @@ on_change
 `gui.Slider`:
 
 ```idyllium
-x, y, width, height, visible
+x, y, width, height, visible, enabled
 value, min, max, step
 on_change
 ```
@@ -2096,7 +2105,7 @@ when the marker is released.
 `gui.CheckBox`:
 
 ```idyllium
-x, y, width, height, visible
+x, y, width, height, visible, enabled
 text, is_checked, font_size
 on_change
 ```
@@ -2104,7 +2113,7 @@ on_change
 `gui.RadioButton`:
 
 ```idyllium
-x, y, width, height, visible
+x, y, width, height, visible, enabled
 text, is_selected, group, font_size
 on_change
 ```
@@ -2116,7 +2125,7 @@ Selecting a radio button deselects the other buttons of the same `group`, and
 `gui.ComboBox`:
 
 ```idyllium
-x, y, width, height, visible
+x, y, width, height, visible, enabled
 selected_index, selected_text, font_size
 add_item(text)
 clear_items()
@@ -2129,7 +2138,7 @@ item through `selected_index`; do not assign to `selected_text`.
 `gui.TabWidget`:
 
 ```idyllium
-x, y, width, height, visible
+x, y, width, height, visible, enabled
 selected_index, selected_title, tab_count, font_size
 add_tab(title, content)
 clear_tabs()
@@ -2269,7 +2278,7 @@ use gui;
 `gui.Canvas` properties:
 
 ```idyllium
-x, y, width, height, visible
+x, y, width, height, visible, enabled
 framerate_limit: int
 on_init
 on_key_pressed
