@@ -352,7 +352,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       documentation: 'Где выполняется программа: "cli", "web" или "vscode".',
     }),
     functionSpec('version', [], STRING, {
-      documentation: 'Версия Idyllium, например "1.2.7".',
+      documentation: 'Версия Idyllium, например "1.2.8".',
     }),
   ]));
 

@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: Idyllium 1.2.7.
+Current language target: Idyllium 1.2.8.
 
 This reference describes implemented behavior. Ideas from `BACKLOG.md` and
 exploratory files under `spec/some_*` are not language features until they are
@@ -1125,7 +1125,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, never returns
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.2.7"
+system.version()                    // "1.2.8"
 ```
 
 **Recursion depth.** Idyllium counts call depth itself instead of relying on the
@@ -2076,6 +2076,16 @@ x, y, width, height, visible
 value, min, max, step
 on_change
 ```
+
+SpinBox, FloatSpinBox and Slider share the defaults `value = 0`, `min = 0`,
+`max = 100`, `step = 1`. Assigning `value` outside `min..max` from code is NOT
+an error and is not clamped: the property keeps the assigned number, while the
+on-screen control shows the nearest bound (Slider) or the raw number (SpinBox) —
+deliberate, because the property setup order is free (`value = 150` followed by
+`max = 300` is legal). USER input, in contrast, always respects the bounds:
+arrows and the mouse wheel stop at the edges, and a number typed into a
+SpinBox is clamped into `min..max` when committed (blur or Enter); empty or
+non-numeric text reverts to the last committed value instead of becoming 0.
 
 Slider `on_change` fires on every marker movement while dragging, not only
 when the marker is released.
