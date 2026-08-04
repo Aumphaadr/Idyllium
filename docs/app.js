@@ -819,9 +819,12 @@
       };
     }
 
-    const memberMatch = /([A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*)\.\s*([A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*)?$/u.exec(prefix);
+    // Перед точкой может стоять любая постфиксная цепочка: имя, `sm[0]`,
+    // `f(...)`, литерал. Разбором занимается языковой сервис — здесь только
+    // распознаём сам контекст «точка + недописанное имя члена».
+    const memberMatch = /[\p{L}\p{N}_\])"']\s*\.\s*([A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*)?$/u.exec(prefix);
     if (memberMatch) {
-      const memberPrefix = memberMatch[2] || '';
+      const memberPrefix = memberMatch[1] || '';
       return {
         kind: 'member',
         prefix: memberPrefix,
@@ -5163,9 +5166,11 @@
   function completionToken() {
     const offset = editor.selectionStart;
     const prefix = editor.value.slice(0, offset);
-    const memberMatch = /([A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*)\.\s*([A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*)?$/u.exec(prefix);
+    // Цепочки перед точкой (`sm[0].`, `f(...).`) разбирает языковой сервис —
+    // здесь распознаём только контекст «точка + недописанное имя члена».
+    const memberMatch = /[\p{L}\p{N}_\])"']\s*\.\s*([A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*)?$/u.exec(prefix);
     if (memberMatch) {
-      const word = memberMatch[2] || '';
+      const word = memberMatch[1] || '';
       return {
         afterDot: true,
         prefix: word,

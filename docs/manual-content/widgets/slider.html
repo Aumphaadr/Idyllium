@@ -127,9 +127,34 @@ main() {
         горизонтальный (<code>"horizontal"</code>), но бывает нужен вертикальный,
         как регулятор громкости на музыкальном пульте: задайте
         <code>orientation = "vertical"</code>, сделайте виджет узким и высоким
-        (например, <code>width = 30; height = 180;</code>) — и минимум окажется
-        внизу, как у настоящего фейдера.
+        — и минимум окажется внизу, как у настоящего фейдера.
       </p>
+
+      <idyl-code-block><script type="text/plain">
+gui.Slider s1;
+s1.orientation = "horizontal"; // обычный: тянем слева направо
+
+gui.Slider s2;
+s2.orientation = "vertical";   // фейдер: минимум внизу, тянем вверх
+s2.width = 30;                 // узкий...
+s2.height = 180;               // ...и высокий
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 200px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 85px; width: 200px;">
+              <input type="range" class="idyl-slider" style="width: 100%;" value="60" min="0" max="100">
+            </div>
+            <div style="position: absolute; left: 260px; top: 15px;">
+              <input type="range" class="idyl-slider" style="writing-mode: vertical-lr; direction: rtl; width: 30px; height: 170px;" value="60" min="0" max="100">
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          🎚️ Оба ползунка стоят на одном значении: <code>"horizontal"</code> тянется вправо, <code>"vertical"</code> — вверх, минимум внизу.
+        </div>
+      </div>
     </div>
 
     <!-- Section 3 -->

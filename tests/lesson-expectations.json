@@ -718,12 +718,12 @@
       ],
       "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
     },
-    "widgets.progressbar.006": {
+    "widgets.progressbar.007": {
       "kind": "compile_error",
       "diagnosticIncludes": [
         "cannot assign 'float' value to 'int' variable"
       ],
-      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции. Ремап 2026-08-04: вставлен сниппет orientation, номер сдвинулся с 006."
     },
     "widgets.radiobutton.005": {
       "kind": "compile_error",
@@ -739,12 +739,12 @@
       ],
       "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
     },
-    "widgets.slider.004": {
+    "widgets.slider.005": {
       "kind": "compile_error",
       "diagnosticIncludes": [
         "cannot assign 'string' value to 'int' variable"
       ],
-      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+      "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции. Ремап 2026-08-04: вставлен сниппет orientation, номер сдвинулся с 004."
     },
     "widgets.spinbox.005": {
       "kind": "compile_error",
