@@ -108,7 +108,7 @@ timer.on_tick = void function() {
 };
 </script></idyl-code-block>
 
-      <p>Кстати, как и у виджетов, у <code>on_tick</code> есть вариант с параметром <code>sender</code> — <code>void function(gui.Timer sender)</code>. Через него таймер может управлять сам собой: например, остановить себя командой <code>sender.stop();</code>.</p>
+      <p>Кстати, у <code>on_tick</code> есть и расширенный вариант — <code>void function(gui.Timer sender)</code>: таймер передаёт в обработчик сам себя, и через параметр <code>sender</code> можно, например, остановить его командой <code>sender.stop();</code>. Такие параметры-отправители есть и у событий виджетов — им посвящён отдельный урок чуть дальше.</p>
     </div>
 
     <!-- Section 4 -->
@@ -166,11 +166,11 @@ main() {
         time_label.text = to_string(seconds);
     };
     
-    start_btn.on_click = void function(gui.Button sender) {
+    start_btn.on_click = void function() {
         timer.start();
     };
-    
-    stop_btn.on_click = void function(gui.Button sender) {
+
+    stop_btn.on_click = void function() {
         timer.stop();
     };
     
@@ -223,7 +223,7 @@ main() {
         timer.stop();  // останавливаем, чтобы не срабатывало снова
     };
 
-    btn.on_click = void function(gui.Button sender) {
+    btn.on_click = void function() {
         btn.text = "Жди 3 секунды...";
         timer.start();
     };

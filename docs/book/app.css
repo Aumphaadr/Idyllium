@@ -1180,45 +1180,6 @@ body.light-theme .lesson-body .task-item.task-star {
   }
 }
 
-.overlap-demo {
-  position: relative;
-  min-height: 112px;
-  margin: 20px 0;
-  padding: 16px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--bg-panel);
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-
-.overlap-label {
-  position: absolute;
-  left: 24px;
-  top: 34px;
-  padding: 5px 8px;
-  border-radius: 8px;
-  color: var(--text-main);
-  background: color-mix(in srgb, var(--bg-panel-2) 74%, transparent);
-  white-space: nowrap;
-}
-
-.overlap-button {
-  position: absolute;
-  left: 205px;
-  top: 28px;
-  width: 150px;
-  height: 36px;
-  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
-  border-radius: 8px;
-  color: white;
-  background: linear-gradient(180deg, #2f8df2, #1f6ed0);
-  box-shadow: var(--shadow);
-  cursor: default;
-  font-family: var(--font-sans);
-  font-weight: 800;
-}
-
 .docs-modal-overlay {
   position: fixed;
   inset: 0;
