@@ -8,14 +8,6 @@
     .interactive-demo .coord-note {
       margin-top: 1em;
     }
-    .overlap-demo {
-      position: relative;
-      background: #2a2a3e;
-      border-radius: 8px;
-      padding: 16px;
-      min-height: 150px;
-      margin: 1em 0;
-    }
 </style>
 
 <div class="docs-section">
@@ -302,9 +294,16 @@ main() {
 }
 </script></idyl-code-block>
 
-      <div class="overlap-demo">
-        <div class="overlap-label">Длинный текст лейбла тянется вправо</div>
-        <button class="overlap-button">Кнопка</button>
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 110px; position: relative;">
+            <div style="position: absolute; left: 24px; top: 34px; color: #cdd6f4; white-space: nowrap;">Длинный текст лейбла тянется вправо</div>
+            <button class="idyl-button" style="position: absolute; left: 205px; top: 28px; width: 150px; height: 36px;">Кнопка</button>
+          </div>
+        </div>
+        <div class="coord-note">
+          🔍 Кнопка добавлена позже — и легла поверх лейбла: длинный текст уходит под неё.
+        </div>
       </div>
 
       <p>В этом примере кнопка частично закрывает лейбл, потому что была добавлена позже. Порядок добавления потомков (<code>add_child</code>) определяет, кто будет выше:</p>

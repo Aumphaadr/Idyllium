@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-04T08:39:47.787Z",
+  "generatedAt": "2026-08-04T16:25:33.895Z",
   "sourceRoot": "packages/docs",
   "sections": [
     {
@@ -518,6 +518,16 @@
           "hasTasks": false
         },
         {
+          "id": "timer",
+          "title": "Объект Timer",
+          "subtitle": "Выполнение кода через равные промежутки времени",
+          "file": "content/widgets/timer.html",
+          "sourceFile": "docs/manual-content/widgets/timer.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
           "id": "audio",
           "title": "Работа со звуками",
           "subtitle": "audio.Sound, audio.Music и первые звуки в GUI-приложении",
@@ -553,16 +563,6 @@
           "subtitle": "Как узнать, какой виджет вызвал обработчик",
           "file": "content/widgets/sender.html",
           "sourceFile": "widgets/013_sender.html",
-          "status": "ready",
-          "reviewFlags": [],
-          "hasTasks": false
-        },
-        {
-          "id": "timer",
-          "title": "Объект Timer",
-          "subtitle": "Выполнение кода через равные промежутки времени",
-          "file": "content/widgets/timer.html",
-          "sourceFile": "widgets/014_timer.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false

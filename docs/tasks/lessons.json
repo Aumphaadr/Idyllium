@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-04T08:39:47.787Z",
+  "generatedAt": "2026-08-04T16:25:33.895Z",
   "sourceRoot": "docs/manual-content/tasks",
   "sections": [
     {
@@ -518,6 +518,16 @@
           "hasTasks": false
         },
         {
+          "id": "timer",
+          "title": "Объект Timer",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/timer.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
           "id": "audio",
           "title": "Работа со звуками",
           "subtitle": "Задания готовятся",
@@ -552,16 +562,6 @@
           "title": "Отправители",
           "subtitle": "Задания готовятся",
           "file": "content/widgets/sender.html",
-          "sourceFile": "",
-          "status": "planned",
-          "reviewFlags": [],
-          "hasTasks": false
-        },
-        {
-          "id": "timer",
-          "title": "Объект Timer",
-          "subtitle": "Задания готовятся",
-          "file": "content/widgets/timer.html",
           "sourceFile": "",
           "status": "planned",
           "reviewFlags": [],

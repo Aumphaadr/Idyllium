@@ -237,6 +237,19 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     reviewFlags: [],
   },
   {
+    sectionId: 'widgets',
+    // Таймер пораньше (владелец, 2026-08-04): сразу после видимости и перед
+    // звуками, а не в самом конце раздела. Запись обрабатывается ПОСЛЕ
+    // audio/tabwidget, поэтому вставка «после visibility» встаёт перед audio.
+    afterLessonId: 'visibility',
+    id: 'timer',
+    title: 'Объект Timer',
+    subtitle: 'Выполнение кода через равные промежутки времени',
+    sourceFile: 'docs/manual-content/widgets/timer.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
     sectionId: 'oop',
     // «Сделай свою кнопку»: события в конце ООП, когда пройдены классы,
     // методы, конструкторы и наследование; перед каталогом ошибок.
