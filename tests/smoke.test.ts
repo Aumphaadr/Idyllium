@@ -7449,6 +7449,24 @@ test('completions resolve postfix chains: array cells, call results, literals', 
   const plain = complete('main() {\n    string s = "ab";\n    s.');
   assert(has(plain, 'split'), 'plain string variable must keep member completions');
 
+  // Курсор посреди файла: после точки есть ещё код — цепочка всё равно видна.
+  const completeAt = (source: string, marker: string) => {
+    const project = new IdylliumProject({ entryFile: 'main.idyl', files: { 'main.idyl': source } });
+    return project.completions({ file: 'main.idyl', offset: source.indexOf(marker) + marker.length });
+  };
+  const midFile = completeAt('main() {\n    array<string, 3> sm;\n    sm[0].\n    int x = 1;\n}\n', 'sm[0].');
+  assert(has(midFile, 'to_upper'), 'chain completions must work mid-file');
+
+  // Недописанное имя члена после точки не сбрасывает контекст цепочки.
+  const partial = completeAt('main() {\n    array<string, 3> sm;\n    sm[0].le\n    int x = 1;\n}\n', 'sm[0].le');
+  assert(has(partial, 'length'), 'partial member word must keep chain completions');
+
+  // Точка внутри строки или комментария не открывает члены.
+  const inString = completeAt('main() {\n    string s = "file.\n}\n', '"file.');
+  assert(inString.length === 0, 'dot inside a string literal must not complete members');
+  const inComment = completeAt('main() {\n    // sm[0].\n    int x = 1;\n}\n', 'sm[0].');
+  assert(inComment.length === 0, 'dot inside a comment must not complete members');
+
   // Ховер по члену цепочки.
   const hoverSource = 'main() {\n    array<string, 3> sm;\n    int n = sm[0].length;\n}\n';
   const hoverProject = new IdylliumProject({ entryFile: 'main.idyl', files: { 'main.idyl': hoverSource } });

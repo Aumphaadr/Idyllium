@@ -76,7 +76,39 @@ pb.height = 30;  // высота 30 пикселей
 </script></idyl-code-block>
 
       <p>Эти свойства есть у <strong>каждого</strong> виджета — от кнопки до выпадающего списка.</p>
-      <p>А своё, особенное, у полоски — <code>orientation</code>: по умолчанию она горизонтальная (<code>"horizontal"</code>), но напишите <code>pb.orientation = "vertical";</code>, поменяйте местами ширину и высоту — и получится вертикальная шкала, заполняющаяся снизу вверх. Так рисуют полоски здоровья по бокам экрана в файтингах.</p>
+      <p>А своё, особенное, у полоски — <code>orientation</code>: по умолчанию она горизонтальная (<code>"horizontal"</code>), но бывает и вертикальная, заполняющаяся снизу вверх — как столбики эквалайзера в музыкальном плеере или шкала опыта рядом с героем. Поменяйте местами ширину и высоту: вертикальной полоске нужна маленькая <code>width</code> и большая <code>height</code>.</p>
+
+      <idyl-code-block><script type="text/plain">
+gui.ProgressBar pb1;
+pb1.orientation = "horizontal"; // обычная: заполняется слева направо
+
+gui.ProgressBar pb2;
+pb2.orientation = "vertical";   // столбик: заполняется снизу вверх
+pb2.width = 30;                 // узкая...
+pb2.height = 120;               // ...и высокая
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 160px; position: relative;">
+            <div style="position: absolute; left: 20px; top: 65px; width: 180px;">
+              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
+                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 65%; border-radius: 4px;"></div>
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">65%</div>
+              </div>
+            </div>
+            <div style="position: absolute; left: 240px; top: 20px; height: 120px; width: 30px;">
+              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 100%; position: relative;">
+                <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 65%; background: linear-gradient(0deg, #89b4fa 0%, #74c7ec 100%); border-radius: 4px;"></div>
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #cdd6f4;">65%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="coord-note">
+          📊 Одно и то же значение, две ориентации: <code>"horizontal"</code> растёт слева направо, <code>"vertical"</code> — снизу вверх.
+        </div>
+      </div>
     </div>
 
     <div class="docs-section">

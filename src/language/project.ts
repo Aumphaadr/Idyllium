@@ -145,8 +145,10 @@ export class IdylliumProject {
     const argumentCompletions = this.argumentNameCompletions(index, source, request.offset);
     if (argumentCompletions.length > 0) return argumentCompletions;
 
-    const dotMatch = /\.\s*$/u.exec(prefix);
+    // Точка + необязательное недописанное имя члена: `sm[0].`, `sm[0].le`.
+    const dotMatch = /\.\s*(?:[\p{L}_][\p{L}\p{N}_]*)?$/u.exec(prefix);
     if (dotMatch) {
+      if (isInsideStringOrComment(source, dotMatch.index)) return [];
       const segments = postfixChainBeforeDot(prefix, dotMatch.index);
       if (!segments) return [];
       if (segments.length === 1 && segments[0].kind === 'name') {
@@ -1464,6 +1466,44 @@ function memberContext(source: string, wordStart: number): { readonly segments: 
 
   const segments = postfixChainBeforeDot(source, dot);
   return segments ? { segments } : null;
+}
+
+/** Находится ли позиция внутри строкового/символьного литерала или комментария.
+ *  Нужен, чтобы точка в `"file.` или `// obj.` не открывала автодополнение. */
+function isInsideStringOrComment(source: string, offset: number): boolean {
+  let inString: string | null = null;
+  let inLineComment = false;
+  let inBlockComment = false;
+
+  for (let i = 0; i < offset; i++) {
+    const char = source[i];
+    if (inLineComment) {
+      if (char === '\n') inLineComment = false;
+      continue;
+    }
+    if (inBlockComment) {
+      if (char === '*' && source[i + 1] === '/') {
+        inBlockComment = false;
+        i++;
+      }
+      continue;
+    }
+    if (inString) {
+      if (char === '\\') i++;
+      else if (char === inString || char === '\n') inString = null;
+      continue;
+    }
+    if (char === '"' || char === "'") inString = char;
+    else if (char === '/' && source[i + 1] === '/') {
+      inLineComment = true;
+      i++;
+    } else if (char === '/' && source[i + 1] === '*') {
+      inBlockComment = true;
+      i++;
+    }
+  }
+
+  return inString !== null || inLineComment || inBlockComment;
 }
 
 type ChainSegment =
