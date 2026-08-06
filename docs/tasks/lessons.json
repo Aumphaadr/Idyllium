@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-04T16:25:33.895Z",
+  "generatedAt": "2026-08-06T20:21:22.435Z",
   "sourceRoot": "docs/manual-content/tasks",
   "sections": [
     {
@@ -500,82 +500,82 @@
         {
           "id": "combobox",
           "title": "Виджет ComboBox",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Виджет ComboBox»",
           "file": "content/widgets/combobox.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/combobox.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "visibility",
           "title": "Видимость виджетов",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Видимость виджетов»",
           "file": "content/widgets/visibility.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/visibility.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "timer",
           "title": "Объект Timer",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Объект Timer»",
           "file": "content/widgets/timer.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/timer.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "audio",
           "title": "Работа со звуками",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Работа со звуками»",
           "file": "content/widgets/audio.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/audio.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "tabwidget",
           "title": "Вкладки",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Вкладки»",
           "file": "content/widgets/tabwidget.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/tabwidget.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "arrays",
           "title": "Массивы виджетов",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Массивы виджетов»",
           "file": "content/widgets/arrays.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/arrays.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "sender",
           "title": "Отправители",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Отправители»",
           "file": "content/widgets/sender.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/sender.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "modal",
           "title": "Модальные окна",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Модальные окна»",
           "file": "content/widgets/modal.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/modal.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "errors",
@@ -608,122 +608,122 @@
         {
           "id": "classes",
           "title": "Создание класса",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Создание класса»",
           "file": "content/oop/classes.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/oop/classes.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "fields-methods",
           "title": "Свойства и методы",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Свойства и методы»",
           "file": "content/oop/fields-methods.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/oop/fields-methods.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "this",
           "title": "Идентификатор this",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Идентификатор this»",
           "file": "content/oop/this.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/oop/this.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "modules",
           "title": "Разбиение проекта по файлам",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Разбиение проекта по файлам»",
           "file": "content/oop/modules.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/oop/modules.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "arrays",
           "title": "Массивы объектов",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Массивы объектов»",
           "file": "content/oop/arrays.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/oop/arrays.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "constructor",
           "title": "Конструктор",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Конструктор»",
           "file": "content/oop/constructor.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/oop/constructor.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "composition",
           "title": "Композиция",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Композиция»",
           "file": "content/oop/composition.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/oop/composition.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "inheritance",
           "title": "Наследование",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Наследование»",
           "file": "content/oop/inheritance.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/oop/inheritance.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "polymorphism",
           "title": "Полиморфизм",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Полиморфизм»",
           "file": "content/oop/polymorphism.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/oop/polymorphism.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "encapsulation",
           "title": "Инкапсуляция",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Инкапсуляция»",
           "file": "content/oop/encapsulation.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/oop/encapsulation.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "static",
           "title": "Статические методы",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Статические методы»",
           "file": "content/oop/static.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/oop/static.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "events",
           "title": "Свои события",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Свои события»",
           "file": "content/oop/events.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/oop/events.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "errors",
@@ -746,192 +746,192 @@
         {
           "id": "intro",
           "title": "Первый Canvas",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Первый Canvas»",
           "file": "content/canvas/intro.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/canvas/intro.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "drawable",
           "title": "Drawable-объекты",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Drawable-объекты»",
           "file": "content/canvas/drawable.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/canvas/drawable.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "update",
           "title": "Однократные и повторяющиеся действия",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Однократные и повторяющиеся действия»",
           "file": "content/canvas/update.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/canvas/update.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "keyboard",
           "title": "События клавиатуры",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «События клавиатуры»",
           "file": "content/canvas/keyboard.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/canvas/keyboard.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "pressed-keys",
           "title": "Плавное движение",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Плавное движение»",
           "file": "content/canvas/pressed-keys.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/canvas/pressed-keys.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "mouse-buttons",
           "title": "Кнопки мыши",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Кнопки мыши»",
           "file": "content/canvas/mouse-buttons.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/canvas/mouse-buttons.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "mouse-motion",
           "title": "Движение мыши и колесо",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Движение мыши и колесо»",
           "file": "content/canvas/mouse-motion.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/canvas/mouse-motion.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "modules",
           "title": "Разделение проекта на файлы",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Разделение проекта на файлы»",
           "file": "content/canvas/modules.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/canvas/modules.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "text",
           "title": "Шрифт и текст",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Шрифт и текст»",
           "file": "content/canvas/text.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/canvas/text.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "sprites",
           "title": "Картинки и спрайты",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Картинки и спрайты»",
           "file": "content/canvas/sprites.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/canvas/sprites.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "object-arrays",
           "title": "Массивы объектов",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Массивы объектов»",
           "file": "content/canvas/object-arrays.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/canvas/object-arrays.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "origin",
           "title": "Точка отсчёта и вращение",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Точка отсчёта и вращение»",
           "file": "content/canvas/origin.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/canvas/origin.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "temporary-objects",
           "title": "Временные объекты",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Временные объекты»",
           "file": "content/canvas/temporary-objects.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/canvas/temporary-objects.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "audio",
           "title": "Звуки и музыка",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Звуки и музыка»",
           "file": "content/canvas/audio.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/canvas/audio.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "rectangle-hit-test",
           "title": "Точка в прямоугольной области",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Точка в прямоугольной области»",
           "file": "content/canvas/rectangle-hit-test.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/canvas/rectangle-hit-test.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "circle-hit-test",
           "title": "Точка в круглой области",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Точка в круглой области»",
           "file": "content/canvas/circle-hit-test.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/canvas/circle-hit-test.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "circle-collisions",
           "title": "Круглые коллизии",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Круглые коллизии»",
           "file": "content/canvas/circle-collisions.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/canvas/circle-collisions.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "rectangle-collisions",
           "title": "Прямоугольные коллизии",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Прямоугольные коллизии»",
           "file": "content/canvas/rectangle-collisions.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/canvas/rectangle-collisions.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "geometry-methods",
           "title": "Готовые геометрические проверки",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Готовые геометрические проверки»",
           "file": "content/canvas/geometry-methods.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/canvas/geometry-methods.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         }
       ]
     },

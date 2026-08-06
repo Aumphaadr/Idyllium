@@ -9,6 +9,12 @@
     Для коротких эффектов всё ещё используем <code>audio.Sound</code>, а для
     длинной фоновой музыки — <code>audio.Music</code>.
   </p>
+  <p class="coord-note">
+    Файлы урока: <a href="assets/click.wav" download>скачать click.wav</a> и
+    <a href="assets/theme.mp3" download>скачать theme.mp3</a> — положите их
+    рядом с программой. Ещё несколько треков и звуков лежат на
+    <a href="../handouts/" target="_blank" rel="noopener">странице раздаточных материалов</a>.
+  </p>
 
   <idyl-code-block><script type="text/plain">
 use audio;
@@ -173,7 +179,10 @@ main() {
   <p>
     У <code>audio.Music</code> есть событие <code>on_finished</code>. Оно
     срабатывает, когда музыка сама дошла до конца. Это удобно для заставок,
-    переходов между треками и простых плейлистов.
+    переходов между треками и простых плейлистов. Роль вступления сыграет трек
+    «Rising» со <a href="../handouts/" target="_blank" rel="noopener">страницы
+    раздаточных материалов</a> — нарастающий эмбиент, который сам просится в
+    заставку; а темой пусть будет знакомый <code>theme.mp3</code>:
   </p>
 
   <idyl-code-block><script type="text/plain">
@@ -184,7 +193,7 @@ audio.Music intro;
 audio.Music theme;
 
 main() {
-    intro.load_from_file("intro.mp3");
+    intro.load_from_file("Rising.mp3");
     intro.volume = 0.2;
 
     theme.load_from_file("theme.mp3");

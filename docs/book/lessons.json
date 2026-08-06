@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-04T16:25:33.895Z",
+  "generatedAt": "2026-08-06T20:21:22.435Z",
   "sourceRoot": "packages/docs",
   "sections": [
     {
@@ -505,7 +505,7 @@
           "sourceFile": "widgets/010_combobox.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "visibility",
@@ -515,7 +515,7 @@
           "sourceFile": "widgets/011_visibility.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "timer",
@@ -525,7 +525,7 @@
           "sourceFile": "docs/manual-content/widgets/timer.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "audio",
@@ -535,7 +535,7 @@
           "sourceFile": "docs/manual-content/widgets/audio.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "tabwidget",
@@ -545,7 +545,7 @@
           "sourceFile": "docs/manual-content/widgets/tabwidget.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "arrays",
@@ -555,7 +555,7 @@
           "sourceFile": "widgets/012_arrays.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "sender",
@@ -565,7 +565,7 @@
           "sourceFile": "widgets/013_sender.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "modal",
@@ -575,7 +575,7 @@
           "sourceFile": "widgets/015_modal.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "errors",
@@ -613,7 +613,7 @@
           "sourceFile": "oop/001_classes.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "fields-methods",
@@ -623,7 +623,7 @@
           "sourceFile": "oop/002_fields_methods.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "this",
@@ -633,7 +633,7 @@
           "sourceFile": "oop/003_this.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "modules",
@@ -643,7 +643,7 @@
           "sourceFile": "oop/004_modules.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "arrays",
@@ -653,7 +653,7 @@
           "sourceFile": "oop/005_arrays.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "constructor",
@@ -663,7 +663,7 @@
           "sourceFile": "oop/006_constructor.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "composition",
@@ -673,7 +673,7 @@
           "sourceFile": "oop/007_composition.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "inheritance",
@@ -683,7 +683,7 @@
           "sourceFile": "oop/008_inheritance.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "polymorphism",
@@ -693,7 +693,7 @@
           "sourceFile": "oop/009_polymorphism.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "encapsulation",
@@ -703,7 +703,7 @@
           "sourceFile": "oop/010_encapsulation.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "static",
@@ -713,7 +713,7 @@
           "sourceFile": "oop/011_static.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "events",
@@ -723,7 +723,7 @@
           "sourceFile": "docs/manual-content/oop/events.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "errors",
@@ -751,7 +751,7 @@
           "sourceFile": "docs/manual-content/canvas/intro.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "drawable",
@@ -761,7 +761,7 @@
           "sourceFile": "docs/manual-content/canvas/drawable.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "update",
@@ -771,7 +771,7 @@
           "sourceFile": "docs/manual-content/canvas/update.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "keyboard",
@@ -781,7 +781,7 @@
           "sourceFile": "docs/manual-content/canvas/keyboard.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "pressed-keys",
@@ -791,7 +791,7 @@
           "sourceFile": "docs/manual-content/canvas/pressed-keys.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "mouse-buttons",
@@ -801,7 +801,7 @@
           "sourceFile": "docs/manual-content/canvas/mouse-buttons.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "mouse-motion",
@@ -811,7 +811,7 @@
           "sourceFile": "docs/manual-content/canvas/mouse-motion.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "modules",
@@ -821,7 +821,7 @@
           "sourceFile": "docs/manual-content/canvas/modules.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "text",
@@ -831,7 +831,7 @@
           "sourceFile": "docs/manual-content/canvas/text.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "sprites",
@@ -841,7 +841,7 @@
           "sourceFile": "docs/manual-content/canvas/sprites.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "object-arrays",
@@ -851,7 +851,7 @@
           "sourceFile": "docs/manual-content/canvas/object-arrays.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "origin",
@@ -861,7 +861,7 @@
           "sourceFile": "docs/manual-content/canvas/origin.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "temporary-objects",
@@ -871,7 +871,7 @@
           "sourceFile": "docs/manual-content/canvas/temporary-objects.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "audio",
@@ -881,7 +881,7 @@
           "sourceFile": "docs/manual-content/canvas/audio.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "rectangle-hit-test",
@@ -891,7 +891,7 @@
           "sourceFile": "docs/manual-content/canvas/rectangle-hit-test.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "circle-hit-test",
@@ -901,7 +901,7 @@
           "sourceFile": "docs/manual-content/canvas/circle-hit-test.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "circle-collisions",
@@ -911,7 +911,7 @@
           "sourceFile": "docs/manual-content/canvas/circle-collisions.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "rectangle-collisions",
@@ -921,7 +921,7 @@
           "sourceFile": "docs/manual-content/canvas/rectangle-collisions.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "geometry-methods",
@@ -931,7 +931,7 @@
           "sourceFile": "docs/manual-content/canvas/geometry-methods.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         }
       ]
     },
