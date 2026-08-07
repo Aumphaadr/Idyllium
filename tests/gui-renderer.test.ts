@@ -103,7 +103,9 @@ function createFakeCanvasContext(): any {
     rotateCalls: [] as number[],
     scaleCalls: [] as number[][],
     translateCalls: [] as number[][],
+    lineToCalls: 0,
     beginPath() {},
+    closePath() {},
     arc(...args: number[]) { this.arcCalls.push(args); },
     clearRect() {},
     drawImage(...args: unknown[]) {
@@ -116,7 +118,7 @@ function createFakeCanvasContext(): any {
       this.fillTextCalls++;
       this.fillTextArguments.push(args);
     },
-    lineTo() {},
+    lineTo() { this.lineToCalls++; },
     moveTo() {},
     restore() {},
     rotate(angle: number) { this.rotateCalls.push(angle); },
@@ -1111,6 +1113,40 @@ test('gui renderer retries a pending music seek after metadata loads', () => {
   });
   assertNumberEquals(music.currentTime, 12.5, 'repeated seek position');
   assertNumberEquals(music.playCount, 1, 'seek must not start another playback');
+});
+
+test('gui renderer draws turtle.Path polygons on canvas', () => {
+  const harness = createRendererHarness();
+
+  harness.sendSnapshot({
+    generation: 1,
+    audio: [],
+    windows: [],
+    canvases: [{
+      id: 7,
+      properties: { width: 300, height: 300 },
+      commands: [
+        { kind: 'clear', color: '#ffffff' },
+        {
+          kind: 'draw',
+          object: {
+            type: 'turtle.Path',
+            properties: {
+              points: [150, 150, 250, 150, 200, 60],
+              fill_color: '#ff0000',
+              border_color: '#ffffff',
+              border_width: 1,
+            },
+          },
+        },
+      ],
+    }],
+    modals: [],
+  });
+
+  assertNumberEquals(harness.canvasContexts.length, 1, 'canvas render count');
+  // Треугольник: moveTo + два lineTo, затем closePath/fill — падать не должно.
+  assertNumberEquals(harness.canvasContexts[0].lineToCalls, 2, 'turtle.Path lineTo count');
 });
 
 async function main(): Promise<void> {

@@ -803,6 +803,80 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ]),
   ]));
 
+  registry.registerModule(moduleSpec('turtle', [
+    functionSpec('setup', [
+      { name: 'width', type: INT },
+      { name: 'height', type: INT },
+    ], VOID, {
+      documentation: 'Задаёт размер черепашьего поля в пикселях (по умолчанию 600×600).',
+    }),
+    functionSpec('title', [{ name: 'text', type: STRING }], VOID, {
+      documentation: 'Заголовок окна черепашьего поля.',
+    }),
+    functionSpec('bg_color', [{ name: 'color', type: COLOR }], VOID, {
+      documentation: 'Цвет фона поля (по умолчанию белый).',
+    }),
+    functionSpec('clear', [], VOID, {
+      documentation: 'Стирает все следы на поле. Черепахи остаются на своих местах.',
+    }),
+    functionSpec('save_svg', [{ name: 'path', type: STRING }], VOID, {
+      documentation: 'Сохраняет рисунок в SVG-файл. Работает и без окна — например, в консольной программе.',
+    }),
+  ], [], [
+    typeSpec('Turtle', [
+      propertySpec('x', FLOAT, true, 'Где я по горизонтали. Центр поля — 0, вправо — больше.'),
+      propertySpec('y', FLOAT, true, 'Где я по вертикали. Центр поля — 0, вверх — больше.'),
+      propertySpec('heading', FLOAT, true, 'Куда я смотрю, в градусах: 0 — вправо, 90 — вверх.'),
+      propertySpec('is_down', BOOL, true, 'Опущено ли перо. Меняется методами pen_up() и pen_down().'),
+      propertySpec('pen_color', COLOR, false, 'Цвет пера — им рисуются линии и подписи.'),
+      propertySpec('pen_width', INT, false, 'Толщина пера в пикселях, от 1 до 100 (по умолчанию 2).'),
+      propertySpec('fill_color', COLOR, false, 'Цвет заливки для begin_fill()/end_fill().'),
+      propertySpec('speed', INT, false, 'Скорость черепахи: 1 (черепашья) … 10 (спринт), 0 — мгновенно. По умолчанию 6.'),
+      propertySpec('visible', BOOL, false, 'Видна ли сама черепашка. След остаётся в любом случае.'),
+    ], [
+      functionSpec('forward', [{ name: 'distance', type: FLOAT }], VOID, {
+        documentation: 'Ползти вперёд на distance пикселей. С опущенным пером — рисуя линию.',
+      }),
+      functionSpec('back', [{ name: 'distance', type: FLOAT }], VOID, {
+        documentation: 'Ползти назад, не поворачиваясь.',
+      }),
+      functionSpec('left', [{ name: 'angle', type: FLOAT }], VOID, {
+        documentation: 'Повернуться налево (против часовой стрелки) на angle градусов.',
+      }),
+      functionSpec('right', [{ name: 'angle', type: FLOAT }], VOID, {
+        documentation: 'Повернуться направо (по часовой стрелке) на angle градусов.',
+      }),
+      functionSpec('goto', [
+        { name: 'x', type: FLOAT },
+        { name: 'y', type: FLOAT },
+      ], VOID, {
+        documentation: 'Переползти в точку (x, y). С опущенным пером — рисуя линию.',
+      }),
+      functionSpec('home', [], VOID, {
+        documentation: 'Вернуться в центр поля и посмотреть вправо.',
+      }),
+      functionSpec('pen_up', [], VOID, {
+        documentation: 'Поднять перо: движения перестают оставлять след.',
+      }),
+      functionSpec('pen_down', [], VOID, {
+        documentation: 'Опустить перо: движения снова рисуют.',
+      }),
+      functionSpec('dot', [{ name: 'size', type: INT, defaultValue: '8' }], VOID, {
+        minArguments: 0,
+        documentation: 'Поставить круглую кляксу цвета пера диаметром size.',
+      }),
+      functionSpec('write', [{ name: 'text', type: STRING }], VOID, {
+        documentation: 'Подписать текущую точку текстом цвета пера.',
+      }),
+      functionSpec('begin_fill', [], VOID, {
+        documentation: 'Начать запоминать контур. Всё, что черепаха обойдёт до end_fill(), зальётся fill_color.',
+      }),
+      functionSpec('end_fill', [], VOID, {
+        documentation: 'Закончить контур и залить его цветом fill_color.',
+      }),
+    ]),
+  ]));
+
   registry.registerModule(moduleSpec('image', [], [], [
     typeSpec('Image', [
       propertySpec('src', STRING, true),

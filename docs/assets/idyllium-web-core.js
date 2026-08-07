@@ -5874,6 +5874,79 @@ function createDefaultStandardLibrary() {
             functionSpec('stop', [], types_1.VOID),
         ]),
     ]));
+    registry.registerModule(moduleSpec('turtle', [
+        functionSpec('setup', [
+            { name: 'width', type: types_1.INT },
+            { name: 'height', type: types_1.INT },
+        ], types_1.VOID, {
+            documentation: 'Задаёт размер черепашьего поля в пикселях (по умолчанию 600×600).',
+        }),
+        functionSpec('title', [{ name: 'text', type: types_1.STRING }], types_1.VOID, {
+            documentation: 'Заголовок окна черепашьего поля.',
+        }),
+        functionSpec('bg_color', [{ name: 'color', type: types_1.COLOR }], types_1.VOID, {
+            documentation: 'Цвет фона поля (по умолчанию белый).',
+        }),
+        functionSpec('clear', [], types_1.VOID, {
+            documentation: 'Стирает все следы на поле. Черепахи остаются на своих местах.',
+        }),
+        functionSpec('save_svg', [{ name: 'path', type: types_1.STRING }], types_1.VOID, {
+            documentation: 'Сохраняет рисунок в SVG-файл. Работает и без окна — например, в консольной программе.',
+        }),
+    ], [], [
+        typeSpec('Turtle', [
+            propertySpec('x', types_1.FLOAT, true, 'Где я по горизонтали. Центр поля — 0, вправо — больше.'),
+            propertySpec('y', types_1.FLOAT, true, 'Где я по вертикали. Центр поля — 0, вверх — больше.'),
+            propertySpec('heading', types_1.FLOAT, true, 'Куда я смотрю, в градусах: 0 — вправо, 90 — вверх.'),
+            propertySpec('is_down', types_1.BOOL, true, 'Опущено ли перо. Меняется методами pen_up() и pen_down().'),
+            propertySpec('pen_color', types_1.COLOR, false, 'Цвет пера — им рисуются линии и подписи.'),
+            propertySpec('pen_width', types_1.INT, false, 'Толщина пера в пикселях, от 1 до 100 (по умолчанию 2).'),
+            propertySpec('fill_color', types_1.COLOR, false, 'Цвет заливки для begin_fill()/end_fill().'),
+            propertySpec('speed', types_1.INT, false, 'Скорость черепахи: 1 (черепашья) … 10 (спринт), 0 — мгновенно. По умолчанию 6.'),
+            propertySpec('visible', types_1.BOOL, false, 'Видна ли сама черепашка. След остаётся в любом случае.'),
+        ], [
+            functionSpec('forward', [{ name: 'distance', type: types_1.FLOAT }], types_1.VOID, {
+                documentation: 'Ползти вперёд на distance пикселей. С опущенным пером — рисуя линию.',
+            }),
+            functionSpec('back', [{ name: 'distance', type: types_1.FLOAT }], types_1.VOID, {
+                documentation: 'Ползти назад, не поворачиваясь.',
+            }),
+            functionSpec('left', [{ name: 'angle', type: types_1.FLOAT }], types_1.VOID, {
+                documentation: 'Повернуться налево (против часовой стрелки) на angle градусов.',
+            }),
+            functionSpec('right', [{ name: 'angle', type: types_1.FLOAT }], types_1.VOID, {
+                documentation: 'Повернуться направо (по часовой стрелке) на angle градусов.',
+            }),
+            functionSpec('goto', [
+                { name: 'x', type: types_1.FLOAT },
+                { name: 'y', type: types_1.FLOAT },
+            ], types_1.VOID, {
+                documentation: 'Переползти в точку (x, y). С опущенным пером — рисуя линию.',
+            }),
+            functionSpec('home', [], types_1.VOID, {
+                documentation: 'Вернуться в центр поля и посмотреть вправо.',
+            }),
+            functionSpec('pen_up', [], types_1.VOID, {
+                documentation: 'Поднять перо: движения перестают оставлять след.',
+            }),
+            functionSpec('pen_down', [], types_1.VOID, {
+                documentation: 'Опустить перо: движения снова рисуют.',
+            }),
+            functionSpec('dot', [{ name: 'size', type: types_1.INT, defaultValue: '8' }], types_1.VOID, {
+                minArguments: 0,
+                documentation: 'Поставить круглую кляксу цвета пера диаметром size.',
+            }),
+            functionSpec('write', [{ name: 'text', type: types_1.STRING }], types_1.VOID, {
+                documentation: 'Подписать текущую точку текстом цвета пера.',
+            }),
+            functionSpec('begin_fill', [], types_1.VOID, {
+                documentation: 'Начать запоминать контур. Всё, что черепаха обойдёт до end_fill(), зальётся fill_color.',
+            }),
+            functionSpec('end_fill', [], types_1.VOID, {
+                documentation: 'Закончить контур и залить его цветом fill_color.',
+            }),
+        ]),
+    ]));
     registry.registerModule(moduleSpec('image', [], [], [
         typeSpec('Image', [
             propertySpec('src', types_1.STRING, true),
@@ -11716,7 +11789,10 @@ function createRuntime(options = {}) {
         windows: [],
         nextAudioCommandId: 1,
         nextObjectId: 1,
+        turtleField: null,
+        turtlePlatform: String(options.platform ?? defaultRuntimePlatform()),
     };
+    runtimeObjects.stopCheck = (file, line) => throwIfRuntimeStopped(file, line);
     const io = {
         write(text) {
             output += text;
@@ -12501,6 +12577,7 @@ function createRuntime(options = {}) {
             audio: {},
             image: {},
             gui: {},
+            turtle: createTurtleModule(runtimeObjects),
             colors: {
                 RGB: contextFunction((red, green, blue, file, line) => IdylliumColor.RGB(red, green, blue, file, line)),
                 RGBA: contextFunction((red, green, blue, alpha, file, line) => IdylliumColor.RGBA(red, green, blue, alpha, file, line)),
@@ -14073,6 +14150,9 @@ function createPlainRuntimeObject(moduleName, typeName, state) {
     if (moduleName === 'image') {
         initializeImageObject(obj, typeName, state);
     }
+    if (moduleName === 'turtle') {
+        initializeTurtleObject(obj, typeName, state);
+    }
     return obj;
 }
 function initializeGuiObject(obj, typeName, state) {
@@ -14518,6 +14598,370 @@ function fontMimeType(format) {
     if (format === 'woff')
         return 'font/woff';
     return 'font/woff2';
+}
+const TURTLE_FRAME_MS = 25;
+function ensureTurtleField(state) {
+    if (state.turtleField)
+        return state.turtleField;
+    const field = {
+        window: null,
+        canvas: null,
+        turtles: [],
+        entries: [],
+        width: 600,
+        height: 600,
+        bgColor: '#ffffff',
+    };
+    state.turtleField = field;
+    if (state.turtlePlatform !== 'cli') {
+        const window = {
+            __idylliumObjectId: state.nextObjectId++,
+            __idylliumType: 'gui.Window',
+        };
+        state.objects.push(window);
+        initializeGuiObject(window, 'Window', state);
+        window.title = 'Черепашье поле';
+        window.width = field.width;
+        window.height = field.height;
+        window.__shown = true;
+        const canvas = {
+            __idylliumObjectId: state.nextObjectId++,
+            __idylliumType: 'gui.Canvas',
+        };
+        state.objects.push(canvas);
+        initializeGuiObject(canvas, 'Canvas', state);
+        canvas.x = 0;
+        canvas.y = 0;
+        canvas.width = field.width;
+        canvas.height = field.height;
+        canvas.__parent = window;
+        window.__children.push(canvas);
+        field.window = window;
+        field.canvas = canvas;
+    }
+    rebuildTurtleFieldCommands(state);
+    return field;
+}
+function turtleToCanvasX(field, x) {
+    return field.width / 2 + x;
+}
+function turtleToCanvasY(field, y) {
+    return field.height / 2 - y;
+}
+function turtleCss(value) {
+    return value instanceof IdylliumColor ? value.toCss() : '#000000';
+}
+function rebuildTurtleFieldCommands(state) {
+    const field = state.turtleField;
+    if (!field || !field.canvas)
+        return;
+    const commands = canvasCommands(field.canvas);
+    commands.length = 0;
+    commands.push({ kind: 'clear', color: field.bgColor });
+    for (const entry of field.entries) {
+        commands.push({ kind: 'draw', object: turtleEntrySnapshot(entry, field) });
+    }
+    for (const turtle of field.turtles) {
+        if (turtle.visible !== true)
+            continue;
+        commands.push({ kind: 'draw', object: turtleSpriteSnapshot(turtle, field) });
+    }
+}
+function turtleEntrySnapshot(entry, field) {
+    if (entry.kind === 'line') {
+        return {
+            type: 'drawable.Line',
+            properties: {
+                x1: turtleToCanvasX(field, entry.x1),
+                y1: turtleToCanvasY(field, entry.y1),
+                x2: turtleToCanvasX(field, entry.x2),
+                y2: turtleToCanvasY(field, entry.y2),
+                color: entry.color,
+                thickness: entry.width,
+            },
+        };
+    }
+    if (entry.kind === 'dot') {
+        const radius = entry.size / 2;
+        return {
+            type: 'drawable.Circle',
+            properties: {
+                x: turtleToCanvasX(field, entry.x) - radius,
+                y: turtleToCanvasY(field, entry.y) - radius,
+                radius,
+                fill_color: entry.color,
+                border_width: 0,
+            },
+        };
+    }
+    if (entry.kind === 'poly') {
+        const points = [];
+        for (let i = 0; i + 1 < entry.points.length; i += 2) {
+            points.push(turtleToCanvasX(field, entry.points[i]), turtleToCanvasY(field, entry.points[i + 1]));
+        }
+        return { type: 'turtle.Path', properties: { points, fill_color: entry.color } };
+    }
+    return {
+        type: 'drawable.Text',
+        properties: {
+            x: turtleToCanvasX(field, entry.x) + 6,
+            y: turtleToCanvasY(field, entry.y) - 18,
+            text: entry.text,
+            text_color: entry.color,
+            font_size: 14,
+        },
+    };
+}
+function turtleSpriteSnapshot(turtle, field) {
+    const x = Number(turtle.x);
+    const y = Number(turtle.y);
+    const rad = (Number(turtle.heading) * Math.PI) / 180;
+    const size = 12;
+    const corners = [
+        [x + Math.cos(rad) * size, y + Math.sin(rad) * size],
+        [x + Math.cos(rad + 2.5) * size * 0.8, y + Math.sin(rad + 2.5) * size * 0.8],
+        [x + Math.cos(rad - 2.5) * size * 0.8, y + Math.sin(rad - 2.5) * size * 0.8],
+    ];
+    const points = [];
+    for (const [px, py] of corners) {
+        points.push(turtleToCanvasX(field, px), turtleToCanvasY(field, py));
+    }
+    return {
+        type: 'turtle.Path',
+        properties: { points, fill_color: turtleCss(turtle.pen_color), border_color: '#ffffff', border_width: 1 },
+    };
+}
+function turtleAnimationSteps(state, speed, magnitude) {
+    if (state.turtlePlatform === 'cli' || speed <= 0)
+        return 1;
+    const perFrame = speed * speed * 1.4 + 3;
+    return Math.max(1, Math.min(120, Math.ceil(Math.abs(magnitude) / perFrame)));
+}
+async function turtleFrame(state, file, line) {
+    state.stopCheck?.(file, line);
+    await new Promise((resolve) => setTimeout(resolve, TURTLE_FRAME_MS));
+    state.stopCheck?.(file, line);
+}
+async function turtleTravel(state, obj, targetX, targetY, file, line) {
+    const field = ensureTurtleField(state);
+    const startX = Number(obj.x);
+    const startY = Number(obj.y);
+    const distance = Math.hypot(targetX - startX, targetY - startY);
+    const steps = turtleAnimationSteps(state, Number(obj.speed), distance);
+    let entry = null;
+    if (obj.is_down === true && distance > 0) {
+        entry = {
+            kind: 'line',
+            x1: startX,
+            y1: startY,
+            x2: startX,
+            y2: startY,
+            color: turtleCss(obj.pen_color),
+            width: Number(obj.pen_width),
+        };
+        field.entries.push(entry);
+    }
+    for (let step = 1; step <= steps; step++) {
+        const t = step / steps;
+        obj.x = startX + (targetX - startX) * t;
+        obj.y = startY + (targetY - startY) * t;
+        if (entry) {
+            entry.x2 = Number(obj.x);
+            entry.y2 = Number(obj.y);
+        }
+        rebuildTurtleFieldCommands(state);
+        if (step < steps)
+            await turtleFrame(state, file, line);
+    }
+    obj.x = targetX;
+    obj.y = targetY;
+    if (entry) {
+        entry.x2 = targetX;
+        entry.y2 = targetY;
+    }
+    const fill = obj.__turtleFill;
+    if (fill)
+        fill.points.push(targetX, targetY);
+    rebuildTurtleFieldCommands(state);
+}
+function normalizeTurtleHeading(value) {
+    const wrapped = value % 360;
+    return wrapped < 0 ? wrapped + 360 : wrapped;
+}
+async function turtleTurn(state, obj, deltaDeg, file, line) {
+    ensureTurtleField(state);
+    const start = Number(obj.heading);
+    // Повороты анимируем вчетверо бодрее движения: угол «легче» пикселя.
+    const steps = turtleAnimationSteps(state, Number(obj.speed), deltaDeg / 4);
+    for (let step = 1; step <= steps; step++) {
+        obj.heading = normalizeTurtleHeading(start + deltaDeg * (step / steps));
+        rebuildTurtleFieldCommands(state);
+        if (step < steps)
+            await turtleFrame(state, file, line);
+    }
+}
+function initializeTurtleObject(obj, typeName, state) {
+    if (typeName !== 'Turtle')
+        return;
+    const field = ensureTurtleField(state);
+    obj.x = 0;
+    obj.y = 0;
+    obj.heading = 0;
+    obj.is_down = true;
+    obj.__turtleFill = null;
+    defineValidatedRuntimeProperty(obj, 'pen_color', colorBlack(), (value) => value, () => rebuildTurtleFieldCommands(state));
+    defineValidatedRuntimeProperty(obj, 'fill_color', colorBlack(), (value) => value);
+    defineValidatedRuntimeProperty(obj, 'pen_width', 2, (value, file, line) => {
+        const width = Math.trunc(Number(value));
+        if (!Number.isFinite(width) || width < 1 || width > 100) {
+            throw new IdylliumRuntimeError(file, line, `Turtle.pen_width must be between 1 and 100, got ${String(value)}`);
+        }
+        return width;
+    });
+    defineValidatedRuntimeProperty(obj, 'speed', 6, (value, file, line) => {
+        const speed = Math.trunc(Number(value));
+        if (!Number.isFinite(speed) || speed < 0 || speed > 10) {
+            throw new IdylliumRuntimeError(file, line, `Turtle.speed must be between 0 and 10, got ${String(value)}`);
+        }
+        return speed;
+    });
+    defineValidatedRuntimeProperty(obj, 'visible', true, (value) => value === true, () => rebuildTurtleFieldCommands(state));
+    obj.forward = contextFunction(async (distance, file, line) => {
+        const length = Number(distance);
+        const rad = (Number(obj.heading) * Math.PI) / 180;
+        await turtleTravel(state, obj, Number(obj.x) + Math.cos(rad) * length, Number(obj.y) + Math.sin(rad) * length, file, line);
+    });
+    obj.back = contextFunction(async (distance, file, line) => {
+        const length = -Number(distance);
+        const rad = (Number(obj.heading) * Math.PI) / 180;
+        await turtleTravel(state, obj, Number(obj.x) + Math.cos(rad) * length, Number(obj.y) + Math.sin(rad) * length, file, line);
+    });
+    obj.left = contextFunction(async (angle, file, line) => {
+        await turtleTurn(state, obj, Number(angle), file, line);
+    });
+    obj.right = contextFunction(async (angle, file, line) => {
+        await turtleTurn(state, obj, -Number(angle), file, line);
+    });
+    obj.goto = contextFunction(async (x, y, file, line) => {
+        await turtleTravel(state, obj, Number(x), Number(y), file, line);
+    });
+    obj.home = contextFunction(async (file, line) => {
+        await turtleTravel(state, obj, 0, 0, file, line);
+        obj.heading = 0;
+        rebuildTurtleFieldCommands(state);
+    });
+    obj.pen_up = contextFunction((_file, _line) => {
+        obj.is_down = false;
+    });
+    obj.pen_down = contextFunction((_file, _line) => {
+        obj.is_down = true;
+    });
+    obj.dot = contextFunction((size, file, line) => {
+        const diameter = size === undefined ? 8 : Math.trunc(Number(size));
+        if (!Number.isFinite(diameter) || diameter < 1 || diameter > 400) {
+            throw new IdylliumRuntimeError(file, line, `Turtle.dot() size must be between 1 and 400, got ${String(size)}`);
+        }
+        field.entries.push({ kind: 'dot', x: Number(obj.x), y: Number(obj.y), size: diameter, color: turtleCss(obj.pen_color) });
+        rebuildTurtleFieldCommands(state);
+    });
+    obj.write = contextFunction((text, _file, _line) => {
+        field.entries.push({ kind: 'text', x: Number(obj.x), y: Number(obj.y), text: String(text), color: turtleCss(obj.pen_color) });
+        rebuildTurtleFieldCommands(state);
+    });
+    obj.begin_fill = contextFunction((file, line) => {
+        if (obj.__turtleFill) {
+            throw new IdylliumRuntimeError(file, line, 'begin_fill() is already active — call end_fill() first');
+        }
+        obj.__turtleFill = { points: [Number(obj.x), Number(obj.y)], insertIndex: field.entries.length };
+    });
+    obj.end_fill = contextFunction((file, line) => {
+        const fill = obj.__turtleFill;
+        if (!fill) {
+            throw new IdylliumRuntimeError(file, line, 'end_fill() without begin_fill()');
+        }
+        obj.__turtleFill = null;
+        if (fill.points.length >= 6) {
+            // Заливка ложится ПОД свой контур: вставляем её туда, где контур начался.
+            field.entries.splice(fill.insertIndex, 0, { kind: 'poly', points: fill.points, color: turtleCss(obj.fill_color) });
+        }
+        rebuildTurtleFieldCommands(state);
+    });
+    obj.to_string = () => (`turtle.Turtle(x: ${Math.round(Number(obj.x))}, y: ${Math.round(Number(obj.y))}, heading: ${Math.round(Number(obj.heading))})`);
+    field.turtles.push(obj);
+    rebuildTurtleFieldCommands(state);
+}
+function createTurtleModule(state) {
+    return {
+        setup: contextFunction((width, height, file, line) => {
+            const w = Math.trunc(Number(width));
+            const h = Math.trunc(Number(height));
+            if (!Number.isFinite(w) || !Number.isFinite(h) || w < 100 || h < 100 || w > 2000 || h > 2000) {
+                throw new IdylliumRuntimeError(file, line, `turtle.setup() expects sizes between 100 and 2000, got ${String(width)}×${String(height)}`);
+            }
+            const field = ensureTurtleField(state);
+            field.width = w;
+            field.height = h;
+            if (field.window) {
+                field.window.width = w;
+                field.window.height = h;
+            }
+            if (field.canvas) {
+                field.canvas.width = w;
+                field.canvas.height = h;
+            }
+            rebuildTurtleFieldCommands(state);
+        }),
+        title: contextFunction((text, _file, _line) => {
+            const field = ensureTurtleField(state);
+            if (field.window)
+                field.window.title = String(text);
+        }),
+        bg_color: contextFunction((value, file, line) => {
+            const field = ensureTurtleField(state);
+            field.bgColor = colorToCss(value, 'turtle.bg_color() color', file, line);
+            rebuildTurtleFieldCommands(state);
+        }),
+        clear: contextFunction((_file, _line) => {
+            const field = ensureTurtleField(state);
+            field.entries.length = 0;
+            rebuildTurtleFieldCommands(state);
+        }),
+        save_svg: contextFunction((pathValue, file, line) => {
+            const field = ensureTurtleField(state);
+            const resolved = state.fileSystem.resolvePath(String(pathValue), file);
+            state.fileSystem.writeText(resolved, turtleSvg(field));
+        }),
+    };
+}
+function turtleSvg(field) {
+    const fmt = (value) => String(Math.round(value * 100) / 100);
+    const escapeXml = (value) => value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    const parts = [];
+    parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${field.width}" height="${field.height}" viewBox="0 0 ${field.width} ${field.height}">`);
+    parts.push(`<rect width="100%" height="100%" fill="${field.bgColor}"/>`);
+    for (const entry of field.entries) {
+        if (entry.kind === 'line') {
+            parts.push(`<line x1="${fmt(turtleToCanvasX(field, entry.x1))}" y1="${fmt(turtleToCanvasY(field, entry.y1))}" x2="${fmt(turtleToCanvasX(field, entry.x2))}" y2="${fmt(turtleToCanvasY(field, entry.y2))}" stroke="${entry.color}" stroke-width="${entry.width}" stroke-linecap="round"/>`);
+        }
+        else if (entry.kind === 'dot') {
+            parts.push(`<circle cx="${fmt(turtleToCanvasX(field, entry.x))}" cy="${fmt(turtleToCanvasY(field, entry.y))}" r="${fmt(entry.size / 2)}" fill="${entry.color}"/>`);
+        }
+        else if (entry.kind === 'poly') {
+            const points = [];
+            for (let i = 0; i + 1 < entry.points.length; i += 2) {
+                points.push(`${fmt(turtleToCanvasX(field, entry.points[i]))},${fmt(turtleToCanvasY(field, entry.points[i + 1]))}`);
+            }
+            parts.push(`<polygon points="${points.join(' ')}" fill="${entry.color}"/>`);
+        }
+        else {
+            parts.push(`<text x="${fmt(turtleToCanvasX(field, entry.x) + 6)}" y="${fmt(turtleToCanvasY(field, entry.y) - 6)}" fill="${entry.color}" font-size="14" font-family="sans-serif">${escapeXml(entry.text)}</text>`);
+        }
+    }
+    parts.push('</svg>');
+    return `${parts.join('\n')}\n`;
 }
 function initializeImageObject(obj, typeName, state) {
     obj.src = '';

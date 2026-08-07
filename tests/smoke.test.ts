@@ -7519,4 +7519,145 @@ test('unfinished identifiers are not painted as class names by semantic tokens',
   );
 });
 
+test('turtle graphics: display list, math coordinates, fills and guards', async () => {
+  const runTurtle = async (source: string, platform = 'web', fileSystem?: ReturnType<typeof createMemoryRuntimeFileSystem>) => {
+    const compilation = compileIdyllium(source, { file: '/workspace/main.idyl' });
+    assert(compilation.success, compilation.diagnosticsText);
+    const runtime = createRuntime({ platform: platform as 'web' | 'cli', fileSystem });
+    const AsyncFunction = Object.getPrototypeOf(async function idle() {}).constructor;
+    const program = await (new AsyncFunction(compilation.jsCode!))();
+    await program(runtime);
+    return runtime;
+  };
+  const drawsOf = (runtime: ReturnType<typeof createRuntime>) => {
+    const canvas = runtime.getWindows()[0]?.children?.[0]?.canvas;
+    assert(canvas !== undefined, 'expected turtle field canvas');
+    return canvas!.commands.filter((command) => command.kind === 'draw');
+  };
+
+  // Квадрат: окно поля, 4 линии, замыкание в центре, ось Y вверх.
+  const square = await runTurtle(`
+use turtle;
+
+main() {
+    turtle.Turtle t;
+    t.speed = 0;
+    int i = 0;
+    while (i < 4) {
+        t.forward(100);
+        t.left(90);
+        i += 1;
+    }
+}
+`);
+  const windows = square.getWindows();
+  assert(windows.length === 1 && windows[0].properties.title === 'Черепашье поле', 'turtle field window must auto-create');
+  const draws = drawsOf(square);
+  const lines = draws.filter((command) => command.object?.type === 'drawable.Line');
+  assert(lines.length === 4, `expected 4 square lines, got ${lines.length}`);
+  const first = lines[0].object!.properties as Record<string, number>;
+  assert(first.x1 === 300 && first.y1 === 300, 'turtle must start at field center');
+  assert(first.x2 === 400 && first.y2 === 300, 'first leg must go screen-right (east)');
+  const last = lines[3].object!.properties as Record<string, number>;
+  assert(Math.abs(last.x2 - 300) < 0.001 && Math.abs(last.y2 - 300) < 0.001, 'square must close at start');
+  assert(draws.some((command) => command.object?.type === 'turtle.Path'), 'turtle sprite must be drawn');
+
+  // Поднятое перо не оставляет линий; dot и write попадают в список.
+  const penUp = await runTurtle(`
+use turtle;
+
+main() {
+    turtle.Turtle t;
+    t.speed = 0;
+    t.pen_up();
+    t.forward(50);
+    t.dot(10);
+    t.write("тут");
+}
+`);
+  const penUpDraws = drawsOf(penUp);
+  assert(!penUpDraws.some((command) => command.object?.type === 'drawable.Line'), 'pen_up must not draw lines');
+  assert(penUpDraws.some((command) => command.object?.type === 'drawable.Circle'), 'dot must draw a circle');
+  assert(penUpDraws.some((command) => command.object?.type === 'drawable.Text'), 'write must draw text');
+
+  // Заливка ложится под контур и красится fill_color.
+  const filled = await runTurtle(`
+use turtle;
+use colors;
+
+main() {
+    turtle.Turtle t;
+    t.speed = 0;
+    t.fill_color = colors.RED;
+    t.begin_fill();
+    t.forward(100);
+    t.left(120);
+    t.forward(100);
+    t.left(120);
+    t.forward(100);
+    t.end_fill();
+}
+`);
+  const filledDraws = drawsOf(filled);
+  const polyIndex = filledDraws.findIndex((command) => (
+    command.object?.type === 'turtle.Path' && ((command.object.properties as { points?: number[] }).points ?? []).length === 8
+  ));
+  const lineIndex = filledDraws.findIndex((command) => command.object?.type === 'drawable.Line');
+  assert(polyIndex !== -1, 'end_fill must produce a polygon');
+  assert(polyIndex < lineIndex, 'fill polygon must lie under its outline');
+  assert((filledDraws[polyIndex].object!.properties as { fill_color?: string }).fill_color === '#ff0000', 'fill must use fill_color');
+
+  // Сторожа рантайма.
+  for (const [snippet, expected] of [
+    ['t.speed = 99;', 'Turtle.speed must be between 0 and 10, got 99'],
+    ['t.end_fill();', 'end_fill() without begin_fill()'],
+    ['t.pen_width = 0;', 'Turtle.pen_width must be between 1 and 100, got 0'],
+  ] as const) {
+    let message = '';
+    try {
+      await runTurtle(`\nuse turtle;\n\nmain() {\n    turtle.Turtle t;\n    ${snippet}\n}\n`);
+    } catch (error) {
+      message = error instanceof Error ? error.message : String(error);
+    }
+    assert(message.includes(expected), `expected guard '${expected}', got '${message}'`);
+  }
+
+  // CLI: поле headless (окон нет, hasGui false), save_svg пишет честный SVG.
+  const memoryFs = createMemoryRuntimeFileSystem({});
+  const headless = await runTurtle(`
+use turtle;
+
+main() {
+    turtle.Turtle t;
+    int i = 0;
+    while (i < 4) {
+        t.forward(100);
+        t.left(90);
+        i += 1;
+    }
+    turtle.save_svg("узор.svg");
+}
+`, 'cli', memoryFs);
+  assert(headless.getWindows().length === 0, 'cli turtle must be headless');
+  assert(headless.hasGui() === false, 'cli turtle must not report gui');
+  const written = memoryFs.writtenFilesSnapshot?.() ?? {};
+  const svgEntry = Object.entries(written).find(([path]) => path.endsWith('узор.svg'));
+  assert(svgEntry !== undefined, 'save_svg must write the file');
+  const svg = String(svgEntry![1].content);
+  assert((svg.match(/<line /g) ?? []).length === 4, 'svg must contain 4 lines');
+  assert(svg.includes('width="600"') && svg.includes('<rect'), 'svg must carry field size and background');
+
+  // Анимация не дробит след: forward со скоростью по умолчанию — одна линия.
+  const animated = await runTurtle(`
+use turtle;
+
+main() {
+    turtle.Turtle t;
+    t.forward(60);
+}
+`);
+  const animatedLines = drawsOf(animated).filter((command) => command.object?.type === 'drawable.Line');
+  assert(animatedLines.length === 1, `animated forward must keep one line entry, got ${animatedLines.length}`);
+});
+
 void runTests();

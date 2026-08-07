@@ -217,7 +217,7 @@ variables, parameters, functions and classes:
 
 ```text
 audio colors console drawable encoding file fonts gui hash image json
-math random sqlite time types url
+math random sqlite system time turtle types url
 ```
 
 ```idyllium
@@ -2798,6 +2798,55 @@ main() {
     win.show();
 }
 ```
+
+## 27a. Turtle Graphics
+
+Import:
+
+```idyllium
+use turtle;
+```
+
+`turtle.Turtle` draws Logo/Python-style turtle graphics. Declaring a turtle
+auto-creates a shared 600×600 window ("Черепашье поле") — do NOT create
+`gui.Window` yourself. Coordinates are mathematical: (0,0) is the field
+center, Y grows UP, heading 0 points east, `left()` turns counter-clockwise.
+
+```idyllium
+use turtle;
+
+main() {
+    turtle.Turtle t;
+    int i = 0;
+    while (i < 4) {
+        t.forward(120);
+        t.left(90);
+        i += 1;
+    }
+}
+```
+
+Methods: `forward(px)`, `back(px)`, `left(deg)`, `right(deg)`, `goto(x, y)`,
+`home()`, `pen_up()`, `pen_down()`, `dot(size = 8)`, `write(text)`,
+`begin_fill()`, `end_fill()`.
+
+Properties: `pen_color` / `fill_color` (`colors.Color`), `pen_width`
+(int 1..100, default 2), `speed` (int 0..10; 0 = instant, default 6 —
+movement is animated), `visible` (bool). Read-only: `x`, `y` (float),
+`heading` (float degrees), `is_down` (bool).
+
+Module functions (shared field): `turtle.setup(width, height)`,
+`turtle.title(text)`, `turtle.bg_color(color)`, `turtle.clear()`,
+`turtle.save_svg(path)`.
+
+Notes:
+
+- Multiple turtles share one field (great for races).
+- In the CLI host the field is headless: no window appears, but drawing and
+  `turtle.save_svg("картинка.svg")` work — turtle programs can run in the
+  console course.
+- Runtime guards: `Turtle.speed must be between 0 and 10, got 99`;
+  `end_fill() without begin_fill()`.
 
 ## 28. SQLite
 
