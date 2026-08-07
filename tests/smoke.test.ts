@@ -7647,6 +7647,29 @@ main() {
   assert((svg.match(/<line /g) ?? []).length === 4, 'svg must contain 4 lines');
   assert(svg.includes('width="600"') && svg.includes('<rect'), 'svg must carry field size and background');
 
+  // set_heading — абсолютный угол независимо от прежних поворотов.
+  const compass = await runTurtle(`
+use turtle;
+use console;
+
+main() {
+    turtle.Turtle t;
+    t.speed = 0;
+    t.left(37);
+    t.right(240);
+    t.set_heading(90);
+    console.writeln("heading = ", t.heading);
+    t.forward(80);
+    console.writeln("x = ", t.x, ", y = ", t.y);
+    t.set_heading(90);
+    console.writeln("still = ", t.heading);
+}
+`);
+  assert(
+    compass.getOutput() === 'heading = 90\nx = 0, y = 80\nstill = 90\n',
+    `set_heading must set an absolute angle, got ${JSON.stringify(compass.getOutput())}`,
+  );
+
   // Анимация не дробит след: forward со скоростью по умолчанию — одна линия.
   const animated = await runTurtle(`
 use turtle;

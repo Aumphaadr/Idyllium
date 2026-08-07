@@ -5917,6 +5917,9 @@ function createDefaultStandardLibrary() {
             functionSpec('right', [{ name: 'angle', type: types_1.FLOAT }], types_1.VOID, {
                 documentation: 'Повернуться направо (по часовой стрелке) на angle градусов.',
             }),
+            functionSpec('set_heading', [{ name: 'angle', type: types_1.FLOAT }], types_1.VOID, {
+                documentation: 'Повернуться носом ТОЧНО на угол angle, откуда бы черепаха ни смотрела: 0 — вправо, 90 — вверх, 180 — влево, 270 — вниз. Поворачивает по кратчайшей дуге.',
+            }),
             functionSpec('goto', [
                 { name: 'x', type: types_1.FLOAT },
                 { name: 'y', type: types_1.FLOAT },
@@ -14788,6 +14791,12 @@ function normalizeTurtleHeading(value) {
     const wrapped = value % 360;
     return wrapped < 0 ? wrapped + 360 : wrapped;
 }
+/** Прищёлкивает координату к 6 знакам: после cos(90°) ребёнок должен видеть
+ *  x = 0, а не 4.9e-15. Микронная точность глазу неотличима. */
+function snapTurtleCoordinate(value) {
+    const rounded = Math.round(value * 1e6) / 1e6;
+    return Object.is(rounded, -0) ? 0 : rounded;
+}
 async function turtleTurn(state, obj, deltaDeg, file, line) {
     ensureTurtleField(state);
     const start = Number(obj.heading);
@@ -14829,18 +14838,27 @@ function initializeTurtleObject(obj, typeName, state) {
     obj.forward = contextFunction(async (distance, file, line) => {
         const length = Number(distance);
         const rad = (Number(obj.heading) * Math.PI) / 180;
-        await turtleTravel(state, obj, Number(obj.x) + Math.cos(rad) * length, Number(obj.y) + Math.sin(rad) * length, file, line);
+        await turtleTravel(state, obj, snapTurtleCoordinate(Number(obj.x) + Math.cos(rad) * length), snapTurtleCoordinate(Number(obj.y) + Math.sin(rad) * length), file, line);
     });
     obj.back = contextFunction(async (distance, file, line) => {
         const length = -Number(distance);
         const rad = (Number(obj.heading) * Math.PI) / 180;
-        await turtleTravel(state, obj, Number(obj.x) + Math.cos(rad) * length, Number(obj.y) + Math.sin(rad) * length, file, line);
+        await turtleTravel(state, obj, snapTurtleCoordinate(Number(obj.x) + Math.cos(rad) * length), snapTurtleCoordinate(Number(obj.y) + Math.sin(rad) * length), file, line);
     });
     obj.left = contextFunction(async (angle, file, line) => {
         await turtleTurn(state, obj, Number(angle), file, line);
     });
     obj.right = contextFunction(async (angle, file, line) => {
         await turtleTurn(state, obj, -Number(angle), file, line);
+    });
+    obj.set_heading = contextFunction(async (angle, file, line) => {
+        const target = normalizeTurtleHeading(Number(angle));
+        // Кратчайшая дуга: доворот в диапазоне (-180, 180].
+        const delta = ((target - Number(obj.heading) + 540) % 360) - 180;
+        await turtleTurn(state, obj, delta, file, line);
+        // Финальный угол выставляем точно — без накопленной дробной пыли.
+        obj.heading = target;
+        rebuildTurtleFieldCommands(state);
     });
     obj.goto = contextFunction(async (x, y, file, line) => {
         await turtleTravel(state, obj, Number(x), Number(y), file, line);
