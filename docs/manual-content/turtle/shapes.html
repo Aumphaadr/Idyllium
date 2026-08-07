@@ -1,0 +1,180 @@
+<style>
+    .turtle-preview {
+      display: flex;
+      justify-content: center;
+      padding: 14px;
+    }
+    .turtle-preview svg {
+      width: min(320px, 100%);
+      height: auto;
+      border-radius: 10px;
+    }
+</style>
+
+    <div class="docs-section">
+      <h2>Треугольник и загадка про 120</h2>
+      <p>Квадрат вы уже рисовали: четыре поворота по 90°. Попробуем треугольник. Углы в равностороннем треугольнике — по 60 градусов, значит, поворачиваем на 60? Проверьте — получится совсем не треугольник. Правильный ответ — <strong>120</strong>:</p>
+
+      <idyl-code-block><script type="text/plain">
+use turtle;
+
+main() {
+    turtle.Turtle t;
+    int i = 0;
+    while (i < 3) {
+        t.forward(150);
+        t.left(120);
+        i += 1;
+    }
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content turtle-preview">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+            <rect width="100%" height="100%" fill="#ffffff"/>
+            <line x1="300" y1="300" x2="450" y2="300" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="450" y1="300" x2="375" y2="170.1" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="375" y1="170.1" x2="300" y2="300" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <p class="coord-note">📐 Черепаха поворачивает не на угол ФИГУРЫ, а на её ВНЕШНИЙ угол — «доворот» носа на новую сторону.</p>
+
+      <p>Дело в том, что черепаха поворачивается не внутри угла, а «доворачивается» до следующей стороны — это внешний угол фигуры. А у внешних углов есть железное правило, которое вы уже подметили на квадрате: полный обход — это ровно один оборот, <strong>360 градусов</strong>. Три поворота — по 120, четыре — по 90.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Формула любого многоугольника</h2>
+      <p>Раз сумма поворотов всегда 360 — угол поворота для правильной фигуры из <code>n</code> сторон равен <code>360 / n</code>. Одна функция рисует ЛЮБОЙ многоугольник:</p>
+
+      <idyl-code-block><script type="text/plain">
+use turtle;
+use colors;
+
+turtle.Turtle t;
+
+void function polygon(int sides, int size) {
+    int i = 0;
+    while (i < sides) {
+        t.forward(size);
+        t.left(360 / sides);
+        i += 1;
+    }
+}
+
+main() {
+    t.speed = 10;
+    t.pen_up();
+    t.goto(-230, -40);
+    t.pen_down();
+
+    t.pen_color = colors.RED;
+    polygon(3, 110);
+
+    t.pen_up();
+    t.forward(160);
+    t.pen_down();
+    t.pen_color = colors.GREEN;
+    polygon(4, 90);
+
+    t.pen_up();
+    t.forward(150);
+    t.pen_down();
+    t.pen_color = colors.BLUE;
+    polygon(6, 60);
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content turtle-preview">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+            <rect width="100%" height="100%" fill="#ffffff"/>
+            <line x1="70" y1="340" x2="180" y2="340" stroke="#ff0000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="180" y1="340" x2="125" y2="244.74" stroke="#ff0000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="125" y1="244.74" x2="70" y2="340" stroke="#ff0000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="230" y1="340" x2="320" y2="340" stroke="#00ff00" stroke-width="2" stroke-linecap="round"/>
+            <line x1="320" y1="340" x2="320" y2="250" stroke="#00ff00" stroke-width="2" stroke-linecap="round"/>
+            <line x1="320" y1="250" x2="230" y2="250" stroke="#00ff00" stroke-width="2" stroke-linecap="round"/>
+            <line x1="230" y1="250" x2="230" y2="340" stroke="#00ff00" stroke-width="2" stroke-linecap="round"/>
+            <line x1="380" y1="340" x2="440" y2="340" stroke="#0000ff" stroke-width="2" stroke-linecap="round"/>
+            <line x1="440" y1="340" x2="470" y2="288.04" stroke="#0000ff" stroke-width="2" stroke-linecap="round"/>
+            <line x1="470" y1="288.04" x2="440" y2="236.08" stroke="#0000ff" stroke-width="2" stroke-linecap="round"/>
+            <line x1="440" y1="236.08" x2="380" y2="236.08" stroke="#0000ff" stroke-width="2" stroke-linecap="round"/>
+            <line x1="380" y1="236.08" x2="350" y2="288.04" stroke="#0000ff" stroke-width="2" stroke-linecap="round"/>
+            <line x1="350" y1="288.04" x2="380" y2="340" stroke="#0000ff" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <p class="coord-note">🔺🟩⬡ Одна функция — три фигуры: <code>polygon(3, ...)</code>, <code>polygon(4, ...)</code>, <code>polygon(6, ...)</code>. Формула <code>360 / sides</code> делает всю геометрию.</p>
+
+      <p>Здесь черепаха объявлена <strong>над</strong> <code>main</code> — глобально, чтобы функция <code>polygon</code> её видела. Так же вы выносили общие переменные в программах с функциями. Команда <code>t.goto(-230, -40)</code> переносит черепаху в точку по координатам — подробно про них в следующем уроке, пока достаточно знать: они как в математике, центр поля — это (0, 0).</p>
+      <p>А что будет, если сторон станет много — 12, 24, 60? Поворот всё меньше, фигура всё круглее... Попробуйте <code>polygon(60, 8)</code> — и вы поймёте, как на самом деле устроены «круги» в компьютерах.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Звезда и подпись</h2>
+      <p>А теперь сломаем формулу — намеренно. Если поворачивать не на 72 (как положено пятиугольнику), а на <strong>144</strong> градуса, черепаха начнёт перечёркивать собственный путь — и получится пятиконечная звезда. Подпишем её командой <code>write</code>:</p>
+
+      <idyl-code-block><script type="text/plain">
+use turtle;
+use colors;
+
+main() {
+    turtle.Turtle t;
+    t.speed = 8;
+    t.pen_color = colors.RGB(200, 60, 160);
+    t.pen_width = 3;
+    t.pen_up();
+    t.goto(-80, 50);
+    t.pen_down();
+
+    int i = 0;
+    while (i < 5) {
+        t.forward(160);
+        t.right(144);
+        i += 1;
+    }
+
+    t.pen_up();
+    t.goto(-60, -120);
+    t.write("Звезда за пять строк!");
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content turtle-preview">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+            <rect width="100%" height="100%" fill="#ffffff"/>
+            <line x1="220" y1="250" x2="380" y2="250" stroke="#c83ca0" stroke-width="3" stroke-linecap="round"/>
+            <line x1="380" y1="250" x2="250.56" y2="344.05" stroke="#c83ca0" stroke-width="3" stroke-linecap="round"/>
+            <line x1="250.56" y1="344.05" x2="300" y2="191.88" stroke="#c83ca0" stroke-width="3" stroke-linecap="round"/>
+            <line x1="300" y1="191.88" x2="349.44" y2="344.05" stroke="#c83ca0" stroke-width="3" stroke-linecap="round"/>
+            <line x1="349.44" y1="344.05" x2="220" y2="250" stroke="#c83ca0" stroke-width="3" stroke-linecap="round"/>
+            <text x="246" y="414" fill="#c83ca0" font-size="14" font-family="sans-serif">Звезда за пять строк!</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <p class="coord-note">⭐ 144 × 5 = 720 — два полных оборота. Звёзды получаются, когда черепаха успевает обернуться вокруг себя больше одного раза.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Шпаргалка: геометрия черепахи</h2>
+      <table>
+        <thead>
+          <tr><th>Фигура</th><th>Рецепт</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Правильный n-угольник</td><td>n раз: <code>forward(size); left(360 / n);</code></td></tr>
+          <tr><td>Круг (почти)</td><td>многоугольник с большим n: <code>polygon(60, 8)</code></td></tr>
+          <tr><td>Пятиконечная звезда</td><td>5 раз: <code>forward(size); right(144);</code></td></tr>
+          <tr><td>Подпись</td><td><code>write("текст")</code> — пишет цветом пера в текущей точке</td></tr>
+        </tbody>
+      </table>
+    </div>

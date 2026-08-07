@@ -1,0 +1,327 @@
+<style>
+    .turtle-preview {
+      display: flex;
+      justify-content: center;
+      padding: 14px;
+    }
+    .turtle-preview svg {
+      width: min(320px, 100%);
+      height: auto;
+      border-radius: 10px;
+    }
+</style>
+
+    <div class="docs-section">
+      <h2>Заливка: обведи и залей</h2>
+      <p>Контурные фигуры — это полдела. Пара команд <code>begin_fill()</code> и <code>end_fill()</code> превращает черепаху в маляра: всё, что она обойдёт между этими командами, зальётся цветом <code>fill_color</code>:</p>
+
+      <idyl-code-block><script type="text/plain">
+use turtle;
+use colors;
+
+main() {
+    turtle.Turtle t;
+    t.pen_color = colors.RGB(20, 90, 50);
+    t.fill_color = colors.RGB(120, 220, 140);
+
+    t.begin_fill();
+    int i = 0;
+    while (i < 3) {
+        t.forward(150);
+        t.left(120);
+        i += 1;
+    }
+    t.end_fill();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content turtle-preview">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+            <rect width="100%" height="100%" fill="#ffffff"/>
+            <polygon points="300,300 450,300 375,170.1 300,300" fill="#78dc8c"/>
+            <line x1="300" y1="300" x2="450" y2="300" stroke="#145a32" stroke-width="2" stroke-linecap="round"/>
+            <line x1="450" y1="300" x2="375" y2="170.1" stroke="#145a32" stroke-width="2" stroke-linecap="round"/>
+            <line x1="375" y1="170.1" x2="300" y2="300" stroke="#145a32" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <p class="coord-note">🎨 Контур рисуется пером (<code>pen_color</code>), внутренность — заливкой (<code>fill_color</code>). Это два независимых цвета.</p>
+
+      <p>Порядок важен: сначала <code>begin_fill()</code>, потом обход фигуры, потом <code>end_fill()</code>. Забудете начать — рантайм честно скажет: <code>end_fill() without begin_fill()</code>.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Функции-фигуры</h2>
+      <p>Соберём выученное вместе: функция рисует залитый квадрат нужного размера в нужной точке — а <code>main</code> раскладывает из таких квадратов лесенку:</p>
+
+      <idyl-code-block><script type="text/plain">
+use turtle;
+use colors;
+
+turtle.Turtle t;
+
+void function filled_square(int x, int y, int size) {
+    t.pen_up();
+    t.goto(x, y);
+    t.pen_down();
+    t.begin_fill();
+    int i = 0;
+    while (i < 4) {
+        t.forward(size);
+        t.left(90);
+        i += 1;
+    }
+    t.end_fill();
+}
+
+main() {
+    t.speed = 0;
+    t.pen_color = colors.RGB(30, 60, 120);
+    t.fill_color = colors.RGB(120, 170, 255);
+
+    int step = 0;
+    while (step < 5) {
+        filled_square(-160 + step * 62, -120 + step * 52, 48);
+        step += 1;
+    }
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content turtle-preview">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+            <rect width="100%" height="100%" fill="#ffffff"/>
+            <polygon points="140,420 188,420 188,372 140,372 140,420" fill="#78aaff"/>
+            <line x1="140" y1="420" x2="188" y2="420" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+            <line x1="188" y1="420" x2="188" y2="372" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+            <line x1="188" y1="372" x2="140" y2="372" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+            <line x1="140" y1="372" x2="140" y2="420" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+            <polygon points="202,368 250,368 250,320 202,320 202,368" fill="#78aaff"/>
+            <line x1="202" y1="368" x2="250" y2="368" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+            <line x1="250" y1="368" x2="250" y2="320" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+            <line x1="250" y1="320" x2="202" y2="320" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+            <line x1="202" y1="320" x2="202" y2="368" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+            <polygon points="264,316 312,316 312,268 264,268 264,316" fill="#78aaff"/>
+            <line x1="264" y1="316" x2="312" y2="316" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+            <line x1="312" y1="316" x2="312" y2="268" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+            <line x1="312" y1="268" x2="264" y2="268" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+            <line x1="264" y1="268" x2="264" y2="316" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+            <polygon points="326,264 374,264 374,216 326,216 326,264" fill="#78aaff"/>
+            <line x1="326" y1="264" x2="374" y2="264" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+            <line x1="374" y1="264" x2="374" y2="216" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+            <line x1="374" y1="216" x2="326" y2="216" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+            <line x1="326" y1="216" x2="326" y2="264" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+            <polygon points="388,212 436,212 436,164 388,164 388,212" fill="#78aaff"/>
+            <line x1="388" y1="212" x2="436" y2="212" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+            <line x1="436" y1="212" x2="436" y2="164" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+            <line x1="436" y1="164" x2="388" y2="164" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+            <line x1="388" y1="164" x2="388" y2="212" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <p class="coord-note">🪜 Пять вызовов одной функции — лесенка. Координаты каждой ступеньки вычисляются из номера шага: <code>x</code> растёт на 62, <code>y</code> — на 52.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Узор из повторений</h2>
+      <p>Главный фокус черепашьей графики: возьмите простую фигуру, повторите её с небольшим поворотом — и получится узор, который не стыдно повесить на стену. Квадрат, повёрнутый 36 раз:</p>
+
+      <idyl-code-block><script type="text/plain">
+use turtle;
+use colors;
+
+main() {
+    turtle.Turtle t;
+    t.speed = 0;
+    t.pen_color = colors.RGB(200, 80, 160);
+
+    int i = 0;
+    while (i < 36) {
+        int side = 0;
+        while (side < 4) {
+            t.forward(140);
+            t.left(90);
+            side += 1;
+        }
+        t.left(10);
+        i += 1;
+    }
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content turtle-preview">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+            <rect width="100%" height="100%" fill="#ffffff"/>
+            <line x1="300" y1="300" x2="440" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="440" y1="300" x2="440" y2="160" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="440" y1="160" x2="300" y2="160" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="160" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="437.87" y2="275.69" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="437.87" y1="275.69" x2="413.56" y2="137.82" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="413.56" y1="137.82" x2="275.69" y2="162.13" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="275.69" y1="162.13" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="431.56" y2="252.12" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="431.56" y1="252.12" x2="383.67" y2="120.56" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="383.67" y1="120.56" x2="252.12" y2="168.44" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="252.12" y1="168.44" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="421.24" y2="230" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="421.24" y1="230" x2="351.24" y2="108.76" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="351.24" y1="108.76" x2="230" y2="178.76" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="230" y1="178.76" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="407.25" y2="210.01" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="407.25" y1="210.01" x2="317.26" y2="102.76" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="317.26" y1="102.76" x2="210.01" y2="192.75" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="210.01" y1="192.75" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="389.99" y2="192.75" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="389.99" y1="192.75" x2="282.74" y2="102.76" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="282.74" y1="102.76" x2="192.75" y2="210.01" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="192.75" y1="210.01" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="370" y2="178.76" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="370" y1="178.76" x2="248.76" y2="108.76" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="248.76" y1="108.76" x2="178.76" y2="230" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="178.76" y1="230" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="347.88" y2="168.44" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="347.88" y1="168.44" x2="216.33" y2="120.56" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="216.33" y1="120.56" x2="168.44" y2="252.12" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="168.44" y1="252.12" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="324.31" y2="162.13" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="324.31" y1="162.13" x2="186.44" y2="137.82" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="186.44" y1="137.82" x2="162.13" y2="275.69" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="162.13" y1="275.69" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="300" y2="160" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="160" x2="160" y2="160" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="160" y1="160" x2="160" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="160" y1="300" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="275.69" y2="162.13" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="275.69" y1="162.13" x2="137.82" y2="186.44" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="137.82" y1="186.44" x2="162.13" y2="324.31" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="162.13" y1="324.31" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="252.12" y2="168.44" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="252.12" y1="168.44" x2="120.56" y2="216.33" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="120.56" y1="216.33" x2="168.44" y2="347.88" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="168.44" y1="347.88" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="230" y2="178.76" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="230" y1="178.76" x2="108.76" y2="248.76" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="108.76" y1="248.76" x2="178.76" y2="370" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="178.76" y1="370" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="210.01" y2="192.75" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="210.01" y1="192.75" x2="102.76" y2="282.74" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="102.76" y1="282.74" x2="192.75" y2="389.99" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="192.75" y1="389.99" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="192.75" y2="210.01" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="192.75" y1="210.01" x2="102.76" y2="317.26" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="102.76" y1="317.26" x2="210.01" y2="407.25" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="210.01" y1="407.25" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="178.76" y2="230" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="178.76" y1="230" x2="108.76" y2="351.24" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="108.76" y1="351.24" x2="230" y2="421.24" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="230" y1="421.24" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="168.44" y2="252.12" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="168.44" y1="252.12" x2="120.56" y2="383.67" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="120.56" y1="383.67" x2="252.12" y2="431.56" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="252.12" y1="431.56" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="162.13" y2="275.69" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="162.13" y1="275.69" x2="137.82" y2="413.56" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="137.82" y1="413.56" x2="275.69" y2="437.87" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="275.69" y1="437.87" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="160" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="160" y1="300" x2="160" y2="440" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="160" y1="440" x2="300" y2="440" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="440" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="162.13" y2="324.31" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="162.13" y1="324.31" x2="186.44" y2="462.18" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="186.44" y1="462.18" x2="324.31" y2="437.87" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="324.31" y1="437.87" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="168.44" y2="347.88" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="168.44" y1="347.88" x2="216.33" y2="479.44" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="216.33" y1="479.44" x2="347.88" y2="431.56" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="347.88" y1="431.56" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="178.76" y2="370" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="178.76" y1="370" x2="248.76" y2="491.24" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="248.76" y1="491.24" x2="370" y2="421.24" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="370" y1="421.24" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="192.75" y2="389.99" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="192.75" y1="389.99" x2="282.74" y2="497.24" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="282.74" y1="497.24" x2="389.99" y2="407.25" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="389.99" y1="407.25" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="210.01" y2="407.25" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="210.01" y1="407.25" x2="317.26" y2="497.24" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="317.26" y1="497.24" x2="407.25" y2="389.99" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="407.25" y1="389.99" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="230" y2="421.24" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="230" y1="421.24" x2="351.24" y2="491.24" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="351.24" y1="491.24" x2="421.24" y2="370" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="421.24" y1="370" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="252.12" y2="431.56" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="252.12" y1="431.56" x2="383.67" y2="479.44" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="383.67" y1="479.44" x2="431.56" y2="347.88" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="431.56" y1="347.88" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="275.69" y2="437.87" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="275.69" y1="437.87" x2="413.56" y2="462.18" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="413.56" y1="462.18" x2="437.87" y2="324.31" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="437.87" y1="324.31" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="300" y2="440" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="440" x2="440" y2="440" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="440" y1="440" x2="440" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="440" y1="300" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="324.31" y2="437.87" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="324.31" y1="437.87" x2="462.18" y2="413.56" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="462.18" y1="413.56" x2="437.87" y2="275.69" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="437.87" y1="275.69" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="347.88" y2="431.56" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="347.88" y1="431.56" x2="479.44" y2="383.67" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="479.44" y1="383.67" x2="431.56" y2="252.12" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="431.56" y1="252.12" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="370" y2="421.24" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="370" y1="421.24" x2="491.24" y2="351.24" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="491.24" y1="351.24" x2="421.24" y2="230" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="421.24" y1="230" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="389.99" y2="407.25" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="389.99" y1="407.25" x2="497.24" y2="317.26" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="497.24" y1="317.26" x2="407.25" y2="210.01" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="407.25" y1="210.01" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="407.25" y2="389.99" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="407.25" y1="389.99" x2="497.24" y2="282.74" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="497.24" y1="282.74" x2="389.99" y2="192.75" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="389.99" y1="192.75" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="421.24" y2="370" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="421.24" y1="370" x2="491.24" y2="248.76" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="491.24" y1="248.76" x2="370" y2="178.76" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="370" y1="178.76" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="431.56" y2="347.88" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="431.56" y1="347.88" x2="479.44" y2="216.33" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="479.44" y1="216.33" x2="347.88" y2="168.44" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="347.88" y1="168.44" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="437.87" y2="324.31" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="437.87" y1="324.31" x2="462.18" y2="186.44" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="462.18" y1="186.44" x2="324.31" y2="162.13" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="324.31" y1="162.13" x2="300" y2="300" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <p class="coord-note">🌸 Розетка: внешний цикл крутит квадрат на 10° — 36 раз по 10 = полный оборот. Здесь <code>speed = 0</code> не для красоты: 144 линии приятнее получить мгновенно.</p>
+
+      <p>Поэкспериментируйте: замените квадрат на треугольник, поворот на 15°, добавьте смену цвета через <code>colors.HSL</code> в зависимости от номера витка. Каждая замена — новый узор; это неисчерпаемо.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Шпаргалка: заливка</h2>
+      <table>
+        <thead>
+          <tr><th>Команда/свойство</th><th>Что делает</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>fill_color</code></td><td>цвет будущей заливки</td></tr>
+          <tr><td><code>begin_fill()</code></td><td>начать запоминать контур</td></tr>
+          <tr><td><code>end_fill()</code></td><td>замкнуть контур и залить</td></tr>
+        </tbody>
+      </table>
+    </div>

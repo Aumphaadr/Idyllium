@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: Idyllium 1.3.0.
+Current language target: Idyllium 1.3.1.
 
 This reference describes implemented behavior. Ideas from `BACKLOG.md` and
 exploratory files under `spec/some_*` are not language features until they are
@@ -1125,7 +1125,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, never returns
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.3.0"
+system.version()                    // "1.3.1"
 ```
 
 **Recursion depth.** Idyllium counts call depth itself instead of relying on the

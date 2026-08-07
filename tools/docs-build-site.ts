@@ -97,7 +97,9 @@ const SLUG_OVERRIDES: Record<string, string> = {
   'cli/025_math.html': 'math-advanced',
 };
 
-const SECTION_ORDER = ['console', 'widgets', 'oop', 'canvas', 'json', 'sqlite', 'examples'];
+// Turtle между GUI и ООП (владелец, 2026-08-07): передышка-геометрия после
+// виджетов, а «каждая черепаха — объект» готовит почву для ООП.
+const SECTION_ORDER = ['console', 'widgets', 'turtle', 'oop', 'canvas', 'json', 'sqlite', 'examples'];
 
 const MANUAL_LESSONS: readonly ManualLesson[] = [
   {
@@ -246,6 +248,69 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     title: 'Объект Timer',
     subtitle: 'Выполнение кода через равные промежутки времени',
     sourceFile: 'docs/manual-content/widgets/timer.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'turtle',
+    id: 'intro',
+    title: 'Знакомство с черепахой',
+    subtitle: 'turtle.Turtle, forward и left: первая фигура за пять строк',
+    sourceFile: 'docs/manual-content/turtle/intro.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'turtle',
+    id: 'pen',
+    title: 'Перо и скорость',
+    subtitle: 'pen_up/pen_down, цвет и толщина пера, speed, кляксы и команды поля',
+    sourceFile: 'docs/manual-content/turtle/pen.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'turtle',
+    id: 'shapes',
+    title: 'Углы и многоугольники',
+    subtitle: 'Внешний угол, формула 360/n и звезда, которую рисует цикл',
+    sourceFile: 'docs/manual-content/turtle/shapes.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'turtle',
+    id: 'coordinates',
+    title: 'Координаты поля',
+    subtitle: 'goto и home: центр (0, 0), ось Y вверх — как на уроке математики',
+    sourceFile: 'docs/manual-content/turtle/coordinates.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'turtle',
+    id: 'fill',
+    title: 'Заливка и узоры',
+    subtitle: 'begin_fill/end_fill, функции-фигуры и розетка из 36 квадратов',
+    sourceFile: 'docs/manual-content/turtle/fill.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'turtle',
+    id: 'turtles',
+    title: 'Несколько черепах',
+    subtitle: 'Каждая черепаха — объект: парное рисование и великие гонки',
+    sourceFile: 'docs/manual-content/turtle/turtles.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'turtle',
+    id: 'svg',
+    title: 'Векторная картинка SVG',
+    subtitle: 'save_svg: рисунок уезжает в файл — даже из консольной программы',
+    sourceFile: 'docs/manual-content/turtle/svg.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -1150,6 +1215,7 @@ function withManualLessons(sections: readonly SiteSection[], outputRoot: string)
   const byId = new Map<string, SiteSection>();
   for (const section of sections) byId.set(section.id, { ...section, lessons: [...section.lessons] });
 
+  ensureSection(byId, outputRoot, 'turtle', 'Черепаха', 'turtle', 'Черепашья графика появится между GUI и ООП.');
   ensureSection(byId, outputRoot, 'canvas', 'Canvas', 'canvas', 'Canvas появится отдельным разделом после ООП.');
   ensureSection(byId, outputRoot, 'json', 'JSON', 'json', 'JSON появится после Canvas, когда мы согласуем синтаксис библиотеки.');
   ensureSection(

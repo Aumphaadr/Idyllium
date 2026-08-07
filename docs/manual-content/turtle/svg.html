@@ -1,0 +1,261 @@
+<style>
+    .turtle-preview {
+      display: flex;
+      justify-content: center;
+      padding: 14px;
+    }
+    .turtle-preview svg {
+      width: min(320px, 100%);
+      height: auto;
+      border-radius: 10px;
+    }
+</style>
+
+    <div class="docs-section">
+      <h2>Рисунок, который можно унести</h2>
+      <p>Всё, что черепаха нарисовала, живёт в окне — закрыл программу, и картины нет. Команда <code>turtle.save_svg("имя.svg")</code> исправляет эту несправедливость: она сохраняет рисунок в файл. Не скриншот окна, а настоящую <strong>векторную картинку</strong>:</p>
+
+      <idyl-code-block><script type="text/plain">
+use turtle;
+use colors;
+
+main() {
+    turtle.Turtle t;
+    t.speed = 0;
+    t.pen_color = colors.RGB(60, 130, 220);
+    t.pen_width = 2;
+
+    int i = 0;
+    while (i < 12) {
+        int side = 0;
+        while (side < 3) {
+            t.forward(130);
+            t.left(120);
+            side += 1;
+        }
+        t.left(30);
+        i += 1;
+    }
+
+    turtle.save_svg("вертушка.svg");
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content turtle-preview">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+            <rect width="100%" height="100%" fill="#ffffff"/>
+            <line x1="300" y1="300" x2="430" y2="300" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="430" y1="300" x2="365" y2="187.42" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="365" y1="187.42" x2="300" y2="300" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="412.58" y2="235" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="412.58" y1="235" x2="300" y2="170" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="170" x2="300" y2="300" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="365" y2="187.42" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="365" y1="187.42" x2="235" y2="187.42" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="235" y1="187.42" x2="300" y2="300" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="300" y2="170" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="170" x2="187.42" y2="235" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="187.42" y1="235" x2="300" y2="300" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="235" y2="187.42" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="235" y1="187.42" x2="170" y2="300" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="170" y1="300" x2="300" y2="300" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="187.42" y2="235" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="187.42" y1="235" x2="187.42" y2="365" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="187.42" y1="365" x2="300" y2="300" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="170" y2="300" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="170" y1="300" x2="235" y2="412.58" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="235" y1="412.58" x2="300" y2="300" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="187.42" y2="365" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="187.42" y1="365" x2="300" y2="430" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="430" x2="300" y2="300" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="235" y2="412.58" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="235" y1="412.58" x2="365" y2="412.58" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="365" y1="412.58" x2="300" y2="300" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="300" y2="430" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="430" x2="412.58" y2="365" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="412.58" y1="365" x2="300" y2="300" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="365" y2="412.58" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="365" y1="412.58" x2="430" y2="300" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="430" y1="300" x2="300" y2="300" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="300" x2="412.58" y2="365" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="412.58" y1="365" x2="412.58" y2="235" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            <line x1="412.58" y1="235" x2="300" y2="300" stroke="#3c82dc" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <p class="coord-note">💾 После запуска в проекте появится файл <code>вертушка.svg</code> — и он останется, даже когда окно закроется.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Векторная — значит, из команд</h2>
+      <p>Откройте <code>вертушка.svg</code> в списке файлов — Web IDE покажет его картинкой. А теперь нажмите переключатель <strong>«Текст»</strong> — и вы увидите, из чего картинка сделана:</p>
+
+      <idyl-output-block>&lt;svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" ...&gt;
+&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
+&lt;line x1="300" y1="300" x2="430" y2="300" stroke="#3c82dc" stroke-width="2" .../&gt;
+&lt;line x1="430" y1="300" x2="365" y2="187.42" stroke="#3c82dc" stroke-width="2" .../&gt;
+...ещё 34 линии...
+&lt;/svg&gt;</idyl-output-block>
+
+      <p>SVG — это не сетка точек, как PNG или JPEG, а <strong>список команд рисования</strong>: «линия отсюда сюда таким-то цветом». Знакомо? Это же дневник вашей черепахи! Каждый её шаг с опущенным пером стал строчкой <code>&lt;line&gt;</code>.</p>
+      <p>Поэтому векторную картинку можно увеличивать сколько угодно — она не «рассыпается на квадратики», линии просто пересчитываются. Логотипы, иконки, шрифты и карты в большом мире хранят именно так.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Черепаха без окна</h2>
+      <p>Сюрприз напоследок: раз рисунок — это список команд, а не пиксели окна, то и окно ему не обязательно. Черепашья программа запускается даже в консольном режиме — там, где никаких окон нет вовсе. Поле не откроется, но черепаха честно «прорисует» всё в памяти и сохранит файл:</p>
+
+      <idyl-code-block><script type="text/plain">
+use turtle;
+use console;
+use colors;
+
+main() {
+    turtle.Turtle t;
+    t.speed = 0;
+    t.pen_color = colors.RGB(200, 80, 160);
+
+    int i = 0;
+    while (i < 36) {
+        int side = 0;
+        while (side < 4) {
+            t.forward(140);
+            t.left(90);
+            side += 1;
+        }
+        t.left(10);
+        i += 1;
+    }
+
+    turtle.save_svg("узор.svg");
+    console.writeln("Готово! Открой файл узор.svg.");
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>Готово! Открой файл узор.svg.</idyl-output-block>
+
+      <p>Программа-«типография»: ни одного окна, а на выходе — файл с узором из 144 линий. Такие программы-генераторы — обычное дело во взрослой разработке: картинки для сайтов, схемы, диаграммы часто рисует не человек, а код.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Финальный проект: открытка</h2>
+      <p>Соберите всё, чему научились за раздел, в одну программу-открытку: фон через <code>turtle.bg_color</code>, залитая фигура, узор из повторений, подпись <code>write</code> — и <code>save_svg</code>, чтобы открытку можно было подарить:</p>
+
+      <idyl-code-block><script type="text/plain">
+use turtle;
+use colors;
+
+turtle.Turtle t;
+
+void function ray(int length) {
+    t.forward(length);
+    t.back(length);
+    t.left(30);
+}
+
+main() {
+    turtle.setup(460, 340);
+    turtle.bg_color(colors.RGB(20, 24, 48));
+
+    t.speed = 0;
+    t.pen_color = colors.RGB(255, 210, 90);
+    t.pen_width = 3;
+
+    t.pen_up();
+    t.goto(-110, 40);
+    t.pen_down();
+    t.fill_color = colors.RGB(255, 230, 140);
+    t.begin_fill();
+    int side = 0;
+    while (side < 12) {
+        t.forward(45);
+        t.left(30);
+        side += 1;
+    }
+    t.end_fill();
+
+    t.pen_up();
+    t.goto(90, 10);
+    t.pen_down();
+    int i = 0;
+    while (i < 12) {
+        ray(55);
+        i += 1;
+    }
+
+    t.pen_up();
+    t.goto(-150, -120);
+    t.pen_color = colors.WHITE;
+    t.write("Доброе утро, солнце встало!");
+
+    turtle.save_svg("открытка.svg");
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content turtle-preview">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 340">
+            <rect width="100%" height="100%" fill="#141830"/>
+            <polygon points="120,130 165,130 203.97,107.5 226.47,68.53 226.47,23.53 203.97,-15.44 165,-37.94 120,-37.94 81.03,-15.44 58.53,23.53 58.53,68.53 81.03,107.5 120,130" fill="#ffe68c"/>
+            <line x1="120" y1="130" x2="165" y2="130" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="165" y1="130" x2="203.97" y2="107.5" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="203.97" y1="107.5" x2="226.47" y2="68.53" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="226.47" y1="68.53" x2="226.47" y2="23.53" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="226.47" y1="23.53" x2="203.97" y2="-15.44" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="203.97" y1="-15.44" x2="165" y2="-37.94" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="165" y1="-37.94" x2="120" y2="-37.94" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="120" y1="-37.94" x2="81.03" y2="-15.44" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="81.03" y1="-15.44" x2="58.53" y2="23.53" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="58.53" y1="23.53" x2="58.53" y2="68.53" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="58.53" y1="68.53" x2="81.03" y2="107.5" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="81.03" y1="107.5" x2="120" y2="130" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="320" y1="160" x2="375" y2="160" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="375" y1="160" x2="320" y2="160" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="320" y1="160" x2="367.63" y2="132.5" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="367.63" y1="132.5" x2="320" y2="160" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="320" y1="160" x2="347.5" y2="112.37" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="347.5" y1="112.37" x2="320" y2="160" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="320" y1="160" x2="320" y2="105" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="320" y1="105" x2="320" y2="160" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="320" y1="160" x2="292.5" y2="112.37" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="292.5" y1="112.37" x2="320" y2="160" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="320" y1="160" x2="272.37" y2="132.5" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="272.37" y1="132.5" x2="320" y2="160" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="320" y1="160" x2="265" y2="160" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="265" y1="160" x2="320" y2="160" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="320" y1="160" x2="272.37" y2="187.5" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="272.37" y1="187.5" x2="320" y2="160" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="320" y1="160" x2="292.5" y2="207.63" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="292.5" y1="207.63" x2="320" y2="160" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="320" y1="160" x2="320" y2="215" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="320" y1="215" x2="320" y2="160" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="320" y1="160" x2="347.5" y2="207.63" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="347.5" y1="207.63" x2="320" y2="160" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="320" y1="160" x2="367.63" y2="187.5" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="367.63" y1="187.5" x2="320" y2="160" stroke="#ffd25a" stroke-width="3" stroke-linecap="round"/>
+            <text x="86" y="284" fill="#ffffff" font-size="14" font-family="sans-serif">Доброе утро, солнце встало!</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <p class="coord-note">🌅 Луна из двенадцатиугольника с заливкой, солнце из лучей функцией <code>ray</code>, подпись — и всё это уезжает в файл. Замените текст и цвета — и открытка ваша.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Шпаргалка и итог раздела</h2>
+      <table>
+        <thead>
+          <tr><th>Команда</th><th>Что делает</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>turtle.save_svg("файл.svg")</code></td><td>сохранить рисунок в векторный файл</td></tr>
+          <tr><td>SVG</td><td>картинка-список команд; масштабируется без потерь</td></tr>
+          <tr><td>Просмотр в Web IDE</td><td>svg-файл открывается картинкой; кнопка «Текст» покажет команды</td></tr>
+        </tbody>
+      </table>
+      <p>Черепаха научила вас двум большим вещам. Во-первых, геометрии руками: углы, координаты и узоры теперь не абстракция, а то, что вы рисовали. Во-вторых, мысли «рисунок — это программа»: каждая картина раздела — список команд, который можно перечитать, поменять и повторить. Дальше — раздел ООП: там вы узнаете, как самим строить объекты вроде черепахи.</p>
+    </div>
