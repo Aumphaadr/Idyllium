@@ -1,128 +1,585 @@
 {
-  "groups": [
+  "categories": [
     {
+      "id": "images",
       "title": "Картинки",
-      "items": [
+      "icon": "🖼️",
+      "groups": [
         {
-          "file": "cat.png",
-          "note": "Кот для уроков про картинки и ImageBox"
+          "title": "JPEG",
+          "items": [
+            {
+              "file": "travolta.jpeg",
+              "note": "Растерянный Траволта — для заданий про режимы растяжения"
+            },
+            {
+              "file": "cow_rotator.jpeg",
+              "note": "Корова для заданий про повороты и трансформации"
+            },
+            {
+              "file": "meme_left.jpeg",
+              "note": "Левая половинка мема — соберите из двух ImageBox"
+            },
+            {
+              "file": "meme_right.jpeg",
+              "note": "Правая половинка мема"
+            }
+          ]
         },
         {
-          "file": "red_stickman.png",
-          "note": "Красный человечек — спрайт для Canvas"
+          "title": "PNG",
+          "items": [
+            {
+              "file": "cat.png",
+              "note": "Кот для уроков про картинки и ImageBox"
+            },
+            {
+              "file": "red_stickman.png",
+              "note": "Красный человечек — спрайт для Canvas"
+            }
+          ]
         },
         {
-          "file": "cow_rotator.jpeg",
-          "note": "Корова для заданий про повороты и трансформации"
-        },
-        {
-          "file": "travolta.jpeg",
-          "note": "Растерянный Траволта — для заданий про режимы растяжения"
-        },
-        {
-          "file": "meme_left.jpeg",
-          "note": "Левая половинка мема — собери из двух ImageBox"
-        },
-        {
-          "file": "meme_right.jpeg",
-          "note": "Правая половинка мема"
+          "title": "GIF (анимации)",
+          "items": [
+            {
+              "file": "walk.gif",
+              "note": "Анимация ходьбы, 10 кадров — для image.Animation"
+            },
+            {
+              "file": "green_stickman.gif",
+              "note": "Зелёный человечек, 2 кадра"
+            }
+          ]
         }
       ]
     },
     {
-      "title": "Анимации",
-      "items": [
+      "id": "audio",
+      "title": "Звук и музыка",
+      "icon": "🎵",
+      "groups": [
         {
-          "file": "walk.gif",
-          "note": "Анимация ходьбы, 10 кадров — для image.Animation"
+          "title": "WAV — короткие эффекты",
+          "items": [
+            {
+              "file": "click.wav",
+              "note": "Короткий щелчок (0,3 сек) — для audio.Sound"
+            }
+          ]
         },
         {
-          "file": "green_stickman.gif",
-          "note": "Зелёный человечек, 2 кадра"
+          "title": "MP3 — длинные треки",
+          "items": [
+            {
+              "file": "Mesmerizing Galaxy.mp3",
+              "note": "Спокойный космический фон, 92,97 сек (Kevin MacLeod)"
+            },
+            {
+              "file": "Surf Shimmy.mp3",
+              "note": "Бодрый сёрф-рок, 122,88 сек (Kevin MacLeod)"
+            },
+            {
+              "file": "Rising.mp3",
+              "note": "Нарастающий эмбиент, 151,48 сек (Kevin MacLeod)"
+            }
+          ]
         }
       ]
     },
     {
-      "title": "Звуки и музыка",
-      "items": [
-        {
-          "file": "click.wav",
-          "note": "Короткий щелчок — для audio.Sound"
-        },
-        {
-          "file": "Mesmerizing Galaxy.mp3",
-          "note": "Спокойный космический фон (Kevin MacLeod, incompetech.com)"
-        },
-        {
-          "file": "Surf Shimmy.mp3",
-          "note": "Бодрый сёрф-рок (Kevin MacLeod, incompetech.com)"
-        },
-        {
-          "file": "Rising.mp3",
-          "note": "Нарастающий эмбиент (Kevin MacLeod, incompetech.com)"
-        }
-      ]
-    },
-    {
+      "id": "fonts",
       "title": "Шрифты",
-      "items": [
+      "icon": "🔤",
+      "groups": [
         {
-          "file": "Comfortaa-Variable.ttf",
-          "note": "Округлый Comfortaa с кириллицей (SIL OFL)",
-          "license": "Comfortaa-OFL.txt"
-        },
-        {
-          "file": "Lora-Variable.ttf",
-          "note": "Книжная антиква Lora (SIL OFL)",
-          "license": "Lora-OFL.txt"
-        },
-        {
-          "file": "Lora-Italic-Variable.ttf",
-          "note": "Lora, курсивное начертание (SIL OFL)",
-          "license": "Lora-OFL.txt"
-        },
-        {
-          "file": "Lobster-Regular.ttf",
-          "note": "Рукописный Lobster с кириллицей (SIL OFL)",
-          "license": "Lobster-OFL.txt"
-        },
-        {
-          "file": "BlackOpsOne-Regular.ttf",
-          "note": "Black Ops One — нарочно БЕЗ кириллицы: показать, что русские буквы есть не у всех шрифтов (SIL OFL)",
-          "license": "BlackOpsOne-OFL.txt"
+          "title": "",
+          "items": [
+            {
+              "file": "Comfortaa-Variable.ttf",
+              "note": "Округлый Comfortaa с кириллицей (SIL OFL)",
+              "license": "Comfortaa-OFL.txt"
+            },
+            {
+              "file": "Lora-Variable.ttf",
+              "note": "Книжная антиква Lora (SIL OFL)",
+              "license": "Lora-OFL.txt"
+            },
+            {
+              "file": "Lora-Italic-Variable.ttf",
+              "note": "Lora, курсивное начертание (SIL OFL)",
+              "license": "Lora-OFL.txt"
+            },
+            {
+              "file": "Lobster-Regular.ttf",
+              "note": "Рукописный Lobster с кириллицей (SIL OFL)",
+              "license": "Lobster-OFL.txt"
+            },
+            {
+              "file": "BlackOpsOne-Regular.ttf",
+              "note": "Black Ops One — нарочно БЕЗ кириллицы: не у всех шрифтов есть русские буквы (SIL OFL)",
+              "license": "BlackOpsOne-OFL.txt"
+            }
+          ]
         }
       ]
     },
     {
-      "title": "Данные",
-      "items": [
+      "id": "text",
+      "title": "Текстовые файлы",
+      "icon": "📄",
+      "groups": [
         {
-          "file": "guild.db",
-          "note": "Готовая база SQLite: гильдия из 10 игроков, 20 предметов и 24 покупок со связями — для SELECT, WHERE, JOIN и агрегатов"
+          "title": "Данные для чтения",
+          "items": [
+            {
+              "file": "numbers.txt",
+              "note": "Сто чисел по одному в строке — суммы, максимумы, подсчёт чётных"
+            },
+            {
+              "file": "scores.txt",
+              "note": "Таблица рекордов «имя;очки» — split, to_int и поиск чемпиона"
+            },
+            {
+              "file": "game_items.txt",
+              "note": "Двадцать шуточных игровых предметов — файлы и массивы"
+            },
+            {
+              "file": "weather.txt",
+              "note": "Семь температур, есть отрицательные"
+            },
+            {
+              "file": "story.txt",
+              "note": "Сплошной текст без знаков препинания — для подсчёта слов"
+            },
+            {
+              "file": "counter.txt",
+              "note": "Одна строка «0» — стартовое зерно счётчика запусков"
+            }
+          ]
         },
         {
-          "file": "save.json",
-          "note": "Сейв игры: герой с вложенной позицией, инвентарь-массив, настройки — для уроков про чтение JSON"
+          "title": "Шкафы-колонки (файл на каждое поле)",
+          "items": [
+            {
+              "file": "names.txt",
+              "note": "Два имени — пара к levels.txt (первый «шкаф» из урока)"
+            },
+            {
+              "file": "levels.txt",
+              "note": "Два уровня — пара к names.txt"
+            },
+            {
+              "file": "hero_names.txt",
+              "note": "Шкаф гильдии: пять имён (пара к hero_classes/levels/coins)"
+            },
+            {
+              "file": "hero_classes.txt",
+              "note": "Шкаф гильдии: пять классов"
+            },
+            {
+              "file": "hero_levels.txt",
+              "note": "Шкаф гильдии: пять уровней"
+            },
+            {
+              "file": "hero_coins.txt",
+              "note": "Шкаф гильдии: пять кошельков"
+            },
+            {
+              "file": "students.txt",
+              "note": "Четыре ученика — пара к grades.txt"
+            },
+            {
+              "file": "grades.txt",
+              "note": "Четыре оценки — пара к students.txt"
+            },
+            {
+              "file": "menu_names.txt",
+              "note": "Четыре блюда — пара к menu_prices.txt"
+            },
+            {
+              "file": "menu_prices.txt",
+              "note": "Четыре цены — пара к menu_names.txt"
+            },
+            {
+              "file": "race_names.txt",
+              "note": "Шесть бегунов — пара к race_times.txt"
+            },
+            {
+              "file": "race_times.txt",
+              "note": "Шесть результатов забега; есть ничья 39:39 — намеренно"
+            },
+            {
+              "file": "guests.txt",
+              "note": "Четыре гостя — пара к gifts.txt"
+            },
+            {
+              "file": "gifts.txt",
+              "note": "Три подарка: гостей больше — рассинхрон намеренный"
+            }
+          ]
         },
         {
-          "file": "broken_save.json",
-          "note": "Нарочно сломанный сейв (комментарий и лишние запятые) — почините файл, не трогая программу"
+          "title": "Испорченные нарочно",
+          "items": [
+            {
+              "file": "broken_letter.txt",
+              "note": "Письмо, испорченное двойной перекодировкой («РџСЂРёРІРµС‚») — почините через encoding"
+            },
+            {
+              "file": "broken_guild_names.txt",
+              "note": "Больной шкаф: 4 имени..."
+            },
+            {
+              "file": "broken_guild_levels.txt",
+              "note": "...но всего 3 уровня — программа обязана заметить"
+            },
+            {
+              "file": "broken_guild_coins.txt",
+              "note": "...и снова 4 кошелька. Данные врозь — беда врозь"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "json",
+      "title": "JSON",
+      "icon": "{ }",
+      "groups": [
+        {
+          "title": "Простые объекты",
+          "items": [
+            {
+              "file": "player.json",
+              "note": "Анкета игрока с null в middle_name"
+            },
+            {
+              "file": "pet.json",
+              "note": "Хомяк Батон: имя, вид, возраст, знает ли трюки"
+            },
+            {
+              "file": "book.json",
+              "note": "Книга: название, автор, год, страницы"
+            },
+            {
+              "file": "profile.json",
+              "note": "Профиль: имя, уровень, клан"
+            },
+            {
+              "file": "stash.json",
+              "note": "Заначка Кая: владелец и число"
+            },
+            {
+              "file": "hero_save.json",
+              "note": "Сейв героя: имя, уровень, монеты"
+            },
+            {
+              "file": "reference_card.json",
+              "note": "Карточка товара с дробным рейтингом 4.8"
+            },
+            {
+              "file": "pawnshop_item.json",
+              "note": "Лот ломбарда: цена и флаг «продаётся»"
+            },
+            {
+              "file": "counter.json",
+              "note": "Счётчик запусков в объекте — читать, увеличивать, записывать"
+            },
+            {
+              "file": "save.json",
+              "note": "Сейв игры: герой, инвентарь, настройки — для первых чтений JSON"
+            },
+            {
+              "file": "hero_1.json",
+              "note": "Мира, 12 уровень — первый из пяти переселённых героев"
+            },
+            {
+              "file": "hero_2.json",
+              "note": "Кай, 9 уровень"
+            },
+            {
+              "file": "hero_3.json",
+              "note": "Лея, 14 уровень"
+            },
+            {
+              "file": "hero_4.json",
+              "note": "Борис, 3 уровень"
+            },
+            {
+              "file": "hero_5.json",
+              "note": "Ника, 21 уровень"
+            },
+            {
+              "file": "hero_duel_1.json",
+              "note": "Дуэлянт Лея — сравните с hero_duel_2.json"
+            },
+            {
+              "file": "hero_duel_2.json",
+              "note": "Дуэлянт Ника"
+            },
+            {
+              "file": "old_hero_save.json",
+              "note": "Старый сейв Славы — для сравнения версий"
+            }
+          ]
         },
         {
-          "file": "broken_letter.txt",
-          "note": "Письмо, испорченное двойной перекодировкой (кракозябры вида «РџСЂРёРІРµС‚») — почините его через encoding и прочтите тайну"
+          "title": "Вложенные объекты",
+          "items": [
+            {
+              "file": "character_full.json",
+              "note": "Герой с вложенными position и stats"
+            },
+            {
+              "file": "flat_hero.json",
+              "note": "Тот же герой «плоско»: pos_x, stat_strength — сравните с вложенным"
+            },
+            {
+              "file": "player_position.json",
+              "note": "Игрок с вложенным объектом position"
+            },
+            {
+              "file": "house.json",
+              "note": "Дом с вложенным адресом"
+            },
+            {
+              "file": "fortress.json",
+              "note": "Крепость: башня, а в башне сундук — два уровня вложенности"
+            },
+            {
+              "file": "game_settings.json",
+              "note": "Настройки игры: разделы audio и video"
+            },
+            {
+              "file": "settings_full.json",
+              "note": "Плоские настройки: громкость, сложность, язык, автосейв"
+            },
+            {
+              "file": "pizza_order.json",
+              "note": "Заказ пиццы: клиент внутри, топпинги массивом"
+            },
+            {
+              "file": "alien_artifact.json",
+              "note": "Артефакт пришельцев: все типы разом, включая null и вложенное ядро"
+            },
+            {
+              "file": "duel_pos_1.json",
+              "note": "Позиция Миры на карте — пара к duel_pos_2.json"
+            },
+            {
+              "file": "duel_pos_2.json",
+              "note": "Позиция Тимура — посчитайте расстояние между героями"
+            },
+            {
+              "file": "config_v1.json",
+              "note": "Конфиг версии 1 — сравните с v2: одного ключа не станет"
+            },
+            {
+              "file": "config_v2.json",
+              "note": "Конфиг версии 2: cheats исчез, появились language и autosave"
+            },
+            {
+              "file": "old_save.json",
+              "note": "Сейв со свалкой устаревших полей — вычистить лишнее"
+            },
+            {
+              "file": "player_with_inventory.json",
+              "note": "Герой с инвентарём-массивом (есть повтор!)"
+            }
+          ]
         },
         {
-          "file": "scores.txt",
-          "note": "Таблица рекордов «имя;очки» — чтение файла, split, to_int и поиск чемпиона"
+          "title": "Массивы значений",
+          "items": [
+            {
+              "file": "inventory.json",
+              "note": "Инвентарь: четыре предмета строками"
+            },
+            {
+              "file": "shopping.json",
+              "note": "Список покупок из пяти пунктов"
+            },
+            {
+              "file": "bought.json",
+              "note": "Что купили на самом деле — сравните со списком"
+            },
+            {
+              "file": "todo.json",
+              "note": "Список дел"
+            },
+            {
+              "file": "guild_members.json",
+              "note": "Шесть имён гильдии"
+            },
+            {
+              "file": "lunch_queue.json",
+              "note": "Очередь в столовую — вставки и удаления"
+            },
+            {
+              "file": "rival_guild.json",
+              "note": "Три имени соседней гильдии"
+            },
+            {
+              "file": "history.json",
+              "note": "История поиска — пять запросов"
+            },
+            {
+              "file": "inbox.json",
+              "note": "Почта: письма вперемешку со СПАМом — фильтрация"
+            },
+            {
+              "file": "playlist_edit.json",
+              "note": "Плейлист для перестановок и удалений"
+            },
+            {
+              "file": "lottery.json",
+              "note": "Три счастливых числа"
+            },
+            {
+              "file": "mood_week.json",
+              "note": "Настроение по дням недели, 7 чисел"
+            },
+            {
+              "file": "temperatures.json",
+              "note": "Неделя температур, есть отрицательные"
+            },
+            {
+              "file": "top_scores.json",
+              "note": "Шесть рекордов по убыванию"
+            },
+            {
+              "file": "prices.json",
+              "note": "Прайс-лист: ключ-товар, значение-цена (объект как словарь)"
+            },
+            {
+              "file": "translations.json",
+              "note": "Словарик англо-русский — объект как справочник"
+            }
+          ]
         },
         {
-          "file": "numbers.txt",
-          "note": "Сто чисел по одному в строке — суммы, максимумы и подсчёт чётных"
+          "title": "Массивы объектов (таблицы)",
+          "items": [
+            {
+              "file": "guild.json",
+              "note": "Гильдия: пять героев (name/class/level/coins) — главная таблица раздела"
+            },
+            {
+              "file": "rival_guild_full.json",
+              "note": "Соседняя гильдия целиком — для объединения таблиц"
+            },
+            {
+              "file": "party_save.json",
+              "note": "Отряд из трёх героев с монетами"
+            },
+            {
+              "file": "team.json",
+              "note": "Команда из двух героев — первый массив объектов"
+            },
+            {
+              "file": "zoo.json",
+              "note": "Пять питомцев, виды повторяются — для подсчётов"
+            },
+            {
+              "file": "quests.json",
+              "note": "Доска заданий с флагами done"
+            },
+            {
+              "file": "shop_catalog.json",
+              "note": "Каталог из пяти товаров, один не в наличии"
+            },
+            {
+              "file": "tournament.json",
+              "note": "Пять участников вперемешку — сортировка по очкам"
+            },
+            {
+              "file": "class_journal.json",
+              "note": "Журнал: ученики, у каждого массив оценок — массив в объекте в массиве"
+            }
+          ]
         },
         {
-          "file": "game_items.txt",
-          "note": "Список из 20 шуточных игровых предметов — для заданий про файлы и массивы"
+          "title": "Особые случаи и грязные данные",
+          "items": [
+            {
+              "file": "broken_save.json",
+              "note": "Нарочно сломанный сейв (комментарий и лишние запятые) — почините файл, не трогая программу"
+            },
+            {
+              "file": "big_id.json",
+              "note": "Player_id = 9007199254740993 — число, которое не влезает в обычный int"
+            },
+            {
+              "file": "stash_weird.json",
+              "note": "Заначка Бориса: amount = «немерено» вместо числа — грязные данные"
+            },
+            {
+              "file": "unknown_save.json",
+              "note": "Шесть ключей неизвестного сейва: null, дробь 0.13, длинная строка"
+            },
+            {
+              "file": "mystery_1.json",
+              "note": "Ключ mystery: целое число"
+            },
+            {
+              "file": "mystery_2.json",
+              "note": "Тот же ключ — строка"
+            },
+            {
+              "file": "mystery_3.json",
+              "note": "Тот же ключ — булево. Спросите тип, потом распаковывайте"
+            },
+            {
+              "file": "witness_1.json",
+              "note": "Показания Миры — дело о пицце из холодильника гильдии"
+            },
+            {
+              "file": "witness_2.json",
+              "note": "Показания Кая"
+            },
+            {
+              "file": "witness_3.json",
+              "note": "Показания Леи — кто съел пиццу?"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db",
+      "title": "Базы данных",
+      "icon": "🗄️",
+      "groups": [
+        {
+          "title": "Готовые базы",
+          "items": [
+            {
+              "file": "guild.db",
+              "note": "Готовая база SQLite: 10 игроков, 20 товаров и 24 покупки со связями — SELECT, WHERE, JOIN, агрегаты"
+            }
+          ]
+        },
+        {
+          "title": "SQL-скрипты",
+          "items": [
+            {
+              "file": "setup_guild.sql",
+              "note": "Схема гильдии: три таблицы + герои, товары, покупки. С DROP-прологом — запускается сколько угодно раз"
+            },
+            {
+              "file": "seed_extra.sql",
+              "note": "Дополнение к гильдии: ещё 6 героев и 6 товаров. Без DROP — только добавляет"
+            },
+            {
+              "file": "setup_school.sql",
+              "note": "Школьная база: ученики, предметы (у физкультуры кабинет NULL), оценки"
+            },
+            {
+              "file": "setup_broken.sql",
+              "note": "Ровно одна спрятанная ошибка — почините по письму near \"12\": syntax error"
+            }
+          ]
         }
       ]
     }

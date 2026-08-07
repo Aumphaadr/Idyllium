@@ -11,18 +11,35 @@
     * { box-sizing: border-box; }
     body { margin: 0; padding: 34px 20px 60px; background: #0c0515; color: #f2eaf7;
       font: 17px/1.6 "Geologica", system-ui, sans-serif; }
-    main { max-width: 860px; margin: 0 auto; }
+    main { max-width: 900px; margin: 0 auto; }
     h1 { margin: 0 0 6px; font-size: 34px; }
-    .lead { margin: 0 0 30px; color: #c9bdd6; }
-    h2 { margin: 34px 0 12px; padding: 8px 16px; border-left: 4px solid #87bfff;
+    .lead { margin: 0 0 22px; color: #c9bdd6; }
+    .controls { position: sticky; top: 0; z-index: 5; padding: 12px 0 10px;
+      background: linear-gradient(#0c0515 78%, rgba(12, 5, 21, 0)); }
+    .search { width: 100%; padding: 11px 16px; border: 1px solid #342846; border-radius: 999px;
+      background: #151020; color: #f2eaf7; font: 16px "Geologica", system-ui, sans-serif; }
+    .search::placeholder { color: #8e819d; }
+    .search:focus { outline: none; border-color: #87bfff; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .tab { display: inline-flex; align-items: center; gap: 8px; padding: 8px 15px;
+      border: 1px solid #342846; border-radius: 999px; background: #151020; color: #c9bdd6;
+      font: 700 15px "Geologica", system-ui, sans-serif; cursor: pointer; }
+    .tab:hover { border-color: #87bfff; color: #f2eaf7; }
+    .tab[aria-selected="true"] { border-color: #87bfff; background: rgba(135, 191, 255, 0.16); color: #f2eaf7; }
+    .tab-icon { font-size: 15px; }
+    .tab-count { padding: 1px 8px; border-radius: 999px; background: rgba(135, 191, 255, 0.16);
+      color: #87bfff; font-size: 13px; }
+    h2 { margin: 26px 0 12px; padding: 8px 16px; border-left: 4px solid #87bfff;
       border-radius: 10px; background: linear-gradient(90deg, rgba(135, 191, 255, 0.12), transparent 82%);
       font-size: 21px; }
+    h3 { margin: 24px 0 10px; color: #87bfff; font-size: 16px; text-transform: uppercase;
+      letter-spacing: 0.06em; }
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
     li { display: flex; align-items: center; gap: 14px; padding: 10px 14px;
       border: 1px solid #342846; border-radius: 12px; background: #151020; }
     .thumb { width: 56px; height: 56px; flex: none; object-fit: contain;
       border-radius: 8px; background: #100b1a; }
-    .thumb-icon { display: grid; place-items: center; color: #87bfff; font-size: 24px; font-weight: 700; }
+    .thumb-icon { display: grid; place-items: center; color: #87bfff; font-size: 20px; font-weight: 700; }
     .meta { min-width: 0; flex: 1; }
     .name { font-weight: 700; overflow-wrap: anywhere; }
     .size { margin-left: 6px; color: #8e819d; font-size: 13px; font-weight: 400; }
@@ -31,6 +48,8 @@
     .download { flex: none; padding: 8px 16px; border: 1px solid #87bfff; border-radius: 999px;
       color: #87bfff; font-weight: 800; font-size: 14px; text-decoration: none; }
     .download:hover { background: #87bfff; color: #0c0515; }
+    .empty { display: none; margin: 30px 0; color: #8e819d; }
+    body.searching .tab-count { opacity: 0.4; }
     .footnote { margin-top: 36px; color: #8e819d; font-size: 14px; }
     .footnote a { color: #87bfff; }
   </style>
@@ -39,224 +58,1077 @@
   <main>
     <h1>Файлы для заданий</h1>
     <p class="lead">Раздатка задачника: картинки, звуки, шрифты и данные, которые просят скачать задания. Кладите скачанный файл рядом с программой (в Web IDE — загрузите в проект).</p>
-    <section>
-      <h2>Картинки</h2>
+    <div class="controls">
+      <input type="search" class="search" id="search" placeholder="Поиск по имени файла или описанию — например, «гильдия» или «.json»" aria-label="Поиск файлов">
+      <div class="tabs" role="tablist">
+      <button type="button" class="tab" data-tab="images" role="tab" aria-selected="false"><span class="tab-icon">🖼️</span>Картинки<span class="tab-count">8</span></button>
+      <button type="button" class="tab" data-tab="audio" role="tab" aria-selected="false"><span class="tab-icon">🎵</span>Звук и музыка<span class="tab-count">4</span></button>
+      <button type="button" class="tab" data-tab="fonts" role="tab" aria-selected="false"><span class="tab-icon">🔤</span>Шрифты<span class="tab-count">5</span></button>
+      <button type="button" class="tab" data-tab="text" role="tab" aria-selected="false"><span class="tab-icon">📄</span>Текстовые файлы<span class="tab-count">24</span></button>
+      <button type="button" class="tab" data-tab="json" role="tab" aria-selected="false"><span class="tab-icon">{ }</span>JSON<span class="tab-count">68</span></button>
+      <button type="button" class="tab" data-tab="db" role="tab" aria-selected="false"><span class="tab-icon">🗄️</span>Базы данных<span class="tab-count">5</span></button>
+      </div>
+    </div>
+    <p class="empty" id="empty">Ничего не нашлось. Попробуйте другое слово или выберите вкладку.</p>
+    <section class="panel" id="tab-images" role="tabpanel" hidden>
+      <h2>🖼️ Картинки</h2>
+      <h3>JPEG</h3>
       <ul>
-      <li>
-        <img class="thumb" src="files/cat.png" alt="" loading="lazy">
-        <div class="meta">
-          <div class="name">cat.png <span class="size">17 КБ</span></div>
-          <div class="note">Кот для уроков про картинки и ImageBox</div>
-        </div>
-        <a class="download" href="files/cat.png" download>Скачать</a>
-      </li>
-      <li>
-        <img class="thumb" src="files/red_stickman.png" alt="" loading="lazy">
-        <div class="meta">
-          <div class="name">red_stickman.png <span class="size">5 КБ</span></div>
-          <div class="note">Красный человечек — спрайт для Canvas</div>
-        </div>
-        <a class="download" href="files/red_stickman.png" download>Скачать</a>
-      </li>
-      <li>
-        <img class="thumb" src="files/cow_rotator.jpeg" alt="" loading="lazy">
-        <div class="meta">
-          <div class="name">cow_rotator.jpeg <span class="size">50 КБ</span></div>
-          <div class="note">Корова для заданий про повороты и трансформации</div>
-        </div>
-        <a class="download" href="files/cow_rotator.jpeg" download>Скачать</a>
-      </li>
-      <li>
-        <img class="thumb" src="files/travolta.jpeg" alt="" loading="lazy">
-        <div class="meta">
-          <div class="name">travolta.jpeg <span class="size">159 КБ</span></div>
-          <div class="note">Растерянный Траволта — для заданий про режимы растяжения</div>
-        </div>
-        <a class="download" href="files/travolta.jpeg" download>Скачать</a>
-      </li>
-      <li>
-        <img class="thumb" src="files/meme_left.jpeg" alt="" loading="lazy">
-        <div class="meta">
-          <div class="name">meme_left.jpeg <span class="size">77 КБ</span></div>
-          <div class="note">Левая половинка мема — собери из двух ImageBox</div>
-        </div>
-        <a class="download" href="files/meme_left.jpeg" download>Скачать</a>
-      </li>
-      <li>
-        <img class="thumb" src="files/meme_right.jpeg" alt="" loading="lazy">
-        <div class="meta">
-          <div class="name">meme_right.jpeg <span class="size">70 КБ</span></div>
-          <div class="note">Правая половинка мема</div>
-        </div>
-        <a class="download" href="files/meme_right.jpeg" download>Скачать</a>
-      </li>
+        <li data-search="travolta.jpeg растерянный траволта — для заданий про режимы растяжения">
+          <img class="thumb" src="files/travolta.jpeg" alt="" loading="lazy">
+          <div class="meta">
+            <div class="name">travolta.jpeg <span class="size">159 КБ</span></div>
+            <div class="note">Растерянный Траволта — для заданий про режимы растяжения</div>
+          </div>
+          <a class="download" href="files/travolta.jpeg" download>Скачать</a>
+        </li>
+        <li data-search="cow_rotator.jpeg корова для заданий про повороты и трансформации">
+          <img class="thumb" src="files/cow_rotator.jpeg" alt="" loading="lazy">
+          <div class="meta">
+            <div class="name">cow_rotator.jpeg <span class="size">50 КБ</span></div>
+            <div class="note">Корова для заданий про повороты и трансформации</div>
+          </div>
+          <a class="download" href="files/cow_rotator.jpeg" download>Скачать</a>
+        </li>
+        <li data-search="meme_left.jpeg левая половинка мема — соберите из двух imagebox">
+          <img class="thumb" src="files/meme_left.jpeg" alt="" loading="lazy">
+          <div class="meta">
+            <div class="name">meme_left.jpeg <span class="size">77 КБ</span></div>
+            <div class="note">Левая половинка мема — соберите из двух ImageBox</div>
+          </div>
+          <a class="download" href="files/meme_left.jpeg" download>Скачать</a>
+        </li>
+        <li data-search="meme_right.jpeg правая половинка мема">
+          <img class="thumb" src="files/meme_right.jpeg" alt="" loading="lazy">
+          <div class="meta">
+            <div class="name">meme_right.jpeg <span class="size">70 КБ</span></div>
+            <div class="note">Правая половинка мема</div>
+          </div>
+          <a class="download" href="files/meme_right.jpeg" download>Скачать</a>
+        </li>
+      </ul>
+      <h3>PNG</h3>
+      <ul>
+        <li data-search="cat.png кот для уроков про картинки и imagebox">
+          <img class="thumb" src="files/cat.png" alt="" loading="lazy">
+          <div class="meta">
+            <div class="name">cat.png <span class="size">17 КБ</span></div>
+            <div class="note">Кот для уроков про картинки и ImageBox</div>
+          </div>
+          <a class="download" href="files/cat.png" download>Скачать</a>
+        </li>
+        <li data-search="red_stickman.png красный человечек — спрайт для canvas">
+          <img class="thumb" src="files/red_stickman.png" alt="" loading="lazy">
+          <div class="meta">
+            <div class="name">red_stickman.png <span class="size">5 КБ</span></div>
+            <div class="note">Красный человечек — спрайт для Canvas</div>
+          </div>
+          <a class="download" href="files/red_stickman.png" download>Скачать</a>
+        </li>
+      </ul>
+      <h3>GIF (анимации)</h3>
+      <ul>
+        <li data-search="walk.gif анимация ходьбы, 10 кадров — для image.animation">
+          <img class="thumb" src="files/walk.gif" alt="" loading="lazy">
+          <div class="meta">
+            <div class="name">walk.gif <span class="size">24 КБ</span></div>
+            <div class="note">Анимация ходьбы, 10 кадров — для image.Animation</div>
+          </div>
+          <a class="download" href="files/walk.gif" download>Скачать</a>
+        </li>
+        <li data-search="green_stickman.gif зелёный человечек, 2 кадра">
+          <img class="thumb" src="files/green_stickman.gif" alt="" loading="lazy">
+          <div class="meta">
+            <div class="name">green_stickman.gif <span class="size">3 КБ</span></div>
+            <div class="note">Зелёный человечек, 2 кадра</div>
+          </div>
+          <a class="download" href="files/green_stickman.gif" download>Скачать</a>
+        </li>
       </ul>
     </section>
-    <section>
-      <h2>Анимации</h2>
+    <section class="panel" id="tab-audio" role="tabpanel" hidden>
+      <h2>🎵 Звук и музыка</h2>
+      <h3>WAV — короткие эффекты</h3>
       <ul>
-      <li>
-        <img class="thumb" src="files/walk.gif" alt="" loading="lazy">
-        <div class="meta">
-          <div class="name">walk.gif <span class="size">24 КБ</span></div>
-          <div class="note">Анимация ходьбы, 10 кадров — для image.Animation</div>
-        </div>
-        <a class="download" href="files/walk.gif" download>Скачать</a>
-      </li>
-      <li>
-        <img class="thumb" src="files/green_stickman.gif" alt="" loading="lazy">
-        <div class="meta">
-          <div class="name">green_stickman.gif <span class="size">3 КБ</span></div>
-          <div class="note">Зелёный человечек, 2 кадра</div>
-        </div>
-        <a class="download" href="files/green_stickman.gif" download>Скачать</a>
-      </li>
+        <li data-search="click.wav короткий щелчок (0,3 сек) — для audio.sound">
+          <span class="thumb thumb-icon">♪</span>
+          <div class="meta">
+            <div class="name">click.wav <span class="size">52 КБ</span></div>
+            <div class="note">Короткий щелчок (0,3 сек) — для audio.Sound</div>
+          </div>
+          <a class="download" href="files/click.wav" download>Скачать</a>
+        </li>
+      </ul>
+      <h3>MP3 — длинные треки</h3>
+      <ul>
+        <li data-search="mesmerizing galaxy.mp3 спокойный космический фон, 92,97 сек (kevin macleod)">
+          <span class="thumb thumb-icon">♪</span>
+          <div class="meta">
+            <div class="name">Mesmerizing Galaxy.mp3 <span class="size">2,8 МБ</span></div>
+            <div class="note">Спокойный космический фон, 92,97 сек (Kevin MacLeod)</div>
+          </div>
+          <a class="download" href="files/Mesmerizing%20Galaxy.mp3" download>Скачать</a>
+        </li>
+        <li data-search="surf shimmy.mp3 бодрый сёрф-рок, 122,88 сек (kevin macleod)">
+          <span class="thumb thumb-icon">♪</span>
+          <div class="meta">
+            <div class="name">Surf Shimmy.mp3 <span class="size">3,8 МБ</span></div>
+            <div class="note">Бодрый сёрф-рок, 122,88 сек (Kevin MacLeod)</div>
+          </div>
+          <a class="download" href="files/Surf%20Shimmy.mp3" download>Скачать</a>
+        </li>
+        <li data-search="rising.mp3 нарастающий эмбиент, 151,48 сек (kevin macleod)">
+          <span class="thumb thumb-icon">♪</span>
+          <div class="meta">
+            <div class="name">Rising.mp3 <span class="size">5,8 МБ</span></div>
+            <div class="note">Нарастающий эмбиент, 151,48 сек (Kevin MacLeod)</div>
+          </div>
+          <a class="download" href="files/Rising.mp3" download>Скачать</a>
+        </li>
       </ul>
     </section>
-    <section>
-      <h2>Звуки и музыка</h2>
+    <section class="panel" id="tab-fonts" role="tabpanel" hidden>
+      <h2>🔤 Шрифты</h2>
       <ul>
-      <li>
-        <span class="thumb thumb-icon">♪</span>
-        <div class="meta">
-          <div class="name">click.wav <span class="size">52 КБ</span></div>
-          <div class="note">Короткий щелчок — для audio.Sound</div>
-        </div>
-        <a class="download" href="files/click.wav" download>Скачать</a>
-      </li>
-      <li>
-        <span class="thumb thumb-icon">♪</span>
-        <div class="meta">
-          <div class="name">Mesmerizing Galaxy.mp3 <span class="size">2,8 МБ</span></div>
-          <div class="note">Спокойный космический фон (Kevin MacLeod, incompetech.com)</div>
-        </div>
-        <a class="download" href="files/Mesmerizing%20Galaxy.mp3" download>Скачать</a>
-      </li>
-      <li>
-        <span class="thumb thumb-icon">♪</span>
-        <div class="meta">
-          <div class="name">Surf Shimmy.mp3 <span class="size">3,8 МБ</span></div>
-          <div class="note">Бодрый сёрф-рок (Kevin MacLeod, incompetech.com)</div>
-        </div>
-        <a class="download" href="files/Surf%20Shimmy.mp3" download>Скачать</a>
-      </li>
-      <li>
-        <span class="thumb thumb-icon">♪</span>
-        <div class="meta">
-          <div class="name">Rising.mp3 <span class="size">5,8 МБ</span></div>
-          <div class="note">Нарастающий эмбиент (Kevin MacLeod, incompetech.com)</div>
-        </div>
-        <a class="download" href="files/Rising.mp3" download>Скачать</a>
-      </li>
+        <li data-search="comfortaa-variable.ttf округлый comfortaa с кириллицей (sil ofl)">
+          <span class="thumb thumb-icon">Aa</span>
+          <div class="meta">
+            <div class="name">Comfortaa-Variable.ttf <span class="size">199 КБ</span> <a class="license" href="files/Comfortaa-OFL.txt" download>лицензия</a></div>
+            <div class="note">Округлый Comfortaa с кириллицей (SIL OFL)</div>
+          </div>
+          <a class="download" href="files/Comfortaa-Variable.ttf" download>Скачать</a>
+        </li>
+        <li data-search="lora-variable.ttf книжная антиква lora (sil ofl)">
+          <span class="thumb thumb-icon">Aa</span>
+          <div class="meta">
+            <div class="name">Lora-Variable.ttf <span class="size">206 КБ</span> <a class="license" href="files/Lora-OFL.txt" download>лицензия</a></div>
+            <div class="note">Книжная антиква Lora (SIL OFL)</div>
+          </div>
+          <a class="download" href="files/Lora-Variable.ttf" download>Скачать</a>
+        </li>
+        <li data-search="lora-italic-variable.ttf lora, курсивное начертание (sil ofl)">
+          <span class="thumb thumb-icon">Aa</span>
+          <div class="meta">
+            <div class="name">Lora-Italic-Variable.ttf <span class="size">214 КБ</span> <a class="license" href="files/Lora-OFL.txt" download>лицензия</a></div>
+            <div class="note">Lora, курсивное начертание (SIL OFL)</div>
+          </div>
+          <a class="download" href="files/Lora-Italic-Variable.ttf" download>Скачать</a>
+        </li>
+        <li data-search="lobster-regular.ttf рукописный lobster с кириллицей (sil ofl)">
+          <span class="thumb thumb-icon">Aa</span>
+          <div class="meta">
+            <div class="name">Lobster-Regular.ttf <span class="size">387 КБ</span> <a class="license" href="files/Lobster-OFL.txt" download>лицензия</a></div>
+            <div class="note">Рукописный Lobster с кириллицей (SIL OFL)</div>
+          </div>
+          <a class="download" href="files/Lobster-Regular.ttf" download>Скачать</a>
+        </li>
+        <li data-search="blackopsone-regular.ttf black ops one — нарочно без кириллицы: не у всех шрифтов есть русские буквы (sil ofl)">
+          <span class="thumb thumb-icon">Aa</span>
+          <div class="meta">
+            <div class="name">BlackOpsOne-Regular.ttf <span class="size">160 КБ</span> <a class="license" href="files/BlackOpsOne-OFL.txt" download>лицензия</a></div>
+            <div class="note">Black Ops One — нарочно БЕЗ кириллицы: не у всех шрифтов есть русские буквы (SIL OFL)</div>
+          </div>
+          <a class="download" href="files/BlackOpsOne-Regular.ttf" download>Скачать</a>
+        </li>
       </ul>
     </section>
-    <section>
-      <h2>Шрифты</h2>
+    <section class="panel" id="tab-text" role="tabpanel" hidden>
+      <h2>📄 Текстовые файлы</h2>
+      <h3>Данные для чтения</h3>
       <ul>
-      <li>
-        <span class="thumb thumb-icon">Aa</span>
-        <div class="meta">
-          <div class="name">Comfortaa-Variable.ttf <span class="size">199 КБ</span> <a class="license" href="files/Comfortaa-OFL.txt" download>лицензия</a></div>
-          <div class="note">Округлый Comfortaa с кириллицей (SIL OFL)</div>
-        </div>
-        <a class="download" href="files/Comfortaa-Variable.ttf" download>Скачать</a>
-      </li>
-      <li>
-        <span class="thumb thumb-icon">Aa</span>
-        <div class="meta">
-          <div class="name">Lora-Variable.ttf <span class="size">206 КБ</span> <a class="license" href="files/Lora-OFL.txt" download>лицензия</a></div>
-          <div class="note">Книжная антиква Lora (SIL OFL)</div>
-        </div>
-        <a class="download" href="files/Lora-Variable.ttf" download>Скачать</a>
-      </li>
-      <li>
-        <span class="thumb thumb-icon">Aa</span>
-        <div class="meta">
-          <div class="name">Lora-Italic-Variable.ttf <span class="size">214 КБ</span> <a class="license" href="files/Lora-OFL.txt" download>лицензия</a></div>
-          <div class="note">Lora, курсивное начертание (SIL OFL)</div>
-        </div>
-        <a class="download" href="files/Lora-Italic-Variable.ttf" download>Скачать</a>
-      </li>
-      <li>
-        <span class="thumb thumb-icon">Aa</span>
-        <div class="meta">
-          <div class="name">Lobster-Regular.ttf <span class="size">387 КБ</span> <a class="license" href="files/Lobster-OFL.txt" download>лицензия</a></div>
-          <div class="note">Рукописный Lobster с кириллицей (SIL OFL)</div>
-        </div>
-        <a class="download" href="files/Lobster-Regular.ttf" download>Скачать</a>
-      </li>
-      <li>
-        <span class="thumb thumb-icon">Aa</span>
-        <div class="meta">
-          <div class="name">BlackOpsOne-Regular.ttf <span class="size">160 КБ</span> <a class="license" href="files/BlackOpsOne-OFL.txt" download>лицензия</a></div>
-          <div class="note">Black Ops One — нарочно БЕЗ кириллицы: показать, что русские буквы есть не у всех шрифтов (SIL OFL)</div>
-        </div>
-        <a class="download" href="files/BlackOpsOne-Regular.ttf" download>Скачать</a>
-      </li>
+        <li data-search="numbers.txt сто чисел по одному в строке — суммы, максимумы, подсчёт чётных">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">numbers.txt <span class="size">349 Б</span></div>
+            <div class="note">Сто чисел по одному в строке — суммы, максимумы, подсчёт чётных</div>
+          </div>
+          <a class="download" href="files/numbers.txt" download>Скачать</a>
+        </li>
+        <li data-search="scores.txt таблица рекордов «имя;очки» — split, to_int и поиск чемпиона">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">scores.txt <span class="size">163 Б</span></div>
+            <div class="note">Таблица рекордов «имя;очки» — split, to_int и поиск чемпиона</div>
+          </div>
+          <a class="download" href="files/scores.txt" download>Скачать</a>
+        </li>
+        <li data-search="game_items.txt двадцать шуточных игровых предметов — файлы и массивы">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">game_items.txt <span class="size">884 Б</span></div>
+            <div class="note">Двадцать шуточных игровых предметов — файлы и массивы</div>
+          </div>
+          <a class="download" href="files/game_items.txt" download>Скачать</a>
+        </li>
+        <li data-search="weather.txt семь температур, есть отрицательные">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">weather.txt <span class="size">16 Б</span></div>
+            <div class="note">Семь температур, есть отрицательные</div>
+          </div>
+          <a class="download" href="files/weather.txt" download>Скачать</a>
+        </li>
+        <li data-search="story.txt сплошной текст без знаков препинания — для подсчёта слов">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">story.txt <span class="size">203 Б</span></div>
+            <div class="note">Сплошной текст без знаков препинания — для подсчёта слов</div>
+          </div>
+          <a class="download" href="files/story.txt" download>Скачать</a>
+        </li>
+        <li data-search="counter.txt одна строка «0» — стартовое зерно счётчика запусков">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">counter.txt <span class="size">2 Б</span></div>
+            <div class="note">Одна строка «0» — стартовое зерно счётчика запусков</div>
+          </div>
+          <a class="download" href="files/counter.txt" download>Скачать</a>
+        </li>
+      </ul>
+      <h3>Шкафы-колонки (файл на каждое поле)</h3>
+      <ul>
+        <li data-search="names.txt два имени — пара к levels.txt (первый «шкаф» из урока)">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">names.txt <span class="size">10 Б</span></div>
+            <div class="note">Два имени — пара к levels.txt (первый «шкаф» из урока)</div>
+          </div>
+          <a class="download" href="files/names.txt" download>Скачать</a>
+        </li>
+        <li data-search="levels.txt два уровня — пара к names.txt">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">levels.txt <span class="size">4 Б</span></div>
+            <div class="note">Два уровня — пара к names.txt</div>
+          </div>
+          <a class="download" href="files/levels.txt" download>Скачать</a>
+        </li>
+        <li data-search="hero_names.txt шкаф гильдии: пять имён (пара к hero_classes/levels/coins)">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">hero_names.txt <span class="size">43 Б</span></div>
+            <div class="note">Шкаф гильдии: пять имён (пара к hero_classes/levels/coins)</div>
+          </div>
+          <a class="download" href="files/hero_names.txt" download>Скачать</a>
+        </li>
+        <li data-search="hero_classes.txt шкаф гильдии: пять классов">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">hero_classes.txt <span class="size">59 Б</span></div>
+            <div class="note">Шкаф гильдии: пять классов</div>
+          </div>
+          <a class="download" href="files/hero_classes.txt" download>Скачать</a>
+        </li>
+        <li data-search="hero_levels.txt шкаф гильдии: пять уровней">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">hero_levels.txt <span class="size">13 Б</span></div>
+            <div class="note">Шкаф гильдии: пять уровней</div>
+          </div>
+          <a class="download" href="files/hero_levels.txt" download>Скачать</a>
+        </li>
+        <li data-search="hero_coins.txt шкаф гильдии: пять кошельков">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">hero_coins.txt <span class="size">22 Б</span></div>
+            <div class="note">Шкаф гильдии: пять кошельков</div>
+          </div>
+          <a class="download" href="files/hero_coins.txt" download>Скачать</a>
+        </li>
+        <li data-search="students.txt четыре ученика — пара к grades.txt">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">students.txt <span class="size">42 Б</span></div>
+            <div class="note">Четыре ученика — пара к grades.txt</div>
+          </div>
+          <a class="download" href="files/students.txt" download>Скачать</a>
+        </li>
+        <li data-search="grades.txt четыре оценки — пара к students.txt">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">grades.txt <span class="size">8 Б</span></div>
+            <div class="note">Четыре оценки — пара к students.txt</div>
+          </div>
+          <a class="download" href="files/grades.txt" download>Скачать</a>
+        </li>
+        <li data-search="menu_names.txt четыре блюда — пара к menu_prices.txt">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">menu_names.txt <span class="size">204 Б</span></div>
+            <div class="note">Четыре блюда — пара к menu_prices.txt</div>
+          </div>
+          <a class="download" href="files/menu_names.txt" download>Скачать</a>
+        </li>
+        <li data-search="menu_prices.txt четыре цены — пара к menu_names.txt">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">menu_prices.txt <span class="size">14 Б</span></div>
+            <div class="note">Четыре цены — пара к menu_names.txt</div>
+          </div>
+          <a class="download" href="files/menu_prices.txt" download>Скачать</a>
+        </li>
+        <li data-search="race_names.txt шесть бегунов — пара к race_times.txt">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">race_names.txt <span class="size">54 Б</span></div>
+            <div class="note">Шесть бегунов — пара к race_times.txt</div>
+          </div>
+          <a class="download" href="files/race_names.txt" download>Скачать</a>
+        </li>
+        <li data-search="race_times.txt шесть результатов забега; есть ничья 39:39 — намеренно">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">race_times.txt <span class="size">18 Б</span></div>
+            <div class="note">Шесть результатов забега; есть ничья 39:39 — намеренно</div>
+          </div>
+          <a class="download" href="files/race_times.txt" download>Скачать</a>
+        </li>
+        <li data-search="guests.txt четыре гостя — пара к gifts.txt">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">guests.txt <span class="size">34 Б</span></div>
+            <div class="note">Четыре гостя — пара к gifts.txt</div>
+          </div>
+          <a class="download" href="files/guests.txt" download>Скачать</a>
+        </li>
+        <li data-search="gifts.txt три подарка: гостей больше — рассинхрон намеренный">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">gifts.txt <span class="size">101 Б</span></div>
+            <div class="note">Три подарка: гостей больше — рассинхрон намеренный</div>
+          </div>
+          <a class="download" href="files/gifts.txt" download>Скачать</a>
+        </li>
+      </ul>
+      <h3>Испорченные нарочно</h3>
+      <ul>
+        <li data-search="broken_letter.txt письмо, испорченное двойной перекодировкой («рџсђрёрірµс‚») — почините через encoding">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">broken_letter.txt <span class="size">952 Б</span></div>
+            <div class="note">Письмо, испорченное двойной перекодировкой («РџСЂРёРІРµС‚») — почините через encoding</div>
+          </div>
+          <a class="download" href="files/broken_letter.txt" download>Скачать</a>
+        </li>
+        <li data-search="broken_guild_names.txt больной шкаф: 4 имени...">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">broken_guild_names.txt <span class="size">34 Б</span></div>
+            <div class="note">Больной шкаф: 4 имени...</div>
+          </div>
+          <a class="download" href="files/broken_guild_names.txt" download>Скачать</a>
+        </li>
+        <li data-search="broken_guild_levels.txt ...но всего 3 уровня — программа обязана заметить">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">broken_guild_levels.txt <span class="size">8 Б</span></div>
+            <div class="note">...но всего 3 уровня — программа обязана заметить</div>
+          </div>
+          <a class="download" href="files/broken_guild_levels.txt" download>Скачать</a>
+        </li>
+        <li data-search="broken_guild_coins.txt ...и снова 4 кошелька. данные врозь — беда врозь">
+          <span class="thumb thumb-icon">📄</span>
+          <div class="meta">
+            <div class="name">broken_guild_coins.txt <span class="size">17 Б</span></div>
+            <div class="note">...и снова 4 кошелька. Данные врозь — беда врозь</div>
+          </div>
+          <a class="download" href="files/broken_guild_coins.txt" download>Скачать</a>
+        </li>
       </ul>
     </section>
-    <section>
-      <h2>Данные</h2>
+    <section class="panel" id="tab-json" role="tabpanel" hidden>
+      <h2>{ } JSON</h2>
+      <h3>Простые объекты</h3>
       <ul>
-      <li>
-        <span class="thumb thumb-icon">📄</span>
-        <div class="meta">
-          <div class="name">guild.db <span class="size">28 КБ</span></div>
-          <div class="note">Готовая база SQLite: гильдия из 10 игроков, 20 предметов и 24 покупок со связями — для SELECT, WHERE, JOIN и агрегатов</div>
-        </div>
-        <a class="download" href="files/guild.db" download>Скачать</a>
-      </li>
-      <li>
-        <span class="thumb thumb-icon">📄</span>
-        <div class="meta">
-          <div class="name">save.json <span class="size">751 Б</span></div>
-          <div class="note">Сейв игры: герой с вложенной позицией, инвентарь-массив, настройки — для уроков про чтение JSON</div>
-        </div>
-        <a class="download" href="files/save.json" download>Скачать</a>
-      </li>
-      <li>
-        <span class="thumb thumb-icon">📄</span>
-        <div class="meta">
-          <div class="name">broken_save.json <span class="size">316 Б</span></div>
-          <div class="note">Нарочно сломанный сейв (комментарий и лишние запятые) — почините файл, не трогая программу</div>
-        </div>
-        <a class="download" href="files/broken_save.json" download>Скачать</a>
-      </li>
-      <li>
-        <span class="thumb thumb-icon">📄</span>
-        <div class="meta">
-          <div class="name">broken_letter.txt <span class="size">952 Б</span></div>
-          <div class="note">Письмо, испорченное двойной перекодировкой (кракозябры вида «РџСЂРёРІРµС‚») — почините его через encoding и прочтите тайну</div>
-        </div>
-        <a class="download" href="files/broken_letter.txt" download>Скачать</a>
-      </li>
-      <li>
-        <span class="thumb thumb-icon">📄</span>
-        <div class="meta">
-          <div class="name">scores.txt <span class="size">163 Б</span></div>
-          <div class="note">Таблица рекордов «имя;очки» — чтение файла, split, to_int и поиск чемпиона</div>
-        </div>
-        <a class="download" href="files/scores.txt" download>Скачать</a>
-      </li>
-      <li>
-        <span class="thumb thumb-icon">📄</span>
-        <div class="meta">
-          <div class="name">numbers.txt <span class="size">349 Б</span></div>
-          <div class="note">Сто чисел по одному в строке — суммы, максимумы и подсчёт чётных</div>
-        </div>
-        <a class="download" href="files/numbers.txt" download>Скачать</a>
-      </li>
-      <li>
-        <span class="thumb thumb-icon">📄</span>
-        <div class="meta">
-          <div class="name">game_items.txt <span class="size">884 Б</span></div>
-          <div class="note">Список из 20 шуточных игровых предметов — для заданий про файлы и массивы</div>
-        </div>
-        <a class="download" href="files/game_items.txt" download>Скачать</a>
-      </li>
+        <li data-search="player.json анкета игрока с null в middle_name">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">player.json <span class="size">86 Б</span></div>
+            <div class="note">Анкета игрока с null в middle_name</div>
+          </div>
+          <a class="download" href="files/player.json" download>Скачать</a>
+        </li>
+        <li data-search="pet.json хомяк батон: имя, вид, возраст, знает ли трюки">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">pet.json <span class="size">95 Б</span></div>
+            <div class="note">Хомяк Батон: имя, вид, возраст, знает ли трюки</div>
+          </div>
+          <a class="download" href="files/pet.json" download>Скачать</a>
+        </li>
+        <li data-search="book.json книга: название, автор, год, страницы">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">book.json <span class="size">140 Б</span></div>
+            <div class="note">Книга: название, автор, год, страницы</div>
+          </div>
+          <a class="download" href="files/book.json" download>Скачать</a>
+        </li>
+        <li data-search="profile.json профиль: имя, уровень, клан">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">profile.json <span class="size">84 Б</span></div>
+            <div class="note">Профиль: имя, уровень, клан</div>
+          </div>
+          <a class="download" href="files/profile.json" download>Скачать</a>
+        </li>
+        <li data-search="stash.json заначка кая: владелец и число">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">stash.json <span class="size">45 Б</span></div>
+            <div class="note">Заначка Кая: владелец и число</div>
+          </div>
+          <a class="download" href="files/stash.json" download>Скачать</a>
+        </li>
+        <li data-search="hero_save.json сейв героя: имя, уровень, монеты">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">hero_save.json <span class="size">63 Б</span></div>
+            <div class="note">Сейв героя: имя, уровень, монеты</div>
+          </div>
+          <a class="download" href="files/hero_save.json" download>Скачать</a>
+        </li>
+        <li data-search="reference_card.json карточка товара с дробным рейтингом 4.8">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">reference_card.json <span class="size">101 Б</span></div>
+            <div class="note">Карточка товара с дробным рейтингом 4.8</div>
+          </div>
+          <a class="download" href="files/reference_card.json" download>Скачать</a>
+        </li>
+        <li data-search="pawnshop_item.json лот ломбарда: цена и флаг «продаётся»">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">pawnshop_item.json <span class="size">131 Б</span></div>
+            <div class="note">Лот ломбарда: цена и флаг «продаётся»</div>
+          </div>
+          <a class="download" href="files/pawnshop_item.json" download>Скачать</a>
+        </li>
+        <li data-search="counter.json счётчик запусков в объекте — читать, увеличивать, записывать">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">counter.json <span class="size">49 Б</span></div>
+            <div class="note">Счётчик запусков в объекте — читать, увеличивать, записывать</div>
+          </div>
+          <a class="download" href="files/counter.json" download>Скачать</a>
+        </li>
+        <li data-search="save.json сейв игры: герой, инвентарь, настройки — для первых чтений json">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">save.json <span class="size">751 Б</span></div>
+            <div class="note">Сейв игры: герой, инвентарь, настройки — для первых чтений JSON</div>
+          </div>
+          <a class="download" href="files/save.json" download>Скачать</a>
+        </li>
+        <li data-search="hero_1.json мира, 12 уровень — первый из пяти переселённых героев">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">hero_1.json <span class="size">44 Б</span></div>
+            <div class="note">Мира, 12 уровень — первый из пяти переселённых героев</div>
+          </div>
+          <a class="download" href="files/hero_1.json" download>Скачать</a>
+        </li>
+        <li data-search="hero_2.json кай, 9 уровень">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">hero_2.json <span class="size">41 Б</span></div>
+            <div class="note">Кай, 9 уровень</div>
+          </div>
+          <a class="download" href="files/hero_2.json" download>Скачать</a>
+        </li>
+        <li data-search="hero_3.json лея, 14 уровень">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">hero_3.json <span class="size">42 Б</span></div>
+            <div class="note">Лея, 14 уровень</div>
+          </div>
+          <a class="download" href="files/hero_3.json" download>Скачать</a>
+        </li>
+        <li data-search="hero_4.json борис, 3 уровень">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">hero_4.json <span class="size">45 Б</span></div>
+            <div class="note">Борис, 3 уровень</div>
+          </div>
+          <a class="download" href="files/hero_4.json" download>Скачать</a>
+        </li>
+        <li data-search="hero_5.json ника, 21 уровень">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">hero_5.json <span class="size">44 Б</span></div>
+            <div class="note">Ника, 21 уровень</div>
+          </div>
+          <a class="download" href="files/hero_5.json" download>Скачать</a>
+        </li>
+        <li data-search="hero_duel_1.json дуэлянт лея — сравните с hero_duel_2.json">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">hero_duel_1.json <span class="size">42 Б</span></div>
+            <div class="note">Дуэлянт Лея — сравните с hero_duel_2.json</div>
+          </div>
+          <a class="download" href="files/hero_duel_1.json" download>Скачать</a>
+        </li>
+        <li data-search="hero_duel_2.json дуэлянт ника">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">hero_duel_2.json <span class="size">44 Б</span></div>
+            <div class="note">Дуэлянт Ника</div>
+          </div>
+          <a class="download" href="files/hero_duel_2.json" download>Скачать</a>
+        </li>
+        <li data-search="old_hero_save.json старый сейв славы — для сравнения версий">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">old_hero_save.json <span class="size">45 Б</span></div>
+            <div class="note">Старый сейв Славы — для сравнения версий</div>
+          </div>
+          <a class="download" href="files/old_hero_save.json" download>Скачать</a>
+        </li>
+      </ul>
+      <h3>Вложенные объекты</h3>
+      <ul>
+        <li data-search="character_full.json герой с вложенными position и stats">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">character_full.json <span class="size">153 Б</span></div>
+            <div class="note">Герой с вложенными position и stats</div>
+          </div>
+          <a class="download" href="files/character_full.json" download>Скачать</a>
+        </li>
+        <li data-search="flat_hero.json тот же герой «плоско»: pos_x, stat_strength — сравните с вложенным">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">flat_hero.json <span class="size">110 Б</span></div>
+            <div class="note">Тот же герой «плоско»: pos_x, stat_strength — сравните с вложенным</div>
+          </div>
+          <a class="download" href="files/flat_hero.json" download>Скачать</a>
+        </li>
+        <li data-search="player_position.json игрок с вложенным объектом position">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">player_position.json <span class="size">82 Б</span></div>
+            <div class="note">Игрок с вложенным объектом position</div>
+          </div>
+          <a class="download" href="files/player_position.json" download>Скачать</a>
+        </li>
+        <li data-search="house.json дом с вложенным адресом">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">house.json <span class="size">193 Б</span></div>
+            <div class="note">Дом с вложенным адресом</div>
+          </div>
+          <a class="download" href="files/house.json" download>Скачать</a>
+        </li>
+        <li data-search="fortress.json крепость: башня, а в башне сундук — два уровня вложенности">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">fortress.json <span class="size">179 Б</span></div>
+            <div class="note">Крепость: башня, а в башне сундук — два уровня вложенности</div>
+          </div>
+          <a class="download" href="files/fortress.json" download>Скачать</a>
+        </li>
+        <li data-search="game_settings.json настройки игры: разделы audio и video">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">game_settings.json <span class="size">172 Б</span></div>
+            <div class="note">Настройки игры: разделы audio и video</div>
+          </div>
+          <a class="download" href="files/game_settings.json" download>Скачать</a>
+        </li>
+        <li data-search="settings_full.json плоские настройки: громкость, сложность, язык, автосейв">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">settings_full.json <span class="size">105 Б</span></div>
+            <div class="note">Плоские настройки: громкость, сложность, язык, автосейв</div>
+          </div>
+          <a class="download" href="files/settings_full.json" download>Скачать</a>
+        </li>
+        <li data-search="pizza_order.json заказ пиццы: клиент внутри, топпинги массивом">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">pizza_order.json <span class="size">316 Б</span></div>
+            <div class="note">Заказ пиццы: клиент внутри, топпинги массивом</div>
+          </div>
+          <a class="download" href="files/pizza_order.json" download>Скачать</a>
+        </li>
+        <li data-search="alien_artifact.json артефакт пришельцев: все типы разом, включая null и вложенное ядро">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">alien_artifact.json <span class="size">279 Б</span></div>
+            <div class="note">Артефакт пришельцев: все типы разом, включая null и вложенное ядро</div>
+          </div>
+          <a class="download" href="files/alien_artifact.json" download>Скачать</a>
+        </li>
+        <li data-search="duel_pos_1.json позиция миры на карте — пара к duel_pos_2.json">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">duel_pos_1.json <span class="size">85 Б</span></div>
+            <div class="note">Позиция Миры на карте — пара к duel_pos_2.json</div>
+          </div>
+          <a class="download" href="files/duel_pos_1.json" download>Скачать</a>
+        </li>
+        <li data-search="duel_pos_2.json позиция тимура — посчитайте расстояние между героями">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">duel_pos_2.json <span class="size">87 Б</span></div>
+            <div class="note">Позиция Тимура — посчитайте расстояние между героями</div>
+          </div>
+          <a class="download" href="files/duel_pos_2.json" download>Скачать</a>
+        </li>
+        <li data-search="config_v1.json конфиг версии 1 — сравните с v2: одного ключа не станет">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">config_v1.json <span class="size">96 Б</span></div>
+            <div class="note">Конфиг версии 1 — сравните с v2: одного ключа не станет</div>
+          </div>
+          <a class="download" href="files/config_v1.json" download>Скачать</a>
+        </li>
+        <li data-search="config_v2.json конфиг версии 2: cheats исчез, появились language и autosave">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">config_v2.json <span class="size">120 Б</span></div>
+            <div class="note">Конфиг версии 2: cheats исчез, появились language и autosave</div>
+          </div>
+          <a class="download" href="files/config_v2.json" download>Скачать</a>
+        </li>
+        <li data-search="old_save.json сейв со свалкой устаревших полей — вычистить лишнее">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">old_save.json <span class="size">129 Б</span></div>
+            <div class="note">Сейв со свалкой устаревших полей — вычистить лишнее</div>
+          </div>
+          <a class="download" href="files/old_save.json" download>Скачать</a>
+        </li>
+        <li data-search="player_with_inventory.json герой с инвентарём-массивом (есть повтор!)">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">player_with_inventory.json <span class="size">258 Б</span></div>
+            <div class="note">Герой с инвентарём-массивом (есть повтор!)</div>
+          </div>
+          <a class="download" href="files/player_with_inventory.json" download>Скачать</a>
+        </li>
+      </ul>
+      <h3>Массивы значений</h3>
+      <ul>
+        <li data-search="inventory.json инвентарь: четыре предмета строками">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">inventory.json <span class="size">170 Б</span></div>
+            <div class="note">Инвентарь: четыре предмета строками</div>
+          </div>
+          <a class="download" href="files/inventory.json" download>Скачать</a>
+        </li>
+        <li data-search="shopping.json список покупок из пяти пунктов">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">shopping.json <span class="size">155 Б</span></div>
+            <div class="note">Список покупок из пяти пунктов</div>
+          </div>
+          <a class="download" href="files/shopping.json" download>Скачать</a>
+        </li>
+        <li data-search="bought.json что купили на самом деле — сравните со списком">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">bought.json <span class="size">94 Б</span></div>
+            <div class="note">Что купили на самом деле — сравните со списком</div>
+          </div>
+          <a class="download" href="files/bought.json" download>Скачать</a>
+        </li>
+        <li data-search="todo.json список дел">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">todo.json <span class="size">158 Б</span></div>
+            <div class="note">Список дел</div>
+          </div>
+          <a class="download" href="files/todo.json" download>Скачать</a>
+        </li>
+        <li data-search="guild_members.json шесть имён гильдии">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">guild_members.json <span class="size">99 Б</span></div>
+            <div class="note">Шесть имён гильдии</div>
+          </div>
+          <a class="download" href="files/guild_members.json" download>Скачать</a>
+        </li>
+        <li data-search="lunch_queue.json очередь в столовую — вставки и удаления">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">lunch_queue.json <span class="size">65 Б</span></div>
+            <div class="note">Очередь в столовую — вставки и удаления</div>
+          </div>
+          <a class="download" href="files/lunch_queue.json" download>Скачать</a>
+        </li>
+        <li data-search="rival_guild.json три имени соседней гильдии">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">rival_guild.json <span class="size">61 Б</span></div>
+            <div class="note">Три имени соседней гильдии</div>
+          </div>
+          <a class="download" href="files/rival_guild.json" download>Скачать</a>
+        </li>
+        <li data-search="history.json история поиска — пять запросов">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">history.json <span class="size">193 Б</span></div>
+            <div class="note">История поиска — пять запросов</div>
+          </div>
+          <a class="download" href="files/history.json" download>Скачать</a>
+        </li>
+        <li data-search="inbox.json почта: письма вперемешку со спамом — фильтрация">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">inbox.json <span class="size">351 Б</span></div>
+            <div class="note">Почта: письма вперемешку со СПАМом — фильтрация</div>
+          </div>
+          <a class="download" href="files/inbox.json" download>Скачать</a>
+        </li>
+        <li data-search="playlist_edit.json плейлист для перестановок и удалений">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">playlist_edit.json <span class="size">221 Б</span></div>
+            <div class="note">Плейлист для перестановок и удалений</div>
+          </div>
+          <a class="download" href="files/playlist_edit.json" download>Скачать</a>
+        </li>
+        <li data-search="lottery.json три счастливых числа">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">lottery.json <span class="size">26 Б</span></div>
+            <div class="note">Три счастливых числа</div>
+          </div>
+          <a class="download" href="files/lottery.json" download>Скачать</a>
+        </li>
+        <li data-search="mood_week.json настроение по дням недели, 7 чисел">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">mood_week.json <span class="size">53 Б</span></div>
+            <div class="note">Настроение по дням недели, 7 чисел</div>
+          </div>
+          <a class="download" href="files/mood_week.json" download>Скачать</a>
+        </li>
+        <li data-search="temperatures.json неделя температур, есть отрицательные">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">temperatures.json <span class="size">54 Б</span></div>
+            <div class="note">Неделя температур, есть отрицательные</div>
+          </div>
+          <a class="download" href="files/temperatures.json" download>Скачать</a>
+        </li>
+        <li data-search="top_scores.json шесть рекордов по убыванию">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">top_scores.json <span class="size">61 Б</span></div>
+            <div class="note">Шесть рекордов по убыванию</div>
+          </div>
+          <a class="download" href="files/top_scores.json" download>Скачать</a>
+        </li>
+        <li data-search="prices.json прайс-лист: ключ-товар, значение-цена (объект как словарь)">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">prices.json <span class="size">171 Б</span></div>
+            <div class="note">Прайс-лист: ключ-товар, значение-цена (объект как словарь)</div>
+          </div>
+          <a class="download" href="files/prices.json" download>Скачать</a>
+        </li>
+        <li data-search="translations.json словарик англо-русский — объект как справочник">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">translations.json <span class="size">188 Б</span></div>
+            <div class="note">Словарик англо-русский — объект как справочник</div>
+          </div>
+          <a class="download" href="files/translations.json" download>Скачать</a>
+        </li>
+      </ul>
+      <h3>Массивы объектов (таблицы)</h3>
+      <ul>
+        <li data-search="guild.json гильдия: пять героев (name/class/level/coins) — главная таблица раздела">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">guild.json <span class="size">575 Б</span></div>
+            <div class="note">Гильдия: пять героев (name/class/level/coins) — главная таблица раздела</div>
+          </div>
+          <a class="download" href="files/guild.json" download>Скачать</a>
+        </li>
+        <li data-search="rival_guild_full.json соседняя гильдия целиком — для объединения таблиц">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">rival_guild_full.json <span class="size">280 Б</span></div>
+            <div class="note">Соседняя гильдия целиком — для объединения таблиц</div>
+          </div>
+          <a class="download" href="files/rival_guild_full.json" download>Скачать</a>
+        </li>
+        <li data-search="party_save.json отряд из трёх героев с монетами">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">party_save.json <span class="size">165 Б</span></div>
+            <div class="note">Отряд из трёх героев с монетами</div>
+          </div>
+          <a class="download" href="files/party_save.json" download>Скачать</a>
+        </li>
+        <li data-search="team.json команда из двух героев — первый массив объектов">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">team.json <span class="size">115 Б</span></div>
+            <div class="note">Команда из двух героев — первый массив объектов</div>
+          </div>
+          <a class="download" href="files/team.json" download>Скачать</a>
+        </li>
+        <li data-search="zoo.json пять питомцев, виды повторяются — для подсчётов">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">zoo.json <span class="size">314 Б</span></div>
+            <div class="note">Пять питомцев, виды повторяются — для подсчётов</div>
+          </div>
+          <a class="download" href="files/zoo.json" download>Скачать</a>
+        </li>
+        <li data-search="quests.json доска заданий с флагами done">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">quests.json <span class="size">379 Б</span></div>
+            <div class="note">Доска заданий с флагами done</div>
+          </div>
+          <a class="download" href="files/quests.json" download>Скачать</a>
+        </li>
+        <li data-search="shop_catalog.json каталог из пяти товаров, один не в наличии">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">shop_catalog.json <span class="size">460 Б</span></div>
+            <div class="note">Каталог из пяти товаров, один не в наличии</div>
+          </div>
+          <a class="download" href="files/shop_catalog.json" download>Скачать</a>
+        </li>
+        <li data-search="tournament.json пять участников вперемешку — сортировка по очкам">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">tournament.json <span class="size">218 Б</span></div>
+            <div class="note">Пять участников вперемешку — сортировка по очкам</div>
+          </div>
+          <a class="download" href="files/tournament.json" download>Скачать</a>
+        </li>
+        <li data-search="class_journal.json журнал: ученики, у каждого массив оценок — массив в объекте в массиве">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">class_journal.json <span class="size">234 Б</span></div>
+            <div class="note">Журнал: ученики, у каждого массив оценок — массив в объекте в массиве</div>
+          </div>
+          <a class="download" href="files/class_journal.json" download>Скачать</a>
+        </li>
+      </ul>
+      <h3>Особые случаи и грязные данные</h3>
+      <ul>
+        <li data-search="broken_save.json нарочно сломанный сейв (комментарий и лишние запятые) — почините файл, не трогая программу">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">broken_save.json <span class="size">316 Б</span></div>
+            <div class="note">Нарочно сломанный сейв (комментарий и лишние запятые) — почините файл, не трогая программу</div>
+          </div>
+          <a class="download" href="files/broken_save.json" download>Скачать</a>
+        </li>
+        <li data-search="big_id.json player_id = 9007199254740993 — число, которое не влезает в обычный int">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">big_id.json <span class="size">66 Б</span></div>
+            <div class="note">Player_id = 9007199254740993 — число, которое не влезает в обычный int</div>
+          </div>
+          <a class="download" href="files/big_id.json" download>Скачать</a>
+        </li>
+        <li data-search="stash_weird.json заначка бориса: amount = «немерено» вместо числа — грязные данные">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">stash_weird.json <span class="size">64 Б</span></div>
+            <div class="note">Заначка Бориса: amount = «немерено» вместо числа — грязные данные</div>
+          </div>
+          <a class="download" href="files/stash_weird.json" download>Скачать</a>
+        </li>
+        <li data-search="unknown_save.json шесть ключей неизвестного сейва: null, дробь 0.13, длинная строка">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">unknown_save.json <span class="size">163 Б</span></div>
+            <div class="note">Шесть ключей неизвестного сейва: null, дробь 0.13, длинная строка</div>
+          </div>
+          <a class="download" href="files/unknown_save.json" download>Скачать</a>
+        </li>
+        <li data-search="mystery_1.json ключ mystery: целое число">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">mystery_1.json <span class="size">22 Б</span></div>
+            <div class="note">Ключ mystery: целое число</div>
+          </div>
+          <a class="download" href="files/mystery_1.json" download>Скачать</a>
+        </li>
+        <li data-search="mystery_2.json тот же ключ — строка">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">mystery_2.json <span class="size">39 Б</span></div>
+            <div class="note">Тот же ключ — строка</div>
+          </div>
+          <a class="download" href="files/mystery_2.json" download>Скачать</a>
+        </li>
+        <li data-search="mystery_3.json тот же ключ — булево. спросите тип, потом распаковывайте">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">mystery_3.json <span class="size">24 Б</span></div>
+            <div class="note">Тот же ключ — булево. Спросите тип, потом распаковывайте</div>
+          </div>
+          <a class="download" href="files/mystery_3.json" download>Скачать</a>
+        </li>
+        <li data-search="witness_1.json показания миры — дело о пицце из холодильника гильдии">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">witness_1.json <span class="size">123 Б</span></div>
+            <div class="note">Показания Миры — дело о пицце из холодильника гильдии</div>
+          </div>
+          <a class="download" href="files/witness_1.json" download>Скачать</a>
+        </li>
+        <li data-search="witness_2.json показания кая">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">witness_2.json <span class="size">110 Б</span></div>
+            <div class="note">Показания Кая</div>
+          </div>
+          <a class="download" href="files/witness_2.json" download>Скачать</a>
+        </li>
+        <li data-search="witness_3.json показания леи — кто съел пиццу?">
+          <span class="thumb thumb-icon">{ }</span>
+          <div class="meta">
+            <div class="name">witness_3.json <span class="size">117 Б</span></div>
+            <div class="note">Показания Леи — кто съел пиццу?</div>
+          </div>
+          <a class="download" href="files/witness_3.json" download>Скачать</a>
+        </li>
+      </ul>
+    </section>
+    <section class="panel" id="tab-db" role="tabpanel" hidden>
+      <h2>🗄️ Базы данных</h2>
+      <h3>Готовые базы</h3>
+      <ul>
+        <li data-search="guild.db готовая база sqlite: 10 игроков, 20 товаров и 24 покупки со связями — select, where, join, агрегаты">
+          <span class="thumb thumb-icon">🗄</span>
+          <div class="meta">
+            <div class="name">guild.db <span class="size">28 КБ</span></div>
+            <div class="note">Готовая база SQLite: 10 игроков, 20 товаров и 24 покупки со связями — SELECT, WHERE, JOIN, агрегаты</div>
+          </div>
+          <a class="download" href="files/guild.db" download>Скачать</a>
+        </li>
+      </ul>
+      <h3>SQL-скрипты</h3>
+      <ul>
+        <li data-search="setup_guild.sql схема гильдии: три таблицы + герои, товары, покупки. с drop-прологом — запускается сколько угодно раз">
+          <span class="thumb thumb-icon">🗄</span>
+          <div class="meta">
+            <div class="name">setup_guild.sql <span class="size">1 КБ</span></div>
+            <div class="note">Схема гильдии: три таблицы + герои, товары, покупки. С DROP-прологом — запускается сколько угодно раз</div>
+          </div>
+          <a class="download" href="files/setup_guild.sql" download>Скачать</a>
+        </li>
+        <li data-search="seed_extra.sql дополнение к гильдии: ещё 6 героев и 6 товаров. без drop — только добавляет">
+          <span class="thumb thumb-icon">🗄</span>
+          <div class="meta">
+            <div class="name">seed_extra.sql <span class="size">1023 Б</span></div>
+            <div class="note">Дополнение к гильдии: ещё 6 героев и 6 товаров. Без DROP — только добавляет</div>
+          </div>
+          <a class="download" href="files/seed_extra.sql" download>Скачать</a>
+        </li>
+        <li data-search="setup_school.sql школьная база: ученики, предметы (у физкультуры кабинет null), оценки">
+          <span class="thumb thumb-icon">🗄</span>
+          <div class="meta">
+            <div class="name">setup_school.sql <span class="size">970 Б</span></div>
+            <div class="note">Школьная база: ученики, предметы (у физкультуры кабинет NULL), оценки</div>
+          </div>
+          <a class="download" href="files/setup_school.sql" download>Скачать</a>
+        </li>
+        <li data-search="setup_broken.sql ровно одна спрятанная ошибка — почините по письму near &quot;12&quot;: syntax error">
+          <span class="thumb thumb-icon">🗄</span>
+          <div class="meta">
+            <div class="name">setup_broken.sql <span class="size">586 Б</span></div>
+            <div class="note">Ровно одна спрятанная ошибка — почините по письму near &quot;12&quot;: syntax error</div>
+          </div>
+          <a class="download" href="files/setup_broken.sql" download>Скачать</a>
+        </li>
       </ul>
     </section>
     <p class="footnote">Музыка — Kevin MacLeod (<a href="https://incompetech.com" rel="noopener">incompetech.com</a>), лицензия CC BY 4.0. Шрифты — SIL Open Font License (текст лицензии рядом с каждым шрифтом). Остальные материалы созданы командой Idyllium.</p>
   </main>
+  <script>
+    (function () {
+      var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+      var panels = Array.prototype.slice.call(document.querySelectorAll('.panel'));
+      var search = document.getElementById('search');
+      var empty = document.getElementById('empty');
+
+      function showTab(id) {
+        var found = false;
+        tabs.forEach(function (tab) {
+          var active = tab.dataset.tab === id;
+          if (active) found = true;
+          tab.setAttribute('aria-selected', String(active));
+        });
+        panels.forEach(function (panel) { panel.hidden = panel.id !== 'tab-' + id; });
+        return found;
+      }
+
+      function applySearch() {
+        var query = search.value.trim().toLowerCase();
+        document.body.classList.toggle('searching', query !== '');
+        if (!query) {
+          empty.style.display = 'none';
+          var selected = tabs.filter(function (tab) { return tab.getAttribute('aria-selected') === 'true'; })[0];
+          panels.forEach(function (panel) { panel.hidden = true; });
+          Array.prototype.forEach.call(document.querySelectorAll('.panel li, .panel h3, .panel ul'), function (node) {
+            node.style.display = '';
+          });
+          showTab(selected ? selected.dataset.tab : tabs[0].dataset.tab);
+          return;
+        }
+        // Во время поиска показываем совпадения СРАЗУ ПО ВСЕМ вкладкам:
+        // искать файл, помня, в какой он категории, — лишняя работа для глаз.
+        var matches = 0;
+        panels.forEach(function (panel) {
+          var visibleInPanel = 0;
+          Array.prototype.forEach.call(panel.querySelectorAll('li'), function (item) {
+            var hit = (item.dataset.search || '').indexOf(query) !== -1;
+            item.style.display = hit ? '' : 'none';
+            if (hit) { visibleInPanel++; matches++; }
+          });
+          Array.prototype.forEach.call(panel.querySelectorAll('ul'), function (list) {
+            var anyVisible = Array.prototype.some.call(list.querySelectorAll('li'), function (item) {
+              return item.style.display !== 'none';
+            });
+            list.style.display = anyVisible ? '' : 'none';
+            var heading = list.previousElementSibling;
+            if (heading && heading.tagName === 'H3') heading.style.display = anyVisible ? '' : 'none';
+          });
+          panel.hidden = visibleInPanel === 0;
+        });
+        empty.style.display = matches === 0 ? 'block' : 'none';
+      }
+
+      tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          search.value = '';
+          applySearch();
+          showTab(tab.dataset.tab);
+          // Ссылка вида /handouts#json ведёт прямо на нужную вкладку —
+          // задания ссылаются на раздатку адресно.
+          history.replaceState(null, '', '#' + tab.dataset.tab);
+        });
+      });
+      search.addEventListener('input', applySearch);
+
+      function openFromHash() {
+        var id = (location.hash || '').replace('#', '');
+        if (!id || !showTab(id)) showTab(tabs[0].dataset.tab);
+      }
+
+      // Смена одного лишь хеша документ не перезагружает: без этого переход
+      // по ссылке /handouts#db с уже открытой страницы ничего бы не сделал.
+      window.addEventListener('hashchange', function () {
+        search.value = '';
+        applySearch();
+        openFromHash();
+      });
+      openFromHash();
+    })();
+  </script>
 </body>
 </html>

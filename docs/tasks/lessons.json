@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-07T07:28:05.932Z",
+  "generatedAt": "2026-08-07T16:45:29.146Z",
   "sourceRoot": "docs/manual-content/tasks",
   "sections": [
     {
@@ -1022,92 +1022,92 @@
         {
           "id": "intro",
           "title": "Работа с файлами: повторение",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Работа с файлами: повторение»",
           "file": "content/json/intro.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/json/intro.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "first-object",
           "title": "Первый JSON-объект",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Первый JSON-объект»",
           "file": "content/json/first-object.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/json/first-object.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "reading",
           "title": "Чтение JSON-данных",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Чтение JSON-данных»",
           "file": "content/json/reading.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/json/reading.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "arrays",
           "title": "JSON-массивы",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «JSON-массивы»",
           "file": "content/json/arrays.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/json/arrays.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "nested-objects",
           "title": "Вложенные объекты",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Вложенные объекты»",
           "file": "content/json/nested-objects.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/json/nested-objects.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "object-arrays",
           "title": "Массивы объектов",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Массивы объектов»",
           "file": "content/json/object-arrays.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/json/object-arrays.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "array-methods",
           "title": "Методы массивов",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Методы массивов»",
           "file": "content/json/array-methods.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/json/array-methods.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "object-methods",
           "title": "Методы объектов",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Методы объектов»",
           "file": "content/json/object-methods.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/json/object-methods.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "oop",
           "title": "JSON и ООП",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «JSON и ООП»",
           "file": "content/json/oop.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/json/oop.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "errors",
@@ -1130,142 +1130,142 @@
         {
           "id": "intro",
           "title": "Первая база данных",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Первая база данных»",
           "file": "content/sqlite/intro.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/sqlite/intro.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "changes",
           "title": "Таблицы и первые записи",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Таблицы и первые записи»",
           "file": "content/sqlite/changes.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/sqlite/changes.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "select",
           "title": "Чтение строк",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Чтение строк»",
           "file": "content/sqlite/select.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/sqlite/select.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "parameters",
           "title": "Безопасные параметры",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Безопасные параметры»",
           "file": "content/sqlite/parameters.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/sqlite/parameters.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "filters",
           "title": "Поиск и фильтрация",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Поиск и фильтрация»",
           "file": "content/sqlite/filters.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/sqlite/filters.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "null",
           "title": "Неизвестные значения и null",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Неизвестные значения и null»",
           "file": "content/sqlite/null.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/sqlite/null.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "reuse",
           "title": "Много записей одним запросом",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Много записей одним запросом»",
           "file": "content/sqlite/reuse.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/sqlite/reuse.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "transactions",
           "title": "Всё или ничего",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Всё или ничего»",
           "file": "content/sqlite/transactions.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/sqlite/transactions.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "scripts",
           "title": "SQL в отдельном файле",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «SQL в отдельном файле»",
           "file": "content/sqlite/scripts.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/sqlite/scripts.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "select-tools",
           "title": "Все строки и краткая статистика",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Все строки и краткая статистика»",
           "file": "content/sqlite/select-tools.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/sqlite/select-tools.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "defaults",
           "title": "Повторный запуск и значения по умолчанию",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Повторный запуск и значения по умолчанию»",
           "file": "content/sqlite/defaults.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/sqlite/defaults.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "keys",
           "title": "Ключи и уникальные значения",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Ключи и уникальные значения»",
           "file": "content/sqlite/keys.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/sqlite/keys.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "hashing",
           "title": "Хеширование",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Хеширование»",
           "file": "content/sqlite/hashing.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/sqlite/hashing.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "joins",
           "title": "Связи между таблицами",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Связи между таблицами»",
           "file": "content/sqlite/joins.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/sqlite/joins.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "errors",

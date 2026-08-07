@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-07T07:28:05.932Z",
+  "generatedAt": "2026-08-07T16:45:29.146Z",
   "sourceRoot": "packages/docs",
   "sections": [
     {
@@ -1027,7 +1027,7 @@
           "sourceFile": "docs/manual-content/json/intro.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "first-object",
@@ -1037,7 +1037,7 @@
           "sourceFile": "docs/manual-content/json/first-object.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "reading",
@@ -1047,7 +1047,7 @@
           "sourceFile": "docs/manual-content/json/reading.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "arrays",
@@ -1057,7 +1057,7 @@
           "sourceFile": "docs/manual-content/json/arrays.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "nested-objects",
@@ -1067,7 +1067,7 @@
           "sourceFile": "docs/manual-content/json/nested-objects.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "object-arrays",
@@ -1077,7 +1077,7 @@
           "sourceFile": "docs/manual-content/json/object-arrays.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "array-methods",
@@ -1087,7 +1087,7 @@
           "sourceFile": "docs/manual-content/json/array-methods.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "object-methods",
@@ -1097,7 +1097,7 @@
           "sourceFile": "docs/manual-content/json/object-methods.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "oop",
@@ -1107,7 +1107,7 @@
           "sourceFile": "docs/manual-content/json/oop.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "errors",
@@ -1135,7 +1135,7 @@
           "sourceFile": "docs/manual-content/sqlite/intro.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "changes",
@@ -1145,7 +1145,7 @@
           "sourceFile": "docs/manual-content/sqlite/changes.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "select",
@@ -1155,7 +1155,7 @@
           "sourceFile": "docs/manual-content/sqlite/select.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "parameters",
@@ -1165,7 +1165,7 @@
           "sourceFile": "docs/manual-content/sqlite/parameters.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "filters",
@@ -1175,7 +1175,7 @@
           "sourceFile": "docs/manual-content/sqlite/filters.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "null",
@@ -1185,7 +1185,7 @@
           "sourceFile": "docs/manual-content/sqlite/null.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "reuse",
@@ -1195,7 +1195,7 @@
           "sourceFile": "docs/manual-content/sqlite/reuse.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "transactions",
@@ -1205,7 +1205,7 @@
           "sourceFile": "docs/manual-content/sqlite/transactions.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "scripts",
@@ -1215,7 +1215,7 @@
           "sourceFile": "docs/manual-content/sqlite/scripts.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "select-tools",
@@ -1225,7 +1225,7 @@
           "sourceFile": "docs/manual-content/sqlite/select-tools.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "defaults",
@@ -1235,7 +1235,7 @@
           "sourceFile": "docs/manual-content/sqlite/defaults.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "keys",
@@ -1245,7 +1245,7 @@
           "sourceFile": "docs/manual-content/sqlite/keys.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "hashing",
@@ -1255,7 +1255,7 @@
           "sourceFile": "docs/manual-content/sqlite/hashing.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "joins",
@@ -1265,7 +1265,7 @@
           "sourceFile": "docs/manual-content/sqlite/joins.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "errors",

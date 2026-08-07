@@ -1,0 +1,10 @@
+{
+    "name": "Черничная крепость",
+    "tower": {
+        "height": 30,
+        "chest": {
+            "gold": 500,
+            "locked": true
+        }
+    }
+}

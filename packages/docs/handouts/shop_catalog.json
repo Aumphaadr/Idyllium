@@ -1,0 +1,7 @@
+[
+    { "title": "Зелье от прокрастинации", "price": 199, "in_stock": true },
+    { "title": "Свиток с ГДЗ", "price": 149, "in_stock": true },
+    { "title": "Шапка-невидимка от учителей", "price": 890, "in_stock": false },
+    { "title": "Всегда прохладная подушка", "price": 350, "in_stock": true },
+    { "title": "Картонный шлем", "price": 25, "in_stock": true }
+]

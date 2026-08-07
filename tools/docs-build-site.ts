@@ -958,12 +958,26 @@ function bakeCleanUrlPages(
  * закрыта от поисковиков noindex-ом. Файлы и опись лежат в
  * packages/docs/handouts; страница генерируется отсюда целиком.
  */
+/**
+ * Печёт страницу раздатки: вкладки по типам файлов, внутри — подзаголовки.
+ *
+ * Манифест (packages/docs/handouts/handouts.json) описывает вкладки и
+ * подгруппы; пустые подгруппы просто не попадают в вёрстку, поэтому новый
+ * тип файлов появляется на странице сразу, как только его туда положат.
+ * Поиск и переключение вкладок — на инлайновом скрипте: страница обязана
+ * работать сама по себе, без сборщиков и внешних зависимостей.
+ */
 function buildHandoutsPage(outputRoot: string): void {
   const sourceRoot = path.resolve(process.cwd(), 'packages', 'docs', 'handouts');
   const manifest = JSON.parse(fs.readFileSync(path.join(sourceRoot, 'handouts.json'), 'utf8')) as {
-    readonly groups: readonly {
+    readonly categories: readonly {
+      readonly id: string;
       readonly title: string;
-      readonly items: readonly { readonly file: string; readonly note: string; readonly license?: string }[];
+      readonly icon: string;
+      readonly groups: readonly {
+        readonly title: string;
+        readonly items: readonly { readonly file: string; readonly note: string; readonly license?: string }[];
+      }[];
     }[];
   };
 
@@ -979,34 +993,59 @@ function buildHandoutsPage(outputRoot: string): void {
     return `${bytes} Б`;
   };
 
-  const groupsHtml = manifest.groups.map((group) => {
-    const rows = group.items.map((item) => {
-      const filePath = path.join(sourceRoot, item.file);
-      if (!fs.existsSync(filePath)) throw new Error(`handout is missing: ${item.file}`);
-      const size = sizeLabel(fs.statSync(filePath).size);
-      const href = `files/${encodeURIComponent(item.file)}`;
-      const license = item.license
-        ? ` <a class="license" href="files/${encodeURIComponent(item.license)}" download>лицензия</a>`
-        : '';
-      const preview = /\.(png|gif|jpe?g)$/iu.test(item.file)
-        ? `<img class="thumb" src="${href}" alt="" loading="lazy">`
-        : `<span class="thumb thumb-icon">${/\.(mp3|wav)$/iu.test(item.file) ? '♪' : /\.ttf$/iu.test(item.file) ? 'Aa' : '📄'}</span>`;
-      return `      <li>
-        ${preview}
-        <div class="meta">
-          <div class="name">${escapeHtml(item.file)} <span class="size">${size}</span>${license}</div>
-          <div class="note">${escapeHtml(item.note)}</div>
-        </div>
-        <a class="download" href="${href}" download>Скачать</a>
-      </li>`;
+  const thumbFor = (file: string, href: string): string => {
+    if (/\.(png|gif|jpe?g|svg)$/iu.test(file)) return `<img class="thumb" src="${href}" alt="" loading="lazy">`;
+    const glyph = /\.(mp3|wav|ogg)$/iu.test(file) ? '♪'
+      : /\.ttf$/iu.test(file) ? 'Aa'
+        : /\.json$/iu.test(file) ? '{ }'
+          : /\.(db|sqlite3?|sql)$/iu.test(file) ? '🗄'
+            : '📄';
+    return `<span class="thumb thumb-icon">${glyph}</span>`;
+  };
+
+  let total = 0;
+  const tabs: string[] = [];
+  const panels: string[] = [];
+
+  for (const category of manifest.categories) {
+    const groups = category.groups.filter((group) => group.items.length > 0);
+    if (groups.length === 0) continue;
+
+    const count = groups.reduce((sum, group) => sum + group.items.length, 0);
+    total += count;
+
+    tabs.push(`      <button type="button" class="tab" data-tab="${escapeHtml(category.id)}" role="tab" aria-selected="false">`
+      + `<span class="tab-icon">${escapeHtml(category.icon)}</span>${escapeHtml(category.title)}`
+      + `<span class="tab-count">${count}</span></button>`);
+
+    const groupsHtml = groups.map((group) => {
+      const rows = group.items.map((item) => {
+        const filePath = path.join(sourceRoot, item.file);
+        if (!fs.existsSync(filePath)) throw new Error(`handout is missing: ${item.file}`);
+        const size = sizeLabel(fs.statSync(filePath).size);
+        const href = `files/${encodeURIComponent(item.file)}`;
+        const license = item.license
+          ? ` <a class="license" href="files/${encodeURIComponent(item.license)}" download>лицензия</a>`
+          : '';
+        const search = `${item.file} ${item.note}`.toLowerCase();
+        return `        <li data-search="${escapeHtml(search)}">
+          ${thumbFor(item.file, href)}
+          <div class="meta">
+            <div class="name">${escapeHtml(item.file)} <span class="size">${size}</span>${license}</div>
+            <div class="note">${escapeHtml(item.note)}</div>
+          </div>
+          <a class="download" href="${href}" download>Скачать</a>
+        </li>`;
+      }).join('\n');
+      const heading = group.title ? `      <h3>${escapeHtml(group.title)}</h3>\n` : '';
+      return `${heading}      <ul>\n${rows}\n      </ul>`;
     }).join('\n');
-    return `    <section>
-      <h2>${escapeHtml(group.title)}</h2>
-      <ul>
-${rows}
-      </ul>
-    </section>`;
-  }).join('\n');
+
+    panels.push(`    <section class="panel" id="tab-${escapeHtml(category.id)}" role="tabpanel" hidden>
+      <h2>${escapeHtml(category.icon)} ${escapeHtml(category.title)}</h2>
+${groupsHtml}
+    </section>`);
+  }
 
   const page = `<!doctype html>
 <html lang="ru">
@@ -1021,18 +1060,35 @@ ${rows}
     * { box-sizing: border-box; }
     body { margin: 0; padding: 34px 20px 60px; background: #0c0515; color: #f2eaf7;
       font: 17px/1.6 "Geologica", system-ui, sans-serif; }
-    main { max-width: 860px; margin: 0 auto; }
+    main { max-width: 900px; margin: 0 auto; }
     h1 { margin: 0 0 6px; font-size: 34px; }
-    .lead { margin: 0 0 30px; color: #c9bdd6; }
-    h2 { margin: 34px 0 12px; padding: 8px 16px; border-left: 4px solid #87bfff;
+    .lead { margin: 0 0 22px; color: #c9bdd6; }
+    .controls { position: sticky; top: 0; z-index: 5; padding: 12px 0 10px;
+      background: linear-gradient(#0c0515 78%, rgba(12, 5, 21, 0)); }
+    .search { width: 100%; padding: 11px 16px; border: 1px solid #342846; border-radius: 999px;
+      background: #151020; color: #f2eaf7; font: 16px "Geologica", system-ui, sans-serif; }
+    .search::placeholder { color: #8e819d; }
+    .search:focus { outline: none; border-color: #87bfff; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .tab { display: inline-flex; align-items: center; gap: 8px; padding: 8px 15px;
+      border: 1px solid #342846; border-radius: 999px; background: #151020; color: #c9bdd6;
+      font: 700 15px "Geologica", system-ui, sans-serif; cursor: pointer; }
+    .tab:hover { border-color: #87bfff; color: #f2eaf7; }
+    .tab[aria-selected="true"] { border-color: #87bfff; background: rgba(135, 191, 255, 0.16); color: #f2eaf7; }
+    .tab-icon { font-size: 15px; }
+    .tab-count { padding: 1px 8px; border-radius: 999px; background: rgba(135, 191, 255, 0.16);
+      color: #87bfff; font-size: 13px; }
+    h2 { margin: 26px 0 12px; padding: 8px 16px; border-left: 4px solid #87bfff;
       border-radius: 10px; background: linear-gradient(90deg, rgba(135, 191, 255, 0.12), transparent 82%);
       font-size: 21px; }
+    h3 { margin: 24px 0 10px; color: #87bfff; font-size: 16px; text-transform: uppercase;
+      letter-spacing: 0.06em; }
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
     li { display: flex; align-items: center; gap: 14px; padding: 10px 14px;
       border: 1px solid #342846; border-radius: 12px; background: #151020; }
     .thumb { width: 56px; height: 56px; flex: none; object-fit: contain;
       border-radius: 8px; background: #100b1a; }
-    .thumb-icon { display: grid; place-items: center; color: #87bfff; font-size: 24px; font-weight: 700; }
+    .thumb-icon { display: grid; place-items: center; color: #87bfff; font-size: 20px; font-weight: 700; }
     .meta { min-width: 0; flex: 1; }
     .name { font-weight: 700; overflow-wrap: anywhere; }
     .size { margin-left: 6px; color: #8e819d; font-size: 13px; font-weight: 400; }
@@ -1041,6 +1097,8 @@ ${rows}
     .download { flex: none; padding: 8px 16px; border: 1px solid #87bfff; border-radius: 999px;
       color: #87bfff; font-weight: 800; font-size: 14px; text-decoration: none; }
     .download:hover { background: #87bfff; color: #0c0515; }
+    .empty { display: none; margin: 30px 0; color: #8e819d; }
+    body.searching .tab-count { opacity: 0.4; }
     .footnote { margin-top: 36px; color: #8e819d; font-size: 14px; }
     .footnote a { color: #87bfff; }
   </style>
@@ -1049,16 +1107,102 @@ ${rows}
   <main>
     <h1>Файлы для заданий</h1>
     <p class="lead">Раздатка задачника: картинки, звуки, шрифты и данные, которые просят скачать задания. Кладите скачанный файл рядом с программой (в Web IDE — загрузите в проект).</p>
-${groupsHtml}
+    <div class="controls">
+      <input type="search" class="search" id="search" placeholder="Поиск по имени файла или описанию — например, «гильдия» или «.json»" aria-label="Поиск файлов">
+      <div class="tabs" role="tablist">
+${tabs.join('\n')}
+      </div>
+    </div>
+    <p class="empty" id="empty">Ничего не нашлось. Попробуйте другое слово или выберите вкладку.</p>
+${panels.join('\n')}
     <p class="footnote">Музыка — Kevin MacLeod (<a href="https://incompetech.com" rel="noopener">incompetech.com</a>), лицензия CC BY 4.0. Шрифты — SIL Open Font License (текст лицензии рядом с каждым шрифтом). Остальные материалы созданы командой Idyllium.</p>
   </main>
+  <script>
+    (function () {
+      var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+      var panels = Array.prototype.slice.call(document.querySelectorAll('.panel'));
+      var search = document.getElementById('search');
+      var empty = document.getElementById('empty');
+
+      function showTab(id) {
+        var found = false;
+        tabs.forEach(function (tab) {
+          var active = tab.dataset.tab === id;
+          if (active) found = true;
+          tab.setAttribute('aria-selected', String(active));
+        });
+        panels.forEach(function (panel) { panel.hidden = panel.id !== 'tab-' + id; });
+        return found;
+      }
+
+      function applySearch() {
+        var query = search.value.trim().toLowerCase();
+        document.body.classList.toggle('searching', query !== '');
+        if (!query) {
+          empty.style.display = 'none';
+          var selected = tabs.filter(function (tab) { return tab.getAttribute('aria-selected') === 'true'; })[0];
+          panels.forEach(function (panel) { panel.hidden = true; });
+          Array.prototype.forEach.call(document.querySelectorAll('.panel li, .panel h3, .panel ul'), function (node) {
+            node.style.display = '';
+          });
+          showTab(selected ? selected.dataset.tab : tabs[0].dataset.tab);
+          return;
+        }
+        // Во время поиска показываем совпадения СРАЗУ ПО ВСЕМ вкладкам:
+        // искать файл, помня, в какой он категории, — лишняя работа для глаз.
+        var matches = 0;
+        panels.forEach(function (panel) {
+          var visibleInPanel = 0;
+          Array.prototype.forEach.call(panel.querySelectorAll('li'), function (item) {
+            var hit = (item.dataset.search || '').indexOf(query) !== -1;
+            item.style.display = hit ? '' : 'none';
+            if (hit) { visibleInPanel++; matches++; }
+          });
+          Array.prototype.forEach.call(panel.querySelectorAll('ul'), function (list) {
+            var anyVisible = Array.prototype.some.call(list.querySelectorAll('li'), function (item) {
+              return item.style.display !== 'none';
+            });
+            list.style.display = anyVisible ? '' : 'none';
+            var heading = list.previousElementSibling;
+            if (heading && heading.tagName === 'H3') heading.style.display = anyVisible ? '' : 'none';
+          });
+          panel.hidden = visibleInPanel === 0;
+        });
+        empty.style.display = matches === 0 ? 'block' : 'none';
+      }
+
+      tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          search.value = '';
+          applySearch();
+          showTab(tab.dataset.tab);
+          // Ссылка вида /handouts#json ведёт прямо на нужную вкладку —
+          // задания ссылаются на раздатку адресно.
+          history.replaceState(null, '', '#' + tab.dataset.tab);
+        });
+      });
+      search.addEventListener('input', applySearch);
+
+      function openFromHash() {
+        var id = (location.hash || '').replace('#', '');
+        if (!id || !showTab(id)) showTab(tabs[0].dataset.tab);
+      }
+
+      // Смена одного лишь хеша документ не перезагружает: без этого переход
+      // по ссылке /handouts#db с уже открытой страницы ничего бы не сделал.
+      window.addEventListener('hashchange', function () {
+        search.value = '';
+        applySearch();
+        openFromHash();
+      });
+      openFromHash();
+    })();
+  </script>
 </body>
 </html>
 `;
   fs.writeFileSync(path.join(outputRoot, 'index.html'), page, 'utf8');
-
-  const total = manifest.groups.reduce((sum, group) => sum + group.items.length, 0);
-  console.log(`handouts generated: ${total} files`);
+  console.log(`handouts generated: ${total} files in ${manifest.categories.length} tabs`);
 }
 
 function pendingTasksFragment(sectionId: string, lessonId: string, lessonTitle: string): string {
