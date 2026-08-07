@@ -1,0 +1,11 @@
+{
+    "profile": "Ника",
+    "audio": {
+        "music": true,
+        "volume": 60
+    },
+    "video": {
+        "fullscreen": false,
+        "brightness": 80
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "name": "Лея",
+    "position": {
+        "x": 45,
+        "y": 210
+    },
+    "stats": {
+        "strength": 8,
+        "intellect": 15
+    }
+}

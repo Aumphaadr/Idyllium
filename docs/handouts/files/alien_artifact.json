@@ -1,0 +1,12 @@
+{
+    "signature": "ZX-042",
+    "mass": 13.37,
+    "active": true,
+    "origin": null,
+    "charge": 9000,
+    "core": {
+        "material": "неопознанный сплав",
+        "temperature": 451
+    },
+    "signals": ["пик", "пик", "тишина", "пик"]
+}

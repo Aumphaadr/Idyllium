@@ -1,0 +1,6 @@
+[
+    { "title": "Вернуть пиццу гильдии", "reward": 300, "done": false },
+    { "title": "Полить кактус архимага", "reward": 50, "done": true },
+    { "title": "Найти второй носок Бориса", "reward": 120, "done": false },
+    { "title": "Переписать гильдию на JSON", "reward": 999, "done": false }
+]

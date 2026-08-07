@@ -7401,14 +7401,31 @@ test('handouts page is baked with every manifest file present', () => {
     path.resolve(process.cwd(), 'packages', 'docs', 'handouts', 'handouts.json'), 'utf8'));
   const page = fs.readFileSync(path.join(docsRoot, 'handouts', 'index.html'), 'utf8');
   assert(page.includes('noindex'), 'handouts page must be closed from search engines');
-  for (const group of manifest.groups) {
-    for (const item of group.items) {
-      assert(
-        fs.existsSync(path.join(docsRoot, 'handouts', 'files', item.file)),
-        `handout file missing from the site: ${item.file}`,
-      );
-      assert(page.includes(encodeURIComponent(item.file)), `handout not listed on the page: ${item.file}`);
+
+  const seen = new Set<string>();
+  for (const category of manifest.categories) {
+    assert(category.id && category.title, 'every handouts tab needs an id and a title');
+    assert(page.includes(`data-tab="${category.id}"`), `tab is missing from the page: ${category.id}`);
+    for (const group of category.groups) {
+      for (const item of group.items) {
+        assert(!seen.has(item.file), `handout listed twice: ${item.file}`);
+        seen.add(item.file);
+        assert(
+          fs.existsSync(path.join(docsRoot, 'handouts', 'files', item.file)),
+          `handout file missing from the site: ${item.file}`,
+        );
+        assert(page.includes(encodeURIComponent(item.file)), `handout not listed on the page: ${item.file}`);
+        assert(item.note.trim().length > 0, `handout has no description: ${item.file}`);
+      }
     }
+  }
+
+  // Ни один выложенный файл не должен потеряться мимо вкладок: единственное
+  // исключение — тексты лицензий, они висят ссылкой на своём шрифте.
+  const sourceRoot = path.resolve(process.cwd(), 'packages', 'docs', 'handouts');
+  for (const entry of fs.readdirSync(sourceRoot)) {
+    if (entry === 'handouts.json' || entry.endsWith('-OFL.txt')) continue;
+    assert(seen.has(entry), `handout file is not listed in any tab: ${entry}`);
   }
 });
 
