@@ -5440,7 +5440,7 @@ function createDefaultStandardLibrary() {
             documentation: 'Где выполняется программа: "cli", "web" или "vscode".',
         }),
         functionSpec('version', [], types_1.STRING, {
-            documentation: 'Версия Idyllium, например "1.3.0".',
+            documentation: 'Версия Idyllium, например "1.3.1".',
         }),
     ]));
     registry.registerModule(moduleSpec('console', [
@@ -9918,7 +9918,7 @@ exports.IdylliumRuntimeError = IdylliumRuntimeError;
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-exports.IDYLLIUM_VERSION = '1.3.0';
+exports.IDYLLIUM_VERSION = '1.3.1';
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform() {
     const nodeProcess = typeof process === 'object' ? process : null;

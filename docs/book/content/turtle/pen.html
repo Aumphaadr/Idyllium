@@ -1,0 +1,202 @@
+<style>
+    .turtle-preview {
+      display: flex;
+      justify-content: center;
+      padding: 14px;
+    }
+    .turtle-preview svg {
+      width: min(320px, 100%);
+      height: auto;
+      border-radius: 10px;
+    }
+</style>
+
+    <div class="docs-section">
+      <h2>Перо можно поднять</h2>
+      <p>Черепаха рисует, потому что её перо опущено. Команда <code>pen_up()</code> поднимает перо — черепаха ползёт, а следа нет. <code>pen_down()</code> опускает обратно. Пунктирная дорожка:</p>
+
+      <idyl-code-block><script type="text/plain">
+use turtle;
+
+main() {
+    turtle.Turtle t;
+    int i = 0;
+    while (i < 6) {
+        t.pen_down();
+        t.forward(30);
+        t.pen_up();
+        t.forward(20);
+        i += 1;
+    }
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content turtle-preview">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+            <rect width="100%" height="100%" fill="#ffffff"/>
+            <line x1="300" y1="300" x2="330" y2="300" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="350" y1="300" x2="380" y2="300" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="400" y1="300" x2="430" y2="300" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="450" y1="300" x2="480" y2="300" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="500" y1="300" x2="530" y2="300" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="550" y1="300" x2="580" y2="300" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <p class="coord-note">➖ Шесть штрихов по 30 пикселей с промежутками по 20. Свойство <code>t.is_down</code> подскажет программе, опущено ли перо сейчас.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Цвет и толщина</h2>
+      <p>Перо настраивается свойствами — точно так же, как вы настраивали виджеты. Цвета берутся из знакомой библиотеки <code>colors</code>:</p>
+
+      <idyl-code-block><script type="text/plain">
+use turtle;
+use colors;
+
+main() {
+    turtle.Turtle t;
+    t.pen_color = colors.RED;
+    t.pen_width = 6;
+    t.forward(100);
+
+    t.pen_color = colors.RGB(40, 120, 255);
+    t.pen_width = 2;
+    t.left(120);
+    t.forward(100);
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content turtle-preview">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+            <rect width="100%" height="100%" fill="#ffffff"/>
+            <line x1="300" y1="300" x2="400" y2="300" stroke="#ff0000" stroke-width="6" stroke-linecap="round"/>
+            <line x1="400" y1="300" x2="350" y2="213.4" stroke="#2878ff" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <p class="coord-note">🖍️ Каждая линия рисуется тем пером, которое было у черепахи <strong>в момент движения</strong>: толстая красная, потом тонкая синяя.</p>
+
+      <p>Толщина <code>pen_width</code> живёт в пределах от 1 до 100 — на попытку выйти за границы рантайм ответит честной ошибкой, как слайдер на неправильное значение:</p>
+      <idyl-output-block>main.idyl:6: runtime error: Turtle.pen_width must be between 1 and 100, got 0</idyl-output-block>
+    </div>
+
+    <div class="docs-section">
+      <h2>Скорость и кляксы</h2>
+      <p>Свойство <code>speed</code> управляет скоростью черепахи: от 1 (нетороплива, как настоящая) до 10 (спринт). Особое значение 0 — «мгновенно»: рисунок появляется сразу, без анимации. По умолчанию скорость 6.</p>
+      <p>А команда <code>dot()</code> ставит круглую кляксу цвета пера — по умолчанию диаметром 8, или любым, который передадите:</p>
+
+      <idyl-code-block><script type="text/plain">
+use turtle;
+use colors;
+
+main() {
+    turtle.Turtle t;
+    t.speed = 10;
+    t.pen_color = colors.GREEN;
+    int i = 0;
+    while (i < 5) {
+        t.dot(6 + i * 4);
+        t.pen_up();
+        t.forward(45);
+        t.pen_down();
+        i += 1;
+    }
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content turtle-preview">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+            <rect width="100%" height="100%" fill="#ffffff"/>
+            <circle cx="300" cy="300" r="3" fill="#00ff00"/>
+            <circle cx="345" cy="300" r="5" fill="#00ff00"/>
+            <circle cx="390" cy="300" r="7" fill="#00ff00"/>
+            <circle cx="435" cy="300" r="9" fill="#00ff00"/>
+            <circle cx="480" cy="300" r="11" fill="#00ff00"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <p class="coord-note">🟢 Пять клякс растущего диаметра. Перо поднято — между кляксами следа нет.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Хозяйство поля</h2>
+      <p>У самого поля есть несколько модульных команд — они пишутся через <code>turtle.</code>, потому что поле общее, а не чьё-то личное:</p>
+      <table>
+        <thead>
+          <tr><th>Команда</th><th>Что делает</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>turtle.setup(800, 500)</code></td><td>размер поля в пикселях (по умолчанию 600×600)</td></tr>
+          <tr><td><code>turtle.title("Моя картина")</code></td><td>заголовок окна</td></tr>
+          <tr><td><code>turtle.bg_color(colors.BLACK)</code></td><td>цвет фона поля</td></tr>
+          <tr><td><code>turtle.clear()</code></td><td>стереть все следы (черепахи остаются на местах)</td></tr>
+        </tbody>
+      </table>
+
+      <idyl-code-block><script type="text/plain">
+use turtle;
+use colors;
+
+main() {
+    turtle.setup(420, 300);
+    turtle.title("Ночное небо");
+    turtle.bg_color(colors.RGB(15, 18, 40));
+
+    turtle.Turtle t;
+    t.pen_color = colors.RGB(255, 230, 120);
+    t.pen_up();
+    int i = 0;
+    while (i < 7) {
+        t.forward(30 + i * 17);
+        t.left(65);
+        t.dot(4 + mod(i, 3) * 3);
+        i += 1;
+    }
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content turtle-preview">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 300">
+            <rect width="100%" height="100%" fill="#0f1228"/>
+            <circle cx="240" cy="150" r="2" fill="#ffe678"/>
+            <circle cx="259.86" cy="107.4" r="3.5" fill="#ffe678"/>
+            <circle cx="218.72" cy="58.38" r="5" fill="#ffe678"/>
+            <circle cx="140.48" cy="79.34" r="2" fill="#ffe678"/>
+            <circle cx="123.47" cy="175.85" r="3.5" fill="#ffe678"/>
+            <circle cx="217.67" cy="241.81" r="5" fill="#ffe678"/>
+            <circle cx="331.98" cy="175.81" r="2" fill="#ffe678"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <p class="coord-note">🌌 Тёмное поле, перо поднято — только жёлтые звёзды-кляксы. Разбросаны они не случайно: черепаха честно ползла по спирали.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Шпаргалка: перо и поле</h2>
+      <table>
+        <thead>
+          <tr><th>Свойство/команда</th><th>Что делает</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>pen_up()</code> / <code>pen_down()</code></td><td>поднять/опустить перо; <code>is_down</code> — проверить</td></tr>
+          <tr><td><code>pen_color</code></td><td>цвет линий, клякс и подписей</td></tr>
+          <tr><td><code>pen_width</code></td><td>толщина линии, 1..100</td></tr>
+          <tr><td><code>speed</code></td><td>0 — мгновенно, 1..10 — от медленного к быстрому</td></tr>
+          <tr><td><code>dot(size)</code></td><td>клякса цвета пера</td></tr>
+          <tr><td><code>turtle.setup / title / bg_color / clear</code></td><td>команды всего поля</td></tr>
+        </tbody>
+      </table>
+    </div>

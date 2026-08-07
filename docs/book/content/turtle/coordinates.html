@@ -1,0 +1,134 @@
+<style>
+    .turtle-preview {
+      display: flex;
+      justify-content: center;
+      padding: 14px;
+    }
+    .turtle-preview svg {
+      width: min(320px, 100%);
+      height: auto;
+      border-radius: 10px;
+    }
+</style>
+
+    <div class="docs-section">
+      <h2>Поле — как тетрадь по математике</h2>
+      <p>До сих пор черепаха ползала «от себя»: вперёд, налево. Но у каждой точки поля есть и точный адрес — координаты. И вот приятный сюрприз: у черепашьего поля они устроены <strong>ровно как на уроке математики</strong>.</p>
+      <ul>
+        <li>Точка <code>(0, 0)</code> — центр поля. Именно там рождается каждая черепаха.</li>
+        <li>Ось X направлена вправо: <code>x = 100</code> — правее центра, <code>x = -100</code> — левее.</li>
+        <li>Ось Y направлена <strong>вверх</strong>: <code>y = 100</code> — выше центра. Больше игрек — выше точка, как и положено графику.</li>
+      </ul>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content turtle-preview">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 320">
+            <rect width="100%" height="100%" fill="#ffffff"/>
+            <line x1="20" y1="160" x2="400" y2="160" stroke="#9696a5" stroke-width="2" stroke-linecap="round"/>
+            <line x1="210" y1="300" x2="210" y2="20" stroke="#9696a5" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="330" cy="80" r="5" fill="#ff0000"/>
+            <text x="342" y="70" fill="#ff0000" font-size="14" font-family="sans-serif">(120, 80)</text>
+            <circle cx="60" cy="250" r="5" fill="#0000ff"/>
+            <text x="72" y="240" fill="#0000ff" font-size="14" font-family="sans-serif">(-150, -90)</text>
+            <text x="222" y="148" fill="#9696a5" font-size="14" font-family="sans-serif">(0, 0)</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <p class="coord-note">🧭 Оси черепашьего поля: центр в середине, X вправо, Y вверх. Красная точка правее и выше центра, синяя — левее и ниже.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>goto: ползти по адресу</h2>
+      <p>Команда <code>goto(x, y)</code> отправляет черепаху в точку с указанными координатами. С опущенным пером — рисуя линию, с поднятым — телепортом. Домик одной цепочкой адресов:</p>
+
+      <idyl-code-block><script type="text/plain">
+use turtle;
+
+main() {
+    turtle.Turtle t;
+    t.pen_up();
+    t.goto(-80, -80);
+    t.pen_down();
+
+    t.goto(80, -80);
+    t.goto(80, 40);
+    t.goto(0, 120);
+    t.goto(-80, 40);
+    t.goto(-80, -80);
+    t.goto(80, 40);
+    t.goto(-80, 40);
+    t.goto(80, -80);
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content turtle-preview">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+            <rect width="100%" height="100%" fill="#ffffff"/>
+            <line x1="220" y1="380" x2="380" y2="380" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="380" y1="380" x2="380" y2="260" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="380" y1="260" x2="300" y2="180" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="300" y1="180" x2="220" y2="260" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="220" y1="260" x2="220" y2="380" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="220" y1="380" x2="380" y2="260" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="380" y1="260" x2="220" y2="260" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+            <line x1="220" y1="260" x2="380" y2="380" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <p class="coord-note">🏠 Классическая задача «нарисуй домик, не отрывая пера» — решается списком координат. Крыша выше стен, потому что у её вершины самый большой игрек: 120.</p>
+
+      <p>Команда <code>home()</code> — «домой»: черепаха возвращается в центр <code>(0, 0)</code> и снова смотрит вправо. С опущенным пером — прочертит дорогу домой.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Черепаха знает, где она</h2>
+      <p>У черепахи есть три свойства только для чтения: <code>x</code>, <code>y</code> — где она, и <code>heading</code> — куда смотрит (в градусах: 0 — вправо, 90 — вверх, 180 — влево, 270 — вниз). Их можно печатать в консоль прямо во время рисования:</p>
+
+      <idyl-code-block><script type="text/plain">
+use turtle;
+use console;
+
+main() {
+    turtle.Turtle t;
+    t.forward(100);
+    t.left(90);
+    t.forward(50);
+
+    console.writeln("x = ", t.x);
+    console.writeln("y = ", t.y);
+    console.writeln("heading = ", t.heading);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>x = 100
+y = 50
+heading = 90</idyl-output-block>
+
+      <p>Проверьте себя: черепаха проползла 100 вправо (<code>x</code> стал 100), повернула вверх и проползла 50 (<code>y</code> стал 50). Нос смотрит вверх — <code>heading</code> равен 90. Геометрия и программа рассказывают одну и ту же историю.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Внимание: у окон было по-другому!</h2>
+      <p>Вспомните GUI-раздел: там <code>x</code> и <code>y</code> виджета отсчитывались от <strong>левого верхнего</strong> угла окна, и Y рос <strong>вниз</strong>. А у черепахи — центр и Y вверх. Кто из них «правильный»?</p>
+      <p>Оба. Экранные координаты (сверху вниз) достались программистам от старых экранов, которые рисовали изображение строка за строкой сверху. Математические (снизу вверх) — от графиков и геометрии. Черепаха — территория геометрии, поэтому она живёт по-математически. А когда доберётесь до раздела Canvas — вернётесь в экранные координаты, и вы уже будете понимать обе системы и уметь не путаться.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Шпаргалка: координаты</h2>
+      <table>
+        <thead>
+          <tr><th>Команда/свойство</th><th>Что делает</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>goto(x, y)</code></td><td>ползти в точку; перо опущено — рисуется линия</td></tr>
+          <tr><td><code>home()</code></td><td>в центр (0, 0), нос вправо</td></tr>
+          <tr><td><code>x</code>, <code>y</code></td><td>где я (только чтение)</td></tr>
+          <tr><td><code>heading</code></td><td>куда смотрю: 0 вправо, 90 вверх, 180 влево, 270 вниз</td></tr>
+        </tbody>
+      </table>
+    </div>

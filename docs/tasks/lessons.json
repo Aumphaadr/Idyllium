@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-06T21:34:30.517Z",
+  "generatedAt": "2026-08-07T06:55:54.383Z",
   "sourceRoot": "docs/manual-content/tasks",
   "sections": [
     {
@@ -582,6 +582,84 @@
           "title": "Типичные ошибки",
           "subtitle": "Задания готовятся",
           "file": "content/widgets/errors.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        }
+      ]
+    },
+    {
+      "id": "turtle",
+      "title": "Черепаха",
+      "icon": "turtle",
+      "status": "ready",
+      "lessons": [
+        {
+          "id": "intro",
+          "title": "Знакомство с черепахой",
+          "subtitle": "Задания готовятся",
+          "file": "content/turtle/intro.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "pen",
+          "title": "Перо и скорость",
+          "subtitle": "Задания готовятся",
+          "file": "content/turtle/pen.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "shapes",
+          "title": "Углы и многоугольники",
+          "subtitle": "Задания готовятся",
+          "file": "content/turtle/shapes.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "coordinates",
+          "title": "Координаты поля",
+          "subtitle": "Задания готовятся",
+          "file": "content/turtle/coordinates.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "fill",
+          "title": "Заливка и узоры",
+          "subtitle": "Задания готовятся",
+          "file": "content/turtle/fill.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "turtles",
+          "title": "Несколько черепах",
+          "subtitle": "Задания готовятся",
+          "file": "content/turtle/turtles.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "svg",
+          "title": "Векторная картинка SVG",
+          "subtitle": "Задания готовятся",
+          "file": "content/turtle/svg.html",
           "sourceFile": "",
           "status": "planned",
           "reviewFlags": [],

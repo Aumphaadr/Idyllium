@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-06T21:34:30.517Z",
+  "generatedAt": "2026-08-07T06:55:54.383Z",
   "sourceRoot": "packages/docs",
   "sections": [
     {
@@ -583,6 +583,84 @@
           "subtitle": "Как не попасть в ловушки и понять сообщения компилятора",
           "file": "content/widgets/errors.html",
           "sourceFile": "widgets/016_errors.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        }
+      ]
+    },
+    {
+      "id": "turtle",
+      "title": "Черепаха",
+      "icon": "turtle",
+      "status": "ready",
+      "lessons": [
+        {
+          "id": "intro",
+          "title": "Знакомство с черепахой",
+          "subtitle": "turtle.Turtle, forward и left: первая фигура за пять строк",
+          "file": "content/turtle/intro.html",
+          "sourceFile": "docs/manual-content/turtle/intro.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "pen",
+          "title": "Перо и скорость",
+          "subtitle": "pen_up/pen_down, цвет и толщина пера, speed, кляксы и команды поля",
+          "file": "content/turtle/pen.html",
+          "sourceFile": "docs/manual-content/turtle/pen.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "shapes",
+          "title": "Углы и многоугольники",
+          "subtitle": "Внешний угол, формула 360/n и звезда, которую рисует цикл",
+          "file": "content/turtle/shapes.html",
+          "sourceFile": "docs/manual-content/turtle/shapes.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "coordinates",
+          "title": "Координаты поля",
+          "subtitle": "goto и home: центр (0, 0), ось Y вверх — как на уроке математики",
+          "file": "content/turtle/coordinates.html",
+          "sourceFile": "docs/manual-content/turtle/coordinates.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "fill",
+          "title": "Заливка и узоры",
+          "subtitle": "begin_fill/end_fill, функции-фигуры и розетка из 36 квадратов",
+          "file": "content/turtle/fill.html",
+          "sourceFile": "docs/manual-content/turtle/fill.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "turtles",
+          "title": "Несколько черепах",
+          "subtitle": "Каждая черепаха — объект: парное рисование и великие гонки",
+          "file": "content/turtle/turtles.html",
+          "sourceFile": "docs/manual-content/turtle/turtles.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "svg",
+          "title": "Векторная картинка SVG",
+          "subtitle": "save_svg: рисунок уезжает в файл — даже из консольной программы",
+          "file": "content/turtle/svg.html",
+          "sourceFile": "docs/manual-content/turtle/svg.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
