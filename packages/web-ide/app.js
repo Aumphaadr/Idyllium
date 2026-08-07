@@ -1245,6 +1245,10 @@
         showJsonTree(file, item.content || '');
       } else if (isMarkdownFile(file) && structuredViewModes.get(file) === 'preview') {
         showMarkdownPreview(file, item.content || '');
+      } else if (isSvgFile(file) && (structuredViewModes.get(file) || 'image') === 'image') {
+        // SVG по умолчанию открывается КАРТИНКОЙ (кнопка «Код» вернёт исходник):
+        // черепашьи узоры и любые svg-файлы хочется сначала увидеть.
+        showSvgImagePreview(file, item.content || '');
       }
     } else if (item && item.kind === 'asset') {
       showAssetViewer(file, item);
@@ -1304,11 +1308,23 @@
     return /\.(?:md|markdown)$/iu.test(file);
   }
 
+  function isSvgFile(file) {
+    return /\.svg$/iu.test(file);
+  }
+
   function structuredViewMode(file) {
     if (isCsvFile(file)) return 'table';
     if (isJsonFile(file)) return 'tree';
     if (isMarkdownFile(file)) return 'preview';
+    if (isSvgFile(file)) return 'image';
     return '';
+  }
+
+  // Текстовый SVG показываем тем же ассетным просмотрщиком, что и бинарные
+  // картинки: масштаб, детали и определение типа достаются бесплатно.
+  function showSvgImagePreview(file, source) {
+    const bytes = new TextEncoder().encode(source);
+    showAssetViewer(file, { kind: 'asset', content: '', bytes });
   }
 
   function setStructuredViewMode(mode) {
@@ -1321,6 +1337,7 @@
       structuredViewModes.set(currentFile, structuredMode);
       if (structuredMode === 'table') showCsvTable(currentFile, item.content || '');
       else if (structuredMode === 'tree') showJsonTree(currentFile, item.content || '');
+      else if (structuredMode === 'image') showSvgImagePreview(currentFile, item.content || '');
       else showMarkdownPreview(currentFile, item.content || '');
     } else {
       structuredViewModes.set(currentFile, 'text');
@@ -1337,8 +1354,16 @@
     const item = files.get(currentFile);
     const structuredMode = structuredViewMode(currentFile);
     const available = Boolean(item && item.kind === 'text' && structuredMode);
-    const mode = available ? structuredViewModes.get(currentFile) || 'text' : 'text';
-    const formatName = isCsvFile(currentFile) ? 'CSV' : isJsonFile(currentFile) ? 'JSON' : 'Markdown';
+    // SVG по умолчанию открыт картинкой — переключатель должен это показывать.
+    const defaultMode = structuredMode === 'image' ? 'image' : 'text';
+    const mode = available ? structuredViewModes.get(currentFile) || defaultMode : 'text';
+    const formatName = isCsvFile(currentFile)
+      ? 'CSV'
+      : isJsonFile(currentFile)
+        ? 'JSON'
+        : isSvgFile(currentFile)
+          ? 'SVG'
+          : 'Markdown';
 
     structuredViewToggle.hidden = !available;
     structuredViewToggle.setAttribute('aria-label', `Режим просмотра ${formatName}`);
@@ -1346,7 +1371,9 @@
       ? 'Таблица'
       : structuredMode === 'tree'
         ? 'Дерево'
-        : 'Просмотр';
+        : structuredMode === 'image'
+          ? 'Картинка'
+          : 'Просмотр';
     structuredTextViewButton.classList.toggle('active', mode === 'text');
     structuredDataViewButton.classList.toggle('active', mode === structuredMode);
     structuredTextViewButton.setAttribute('aria-pressed', String(mode === 'text'));
@@ -2736,7 +2763,31 @@
     caps.appendChild(capsInput);
     caps.appendChild(capsText);
 
+    // «Ж» и «К» — отжимаемые кнопки начертания, как в текстовых редакторах.
+    // Если в файле нет жирного/курсивного начертания, браузер честно
+    // имитирует его сам — об этом предупреждает подпись под образцами.
+    const makeStyleButton = (text, className, ariaLabel, toggleClass) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `asset-font-style-button ${className}`;
+      button.textContent = text;
+      button.title = ariaLabel;
+      button.setAttribute('aria-label', ariaLabel);
+      button.setAttribute('aria-pressed', 'false');
+      button.addEventListener('click', () => {
+        const active = !content.classList.contains(toggleClass);
+        content.classList.toggle(toggleClass, active);
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+      });
+      return button;
+    };
+    const boldButton = makeStyleButton('Ж', 'asset-font-bold-button', 'Показать жирное начертание', 'bold-on');
+    const italicButton = makeStyleButton('К', 'asset-font-italic-button', 'Показать курсивное начертание', 'italic-on');
+
     toolbar.appendChild(caps);
+    toolbar.appendChild(boldButton);
+    toolbar.appendChild(italicButton);
     toolbar.appendChild(label);
     content.appendChild(toolbar);
 
@@ -2770,7 +2821,7 @@
 
     const note = document.createElement('p');
     note.className = 'asset-font-note';
-    note.textContent = 'Если в файле нет нужного символа, браузер может незаметно подставить его из запасного шрифта.';
+    note.textContent = 'Если в файле нет нужного символа, браузер может незаметно подставить его из запасного шрифта. То же с начертаниями «Ж» и «К»: когда в файле нет жирного или курсива, браузер имитирует их сам.';
     content.appendChild(note);
     return content;
   }
@@ -5926,6 +5977,7 @@
       || name.endsWith('.md')
       || name.endsWith('.markdown')
       || name.endsWith('.xml')
+      || name.endsWith('.svg')
       || name.endsWith('.html')
       || name.endsWith('.htm')
       || name.endsWith('.css');

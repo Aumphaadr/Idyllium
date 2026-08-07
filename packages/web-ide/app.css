@@ -2394,6 +2394,45 @@ summary.json-node-line:hover {
   text-transform: uppercase;
 }
 
+/* «Ж»/«К» — отжимаемые кнопки начертания, как в текстовых редакторах. */
+.asset-font-style-button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font: 700 14px var(--ui-font);
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+}
+
+.asset-font-italic-button {
+  font-style: italic;
+  font-family: serif;
+}
+
+.asset-font-style-button:hover {
+  border-color: var(--accent);
+  color: var(--editor-text);
+}
+
+.asset-font-style-button.active {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  border-color: var(--accent);
+  color: var(--editor-text);
+}
+
+.asset-font-preview.bold-on .asset-font-sample-text {
+  font-weight: 700;
+}
+
+.asset-font-preview.italic-on .asset-font-sample-text {
+  font-style: italic;
+}
+
 .asset-font-note {
   margin: 20px 0 0;
   color: var(--muted);

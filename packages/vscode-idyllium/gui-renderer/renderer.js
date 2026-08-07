@@ -1294,6 +1294,28 @@
         ctx.fillText(stringValue(props.text, ''), -originX, -originY);
       });
     }
+    if (object.type === 'turtle.Path') {
+      // Черепашья графика: залитый многоугольник (заливки begin/end_fill и
+      // спрайт-треугольник черепашки). Точки приходят плоским массивом
+      // [x1, y1, x2, y2, ...] уже в экранных координатах.
+      const points = Array.isArray(props.points) ? props.points : [];
+      if (points.length >= 6) {
+        ctx.beginPath();
+        ctx.moveTo(numberValue(points[0]), numberValue(points[1]));
+        for (let i = 2; i + 1 < points.length; i += 2) {
+          ctx.lineTo(numberValue(points[i]), numberValue(points[i + 1]));
+        }
+        ctx.closePath();
+        ctx.fillStyle = color(props.fill_color, 'rgba(0, 0, 0, 0)');
+        ctx.fill();
+        const borderWidth = numberValue(props.border_width, 0);
+        if (borderWidth > 0) {
+          ctx.lineWidth = borderWidth;
+          ctx.strokeStyle = color(props.border_color, '#000000');
+          ctx.stroke();
+        }
+      }
+    }
     if (object.type === 'drawable.Sprite') {
       const resource = props.image && props.image.properties ? props.image.properties : null;
       const image = loadImage(resource && (resource.webview_uri || resource.resource_uri));
