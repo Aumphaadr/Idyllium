@@ -846,6 +846,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       functionSpec('right', [{ name: 'angle', type: FLOAT }], VOID, {
         documentation: 'Повернуться направо (по часовой стрелке) на angle градусов.',
       }),
+      functionSpec('set_heading', [{ name: 'angle', type: FLOAT }], VOID, {
+        documentation: 'Повернуться носом ТОЧНО на угол angle, откуда бы черепаха ни смотрела: 0 — вправо, 90 — вверх, 180 — влево, 270 — вниз. Поворачивает по кратчайшей дуге.',
+      }),
       functionSpec('goto', [
         { name: 'x', type: FLOAT },
         { name: 'y', type: FLOAT },

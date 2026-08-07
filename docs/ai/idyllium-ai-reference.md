@@ -2826,9 +2826,10 @@ main() {
 }
 ```
 
-Methods: `forward(px)`, `back(px)`, `left(deg)`, `right(deg)`, `goto(x, y)`,
-`home()`, `pen_up()`, `pen_down()`, `dot(size = 8)`, `write(text)`,
-`begin_fill()`, `end_fill()`.
+Methods: `forward(px)`, `back(px)`, `left(deg)`, `right(deg)`,
+`set_heading(deg)` (turn to an ABSOLUTE angle via the shortest arc),
+`goto(x, y)`, `home()`, `pen_up()`, `pen_down()`, `dot(size = 8)`,
+`write(text)`, `begin_fill()`, `end_fill()`.
 
 Properties: `pen_color` / `fill_color` (`colors.Color`), `pen_width`
 (int 1..100, default 2), `speed` (int 0..10; 0 = instant, default 6 —
