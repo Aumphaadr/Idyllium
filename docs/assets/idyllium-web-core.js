@@ -5342,6 +5342,7 @@ function createDefaultStandardLibrary() {
     const guiCheckBox = (0, types_1.qualified)('gui', 'CheckBox');
     const guiRadioButton = (0, types_1.qualified)('gui', 'RadioButton');
     const guiComboBox = (0, types_1.qualified)('gui', 'ComboBox');
+    const guiTable = (0, types_1.qualified)('gui', 'Table');
     const guiModal = (0, types_1.qualified)('gui', 'Modal');
     const guiTimer = (0, types_1.qualified)('gui', 'Timer');
     const guiKeyboardEvent = (0, types_1.qualified)('gui', 'KeyboardEvent');
@@ -5440,7 +5441,7 @@ function createDefaultStandardLibrary() {
             documentation: 'Где выполняется программа: "cli", "web" или "vscode".',
         }),
         functionSpec('version', [], types_1.STRING, {
-            documentation: 'Версия Idyllium, например "1.3.1".',
+            documentation: 'Версия Idyllium, например "1.3.2".',
         }),
     ]));
     registry.registerModule(moduleSpec('console', [
@@ -6236,6 +6237,103 @@ function createDefaultStandardLibrary() {
         ], [
             functionSpec('add_item', [{ name: 'text', type: types_1.STRING }], types_1.VOID),
             functionSpec('clear_items', [], types_1.VOID),
+        ], guiWidget),
+        typeSpec('Table', [
+            ...positioned,
+            ...widgetState,
+            ...styleable,
+            ...fontSized,
+            propertySpec('row_count', types_1.INT, true, 'Сколько строк в таблице сейчас.'),
+            propertySpec('selected_row', types_1.INT, true, 'Номер строки, выбранной кликом (с нуля); -1 — ничего не выбрано.'),
+            callbackPropertySpec('on_select', [
+                callbackSpec([]),
+                callbackSpec([guiTable]),
+            ], 'Срабатывает при клике по строке; номер выбранной — в selected_row.'),
+        ], [
+            functionSpec('set_columns', [], types_1.VOID, {
+                variadic: true,
+                variadicTypes: [types_1.STRING],
+                minArguments: 1,
+                documentation: 'Задаёт заголовки колонок. Повторный вызов очищает строки и задаёт колонки заново.',
+            }),
+            functionSpec('add_row', [], types_1.VOID, {
+                variadic: true,
+                variadicTypes: [types_1.STRING],
+                minArguments: 1,
+                documentation: 'Добавляет строку. Значений должно быть ровно столько, сколько колонок; числа переводите через to_string().',
+            }),
+            functionSpec('set_cell', [
+                { name: 'row', type: types_1.INT },
+                { name: 'column', type: types_1.INT },
+                { name: 'text', type: types_1.STRING },
+            ], types_1.VOID, {
+                documentation: 'Заменяет текст одной ячейки — для «живых» таблиц.',
+            }),
+            functionSpec('remove_row', [{ name: 'row', type: types_1.INT }], types_1.VOID, {
+                documentation: 'Удаляет строку по номеру (с нуля).',
+            }),
+            functionSpec('clear', [], types_1.VOID, {
+                documentation: 'Убирает все строки; колонки остаются.',
+            }),
+        ], guiWidget),
+        typeSpec('BarChart', [
+            ...positioned,
+            ...widgetState,
+            ...styleable,
+            propertySpec('bar_color', types_1.COLOR, false, 'Цвет столбиков — один на всех, чтобы сравнение было честным. Не задан — акцентный цвет темы.'),
+            propertySpec('show_values', types_1.BOOL, false, 'Печатать ли числа над столбиками (по умолчанию true).'),
+            propertySpec('min_value', types_1.FLOAT, false, 'Нижняя граница шкалы. Не задана — шкала начинается с нуля.'),
+            propertySpec('max_value', types_1.FLOAT, false, 'Верхняя граница шкалы. Не задана — шкала подстраивается под максимум.'),
+        ], [
+            functionSpec('add_value', [
+                { name: 'label', type: types_1.STRING },
+                { name: 'value', type: types_1.FLOAT },
+            ], types_1.VOID, {
+                documentation: 'Новый столбик с подписью. Значение не бывает отрицательным.',
+            }),
+            functionSpec('set_value', [
+                { name: 'label', type: types_1.STRING },
+                { name: 'value', type: types_1.FLOAT },
+            ], types_1.VOID, {
+                documentation: 'Обновляет столбик по подписи — для «живых» диаграмм.',
+            }),
+            functionSpec('clear', [], types_1.VOID),
+        ], guiWidget),
+        typeSpec('LineChart', [
+            ...positioned,
+            ...widgetState,
+            ...styleable,
+            propertySpec('line_color', types_1.COLOR, false, 'Цвет линии. Не задан — акцентный цвет темы.'),
+            propertySpec('show_dots', types_1.BOOL, false, 'Рисовать ли кружки в точках (по умолчанию true).'),
+            propertySpec('min_value', types_1.FLOAT, false, 'Нижняя граница шкалы. Для приборов шкалу фиксируют, иначе ось «дышит».'),
+            propertySpec('max_value', types_1.FLOAT, false, 'Верхняя граница шкалы.'),
+            propertySpec('max_points', types_1.INT, false, 'Сколько последних точек помнить (бегущая лента); 0 — помнить всё.'),
+        ], [
+            functionSpec('add_value', [{ name: 'value', type: types_1.FLOAT }], types_1.VOID, {
+                documentation: 'Следующая точка; точки идут по порядку слева направо.',
+            }),
+            functionSpec('clear', [], types_1.VOID),
+        ], guiWidget),
+        typeSpec('PieChart', [
+            ...positioned,
+            ...widgetState,
+            ...styleable,
+            propertySpec('show_legend', types_1.BOOL, false, 'Показывать ли легенду сбоку (по умолчанию true).'),
+            propertySpec('show_percents', types_1.BOOL, false, 'Подписывать ли проценты на дольках (по умолчанию true).'),
+        ], [
+            functionSpec('add_slice', [
+                { name: 'label', type: types_1.STRING },
+                { name: 'value', type: types_1.FLOAT },
+            ], types_1.VOID, {
+                documentation: 'Новая долька. Доли пирог считает сам; значение не бывает отрицательным.',
+            }),
+            functionSpec('set_slice', [
+                { name: 'label', type: types_1.STRING },
+                { name: 'value', type: types_1.FLOAT },
+            ], types_1.VOID, {
+                documentation: 'Обновляет дольку по подписи.',
+            }),
+            functionSpec('clear', [], types_1.VOID),
         ], guiWidget),
         typeSpec('TabWidget', [
             ...positioned,
@@ -9921,7 +10019,7 @@ exports.IdylliumRuntimeError = IdylliumRuntimeError;
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-exports.IDYLLIUM_VERSION = '1.3.1';
+exports.IDYLLIUM_VERSION = '1.3.2';
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform() {
     const nodeProcess = typeof process === 'object' ? process : null;
@@ -14380,6 +14478,154 @@ function initializeGuiObject(obj, typeName, state) {
             obj.selected_index = -1;
         };
     }
+    if (typeName === 'Table') {
+        const columns = [];
+        const rows = [];
+        obj.__columns = columns;
+        obj.__rows = rows;
+        obj.selected_row = -1;
+        obj.row_count = 0;
+        obj.set_columns = contextFunction((...callArgs) => {
+            callArgs.pop();
+            callArgs.pop();
+            columns.length = 0;
+            for (const value of callArgs)
+                columns.push(String(value));
+            rows.length = 0;
+            obj.selected_row = -1;
+            obj.row_count = 0;
+        });
+        obj.add_row = contextFunction((...callArgs) => {
+            const line = callArgs.pop();
+            const file = callArgs.pop();
+            if (columns.length === 0) {
+                throw new IdylliumRuntimeError(file, line, 'Table.add_row() before set_columns() — set the columns first');
+            }
+            if (callArgs.length !== columns.length) {
+                throw new IdylliumRuntimeError(file, line, `Table.add_row() expects ${columns.length} values (one per column), got ${callArgs.length}`);
+            }
+            rows.push(callArgs.map((value) => String(value)));
+            obj.row_count = rows.length;
+        });
+        obj.set_cell = contextFunction((row, column, text, file, line) => {
+            const rowIndex = Math.trunc(Number(row));
+            const columnIndex = Math.trunc(Number(column));
+            if (rowIndex < 0 || rowIndex >= rows.length) {
+                throw new IdylliumRuntimeError(file, line, `Table.set_cell() row ${rowIndex} is out of range 0..${rows.length - 1}`);
+            }
+            if (columnIndex < 0 || columnIndex >= columns.length) {
+                throw new IdylliumRuntimeError(file, line, `Table.set_cell() column ${columnIndex} is out of range 0..${columns.length - 1}`);
+            }
+            rows[rowIndex][columnIndex] = String(text);
+        });
+        obj.remove_row = contextFunction((row, file, line) => {
+            const rowIndex = Math.trunc(Number(row));
+            if (rowIndex < 0 || rowIndex >= rows.length) {
+                throw new IdylliumRuntimeError(file, line, `Table.remove_row() row ${rowIndex} is out of range 0..${rows.length - 1}`);
+            }
+            rows.splice(rowIndex, 1);
+            obj.row_count = rows.length;
+            const selected = Number(obj.selected_row);
+            if (selected === rowIndex)
+                obj.selected_row = -1;
+            else if (selected > rowIndex)
+                obj.selected_row = selected - 1;
+        });
+        obj.clear = contextFunction((_file, _line) => {
+            rows.length = 0;
+            obj.row_count = 0;
+            obj.selected_row = -1;
+        });
+        obj.to_string = () => `gui.Table(${columns.length} columns, ${rows.length} rows)`;
+    }
+    if (typeName === 'BarChart' || typeName === 'PieChart') {
+        const entries = [];
+        obj.__entries = entries;
+        // «bar» против «slice» — сторожа говорят на языке своего виджета.
+        const noun = typeName === 'BarChart' ? 'bar' : 'slice';
+        const addEntry = (label, value, file, line) => {
+            const amount = Number(value);
+            if (!Number.isFinite(amount) || amount < 0) {
+                throw new IdylliumRuntimeError(file, line, `${typeName} ${noun} value must be >= 0, got ${String(value)}`);
+            }
+            const name = String(label);
+            if (entries.some((entry) => entry.label === name)) {
+                throw new IdylliumRuntimeError(file, line, `${typeName} ${noun} '${name}' already exists — use set_${typeName === 'BarChart' ? 'value' : 'slice'}()`);
+            }
+            entries.push({ label: name, value: amount });
+        };
+        const setEntry = (label, value, file, line) => {
+            const amount = Number(value);
+            if (!Number.isFinite(amount) || amount < 0) {
+                throw new IdylliumRuntimeError(file, line, `${typeName} ${noun} value must be >= 0, got ${String(value)}`);
+            }
+            const name = String(label);
+            const entry = entries.find((item) => item.label === name);
+            if (!entry) {
+                throw new IdylliumRuntimeError(file, line, `${typeName} has no ${noun} '${name}'`);
+            }
+            entry.value = amount;
+        };
+        if (typeName === 'BarChart') {
+            obj.add_value = contextFunction(addEntry);
+            obj.set_value = contextFunction(setEntry);
+            defineTrackedRuntimeProperty(obj, 'bar_color', colorTransparent());
+            obj.show_values = true;
+        }
+        else {
+            obj.add_slice = contextFunction(addEntry);
+            obj.set_slice = contextFunction(setEntry);
+            obj.show_legend = true;
+            obj.show_percents = true;
+        }
+        obj.clear = contextFunction((_file, _line) => {
+            entries.length = 0;
+        });
+        // Автомасштаб: пока min/max не заданы явно, рендерер считает шкалу сам —
+        // явность отслеживается той же механикой, что явные цвета у тем.
+        if (typeName === 'BarChart') {
+            defineTrackedRuntimeProperty(obj, 'min_value', 0);
+            defineTrackedRuntimeProperty(obj, 'max_value', 0);
+        }
+        obj.to_string = () => `gui.${typeName}(${entries.length} ${noun}s)`;
+    }
+    if (typeName === 'LineChart') {
+        const points = [];
+        obj.__points = points;
+        obj.show_dots = true;
+        defineTrackedRuntimeProperty(obj, 'line_color', colorTransparent());
+        defineTrackedRuntimeProperty(obj, 'min_value', 0);
+        defineTrackedRuntimeProperty(obj, 'max_value', 0);
+        defineValidatedRuntimeProperty(obj, 'max_points', 0, (value, file, line) => {
+            const limit = Math.trunc(Number(value));
+            if (!Number.isFinite(limit) || limit < 0 || limit > 100000) {
+                throw new IdylliumRuntimeError(file, line, `LineChart.max_points must be between 0 and 100000, got ${String(value)}`);
+            }
+            return limit;
+        }, (value) => {
+            const limit = Number(value);
+            if (limit > 0) {
+                while (points.length > limit)
+                    points.shift();
+            }
+        });
+        obj.add_value = contextFunction((value, file, line) => {
+            const amount = Number(value);
+            if (!Number.isFinite(amount)) {
+                throw new IdylliumRuntimeError(file, line, `LineChart.add_value() expects a number, got ${String(value)}`);
+            }
+            points.push(amount);
+            const limit = Number(obj.max_points);
+            if (limit > 0) {
+                while (points.length > limit)
+                    points.shift();
+            }
+        });
+        obj.clear = contextFunction((_file, _line) => {
+            points.length = 0;
+        });
+        obj.to_string = () => `gui.LineChart(${points.length} points)`;
+    }
     if (typeName === 'Modal') {
         obj.title = '';
         obj.message = '';
@@ -14409,6 +14655,12 @@ function defaultGuiWidgetSize(typeName) {
             return { width: 220, height: 140 };
         case 'TabWidget':
             return { width: 320, height: 200 };
+        case 'Table':
+            return { width: 320, height: 200 };
+        case 'BarChart':
+        case 'LineChart':
+        case 'PieChart':
+            return { width: 320, height: 220 };
         case 'ImageBox':
             return { width: 160, height: 120 };
         case 'LineEdit':
@@ -15763,7 +16015,11 @@ function isGuiWidget(typeName) {
         || typeName === 'Slider'
         || typeName === 'CheckBox'
         || typeName === 'RadioButton'
-        || typeName === 'ComboBox';
+        || typeName === 'ComboBox'
+        || typeName === 'Table'
+        || typeName === 'BarChart'
+        || typeName === 'LineChart'
+        || typeName === 'PieChart';
 }
 function guiObjectUsesFontSize(typeName) {
     return typeName === 'Window'
@@ -15778,7 +16034,8 @@ function guiObjectUsesFontSize(typeName) {
         || typeName === 'FloatSpinBox'
         || typeName === 'CheckBox'
         || typeName === 'RadioButton'
-        || typeName === 'ComboBox';
+        || typeName === 'ComboBox'
+        || typeName === 'Table';
 }
 function isRuntimeObject(value) {
     return value !== null && typeof value === 'object';
@@ -15850,6 +16107,14 @@ function widgetSnapshot(widget) {
         children: widgetChildrenSnapshot(widget),
         canvas: type === 'gui.Canvas' ? canvasSnapshot(widget) : undefined,
         items: type === 'gui.ComboBox' && Array.isArray(widget.__items) ? [...widget.__items] : undefined,
+        columns: type === 'gui.Table' && Array.isArray(widget.__columns) ? [...widget.__columns] : undefined,
+        rows: type === 'gui.Table' && Array.isArray(widget.__rows)
+            ? widget.__rows.map((row) => [...row])
+            : undefined,
+        entries: (type === 'gui.BarChart' || type === 'gui.PieChart') && Array.isArray(widget.__entries)
+            ? widget.__entries.map((entry) => ({ ...entry }))
+            : undefined,
+        points: type === 'gui.LineChart' && Array.isArray(widget.__points) ? [...widget.__points] : undefined,
     };
 }
 function widgetChildrenSnapshot(widget) {
@@ -15971,6 +16236,12 @@ function applyGuiEventPayload(target, eventName, payload, state) {
         target.is_playing = false;
         return;
     }
+    if (target.__idylliumType === 'gui.Table' && eventName === 'select') {
+        const row = Math.trunc(Number(payload.row));
+        const rows = Array.isArray(target.__rows) ? target.__rows.length : 0;
+        target.selected_row = row >= 0 && row < rows ? row : -1;
+        return;
+    }
     if (eventName === 'modal_confirm' || eventName === 'modal_cancel') {
         if (typeof payload.input_value === 'string') {
             target.__input_value = payload.input_value;
@@ -16054,6 +16325,8 @@ function guiCallbackName(target, eventName) {
         return 'on_click';
     if (eventName === 'change')
         return 'on_change';
+    if (target.__idylliumType === 'gui.Table' && eventName === 'select')
+        return 'on_select';
     if (target.__idylliumType === 'gui.Modal' && eventName === 'modal_confirm')
         return 'on_confirm';
     if (target.__idylliumType === 'gui.Modal' && eventName === 'modal_cancel')

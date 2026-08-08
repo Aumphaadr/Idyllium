@@ -252,6 +252,19 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     reviewFlags: [],
   },
   {
+    sectionId: 'widgets',
+    // Факультатив (владелец, 2026-08-08): витрины применяются не каждой
+    // группой — ставим предпоследним, после модальных окон и перед
+    // «Типичными ошибками».
+    afterLessonId: 'modal',
+    id: 'data-widgets',
+    title: 'Витрины данных',
+    subtitle: 'Факультатив: gui.Table и графики — таблица, столбики, пирог и живая линия',
+    sourceFile: 'docs/manual-content/widgets/data-widgets.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
     sectionId: 'turtle',
     id: 'intro',
     title: 'Знакомство с черепахой',

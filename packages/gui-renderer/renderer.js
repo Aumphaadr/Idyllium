@@ -364,6 +364,10 @@
     if (widget.type === 'gui.Frame') return renderFrame(widget, inheritedColors);
     if (widget.type === 'gui.ImageBox') return renderImageBox(widget, inheritedColors);
     if (widget.type === 'gui.TabWidget') return renderTabWidget(widget, inheritedColors);
+    if (widget.type === 'gui.Table') return renderTable(widget, inheritedColors);
+    if (widget.type === 'gui.BarChart') return renderChart(widget, inheritedColors, paintBarChart);
+    if (widget.type === 'gui.LineChart') return renderChart(widget, inheritedColors, paintLineChart);
+    if (widget.type === 'gui.PieChart') return renderChart(widget, inheritedColors, paintPieChart);
     if (widget.type === 'gui.Label') return renderLabel(widget, inheritedColors);
 
     return renderPlaceholder(widget, inheritedColors);
@@ -656,6 +660,269 @@
     installControlFocus(el, widget.id);
     el.addEventListener('change', () => postGuiEvent(widget.id, 'change', { selected_index: Number(el.value) }));
     return el;
+  }
+
+  function renderTable(widget, inheritedColors) {
+    const el = baseWidget('div', widget, 'datatable', inheritedColors);
+    const columns = widget.columns || [];
+    const rows = widget.rows || [];
+    const selectedRow = numberValue(widget.properties.selected_row, -1);
+
+    const table = document.createElement('table');
+    table.className = 'datatable-grid';
+
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    for (const column of columns) {
+      const th = document.createElement('th');
+      th.textContent = column;
+      headRow.appendChild(th);
+    }
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    rows.forEach((cells, rowIndex) => {
+      const tr = document.createElement('tr');
+      tr.className = 'datatable-row' + (rowIndex === selectedRow ? ' selected' : '');
+      for (const cell of cells) {
+        const td = document.createElement('td');
+        td.textContent = cell;
+        tr.appendChild(td);
+      }
+      tr.addEventListener('click', () => postGuiEvent(widget.id, 'select', { row: rowIndex }));
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    el.appendChild(table);
+    return el;
+  }
+
+  // Общий каркас чартов: канвас + отрисовка в два прохода. Первый — сразу,
+  // с запасными цветами; второй — после прикрепления к DOM, когда доступны
+  // переменные темы окна (getComputedStyle до вставки их не видит).
+  function renderChart(widget, inheritedColors, paint) {
+    const el = baseWidget('div', widget, 'datachart', inheritedColors);
+    const canvas = document.createElement('canvas');
+    const width = Math.max(40, positiveNumber(widget.properties.width, 320));
+    const height = Math.max(40, positiveNumber(widget.properties.height, 220));
+    canvas.width = width;
+    canvas.height = height;
+    el.appendChild(canvas);
+
+    const draw = () => {
+      const ctx = canvas.getContext && canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.clearRect(0, 0, width, height);
+      paint(ctx, width, height, widget, chartTheme(el, widget.properties));
+    };
+    draw();
+    const schedule = typeof requestAnimationFrame === 'function'
+      ? requestAnimationFrame
+      : (fn) => setTimeout(fn, 0);
+    schedule(draw);
+    return el;
+  }
+
+  function chartTheme(el, props) {
+    let resolve = () => '';
+    if (typeof getComputedStyle === 'function') {
+      try {
+        const style = getComputedStyle(el);
+        resolve = (name) => String(style.getPropertyValue(name) || '').trim();
+      } catch (error) {
+        resolve = () => '';
+      }
+    }
+    const accent = resolve('--w-accent') || '#2673d9';
+    return {
+      accent,
+      text: resolve('--w-control-text') || '#333333',
+      muted: resolve('--w-muted') || '#888888',
+      grid: resolve('--w-border') || '#cccccc',
+      barColor: isExplicitProperty(props, 'bar_color') ? color(props.bar_color, accent) : accent,
+      lineColor: isExplicitProperty(props, 'line_color') ? color(props.line_color, accent) : accent,
+    };
+  }
+
+  // Диапазон шкалы: явные min/max уважаются, остальное считается по данным.
+  function chartScale(props, values) {
+    const top = values.length ? Math.max.apply(null, values) : 1;
+    const min = isExplicitProperty(props, 'min_value') ? numberValue(props.min_value, 0) : 0;
+    let max = isExplicitProperty(props, 'max_value') ? numberValue(props.max_value, top) : top;
+    if (max <= min) max = min + 1;
+    return { min, max };
+  }
+
+  function paintBarChart(ctx, width, height, widget, theme) {
+    const entries = widget.entries || [];
+    if (entries.length === 0) return;
+    const props = widget.properties;
+    const showValues = props.show_values !== false;
+    const padTop = showValues ? 22 : 10;
+    const padBottom = 22;
+    const padSide = 12;
+    const plotHeight = Math.max(10, height - padTop - padBottom);
+    const scale = chartScale(props, entries.map((entry) => entry.value));
+    const slot = (width - padSide * 2) / entries.length;
+    const barWidth = Math.max(6, Math.min(64, slot * 0.7));
+
+    ctx.strokeStyle = theme.grid;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padSide, height - padBottom + 0.5);
+    ctx.lineTo(width - padSide, height - padBottom + 0.5);
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    entries.forEach((entry, index) => {
+      const centerX = padSide + slot * index + slot / 2;
+      const ratio = Math.max(0, Math.min(1, (entry.value - scale.min) / (scale.max - scale.min)));
+      const barHeight = Math.round(plotHeight * ratio);
+      ctx.fillStyle = theme.barColor;
+      ctx.fillRect(Math.round(centerX - barWidth / 2), height - padBottom - barHeight, Math.round(barWidth), barHeight);
+
+      ctx.fillStyle = theme.muted;
+      ctx.font = '11px sans-serif';
+      ctx.textBaseline = 'top';
+      ctx.fillText(clipChartLabel(ctx, entry.label, slot - 4), centerX, height - padBottom + 5);
+      if (showValues) {
+        ctx.fillStyle = theme.text;
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(chartNumber(entry.value), centerX, height - padBottom - barHeight - 3);
+      }
+    });
+  }
+
+  function paintLineChart(ctx, width, height, widget, theme) {
+    const points = widget.points || [];
+    const props = widget.properties;
+    const pad = 12;
+    const padBottom = 14;
+    const plotWidth = width - pad * 2;
+    const plotHeight = height - pad - padBottom;
+    const scale = chartScale(props, points);
+
+    ctx.strokeStyle = theme.grid;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(pad + 0.5, pad + 0.5, plotWidth, plotHeight);
+    if (points.length === 0) return;
+
+    const stepX = points.length > 1 ? plotWidth / (points.length - 1) : 0;
+    const pointX = (index) => pad + (points.length > 1 ? stepX * index : plotWidth / 2);
+    const pointY = (value) => {
+      const ratio = Math.max(0, Math.min(1, (value - scale.min) / (scale.max - scale.min)));
+      return pad + plotHeight - plotHeight * ratio;
+    };
+
+    ctx.strokeStyle = theme.lineColor;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    points.forEach((value, index) => {
+      if (index === 0) ctx.moveTo(pointX(index), pointY(value));
+      else ctx.lineTo(pointX(index), pointY(value));
+    });
+    ctx.stroke();
+
+    if (props.show_dots !== false && points.length <= 120) {
+      ctx.fillStyle = theme.lineColor;
+      points.forEach((value, index) => {
+        ctx.beginPath();
+        ctx.arc(pointX(index), pointY(value), 3, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+  }
+
+  function paintPieChart(ctx, width, height, widget, theme) {
+    const entries = (widget.entries || []).filter((entry) => entry.value > 0);
+    if (entries.length === 0) return;
+    const props = widget.properties;
+    const showLegend = props.show_legend !== false;
+    const showPercents = props.show_percents !== false;
+    const legendWidth = showLegend ? Math.min(150, Math.floor(width * 0.42)) : 0;
+    const radius = Math.max(20, Math.min((width - legendWidth) / 2, height / 2) - 12);
+    const centerX = (width - legendWidth) / 2;
+    const centerY = height / 2;
+    const total = entries.reduce((sum, entry) => sum + entry.value, 0);
+
+    let angle = -Math.PI / 2;
+    entries.forEach((entry, index) => {
+      const share = entry.value / total;
+      const next = angle + share * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.arc(centerX, centerY, radius, angle, next);
+      ctx.closePath();
+      ctx.fillStyle = pieSliceColor(index, entries.length, theme.accent);
+      ctx.fill();
+
+      if (showPercents && share >= 0.06) {
+        const middle = (angle + next) / 2;
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(Math.round(share * 100) + '%', centerX + Math.cos(middle) * radius * 0.62, centerY + Math.sin(middle) * radius * 0.62);
+      }
+      angle = next;
+    });
+
+    if (showLegend) {
+      const lineHeight = 18;
+      const startY = Math.max(10, centerY - (entries.length * lineHeight) / 2);
+      entries.forEach((entry, index) => {
+        const y = startY + index * lineHeight;
+        if (y + lineHeight > height) return;
+        ctx.fillStyle = pieSliceColor(index, entries.length, theme.accent);
+        ctx.fillRect(width - legendWidth + 4, y + 3, 10, 10);
+        ctx.fillStyle = theme.text;
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(clipChartLabel(ctx, entry.label, legendWidth - 24), width - legendWidth + 20, y + 1);
+      });
+    }
+  }
+
+  // Палитра долек: ровные шаги оттенка от акцента темы.
+  function pieSliceColor(index, count, accent) {
+    const base = parseAccentHue(accent);
+    const hue = (base + (360 / Math.max(1, count)) * index) % 360;
+    return 'hsl(' + Math.round(hue) + ', 62%, 52%)';
+  }
+
+  function parseAccentHue(accent) {
+    const match = /^#?([0-9a-f]{6})$/i.exec(String(accent).replace('#', ''));
+    if (!match) return 215;
+    const value = parseInt(match[1], 16);
+    const r = ((value >> 16) & 255) / 255;
+    const g = ((value >> 8) & 255) / 255;
+    const b = (value & 255) / 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    if (max === min) return 215;
+    let hue;
+    if (max === r) hue = ((g - b) / (max - min)) % 6;
+    else if (max === g) hue = (b - r) / (max - min) + 2;
+    else hue = (r - g) / (max - min) + 4;
+    return (hue * 60 + 360) % 360;
+  }
+
+  function chartNumber(value) {
+    return Number.isInteger(value) ? String(value) : String(Math.round(value * 100) / 100);
+  }
+
+  function clipChartLabel(ctx, text, maxWidth) {
+    const label = String(text);
+    if (!ctx.measureText || maxWidth <= 0) return label;
+    if (ctx.measureText(label).width <= maxWidth) return label;
+    let clipped = label;
+    while (clipped.length > 1 && ctx.measureText(clipped + '…').width > maxWidth) {
+      clipped = clipped.slice(0, -1);
+    }
+    return clipped + '…';
   }
 
   function renderProgressBar(widget, inheritedColors) {

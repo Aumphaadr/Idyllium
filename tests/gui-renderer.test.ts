@@ -1115,6 +1115,65 @@ test('gui renderer retries a pending music seek after metadata loads', () => {
   assertNumberEquals(music.playCount, 1, 'seek must not start another playback');
 });
 
+test('gui renderer shows data widgets: table rows and chart canvases', () => {
+  const harness = createRendererHarness();
+
+  harness.sendSnapshot({
+    generation: 1,
+    audio: [],
+    windows: [{
+      id: 1,
+      type: 'gui.Window',
+      properties: { width: 700, height: 400, title: 'Витрины' },
+      children: [
+        {
+          id: 2,
+          type: 'gui.Table',
+          properties: { x: 10, y: 10, width: 300, height: 200, selected_row: 1 },
+          children: [],
+          columns: ['Имя', 'Уровень'],
+          rows: [['Мира', '12'], ['Кай', '9']],
+        },
+        {
+          id: 3,
+          type: 'gui.BarChart',
+          properties: { x: 320, y: 10, width: 200, height: 150, show_values: true },
+          children: [],
+          entries: [{ label: 'Мира', value: 340 }, { label: 'Кай', value: 120 }],
+        },
+        {
+          id: 4,
+          type: 'gui.PieChart',
+          properties: { x: 320, y: 170, width: 200, height: 150 },
+          children: [],
+          entries: [{ label: 'Маги', value: 3 }, { label: 'Воины', value: 4 }],
+        },
+        {
+          id: 5,
+          type: 'gui.LineChart',
+          properties: { x: 530, y: 10, width: 160, height: 150 },
+          children: [],
+          points: [1, 5, 3, 8],
+        },
+      ],
+    }],
+    canvases: [],
+    modals: [],
+  });
+
+  // Fake DOM без querySelectorAll — проверяем по счётчикам контекстов:
+  // три чарта = три канваса с рисованием.
+  assertNumberEquals(harness.canvasContexts.length, 3, 'chart canvas count');
+  assert(
+    harness.canvasContexts.some((context) => context.fillRectCalls.length > 0),
+    'bar chart must draw bars via fillRect',
+  );
+  assert(
+    harness.canvasContexts.some((context) => context.arcCalls.length > 0),
+    'pie chart must draw slices via arc',
+  );
+});
+
 test('gui renderer draws turtle.Path polygons on canvas', () => {
   const harness = createRendererHarness();
 

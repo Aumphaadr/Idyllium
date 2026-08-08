@@ -63,7 +63,7 @@ export class IdylliumRuntimeError extends Error {
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-export const IDYLLIUM_VERSION = '1.3.1';
+export const IDYLLIUM_VERSION = '1.3.2';
 
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform(): string {
@@ -2285,6 +2285,13 @@ export interface IdylliumGuiWidgetSnapshot {
   readonly children: readonly IdylliumGuiWidgetSnapshot[];
   readonly canvas?: IdylliumCanvasSnapshot;
   readonly items?: readonly string[];
+  /** gui.Table: заголовки и строки. */
+  readonly columns?: readonly string[];
+  readonly rows?: ReadonlyArray<readonly string[]>;
+  /** gui.BarChart / gui.PieChart: пары «подпись — значение». */
+  readonly entries?: ReadonlyArray<{ readonly label: string; readonly value: number }>;
+  /** gui.LineChart: точки по порядку. */
+  readonly points?: readonly number[];
 }
 
 export interface IdylliumWindowSnapshot extends IdylliumGuiWidgetSnapshot {
@@ -5282,6 +5289,156 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
     };
   }
 
+  if (typeName === 'Table') {
+    const columns: string[] = [];
+    const rows: string[][] = [];
+    obj.__columns = columns;
+    obj.__rows = rows;
+    obj.selected_row = -1;
+    obj.row_count = 0;
+
+    obj.set_columns = contextFunction((...callArgs: unknown[]) => {
+      callArgs.pop();
+      callArgs.pop();
+      columns.length = 0;
+      for (const value of callArgs) columns.push(String(value));
+      rows.length = 0;
+      obj.selected_row = -1;
+      obj.row_count = 0;
+    });
+    obj.add_row = contextFunction((...callArgs: unknown[]) => {
+      const line = callArgs.pop() as number;
+      const file = callArgs.pop() as string;
+      if (columns.length === 0) {
+        throw new IdylliumRuntimeError(file, line, 'Table.add_row() before set_columns() — set the columns first');
+      }
+      if (callArgs.length !== columns.length) {
+        throw new IdylliumRuntimeError(
+          file,
+          line,
+          `Table.add_row() expects ${columns.length} values (one per column), got ${callArgs.length}`,
+        );
+      }
+      rows.push(callArgs.map((value) => String(value)));
+      obj.row_count = rows.length;
+    });
+    obj.set_cell = contextFunction((row: unknown, column: unknown, text: unknown, file: string, line: number) => {
+      const rowIndex = Math.trunc(Number(row));
+      const columnIndex = Math.trunc(Number(column));
+      if (rowIndex < 0 || rowIndex >= rows.length) {
+        throw new IdylliumRuntimeError(file, line, `Table.set_cell() row ${rowIndex} is out of range 0..${rows.length - 1}`);
+      }
+      if (columnIndex < 0 || columnIndex >= columns.length) {
+        throw new IdylliumRuntimeError(file, line, `Table.set_cell() column ${columnIndex} is out of range 0..${columns.length - 1}`);
+      }
+      rows[rowIndex][columnIndex] = String(text);
+    });
+    obj.remove_row = contextFunction((row: unknown, file: string, line: number) => {
+      const rowIndex = Math.trunc(Number(row));
+      if (rowIndex < 0 || rowIndex >= rows.length) {
+        throw new IdylliumRuntimeError(file, line, `Table.remove_row() row ${rowIndex} is out of range 0..${rows.length - 1}`);
+      }
+      rows.splice(rowIndex, 1);
+      obj.row_count = rows.length;
+      const selected = Number(obj.selected_row);
+      if (selected === rowIndex) obj.selected_row = -1;
+      else if (selected > rowIndex) obj.selected_row = selected - 1;
+    });
+    obj.clear = contextFunction((_file: string, _line: number) => {
+      rows.length = 0;
+      obj.row_count = 0;
+      obj.selected_row = -1;
+    });
+    obj.to_string = () => `gui.Table(${columns.length} columns, ${rows.length} rows)`;
+  }
+
+  if (typeName === 'BarChart' || typeName === 'PieChart') {
+    const entries: { label: string; value: number }[] = [];
+    obj.__entries = entries;
+    // «bar» против «slice» — сторожа говорят на языке своего виджета.
+    const noun = typeName === 'BarChart' ? 'bar' : 'slice';
+    const addEntry = (label: unknown, value: unknown, file: string, line: number): void => {
+      const amount = Number(value);
+      if (!Number.isFinite(amount) || amount < 0) {
+        throw new IdylliumRuntimeError(file, line, `${typeName} ${noun} value must be >= 0, got ${String(value)}`);
+      }
+      const name = String(label);
+      if (entries.some((entry) => entry.label === name)) {
+        throw new IdylliumRuntimeError(file, line, `${typeName} ${noun} '${name}' already exists — use set_${typeName === 'BarChart' ? 'value' : 'slice'}()`);
+      }
+      entries.push({ label: name, value: amount });
+    };
+    const setEntry = (label: unknown, value: unknown, file: string, line: number): void => {
+      const amount = Number(value);
+      if (!Number.isFinite(amount) || amount < 0) {
+        throw new IdylliumRuntimeError(file, line, `${typeName} ${noun} value must be >= 0, got ${String(value)}`);
+      }
+      const name = String(label);
+      const entry = entries.find((item) => item.label === name);
+      if (!entry) {
+        throw new IdylliumRuntimeError(file, line, `${typeName} has no ${noun} '${name}'`);
+      }
+      entry.value = amount;
+    };
+    if (typeName === 'BarChart') {
+      obj.add_value = contextFunction(addEntry);
+      obj.set_value = contextFunction(setEntry);
+      defineTrackedRuntimeProperty(obj, 'bar_color', colorTransparent());
+      obj.show_values = true;
+    } else {
+      obj.add_slice = contextFunction(addEntry);
+      obj.set_slice = contextFunction(setEntry);
+      obj.show_legend = true;
+      obj.show_percents = true;
+    }
+    obj.clear = contextFunction((_file: string, _line: number) => {
+      entries.length = 0;
+    });
+    // Автомасштаб: пока min/max не заданы явно, рендерер считает шкалу сам —
+    // явность отслеживается той же механикой, что явные цвета у тем.
+    if (typeName === 'BarChart') {
+      defineTrackedRuntimeProperty(obj, 'min_value', 0);
+      defineTrackedRuntimeProperty(obj, 'max_value', 0);
+    }
+    obj.to_string = () => `gui.${typeName}(${entries.length} ${noun}s)`;
+  }
+
+  if (typeName === 'LineChart') {
+    const points: number[] = [];
+    obj.__points = points;
+    obj.show_dots = true;
+    defineTrackedRuntimeProperty(obj, 'line_color', colorTransparent());
+    defineTrackedRuntimeProperty(obj, 'min_value', 0);
+    defineTrackedRuntimeProperty(obj, 'max_value', 0);
+    defineValidatedRuntimeProperty(obj, 'max_points', 0, (value, file, line) => {
+      const limit = Math.trunc(Number(value));
+      if (!Number.isFinite(limit) || limit < 0 || limit > 100000) {
+        throw new IdylliumRuntimeError(file, line, `LineChart.max_points must be between 0 and 100000, got ${String(value)}`);
+      }
+      return limit;
+    }, (value) => {
+      const limit = Number(value);
+      if (limit > 0) {
+        while (points.length > limit) points.shift();
+      }
+    });
+    obj.add_value = contextFunction((value: unknown, file: string, line: number) => {
+      const amount = Number(value);
+      if (!Number.isFinite(amount)) {
+        throw new IdylliumRuntimeError(file, line, `LineChart.add_value() expects a number, got ${String(value)}`);
+      }
+      points.push(amount);
+      const limit = Number(obj.max_points);
+      if (limit > 0) {
+        while (points.length > limit) points.shift();
+      }
+    });
+    obj.clear = contextFunction((_file: string, _line: number) => {
+      points.length = 0;
+    });
+    obj.to_string = () => `gui.LineChart(${points.length} points)`;
+  }
+
   if (typeName === 'Modal') {
     obj.title = '';
     obj.message = '';
@@ -5312,6 +5469,12 @@ function defaultGuiWidgetSize(typeName: string): { width: number; height: number
       return { width: 220, height: 140 };
     case 'TabWidget':
       return { width: 320, height: 200 };
+    case 'Table':
+      return { width: 320, height: 200 };
+    case 'BarChart':
+    case 'LineChart':
+    case 'PieChart':
+      return { width: 320, height: 220 };
     case 'ImageBox':
       return { width: 160, height: 120 };
     case 'LineEdit':
@@ -7097,7 +7260,11 @@ function isGuiWidget(typeName: string): boolean {
     || typeName === 'Slider'
     || typeName === 'CheckBox'
     || typeName === 'RadioButton'
-    || typeName === 'ComboBox';
+    || typeName === 'ComboBox'
+    || typeName === 'Table'
+    || typeName === 'BarChart'
+    || typeName === 'LineChart'
+    || typeName === 'PieChart';
 }
 
 function guiObjectUsesFontSize(typeName: string): boolean {
@@ -7113,7 +7280,8 @@ function guiObjectUsesFontSize(typeName: string): boolean {
     || typeName === 'FloatSpinBox'
     || typeName === 'CheckBox'
     || typeName === 'RadioButton'
-    || typeName === 'ComboBox';
+    || typeName === 'ComboBox'
+    || typeName === 'Table';
 }
 
 function isRuntimeObject(value: unknown): value is RuntimeObject {
@@ -7195,6 +7363,14 @@ function widgetSnapshot(widget: RuntimeObject): IdylliumGuiWidgetSnapshot {
     children: widgetChildrenSnapshot(widget),
     canvas: type === 'gui.Canvas' ? canvasSnapshot(widget) : undefined,
     items: type === 'gui.ComboBox' && Array.isArray(widget.__items) ? [...widget.__items] as string[] : undefined,
+    columns: type === 'gui.Table' && Array.isArray(widget.__columns) ? [...widget.__columns] as string[] : undefined,
+    rows: type === 'gui.Table' && Array.isArray(widget.__rows)
+      ? (widget.__rows as string[][]).map((row) => [...row])
+      : undefined,
+    entries: (type === 'gui.BarChart' || type === 'gui.PieChart') && Array.isArray(widget.__entries)
+      ? (widget.__entries as { label: string; value: number }[]).map((entry) => ({ ...entry }))
+      : undefined,
+    points: type === 'gui.LineChart' && Array.isArray(widget.__points) ? [...widget.__points] as number[] : undefined,
   };
 }
 
@@ -7332,6 +7508,13 @@ function applyGuiEventPayload(
     return;
   }
 
+  if (target.__idylliumType === 'gui.Table' && eventName === 'select') {
+    const row = Math.trunc(Number(payload.row));
+    const rows = Array.isArray(target.__rows) ? (target.__rows as string[][]).length : 0;
+    target.selected_row = row >= 0 && row < rows ? row : -1;
+    return;
+  }
+
   if (eventName === 'modal_confirm' || eventName === 'modal_cancel') {
     if (typeof payload.input_value === 'string') {
       target.__input_value = payload.input_value;
@@ -7418,6 +7601,7 @@ function closeModal(target: RuntimeObject, state: RuntimeObjectState): void {
 function guiCallbackName(target: RuntimeObject, eventName: string): string | null {
   if (eventName === 'click') return 'on_click';
   if (eventName === 'change') return 'on_change';
+  if (target.__idylliumType === 'gui.Table' && eventName === 'select') return 'on_select';
   if (target.__idylliumType === 'gui.Modal' && eventName === 'modal_confirm') return 'on_confirm';
   if (target.__idylliumType === 'gui.Modal' && eventName === 'modal_cancel') return 'on_cancel';
   if (target.__idylliumType === 'audio.Music' && eventName === 'finished') return 'on_finished';

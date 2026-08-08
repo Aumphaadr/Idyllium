@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: Idyllium 1.3.1.
+Current language target: Idyllium 1.3.2.
 
 This reference describes implemented behavior. Ideas from `BACKLOG.md` and
 exploratory files under `spec/some_*` are not language features until they are
@@ -1125,7 +1125,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, never returns
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.3.1"
+system.version()                    // "1.3.2"
 ```
 
 **Recursion depth.** Idyllium counts call depth itself instead of relying on the
@@ -2254,6 +2254,42 @@ main() {
     win.show();
 }
 ```
+
+## 25a. Data View Widgets (Table And Charts)
+
+Four widgets for showing data (Idyllium 1.3.2+). All follow normal widget
+rules: x/y/width/height, visible/enabled, IdySS `style`, add_child.
+
+```idyllium
+gui.Table table;
+table.set_columns("Имя", "Класс", "Уровень");   // variadic strings
+table.add_row("Мира", "маг", to_string(12));    // one value per column
+```
+
+- `gui.Table`: `set_columns(...)` (variadic, resets rows), `add_row(...)`
+  (variadic; count must match columns or runtime error), `set_cell(row,
+  column, text)`, `remove_row(row)`, `clear()`; read-only `row_count`,
+  `selected_row` (−1 when nothing selected); `on_select` callback
+  (`void function()` or `void function(gui.Table sender)`) fires on row click.
+  Cells are STRINGS — convert numbers with `to_string()`.
+- `gui.BarChart`: `add_value(label, value)`, `set_value(label, value)`,
+  `clear()`; `bar_color` (one color for all bars; theme accent by default),
+  `show_values` (default true), `min_value`/`max_value` (auto-scale unless
+  set). Values must be >= 0.
+- `gui.LineChart`: `add_value(value)` appends points left-to-right; `clear()`;
+  `line_color`, `show_dots` (default true), `min_value`/`max_value` (fix the
+  scale for instruments), `max_points` (ring buffer for live charts; 0 = keep
+  all). Pair with `gui.Timer` for live dashboards.
+- `gui.PieChart`: `add_slice(label, value)`, `set_slice`, `clear()`;
+  `show_legend`, `show_percents` (both default true). Percentages and slice
+  colors are automatic.
+
+Guards are literal: `Table.add_row() expects 3 values (one per column), got 2`;
+`BarChart has no bar 'Хома'`; `PieChart slice value must be >= 0, got -3`;
+`LineChart.max_points must be between 0 and 100000, got -1`.
+
+Do NOT invent `load_from_result()` / `load_from_json()` — feed widgets with an
+explicit loop over your data.
 
 ## 26. Canvas And Drawable Objects
 

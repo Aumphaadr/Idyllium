@@ -7700,4 +7700,106 @@ main() {
   assert(animatedLines.length === 1, `animated forward must keep one line entry, got ${animatedLines.length}`);
 });
 
+test('data widgets: table rows, select event, chart guards and scales', async () => {
+  const runGui = async (source: string) => {
+    const compilation = compileIdyllium(source, { file: 'main.idyl' });
+    assert(compilation.success, compilation.diagnosticsText);
+    const runtime = createRuntime({ platform: 'web' });
+    const AsyncFunction = Object.getPrototypeOf(async function idle() {}).constructor;
+    const program = await (new AsyncFunction(compilation.jsCode!))();
+    await program(runtime);
+    return runtime;
+  };
+
+  // Таблица: снапшот несёт колонки и строки; row_count живёт.
+  const table = await runGui(`
+use gui;
+use console;
+
+main() {
+    gui.Window win;
+    gui.Table t;
+    t.set_columns("Имя", "Уровень");
+    t.add_row("Мира", "12");
+    t.add_row("Кай", "9");
+    t.set_cell(1, 1, "10");
+    console.writeln(t.row_count);
+    win.add_child(t);
+    win.show();
+}`);
+  assert(table.getOutput() === '2\n', `row_count: ${JSON.stringify(table.getOutput())}`);
+  const tableSnapshot = table.getWindows()[0].children[0];
+  assert(JSON.stringify(tableSnapshot.columns) === '["Имя","Уровень"]', 'table snapshot must carry columns');
+  assert(JSON.stringify(tableSnapshot.rows) === '[["Мира","12"],["Кай","10"]]', 'table snapshot must carry rows with set_cell applied');
+
+  // Событие select: selected_row обновляется, on_select зовётся.
+  const selectable = await runGui(`
+use gui;
+use console;
+
+gui.Table t;
+
+main() {
+    gui.Window win;
+    t.set_columns("Имя");
+    t.add_row("Мира");
+    t.add_row("Кай");
+    t.on_select = void function(gui.Table sender) {
+        console.writeln("строка: ", sender.selected_row);
+    };
+    win.add_child(t);
+    win.show();
+}`);
+  await selectable.dispatchGuiEvent(selectable.getWindows()[0].children[0].id, 'select', { row: 1 });
+  assert(selectable.getOutput() === 'строка: 1\n', `select event: ${JSON.stringify(selectable.getOutput())}`);
+
+  // Сторожа — дословные.
+  for (const [snippet, expected] of [
+    ['gui.Table t;\n    t.add_row("x");', 'Table.add_row() before set_columns()'],
+    ['gui.Table t;\n    t.set_columns("а", "б");\n    t.add_row("x");', 'Table.add_row() expects 2 values (one per column), got 1'],
+    ['gui.BarChart b;\n    b.set_value("Хома", 1);', "BarChart has no bar 'Хома'"],
+    ['gui.PieChart p;\n    p.add_slice("х", 0 - 3);', 'PieChart slice value must be >= 0, got -3'],
+    ['gui.LineChart l;\n    l.max_points = 0 - 1;', 'LineChart.max_points must be between 0 and 100000, got -1'],
+  ] as const) {
+    let message = '';
+    try {
+      await runGui(`use gui;\n\nmain() {\n    ${snippet}\n}`);
+    } catch (error) {
+      message = error instanceof Error ? error.message : String(error);
+    }
+    assert(message.includes(expected), `expected guard '${expected}', got '${message}'`);
+  }
+
+  // Лента LineChart подрезается, автомасштаб отражается в явных свойствах.
+  const charts = await runGui(`
+use gui;
+
+main() {
+    gui.Window win;
+    gui.LineChart line;
+    line.max_points = 3;
+    line.add_value(1);
+    line.add_value(2);
+    line.add_value(3);
+    line.add_value(4);
+
+    gui.BarChart auto_scale;
+    auto_scale.add_value("х", 5);
+    gui.BarChart fixed;
+    fixed.max_value = 100;
+    fixed.add_value("х", 5);
+
+    win.add_child(line);
+    win.add_child(auto_scale);
+    win.add_child(fixed);
+    win.show();
+}`);
+  const [lineSnapshot, autoSnapshot, fixedSnapshot] = charts.getWindows()[0].children;
+  assert(JSON.stringify(lineSnapshot.points) === '[2,3,4]', `line ring buffer: ${JSON.stringify(lineSnapshot.points)}`);
+  const autoExplicit = (autoSnapshot.properties.__explicit_properties ?? []) as string[];
+  const fixedExplicit = (fixedSnapshot.properties.__explicit_properties ?? []) as string[];
+  assert(!autoExplicit.includes('max_value'), 'auto scale must keep max_value non-explicit');
+  assert(fixedExplicit.includes('max_value'), 'fixed scale must mark max_value explicit');
+});
+
 void runTests();

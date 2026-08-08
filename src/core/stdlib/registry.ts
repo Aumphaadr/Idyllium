@@ -251,6 +251,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   const guiCheckBox = qualified('gui', 'CheckBox');
   const guiRadioButton = qualified('gui', 'RadioButton');
   const guiComboBox = qualified('gui', 'ComboBox');
+  const guiTable = qualified('gui', 'Table');
   const guiModal = qualified('gui', 'Modal');
   const guiTimer = qualified('gui', 'Timer');
   const guiKeyboardEvent = qualified('gui', 'KeyboardEvent');
@@ -356,7 +357,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       documentation: 'Где выполняется программа: "cli", "web" или "vscode".',
     }),
     functionSpec('version', [], STRING, {
-      documentation: 'Версия Idyllium, например "1.3.1".',
+      documentation: 'Версия Idyllium, например "1.3.2".',
     }),
   ]));
 
@@ -1174,6 +1175,103 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], [
       functionSpec('add_item', [{ name: 'text', type: STRING }], VOID),
       functionSpec('clear_items', [], VOID),
+    ], guiWidget),
+    typeSpec('Table', [
+      ...positioned,
+      ...widgetState,
+      ...styleable,
+      ...fontSized,
+      propertySpec('row_count', INT, true, 'Сколько строк в таблице сейчас.'),
+      propertySpec('selected_row', INT, true, 'Номер строки, выбранной кликом (с нуля); -1 — ничего не выбрано.'),
+      callbackPropertySpec('on_select', [
+        callbackSpec([]),
+        callbackSpec([guiTable]),
+      ], 'Срабатывает при клике по строке; номер выбранной — в selected_row.'),
+    ], [
+      functionSpec('set_columns', [], VOID, {
+        variadic: true,
+        variadicTypes: [STRING],
+        minArguments: 1,
+        documentation: 'Задаёт заголовки колонок. Повторный вызов очищает строки и задаёт колонки заново.',
+      }),
+      functionSpec('add_row', [], VOID, {
+        variadic: true,
+        variadicTypes: [STRING],
+        minArguments: 1,
+        documentation: 'Добавляет строку. Значений должно быть ровно столько, сколько колонок; числа переводите через to_string().',
+      }),
+      functionSpec('set_cell', [
+        { name: 'row', type: INT },
+        { name: 'column', type: INT },
+        { name: 'text', type: STRING },
+      ], VOID, {
+        documentation: 'Заменяет текст одной ячейки — для «живых» таблиц.',
+      }),
+      functionSpec('remove_row', [{ name: 'row', type: INT }], VOID, {
+        documentation: 'Удаляет строку по номеру (с нуля).',
+      }),
+      functionSpec('clear', [], VOID, {
+        documentation: 'Убирает все строки; колонки остаются.',
+      }),
+    ], guiWidget),
+    typeSpec('BarChart', [
+      ...positioned,
+      ...widgetState,
+      ...styleable,
+      propertySpec('bar_color', COLOR, false, 'Цвет столбиков — один на всех, чтобы сравнение было честным. Не задан — акцентный цвет темы.'),
+      propertySpec('show_values', BOOL, false, 'Печатать ли числа над столбиками (по умолчанию true).'),
+      propertySpec('min_value', FLOAT, false, 'Нижняя граница шкалы. Не задана — шкала начинается с нуля.'),
+      propertySpec('max_value', FLOAT, false, 'Верхняя граница шкалы. Не задана — шкала подстраивается под максимум.'),
+    ], [
+      functionSpec('add_value', [
+        { name: 'label', type: STRING },
+        { name: 'value', type: FLOAT },
+      ], VOID, {
+        documentation: 'Новый столбик с подписью. Значение не бывает отрицательным.',
+      }),
+      functionSpec('set_value', [
+        { name: 'label', type: STRING },
+        { name: 'value', type: FLOAT },
+      ], VOID, {
+        documentation: 'Обновляет столбик по подписи — для «живых» диаграмм.',
+      }),
+      functionSpec('clear', [], VOID),
+    ], guiWidget),
+    typeSpec('LineChart', [
+      ...positioned,
+      ...widgetState,
+      ...styleable,
+      propertySpec('line_color', COLOR, false, 'Цвет линии. Не задан — акцентный цвет темы.'),
+      propertySpec('show_dots', BOOL, false, 'Рисовать ли кружки в точках (по умолчанию true).'),
+      propertySpec('min_value', FLOAT, false, 'Нижняя граница шкалы. Для приборов шкалу фиксируют, иначе ось «дышит».'),
+      propertySpec('max_value', FLOAT, false, 'Верхняя граница шкалы.'),
+      propertySpec('max_points', INT, false, 'Сколько последних точек помнить (бегущая лента); 0 — помнить всё.'),
+    ], [
+      functionSpec('add_value', [{ name: 'value', type: FLOAT }], VOID, {
+        documentation: 'Следующая точка; точки идут по порядку слева направо.',
+      }),
+      functionSpec('clear', [], VOID),
+    ], guiWidget),
+    typeSpec('PieChart', [
+      ...positioned,
+      ...widgetState,
+      ...styleable,
+      propertySpec('show_legend', BOOL, false, 'Показывать ли легенду сбоку (по умолчанию true).'),
+      propertySpec('show_percents', BOOL, false, 'Подписывать ли проценты на дольках (по умолчанию true).'),
+    ], [
+      functionSpec('add_slice', [
+        { name: 'label', type: STRING },
+        { name: 'value', type: FLOAT },
+      ], VOID, {
+        documentation: 'Новая долька. Доли пирог считает сам; значение не бывает отрицательным.',
+      }),
+      functionSpec('set_slice', [
+        { name: 'label', type: STRING },
+        { name: 'value', type: FLOAT },
+      ], VOID, {
+        documentation: 'Обновляет дольку по подписи.',
+      }),
+      functionSpec('clear', [], VOID),
     ], guiWidget),
     typeSpec('TabWidget', [
       ...positioned,
