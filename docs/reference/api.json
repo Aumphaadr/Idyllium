@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "languageVersion": "1.3.1",
-  "generatedAt": "2026-08-07T16:45:29.242Z",
+  "languageVersion": "1.3.2",
+  "generatedAt": "2026-08-08T17:16:20.713Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "general": [
     {
@@ -4564,6 +4564,194 @@
       "constants": [],
       "types": [
         {
+          "name": "BarChart",
+          "qualifiedName": "gui.BarChart",
+          "baseType": "gui.Widget",
+          "description": "",
+          "notes": [],
+          "example": "",
+          "properties": [
+            {
+              "name": "bar_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "Цвет столбиков — один на всех, чтобы сравнение было честным. Не задан — акцентный цвет темы.",
+              "callbacks": []
+            },
+            {
+              "name": "enabled",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.",
+              "callbacks": []
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "max_value",
+              "type": "float",
+              "readonly": false,
+              "documentation": "Верхняя граница шкалы. Не задана — шкала подстраивается под максимум.",
+              "callbacks": []
+            },
+            {
+              "name": "min_value",
+              "type": "float",
+              "readonly": false,
+              "documentation": "Нижняя граница шкалы. Не задана — шкала начинается с нуля.",
+              "callbacks": []
+            },
+            {
+              "name": "show_values",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Печатать ли числа над столбиками (по умолчанию true).",
+              "callbacks": []
+            },
+            {
+              "name": "style",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
+              "callbacks": []
+            },
+            {
+              "name": "style_active",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_hover",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "visible",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.",
+              "callbacks": []
+            },
+            {
+              "name": "width",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "x",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "y",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "background_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "font",
+              "type": "fonts.Font",
+              "readonly": false,
+              "documentation": "Шрифт виджета. Если не задан явно, наследуется от Window или Frame.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "text_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            }
+          ],
+          "methods": [
+            {
+              "name": "add_value",
+              "signature": "add_value(label: string, value: float): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "label",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "value",
+                  "type": "float",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Новый столбик с подписью. Значение не бывает отрицательным."
+            },
+            {
+              "name": "clear",
+              "signature": "clear(): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": false,
+              "documentation": ""
+            },
+            {
+              "name": "set_value",
+              "signature": "set_value(label: string, value: float): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "label",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "value",
+                  "type": "float",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Обновляет столбик по подписи — для «живых» диаграмм."
+            }
+          ]
+        },
+        {
           "name": "Button",
           "qualifiedName": "gui.Button",
           "baseType": "gui.Widget",
@@ -5779,6 +5967,168 @@
           "methods": []
         },
         {
+          "name": "LineChart",
+          "qualifiedName": "gui.LineChart",
+          "baseType": "gui.Widget",
+          "description": "",
+          "notes": [],
+          "example": "",
+          "properties": [
+            {
+              "name": "enabled",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.",
+              "callbacks": []
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "line_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "Цвет линии. Не задан — акцентный цвет темы.",
+              "callbacks": []
+            },
+            {
+              "name": "max_points",
+              "type": "int",
+              "readonly": false,
+              "documentation": "Сколько последних точек помнить (бегущая лента); 0 — помнить всё.",
+              "callbacks": []
+            },
+            {
+              "name": "max_value",
+              "type": "float",
+              "readonly": false,
+              "documentation": "Верхняя граница шкалы.",
+              "callbacks": []
+            },
+            {
+              "name": "min_value",
+              "type": "float",
+              "readonly": false,
+              "documentation": "Нижняя граница шкалы. Для приборов шкалу фиксируют, иначе ось «дышит».",
+              "callbacks": []
+            },
+            {
+              "name": "show_dots",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Рисовать ли кружки в точках (по умолчанию true).",
+              "callbacks": []
+            },
+            {
+              "name": "style",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
+              "callbacks": []
+            },
+            {
+              "name": "style_active",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_hover",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "visible",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.",
+              "callbacks": []
+            },
+            {
+              "name": "width",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "x",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "y",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "background_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "font",
+              "type": "fonts.Font",
+              "readonly": false,
+              "documentation": "Шрифт виджета. Если не задан явно, наследуется от Window или Frame.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "text_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            }
+          ],
+          "methods": [
+            {
+              "name": "add_value",
+              "signature": "add_value(value: float): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "value",
+                  "type": "float",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Следующая точка; точки идут по порядку слева направо."
+            },
+            {
+              "name": "clear",
+              "signature": "clear(): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": false,
+              "documentation": ""
+            }
+          ]
+        },
+        {
           "name": "LineEdit",
           "qualifiedName": "gui.LineEdit",
           "baseType": "gui.Widget",
@@ -6079,6 +6429,180 @@
             }
           ],
           "methods": []
+        },
+        {
+          "name": "PieChart",
+          "qualifiedName": "gui.PieChart",
+          "baseType": "gui.Widget",
+          "description": "",
+          "notes": [],
+          "example": "",
+          "properties": [
+            {
+              "name": "enabled",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.",
+              "callbacks": []
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "show_legend",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Показывать ли легенду сбоку (по умолчанию true).",
+              "callbacks": []
+            },
+            {
+              "name": "show_percents",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Подписывать ли проценты на дольках (по умолчанию true).",
+              "callbacks": []
+            },
+            {
+              "name": "style",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
+              "callbacks": []
+            },
+            {
+              "name": "style_active",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_hover",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "visible",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.",
+              "callbacks": []
+            },
+            {
+              "name": "width",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "x",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "y",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "background_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "font",
+              "type": "fonts.Font",
+              "readonly": false,
+              "documentation": "Шрифт виджета. Если не задан явно, наследуется от Window или Frame.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "text_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            }
+          ],
+          "methods": [
+            {
+              "name": "add_slice",
+              "signature": "add_slice(label: string, value: float): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "label",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "value",
+                  "type": "float",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Новая долька. Доли пирог считает сам; значение не бывает отрицательным."
+            },
+            {
+              "name": "clear",
+              "signature": "clear(): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": false,
+              "documentation": ""
+            },
+            {
+              "name": "set_slice",
+              "signature": "set_slice(label: string, value: float): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "label",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "value",
+                  "type": "float",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Обновляет дольку по подписи."
+            }
+          ]
         },
         {
           "name": "ProgressBar",
@@ -6647,6 +7171,213 @@
             }
           ],
           "methods": []
+        },
+        {
+          "name": "Table",
+          "qualifiedName": "gui.Table",
+          "baseType": "gui.Widget",
+          "description": "",
+          "notes": [],
+          "example": "",
+          "properties": [
+            {
+              "name": "enabled",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.",
+              "callbacks": []
+            },
+            {
+              "name": "font_size",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "on_select",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Срабатывает при клике по строке; номер выбранной — в selected_row.",
+              "callbacks": [
+                "function(): void",
+                "function(gui.Table): void"
+              ]
+            },
+            {
+              "name": "row_count",
+              "type": "int",
+              "readonly": true,
+              "documentation": "Сколько строк в таблице сейчас.",
+              "callbacks": []
+            },
+            {
+              "name": "selected_row",
+              "type": "int",
+              "readonly": true,
+              "documentation": "Номер строки, выбранной кликом (с нуля); -1 — ничего не выбрано.",
+              "callbacks": []
+            },
+            {
+              "name": "style",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
+              "callbacks": []
+            },
+            {
+              "name": "style_active",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_hover",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "visible",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.",
+              "callbacks": []
+            },
+            {
+              "name": "width",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "x",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "y",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "background_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "font",
+              "type": "fonts.Font",
+              "readonly": false,
+              "documentation": "Шрифт виджета. Если не задан явно, наследуется от Window или Frame.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "text_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            }
+          ],
+          "methods": [
+            {
+              "name": "add_row",
+              "signature": "add_row(...values: string): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": true,
+              "documentation": "Добавляет строку. Значений должно быть ровно столько, сколько колонок; числа переводите через to_string()."
+            },
+            {
+              "name": "clear",
+              "signature": "clear(): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "Убирает все строки; колонки остаются."
+            },
+            {
+              "name": "remove_row",
+              "signature": "remove_row(row: int): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "row",
+                  "type": "int",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Удаляет строку по номеру (с нуля)."
+            },
+            {
+              "name": "set_cell",
+              "signature": "set_cell(row: int, column: int, text: string): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "row",
+                  "type": "int",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "column",
+                  "type": "int",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "text",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Заменяет текст одной ячейки — для «живых» таблиц."
+            },
+            {
+              "name": "set_columns",
+              "signature": "set_columns(...values: string): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": true,
+              "documentation": "Задаёт заголовки колонок. Повторный вызов очищает строки и задаёт колонки заново."
+            }
+          ]
         },
         {
           "name": "TabWidget",
@@ -10867,7 +11598,7 @@
           "returnType": "string",
           "parameters": [],
           "variadic": false,
-          "documentation": "Версия Idyllium, например \"1.3.1\"."
+          "documentation": "Версия Idyllium, например \"1.3.2\"."
         }
       ],
       "constants": [],

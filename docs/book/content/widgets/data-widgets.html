@@ -1,0 +1,252 @@
+<style>
+    .dw-preview-table {
+      border-collapse: collapse;
+      font-size: 13px;
+      background: #1e1e2e;
+      border: 1px solid #45475a;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .dw-preview-table th {
+      background: #313244;
+      color: #cdd6f4;
+      padding: 5px 12px;
+      text-align: left;
+      border-bottom: 1px solid #45475a;
+    }
+    .dw-preview-table td {
+      color: #cdd6f4;
+      padding: 4px 12px;
+      border-bottom: 1px solid #31324480;
+    }
+    .dw-preview-table tr.dw-selected td {
+      background: #2673d955;
+    }
+</style>
+
+    <div class="docs-section">
+      <h2>Урок-факультатив: витрины данных</h2>
+      <p>Этот урок — по желанию: четыре виджета, которые понадобятся не каждой программе, но целиком меняют жанр тех, которым понадобятся. Вы уже умеете <strong>читать</strong> данные откуда угодно — из массивов, файлов, JSON и баз. А показывали их до сих пор консолью да лейблами. Пора честно: таблицу — таблицей, сравнение — столбиками, доли — пирогом, изменение — линией.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>gui.Table — таблица</h2>
+      <p>Колонки задаются один раз, строки добавляются по одной. Всё — строки: числа переводите через <code>to_string()</code>, как в лейблах:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 380;
+    win.height = 240;
+    win.title = "Герои";
+
+    gui.Table table;
+    table.x = 20;
+    table.y = 20;
+    table.width = 340;
+    table.height = 180;
+    table.set_columns("Имя", "Класс", "Уровень");
+    table.add_row("Мира", "маг", to_string(12));
+    table.add_row("Кай", "воин", to_string(9));
+    table.add_row("Ника", "жрица", to_string(21));
+
+    win.add_child(table);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 150px; position: relative;">
+            <table class="dw-preview-table" style="position: absolute; left: 20px; top: 12px; width: 300px;">
+              <thead><tr><th>Имя</th><th>Класс</th><th>Уровень</th></tr></thead>
+              <tbody>
+                <tr><td>Мира</td><td>маг</td><td>12</td></tr>
+                <tr><td>Кай</td><td>воин</td><td>9</td></tr>
+                <tr><td>Ника</td><td>жрица</td><td>21</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="coord-note">
+          📋 Полосатость, рамки и прокрутка (когда строк много) — сами собой, из темы окна.
+        </div>
+      </div>
+
+      <p>Ошибиться в количестве значений не получится — таблица сторожит: <code>Table.add_row() expects 3 values (one per column), got 2</code>. Для «живых» таблиц есть <code>set_cell(строка, колонка, текст)</code>, <code>remove_row(строка)</code> и <code>clear()</code>; свойство <code>row_count</code> знает, сколько строк сейчас.</p>
+
+      <p>Таблица умеет отвечать на клик: свойство <code>selected_row</code> хранит номер выбранной строки (−1 — ничего), а событие <code>on_select</code> срабатывает при выборе:</p>
+
+      <idyl-code-block><script type="text/plain">
+table.on_select = void function(gui.Table sender) {
+    info.text = "Выбрана строка №" + to_string(sender.selected_row + 1);
+};
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 130px; position: relative;">
+            <table class="dw-preview-table" style="position: absolute; left: 20px; top: 12px; width: 200px;">
+              <thead><tr><th>Имя</th><th>Уровень</th></tr></thead>
+              <tbody>
+                <tr><td>Мира</td><td>12</td></tr>
+                <tr class="dw-selected"><td>Кай</td><td>9</td></tr>
+              </tbody>
+            </table>
+            <div style="position: absolute; left: 250px; top: 46px; color: #cdd6f4;">Выбрана строка №2</div>
+          </div>
+        </div>
+        <div class="coord-note">
+          🖱️ Клик подсвечивает строку и зовёт <code>on_select</code> — как <code>on_click</code> у кнопки, только с номером в придачу.
+        </div>
+      </div>
+    </div>
+
+    <div class="docs-section">
+      <h2>gui.BarChart — столбики сравнивают</h2>
+
+      <idyl-code-block><script type="text/plain">
+gui.BarChart chart;
+chart.x = 20;
+chart.y = 20;
+chart.width = 340;
+chart.height = 200;
+chart.add_value("Мира", 340);
+chart.add_value("Кай", 120);
+chart.add_value("Ника", 1500);
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 190px; position: relative;">
+            <svg viewBox="0 0 340 180" style="position: absolute; left: 20px; top: 5px; width: 300px; background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px;">
+              <line x1="20" y1="155" x2="320" y2="155" stroke="#45475a"/>
+              <rect x="45" y="122" width="50" height="33" fill="#87bfff"/>
+              <rect x="145" y="143" width="50" height="12" fill="#87bfff"/>
+              <rect x="245" y="10" width="50" height="145" fill="#87bfff"/>
+              <text x="70" y="117" fill="#cdd6f4" font-size="11" text-anchor="middle">340</text>
+              <text x="170" y="138" fill="#cdd6f4" font-size="11" text-anchor="middle">120</text>
+              <text x="270" y="26" fill="#cdd6f4" font-size="11" text-anchor="middle">1500</text>
+              <text x="70" y="170" fill="#9399b2" font-size="11" text-anchor="middle">Мира</text>
+              <text x="170" y="170" fill="#9399b2" font-size="11" text-anchor="middle">Кай</text>
+              <text x="270" y="170" fill="#9399b2" font-size="11" text-anchor="middle">Ника</text>
+            </svg>
+          </div>
+        </div>
+        <div class="coord-note">
+          📊 Кто богаче — видно без единого числа (но числа над столбиками есть: <code>show_values</code>, по умолчанию включено).
+        </div>
+      </div>
+
+      <p>Цвет столбиков — один на всех (<code>bar_color</code>; не задали — акцентный цвет темы): сравнение честно, когда столбики отличаются только высотой. Обновлять данные на ходу — <code>set_value("Мира", 900)</code>; шкалу можно зафиксировать парой <code>min_value</code>/<code>max_value</code>, знакомой по слайдеру, — а можно не трогать, и она подстроится сама.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>gui.PieChart — пирог делит целое</h2>
+
+      <idyl-code-block><script type="text/plain">
+gui.PieChart chart;
+chart.add_slice("Маги", 3);
+chart.add_slice("Воины", 4);
+chart.add_slice("Жрицы", 2);
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 170px; position: relative;">
+            <svg viewBox="0 0 300 160" style="position: absolute; left: 20px; top: 5px; width: 280px; background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px;">
+              <path d="M100 80 L100 20 A60 60 0 0 1 155.4 117.1 Z" fill="hsl(215, 62%, 52%)"/>
+              <path d="M100 80 L155.4 117.1 A60 60 0 0 1 44.6 117.1 Z" fill="hsl(335, 62%, 52%)"/>
+              <path d="M100 80 L44.6 117.1 A60 60 0 0 1 100 20 Z" fill="hsl(95, 62%, 52%)"/>
+              <text x="128" y="60" fill="#fff" font-size="11" font-weight="bold" text-anchor="middle">33%</text>
+              <text x="100" y="130" fill="#fff" font-size="11" font-weight="bold" text-anchor="middle">44%</text>
+              <text x="66" y="66" fill="#fff" font-size="11" font-weight="bold" text-anchor="middle">22%</text>
+              <rect x="195" y="45" width="10" height="10" fill="hsl(215, 62%, 52%)"/>
+              <text x="212" y="54" fill="#cdd6f4" font-size="12">Маги</text>
+              <rect x="195" y="67" width="10" height="10" fill="hsl(335, 62%, 52%)"/>
+              <text x="212" y="76" fill="#cdd6f4" font-size="12">Воины</text>
+              <rect x="195" y="89" width="10" height="10" fill="hsl(95, 62%, 52%)"/>
+              <text x="212" y="98" fill="#cdd6f4" font-size="12">Жрицы</text>
+            </svg>
+          </div>
+        </div>
+        <div class="coord-note">
+          🥧 Проценты пирог считает сам — вы даёте «сколько кого», доли — его забота. Цвета долек тоже автоматические.
+        </div>
+      </div>
+    </div>
+
+    <div class="docs-section">
+      <h2>gui.LineChart — линия наблюдает</h2>
+      <p>Столбики сравнивают «кто больше сейчас», линия отвечает на другой вопрос — «как менялось». Точки добавляются по одной и идут слева направо. Главный напарник линии — таймер:</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+use random;
+
+main() {
+    gui.Window win;
+    win.width = 420;
+    win.height = 260;
+    win.title = "Датчик температуры";
+
+    gui.LineChart chart;
+    chart.x = 20;
+    chart.y = 20;
+    chart.width = 380;
+    chart.height = 200;
+    chart.min_value = 15;     // прибору шкалу фиксируют,
+    chart.max_value = 30;     // иначе ось «дышит» и картинка врёт
+    chart.max_points = 60;    // помнить последнюю минуту
+
+    gui.Timer timer;
+    timer.interval = 1000;
+    timer.on_tick = void function() {
+        chart.add_value(18 + random.create_int(0, 7));
+    };
+    timer.start();
+
+    win.add_child(chart);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <div class="interactive-demo">
+        <div class="gui-demo-window">
+          <div class="demo-content" style="min-height: 160px; position: relative;">
+            <svg viewBox="0 0 380 150" style="position: absolute; left: 20px; top: 5px; width: 320px; background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px;">
+              <rect x="12" y="12" width="356" height="122" fill="none" stroke="#45475a"/>
+              <polyline points="12,90 47,70 82,95 117,50 152,64 187,30 222,58 257,44 292,80 327,36 368,60" fill="none" stroke="#a6e3a1" stroke-width="2"/>
+              <circle cx="117" cy="50" r="3" fill="#a6e3a1"/><circle cx="187" cy="30" r="3" fill="#a6e3a1"/>
+              <circle cx="257" cy="44" r="3" fill="#a6e3a1"/><circle cx="327" cy="36" r="3" fill="#a6e3a1"/>
+            </svg>
+          </div>
+        </div>
+        <div class="coord-note">
+          📈 <code>max_points = 60</code> превращает график в бегущую ленту: новая точка приходит — самая старая уезжает влево. Осциллограф из урока про таймер готов.
+        </div>
+      </div>
+    </div>
+
+    <div class="docs-section">
+      <h2>Витрина + данные = дашборд</h2>
+      <p>Настоящая сила этих виджетов — в связке с разделами про данные, которые ждут вас впереди (JSON и SQLite) или уже пройдены (файлы, массивы). Прочитал — показал: цикл по данным перекладывает строки в <code>add_row</code>, суммы — в <code>add_value</code>. Одно окно с таблицей и парой графиков по одной базе называется взрослым словом <strong>дашборд</strong> — приборная панель. После раздела SQLite соберите свой: это законный финальный проект всего курса виджетов.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Шпаргалка: витрины данных</h2>
+      <table>
+        <thead>
+          <tr><th>Виджет</th><th>Данные кладут так</th><th>Особое</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>gui.Table</code></td><td><code>set_columns(...)</code>, затем <code>add_row(...)</code></td><td><code>selected_row</code> + <code>on_select</code>; <code>set_cell</code>, <code>remove_row</code>, <code>row_count</code></td></tr>
+          <tr><td><code>gui.BarChart</code></td><td><code>add_value("Мира", 340)</code></td><td><code>bar_color</code>, <code>show_values</code>, <code>set_value</code></td></tr>
+          <tr><td><code>gui.PieChart</code></td><td><code>add_slice("Маги", 3)</code></td><td>доли и цвета — сам; <code>show_legend</code>, <code>show_percents</code></td></tr>
+          <tr><td><code>gui.LineChart</code></td><td><code>add_value(21)</code> — точки по порядку</td><td><code>max_points</code> — бегущая лента; шкалу приборам фиксируйте</td></tr>
+        </tbody>
+      </table>
+      <p>Общие правила у всех четырёх прежние: координаты и размеры, <code>visible</code>/<code>enabled</code>, IdySS-наклейки, <code>clear()</code> — начать заново.</p>
+    </div>

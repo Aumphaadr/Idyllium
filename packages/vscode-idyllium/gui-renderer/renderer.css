@@ -257,6 +257,71 @@ button.widget.button,
   border-radius: 999px;
   overflow: hidden;
 }
+
+/* Витрины данных: таблица. */
+.datatable {
+  border: 1px solid var(--w-border);
+  border-radius: var(--w-radius);
+  background: var(--w-control-bg);
+  color: var(--w-control-text);
+  overflow: auto;
+}
+
+.datatable-grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.datatable-grid th {
+  position: sticky;
+  top: 0;
+  padding: 6px 10px;
+  text-align: left;
+  background: var(--w-titlebar-bg);
+  color: var(--w-control-text);
+  border-bottom: 1px solid var(--w-border);
+  font-weight: 700;
+}
+
+.datatable-grid td {
+  padding: 5px 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--w-border) 45%, transparent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+.datatable-row:nth-child(even) {
+  background: color-mix(in srgb, var(--w-border) 16%, transparent);
+}
+
+.datatable-row {
+  cursor: pointer;
+}
+
+.datatable-row:hover {
+  background: color-mix(in srgb, var(--w-accent) 14%, transparent);
+}
+
+.datatable-row.selected {
+  background: color-mix(in srgb, var(--w-accent) 26%, transparent);
+}
+
+/* Витрины данных: чарты — контейнер под канвас. */
+.datachart {
+  border: 1px solid var(--w-border);
+  border-radius: var(--w-radius);
+  background: var(--w-control-bg);
+  overflow: hidden;
+}
+
+.datachart canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
 .progressbar-fill {
   height: 100%;
   background: var(--w-accent);

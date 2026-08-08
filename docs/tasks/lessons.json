@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-07T16:45:29.146Z",
+  "generatedAt": "2026-08-08T17:16:20.614Z",
   "sourceRoot": "docs/manual-content/tasks",
   "sections": [
     {
@@ -576,6 +576,16 @@
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
+        },
+        {
+          "id": "data-widgets",
+          "title": "Витрины данных",
+          "subtitle": "Задания готовятся",
+          "file": "content/widgets/data-widgets.html",
+          "sourceFile": "",
+          "status": "planned",
+          "reviewFlags": [],
+          "hasTasks": false
         },
         {
           "id": "errors",

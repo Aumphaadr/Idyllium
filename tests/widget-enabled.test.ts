@@ -63,6 +63,7 @@ test('enabled compiles on every widget kind', () => {
     'Button', 'Label', 'ProgressBar', 'LineEdit', 'TextEdit', 'SpinBox',
     'FloatSpinBox', 'Slider', 'CheckBox', 'RadioButton', 'ComboBox',
     'Frame', 'ImageBox', 'TabWidget',
+    'Table', 'BarChart', 'LineChart', 'PieChart',
   ];
   const body = widgets
     .map((name, index) => [
