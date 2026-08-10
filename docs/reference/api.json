@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "languageVersion": "1.3.2",
-  "generatedAt": "2026-08-10T11:52:26.643Z",
+  "languageVersion": "1.3.3",
+  "generatedAt": "2026-08-10T12:11:42.369Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "general": [
     {
@@ -4462,6 +4462,88 @@
               ],
               "variadic": false,
               "documentation": "Создаёт копию с прозрачностью от 0.0 до 1.0."
+            }
+          ]
+        },
+        {
+          "name": "Vector",
+          "qualifiedName": "image.Vector",
+          "baseType": "",
+          "description": "",
+          "notes": [],
+          "example": "",
+          "properties": [
+            {
+              "name": "height",
+              "type": "int",
+              "readonly": true,
+              "documentation": "Родная высота из viewBox или атрибутов SVG.",
+              "callbacks": []
+            },
+            {
+              "name": "is_loaded",
+              "type": "bool",
+              "readonly": true,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "src",
+              "type": "string",
+              "readonly": true,
+              "documentation": "Путь к загруженному SVG-файлу.",
+              "callbacks": []
+            },
+            {
+              "name": "width",
+              "type": "int",
+              "readonly": true,
+              "documentation": "Родная ширина из viewBox или атрибутов SVG. Вектор можно растрировать любым размером — это лишь паспорт.",
+              "callbacks": []
+            }
+          ],
+          "methods": [
+            {
+              "name": "load_from_file",
+              "signature": "load_from_file(path: string): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "path",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Загружает векторную картинку из SVG-файла (например, сохранённого черепахой) или сообщает понятную runtime error."
+            },
+            {
+              "name": "to_static",
+              "signature": "to_static(width: int, height: int = 0): image.Static",
+              "returnType": "image.Static",
+              "parameters": [
+                {
+                  "name": "width",
+                  "type": "int",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "height",
+                  "type": "int",
+                  "optional": true,
+                  "defaultValue": "0",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Печатает вектор растровой картинкой image.Static. height опущен — считается из пропорций; заданы оба — картинка вписывается без искажений (поля прозрачные). Дальше — вся растровая семья: ImageBox, спрайты, export_to_file()."
             }
           ]
         }
@@ -11598,7 +11680,7 @@
           "returnType": "string",
           "parameters": [],
           "variadic": false,
-          "documentation": "Версия Idyllium, например \"1.3.2\"."
+          "documentation": "Версия Idyllium, например \"1.3.3\"."
         }
       ],
       "constants": [],

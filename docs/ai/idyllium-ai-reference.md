@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: Idyllium 1.3.2.
+Current language target: Idyllium 1.3.3.
 
 This reference describes implemented behavior. Ideas from `BACKLOG.md` and
 exploratory files under `spec/some_*` are not language features until they are
@@ -1125,7 +1125,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, never returns
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.3.2"
+system.version()                    // "1.3.3"
 ```
 
 **Recursion depth.** Idyllium counts call depth itself instead of relying on the
@@ -2509,6 +2509,27 @@ may be positive or negative but not zero. Negative X mirrors horizontally;
 negative Y mirrors vertically. Rotation angles must be divisible by 90.
 Opacity and desaturation use `0.0..1.0`. A crop rectangle must fit fully inside
 the source.
+
+`image.Vector` (SVG, Idyllium 1.3.3+):
+
+```idyllium
+load_from_file(path)                    // SVG only; e.g. files from turtle.save_svg()
+to_static(width, height = 0) -> image.Static
+src: string        // read-only
+width: int         // read-only: native size from viewBox / width+height attrs
+height: int        // read-only
+is_loaded: bool    // read-only
+```
+
+`to_static` rasterizes the vector: omit `height` to keep proportions; give
+both sizes and the drawing is FITTED without distortion (transparent margins,
+like ImageBox contain). Sizes are 1..4096. The result is a normal
+`image.Static`, so PNG export is a chain: `v.to_static(512, 512)
+.export_to_file("логотип.png")` — do NOT invent `save_png()`. Rasterization
+works in the Web IDE and VS Code hosts; in the console host `to_static`
+raises `Vector.to_static() is not available in the console host`. Guards:
+`cannot decode '...': not an SVG document (expected <svg...>)`,
+`Vector.to_static() size must be between 1 and 4096, got 9000`.
 
 `image.Animation`:
 

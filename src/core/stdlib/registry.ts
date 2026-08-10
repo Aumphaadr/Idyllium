@@ -357,7 +357,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       documentation: 'Где выполняется программа: "cli", "web" или "vscode".',
     }),
     functionSpec('version', [], STRING, {
-      documentation: 'Версия Idyllium, например "1.3.2".',
+      documentation: 'Версия Idyllium, например "1.3.3".',
     }),
   ]));
 
@@ -910,6 +910,23 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ], imageStatic),
       functionSpec('export_to_file', [{ name: 'path', type: STRING }], VOID),
     ], imageImage),
+    typeSpec('Vector', [
+      propertySpec('src', STRING, true, 'Путь к загруженному SVG-файлу.'),
+      propertySpec('width', INT, true, 'Родная ширина из viewBox или атрибутов SVG. Вектор можно растрировать любым размером — это лишь паспорт.'),
+      propertySpec('height', INT, true, 'Родная высота из viewBox или атрибутов SVG.'),
+      propertySpec('is_loaded', BOOL, true),
+    ], [
+      functionSpec('load_from_file', [{ name: 'path', type: STRING }], VOID, {
+        documentation: 'Загружает векторную картинку из SVG-файла (например, сохранённого черепахой) или сообщает понятную runtime error.',
+      }),
+      functionSpec('to_static', [
+        { name: 'width', type: INT },
+        { name: 'height', type: INT, defaultValue: '0' },
+      ], imageStatic, {
+        minArguments: 1,
+        documentation: 'Печатает вектор растровой картинкой image.Static. height опущен — считается из пропорций; заданы оба — картинка вписывается без искажений (поля прозрачные). Дальше — вся растровая семья: ImageBox, спрайты, export_to_file().',
+      }),
+    ]),
     typeSpec('Bitmap', [
       propertySpec('src', STRING, true),
       propertySpec('width', INT, true),
