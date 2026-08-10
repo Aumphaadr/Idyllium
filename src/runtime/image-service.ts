@@ -30,6 +30,19 @@ export interface RuntimeImageService {
   encodeStatic(image: RuntimeRasterImage, format: RuntimeImageFormat): Promise<Uint8Array>;
   decodeAnimation(bytes: Uint8Array, format: RuntimeImageFormat): Promise<RuntimeDecodedAnimation>;
   encodeAnimation(animation: RuntimeDecodedAnimation, format: RuntimeImageFormat): Promise<Uint8Array>;
+  /**
+   * Печатает SVG растровой картинкой width×height, вписывая исходник
+   * sourceWidth×sourceHeight без искажений (contain, прозрачные поля).
+   * Опционален: в консольном хосте SVG-рендерера нет — image.Vector честно
+   * откажет.
+   */
+  rasterizeSvg?(
+    svgText: string,
+    width: number,
+    height: number,
+    sourceWidth: number,
+    sourceHeight: number,
+  ): Promise<RuntimeRasterImage>;
 }
 
 export function detectImageFormat(bytes: Uint8Array): RuntimeImageFormat {

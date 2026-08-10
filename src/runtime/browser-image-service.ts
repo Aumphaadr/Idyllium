@@ -52,6 +52,50 @@ export function createBrowserImageService(): RuntimeImageService {
       if (format === 'png' || format === 'apng') return encodeApng(animation);
       throw new Error(`cannot encode '${format}' animation`);
     },
+
+    async rasterizeSvg(
+      svgText: string,
+      width: number,
+      height: number,
+      sourceWidth: number,
+      sourceHeight: number,
+    ): Promise<RuntimeRasterImage> {
+      if (typeof document === 'undefined' || typeof Image === 'undefined') {
+        throw new Error('SVG rasterization needs a browser host');
+      }
+      // Режим «SVG как <img>»: браузер не исполняет скрипты и не грузит
+      // внешние ресурсы из такого SVG — безопасность by design.
+      const blob = new Blob([svgText], { type: 'image/svg+xml' });
+      const uri = URL.createObjectURL(blob);
+      try {
+        const image = new Image();
+        image.src = uri;
+        await new Promise<void>((resolve, reject) => {
+          image.onload = () => resolve();
+          image.onerror = () => reject(new Error('the browser could not render the SVG'));
+        });
+
+        const canvas = createCanvas(width, height);
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        if (!context) throw new Error('2D canvas is unavailable');
+        context.clearRect(0, 0, width, height);
+
+        // Вписывание без искажений: масштаб по меньшей стороне, поля прозрачны.
+        const aspectWidth = sourceWidth > 0 ? sourceWidth : width;
+        const aspectHeight = sourceHeight > 0 ? sourceHeight : height;
+        const scale = Math.min(width / aspectWidth, height / aspectHeight);
+        const drawWidth = Math.max(1, Math.round(aspectWidth * scale));
+        const drawHeight = Math.max(1, Math.round(aspectHeight * scale));
+        const offsetX = Math.round((width - drawWidth) / 2);
+        const offsetY = Math.round((height - drawHeight) / 2);
+        context.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+
+        const data = context.getImageData(0, 0, width, height).data;
+        return { width, height, pixels: new Uint8Array(data) };
+      } finally {
+        URL.revokeObjectURL(uri);
+      }
+    },
   };
 }
 

@@ -5441,7 +5441,7 @@ function createDefaultStandardLibrary() {
             documentation: 'Где выполняется программа: "cli", "web" или "vscode".',
         }),
         functionSpec('version', [], types_1.STRING, {
-            documentation: 'Версия Idyllium, например "1.3.2".',
+            documentation: 'Версия Idyllium, например "1.3.3".',
         }),
     ]));
     registry.registerModule(moduleSpec('console', [
@@ -5980,6 +5980,23 @@ function createDefaultStandardLibrary() {
             ], imageStatic),
             functionSpec('export_to_file', [{ name: 'path', type: types_1.STRING }], types_1.VOID),
         ], imageImage),
+        typeSpec('Vector', [
+            propertySpec('src', types_1.STRING, true, 'Путь к загруженному SVG-файлу.'),
+            propertySpec('width', types_1.INT, true, 'Родная ширина из viewBox или атрибутов SVG. Вектор можно растрировать любым размером — это лишь паспорт.'),
+            propertySpec('height', types_1.INT, true, 'Родная высота из viewBox или атрибутов SVG.'),
+            propertySpec('is_loaded', types_1.BOOL, true),
+        ], [
+            functionSpec('load_from_file', [{ name: 'path', type: types_1.STRING }], types_1.VOID, {
+                documentation: 'Загружает векторную картинку из SVG-файла (например, сохранённого черепахой) или сообщает понятную runtime error.',
+            }),
+            functionSpec('to_static', [
+                { name: 'width', type: types_1.INT },
+                { name: 'height', type: types_1.INT, defaultValue: '0' },
+            ], imageStatic, {
+                minArguments: 1,
+                documentation: 'Печатает вектор растровой картинкой image.Static. height опущен — считается из пропорций; заданы оба — картинка вписывается без искажений (поля прозрачные). Дальше — вся растровая семья: ImageBox, спрайты, export_to_file().',
+            }),
+        ]),
         typeSpec('Bitmap', [
             propertySpec('src', types_1.STRING, true),
             propertySpec('width', types_1.INT, true),
@@ -8624,6 +8641,42 @@ function createBrowserImageService() {
                 return (0, image_service_1.encodeApng)(animation);
             throw new Error(`cannot encode '${format}' animation`);
         },
+        async rasterizeSvg(svgText, width, height, sourceWidth, sourceHeight) {
+            if (typeof document === 'undefined' || typeof Image === 'undefined') {
+                throw new Error('SVG rasterization needs a browser host');
+            }
+            // Режим «SVG как <img>»: браузер не исполняет скрипты и не грузит
+            // внешние ресурсы из такого SVG — безопасность by design.
+            const blob = new Blob([svgText], { type: 'image/svg+xml' });
+            const uri = URL.createObjectURL(blob);
+            try {
+                const image = new Image();
+                image.src = uri;
+                await new Promise((resolve, reject) => {
+                    image.onload = () => resolve();
+                    image.onerror = () => reject(new Error('the browser could not render the SVG'));
+                });
+                const canvas = createCanvas(width, height);
+                const context = canvas.getContext('2d', { willReadFrequently: true });
+                if (!context)
+                    throw new Error('2D canvas is unavailable');
+                context.clearRect(0, 0, width, height);
+                // Вписывание без искажений: масштаб по меньшей стороне, поля прозрачны.
+                const aspectWidth = sourceWidth > 0 ? sourceWidth : width;
+                const aspectHeight = sourceHeight > 0 ? sourceHeight : height;
+                const scale = Math.min(width / aspectWidth, height / aspectHeight);
+                const drawWidth = Math.max(1, Math.round(aspectWidth * scale));
+                const drawHeight = Math.max(1, Math.round(aspectHeight * scale));
+                const offsetX = Math.round((width - drawWidth) / 2);
+                const offsetY = Math.round((height - drawHeight) / 2);
+                context.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+                const data = context.getImageData(0, 0, width, height).data;
+                return { width, height, pixels: new Uint8Array(data) };
+            }
+            finally {
+                URL.revokeObjectURL(uri);
+            }
+        },
     };
 }
 async function decodeWithCanvas(bytes, mimeType) {
@@ -10019,7 +10072,7 @@ exports.IdylliumRuntimeError = IdylliumRuntimeError;
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-exports.IDYLLIUM_VERSION = '1.3.2';
+exports.IDYLLIUM_VERSION = '1.3.3';
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform() {
     const nodeProcess = typeof process === 'object' ? process : null;
@@ -15244,6 +15297,75 @@ function initializeImageObject(obj, typeName, state) {
     obj.is_loaded = false;
     if (typeName === 'Bitmap')
         obj.is_created = false;
+    if (typeName === 'Vector') {
+        obj.src = '';
+        obj.width = 0;
+        obj.height = 0;
+        obj.is_loaded = false;
+        obj.load_from_file = contextFunction((targetPath, file, line) => {
+            const requestedPath = stringArgument(targetPath, 'Vector.load_from_file() path', file, line);
+            const resolvedPath = resolveImageInputPath(requestedPath, file, line, state, 'Vector.load_from_file()');
+            if (!state.fileSystem.exists(resolvedPath) || !state.fileSystem.isFile(resolvedPath)) {
+                throw new IdylliumRuntimeError(file, line, `Vector.load_from_file() cannot load '${requestedPath}': file does not exist`);
+            }
+            let text;
+            try {
+                text = state.fileSystem.readText(resolvedPath);
+            }
+            catch (error) {
+                throw imageRuntimeError(file, line, `Vector.load_from_file() cannot load '${requestedPath}'`, error);
+            }
+            if (!/<svg[\s>]/iu.test(text)) {
+                throw new IdylliumRuntimeError(file, line, `Vector.load_from_file() cannot decode '${requestedPath}': not an SVG document (expected <svg...>)`);
+            }
+            const passport = svgPassport(text);
+            obj.__vectorSvg = text;
+            obj.src = requestedPath;
+            obj.width = passport.width;
+            obj.height = passport.height;
+            obj.is_loaded = true;
+        });
+        obj.to_static = contextFunction(async (...callArgs) => {
+            const line = callArgs.pop();
+            const file = callArgs.pop();
+            const widthValue = callArgs[0];
+            const heightValue = callArgs.length > 1 ? callArgs[1] : undefined;
+            const svgText = obj.__vectorSvg;
+            if (typeof svgText !== 'string') {
+                throw new IdylliumRuntimeError(file, line, 'Vector.to_static() before load_from_file() — load an SVG first');
+            }
+            const targetWidth = Math.trunc(Number(widthValue));
+            if (!Number.isFinite(targetWidth) || targetWidth < 1 || targetWidth > 4096) {
+                throw new IdylliumRuntimeError(file, line, `Vector.to_static() size must be between 1 and 4096, got ${String(widthValue)}`);
+            }
+            const rawHeight = heightValue === undefined || heightValue === null ? 0 : Math.trunc(Number(heightValue));
+            if (!Number.isFinite(rawHeight) || rawHeight < 0 || rawHeight > 4096) {
+                throw new IdylliumRuntimeError(file, line, `Vector.to_static() size must be between 1 and 4096, got ${String(heightValue)}`);
+            }
+            const sourceWidth = Math.max(1, Number(obj.width));
+            const sourceHeight = Math.max(1, Number(obj.height));
+            // height опущен — считаем из пропорций родного размера.
+            const targetHeight = rawHeight === 0
+                ? Math.min(4096, Math.max(1, Math.round((targetWidth * sourceHeight) / sourceWidth)))
+                : rawHeight;
+            const service = imageService(state, file, line);
+            if (typeof service.rasterizeSvg !== 'function') {
+                throw new IdylliumRuntimeError(file, line, 'Vector.to_static() is not available in the console host — run the program in the Web IDE or VS Code');
+            }
+            try {
+                const raster = await service.rasterizeSvg(svgText, targetWidth, targetHeight, sourceWidth, sourceHeight);
+                return await createGeneratedStaticImage(raster, String(obj.src ?? ''), state, file, line);
+            }
+            catch (error) {
+                if (error instanceof IdylliumRuntimeError)
+                    throw error;
+                throw imageRuntimeError(file, line, `Vector.to_static() cannot rasterize '${String(obj.src ?? '')}'`, error);
+            }
+        });
+        obj.to_string = () => (obj.is_loaded === true
+            ? `image.Vector(${obj.src}, ${obj.width}×${obj.height})`
+            : 'image.Vector(not loaded)');
+    }
     if (typeName === 'Static') {
         obj.load_from_file = contextFunction(async (targetPath, file, line) => {
             const requestedPath = stringArgument(targetPath, 'Static.load_from_file() path', file, line);
@@ -15673,6 +15795,24 @@ function resolveImageInputPath(requestedPath, file, line, state, methodName) {
         throw new IdylliumRuntimeError(file, line, `${methodName} cannot load '${requestedPath}': path is not a file`);
     }
     return resolvedPath;
+}
+/** Родные размеры SVG: viewBox приоритетнее атрибутов width/height.
+ *  Числа с единицами («300px») читаются по числовому префиксу. */
+function svgPassport(svgText) {
+    const openTag = /<svg\b[^>]*>/iu.exec(svgText)?.[0] ?? '';
+    const attribute = (name) => (new RegExp(`\\b${name}\\s*=\\s*"([^"]*)"`, 'iu').exec(openTag)?.[1] ?? '');
+    const viewBox = attribute('viewBox').trim().split(/[\s,]+/u).map(Number);
+    if (viewBox.length === 4 && viewBox.every(Number.isFinite) && viewBox[2] > 0 && viewBox[3] > 0) {
+        return { width: Math.round(viewBox[2]), height: Math.round(viewBox[3]) };
+    }
+    const numericPrefix = (value) => Number.parseFloat(value);
+    const width = numericPrefix(attribute('width'));
+    const height = numericPrefix(attribute('height'));
+    if (Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0) {
+        return { width: Math.round(width), height: Math.round(height) };
+    }
+    // Безразмерный SVG: паспорт условный, растрирование всё равно работает.
+    return { width: 300, height: 150 };
 }
 function readRuntimeBytes(fileSystem, resolvedPath, file, line, methodName) {
     if (!fileSystem.readBytes) {

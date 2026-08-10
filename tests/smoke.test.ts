@@ -7802,4 +7802,89 @@ main() {
   assert(fixedExplicit.includes('max_value'), 'fixed scale must mark max_value explicit');
 });
 
+test('image.Vector: svg passport, proportional rasterization, guards', async () => {
+  const TURTLE_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">\n'
+    + '<rect width="100%" height="100%" fill="#ffffff"/>\n'
+    + '<line x1="300" y1="300" x2="400" y2="300" stroke="#000000" stroke-width="2" stroke-linecap="round"/>\n'
+    + '</svg>';
+
+  const makeMockService = (withRasterize: boolean) => {
+    const calls: number[][] = [];
+    const service: Record<string, unknown> = {
+      calls,
+      decodeStatic: async () => { throw new Error('unused'); },
+      encodeStatic: async (raster: { width: number; height: number }) => (
+        new Uint8Array([0x89, 0x50, 0x4e, 0x47, raster.width & 255, raster.height & 255])
+      ),
+      decodeAnimation: async () => { throw new Error('unused'); },
+      encodeAnimation: async () => { throw new Error('unused'); },
+    };
+    if (withRasterize) {
+      service.rasterizeSvg = async (_text: string, width: number, height: number, sourceWidth: number, sourceHeight: number) => {
+        calls.push([width, height, sourceWidth, sourceHeight]);
+        return { width, height, pixels: new Uint8Array(width * height * 4) };
+      };
+    }
+    return service;
+  };
+
+  const runVector = async (source: string, service: Record<string, unknown>, files: Record<string, string>) => {
+    const compilation = compileIdyllium(source, { file: '/workspace/main.idyl' });
+    assert(compilation.success, compilation.diagnosticsText);
+    const fileSystem = createMemoryRuntimeFileSystem(files);
+    const runtime = createRuntime({
+      platform: 'cli',
+      imageService: service as never,
+      fileSystem,
+    });
+    const AsyncFunction = Object.getPrototypeOf(async function idle() {}).constructor;
+    const program = await (new AsyncFunction(compilation.jsCode!))();
+    await program(runtime);
+    return { runtime, fileSystem };
+  };
+
+  // Паспорт из viewBox, пропорции при опущенной высоте, contain, PNG-цепочка.
+  const service = makeMockService(true);
+  const { runtime, fileSystem } = await runVector(`
+use image;
+use console;
+
+main() {
+    image.Vector v;
+    v.load_from_file("узор.svg");
+    console.writeln(v.width, "x", v.height, " loaded=", v.is_loaded);
+    image.Static a = v.to_static(64);
+    image.Static b = v.to_static(300, 100);
+    b.export_to_file("узор.png");
+}`, service, { '/workspace/узор.svg': TURTLE_SVG });
+  assert(runtime.getOutput() === '600x600 loaded=true\n', `vector passport: ${JSON.stringify(runtime.getOutput())}`);
+  const calls = service.calls as number[][];
+  assert(JSON.stringify(calls[0]) === '[64,64,600,600]', `proportional height: ${JSON.stringify(calls[0])}`);
+  assert(JSON.stringify(calls[1]) === '[300,100,600,600]', `explicit size: ${JSON.stringify(calls[1])}`);
+  const written = fileSystem.writtenFilesSnapshot?.() ?? {};
+  assert(Object.keys(written).some((path) => path.endsWith('узор.png')), 'to_static().export_to_file() must write a PNG');
+
+  // Сторожа — дословные.
+  for (const [source, files, withRasterize, expected] of [
+    ['use image;\n\nmain() {\n    image.Vector v;\n    v.load_from_file("нет.svg");\n}', {}, true,
+      "Vector.load_from_file() cannot load 'нет.svg': file does not exist"],
+    ['use image;\n\nmain() {\n    image.Vector v;\n    v.load_from_file("т.svg");\n}', { '/workspace/т.svg': 'просто текст' }, true,
+      "cannot decode 'т.svg': not an SVG document (expected <svg...>)"],
+    ['use image;\n\nmain() {\n    image.Vector v;\n    v.load_from_file("у.svg");\n    v.to_static(9000);\n}', { '/workspace/у.svg': TURTLE_SVG }, true,
+      'Vector.to_static() size must be between 1 and 4096, got 9000'],
+    ['use image;\n\nmain() {\n    image.Vector v;\n    v.to_static(64);\n}', {}, true,
+      'Vector.to_static() before load_from_file()'],
+    ['use image;\n\nmain() {\n    image.Vector v;\n    v.load_from_file("у.svg");\n    v.to_static(64);\n}', { '/workspace/у.svg': TURTLE_SVG }, false,
+      'Vector.to_static() is not available in the console host'],
+  ] as const) {
+    let message = '';
+    try {
+      await runVector(source, makeMockService(withRasterize), files as Record<string, string>);
+    } catch (error) {
+      message = error instanceof Error ? error.message : String(error);
+    }
+    assert(message.includes(expected), `expected vector guard '${expected}', got '${message}'`);
+  }
+});
+
 void runTests();
