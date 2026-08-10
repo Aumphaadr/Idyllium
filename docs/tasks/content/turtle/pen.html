@@ -18,18 +18,22 @@ main() {
     }
 }
 </script></idyl-code-block>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M10 150L40 150M60 150L90 150M110 150L140 150M160 150L190 150M210 150L240 150M260 150L290 150" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M10 150L40 150M60 150L90 150M110 150L140 150M160 150L190 150M210 150L240 150M260 150L290 150" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Проговорите три вещи. Первая: <strong>перо — это не движение</strong>: <code>pen_up()</code> не двигает черепаху, она ползёт как ползла, просто молча. Вторая: свойство <code>is_down</code> подскажет программе, опущено ли перо сейчас (пригодится в экспертизе). Третья, главная: <strong>теперь фигуры можно разделять</strong> — то, чего так не хватало в первой книге.</p>
   <h3 class="task-group">Самостоятельная практика</h3>
   <h4 class="task-item">Задание 2. Буква Ш без хитростей</h4>
   <p>Заноза первой книги — вон. Буква Ш: три вертикальные палочки и перекладина снизу, а между палочками черепаха переходит <strong>с поднятым пером</strong>.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M150 90L150 190M190 90L190 190M230 90L230 190M150 190L270 190" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M150 90L150 190M190 90L190 190M230 90L230 190M150 190L270 190" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Сравните с мучениями з.13 и з.17 первой книги: там приходилось возвращаться по следам и придумывать «лигатуры», теперь — подняли, перешли, опустили. Инструмент решает задачу, которая без него решалась хитростью.</p>
   <h4 class="task-item">Задание 3. Три квадрата в ряд</h4>
   <p>Три отдельных квадрата на одном поле (сторона 50, промежуток 30). Цикл рисует квадрат, потом перо поднимается, черепаха переходит и опускает перо снова. Это первая задача курса, где на поле <strong>несколько независимых фигур</strong>, — а всё лишь потому, что появилась одна команда.</p>
@@ -70,37 +74,43 @@ main() {
     t.forward(100);
 }
 </script></idyl-code-block>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M150 150L250 150" fill="none" stroke="#ff0000" stroke-width="6" stroke-linecap="round"/&gt;
-&lt;path d="M250 150L200 63.4" fill="none" stroke="#2878ff" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M150 150L250 150" fill="none" stroke="#ff0000" stroke-width="6" stroke-linecap="round"/>
+<path d="M250 150L200 63.4" fill="none" stroke="#2878ff" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Проговорите: цвета — из знакомой библиотеки <code>colors</code> (те же <code>RED</code>, <code>RGB(r, g, b)</code>, что в GUI и Canvas — багаж работает), а настройки пера — <strong>свойства</strong>, как у виджетов: присвоил и забыл, действует до следующей смены.</p>
   <h3 class="task-group">Самостоятельная практика</h3>
   <h4 class="task-item">Задание 10. Радуга</h4>
   <p>Семь параллельных линий семи цветов радуги, одна под другой (между ними — переход с поднятым пером). Порядок цветов — школьная считалка про фазана; <code>colors.RGB</code> даст любые оттенки. Первая по-настоящему <strong>красивая</strong> картинка курса — и вся она из четырёх команд книги №1 плюс два свойства.</p>
   <h4 class="task-item">Задание 11. Лесенка толщины</h4>
   <p>Шесть горизонтальных линий одного цвета, но толщина растёт: 1, 5, 9, 13, 17, 21 (<code>pen_width = 1 + i * 4</code> — формула от номера, как в растущем квадрате №1 з.16).</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M40 60L220 60" fill="none" stroke="#1e3ca0" stroke-width="1" stroke-linecap="round"/&gt;
-&lt;path d="M40 88L220 88" fill="none" stroke="#1e3ca0" stroke-width="5" stroke-linecap="round"/&gt;
-&lt;path d="M40 116L220 116" fill="none" stroke="#1e3ca0" stroke-width="9" stroke-linecap="round"/&gt;
-&lt;path d="M40 144L220 144" fill="none" stroke="#1e3ca0" stroke-width="13" stroke-linecap="round"/&gt;
-&lt;path d="M40 172L220 172" fill="none" stroke="#1e3ca0" stroke-width="17" stroke-linecap="round"/&gt;
-&lt;path d="M40 200L220 200" fill="none" stroke="#1e3ca0" stroke-width="21" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M40 60L220 60" fill="none" stroke="#1e3ca0" stroke-width="1" stroke-linecap="round"/>
+<path d="M40 88L220 88" fill="none" stroke="#1e3ca0" stroke-width="5" stroke-linecap="round"/>
+<path d="M40 116L220 116" fill="none" stroke="#1e3ca0" stroke-width="9" stroke-linecap="round"/>
+<path d="M40 144L220 144" fill="none" stroke="#1e3ca0" stroke-width="13" stroke-linecap="round"/>
+<path d="M40 172L220 172" fill="none" stroke="#1e3ca0" stroke-width="17" stroke-linecap="round"/>
+<path d="M40 200L220 200" fill="none" stroke="#1e3ca0" stroke-width="21" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Наглядная шкала: теперь вы знаете в лицо все толщины, которыми будете рисовать весь раздел.</p>
   <h4 class="task-item">Задание 12. Гусеница из клякс</h4>
   <p><code>dot(размер)</code> ставит круглую кляксу цвета пера. Пять клякс растущего диаметра с промежутками (перо поднято — между кляксами следа нет):</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;circle cx="150" cy="150" r="3" fill="#00ff00"/&gt;
-&lt;circle cx="195" cy="150" r="5" fill="#00ff00"/&gt;
-&lt;circle cx="240" cy="150" r="7" fill="#00ff00"/&gt;
-&lt;circle cx="285" cy="150" r="9" fill="#00ff00"/&gt;
-&lt;circle cx="330" cy="150" r="11" fill="#00ff00"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<circle cx="150" cy="150" r="3" fill="#00ff00"/>
+<circle cx="195" cy="150" r="5" fill="#00ff00"/>
+<circle cx="240" cy="150" r="7" fill="#00ff00"/>
+<circle cx="285" cy="150" r="9" fill="#00ff00"/>
+<circle cx="330" cy="150" r="11" fill="#00ff00"/>
+</svg>
+</div>
   <p>Обратите внимание: клякса ставится <strong>в точке, где черепаха стоит</strong>, и её размер — диаметр (в превью радиусы вдвое меньше). Кто заметил, что пятая клякса убежала за край поля, — тот прав: поле кончилось, а черепаха ползла дальше. Так бывает; в следующей задаче поле мы увеличим.</p>
   <h4 class="task-item">Минутка из внешнего мира. Плоттер — большой брат черепахи</h4>
   <p><em>Это не задание — делать ничего не нужно. Просто любопытное из большого мира, читается за минуту.</em></p>
@@ -113,16 +123,18 @@ main() {
   <p>Четыре команды поля разом: <code>turtle.setup(400, 300)</code> — размер, <code>turtle.title(&quot;Моя картина&quot;)</code> — заголовок окна, <code>turtle.bg_color(...)</code> — фон, и рисунок поверх. Проговорите, почему они пишутся через <code>turtle.</code>, а не через <code>t.</code>: <strong>поле общее, а черепаха — личная</strong> (в шестой книге черепах станет несколько, и разница станет очевидной). Попробуйте вытянутое поле (600×200) — и нарисуйте на нём что-то длинное: панораму, забор, поезд.</p>
   <h4 class="task-item">Задание 14. Ночное небо</h4>
   <p>Обратный скаффолд: «Поле 300×300, заголовок &quot;Ночное небо&quot;, тёмно-синий фон; жёлтым пером, <strong>не опуская его</strong>, черепаха бродит по небу и в семи местах ставит кляксы-звёзды разного размера (<code>dot(4 + mod(i, 3) * 3)</code> — кольцо трёх размеров через mod!)».</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#0f1228"/&gt;
-&lt;circle cx="170" cy="150" r="2" fill="#ffe678"/&gt;
-&lt;circle cx="182.26" cy="123.72" r="3.5" fill="#ffe678"/&gt;
-&lt;circle cx="157.83" cy="94.61" r="5" fill="#ffe678"/&gt;
-&lt;circle cx="112.43" cy="106.77" r="2" fill="#ffe678"/&gt;
-&lt;circle cx="102.71" cy="161.92" r="3.5" fill="#ffe678"/&gt;
-&lt;circle cx="155.95" cy="199.2" r="5" fill="#ffe678"/&gt;
-&lt;circle cx="220.04" cy="162.2" r="2" fill="#ffe678"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#0f1228"/>
+<circle cx="170" cy="150" r="2" fill="#ffe678"/>
+<circle cx="182.26" cy="123.72" r="3.5" fill="#ffe678"/>
+<circle cx="157.83" cy="94.61" r="5" fill="#ffe678"/>
+<circle cx="112.43" cy="106.77" r="2" fill="#ffe678"/>
+<circle cx="102.71" cy="161.92" r="3.5" fill="#ffe678"/>
+<circle cx="155.95" cy="199.2" r="5" fill="#ffe678"/>
+<circle cx="220.04" cy="162.2" r="2" fill="#ffe678"/>
+</svg>
+</div>
   <p>Соберите. Ни одной линии на картинке — только кляксы: черепаха всё небо прошла с поднятым пером. Ваше созвездие может отличаться от эталонного — важно, что звёзды разбросаны, а не выстроены в шеренгу.</p>
   <h4 class="task-item">Задание 15. Разноцветный забор</h4>
   <p>Синтез книги: забор из десяти вертикальных досок, у каждой <strong>свой цвет</strong> (меняйте <code>pen_color</code> в цикле — например, <code>colors.RGB(50 + i * 20, 120, 200 - i * 15)</code>, чтобы получился плавный переход) и своя толщина (растёт от 2 до 11). Между досками — переход с поднятым пером. Сверху доски соединены перекладиной. Три инструмента книги в одном цикле — и забор выглядит нарисованным художником, а не программой.</p>

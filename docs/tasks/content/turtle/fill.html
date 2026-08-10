@@ -22,43 +22,51 @@ main() {
     t.end_fill();
 }
 </script></idyl-code-block>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;polygon points="80,210 220,210 150,88.76 80,210" fill="#78dc8c"/&gt;
-&lt;path d="M80 210L220 210L150 88.76L80 210" fill="none" stroke="#145a32" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<polygon points="80,210 220,210 150,88.76 80,210" fill="#78dc8c"/>
+<path d="M80 210L220 210L150 88.76L80 210" fill="none" stroke="#145a32" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Разберите порядок, он священен: <strong>сначала</strong> <code>begin_fill()</code> — черепаха начинает запоминать путь, <strong>потом</strong> обход фигуры, <strong>потом</strong> <code>end_fill()</code> — путь замыкается и заливается. И покажите два цвета в деле: тёмно-зелёный контур — это перо (<code>pen_color</code>), светло-зелёное нутро — краска (<code>fill_color</code>), они настраиваются отдельно и друг про друга не знают. Вопрос на предсказание перед запуском: что нарисует эта программа, если стереть обе строчки про fill — <code>begin_fill()</code> и <code>end_fill()</code>? (Ровно то, что вы рисовали в книге №3, — каркас.)</p>
   <h3 class="task-group">Самостоятельная практика</h3>
   <h4 class="task-item">Задание 2. Три краски</h4>
   <p>Три залитых квадрата в ряд: красный, жёлтый, синий (контур у всех один — тёмный). Квадраты со стороной 60, между фигурами — телепорт (№4 помнит). Краска меняется <strong>между</strong> фигурами: одно свойство <code>fill_color</code> — три присваивания. Проверьте себя вопросом: сколько раз в программе написано <code>begin_fill()</code>? (Три — по одному на фигуру: каждая покраска — свой сеанс.)</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;polygon points="40,180 100,180 100,120 40,120 40,180" fill="#e65050"/&gt;
-&lt;path d="M40 180L100 180L100 120L40 120L40 180" fill="none" stroke="#282828" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="120,180 180,180 180,120 120,120 120,180" fill="#fac83c"/&gt;
-&lt;path d="M120 180L180 180L180 120L120 120L120 180" fill="none" stroke="#282828" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="200,180 260,180 260,120 200,120 200,180" fill="#5aa0fa"/&gt;
-&lt;path d="M200 180L260 180L260 120L200 120L200 180" fill="none" stroke="#282828" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<polygon points="40,180 100,180 100,120 40,120 40,180" fill="#e65050"/>
+<path d="M40 180L100 180L100 120L40 120L40 180" fill="none" stroke="#282828" stroke-width="2" stroke-linecap="round"/>
+<polygon points="120,180 180,180 180,120 120,120 120,180" fill="#fac83c"/>
+<path d="M120 180L180 180L180 120L120 120L120 180" fill="none" stroke="#282828" stroke-width="2" stroke-linecap="round"/>
+<polygon points="200,180 260,180 260,120 200,120 200,180" fill="#5aa0fa"/>
+<path d="M200 180L260 180L260 120L200 120L200 180" fill="none" stroke="#282828" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <h4 class="task-item">Задание 3. Солнце</h4>
   <p>Круг из книги №3 — многоугольник на 20 сторон (<code>forward(28)</code>, <code>left(18)</code>) — обведите оранжевым пером потолще и залейте жёлтым. Одна фигура, один сеанс заливки, а выглядит как настоящее солнце.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;polygon points="106,235 134,235 160.63,226.35 183.28,209.89 199.74,187.24 208.39,160.61 208.39,132.61 199.74,105.98 183.28,83.33 160.63,66.87 134,58.21 106,58.21 79.37,66.87 56.72,83.33 40.26,105.98 31.61,132.61 31.61,160.61 40.26,187.24 56.72,209.89 79.37,226.35 106,235" fill="#ffd228"/&gt;
-&lt;path d="M106 235L134 235L160.63 226.35L183.28 209.89L199.74 187.24L208.39 160.61L208.39 132.61L199.74 105.98L183.28 83.33L160.63 66.87L134 58.21L106 58.21L79.37 66.87L56.72 83.33L40.26 105.98L31.61 132.61L31.61 160.61L40.26 187.24L56.72 209.89L79.37 226.35L106 235" fill="none" stroke="#e68c00" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<polygon points="106,235 134,235 160.63,226.35 183.28,209.89 199.74,187.24 208.39,160.61 208.39,132.61 199.74,105.98 183.28,83.33 160.63,66.87 134,58.21 106,58.21 79.37,66.87 56.72,83.33 40.26,105.98 31.61,132.61 31.61,160.61 40.26,187.24 56.72,209.89 79.37,226.35 106,235" fill="#ffd228"/>
+<path d="M106 235L134 235L160.63 226.35L183.28 209.89L199.74 187.24L208.39 160.61L208.39 132.61L199.74 105.98L183.28 83.33L160.63 66.87L134 58.21L106 58.21L79.37 66.87L56.72 83.33L40.26 105.98L31.61 132.61L31.61 160.61L40.26 187.24L56.72 209.89L79.37 226.35L106 235" fill="none" stroke="#e68c00" stroke-width="3" stroke-linecap="round"/>
+</svg>
+</div>
   <h4 class="task-item">Задание 4. Флаг</h4>
   <p>Флаг выдуманной страны: три горизонтальные полосы 160 × 40, каждая — залитый прямоугольник по адресам (<code>goto</code> — №4 в деле), плюс серое древко слева. Средняя полоса — белая, и вот в ней вся соль: <strong>белую фигуру на белом поле выдаёт только контур</strong>. Дайте белой полосе светло-серое перо и обсудите: у настоящих флагов с белыми полосами та же забота — на белой странице их рисуют с тонкой рамкой.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M50 260L50 40" fill="none" stroke="#787878" stroke-width="4" stroke-linecap="round"/&gt;
-&lt;polygon points="50,100 210,100 210,60 50,60 50,100" fill="#3cb45a"/&gt;
-&lt;path d="M50 100L210 100L210 60L50 60L50 100" fill="none" stroke="#1e783c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="50,140 210,140 210,100 50,100 50,140" fill="#ffffff"/&gt;
-&lt;path d="M50 140L210 140L210 100L50 100L50 140" fill="none" stroke="#969696" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="50,180 210,180 210,140 50,140 50,180" fill="#f09632"/&gt;
-&lt;path d="M50 180L210 180L210 140L50 140L50 180" fill="none" stroke="#c86e1e" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M50 260L50 40" fill="none" stroke="#787878" stroke-width="4" stroke-linecap="round"/>
+<polygon points="50,100 210,100 210,60 50,60 50,100" fill="#3cb45a"/>
+<path d="M50 100L210 100L210 60L50 60L50 100" fill="none" stroke="#1e783c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="50,140 210,140 210,100 50,100 50,140" fill="#ffffff"/>
+<path d="M50 140L210 140L210 100L50 100L50 140" fill="none" stroke="#969696" stroke-width="2" stroke-linecap="round"/>
+<polygon points="50,180 210,180 210,140 50,140 50,180" fill="#f09632"/>
+<path d="M50 180L210 180L210 140L50 140L50 180" fill="none" stroke="#c86e1e" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
 </div>
 
 <div class="docs-section">
@@ -98,11 +106,13 @@ t.left(120);
 t.forward(120);
 t.end_fill();
 </script></idyl-code-block>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;polygon points="90,200 210,200 150,96.08" fill="#ffd228"/&gt;
-&lt;path d="M90 200L210 200L150 96.08" fill="none" stroke="#000000" stroke-width="4" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<polygon points="90,200 210,200 150,96.08" fill="#ffd228"/>
+<path d="M90 200L210 200L150 96.08" fill="none" stroke="#000000" stroke-width="4" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Треугольник залился целиком! Присмотритесь к нижней... нет, к <strong>третьей</strong> стороне: линии контура там нет — перо её не рисовало. Заливка <strong>сама замыкает</strong> пройденный путь по прямой от конца к началу и красит всё внутри; перо при этом не дорисовывает ничего. Правило: краске хватает точек, контуру нужны честные команды. Этот эффект — не поломка, а инструмент: «фигура из двух рёбер» станет лепестком в узорах блока 4.</p>
   <h4 class="task-item">Задание 8. Когда выбирается краска</h4>
   <p>Два коротких опыта — оба на предсказание «что увидим?».</p>
@@ -117,12 +127,14 @@ t.end_fill();
 </script></idyl-code-block>
   <p>Половина красная, половина синяя? Нет — <strong>весь квадрат синий</strong>. Краска выбирается один раз, в момент <code>end_fill()</code>: что было в ведёрке при заливке, тем и залито. Хотите две краски — два сеанса, две фигуры.</p>
   <p><strong>Опыт второй.</strong> Целиком поднимите перо — и залейте квадрат с <code>pen_up()</code>. Контур исчез (перо-то поднято!), а заливка — на месте: получилась <strong>фигура без обводки</strong>, чистое цветовое пятно. Сравните пары на превью:</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;polygon points="40,190 120,190 120,110 40,110 40,190" fill="#5aa0fa"/&gt;
-&lt;path d="M40 190L120 190L120 110L40 110L40 190" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="180,190 260,190 260,110 180,110 180,190" fill="#5aa0fa"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<polygon points="40,190 120,190 120,110 40,110 40,190" fill="#5aa0fa"/>
+<path d="M40 190L120 190L120 110L40 110L40 190" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+<polygon points="180,190 260,190 260,110 180,110 180,190" fill="#5aa0fa"/>
+</svg>
+</div>
   <p>Слева — перо опущено (кирпич с обводкой), справа — поднято (стекло без рамки). Профессиональные плоские иллюстрации почти целиком рисуются «правым» способом — без контуров; теперь он есть и у вас.</p>
 </div>
 
@@ -163,63 +175,71 @@ main() {
     }
 }
 </script></idyl-code-block>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;polygon points="20,260 62,260 62,218 20,218 20,260" fill="#78aaff"/&gt;
-&lt;path d="M20 260L62 260L62 218L20 218L20 260" fill="none" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="75,215 117,215 117,173 75,173 75,215" fill="#78aaff"/&gt;
-&lt;path d="M75 215L117 215L117 173L75 173L75 215" fill="none" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="130,170 172,170 172,128 130,128 130,170" fill="#78aaff"/&gt;
-&lt;path d="M130 170L172 170L172 128L130 128L130 170" fill="none" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="185,125 227,125 227,83 185,83 185,125" fill="#78aaff"/&gt;
-&lt;path d="M185 125L227 125L227 83L185 83L185 125" fill="none" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="240,80 282,80 282,38 240,38 240,80" fill="#78aaff"/&gt;
-&lt;path d="M240 80L282 80L282 38L240 38L240 80" fill="none" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<polygon points="20,260 62,260 62,218 20,218 20,260" fill="#78aaff"/>
+<path d="M20 260L62 260L62 218L20 218L20 260" fill="none" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+<polygon points="75,215 117,215 117,173 75,173 75,215" fill="#78aaff"/>
+<path d="M75 215L117 215L117 173L75 173L75 215" fill="none" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+<polygon points="130,170 172,170 172,128 130,128 130,170" fill="#78aaff"/>
+<path d="M130 170L172 170L172 128L130 128L130 170" fill="none" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+<polygon points="185,125 227,125 227,83 185,83 185,125" fill="#78aaff"/>
+<path d="M185 125L227 125L227 83L185 83L185 125" fill="none" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+<polygon points="240,80 282,80 282,38 240,38 240,80" fill="#78aaff"/>
+<path d="M240 80L282 80L282 38L240 38L240 80" fill="none" stroke="#1e3c78" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Пять вызовов — лесенка; координаты каждой ступеньки <strong>вычислены из номера шага</strong>. Проговорите анатомию функции: телепорт на место → опустить перо → сеанс заливки. Черепаха, как и в книге №3, объявлена глобально — чтобы её видели и функция, и <code>main</code>. Вопросы группе: что изменить, чтобы лесенка спускалась? чтобы ступеньки росли по дороге (подсказка: <code>size</code> тоже может зависеть от <code>step</code>)?</p>
   <h3 class="task-group">Самостоятельная практика</h3>
   <h4 class="task-item">Задание 10. Светофор</h4>
   <p>Соберите светофор: тёмный корпус (залитый прямоугольник по адресам) и три круга — красный, жёлтый, зелёный. Круг просится в функцию, а у кругов разные цвета — значит, у функции будет <strong>параметр-краска</strong>: <code>void function filled_circle(int x, int y, colors.Color c)</code> (тип <code>colors.Color</code> в сигнатуре — законный, проверено). Внутри — телепорт, <code>fill_color = c;</code>, и 20-угольник маленькой стороной (<code>forward(8)</code>, <code>left(18)</code>). Совет для кругов без ободка: пусть функция ставит и <code>pen_color = c;</code> — контур в цвет заливки.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;polygon points="105,270 195,270 195,30 105,30 105,270" fill="#464655"/&gt;
-&lt;path d="M105 270L195 270L195 30L105 30L105 270" fill="none" stroke="#32323c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,95 158,95 165.61,92.53 172.08,87.83 176.78,81.35 179.26,73.74 179.26,65.74 176.78,58.14 172.08,51.66 165.61,46.96 158,44.49 150,44.49 142.39,46.96 135.92,51.66 131.22,58.14 128.74,65.74 128.74,73.74 131.22,81.35 135.92,87.83 142.39,92.53 150,95" fill="#f0463c"/&gt;
-&lt;path d="M150 95L158 95L165.61 92.53L172.08 87.83L176.78 81.35L179.26 73.74L179.26 65.74L176.78 58.14L172.08 51.66L165.61 46.96L158 44.49L150 44.49L142.39 46.96L135.92 51.66L131.22 58.14L128.74 65.74L128.74 73.74L131.22 81.35L135.92 87.83L142.39 92.53L150 95" fill="none" stroke="#f0463c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,165 158,165 165.61,162.53 172.08,157.83 176.78,151.35 179.26,143.74 179.26,135.74 176.78,128.14 172.08,121.66 165.61,116.96 158,114.49 150,114.49 142.39,116.96 135.92,121.66 131.22,128.14 128.74,135.74 128.74,143.74 131.22,151.35 135.92,157.83 142.39,162.53 150,165" fill="#fac83c"/&gt;
-&lt;path d="M150 165L158 165L165.61 162.53L172.08 157.83L176.78 151.35L179.26 143.74L179.26 135.74L176.78 128.14L172.08 121.66L165.61 116.96L158 114.49L150 114.49L142.39 116.96L135.92 121.66L131.22 128.14L128.74 135.74L128.74 143.74L131.22 151.35L135.92 157.83L142.39 162.53L150 165" fill="none" stroke="#fac83c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,235 158,235 165.61,232.53 172.08,227.83 176.78,221.35 179.26,213.74 179.26,205.74 176.78,198.14 172.08,191.66 165.61,186.96 158,184.49 150,184.49 142.39,186.96 135.92,191.66 131.22,198.14 128.74,205.74 128.74,213.74 131.22,221.35 135.92,227.83 142.39,232.53 150,235" fill="#50d25a"/&gt;
-&lt;path d="M150 235L158 235L165.61 232.53L172.08 227.83L176.78 221.35L179.26 213.74L179.26 205.74L176.78 198.14L172.08 191.66L165.61 186.96L158 184.49L150 184.49L142.39 186.96L135.92 191.66L131.22 198.14L128.74 205.74L128.74 213.74L131.22 221.35L135.92 227.83L142.39 232.53L150 235" fill="none" stroke="#50d25a" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<polygon points="105,270 195,270 195,30 105,30 105,270" fill="#464655"/>
+<path d="M105 270L195 270L195 30L105 30L105 270" fill="none" stroke="#32323c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,95 158,95 165.61,92.53 172.08,87.83 176.78,81.35 179.26,73.74 179.26,65.74 176.78,58.14 172.08,51.66 165.61,46.96 158,44.49 150,44.49 142.39,46.96 135.92,51.66 131.22,58.14 128.74,65.74 128.74,73.74 131.22,81.35 135.92,87.83 142.39,92.53 150,95" fill="#f0463c"/>
+<path d="M150 95L158 95L165.61 92.53L172.08 87.83L176.78 81.35L179.26 73.74L179.26 65.74L176.78 58.14L172.08 51.66L165.61 46.96L158 44.49L150 44.49L142.39 46.96L135.92 51.66L131.22 58.14L128.74 65.74L128.74 73.74L131.22 81.35L135.92 87.83L142.39 92.53L150 95" fill="none" stroke="#f0463c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,165 158,165 165.61,162.53 172.08,157.83 176.78,151.35 179.26,143.74 179.26,135.74 176.78,128.14 172.08,121.66 165.61,116.96 158,114.49 150,114.49 142.39,116.96 135.92,121.66 131.22,128.14 128.74,135.74 128.74,143.74 131.22,151.35 135.92,157.83 142.39,162.53 150,165" fill="#fac83c"/>
+<path d="M150 165L158 165L165.61 162.53L172.08 157.83L176.78 151.35L179.26 143.74L179.26 135.74L176.78 128.14L172.08 121.66L165.61 116.96L158 114.49L150 114.49L142.39 116.96L135.92 121.66L131.22 128.14L128.74 135.74L128.74 143.74L131.22 151.35L135.92 157.83L142.39 162.53L150 165" fill="none" stroke="#fac83c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,235 158,235 165.61,232.53 172.08,227.83 176.78,221.35 179.26,213.74 179.26,205.74 176.78,198.14 172.08,191.66 165.61,186.96 158,184.49 150,184.49 142.39,186.96 135.92,191.66 131.22,198.14 128.74,205.74 128.74,213.74 131.22,221.35 135.92,227.83 142.39,232.53 150,235" fill="#50d25a"/>
+<path d="M150 235L158 235L165.61 232.53L172.08 227.83L176.78 221.35L179.26 213.74L179.26 205.74L176.78 198.14L172.08 191.66L165.61 186.96L158 184.49L150 184.49L142.39 186.96L135.92 191.66L131.22 198.14L128.74 205.74L128.74 213.74L131.22 221.35L135.92 227.83L142.39 232.53L150 235" fill="none" stroke="#50d25a" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <h4 class="task-item">Задание 11. Вечерняя улица</h4>
   <p>Городской силуэт: тёплое закатное небо (<code>turtle.bg_color</code>), линия земли и четыре башни разной ширины, высоты и оттенка — все нарисованы одной функцией <code>tower(int x, int width, int height, colors.Color c)</code>, которая строит залитый прямоугольник <strong>по адресам</strong> от земли (<code>goto</code> четырёх углов — и никакого поворота: прямоугольник с неравными сторонами циклом <code>forward</code>/<code>left</code> не взять, а адресами — легко). Четыре вызова — город.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffe1b4"/&gt;
-&lt;polygon points="20,240 70,240 70,120 20,120 20,240" fill="#5a648c"/&gt;
-&lt;path d="M20 240L70 240L70 120L20 120L20 240" fill="none" stroke="#3c3c50" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="80,240 125,240 125,50 80,50 80,240" fill="#7882aa"/&gt;
-&lt;path d="M80 240L125 240L125 50L80 50L80 240" fill="none" stroke="#3c3c50" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="135,240 190,240 190,150 135,150 135,240" fill="#646e96"/&gt;
-&lt;path d="M135 240L190 240L190 150L135 150L135 240" fill="none" stroke="#3c3c50" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="200,240 248,240 248,80 200,80 200,240" fill="#505a82"/&gt;
-&lt;path d="M200 240L248 240L248 80L200 80L200 240" fill="none" stroke="#3c3c50" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;path d="M10 240L290 240" fill="none" stroke="#3c3c50" stroke-width="4" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffe1b4"/>
+<polygon points="20,240 70,240 70,120 20,120 20,240" fill="#5a648c"/>
+<path d="M20 240L70 240L70 120L20 120L20 240" fill="none" stroke="#3c3c50" stroke-width="2" stroke-linecap="round"/>
+<polygon points="80,240 125,240 125,50 80,50 80,240" fill="#7882aa"/>
+<path d="M80 240L125 240L125 50L80 50L80 240" fill="none" stroke="#3c3c50" stroke-width="2" stroke-linecap="round"/>
+<polygon points="135,240 190,240 190,150 135,150 135,240" fill="#646e96"/>
+<path d="M135 240L190 240L190 150L135 150L135 240" fill="none" stroke="#3c3c50" stroke-width="2" stroke-linecap="round"/>
+<polygon points="200,240 248,240 248,80 200,80 200,240" fill="#505a82"/>
+<path d="M200 240L248 240L248 80L200 80L200 240" fill="none" stroke="#3c3c50" stroke-width="2" stroke-linecap="round"/>
+<path d="M10 240L290 240" fill="none" stroke="#3c3c50" stroke-width="4" stroke-linecap="round"/>
+</svg>
+</div>
   <h4 class="task-item">Задание 12. Ёлка со звездой</h4>
   <p>Сборка из трёх идей книги: функция <code>layer(int y, int size)</code> рисует залитый треугольник яруса (вершиной вверх, серединой на оси), три вызова с убывающим размером — крона; ствол — залитый прямоугольник по адресам; наверху — <strong>залитая звезда</strong> из книги №3 (пять поворотов на 144). Звезда — с сюрпризом: её контур пересекает сам себя, а заливка спокойно закрашивает всё, что внутри, — попробуйте и посмотрите, как краска обходится с самопересечением.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;polygon points="138,270 162,270 162,230 138,230 138,270" fill="#785028"/&gt;
-&lt;path d="M138 270L162 270L162 230L138 230L138 270" fill="none" stroke="#5a3c1e" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="75,230 225,230 150,100.1 75,230" fill="#289646"/&gt;
-&lt;path d="M75 230L225 230L150 100.1L75 230" fill="none" stroke="#146432" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="90,185 210,185 150,81.08 90,185" fill="#289646"/&gt;
-&lt;path d="M90 185L210 185L150 81.08L90 185" fill="none" stroke="#146432" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="105,145 195,145 150,67.06 105,145" fill="#289646"/&gt;
-&lt;path d="M105 145L195 145L150 67.06L105 145" fill="none" stroke="#146432" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="130,50 170,50 137.64,26.49 150,64.53 162.36,26.49 130,50" fill="#ffdc3c"/&gt;
-&lt;path d="M130 50L170 50L137.64 26.49L150 64.53L162.36 26.49L130 50" fill="none" stroke="#fabe1e" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<polygon points="138,270 162,270 162,230 138,230 138,270" fill="#785028"/>
+<path d="M138 270L162 270L162 230L138 230L138 270" fill="none" stroke="#5a3c1e" stroke-width="2" stroke-linecap="round"/>
+<polygon points="75,230 225,230 150,100.1 75,230" fill="#289646"/>
+<path d="M75 230L225 230L150 100.1L75 230" fill="none" stroke="#146432" stroke-width="2" stroke-linecap="round"/>
+<polygon points="90,185 210,185 150,81.08 90,185" fill="#289646"/>
+<path d="M90 185L210 185L150 81.08L90 185" fill="none" stroke="#146432" stroke-width="2" stroke-linecap="round"/>
+<polygon points="105,145 195,145 150,67.06 105,145" fill="#289646"/>
+<path d="M105 145L195 145L150 67.06L105 145" fill="none" stroke="#146432" stroke-width="2" stroke-linecap="round"/>
+<polygon points="130,50 170,50 137.64,26.49 150,64.53 162.36,26.49 130,50" fill="#ffdc3c"/>
+<path d="M130 50L170 50L137.64 26.49L150 64.53L162.36 26.49L130 50" fill="none" stroke="#fabe1e" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <h4 class="task-item">Минутка из внешнего мира. Ящерицы Эшера</h4>
   <p>Узор повторением — древнейший генератор красоты: им покрывали ковры, изразцы и вышивку задолго до компьютеров. Дальше всех идею довели мастера дворца Альгамбра в Испании семьсот лет назад: их мозаики замощают стены повторением одной фигуры — без единой щели и без единого нахлёста. В 1922 году во дворец попал молодой голландский художник Мауриц Эшер — и пропал: он перерисовывал орнаменты часами, а потом всю жизнь строил собственные мозаики, где вместо ромбов и звёзд плоскость без щелей заполняют ящерицы, птицы и рыбы, перетекающие друг в друга. Математики до сих пор изучают его работы, а вы сегодня занимаетесь тем же ремеслом: берёте фигуру и повторяете её по правилу. У Эшера правило было хитрее вашего <code>left(10)</code> — но началось всё с той же мысли: <strong>красота — это фигура плюс закон повторения</strong>.</p>
 </div>
@@ -251,87 +271,95 @@ main() {
     }
 }
 </script></idyl-code-block>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M150 150L240 150L240 60L150 60L150 150L238.63 134.37L223 45.74L134.37 61.37L150 150L234.57 119.22L203.79 34.65L119.22 65.43L150 150L227.94 105L182.94 27.06L105 72.06L150 150L218.94 92.15L161.09 23.21L92.15 81.06L150 150L207.85 81.06L138.91 23.21L81.06 92.15L150 150L195 72.06L117.06 27.06L72.06 105L150 150L180.78 65.43L96.21 34.65L65.43 119.22L150 150L165.63 61.37L77 45.74L61.37 134.37L150 150L150 60L60 60L60 150L150 150L134.37 61.37L45.74 77L61.37 165.63L150 150L119.22 65.43L34.65 96.21L65.43 180.78L150 150L105 72.06L27.06 117.06L72.06 195L150 150L92.15 81.06L23.21 138.91L81.06 207.85L150 150L81.06 92.15L23.21 161.09L92.15 218.94L150 150L72.06 105L27.06 182.94L105 227.94L150 150L65.43 119.22L34.65 203.79L119.22 234.57L150 150L61.37 134.37L45.74 223L134.37 238.63L150 150L60 150L60 240L150 240L150 150L61.37 165.63L77 254.26L165.63 238.63L150 150L65.43 180.78L96.21 265.35L180.78 234.57L150 150L72.06 195L117.06 272.94L195 227.94L150 150L81.06 207.85L138.91 276.79L207.85 218.94L150 150L92.15 218.94L161.09 276.79L218.94 207.85L150 150L105 227.94L182.94 272.94L227.94 195L150 150L119.22 234.57L203.79 265.35L234.57 180.78L150 150L134.37 238.63L223 254.26L238.63 165.63L150 150L150 240L240 240L240 150L150 150L165.63 238.63L254.26 223L238.63 134.37L150 150L180.78 234.57L265.35 203.79L234.57 119.22L150 150L195 227.94L272.94 182.94L227.94 105L150 150L207.85 218.94L276.79 161.09L218.94 92.15L150 150L218.94 207.85L276.79 138.91L207.85 81.06L150 150L227.94 195L272.94 117.06L195 72.06L150 150L234.57 180.78L265.35 96.21L180.78 65.43L150 150L238.63 165.63L254.26 77L165.63 61.37L150 150" fill="none" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M150 150L240 150L240 60L150 60L150 150L238.63 134.37L223 45.74L134.37 61.37L150 150L234.57 119.22L203.79 34.65L119.22 65.43L150 150L227.94 105L182.94 27.06L105 72.06L150 150L218.94 92.15L161.09 23.21L92.15 81.06L150 150L207.85 81.06L138.91 23.21L81.06 92.15L150 150L195 72.06L117.06 27.06L72.06 105L150 150L180.78 65.43L96.21 34.65L65.43 119.22L150 150L165.63 61.37L77 45.74L61.37 134.37L150 150L150 60L60 60L60 150L150 150L134.37 61.37L45.74 77L61.37 165.63L150 150L119.22 65.43L34.65 96.21L65.43 180.78L150 150L105 72.06L27.06 117.06L72.06 195L150 150L92.15 81.06L23.21 138.91L81.06 207.85L150 150L81.06 92.15L23.21 161.09L92.15 218.94L150 150L72.06 105L27.06 182.94L105 227.94L150 150L65.43 119.22L34.65 203.79L119.22 234.57L150 150L61.37 134.37L45.74 223L134.37 238.63L150 150L60 150L60 240L150 240L150 150L61.37 165.63L77 254.26L165.63 238.63L150 150L65.43 180.78L96.21 265.35L180.78 234.57L150 150L72.06 195L117.06 272.94L195 227.94L150 150L81.06 207.85L138.91 276.79L207.85 218.94L150 150L92.15 218.94L161.09 276.79L218.94 207.85L150 150L105 227.94L182.94 272.94L227.94 195L150 150L119.22 234.57L203.79 265.35L234.57 180.78L150 150L134.37 238.63L223 254.26L238.63 165.63L150 150L150 240L240 240L240 150L150 150L165.63 238.63L254.26 223L238.63 134.37L150 150L180.78 234.57L265.35 203.79L234.57 119.22L150 150L195 227.94L272.94 182.94L227.94 105L150 150L207.85 218.94L276.79 161.09L218.94 92.15L150 150L218.94 207.85L276.79 138.91L207.85 81.06L150 150L227.94 195L272.94 117.06L195 72.06L150 150L234.57 180.78L265.35 96.21L180.78 65.43L150 150L238.63 165.63L254.26 77L165.63 61.37L150 150" fill="none" stroke="#c850a0" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Устройство узора — два вложенных цикла: внутренний рисует фигуру (квадрат), внешний поворачивает её на 10° — 36 раз по 10 это ровно полный оборот. Проговорите роль <code>speed = 0</code>: здесь 144 линии, и это не украшение, а необходимость — на скорости 6 группа устанет ждать. И предложите два предсказания перед экспериментами: что изменится при повороте 15 (сколько квадратов понадобится для полного круга?), и что — если квадрат заменить на треугольник?</p>
   <h3 class="task-group">Самостоятельная практика</h3>
   <h4 class="task-item">Задание 14. Цветная розетка</h4>
   <p>Розетка вполсилы — 12 квадратов по 30° — но каждый залит своим цветом. Тут выходит на сцену <code>colors.HSL(тон, насыщенность, светлота)</code> — цветовой круг из урока: тон — это угол от 0 до 360, и он <strong>обязан</strong> быть в этих границах (проверено: <code>colors.HSL() hue must be between 0 and 360, got 400</code>). Номер витка превращается в тон: <code>t.fill_color = colors.HSL(i * 30, 80, 65);</code> — и радуга сама раскладывается по кругу. Заметьте, где стоит присваивание краски: <strong>внутри</strong> внешнего цикла, до <code>end_fill()</code> каждой фигуры (з.8 объясняла, почему это важно).</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;polygon points="150,150 220,150 220,80 150,80 150,150" fill="#ed5e5e"/&gt;
-&lt;path d="M150 150L220 150L220 80L150 80L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 210.62,115 175.62,54.38 115,89.38 150,150" fill="#eda65e"/&gt;
-&lt;path d="M150 150L210.62 115L175.62 54.38L115 89.38L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 185,89.38 124.38,54.38 89.38,115 150,150" fill="#eded5e"/&gt;
-&lt;path d="M150 150L185 89.38L124.38 54.38L89.38 115L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 150,80 80,80 80,150 150,150" fill="#a6ed5e"/&gt;
-&lt;path d="M150 150L150 80L80 80L80 150L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 115,89.38 54.38,124.38 89.38,185 150,150" fill="#5eed5e"/&gt;
-&lt;path d="M150 150L115 89.38L54.38 124.38L89.38 185L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 89.38,115 54.38,175.62 115,210.62 150,150" fill="#5eeda6"/&gt;
-&lt;path d="M150 150L89.38 115L54.38 175.62L115 210.62L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 80,150 80,220 150,220 150,150" fill="#5eeded"/&gt;
-&lt;path d="M150 150L80 150L80 220L150 220L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 89.38,185 124.38,245.62 185,210.62 150,150" fill="#5ea6ed"/&gt;
-&lt;path d="M150 150L89.38 185L124.38 245.62L185 210.62L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 115,210.62 175.62,245.62 210.62,185 150,150" fill="#5e5eed"/&gt;
-&lt;path d="M150 150L115 210.62L175.62 245.62L210.62 185L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 150,220 220,220 220,150 150,150" fill="#a65eed"/&gt;
-&lt;path d="M150 150L150 220L220 220L220 150L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 185,210.62 245.62,175.62 210.62,115 150,150" fill="#ed5eed"/&gt;
-&lt;path d="M150 150L185 210.62L245.62 175.62L210.62 115L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 210.62,185 245.62,124.38 185,89.38 150,150" fill="#ed5ea6"/&gt;
-&lt;path d="M150 150L210.62 185L245.62 124.38L185 89.38L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<polygon points="150,150 220,150 220,80 150,80 150,150" fill="#ed5e5e"/>
+<path d="M150 150L220 150L220 80L150 80L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 210.62,115 175.62,54.38 115,89.38 150,150" fill="#eda65e"/>
+<path d="M150 150L210.62 115L175.62 54.38L115 89.38L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 185,89.38 124.38,54.38 89.38,115 150,150" fill="#eded5e"/>
+<path d="M150 150L185 89.38L124.38 54.38L89.38 115L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 150,80 80,80 80,150 150,150" fill="#a6ed5e"/>
+<path d="M150 150L150 80L80 80L80 150L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 115,89.38 54.38,124.38 89.38,185 150,150" fill="#5eed5e"/>
+<path d="M150 150L115 89.38L54.38 124.38L89.38 185L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 89.38,115 54.38,175.62 115,210.62 150,150" fill="#5eeda6"/>
+<path d="M150 150L89.38 115L54.38 175.62L115 210.62L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 80,150 80,220 150,220 150,150" fill="#5eeded"/>
+<path d="M150 150L80 150L80 220L150 220L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 89.38,185 124.38,245.62 185,210.62 150,150" fill="#5ea6ed"/>
+<path d="M150 150L89.38 185L124.38 245.62L185 210.62L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 115,210.62 175.62,245.62 210.62,185 150,150" fill="#5e5eed"/>
+<path d="M150 150L115 210.62L175.62 245.62L210.62 185L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 150,220 220,220 220,150 150,150" fill="#a65eed"/>
+<path d="M150 150L150 220L220 220L220 150L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 185,210.62 245.62,175.62 210.62,115 150,150" fill="#ed5eed"/>
+<path d="M150 150L185 210.62L245.62 175.62L210.62 115L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 210.62,185 245.62,124.38 185,89.38 150,150" fill="#ed5ea6"/>
+<path d="M150 150L210.62 185L245.62 124.38L185 89.38L150 150" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <h4 class="task-item">Задание 15. Вертушка</h4>
   <p>Узор из лепестков — и лепесток вы уже открыли в з.7: два ребра с заливкой, третью сторону краска дорисует сама. Двенадцать лепестков по кругу: каждый начинается <strong>из центра</strong> — телепорт <code>home()</code>, поворот по компасу <code>set_heading(i * 30)</code> (№4 в деле: попробуйте тот же узор рулём — и поймёте, за что вам дали компас), затем <code>begin_fill(); forward(120); left(165); forward(120); end_fill();</code>. Цвет — HSL от номера, как в з.14.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;polygon points="150,150 270,150 154.09,118.94" fill="#f04242"/&gt;
-&lt;path d="M150 150L270 150L154.09 118.94" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 253.92,90 138.01,121.06" fill="#f09942"/&gt;
-&lt;path d="M150 150L253.92 90L138.01 121.06" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 210,46.08 125.15,130.93" fill="#f0f042"/&gt;
-&lt;path d="M150 150L210 46.08L125.15 130.93" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 150,30 118.94,145.91" fill="#99f042"/&gt;
-&lt;path d="M150 150L150 30L118.94 145.91" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 90,46.08 121.06,161.99" fill="#42f042"/&gt;
-&lt;path d="M150 150L90 46.08L121.06 161.99" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 46.08,90 130.93,174.85" fill="#42f099"/&gt;
-&lt;path d="M150 150L46.08 90L130.93 174.85" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 30,150 145.91,181.06" fill="#42f0f0"/&gt;
-&lt;path d="M150 150L30 150L145.91 181.06" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 46.08,210 161.99,178.94" fill="#4299f0"/&gt;
-&lt;path d="M150 150L46.08 210L161.99 178.94" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 90,253.92 174.85,169.07" fill="#4242f0"/&gt;
-&lt;path d="M150 150L90 253.92L174.85 169.07" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 150,270 181.06,154.09" fill="#9942f0"/&gt;
-&lt;path d="M150 150L150 270L181.06 154.09" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 210,253.92 178.94,138.01" fill="#f042f0"/&gt;
-&lt;path d="M150 150L210 253.92L178.94 138.01" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 253.92,210 169.07,125.15" fill="#f04299"/&gt;
-&lt;path d="M150 150L253.92 210L169.07 125.15" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<polygon points="150,150 270,150 154.09,118.94" fill="#f04242"/>
+<path d="M150 150L270 150L154.09 118.94" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 253.92,90 138.01,121.06" fill="#f09942"/>
+<path d="M150 150L253.92 90L138.01 121.06" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 210,46.08 125.15,130.93" fill="#f0f042"/>
+<path d="M150 150L210 46.08L125.15 130.93" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 150,30 118.94,145.91" fill="#99f042"/>
+<path d="M150 150L150 30L118.94 145.91" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 90,46.08 121.06,161.99" fill="#42f042"/>
+<path d="M150 150L90 46.08L121.06 161.99" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 46.08,90 130.93,174.85" fill="#42f099"/>
+<path d="M150 150L46.08 90L130.93 174.85" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 30,150 145.91,181.06" fill="#42f0f0"/>
+<path d="M150 150L30 150L145.91 181.06" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 46.08,210 161.99,178.94" fill="#4299f0"/>
+<path d="M150 150L46.08 210L161.99 178.94" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 90,253.92 174.85,169.07" fill="#4242f0"/>
+<path d="M150 150L90 253.92L174.85 169.07" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 150,270 181.06,154.09" fill="#9942f0"/>
+<path d="M150 150L150 270L181.06 154.09" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 210,253.92 178.94,138.01" fill="#f042f0"/>
+<path d="M150 150L210 253.92L178.94 138.01" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 253.92,210 169.07,125.15" fill="#f04299"/>
+<path d="M150 150L253.92 210L169.07 125.15" fill="none" stroke="#3c3c3c" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <h4 class="task-item">Задание 16. Кайма</h4>
   <p>Узор бывает не только круглым — бывает лентой. Бордюр из шести залитых ромбов в ряд: функция <code>diamond(int x, colors.Color c)</code> (внутри — телепорт в <code>(x, 0)</code>, наклон <code>set_heading(60)</code>, квадратный цикл — и квадрат становится ромбом!), а в <code>main</code> — цикл с <strong>чередованием</strong>: чётные ромбы синие, нечётные жёлтые — <code>mod(i, 2)</code> из консольного курса решает, кому какая краска. Осторожно с делением: помните из книги №3, что <code>/</code> хранит дробь — для чередования нужен именно <code>mod()</code>.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;polygon points="70,150 90,115.36 55.36,95.36 35.36,130 70,150" fill="#5a82f0"/&gt;
-&lt;path d="M70 150L90 115.36L55.36 95.36L35.36 130L70 150" fill="none" stroke="#28285a" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="110,150 130,115.36 95.36,95.36 75.36,130 110,150" fill="#fac846"/&gt;
-&lt;path d="M110 150L130 115.36L95.36 95.36L75.36 130L110 150" fill="none" stroke="#28285a" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 170,115.36 135.36,95.36 115.36,130 150,150" fill="#5a82f0"/&gt;
-&lt;path d="M150 150L170 115.36L135.36 95.36L115.36 130L150 150" fill="none" stroke="#28285a" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="190,150 210,115.36 175.36,95.36 155.36,130 190,150" fill="#fac846"/&gt;
-&lt;path d="M190 150L210 115.36L175.36 95.36L155.36 130L190 150" fill="none" stroke="#28285a" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="230,150 250,115.36 215.36,95.36 195.36,130 230,150" fill="#5a82f0"/&gt;
-&lt;path d="M230 150L250 115.36L215.36 95.36L195.36 130L230 150" fill="none" stroke="#28285a" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="270,150 290,115.36 255.36,95.36 235.36,130 270,150" fill="#fac846"/&gt;
-&lt;path d="M270 150L290 115.36L255.36 95.36L235.36 130L270 150" fill="none" stroke="#28285a" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<polygon points="70,150 90,115.36 55.36,95.36 35.36,130 70,150" fill="#5a82f0"/>
+<path d="M70 150L90 115.36L55.36 95.36L35.36 130L70 150" fill="none" stroke="#28285a" stroke-width="2" stroke-linecap="round"/>
+<polygon points="110,150 130,115.36 95.36,95.36 75.36,130 110,150" fill="#fac846"/>
+<path d="M110 150L130 115.36L95.36 95.36L75.36 130L110 150" fill="none" stroke="#28285a" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 170,115.36 135.36,95.36 115.36,130 150,150" fill="#5a82f0"/>
+<path d="M150 150L170 115.36L135.36 95.36L115.36 130L150 150" fill="none" stroke="#28285a" stroke-width="2" stroke-linecap="round"/>
+<polygon points="190,150 210,115.36 175.36,95.36 155.36,130 190,150" fill="#fac846"/>
+<path d="M190 150L210 115.36L175.36 95.36L155.36 130L190 150" fill="none" stroke="#28285a" stroke-width="2" stroke-linecap="round"/>
+<polygon points="230,150 250,115.36 215.36,95.36 195.36,130 230,150" fill="#5a82f0"/>
+<path d="M230 150L250 115.36L215.36 95.36L195.36 130L230 150" fill="none" stroke="#28285a" stroke-width="2" stroke-linecap="round"/>
+<polygon points="270,150 290,115.36 255.36,95.36 235.36,130 270,150" fill="#fac846"/>
+<path d="M270 150L290 115.36L255.36 95.36L235.36 130L270 150" fill="none" stroke="#28285a" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
 </div>
 
 <div class="docs-section">
@@ -345,47 +373,49 @@ main() {
     <li><strong>Внешнее кольцо</strong>: точки-кляксы <code>dot</code> по кругу между лепестками (телепорты по компасу — №4).</li>
     <li><code>speed = 0</code> — обязателен: линий будет много.</li>
   </ol>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#191432"/&gt;
-&lt;polygon points="150,150 255,150 164.07,97.5" fill="#dd3c3c"/&gt;
-&lt;path d="M150 150L255 150L164.07 97.5" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 240.93,97.5 135.93,97.5" fill="#dd8c3c"/&gt;
-&lt;path d="M150 150L240.93 97.5L135.93 97.5" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 202.5,59.07 111.57,111.57" fill="#dddd3c"/&gt;
-&lt;path d="M150 150L202.5 59.07L111.57 111.57" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 150,45 97.5,135.93" fill="#8cdd3c"/&gt;
-&lt;path d="M150 150L150 45L97.5 135.93" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 97.5,59.07 97.5,164.07" fill="#3cdd3c"/&gt;
-&lt;path d="M150 150L97.5 59.07L97.5 164.07" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 59.07,97.5 111.57,188.43" fill="#3cdd8c"/&gt;
-&lt;path d="M150 150L59.07 97.5L111.57 188.43" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 45,150 135.93,202.5" fill="#3cdddd"/&gt;
-&lt;path d="M150 150L45 150L135.93 202.5" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 59.07,202.5 164.07,202.5" fill="#3c8cdd"/&gt;
-&lt;path d="M150 150L59.07 202.5L164.07 202.5" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 97.5,240.93 188.43,188.43" fill="#3c3cdd"/&gt;
-&lt;path d="M150 150L97.5 240.93L188.43 188.43" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 150,255 202.5,164.07" fill="#8c3cdd"/&gt;
-&lt;path d="M150 150L150 255L202.5 164.07" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 202.5,240.93 202.5,135.93" fill="#dd3cdd"/&gt;
-&lt;path d="M150 150L202.5 240.93L202.5 135.93" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 240.93,202.5 188.43,111.57" fill="#dd3c8c"/&gt;
-&lt;path d="M150 150L240.93 202.5L188.43 111.57" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="136,175 144,175 150.93,171 154.93,164.07 154.93,156.07 150.93,149.14 144,145.14 136,145.14 129.07,149.14 125.07,156.07 125.07,164.07 129.07,171 136,175" fill="#ffd23c"/&gt;
-&lt;path d="M136 175L144 175L150.93 171L154.93 164.07L154.93 156.07L150.93 149.14L144 145.14L136 145.14L129.07 149.14L125.07 156.07L125.07 164.07L129.07 171L136 175" fill="none" stroke="#ffe68c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;circle cx="270.74" cy="117.65" r="2.5" fill="#ffffff"/&gt;
-&lt;circle cx="238.39" cy="61.61" r="2.5" fill="#ffffff"/&gt;
-&lt;circle cx="182.35" cy="29.26" r="2.5" fill="#ffffff"/&gt;
-&lt;circle cx="117.65" cy="29.26" r="2.5" fill="#ffffff"/&gt;
-&lt;circle cx="61.61" cy="61.61" r="2.5" fill="#ffffff"/&gt;
-&lt;circle cx="29.26" cy="117.65" r="2.5" fill="#ffffff"/&gt;
-&lt;circle cx="29.26" cy="182.35" r="2.5" fill="#ffffff"/&gt;
-&lt;circle cx="61.61" cy="238.39" r="2.5" fill="#ffffff"/&gt;
-&lt;circle cx="117.65" cy="270.74" r="2.5" fill="#ffffff"/&gt;
-&lt;circle cx="182.35" cy="270.74" r="2.5" fill="#ffffff"/&gt;
-&lt;circle cx="238.39" cy="238.39" r="2.5" fill="#ffffff"/&gt;
-&lt;circle cx="270.74" cy="182.35" r="2.5" fill="#ffffff"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#191432"/>
+<polygon points="150,150 255,150 164.07,97.5" fill="#dd3c3c"/>
+<path d="M150 150L255 150L164.07 97.5" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 240.93,97.5 135.93,97.5" fill="#dd8c3c"/>
+<path d="M150 150L240.93 97.5L135.93 97.5" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 202.5,59.07 111.57,111.57" fill="#dddd3c"/>
+<path d="M150 150L202.5 59.07L111.57 111.57" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 150,45 97.5,135.93" fill="#8cdd3c"/>
+<path d="M150 150L150 45L97.5 135.93" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 97.5,59.07 97.5,164.07" fill="#3cdd3c"/>
+<path d="M150 150L97.5 59.07L97.5 164.07" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 59.07,97.5 111.57,188.43" fill="#3cdd8c"/>
+<path d="M150 150L59.07 97.5L111.57 188.43" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 45,150 135.93,202.5" fill="#3cdddd"/>
+<path d="M150 150L45 150L135.93 202.5" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 59.07,202.5 164.07,202.5" fill="#3c8cdd"/>
+<path d="M150 150L59.07 202.5L164.07 202.5" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 97.5,240.93 188.43,188.43" fill="#3c3cdd"/>
+<path d="M150 150L97.5 240.93L188.43 188.43" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 150,255 202.5,164.07" fill="#8c3cdd"/>
+<path d="M150 150L150 255L202.5 164.07" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 202.5,240.93 202.5,135.93" fill="#dd3cdd"/>
+<path d="M150 150L202.5 240.93L202.5 135.93" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 240.93,202.5 188.43,111.57" fill="#dd3c8c"/>
+<path d="M150 150L240.93 202.5L188.43 111.57" fill="none" stroke="#f0e6c8" stroke-width="2" stroke-linecap="round"/>
+<polygon points="136,175 144,175 150.93,171 154.93,164.07 154.93,156.07 150.93,149.14 144,145.14 136,145.14 129.07,149.14 125.07,156.07 125.07,164.07 129.07,171 136,175" fill="#ffd23c"/>
+<path d="M136 175L144 175L150.93 171L154.93 164.07L154.93 156.07L150.93 149.14L144 145.14L136 145.14L129.07 149.14L125.07 156.07L125.07 164.07L129.07 171L136 175" fill="none" stroke="#ffe68c" stroke-width="2" stroke-linecap="round"/>
+<circle cx="270.74" cy="117.65" r="2.5" fill="#ffffff"/>
+<circle cx="238.39" cy="61.61" r="2.5" fill="#ffffff"/>
+<circle cx="182.35" cy="29.26" r="2.5" fill="#ffffff"/>
+<circle cx="117.65" cy="29.26" r="2.5" fill="#ffffff"/>
+<circle cx="61.61" cy="61.61" r="2.5" fill="#ffffff"/>
+<circle cx="29.26" cy="117.65" r="2.5" fill="#ffffff"/>
+<circle cx="29.26" cy="182.35" r="2.5" fill="#ffffff"/>
+<circle cx="61.61" cy="238.39" r="2.5" fill="#ffffff"/>
+<circle cx="117.65" cy="270.74" r="2.5" fill="#ffffff"/>
+<circle cx="182.35" cy="270.74" r="2.5" fill="#ffffff"/>
+<circle cx="238.39" cy="238.39" r="2.5" fill="#ffffff"/>
+<circle cx="270.74" cy="182.35" r="2.5" fill="#ffffff"/>
+</svg>
+</div>
   <p>Превью — образец духа, не эталон: ваши цвета, ваш ритм, ваше число лепестков. Сдача — картинка плюс устный экзамен: сколько сеансов заливки в вашей программе? почему лепестки рисуются раньше сердцевины? (Порядок рисования — это порядок слоёв: кто позже, тот сверху.)</p>
 </div>
 
@@ -394,108 +424,112 @@ main() {
   <p><em>Комбинацию инструментов не подсказываем — в этом и звёздочка.</em></p>
   <h4 class="task-item task-star">Задание 18 ⭐. Ромашка</h4>
   <p>Соберите цветок: белые лепестки (не меньше восьми) вокруг жёлтой сердцевины на нежном фоне. Всё нужное в книге уже было: лепесток из двух рёбер, поворот по компасу из центра, а сердцевину, между прочим, быстрее всего даёт большая клякса <code>dot(46)</code> — она рисуется цветом <strong>пера</strong>, так что перед ней пригодится смена <code>pen_color</code> (книга №2 не забыта!). Тонкость композиции: лепестки — «стеклом», без обводки или с белым пером; и подумайте, почему сердцевину надо рисовать <strong>после</strong> лепестков, а не до.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#bee6fa"/&gt;
-&lt;polygon points="150,150 235,150 155.13,120.93" fill="#ffffff"/&gt;
-&lt;path d="M150 150L235 150L155.13 120.93" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 218.77,100.04 137.06,123.47" fill="#ffffff"/&gt;
-&lt;path d="M150 150L218.77 100.04L137.06 123.47" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 176.27,69.16 123.94,136.14" fill="#ffffff"/&gt;
-&lt;path d="M150 150L176.27 69.16L123.94 136.14" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 123.73,69.16 120.77,154.11" fill="#ffffff"/&gt;
-&lt;path d="M150 150L123.73 69.16L120.77 154.11" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 81.23,100.04 128.76,170.51" fill="#ffffff"/&gt;
-&lt;path d="M150 150L81.23 100.04L128.76 170.51" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 65,150 144.87,179.07" fill="#ffffff"/&gt;
-&lt;path d="M150 150L65 150L144.87 179.07" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 81.23,199.96 162.94,176.53" fill="#ffffff"/&gt;
-&lt;path d="M150 150L81.23 199.96L162.94 176.53" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 123.73,230.84 176.06,163.86" fill="#ffffff"/&gt;
-&lt;path d="M150 150L123.73 230.84L176.06 163.86" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 176.27,230.84 179.23,145.89" fill="#ffffff"/&gt;
-&lt;path d="M150 150L176.27 230.84L179.23 145.89" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 218.77,199.96 171.24,129.49" fill="#ffffff"/&gt;
-&lt;path d="M150 150L218.77 199.96L171.24 129.49" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;circle cx="150" cy="150" r="23" fill="#ffc828"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#bee6fa"/>
+<polygon points="150,150 235,150 155.13,120.93" fill="#ffffff"/>
+<path d="M150 150L235 150L155.13 120.93" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 218.77,100.04 137.06,123.47" fill="#ffffff"/>
+<path d="M150 150L218.77 100.04L137.06 123.47" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 176.27,69.16 123.94,136.14" fill="#ffffff"/>
+<path d="M150 150L176.27 69.16L123.94 136.14" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 123.73,69.16 120.77,154.11" fill="#ffffff"/>
+<path d="M150 150L123.73 69.16L120.77 154.11" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 81.23,100.04 128.76,170.51" fill="#ffffff"/>
+<path d="M150 150L81.23 100.04L128.76 170.51" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 65,150 144.87,179.07" fill="#ffffff"/>
+<path d="M150 150L65 150L144.87 179.07" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 81.23,199.96 162.94,176.53" fill="#ffffff"/>
+<path d="M150 150L81.23 199.96L162.94 176.53" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 123.73,230.84 176.06,163.86" fill="#ffffff"/>
+<path d="M150 150L123.73 230.84L176.06 163.86" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 176.27,230.84 179.23,145.89" fill="#ffffff"/>
+<path d="M150 150L176.27 230.84L179.23 145.89" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 218.77,199.96 171.24,129.49" fill="#ffffff"/>
+<path d="M150 150L218.77 199.96L171.24 129.49" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+<circle cx="150" cy="150" r="23" fill="#ffc828"/>
+</svg>
+</div>
   <h4 class="task-item task-star">Задание 19 ⭐⭐. Генеративный сад</h4>
   <p>Финал — программа-художник, у которой <strong>каждый запуск рисует новую картину</strong>. Утреннее небо, залитая полоса земли, а на ней — цветы: функция <code>flower(int x, int y, int size, int hue)</code> рисует стебель от земли до точки цветка, восемь лепестков вокруг неё (лепестки — приём з.7, поворот — по компасу, цвет — <code>colors.HSL(hue, 80, 60)</code>) и жёлтую серединку-кляксу (<code>dot(div(size, 2))</code> — и вспомните, почему тут <code>div</code>, а не косая черта: <code>dot</code> требует целого!). А дальше — сад: цикл вызывает <code>flower</code> с <strong>случайными</strong> адресами, размерами и оттенками (<code>random</code> — консольный багаж; следите, чтобы hue не вылез за 360!). Запустите трижды — три разных сада. Это называется генеративным искусством: художник пишет не картину, а <strong>закон</strong>, по которому картины рождаются, — и продаются такие работы, между прочим, на настоящих аукционах.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#d2f0ff"/&gt;
-&lt;polygon points="0,300 300,300 300,240 0,240 0,300" fill="#8cd278"/&gt;
-&lt;path d="M0 300L300 300L300 240L0 240L0 300" fill="none" stroke="#5ab45a" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;path d="M60 240L60 160" fill="none" stroke="#28783c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="60,160 88,160 63.75,146" fill="#eb4747"/&gt;
-&lt;path d="M60 160L88 160L63.75 146" fill="none" stroke="#f07575" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="60,160 79.8,140.2 52.75,147.45" fill="#eb4747"/&gt;
-&lt;path d="M60 160L79.8 140.2L52.75 147.45" fill="none" stroke="#f07575" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="60,160 60,132 46,156.25" fill="#eb4747"/&gt;
-&lt;path d="M60 160L60 132L46 156.25" fill="none" stroke="#f07575" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="60,160 40.2,140.2 47.45,167.25" fill="#eb4747"/&gt;
-&lt;path d="M60 160L40.2 140.2L47.45 167.25" fill="none" stroke="#f07575" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="60,160 32,160 56.25,174" fill="#eb4747"/&gt;
-&lt;path d="M60 160L32 160L56.25 174" fill="none" stroke="#f07575" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="60,160 40.2,179.8 67.25,172.55" fill="#eb4747"/&gt;
-&lt;path d="M60 160L40.2 179.8L67.25 172.55" fill="none" stroke="#f07575" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="60,160 60,188 74,163.75" fill="#eb4747"/&gt;
-&lt;path d="M60 160L60 188L74 163.75" fill="none" stroke="#f07575" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="60,160 79.8,179.8 72.55,152.75" fill="#eb4747"/&gt;
-&lt;path d="M60 160L79.8 179.8L72.55 152.75" fill="none" stroke="#f07575" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;circle cx="60" cy="160" r="7" fill="#ffdc50"/&gt;
-&lt;path d="M130 240L130 120" fill="none" stroke="#28783c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="130,120 164,120 134.56,103" fill="#b447eb"/&gt;
-&lt;path d="M130 120L164 120L134.56 103" fill="none" stroke="#c775f0" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="130,120 154.04,95.96 121.2,104.76" fill="#b447eb"/&gt;
-&lt;path d="M130 120L154.04 95.96L121.2 104.76" fill="none" stroke="#c775f0" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="130,120 130,86 113,115.44" fill="#b447eb"/&gt;
-&lt;path d="M130 120L130 86L113 115.44" fill="none" stroke="#c775f0" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="130,120 105.96,95.96 114.76,128.8" fill="#b447eb"/&gt;
-&lt;path d="M130 120L105.96 95.96L114.76 128.8" fill="none" stroke="#c775f0" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="130,120 96,120 125.44,137" fill="#b447eb"/&gt;
-&lt;path d="M130 120L96 120L125.44 137" fill="none" stroke="#c775f0" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="130,120 105.96,144.04 138.8,135.24" fill="#b447eb"/&gt;
-&lt;path d="M130 120L105.96 144.04L138.8 135.24" fill="none" stroke="#c775f0" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="130,120 130,154 147,124.56" fill="#b447eb"/&gt;
-&lt;path d="M130 120L130 154L147 124.56" fill="none" stroke="#c775f0" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="130,120 154.04,144.04 145.24,111.2" fill="#b447eb"/&gt;
-&lt;path d="M130 120L154.04 144.04L145.24 111.2" fill="none" stroke="#c775f0" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;circle cx="130" cy="120" r="8.5" fill="#ffdc50"/&gt;
-&lt;path d="M205 240L205 175" fill="none" stroke="#28783c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="205,175 229,175 208.22,163" fill="#ebb447"/&gt;
-&lt;path d="M205 175L229 175L208.22 163" fill="none" stroke="#f0c775" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="205,175 221.97,158.03 198.79,164.24" fill="#ebb447"/&gt;
-&lt;path d="M205 175L221.97 158.03L198.79 164.24" fill="none" stroke="#f0c775" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="205,175 205,151 193,171.78" fill="#ebb447"/&gt;
-&lt;path d="M205 175L205 151L193 171.78" fill="none" stroke="#f0c775" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="205,175 188.03,158.03 194.24,181.21" fill="#ebb447"/&gt;
-&lt;path d="M205 175L188.03 158.03L194.24 181.21" fill="none" stroke="#f0c775" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="205,175 181,175 201.78,187" fill="#ebb447"/&gt;
-&lt;path d="M205 175L181 175L201.78 187" fill="none" stroke="#f0c775" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="205,175 188.03,191.97 211.21,185.76" fill="#ebb447"/&gt;
-&lt;path d="M205 175L188.03 191.97L211.21 185.76" fill="none" stroke="#f0c775" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="205,175 205,199 217,178.22" fill="#ebb447"/&gt;
-&lt;path d="M205 175L205 199L217 178.22" fill="none" stroke="#f0c775" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="205,175 221.97,191.97 215.76,168.79" fill="#ebb447"/&gt;
-&lt;path d="M205 175L221.97 191.97L215.76 168.79" fill="none" stroke="#f0c775" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;circle cx="205" cy="175" r="6" fill="#ffdc50"/&gt;
-&lt;path d="M255 240L255 110" fill="none" stroke="#28783c" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="255,110 285,110 259.02,95" fill="#eb47b4"/&gt;
-&lt;path d="M255 110L285 110L259.02 95" fill="none" stroke="#f075c7" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="255,110 276.21,88.79 247.24,96.55" fill="#eb47b4"/&gt;
-&lt;path d="M255 110L276.21 88.79L247.24 96.55" fill="none" stroke="#f075c7" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="255,110 255,80 240,105.98" fill="#eb47b4"/&gt;
-&lt;path d="M255 110L255 80L240 105.98" fill="none" stroke="#f075c7" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="255,110 233.79,88.79 241.55,117.76" fill="#eb47b4"/&gt;
-&lt;path d="M255 110L233.79 88.79L241.55 117.76" fill="none" stroke="#f075c7" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="255,110 225,110 250.98,125" fill="#eb47b4"/&gt;
-&lt;path d="M255 110L225 110L250.98 125" fill="none" stroke="#f075c7" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="255,110 233.79,131.21 262.76,123.45" fill="#eb47b4"/&gt;
-&lt;path d="M255 110L233.79 131.21L262.76 123.45" fill="none" stroke="#f075c7" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="255,110 255,140 270,114.02" fill="#eb47b4"/&gt;
-&lt;path d="M255 110L255 140L270 114.02" fill="none" stroke="#f075c7" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="255,110 276.21,131.21 268.45,102.24" fill="#eb47b4"/&gt;
-&lt;path d="M255 110L276.21 131.21L268.45 102.24" fill="none" stroke="#f075c7" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;circle cx="255" cy="110" r="7.5" fill="#ffdc50"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#d2f0ff"/>
+<polygon points="0,300 300,300 300,240 0,240 0,300" fill="#8cd278"/>
+<path d="M0 300L300 300L300 240L0 240L0 300" fill="none" stroke="#5ab45a" stroke-width="2" stroke-linecap="round"/>
+<path d="M60 240L60 160" fill="none" stroke="#28783c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="60,160 88,160 63.75,146" fill="#eb4747"/>
+<path d="M60 160L88 160L63.75 146" fill="none" stroke="#f07575" stroke-width="2" stroke-linecap="round"/>
+<polygon points="60,160 79.8,140.2 52.75,147.45" fill="#eb4747"/>
+<path d="M60 160L79.8 140.2L52.75 147.45" fill="none" stroke="#f07575" stroke-width="2" stroke-linecap="round"/>
+<polygon points="60,160 60,132 46,156.25" fill="#eb4747"/>
+<path d="M60 160L60 132L46 156.25" fill="none" stroke="#f07575" stroke-width="2" stroke-linecap="round"/>
+<polygon points="60,160 40.2,140.2 47.45,167.25" fill="#eb4747"/>
+<path d="M60 160L40.2 140.2L47.45 167.25" fill="none" stroke="#f07575" stroke-width="2" stroke-linecap="round"/>
+<polygon points="60,160 32,160 56.25,174" fill="#eb4747"/>
+<path d="M60 160L32 160L56.25 174" fill="none" stroke="#f07575" stroke-width="2" stroke-linecap="round"/>
+<polygon points="60,160 40.2,179.8 67.25,172.55" fill="#eb4747"/>
+<path d="M60 160L40.2 179.8L67.25 172.55" fill="none" stroke="#f07575" stroke-width="2" stroke-linecap="round"/>
+<polygon points="60,160 60,188 74,163.75" fill="#eb4747"/>
+<path d="M60 160L60 188L74 163.75" fill="none" stroke="#f07575" stroke-width="2" stroke-linecap="round"/>
+<polygon points="60,160 79.8,179.8 72.55,152.75" fill="#eb4747"/>
+<path d="M60 160L79.8 179.8L72.55 152.75" fill="none" stroke="#f07575" stroke-width="2" stroke-linecap="round"/>
+<circle cx="60" cy="160" r="7" fill="#ffdc50"/>
+<path d="M130 240L130 120" fill="none" stroke="#28783c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="130,120 164,120 134.56,103" fill="#b447eb"/>
+<path d="M130 120L164 120L134.56 103" fill="none" stroke="#c775f0" stroke-width="2" stroke-linecap="round"/>
+<polygon points="130,120 154.04,95.96 121.2,104.76" fill="#b447eb"/>
+<path d="M130 120L154.04 95.96L121.2 104.76" fill="none" stroke="#c775f0" stroke-width="2" stroke-linecap="round"/>
+<polygon points="130,120 130,86 113,115.44" fill="#b447eb"/>
+<path d="M130 120L130 86L113 115.44" fill="none" stroke="#c775f0" stroke-width="2" stroke-linecap="round"/>
+<polygon points="130,120 105.96,95.96 114.76,128.8" fill="#b447eb"/>
+<path d="M130 120L105.96 95.96L114.76 128.8" fill="none" stroke="#c775f0" stroke-width="2" stroke-linecap="round"/>
+<polygon points="130,120 96,120 125.44,137" fill="#b447eb"/>
+<path d="M130 120L96 120L125.44 137" fill="none" stroke="#c775f0" stroke-width="2" stroke-linecap="round"/>
+<polygon points="130,120 105.96,144.04 138.8,135.24" fill="#b447eb"/>
+<path d="M130 120L105.96 144.04L138.8 135.24" fill="none" stroke="#c775f0" stroke-width="2" stroke-linecap="round"/>
+<polygon points="130,120 130,154 147,124.56" fill="#b447eb"/>
+<path d="M130 120L130 154L147 124.56" fill="none" stroke="#c775f0" stroke-width="2" stroke-linecap="round"/>
+<polygon points="130,120 154.04,144.04 145.24,111.2" fill="#b447eb"/>
+<path d="M130 120L154.04 144.04L145.24 111.2" fill="none" stroke="#c775f0" stroke-width="2" stroke-linecap="round"/>
+<circle cx="130" cy="120" r="8.5" fill="#ffdc50"/>
+<path d="M205 240L205 175" fill="none" stroke="#28783c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="205,175 229,175 208.22,163" fill="#ebb447"/>
+<path d="M205 175L229 175L208.22 163" fill="none" stroke="#f0c775" stroke-width="2" stroke-linecap="round"/>
+<polygon points="205,175 221.97,158.03 198.79,164.24" fill="#ebb447"/>
+<path d="M205 175L221.97 158.03L198.79 164.24" fill="none" stroke="#f0c775" stroke-width="2" stroke-linecap="round"/>
+<polygon points="205,175 205,151 193,171.78" fill="#ebb447"/>
+<path d="M205 175L205 151L193 171.78" fill="none" stroke="#f0c775" stroke-width="2" stroke-linecap="round"/>
+<polygon points="205,175 188.03,158.03 194.24,181.21" fill="#ebb447"/>
+<path d="M205 175L188.03 158.03L194.24 181.21" fill="none" stroke="#f0c775" stroke-width="2" stroke-linecap="round"/>
+<polygon points="205,175 181,175 201.78,187" fill="#ebb447"/>
+<path d="M205 175L181 175L201.78 187" fill="none" stroke="#f0c775" stroke-width="2" stroke-linecap="round"/>
+<polygon points="205,175 188.03,191.97 211.21,185.76" fill="#ebb447"/>
+<path d="M205 175L188.03 191.97L211.21 185.76" fill="none" stroke="#f0c775" stroke-width="2" stroke-linecap="round"/>
+<polygon points="205,175 205,199 217,178.22" fill="#ebb447"/>
+<path d="M205 175L205 199L217 178.22" fill="none" stroke="#f0c775" stroke-width="2" stroke-linecap="round"/>
+<polygon points="205,175 221.97,191.97 215.76,168.79" fill="#ebb447"/>
+<path d="M205 175L221.97 191.97L215.76 168.79" fill="none" stroke="#f0c775" stroke-width="2" stroke-linecap="round"/>
+<circle cx="205" cy="175" r="6" fill="#ffdc50"/>
+<path d="M255 240L255 110" fill="none" stroke="#28783c" stroke-width="2" stroke-linecap="round"/>
+<polygon points="255,110 285,110 259.02,95" fill="#eb47b4"/>
+<path d="M255 110L285 110L259.02 95" fill="none" stroke="#f075c7" stroke-width="2" stroke-linecap="round"/>
+<polygon points="255,110 276.21,88.79 247.24,96.55" fill="#eb47b4"/>
+<path d="M255 110L276.21 88.79L247.24 96.55" fill="none" stroke="#f075c7" stroke-width="2" stroke-linecap="round"/>
+<polygon points="255,110 255,80 240,105.98" fill="#eb47b4"/>
+<path d="M255 110L255 80L240 105.98" fill="none" stroke="#f075c7" stroke-width="2" stroke-linecap="round"/>
+<polygon points="255,110 233.79,88.79 241.55,117.76" fill="#eb47b4"/>
+<path d="M255 110L233.79 88.79L241.55 117.76" fill="none" stroke="#f075c7" stroke-width="2" stroke-linecap="round"/>
+<polygon points="255,110 225,110 250.98,125" fill="#eb47b4"/>
+<path d="M255 110L225 110L250.98 125" fill="none" stroke="#f075c7" stroke-width="2" stroke-linecap="round"/>
+<polygon points="255,110 233.79,131.21 262.76,123.45" fill="#eb47b4"/>
+<path d="M255 110L233.79 131.21L262.76 123.45" fill="none" stroke="#f075c7" stroke-width="2" stroke-linecap="round"/>
+<polygon points="255,110 255,140 270,114.02" fill="#eb47b4"/>
+<path d="M255 110L255 140L270 114.02" fill="none" stroke="#f075c7" stroke-width="2" stroke-linecap="round"/>
+<polygon points="255,110 276.21,131.21 268.45,102.24" fill="#eb47b4"/>
+<path d="M255 110L276.21 131.21L268.45 102.24" fill="none" stroke="#f075c7" stroke-width="2" stroke-linecap="round"/>
+<circle cx="255" cy="110" r="7.5" fill="#ffdc50"/>
+</svg>
+</div>
   <p>Превью — один из бесконечных вариантов, ваш сад будет другим (в этом и суть). Сдача: три запуска при преподавателе + устный экзамен: покажите, где в программе случайность, а где закон; что будет, если случайный <code>hue</code> окажется 380, и как вы от этого защитились. Одна черепаха вырастила весь сад — а в следующей книге их станет много; и берегите программу: в последней книге раздела вы научитесь сохранять такие картины в файл, и сад станет открыткой.</p>
 </div>

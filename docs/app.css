@@ -530,7 +530,9 @@ button:disabled:active {
 
 .color-picker-menu {
   position: absolute;
-  z-index: 11;
+  /* Выше внутренних слоёв Monaco (скроллбар/виджеты доходят до z-index 40):
+     иначе ховер по скроллбару редактора всплывал ПОВЕРХ генератора цвета. */
+  z-index: 60;
   top: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
