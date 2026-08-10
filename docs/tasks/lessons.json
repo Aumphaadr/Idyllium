@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-08T17:16:20.614Z",
+  "generatedAt": "2026-08-10T11:16:09.629Z",
   "sourceRoot": "docs/manual-content/tasks",
   "sections": [
     {
@@ -322,12 +322,12 @@
         {
           "id": "errors",
           "title": "Типичные ошибки",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Типичные ошибки»",
           "file": "content/console/errors.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/errors.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "try-catch",
@@ -350,12 +350,12 @@
         {
           "id": "window",
           "title": "Первое графическое приложение",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Первое графическое приложение»",
           "file": "content/widgets/window.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/window.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "button",
@@ -580,22 +580,22 @@
         {
           "id": "data-widgets",
           "title": "Витрины данных",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Витрины данных»",
           "file": "content/widgets/data-widgets.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/data-widgets.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "errors",
           "title": "Типичные ошибки",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Типичные ошибки»",
           "file": "content/widgets/errors.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/widgets/errors.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         }
       ]
     },
@@ -608,72 +608,72 @@
         {
           "id": "intro",
           "title": "Знакомство с черепахой",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Знакомство с черепахой»",
           "file": "content/turtle/intro.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/turtle/intro.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "pen",
           "title": "Перо и скорость",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Перо и скорость»",
           "file": "content/turtle/pen.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/turtle/pen.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "shapes",
           "title": "Углы и многоугольники",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Углы и многоугольники»",
           "file": "content/turtle/shapes.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/turtle/shapes.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "coordinates",
           "title": "Координаты поля",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Координаты поля»",
           "file": "content/turtle/coordinates.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/turtle/coordinates.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "fill",
           "title": "Заливка и узоры",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Заливка и узоры»",
           "file": "content/turtle/fill.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/turtle/fill.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "turtles",
           "title": "Несколько черепах",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Несколько черепах»",
           "file": "content/turtle/turtles.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/turtle/turtles.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "svg",
           "title": "Векторная картинка SVG",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Векторная картинка SVG»",
           "file": "content/turtle/svg.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/turtle/svg.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         }
       ]
     },

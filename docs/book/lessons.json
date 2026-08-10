@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-08T17:16:20.614Z",
+  "generatedAt": "2026-08-10T11:16:09.629Z",
   "sourceRoot": "packages/docs",
   "sections": [
     {
@@ -327,7 +327,7 @@
           "sourceFile": "cli/027_errors.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "try-catch",
@@ -355,7 +355,7 @@
           "sourceFile": "widgets/000_window.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "button",
@@ -585,7 +585,7 @@
           "sourceFile": "docs/manual-content/widgets/data-widgets.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "errors",
@@ -595,7 +595,7 @@
           "sourceFile": "widgets/016_errors.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         }
       ]
     },
@@ -613,7 +613,7 @@
           "sourceFile": "docs/manual-content/turtle/intro.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "pen",
@@ -623,7 +623,7 @@
           "sourceFile": "docs/manual-content/turtle/pen.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "shapes",
@@ -633,7 +633,7 @@
           "sourceFile": "docs/manual-content/turtle/shapes.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "coordinates",
@@ -643,7 +643,7 @@
           "sourceFile": "docs/manual-content/turtle/coordinates.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "fill",
@@ -653,7 +653,7 @@
           "sourceFile": "docs/manual-content/turtle/fill.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "turtles",
@@ -663,7 +663,7 @@
           "sourceFile": "docs/manual-content/turtle/turtles.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "svg",
@@ -673,7 +673,7 @@
           "sourceFile": "docs/manual-content/turtle/svg.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         }
       ]
     },
