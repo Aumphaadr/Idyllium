@@ -35,38 +35,46 @@ main() {
     }
 }
 </script></idyl-code-block>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M40 220L80 220L80 192L120 192L120 164L160 164L160 136L200 136L200 108" fill="none" stroke="#ff0000" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;path d="M260 80L220 80L220 108L180 108L180 136L140 136L140 164L100 164L100 192" fill="none" stroke="#0000ff" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M40 220L80 220L80 192L120 192L120 164L160 164L160 136L200 136L200 108" fill="none" stroke="#ff0000" stroke-width="2" stroke-linecap="round"/>
+<path d="M260 80L220 80L220 108L180 108L180 136L140 136L140 164L100 164L100 192" fill="none" stroke="#0000ff" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Три вещи для проговаривания. Первая: <strong>каждое объявление рождает новую черепаху</strong> — после двух объявлений на поле два треугольничка. Вторая: <code>anna.forward(60)</code> двигает <strong>только Анну</strong> — команда всегда адресована по имени, у каждой черепахи своё перо и свой нос (Борис развёрнут <code>left(180)</code> — и его «вперёд» смотрит влево!). Третья: черепахи ходят по очереди внутри одного витка — но глазу кажется, что <strong>одновременно</strong>. Запустите на <code>speed = 3</code> и убедитесь.</p>
   <h3 class="task-group">Самостоятельная практика</h3>
   <h4 class="task-item">Задание 2. Дуэт квадратов</h4>
   <p>Две черепахи со своими именами (придумайте!) и цветами рисуют два квадрата 80 в разных углах поля — <strong>одновременно</strong>, чередованием в одном цикле: виток рисует по одной стороне каждого. Проверка понимания: сколько всего витков у цикла? (Четыре — по числу сторон, а не восемь.)</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M40 260L120 260L120 180L40 180L40 260" fill="none" stroke="#e65a3c" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;path d="M180 120L260 120L260 40L180 40L180 120" fill="none" stroke="#3c78e6" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M40 260L120 260L120 180L40 180L40 260" fill="none" stroke="#e65a3c" stroke-width="3" stroke-linecap="round"/>
+<path d="M180 120L260 120L260 40L180 40L180 120" fill="none" stroke="#3c78e6" stroke-width="3" stroke-linecap="round"/>
+</svg>
+</div>
   <h4 class="task-item">Задание 3. У каждой своё</h4>
   <p>Опыт про «своё состояние». Две черепахи стартуют с одной вертикали: у первой перо толщиной 8 и шаг 40, у второй — толщиной 2 и шаг 30. Шесть шагов чередованием — и доклад в консоль:</p>
   <idyl-output-block>толстая: x = 120, перо 8
 тонкая: x = 60, перо 2</idyl-output-block>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M30 120L70 120L110 120L150 120L190 120L230 120L270 120" fill="none" stroke="#c83ca0" stroke-width="8" stroke-linecap="round"/&gt;
-&lt;path d="M30 180L60 180L90 180L120 180L150 180L180 180L210 180" fill="none" stroke="#3cb45a" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M30 120L70 120L110 120L150 120L190 120L230 120L270 120" fill="none" stroke="#c83ca0" stroke-width="8" stroke-linecap="round"/>
+<path d="M30 180L60 180L90 180L120 180L150 180L180 180L210 180" fill="none" stroke="#3cb45a" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Одна программа — а <code>x</code> у черепах разные, и толщина разная, и цвет. Настройки не перепутались и не «перетекли»: <strong>у каждой черепахи всё своё</strong>. Это и есть то самое слово «состояние», которое всплывёт в разделе ООП.</p>
   <h4 class="task-item">Задание 4. Трио спиралей</h4>
   <p>Три черепахи (правило: раз тема — «много», меньше трёх не берём!) выходят из центра носами в три стороны — <code>set_heading(90)</code>, <code>set_heading(210)</code>, <code>set_heading(330)</code> — и в одном цикле накручивают одинаковые растущие спирали: <code>forward(4 + i * 3); left(60);</code>. Тридцать витков, три цвета.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M150 150L150 146L143.94 142.5L135.28 147.5L135.28 160.5L149.13 168.5L165.59 159L165.59 137L143.94 124.5L119.69 138.5L119.69 169.5L149.13 186.5L181.18 168L181.18 128L143.94 106.5L104.1 129.5L104.1 178.5L149.13 204.5L196.77 177L196.77 119L143.94 88.5L88.51 120.5L88.51 187.5L149.13 222.5L212.35 186L212.35 110L143.94 70.5L72.92 111.5L72.92 196.5L149.13 240.5L227.94 195" fill="none" stroke="#e65050" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;path d="M150 150L146.54 152L146.54 159L155.2 164L166.45 157.5L166.45 141.5L150 132L130.95 143L130.95 168L155.2 182L182.04 166.5L182.04 132.5L150 114L115.36 134L115.36 177L155.2 200L197.63 175.5L197.63 123.5L150 96L99.77 125L99.77 186L155.2 218L213.22 184.5L213.22 114.5L150 78L84.18 116L84.18 195L155.2 236L228.81 193.5L228.81 105.5L150 60" fill="none" stroke="#50a0e6" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;path d="M150 150L153.46 152L159.53 148.5L159.53 138.5L148.27 132L134.41 140L134.41 159L153.46 170L175.11 157.5L175.11 129.5L148.27 114L118.82 131L118.82 168L153.46 188L190.7 166.5L190.7 120.5L148.27 96L103.23 122L103.23 177L153.46 206L206.29 175.5L206.29 111.5L148.27 78L87.65 113L87.65 186L153.46 224L221.88 184.5L221.88 102.5L148.27 60L72.06 104L72.06 195" fill="none" stroke="#5ac86e" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M150 150L150 146L143.94 142.5L135.28 147.5L135.28 160.5L149.13 168.5L165.59 159L165.59 137L143.94 124.5L119.69 138.5L119.69 169.5L149.13 186.5L181.18 168L181.18 128L143.94 106.5L104.1 129.5L104.1 178.5L149.13 204.5L196.77 177L196.77 119L143.94 88.5L88.51 120.5L88.51 187.5L149.13 222.5L212.35 186L212.35 110L143.94 70.5L72.92 111.5L72.92 196.5L149.13 240.5L227.94 195" fill="none" stroke="#e65050" stroke-width="2" stroke-linecap="round"/>
+<path d="M150 150L146.54 152L146.54 159L155.2 164L166.45 157.5L166.45 141.5L150 132L130.95 143L130.95 168L155.2 182L182.04 166.5L182.04 132.5L150 114L115.36 134L115.36 177L155.2 200L197.63 175.5L197.63 123.5L150 96L99.77 125L99.77 186L155.2 218L213.22 184.5L213.22 114.5L150 78L84.18 116L84.18 195L155.2 236L228.81 193.5L228.81 105.5L150 60" fill="none" stroke="#50a0e6" stroke-width="2" stroke-linecap="round"/>
+<path d="M150 150L153.46 152L159.53 148.5L159.53 138.5L148.27 132L134.41 140L134.41 159L153.46 170L175.11 157.5L175.11 129.5L148.27 114L118.82 131L118.82 168L153.46 188L190.7 166.5L190.7 120.5L148.27 96L103.23 122L103.23 177L153.46 206L206.29 175.5L206.29 111.5L148.27 78L87.65 113L87.65 186L153.46 224L221.88 184.5L221.88 102.5L148.27 60L72.06 104L72.06 195" fill="none" stroke="#5ac86e" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Команды в цикле — одинаковые тройками, меняется только имя. Три одинаковых куска кода — знакомый звоночек из книги №3... о том, что с ним делать, — блок 3.</p>
 </div>
 
@@ -74,11 +82,13 @@ main() {
   <h2>Блок 2. Экспертиза</h2>
   <h4 class="task-item">Задание 5. Перепутанные имена</h4>
   <p>Программист писал «две скобки навстречу» — но в спешке перепутал имена, и часть команд ушла не той черепахе. Картинка получилась кривой. Вот замысел (правильный результат):</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M40 260L160 260L160 140" fill="none" stroke="#dc503c" stroke-width="4" stroke-linecap="round"/&gt;
-&lt;path d="M260 40L140 40L140 160" fill="none" stroke="#466edc" stroke-width="4" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M40 260L160 260L160 140" fill="none" stroke="#dc503c" stroke-width="4" stroke-linecap="round"/>
+<path d="M260 40L140 40L140 160" fill="none" stroke="#466edc" stroke-width="4" stroke-linecap="round"/>
+</svg>
+</div>
   <p>А вот хвост программы (настройка и развороты — выше, там всё верно):</p>
   <idyl-code-block><script type="text/plain">
     vera.forward(120);
@@ -173,12 +183,14 @@ main() {
     }
 }
 </script></idyl-code-block>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M20 120L258 120" fill="none" stroke="#ff0000" stroke-width="4" stroke-linecap="round"/&gt;
-&lt;path d="M20 180L282 180" fill="none" stroke="#0000ff" stroke-width="4" stroke-linecap="round"/&gt;
-&lt;text x="36" y="234" fill="#0000ff" font-size="14" font-family="sans-serif"&gt;Победа синей!&lt;/text&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M20 120L258 120" fill="none" stroke="#ff0000" stroke-width="4" stroke-linecap="round"/>
+<path d="M20 180L282 180" fill="none" stroke="#0000ff" stroke-width="4" stroke-linecap="round"/>
+<text x="36" y="234" fill="#0000ff" font-size="14" font-family="sans-serif">Победа синей!</text>
+</svg>
+</div>
   <p>Запустите <strong>трижды</strong> — три разные гонки, три (возможно) разных чемпиона: <code>random</code> выдаёт каждой черепахе свой бросок на каждом ходу, а финальное сравнение <code>red.x &gt; blue.x</code> честно мерит, чей след правее. Превью — один из вариантов забега. Обсудите драматургию: почему ходов ровно 40 и хватает ли их доползти до края? (В среднем шаг 9, сорок ходов — около 360: даже с окраины доедут.) И заготовка на з.10: а как сделать гонку «до финишной черты», а не «на 40 ходов»?</p>
   <h3 class="task-group">Самостоятельная практика</h3>
   <h4 class="task-item">Задание 10. До самого финиша</h4>
@@ -187,14 +199,16 @@ main() {
   <p>(Число у вас будет своё — на то и гонки.) Вопрос на понимание условия: почему <code>and</code>, а не <code>or</code>? Что изменится с <code>or</code> — когда цикл остановится, и догонит ли отстающая?</p>
   <h4 class="task-item">Задание 11. Отряд по списку</h4>
   <p>Пять черепах — пять переменных? После книги про массивы виджетов рука не поднимется. <strong>Массив черепах</strong>: <code>array&lt;turtle.Turtle, 5&gt; flock;</code> — и все пять готовы сразу. Настройте отряд циклом: цвет — <code>colors.HSL(i * 60, 80, 55)</code>, старт — <code>goto(-120, 100 - i * 50)</code>; затем «парад»: восемь шагов чередованием, шаг у каждой свой — <code>15 + i * 4</code>. Нижние обгоняют верхних — по превью видно, у кого длиннее след:</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M30 50L45 50L60 50L75 50L90 50L105 50L120 50L135 50L150 50" fill="none" stroke="#e83030" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;path d="M30 100L49 100L68 100L87 100L106 100L125 100L144 100L163 100L182 100" fill="none" stroke="#e8e830" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;path d="M30 150L53 150L76 150L99 150L122 150L145 150L168 150L191 150L214 150" fill="none" stroke="#30e830" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;path d="M30 200L57 200L84 200L111 200L138 200L165 200L192 200L219 200L246 200" fill="none" stroke="#30e8e8" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;path d="M30 250L61 250L92 250L123 250L154 250L185 250L216 250L247 250L278 250" fill="none" stroke="#3030e8" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M30 50L45 50L60 50L75 50L90 50L105 50L120 50L135 50L150 50" fill="none" stroke="#e83030" stroke-width="3" stroke-linecap="round"/>
+<path d="M30 100L49 100L68 100L87 100L106 100L125 100L144 100L163 100L182 100" fill="none" stroke="#e8e830" stroke-width="3" stroke-linecap="round"/>
+<path d="M30 150L53 150L76 150L99 150L122 150L145 150L168 150L191 150L214 150" fill="none" stroke="#30e830" stroke-width="3" stroke-linecap="round"/>
+<path d="M30 200L57 200L84 200L111 200L138 200L165 200L192 200L219 200L246 200" fill="none" stroke="#30e8e8" stroke-width="3" stroke-linecap="round"/>
+<path d="M30 250L61 250L92 250L123 250L154 250L185 250L216 250L247 250L278 250" fill="none" stroke="#3030e8" stroke-width="3" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Сверка числами: <code>flock[2].x</code> после парада — посчитайте на бумаге и проверьте печатью. Двойной цикл (ходы × черепахи) — тот же строй, что «двойной цикл» координатной сетки в №4, только по осям «время × исполнители».</p>
   <h4 class="task-item">Задание 12. Гонка четырёх</h4>
   <p>Соедините з.10 и з.11: <strong>четыре</strong> гонщика в массиве, гонка до финиша <code>x &gt;= 250</code> (условие «кто-нибудь доехал» проверяйте внутри цикла ходов), а после — церемония награждения в консоли: цикл ищет чемпиона <strong>сравнением <code>x</code></strong> (консольный поиск максимума — теперь среди черепах!) и печатает таблицу: номер дорожки — итоговый <code>x</code> каждой. Формат сверки:</p>
@@ -211,69 +225,77 @@ main() {
   <h2>Блок 4. Сцены</h2>
   <h4 class="task-item">Задание 13. Разделение труда</h4>
   <p>Два мастера — две профессии: черепаха-<strong>маляр</strong> рисует три вложенные квадратные рамки (200, 130, 60 — телепорт в угол перед каждой), черепаха-<strong>декоратор</strong> ходит следом с поднятым пером и ставит кляксы на противоположных углах каждой рамки. Работают попеременно: рамка — украшение, рамка — украшение.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M50 250L250 250L250 50L50 50L50 250M85 215L215 215L215 85L85 85L85 215M120 180L180 180L180 120L120 120L120 180" fill="none" stroke="#3c64c8" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;circle cx="50" cy="250" r="5" fill="#f0aa28"/&gt;
-&lt;circle cx="250" cy="50" r="5" fill="#f0aa28"/&gt;
-&lt;circle cx="85" cy="215" r="5" fill="#f0aa28"/&gt;
-&lt;circle cx="215" cy="85" r="5" fill="#f0aa28"/&gt;
-&lt;circle cx="120" cy="180" r="5" fill="#f0aa28"/&gt;
-&lt;circle cx="180" cy="120" r="5" fill="#f0aa28"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M50 250L250 250L250 50L50 50L50 250M85 215L215 215L215 85L85 85L85 215M120 180L180 180L180 120L120 120L120 180" fill="none" stroke="#3c64c8" stroke-width="3" stroke-linecap="round"/>
+<circle cx="50" cy="250" r="5" fill="#f0aa28"/>
+<circle cx="250" cy="50" r="5" fill="#f0aa28"/>
+<circle cx="85" cy="215" r="5" fill="#f0aa28"/>
+<circle cx="215" cy="85" r="5" fill="#f0aa28"/>
+<circle cx="120" cy="180" r="5" fill="#f0aa28"/>
+<circle cx="180" cy="120" r="5" fill="#f0aa28"/>
+</svg>
+</div>
   <p>Подсказка по адресам: углы рамки размера <code>size</code> — это <code>(-size/2, -size/2)</code> и <code>(size/2, size/2)</code>, а поскольку деление косой чертой даёт дробь, для целых половинок берите <code>div(size, 2)</code> (книга №3 объясняла разницу!).</p>
   <h4 class="task-item">Задание 14. Спирали навстречу</h4>
   <p>Восстановите программу по картинке: две черепахи, старт в точках (-75, 0) и (75, 0), вторая развёрнута на 180. Обе крутят <strong>одинаковую</strong> квадратную спираль — <code>forward(5 + i * 4); left(90);</code> двадцать витков — но из-за разворота узоры выходят зеркальными. В программе-заготовке потерялись три строки: разворот второй черепахи и оба старта — верните их по превью:</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M75 150L80 150L80 141L67 141L67 158L88 158L88 133L59 133L59 166L96 166L96 125L51 125L51 174L104 174L104 117L43 117L43 182L112 182L112 109L35 109L35 190" fill="none" stroke="#dc6428" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;path d="M225 150L220 150L220 159L233 159L233 142L212 142L212 167L241 167L241 134L204 134L204 175L249 175L249 126L196 126L196 183L257 183L257 118L188 118L188 191L265 191L265 110" fill="none" stroke="#288cdc" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M75 150L80 150L80 141L67 141L67 158L88 158L88 133L59 133L59 166L96 166L96 125L51 125L51 174L104 174L104 117L43 117L43 182L112 182L112 109L35 109L35 190" fill="none" stroke="#dc6428" stroke-width="3" stroke-linecap="round"/>
+<path d="M225 150L220 150L220 159L233 159L233 142L212 142L212 167L241 167L241 134L204 134L204 175L249 175L249 126L196 126L196 183L257 183L257 118L188 118L188 191L265 191L265 110" fill="none" stroke="#288cdc" stroke-width="3" stroke-linecap="round"/>
+</svg>
+</div>
   <h4 class="task-item">Задание 15. Хоровод</h4>
   <p>Восемь черепах в массиве встают в центр носами по кругу — <code>set_heading(i * 45)</code> — и расходятся лучами: три шага по 40, после каждого шага <strong>бусина</strong> <code>dot(8)</code>. Цвета — HSL по номеру. Получается хоровод из разноцветных бус:</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M150 150L190 150L230 150L270 150" fill="none" stroke="#e83030" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;path d="M150 150L178.28 121.72L206.57 93.43L234.85 65.15" fill="none" stroke="#e8ba30" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;path d="M150 150L150 110L150 70L150 30" fill="none" stroke="#8ce830" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;path d="M150 150L121.72 121.72L93.43 93.43L65.15 65.15" fill="none" stroke="#30e85e" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;path d="M150 150L110 150L70 150L30 150" fill="none" stroke="#30e8e8" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;path d="M150 150L121.72 178.28L93.43 206.57L65.15 234.85" fill="none" stroke="#305ee8" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;path d="M150 150L150 190L150 230L150 270" fill="none" stroke="#8c30e8" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;path d="M150 150L178.28 178.28L206.57 206.57L234.85 234.85" fill="none" stroke="#e830ba" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;circle cx="190" cy="150" r="4" fill="#e83030"/&gt;
-&lt;circle cx="178.28" cy="121.72" r="4" fill="#e8ba30"/&gt;
-&lt;circle cx="150" cy="110" r="4" fill="#8ce830"/&gt;
-&lt;circle cx="121.72" cy="121.72" r="4" fill="#30e85e"/&gt;
-&lt;circle cx="110" cy="150" r="4" fill="#30e8e8"/&gt;
-&lt;circle cx="121.72" cy="178.28" r="4" fill="#305ee8"/&gt;
-&lt;circle cx="150" cy="190" r="4" fill="#8c30e8"/&gt;
-&lt;circle cx="178.28" cy="178.28" r="4" fill="#e830ba"/&gt;
-&lt;circle cx="230" cy="150" r="4" fill="#e83030"/&gt;
-&lt;circle cx="206.57" cy="93.43" r="4" fill="#e8ba30"/&gt;
-&lt;circle cx="150" cy="70" r="4" fill="#8ce830"/&gt;
-&lt;circle cx="93.43" cy="93.43" r="4" fill="#30e85e"/&gt;
-&lt;circle cx="70" cy="150" r="4" fill="#30e8e8"/&gt;
-&lt;circle cx="93.43" cy="206.57" r="4" fill="#305ee8"/&gt;
-&lt;circle cx="150" cy="230" r="4" fill="#8c30e8"/&gt;
-&lt;circle cx="206.57" cy="206.57" r="4" fill="#e830ba"/&gt;
-&lt;circle cx="270" cy="150" r="4" fill="#e83030"/&gt;
-&lt;circle cx="234.85" cy="65.15" r="4" fill="#e8ba30"/&gt;
-&lt;circle cx="150" cy="30" r="4" fill="#8ce830"/&gt;
-&lt;circle cx="65.15" cy="65.15" r="4" fill="#30e85e"/&gt;
-&lt;circle cx="30" cy="150" r="4" fill="#30e8e8"/&gt;
-&lt;circle cx="65.15" cy="234.85" r="4" fill="#305ee8"/&gt;
-&lt;circle cx="150" cy="270" r="4" fill="#8c30e8"/&gt;
-&lt;circle cx="234.85" cy="234.85" r="4" fill="#e830ba"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M150 150L190 150L230 150L270 150" fill="none" stroke="#e83030" stroke-width="3" stroke-linecap="round"/>
+<path d="M150 150L178.28 121.72L206.57 93.43L234.85 65.15" fill="none" stroke="#e8ba30" stroke-width="3" stroke-linecap="round"/>
+<path d="M150 150L150 110L150 70L150 30" fill="none" stroke="#8ce830" stroke-width="3" stroke-linecap="round"/>
+<path d="M150 150L121.72 121.72L93.43 93.43L65.15 65.15" fill="none" stroke="#30e85e" stroke-width="3" stroke-linecap="round"/>
+<path d="M150 150L110 150L70 150L30 150" fill="none" stroke="#30e8e8" stroke-width="3" stroke-linecap="round"/>
+<path d="M150 150L121.72 178.28L93.43 206.57L65.15 234.85" fill="none" stroke="#305ee8" stroke-width="3" stroke-linecap="round"/>
+<path d="M150 150L150 190L150 230L150 270" fill="none" stroke="#8c30e8" stroke-width="3" stroke-linecap="round"/>
+<path d="M150 150L178.28 178.28L206.57 206.57L234.85 234.85" fill="none" stroke="#e830ba" stroke-width="3" stroke-linecap="round"/>
+<circle cx="190" cy="150" r="4" fill="#e83030"/>
+<circle cx="178.28" cy="121.72" r="4" fill="#e8ba30"/>
+<circle cx="150" cy="110" r="4" fill="#8ce830"/>
+<circle cx="121.72" cy="121.72" r="4" fill="#30e85e"/>
+<circle cx="110" cy="150" r="4" fill="#30e8e8"/>
+<circle cx="121.72" cy="178.28" r="4" fill="#305ee8"/>
+<circle cx="150" cy="190" r="4" fill="#8c30e8"/>
+<circle cx="178.28" cy="178.28" r="4" fill="#e830ba"/>
+<circle cx="230" cy="150" r="4" fill="#e83030"/>
+<circle cx="206.57" cy="93.43" r="4" fill="#e8ba30"/>
+<circle cx="150" cy="70" r="4" fill="#8ce830"/>
+<circle cx="93.43" cy="93.43" r="4" fill="#30e85e"/>
+<circle cx="70" cy="150" r="4" fill="#30e8e8"/>
+<circle cx="93.43" cy="206.57" r="4" fill="#305ee8"/>
+<circle cx="150" cy="230" r="4" fill="#8c30e8"/>
+<circle cx="206.57" cy="206.57" r="4" fill="#e830ba"/>
+<circle cx="270" cy="150" r="4" fill="#e83030"/>
+<circle cx="234.85" cy="65.15" r="4" fill="#e8ba30"/>
+<circle cx="150" cy="30" r="4" fill="#8ce830"/>
+<circle cx="65.15" cy="65.15" r="4" fill="#30e85e"/>
+<circle cx="30" cy="150" r="4" fill="#30e8e8"/>
+<circle cx="65.15" cy="234.85" r="4" fill="#305ee8"/>
+<circle cx="150" cy="270" r="4" fill="#8c30e8"/>
+<circle cx="234.85" cy="234.85" r="4" fill="#e830ba"/>
+</svg>
+</div>
   <p>Пружина задачи — шаг хоровода общий (внешний цикл ходов), а направления у всех свои (личное состояние из з.3, но теперь состояний восемь).</p>
   <h4 class="task-item">Задание 16. Зеркальный дуэт</h4>
   <p>Две черепахи из одной точки носами вверх; в цикле обе шагают по 28, но одна поворачивает <code>right(45)</code>, а вторая — <strong><code>left(45)</code></strong>: каждая команда правой отражается у левой. Двенадцать витков — и на поле «бабочка» из двух зеркальных восьмиугольников. Это простейший <strong>синхронный танец</strong>: один сценарий, отражённые роли.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M150 150L150 122L169.8 102.2L197.8 102.2L217.6 122L217.6 150L197.8 169.8L169.8 169.8L150 150L150 122L169.8 102.2L197.8 102.2L217.6 122" fill="none" stroke="#c8468c" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;path d="M150 150L150 122L130.2 102.2L102.2 102.2L82.4 122L82.4 150L102.2 169.8L130.2 169.8L150 150L150 122L130.2 102.2L102.2 102.2L82.4 122" fill="none" stroke="#46a0c8" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M150 150L150 122L169.8 102.2L197.8 102.2L217.6 122L217.6 150L197.8 169.8L169.8 169.8L150 150L150 122L169.8 102.2L197.8 102.2L217.6 122" fill="none" stroke="#c8468c" stroke-width="3" stroke-linecap="round"/>
+<path d="M150 150L150 122L130.2 102.2L102.2 102.2L82.4 122L82.4 150L102.2 169.8L130.2 169.8L150 150L150 122L130.2 102.2L102.2 102.2L82.4 122" fill="none" stroke="#46a0c8" stroke-width="3" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Кто быстро справился — пусть добавит «унисонную» пару фигур в других цветах со сдвигом старта: четыре черепахи, два дуэта.</p>
 </div>
 
@@ -288,14 +310,16 @@ main() {
     <li><strong>Церемония</strong>: поиск чемпиона по <code>x</code> (з.12), подпись <code>write</code> на поле — «Чемпион — дорожка N!» (номер — из переменной, не руками!) и полная таблица результатов в консоли.</li>
     <li><code>speed = 0</code> у разметчика, у гонщиков — 6+: разметка мгновенна, заезд — зрелище.</li>
   </ol>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M20 60L280 60M20 105L280 105M20 150L280 150M20 195L280 195M265 50L265 250" fill="none" stroke="#969696" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;path d="M25 82L32 82L43 82L52 82L62 82L70 82L80 82L91 82L99 82L110 82L120 82L130 82L136 82L145 82L152 82L161 82L167 82L176 82L186 82L197 82L202 82L206 82L216 82L226 82L234 82L245 82L248 82L256 82L264 82L267 82" fill="none" stroke="#df2020" stroke-width="4" stroke-linecap="round"/&gt;
-&lt;path d="M25 127L28 127L32 127L37 127L48 127L55 127L63 127L66 127L69 127L77 127L80 127L83 127L92 127L97 127L108 127L115 127L124 127L136 127L140 127L146 127L154 127L166 127L175 127L187 127L193 127L204 127L209 127L213 127L219 127L227 127" fill="none" stroke="#20df20" stroke-width="4" stroke-linecap="round"/&gt;
-&lt;path d="M25 172L35 172L47 172L57 172L66 172L76 172L85 172L91 172L97 172L100 172L105 172L117 172L126 172L131 172L139 172L150 172L155 172L163 172L174 172L184 172L187 172L195 172L206 172L210 172L214 172L224 172L231 172L241 172L252 172L264 172" fill="none" stroke="#2020df" stroke-width="4" stroke-linecap="round"/&gt;
-&lt;text x="31" y="269" fill="#df2020" font-size="14" font-family="sans-serif"&gt;Чемпион — дорожка 1!&lt;/text&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M20 60L280 60M20 105L280 105M20 150L280 150M20 195L280 195M265 50L265 250" fill="none" stroke="#969696" stroke-width="2" stroke-linecap="round"/>
+<path d="M25 82L32 82L43 82L52 82L62 82L70 82L80 82L91 82L99 82L110 82L120 82L130 82L136 82L145 82L152 82L161 82L167 82L176 82L186 82L197 82L202 82L206 82L216 82L226 82L234 82L245 82L248 82L256 82L264 82L267 82" fill="none" stroke="#df2020" stroke-width="4" stroke-linecap="round"/>
+<path d="M25 127L28 127L32 127L37 127L48 127L55 127L63 127L66 127L69 127L77 127L80 127L83 127L92 127L97 127L108 127L115 127L124 127L136 127L140 127L146 127L154 127L166 127L175 127L187 127L193 127L204 127L209 127L213 127L219 127L227 127" fill="none" stroke="#20df20" stroke-width="4" stroke-linecap="round"/>
+<path d="M25 172L35 172L47 172L57 172L66 172L76 172L85 172L91 172L97 172L100 172L105 172L117 172L126 172L131 172L139 172L150 172L155 172L163 172L174 172L184 172L187 172L195 172L206 172L210 172L214 172L224 172L231 172L241 172L252 172L264 172" fill="none" stroke="#2020df" stroke-width="4" stroke-linecap="round"/>
+<text x="31" y="269" fill="#df2020" font-size="14" font-family="sans-serif">Чемпион — дорожка 1!</text>
+</svg>
+</div>
   <p>Сдача — три заезда при преподавателе (чемпионы должны меняться!) плюс устный экзамен: покажите, где в коде рождается каждая черепаха и почему разметчик не участвует в гонке, хотя он тоже <code>turtle.Turtle</code>.</p>
 </div>
 
@@ -304,45 +328,47 @@ main() {
   <p><em>Комбинацию инструментов не подсказываем — в этом и звёздочка.</em></p>
   <h4 class="task-item task-star">Задание 18 ⭐. Мастерская на двоих</h4>
   <p>Картина в четыре лапы: черепаха-<strong>художник</strong> рисует в центре залитую розетку из лепестков (книга №5 — приём «лепесток из двух рёбер», цвета HSL), черепаха-<strong>оформитель</strong> выкладывает вокруг кольцо золотых клякс. Обязательное условие: лепесток — <strong>функция с параметром-черепахой</strong> (з.7): <code>petal(artist, 85);</code> — чтобы при сдаче ответить на вопрос «а сможет ли оформитель нарисовать лепесток вашей функцией?» (Сможет — в том и сила: функция не привязана к исполнителю.) Фон тёмный, <code>speed = 0</code>.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#1c182e"/&gt;
-&lt;polygon points="150,150 235,150 161.39,107.5" fill="#e64c4c"/&gt;
-&lt;path d="M150 150L235 150L161.39 107.5" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 223.61,107.5 138.61,107.5" fill="#e6994c"/&gt;
-&lt;path d="M150 150L223.61 107.5L138.61 107.5" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 192.5,76.39 118.89,118.89" fill="#e6e64c"/&gt;
-&lt;path d="M150 150L192.5 76.39L118.89 118.89" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 150,65 107.5,138.61" fill="#99e64c"/&gt;
-&lt;path d="M150 150L150 65L107.5 138.61" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 107.5,76.39 107.5,161.39" fill="#4ce64c"/&gt;
-&lt;path d="M150 150L107.5 76.39L107.5 161.39" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 76.39,107.5 118.89,181.11" fill="#4ce699"/&gt;
-&lt;path d="M150 150L76.39 107.5L118.89 181.11" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 65,150 138.61,192.5" fill="#4ce6e6"/&gt;
-&lt;path d="M150 150L65 150L138.61 192.5" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 76.39,192.5 161.39,192.5" fill="#4c99e6"/&gt;
-&lt;path d="M150 150L76.39 192.5L161.39 192.5" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 107.5,223.61 181.11,181.11" fill="#4c4ce6"/&gt;
-&lt;path d="M150 150L107.5 223.61L181.11 181.11" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 150,235 192.5,161.39" fill="#994ce6"/&gt;
-&lt;path d="M150 150L150 235L192.5 161.39" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 192.5,223.61 192.5,138.61" fill="#e64ce6"/&gt;
-&lt;path d="M150 150L192.5 223.61L192.5 138.61" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;polygon points="150,150 223.61,192.5 181.11,118.89" fill="#e64c99"/&gt;
-&lt;path d="M150 150L223.61 192.5L181.11 118.89" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;circle cx="265.91" cy="118.94" r="3.5" fill="#f0c850"/&gt;
-&lt;circle cx="234.85" cy="65.15" r="3.5" fill="#f0c850"/&gt;
-&lt;circle cx="181.06" cy="34.09" r="3.5" fill="#f0c850"/&gt;
-&lt;circle cx="118.94" cy="34.09" r="3.5" fill="#f0c850"/&gt;
-&lt;circle cx="65.15" cy="65.15" r="3.5" fill="#f0c850"/&gt;
-&lt;circle cx="34.09" cy="118.94" r="3.5" fill="#f0c850"/&gt;
-&lt;circle cx="34.09" cy="181.06" r="3.5" fill="#f0c850"/&gt;
-&lt;circle cx="65.15" cy="234.85" r="3.5" fill="#f0c850"/&gt;
-&lt;circle cx="118.94" cy="265.91" r="3.5" fill="#f0c850"/&gt;
-&lt;circle cx="181.06" cy="265.91" r="3.5" fill="#f0c850"/&gt;
-&lt;circle cx="234.85" cy="234.85" r="3.5" fill="#f0c850"/&gt;
-&lt;circle cx="265.91" cy="181.06" r="3.5" fill="#f0c850"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#1c182e"/>
+<polygon points="150,150 235,150 161.39,107.5" fill="#e64c4c"/>
+<path d="M150 150L235 150L161.39 107.5" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 223.61,107.5 138.61,107.5" fill="#e6994c"/>
+<path d="M150 150L223.61 107.5L138.61 107.5" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 192.5,76.39 118.89,118.89" fill="#e6e64c"/>
+<path d="M150 150L192.5 76.39L118.89 118.89" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 150,65 107.5,138.61" fill="#99e64c"/>
+<path d="M150 150L150 65L107.5 138.61" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 107.5,76.39 107.5,161.39" fill="#4ce64c"/>
+<path d="M150 150L107.5 76.39L107.5 161.39" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 76.39,107.5 118.89,181.11" fill="#4ce699"/>
+<path d="M150 150L76.39 107.5L118.89 181.11" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 65,150 138.61,192.5" fill="#4ce6e6"/>
+<path d="M150 150L65 150L138.61 192.5" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 76.39,192.5 161.39,192.5" fill="#4c99e6"/>
+<path d="M150 150L76.39 192.5L161.39 192.5" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 107.5,223.61 181.11,181.11" fill="#4c4ce6"/>
+<path d="M150 150L107.5 223.61L181.11 181.11" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 150,235 192.5,161.39" fill="#994ce6"/>
+<path d="M150 150L150 235L192.5 161.39" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 192.5,223.61 192.5,138.61" fill="#e64ce6"/>
+<path d="M150 150L192.5 223.61L192.5 138.61" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/>
+<polygon points="150,150 223.61,192.5 181.11,118.89" fill="#e64c99"/>
+<path d="M150 150L223.61 192.5L181.11 118.89" fill="none" stroke="#f0e6d2" stroke-width="2" stroke-linecap="round"/>
+<circle cx="265.91" cy="118.94" r="3.5" fill="#f0c850"/>
+<circle cx="234.85" cy="65.15" r="3.5" fill="#f0c850"/>
+<circle cx="181.06" cy="34.09" r="3.5" fill="#f0c850"/>
+<circle cx="118.94" cy="34.09" r="3.5" fill="#f0c850"/>
+<circle cx="65.15" cy="65.15" r="3.5" fill="#f0c850"/>
+<circle cx="34.09" cy="118.94" r="3.5" fill="#f0c850"/>
+<circle cx="34.09" cy="181.06" r="3.5" fill="#f0c850"/>
+<circle cx="65.15" cy="234.85" r="3.5" fill="#f0c850"/>
+<circle cx="118.94" cy="265.91" r="3.5" fill="#f0c850"/>
+<circle cx="181.06" cy="265.91" r="3.5" fill="#f0c850"/>
+<circle cx="234.85" cy="234.85" r="3.5" fill="#f0c850"/>
+<circle cx="265.91" cy="181.06" r="3.5" fill="#f0c850"/>
+</svg>
+</div>
   <h4 class="task-item task-star">Задание 19 ⭐⭐. Гонка с репортажем</h4>
   <p>Финал — трансляция державного заезда. Всё как на олимпиаде (з.17: массив, дорожки, финиш по условию), но теперь у гонки есть <strong>голос</strong>: консоль ведёт репортаж. Каждые 10 ходов комментатор объявляет лидера («ход 20: впереди дорожка 3»); лидер ищется циклом по <code>x</code> прямо посреди заезда. На финише — интрига: если чемпиона и второго призёра разделяет меньше 10 очков по <code>x</code> — печатается «Фотофиниш!» (значит, нужен и <strong>второй</strong> максимум!). Заканчивается всё пьедесталом: чемпион остаётся видимым, остальные — <code>visible = false</code>, и на поле только победный след и подпись. Сдача: три запуска, устный экзамен по поиску второго места («почему нельзя просто взять <code>champion - 1</code>?»). Кто хочет совсем звёздно — пусть комментатор замечает и смену лидера («дорожка 2 вырывается вперёд!») — для этого придётся <strong>помнить</strong> прошлого лидера между ходами.</p>
 </div>

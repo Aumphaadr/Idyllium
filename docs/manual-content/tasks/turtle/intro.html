@@ -13,27 +13,33 @@ main() {
     t.forward(100);
 }
 </script></idyl-code-block>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M150 150L250 150L250 50" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M150 150L250 150L250 50" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Запустите и <strong>смотрите на черепаху</strong>, а не только на результат: она ползёт медленно, и видно, как рождается линия. Проговорите три вещи. Первая: <code>turtle.Turtle t;</code> — родилась черепаха, поле открылось само; она сидит в центре и смотрит <strong>вправо</strong>. Вторая: <code>forward(100)</code> — сто пикселей вперёд, <code>left(90)</code> — поворот налево на 90 градусов; черепаха поворачивается <strong>на месте</strong>, следа при этом нет. Третья: программа читается сверху вниз, как консольная, — команда, команда, команда. Никакой магии.</p>
   <h3 class="task-group">Самостоятельная практика</h3>
   <h4 class="task-item">Задание 2. Буква Г</h4>
   <p>Первая осмысленная фигура — буква. Черепаха должна нарисовать «Г»: сначала подняться вверх, потом пойти вправо.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M150 150L150 30L220 30" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M150 150L150 30L220 30" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Подсказка на первый раз: чтобы пойти вверх, черепахе надо сначала <strong>повернуться</strong> — она же смотрит вправо. Сколько команд у вас вышло? (Четыре: повернуть, вперёд, повернуть, вперёд.)</p>
   <h4 class="task-item">Задание 3. Своя ломаная</h4>
   <p>Свободная задача: пять-шесть команд, рисующих что угодно — молнию, дорожку, каракулю. Единственное требование: <strong>перед запуском предскажите на бумаге</strong>, что получится, и сверьте с экраном. Черепаха — не оракул, а исполнитель: она рисует ровно то, что вы приказали, и первое умение курса — приказывать осознанно.</p>
   <h4 class="task-item">Задание 4. Лесенка</h4>
   <p>Ступеньки: вперёд-вверх-вперёд-вверх, четыре раза (пока — без цикла, честными командами; цикл придёт в блоке 3, и вы сами обрадуетесь).</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M150 150L190 150L190 110L230 110L230 70L270 70L270 30L310 30L310 -10" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M150 150L190 150L190 110L230 110L230 70L270 70L270 30L310 30L310 -10" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Считайте команды: шестнадцать штук, и все почти одинаковые. Запомните это чувство — в третьем блоке оно окупится.</p>
 </div>
 
@@ -79,27 +85,33 @@ main() {
     }
 }
 </script></idyl-code-block>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M150 150L270 150L270 30L150 30L150 150" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M150 150L270 150L270 30L150 30L150 150" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Сравните с лесенкой з.4: там было шестнадцать строк, тут — три внутри цикла. Проговорите: <strong>где «повторить одно и то же» — там цикл</strong>; черепаха превращает это правило из абстрактного в очевидное. И проверьте вслух наблюдение з.7: после четвёртого поворота черепаха вернулась в начало и смотрит вправо — цикл замкнул фигуру.</p>
   <h3 class="task-group">Самостоятельная практика</h3>
   <h4 class="task-item">Задание 10. Прямоугольник</h4>
   <p>Тот же цикл, но стороны разные: длинная-короткая-длинная-короткая. Как быть, если цикл повторяет одно и то же? (Два хода: либо цикл из двух витков с четырьмя командами внутри, либо честные восемь команд без цикла — оба решения законны, выберите и обоснуйте.) Первая задача, где цикл приходится <strong>придумать</strong>, а не списать.</p>
   <h4 class="task-item">Задание 11. Крест</h4>
   <p>Фигура на команду <code>back</code>: луч вперёд, тем же путём назад, поворот — и так четыре раза.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M150 150L220 150L150 150L150 80L150 150L80 150L150 150L150 220L150 150" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M150 150L220 150L150 150L150 80L150 150L80 150L150 150L150 220L150 150" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Черепаха каждый раз возвращается в центр — потому что <code>back</code> отматывает ровно столько, сколько прошла <code>forward</code>. Приём «сходил и вернулся» ещё пригодится: им рисуют лучи, ветки и лапки.</p>
   <h4 class="task-item">Задание 12. Гребёнка</h4>
   <p>Соединяем движение вдоль и лучи вбок: черепаха идёт слева направо, и через равные промежутки выпускает вверх зубец (сходила-вернулась — з.11!).</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M150 150L50 150L50 100L50 150L85 150L85 100L85 150L120 150L120 100L120 150L155 150L155 100L155 150L190 150L190 100L190 150L225 150L225 100L225 150L260 150L260 100L260 150" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M150 150L50 150L50 100L50 150L85 150L85 100L85 150L120 150L120 100L120 150L155 150L155 100L155 150L190 150L190 100L190 150L225 150L225 100L225 150L260 150L260 100L260 150" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Шесть зубцов — шесть витков цикла, внутри пять команд. Обратите внимание: <strong>основание рисуется само</strong> — черепаха проходит по нему, шагая от зубца к зубцу.</p>
   <h4 class="task-item">Минутка из внешнего мира. Черепаха, которая ползала по полу</h4>
   <p><em>Это не задание — делать ничего не нужно. Просто любопытное из большого мира, читается за минуту.</em></p>
@@ -129,16 +141,20 @@ main() {
   <p><em>Комбинацию инструментов не подсказываем — в этом и звёздочка.</em></p>
   <h4 class="task-item task-star">Задание 18 ⭐. Квадратная спираль</h4>
   <p>Улитка из з.16 в полную силу: шестнадцать витков, сторона растёт на восемь пикселей каждый раз.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M150 150L158 150L158 134L134 134L134 166L174 166L174 118L118 118L118 182L190 182L190 102L102 102L102 198L206 198L206 86L86 86L86 214" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M150 150L158 150L158 134L134 134L134 166L174 166L174 118L118 118L118 182L190 182L190 102L102 102L102 198L206 198L206 86L86 86L86 214" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Формула стороны — из номера витка; поворот неизменен. Поиграйте с числами: что будет, если поворачивать на 91 градус вместо 90? (Спираль поедет и закрутится — попробуйте обязательно, это самый дешёвый способ получить красоту в этой книге.) А если сторона будет расти на 2? На 20?</p>
   <h4 class="task-item task-star">Задание 19 ⭐⭐. Снежинка из лучей</h4>
   <p>Восемь лучей из одной точки — приём «сходил-вернулся» (з.11) на новом уровне: после каждого луча поворот на 45 градусов.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M150 150L240 150L150 150L213.64 86.36L150 150L150 60L150 150L86.36 86.36L150 150L60 150L150 150L86.36 213.64L150 150L150 240L150 150L213.64 213.64L150 150" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M150 150L240 150L150 150L213.64 86.36L150 150L150 60L150 150L86.36 86.36L150 150L60 150L150 150L86.36 213.64L150 150L150 240L150 150L213.64 213.64L150 150" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Сначала посчитайте на бумаге: восемь лучей по кругу — какой угол между соседними? (360 разделить на 8 — и вы только что вывели формулу третьей книги, сами того не зная!) Кто добавит на конце каждого луча маленькую «вилку» из двух коротких отрезков — получит настоящую снежинку; кто сделает лучи разной длины (<code>60 + i * 10</code>) — получит вертушку. И заметьте: рисунок собран из четырёх команд, которые вы знали ещё на первой странице.</p>
 </div>

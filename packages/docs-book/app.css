@@ -610,6 +610,20 @@ body.light-theme .lesson-body .task-item.task-star {
   line-height: 1.55;
 }
 
+/* SVG-превью в задачниках (черепашьи рисунки): картинка, не листинг. */
+.task-svg-preview {
+  display: flex;
+  justify-content: center;
+  margin: 14px 0;
+}
+
+.task-svg-preview svg {
+  width: min(320px, 100%);
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
 .docs-section {
   min-width: 0;
   padding: 24px 0;

@@ -22,10 +22,12 @@ main() {
     t.goto(80, -80);
 }
 </script></idyl-code-block>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M70 230L230 230L230 110L150 30L70 110L70 230L230 110L70 110L230 230" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M70 230L230 230L230 110L150 30L70 110L70 230L230 110L70 110L230 230" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Прежде чем запускать — разминка на предсказание: покажите на доске оси и спросите про каждый адрес, где он («минус 80 по иксу — это левее или правее центра? игрек 120 — выше или ниже?»). Проговорите два ключевых места: <strong>первый <code>goto</code> сделан с поднятым пером</strong> — это телепорт на стартовую позицию, без него от центра потянулся бы лишний след; а вершина крыши — точка с <strong>самым большим игреком</strong> (120), потому она и выше всех. И финальный вопрос на засыпку: почему у домика 8 команд <code>goto</code>, а не 5 — сколько раз черепаха проходила по уже нарисованным стенам?</p>
   <h3 class="task-group">Самостоятельная практика</h3>
   <h4 class="task-item">Задание 2. Три телепорта</h4>
@@ -63,10 +65,12 @@ heading = 180</idyl-output-block>
   <h4 class="task-item">Задание 4. Все дороги ведут домой</h4>
   <p>Команда <code>home()</code> возвращает черепаху в центр и разворачивает носом вправо — а с опущенным пером ещё и прочерчивает дорогу домой. Используйте это: отправьте черепаху пером вниз по восьми адресам — (100, 0), (70, 70), (0, 100), (-70, 70), (-100, 0), (-70, -70), (0, -100), (70, -70) — и после <strong>каждого</strong> адреса командуйте <code>home()</code>. Получится звезда из лучей, и каждый луч нарисован дважды: туда — командой <code>goto</code>, обратно — командой <code>home</code>. В конце напечатайте положение и направление:</p>
   <idyl-output-block>x = 0, y = 0, heading = 0</idyl-output-block>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M150 150L250 150L150 150L220 80L150 150L150 50L150 150L80 80L150 150L50 150L150 150L80 220L150 150L150 250L150 150L220 220L150 150" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M150 150L250 150L150 150L220 80L150 150L150 50L150 150L80 80L150 150L50 150L150 150L80 220L150 150L150 250L150 150L220 220L150 150" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Ровные нули и ноль в носу — фирменный почерк <code>home</code>: он не «примерно возвращает», а ставит черепаху точно в начало координат.</p>
 </div>
 
@@ -105,10 +109,12 @@ main() {
 }
 </script></idyl-code-block>
   <p>Найдите пропавшую строчку и верните её на место. Правильный результат:</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M50 180L110 180L110 120L50 120L50 180M190 180L250 180L250 120L190 120L190 180" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M50 180L110 180L110 120L50 120L50 180M190 180L250 180L250 120L190 120L190 180" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Запомните симптом: лишняя линия между фигурами — значит, перед переездом забыли <code>pen_up()</code>. Это самая частая ошибка адресного рисования, вы ещё не раз её у себя поймаете.</p>
   <h4 class="task-item">Задание 7. Пыль на компасе</h4>
   <p>Эксперимент. В прошлой книге щель в контуре оставляло обрезающее <code>div()</code>, а честная дробь <code>360.0 / 7</code> замыкала фигуру идеально. Сегодня зайдём с прибором точнее глаза: пусть черепаха нарисует такой семиугольник, а потом доложит числа.</p>
@@ -171,44 +177,52 @@ main() {
   <h3 class="task-group">Практика с преподавателем</h3>
   <h4 class="task-item">Задание 9. Созвездие Черепахи</h4>
   <p>У доски. В астрономическом атласе созвездие — это список координат звёзд. Наш список — семь звёзд: (-90, 80), (-30, 100), (30, 70), (80, 90), (60, 10), (-20, -20), (-80, 10). Программа делает <strong>два прохода по одним и тем же адресам</strong>: первый — с поднятым пером, в каждой точке клякса (размеры на вкус, 6–9); второй — с опущенным тонким пером (<code>pen_width = 1</code>), соединяя звёзды ломаной. Небо — тёмное (<code>turtle.bg_color</code>), перо — звёздное жёлтое.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#0f1228"/&gt;
-&lt;path d="M60 70L120 50L180 80L230 60L210 140L130 170L70 140" fill="none" stroke="#ffe678" stroke-width="1" stroke-linecap="round"/&gt;
-&lt;circle cx="60" cy="70" r="4.5" fill="#ffe678"/&gt;
-&lt;circle cx="120" cy="50" r="3.5" fill="#ffe678"/&gt;
-&lt;circle cx="180" cy="80" r="4.5" fill="#ffe678"/&gt;
-&lt;circle cx="230" cy="60" r="3" fill="#ffe678"/&gt;
-&lt;circle cx="210" cy="140" r="4" fill="#ffe678"/&gt;
-&lt;circle cx="130" cy="170" r="3.5" fill="#ffe678"/&gt;
-&lt;circle cx="70" cy="140" r="4.5" fill="#ffe678"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#0f1228"/>
+<path d="M60 70L120 50L180 80L230 60L210 140L130 170L70 140" fill="none" stroke="#ffe678" stroke-width="1" stroke-linecap="round"/>
+<circle cx="60" cy="70" r="4.5" fill="#ffe678"/>
+<circle cx="120" cy="50" r="3.5" fill="#ffe678"/>
+<circle cx="180" cy="80" r="4.5" fill="#ffe678"/>
+<circle cx="230" cy="60" r="3" fill="#ffe678"/>
+<circle cx="210" cy="140" r="4" fill="#ffe678"/>
+<circle cx="130" cy="170" r="3.5" fill="#ffe678"/>
+<circle cx="70" cy="140" r="4.5" fill="#ffe678"/>
+</svg>
+</div>
   <p>Главная мысль для проговаривания: <strong>рисунок — это данные</strong>. Один и тот же список адресов дал и звёзды, и линии; поменяется список — поменяется созвездие, а программа не изменится ни на строчку. Эта мысль будет расти до конца книги.</p>
   <h3 class="task-group">Самостоятельная практика</h3>
   <h4 class="task-item">Задание 10. График температуры</h4>
   <p>Синоптики намерили температуру за восемь дней: -3, 1, -2, 4, 3, 7, 5, 8 градусов. Постройте настоящий график. Сначала серым пером — оси: горизонтальная от (-140, 0) до (140, 0), вертикальная от (-140, -90) до (-140, 90). Затем красным пером потолще (<code>pen_width = 3</code>) — ломаная по точкам: икс первого дня -140, каждый следующий день на 40 правее; игрек — <strong>температура, умноженная на 10</strong>. Первая точка (-140, -30) — мороз ниже оси, последняя (140, 80) — жара.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M20 120L300 120M20 210L20 30" fill="none" stroke="#969696" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;path d="M20 150L60 110L100 140L140 80L180 90L220 50L260 70L300 40" fill="none" stroke="#ff0000" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M20 120L300 120M20 210L20 30" fill="none" stroke="#969696" stroke-width="2" stroke-linecap="round"/>
+<path d="M20 150L60 110L100 140L140 80L180 90L220 50L260 70L300 40" fill="none" stroke="#ff0000" stroke-width="3" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Поле — <code>turtle.setup(320, 240)</code>. Между осями и графиком не забудьте телепорт (з.6 предупреждала!). Вы только что сделали то, чем занимаются все программы с графиками на свете: превратили числа в игреки точек.</p>
   <h4 class="task-item">Задание 11. Решётка по формуле</h4>
   <p>Пять горизонтальных и пять вертикальных линий — аккуратная сетка. Рисовать двадцать команд руками нельзя: одно тело цикла, внутри — <strong>формула адреса</strong> <code>int coord = -100 + i * 50;</code>. На каждом витке две линии: горизонтальная от (-100, coord) до (100, coord) и вертикальная от (coord, -100) до (coord, 100), между ними — телепорты.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M50 250L250 250M50 250L50 50M50 200L250 200M100 250L100 50M50 150L250 150M150 250L150 50M50 100L250 100M200 250L200 50M50 50L250 50M250 250L250 50" fill="none" stroke="#78aaff" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M50 250L250 250M50 250L50 50M50 200L250 200M100 250L100 50M50 150L250 150M150 250L150 50M50 100L250 100M200 250L200 50M50 50L250 50M250 250L250 50" fill="none" stroke="#78aaff" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Проверка понимания формулы: какой coord получится при i = 0? При i = 4? Почему шаг именно 50 — и что поменять, чтобы линий стало 9, а сетка осталась того же размера?</p>
   <h4 class="task-item">Задание 12. Роза ветров</h4>
   <p>Компас в деле. Из центра — четыре луча по сторонам света, каждый строится одинаково: <code>set_heading(угол)</code>, <code>forward(90)</code>, подпись <code>write</code>, <code>back(90)</code> — и черепаха снова в центре, готова к следующему лучу. Север — угол 90, подпись «С»; восток — 0, «В»; юг — 270, «Ю»; запад — 180, «З». Перо потолще (<code>pen_width = 3</code>). В конце — доклад <code>вернулась: x = 0, y = 0</code>.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M150 150L150 60L150 150L240 150L150 150L150 240L150 150L60 150L150 150" fill="none" stroke="#000000" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;text x="156" y="54" fill="#000000" font-size="14" font-family="sans-serif"&gt;С&lt;/text&gt;
-&lt;text x="246" y="144" fill="#000000" font-size="14" font-family="sans-serif"&gt;В&lt;/text&gt;
-&lt;text x="156" y="234" fill="#000000" font-size="14" font-family="sans-serif"&gt;Ю&lt;/text&gt;
-&lt;text x="66" y="144" fill="#000000" font-size="14" font-family="sans-serif"&gt;З&lt;/text&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M150 150L150 60L150 150L240 150L150 150L150 240L150 150L60 150L150 150" fill="none" stroke="#000000" stroke-width="3" stroke-linecap="round"/>
+<text x="156" y="54" fill="#000000" font-size="14" font-family="sans-serif">С</text>
+<text x="246" y="144" fill="#000000" font-size="14" font-family="sans-serif">В</text>
+<text x="156" y="234" fill="#000000" font-size="14" font-family="sans-serif">Ю</text>
+<text x="66" y="144" fill="#000000" font-size="14" font-family="sans-serif">З</text>
+</svg>
+</div>
   <p>Попробуйте мысленно решить эту задачу рулём (<code>left</code>/<code>right</code>) — придётся высчитывать, куда черепаха смотрит после каждого луча. Компас снимает эту заботу: «повернись на север» работает из любого положения. Это и есть его сила.</p>
   <h4 class="task-item">Минутка из внешнего мира. Муха на потолке</h4>
   <p>Систему координат придумал французский математик Рене Декарт почти четыреста лет назад — и, по легенде, помогла ему муха. Декарт много болел и подолгу лежал в постели, разглядывая потолок. Однажды он следил за ползающей мухой и задумался: как описать словами, где она сейчас? И понял: хватит двух чисел — расстояния от одной стены и расстояния от другой. Так родилась идея, на которой стоит вся современная графика: <strong>место — это пара чисел</strong>. Вы пользуетесь ей чаще, чем думаете: клетка e2 на шахматной доске, «б-4» в морском бое, место «ряд 7, кресло 12» в кинотеатре — всё это координаты, только оси подписаны буквами. А черепашье поле — честная декартова плоскость, без скидок на возраст.</p>
@@ -218,34 +232,36 @@ main() {
   <h2>Блок 4. Сцены</h2>
   <h4 class="task-item">Задание 13. Поле в горошек</h4>
   <p>Двадцать пять клякс ровными рядами — 5 × 5. Руками — нельзя, формулами — легко: <strong>два вложенных цикла</strong> (по i и по j, консольный багаж), внутри телепорт в точку с адресом <code>(-80 + i * 40, -80 + j * 40)</code> и клякса <code>dot(9)</code>. Цвет на вкус.</p>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;circle cx="70" cy="230" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="70" cy="190" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="70" cy="150" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="70" cy="110" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="70" cy="70" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="110" cy="230" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="110" cy="190" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="110" cy="150" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="110" cy="110" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="110" cy="70" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="150" cy="230" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="150" cy="190" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="150" cy="150" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="150" cy="110" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="150" cy="70" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="190" cy="230" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="190" cy="190" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="190" cy="150" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="190" cy="110" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="190" cy="70" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="230" cy="230" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="230" cy="190" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="230" cy="150" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="230" cy="110" r="4.5" fill="#dc3c78"/&gt;
-&lt;circle cx="230" cy="70" r="4.5" fill="#dc3c78"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<circle cx="70" cy="230" r="4.5" fill="#dc3c78"/>
+<circle cx="70" cy="190" r="4.5" fill="#dc3c78"/>
+<circle cx="70" cy="150" r="4.5" fill="#dc3c78"/>
+<circle cx="70" cy="110" r="4.5" fill="#dc3c78"/>
+<circle cx="70" cy="70" r="4.5" fill="#dc3c78"/>
+<circle cx="110" cy="230" r="4.5" fill="#dc3c78"/>
+<circle cx="110" cy="190" r="4.5" fill="#dc3c78"/>
+<circle cx="110" cy="150" r="4.5" fill="#dc3c78"/>
+<circle cx="110" cy="110" r="4.5" fill="#dc3c78"/>
+<circle cx="110" cy="70" r="4.5" fill="#dc3c78"/>
+<circle cx="150" cy="230" r="4.5" fill="#dc3c78"/>
+<circle cx="150" cy="190" r="4.5" fill="#dc3c78"/>
+<circle cx="150" cy="150" r="4.5" fill="#dc3c78"/>
+<circle cx="150" cy="110" r="4.5" fill="#dc3c78"/>
+<circle cx="150" cy="70" r="4.5" fill="#dc3c78"/>
+<circle cx="190" cy="230" r="4.5" fill="#dc3c78"/>
+<circle cx="190" cy="190" r="4.5" fill="#dc3c78"/>
+<circle cx="190" cy="150" r="4.5" fill="#dc3c78"/>
+<circle cx="190" cy="110" r="4.5" fill="#dc3c78"/>
+<circle cx="190" cy="70" r="4.5" fill="#dc3c78"/>
+<circle cx="230" cy="230" r="4.5" fill="#dc3c78"/>
+<circle cx="230" cy="190" r="4.5" fill="#dc3c78"/>
+<circle cx="230" cy="150" r="4.5" fill="#dc3c78"/>
+<circle cx="230" cy="110" r="4.5" fill="#dc3c78"/>
+<circle cx="230" cy="70" r="4.5" fill="#dc3c78"/>
+</svg>
+</div>
   <p>Сравните с решёткой из з.11: там формула считала адрес в <strong>одном</strong> измерении, тут — в <strong>двух</strong>. Убедитесь, что понимаете, какой из циклов отвечает за столбцы, а какой за ряды: поменяйте <code>dot(9)</code> на <code>dot(4 + i * 2)</code> и посмотрите, в какую сторону растут кляксы.</p>
   <h4 class="task-item">Задание 14. Молния</h4>
   <p>Восстановите программу по картинке. Известно: молния — ломаная из четырёх точек, все иксы равны 30 или -30, игреки идут от 100 вниз с шагом 60, перо оранжевое толщиной 4. В программе художник потерял половину адресов:</p>
@@ -265,10 +281,12 @@ main() {
     t.goto(___, -80);
 }
 </script></idyl-code-block>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M120 50L180 110L120 170L180 230" fill="none" stroke="#f0aa00" stroke-width="4" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M120 50L180 110L120 170L180 230" fill="none" stroke="#f0aa00" stroke-width="4" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Подсказка в самой закономерности: зигзаг — это иксы, прыгающие между -30 и 30, и игреки, честно шагающие вниз: 100, 40, -20, -80.</p>
   <h4 class="task-item">Задание 15. Штурманский журнал</h4>
   <p>На настоящем корабле штурман после каждого поворота записывает координаты в журнал. Проведите черепаху по маршруту (100, 0) → (100, 80) → (-40, 80) → (-40, -60) с опущенным пером и <strong>после каждого отрезка</strong> печатайте запись журнала. В конце — <code>home()</code> и итоговая строка:</p>
@@ -300,10 +318,12 @@ main() {
     }
 }
 </script></idyl-code-block>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#ffffff"/&gt;
-&lt;path d="M70 230L70 70L150 150L230 70L230 230" fill="none" stroke="#000000" stroke-width="4" stroke-linecap="round"/&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<path d="M70 230L70 70L150 150L230 70L230 230" fill="none" stroke="#000000" stroke-width="4" stroke-linecap="round"/>
+</svg>
+</div>
   <p>Наберите, запустите, разберите: точка номер i — это пара <code>(xs[i], ys[i])</code>, к первой точке — телепорт, дальше цикл ведёт перо. А теперь главное: <strong>не трогая цикл</strong>, поменяйте только числа в массивах и получите другую букву — например, Л или И (для И понадобится больше точек — меняйте и размер массива). Цикл не изменился, картинка изменилась: программа и данные окончательно разъехались по разным квартирам.</p>
 </div>
 
@@ -320,16 +340,18 @@ main() {
     <li><strong>Компас</strong>: в углу карты короткая стрелка на север — <code>set_heading(90)</code>, <code>forward</code>, подпись «С» (з.12 в миниатюре).</li>
     <li><strong>Заголовок</strong>: подпись карты внизу через <code>write</code>.</li>
   </ol>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#bee1f5"/&gt;
-&lt;path d="M50 210L110 240L190 230L250 190L240 110L180 60L90 70L40 130L50 210" fill="none" stroke="#3c8c3c" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;path d="M100 140L100 100" fill="none" stroke="#785028" stroke-width="4" stroke-linecap="round"/&gt;
-&lt;path d="M100 100L75 85M100 100L100 75M100 100L125 85" fill="none" stroke="#1ea03c" stroke-width="3" stroke-linecap="round"/&gt;
-&lt;path d="M200 160L220 140M200 140L220 160" fill="none" stroke="#ff0000" stroke-width="4" stroke-linecap="round"/&gt;
-&lt;path d="M245 55L245 30L245 55" fill="none" stroke="#282878" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;text x="251" y="24" fill="#282878" font-size="14" font-family="sans-serif"&gt;С&lt;/text&gt;
-&lt;text x="51" y="259" fill="#282828" font-size="14" font-family="sans-serif"&gt;Остров сокровищ&lt;/text&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#bee1f5"/>
+<path d="M50 210L110 240L190 230L250 190L240 110L180 60L90 70L40 130L50 210" fill="none" stroke="#3c8c3c" stroke-width="3" stroke-linecap="round"/>
+<path d="M100 140L100 100" fill="none" stroke="#785028" stroke-width="4" stroke-linecap="round"/>
+<path d="M100 100L75 85M100 100L100 75M100 100L125 85" fill="none" stroke="#1ea03c" stroke-width="3" stroke-linecap="round"/>
+<path d="M200 160L220 140M200 140L220 160" fill="none" stroke="#ff0000" stroke-width="4" stroke-linecap="round"/>
+<path d="M245 55L245 30L245 55" fill="none" stroke="#282878" stroke-width="2" stroke-linecap="round"/>
+<text x="251" y="24" fill="#282878" font-size="14" font-family="sans-serif">С</text>
+<text x="51" y="259" fill="#282828" font-size="14" font-family="sans-serif">Остров сокровищ</text>
+</svg>
+</div>
   <p>Превью — образец духа, не эталон для копирования: берег, место пальмы и клада — ваши собственные. <code>speed = 0</code> разрешён, но прогоните разок на <code>speed = 3</code> — посмотреть, как черепаха «читает» вашу карту. Сдача — картинка плюс устный рассказ: покажите в коде, где телепорты, а где следы, и почему без <code>pen_up</code> карта превратилась бы в паутину (з.6 знает).</p>
 </div>
 
@@ -347,35 +369,37 @@ main() {
     <li><strong>Луна</strong>: круг — многоугольник на 20 сторон по формуле <code>360.0 / 20</code> (из книги №3).</li>
     <li><strong>Подпись города</strong> внизу и доклад в консоль: <code>город построен, окон: 18</code>.</li>
   </ol>
-  <pre class="task-pre" data-lang="svg"><code>&lt;svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"&gt;
-&lt;rect width="100%" height="100%" fill="#0f0f2d"/&gt;
-&lt;path d="M35 260L95 260L95 170L35 170L35 260M120 260L180 260L180 170L120 170L120 260M205 260L265 260L265 170L205 170L205 260" fill="none" stroke="#96a0c8" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;path d="M245 125L254 125L262.56 122.22L269.84 116.93L275.13 109.65L277.91 101.09L277.91 92.09L275.13 83.53L269.84 76.25L262.56 70.96L254 68.18L245 68.18L236.44 70.96L229.16 76.25L223.87 83.53L221.09 92.09L221.09 101.09L223.87 109.65L229.16 116.93L236.44 122.22L245 125" fill="none" stroke="#faf5c8" stroke-width="2" stroke-linecap="round"/&gt;
-&lt;circle cx="53" cy="245" r="3.5" fill="#ffd25a"/&gt;
-&lt;circle cx="53" cy="215" r="3.5" fill="#ffd25a"/&gt;
-&lt;circle cx="53" cy="185" r="3.5" fill="#ffd25a"/&gt;
-&lt;circle cx="77" cy="245" r="3.5" fill="#ffd25a"/&gt;
-&lt;circle cx="77" cy="215" r="3.5" fill="#ffd25a"/&gt;
-&lt;circle cx="77" cy="185" r="3.5" fill="#ffd25a"/&gt;
-&lt;circle cx="138" cy="245" r="3.5" fill="#ffd25a"/&gt;
-&lt;circle cx="138" cy="215" r="3.5" fill="#ffd25a"/&gt;
-&lt;circle cx="138" cy="185" r="3.5" fill="#ffd25a"/&gt;
-&lt;circle cx="162" cy="245" r="3.5" fill="#ffd25a"/&gt;
-&lt;circle cx="162" cy="215" r="3.5" fill="#ffd25a"/&gt;
-&lt;circle cx="162" cy="185" r="3.5" fill="#ffd25a"/&gt;
-&lt;circle cx="223" cy="245" r="3.5" fill="#ffd25a"/&gt;
-&lt;circle cx="223" cy="215" r="3.5" fill="#ffd25a"/&gt;
-&lt;circle cx="223" cy="185" r="3.5" fill="#ffd25a"/&gt;
-&lt;circle cx="247" cy="245" r="3.5" fill="#ffd25a"/&gt;
-&lt;circle cx="247" cy="215" r="3.5" fill="#ffd25a"/&gt;
-&lt;circle cx="247" cy="185" r="3.5" fill="#ffd25a"/&gt;
-&lt;circle cx="50" cy="50" r="2" fill="#ffffff"/&gt;
-&lt;circle cx="110" cy="25" r="1.5" fill="#ffffff"/&gt;
-&lt;circle cx="170" cy="60" r="2" fill="#ffffff"/&gt;
-&lt;circle cx="230" cy="30" r="1.5" fill="#ffffff"/&gt;
-&lt;circle cx="270" cy="80" r="2" fill="#ffffff"/&gt;
-&lt;circle cx="30" cy="90" r="1.5" fill="#ffffff"/&gt;
-&lt;text x="96" y="284" fill="#ffffff" font-size="14" font-family="sans-serif"&gt;Черепаший город&lt;/text&gt;
-&lt;/svg&gt;</code></pre>
+  <div class="task-svg-preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+<rect width="100%" height="100%" fill="#0f0f2d"/>
+<path d="M35 260L95 260L95 170L35 170L35 260M120 260L180 260L180 170L120 170L120 260M205 260L265 260L265 170L205 170L205 260" fill="none" stroke="#96a0c8" stroke-width="2" stroke-linecap="round"/>
+<path d="M245 125L254 125L262.56 122.22L269.84 116.93L275.13 109.65L277.91 101.09L277.91 92.09L275.13 83.53L269.84 76.25L262.56 70.96L254 68.18L245 68.18L236.44 70.96L229.16 76.25L223.87 83.53L221.09 92.09L221.09 101.09L223.87 109.65L229.16 116.93L236.44 122.22L245 125" fill="none" stroke="#faf5c8" stroke-width="2" stroke-linecap="round"/>
+<circle cx="53" cy="245" r="3.5" fill="#ffd25a"/>
+<circle cx="53" cy="215" r="3.5" fill="#ffd25a"/>
+<circle cx="53" cy="185" r="3.5" fill="#ffd25a"/>
+<circle cx="77" cy="245" r="3.5" fill="#ffd25a"/>
+<circle cx="77" cy="215" r="3.5" fill="#ffd25a"/>
+<circle cx="77" cy="185" r="3.5" fill="#ffd25a"/>
+<circle cx="138" cy="245" r="3.5" fill="#ffd25a"/>
+<circle cx="138" cy="215" r="3.5" fill="#ffd25a"/>
+<circle cx="138" cy="185" r="3.5" fill="#ffd25a"/>
+<circle cx="162" cy="245" r="3.5" fill="#ffd25a"/>
+<circle cx="162" cy="215" r="3.5" fill="#ffd25a"/>
+<circle cx="162" cy="185" r="3.5" fill="#ffd25a"/>
+<circle cx="223" cy="245" r="3.5" fill="#ffd25a"/>
+<circle cx="223" cy="215" r="3.5" fill="#ffd25a"/>
+<circle cx="223" cy="185" r="3.5" fill="#ffd25a"/>
+<circle cx="247" cy="245" r="3.5" fill="#ffd25a"/>
+<circle cx="247" cy="215" r="3.5" fill="#ffd25a"/>
+<circle cx="247" cy="185" r="3.5" fill="#ffd25a"/>
+<circle cx="50" cy="50" r="2" fill="#ffffff"/>
+<circle cx="110" cy="25" r="1.5" fill="#ffffff"/>
+<circle cx="170" cy="60" r="2" fill="#ffffff"/>
+<circle cx="230" cy="30" r="1.5" fill="#ffffff"/>
+<circle cx="270" cy="80" r="2" fill="#ffffff"/>
+<circle cx="30" cy="90" r="1.5" fill="#ffffff"/>
+<text x="96" y="284" fill="#ffffff" font-size="14" font-family="sans-serif">Черепаший город</text>
+</svg>
+</div>
   <p>Экзаменационный вопрос при сдаче: в функции <code>house</code> девять адресов — и <strong>ни одного числа, написанного дважды с разным смыслом</strong>: покажите, как каждый адрес выражен через cx. Дома пока прозрачные, как чертежи, — в следующей книге черепаха научится заливать фигуры цветом, и город зажжётся по-настоящему. А в конце раздела такие картины научимся сохранять в файл — и открытку с этим городом можно будет отправить.</p>
 </div>
