@@ -1,0 +1,650 @@
+<div class="docs-section">
+  <h2>Блок 1. Читаем сообщения</h2>
+  <h3 class="task-group">Практика с преподавателем</h3>
+  <h4 class="task-item">Задание 1. Эхо и загадочный тип</h4>
+  <p>У доски. Автор писал кнопку с обработчиком — «сначала поведение, потом внешность» — и получил отказ:</p>
+  <idyl-code-block><script type="text/plain">
+use gui;
+use console;
+
+main() {
+    gui.Window win;
+
+    btn.on_click = void function() {
+        console.writeln("Нажато");
+    };
+
+    gui.Button btn;
+    btn.text = "Жми";
+    win.add_child(btn);
+    win.show();
+}
+</script></idyl-code-block>
+  <p>Сообщения два, причина одна. Разберите оба: первое — знакомое ещё с консоли «не объявлена»; второе — эхо с «загадочным типом» <code>&lt;error&gt;</code>: это компилятор разводит руками — раз <code>btn</code> не существует, у неё нет и свойств. Правило урока хором: <strong>чинить с первого</strong>. И GUI-мораль: виджет объявляют <strong>до</strong> первого использования — порядок строк в <code>main</code> не украшение.</p>
+  <h3 class="task-group">Самостоятельная практика</h3>
+  <p><em>В каждой программе блока — одна ошибка. Компилятор укажет строку — ваше дело дочитать сообщение до конца и понять, чего он хочет.</em></p>
+  <h4 class="task-item">Задание 2. Табло с характером</h4>
+  <p>Окно «Счёт игры» должно показывать лейбл с числом 42. Код от автора:</p>
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.title = "Счёт игры";
+
+    int score = 42;
+
+    gui.Label board;
+    board.x = 20;
+    board.y = 20;
+    board.text = score;
+
+    win.add_child(board);
+    win.show();
+}
+</script></idyl-code-block>
+  <p>Сообщение окажется старым знакомым из консольных времён — эта порода не знает границ между разделами.</p>
+  <h4 class="task-item">Задание 3. Не тот адресат</h4>
+  <p>Кнопка «Поздороваться» по клику должна сама менять свой текст на «Привет!» (через <code>sender</code> — урок №22). Код от автора:</p>
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+
+    gui.Button greet;
+    greet.x = 20;
+    greet.y = 20;
+    greet.text = "Поздороваться";
+    greet.on_click = void function(gui.Label sender) {
+        sender.text = "Привет!";
+    };
+
+    win.add_child(greet);
+    win.show();
+}
+</script></idyl-code-block>
+  <p>Сообщение получится длинным — и это подарок: компилятор <strong>перечисляет все сигнатуры, которые готов принять</strong>. Прочитайте список и выберите из него.</p>
+  <h4 class="task-item">Задание 4. Свойство-фантом</h4>
+  <p>Кнопка «Отправить» в правом углу. Код от автора:</p>
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+
+    gui.Button send;
+    send.x = 20;
+    send.y = 60;
+    send.placeholder = "Отправить";
+
+    win.add_child(send);
+    win.show();
+}
+</script></idyl-code-block>
+  <p>Автор перепутал два виджета с похожей ролью. Сообщение назовёт беду точно; после починки ответьте на сдаче: у какого виджета свойство <code>placeholder</code> есть и зачем оно там?</p>
+</div>
+
+<div class="docs-section">
+  <h2>Блок 2. Молчаливый жанр</h2>
+  <h3 class="task-group">Практика с преподавателем</h3>
+  <h4 class="task-item">Задание 5. Невидимая кнопка</h4>
+  <p>У доски — первая молчаливая. Спецификация витрины: лейбл «Акция дня: пряники!» и под ним кнопка «Купить». Код от автора:</p>
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 300;
+    win.height = 200;
+    win.title = "Витрина";
+
+    gui.Label offer;
+    offer.x = 20;
+    offer.y = 20;
+    offer.text = "Акция дня: пряники!";
+
+    gui.Button buy;
+    buy.x = 20;
+    buy.y = 60;
+    buy.text = "Купить";
+
+    win.add_child(offer);
+    win.show();
+}
+</script></idyl-code-block>
+  <p>Скомпилируйте — ни одного замечания. Запустите — лейбл на месте, кнопки <strong>нет</strong>. Проведите разбор методом допроса: кнопка объявлена? Да. Настроена? Да. Жива? Да — в памяти. Почему же её не видно? Введите чек-лист молчаливых поломок (он будет висеть на доске до конца урока): <strong>не отображается → проверь <code>add_child</code>; не тикает → проверь <code>start()</code>; не отзывается → проверь обработчик; пропал → проверь <code>visible</code>; не там → проверь координаты.</strong> Первая строка чек-листа только что спасла пряники.</p>
+  <h3 class="task-group">Самостоятельная практика</h3>
+  <p><em>Все программы блока компилируются без замечаний. Улики добываются запуском, кликом и чек-листом.</em></p>
+  <h4 class="task-item">Задание 6. Спящие часы</h4>
+  <p>Секундомер: лейбл раз в секунду должен обновляться — «Прошло секунд: 1, 2, 3...». Код от автора:</p>
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.title = "Секундомер";
+
+    int seconds = 0;
+
+    gui.Label board;
+    board.x = 20;
+    board.y = 20;
+    board.text = "Прошло секунд: 0";
+
+    gui.Timer ticker;
+    ticker.interval = 1000;
+    ticker.on_tick = void function() {
+        seconds += 1;
+        board.text = "Прошло секунд: " + to_string(seconds);
+    };
+
+    win.add_child(board);
+    win.show();
+}
+</script></idyl-code-block>
+  <p>Окно открылось, надпись стоит как вкопанная. Таймер создан, интервал задан, обработчик написан — всё честно... почти всё. Вторая строка чек-листа.</p>
+  <h4 class="task-item">Задание 7. Афиша под кнопкой</h4>
+  <p>Спецификация афиши: заголовок «Сегодня в кино: Черепахи-ниндзя» читается целиком, под ним — кнопка «Подробнее». Код от автора:</p>
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 320;
+    win.height = 160;
+    win.title = "Афиша";
+
+    gui.Button details;
+    details.x = 30;
+    details.y = 25;
+    details.width = 120;
+    details.text = "Подробнее";
+
+    gui.Label title;
+    title.x = 20;
+    title.y = 30;
+    title.width = 280;
+    title.text = "Сегодня в кино: Черепахи-ниндзя";
+
+    win.add_child(title);
+    win.add_child(details);
+    win.show();
+}
+</script></idyl-code-block>
+  <p>Всё на экране — но заголовок читается кусками: кнопка уселась прямо на него. Тут две правды из урока: виджеты рисуются <strong>в порядке <code>add_child</code></strong> (первый — снизу), и виджеты не обязаны пересекаться вовсе. Почините так, чтобы спецификация выполнялась: заголовок целиком, кнопка — под ним. (Способов два — переставить слои или развести координаты; для афиши правильнее второй: почему?)</p>
+  <h4 class="task-item">Задание 8. Сейф не открывается</h4>
+  <p>Спецификация: код от сейфа спрятан; клик по кнопке «Показать код» открывает его. Код от автора:</p>
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.title = "Сейф";
+
+    gui.Label secret;
+    secret.x = 20;
+    secret.y = 60;
+    secret.text = "Код от сейфа: 1917";
+    secret.visible = false;
+
+    gui.Button reveal;
+    reveal.x = 20;
+    reveal.y = 20;
+    reveal.text = "Показать код";
+    reveal.on_click = void function() {
+        secret.visible = false;
+    };
+
+    win.add_child(secret);
+    win.add_child(reveal);
+    win.show();
+}
+</script></idyl-code-block>
+  <p>Кликаешь — и ничего. Причём «ничего» тут двойное: программа делает ровно то, что написано, — просто написана она не про то. Найдите строку, где замысел разошёлся с текстом, и на сдаче объясните, почему эта поломка «не отзывается», хотя обработчик назначен и срабатывает честно.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Блок 3. Кликается, но не то</h2>
+  <h3 class="task-group">Практика с преподавателем</h3>
+  <h4 class="task-item">Задание 9. Кликер-однолюб</h4>
+  <p>У доски — легендарная поломка обработчиков. Кликер: каждый клик увеличивает счёт на табло. Код от автора:</p>
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.title = "Кликер";
+
+    gui.Label board;
+    board.x = 20;
+    board.y = 60;
+    board.text = "Кликов: 0";
+
+    gui.Button clicker;
+    clicker.x = 20;
+    clicker.y = 20;
+    clicker.text = "Клик!";
+    clicker.on_click = void function() {
+        int count = 0;
+        count += 1;
+        board.text = "Кликов: " + to_string(count);
+    };
+
+    win.add_child(board);
+    win.add_child(clicker);
+    win.show();
+}
+</script></idyl-code-block>
+  <p>Кликайте при группе: раз — «Кликов: 1», два — «Кликов: 1», сто — «Кликов: 1». Программа не сломана и не молчит — она <strong>забывает</strong>. Разберите жизнь переменной <code>count</code>: рождается при каждом клике заново, нулём, и умирает в конце обработчика. Мораль — на доску, рядом с чек-листом: <strong>состояние, которое должно пережить клик, живёт снаружи обработчика.</strong> Вы писали это правильно весь раздел — теперь вы знаете, почему.</p>
+  <h3 class="task-group">Самостоятельная практика</h3>
+  <h4 class="task-item">Задание 10. Матч без минусов</h4>
+  <p>Табло матча: кнопка «+1 очко» прибавляет, «-1 очко» — отнимает. Код от автора:</p>
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.title = "Табло матча";
+
+    int score = 0;
+
+    gui.Label board;
+    board.x = 20;
+    board.y = 70;
+    board.text = "Очки: 0";
+
+    gui.Button plus;
+    plus.x = 20;
+    plus.y = 20;
+    plus.width = 100;
+    plus.text = "+1 очко";
+    plus.on_click = void function() {
+        score += 1;
+        board.text = "Очки: " + to_string(score);
+    };
+
+    gui.Button minus;
+    minus.x = 140;
+    minus.y = 20;
+    minus.width = 100;
+    minus.text = "-1 очко";
+    minus.on_click = void function() {
+        score += 1;
+        board.text = "Очки: " + to_string(score);
+    };
+
+    win.add_child(board);
+    win.add_child(plus);
+    win.add_child(minus);
+    win.show();
+}
+</script></idyl-code-block>
+  <p>Обе кнопки живые, обе меняют табло — а матч идёт только в одну сторону. Найдите след копипаста. (На сдаче: как <strong>одним кликом по каждой кнопке</strong> доказать, что поломка именно эта, а не «минус не подключён»?)</p>
+  <h4 class="task-item">Задание 11. Немой указатель громкости</h4>
+  <p>Спецификация: рядом со слайдером — цифра, которая <strong>следует за ручкой</strong>. Код от автора:</p>
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.title = "Громкость";
+
+    gui.Slider volume;
+    volume.x = 20;
+    volume.y = 20;
+    volume.width = 200;
+    volume.min = 0;
+    volume.max = 100;
+    volume.value = 50;
+
+    gui.Label board;
+    board.x = 240;
+    board.y = 20;
+    board.text = to_string(volume.value);
+
+    volume.on_change = void function() {
+    };
+
+    win.add_child(volume);
+    win.add_child(board);
+    win.show();
+}
+</script></idyl-code-block>
+  <p>При старте цифра правильная — 50. Двигаешь ручку — цифра стоит. Обработчик назначен, программа не падает... Загляните внутрь <code>on_change</code> — и сформулируйте на сдаче разницу между «однажды при старте» и «при каждом изменении»: где обязана жить строка обновления табло?</p>
+  <h4 class="task-item">Задание 12. Скидка наоборот</h4>
+  <p>Касса со скидкой по купону: галочка поставлена — к оплате 350, снята — 400. Код от автора:</p>
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.title = "Касса";
+
+    int price = 400;
+
+    gui.CheckBox discount;
+    discount.x = 20;
+    discount.y = 20;
+    discount.text = "У меня есть купон на скидку 50";
+
+    gui.Label total;
+    total.x = 20;
+    total.y = 60;
+    total.text = "К оплате: 400";
+
+    discount.on_change = void function() {
+        if (discount.is_checked == false) {
+            total.text = "К оплате: " + to_string(price - 50);
+        } else {
+            total.text = "К оплате: " + to_string(price);
+        }
+    };
+
+    win.add_child(discount);
+    win.add_child(total);
+    win.show();
+}
+</script></idyl-code-block>
+  <p>Поставьте галочку — цена <strong>выросла до полной</strong>; снимите — магазин дарит скидку без купона. Классическая инверсия условия. Почините — и заодно причешите: сравнение <code>== false</code> в этой книге считается дурным тоном, есть способ выразительнее (консольный урок логики подскажет).</p>
+  <h4 class="task-item">Минутка из внешнего мира. Не та кнопка</h4>
+  <p>13 января 2018 года жители Гавайев получили на телефоны официальное оповещение: «Угроза баллистической ракеты. Немедленно в укрытие. Это не учения». Тревога оказалась ложной — но 38 минут до опровержения штат прожил всерьёз. Что случилось? Сотрудник центра оповещения проводил плановую проверку и в интерфейсе программы <strong>выбрал не тот пункт меню</strong>: боевая рассылка и учебная выглядели почти одинаково и стояли рядом. Расследование обвинило не только человека, но и программу: интерфейс, в котором учебную тревогу легко перепутать с настоящей, — это ошибка проектирования. После инцидента экран переделали. Запомните этот случай, доводя свои окна до ума: «пользователь может кликнуть не туда» — не оскорбление пользователя, а закон природы, и хороший интерфейс проектируют так, чтобы самая страшная кнопка не стояла вплотную к самой обычной.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Блок 4. Работает, пока кликают правильно</h2>
+  <h3 class="task-group">Практика с преподавателем</h3>
+  <h4 class="task-item">Задание 13. Касса падает от слова</h4>
+  <p>У доски — GUI-версия главной краевой ловушки. Кинотеатр проверяет возраст: ввёл число — получил вердикт. Код от автора:</p>
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.title = "Пропуск в кино";
+
+    gui.LineEdit age_input;
+    age_input.x = 20;
+    age_input.y = 20;
+    age_input.width = 160;
+    age_input.placeholder = "Сколько вам лет?";
+
+    gui.Label verdict;
+    verdict.x = 20;
+    verdict.y = 100;
+    verdict.text = "Жду ответа...";
+
+    gui.Button check_btn;
+    check_btn.x = 20;
+    check_btn.y = 55;
+    check_btn.text = "Проверить";
+    check_btn.on_click = void function() {
+        int age = to_int(age_input.text);
+        if (age >= 12) {
+            verdict.text = "Проходите!";
+        } else {
+            verdict.text = "Только с родителями.";
+        }
+    };
+
+    win.add_child(age_input);
+    win.add_child(check_btn);
+    win.add_child(verdict);
+    win.show();
+}
+</script></idyl-code-block>
+  <p>Введите «13» — работает. Введите «двенадцать» — и по клику программа <strong>падает на ходу</strong>: <code>LineEdit.text</code> — всегда строка, а строка не обязана быть числом. Важное отличие от консоли: там крах случался на этапе ввода в терминале, здесь — в живом окне по клику, на глазах у пользователя. Правило блока: <strong>всё, что пришло из поля ввода, — под подозрением</strong>; проверка <code>is_int()</code> перед <code>to_int</code> — не вежливость, а техника безопасности. Почините у доски и покажите, как чинёная касса вежливо отвечает на «двенадцать».</p>
+  <h3 class="task-group">Самостоятельная практика</h3>
+  <p><em>Программы блока компилируются и отлично работают — пока преподаватель не начнёт кликать по-своему. Найдите убийственный сценарий и укрепите.</em></p>
+  <h4 class="task-item">Задание 14. Совет дня заканчивается</h4>
+  <p>Листалка советов: клик — следующий совет. Код от автора:</p>
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.title = "Совет дня";
+
+    array<string, 3> tips = ["Пей воду", "Гуляй днём", "Спи ночью"];
+    int current = 0;
+
+    gui.Label tip;
+    tip.x = 20;
+    tip.y = 60;
+    tip.width = 250;
+    tip.text = tips[0];
+
+    gui.Button next;
+    next.x = 20;
+    next.y = 20;
+    next.text = "Следующий совет";
+    next.on_click = void function() {
+        current += 1;
+        tip.text = tips[current];
+    };
+
+    win.add_child(tip);
+    win.add_child(next);
+    win.show();
+}
+</script></idyl-code-block>
+  <p>Два клика — прекрасно. Третий — тоже. А четвёртый? Почините так, чтобы советы не кончались никогда (по кругу — красивое решение в одну строчку, <code>mod</code> в помощь).</p>
+  <h4 class="task-item">Задание 15. Пицца на нуль едоков</h4>
+  <p>Делёж пиццы: спинбокс с числом едоков (от 0 до 12!), кнопка «Разделить 8 кусков», табло с результатом. Код от автора:</p>
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.title = "Делим пиццу";
+
+    gui.SpinBox eaters;
+    eaters.x = 20;
+    eaters.y = 20;
+    eaters.min = 0;
+    eaters.max = 12;
+    eaters.value = 4;
+
+    gui.Label share;
+    share.x = 20;
+    share.y = 100;
+    share.text = "Кусков каждому: 2";
+
+    gui.Button split;
+    split.x = 20;
+    split.y = 55;
+    split.text = "Разделить 8 кусков";
+    split.on_click = void function() {
+        share.text = "Кусков каждому: " + to_string(div(8, eaters.value));
+    };
+
+    win.add_child(eaters);
+    win.add_child(split);
+    win.add_child(share);
+    win.show();
+}
+</script></idyl-code-block>
+  <p>На четырёх едоках — по два куска, всё честно. Какое значение спинбокса роняет программу по клику? Почините — и подумайте на сдаче: можно было бы вместо <code>if</code> просто поставить <code>eaters.min = 1;</code> — чем это решение лучше и чем хуже? (Спойлер: это <strong>проектирование против ошибки</strong> — как переделанный экран с Гавайев.)</p>
+  <h4 class="task-item">Задание 16. Бейдж агента</h4>
+  <p>Генератор бейджей: вводишь имя — получаешь «Агент М.». Код от автора:</p>
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.title = "Бейдж";
+
+    gui.LineEdit name_input;
+    name_input.x = 20;
+    name_input.y = 20;
+    name_input.width = 160;
+    name_input.placeholder = "Ваше имя";
+
+    gui.Label badge;
+    badge.x = 20;
+    badge.y = 100;
+    badge.text = "?";
+
+    gui.Button make;
+    make.x = 20;
+    make.y = 55;
+    make.text = "Сделать бейдж";
+    make.on_click = void function() {
+        badge.text = "Агент " + name_input.text[0] + ".";
+    };
+
+    win.add_child(name_input);
+    win.add_child(make);
+    win.add_child(badge);
+    win.show();
+}
+</script></idyl-code-block>
+  <p>На «Мире» — «Агент М.». А если кликнуть, ничего не введя? Найдите крушение, почините, и на сдаче назовите консольного близнеца этой поломки (в консольном детективе она уже была — какая задача?).</p>
+</div>
+
+<div class="docs-section">
+  <h2>Блок 5. Полигон</h2>
+  <h4 class="task-item">Задание 17. Копилка</h4>
+  <p>Большое расследование. Стажёр сдал «Копилку» и уехал на каникулы. Спецификация:</p>
+  <ol>
+    <li>Поле «Сумма в рублях», кнопки «Положить» и «Снять», табло «В копилке: N рублей».</li>
+    <li>«Положить» прибавляет сумму из поля; «Снять» — вычитает, но <strong>не больше, чем есть</strong> (иначе табло говорит «В копилке столько нет!»).</li>
+    <li>Если в поле не число — табло говорит «Сумма — числом, цифрами!» и копилка не меняется.</li>
+    <li>Отдельный лейбл-часы: «Копилка открыта: N секунд» — обновляется каждую секунду.</li>
+  </ol>
+  <p>Код стажёра — в нём <strong>шесть поломок</strong>, и среди них есть все пять пород этой книги (компиляционная даст гроздь — не дайте себя обмануть числом сообщений):</p>
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 360;
+    win.height = 260;
+    win.title = "Копилка";
+
+    int savings = 0;
+
+    gui.Label board;
+    board.x = 20;
+    board.y = 140;
+    board.text = "В копилке: 0 рублей";
+
+    gui.Label clock_note;
+    clock_note.x = 20;
+    clock_note.y = 180;
+    clock_note.text = "Копилка открыта: 0 секунд";
+
+    int seconds = 0;
+    gui.Timer clock;
+    clock.interval = 1000;
+    clock.on_tick = void function() {
+        seconds += 1;
+        clock_note.text = "Копилка открыта: " + to_string(seconds) + " секунд";
+    };
+
+    gui.LineEdit amount;
+    amount.x = 20;
+    amount.y = 20;
+    amount.width = 150;
+    amount.placeholder = "Сумма в рублях";
+
+    gui.Button put;
+    put.x = 20;
+    put.y = 60;
+    put.width = 150;
+    put.text = "Положить";
+    put.on_click = void function() {
+        savings += to_int(amount.text);
+        board.text = "В копилке: " + savings + " рублей";
+    };
+
+    gui.Button take;
+    take.x = 190;
+    take.y = 60;
+    take.width = 150;
+    take.text = "Снять";
+    take.on_click = void function() {
+        savings += to_int(amount.text);
+        board.text = "В копилке: " + savings + " рублей";
+    };
+
+    win.add_child(amount);
+    win.add_child(put);
+    win.add_child(take);
+    win.add_child(clock_note);
+    win.show();
+}
+</script></idyl-code-block>
+  <p>Порядок раскопок подскажет сама программа: сначала она вообще не соберётся; потом соберётся — и начнёт удивлять. Проверяйте каждую версию по спецификации, всеми кнопками и вводами. Сдача — приёмка преподавателя по всем четырём пунктам спецификации плюс два вредных сценария на его вкус.</p>
+</div>
+
+<div class="docs-section">
+  <h2>Блок 6. Со звёздочкой</h2>
+  <p><em>Сколько дыр — не говорим. Детектив сам решает, когда дело закрыто.</em></p>
+  <h4 class="task-item task-star">Задание 18 ⭐. Приёмка с пристрастием</h4>
+  <p>Школе сдали «Переводчик баллов»: вводишь балл за контрольную от 0 до 100 — получаешь оценку (от 90 — «5», от 70 — «4», от 50 — «3», ниже — «2»). Автор демонстрирует: «87» → «Оценка: 4». Работает же!</p>
+  <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 360;
+    win.height = 220;
+    win.title = "Переводчик баллов";
+
+    gui.Label hint;
+    hint.x = 20;
+    hint.y = 20;
+    hint.width = 320;
+    hint.text = "Введите балл за контрольную (от 0 до 100):";
+
+    gui.LineEdit points;
+    points.x = 20;
+    points.y = 55;
+    points.width = 150;
+    points.placeholder = "Балл";
+
+    gui.Label grade;
+    grade.x = 20;
+    grade.y = 140;
+    grade.text = "Оценка появится здесь";
+
+    gui.Button translate;
+    translate.x = 190;
+    translate.y = 52;
+    translate.width = 150;
+    translate.text = "Перевести";
+    translate.on_click = void function() {
+        int score = to_int(points.text);
+        if (score >= 90) {
+            grade.text = "Оценка: 5";
+        } else {
+            if (score >= 70) {
+                grade.text = "Оценка: 4";
+            } else {
+                if (score >= 50) {
+                    grade.text = "Оценка: 3";
+                } else {
+                    grade.text = "Оценка: 2";
+                }
+            }
+        }
+    };
+
+    win.add_child(points);
+    win.add_child(translate);
+    win.add_child(grade);
+    win.show();
+}
+</script></idyl-code-block>
+  <p>Вы — приёмная комиссия. Шаг 1: составьте <strong>кликовый тест-план</strong> — таблицу «действие → ожидание по спецификации» (не забудьте ни одну строчку спецификации: и про подсказку на экране, и про границы баллов, и про чепуху в поле). Шаг 2: прогоните программу по плану, фиксируя каждое расхождение — их тут больше одного, и породы разные. Шаг 3: почините всё и прогоните план заново — чисто. Сдача: тест-план с пометками «до/после» — это и есть главный документ задачи.</p>
+  <h4 class="task-item task-star">Задание 19 ⭐⭐. Сапёр наоборот: оконная версия</h4>
+  <p>Финал — снова тёмная сторона, теперь с окнами. Сочините мину для соседа по всем правилам жанра:</p>
+  <ol>
+    <li>Честная спецификация поведения по кликам + аккуратный внешний вид (мина должна выглядеть как настоящее приложение!).</li>
+    <li><strong>Ровно четыре ошибки — по одной каждой породы:</strong> компиляционная, <strong>молчаливая</strong> (это новое требование против консольной версии — и самое интересное!), логическая («кликается, но не то») и краевая («падает от неудобного клика»).</li>
+    <li>Своя починенная версия — прогнана и прокликана заранее.</li>
+    <li>Ошибки честные: просчёт спешащего автора, не шифровка.</li>
+  </ol>
+  <p>Обмен, расследование, двойная сдача — как в консольном сапёре: обезвредить чужую мину и выслушать разбор своей. Вопрос на защите — каждому: <strong>какую породу сосед искал дольше всех?</strong> Если молчаливую — вы всё сделали правильно: у неё единственной нет сообщения-улики, и находит её только дисциплина чек-листа. Кто прошёл — закрыл раздел виджетов с самым взрослым навыком в багаже: умением принимать работу — чужую и свою — по спецификации, а не по первому впечатлению.</p>
+</div>
