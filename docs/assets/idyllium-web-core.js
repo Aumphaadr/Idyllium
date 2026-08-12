@@ -5485,6 +5485,12 @@ function createDefaultStandardLibrary() {
         functionSpec('asin', [{ name: 'value', type: types_1.FLOAT }], types_1.FLOAT),
         functionSpec('acos', [{ name: 'value', type: types_1.FLOAT }], types_1.FLOAT),
         functionSpec('atan', [{ name: 'value', type: types_1.FLOAT }], types_1.FLOAT),
+        functionSpec('atan2', [
+            { name: 'y', type: types_1.FLOAT },
+            { name: 'x', type: types_1.FLOAT },
+        ], types_1.FLOAT, {
+            documentation: 'Угол (в радианах) от начала координат до точки (x, y) — сначала y! Работает во всех четырёх квадрантах и не боится x = 0. Рецепт для Canvas: повернуться к цели — rotation = math.to_degrees(math.atan2(target_y - y, target_x - x)); ось Y экрана смотрит вниз, поэтому угол идёт по часовой — как rotation у drawable, поправки не нужны.',
+        }),
         functionSpec('log', [{ name: 'value', type: types_1.FLOAT }], types_1.FLOAT),
         functionSpec('log10', [{ name: 'value', type: types_1.FLOAT }], types_1.FLOAT),
         functionSpec('to_radians', [{ name: 'degrees', type: types_1.FLOAT }], types_1.FLOAT),
@@ -12414,6 +12420,7 @@ function createRuntime(options = {}) {
                     return Math.acos(number);
                 }),
                 atan: contextFunction((value, file, line) => Math.atan(finiteNumber(value, 'math.atan() value', file, line))),
+                atan2: contextFunction((y, x, file, line) => Math.atan2(finiteNumber(y, 'math.atan2() y', file, line), finiteNumber(x, 'math.atan2() x', file, line))),
                 log: contextFunction((value, file, line) => {
                     const number = finiteNumber(value, 'math.log() value', file, line);
                     if (number <= 0)

@@ -403,6 +403,12 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     functionSpec('asin', [{ name: 'value', type: FLOAT }], FLOAT),
     functionSpec('acos', [{ name: 'value', type: FLOAT }], FLOAT),
     functionSpec('atan', [{ name: 'value', type: FLOAT }], FLOAT),
+    functionSpec('atan2', [
+      { name: 'y', type: FLOAT },
+      { name: 'x', type: FLOAT },
+    ], FLOAT, {
+      documentation: 'Угол (в радианах) от начала координат до точки (x, y) — сначала y! Работает во всех четырёх квадрантах и не боится x = 0. Рецепт для Canvas: повернуться к цели — rotation = math.to_degrees(math.atan2(target_y - y, target_x - x)); ось Y экрана смотрит вниз, поэтому угол идёт по часовой — как rotation у drawable, поправки не нужны.',
+    }),
     functionSpec('log', [{ name: 'value', type: FLOAT }], FLOAT),
     functionSpec('log10', [{ name: 'value', type: FLOAT }], FLOAT),
     functionSpec('to_radians', [{ name: 'degrees', type: FLOAT }], FLOAT),

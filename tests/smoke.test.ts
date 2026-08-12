@@ -7887,4 +7887,26 @@ main() {
   }
 });
 
+test('math.atan2 covers all quadrants and matches drawable rotation recipe', async () => {
+  const result = await runIdyllium(`
+use math;
+use console;
+
+main() {
+    console.set_precision(4);
+    console.writeln(math.to_degrees(math.atan2(0, 1)));      // восток
+    console.writeln(math.to_degrees(math.atan2(1, 0)));      // экранный «вниз» — по часовой
+    console.writeln(math.to_degrees(math.atan2(0, 0 - 1)));  // запад
+    console.writeln(math.to_degrees(math.atan2(0 - 1, 0)));  // экранный «вверх»
+    console.writeln(math.to_degrees(math.atan2(1, 1)));      // диагональ
+    console.writeln(math.atan2(0, 0));                       // особая точка — 0, не ошибка
+}
+`, { platform: 'cli' }, { file: 'main.idyl' });
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === '0\n90\n180\n-90\n45\n0\n',
+    `atan2 quadrants: ${JSON.stringify(result.output)}`,
+  );
+});
+
 void runTests();

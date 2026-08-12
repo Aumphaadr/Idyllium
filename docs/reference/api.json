@@ -1,7 +1,7 @@
 {
   "version": 1,
   "languageVersion": "1.3.3",
-  "generatedAt": "2026-08-10T12:11:42.369Z",
+  "generatedAt": "2026-08-12T21:10:09.512Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "general": [
     {
@@ -802,6 +802,31 @@
           ],
           "variadic": false,
           "documentation": ""
+        },
+        {
+          "name": "atan2",
+          "signature": "atan2(y: float, x: float): float",
+          "returnType": "float",
+          "parameters": [
+            {
+              "name": "y",
+              "type": "float",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            },
+            {
+              "name": "x",
+              "type": "float",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Угол (в радианах) от начала координат до точки (x, y) — сначала y! Работает во всех четырёх квадрантах и не боится x = 0. Рецепт для Canvas: повернуться к цели — rotation = math.to_degrees(math.atan2(target_y - y, target_x - x)); ось Y экрана смотрит вниз, поэтому угол идёт по часовой — как rotation у drawable, поправки не нужны."
         },
         {
           "name": "ceil",
