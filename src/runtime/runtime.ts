@@ -2990,6 +2990,10 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
           return Math.acos(number);
         }),
         atan: contextFunction((value: number, file: string, line: number) => Math.atan(finiteNumber(value, 'math.atan() value', file, line))),
+        atan2: contextFunction((y: number, x: number, file: string, line: number) => Math.atan2(
+          finiteNumber(y, 'math.atan2() y', file, line),
+          finiteNumber(x, 'math.atan2() x', file, line),
+        )),
         log: contextFunction((value: number, file: string, line: number) => {
           const number = finiteNumber(value, 'math.log() value', file, line);
           if (number <= 0) throw new IdylliumRuntimeError(file, line, `math.log() expects a positive number, got ${number}`);
