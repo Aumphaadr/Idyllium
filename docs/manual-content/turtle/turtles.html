@@ -44,7 +44,7 @@ main() {
         boris.left(90);
         boris.forward(40);
         boris.right(90);
-        i += 1;
+        i = i + 1;
     }
 }
 </script></idyl-code-block>
@@ -107,7 +107,7 @@ main() {
     while (i < 40) {
         red.forward(random.create_int(4, 14));
         blue.forward(random.create_int(4, 14));
-        i += 1;
+        i = i + 1;
     }
 
     if (red.x > blue.x) {
@@ -226,7 +226,7 @@ main() {
     while (i < 4) {
         artist.forward(120);
         artist.left(90);
-        i += 1;
+        i = i + 1;
     }
     artist.visible = false;   // картина готова — художник уходит со сцены
 }

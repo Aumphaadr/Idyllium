@@ -162,7 +162,7 @@ main() {
     int seconds = 0;
     
     timer.on_tick = void function() {
-        seconds += 1;
+        seconds = seconds + 1;
         time_label.text = to_string(seconds);
     };
     

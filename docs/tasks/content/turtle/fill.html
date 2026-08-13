@@ -17,7 +17,7 @@ main() {
     while (i < 3) {
         t.forward(140);
         t.left(120);
-        i += 1;
+        i = i + 1;
     }
     t.end_fill();
 }
@@ -92,7 +92,7 @@ main() {
     while (i < 4) {
         t.forward(80);
         t.left(90);
-        i += 1;
+        i = i + 1;
     }
 }
 </script></idyl-code-block>
@@ -158,7 +158,7 @@ void function filled_square(int x, int y, int size) {
     while (i < 4) {
         t.forward(size);
         t.left(90);
-        i += 1;
+        i = i + 1;
     }
     t.end_fill();
 }
@@ -171,7 +171,7 @@ main() {
     int step = 0;
     while (step < 5) {
         filled_square(-130 + step * 55, -110 + step * 45, 42);
-        step += 1;
+        step = step + 1;
     }
 }
 </script></idyl-code-block>
@@ -264,10 +264,10 @@ main() {
         while (side < 4) {
             t.forward(90);
             t.left(90);
-            side += 1;
+            side = side + 1;
         }
         t.left(10);
-        i += 1;
+        i = i + 1;
     }
 }
 </script></idyl-code-block>

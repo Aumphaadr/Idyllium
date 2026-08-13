@@ -40,7 +40,7 @@ import {
   WhileStatement,
 } from './ast';
 import { DiagnosticBag, SourceRange } from './diagnostics';
-import { Token, TokenKind, tokenDisplay } from './tokens';
+import { Token, TokenKind, keywordDisplay, tokenDisplay } from './tokens';
 import { PrimitiveTypeName } from './types';
 
 export interface ParseResult {
@@ -51,6 +51,8 @@ export interface ParseResult {
 export class Parser {
   private readonly diagnostics = new DiagnosticBag();
   private current = 0;
+  // Позиция последней подсказки про кавычку в строке — защита от повтора.
+  private quoteHintAt = -1;
 
   constructor(private readonly tokens: readonly Token[]) {}
 
@@ -240,6 +242,12 @@ export class Parser {
       return this.parseIfStatement();
     }
 
+    if (this.check(TokenKind.Identifier) && this.peek().lexeme === 'elif' && this.checkNext(TokenKind.LeftParen)) {
+      const elifToken = this.advance();
+      this.error(elifToken.range, "'elif' is not an Idyllium keyword — write 'else if'");
+      return this.parseIfStatement(elifToken);
+    }
+
     if (this.check(TokenKind.KwTry)) {
       return this.parseTryStatement();
     }
@@ -335,7 +343,7 @@ export class Parser {
     isConst: boolean,
     start: SourceRange['start'],
   ): VariableDeclaration {
-    const name = this.consume(TokenKind.Identifier, 'expected variable name');
+    const name = this.consumeName('expected variable name');
     let initializer: Expression | null = null;
     let constructorArgs: CallArgument[] | null = null;
 
@@ -360,7 +368,7 @@ export class Parser {
 
   private parseClassDeclaration(): ClassDeclaration {
     const classToken = this.consume(TokenKind.KwClass, "expected 'class'");
-    const name = this.consume(TokenKind.Identifier, 'expected class name');
+    const name = this.consumeName('expected class name');
     let baseName: string | null = null;
     let baseNameRange: SourceRange | null = null;
 
@@ -462,7 +470,7 @@ export class Parser {
     const fields: ClassFieldDeclaration['fields'] = [];
 
     do {
-      const name = this.consume(TokenKind.Identifier, 'expected field name');
+      const name = this.consumeName('expected field name');
       const initializer = this.match(TokenKind.Equal) ? this.parseExpression() : null;
       fields.push({
         kind: 'FieldDeclarator',
@@ -535,7 +543,7 @@ export class Parser {
       this.error(this.previous().range, 'const parameters are not supported');
     }
     const paramType = this.parseTypeName();
-    const paramName = this.consume(TokenKind.Identifier, 'expected parameter name');
+    const paramName = this.consumeName('expected parameter name');
     const defaultValue = this.match(TokenKind.Equal) ? this.parseExpression() : null;
     return {
       kind: 'ParameterDeclaration',
@@ -627,10 +635,10 @@ export class Parser {
     }
   }
 
-  private parseIfStatement(): IfStatement {
-    const ifToken = this.consume(TokenKind.KwIf, "expected 'if'");
+  private parseIfStatement(ifToken: Token = this.consume(TokenKind.KwIf, "expected 'if'")): IfStatement {
     this.consume(TokenKind.LeftParen, "expected '(' after if");
     const condition = this.parseExpression();
+    this.hintAssignmentInCondition();
     this.consume(TokenKind.RightParen, "expected ')' after if condition");
     const thenBranch = this.parseStatement();
     const elseBranch = this.match(TokenKind.KwElse)
@@ -710,6 +718,7 @@ export class Parser {
     const whileToken = this.consume(TokenKind.KwWhile, "expected 'while'");
     this.consume(TokenKind.LeftParen, "expected '(' after while");
     const condition = this.parseExpression();
+    this.hintAssignmentInCondition();
     this.consume(TokenKind.RightParen, "expected ')' after while condition");
     const body = this.parseStatement();
     return {
@@ -726,6 +735,7 @@ export class Parser {
     this.consume(TokenKind.KwWhile, "expected 'while' after do body");
     this.consume(TokenKind.LeftParen, "expected '(' after while");
     const condition = this.parseExpression();
+    this.hintAssignmentInCondition();
     this.consume(TokenKind.RightParen, "expected ')' after do-while condition");
     const semicolon = this.consume(TokenKind.Semicolon, "expected ';' after do-while");
     return {
@@ -746,6 +756,7 @@ export class Parser {
     if (!this.check(TokenKind.Semicolon)) {
       condition = this.parseExpression();
     }
+    this.hintAssignmentInCondition();
     this.consume(TokenKind.Semicolon, "expected ';' after for condition");
 
     let increment: ForClauseStatement | null = null;
@@ -1010,6 +1021,7 @@ export class Parser {
       };
     }
 
+    this.hintIncrementDecrement();
     const token = this.advance();
     this.error(token.range, `expected expression, got ${tokenDisplay(token.kind)}`);
     return {
@@ -1241,6 +1253,7 @@ export class Parser {
 
   private consume(kind: TokenKind, message: string): Token {
     if (this.check(kind)) return this.advance();
+    this.hintBeforeConsumeError(kind);
     this.error(this.peek().range, message);
     return {
       kind,
@@ -1248,6 +1261,92 @@ export class Parser {
       literal: null,
       range: this.peek().range,
     };
+  }
+
+  /** Как consume(Identifier, …), но про ключевое слово говорит прямо. */
+  private consumeName(message: string): Token {
+    const keyword = keywordDisplay(this.peek().kind);
+    if (keyword !== undefined) {
+      this.error(this.peek().range, `'${keyword}' is a keyword and cannot be used as a name`);
+      return {
+        kind: TokenKind.Identifier,
+        lexeme: '',
+        literal: null,
+        range: this.peek().range,
+      };
+    }
+    return this.consume(TokenKind.Identifier, message);
+  }
+
+  /** Подсказки перед стандартным «expected …»: лавину не убираем, но первой
+   *  строкой называем настоящую причину. */
+  private hintBeforeConsumeError(expected: TokenKind): void {
+    const current = this.peek();
+    const prev = this.tokens[this.current - 1];
+    if (prev === undefined) return;
+
+    // Кавычка внутри строки: следующий токен стоит к строке ВПЛОТНУЮ —
+    // легальный код так выглядеть не может. Несколько провалившихся consume
+    // на одной позиции дают одну подсказку, не хор.
+    if (prev.kind === TokenKind.StringLiteral && this.adjacentTokens(prev, current)) {
+      if (this.quoteHintAt !== this.current) {
+        this.quoteHintAt = this.current;
+        this.error(current.range, 'to put a quote inside a string, write \\" (e.g. "she said \\"hi\\"")');
+      }
+      return;
+    }
+
+    // Десятичная запятая: «3,14» там, где ждали ';'. Ограничение на ';'
+    // отсекает честные запятые аргументов и индексов.
+    if (expected === TokenKind.Semicolon && current.kind === TokenKind.Comma) {
+      const next = this.tokens[this.current + 1];
+      if (
+        (prev.kind === TokenKind.IntLiteral || prev.kind === TokenKind.FloatLiteral) &&
+        next !== undefined &&
+        next.kind === TokenKind.IntLiteral &&
+        this.adjacentTokens(prev, current) &&
+        this.adjacentTokens(current, next)
+      ) {
+        this.error(current.range, `decimal numbers use a dot, not a comma: write ${prev.lexeme}.${next.lexeme}`);
+      }
+    }
+  }
+
+  // 'x++' роняет разбор на втором '+', а 'x--' съедается как 'x - (-…)' и
+  // роняет его на первом токене после пары минусов — ловим обе картины.
+  private hintIncrementDecrement(): void {
+    const current = this.peek();
+    const prev = this.tokens[this.current - 1];
+    if (prev === undefined) return;
+    if (current.kind === TokenKind.Plus && prev.kind === TokenKind.Plus && this.adjacentTokens(prev, current)) {
+      const before = this.tokens[this.current - 2];
+      const name = before !== undefined && before.kind === TokenKind.Identifier ? before.lexeme : 'x';
+      this.error(current.range, `'++' is not an Idyllium operator — write '${name} = ${name} + 1'`);
+      return;
+    }
+    const prev2 = this.tokens[this.current - 2];
+    if (
+      prev2 !== undefined &&
+      prev.kind === TokenKind.Minus &&
+      prev2.kind === TokenKind.Minus &&
+      this.adjacentTokens(prev2, prev)
+    ) {
+      const before = this.tokens[this.current - 3];
+      const name = before !== undefined && before.kind === TokenKind.Identifier ? before.lexeme : 'x';
+      this.error(prev.range, `'--' is not an Idyllium operator — write '${name} = ${name} - 1'`);
+    }
+  }
+
+  // '=' вместо '==' в условии — бытовая ошибка; подсказка первой строкой,
+  // каскад честно остаётся (решение владельца).
+  private hintAssignmentInCondition(): void {
+    if (this.check(TokenKind.Equal)) {
+      this.error(this.peek().range, "assignment '=' is not allowed in a condition — did you mean '==' ?");
+    }
+  }
+
+  private adjacentTokens(a: Token, b: Token): boolean {
+    return a.range.end.line === b.range.start.line && a.range.end.column === b.range.start.column;
   }
 
   private check(...kinds: TokenKind[]): boolean {

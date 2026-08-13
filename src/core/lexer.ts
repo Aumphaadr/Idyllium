@@ -102,14 +102,57 @@ export class Lexer {
         this.addSimple(this.match('=') ? TokenKind.SlashEqual : TokenKind.Slash, start);
         return;
       case '=':
-        this.addSimple(this.match('=') ? TokenKind.EqualEqual : TokenKind.Equal, start);
+        if (this.match('=')) {
+          this.addSimple(TokenKind.EqualEqual, start);
+          return;
+        }
+        // Перевёрнутые пары вплотную: легального кода с '=>' или '=!' не
+        // существует, а у детей это транспозиция '>=' и '!='.
+        if (this.match('>')) {
+          this.hinted(TokenKind.GreaterEqual, start, "'=>' is not an operator — did you mean '>=' ?");
+          return;
+        }
+        if (this.match('!')) {
+          this.hinted(TokenKind.BangEqual, start, "'=!' is not an operator — did you mean '!=' ?");
+          return;
+        }
+        this.addSimple(TokenKind.Equal, start);
         return;
       case '!':
         if (this.match('=')) {
           this.addSimple(TokenKind.BangEqual, start);
           return;
         }
-        this.bad(start, "unexpected character '!'");
+        this.hinted(TokenKind.KwNot, start, "'!' is not an Idyllium operator — use 'not'");
+        return;
+      case '&':
+        this.hinted(
+          TokenKind.KwAnd,
+          start,
+          this.match('&')
+            ? "'&&' is not an Idyllium operator — use 'and'"
+            : "'&' is not an Idyllium operator — use 'and'",
+        );
+        return;
+      case '|':
+        this.hinted(
+          TokenKind.KwOr,
+          start,
+          this.match('|')
+            ? "'||' is not an Idyllium operator — use 'or'"
+            : "'|' is not an Idyllium operator — use 'or'",
+        );
+        return;
+      case '%':
+        // mod — функция, а не бинарный оператор, поэтому подставить токен
+        // «как надо» нельзя: честный Bad-токен, подсказка первой строкой.
+        this.bad(start, "'%' is not an Idyllium operator — remainder is the function mod(a, b)");
+        return;
+      case '#':
+        // Остаток строки пропускаем как комментарий: разбирать «текст после
+        // решётки» как код заведомо бессмысленно.
+        this.diagnostics.error(this.rangeFrom(start), "comments start with '//' in Idyllium, not '#'");
+        this.skipLineComment();
         return;
       case '<':
         this.addSimple(this.match('=') ? TokenKind.LessEqual : TokenKind.Less, start);
@@ -189,7 +232,7 @@ export class Lexer {
 
     while (!this.isAtEnd() && this.peek() !== '"') {
       if (this.peek() === '\n') {
-        this.bad(start, 'string literal cannot contain a raw newline');
+        this.bad(start, `string is not closed — a '"' is missing before the end of the line`);
         return;
       }
       value += this.scanEscapedCharacter(start);
@@ -298,6 +341,19 @@ export class Lexer {
       lexeme: this.sourceSlice(start),
       literal: null,
       range: this.rangeFrom(start),
+    });
+  }
+
+  /** Ошибка-подсказка + токен «как надо»: разбор продолжается по очевидному
+   *  намерению ученика, и вместо лавины остаётся одно точное сообщение. */
+  private hinted(kind: TokenKind, start: SourceLocation, message: string): void {
+    const range = this.rangeFrom(start);
+    this.diagnostics.error(range, message);
+    this.tokens.push({
+      kind,
+      lexeme: this.sourceSlice(start),
+      literal: null,
+      range,
     });
   }
 

@@ -274,13 +274,14 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:6:15: compile error: expected ')' after if condition
-main.idyl:6:15: compile error: expected expression, got 'Equal'
+      <idyl-error-block>main.idyl:6:15: compile error: assignment '=' is not allowed in a condition — did you mean '==' ?
+main.idyl:6:15: compile error: expected ')' after if condition
+main.idyl:6:15: compile error: expected expression, got '='
 main.idyl:6:17: compile error: expected ';' after expression
 main.idyl:6:20: compile error: expected ';' after expression
-main.idyl:6:20: compile error: expected expression, got 'RightParen'
+main.idyl:6:20: compile error: expected expression, got ')'
 main.idyl:6:22: compile error: expected ';' after expression</idyl-error-block>
 
-      <p>Компилятор спотыкается прямо на знаке <code>=</code> и от растерянности жалуется сразу шесть раз. Не пугайтесь: читать всегда стоит первую строку. «expected ')' after if condition» означает, что присваивание внутри условия компилятор даже не признал за условие.</p>
+      <p>Компилятор спотыкается прямо на знаке <code>=</code> и от растерянности жалуется сразу семь раз. Не пугайтесь: читать всегда стоит первую строку. А первая строка здесь — прямая подсказка: «assignment '=' is not allowed in a condition — did you mean '==' ?» — «присваивание '=' в условии запрещено — может, вы имели в виду '=='?». Компилятор сам догадался, что произошло.</p>
       <p>Idyllium <strong>не разрешает</strong> использовать оператор присваивания внутри условия — это всегда ошибка компиляции. Так детская опечатка не превратится в серьёзный баг.</p>
     </div>

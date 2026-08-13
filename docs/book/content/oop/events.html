@@ -105,7 +105,7 @@ class Hero {
     event on_death(Hero victim);
 
     void function hit(int damage) {
-        this.hp -= damage;
+        this.hp = this.hp - damage;
         if (this.hp <= 0) {
             this.on_death(this);
         }
@@ -159,7 +159,7 @@ class Scoreboard {
     int deaths;
 
     void function count(Hero victim) {
-        this.deaths += 1;
+        this.deaths = this.deaths + 1;
         console.writeln("Счёт потерь: ", this.deaths);
     }
 }

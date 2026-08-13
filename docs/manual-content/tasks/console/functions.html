@@ -10,7 +10,7 @@ main() {
     int a = 352;
     int sa = 0;
     while (a > 0) {
-        sa += mod(a, 10);
+        sa = sa + mod(a, 10);
         a = div(a, 10);
     }
     console.writeln("Сумма цифр 352: ", sa);
@@ -18,7 +18,7 @@ main() {
     int b = 47;
     int sb = 0;
     while (b > 0) {
-        sb += mod(b, 10);
+        sb = sb + mod(b, 10);
         b = div(b, 10);
     }
     console.writeln("Сумма цифр 47: ", sb);
@@ -26,7 +26,7 @@ main() {
     int c = 1000;
     int sc = 0;
     while (c > 0) {
-        sc += mod(c, 10);
+        sc = sc + mod(c, 10);
         c = div(c, 10);
     }
     console.writeln("Сумма цифр 1000: ", sc);
@@ -34,7 +34,7 @@ main() {
     int d = 999;
     int sd = 0;
     while (d > 0) {
-        sd += mod(d, 10);
+        sd = sd + mod(d, 10);
         d = div(d, 10);
     }
     console.writeln("Сумма цифр 999: ", sd);
@@ -53,7 +53,7 @@ use console;
 int function digit_sum(int number) {
     int res = 0;
     while (number > 0) {
-        res += mod(number, 10);
+        res = res + mod(number, 10);
         number = div(number, 10);
     }
     return res;
@@ -89,7 +89,7 @@ int function sale_price(int price) {
   <idyl-code-block><script type="text/plain">
 int function mul_all(dyn_array<int> some_arr) {
     int res = 1;
-    for (int i = 0; i < some_arr.length; i += 1) {
+    for (int i = 0; i < some_arr.length; i = i + 1) {
         res = res * some_arr[i];
     }
     return res;
@@ -126,7 +126,7 @@ int function square(int n) {
 
 main() {
     console.writeln("Прайс мастерской ковров:");
-    for (int i = 1; i <= 5; i += 1) {
+    for (int i = 1; i <= 5; i = i + 1) {
         console.writeln("Ковёр ", i, "×", i, " — ", square(i), " кв. м");
     }
 }
@@ -275,7 +275,7 @@ use console;
 
 void function draw_line(int L) {
     string res = "";
-    for (int i = 0; i < L; i += 1) {
+    for (int i = 0; i < L; i = i + 1) {
         res = res + '-';
     }
     console.writeln(res);
@@ -432,7 +432,7 @@ int function main() {
   <idyl-output-block>25</idyl-output-block>
   <p>Функции складываются из функций, как конструктор, — на этом стоит всё большое программирование.</p>
   <h4 class="task-item task-star">Задание 36 ⭐. Викторина на конвейере</h4>
-  <p>Соберите викторину, где каждый вопрос — один вызов. <strong>Функция</strong> <code>int ask(string question, int answer)</code>: задаёт вопрос, принимает ответ, хвалит или поправляет — и <strong>возвращает</strong> 1 балл за верный ответ, 0 за неверный. <strong><code>main</code></strong>: три-четыре вызова <code>score += ask(...)</code> и итог. Заметьте, какая мощь: новый вопрос — одна строка.</p>
+  <p>Соберите викторину, где каждый вопрос — один вызов. <strong>Функция</strong> <code>int ask(string question, int answer)</code>: задаёт вопрос, принимает ответ, хвалит или поправляет — и <strong>возвращает</strong> 1 балл за верный ответ, 0 за неверный. <strong><code>main</code></strong>: три-четыре вызова <code>score = score + ask(...)</code> и итог. Заметьте, какая мощь: новый вопрос — одна строка.</p>
   <idyl-output-block>Сколько будет 6 умножить на 7? 42
 Верно!
 Сколько бит в байте? 5

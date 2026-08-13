@@ -65,7 +65,7 @@ use console;
 
 main() {
     array<int, 5> nums = [29, 84, 16, 35, 43];
-    for (int i = 0; i < 5; i += 1) {
+    for (int i = 0; i < 5; i = i + 1) {
         console.writeln("Ячейка ", i, ": ", nums[i]);
     }
 }
@@ -123,7 +123,7 @@ use console;
 main() {
     array<int, 5> jumps = [129, 84, 165, 91, 143];
     int record = jumps[0];
-    for (int i = 1; i < 5; i += 1) {
+    for (int i = 1; i < 5; i = i + 1) {
         if (jumps[i] > record) {
             record = jumps[i];
         }
@@ -169,7 +169,7 @@ use console;
 main() {
     array<string, 3> names = ["Аня", "Боря", "Витя"];
     array<int, 3> points = [50, 80, 65];
-    for (int i = 0; i < 3; i += 1) {
+    for (int i = 0; i < 3; i = i + 1) {
         console.writeln(names[i], ": ", points[i], " очков");
     }
 }
@@ -225,7 +225,7 @@ main() {
   <p>Загадка на внимательность. Массив из 5 ячеек, а цикл написан так:</p>
   <idyl-code-block><script type="text/plain">
     array<int, 5> a = [10, 20, 30, 40, 50];
-    for (int i = 0; i <= 5; i += 1) {
+    for (int i = 0; i <= 5; i = i + 1) {
         console.writeln(a[i]);
     }
 }

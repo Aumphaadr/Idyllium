@@ -100,10 +100,10 @@ void function on_update(gui.Canvas canvas, float delta_time) {
 
   <idyl-code-block><script type="text/plain">
 void function on_update(gui.Canvas canvas, float delta_time) {
-    if (pressed_keys.contains("W")) { player.y -= 2; }
-    if (pressed_keys.contains("S")) { player.y += 2; }
-    if (pressed_keys.contains("A")) { player.x -= 2; }
-    if (pressed_keys.contains("D")) { player.x += 2; }
+    if (pressed_keys.contains("W")) { player.y = player.y - 2; }
+    if (pressed_keys.contains("S")) { player.y = player.y + 2; }
+    if (pressed_keys.contains("A")) { player.x = player.x - 2; }
+    if (pressed_keys.contains("D")) { player.x = player.x + 2; }
 
     canvas.clear();
     canvas.draw(player);
@@ -160,10 +160,10 @@ void function on_key_released(gui.Canvas canvas, gui.KeyboardEvent e) {
 }
 
 void function on_update(gui.Canvas canvas, float delta_time) {
-    if (pressed_keys.contains("W")) { player.y -= 2; }
-    if (pressed_keys.contains("S")) { player.y += 2; }
-    if (pressed_keys.contains("A")) { player.x -= 2; }
-    if (pressed_keys.contains("D")) { player.x += 2; }
+    if (pressed_keys.contains("W")) { player.y = player.y - 2; }
+    if (pressed_keys.contains("S")) { player.y = player.y + 2; }
+    if (pressed_keys.contains("A")) { player.x = player.x - 2; }
+    if (pressed_keys.contains("D")) { player.x = player.x + 2; }
 
     canvas.clear();
     canvas.draw(player);

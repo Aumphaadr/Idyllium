@@ -11,7 +11,7 @@ main() {
     int n = 5;
     while (n >= 1) {
         console.writeln(n);
-        n -= 1;
+        n = n - 1;
     }
     console.writeln("Пуск!");
 }
@@ -22,7 +22,7 @@ main() {
 2
 1
 Пуск!</idyl-output-block>
-  <p>Счётчик <code>n</code> уменьшается на каждом круге. Как только он дойдёт до нуля, условие <code>n &gt;= 1</code> станет ложным — и цикл закончится. Уберите строку <code>n -= 1;</code> мысленно: что будет? (Правильно — беда; проверим это в задании 6.)</p>
+  <p>Счётчик <code>n</code> уменьшается на каждом круге. Как только он дойдёт до нуля, условие <code>n &gt;= 1</code> станет ложным — и цикл закончится. Уберите строку <code>n = n - 1;</code> мысленно: что будет? (Правильно — беда; проверим это в задании 6.)</p>
   <h4 class="task-item">Задание 2. Долго ли копить</h4>
   <p>Пока цель не достигнута — продолжаем. Наберите:</p>
   <idyl-code-block><script type="text/plain">
@@ -32,8 +32,8 @@ main() {
     int saved = 0;
     int days = 0;
     while (saved < 100) {
-        saved += 15;
-        days += 1;
+        saved = saved + 15;
+        days = days + 1;
     }
     console.writeln("За ", days, " дней накопится ", saved, " монет.");
 }
@@ -72,7 +72,7 @@ main() {
     int c = 1;
     while (c <= 3) {
         int doubled = c * 2;
-        c += 1;
+        c = c + 1;
     }
     console.writeln(doubled);
 </script></idyl-code-block>
@@ -89,7 +89,7 @@ main() {
 use console;
 
 main() {
-    for (int i = 1; i <= 10; i += 1) {
+    for (int i = 1; i <= 10; i = i + 1) {
         console.writeln("7 x ", i, " = ", 7 * i);
     }
 }
@@ -113,7 +113,7 @@ use console;
 main() {
     console.write("Длина дорожки: ");
     int len = console.get_int();
-    for (int i = 0; i < len; i += 1) {
+    for (int i = 0; i < len; i = i + 1) {
         console.write("*");
     }
     console.write("\n");
@@ -157,7 +157,7 @@ main() {
   <h4 class="task-item">Задание 16. Счётчик после финиша</h4>
   <p>Ещё про область видимости — теперь для счётчика <code>for</code>. Обратитесь к <code>i</code> <strong>после</strong> цикла:</p>
   <idyl-code-block><script type="text/plain">
-    for (int i = 1; i <= 5; i += 1) {
+    for (int i = 1; i <= 5; i = i + 1) {
         console.writeln(i);
     }
     console.writeln("Последним было: ", i);
@@ -255,9 +255,9 @@ main() {
 5 -&gt; 2.23606798</idyl-output-block>
   <p>Приглядитесь: у точных квадратов (0, 1, 4, 9, 16…) корень целый, у остальных — длинный дробный хвост. Тот самый <code>float</code> из ранних уроков во всей красе.</p>
   <h4 class="task-item task-star">Задание 25 ⭐. Как крутят циклы у соседей</h4>
-  <p>Ещё с урока про инкремент вы знаете: короткой записи <code>i++</code> в Idyllium нет — шаг пишется <code>i += 1</code>, в том числе и в заголовке <code>for</code> (проверьте: <code>for (int i = 1; i &lt;= 5; i++)</code> не соберётся). Но у соседей по цеху на этот счёт свои порядки.</p>
+  <p>Ещё с урока про инкремент вы знаете: короткой записи <code>i++</code> в Idyllium нет — шаг пишется явно: <code>i = i + 1</code> (есть и короткая запись <code>i += 1</code>), в том числе и в заголовке <code>for</code> (проверьте: <code>for (int i = 1; i &lt;= 5; i++)</code> не соберётся). Но у соседей по цеху на этот счёт свои порядки.</p>
   <ul>
-    <li>В <strong>C++, Java и JavaScript</strong> есть короткая запись <code>i++</code> (то же, что <code>i += 1</code>) — привычная, но новичков путает: чем <code>i++</code> отличается от <code>++i</code>? Idyllium убрал этот вопрос, оставив ясное <code>i += 1</code>.</li>
+    <li>В <strong>C++, Java и JavaScript</strong> есть короткая запись <code>i++</code> (то же, что <code>i = i + 1</code>) — привычная, но новичков путает: чем <code>i++</code> отличается от <code>++i</code>? Idyllium убрал этот вопрос, оставив ясное <code>i = i + 1</code>.</li>
     <li>Ещё коварнее — <strong>лишняя точка с запятой</strong>: в C++ строка <code>while (i &lt; 3);</code> спокойно компилируется, но означает пустой цикл — программа зависает, а ошибки не видно. Напишите <code>while (i &lt; 3);</code> с точкой с запятой в Idyllium — язык сразу откажется.</li>
   </ul>
   <p>Idyllium специально проще и строже: одна очевидная форма шага и никаких «пустых» циклов исподтишка.</p>

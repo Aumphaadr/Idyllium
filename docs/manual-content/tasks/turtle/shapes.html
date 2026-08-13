@@ -12,7 +12,7 @@ main() {
     while (i < 3) {
         t.forward(150);
         t.left(120);
-        i += 1;
+        i = i + 1;
     }
 }
 </script></idyl-code-block>
@@ -59,7 +59,7 @@ main() {
     while (i < 11) {
         t.forward(60);
         t.left(div(360, 11));
-        i += 1;
+        i = i + 1;
     }
     console.writeln("угол div(360, 11) = ", div(360, 11));
     console.writeln("одиннадцать поворотов = ", 11 * div(360, 11));
@@ -100,7 +100,7 @@ void function polygon(int sides, int size) {
     while (i < sides) {
         t.forward(size);
         t.left(360 / sides);
-        i += 1;
+        i = i + 1;
     }
 }
 

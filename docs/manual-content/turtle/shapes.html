@@ -24,7 +24,7 @@ main() {
     while (i < 3) {
         t.forward(150);
         t.left(120);
-        i += 1;
+        i = i + 1;
     }
 }
 </script></idyl-code-block>
@@ -61,7 +61,7 @@ void function polygon(int sides, int size) {
     while (i < sides) {
         t.forward(size);
         t.left(360 / sides);
-        i += 1;
+        i = i + 1;
     }
 }
 
@@ -137,7 +137,7 @@ main() {
     while (i < 5) {
         t.forward(160);
         t.right(144);
-        i += 1;
+        i = i + 1;
     }
 
     t.pen_up();

@@ -96,10 +96,10 @@ class Player {
     void function fight(Monster target) {
         console.writeln(this.name, " нападает на чудище (", target.kind, ")!");
         while (target.hp > 0) {
-            target.hp -= this.damage;
+            target.hp = target.hp - this.damage;
             console.writeln("  Удар! У чудища осталось ", target.hp);
         }
-        this.wallet += target.gold;
+        this.wallet = this.wallet + target.gold;
         target.gold = 0;
         console.writeln(this.name, " забирает золото. В кошельке: ", this.wallet);
     }
@@ -114,7 +114,7 @@ class Player {
 <div class="docs-section">
   <h2>Блок 4. Настоящие проекты</h2>
   <h4 class="task-item">Задание 13. Разгон с множителем (два файла)</h4>
-  <p>Оверклокинг дорос до параметра. В <code>cpu.idyl</code> — класс <code>CPU</code> из прошлой книги, но <code>overclock(float multiplier)</code> теперь честный: частота <code>*= multiplier</code>, температура <code>+= 30</code>, порог 95 и дымок — как раньше. В <code>main.idyl</code> — три процессора и <strong>разные аппетиты</strong>: Скромняге ×1.2, Зверю ×1.5, Картофелю — ×1.5 дважды. Кто задымился при ваших множителях? Подберите множитель, при котором Скромняга гибнет с первого разгона, — и объясните, почему параметр сделал класс полезнее «звёздной» версии с зашитой полуторкой.</p>
+  <p>Оверклокинг дорос до параметра. В <code>cpu.idyl</code> — класс <code>CPU</code> из прошлой книги, но <code>overclock(float multiplier)</code> теперь честный: частота <code>frequency = frequency * multiplier</code>, температура <code>temperature = temperature + 30</code>, порог 95 и дымок — как раньше. В <code>main.idyl</code> — три процессора и <strong>разные аппетиты</strong>: Скромняге ×1.2, Зверю ×1.5, Картофелю — ×1.5 дважды. Кто задымился при ваших множителях? Подберите множитель, при котором Скромняга гибнет с первого разгона, — и объясните, почему параметр сделал класс полезнее «звёздной» версии с зашитой полуторкой.</p>
   <h4 class="task-item">Задание 14. Кулер спешит на помощь (три файла)</h4>
   <p>Первый проект на <strong>три</strong> файла: <code>cpu.idyl</code> (из з.13), <code>cooler.idyl</code> и <code>main.idyl</code>. Класс <code>Cooler</code>: вид, мощность — и метод-спасатель <code>cool(cpu.CPU target)</code>: снимает с чужого процессора <code>power</code> градусов и докладывает. Заметьте сигнатуру: <strong>тип параметра — с префиксом модуля</strong> (<code>cpu.CPU</code>), и в начале <code>cooler.idyl</code> нужен свой <code>use cpu;</code> — кулер обязан знать, что такое процессор. Сценарий main: разгон — охлаждение — разгон — охлаждение; подберите мощность кулера так, чтобы Картофель-3000 пережил два разгона ×1.5 (пробный эталон выживает <strong>ровно на волоске</strong>: температура 95 — это ещё не «больше 95»). Три файла, два класса, одна драма.</p>
   <h4 class="task-item">Задание 15. Расселение (три файла)</h4>
