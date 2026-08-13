@@ -33,8 +33,8 @@ void function init(gui.Canvas canvas) {
 }
 
 void function update(gui.Canvas canvas, float delta_time) {
-    left_box.x += 2;
-    right_box.x -= 2;
+    left_box.x = left_box.x + 2;
+    right_box.x = right_box.x - 2;
 
     canvas.fill(colors.RGB(20, 24, 32));
     canvas.draw(left_box);

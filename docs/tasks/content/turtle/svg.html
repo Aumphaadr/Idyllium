@@ -19,10 +19,10 @@ main() {
         while (side < 3) {
             t.forward(95);
             t.left(120);
-            side += 1;
+            side = side + 1;
         }
         t.left(30);
-        i += 1;
+        i = i + 1;
     }
 
     turtle.save_svg("вертушка.svg");
@@ -56,10 +56,10 @@ main() {
         while (side < 4) {
             t.forward(140);
             t.left(90);
-            side += 1;
+            side = side + 1;
         }
         t.left(10);
-        i += 1;
+        i = i + 1;
     }
 
     turtle.save_svg("узор.svg");
@@ -87,7 +87,7 @@ main() {
     turtle.Turtle t;
     t.speed = 0;
     int i = 0;
-    while (i < 4) { t.forward(100); t.left(90); i += 1; }
+    while (i < 4) { t.forward(100); t.left(90); i = i + 1; }
     t.dot(10);
     t.write("готово");
     turtle.save_svg("проба.svg");
@@ -138,7 +138,7 @@ void function polygon(int sides, int size) {
     while (i < sides) {
         t.forward(size);
         t.left(360.0 / sides);
-        i += 1;
+        i = i + 1;
     }
 }
 

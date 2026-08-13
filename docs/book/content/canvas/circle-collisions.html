@@ -39,7 +39,7 @@ void function init(gui.Canvas canvas) {
 }
 
 void function update(gui.Canvas canvas, float delta_time) {
-    moving_ball.x += 2;
+    moving_ball.x = moving_ball.x + 2;
     if (moving_ball.x > 430) {
         moving_ball.x = 20;
     }

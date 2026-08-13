@@ -189,14 +189,14 @@ main() {
     array<string, 3> names = ["Шарик", "Бобик", "Рекс"];
     array<int, 3> ages = [3, 5, 2];
 
-    for (int i = 0; i < 3; i += 1) {
+    for (int i = 0; i < 3; i = i + 1) {
         Dog tmp;             // на каждом витке цикла создаётся НОВЫЙ объект
         tmp.name = names[i];
         tmp.age = ages[i];
         dogs.add(tmp);       // добавляем собаку в массив
     }
 
-    for (int i = 0; i < dogs.length; i += 1) {
+    for (int i = 0; i < dogs.length; i = i + 1) {
         console.writeln(dogs[i].name, " ", dogs[i].age);
     }
 }

@@ -1249,7 +1249,7 @@ function tasksShell(): string {
         <span></span>
         <span></span>
       </button>
-      <a class="brand" href="../">
+      <a class="brand" href="https://github.com/Aumphaadr/Idyllium" target="_blank" rel="noopener" title="Idyllium на GitHub">
         <span class="brand-mark">I</span>
         <span class="brand-text">Idyllium</span>
         <span class="idyllium-version">v</span>

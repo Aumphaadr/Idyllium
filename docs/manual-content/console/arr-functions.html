@@ -9,8 +9,8 @@ main() {
     dyn_array<int> scores = [29, 84, 16, 35, 43, 60, 17];
 
     int total = 0;
-    for (int i = 0; i < scores.length; i += 1) {
-        total += scores[i];
+    for (int i = 0; i < scores.length; i = i + 1) {
+        total = total + scores[i];
     }
     console.writeln("Сумма очков: ", total);
 }

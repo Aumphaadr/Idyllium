@@ -130,6 +130,47 @@ export const KEYWORDS: Readonly<Record<string, TokenKind>> = {
   public: TokenKind.KwPublic,
 };
 
+/** Знаки препинания и операторы — печатаем сам символ: ребёнку «got ')'»
+ *  говорит всё, а внутреннее имя 'RightParen' — ничего. */
+const PUNCTUATION_DISPLAY: Readonly<Partial<Record<TokenKind, string>>> = {
+  [TokenKind.LeftParen]: '(',
+  [TokenKind.RightParen]: ')',
+  [TokenKind.LeftBrace]: '{',
+  [TokenKind.RightBrace]: '}',
+  [TokenKind.LeftBracket]: '[',
+  [TokenKind.RightBracket]: ']',
+  [TokenKind.Comma]: ',',
+  [TokenKind.Semicolon]: ';',
+  [TokenKind.Dot]: '.',
+  [TokenKind.Colon]: ':',
+  [TokenKind.Tilde]: '~',
+  [TokenKind.Plus]: '+',
+  [TokenKind.Minus]: '-',
+  [TokenKind.Star]: '*',
+  [TokenKind.Slash]: '/',
+  [TokenKind.Equal]: '=',
+  [TokenKind.PlusEqual]: '+=',
+  [TokenKind.MinusEqual]: '-=',
+  [TokenKind.StarEqual]: '*=',
+  [TokenKind.SlashEqual]: '/=',
+  [TokenKind.EqualEqual]: '==',
+  [TokenKind.BangEqual]: '!=',
+  [TokenKind.Less]: '<',
+  [TokenKind.LessEqual]: '<=',
+  [TokenKind.Greater]: '>',
+  [TokenKind.GreaterEqual]: '>=',
+};
+
+/** Ключевые слова — печатаем само слово (обратная карта KEYWORDS). */
+const KEYWORD_DISPLAY: Readonly<Partial<Record<TokenKind, string>>> = Object.fromEntries(
+  Object.entries(KEYWORDS).map(([word, kind]) => [kind, word]),
+);
+
+/** Слово языка для токена-ключевого слова, undefined для остальных. */
+export function keywordDisplay(kind: TokenKind): string | undefined {
+  return KEYWORD_DISPLAY[kind];
+}
+
 export function tokenDisplay(kind: TokenKind): string {
   switch (kind) {
     case TokenKind.IntLiteral:
@@ -144,7 +185,14 @@ export function tokenDisplay(kind: TokenKind): string {
       return 'identifier';
     case TokenKind.EndOfFile:
       return 'end of file';
-    default:
+    case TokenKind.Bad:
+      return 'unknown character';
+    default: {
+      const punctuation = PUNCTUATION_DISPLAY[kind];
+      if (punctuation !== undefined) return `'${punctuation}'`;
+      const keyword = KEYWORD_DISPLAY[kind];
+      if (keyword !== undefined) return `'${keyword}'`;
       return `'${kind}'`;
+    }
   }
 }

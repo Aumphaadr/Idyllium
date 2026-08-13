@@ -44,8 +44,8 @@ void function on_mouse_move(gui.Canvas canvas, gui.MouseEvent e) {
 }
 
 void function on_mouse_scroll(gui.Canvas canvas, gui.MouseScrollEvent e) {
-    box.width += e.delta * 10;
-    box.height += e.delta * 6;
+    box.width = box.width + e.delta * 10;
+    box.height = box.height + e.delta * 6;
     redraw(canvas);
 }
 

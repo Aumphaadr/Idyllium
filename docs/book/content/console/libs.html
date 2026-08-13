@@ -25,7 +25,7 @@ use console;
 // Функция, которая выводит линию из '-' заданной длины
 void function line(int L) {
     string res = "";
-    for (int i = 0; i < L; i += 1) {
+    for (int i = 0; i < L; i = i + 1) {
         res = res + '-';
     }
     console.writeln(res);
@@ -106,7 +106,7 @@ main() {
 
   <p><strong>Расширение в <code>use</code>.</strong> Написать <code>use draw.idyl;</code> — первые грабли каждого, кто создаёт библиотеку. Компилятор спотыкается о точку и выдаёт целый ворох ошибок:</p>
   <idyl-error-block>main.idyl:2:9: compile error: expected ';' after use declaration
-main.idyl:2:9: compile error: unexpected token 'Dot' at top level
+main.idyl:2:9: compile error: unexpected token '.' at top level
 main.idyl:2:10: compile error: executable statements must be inside 'main()' or another function, not at top level</idyl-error-block>
   <p>Лекарство простое: в <code>use</code> расширение не пишется никогда — ни для системных библиотек, ни для ваших.</p>
 </div>

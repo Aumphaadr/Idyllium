@@ -58,6 +58,25 @@ import {
   typeToString,
 } from './types';
 
+// Кириллические буквы, неотличимые на глаз от латинских. Идентификаторы на
+// кириллице легальны, поэтому смесь алфавитов в имени — не ошибка сама по
+// себе; но когда имя «не объявлено», двойник по этой таблице — почти
+// наверняка настоящая причина.
+const HOMOGLYPHS: Readonly<Record<string, string>> = {
+  а: 'a', в: 'b', е: 'e', к: 'k', м: 'm', н: 'h', о: 'o', р: 'p',
+  с: 'c', т: 't', у: 'y', х: 'x',
+  А: 'A', В: 'B', Е: 'E', К: 'K', М: 'M', Н: 'H', О: 'O', Р: 'P',
+  С: 'C', Т: 'T', У: 'Y', Х: 'X',
+};
+
+function normalizeHomoglyphs(name: string): string {
+  let result = '';
+  for (const char of name) {
+    result += HOMOGLYPHS[char] ?? char;
+  }
+  return result;
+}
+
 export interface SemanticResult {
   readonly success: boolean;
   readonly diagnostics: DiagnosticBag;
@@ -1152,7 +1171,7 @@ export class SemanticAnalyzer {
     if (target.kind === 'IdentifierExpression') {
       const symbol = this.lookup(target.name);
       if (!symbol) {
-        this.diagnostics.error(target.range, `variable '${target.name}' was not declared in this scope`);
+        this.diagnostics.error(target.range, this.notDeclaredMessage(target.name, 'variable '));
         return { type: ERROR_TYPE };
       }
       this.markSymbolReference(symbol, target.range, target.name);
@@ -1473,7 +1492,7 @@ export class SemanticAnalyzer {
       return ERROR_TYPE;
     }
 
-    this.diagnostics.error(range, `'${name}' was not declared in this scope`);
+    this.diagnostics.error(range, this.notDeclaredMessage(name));
     return ERROR_TYPE;
   }
 
@@ -1761,7 +1780,7 @@ export class SemanticAnalyzer {
         };
       }
 
-      this.diagnostics.error(callee.range, `function '${callee.name}' was not declared in this scope`);
+      this.diagnostics.error(callee.range, this.notDeclaredMessage(callee.name, 'function '));
       return null;
     }
 
@@ -2523,6 +2542,29 @@ export class SemanticAnalyzer {
       return false;
     }
     return true;
+  }
+
+  /** Ищет в видимых областях имя, совпадающее с искомым после замены
+   *  кириллических букв на латинские двойники: опечатку «cоunt» с русской „о"
+   *  глазом не найти, компилятор обязан подсказать. */
+  private homoglyphTwin(name: string): string | null {
+    const normalized = normalizeHomoglyphs(name);
+    for (let i = this.scopes.length - 1; i >= 0; i--) {
+      for (const candidate of this.scopes[i].keys()) {
+        if (candidate !== name && normalizeHomoglyphs(candidate) === normalized) {
+          return candidate;
+        }
+      }
+    }
+    return null;
+  }
+
+  private notDeclaredMessage(name: string, prefix = ''): string {
+    const twin = this.homoglyphTwin(name);
+    if (twin !== null) {
+      return `${prefix}'${name}' was not declared in this scope — but '${twin}' is: the two names mix Russian and English letters that look alike`;
+    }
+    return `${prefix}'${name}' was not declared in this scope`;
   }
 
   private lookup(name: string): SymbolInfo | null {

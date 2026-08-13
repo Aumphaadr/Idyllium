@@ -75,13 +75,15 @@ main() {
 }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:4:28: compile error: expected ')' after arguments
+  <idyl-error-block>main.idyl:4:28: compile error: to put a quote inside a string, write \" (e.g. "she said \"hi\"")
+main.idyl:4:28: compile error: expected ')' after arguments
 main.idyl:4:28: compile error: expected ';' after expression
 main.idyl:4:37: compile error: expected ';' after expression
+main.idyl:4:64: compile error: to put a quote inside a string, write \" (e.g. "she said \"hi\"")
 main.idyl:4:64: compile error: expected ';' after expression
-main.idyl:4:64: compile error: expected expression, got 'RightParen'</idyl-error-block>
+main.idyl:4:64: compile error: expected expression, got ')'</idyl-error-block>
 
-  <p>Целая пачка ошибок из-за одной пропущенной косой черты! Не пугайтесь: когда компилятор запутался, читайте первую ошибку — остальные обычно лишь её испуганное эхо.</p>
+  <p>Целая пачка ошибок из-за одной пропущенной косой черты! Не пугайтесь: когда компилятор запутался, читайте первую ошибку — остальные обычно лишь её испуганное эхо. А первая строка здесь прямо подсказывает решение: «to put a quote inside a string, write \"» — «чтобы поставить кавычку внутри строки, пишите \"».</p>
 </div>
 
 <div class="docs-section">

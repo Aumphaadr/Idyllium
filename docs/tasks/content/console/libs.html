@@ -9,7 +9,7 @@ use console;
 
 void function line(int L) {
     string res = "";
-    for (int i = 0; i < L; i += 1) {
+    for (int i = 0; i < L; i = i + 1) {
         res = res + '-';
     }
     console.writeln(res);
@@ -54,7 +54,7 @@ main() {
 // strings.idyl
 string function repeat(string s, int n) {
     string res = "";
-    for (int i = 0; i < n; i += 1) {
+    for (int i = 0; i < n; i = i + 1) {
         res = res + s;
     }
     return res;
@@ -110,7 +110,7 @@ use random;
 string function hp_bar(int hp, int max_hp) {
     int filled = div(hp * 10, max_hp);
     string bar = "[";
-    for (int i = 0; i < 10; i += 1) {
+    for (int i = 0; i < 10; i = i + 1) {
         if (i < filled) {
             bar = bar + "#";
         } else {

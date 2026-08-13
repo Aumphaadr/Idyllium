@@ -1373,14 +1373,49 @@ class Lexer {
                 this.addSimple(this.match('=') ? tokens_1.TokenKind.SlashEqual : tokens_1.TokenKind.Slash, start);
                 return;
             case '=':
-                this.addSimple(this.match('=') ? tokens_1.TokenKind.EqualEqual : tokens_1.TokenKind.Equal, start);
+                if (this.match('=')) {
+                    this.addSimple(tokens_1.TokenKind.EqualEqual, start);
+                    return;
+                }
+                // Перевёрнутые пары вплотную: легального кода с '=>' или '=!' не
+                // существует, а у детей это транспозиция '>=' и '!='.
+                if (this.match('>')) {
+                    this.hinted(tokens_1.TokenKind.GreaterEqual, start, "'=>' is not an operator — did you mean '>=' ?");
+                    return;
+                }
+                if (this.match('!')) {
+                    this.hinted(tokens_1.TokenKind.BangEqual, start, "'=!' is not an operator — did you mean '!=' ?");
+                    return;
+                }
+                this.addSimple(tokens_1.TokenKind.Equal, start);
                 return;
             case '!':
                 if (this.match('=')) {
                     this.addSimple(tokens_1.TokenKind.BangEqual, start);
                     return;
                 }
-                this.bad(start, "unexpected character '!'");
+                this.hinted(tokens_1.TokenKind.KwNot, start, "'!' is not an Idyllium operator — use 'not'");
+                return;
+            case '&':
+                this.hinted(tokens_1.TokenKind.KwAnd, start, this.match('&')
+                    ? "'&&' is not an Idyllium operator — use 'and'"
+                    : "'&' is not an Idyllium operator — use 'and'");
+                return;
+            case '|':
+                this.hinted(tokens_1.TokenKind.KwOr, start, this.match('|')
+                    ? "'||' is not an Idyllium operator — use 'or'"
+                    : "'|' is not an Idyllium operator — use 'or'");
+                return;
+            case '%':
+                // mod — функция, а не бинарный оператор, поэтому подставить токен
+                // «как надо» нельзя: честный Bad-токен, подсказка первой строкой.
+                this.bad(start, "'%' is not an Idyllium operator — remainder is the function mod(a, b)");
+                return;
+            case '#':
+                // Остаток строки пропускаем как комментарий: разбирать «текст после
+                // решётки» как код заведомо бессмысленно.
+                this.diagnostics.error(this.rangeFrom(start), "comments start with '//' in Idyllium, not '#'");
+                this.skipLineComment();
                 return;
             case '<':
                 this.addSimple(this.match('=') ? tokens_1.TokenKind.LessEqual : tokens_1.TokenKind.Less, start);
@@ -1454,7 +1489,7 @@ class Lexer {
         let value = '';
         while (!this.isAtEnd() && this.peek() !== '"') {
             if (this.peek() === '\n') {
-                this.bad(start, 'string literal cannot contain a raw newline');
+                this.bad(start, `string is not closed — a '"' is missing before the end of the line`);
                 return;
             }
             value += this.scanEscapedCharacter(start);
@@ -1549,6 +1584,18 @@ class Lexer {
             lexeme: this.sourceSlice(start),
             literal: null,
             range: this.rangeFrom(start),
+        });
+    }
+    /** Ошибка-подсказка + токен «как надо»: разбор продолжается по очевидному
+     *  намерению ученика, и вместо лавины остаётся одно точное сообщение. */
+    hinted(kind, start, message) {
+        const range = this.rangeFrom(start);
+        this.diagnostics.error(range, message);
+        this.tokens.push({
+            kind,
+            lexeme: this.sourceSlice(start),
+            literal: null,
+            range,
         });
     }
     bad(start, message) {
@@ -1674,6 +1721,8 @@ class Parser {
     tokens;
     diagnostics = new diagnostics_1.DiagnosticBag();
     current = 0;
+    // Позиция последней подсказки про кавычку в строке — защита от повтора.
+    quoteHintAt = -1;
     constructor(tokens) {
         this.tokens = tokens;
     }
@@ -1837,6 +1886,11 @@ class Parser {
         if (this.check(tokens_1.TokenKind.KwIf)) {
             return this.parseIfStatement();
         }
+        if (this.check(tokens_1.TokenKind.Identifier) && this.peek().lexeme === 'elif' && this.checkNext(tokens_1.TokenKind.LeftParen)) {
+            const elifToken = this.advance();
+            this.error(elifToken.range, "'elif' is not an Idyllium keyword — write 'else if'");
+            return this.parseIfStatement(elifToken);
+        }
         if (this.check(tokens_1.TokenKind.KwTry)) {
             return this.parseTryStatement();
         }
@@ -1880,7 +1934,7 @@ class Parser {
         return this.finishVariableDeclaration(declaredType, constToken !== null, constToken?.range.start ?? declaredType.range.start);
     }
     finishVariableDeclaration(declaredType, isConst, start) {
-        const name = this.consume(tokens_1.TokenKind.Identifier, 'expected variable name');
+        const name = this.consumeName('expected variable name');
         let initializer = null;
         let constructorArgs = null;
         if (this.match(tokens_1.TokenKind.Equal)) {
@@ -1903,7 +1957,7 @@ class Parser {
     }
     parseClassDeclaration() {
         const classToken = this.consume(tokens_1.TokenKind.KwClass, "expected 'class'");
-        const name = this.consume(tokens_1.TokenKind.Identifier, 'expected class name');
+        const name = this.consumeName('expected class name');
         let baseName = null;
         let baseNameRange = null;
         if (this.match(tokens_1.TokenKind.KwExtends)) {
@@ -1995,7 +2049,7 @@ class Parser {
     finishClassFieldDeclaration(declaredType, access) {
         const fields = [];
         do {
-            const name = this.consume(tokens_1.TokenKind.Identifier, 'expected field name');
+            const name = this.consumeName('expected field name');
             const initializer = this.match(tokens_1.TokenKind.Equal) ? this.parseExpression() : null;
             fields.push({
                 kind: 'FieldDeclarator',
@@ -2062,7 +2116,7 @@ class Parser {
             this.error(this.previous().range, 'const parameters are not supported');
         }
         const paramType = this.parseTypeName();
-        const paramName = this.consume(tokens_1.TokenKind.Identifier, 'expected parameter name');
+        const paramName = this.consumeName('expected parameter name');
         const defaultValue = this.match(tokens_1.TokenKind.Equal) ? this.parseExpression() : null;
         return {
             kind: 'ParameterDeclaration',
@@ -2144,10 +2198,10 @@ class Parser {
                 return '=';
         }
     }
-    parseIfStatement() {
-        const ifToken = this.consume(tokens_1.TokenKind.KwIf, "expected 'if'");
+    parseIfStatement(ifToken = this.consume(tokens_1.TokenKind.KwIf, "expected 'if'")) {
         this.consume(tokens_1.TokenKind.LeftParen, "expected '(' after if");
         const condition = this.parseExpression();
+        this.hintAssignmentInCondition();
         this.consume(tokens_1.TokenKind.RightParen, "expected ')' after if condition");
         const thenBranch = this.parseStatement();
         const elseBranch = this.match(tokens_1.TokenKind.KwElse)
@@ -2216,6 +2270,7 @@ class Parser {
         const whileToken = this.consume(tokens_1.TokenKind.KwWhile, "expected 'while'");
         this.consume(tokens_1.TokenKind.LeftParen, "expected '(' after while");
         const condition = this.parseExpression();
+        this.hintAssignmentInCondition();
         this.consume(tokens_1.TokenKind.RightParen, "expected ')' after while condition");
         const body = this.parseStatement();
         return {
@@ -2231,6 +2286,7 @@ class Parser {
         this.consume(tokens_1.TokenKind.KwWhile, "expected 'while' after do body");
         this.consume(tokens_1.TokenKind.LeftParen, "expected '(' after while");
         const condition = this.parseExpression();
+        this.hintAssignmentInCondition();
         this.consume(tokens_1.TokenKind.RightParen, "expected ')' after do-while condition");
         const semicolon = this.consume(tokens_1.TokenKind.Semicolon, "expected ';' after do-while");
         return {
@@ -2248,6 +2304,7 @@ class Parser {
         if (!this.check(tokens_1.TokenKind.Semicolon)) {
             condition = this.parseExpression();
         }
+        this.hintAssignmentInCondition();
         this.consume(tokens_1.TokenKind.Semicolon, "expected ';' after for condition");
         let increment = null;
         if (!this.check(tokens_1.TokenKind.RightParen)) {
@@ -2486,6 +2543,7 @@ class Parser {
                 range: { start: expression.range.start, end: rightParen.range.end },
             };
         }
+        this.hintIncrementDecrement();
         const token = this.advance();
         this.error(token.range, `expected expression, got ${(0, tokens_1.tokenDisplay)(token.kind)}`);
         return {
@@ -2693,6 +2751,7 @@ class Parser {
     consume(kind, message) {
         if (this.check(kind))
             return this.advance();
+        this.hintBeforeConsumeError(kind);
         this.error(this.peek().range, message);
         return {
             kind,
@@ -2700,6 +2759,83 @@ class Parser {
             literal: null,
             range: this.peek().range,
         };
+    }
+    /** Как consume(Identifier, …), но про ключевое слово говорит прямо. */
+    consumeName(message) {
+        const keyword = (0, tokens_1.keywordDisplay)(this.peek().kind);
+        if (keyword !== undefined) {
+            this.error(this.peek().range, `'${keyword}' is a keyword and cannot be used as a name`);
+            return {
+                kind: tokens_1.TokenKind.Identifier,
+                lexeme: '',
+                literal: null,
+                range: this.peek().range,
+            };
+        }
+        return this.consume(tokens_1.TokenKind.Identifier, message);
+    }
+    /** Подсказки перед стандартным «expected …»: лавину не убираем, но первой
+     *  строкой называем настоящую причину. */
+    hintBeforeConsumeError(expected) {
+        const current = this.peek();
+        const prev = this.tokens[this.current - 1];
+        if (prev === undefined)
+            return;
+        // Кавычка внутри строки: следующий токен стоит к строке ВПЛОТНУЮ —
+        // легальный код так выглядеть не может. Несколько провалившихся consume
+        // на одной позиции дают одну подсказку, не хор.
+        if (prev.kind === tokens_1.TokenKind.StringLiteral && this.adjacentTokens(prev, current)) {
+            if (this.quoteHintAt !== this.current) {
+                this.quoteHintAt = this.current;
+                this.error(current.range, 'to put a quote inside a string, write \\" (e.g. "she said \\"hi\\"")');
+            }
+            return;
+        }
+        // Десятичная запятая: «3,14» там, где ждали ';'. Ограничение на ';'
+        // отсекает честные запятые аргументов и индексов.
+        if (expected === tokens_1.TokenKind.Semicolon && current.kind === tokens_1.TokenKind.Comma) {
+            const next = this.tokens[this.current + 1];
+            if ((prev.kind === tokens_1.TokenKind.IntLiteral || prev.kind === tokens_1.TokenKind.FloatLiteral) &&
+                next !== undefined &&
+                next.kind === tokens_1.TokenKind.IntLiteral &&
+                this.adjacentTokens(prev, current) &&
+                this.adjacentTokens(current, next)) {
+                this.error(current.range, `decimal numbers use a dot, not a comma: write ${prev.lexeme}.${next.lexeme}`);
+            }
+        }
+    }
+    // 'x++' роняет разбор на втором '+', а 'x--' съедается как 'x - (-…)' и
+    // роняет его на первом токене после пары минусов — ловим обе картины.
+    hintIncrementDecrement() {
+        const current = this.peek();
+        const prev = this.tokens[this.current - 1];
+        if (prev === undefined)
+            return;
+        if (current.kind === tokens_1.TokenKind.Plus && prev.kind === tokens_1.TokenKind.Plus && this.adjacentTokens(prev, current)) {
+            const before = this.tokens[this.current - 2];
+            const name = before !== undefined && before.kind === tokens_1.TokenKind.Identifier ? before.lexeme : 'x';
+            this.error(current.range, `'++' is not an Idyllium operator — write '${name} = ${name} + 1'`);
+            return;
+        }
+        const prev2 = this.tokens[this.current - 2];
+        if (prev2 !== undefined &&
+            prev.kind === tokens_1.TokenKind.Minus &&
+            prev2.kind === tokens_1.TokenKind.Minus &&
+            this.adjacentTokens(prev2, prev)) {
+            const before = this.tokens[this.current - 3];
+            const name = before !== undefined && before.kind === tokens_1.TokenKind.Identifier ? before.lexeme : 'x';
+            this.error(prev.range, `'--' is not an Idyllium operator — write '${name} = ${name} - 1'`);
+        }
+    }
+    // '=' вместо '==' в условии — бытовая ошибка; подсказка первой строкой,
+    // каскад честно остаётся (решение владельца).
+    hintAssignmentInCondition() {
+        if (this.check(tokens_1.TokenKind.Equal)) {
+            this.error(this.peek().range, "assignment '=' is not allowed in a condition — did you mean '==' ?");
+        }
+    }
+    adjacentTokens(a, b) {
+        return a.range.end.line === b.range.start.line && a.range.end.column === b.range.start.column;
     }
     check(...kinds) {
         if (this.isAtEnd())
@@ -3017,6 +3153,23 @@ const diagnostics_1 = require("./diagnostics");
 const modules_1 = require("./modules");
 const registry_1 = require("./stdlib/registry");
 const types_1 = require("./types");
+// Кириллические буквы, неотличимые на глаз от латинских. Идентификаторы на
+// кириллице легальны, поэтому смесь алфавитов в имени — не ошибка сама по
+// себе; но когда имя «не объявлено», двойник по этой таблице — почти
+// наверняка настоящая причина.
+const HOMOGLYPHS = {
+    а: 'a', в: 'b', е: 'e', к: 'k', м: 'm', н: 'h', о: 'o', р: 'p',
+    с: 'c', т: 't', у: 'y', х: 'x',
+    А: 'A', В: 'B', Е: 'E', К: 'K', М: 'M', Н: 'H', О: 'O', Р: 'P',
+    С: 'C', Т: 'T', У: 'Y', Х: 'X',
+};
+function normalizeHomoglyphs(name) {
+    let result = '';
+    for (const char of name) {
+        result += HOMOGLYPHS[char] ?? char;
+    }
+    return result;
+}
 // Единственный источник истины для легенды семантических токенов:
 // расширение VS Code и Web IDE строят свои легенды из этих массивов.
 exports.IDYLLIUM_SEMANTIC_TOKEN_TYPES = [
@@ -3883,7 +4036,7 @@ class SemanticAnalyzer {
         if (target.kind === 'IdentifierExpression') {
             const symbol = this.lookup(target.name);
             if (!symbol) {
-                this.diagnostics.error(target.range, `variable '${target.name}' was not declared in this scope`);
+                this.diagnostics.error(target.range, this.notDeclaredMessage(target.name, 'variable '));
                 return { type: types_1.ERROR_TYPE };
             }
             this.markSymbolReference(symbol, target.range, target.name);
@@ -4150,7 +4303,7 @@ class SemanticAnalyzer {
             this.diagnostics.error(range, "'this' can only be used inside a class");
             return types_1.ERROR_TYPE;
         }
-        this.diagnostics.error(range, `'${name}' was not declared in this scope`);
+        this.diagnostics.error(range, this.notDeclaredMessage(name));
         return types_1.ERROR_TYPE;
     }
     unaryType(expression) {
@@ -4391,7 +4544,7 @@ class SemanticAnalyzer {
                     minArguments: symbol.type.minArguments,
                 };
             }
-            this.diagnostics.error(callee.range, `function '${callee.name}' was not declared in this scope`);
+            this.diagnostics.error(callee.range, this.notDeclaredMessage(callee.name, 'function '));
             return null;
         }
         if (callee.kind === 'MemberExpression' && callee.object.kind === 'IdentifierExpression') {
@@ -5037,6 +5190,27 @@ class SemanticAnalyzer {
         }
         return true;
     }
+    /** Ищет в видимых областях имя, совпадающее с искомым после замены
+     *  кириллических букв на латинские двойники: опечатку «cоunt» с русской „о"
+     *  глазом не найти, компилятор обязан подсказать. */
+    homoglyphTwin(name) {
+        const normalized = normalizeHomoglyphs(name);
+        for (let i = this.scopes.length - 1; i >= 0; i--) {
+            for (const candidate of this.scopes[i].keys()) {
+                if (candidate !== name && normalizeHomoglyphs(candidate) === normalized) {
+                    return candidate;
+                }
+            }
+        }
+        return null;
+    }
+    notDeclaredMessage(name, prefix = '') {
+        const twin = this.homoglyphTwin(name);
+        if (twin !== null) {
+            return `${prefix}'${name}' was not declared in this scope — but '${twin}' is: the two names mix Russian and English letters that look alike`;
+        }
+        return `${prefix}'${name}' was not declared in this scope`;
+    }
     lookup(name) {
         for (let i = this.scopes.length - 1; i >= 0; i--) {
             const symbol = this.scopes[i].get(name);
@@ -5441,7 +5615,7 @@ function createDefaultStandardLibrary() {
             documentation: 'Где выполняется программа: "cli", "web" или "vscode".',
         }),
         functionSpec('version', [], types_1.STRING, {
-            documentation: 'Версия Idyllium, например "1.3.3".',
+            documentation: 'Версия Idyllium, например "1.3.4".',
         }),
     ]));
     registry.registerModule(moduleSpec('console', [
@@ -6761,6 +6935,7 @@ function qualifiedTypeKey(type) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.KEYWORDS = exports.TokenKind = void 0;
+exports.keywordDisplay = keywordDisplay;
 exports.tokenDisplay = tokenDisplay;
 var TokenKind;
 (function (TokenKind) {
@@ -6880,6 +7055,42 @@ exports.KEYWORDS = {
     private: TokenKind.KwPrivate,
     public: TokenKind.KwPublic,
 };
+/** Знаки препинания и операторы — печатаем сам символ: ребёнку «got ')'»
+ *  говорит всё, а внутреннее имя 'RightParen' — ничего. */
+const PUNCTUATION_DISPLAY = {
+    [TokenKind.LeftParen]: '(',
+    [TokenKind.RightParen]: ')',
+    [TokenKind.LeftBrace]: '{',
+    [TokenKind.RightBrace]: '}',
+    [TokenKind.LeftBracket]: '[',
+    [TokenKind.RightBracket]: ']',
+    [TokenKind.Comma]: ',',
+    [TokenKind.Semicolon]: ';',
+    [TokenKind.Dot]: '.',
+    [TokenKind.Colon]: ':',
+    [TokenKind.Tilde]: '~',
+    [TokenKind.Plus]: '+',
+    [TokenKind.Minus]: '-',
+    [TokenKind.Star]: '*',
+    [TokenKind.Slash]: '/',
+    [TokenKind.Equal]: '=',
+    [TokenKind.PlusEqual]: '+=',
+    [TokenKind.MinusEqual]: '-=',
+    [TokenKind.StarEqual]: '*=',
+    [TokenKind.SlashEqual]: '/=',
+    [TokenKind.EqualEqual]: '==',
+    [TokenKind.BangEqual]: '!=',
+    [TokenKind.Less]: '<',
+    [TokenKind.LessEqual]: '<=',
+    [TokenKind.Greater]: '>',
+    [TokenKind.GreaterEqual]: '>=',
+};
+/** Ключевые слова — печатаем само слово (обратная карта KEYWORDS). */
+const KEYWORD_DISPLAY = Object.fromEntries(Object.entries(exports.KEYWORDS).map(([word, kind]) => [kind, word]));
+/** Слово языка для токена-ключевого слова, undefined для остальных. */
+function keywordDisplay(kind) {
+    return KEYWORD_DISPLAY[kind];
+}
 function tokenDisplay(kind) {
     switch (kind) {
         case TokenKind.IntLiteral:
@@ -6894,8 +7105,17 @@ function tokenDisplay(kind) {
             return 'identifier';
         case TokenKind.EndOfFile:
             return 'end of file';
-        default:
+        case TokenKind.Bad:
+            return 'unknown character';
+        default: {
+            const punctuation = PUNCTUATION_DISPLAY[kind];
+            if (punctuation !== undefined)
+                return `'${punctuation}'`;
+            const keyword = KEYWORD_DISPLAY[kind];
+            if (keyword !== undefined)
+                return `'${keyword}'`;
             return `'${kind}'`;
+        }
     }
 }
 //# sourceMappingURL=tokens.js.map
@@ -10078,7 +10298,7 @@ exports.IdylliumRuntimeError = IdylliumRuntimeError;
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-exports.IDYLLIUM_VERSION = '1.3.3';
+exports.IDYLLIUM_VERSION = '1.3.4';
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform() {
     const nodeProcess = typeof process === 'object' ? process : null;

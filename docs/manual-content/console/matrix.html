@@ -64,8 +64,8 @@ main() {
         [12, 53, 40, 63, 94, 76]
     ];
 
-    for (int row = 0; row < 4; row += 1) {
-        for (int col = 0; col < 6; col += 1) {
+    for (int row = 0; row < 4; row = row + 1) {
+        for (int col = 0; col < 6; col = col + 1) {
             console.write(mx[row][col], " ");
         }
         console.write('\n');
@@ -94,9 +94,9 @@ main() {
     ];
 
     int total = 0;
-    for (int r = 0; r < 4; r += 1) {
-        for (int c = 0; c < 6; c += 1) {
-            total += mx[r][c];
+    for (int r = 0; r < 4; r = r + 1) {
+        for (int c = 0; c < 6; c = c + 1) {
+            total = total + mx[r][c];
         }
     }
     console.writeln("Сумма очков турнира: ", total);

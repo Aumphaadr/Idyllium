@@ -17,7 +17,7 @@ class Hero {
     }
 
     void function heal(int amount) {
-        this.hp += amount;
+        this.hp = this.hp + amount;
         if (this.hp > 100) {
             this.hp = 100;
             console.writeln("Здоровье восстановлено до максимума!");
@@ -25,7 +25,7 @@ class Hero {
     }
 
     void function hit(int amount) {
-        this.hp -= amount;
+        this.hp = this.hp - amount;
         if (this.hp < 0) {
             this.hp = 0;
             console.writeln("Герой повержен!");
@@ -79,7 +79,7 @@ class Hero {
 <div class="docs-section">
   <h2>Блок 4. Границы охраны</h2>
   <h4 class="task-item">Задание 13. Наследство под замком</h4>
-  <p>Эксперимент-граница (пробой подтверждено — результат многих удивляет). Родитель <code>Animal</code> с <strong>приватной</strong> энергией; потомок <code>Dog extends Animal</code> пытается в своём методе написать <code>this.energy -= 10;</code>. Компилятор: <code>member &#39;Animal.energy&#39; is private and can only be used inside class &#39;Animal&#39;</code> — <strong>даже потомку нельзя!</strong> Приватное наследуется (энергия у пса есть), но видно только методам самого <code>Animal</code>. Почините по-взрослому: дайте родителю публичный метод <code>spend_energy(int)</code> со сторожем — и пусть потомок зовёт его. Правило в тетрадь: <strong>потомки ходят к приватному родителя через его публичные двери, как все.</strong> (В больших языках есть промежуточный уровень для «своих» — в Idyllium честная двухуровневая система.)</p>
+  <p>Эксперимент-граница (пробой подтверждено — результат многих удивляет). Родитель <code>Animal</code> с <strong>приватной</strong> энергией; потомок <code>Dog extends Animal</code> пытается в своём методе написать <code>this.energy = this.energy - 10;</code>. Компилятор: <code>member &#39;Animal.energy&#39; is private and can only be used inside class &#39;Animal&#39;</code> — <strong>даже потомку нельзя!</strong> Приватное наследуется (энергия у пса есть), но видно только методам самого <code>Animal</code>. Почините по-взрослому: дайте родителю публичный метод <code>spend_energy(int)</code> со сторожем — и пусть потомок зовёт его. Правило в тетрадь: <strong>потомки ходят к приватному родителя через его публичные двери, как все.</strong> (В больших языках есть промежуточный уровень для «своих» — в Idyllium честная двухуровневая система.)</p>
   <h4 class="task-item">Задание 14. Интерфейс по спецификации</h4>
   <p>Обратный скаффолд с дедукцией: дан main —</p>
   <idyl-code-block><script type="text/plain">

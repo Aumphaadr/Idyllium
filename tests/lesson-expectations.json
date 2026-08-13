@@ -429,7 +429,7 @@
     "oop.errors.002": {
       "kind": "compile_error",
       "diagnosticIncludes": [
-        "unexpected token 'Semicolon' at top level"
+        "unexpected token ';' at top level"
       ],
       "reason": "Migration 2026-07-24 (oop/canvas/json/sqlite): teaching example fails to compile with this message."
     },

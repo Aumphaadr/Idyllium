@@ -189,9 +189,9 @@ void function init(gui.Canvas canvas) {
 }
 
 void function update(gui.Canvas canvas, float delta_time) {
-    angle += 1;
+    angle = angle + 1;
     if (angle >= 360) {
-        angle -= 360;
+        angle = angle - 360;
     }
 
     place_points();

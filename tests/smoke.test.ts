@@ -7909,4 +7909,169 @@ main() {
   );
 });
 
+test('beginner mistakes get targeted hints', () => {
+  // '=' вместо '==' в условии — подсказка первой строкой, лавина остаётся.
+  assertFails(`
+    main() {
+      int x = 5;
+      if (x = 5) {}
+    }
+  `, "assignment '=' is not allowed in a condition — did you mean '=='");
+
+  assertFails(`
+    main() {
+      int x = 0;
+      while (x = 3) {}
+    }
+  `, "did you mean '=='");
+
+  assertFails(`
+    main() {
+      for (int i = 0; i = 10; i += 1) {}
+    }
+  `, "did you mean '=='");
+
+  // Беглецы из C/JS: &&, ||, ! — восстановление честными and/or/not
+  // оставляет ровно одну ошибку.
+  assertFails(`
+    main() {
+      int x = 5;
+      if (x > 1 && x < 10) {}
+    }
+  `, "'&&' is not an Idyllium operator — use 'and'");
+
+  assertFails(`
+    main() {
+      int x = 5;
+      if (x < 1 || x > 10) {}
+    }
+  `, "'||' is not an Idyllium operator — use 'or'");
+
+  assertFails(`
+    main() {
+      bool flag = true;
+      if (!flag) {}
+    }
+  `, "'!' is not an Idyllium operator — use 'not'");
+
+  assertFails(`
+    main() {
+      int x = 10 % 3;
+    }
+  `, "'%' is not an Idyllium operator — remainder is the function mod(a, b)");
+
+  // Инкремент/декремент — подсказка с настоящим именем переменной.
+  assertFails(`
+    main() {
+      int score = 5;
+      score++;
+    }
+  `, "'++' is not an Idyllium operator — write 'score = score + 1'");
+
+  assertFails(`
+    main() {
+      int score = 5;
+      score--;
+    }
+  `, "'--' is not an Idyllium operator — write 'score = score - 1'");
+
+  // Кавычка внутри строки: токен вплотную за строковым литералом.
+  assertFails(`
+    use console;
+
+    main() {
+      console.writeln("she said "hi" loudly");
+    }
+  `, 'to put a quote inside a string, write \\"');
+
+  // Десятичная запятая — в подсказке настоящие цифры ученика.
+  assertFails(`
+    main() {
+      float pi = 3,14;
+    }
+  `, 'decimal numbers use a dot, not a comma: write 3.14');
+
+  // Беглец из Python: elif разбирается дальше как if.
+  assertFails(`
+    use console;
+
+    main() {
+      int x = 5;
+      if (x > 10) {
+        console.writeln("big");
+      } elif (x > 3) {
+        console.writeln("mid");
+      }
+    }
+  `, "'elif' is not an Idyllium keyword — write 'else if'");
+
+  // Перевёрнутые пары: '=>' и '=!' вплотную.
+  assertFails(`
+    main() {
+      int x = 7;
+      if (x => 5) {}
+    }
+  `, "'=>' is not an operator — did you mean '>='");
+
+  assertFails(`
+    main() {
+      int x = 5;
+      if (x =! 3) {}
+    }
+  `, "'=!' is not an operator — did you mean '!='");
+
+  // Решётка-комментарий: остаток строки пропускается, лавины нет.
+  assertFails(`
+    use console;
+
+    main() {
+      # comment attempt
+      console.writeln("hi");
+    }
+  `, "comments start with '//' in Idyllium, not '#'");
+
+  // Ключевое слово в роли имени.
+  assertFails(`
+    main() {
+      int class = 5;
+    }
+  `, "'class' is a keyword and cannot be used as a name");
+
+  // Незакрытая кавычка до конца строки.
+  assertFails(`
+    use console;
+
+    main() {
+      console.writeln("hello);
+    }
+  `, "string is not closed — a '\"' is missing before the end of the line");
+});
+
+test('homoglyph twin is suggested for undeclared names', () => {
+  assertFails(`
+    use console;
+
+    main() {
+      int cоunt = 5;
+      console.writeln(count);
+    }
+  `, 'the two names mix Russian and English letters that look alike');
+});
+
+test('hints do not fire on legal code', () => {
+  assertCompiles(`
+    use console;
+
+    main() {
+      int x = 5;
+      int y = x - -3;
+      int elif = mod(10, 3) + div(10, 3);
+      bool f = y > 1 and y < 10 or not (y == 2);
+      elif = elif + 1;
+      string s = "a"+"b";
+      console.writeln("she said \\"hi\\"", s, f, elif, mod(3,14));
+    }
+  `);
+});
+
 void runTests();

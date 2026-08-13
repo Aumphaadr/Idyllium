@@ -54,7 +54,7 @@ void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
   <p>Старая знакомая из ООП-№6 — на родной территории. Сухая консольная программа: соберите <code>dyn_array&lt;drawable.Circle&gt;</code> в цикле, но переменную-заготовку объявите <strong>снаружи</strong>:</p>
   <idyl-code-block><script type="text/plain">
 drawable.Circle tmp;
-for (int i = 0; i < 3; i += 1) {
+for (int i = 0; i < 3; i = i + 1) {
     tmp.x = i * 50;
     bubbles.add(tmp);
 }
@@ -90,8 +90,8 @@ class Ball {
     }
 
     void function update() {
-        this.body.x += this.vx;
-        this.body.y += this.vy;
+        this.body.x = this.body.x + this.vx;
+        this.body.y = this.body.y + this.vy;
         if (this.body.x < 12 or this.body.x > 388) {
             this.vx = -this.vx;
         }
@@ -114,7 +114,7 @@ array<Ball, 4> balls = [
 
 void function on_update(gui.Canvas canvas, float delta_time) {
     canvas.clear();
-    for (int i = 0; i < balls.length; i += 1) {
+    for (int i = 0; i < balls.length; i = i + 1) {
         balls[i].update();
         balls[i].draw(canvas);
     }

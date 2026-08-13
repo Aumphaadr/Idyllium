@@ -135,7 +135,7 @@ main() {
     gui.Timer ticker;
     ticker.interval = 1000;
     ticker.on_tick = void function() {
-        seconds += 1;
+        seconds = seconds + 1;
         board.text = "Прошло секунд: " + to_string(seconds);
     };
 
@@ -227,7 +227,7 @@ main() {
     clicker.text = "Клик!";
     clicker.on_click = void function() {
         int count = 0;
-        count += 1;
+        count = count + 1;
         board.text = "Кликов: " + to_string(count);
     };
 
@@ -260,7 +260,7 @@ main() {
     plus.width = 100;
     plus.text = "+1 очко";
     plus.on_click = void function() {
-        score += 1;
+        score = score + 1;
         board.text = "Очки: " + to_string(score);
     };
 
@@ -270,7 +270,7 @@ main() {
     minus.width = 100;
     minus.text = "-1 очко";
     minus.on_click = void function() {
-        score += 1;
+        score = score + 1;
         board.text = "Очки: " + to_string(score);
     };
 
@@ -419,7 +419,7 @@ main() {
     next.y = 20;
     next.text = "Следующий совет";
     next.on_click = void function() {
-        current += 1;
+        current = current + 1;
         tip.text = tips[current];
     };
 
@@ -538,7 +538,7 @@ main() {
     gui.Timer clock;
     clock.interval = 1000;
     clock.on_tick = void function() {
-        seconds += 1;
+        seconds = seconds + 1;
         clock_note.text = "Копилка открыта: " + to_string(seconds) + " секунд";
     };
 
@@ -554,7 +554,7 @@ main() {
     put.width = 150;
     put.text = "Положить";
     put.on_click = void function() {
-        savings += to_int(amount.text);
+        savings = savings + to_int(amount.text);
         board.text = "В копилке: " + savings + " рублей";
     };
 
@@ -564,7 +564,7 @@ main() {
     take.width = 150;
     take.text = "Снять";
     take.on_click = void function() {
-        savings += to_int(amount.text);
+        savings = savings + to_int(amount.text);
         board.text = "В копилке: " + savings + " рублей";
     };
 

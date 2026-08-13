@@ -11,7 +11,7 @@ sqlite.Statement add_player = db.prepare(
     "INSERT INTO players (name, level) VALUES (:name, :level)"
 );
 
-for (int i = 0; i < names.length; i += 1) {
+for (int i = 0; i < names.length; i = i + 1) {
     add_player.clear_bindings();
     add_player.bind("name", names[i]);
     add_player.bind("level", levels[i]);

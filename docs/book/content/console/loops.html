@@ -22,7 +22,7 @@ console.writeln("Привет!");
 use console;
 
 main() {
-    for (int i = 0; i < 10; i += 1) {
+    for (int i = 0; i < 10; i = i + 1) {
         console.writeln("Привет!");
     }
 }
@@ -55,7 +55,7 @@ main() {
     int count = 1;
     while (count <= 5) {
         console.writeln("Итерация ", count);
-        count += 1;
+        count = count + 1;
     }
 }
 </script></idyl-code-block>
@@ -115,7 +115,7 @@ main() {
 use console;
 
 main() {
-    for (int i = 0; i < 3; i += 1) {
+    for (int i = 0; i < 3; i = i + 1) {
         console.writeln("i = ", i);
     }
 }
@@ -136,7 +136,7 @@ i = 2</idyl-output-block>
 use console;
 
 main() {
-    for (int i = 1; i <= 10; i += 1) {
+    for (int i = 1; i <= 10; i = i + 1) {
         if (i == 5) {
             break; // выйти из цикла
         }
@@ -163,7 +163,7 @@ main() {
 use console;
 
 main() {
-    for (int i = 1; i <= 5; i += 1) {
+    for (int i = 1; i <= 5; i = i + 1) {
         if (i == 3) {
             continue; // пропустить вывод тройки
         }
