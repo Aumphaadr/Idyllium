@@ -265,14 +265,6 @@
             {
               "file": "click.wav",
               "note": "Короткий щелчок (0,3 сек) — для audio.Sound"
-            },
-            {
-              "file": "switch_on.wav",
-              "note": "Тумблер: щелчок вверх — включение"
-            },
-            {
-              "file": "switch_off.wav",
-              "note": "Тумблер: щелчок вниз, ниже тоном — выключение"
             }
           ]
         },
@@ -290,6 +282,307 @@
             {
               "file": "Rising.mp3",
               "note": "Нарастающий эмбиент, 151,48 сек (Kevin MacLeod)"
+            },
+            {
+              "file": "menu_theme.mp3",
+              "note": "спокойная зацикливаемая тема меню (~1 мин)"
+            },
+            {
+              "file": "battle_theme.mp3",
+              "note": "энергичная боевая тема (~1–2 мин)"
+            },
+            {
+              "file": "victory_theme.mp3",
+              "note": "короткая победная композиция (~15–20 c)"
+            },
+            {
+              "file": "night_ambient.mp3",
+              "note": "ночной эмбиент со сверчками (~1 мин)"
+            },
+            {
+              "file": "circus_theme.mp3",
+              "note": "цирковая/карусельная мелодия (~1 мин)"
+            }
+          ]
+        },
+        {
+          "title": "WAV — интерфейс, статусы, приборы",
+          "items": [
+            {
+              "file": "success_ding.wav",
+              "note": "короткий тёплый «дзынь» успеха"
+            },
+            {
+              "file": "error_buzz.wav",
+              "note": "резкий «бззз» отказа"
+            },
+            {
+              "file": "switch_on.wav",
+              "note": "тумблер: вкл (щёлк вверх)"
+            },
+            {
+              "file": "switch_off.wav",
+              "note": "тумблер: выкл (щёлк вниз, ниже тоном)"
+            },
+            {
+              "file": "metronome_tick.wav",
+              "note": "деревянный тик метронома"
+            },
+            {
+              "file": "stopwatch_beep.wav",
+              "note": "электронный писк секундомера"
+            },
+            {
+              "file": "countdown_beep.wav",
+              "note": "бип обратного отсчёта (каждая секунда)"
+            },
+            {
+              "file": "countdown_go.wav",
+              "note": "финальный сигнал «ПУСК!»"
+            },
+            {
+              "file": "typewriter_key.wav",
+              "note": "удар клавиши печатной машинки"
+            },
+            {
+              "file": "typewriter_bell.wav",
+              "note": "звонок каретки в конце строки"
+            },
+            {
+              "file": "camera_shutter.wav",
+              "note": "затвор фотоаппарата"
+            },
+            {
+              "file": "message_pop.wav",
+              "note": "«булька» нового сообщения"
+            },
+            {
+              "file": "slot_machine_spin.wav",
+              "note": "стрекот барабанов автомата"
+            },
+            {
+              "file": "drum_roll.wav",
+              "note": "барабанная дробь ожидания"
+            }
+          ]
+        },
+        {
+          "title": "WAV — двери, замки, сигнализация",
+          "items": [
+            {
+              "file": "doorbell.wav",
+              "note": "классический дверной «динь-дон»"
+            },
+            {
+              "file": "door_creak.wav",
+              "note": "скрип открывающейся дверцы"
+            },
+            {
+              "file": "safe_dial_click.wav",
+              "note": "сухой щелчок наборного диска"
+            },
+            {
+              "file": "safe_unlock.wav",
+              "note": "тяжёлый лязг ригелей — сейф открыт"
+            },
+            {
+              "file": "alarm_siren.wav",
+              "note": "вой охранной сирены (луп ~2 c)"
+            },
+            {
+              "file": "elevator_ding.wav",
+              "note": "«динь» прибытия лифта"
+            }
+          ]
+        },
+        {
+          "title": "WAV — игровые события",
+          "items": [
+            {
+              "file": "bubble_pop.wav",
+              "note": "лёгкое лопанье пузыря"
+            },
+            {
+              "file": "balloon_inflate.wav",
+              "note": "скрип надуваемого шарика"
+            },
+            {
+              "file": "balloon_burst.wav",
+              "note": "басовитый хлопок лопнувшего шара"
+            },
+            {
+              "file": "laser_shot.wav",
+              "note": "«пиу» лазера/снаряда"
+            },
+            {
+              "file": "cannon_boom.wav",
+              "note": "пушечный залп с раскатом"
+            },
+            {
+              "file": "explosion_impact.wav",
+              "note": "взрыв/удар метеорита"
+            },
+            {
+              "file": "target_hit.wav",
+              "note": "тугой удар дротика в мишень"
+            },
+            {
+              "file": "brick_break.wav",
+              "note": "треск разбитого кирпича/ящика"
+            },
+            {
+              "file": "pong_hit.wav",
+              "note": "упругий стук мяча о ракетку"
+            },
+            {
+              "file": "ball_bounce.wav",
+              "note": "мягкий отскок от стены (тише ракетки)"
+            },
+            {
+              "file": "jump_boing.wav",
+              "note": "пружинный прыжок"
+            },
+            {
+              "file": "coin_pickup.wav",
+              "note": "звон подобранной монетки"
+            },
+            {
+              "file": "gold_jingle.wav",
+              "note": "звон горсти золота (богаче монетки)"
+            },
+            {
+              "file": "cash_register.wav",
+              "note": "касса: «ка-чинг» с ящиком"
+            },
+            {
+              "file": "firework_launch.wav",
+              "note": "свист взлетающей ракеты"
+            },
+            {
+              "file": "firework_burst.wav",
+              "note": "разрыв салюта в небе"
+            },
+            {
+              "file": "teleport_whoosh.wav",
+              "note": "«вжух» перемещения"
+            },
+            {
+              "file": "race_horn.wav",
+              "note": "стартовый горн гонки"
+            },
+            {
+              "file": "fanfare_win.wav",
+              "note": "победные фанфары (~2 c)"
+            },
+            {
+              "file": "fail_trombone.wav",
+              "note": "грустный тромбон «вах-вааах»"
+            },
+            {
+              "file": "applause.wav",
+              "note": "живые аплодисменты зала"
+            }
+          ]
+        },
+        {
+          "title": "WAV — животные",
+          "items": [
+            {
+              "file": "cat_meow.wav",
+              "note": "обычное «мяу»"
+            },
+            {
+              "file": "cat_purr.wav",
+              "note": "мурчание (луп ~2 c)"
+            },
+            {
+              "file": "cat_angry.wav",
+              "note": "недовольный вскрик/шипение"
+            },
+            {
+              "file": "mouse_squeak.wav",
+              "note": "писк мыши"
+            },
+            {
+              "file": "crunch_bite.wav",
+              "note": "хруст откушенного"
+            },
+            {
+              "file": "dog_bark.wav",
+              "note": "гав сторожевого пса"
+            },
+            {
+              "file": "mosquito_buzz.wav",
+              "note": "зудение комара (луп)"
+            },
+            {
+              "file": "swat_slap.wav",
+              "note": "шлепок ладонью"
+            },
+            {
+              "file": "aquarium_bubbles.wav",
+              "note": "бульканье аквариума (луп)"
+            },
+            {
+              "file": "bird_chirp.wav",
+              "note": "щебет птицы"
+            }
+          ]
+        },
+        {
+          "title": "WAV — природа, техника, атмосфера",
+          "items": [
+            {
+              "file": "rain_loop.wav",
+              "note": "шум дождя (луп ~3 c)"
+            },
+            {
+              "file": "thunder.wav",
+              "note": "раскат грома"
+            },
+            {
+              "file": "water_splash.wav",
+              "note": "плеск воды"
+            },
+            {
+              "file": "volcano_rumble.wav",
+              "note": "утробный гул вулкана"
+            },
+            {
+              "file": "train_whistle.wav",
+              "note": "гудок паровоза"
+            },
+            {
+              "file": "gears_clank.wav",
+              "note": "лязг шестерёнок"
+            },
+            {
+              "file": "spaceship_hum.wav",
+              "note": "ровный гул двигателей (луп)"
+            },
+            {
+              "file": "radio_static.wav",
+              "note": "шум эфира между станциями"
+            },
+            {
+              "file": "coffee_brew.wav",
+              "note": "кофе-машина варит (шипение пара)"
+            },
+            {
+              "file": "sizzle.wav",
+              "note": "шкворчание на гриле"
+            },
+            {
+              "file": "order_bell.wav",
+              "note": "звонок стойки «заказ готов!»"
+            },
+            {
+              "file": "alarm_clock_ring.wav",
+              "note": "дребезг механического будильника"
+            },
+            {
+              "file": "footsteps.wav",
+              "note": "шаги по полу (3–4 шага)"
             }
           ]
         }

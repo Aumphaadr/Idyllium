@@ -1008,10 +1008,16 @@ function buildHandoutsPage(outputRoot: string): void {
 
   const thumbFor = (file: string, href: string): string => {
     if (/\.(png|gif|jpe?g|svg)$/iu.test(file)) return `<img class="thumb" src="${href}" alt="" loading="lazy">`;
-    const glyph = /\.(mp3|wav|ogg)$/iu.test(file) ? '♪'
-      : /\.ttf$/iu.test(file) ? 'Aa'
-        : /\.json$/iu.test(file) ? '{ }'
-          : /\.(db|sqlite3?|sql)$/iu.test(file) ? '🗄'
+    if (/\.(mp3|wav|ogg)$/iu.test(file)) {
+      return `<button type="button" class="thumb thumb-icon thumb-audio" data-audio="${href}" data-name="${escapeHtml(file)}" title="Прослушать" aria-label="Прослушать ${escapeHtml(file)}">`
+        + '<svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg>'
+        + '<svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg>'
+        + '</button>';
+    }
+    const glyph = /\.ttf$/iu.test(file) ? 'Aa'
+      : /\.json$/iu.test(file) ? '{ }'
+        : /\.(db|sqlite3?|sql)$/iu.test(file) ? '🗄'
+          : /\.zip$/iu.test(file) ? '📦'
             : '📄';
     return `<span class="thumb thumb-icon">${glyph}</span>`;
   };
@@ -1110,6 +1116,25 @@ ${groupsHtml}
     .download { flex: none; padding: 8px 16px; border: 1px solid #87bfff; border-radius: 999px;
       color: #87bfff; font-weight: 800; font-size: 14px; text-decoration: none; }
     .download:hover { background: #87bfff; color: #0c0515; }
+    .thumb-audio { border: 1px solid #342846; cursor: pointer; color: #87bfff; padding: 0; }
+    .thumb-audio:hover { border-color: #87bfff; background: rgba(135, 191, 255, 0.12); }
+    .thumb-audio svg { width: 26px; height: 26px; fill: currentColor; }
+    .thumb-audio .icon-pause { display: none; }
+    .thumb-audio.playing .icon-play { display: none; }
+    .thumb-audio.playing .icon-pause { display: block; }
+    .audio-dock { position: fixed; right: 18px; bottom: 18px; z-index: 20; display: none;
+      align-items: center; gap: 10px; max-width: min(94vw, 540px); padding: 10px 14px;
+      border: 1px solid #342846; border-radius: 14px; background: #151020;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); }
+    .audio-dock.open { display: flex; }
+    .dock-name { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      color: #f2eaf7; font-size: 13px; font-weight: 700; }
+    .dock-time { flex: none; color: #8e819d; font-size: 12px; font-variant-numeric: tabular-nums; }
+    .audio-dock input[type="range"] { accent-color: #87bfff; }
+    .dock-seek { width: 130px; }
+    .dock-volume { width: 64px; }
+    .dock-close { flex: none; border: none; background: none; color: #8e819d; font-size: 16px; cursor: pointer; }
+    .dock-close:hover { color: #f2eaf7; }
     .empty { display: none; margin: 30px 0; color: #8e819d; }
     body.searching .tab-count { opacity: 0.4; }
     .footnote { margin-top: 36px; color: #8e819d; font-size: 14px; }
@@ -1130,6 +1155,14 @@ ${tabs.join('\n')}
 ${panels.join('\n')}
     <p class="footnote">Музыка — Kevin MacLeod (<a href="https://incompetech.com" rel="noopener">incompetech.com</a>), лицензия CC BY 4.0. Шрифты — SIL Open Font License (текст лицензии рядом с каждым шрифтом). Остальные материалы созданы командой Idyllium.</p>
   </main>
+  <div class="audio-dock" id="audio-dock" aria-label="Аудиоплеер">
+    <span class="dock-name" id="dock-name"></span>
+    <span class="dock-time" id="dock-time">0:00</span>
+    <input type="range" class="dock-seek" id="dock-seek" min="0" max="100" step="0.1" value="0" aria-label="Перемотка">
+    <span class="dock-time" id="dock-duration">0:00</span>
+    <input type="range" class="dock-volume" id="dock-volume" min="0" max="1" step="0.01" value="1" aria-label="Громкость">
+    <button type="button" class="dock-close" id="dock-close" title="Остановить и закрыть" aria-label="Остановить и закрыть">✕</button>
+  </div>
   <script>
     (function () {
       var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
@@ -1209,6 +1242,77 @@ ${panels.join('\n')}
         openFromHash();
       });
       openFromHash();
+
+      // Аудиоплеер: один общий Audio на страницу; кнопка строки — play/pause,
+      // док в правом нижнем углу — перемотка и громкость.
+      var player = new Audio();
+      var dock = document.getElementById('audio-dock');
+      var dockName = document.getElementById('dock-name');
+      var dockTime = document.getElementById('dock-time');
+      var dockDuration = document.getElementById('dock-duration');
+      var dockSeek = document.getElementById('dock-seek');
+      var dockVolume = document.getElementById('dock-volume');
+      var currentButton = null;
+      var seeking = false;
+
+      function fmt(t) {
+        if (!isFinite(t)) return '0:00';
+        var m = Math.floor(t / 60);
+        var s = Math.floor(t % 60);
+        return m + ':' + (s < 10 ? '0' : '') + s;
+      }
+      function markStopped() {
+        if (currentButton) currentButton.classList.remove('playing');
+      }
+      Array.prototype.forEach.call(document.querySelectorAll('.thumb-audio'), function (button) {
+        button.addEventListener('click', function () {
+          if (currentButton === button && !player.paused) {
+            player.pause();
+            return;
+          }
+          if (currentButton !== button) {
+            markStopped();
+            currentButton = button;
+            player.src = button.dataset.audio;
+            dockName.textContent = button.dataset.name;
+            dockSeek.value = '0';
+            dockTime.textContent = '0:00';
+            dockDuration.textContent = '0:00';
+          }
+          dock.classList.add('open');
+          player.play();
+        });
+      });
+      player.addEventListener('play', function () {
+        if (currentButton) currentButton.classList.add('playing');
+      });
+      player.addEventListener('pause', markStopped);
+      player.addEventListener('ended', markStopped);
+      player.addEventListener('loadedmetadata', function () {
+        dockDuration.textContent = fmt(player.duration);
+      });
+      player.addEventListener('timeupdate', function () {
+        dockTime.textContent = fmt(player.currentTime);
+        if (!seeking && isFinite(player.duration) && player.duration > 0) {
+          dockSeek.value = String((player.currentTime / player.duration) * 100);
+        }
+      });
+      dockSeek.addEventListener('input', function () { seeking = true; });
+      dockSeek.addEventListener('change', function () {
+        if (isFinite(player.duration)) {
+          player.currentTime = (Number(dockSeek.value) / 100) * player.duration;
+        }
+        seeking = false;
+      });
+      dockVolume.addEventListener('input', function () { player.volume = Number(dockVolume.value); });
+      document.getElementById('dock-close').addEventListener('click', function () {
+        player.pause();
+        player.removeAttribute('src');
+        player.load();
+        markStopped();
+        currentButton = null;
+        dock.classList.remove('open');
+      });
     })();
   </script>
 </body>
@@ -1260,6 +1364,7 @@ function tasksShell(): string {
       <a class="topbar-link" href="../">Открыть IDE</a>
       <a class="topbar-link" href="../book/">Учебник</a>
       <a class="topbar-link" href="../reference/">Документация</a>
+      <a class="topbar-link" href="../handouts/">Файлы для заданий</a>
       <button class="topbar-link" id="theme-toggle" type="button">Светлая тема</button>
     </nav>
   </header>
@@ -1273,7 +1378,6 @@ function tasksShell(): string {
         </label>
       </div>
       <nav class="lesson-nav" id="lesson-nav" aria-label="Темы"></nav>
-      <a class="sidebar-handouts" href="../handouts/">📦 Файлы для заданий</a>
     </aside>
 
     <main class="docs-main" id="docs-main" tabindex="-1">
