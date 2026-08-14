@@ -13,6 +13,7 @@ import {
   ConstructorDeclaration,
   DoWhileStatement,
   Expression,
+  ExpressionStatement,
   ForClauseStatement,
   ForStatement,
   FunctionExpression,
@@ -761,9 +762,26 @@ export class SemanticAnalyzer {
         this.analyzeAssignment(statement);
         return;
       case 'ExpressionStatement':
-        this.expressionType(statement.expression);
+        this.analyzeExpressionStatement(statement);
         return;
     }
+  }
+
+  // Метод или функция без скобок: «v.info;» молча не делает ничего, а
+  // «console.writeln;» и вовсе ронял рантайм. Значений-функций в языке нет,
+  // поэтому функциональный тип у выражения-statement — всегда забытые скобки.
+  private analyzeExpressionStatement(statement: ExpressionStatement): void {
+    const type = this.expressionType(statement.expression);
+    if (type.kind !== 'function') return;
+    const name = statement.expression.kind === 'MemberExpression' || statement.expression.kind === 'IdentifierExpression'
+      ? statement.expression.name
+      : null;
+    this.diagnostics.error(
+      statement.range,
+      name !== null
+        ? `'${name}' is not called — add '()' to call it`
+        : "this expression names a function but does not call it — add '()'",
+    );
   }
 
   private analyzeIfStatement(statement: IfStatement): void {
@@ -838,7 +856,7 @@ export class SemanticAnalyzer {
         this.analyzeAssignment(statement);
         return;
       case 'ExpressionStatement':
-        this.expressionType(statement.expression);
+        this.analyzeExpressionStatement(statement);
         return;
     }
   }
@@ -1208,6 +1226,8 @@ export class SemanticAnalyzer {
       }
 
       const objectType = this.expressionType(target.object);
+      // Тип объекта уже ошибочен — ошибка отзвучала выше, эхо с '<error>' молчит.
+      if (objectType.kind === 'error') return { type: ERROR_TYPE };
       if (this.isBuiltinLengthProperty(objectType, target.name)) {
         this.markSemanticToken('property', target.nameRange, ['readonly', 'defaultLibrary']);
         this.diagnostics.error(target.range, "property 'length' is read-only");
@@ -1263,6 +1283,10 @@ export class SemanticAnalyzer {
 
     if (target.kind === 'IndexExpression') {
       const objectType = this.expressionType(target.object);
+      if (objectType.kind === 'error') {
+        this.expressionType(target.index);
+        return { type: ERROR_TYPE };
+      }
       if (this.isStringType(objectType)) {
         this.expressionType(target.index);
         this.diagnostics.error(target.range, 'string characters are read-only');
@@ -1428,6 +1452,7 @@ export class SemanticAnalyzer {
   private indexExpressionType(expression: IndexExpression): TypeRef {
     const objectType = this.expressionType(expression.object);
     const indexType = this.expressionType(expression.index);
+    if (objectType.kind === 'error') return ERROR_TYPE;
 
     if (!isIntegerLike(indexType)) {
       this.diagnostics.error(
@@ -1859,6 +1884,7 @@ export class SemanticAnalyzer {
 
     if (callee.kind === 'MemberExpression') {
       const objectType = this.expressionType(callee.object);
+      if (objectType.kind === 'error') return null;
       if (this.isStringType(objectType)) {
         this.markSemanticToken('method', callee.nameRange);
         const method = this.stringMethodSpec(callee.name);
@@ -2188,6 +2214,7 @@ export class SemanticAnalyzer {
         }
         if (module.types.has(expression.name)) {
           this.markSemanticToken('class', expression.nameRange, ['defaultLibrary']);
+          this.diagnostics.error(expression.range, `type '${moduleName}.${expression.name}' cannot be used as a value`);
           return ERROR_TYPE;
         }
         this.diagnostics.error(expression.range, `'${moduleName}' has no member '${expression.name}'`);
@@ -2215,6 +2242,7 @@ export class SemanticAnalyzer {
         }
         if (userModule.classes.has(expression.name)) {
           this.markSemanticToken('class', expression.nameRange);
+          this.diagnostics.error(expression.range, `class '${moduleName}.${expression.name}' cannot be used as a value`);
           return ERROR_TYPE;
         }
 
@@ -2254,6 +2282,7 @@ export class SemanticAnalyzer {
     }
 
     const objectType = this.expressionType(expression.object);
+    if (objectType.kind === 'error') return ERROR_TYPE;
     if (this.isStringType(objectType)) {
       if (expression.name === 'length') {
         this.markSemanticToken('property', expression.nameRange, ['readonly', 'defaultLibrary']);

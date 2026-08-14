@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-14T10:35:40.820Z",
+  "generatedAt": "2026-08-14T14:44:22.160Z",
   "sourceRoot": "packages/docs",
   "sections": [
     {
@@ -691,7 +691,7 @@
           "sourceFile": "oop/000_intro.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "classes",

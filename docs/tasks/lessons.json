@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-14T10:35:40.820Z",
+  "generatedAt": "2026-08-14T14:44:22.160Z",
   "sourceRoot": "docs/manual-content/tasks",
   "sections": [
     {
@@ -686,12 +686,12 @@
         {
           "id": "intro",
           "title": "Введение в ООП",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Введение в ООП»",
           "file": "content/oop/intro.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/oop/intro.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "classes",

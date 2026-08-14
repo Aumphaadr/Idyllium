@@ -405,7 +405,7 @@ export class JavaScriptGenerator {
     for (const field of declaration.fields) {
       const rawValue = field.initializer
         ? this.expression(field.initializer)
-        : this.defaultValue(declaration.declaredType, false);
+        : this.defaultValue(declaration.declaredType);
       const value = field.initializer
         ? this.valueForType(rawValue, declaration.declaredType, field.initializer.range)
         : this.castForType(rawValue, declaration.declaredType);
@@ -792,30 +792,27 @@ export class JavaScriptGenerator {
     return `$rt.array.from([${values}], ${dynamic ? 'true' : 'false'}, ${size}, ${defaultFactory})`;
   }
 
-  private defaultValue(type: TypeName, runConstructor = true): string {
+  private defaultValue(type: TypeName): string {
     const runtimeTypeName = this.typesRuntimeName(type);
     if (runtimeTypeName) return `$rt.types.cast(0, ${JSON.stringify(runtimeTypeName)})`;
 
     if (type.kind === 'ArrayTypeName') {
       const size = type.dynamic ? 0 : type.size ?? 0;
-      return `await $rt.array.createAsync(${size}, async () => ${this.defaultValue(type.elementType, false)}, ${type.dynamic ? 'true' : 'false'})`;
+      return `await $rt.array.createAsync(${size}, async () => ${this.defaultValue(type.elementType)}, ${type.dynamic ? 'true' : 'false'})`;
     }
 
     if (type.kind === 'ClassTypeName') {
-      // Конструктор при объявлении без аргументов вызывается, только если его
-      // можно вызвать без аргументов; иначе поля получают дефолтные значения.
-      const callable = this.zeroArgCallable(this.classConstructorParameters.get(type.name));
-      return runConstructor && callable
-        ? `await ${this.classCreateFactoryName(type.name)}()`
-        : `await ${this.classDefaultFactoryName(type.name)}()`;
+      // Объявление без аргументов НИКОГДА не зовёт конструктор — поля
+      // получают дефолтные значения. Конструктор вызывается только явно:
+      // Hero v = Hero(...) или Hero v(...). Единое правило для одиночных
+      // переменных, элементов массивов и полей-композиций (решение
+      // владельца, 2026-08-14).
+      return `await ${this.classDefaultFactoryName(type.name)}()`;
     }
 
     if (type.kind === 'QualifiedTypeName') {
       if (this.userModuleNames.has(type.moduleName)) {
-        const callable = this.zeroArgCallable(this.moduleClassConstructorParameters.get(`${type.moduleName}.${type.name}`));
-        return runConstructor && callable
-          ? `await $rt.modules.${type.moduleName}.${this.exportedClassCreateName(type.name)}()`
-          : `await $rt.modules.${type.moduleName}.${this.exportedClassDefaultName(type.name)}()`;
+        return `await $rt.modules.${type.moduleName}.${this.exportedClassDefaultName(type.name)}()`;
       }
       if (type.moduleName === 'colors' && type.name === 'Color') {
         return '$rt.modules.colors.TRANSPARENT';
@@ -1068,11 +1065,6 @@ export class JavaScriptGenerator {
     return `${className}.${memberName}`;
   }
 
-  private zeroArgCallable(parameters: readonly ParameterDeclaration[] | undefined): boolean {
-    if (!parameters) return true;
-    return parameters.every((parameter) => parameter.defaultValue !== null);
-  }
-
   private valueForType(value: string, type: TypeName | null, range: SourceRange): string {
     if (type?.kind === 'ArrayTypeName') {
       const size = type.dynamic ? 'null' : String(type.size ?? 0);
@@ -1082,7 +1074,7 @@ export class JavaScriptGenerator {
         value,
         `, ${type.dynamic ? 'true' : 'false'}`,
         `, ${size}`,
-        `, async () => ${this.defaultValue(type.elementType, false)}`,
+        `, async () => ${this.defaultValue(type.elementType)}`,
         `, (__array_item) => ${convertedElement}`,
         `, ${JSON.stringify(this.typeNameToString(type))}`,
         `, ${JSON.stringify(range.start.file)}`,

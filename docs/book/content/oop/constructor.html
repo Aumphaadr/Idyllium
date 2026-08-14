@@ -206,6 +206,39 @@ main() {
 </div>
 
 <div class="docs-section">
+  <h2>Объявление без вызова конструктора</h2>
+  <p>
+    Правило простое и единое: конструктор запускается только там, где вы
+    <strong>явно его позвали</strong> — со скобками. Объявление без скобок
+    конструктора не вызывает: объект появляется с полями-«заготовками»
+    (числа — нули, строки — пустые), даже если конструктор у класса есть.
+  </p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Dice {
+    int sides;
+
+    constructor Dice() {
+        this.sides = 6;
+    }
+}
+
+main() {
+    Dice quiet;          // конструктор НЕ вызывался: sides = 0
+    Dice usual = Dice(); // конструктор вызван явно: sides = 6
+
+    console.writeln(quiet.sides, " ", usual.sides);
+}
+  </script></idyl-code-block>
+  <idyl-output-block>0 6</idyl-output-block>
+  <p>
+    Так же ведут себя массив объектов и поле-объект внутри класса: это «склад
+    заготовок», который вы заполняете сами. Хотите конструктор — зовите его
+    явно: <code>Dice usual = Dice();</code> или <code>Dice usual();</code>.
+  </p>
+</div>
+<div class="docs-section">
   <h2>Опорная таблица</h2>
   <table>
     <thead>
@@ -215,6 +248,10 @@ main() {
       <tr>
         <td>Объявление с конструктором</td>
         <td><code>Hero kaspar("Kaspar", 500);</code></td>
+      </tr>
+      <tr>
+        <td>Объявление-заготовка (конструктор молчит)</td>
+        <td><code>Hero ghost; // поля: "", 0</code></td>
       </tr>
       <tr>
         <td>Конструктор-выражение</td>
