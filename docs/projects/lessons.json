@@ -1,0 +1,245 @@
+{
+  "version": 1,
+  "generatedAt": "2026-08-14T20:11:04.564Z",
+  "sourceRoot": "docs/manual-content/projects",
+  "sections": [
+    {
+      "id": "console",
+      "title": "Консоль",
+      "icon": "terminal",
+      "status": "ready",
+      "lessons": [
+        {
+          "id": "quiz",
+          "title": "Знаток большого мира",
+          "subtitle": "Консольный проект · ★★",
+          "file": "content/console/quiz.html",
+          "sourceFile": "docs/manual-content/projects/console/quiz.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "chatbot",
+          "title": "Робот Дуся",
+          "subtitle": "Консольный проект · ★★★",
+          "file": "content/console/chatbot.html",
+          "sourceFile": "docs/manual-content/projects/console/chatbot.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "oracle",
+          "title": "Электронный оракул",
+          "subtitle": "Консольный проект · ★",
+          "file": "content/console/oracle.html",
+          "sourceFile": "docs/manual-content/projects/console/oracle.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "bad-prophet",
+          "title": "Бюро прогнозов на вчера",
+          "subtitle": "Консольный проект · ★",
+          "file": "content/console/bad-prophet.html",
+          "sourceFile": "docs/manual-content/projects/console/bad-prophet.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "dice-duel",
+          "title": "Кости против Железного Джо",
+          "subtitle": "Консольный проект · ★★",
+          "file": "content/console/dice-duel.html",
+          "sourceFile": "docs/manual-content/projects/console/dice-duel.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "curse-shop",
+          "title": "Магазин мелких проклятий «Сглазик»",
+          "subtitle": "Консольный проект · ★",
+          "file": "content/console/curse-shop.html",
+          "sourceFile": "docs/manual-content/projects/console/curse-shop.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "hero-generator",
+          "title": "Мастерская героев",
+          "subtitle": "Консольный проект · ★★",
+          "file": "content/console/hero-generator.html",
+          "sourceFile": "docs/manual-content/projects/console/hero-generator.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "quest-cave",
+          "title": "Пещера трёх дорог",
+          "subtitle": "Консольный проект · ★★★",
+          "file": "content/console/quest-cave.html",
+          "sourceFile": "docs/manual-content/projects/console/quest-cave.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "overlay",
+          "title": "Оверлей реальности 0.9 (бета)",
+          "subtitle": "Консольный проект · ★",
+          "file": "content/console/overlay.html",
+          "sourceFile": "docs/manual-content/projects/console/overlay.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "space-scow",
+          "title": "Космический мусоровоз «Черепаха»",
+          "subtitle": "Консольный проект · ★★",
+          "file": "content/console/space-scow.html",
+          "sourceFile": "docs/manual-content/projects/console/space-scow.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "tamagotchi",
+          "title": "Хомяк-программист Фёдор",
+          "subtitle": "Консольный проект · ★★",
+          "file": "content/console/tamagotchi.html",
+          "sourceFile": "docs/manual-content/projects/console/tamagotchi.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "strict-fridge",
+          "title": "Холодильник строгого режима",
+          "subtitle": "Консольный проект · ★★",
+          "file": "content/console/strict-fridge.html",
+          "sourceFile": "docs/manual-content/projects/console/strict-fridge.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "potion-shop",
+          "title": "Зельеварня бабки Ядвиги",
+          "subtitle": "Консольный проект · ★★★",
+          "file": "content/console/potion-shop.html",
+          "sourceFile": "docs/manual-content/projects/console/potion-shop.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "cat-rescue",
+          "title": "Спасите кота Батона",
+          "subtitle": "Консольный проект · ★★",
+          "file": "content/console/cat-rescue.html",
+          "sourceFile": "docs/manual-content/projects/console/cat-rescue.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "submarine",
+          "title": "Охота на подлодку",
+          "subtitle": "Консольный проект · ★★",
+          "file": "content/console/submarine.html",
+          "sourceFile": "docs/manual-content/projects/console/submarine.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "fishing",
+          "title": "Рыбалка на Тихом омуте",
+          "subtitle": "Консольный проект · ★★★",
+          "file": "content/console/fishing.html",
+          "sourceFile": "docs/manual-content/projects/console/fishing.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "vanga-lite",
+          "title": "Бюро прогнозов «Ванга-Лайт»",
+          "subtitle": "Консольный проект · ★★",
+          "file": "content/console/vanga-lite.html",
+          "sourceFile": "docs/manual-content/projects/console/vanga-lite.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "dragon-shop",
+          "title": "Лавка «Всё для драконов»: инвентаризация",
+          "subtitle": "Консольный проект · ★★",
+          "file": "content/console/dragon-shop.html",
+          "sourceFile": "docs/manual-content/projects/console/dragon-shop.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "dream-map",
+          "title": "Сервер снов: ночная карта района",
+          "subtitle": "Консольный проект · ★★★",
+          "file": "content/console/dream-map.html",
+          "sourceFile": "docs/manual-content/projects/console/dream-map.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "mini-sapper",
+          "title": "Сапёр-разведчик",
+          "subtitle": "Консольный проект · ★★★",
+          "file": "content/console/mini-sapper.html",
+          "sourceFile": "docs/manual-content/projects/console/mini-sapper.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "grimoire",
+          "title": "Гримуар v666.2",
+          "subtitle": "Консольный проект · ★★★",
+          "file": "content/console/grimoire.html",
+          "sourceFile": "docs/manual-content/projects/console/grimoire.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "mini-caesar",
+          "title": "Перехват: шифр Цезаря",
+          "subtitle": "Консольный проект · ★★★",
+          "file": "content/console/mini-caesar.html",
+          "sourceFile": "docs/manual-content/projects/console/mini-caesar.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        },
+        {
+          "id": "mini-tale",
+          "title": "Сказка-матрёшка",
+          "subtitle": "Консольный проект · ★★★",
+          "file": "content/console/mini-tale.html",
+          "sourceFile": "docs/manual-content/projects/console/mini-tale.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
+        }
+      ]
+    }
+  ]
+}

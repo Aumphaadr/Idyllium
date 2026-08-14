@@ -63,7 +63,7 @@ export class IdylliumRuntimeError extends Error {
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-export const IDYLLIUM_VERSION = '1.3.5';
+export const IDYLLIUM_VERSION = '1.3.6';
 
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform(): string {
@@ -5131,6 +5131,61 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
       canvasCommands(obj).push({ kind: 'draw', object: drawableSnapshot(target) });
     });
     obj.to_string = () => `gui.Canvas(commands: ${canvasCommands(obj).length})`;
+    // Снимки холста (1.3.6): save_svg живёт везде (включая консольный
+    // запуск), to_static/export_to_file требуют растеризатора хоста.
+    obj.save_svg = contextFunction((...rawArgs: unknown[]) => {
+      const { values, file, line } = splitContextArgs(rawArgs);
+      const requestedPath = stringArgument(values[0], 'Canvas.save_svg() path', file, line);
+      const region = canvasCaptureRegion(obj, values.slice(1), 'Canvas.save_svg()', file, line);
+      const resolved = state.fileSystem.resolvePath(requestedPath, file);
+      try {
+        state.fileSystem.writeText(resolved, canvasToSvg(obj, region, state));
+      } catch (error) {
+        throw new IdylliumRuntimeError(file, line, `Canvas.save_svg() cannot write '${requestedPath}': ${errorMessage(error)}`);
+      }
+    });
+    obj.to_static = contextFunction(async (...rawArgs: unknown[]) => {
+      const { values, file, line } = splitContextArgs(rawArgs);
+      const region = canvasCaptureRegion(obj, values, 'Canvas.to_static()', file, line);
+      const service = imageService(state, file, line);
+      if (typeof service.rasterizeSvg !== 'function') {
+        throw new IdylliumRuntimeError(file, line, 'Canvas.to_static() is not available in the console host — use Canvas.save_svg() or run the program in the Web IDE');
+      }
+      const svgText = canvasToSvg(obj, region, state);
+      try {
+        const raster = await service.rasterizeSvg(svgText, region.width, region.height, region.width, region.height);
+        return await createGeneratedStaticImage(raster, 'canvas', state, file, line);
+      } catch (error) {
+        if (error instanceof IdylliumRuntimeError) throw error;
+        throw imageRuntimeError(file, line, 'Canvas.to_static() cannot rasterize the canvas', error);
+      }
+    });
+    obj.export_to_file = contextFunction(async (...rawArgs: unknown[]) => {
+      const { values, file, line } = splitContextArgs(rawArgs);
+      const requestedPath = stringArgument(values[0], 'Canvas.export_to_file() path', file, line);
+      const outputFormat = imageFormatFromPath(requestedPath);
+      if (!['png', 'jpeg', 'webp', 'gif'].includes(outputFormat)) {
+        throw new IdylliumRuntimeError(
+          file,
+          line,
+          `Canvas.export_to_file() cannot determine a supported format from '${requestedPath}'`,
+        );
+      }
+      const region = canvasCaptureRegion(obj, values.slice(1), 'Canvas.export_to_file()', file, line);
+      const service = imageService(state, file, line);
+      if (typeof service.rasterizeSvg !== 'function') {
+        throw new IdylliumRuntimeError(file, line, 'Canvas.export_to_file() is not available in the console host — use Canvas.save_svg() or run the program in the Web IDE');
+      }
+      const svgText = canvasToSvg(obj, region, state);
+      try {
+        const raster = await service.rasterizeSvg(svgText, region.width, region.height, region.width, region.height);
+        const bytes = await service.encodeStatic(raster, outputFormat);
+        writeRuntimeImageBytes(requestedPath, bytes, outputFormat, state, file, line, 'Canvas.export_to_file()');
+      } catch (error) {
+        if (error instanceof IdylliumRuntimeError) throw error;
+        throw imageRuntimeError(file, line, `Canvas.export_to_file() cannot write '${requestedPath}'`, error);
+      }
+    });
     state.canvases.push(obj);
   }
 
@@ -7433,6 +7488,206 @@ function canvasSnapshot(canvas: RuntimeObject): IdylliumCanvasSnapshot {
     properties: objectPropertiesSnapshot(canvas),
     commands: canvasCommands(canvas).map((command) => ({ ...command })),
   };
+}
+
+// ─── Снимки холста (1.3.6) ─────────────────────────────────────────────────
+// Canvas умеет отдать текущую картинку: save_svg сериализует display list в
+// SVG (работает везде, включая консольный запуск — жанр turtle.save_svg),
+// to_static растрирует тот же SVG через optional rasterizeSvg (браузерные
+// хосты), export_to_file — сахар поверх to_static. Область по умолчанию —
+// весь холст; нули ширины/высоты означают «до края».
+
+interface CanvasCaptureRegion {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+  readonly canvasWidth: number;
+  readonly canvasHeight: number;
+}
+
+function canvasCaptureRegion(
+  canvas: RuntimeObject,
+  values: readonly unknown[],
+  methodName: string,
+  file: string,
+  line: number,
+): CanvasCaptureRegion {
+  const canvasWidth = Math.max(1, Math.round(Number(canvas.width) || 0));
+  const canvasHeight = Math.max(1, Math.round(Number(canvas.height) || 0));
+  const num = (value: unknown, index: number): number => {
+    if (value === undefined || value === null) return 0;
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) {
+      throw new IdylliumRuntimeError(file, line, `${methodName} region argument ${index + 1} must be a number`);
+    }
+    return Math.round(parsed);
+  };
+  const rawX = num(values[0], 0);
+  const rawY = num(values[1], 1);
+  const rawWidth = num(values[2], 2);
+  const rawHeight = num(values[3], 3);
+
+  const x = Math.min(Math.max(0, rawX), canvasWidth);
+  const y = Math.min(Math.max(0, rawY), canvasHeight);
+  const width = rawWidth <= 0 ? canvasWidth - x : Math.min(rawWidth, canvasWidth - x);
+  const height = rawHeight <= 0 ? canvasHeight - y : Math.min(rawHeight, canvasHeight - y);
+  if (width <= 0 || height <= 0) {
+    throw new IdylliumRuntimeError(
+      file,
+      line,
+      `${methodName} region is empty (canvas is ${canvasWidth}x${canvasHeight}, requested x=${rawX}, y=${rawY}, width=${rawWidth}, height=${rawHeight})`,
+    );
+  }
+  return { x, y, width, height, canvasWidth, canvasHeight };
+}
+
+function canvasSvgEscape(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function canvasSvgNumber(value: unknown, fallback = 0): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.round(parsed * 100) / 100;
+}
+
+function canvasSvgColor(value: unknown, fallback: string): string {
+  return typeof value === 'string' && value !== '' ? value : fallback;
+}
+
+function canvasSpriteHref(imageSnapshot: unknown, state: RuntimeObjectState): string | null {
+  if (!imageSnapshot || typeof imageSnapshot !== 'object') return null;
+  const properties = (imageSnapshot as { properties?: Record<string, unknown> }).properties ?? {};
+  const src = typeof properties.src === 'string' ? properties.src : '';
+  if (src === '') return null;
+  try {
+    const resolved = state.fileSystem.resolvePath(src, '');
+    if (!state.fileSystem.exists(resolved) || !state.fileSystem.isFile(resolved)) return null;
+    const bytes = state.fileSystem.readBytes
+      ? state.fileSystem.readBytes(resolved)
+      : new TextEncoder().encode(state.fileSystem.readText(resolved));
+    const format = detectImageFormat(bytes);
+    const mime = imageMimeType(format);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    const base64 = typeof btoa === 'function'
+      ? btoa(binary)
+      : (globalThis as { Buffer?: { from(data: Uint8Array): { toString(encoding: string): string } } }).Buffer
+        ? (globalThis as any).Buffer.from(bytes).toString('base64')
+        : null;
+    if (base64 === null) return null;
+    return `data:${mime};base64,${base64}`;
+  } catch {
+    return null;
+  }
+}
+
+function canvasDrawableToSvg(object: IdylliumDrawableSnapshot, state: RuntimeObjectState): string {
+  const props = object.properties ?? {};
+  const n = canvasSvgNumber;
+  const transform = (scaleX = 1, scaleY = 1): string => {
+    const parts = [`translate(${n(props.x)} ${n(props.y)})`];
+    const rotation = n(props.rotation, 0);
+    if (rotation !== 0) parts.push(`rotate(${rotation})`);
+    if (scaleX !== 1 || scaleY !== 1) parts.push(`scale(${scaleX} ${scaleY})`);
+    return parts.join(' ');
+  };
+  const originX = n(props.origin_x);
+  const originY = n(props.origin_y);
+
+  if (object.type === 'drawable.Rectangle') {
+    const width = Math.max(0, n(props.width));
+    const height = Math.max(0, n(props.height));
+    const fill = canvasSvgColor(props.fill_color, 'rgba(0, 0, 0, 0)');
+    const parts = [`<rect x="${-originX}" y="${-originY}" width="${width}" height="${height}" fill="${fill}"/>`];
+    const borderWidth = n(props.border_width, 0);
+    if (borderWidth > 0) {
+      parts.push(`<rect x="${-originX}" y="${-originY}" width="${width}" height="${height}" fill="none" stroke="${canvasSvgColor(props.border_color, 'rgba(0, 0, 0, 0)')}" stroke-width="${borderWidth}"/>`);
+    }
+    return `<g transform="${transform()}">${parts.join('')}</g>`;
+  }
+
+  if (object.type === 'drawable.Circle') {
+    const radius = Math.max(0, n(props.radius));
+    const fill = canvasSvgColor(props.fill_color, 'rgba(0, 0, 0, 0)');
+    const parts = [`<circle cx="${radius - originX}" cy="${radius - originY}" r="${radius}" fill="${fill}"/>`];
+    const borderWidth = n(props.border_width, 0);
+    if (borderWidth > 0) {
+      parts.push(`<circle cx="${radius - originX}" cy="${radius - originY}" r="${radius}" fill="none" stroke="${canvasSvgColor(props.border_color, 'rgba(0, 0, 0, 0)')}" stroke-width="${borderWidth}"/>`);
+    }
+    return `<g transform="${transform()}">${parts.join('')}</g>`;
+  }
+
+  if (object.type === 'drawable.Line') {
+    const thickness = n(props.thickness, 1);
+    if (thickness <= 0) return '';
+    return `<line x1="${n(props.x1)}" y1="${n(props.y1)}" x2="${n(props.x2)}" y2="${n(props.y2)}" stroke="${canvasSvgColor(props.color, '#ffffff')}" stroke-width="${thickness}" stroke-linecap="round"/>`;
+  }
+
+  if (object.type === 'drawable.Text') {
+    const fontSize = Math.max(1, n(props.font_size, 16));
+    const text = typeof props.text === 'string' ? props.text : String(props.text ?? '');
+    // Кастомные шрифты внутри SVG-картинки недоступны (svg-as-img не грузит
+    // внешние ресурсы) — честный фоллбек на sans-serif.
+    return `<g transform="${transform()}"><text x="${-originX}" y="${-originY}" font-size="${fontSize}" font-family="sans-serif" dominant-baseline="text-before-edge" fill="${canvasSvgColor(props.text_color, '#ffffff')}">${canvasSvgEscape(text)}</text></g>`;
+  }
+
+  if (object.type === 'turtle.Path') {
+    const raw = Array.isArray(props.points) ? props.points : [];
+    if (raw.length < 6) return '';
+    const points: string[] = [];
+    for (let i = 0; i + 1 < raw.length; i += 2) {
+      points.push(`${n(raw[i])},${n(raw[i + 1])}`);
+    }
+    const borderWidth = n(props.border_width, 0);
+    const stroke = borderWidth > 0
+      ? ` stroke="${canvasSvgColor(props.border_color, '#000000')}" stroke-width="${borderWidth}"`
+      : '';
+    return `<polygon points="${points.join(' ')}" fill="${canvasSvgColor(props.fill_color, 'rgba(0, 0, 0, 0)')}"${stroke}/>`;
+  }
+
+  if (object.type === 'drawable.Sprite') {
+    const scaleX = n(props.scale_x, 1);
+    const scaleY = n(props.scale_y, 1);
+    const imageSnapshot = props.image as { properties?: Record<string, unknown> } | undefined;
+    const resource = imageSnapshot?.properties ?? {};
+    const width = Math.max(1, n(resource.width, 64));
+    const height = Math.max(1, n(resource.height, 64));
+    const href = canvasSpriteHref(imageSnapshot, state);
+    if (href !== null) {
+      return `<g transform="${transform(scaleX, scaleY)}"><image x="${-originX}" y="${-originY}" width="${width}" height="${height}" href="${href}" preserveAspectRatio="none"/></g>`;
+    }
+    // Файл не читается — плейсхолдер, как в живом рендерере.
+    const label = canvasSvgEscape(typeof resource.src === 'string' && resource.src !== '' ? resource.src : 'sprite');
+    return `<g transform="${transform(scaleX, scaleY)}">`
+      + `<rect x="${-originX}" y="${-originY}" width="${width}" height="${height}" fill="rgba(255, 255, 255, 0.18)" stroke="rgba(255, 255, 255, 0.55)"/>`
+      + `<text x="${-originX + 6}" y="${-originY + 6}" font-size="12" font-family="sans-serif" dominant-baseline="text-before-edge" fill="rgba(255, 255, 255, 0.75)">${label}</text></g>`;
+  }
+
+  return '';
+}
+
+function canvasToSvg(canvas: RuntimeObject, region: CanvasCaptureRegion, state: RuntimeObjectState): string {
+  const parts: string[] = [];
+  parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${region.width}" height="${region.height}" viewBox="${region.x} ${region.y} ${region.width} ${region.height}">`);
+  // Фон как в живом рендерере: чёрный до всех команд.
+  parts.push(`<rect x="0" y="0" width="${region.canvasWidth}" height="${region.canvasHeight}" fill="#000000"/>`);
+  for (const command of canvasCommands(canvas)) {
+    if (command.kind === 'clear' || command.kind === 'fill') {
+      parts.push(`<rect x="0" y="0" width="${region.canvasWidth}" height="${region.canvasHeight}" fill="${canvasSvgColor(command.color, '#000000')}"/>`);
+    }
+    if (command.kind === 'draw' && command.object) {
+      const svg = canvasDrawableToSvg(command.object, state);
+      if (svg !== '') parts.push(svg);
+    }
+  }
+  parts.push('</svg>');
+  return parts.join('\n');
 }
 
 function audioSnapshot(audio: RuntimeObject): IdylliumAudioSnapshot {
