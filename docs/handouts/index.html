@@ -48,6 +48,25 @@
     .download { flex: none; padding: 8px 16px; border: 1px solid #87bfff; border-radius: 999px;
       color: #87bfff; font-weight: 800; font-size: 14px; text-decoration: none; }
     .download:hover { background: #87bfff; color: #0c0515; }
+    .thumb-audio { border: 1px solid #342846; cursor: pointer; color: #87bfff; padding: 0; }
+    .thumb-audio:hover { border-color: #87bfff; background: rgba(135, 191, 255, 0.12); }
+    .thumb-audio svg { width: 26px; height: 26px; fill: currentColor; }
+    .thumb-audio .icon-pause { display: none; }
+    .thumb-audio.playing .icon-play { display: none; }
+    .thumb-audio.playing .icon-pause { display: block; }
+    .audio-dock { position: fixed; right: 18px; bottom: 18px; z-index: 20; display: none;
+      align-items: center; gap: 10px; max-width: min(94vw, 540px); padding: 10px 14px;
+      border: 1px solid #342846; border-radius: 14px; background: #151020;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); }
+    .audio-dock.open { display: flex; }
+    .dock-name { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      color: #f2eaf7; font-size: 13px; font-weight: 700; }
+    .dock-time { flex: none; color: #8e819d; font-size: 12px; font-variant-numeric: tabular-nums; }
+    .audio-dock input[type="range"] { accent-color: #87bfff; }
+    .dock-seek { width: 130px; }
+    .dock-volume { width: 64px; }
+    .dock-close { flex: none; border: none; background: none; color: #8e819d; font-size: 16px; cursor: pointer; }
+    .dock-close:hover { color: #f2eaf7; }
     .empty { display: none; margin: 30px 0; color: #8e819d; }
     body.searching .tab-count { opacity: 0.4; }
     .footnote { margin-top: 36px; color: #8e819d; font-size: 14px; }
@@ -62,7 +81,7 @@
       <input type="search" class="search" id="search" placeholder="Поиск по имени файла или описанию — например, «гильдия» или «.json»" aria-label="Поиск файлов">
       <div class="tabs" role="tablist">
       <button type="button" class="tab" data-tab="images" role="tab" aria-selected="false"><span class="tab-icon">🖼️</span>Картинки<span class="tab-count">53</span></button>
-      <button type="button" class="tab" data-tab="audio" role="tab" aria-selected="false"><span class="tab-icon">🎵</span>Звук и музыка<span class="tab-count">6</span></button>
+      <button type="button" class="tab" data-tab="audio" role="tab" aria-selected="false"><span class="tab-icon">🎵</span>Звук и музыка<span class="tab-count">73</span></button>
       <button type="button" class="tab" data-tab="fonts" role="tab" aria-selected="false"><span class="tab-icon">🔤</span>Шрифты<span class="tab-count">5</span></button>
       <button type="button" class="tab" data-tab="text" role="tab" aria-selected="false"><span class="tab-icon">📄</span>Текстовые файлы<span class="tab-count">24</span></button>
       <button type="button" class="tab" data-tab="json" role="tab" aria-selected="false"><span class="tab-icon">{ }</span>JSON<span class="tab-count">68</span></button>
@@ -524,34 +543,18 @@
       <h3>WAV — короткие эффекты</h3>
       <ul>
         <li data-search="click.wav короткий щелчок (0,3 сек) — для audio.sound">
-          <span class="thumb thumb-icon">♪</span>
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/click.wav" data-name="click.wav" title="Прослушать" aria-label="Прослушать click.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
           <div class="meta">
             <div class="name">click.wav <span class="size">52 КБ</span></div>
             <div class="note">Короткий щелчок (0,3 сек) — для audio.Sound</div>
           </div>
           <a class="download" href="files/click.wav" download>Скачать</a>
         </li>
-        <li data-search="switch_on.wav тумблер: щелчок вверх — включение">
-          <span class="thumb thumb-icon">♪</span>
-          <div class="meta">
-            <div class="name">switch_on.wav <span class="size">42 КБ</span></div>
-            <div class="note">Тумблер: щелчок вверх — включение</div>
-          </div>
-          <a class="download" href="files/switch_on.wav" download>Скачать</a>
-        </li>
-        <li data-search="switch_off.wav тумблер: щелчок вниз, ниже тоном — выключение">
-          <span class="thumb thumb-icon">♪</span>
-          <div class="meta">
-            <div class="name">switch_off.wav <span class="size">35 КБ</span></div>
-            <div class="note">Тумблер: щелчок вниз, ниже тоном — выключение</div>
-          </div>
-          <a class="download" href="files/switch_off.wav" download>Скачать</a>
-        </li>
       </ul>
       <h3>MP3 — длинные треки</h3>
       <ul>
         <li data-search="mesmerizing galaxy.mp3 спокойный космический фон, 92,97 сек (kevin macleod)">
-          <span class="thumb thumb-icon">♪</span>
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/Mesmerizing%20Galaxy.mp3" data-name="Mesmerizing Galaxy.mp3" title="Прослушать" aria-label="Прослушать Mesmerizing Galaxy.mp3"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
           <div class="meta">
             <div class="name">Mesmerizing Galaxy.mp3 <span class="size">2,8 МБ</span></div>
             <div class="note">Спокойный космический фон, 92,97 сек (Kevin MacLeod)</div>
@@ -559,7 +562,7 @@
           <a class="download" href="files/Mesmerizing%20Galaxy.mp3" download>Скачать</a>
         </li>
         <li data-search="surf shimmy.mp3 бодрый сёрф-рок, 122,88 сек (kevin macleod)">
-          <span class="thumb thumb-icon">♪</span>
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/Surf%20Shimmy.mp3" data-name="Surf Shimmy.mp3" title="Прослушать" aria-label="Прослушать Surf Shimmy.mp3"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
           <div class="meta">
             <div class="name">Surf Shimmy.mp3 <span class="size">3,8 МБ</span></div>
             <div class="note">Бодрый сёрф-рок, 122,88 сек (Kevin MacLeod)</div>
@@ -567,12 +570,579 @@
           <a class="download" href="files/Surf%20Shimmy.mp3" download>Скачать</a>
         </li>
         <li data-search="rising.mp3 нарастающий эмбиент, 151,48 сек (kevin macleod)">
-          <span class="thumb thumb-icon">♪</span>
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/Rising.mp3" data-name="Rising.mp3" title="Прослушать" aria-label="Прослушать Rising.mp3"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
           <div class="meta">
             <div class="name">Rising.mp3 <span class="size">5,8 МБ</span></div>
             <div class="note">Нарастающий эмбиент, 151,48 сек (Kevin MacLeod)</div>
           </div>
           <a class="download" href="files/Rising.mp3" download>Скачать</a>
+        </li>
+        <li data-search="menu_theme.mp3 спокойная зацикливаемая тема меню (~1 мин)">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/menu_theme.mp3" data-name="menu_theme.mp3" title="Прослушать" aria-label="Прослушать menu_theme.mp3"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">menu_theme.mp3 <span class="size">1,4 МБ</span></div>
+            <div class="note">спокойная зацикливаемая тема меню (~1 мин)</div>
+          </div>
+          <a class="download" href="files/menu_theme.mp3" download>Скачать</a>
+        </li>
+        <li data-search="battle_theme.mp3 энергичная боевая тема (~1–2 мин)">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/battle_theme.mp3" data-name="battle_theme.mp3" title="Прослушать" aria-label="Прослушать battle_theme.mp3"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">battle_theme.mp3 <span class="size">2,1 МБ</span></div>
+            <div class="note">энергичная боевая тема (~1–2 мин)</div>
+          </div>
+          <a class="download" href="files/battle_theme.mp3" download>Скачать</a>
+        </li>
+        <li data-search="victory_theme.mp3 короткая победная композиция (~15–20 c)">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/victory_theme.mp3" data-name="victory_theme.mp3" title="Прослушать" aria-label="Прослушать victory_theme.mp3"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">victory_theme.mp3 <span class="size">424 КБ</span></div>
+            <div class="note">короткая победная композиция (~15–20 c)</div>
+          </div>
+          <a class="download" href="files/victory_theme.mp3" download>Скачать</a>
+        </li>
+        <li data-search="night_ambient.mp3 ночной эмбиент со сверчками (~1 мин)">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/night_ambient.mp3" data-name="night_ambient.mp3" title="Прослушать" aria-label="Прослушать night_ambient.mp3"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">night_ambient.mp3 <span class="size">1,4 МБ</span></div>
+            <div class="note">ночной эмбиент со сверчками (~1 мин)</div>
+          </div>
+          <a class="download" href="files/night_ambient.mp3" download>Скачать</a>
+        </li>
+        <li data-search="circus_theme.mp3 цирковая/карусельная мелодия (~1 мин)">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/circus_theme.mp3" data-name="circus_theme.mp3" title="Прослушать" aria-label="Прослушать circus_theme.mp3"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">circus_theme.mp3 <span class="size">1,4 МБ</span></div>
+            <div class="note">цирковая/карусельная мелодия (~1 мин)</div>
+          </div>
+          <a class="download" href="files/circus_theme.mp3" download>Скачать</a>
+        </li>
+      </ul>
+      <h3>WAV — интерфейс, статусы, приборы</h3>
+      <ul>
+        <li data-search="success_ding.wav короткий тёплый «дзынь» успеха">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/success_ding.wav" data-name="success_ding.wav" title="Прослушать" aria-label="Прослушать success_ding.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">success_ding.wav <span class="size">181 КБ</span></div>
+            <div class="note">короткий тёплый «дзынь» успеха</div>
+          </div>
+          <a class="download" href="files/success_ding.wav" download>Скачать</a>
+        </li>
+        <li data-search="error_buzz.wav резкий «бззз» отказа">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/error_buzz.wav" data-name="error_buzz.wav" title="Прослушать" aria-label="Прослушать error_buzz.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">error_buzz.wav <span class="size">100 КБ</span></div>
+            <div class="note">резкий «бззз» отказа</div>
+          </div>
+          <a class="download" href="files/error_buzz.wav" download>Скачать</a>
+        </li>
+        <li data-search="switch_on.wav тумблер: вкл (щёлк вверх)">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/switch_on.wav" data-name="switch_on.wav" title="Прослушать" aria-label="Прослушать switch_on.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">switch_on.wav <span class="size">43 КБ</span></div>
+            <div class="note">тумблер: вкл (щёлк вверх)</div>
+          </div>
+          <a class="download" href="files/switch_on.wav" download>Скачать</a>
+        </li>
+        <li data-search="switch_off.wav тумблер: выкл (щёлк вниз, ниже тоном)">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/switch_off.wav" data-name="switch_off.wav" title="Прослушать" aria-label="Прослушать switch_off.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">switch_off.wav <span class="size">43 КБ</span></div>
+            <div class="note">тумблер: выкл (щёлк вниз, ниже тоном)</div>
+          </div>
+          <a class="download" href="files/switch_off.wav" download>Скачать</a>
+        </li>
+        <li data-search="metronome_tick.wav деревянный тик метронома">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/metronome_tick.wav" data-name="metronome_tick.wav" title="Прослушать" aria-label="Прослушать metronome_tick.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">metronome_tick.wav <span class="size">29 КБ</span></div>
+            <div class="note">деревянный тик метронома</div>
+          </div>
+          <a class="download" href="files/metronome_tick.wav" download>Скачать</a>
+        </li>
+        <li data-search="stopwatch_beep.wav электронный писк секундомера">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/stopwatch_beep.wav" data-name="stopwatch_beep.wav" title="Прослушать" aria-label="Прослушать stopwatch_beep.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">stopwatch_beep.wav <span class="size">55 КБ</span></div>
+            <div class="note">электронный писк секундомера</div>
+          </div>
+          <a class="download" href="files/stopwatch_beep.wav" download>Скачать</a>
+        </li>
+        <li data-search="countdown_beep.wav бип обратного отсчёта (каждая секунда)">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/countdown_beep.wav" data-name="countdown_beep.wav" title="Прослушать" aria-label="Прослушать countdown_beep.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">countdown_beep.wav <span class="size">66 КБ</span></div>
+            <div class="note">бип обратного отсчёта (каждая секунда)</div>
+          </div>
+          <a class="download" href="files/countdown_beep.wav" download>Скачать</a>
+        </li>
+        <li data-search="countdown_go.wav финальный сигнал «пуск!»">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/countdown_go.wav" data-name="countdown_go.wav" title="Прослушать" aria-label="Прослушать countdown_go.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">countdown_go.wav <span class="size">134 КБ</span></div>
+            <div class="note">финальный сигнал «ПУСК!»</div>
+          </div>
+          <a class="download" href="files/countdown_go.wav" download>Скачать</a>
+        </li>
+        <li data-search="typewriter_key.wav удар клавиши печатной машинки">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/typewriter_key.wav" data-name="typewriter_key.wav" title="Прослушать" aria-label="Прослушать typewriter_key.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">typewriter_key.wav <span class="size">33 КБ</span></div>
+            <div class="note">удар клавиши печатной машинки</div>
+          </div>
+          <a class="download" href="files/typewriter_key.wav" download>Скачать</a>
+        </li>
+        <li data-search="typewriter_bell.wav звонок каретки в конце строки">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/typewriter_bell.wav" data-name="typewriter_bell.wav" title="Прослушать" aria-label="Прослушать typewriter_bell.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">typewriter_bell.wav <span class="size">181 КБ</span></div>
+            <div class="note">звонок каретки в конце строки</div>
+          </div>
+          <a class="download" href="files/typewriter_bell.wav" download>Скачать</a>
+        </li>
+        <li data-search="camera_shutter.wav затвор фотоаппарата">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/camera_shutter.wav" data-name="camera_shutter.wav" title="Прослушать" aria-label="Прослушать camera_shutter.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">camera_shutter.wav <span class="size">83 КБ</span></div>
+            <div class="note">затвор фотоаппарата</div>
+          </div>
+          <a class="download" href="files/camera_shutter.wav" download>Скачать</a>
+        </li>
+        <li data-search="message_pop.wav «булька» нового сообщения">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/message_pop.wav" data-name="message_pop.wav" title="Прослушать" aria-label="Прослушать message_pop.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">message_pop.wav <span class="size">79 КБ</span></div>
+            <div class="note">«булька» нового сообщения</div>
+          </div>
+          <a class="download" href="files/message_pop.wav" download>Скачать</a>
+        </li>
+        <li data-search="slot_machine_spin.wav стрекот барабанов автомата">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/slot_machine_spin.wav" data-name="slot_machine_spin.wav" title="Прослушать" aria-label="Прослушать slot_machine_spin.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">slot_machine_spin.wav <span class="size">319 КБ</span></div>
+            <div class="note">стрекот барабанов автомата</div>
+          </div>
+          <a class="download" href="files/slot_machine_spin.wav" download>Скачать</a>
+        </li>
+        <li data-search="drum_roll.wav барабанная дробь ожидания">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/drum_roll.wav" data-name="drum_roll.wav" title="Прослушать" aria-label="Прослушать drum_roll.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">drum_roll.wav <span class="size">327 КБ</span></div>
+            <div class="note">барабанная дробь ожидания</div>
+          </div>
+          <a class="download" href="files/drum_roll.wav" download>Скачать</a>
+        </li>
+      </ul>
+      <h3>WAV — двери, замки, сигнализация</h3>
+      <ul>
+        <li data-search="doorbell.wav классический дверной «динь-дон»">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/doorbell.wav" data-name="doorbell.wav" title="Прослушать" aria-label="Прослушать doorbell.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">doorbell.wav <span class="size">267 КБ</span></div>
+            <div class="note">классический дверной «динь-дон»</div>
+          </div>
+          <a class="download" href="files/doorbell.wav" download>Скачать</a>
+        </li>
+        <li data-search="door_creak.wav скрип открывающейся дверцы">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/door_creak.wav" data-name="door_creak.wav" title="Прослушать" aria-label="Прослушать door_creak.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">door_creak.wav <span class="size">314 КБ</span></div>
+            <div class="note">скрип открывающейся дверцы</div>
+          </div>
+          <a class="download" href="files/door_creak.wav" download>Скачать</a>
+        </li>
+        <li data-search="safe_dial_click.wav сухой щелчок наборного диска">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/safe_dial_click.wav" data-name="safe_dial_click.wav" title="Прослушать" aria-label="Прослушать safe_dial_click.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">safe_dial_click.wav <span class="size">31 КБ</span></div>
+            <div class="note">сухой щелчок наборного диска</div>
+          </div>
+          <a class="download" href="files/safe_dial_click.wav" download>Скачать</a>
+        </li>
+        <li data-search="safe_unlock.wav тяжёлый лязг ригелей — сейф открыт">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/safe_unlock.wav" data-name="safe_unlock.wav" title="Прослушать" aria-label="Прослушать safe_unlock.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">safe_unlock.wav <span class="size">296 КБ</span></div>
+            <div class="note">тяжёлый лязг ригелей — сейф открыт</div>
+          </div>
+          <a class="download" href="files/safe_unlock.wav" download>Скачать</a>
+        </li>
+        <li data-search="alarm_siren.wav вой охранной сирены (луп ~2 c)">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/alarm_siren.wav" data-name="alarm_siren.wav" title="Прослушать" aria-label="Прослушать alarm_siren.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">alarm_siren.wav <span class="size">345 КБ</span></div>
+            <div class="note">вой охранной сирены (луп ~2 c)</div>
+          </div>
+          <a class="download" href="files/alarm_siren.wav" download>Скачать</a>
+        </li>
+        <li data-search="elevator_ding.wav «динь» прибытия лифта">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/elevator_ding.wav" data-name="elevator_ding.wav" title="Прослушать" aria-label="Прослушать elevator_ding.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">elevator_ding.wav <span class="size">198 КБ</span></div>
+            <div class="note">«динь» прибытия лифта</div>
+          </div>
+          <a class="download" href="files/elevator_ding.wav" download>Скачать</a>
+        </li>
+      </ul>
+      <h3>WAV — игровые события</h3>
+      <ul>
+        <li data-search="bubble_pop.wav лёгкое лопанье пузыря">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/bubble_pop.wav" data-name="bubble_pop.wav" title="Прослушать" aria-label="Прослушать bubble_pop.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">bubble_pop.wav <span class="size">53 КБ</span></div>
+            <div class="note">лёгкое лопанье пузыря</div>
+          </div>
+          <a class="download" href="files/bubble_pop.wav" download>Скачать</a>
+        </li>
+        <li data-search="balloon_inflate.wav скрип надуваемого шарика">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/balloon_inflate.wav" data-name="balloon_inflate.wav" title="Прослушать" aria-label="Прослушать balloon_inflate.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">balloon_inflate.wav <span class="size">296 КБ</span></div>
+            <div class="note">скрип надуваемого шарика</div>
+          </div>
+          <a class="download" href="files/balloon_inflate.wav" download>Скачать</a>
+        </li>
+        <li data-search="balloon_burst.wav басовитый хлопок лопнувшего шара">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/balloon_burst.wav" data-name="balloon_burst.wav" title="Прослушать" aria-label="Прослушать balloon_burst.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">balloon_burst.wav <span class="size">100 КБ</span></div>
+            <div class="note">басовитый хлопок лопнувшего шара</div>
+          </div>
+          <a class="download" href="files/balloon_burst.wav" download>Скачать</a>
+        </li>
+        <li data-search="laser_shot.wav «пиу» лазера/снаряда">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/laser_shot.wav" data-name="laser_shot.wav" title="Прослушать" aria-label="Прослушать laser_shot.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">laser_shot.wav <span class="size">107 КБ</span></div>
+            <div class="note">«пиу» лазера/снаряда</div>
+          </div>
+          <a class="download" href="files/laser_shot.wav" download>Скачать</a>
+        </li>
+        <li data-search="cannon_boom.wav пушечный залп с раскатом">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/cannon_boom.wav" data-name="cannon_boom.wav" title="Прослушать" aria-label="Прослушать cannon_boom.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">cannon_boom.wav <span class="size">336 КБ</span></div>
+            <div class="note">пушечный залп с раскатом</div>
+          </div>
+          <a class="download" href="files/cannon_boom.wav" download>Скачать</a>
+        </li>
+        <li data-search="explosion_impact.wav взрыв/удар метеорита">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/explosion_impact.wav" data-name="explosion_impact.wav" title="Прослушать" aria-label="Прослушать explosion_impact.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">explosion_impact.wav <span class="size">302 КБ</span></div>
+            <div class="note">взрыв/удар метеорита</div>
+          </div>
+          <a class="download" href="files/explosion_impact.wav" download>Скачать</a>
+        </li>
+        <li data-search="target_hit.wav тугой удар дротика в мишень">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/target_hit.wav" data-name="target_hit.wav" title="Прослушать" aria-label="Прослушать target_hit.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">target_hit.wav <span class="size">83 КБ</span></div>
+            <div class="note">тугой удар дротика в мишень</div>
+          </div>
+          <a class="download" href="files/target_hit.wav" download>Скачать</a>
+        </li>
+        <li data-search="brick_break.wav треск разбитого кирпича/ящика">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/brick_break.wav" data-name="brick_break.wav" title="Прослушать" aria-label="Прослушать brick_break.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">brick_break.wav <span class="size">134 КБ</span></div>
+            <div class="note">треск разбитого кирпича/ящика</div>
+          </div>
+          <a class="download" href="files/brick_break.wav" download>Скачать</a>
+        </li>
+        <li data-search="pong_hit.wav упругий стук мяча о ракетку">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/pong_hit.wav" data-name="pong_hit.wav" title="Прослушать" aria-label="Прослушать pong_hit.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">pong_hit.wav <span class="size">34 КБ</span></div>
+            <div class="note">упругий стук мяча о ракетку</div>
+          </div>
+          <a class="download" href="files/pong_hit.wav" download>Скачать</a>
+        </li>
+        <li data-search="ball_bounce.wav мягкий отскок от стены (тише ракетки)">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/ball_bounce.wav" data-name="ball_bounce.wav" title="Прослушать" aria-label="Прослушать ball_bounce.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">ball_bounce.wav <span class="size">48 КБ</span></div>
+            <div class="note">мягкий отскок от стены (тише ракетки)</div>
+          </div>
+          <a class="download" href="files/ball_bounce.wav" download>Скачать</a>
+        </li>
+        <li data-search="jump_boing.wav пружинный прыжок">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/jump_boing.wav" data-name="jump_boing.wav" title="Прослушать" aria-label="Прослушать jump_boing.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">jump_boing.wav <span class="size">131 КБ</span></div>
+            <div class="note">пружинный прыжок</div>
+          </div>
+          <a class="download" href="files/jump_boing.wav" download>Скачать</a>
+        </li>
+        <li data-search="coin_pickup.wav звон подобранной монетки">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/coin_pickup.wav" data-name="coin_pickup.wav" title="Прослушать" aria-label="Прослушать coin_pickup.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">coin_pickup.wav <span class="size">124 КБ</span></div>
+            <div class="note">звон подобранной монетки</div>
+          </div>
+          <a class="download" href="files/coin_pickup.wav" download>Скачать</a>
+        </li>
+        <li data-search="gold_jingle.wav звон горсти золота (богаче монетки)">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/gold_jingle.wav" data-name="gold_jingle.wav" title="Прослушать" aria-label="Прослушать gold_jingle.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">gold_jingle.wav <span class="size">245 КБ</span></div>
+            <div class="note">звон горсти золота (богаче монетки)</div>
+          </div>
+          <a class="download" href="files/gold_jingle.wav" download>Скачать</a>
+        </li>
+        <li data-search="cash_register.wav касса: «ка-чинг» с ящиком">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/cash_register.wav" data-name="cash_register.wav" title="Прослушать" aria-label="Прослушать cash_register.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">cash_register.wav <span class="size">234 КБ</span></div>
+            <div class="note">касса: «ка-чинг» с ящиком</div>
+          </div>
+          <a class="download" href="files/cash_register.wav" download>Скачать</a>
+        </li>
+        <li data-search="firework_launch.wav свист взлетающей ракеты">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/firework_launch.wav" data-name="firework_launch.wav" title="Прослушать" aria-label="Прослушать firework_launch.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">firework_launch.wav <span class="size">262 КБ</span></div>
+            <div class="note">свист взлетающей ракеты</div>
+          </div>
+          <a class="download" href="files/firework_launch.wav" download>Скачать</a>
+        </li>
+        <li data-search="firework_burst.wav разрыв салюта в небе">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/firework_burst.wav" data-name="firework_burst.wav" title="Прослушать" aria-label="Прослушать firework_burst.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">firework_burst.wav <span class="size">272 КБ</span></div>
+            <div class="note">разрыв салюта в небе</div>
+          </div>
+          <a class="download" href="files/firework_burst.wav" download>Скачать</a>
+        </li>
+        <li data-search="teleport_whoosh.wav «вжух» перемещения">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/teleport_whoosh.wav" data-name="teleport_whoosh.wav" title="Прослушать" aria-label="Прослушать teleport_whoosh.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">teleport_whoosh.wav <span class="size">203 КБ</span></div>
+            <div class="note">«вжух» перемещения</div>
+          </div>
+          <a class="download" href="files/teleport_whoosh.wav" download>Скачать</a>
+        </li>
+        <li data-search="race_horn.wav стартовый горн гонки">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/race_horn.wav" data-name="race_horn.wav" title="Прослушать" aria-label="Прослушать race_horn.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">race_horn.wav <span class="size">250 КБ</span></div>
+            <div class="note">стартовый горн гонки</div>
+          </div>
+          <a class="download" href="files/race_horn.wav" download>Скачать</a>
+        </li>
+        <li data-search="fanfare_win.wav победные фанфары (~2 c)">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/fanfare_win.wav" data-name="fanfare_win.wav" title="Прослушать" aria-label="Прослушать fanfare_win.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">fanfare_win.wav <span class="size">341 КБ</span></div>
+            <div class="note">победные фанфары (~2 c)</div>
+          </div>
+          <a class="download" href="files/fanfare_win.wav" download>Скачать</a>
+        </li>
+        <li data-search="fail_trombone.wav грустный тромбон «вах-вааах»">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/fail_trombone.wav" data-name="fail_trombone.wav" title="Прослушать" aria-label="Прослушать fail_trombone.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">fail_trombone.wav <span class="size">338 КБ</span></div>
+            <div class="note">грустный тромбон «вах-вааах»</div>
+          </div>
+          <a class="download" href="files/fail_trombone.wav" download>Скачать</a>
+        </li>
+        <li data-search="applause.wav живые аплодисменты зала">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/applause.wav" data-name="applause.wav" title="Прослушать" aria-label="Прослушать applause.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">applause.wav <span class="size">345 КБ</span></div>
+            <div class="note">живые аплодисменты зала</div>
+          </div>
+          <a class="download" href="files/applause.wav" download>Скачать</a>
+        </li>
+      </ul>
+      <h3>WAV — животные</h3>
+      <ul>
+        <li data-search="cat_meow.wav обычное «мяу»">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/cat_meow.wav" data-name="cat_meow.wav" title="Прослушать" aria-label="Прослушать cat_meow.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">cat_meow.wav <span class="size">226 КБ</span></div>
+            <div class="note">обычное «мяу»</div>
+          </div>
+          <a class="download" href="files/cat_meow.wav" download>Скачать</a>
+        </li>
+        <li data-search="cat_purr.wav мурчание (луп ~2 c)">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/cat_purr.wav" data-name="cat_purr.wav" title="Прослушать" aria-label="Прослушать cat_purr.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">cat_purr.wav <span class="size">345 КБ</span></div>
+            <div class="note">мурчание (луп ~2 c)</div>
+          </div>
+          <a class="download" href="files/cat_purr.wav" download>Скачать</a>
+        </li>
+        <li data-search="cat_angry.wav недовольный вскрик/шипение">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/cat_angry.wav" data-name="cat_angry.wav" title="Прослушать" aria-label="Прослушать cat_angry.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">cat_angry.wav <span class="size">279 КБ</span></div>
+            <div class="note">недовольный вскрик/шипение</div>
+          </div>
+          <a class="download" href="files/cat_angry.wav" download>Скачать</a>
+        </li>
+        <li data-search="mouse_squeak.wav писк мыши">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/mouse_squeak.wav" data-name="mouse_squeak.wav" title="Прослушать" aria-label="Прослушать mouse_squeak.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">mouse_squeak.wav <span class="size">110 КБ</span></div>
+            <div class="note">писк мыши</div>
+          </div>
+          <a class="download" href="files/mouse_squeak.wav" download>Скачать</a>
+        </li>
+        <li data-search="crunch_bite.wav хруст откушенного">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/crunch_bite.wav" data-name="crunch_bite.wav" title="Прослушать" aria-label="Прослушать crunch_bite.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">crunch_bite.wav <span class="size">124 КБ</span></div>
+            <div class="note">хруст откушенного</div>
+          </div>
+          <a class="download" href="files/crunch_bite.wav" download>Скачать</a>
+        </li>
+        <li data-search="dog_bark.wav гав сторожевого пса">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/dog_bark.wav" data-name="dog_bark.wav" title="Прослушать" aria-label="Прослушать dog_bark.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">dog_bark.wav <span class="size">210 КБ</span></div>
+            <div class="note">гав сторожевого пса</div>
+          </div>
+          <a class="download" href="files/dog_bark.wav" download>Скачать</a>
+        </li>
+        <li data-search="mosquito_buzz.wav зудение комара (луп)">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/mosquito_buzz.wav" data-name="mosquito_buzz.wav" title="Прослушать" aria-label="Прослушать mosquito_buzz.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">mosquito_buzz.wav <span class="size">345 КБ</span></div>
+            <div class="note">зудение комара (луп)</div>
+          </div>
+          <a class="download" href="files/mosquito_buzz.wav" download>Скачать</a>
+        </li>
+        <li data-search="swat_slap.wav шлепок ладонью">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/swat_slap.wav" data-name="swat_slap.wav" title="Прослушать" aria-label="Прослушать swat_slap.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">swat_slap.wav <span class="size">83 КБ</span></div>
+            <div class="note">шлепок ладонью</div>
+          </div>
+          <a class="download" href="files/swat_slap.wav" download>Скачать</a>
+        </li>
+        <li data-search="aquarium_bubbles.wav бульканье аквариума (луп)">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/aquarium_bubbles.wav" data-name="aquarium_bubbles.wav" title="Прослушать" aria-label="Прослушать aquarium_bubbles.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">aquarium_bubbles.wav <span class="size">345 КБ</span></div>
+            <div class="note">бульканье аквариума (луп)</div>
+          </div>
+          <a class="download" href="files/aquarium_bubbles.wav" download>Скачать</a>
+        </li>
+        <li data-search="bird_chirp.wav щебет птицы">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/bird_chirp.wav" data-name="bird_chirp.wav" title="Прослушать" aria-label="Прослушать bird_chirp.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">bird_chirp.wav <span class="size">231 КБ</span></div>
+            <div class="note">щебет птицы</div>
+          </div>
+          <a class="download" href="files/bird_chirp.wav" download>Скачать</a>
+        </li>
+      </ul>
+      <h3>WAV — природа, техника, атмосфера</h3>
+      <ul>
+        <li data-search="rain_loop.wav шум дождя (луп ~3 c)">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/rain_loop.wav" data-name="rain_loop.wav" title="Прослушать" aria-label="Прослушать rain_loop.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">rain_loop.wav <span class="size">517 КБ</span></div>
+            <div class="note">шум дождя (луп ~3 c)</div>
+          </div>
+          <a class="download" href="files/rain_loop.wav" download>Скачать</a>
+        </li>
+        <li data-search="thunder.wav раскат грома">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/thunder.wav" data-name="thunder.wav" title="Прослушать" aria-label="Прослушать thunder.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">thunder.wav <span class="size">345 КБ</span></div>
+            <div class="note">раскат грома</div>
+          </div>
+          <a class="download" href="files/thunder.wav" download>Скачать</a>
+        </li>
+        <li data-search="water_splash.wav плеск воды">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/water_splash.wav" data-name="water_splash.wav" title="Прослушать" aria-label="Прослушать water_splash.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">water_splash.wav <span class="size">203 КБ</span></div>
+            <div class="note">плеск воды</div>
+          </div>
+          <a class="download" href="files/water_splash.wav" download>Скачать</a>
+        </li>
+        <li data-search="volcano_rumble.wav утробный гул вулкана">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/volcano_rumble.wav" data-name="volcano_rumble.wav" title="Прослушать" aria-label="Прослушать volcano_rumble.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">volcano_rumble.wav <span class="size">345 КБ</span></div>
+            <div class="note">утробный гул вулкана</div>
+          </div>
+          <a class="download" href="files/volcano_rumble.wav" download>Скачать</a>
+        </li>
+        <li data-search="train_whistle.wav гудок паровоза">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/train_whistle.wav" data-name="train_whistle.wav" title="Прослушать" aria-label="Прослушать train_whistle.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">train_whistle.wav <span class="size">345 КБ</span></div>
+            <div class="note">гудок паровоза</div>
+          </div>
+          <a class="download" href="files/train_whistle.wav" download>Скачать</a>
+        </li>
+        <li data-search="gears_clank.wav лязг шестерёнок">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/gears_clank.wav" data-name="gears_clank.wav" title="Прослушать" aria-label="Прослушать gears_clank.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">gears_clank.wav <span class="size">314 КБ</span></div>
+            <div class="note">лязг шестерёнок</div>
+          </div>
+          <a class="download" href="files/gears_clank.wav" download>Скачать</a>
+        </li>
+        <li data-search="spaceship_hum.wav ровный гул двигателей (луп)">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/spaceship_hum.wav" data-name="spaceship_hum.wav" title="Прослушать" aria-label="Прослушать spaceship_hum.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">spaceship_hum.wav <span class="size">345 КБ</span></div>
+            <div class="note">ровный гул двигателей (луп)</div>
+          </div>
+          <a class="download" href="files/spaceship_hum.wav" download>Скачать</a>
+        </li>
+        <li data-search="radio_static.wav шум эфира между станциями">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/radio_static.wav" data-name="radio_static.wav" title="Прослушать" aria-label="Прослушать radio_static.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">radio_static.wav <span class="size">345 КБ</span></div>
+            <div class="note">шум эфира между станциями</div>
+          </div>
+          <a class="download" href="files/radio_static.wav" download>Скачать</a>
+        </li>
+        <li data-search="coffee_brew.wav кофе-машина варит (шипение пара)">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/coffee_brew.wav" data-name="coffee_brew.wav" title="Прослушать" aria-label="Прослушать coffee_brew.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">coffee_brew.wav <span class="size">345 КБ</span></div>
+            <div class="note">кофе-машина варит (шипение пара)</div>
+          </div>
+          <a class="download" href="files/coffee_brew.wav" download>Скачать</a>
+        </li>
+        <li data-search="sizzle.wav шкворчание на гриле">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/sizzle.wav" data-name="sizzle.wav" title="Прослушать" aria-label="Прослушать sizzle.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">sizzle.wav <span class="size">345 КБ</span></div>
+            <div class="note">шкворчание на гриле</div>
+          </div>
+          <a class="download" href="files/sizzle.wav" download>Скачать</a>
+        </li>
+        <li data-search="order_bell.wav звонок стойки «заказ готов!»">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/order_bell.wav" data-name="order_bell.wav" title="Прослушать" aria-label="Прослушать order_bell.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">order_bell.wav <span class="size">181 КБ</span></div>
+            <div class="note">звонок стойки «заказ готов!»</div>
+          </div>
+          <a class="download" href="files/order_bell.wav" download>Скачать</a>
+        </li>
+        <li data-search="alarm_clock_ring.wav дребезг механического будильника">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/alarm_clock_ring.wav" data-name="alarm_clock_ring.wav" title="Прослушать" aria-label="Прослушать alarm_clock_ring.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">alarm_clock_ring.wav <span class="size">345 КБ</span></div>
+            <div class="note">дребезг механического будильника</div>
+          </div>
+          <a class="download" href="files/alarm_clock_ring.wav" download>Скачать</a>
+        </li>
+        <li data-search="footsteps.wav шаги по полу (3–4 шага)">
+          <button type="button" class="thumb thumb-icon thumb-audio" data-audio="files/footsteps.wav" data-name="footsteps.wav" title="Прослушать" aria-label="Прослушать footsteps.wav"><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg></button>
+          <div class="meta">
+            <div class="name">footsteps.wav <span class="size">331 КБ</span></div>
+            <div class="note">шаги по полу (3–4 шага)</div>
+          </div>
+          <a class="download" href="files/footsteps.wav" download>Скачать</a>
         </li>
       </ul>
     </section>
@@ -1441,7 +2011,7 @@
       <h3>Кадры для сборки анимаций</h3>
       <ul>
         <li data-search="cat_walk_frames.zip походка кота: 6 png-кадров — соберите гифку сами (image.animation.create_from_frames)">
-          <span class="thumb thumb-icon">📄</span>
+          <span class="thumb thumb-icon">📦</span>
           <div class="meta">
             <div class="name">cat_walk_frames.zip <span class="size">15 КБ</span></div>
             <div class="note">Походка кота: 6 PNG-кадров — соберите гифку сами (image.Animation.create_from_frames)</div>
@@ -1449,7 +2019,7 @@
           <a class="download" href="files/cat_walk_frames.zip" download>Скачать</a>
         </li>
         <li data-search="explosion_frames.zip взрыв: 6 png-кадров">
-          <span class="thumb thumb-icon">📄</span>
+          <span class="thumb thumb-icon">📦</span>
           <div class="meta">
             <div class="name">explosion_frames.zip <span class="size">15 КБ</span></div>
             <div class="note">Взрыв: 6 PNG-кадров</div>
@@ -1457,7 +2027,7 @@
           <a class="download" href="files/explosion_frames.zip" download>Скачать</a>
         </li>
         <li data-search="flame_frames.zip пламя: 4 png-кадра">
-          <span class="thumb thumb-icon">📄</span>
+          <span class="thumb thumb-icon">📦</span>
           <div class="meta">
             <div class="name">flame_frames.zip <span class="size">3 КБ</span></div>
             <div class="note">Пламя: 4 PNG-кадра</div>
@@ -1465,7 +2035,7 @@
           <a class="download" href="files/flame_frames.zip" download>Скачать</a>
         </li>
         <li data-search="mouse_run_frames.zip бег мышки: 4 png-кадра">
-          <span class="thumb thumb-icon">📄</span>
+          <span class="thumb thumb-icon">📦</span>
           <div class="meta">
             <div class="name">mouse_run_frames.zip <span class="size">6 КБ</span></div>
             <div class="note">Бег мышки: 4 PNG-кадра</div>
@@ -1476,7 +2046,7 @@
       <h3>Наборы состояний для игр и проектов</h3>
       <ul>
         <li data-search="mole_states.zip крот: нора и 6 состояний от выглядывания до ложной цели">
-          <span class="thumb thumb-icon">📄</span>
+          <span class="thumb thumb-icon">📦</span>
           <div class="meta">
             <div class="name">mole_states.zip <span class="size">29 КБ</span></div>
             <div class="note">Крот: нора и 6 состояний от выглядывания до ложной цели</div>
@@ -1484,7 +2054,7 @@
           <a class="download" href="files/mole_states.zip" download>Скачать</a>
         </li>
         <li data-search="cat_moods.zip кот-сторож: сон, подозрение, тревога, прыжок и другие — плюс крадущаяся мышь">
-          <span class="thumb thumb-icon">📄</span>
+          <span class="thumb thumb-icon">📦</span>
           <div class="meta">
             <div class="name">cat_moods.zip <span class="size">63 КБ</span></div>
             <div class="note">Кот-сторож: сон, подозрение, тревога, прыжок и другие — плюс крадущаяся мышь</div>
@@ -1492,7 +2062,7 @@
           <a class="download" href="files/cat_moods.zip" download>Скачать</a>
         </li>
         <li data-search="mouse_stealth.zip кот-охранник влево/вправо, прыжок и мышь в две фазы">
-          <span class="thumb thumb-icon">📄</span>
+          <span class="thumb thumb-icon">📦</span>
           <div class="meta">
             <div class="name">mouse_stealth.zip <span class="size">32 КБ</span></div>
             <div class="note">Кот-охранник влево/вправо, прыжок и мышь в две фазы</div>
@@ -1500,7 +2070,7 @@
           <a class="download" href="files/mouse_stealth.zip" download>Скачать</a>
         </li>
         <li data-search="alarm_invaders.zip нашествие будильников: шаги, попадание, поломка, подушка и носок-снаряд">
-          <span class="thumb thumb-icon">📄</span>
+          <span class="thumb thumb-icon">📦</span>
           <div class="meta">
             <div class="name">alarm_invaders.zip <span class="size">31 КБ</span></div>
             <div class="note">Нашествие будильников: шаги, попадание, поломка, подушка и носок-снаряд</div>
@@ -1508,7 +2078,7 @@
           <a class="download" href="files/alarm_invaders.zip" download>Скачать</a>
         </li>
         <li data-search="mattress_pump.zip матрас: 3 степени надувания, 3 протечки и насос в двух положениях">
-          <span class="thumb thumb-icon">📄</span>
+          <span class="thumb thumb-icon">📦</span>
           <div class="meta">
             <div class="name">mattress_pump.zip <span class="size">74 КБ</span></div>
             <div class="note">Матрас: 3 степени надувания, 3 протечки и насос в двух положениях</div>
@@ -1516,7 +2086,7 @@
           <a class="download" href="files/mattress_pump.zip" download>Скачать</a>
         </li>
         <li data-search="corridor_walkers.zip школьный коридор: ученик и три старшеклассника по 2 фазы шага">
-          <span class="thumb thumb-icon">📄</span>
+          <span class="thumb thumb-icon">📦</span>
           <div class="meta">
             <div class="name">corridor_walkers.zip <span class="size">114 КБ</span></div>
             <div class="note">Школьный коридор: ученик и три старшеклассника по 2 фазы шага</div>
@@ -1524,7 +2094,7 @@
           <a class="download" href="files/corridor_walkers.zip" download>Скачать</a>
         </li>
         <li data-search="dream_icons.zip четыре сна: полёт, экзамен, речь наоборот и пятница">
-          <span class="thumb thumb-icon">📄</span>
+          <span class="thumb thumb-icon">📦</span>
           <div class="meta">
             <div class="name">dream_icons.zip <span class="size">22 КБ</span></div>
             <div class="note">Четыре сна: полёт, экзамен, речь наоборот и пятница</div>
@@ -1532,7 +2102,7 @@
           <a class="download" href="files/dream_icons.zip" download>Скачать</a>
         </li>
         <li data-search="bug_arena.zip жук арены: 2 шага, таран и получение урона">
-          <span class="thumb thumb-icon">📄</span>
+          <span class="thumb thumb-icon">📦</span>
           <div class="meta">
             <div class="name">bug_arena.zip <span class="size">14 КБ</span></div>
             <div class="note">Жук арены: 2 шага, таран и получение урона</div>
@@ -1540,7 +2110,7 @@
           <a class="download" href="files/bug_arena.zip" download>Скачать</a>
         </li>
         <li data-search="turret_defense.zip четыре гаджета и розетка в 4 состояниях заряда">
-          <span class="thumb thumb-icon">📄</span>
+          <span class="thumb thumb-icon">📦</span>
           <div class="meta">
             <div class="name">turret_defense.zip <span class="size">36 КБ</span></div>
             <div class="note">Четыре гаджета и розетка в 4 состояниях заряда</div>
@@ -1548,7 +2118,7 @@
           <a class="download" href="files/turret_defense.zip" download>Скачать</a>
         </li>
         <li data-search="robot_camera.zip робот и следящая камера в двух направлениях — задание «под колпаком» (спрайты, з.20)">
-          <span class="thumb thumb-icon">📄</span>
+          <span class="thumb thumb-icon">📦</span>
           <div class="meta">
             <div class="name">robot_camera.zip <span class="size">47 КБ</span></div>
             <div class="note">Робот и следящая камера в двух направлениях — задание «Под колпаком» (спрайты, з.20)</div>
@@ -1559,6 +2129,14 @@
     </section>
     <p class="footnote">Музыка — Kevin MacLeod (<a href="https://incompetech.com" rel="noopener">incompetech.com</a>), лицензия CC BY 4.0. Шрифты — SIL Open Font License (текст лицензии рядом с каждым шрифтом). Остальные материалы созданы командой Idyllium.</p>
   </main>
+  <div class="audio-dock" id="audio-dock" aria-label="Аудиоплеер">
+    <span class="dock-name" id="dock-name"></span>
+    <span class="dock-time" id="dock-time">0:00</span>
+    <input type="range" class="dock-seek" id="dock-seek" min="0" max="100" step="0.1" value="0" aria-label="Перемотка">
+    <span class="dock-time" id="dock-duration">0:00</span>
+    <input type="range" class="dock-volume" id="dock-volume" min="0" max="1" step="0.01" value="1" aria-label="Громкость">
+    <button type="button" class="dock-close" id="dock-close" title="Остановить и закрыть" aria-label="Остановить и закрыть">✕</button>
+  </div>
   <script>
     (function () {
       var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
@@ -1638,6 +2216,77 @@
         openFromHash();
       });
       openFromHash();
+
+      // Аудиоплеер: один общий Audio на страницу; кнопка строки — play/pause,
+      // док в правом нижнем углу — перемотка и громкость.
+      var player = new Audio();
+      var dock = document.getElementById('audio-dock');
+      var dockName = document.getElementById('dock-name');
+      var dockTime = document.getElementById('dock-time');
+      var dockDuration = document.getElementById('dock-duration');
+      var dockSeek = document.getElementById('dock-seek');
+      var dockVolume = document.getElementById('dock-volume');
+      var currentButton = null;
+      var seeking = false;
+
+      function fmt(t) {
+        if (!isFinite(t)) return '0:00';
+        var m = Math.floor(t / 60);
+        var s = Math.floor(t % 60);
+        return m + ':' + (s < 10 ? '0' : '') + s;
+      }
+      function markStopped() {
+        if (currentButton) currentButton.classList.remove('playing');
+      }
+      Array.prototype.forEach.call(document.querySelectorAll('.thumb-audio'), function (button) {
+        button.addEventListener('click', function () {
+          if (currentButton === button && !player.paused) {
+            player.pause();
+            return;
+          }
+          if (currentButton !== button) {
+            markStopped();
+            currentButton = button;
+            player.src = button.dataset.audio;
+            dockName.textContent = button.dataset.name;
+            dockSeek.value = '0';
+            dockTime.textContent = '0:00';
+            dockDuration.textContent = '0:00';
+          }
+          dock.classList.add('open');
+          player.play();
+        });
+      });
+      player.addEventListener('play', function () {
+        if (currentButton) currentButton.classList.add('playing');
+      });
+      player.addEventListener('pause', markStopped);
+      player.addEventListener('ended', markStopped);
+      player.addEventListener('loadedmetadata', function () {
+        dockDuration.textContent = fmt(player.duration);
+      });
+      player.addEventListener('timeupdate', function () {
+        dockTime.textContent = fmt(player.currentTime);
+        if (!seeking && isFinite(player.duration) && player.duration > 0) {
+          dockSeek.value = String((player.currentTime / player.duration) * 100);
+        }
+      });
+      dockSeek.addEventListener('input', function () { seeking = true; });
+      dockSeek.addEventListener('change', function () {
+        if (isFinite(player.duration)) {
+          player.currentTime = (Number(dockSeek.value) / 100) * player.duration;
+        }
+        seeking = false;
+      });
+      dockVolume.addEventListener('input', function () { player.volume = Number(dockVolume.value); });
+      document.getElementById('dock-close').addEventListener('click', function () {
+        player.pause();
+        player.removeAttribute('src');
+        player.load();
+        markStopped();
+        currentButton = null;
+        dock.classList.remove('open');
+      });
     })();
   </script>
 </body>

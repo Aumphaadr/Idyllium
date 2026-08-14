@@ -300,23 +300,6 @@ body.light-theme .docs-topbar {
   padding: 8px 10px 20px;
 }
 
-/* Тихая ссылка на раздатку — в самом низу сайдбара, вне основной навигации. */
-.sidebar-handouts {
-  display: block;
-  margin: 0 10px 18px;
-  padding: 8px 12px;
-  border: 1px dashed var(--border);
-  border-radius: 8px;
-  color: var(--text-muted);
-  font-size: 14px;
-  text-decoration: none;
-}
-
-.sidebar-handouts:hover {
-  border-color: var(--accent);
-  color: var(--text-soft);
-}
-
 .nav-section {
   margin: 10px 0;
 }
