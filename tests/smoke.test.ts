@@ -1073,9 +1073,9 @@ test('bare class declarations keep default field values', async () => {
   ].join('\n'), {}, { file: 'main.idyl' });
 
   assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
-  // Конструктор с обязательными параметрами при голом объявлении не вызывается
-  // (поля — дефолтные), конструкторы без обязательных параметров — вызываются.
-  assert(result.output === '[]:R2:hi', `unexpected bare declaration output: ${JSON.stringify(result.output)}`);
+  // Правило 1.3.5: голое объявление НИКОГДА не вызывает конструктор — поля
+  // всех трёх объектов остаются дефолтными; вызов только явный: T v = T().
+  assert(result.output === '[]::', `unexpected bare declaration output: ${JSON.stringify(result.output)}`);
 });
 
 test('user class events fire handlers and stay silent without a subscriber', async () => {
@@ -1492,7 +1492,7 @@ test('class methods see file-level constants and globals', async () => {
     '}',
     '',
     'main() {',
-    '    Dungeon d;',
+    '    Dungeon d = Dungeon();',
     '    console.write(d.width(), ":", d.cells.length, ":", visits);',
     '}',
   ].join('\n'), {}, { file: 'main.idyl' });
@@ -8072,6 +8072,120 @@ test('hints do not fire on legal code', () => {
       console.writeln("she said \\"hi\\"", s, f, elif, mod(3,14));
     }
   `);
+});
+
+test('forgotten parentheses and class-as-value get honest diagnostics', () => {
+  // Метод без скобок в позиции statement — раньше молча ничего не делал.
+  assertFails(`
+    use console;
+
+    class Hero {
+      string name;
+      constructor Hero(string name) { this.name = name; }
+      void function info() { console.writeln(this.name); }
+    }
+
+    main() {
+      Hero v = Hero("Боря");
+      v.info;
+    }
+  `, "'info' is not called — add '()' to call it");
+
+  // Модульная функция без скобок — раньше РОНЯЛА рантайм голым JS-ликом.
+  assertFails(`
+    use console;
+
+    main() {
+      console.writeln;
+    }
+  `, "'writeln' is not called — add '()' to call it");
+
+  // Тип stdlib-модуля как значение.
+  assertFails(`
+    use gui;
+    use console;
+
+    main() {
+      console.writeln(gui.Window);
+    }
+  `, "type 'gui.Window' cannot be used as a value");
+
+  // Класс пользовательского модуля как значение — раньше утекал '<error>'.
+  const viaModule = compileProject({
+    entryFile: 'main.idyl',
+    files: {
+      'main.idyl': 'use cat;\n\nmain() {\n    cat.Cat.info();\n}\n',
+      'cat.idyl': 'use console;\n\nclass Cat {\n    string name;\n    constructor Cat(string name) { this.name = name; }\n    void function info() { console.writeln(this.name); }\n}\n',
+    },
+  });
+  assert(!viaModule.success, 'expected failure for class-as-value via module');
+  assert(
+    viaModule.diagnosticsText.includes("class 'cat.Cat' cannot be used as a value"),
+    `expected class-as-value diagnostic, got:\n${viaModule.diagnosticsText}`,
+  );
+  assert(
+    !viaModule.diagnosticsText.includes("<error>"),
+    `internal '<error>' leaked:\n${viaModule.diagnosticsText}`,
+  );
+});
+
+test('bare declaration never calls the constructor (owner rule, 2026-08-14)', async () => {
+  // Голое объявление — заготовка; конструктор зовётся только явно.
+  const result = await runIdyllium(`
+use console;
+
+class Dice {
+    int sides;
+
+    constructor Dice(int sides = 6) {
+        this.sides = sides;
+        console.writeln("ctor");
+    }
+}
+
+main() {
+    Dice quiet;
+    console.writeln(quiet.sides);
+    Dice usual = Dice();
+    console.writeln(usual.sides);
+    Dice loaded(20);
+    console.writeln(loaded.sides);
+}
+`, { platform: 'cli' }, { file: 'main.idyl' });
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === '0\nctor\n6\nctor\n20\n',
+    `ghost rule outputs: ${JSON.stringify(result.output)}`,
+  );
+
+  // Класс без конструктора: явный вызов с нулём аргументов легален,
+  // с аргументами — честная ошибка.
+  assertCompiles(`
+    class Box { int n; }
+    main() {
+      Box a;
+      Box b = Box();
+      Box c();
+    }
+  `);
+  assertFails(`
+    class Box { int n; }
+    main() {
+      Box broken = Box(5);
+    }
+  `, "'Box' expects 0 arguments, got 1");
+
+  // Обязательный параметр: явные вызовы без аргументов — ошибка, голое
+  // объявление — легальная заготовка.
+  assertFails(`
+    class Hero {
+      string name;
+      constructor Hero(string name) { this.name = name; }
+    }
+    main() {
+      Hero v = Hero();
+    }
+  `, "'Hero' expects 1 arguments, got 0");
 });
 
 void runTests();

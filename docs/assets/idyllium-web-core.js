@@ -526,7 +526,7 @@ class JavaScriptGenerator {
         for (const field of declaration.fields) {
             const rawValue = field.initializer
                 ? this.expression(field.initializer)
-                : this.defaultValue(declaration.declaredType, false);
+                : this.defaultValue(declaration.declaredType);
             const value = field.initializer
                 ? this.valueForType(rawValue, declaration.declaredType, field.initializer.range)
                 : this.castForType(rawValue, declaration.declaredType);
@@ -859,28 +859,25 @@ class JavaScriptGenerator {
         const size = staticSize === null ? 'null' : String(staticSize);
         return `$rt.array.from([${values}], ${dynamic ? 'true' : 'false'}, ${size}, ${defaultFactory})`;
     }
-    defaultValue(type, runConstructor = true) {
+    defaultValue(type) {
         const runtimeTypeName = this.typesRuntimeName(type);
         if (runtimeTypeName)
             return `$rt.types.cast(0, ${JSON.stringify(runtimeTypeName)})`;
         if (type.kind === 'ArrayTypeName') {
             const size = type.dynamic ? 0 : type.size ?? 0;
-            return `await $rt.array.createAsync(${size}, async () => ${this.defaultValue(type.elementType, false)}, ${type.dynamic ? 'true' : 'false'})`;
+            return `await $rt.array.createAsync(${size}, async () => ${this.defaultValue(type.elementType)}, ${type.dynamic ? 'true' : 'false'})`;
         }
         if (type.kind === 'ClassTypeName') {
-            // Конструктор при объявлении без аргументов вызывается, только если его
-            // можно вызвать без аргументов; иначе поля получают дефолтные значения.
-            const callable = this.zeroArgCallable(this.classConstructorParameters.get(type.name));
-            return runConstructor && callable
-                ? `await ${this.classCreateFactoryName(type.name)}()`
-                : `await ${this.classDefaultFactoryName(type.name)}()`;
+            // Объявление без аргументов НИКОГДА не зовёт конструктор — поля
+            // получают дефолтные значения. Конструктор вызывается только явно:
+            // Hero v = Hero(...) или Hero v(...). Единое правило для одиночных
+            // переменных, элементов массивов и полей-композиций (решение
+            // владельца, 2026-08-14).
+            return `await ${this.classDefaultFactoryName(type.name)}()`;
         }
         if (type.kind === 'QualifiedTypeName') {
             if (this.userModuleNames.has(type.moduleName)) {
-                const callable = this.zeroArgCallable(this.moduleClassConstructorParameters.get(`${type.moduleName}.${type.name}`));
-                return runConstructor && callable
-                    ? `await $rt.modules.${type.moduleName}.${this.exportedClassCreateName(type.name)}()`
-                    : `await $rt.modules.${type.moduleName}.${this.exportedClassDefaultName(type.name)}()`;
+                return `await $rt.modules.${type.moduleName}.${this.exportedClassDefaultName(type.name)}()`;
             }
             if (type.moduleName === 'colors' && type.name === 'Color') {
                 return '$rt.modules.colors.TRANSPARENT';
@@ -1103,11 +1100,6 @@ class JavaScriptGenerator {
     classMemberKey(className, memberName) {
         return `${className}.${memberName}`;
     }
-    zeroArgCallable(parameters) {
-        if (!parameters)
-            return true;
-        return parameters.every((parameter) => parameter.defaultValue !== null);
-    }
     valueForType(value, type, range) {
         if (type?.kind === 'ArrayTypeName') {
             const size = type.dynamic ? 'null' : String(type.size ?? 0);
@@ -1117,7 +1109,7 @@ class JavaScriptGenerator {
                 value,
                 `, ${type.dynamic ? 'true' : 'false'}`,
                 `, ${size}`,
-                `, async () => ${this.defaultValue(type.elementType, false)}`,
+                `, async () => ${this.defaultValue(type.elementType)}`,
                 `, (__array_item) => ${convertedElement}`,
                 `, ${JSON.stringify(this.typeNameToString(type))}`,
                 `, ${JSON.stringify(range.start.file)}`,
@@ -3695,9 +3687,23 @@ class SemanticAnalyzer {
                 this.analyzeAssignment(statement);
                 return;
             case 'ExpressionStatement':
-                this.expressionType(statement.expression);
+                this.analyzeExpressionStatement(statement);
                 return;
         }
+    }
+    // Метод или функция без скобок: «v.info;» молча не делает ничего, а
+    // «console.writeln;» и вовсе ронял рантайм. Значений-функций в языке нет,
+    // поэтому функциональный тип у выражения-statement — всегда забытые скобки.
+    analyzeExpressionStatement(statement) {
+        const type = this.expressionType(statement.expression);
+        if (type.kind !== 'function')
+            return;
+        const name = statement.expression.kind === 'MemberExpression' || statement.expression.kind === 'IdentifierExpression'
+            ? statement.expression.name
+            : null;
+        this.diagnostics.error(statement.range, name !== null
+            ? `'${name}' is not called — add '()' to call it`
+            : "this expression names a function but does not call it — add '()'");
     }
     analyzeIfStatement(statement) {
         this.expectBoolCondition(statement.condition, 'if condition');
@@ -3758,7 +3764,7 @@ class SemanticAnalyzer {
                 this.analyzeAssignment(statement);
                 return;
             case 'ExpressionStatement':
-                this.expressionType(statement.expression);
+                this.analyzeExpressionStatement(statement);
                 return;
         }
     }
@@ -4063,6 +4069,9 @@ class SemanticAnalyzer {
                 }
             }
             const objectType = this.expressionType(target.object);
+            // Тип объекта уже ошибочен — ошибка отзвучала выше, эхо с '<error>' молчит.
+            if (objectType.kind === 'error')
+                return { type: types_1.ERROR_TYPE };
             if (this.isBuiltinLengthProperty(objectType, target.name)) {
                 this.markSemanticToken('property', target.nameRange, ['readonly', 'defaultLibrary']);
                 this.diagnostics.error(target.range, "property 'length' is read-only");
@@ -4116,6 +4125,10 @@ class SemanticAnalyzer {
         }
         if (target.kind === 'IndexExpression') {
             const objectType = this.expressionType(target.object);
+            if (objectType.kind === 'error') {
+                this.expressionType(target.index);
+                return { type: types_1.ERROR_TYPE };
+            }
             if (this.isStringType(objectType)) {
                 this.expressionType(target.index);
                 this.diagnostics.error(target.range, 'string characters are read-only');
@@ -4255,6 +4268,8 @@ class SemanticAnalyzer {
     indexExpressionType(expression) {
         const objectType = this.expressionType(expression.object);
         const indexType = this.expressionType(expression.index);
+        if (objectType.kind === 'error')
+            return types_1.ERROR_TYPE;
         if (!(0, types_1.isIntegerLike)(indexType)) {
             this.diagnostics.error(expression.index.range, `array index must be integer, got '${(0, types_1.typeToString)(indexType)}'`);
         }
@@ -4613,6 +4628,8 @@ class SemanticAnalyzer {
         }
         if (callee.kind === 'MemberExpression') {
             const objectType = this.expressionType(callee.object);
+            if (objectType.kind === 'error')
+                return null;
             if (this.isStringType(objectType)) {
                 this.markSemanticToken('method', callee.nameRange);
                 const method = this.stringMethodSpec(callee.name);
@@ -4879,6 +4896,7 @@ class SemanticAnalyzer {
                 }
                 if (module.types.has(expression.name)) {
                     this.markSemanticToken('class', expression.nameRange, ['defaultLibrary']);
+                    this.diagnostics.error(expression.range, `type '${moduleName}.${expression.name}' cannot be used as a value`);
                     return types_1.ERROR_TYPE;
                 }
                 this.diagnostics.error(expression.range, `'${moduleName}' has no member '${expression.name}'`);
@@ -4903,6 +4921,7 @@ class SemanticAnalyzer {
                 }
                 if (userModule.classes.has(expression.name)) {
                     this.markSemanticToken('class', expression.nameRange);
+                    this.diagnostics.error(expression.range, `class '${moduleName}.${expression.name}' cannot be used as a value`);
                     return types_1.ERROR_TYPE;
                 }
                 this.diagnostics.error(expression.range, `module '${moduleName}' has no member '${expression.name}'`);
@@ -4936,6 +4955,8 @@ class SemanticAnalyzer {
             }
         }
         const objectType = this.expressionType(expression.object);
+        if (objectType.kind === 'error')
+            return types_1.ERROR_TYPE;
         if (this.isStringType(objectType)) {
             if (expression.name === 'length') {
                 this.markSemanticToken('property', expression.nameRange, ['readonly', 'defaultLibrary']);
@@ -5615,7 +5636,7 @@ function createDefaultStandardLibrary() {
             documentation: 'Где выполняется программа: "cli", "web" или "vscode".',
         }),
         functionSpec('version', [], types_1.STRING, {
-            documentation: 'Версия Idyllium, например "1.3.4".',
+            documentation: 'Версия Idyllium, например "1.3.5".',
         }),
     ]));
     registry.registerModule(moduleSpec('console', [
@@ -10298,7 +10319,7 @@ exports.IdylliumRuntimeError = IdylliumRuntimeError;
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-exports.IDYLLIUM_VERSION = '1.3.4';
+exports.IDYLLIUM_VERSION = '1.3.5';
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform() {
     const nodeProcess = typeof process === 'object' ? process : null;
