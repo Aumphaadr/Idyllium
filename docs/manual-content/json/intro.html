@@ -39,6 +39,21 @@ main() {
     В файле <code>save.txt</code> окажутся две строки: имя игрока и уровень.
     Это уже похоже на сохранение игры, только очень маленькое.
   </p>
+  <p>
+    И раз уж вспоминаем файлы — пора открыть третий режим
+    <code>file.open</code>: <code>"append"</code>, дозапись. В отличие от
+    <code>"write"</code>, он ничего не стирает, а пишет в конец файла;
+    отсутствующий файл создаётся пустым.
+  </p>
+  <idyl-code-block><script type="text/plain">
+use file;
+
+main() {
+    file.ostream fout = file.open("save.txt", "append");
+    fout.write_line("Запись в конец — прежние строки целы");
+    fout.close();
+}
+</script></idyl-code-block>
 </div>
 
 <div class="docs-section">

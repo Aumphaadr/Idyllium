@@ -63,10 +63,9 @@ class Cat {
 }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:7:25: compile error: 'this' cannot be used in a static method
-main.idyl:7:25: compile error: type '&lt;error&gt;' has no member 'name'</idyl-error-block>
+  <idyl-error-block>main.idyl:7:25: compile error: 'this' cannot be used in a static method</idyl-error-block>
 
-  <p>Сообщений два, но настоящая ошибка — первая. Вторая — её «эхо»: раз <code>this</code> использовать нельзя, компилятор уже не понимает, у чего мы просим <code>name</code>. Когда сообщений несколько — читайте и исправляйте первое: остальные обычно исчезают вместе с ним.</p>
+  <p>Сообщение одно и называет причину точно: <code>this</code> в статическом методе недоступен. Общее правило от этого не отменяется: когда сообщений несколько — читайте и исправляйте первое, остальные обычно исчезают вместе с ним.</p>
 
   <p>Статические методы могут работать только с:</p>
   <ul>

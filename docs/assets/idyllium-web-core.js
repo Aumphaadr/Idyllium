@@ -5803,7 +5803,9 @@ function createDefaultStandardLibrary() {
         functionSpec('open', [
             { name: 'path', type: types_1.STRING },
             { name: 'mode', type: types_1.STRING },
-        ], types_1.ANY_TYPE),
+        ], types_1.ANY_TYPE, {
+            documentation: 'Открывает файл. Режимы: "read" — чтение (file.istream); "write" — запись с чистого листа, прежнее содержимое стирается (file.ostream); "append" — дозапись в конец, существующее содержимое сохраняется, отсутствующий файл создаётся пустым (file.ostream).',
+        }),
     ], [], [
         typeSpec('istream', [
             propertySpec('is_open', types_1.BOOL, true, 'Показывает, открыт ли поток.'),
@@ -12304,20 +12306,31 @@ function createRuntime(options = {}) {
         };
         return stream;
     }
-    function createOutputFile(filePath, sourceFile, line) {
+    function createOutputFile(filePath, sourceFile, line, append = false) {
         const shownPath = humanizeFsPaths(filePath);
+        // Режим 'append' дозаписывает в конец: существующее содержимое не
+        // стирается, отсутствующий файл создаётся пустым.
+        const action = append ? 'appending' : 'writing';
         const parent = runtimeDirname(filePath);
         if (!fileSystem.exists(parent)) {
-            throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for writing: directory does not exist`);
+            throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for ${action}: directory does not exist`);
         }
-        if (!runtimeIsDirectory(fileSystem, parent, sourceFile, line, 'writing', shownPath)) {
-            throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for writing: parent path is not a directory`);
+        if (!runtimeIsDirectory(fileSystem, parent, sourceFile, line, action, shownPath)) {
+            throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for ${action}: parent path is not a directory`);
         }
         try {
-            fileSystem.writeText(filePath, '');
+            if (!append) {
+                fileSystem.writeText(filePath, '');
+            }
+            else if (!fileSystem.exists(filePath)) {
+                fileSystem.writeText(filePath, '');
+            }
+            else if (!fileSystem.isFile(filePath)) {
+                throw new Error('path is not a file');
+            }
         }
         catch (error) {
-            throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for writing: ${humanizeFsPaths(errorMessage(error))}`);
+            throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for ${action}: ${humanizeFsPaths(errorMessage(error))}`);
         }
         let closed = false;
         const stream = {
@@ -12855,7 +12868,9 @@ function createRuntime(options = {}) {
                         return createInputFile(resolvedPath, file, line);
                     if (openMode === 'write')
                         return createOutputFile(resolvedPath, file, line);
-                    throw new IdylliumRuntimeError(file, line, `file.open() mode must be 'read' or 'write', got '${openMode}'`);
+                    if (openMode === 'append')
+                        return createOutputFile(resolvedPath, file, line, true);
+                    throw new IdylliumRuntimeError(file, line, `file.open() mode must be 'read', 'write' or 'append', got '${openMode}'`);
                 }),
             },
             types: {
