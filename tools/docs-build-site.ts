@@ -89,7 +89,6 @@ const SECTION_RENAMES: Record<string, { readonly id: string; readonly title: str
   console: { id: 'console', title: 'Консоль', icon: 'terminal' },
   widgets: { id: 'widgets', title: 'Виджеты', icon: 'widgets' },
   oop: { id: 'oop', title: 'ООП', icon: 'classes' },
-  examples: { id: 'examples', title: 'Примеры задач', icon: 'examples' },
 };
 
 const SLUG_OVERRIDES: Record<string, string> = {
@@ -99,7 +98,7 @@ const SLUG_OVERRIDES: Record<string, string> = {
 
 // Turtle между GUI и ООП (владелец, 2026-08-07): передышка-геометрия после
 // виджетов, а «каждая черепаха — объект» готовит почву для ООП.
-const SECTION_ORDER = ['console', 'widgets', 'turtle', 'oop', 'canvas', 'json', 'sqlite', 'examples'];
+const SECTION_ORDER = ['console', 'widgets', 'turtle', 'oop', 'canvas', 'json', 'sqlite'];
 
 const MANUAL_LESSONS: readonly ManualLesson[] = [
   {
@@ -802,7 +801,6 @@ const LESSON_REPLACEMENTS: Record<string, string> = {
   'oop/011_static.html': 'docs/manual-content/oop/static.html',
   'oop/012_errors.html': 'docs/manual-content/oop/errors.html',
   'oop/006_constructor.html': 'docs/manual-content/oop/constructor.html',
-  'examples/000_calc.html': 'docs/manual-content/examples/calc.html',
   'oop/009_polymorphism.html': 'docs/manual-content/oop/polymorphism.html',
 };
 

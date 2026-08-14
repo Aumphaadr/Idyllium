@@ -529,7 +529,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     functionSpec('open', [
       { name: 'path', type: STRING },
       { name: 'mode', type: STRING },
-    ], ANY_TYPE),
+    ], ANY_TYPE, {
+      documentation: 'Открывает файл. Режимы: "read" — чтение (file.istream); "write" — запись с чистого листа, прежнее содержимое стирается (file.ostream); "append" — дозапись в конец, существующее содержимое сохраняется, отсутствующий файл создаётся пустым (file.ostream).',
+    }),
   ], [], [
     typeSpec('istream', [
       propertySpec('is_open', BOOL, true, 'Показывает, открыт ли поток.'),

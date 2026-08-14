@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-14T14:44:22.160Z",
+  "generatedAt": "2026-08-14T16:34:45.168Z",
   "sourceRoot": "packages/docs",
   "sections": [
     {
@@ -17,7 +17,7 @@
           "sourceFile": "cli/000_setup.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "hello",
@@ -821,7 +821,7 @@
           "sourceFile": "oop/012_errors.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         }
       ]
     },
@@ -1127,7 +1127,7 @@
           "sourceFile": "docs/manual-content/json/errors.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         }
       ]
     },
@@ -1285,25 +1285,7 @@
           "sourceFile": "docs/manual-content/sqlite/errors.html",
           "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
-        }
-      ]
-    },
-    {
-      "id": "examples",
-      "title": "Примеры задач",
-      "icon": "examples",
-      "status": "ready",
-      "lessons": [
-        {
-          "id": "calc",
-          "title": "Калькулятор",
-          "subtitle": "Готовый проект калькулятора: собираем всё выученное в одну программу",
-          "file": "content/examples/calc.html",
-          "sourceFile": "examples/000_calc.html",
-          "status": "ready",
-          "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         }
       ]
     }

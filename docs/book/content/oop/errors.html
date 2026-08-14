@@ -71,10 +71,9 @@ class Cat {
 main() { }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:7:25: compile error: 'this' cannot be used in a static method
-main.idyl:7:25: compile error: type '&lt;error&gt;' has no member 'name'</idyl-error-block>
+  <idyl-error-block>main.idyl:7:25: compile error: 'this' cannot be used in a static method</idyl-error-block>
 
-  <p>Вот и обещанная «гроздь»: сообщения два, но настоящая ошибка — первая. Раз <code>this</code> недоступен, компилятор уже не знает, у чего мы просим <code>name</code>, — отсюда вторая строка. Исправьте первую — исчезнут обе.</p>
+  <p>Сообщение одно и бьёт точно: <code>this</code> в статическом методе недоступен. Раньше компилятор добавлял к нему второе, каскадное — теперь молчит о последствиях и называет только причину. Правило «если сообщений несколько — чините первое» от этого не отменяется: гроздья ещё встречаются в других местах, и растут они всегда из первой строки.</p>
   <p>Исправление: либо сделайте метод нестатическим, либо передавайте нужные данные как параметры.</p>
 </div>
 

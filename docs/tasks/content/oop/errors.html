@@ -1,5 +1,518 @@
-<div class="docs-section docs-placeholder">
-  <h2>Задания готовятся</h2>
-  <p>Практикум по теме <strong>Типичные ошибки</strong> ещё не составлен.</p>
-  <p>Пока его нет, вернитесь к <a href="../book/oop/errors">уроку</a>: примеры оттуда полезно повторить руками и переделать под себя.</p>
+<div class="docs-section">
+  <p>В консольном детективе улики сами шли в руки. В ООП появился противник серьёзнее: поломки, которые не оставляют следов <strong>вообще</strong>. Программа собирается, запускается, что-то печатает — а внутри уже случилась беда: у ветерана пропало имя, взнос стёр казну, второй кошелёк оказался тем же первым. Компилятор про такое молчит не по слабости, а по уговору: логика программы — территория человека. Сегодня вы патрулируете эту территорию: сначала разомнётесь на громких ошибках (их сообщения в этом разделе — образцовые), а потом выйдете туда, где сообщений не бывает.</p>
+</div>
+<div class="docs-section">
+  <h2>Блок 1. Читаем сообщения</h2>
+  <h3 class="task-group">Практика с преподавателем</h3>
+  <h4 class="task-item">Задание 1. Одноразовая доброта</h4>
+  <p>У доски. Программист, переехавший с C++, расставил точки с запятой по привычке:</p>
+  <idyl-code-block><script type="text/plain">
+class Cat {
+    string name;
+};
+
+main() {
+    Cat c;
+    c.name = "Барсик";
+};
+</script></idyl-code-block>
+  <p>Запустите и удивитесь дважды. Первая <code>;</code> — после класса — <strong>прощена молча</strong>: компилятор знает про привычку из C++ и один раз закрывает глаза. Вторая — после <code>main()</code> — уже нет: <code>unexpected token ';' at top level</code>. Разберите сообщение по частям (файл — строка — символ — описание) и проговорите: «верхний уровень» — это космос между классами и функциями, команды там не живут, и точки с запятой тоже. Доброта компилятора одноразовая — не стройте на ней стиль.</p>
+  <h3 class="task-group">Самостоятельная практика</h3>
+  <p><em>В каждой программе блока — по одной-две ошибки. Копируйте, запускайте, читайте, чините.</em></p>
+  <h4 class="task-item">Задание 2. Не с той стороны</h4>
+  <p>Две мини-программы от одного автора. Обе должны напечатать по строчке — образцы: <code>25</code> и <code>Мяу</code>.</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class MathUtils {
+    static int function square(int x) {
+        return x * x;
+    }
+}
+
+main() {
+    MathUtils m;
+    console.writeln(m.square(5));
+}
+</script></idyl-code-block>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Cat {
+    void function meow() {
+        console.writeln("Мяу");
+    }
+}
+
+main() {
+    Cat.meow();
+}
+</script></idyl-code-block>
+  <p>Оба сообщения прочитайте вслух: каждое <strong>само называет лечение</strong> («must be called on class» / «must be called on an object»). Сформулируйте правило стороны: статическое зовут у чертежа, обычное — у изделия. И заметьте зеркальность: автор ошибся в обе стороны сразу — так бывает, когда правило выучено наполовину.</p>
+  <h4 class="task-item">Задание 3. Сейф без ключа</h4>
+  <p>Банк хвастается защитой, но программа не собирается. Образец: <code>Баланс: 1300</code>.</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class BankAccount {
+    private:
+    int balance;
+
+    public:
+    constructor BankAccount(int start) {
+        this.balance = start;
+    }
+
+    int function get_balance() {
+        return this.balance;
+    }
+}
+
+main() {
+    BankAccount acc = BankAccount(1000);
+    acc.balance = acc.balance + 300;
+    console.writeln("Баланс: ", acc.get_balance());
+}
+</script></idyl-code-block>
+  <p>Сообщение называет и виновника, и правило. Чинить запретом нельзя (убрать <code>private</code> — значит разоружить сейф); чините <strong>по-банковски</strong>: добавьте классу публичный метод пополнения и вызовите его. Вопрос на сдаче: почему «просто сделать поле публичным» — починка хуже?</p>
+  <h4 class="task-item">Задание 4. Чертёж не найден</h4>
+  <p>Одно сообщение — два разных преступника. Программа А:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Hero {
+    string name;
+}
+
+main() {
+    Herro h;
+    h.name = "Вася";
+    console.writeln(h.name);
+}
+</script></idyl-code-block>
+  <p>Программа Б — класс вынесен в файл <code>cat.idyl</code> (класс <code>Cat</code> с полем <code>name</code> — создайте файл сами), а main такой:</p>
+  <idyl-code-block><script type="text/plain">
+use cat;
+use console;
+
+main() {
+    Cat c;
+    c.name = "Барсик";
+    console.writeln(c.name);
+}
+</script></idyl-code-block>
+  <p>Обе падают с <code>unknown class ...</code> — но лечения разные. Порядок расследования из урока: <strong>сначала проверь написание, потом — файлы.</strong> В программе Б подключение есть — чего не хватает? (Урок о модулях отвечал: класс из файла живёт только под полным именем.)</p>
+</div>
+<div class="docs-section">
+  <h2>Блок 2. Этажи и границы</h2>
+  <h4 class="task-item">Задание 5. Статика без this</h4>
+  <p>Автор захотел статический метод-визитку:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Cat {
+    string name;
+
+    static void function meow() {
+        console.writeln(this.name, ": мяу!");
+    }
+}
+
+main() {
+    Cat barsik;
+    barsik.name = "Барсик";
+    Cat.meow();
+}
+</script></idyl-code-block>
+  <p>Почините так, чтобы <code>Мяу</code> обрело хозяина (образец: <code>Барсик: мяу!</code>). Исторический комментарий для сдачи: урок показывает на этом месте гроздь из двух сообщений — сейчас компилятор лаконичнее, сообщение одно. Но правило первой строки не отменено: где гроздь возможна, чинят с первого.</p>
+  <h4 class="task-item">Задание 6. Замкнутый круг</h4>
+  <p>Проект из двух файлов не собирается. <code>a.idyl</code>:</p>
+  <idyl-code-block><script type="text/plain">
+use b;
+
+main() {
+}
+</script></idyl-code-block>
+  <p><code>b.idyl</code>:</p>
+  <idyl-code-block><script type="text/plain">
+use a;
+
+class Helper {
+    int value;
+}
+</script></idyl-code-block>
+  <p>Компилятор рисует круг: <code>module import cycle detected: b -&gt; a -&gt; b</code>. Распутайте (здесь достаточно убрать один лишний <code>use</code> — найдите, какой и почему он лишний). Вопрос на сдаче: а если бы обоим файлам взаправду было нужно общее — как распутывают тогда? (Урок называл приём с третьим файлом.)</p>
+  <h4 class="task-item">Задание 7. Кот целиком не лезет</h4>
+  <p>Старый знакомый в новой обстановке — программа переписи:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Cat {
+    string name;
+    int age;
+
+    constructor Cat(string ex_name, int ex_age) {
+        this.name = ex_name;
+        this.age = ex_age;
+    }
+}
+
+main() {
+    Cat first = Cat("Барсик", 3);
+    Cat second = Cat("Мурка", 5);
+    console.writeln(first);
+    console.writeln(second);
+}
+</script></idyl-code-block>
+  <p>Образец: <code>Барсик (3 г.)</code> и <code>Мурка (5 л.)</code> — стоп, с суффиксами возни много: примите образец <code>Барсик, 3</code> / <code>Мурка, 5</code>. Чинить можно двумя способами — перечислением полей или методом-визиткой <code>info()</code>. Выберите визитку и объясните на сдаче, почему при <strong>двадцати</strong> котах она выгоднее (посчитайте строчки).</p>
+  <h4 class="task-item">Задание 8. Кнопка без скобок</h4>
+  <p>Смотр перед парадом:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Soldier {
+    string name;
+
+    constructor Soldier(string ex_name) {
+        this.name = ex_name;
+    }
+
+    void function report() {
+        console.writeln(this.name, ": я!");
+    }
+}
+
+main() {
+    Soldier first = Soldier("Горазд");
+    Soldier second = Soldier("Мирон");
+    first.report();
+    second.report;
+}
+</script></idyl-code-block>
+  <p>Сообщение компилятора здесь — чемпион заботы: называет беду и диктует лечение посимвольно. Прочитайте, почините, и запишите правило (оно с первого курса, но тут звучит по-новому): <strong>вызов — это скобки; без скобок метод только назван.</strong> На сдаче — короткий разговор: во многих взрослых языках эта строчка прошла бы молча. Оцените, от чего вас застраховали.</p>
+</div>
+<div class="docs-section">
+  <h2>Блок 3. Территория человека</h2>
+  <p><em>С этого места сообщений не будет. Все программы блока компилируются и запускаются. Единственные ваши инструменты — предсказание, сравнение с образцом и чек-лист тихой зоны, который вы соберёте по ходу блока.</em></p>
+  <h3 class="task-group">Практика с преподавателем</h3>
+  <h4 class="task-item">Задание 9. КАМАЗ потерял имя</h4>
+  <p>У доски — первая тихая мина, знакомая по уроку наследования:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Car {
+    string model;
+    int weight;
+
+    constructor Car(string ex_model, int ex_weight) {
+        this.model = ex_model;
+        this.weight = ex_weight;
+    }
+}
+
+class Truck extends Car {
+    int cargo;
+
+    constructor Truck(string ex_model, int ex_weight, int ex_cargo) {
+        this.cargo = ex_cargo;
+    }
+}
+
+main() {
+    Truck kamaz = Truck("КАМАЗ", 9000, 12000);
+    console.writeln("Модель: [", kamaz.model, "]");
+    console.writeln("Масса: ", kamaz.weight);
+    console.writeln("Груз: ", kamaz.cargo);
+}
+</script></idyl-code-block>
+  <p>Сначала — предсказание письменно, потом запуск: модель пуста, масса нулевая, и <strong>ни одного сообщения</strong>. Конструктор родителя не выполнился, потому что его никто не позвал. Проговорите уговор раздела: компилятор ловит нарушения правил <strong>языка</strong>; вызов <code>parent()</code> — правило <strong>человека</strong>, и следить за ним человеку. Почините первой строкой конструктора — и начните на доске <strong>чек-лист тихой зоны</strong>, пункт 1: <em>«у потомка есть конструктор? — проверь parent()».</em></p>
+  <h3 class="task-group">Самостоятельная практика</h3>
+  <h4 class="task-item">Задание 10. Тень конструктора</h4>
+  <p>Гильдия принимает новобранца — а в картотеке пусто. Образец: <code>Вася | сила 120</code>.</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Hero {
+    string name;
+    int power;
+
+    constructor Hero(string name, int power) {
+        name = name;
+        power = power;
+    }
+}
+
+main() {
+    Hero v = Hero("Вася", 120);
+    console.writeln(v.name, " | сила ", v.power);
+}
+</script></idyl-code-block>
+  <p>Запустите: <code> | сила 0</code>. Аргументы приехали — и уехали: строка <code>name = name;</code> присвоила параметр самому себе, поле не тронуто. Почините через <code>this.</code> и допишите чек-лист, пункт 2: <em>«параметр назван как поле? — ищи this в каждой строке конструктора»</em> (а лучше — называйте параметры иначе: <code>ex_name</code>, как весь раздел). Эта ошибка — легенда: на ней спотыкаются во всех языках, где поле и параметр могут звать одинаково.</p>
+  <h4 class="task-item">Задание 11. Приблуда</h4>
+  <p>Отряд собирался из трёх героев, а на смотр вышли двое:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Hero {
+    string name;
+
+    constructor Hero(string ex_name) {
+        this.name = ex_name;
+    }
+
+    void function report() {
+        console.writeln(this.name, " в строю");
+    }
+}
+
+main() {
+    Hero first = Hero("Горазд");
+    Hero second = Hero("Мирон");
+    Hero("Приблуда");
+    first.report();
+    second.report();
+    console.writeln("Отряд собран");
+}
+</script></idyl-code-block>
+  <p>Программа довольна собой, а Приблуды нет нигде. Найдите строку, где герой родился и тут же сгинул, почините (герою — имя переменной и место в перекличке; образец соберите сами на троих). Чек-лист, пункт 3: <em>«объект создан — а положен ли в переменную?»</em></p>
+  <h4 class="task-item">Задание 12. Шарик пропал</h4>
+  <p>Классика из урока массивов — теперь как детектив. Образец:</p>
+  <idyl-output-block>Шарик 3
+Бобик 5</idyl-output-block>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Dog {
+    string name;
+    int age;
+}
+
+main() {
+    dyn_array<Dog> dogs;
+    Dog tmp;
+    tmp.name = "Шарик";
+    tmp.age = 3;
+    dogs.add(tmp);
+    tmp.name = "Бобик";
+    tmp.age = 5;
+    dogs.add(tmp);
+    console.writeln(dogs[0].name, " ", dogs[0].age);
+    console.writeln(dogs[1].name, " ", dogs[1].age);
+}
+</script></idyl-code-block>
+  <p>Два Бобика, Шарика нет. <code>add</code> кладёт <strong>ссылку</strong>, и обе ячейки смотрят на один объект. Лечение из урока: временную переменную объявлять заново на каждую собаку (или собирать конструктором прямо в <code>add</code>, если перепишете класс). Чек-лист, пункт 4: <em>«одна переменная переиспользуется для многих объектов? — в массиве ссылки-двойники».</em></p>
+  <h4 class="task-item">Задание 13. Один цвет на двоих</h4>
+  <p>Два флага — а перекрасился и чужой. Образец: Алония <code>255,0,0</code>, Бертия <code>255,165,0</code>.</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Color {
+    int r;
+    int g;
+    int b;
+
+    constructor Color(int ex_r, int ex_g, int ex_b) {
+        this.r = ex_r;
+        this.g = ex_g;
+        this.b = ex_b;
+    }
+}
+
+class Flag {
+    string country;
+    Color main_color = Color(0, 0, 0);
+}
+
+main() {
+    Color red = Color(255, 0, 0);
+
+    Flag first;
+    first.country = "Алония";
+    first.main_color = red;
+
+    Flag second;
+    second.country = "Бертия";
+    second.main_color = red;
+
+    second.main_color.g = 165;
+
+    console.writeln(first.country, ": ", first.main_color.r, ",", first.main_color.g, ",", first.main_color.b);
+    console.writeln(second.country, ": ", second.main_color.r, ",", second.main_color.g, ",", second.main_color.b);
+}
+</script></idyl-code-block>
+  <p>Оба флага оранжевые — дипломатический скандал. Третья встреча со ссылками: одна переменная <code>red</code> на два флага — один объект на двоих. Каждой стране — свой <code>Color(...)</code>. Чек-лист, пункт 5: <em>«один объект раздали нескольким хозяевам? — правка у одного видна всем».</em></p>
+  <h4 class="task-item">Минутка из внешнего мира. Молчание дороже крика</h4>
+  <p><em>Это не задание — просто любопытное, на минуту.</em></p>
+  <p>В 1996 году ракета Ariane 5 взорвалась через 37 секунд после старта. Код был честно скомпилирован и протестирован — на данных предыдущей ракеты, Ariane 4. Новая летела быстрее, число не влезло в отведённый тип — и защиту от этого случая инженеры <strong>сознательно отключили</strong>, посчитав невозможным. Ни одна строчка не была «ошибкой» для компилятора: всё собиралось, всё работало — на старых данных. Убыток оценили в сотни миллионов долларов, а случай вошёл во все учебники как самый дорогой пример поломки с территории человека: машина следила за правилами языка, а за замысел отвечали люди. Ваш чек-лист тихой зоны — из той же профессии, что и чек-листы, которые после таких историй появились в авиации и космонавтике.</p>
+</div>
+<div class="docs-section">
+  <h2>Блок 4. Зелёный — не значит правильный</h2>
+  <p><em>Программы компилируются. Сверяйте вывод с образцом — и трассируйте методы.</em></p>
+  <h4 class="task-item">Задание 14. Щедрый лекарь</h4>
+  <p>Лекарь обещает прибавку здоровья. Образец:</p>
+  <idyl-output-block>Вася: 110</idyl-output-block>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Hero {
+    string name;
+    int hp;
+
+    constructor Hero(string ex_name, int ex_hp) {
+        this.name = ex_name;
+        this.hp = ex_hp;
+    }
+
+    void function heal(int amount) {
+        this.hp = amount;
+        if (this.hp > 150) {
+            this.hp = 150;
+        }
+    }
+
+    void function info() {
+        console.writeln(this.name, ": ", this.hp);
+    }
+}
+
+main() {
+    Hero v = Hero("Вася", 90);
+    v.heal(20);
+    v.info();
+}
+</script></idyl-code-block>
+  <p>Вася с 90 здоровья получил «плюс 20» — и остался с 20. Лекарь не лечит, а <strong>переписывает</strong>. Одна строка в методе — но найдите её трассировкой, а не угадыванием: столбиком, как в консольном детективе, только теперь строки метода. Проверьте починку и вторым прогоном: <code>heal(200)</code> от 90 должен упереться в 150 — сторож обязан пережить вашу правку.</p>
+  <h4 class="task-item">Задание 15. Немой круг</h4>
+  <p>Художник ждёт полиморфизм. Образец:</p>
+  <idyl-output-block>Рисуем круг
+Рисуем фигуру вообще</idyl-output-block>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Shape {
+    void function draw() {
+        console.writeln("Рисуем фигуру вообще");
+    }
+}
+
+class Circle extends Shape {
+    void function drow() {
+        console.writeln("Рисуем круг");
+    }
+}
+
+main() {
+    Shape shape = Circle();
+    shape.draw();
+
+    Shape plain = Shape();
+    plain.draw();
+}
+</script></idyl-code-block>
+  <p>Обе строки — «вообще»: круг молчит, и никакого сообщения. В Idyllium нет слова-пометки для переопределения — <strong>совпадение имени и есть переопределение</strong>, а опечатка тихо его отменяет: <code>drow</code> стал просто лишним методом, и вызов ушёл родителю. Чек-лист, пункт 6 (последний): <em>«переопределение не сработало? — сверь имена посимвольно».</em></p>
+</div>
+<div class="docs-section">
+  <h2>Блок 5. Полигон</h2>
+  <h4 class="task-item">Задание 16. Смотр новобранцев</h4>
+  <p>Большое расследование: программу смотра писали в спешке, в ней <strong>пять ошибок трёх этажей</strong> — компиляция, крушение на ходу и тихие мины. Образец правильной работы:</p>
+  <idyl-output-block>Ясна | сила 12
+Медали Ясны: 3
+Горазд | сила 7
+Мирон | сила 4</idyl-output-block>
+  <p>Код:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Recruit {
+    string name;
+    int power;
+
+    constructor Recruit(string ex_name, int power) {
+        this.name = ex_name;
+        power = power;
+    }
+
+    void function info() {
+        console.writeln(this.name, " | сила ", this.power);
+    }
+}
+
+class Veteran extends Recruit {
+    int medals;
+
+    constructor Veteran(string ex_name, int ex_power, int ex_medals) {
+        this.medals = ex_medals;
+    }
+}
+
+main() {
+    dyn_array<Recruit> squad;
+    squad.add(Recruit("Горазд", 7));
+    squad.add(Recruit("Мирон", 4));
+
+    Veteran vet = Veteran("Ясна", 12, 3);
+    console.writeln(vet);
+    console.writeln("Медали Ясны: ", vet.medals);
+
+    for (int i = 0; i <= squad.length; i += 1) {
+        squad[i].info;
+    }
+}
+</script></idyl-code-block>
+  <p>Раскопки пойдут слоями, как в кассе кинотеатра: почините компиляцию — программа запустится и упадёт на бегу; почините падение — начнёт врать молча; сверка с образцом и чек-лист доведут до конца. Сдача — прогон с рассказом: пять ошибок, три этажа — какая на каком жила?</p>
+</div>
+<div class="docs-section">
+  <h2>Блок 6. Со звёздочкой</h2>
+  <h4 class="task-item task-star">Задание 17 ⭐. Аудит тихой зоны</h4>
+  <p>Гильдейский казначей клянётся, что программа исправна: «Смотрите — компилируется, работает, печатает!» Вот она:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Wallet {
+    string owner;
+    int coins;
+
+    constructor Wallet(string ex_owner, int ex_coins) {
+        this.owner = ex_owner;
+        this.coins = ex_coins;
+    }
+
+    void function deposit(int amount) {
+        this.coins = amount;
+    }
+
+    void function report() {
+        console.writeln(this.owner, ": ", this.coins, " монет");
+    }
+}
+
+main() {
+    dyn_array<Wallet> vault;
+    Wallet tmp = Wallet("Ясна", 300);
+    vault.add(tmp);
+    tmp.owner = "Горазд";
+    tmp.coins = 120;
+    vault.add(tmp);
+    Wallet("Запасной", 100);
+
+    console.writeln("=== Казна гильдии ===");
+    for (int i = 0; i < vault.length; i += 1) {
+        vault[i].report();
+    }
+
+    vault[0].deposit(50);
+    console.writeln("=== После взноса Ясны (+50) ===");
+    for (int i = 0; i < vault.length; i += 1) {
+        vault[i].report();
+    }
+}
+</script></idyl-code-block>
+  <p>Спецификация казначейства: в казне <strong>три</strong> кошелька — Ясна (300), Горазд (120), Запасной (100); взнос Ясны +50 меняет только её кошелёк. Ваша работа — аудит по всем шести пунктам чек-листа тихой зоны: пройдите список, найдите <strong>все</strong> мины (сколько их — не скажем), почините и предъявите акт: пункт чек-листа → строка кода → что было бы дальше, если бы не аудит. Образец правильного вывода соберите из спецификации сами — это тоже часть акта.</p>
+  <h4 class="task-item task-star">Задание 18 ⭐⭐. Сапёр наоборот</h4>
+  <p>Финал раздела — вы автор мины. Сочините детектив для соседа по правилам жанра:</p>
+  <p>1. Честная формулировка задачи + образец правильной работы.</p>
+  <p>2. В коде — <strong>ровно три ошибки, по одной с каждого этажа</strong>: одна громкая (компиляция), одна с крушением на ходу (рантайм) и одна <strong>тихая с территории человека</strong> (из чек-листа — на выбор: parent, тень, приблуда, двойник, немой круг).</p>
+  <p>3. Своя починенная версия прогнана заранее.</p>
+  <p>4. Ошибки честные: просчёт спешащего автора, а не шифровка.</p>
+  <p>Обмен, расследование, двойная сдача: как сапёр — три ошибки соседа найдены и починены; как минёр — разбор «какая из трёх держалась дольше всех». Ставим на тихую: против неё у соседа только чек-лист — и это лучший экзамен по всему разделу.</p>
 </div>

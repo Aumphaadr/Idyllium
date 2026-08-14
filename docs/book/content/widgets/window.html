@@ -124,10 +124,9 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:2:5: compile error: 'gui' is not imported (use 'use gui;')
-main.idyl:3:5: compile error: type '&lt;error&gt;' has no method 'show'</idyl-error-block>
+      <idyl-error-block>main.idyl:2:5: compile error: 'gui' is not imported (use 'use gui;')</idyl-error-block>
 
-      <p>Компилятор пожаловался дважды, хотя ошибка одна: без <code>use gui;</code> он не знает, что такое <code>gui.Window</code>, — а из-за этого не понимает и строку с <code>show()</code>. Так бывает часто: одна ошибка тянет за собой хвост из других сообщений. Правило простое — <strong>чините первое сообщение</strong>. Здесь оно даже подсказывает решение прямо в скобках: <code>use gui;</code>. Добавьте эту строку в начало файла — и оба сообщения исчезнут.</p>
+      <p>Без <code>use gui;</code> компилятор не знает, что такое <code>gui.Window</code>, — и говорит об этом одним точным сообщением, которое подсказывает решение прямо в скобках: <code>use gui;</code>. Добавьте эту строку в начало файла — и программа скомпилируется.</p>
     </div>
 
     <div class="docs-section">

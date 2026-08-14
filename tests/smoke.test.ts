@@ -2294,14 +2294,14 @@ test('file stream runtime errors are readable', async () => {
       'use file;',
       '',
       'main() {',
-      '    file.istream fin = file.open("input.txt", "append");',
+      '    file.istream fin = file.open("input.txt", "edit");',
       '}',
     ].join('\n'), {}, { file: sourceFile });
 
     assert(!badMode.success, 'expected runtime failure');
     assert(badMode.runtimeError !== null, 'expected runtime error text');
     assert(
-      badMode.runtimeError.includes(`${sourceFile}:4: runtime error: file.open() mode must be 'read' or 'write', got 'append'`),
+      badMode.runtimeError.includes(`${sourceFile}:4: runtime error: file.open() mode must be 'read', 'write' or 'append', got 'edit'`),
       `unexpected bad mode error: ${JSON.stringify(badMode.runtimeError)}`,
     );
   } finally {
@@ -8186,6 +8186,47 @@ main() {
       Hero v = Hero();
     }
   `, "'Hero' expects 1 arguments, got 0");
+});
+
+test('file.open append mode keeps content and creates missing files', async () => {
+  const result = await runIdyllium(`
+use console;
+use file;
+
+main() {
+    file.ostream first = file.open("log.txt", "write");
+    first.write_line("alpha");
+    first.close();
+
+    file.ostream more = file.open("log.txt", "append");
+    more.write_line("beta");
+    more.close();
+
+    file.ostream fresh = file.open("brand_new.txt", "append");
+    fresh.write_line("gamma");
+    fresh.close();
+
+    file.istream fin = file.open("log.txt", "read");
+    console.write(fin.read_all());
+    file.istream fin2 = file.open("brand_new.txt", "read");
+    console.write(fin2.read_all());
+}
+`, { platform: 'cli', fileSystem: createMemoryRuntimeFileSystem() }, { file: '/workspace/main.idyl' });
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === 'alpha\nbeta\ngamma\n', `append outputs: ${JSON.stringify(result.output)}`);
+
+  const bad = await runIdyllium(`
+use file;
+
+main() {
+    file.ostream f = file.open("x.txt", "add");
+}
+`, { platform: 'cli', fileSystem: createMemoryRuntimeFileSystem() }, { file: '/workspace/main.idyl' });
+  assert(!bad.success || bad.runtimeError !== null, 'expected bad mode failure');
+  assert(
+    (bad.runtimeError ?? '').includes("file.open() mode must be 'read', 'write' or 'append', got 'add'"),
+    `bad mode message: ${bad.runtimeError}`,
+  );
 });
 
 void runTests();

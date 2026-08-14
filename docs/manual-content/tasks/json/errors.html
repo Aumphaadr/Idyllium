@@ -1,0 +1,245 @@
+<div class="docs-section">
+  <p>Весь курс вы чинили программы. Сегодня половина преступлений совершена не в коде: сломан сам <strong>файл</strong> — лишняя запятая, контрабандный комментарий, число в кавычках. Программа при этом бывает невиновна целиком. Ваш новый инструмент — сообщение с <strong>двумя адресами</strong>: первый ведёт в код (кто споткнулся), второй — внутрь данных (обо что). Научитесь различать, кого чинить, — и JSON-ошибки станут самыми простыми в вашей практике: здесь каждое сообщение договаривает до конца.</p>
+</div>
+<div class="docs-section">
+  <h2>Блок 1. Ошибка с двумя адресами</h2>
+  <h3 class="task-group">Практика с преподавателем</h3>
+  <h4 class="task-item">Задание 1. Два адреса</h4>
+  <p>У доски:</p>
+  <idyl-code-block><script type="text/plain">
+use json;
+
+main() {
+    string text = "{ \"name\": \"Liam\", }";
+    json.Value root = json.parse(text);
+}
+</script></idyl-code-block>
+  <p>Запустите и разберите сообщение по кускам: <code>имя_файла:5</code> — это адрес в <strong>программе</strong> (строка с parse); <code>at line 1, column 19</code> — адрес в <strong>данных</strong>: девятнадцатый символ JSON-текста. Посчитайте пальцем до 19-го символа — там закрывающая скобка, до которой парсер дошёл, ожидая новый ключ после запятой. Преступник — запятая после последней пары: в JSON хвостовых запятых не бывает. Проговорите главное правило книги: <strong>сначала пойми, по какому из двух адресов идти.</strong></p>
+  <h3 class="task-group">Самостоятельная практика</h3>
+  <h4 class="task-item">Задание 2. Контрабандный комментарий</h4>
+  <p>Автор заботливо задокументировал сейв:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+use json;
+
+main() {
+    string text = "{ \"gold\": 250, // золото за квест\n \"level\": 7 }";
+    json.Value root = json.parse(text);
+    console.writeln("Прочитано!");
+}
+</script></idyl-code-block>
+  <p>Предскажите до запуска: где споткнётся парсер (<code>line? column?</code>) — потом проверьте. JSON — формат <strong>данных</strong>, а не код: комментариев в нём нет, <code>//</code> для парсера — мусор посреди объекта. Куда деть пояснение «золото за квест», если очень надо? (Урок предлагал честный способ — вспомните какой.)</p>
+  <h4 class="task-item">Задание 3. Почини не код</h4>
+  <p>Возьмите с сайта раздатку <code>broken_save.json</code> и программу:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+use file;
+use json;
+
+main() {
+    file.istream fin = file.open("broken_save.json", "read");
+    string text = fin.read_all();
+    fin.close();
+
+    json.Object root = json.parse(text).to_object();
+    json.Object hero = root.get("hero").to_object();
+    console.writeln("Герой: ", hero.get("name").to_string(), ", уровень ", hero.get("level").to_int());
+}
+</script></idyl-code-block>
+  <p>Образец: <code>Герой: Кай, уровень 9</code>. Программа — <strong>исправна</strong>, не трогайте в ней ни символа: все поломки в файле, и их несколько. Работайте конвейером: запуск → parse называет адрес в данных → починка файла → снова запуск. Парсер сам поведёт вас от поломки к поломке, пока не скажет главное — ничего (то есть всё). На сдаче перечислите поломки файла и ответьте: чем каждая из них могла бы казаться «нормальной» человеку, привыкшему к Idyllium-коду?</p>
+</div>
+<div class="docs-section">
+  <h2>Блок 2. Каталог рантаймов</h2>
+  <p><em>Теперь данные целы — спотыкается код. Каждая программа блока падает; сообщение читайте до конца: лечение почти всегда написано в нём.</em></p>
+  <h4 class="task-item">Задание 4. Ключа нет</h4>
+  <idyl-code-block><script type="text/plain">
+use console;
+use json;
+
+main() {
+    json.Object player = json.parse("{\"name\":\"Liam\",\"lvl\":7}").to_object();
+    console.writeln(player.get("name").to_string(), ", уровень ", player.get("level").to_int());
+}
+</script></idyl-code-block>
+  <p>Образец: <code>Liam, уровень 7</code>. Почините — и сформулируйте, почему здесь виноват код, хотя выглядит «файл неправильно назвал ключ» (подсказка-вопрос: у кого спецификация?).</p>
+  <h4 class="task-item">Задание 5. Изменить можно существующее</h4>
+  <p>Два мини-фрагмента одного автора, оба падают одинаковым сообщением:</p>
+  <idyl-code-block><script type="text/plain">
+use json;
+
+main() {
+    json.Object player;
+    player.add("name", json.Value("Liam"));
+    player.set("level", json.Value(8));
+}
+</script></idyl-code-block>
+  <idyl-code-block><script type="text/plain">
+use json;
+
+main() {
+    json.Object player;
+    player.add("name", json.Value("Liam"));
+    player.remove("level");
+}
+</script></idyl-code-block>
+  <p>Правило пары <code>add</code>/<code>set</code> — из урока методов объектов: <strong>add — только новое, set — только существующее</strong> (remove — тоже только существующее). Почините оба фрагмента по-разному: первый так, чтобы уровень появился, второй — чтобы удаление не понадобилось вовсе (проверка вместо действия).</p>
+  <h4 class="task-item">Задание 6. Не тот распаковщик</h4>
+  <idyl-code-block><script type="text/plain">
+use console;
+use json;
+
+main() {
+    json.Object player = json.parse("{\"name\":\"Liam\",\"level\":7}").to_object();
+    int name = player.get("name").to_int();
+    console.writeln("Игрок №", name);
+}
+</script></idyl-code-block>
+  <p>Сообщение называет оба типа: какой есть и какой потребовали. Почините дважды: (а) минимально — правильным распаковщиком и типом переменной; (б) по-взрослому — решите, что программа вообще должна была печатать про игрока, и сделайте осмысленный вывод.</p>
+  <h4 class="task-item">Задание 7. Ноль, пустота и null — три разные вещи</h4>
+  <idyl-code-block><script type="text/plain">
+use console;
+use json;
+
+main() {
+    json.Object player = json.parse("{\"name\":\"Liam\",\"guild\":null}").to_object();
+    console.writeln("Гильдия: ", player.get("guild").to_string());
+}
+</script></idyl-code-block>
+  <p>Падение с знакомым семейством сообщений — но тип на этот раз особый. Почините веткой: если гильдии нет (<code>is_null()</code>) — печатать «Без гильдии», иначе — имя. Вопрос на сдаче — из урока чтения: чем <code>null</code> отличается от пустой строки и от нуля?</p>
+  <h4 class="task-item">Задание 8. За краем списка</h4>
+  <idyl-code-block><script type="text/plain">
+use console;
+use json;
+
+main() {
+    json.Array scores = json.parse("[5, 4, 5]").to_array();
+    console.writeln("Последний результат: ", scores.at(3).to_int());
+}
+</script></idyl-code-block>
+  <p>Сообщение — родня массивному из первого курса, и так же называет диапазон валидных индексов. Почините так, чтобы программа печатала последний элемент <strong>при любой длине</strong> списка.</p>
+  <h4 class="task-item">Задание 9. Дважды в одну дверь</h4>
+  <idyl-code-block><script type="text/plain">
+use json;
+
+main() {
+    json.Object player;
+    player.add("name", json.Value("Liam"));
+    player.add("name", json.Value("Mira"));
+}
+</script></idyl-code-block>
+  <p>Автор хотел переименовать игрока. Почините его замыслом, а не удалением строки, — и объясните, почему JSON-объект охраняет уникальность ключей (что стало бы с <code>get("name")</code>, будь ключа два?).</p>
+</div>
+<div class="docs-section">
+  <h2>Блок 3. Вежливость вместо падения</h2>
+  <p><em>Каталог прочитан — теперь превращаем падения в достойное поведение. Программы блока исправны, но хрупки: ваша работа — укрепить.</em></p>
+  <h4 class="task-item">Задание 10. Своё сообщение</h4>
+  <p>Вернитесь к программе з.1 (лишняя запятая). Не чиня текст, добавьте перед parse проверку <code>json.is_valid(text)</code> и вежливый отказ: <code>Файл сохранения повреждён</code>. Разговор на сдаче: чем этот путь лучше падения (пользователь игры не должен читать про line и column) — и чем <strong>хуже</strong> во время разработки (мы-то как раз хотим адрес!). Вывод: is_valid — для чужих людей, голый parse — для себя.</p>
+  <h4 class="task-item">Задание 11. Спроси, потом бери</h4>
+  <p>Читалка профиля падает на старых сейвах, где ключа <code>title</code> ещё не было:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+use json;
+
+main() {
+    json.Object profile = json.parse("{\"name\":\"Мира\"}").to_object();
+    console.writeln("Имя: ", profile.get("name").to_string());
+    console.writeln("Звание: ", profile.get("title").to_string());
+}
+</script></idyl-code-block>
+  <p>Укрепите через <code>has</code>: званий нет — печатать «Звание: (не получено)». Это паттерн на всю жизнь: <strong>чужой файл не обязан совпадать с вашими ожиданиями</strong> — вежливая программа спрашивает, а не требует.</p>
+  <h4 class="task-item">Задание 12. Лесенка недоверия</h4>
+  <p>Файл конфигурации пишут руками — а руки ошибаются. Программа ждёт <code>{"volume": 7}</code>, но должна пережить и <code>{"volume": "громко"}</code>, и <code>{}</code>, и <code>{"volume": null}</code>:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+use json;
+
+main() {
+    string text = "{\"volume\": \"громко\"}";
+    json.Object config = json.parse(text).to_object();
+    int volume = config.get("volume").to_int();
+    console.writeln("Громкость: ", volume);
+}
+</script></idyl-code-block>
+  <p>Соберите полную лесенку: <code>has</code> → <code>is_int</code> → только потом <code>to_int</code>; на любом отказе — громкость 5 (умолчание) и честная строка «Настройка испорчена, беру 5». Прогоните все четыре варианта текста — лесенка обязана выстоять на каждом.</p>
+</div>
+<div class="docs-section">
+  <h2>Блок 4. Тихие ссылки</h2>
+  <p><em>Сообщений не будет. Предсказание, запуск, сравнение.</em></p>
+  <h4 class="task-item">Задание 13. Правка по копии</h4>
+  <idyl-code-block><script type="text/plain">
+use console;
+use json;
+
+main() {
+    json.Object player = json.parse("{\"name\":\"Liam\",\"position\":{\"x\":3,\"y\":8}}").to_object();
+
+    json.Object backup = player.get("position").to_object();
+    backup.set("x", json.Value(99));
+
+    console.writeln("Сейв: ", player.to_json());
+}
+</script></idyl-code-block>
+  <p>Автор думал, что <code>backup</code> — запасная копия позиции, и смело правил её «в черновике». Предскажите вывод письменно — потом запустите. <code>get(...).to_object()</code> возвращает <strong>ссылку</strong>: черновик оказался оригиналом. Почините замысел: соберите настоящую копию (новый <code>json.Object</code>, поля перенести руками) — и покажите, что теперь правка копии сейв не трогает.</p>
+  <h4 class="task-item">Задание 14. Отряд клонов</h4>
+  <idyl-code-block><script type="text/plain">
+use console;
+use json;
+
+main() {
+    json.Array team;
+    json.Object member;
+    member.add("name", json.Value("Горазд"));
+    team.add(json.Value(member));
+
+    member.set("name", json.Value("Мирон"));
+    team.add(json.Value(member));
+
+    console.writeln(team.to_json());
+}
+</script></idyl-code-block>
+  <p>Образец: <code>[{"name":"Горазд"},{"name":"Мирон"}]</code>. Запустите — и пересчитайте Гораздов. <code>json.Value(объект)</code> упаковывает ссылку (врезка урока №6 — теперь вы видите её в деле): одна переменная — один объект — две ячейки-двойника. Лечение то же, что у Шарика из ООП: <strong>каждому члену отряда — своя переменная</strong> (или свой свежий объект в каждой итерации сборки).</p>
+</div>
+<div class="docs-section">
+  <h2>Блок 5. Полигон</h2>
+  <h4 class="task-item">Задание 15. Сейв экспедиции</h4>
+  <p>Большое расследование с обоих адресов сразу. Раздатка: <code>expedition_save.json</code>; спецификация: экспедиция «Северный перевал», <strong>12 дней</strong> в пути (число!), старшая — Ясна, припасов три, последним в списке — фонарь. Образец:</p>
+  <idyl-output-block>Экспедиция: Северный перевал
+Дней в пути: 12
+Старшая: Ясна
+Припасов: 3
+Последний припас: фонарь</idyl-output-block>
+  <p>Программа:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+use file;
+use json;
+
+main() {
+    file.istream fin = file.open("expedition_save.json", "read");
+    string text = fin.read_all();
+    fin.close();
+
+    json.Object root = json.parse(text).to_object();
+
+    console.writeln("Экспедиция: ", root.get("expedition").to_string());
+    console.writeln("Дней в пути: ", root.get("days").to_int());
+    console.writeln("Старшая: ", root.get("captain").to_string());
+
+    json.Array supplies = root.get("supplies").to_array();
+    console.writeln("Припасов: ", supplies.length);
+    console.writeln("Последний припас: ", supplies.at(3).to_string());
+}
+</script></idyl-code-block>
+  <p>Всего поломок <strong>пять</strong>: часть в файле, часть в коде — раскопки решат, где какая. Спорный случай разбирайте спецификацией (она — верховный судья: если файл говорит одно, а ТЗ другое — чинится файл). Сдача: прогон + протокол «поломка → адрес (код/данные) → починка».</p>
+</div>
+<div class="docs-section">
+  <h2>Блок 6. Со звёздочкой</h2>
+  <h4 class="task-item task-star">Задание 16 ⭐. Обстрел читалки</h4>
+  <p>Раздатка: целый <code>camp_save.json</code> и ваша задача навылет — написать <strong>неубиваемую читалку</strong> лагеря: название, день, дежурный (может быть null!), и чтобы никакая порча файла её не роняла. Работа в три шага, как у взрослых испытателей:</p>
+  <p>1. <strong>Тест-план обстрела:</strong> список порч файла по каталогу книги (хвостовая запятая, комментарий, ключ без кавычек, не тот тип, пропавший ключ, null там, где ждали строку...) — не меньше шести, с прогнозом: какое сообщение выдал бы голый parse на каждой.</p>
+  <p>2. <strong>Обстрел хрупкой версии:</strong> читалка без проверок + все порчи по очереди — записать фактические сообщения (сверить с прогнозами!).</p>
+  <p>3. <strong>Броня:</strong> <code>is_valid</code> на входе + <code>has</code>/<code>is_*</code>-лесенки на каждом чтении; повторный обстрел — ни одного падения, на каждую порчу — осмысленная строка.</p>
+  <p>Сдача — сам тест-план с двумя колонками прогонов («до брони» / «после») и живой обстрел одной порчей по выбору преподавателя.</p>
+  <h4 class="task-item task-star">Задание 17 ⭐⭐. Сапёр с двумя адресами</h4>
+  <p>Финал: сочините мину для соседа — <strong>сейв придуманной игры + читалка</strong> к нему. Требования: ровно четыре ошибки — <strong>две в файле</strong> (разных пород: синтаксис текста и неверные данные при валидном синтаксисе) и <strong>две в коде</strong> (разных семейств из блока 2); образец правильной работы; своя починенная пара «файл + код» прогнана заранее; ошибки честные. Обмен, расследование, двойная сдача. Изюминка жанра — на каждую находку сосед обязан назвать <strong>адрес</strong>: «это жило в данных» или «это жило в коде». Перепутал адрес — находка не засчитана: в JSON-детективе это и есть профессия.</p>
+</div>

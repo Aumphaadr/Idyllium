@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: Idyllium 1.3.3.
+Current language target: Idyllium 1.3.5.
 
 This reference describes implemented behavior. Ideas from `BACKLOG.md` and
 exploratory files under `spec/some_*` are not language features until they are
@@ -33,6 +33,18 @@ Core principles:
 - Runtime errors should be readable, copyable, and understandable after machine
   translation.
 - `++` and `--` do not exist in Idyllium and must not be generated.
+- Compound assignments (`+=`, `-=`, `*=`, `/=`) exist, but course materials
+  deliberately prefer the full form `x = x + 1` — it keeps both roles of the
+  variable visible (source on the right, target on the left). When generating
+  teaching code, prefer the full form; reserve `+=` for string style appending
+  (`sign.style += "color: green;";`) where the course itself uses it.
+- Since 1.3.5 the compiler emits targeted hints for common beginner mistakes:
+  `=` in a condition, `&&`/`||`/`!` (suggests `and`/`or`/`not`), `%` (suggests
+  `mod(a, b)`), `++`/`--` (suggests `x = x + 1`), `elif`, a decimal comma in
+  numbers, an unescaped quote inside a string, a keyword used as a name, and
+  Cyrillic/Latin homoglyph mixups in identifiers. A method or function named
+  without parentheses in statement position is a compile error
+  (`'info' is not called — add '()' to call it`).
 
 ## 2. File And Program Shape
 
@@ -48,9 +60,12 @@ Example:
 use console;
 
 main() {
-    console.writeln("Hello, World!");
+    console.write("Hello, World!", '\n');
 }
 ```
+
+This matches the Web IDE starter program and the first lesson of the course
+(`console.write` with an explicit `'\n'` is taught before `writeln`).
 
 Modules are imported by file/library name:
 
@@ -147,7 +162,7 @@ age = 13;
 Compound assignment:
 
 ```idyllium
-age += 1;
+age += 1;          // works, but course style prefers: age = age + 1;
 age -= 1;
 temperature *= 2;
 temperature /= 2;
@@ -446,7 +461,7 @@ if (score >= 90) {
 ```
 
 There is no `switch` statement and no `for (x in collection)` loop. Iterate
-collections by index: `for (int i = 0; i < items.length; i += 1)`.
+collections by index: `for (int i = 0; i < items.length; i = i + 1)`.
 
 `while`:
 
@@ -454,7 +469,7 @@ collections by index: `for (int i = 0; i < items.length; i += 1)`.
 int i = 0;
 while (i < 5) {
     console.writeln(i);
-    i += 1;
+    i = i + 1;
 }
 ```
 
@@ -463,14 +478,14 @@ while (i < 5) {
 ```idyllium
 int x = 0;
 do {
-    x += 1;
+    x = x + 1;
 } while (x < 10);
 ```
 
 `for`:
 
 ```idyllium
-for (int i = 0; i < 10; i += 1) {
+for (int i = 0; i < 10; i = i + 1) {
     console.writeln(i);
 }
 ```
@@ -684,7 +699,7 @@ class Counter {
     }
 
     void function add(int amount = 1) {
-        this.value += amount;
+        this.value = this.value + amount;
     }
 }
 ```
@@ -813,7 +828,7 @@ class Hero {
     }
 
     void function hit(int damage) {
-        this.hp -= damage;
+        this.hp = this.hp - damage;
         if (this.hp < 0) {
             this.hp = 0;
         }
@@ -830,9 +845,9 @@ must be accessed through `this.`. A bare field name is treated as an ordinary
 local/global name and is therefore an error when no such name exists:
 
 ```idyllium
-this.hp -= damage;      // correct: class field
+this.hp = this.hp - damage;   // correct: class field
 this.get_hp();          // correct: instance method
-hp -= damage;           // wrong: 'hp' is not a local variable
+hp = hp - damage;             // wrong: 'hp' is not a local variable
 ```
 
 Object creation:
@@ -864,6 +879,22 @@ Hero function create_boss() {
 
 bool strong = Hero("Ornella", 750).get_hp() > 700;
 ```
+
+Declaring an object variable without parentheses NEVER runs the constructor
+(rule since 1.3.5). The object is created with default field values (numbers 0,
+strings empty). To run the constructor, call it explicitly:
+
+```idyllium
+Hero ghost;                  // constructor NOT called: fields are "" and 0
+Hero named = Hero("Mira");   // constructor called explicitly
+Hero short_form("Mira");     // parenthesized declaration also calls it
+```
+
+The same rule applies to arrays of objects (`array<Hero, 3> team;` creates
+three default-valued objects) and to object fields inside classes — both are
+"blank slots" that the program fills explicitly. A zero-argument explicit call
+`Hero()` is valid when the constructor has no required parameters (or the
+class has no constructor at all).
 
 Named and default arguments work in constructor expressions. A class imported
 from a user module is created with `geometry.Point(10, 20)`. Each call returns
@@ -991,7 +1022,7 @@ class Hero {
     event on_death(Hero victim);
 
     void function hit(int damage) {
-        this.hp -= damage;
+        this.hp = this.hp - damage;
         if (this.hp <= 0) {
             this.on_death(this);
         }
@@ -1125,7 +1156,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, never returns
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.3.3"
+system.version()                    // "1.3.5"
 ```
 
 **Recursion depth.** Idyllium counts call depth itself instead of relying on the
@@ -1326,6 +1357,23 @@ fout.write_line(42);
 fout.write_line("Done");
 fout.close();
 ```
+
+Append:
+
+```idyllium
+file.ostream fout = file.open("log.txt", "append");
+fout.write_line("New entry");
+fout.close();
+```
+
+`"append"` keeps the existing content and writes at the end; a missing file is
+created empty. `"write"` always starts from an empty file. Any other mode is a
+runtime error: `file.open() mode must be 'read', 'write' or 'append', got
+'...'`. Teaching note: the first-year console course intentionally does not
+mention `"append"` — there, school tasks solve appending by reading the whole
+file and rewriting it, which is a deliberate exercise; do not suggest
+`"append"` for first-year course tasks. The mode is introduced in the
+third-year JSON course and is fine everywhere else.
 
 `write(...)` writes exactly the supplied values. `write_line(...)` writes the
 supplied values and then appends `\n`, like `console.writeln(...)`.
@@ -2734,10 +2782,10 @@ void function on_key_released(gui.Canvas canvas, gui.KeyboardEvent e) {
 }
 
 void function on_update(gui.Canvas canvas, float delta_time) {
-    if (pressed_keys.contains("W")) { player.y -= 2; }
-    if (pressed_keys.contains("S")) { player.y += 2; }
-    if (pressed_keys.contains("A")) { player.x -= 2; }
-    if (pressed_keys.contains("D")) { player.x += 2; }
+    if (pressed_keys.contains("W")) { player.y = player.y - 2; }
+    if (pressed_keys.contains("S")) { player.y = player.y + 2; }
+    if (pressed_keys.contains("A")) { player.x = player.x - 2; }
+    if (pressed_keys.contains("D")) { player.x = player.x + 2; }
 
     canvas.clear();
     canvas.draw(player);
@@ -2881,7 +2929,7 @@ main() {
     while (i < 4) {
         t.forward(120);
         t.left(90);
-        i += 1;
+        i = i + 1;
     }
 }
 ```
@@ -3186,7 +3234,7 @@ When asked to generate Idyllium code:
    functions/typed `main`.
 3. Use four spaces for indentation.
 4. Use explicit conversions with `to_int`, `to_float`, `to_string`.
-5. Use `+= 1` instead of `++`.
+5. Use `x = x + 1` instead of `++` (course style; `+= 1` also compiles).
 6. Use `colors.Color` objects for GUI/Canvas colors.
 7. For GUI/Canvas, create widgets/objects as normal variables, set properties,
    then call `add_child`, `draw`, or assign callbacks.

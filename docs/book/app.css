@@ -90,6 +90,15 @@ a {
 code {
   font-family: var(--font-mono);
   font-size: 0.92em;
+  /* Инлайн-код с пробелами (win.theme = "неоновый") не разрывается между
+     строками — читается как один жетон (решение владельца, 2026-08-14). */
+  white-space: nowrap;
+}
+
+/* Внутри блоков кода правило неприменимо — там переносы управляются блоком. */
+idyl-code-block code,
+pre code {
+  white-space: inherit;
 }
 
 ::selection {
@@ -385,6 +394,14 @@ body.light-theme .docs-topbar {
   min-width: 0;
   padding: 34px clamp(22px, 4vw, 58px) 54px;
   position: relative;
+}
+
+/* main фокусируется программно (переход урока) и кликом — tabindex="-1".
+   Браузерная фокус-обводка рисовала «белые полоски» по границам колонки;
+   визуальный фокус этому контейнеру не нужен. */
+.docs-main:focus,
+.docs-main:focus-visible {
+  outline: none;
 }
 
 /* Индикатор загрузки урока: полупрозрачная вуаль поверх прежнего содержимого

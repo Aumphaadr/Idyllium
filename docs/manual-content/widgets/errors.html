@@ -151,10 +151,9 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:7:5: compile error: 'btn' was not declared in this scope
-main.idyl:7:5: compile error: type '&lt;error&gt;' has no property 'on_click'</idyl-error-block>
+      <idyl-error-block>main.idyl:7:5: compile error: 'btn' was not declared in this scope</idyl-error-block>
 
-      <p>Обратите внимание: сообщений два, а причина одна. Компилятор не нашёл переменную <code>btn</code> — и второе сообщение лишь эхо первого (загадочный тип <code>&lt;error&gt;</code> — это компилятор разводит руками). Исправление: объявляйте виджет до его использования в обработчиках.</p>
+      <p>Компилятор не нашёл переменную <code>btn</code> — и сказал об этом ровно один раз, без эха о последствиях. Исправление: объявляйте виджет до его использования в обработчиках.</p>
     </div>
 
     <!-- Section 6 -->

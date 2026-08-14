@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-14T14:44:22.160Z",
+  "generatedAt": "2026-08-14T16:34:45.168Z",
   "sourceRoot": "docs/manual-content/tasks",
   "sections": [
     {
@@ -12,12 +12,12 @@
         {
           "id": "setup",
           "title": "Установка Idyllium",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Установка Idyllium»",
           "file": "content/console/setup.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/console/setup.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         },
         {
           "id": "hello",
@@ -816,12 +816,12 @@
         {
           "id": "errors",
           "title": "Типичные ошибки",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Типичные ошибки»",
           "file": "content/oop/errors.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/oop/errors.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         }
       ]
     },
@@ -1122,12 +1122,12 @@
         {
           "id": "errors",
           "title": "Типичные ошибки",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Типичные ошибки»",
           "file": "content/json/errors.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/json/errors.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         }
       ]
     },
@@ -1280,30 +1280,12 @@
         {
           "id": "errors",
           "title": "Типичные ошибки",
-          "subtitle": "Задания готовятся",
+          "subtitle": "Практикум к уроку «Типичные ошибки»",
           "file": "content/sqlite/errors.html",
-          "sourceFile": "",
-          "status": "planned",
+          "sourceFile": "docs/manual-content/tasks/sqlite/errors.html",
+          "status": "ready",
           "reviewFlags": [],
-          "hasTasks": false
-        }
-      ]
-    },
-    {
-      "id": "examples",
-      "title": "Примеры задач",
-      "icon": "examples",
-      "status": "ready",
-      "lessons": [
-        {
-          "id": "calc",
-          "title": "Калькулятор",
-          "subtitle": "Задания готовятся",
-          "file": "content/examples/calc.html",
-          "sourceFile": "",
-          "status": "planned",
-          "reviewFlags": [],
-          "hasTasks": false
+          "hasTasks": true
         }
       ]
     }

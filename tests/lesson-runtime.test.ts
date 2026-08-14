@@ -29,8 +29,8 @@ const RUNTIME_SECTIONS = ['sqlite', 'json'] as const;
 // Программы, читающие файлы данных проекта, которых нет в голом рантайме.
 const SKIP: Readonly<Record<string, string>> = {
   'sqlite.scripts.004': 'reads setup.sql from the project directory',
-  'json.intro.002': 'reads save.txt from the project directory',
-  'json.intro.003': 'reads names.txt from the project directory',
+  'json.intro.003': 'reads save.txt from the project directory',
+  'json.intro.004': 'reads names.txt from the project directory',
   'json.reading.001': 'reads player.json from the project directory',
 };
 

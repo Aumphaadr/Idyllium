@@ -1,0 +1,393 @@
+<div class="docs-section">
+  <p>Это последняя книга учебника — и противник в ней достойный финала. В ваших программах теперь два языка: Idyllium, чьи ошибки вы читаете с первого курса, и SQL — язык, на котором вы разговариваете с базой. Ошибка может жить на любом из двух этажей, а самые опасные не живут ни на одном: база — исполнитель <strong>буквальный</strong>. Скажете «поднять цену» — поднимет всем. Спросите «где редкость равна неизвестности» — честно ответит «нигде». И не скажет ни слова поперёк. Детектив, дошедший до этой книги, умеет читать сообщения; сегодня он научится главному — слышать молчание.</p>
+</div>
+<div class="docs-section">
+  <h2>Блок 1. Idyllium-этаж</h2>
+  <h3 class="task-group">Практика с преподавателем</h3>
+  <h4 class="task-item">Задание 1. Два этажа</h4>
+  <p>У доски — две мини-программы. Первая:</p>
+  <idyl-code-block><script type="text/plain">
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("guild_hall.db");
+    sqlite.Result rows = db.execute("SELECT * FROM ghosts");
+}
+</script></idyl-code-block>
+  <p>Вторая:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("guild_hall.db");
+    db.execute("DROP TABLE IF EXISTS players");
+    db.execute("CREATE TABLE players (name TEXT)");
+    db.execute("INSERT INTO players VALUES ('Ясна')");
+    sqlite.Result rows = db.execute("SELECT name FROM players");
+    console.writeln("Первая: ", rows.get_string("name"));
+}
+</script></idyl-code-block>
+  <p>Обе падают — но по-разному. В первой сообщение начинается с <code>sqlite execution failed:</code> — это <strong>голос базы</strong>: SQL дошёл до неё, и она отказалась (<code>no such table</code>). Во второй базы никто ни о чём плохом не спрашивал — споткнулся <strong>Idyllium-объект</strong> <code>Result</code>: курсор ещё стоит перед первой строкой. Прочитайте оба сообщения слева направо по правилу урока и надпишите над каждым этаж. Весь блок 1 — второй этаж, Idyllium; блок 2 — первый, SQL.</p>
+  <h3 class="task-group">Самостоятельная практика</h3>
+  <p><em>В каждой программе — одна ошибка. Образцы правильной работы прилагаются.</em></p>
+  <h4 class="task-item">Задание 2. Недокормленный запрос</h4>
+  <p>Образец: <code>Записан: Борис (уровень 3)</code>.</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("errors_feed.db");
+    db.execute("DROP TABLE IF EXISTS players");
+    db.execute("CREATE TABLE players (name TEXT NOT NULL, level INTEGER NOT NULL)");
+
+    sqlite.Statement ins = db.prepare("INSERT INTO players (name, level) VALUES (:name, :level)");
+    ins.bind_string("name", "Борис");
+    ins.execute();
+
+    sqlite.Result rows = db.execute("SELECT name, level FROM players");
+    rows.next();
+    console.writeln("Записан: ", rows.get_string("name"), " (уровень ", rows.get_int("level"), ")");
+}
+</script></idyl-code-block>
+  <p>Сообщение называет забытое по имени — с двоеточием, как в SQL. Оцените заботу: во многих системах забытый параметр молча стал бы NULL, и вы узнали бы об этом через месяц из битых данных. Idyllium предпочитает крик тишине.</p>
+  <h4 class="task-item">Задание 3. Не тот читатель</h4>
+  <p>Образец: <code>Мира зарабатывает 340 золотых</code>.</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("errors_reader.db");
+    db.execute("DROP TABLE IF EXISTS players");
+    db.execute("CREATE TABLE players (name TEXT NOT NULL, gold INTEGER NOT NULL)");
+    db.execute("INSERT INTO players VALUES ('Мира', 340)");
+
+    sqlite.Result rows = db.execute("SELECT name, gold FROM players");
+    rows.next();
+    string who = rows.get_string("name");
+    int gold = rows.get_int("name");
+    console.writeln(who, " зарабатывает ", gold, " золотых");
+}
+</script></idyl-code-block>
+  <p>Сообщение называет оба типа — что лежит и что потребовали. Найдите настоящую причину (она не в типах, а в невнимательности) и почините.</p>
+  <h4 class="task-item">Задание 4. Колонка-невидимка</h4>
+  <p>Образец: <code>Ника: 1500 зол.</code></p>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("errors_column.db");
+    db.execute("DROP TABLE IF EXISTS players");
+    db.execute("CREATE TABLE players (name TEXT NOT NULL, gold INTEGER NOT NULL)");
+    db.execute("INSERT INTO players VALUES ('Ника', 1500)");
+
+    sqlite.Result rows = db.execute("SELECT name FROM players");
+    rows.next();
+    console.writeln(rows.get_string("name"), ": ", rows.get_int("gold"), " зол.");
+}
+</script></idyl-code-block>
+  <p>Тонкость урока в чистом виде: колонка <code>gold</code> <strong>существует в таблице</strong> — и всё равно <code>has no column</code>. У результата есть только то, что перечислил <code>SELECT</code>. Почините — и сформулируйте правило одним предложением.</p>
+  <h4 class="task-item">Задание 5. Разговор с закрытой дверью</h4>
+  <p>Образец: <code>Гильдия на месте: 1 запись</code>.</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("errors_door.db");
+    db.execute("DROP TABLE IF EXISTS guild");
+    db.execute("CREATE TABLE guild (name TEXT)");
+    db.execute("INSERT INTO guild VALUES ('Ночная стража')");
+    db.close();
+
+    sqlite.Result rows = db.execute("SELECT COUNT(*) AS cnt FROM guild");
+    rows.next();
+    console.writeln("Гильдия на месте: ", rows.get_int("cnt"), " запись");
+}
+</script></idyl-code-block>
+  <p>После <code>close()</code> объект отвязан от базы навсегда — двигайте закрытие туда, где ему место. Вопрос на сдаче: каким свойством можно <strong>проверить</strong> состояние базы, и почему лучший ответ — «организовать код так, чтобы проверка не понадобилась»?</p>
+</div>
+<div class="docs-section">
+  <h2>Блок 2. SQL-этаж и ограничения</h2>
+  <p><em>Теперь говорит база. Признак этажа — <code>sqlite execution failed:</code> в сообщении.</em></p>
+  <h4 class="task-item">Задание 6. Стол, которого нет</h4>
+  <p>Образец: <code>В приюте 2 кота</code>.</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("errors_cats.db");
+    db.execute("DROP TABLE IF EXISTS cats");
+    db.execute("CREATE TABLE cats (name TEXT)");
+    db.execute("INSERT INTO cats VALUES ('Барсик')");
+    db.execute("INSERT INTO cats VALUES ('Мурка')");
+
+    sqlite.Result rows = db.execute("SELECT COUNT(*) AS cnt FROM cast");
+    rows.next();
+    console.writeln("В приюте ", rows.get_int("cnt"), " кота");
+}
+</script></idyl-code-block>
+  <p>База докладывает точно, какого стола не нашла. Порядок расследования — как с <code>unknown class</code>: сначала опечатки, потом всё остальное.</p>
+  <h4 class="task-item">Задание 7. База не поняла</h4>
+  <p>Образец: таблица создаётся, программа молчит и завершается без ошибок.</p>
+  <idyl-code-block><script type="text/plain">
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("errors_grammar.db");
+    db.execute("DROP TABLE IF EXISTS heroes");
+    db.execute("CREATE TABEL heroes (name TEXT, level INTEGER)");
+}
+</script></idyl-code-block>
+  <p><code>near "..."</code> — так база показывает, <strong>на каком слове</strong> она перестала понимать приказ. Заметьте странность второго этажа: для компилятора Idyllium эта программа безупречна — SQL для него просто строка в кавычках. Ошибки SQL живут только в рантайме — вот почему их и ловит «sqlite execution failed», а не compile error.</p>
+  <h4 class="task-item">Задание 8. Два одинаковых логина</h4>
+  <p>Образец: <code>Зарегистрировано игроков: 2</code>.</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("errors_unique.db");
+    db.execute("DROP TABLE IF EXISTS accounts");
+    db.execute("CREATE TABLE accounts (login TEXT UNIQUE, name TEXT)");
+    db.execute("INSERT INTO accounts VALUES ('mira', 'Мира')");
+    db.execute("INSERT INTO accounts VALUES ('mira', 'Мирослав')");
+
+    sqlite.Result rows = db.execute("SELECT COUNT(*) AS cnt FROM accounts");
+    rows.next();
+    console.writeln("Зарегистрировано игроков: ", rows.get_int("cnt"));
+}
+</script></idyl-code-block>
+  <p>База сдержала слово, данное при <code>CREATE TABLE</code>: <code>UNIQUE</code> — не пожелание, а контракт. Почините по-человечески: Мирослав тоже хочет играть (логин — его забота, придумайте правило). Разговор на сдаче: почему хорошо, что упала <strong>вставка</strong>, а не поиск через месяц?</p>
+  <h4 class="task-item">Задание 9. Обязательное поле</h4>
+  <p>Образец: <code>Все герои названы</code>.</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("errors_notnull.db");
+    db.execute("DROP TABLE IF EXISTS heroes");
+    db.execute("CREATE TABLE heroes (name TEXT NOT NULL, level INTEGER)");
+
+    sqlite.Statement ins = db.prepare("INSERT INTO heroes (name, level) VALUES (:name, :level)");
+    ins.bind_null("name");
+    ins.bind_int("level", 5);
+    ins.execute();
+
+    console.writeln("Все герои названы");
+}
+</script></idyl-code-block>
+  <p><code>NOT NULL constraint failed</code> — второй контракт базы. Обратите внимание на разницу с з.2: там параметр <strong>забыли</strong> (ошибка Idyllium-этажа), здесь NULL положили <strong>сознательно</strong> — и возразила уже база. Один и тот же NULL, два разных этажа — разберите на сдаче, почему.</p>
+</div>
+<div class="docs-section">
+  <h2>Блок 3. Тихий SQL</h2>
+  <p><em>С этого места сообщений не будет. База исполняет приказы буквально — сверяйте вывод с образцом и слушайте молчание.</em></p>
+  <h3 class="task-group">Практика с преподавателем</h3>
+  <h4 class="task-item">Задание 10. Премия всем</h4>
+  <p>У доски. Казначей выписал премию лучшему бойцу — Ясне:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("errors_bonus.db");
+    db.execute("DROP TABLE IF EXISTS players");
+    db.execute("CREATE TABLE players (name TEXT, gold INTEGER)");
+    db.execute("INSERT INTO players VALUES ('Ясна', 300)");
+    db.execute("INSERT INTO players VALUES ('Горазд', 120)");
+    db.execute("INSERT INTO players VALUES ('Мирон', 45)");
+
+    db.execute("UPDATE players SET gold = gold + 100");
+
+    sqlite.Result rows = db.execute("SELECT name, gold FROM players");
+    while (rows.next()) {
+        console.writeln(rows.get_string("name"), ": ", rows.get_int("gold"));
+    }
+}
+</script></idyl-code-block>
+  <p>Предскажите вывод письменно — потом запускайте. Премию получили все: <code>UPDATE</code> без <code>WHERE</code> бьёт по каждой строке, и <strong>ни одного сообщения</strong> — приказ выполнен образцово, приказ был неточен. Проговорите святое правило урока №2 и начните чек-лист тихого SQL, пункт 1: <em>«команда UPDATE или DELETE? — покажи мне её WHERE».</em> И контрольный вопрос: что натворил бы здесь <code>DELETE FROM players</code> без WHERE?</p>
+  <h3 class="task-group">Самостоятельная практика</h3>
+  <h4 class="task-item">Задание 11. Кавычки-оборотни</h4>
+  <p>Игроку меняют отображаемое имя на псевдоним. Образец: <code>Мира → Ночная тень</code>.</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("errors_quotes.db");
+    db.execute("DROP TABLE IF EXISTS players");
+    db.execute("CREATE TABLE players (name TEXT, nickname TEXT)");
+    db.execute("INSERT INTO players (name) VALUES ('Мира')");
+
+    db.execute("UPDATE players SET name = \"nickname\"");
+
+    sqlite.Result rows = db.execute("SELECT name FROM players");
+    rows.next();
+    if (rows.is_null("name")) {
+        console.writeln("Имя пропало!");
+    } else {
+        console.writeln("Мира → ", rows.get_string("name"));
+    }
+}
+</script></idyl-code-block>
+  <p>Запустите: имя <strong>пропало</strong> — вместо текста «nickname» база подставила значение <strong>колонки</strong> nickname (пустой). Двойные кавычки в SQL — для имён таблиц и колонок, текст живёт только в одинарных; при совпадении со случайным именем колонки двойные превращаются в оборотня и портят данные молча. Чек-лист, пункт 2: <em>«текст в SQL? — только одинарные кавычки, всегда»</em> (а имя из переменной — вообще параметром, за этим следит урок №4).</p>
+  <h4 class="task-item">Задание 12. Поиск по неизвестности</h4>
+  <p>Ревизия ищет товары, у которых редкость ещё не назначена. Образец:</p>
+  <idyl-output-block>Без редкости: Второй носок
+Найдено: 1</idyl-output-block>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("errors_null_find.db");
+    db.execute("DROP TABLE IF EXISTS goods");
+    db.execute("CREATE TABLE goods (title TEXT, rarity TEXT)");
+    db.execute("INSERT INTO goods VALUES ('Второй носок', NULL)");
+    db.execute("INSERT INTO goods VALUES ('Зелье храбрости', 'редкий')");
+
+    sqlite.Result rows = db.execute("SELECT title FROM goods WHERE rarity = NULL");
+    int found = 0;
+    while (rows.next()) {
+        found = found + 1;
+        console.writeln("Без редкости: ", rows.get_string("title"));
+    }
+    console.writeln("Найдено: ", found);
+}
+</script></idyl-code-block>
+  <p>«Найдено: 0» — и тишина. NULL — неизвестность, а неизвестность не равна <strong>ничему</strong>, даже самой себе: <code>= NULL</code> отсеивает всё. Почините правильным оператором из урока о NULL. Чек-лист, пункт 3: <em>«в WHERE сравнивают с NULL? — только IS NULL / IS NOT NULL».</em></p>
+  <h4 class="task-item">Задание 13. Кончился и молчит</h4>
+  <p>Перепись читает список дважды: сосчитать и назвать. Образец:</p>
+  <idyl-output-block>Всего: 2
+Имя: Ясна
+Имя: Мирон
+Перепись окончена</idyl-output-block>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("errors_rewind.db");
+    db.execute("DROP TABLE IF EXISTS players");
+    db.execute("CREATE TABLE players (name TEXT)");
+    db.execute("INSERT INTO players VALUES ('Ясна')");
+    db.execute("INSERT INTO players VALUES ('Мирон')");
+
+    sqlite.Result rows = db.execute("SELECT name FROM players");
+    int count = 0;
+    while (rows.next()) {
+        count = count + 1;
+    }
+    console.writeln("Всего: ", count);
+
+    while (rows.next()) {
+        console.writeln("Имя: ", rows.get_string("name"));
+    }
+    console.writeln("Перепись окончена");
+}
+</script></idyl-code-block>
+  <p>Имён нет, ошибок тоже: <code>next()</code> за концом отвечает мирным <code>false</code>, а <code>Result</code> не перематывается. Способа два — свежий <code>execute</code> перед вторым проходом или один проход, который делает всё сразу; выберите и обоснуйте. Чек-лист, пункт 4: <em>«Result читают второй раз? — не читается: бери свежий».</em></p>
+  <h4 class="task-item">Минутка из внешнего мира. Приказ, понятый буквально</h4>
+  <p><em>Не задание — просто минутка.</em></p>
+  <p>В 2017 году программист компании GitLab чистил сервер от лишних данных и запустил команду удаления — как ему казалось, на запасном сервере. Терминалов было два, окна похожи; команда ушла на боевой. База послушно выполнила приказ — буквально, быстро и молча, как положено хорошей базе, — и стёрла триста гигабайт живых данных. Из пяти способов резервного копирования в тот день сработал ни один... Компания честно вела прямую трансляцию восстановления, и теперь этот случай — классика обучения админов: <strong>буквальность исполнителя лечится не надеждой, а привычками</strong> — WHERE в каждом опасном приказе, проверка «куда я подключён», транзакция с возможностью отката и живой бэкап. Все четыре привычки у вас уже есть — они разложены по урокам этого раздела.</p>
+</div>
+<div class="docs-section">
+  <h2>Блок 4. Зелёный — не значит правильный</h2>
+  <h4 class="task-item">Задание 14. Топ наоборот</h4>
+  <p>Доска почёта обещает тройку богатейших. Образец:</p>
+  <idyl-output-block>1) Ника: 1500
+2) Лея: 980
+3) Агата: 720</idyl-output-block>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("errors_top.db");
+    db.execute("DROP TABLE IF EXISTS players");
+    db.execute("CREATE TABLE players (name TEXT, gold INTEGER)");
+    db.execute("INSERT INTO players VALUES ('Ника', 1500)");
+    db.execute("INSERT INTO players VALUES ('Кай', 120)");
+    db.execute("INSERT INTO players VALUES ('Лея', 980)");
+    db.execute("INSERT INTO players VALUES ('Агата', 720)");
+    db.execute("INSERT INTO players VALUES ('Борис', 45)");
+
+    sqlite.Result rows = db.execute("SELECT name, gold FROM players ORDER BY gold LIMIT 3");
+    int place = 1;
+    while (rows.next()) {
+        console.writeln(place, ") ", rows.get_string("name"), ": ", rows.get_int("gold"));
+        place = place + 1;
+    }
+}
+</script></idyl-code-block>
+  <p>Программа уверенно печатает тройку... беднейших. SQL корректен, база довольна, сообщений ноль — сломан <strong>замысел</strong>: у <code>ORDER BY</code> два направления, и умолчание — не то, что нужно доске почёта. Почините одним словом. Бонус-вопрос: поменяйте местами <code>LIMIT 3</code> и <code>ORDER BY gold</code> — что скажет база и на каком этаже жалоба?</p>
+</div>
+<div class="docs-section">
+  <h2>Блок 5. Полигон</h2>
+  <h4 class="task-item">Задание 15. Лавка гильдии</h4>
+  <p>Большое расследование: программу лавки писали в пятницу вечером. Спецификация: три товара (Зелье храбрости — 150, редкий; Второй носок — 5, редкость <strong>неизвестна</strong>; Карманный телепорт — 900, легендарный); скидка 50 монет — <strong>только товарам дороже 100</strong>; отчёт — прайс с ценами, число товаров, список товаров без редкости. Образец:</p>
+  <idyl-output-block>=== Прайс после скидки ===
+Зелье храбрости: 100
+Второй носок: 5
+Карманный телепорт: 850
+Товаров в лавке: 3
+=== Товары без редкости ===
+Второй носок</idyl-output-block>
+  <p>Код:</p>
+  <idyl-code-block><script type="text/plain">
+use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("shop.db");
+    db.execute("DROP TABLE IF EXISTS goods");
+    db.execute("CREATE TABLE goods (title TEXT NOT NULL, price INTEGER NOT NULL, rarity TEXT)");
+
+    sqlite.Statement ins = db.prepare("INSERT INTO goods (title, price, rarity) VALUES (:title, :price, :rarity)");
+    ins.bind_string("title", "Зелье храбрости");
+    ins.bind_int("price", 150);
+    ins.bind_string("rarity", "редкий");
+    ins.execute();
+    ins.clear_bindings();
+    ins.bind_string("title", "Второй носок");
+    ins.bind_int("price", 5);
+    ins.execute();
+    ins.clear_bindings();
+    ins.bind_string("title", "Карманный телепорт");
+    ins.bind_int("price", 900);
+    ins.bind_string("rarity", "легендарный");
+    ins.execute();
+    ins.close();
+
+    db.execute("UPDATE goods SET price = price - 50");
+
+    console.writeln("=== Прайс после скидки ===");
+    sqlite.Result rows = db.execute("SELECT title FROM goods");
+    while (rows.next()) {
+        console.writeln(rows.get_string("title"), ": ", rows.get_int("price"));
+    }
+
+    sqlite.Result total = db.execute("SELECT COUNT(*) AS cnt FROM goods");
+    console.writeln("Товаров в лавке: ", total.get_int("cnt"));
+
+    console.writeln("=== Товары без редкости ===");
+    sqlite.Result plain = db.execute("SELECT title FROM goods WHERE rarity = NULL");
+    while (plain.next()) {
+        console.writeln(plain.get_string("title"));
+    }
+}
+</script></idyl-code-block>
+  <p>Ошибок <strong>пять</strong>, на всех этажах — громкие Idyllium-этажа и тихие SQL-этажа. Копайте слоями: каждая починка открывает следующий слой; сверка с образцом закрывает дело. Особое внимание носку — спецификация говорит о нём две вещи, и обе в коде нарушены. Сдача: прогон + протокол «ошибка → этаж → починка», плюс <strong>повторный запуск</strong> — программа обязана пережить его без дублей и падений.</p>
+</div>
+<div class="docs-section">
+  <h2>Блок 6. Со звёздочкой</h2>
+  <h4 class="task-item task-star">Задание 16 ⭐. Обстрел базы</h4>
+  <p>Постройте регистратуру гильдии, которую не стыдно включить в настоящий проект: таблица <code>accounts</code> (логин — уникальный, имя — обязательное), программа регистрирует новичков <strong>параметрами</strong> и печатает итоговый список. А теперь — испытания, как у взрослых: составьте письменный <strong>тест-план обстрела</strong> не меньше чем из шести атак по каталогу книги (дубль логина; NULL в обязательное; апостроф в имени — О'Нил имеет право!; повторный запуск всей программы; поиск по <code>= NULL</code>; текст в двойных кавычках...) с прогнозом для каждой: упадёт / выстоит / молча соврёт — и на каком этаже. Прогоните весь план, зафиксируйте фактические ответы, укрепите слабые места (проверка перед вставкой, IS NULL, одинарные кавычки, идемпотентный старт) — и прогоните ещё раз, теперь без единого происшествия. Сдача — тест-план с двумя колонками прогонов и живой обстрел одной атакой по выбору преподавателя.</p>
+  <h4 class="task-item task-star">Задание 17 ⭐⭐. Сапёр двух этажей</h4>
+  <p>Финал учебника: сочините мину для соседа — база строится в программе, всё по правилам жанра. Ровно четыре ошибки: <strong>по одной громкой с каждого этажа</strong> (одна Idyllium — unbound/next/колонка/closed, одна SQL — таблица/синтаксис/контракт) и <strong>две тихие</strong> (WHERE-беды, кавычки, неперемотанный Result, забытое направление сортировки — на выбор). Образец правильной работы, своя починенная версия, честность просчётов — как всегда. Двойная сдача: сапёр называет <strong>этаж каждой находки</strong>, минёр докладывает, какая держалась дольше. Ставки на тихую — и если сосед нашёл её по чек-листу, а не случайно, поздравьте друг друга: учебник пройден не зря.</p>
+</div>
