@@ -8229,4 +8229,87 @@ main() {
   );
 });
 
+test('canvas snapshots: save_svg everywhere, to_static needs a renderer host', async () => {
+  const fsMemory = createMemoryRuntimeFileSystem();
+  const result = await runIdyllium(`
+use console;
+use gui;
+use drawable;
+use colors;
+
+main() {
+    gui.Window win;
+    gui.Canvas canvas;
+    canvas.width = 300;
+    canvas.height = 200;
+    win.add_child(canvas);
+    win.show();
+
+    canvas.fill(colors.RGB(20, 30, 60));
+
+    drawable.Rectangle box;
+    box.x = 40;
+    box.y = 50;
+    box.width = 100;
+    box.height = 60;
+    box.fill_color = colors.RGB(255, 165, 0);
+    canvas.draw(box);
+
+    drawable.Text label;
+    label.x = 40;
+    label.y = 130;
+    label.text = "Снимок";
+    canvas.draw(label);
+
+    canvas.save_svg("shot.svg");
+    canvas.save_svg("region.svg", 150, 0, 150, 100);
+    console.writeln("сохранено");
+}
+`, { platform: 'cli', fileSystem: fsMemory }, { file: '/workspace/main.idyl' });
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  const files = fsMemory.snapshot?.() ?? {};
+  const shot = String(files['/workspace/shot.svg']?.content ?? '');
+  assert(shot.includes('viewBox="0 0 300 200"'), 'full canvas viewBox');
+  assert(shot.includes('fill="#141e3c"'), 'fill command color');
+  assert(shot.includes('width="100" height="60" fill="#ffa500"'), 'rectangle');
+  assert(shot.includes('>Снимок</text>'), 'text content');
+  const region = String(files['/workspace/region.svg']?.content ?? '');
+  assert(region.includes('viewBox="150 0 150 100"'), 'region crop via viewBox');
+
+  const refusal = await runIdyllium(`
+use gui;
+use image;
+
+main() {
+    gui.Window win;
+    gui.Canvas canvas;
+    win.add_child(canvas);
+    win.show();
+    image.Static shot = canvas.to_static();
+}
+`, { platform: 'cli', fileSystem: createMemoryRuntimeFileSystem() }, { file: '/workspace/main.idyl' });
+  assert(
+    (refusal.runtimeError ?? '').includes('Canvas.to_static() is not available in the console host — use Canvas.save_svg()'),
+    `to_static refusal: ${refusal.runtimeError}`,
+  );
+
+  const empty = await runIdyllium(`
+use gui;
+
+main() {
+    gui.Window win;
+    gui.Canvas canvas;
+    canvas.width = 100;
+    canvas.height = 100;
+    win.add_child(canvas);
+    win.show();
+    canvas.save_svg("x.svg", 200, 0, 50, 50);
+}
+`, { platform: 'cli', fileSystem: createMemoryRuntimeFileSystem() }, { file: '/workspace/main.idyl' });
+  assert(
+    (empty.runtimeError ?? '').includes('Canvas.save_svg() region is empty (canvas is 100x100'),
+    `empty region: ${empty.runtimeError}`,
+  );
+});
+
 void runTests();

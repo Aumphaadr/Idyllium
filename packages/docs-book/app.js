@@ -38,8 +38,21 @@
 
   // Одна и та же оболочка обслуживает учебник (/book/) и задачник (/tasks/).
   // Отличаются они только подписями и направлением перекрёстной ссылки.
-  const MODE = document.body?.dataset.docsMode === 'tasks' ? 'tasks' : 'book';
-  const UI = MODE === 'tasks'
+  const MODE = document.body?.dataset.docsMode === 'tasks' ? 'tasks'
+    : document.body?.dataset.docsMode === 'projects' ? 'projects'
+      : 'book';
+  const UI = MODE === 'projects'
+    ? {
+      titleSuffix: 'Проекты Idyllium',
+      loading: 'Загружаем проект...',
+      fatal: 'Раздел проектов не загрузился',
+      kicker: 'Проект',
+      crossLabel: '',
+      crossBase: '',
+      prevLabel: 'Предыдущий проект',
+      nextLabel: 'Следующий проект',
+    }
+    : MODE === 'tasks'
     ? {
       titleSuffix: 'Задачник Idyllium',
       loading: 'Загружаем задачи...',
@@ -437,6 +450,8 @@
   // Учебник ведёт на задачи по этой же теме, задачник — обратно на урок.
   // Пока практикум не написан, кнопка честно говорит об этом и никуда не ведёт.
   function renderCrossLink(lesson) {
+    // У проектов нет парной страницы — перекрёстная кнопка не рисуется.
+    if (UI.crossBase === '') return '';
     const target = `${UI.crossBase}${lesson.sectionId}/${lesson.id}`;
     if (MODE === 'book' && lesson.hasTasks !== true) {
       return '<span class="lesson-cross-link is-pending">Задачи готовятся</span>';

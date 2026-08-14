@@ -357,7 +357,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       documentation: 'Где выполняется программа: "cli", "web" или "vscode".',
     }),
     functionSpec('version', [], STRING, {
-      documentation: 'Версия Idyllium, например "1.3.5".',
+      documentation: 'Версия Idyllium, например "1.3.6".',
     }),
   ]));
 
@@ -1052,6 +1052,35 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
         acceptedTypes: [drawableDrawable],
         acceptedDescription: 'drawable object',
       }], VOID),
+      functionSpec('to_static', [
+        { name: 'x', type: INT, defaultValue: '0' },
+        { name: 'y', type: INT, defaultValue: '0' },
+        { name: 'width', type: INT, defaultValue: '0' },
+        { name: 'height', type: INT, defaultValue: '0' },
+      ], imageStatic, {
+        minArguments: 0,
+        documentation: 'Снимок текущей картинки холста как image.Static. Без аргументов — весь холст; иначе прямоугольная область (нули ширины/высоты — «до края»). Дальше вся растровая семья: export_to_file, спрайты, ImageBox. Требует растеризатора хоста (Web IDE); в консольном запуске используйте save_svg().',
+      }),
+      functionSpec('export_to_file', [
+        { name: 'path', type: STRING },
+        { name: 'x', type: INT, defaultValue: '0' },
+        { name: 'y', type: INT, defaultValue: '0' },
+        { name: 'width', type: INT, defaultValue: '0' },
+        { name: 'height', type: INT, defaultValue: '0' },
+      ], VOID, {
+        minArguments: 1,
+        documentation: 'Снимок холста сразу в файл; формат по расширению (png/jpeg/webp/gif). Сахар над to_static() + Static.export_to_file(). Область — как у to_static().',
+      }),
+      functionSpec('save_svg', [
+        { name: 'path', type: STRING },
+        { name: 'x', type: INT, defaultValue: '0' },
+        { name: 'y', type: INT, defaultValue: '0' },
+        { name: 'width', type: INT, defaultValue: '0' },
+        { name: 'height', type: INT, defaultValue: '0' },
+      ], VOID, {
+        minArguments: 1,
+        documentation: 'Сохраняет текущую картинку холста в SVG-файл. Работает на всех платформах, включая консольный запуск (жанр turtle.save_svg) — путь для длинных симуляций с автосейвом кадров. Область — как у to_static(). Ограничение: кастомные шрифты в SVG-снимке заменяются на sans-serif.',
+      }),
     ], guiWidget),
     typeSpec('Label', [
       ...positioned,

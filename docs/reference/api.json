@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "languageVersion": "1.3.5",
-  "generatedAt": "2026-08-14T16:34:45.331Z",
+  "languageVersion": "1.3.6",
+  "generatedAt": "2026-08-14T20:11:04.715Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "general": [
     {
@@ -5199,6 +5199,55 @@
               "documentation": ""
             },
             {
+              "name": "export_to_file",
+              "signature": "export_to_file(path: string, x: int = 0, y: int = 0, width: int = 0, height: int = 0): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "path",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "x",
+                  "type": "int",
+                  "optional": true,
+                  "defaultValue": "0",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "y",
+                  "type": "int",
+                  "optional": true,
+                  "defaultValue": "0",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "width",
+                  "type": "int",
+                  "optional": true,
+                  "defaultValue": "0",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "height",
+                  "type": "int",
+                  "optional": true,
+                  "defaultValue": "0",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Снимок холста сразу в файл; формат по расширению (png/jpeg/webp/gif). Сахар над to_static() + Static.export_to_file(). Область — как у to_static()."
+            },
+            {
               "name": "fill",
               "signature": "fill(color: colors.Color): void",
               "returnType": "void",
@@ -5214,6 +5263,96 @@
               ],
               "variadic": false,
               "documentation": ""
+            },
+            {
+              "name": "save_svg",
+              "signature": "save_svg(path: string, x: int = 0, y: int = 0, width: int = 0, height: int = 0): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "path",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "x",
+                  "type": "int",
+                  "optional": true,
+                  "defaultValue": "0",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "y",
+                  "type": "int",
+                  "optional": true,
+                  "defaultValue": "0",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "width",
+                  "type": "int",
+                  "optional": true,
+                  "defaultValue": "0",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "height",
+                  "type": "int",
+                  "optional": true,
+                  "defaultValue": "0",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Сохраняет текущую картинку холста в SVG-файл. Работает на всех платформах, включая консольный запуск (жанр turtle.save_svg) — путь для длинных симуляций с автосейвом кадров. Область — как у to_static(). Ограничение: кастомные шрифты в SVG-снимке заменяются на sans-serif."
+            },
+            {
+              "name": "to_static",
+              "signature": "to_static(x: int = 0, y: int = 0, width: int = 0, height: int = 0): image.Static",
+              "returnType": "image.Static",
+              "parameters": [
+                {
+                  "name": "x",
+                  "type": "int",
+                  "optional": true,
+                  "defaultValue": "0",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "y",
+                  "type": "int",
+                  "optional": true,
+                  "defaultValue": "0",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "width",
+                  "type": "int",
+                  "optional": true,
+                  "defaultValue": "0",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "height",
+                  "type": "int",
+                  "optional": true,
+                  "defaultValue": "0",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Снимок текущей картинки холста как image.Static. Без аргументов — весь холст; иначе прямоугольная область (нули ширины/высоты — «до края»). Дальше вся растровая семья: export_to_file, спрайты, ImageBox. Требует растеризатора хоста (Web IDE); в консольном запуске используйте save_svg()."
             }
           ]
         },
@@ -11705,7 +11844,7 @@
           "returnType": "string",
           "parameters": [],
           "variadic": false,
-          "documentation": "Версия Idyllium, например \"1.3.5\"."
+          "documentation": "Версия Idyllium, например \"1.3.6\"."
         }
       ],
       "constants": [],

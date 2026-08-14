@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: Idyllium 1.3.5.
+Current language target: Idyllium 1.3.6.
 
 This reference describes implemented behavior. Ideas from `BACKLOG.md` and
 exploratory files under `spec/some_*` are not language features until they are
@@ -1156,7 +1156,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, never returns
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.3.5"
+system.version()                    // "1.3.6"
 ```
 
 **Recursion depth.** Idyllium counts call depth itself instead of relying on the
@@ -2791,6 +2791,25 @@ void function on_update(gui.Canvas canvas, float delta_time) {
     canvas.draw(player);
 }
 ```
+
+### Canvas Snapshots (since 1.3.6)
+
+The canvas can hand its current picture back:
+
+```idyllium
+image.Static shot = canvas.to_static();               // whole canvas
+image.Static part = canvas.to_static(140, 60, 200, 150); // region x, y, w, h
+canvas.export_to_file("frame.png");                   // shortcut, format by extension
+canvas.save_svg("frame.svg");                         // works everywhere, including console runs
+```
+
+Region rules: zeros for width/height mean "to the edge"; an empty region is a
+runtime error. The snapshot captures what has been drawn up to that line.
+`to_static()` and `export_to_file()` need the host rasterizer (Web IDE);
+in console runs they raise a readable error that suggests `save_svg()`.
+`save_svg()` serializes the display list and works on every platform — the
+right tool for long headless simulations that autosave frames. Limitation:
+custom fonts inside SVG snapshots fall back to sans-serif.
 
 ## 27. Audio
 

@@ -73,6 +73,7 @@ const MANAGED_PATHS = [
   'gui-preview.html',
   'book',
   'tasks',
+  'projects',
   'handouts',
   'reference',
   'ide',
@@ -835,6 +836,7 @@ function main(): void {
   // одинаковые перечни тем. Заодно проставляет hasTasks в манифест учебника —
   // по нему урок решает, вести ли кнопке «Открыть задачи» на живую страницу.
   buildTasksSite(path.join(siteRoot, 'tasks'), manifest);
+  buildProjectsSite(path.join(siteRoot, 'projects'));
 
   fs.writeFileSync(path.join(bookRoot, 'lessons.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
 
@@ -1329,6 +1331,103 @@ function pendingTasksFragment(sectionId: string, lessonId: string, lessonTitle: 
 `;
 }
 
+
+// ─── Проекты (решение владельца, 2026-08-15): третий режим оболочки ────────
+// Страницы-руководства проектной деятельности; источники фрагментов —
+// docs/manual-content/projects/<раздел>/<имя>.html (пекутся из методистских
+// MD по регламенту projects_md/00-page-rules.md). Пока — только «Консоль».
+const PROJECTS_SOURCE_ROOT = 'docs/manual-content/projects';
+
+const PROJECTS_SECTIONS: ReadonlyArray<{ id: string; title: string; icon: string; lessons: ReadonlyArray<{ id: string; title: string; subtitle: string }> }> = [
+  {
+    id: 'console',
+    title: 'Консоль',
+    icon: 'terminal',
+    lessons: [
+      { id: "quiz", title: "Знаток большого мира", subtitle: "Консольный проект · ★★" },
+      { id: "chatbot", title: "Робот Дуся", subtitle: "Консольный проект · ★★★" },
+      { id: "oracle", title: "Электронный оракул", subtitle: "Консольный проект · ★" },
+      { id: "bad-prophet", title: "Бюро прогнозов на вчера", subtitle: "Консольный проект · ★" },
+      { id: "dice-duel", title: "Кости против Железного Джо", subtitle: "Консольный проект · ★★" },
+      { id: "curse-shop", title: "Магазин мелких проклятий «Сглазик»", subtitle: "Консольный проект · ★" },
+      { id: "hero-generator", title: "Мастерская героев", subtitle: "Консольный проект · ★★" },
+      { id: "quest-cave", title: "Пещера трёх дорог", subtitle: "Консольный проект · ★★★" },
+      { id: "overlay", title: "Оверлей реальности 0.9 (бета)", subtitle: "Консольный проект · ★" },
+      { id: "space-scow", title: "Космический мусоровоз «Черепаха»", subtitle: "Консольный проект · ★★" },
+      { id: "tamagotchi", title: "Хомяк-программист Фёдор", subtitle: "Консольный проект · ★★" },
+      { id: "strict-fridge", title: "Холодильник строгого режима", subtitle: "Консольный проект · ★★" },
+      { id: "potion-shop", title: "Зельеварня бабки Ядвиги", subtitle: "Консольный проект · ★★★" },
+      { id: "cat-rescue", title: "Спасите кота Батона", subtitle: "Консольный проект · ★★" },
+      { id: "submarine", title: "Охота на подлодку", subtitle: "Консольный проект · ★★" },
+      { id: "fishing", title: "Рыбалка на Тихом омуте", subtitle: "Консольный проект · ★★★" },
+      { id: "vanga-lite", title: "Бюро прогнозов «Ванга-Лайт»", subtitle: "Консольный проект · ★★" },
+      { id: "dragon-shop", title: "Лавка «Всё для драконов»: инвентаризация", subtitle: "Консольный проект · ★★" },
+      { id: "dream-map", title: "Сервер снов: ночная карта района", subtitle: "Консольный проект · ★★★" },
+      { id: "mini-sapper", title: "Сапёр-разведчик", subtitle: "Консольный проект · ★★★" },
+      { id: "grimoire", title: "Гримуар v666.2", subtitle: "Консольный проект · ★★★" },
+      { id: "mini-caesar", title: "Перехват: шифр Цезаря", subtitle: "Консольный проект · ★★★" },
+      { id: "mini-tale", title: "Сказка-матрёшка", subtitle: "Консольный проект · ★★★" }
+    ],
+  },
+];
+
+function projectsShell(): string {
+  return tasksShell()
+    .replace('<title>Idyllium - Задачник</title>', '<title>Idyllium - Проекты</title>')
+    .replace('<body data-docs-mode="tasks">', '<body data-docs-mode="projects">')
+    .replace('<span class="topbar-badge">Задачник</span>', '<span class="topbar-badge">Проекты</span>')
+    .replace('<a class="topbar-link" href="../projects/">Проекты</a>', '<a class="topbar-link" href="../tasks/">Задачник</a>')
+    .replace('Загрузка задачника...', 'Загрузка проектов...')
+    .replace('placeholder="Найти тему"', 'placeholder="Найти проект"');
+}
+
+function buildProjectsSite(projectsRoot: string): void {
+  fs.mkdirSync(projectsRoot, { recursive: true });
+
+  const sections: SiteSection[] = [];
+  let ready = 0;
+
+  for (const section of PROJECTS_SECTIONS) {
+    const lessons: SiteLesson[] = [];
+    for (const project of section.lessons) {
+      const sourceFile = `${PROJECTS_SOURCE_ROOT}/${section.id}/${project.id}.html`;
+      const sourcePath = path.resolve(process.cwd(), sourceFile);
+      if (!fs.existsSync(sourcePath)) {
+        throw new Error(`project page is missing: ${sourceFile}`);
+      }
+      const outputFile = `content/${section.id}/${project.id}.html`;
+      const outputPath = path.join(projectsRoot, outputFile);
+      fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+      fs.writeFileSync(outputPath, fs.readFileSync(sourcePath, 'utf8'), 'utf8');
+      ready++;
+      lessons.push({
+        id: project.id,
+        title: project.title,
+        subtitle: project.subtitle,
+        file: outputFile,
+        sourceFile,
+        status: 'ready',
+        reviewFlags: [],
+        hasTasks: false,
+      });
+    }
+    sections.push({ id: section.id, title: section.title, icon: section.icon, status: 'ready', lessons });
+  }
+
+  const projectsManifest: SiteManifest = {
+    version: 1,
+    generatedAt: new Date().toISOString(),
+    sourceRoot: PROJECTS_SOURCE_ROOT,
+    sections,
+  };
+
+  fs.writeFileSync(path.join(projectsRoot, 'lessons.json'), `${JSON.stringify(projectsManifest, null, 2)}
+`, 'utf8');
+  fs.writeFileSync(path.join(projectsRoot, 'index.html'), projectsShell(), 'utf8');
+  const pages = bakeCleanUrlPages(projectsShell(), projectsRoot, projectsManifest, 'Проекты Idyllium');
+  console.log(`projects generated: ${ready} pages (+${pages} clean URLs)`);
+}
+
 function tasksShell(): string {
   return `<!DOCTYPE html>
 <html lang="ru">
@@ -1361,6 +1460,7 @@ function tasksShell(): string {
     <nav class="topbar-actions" aria-label="Основные действия">
       <a class="topbar-link" href="../">Открыть IDE</a>
       <a class="topbar-link" href="../book/">Учебник</a>
+      <a class="topbar-link" href="../projects/">Проекты</a>
       <a class="topbar-link" href="../reference/">Документация</a>
       <a class="topbar-link" href="../handouts/">Файлы для заданий</a>
       <button class="topbar-link" id="theme-toggle" type="button">Светлая тема</button>
