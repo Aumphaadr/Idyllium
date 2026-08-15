@@ -179,7 +179,11 @@
   function applyTheme(theme) {
     const light = theme === 'light';
     document.body.classList.toggle('light-theme', light);
-    els.themeToggle.textContent = light ? 'Тёмная тема' : 'Светлая тема';
+    // Кнопка-иконка: солнце в тёмной теме, луна в светлой (иконки в разметке,
+    // видимостью правит CSS по body.light-theme); текст живёт в хинте.
+    const hint = light ? 'Тёмная тема' : 'Светлая тема';
+    els.themeToggle.title = hint;
+    els.themeToggle.setAttribute('aria-label', hint);
   }
 
   function renderNavigation() {
