@@ -226,6 +226,27 @@ body.light-theme .reference-topbar {
   white-space: nowrap;
 }
 
+/* Кнопка темы — иконка вместо текста: солнце в тёмной, луна в светлой. */
+#theme-toggle {
+  padding: 0 9px;
+}
+
+#theme-toggle svg {
+  display: block;
+}
+
+#theme-toggle .icon-moon {
+  display: none;
+}
+
+body.light-theme #theme-toggle .icon-sun {
+  display: none;
+}
+
+body.light-theme #theme-toggle .icon-moon {
+  display: block;
+}
+
 .topbar-actions a:hover,
 .topbar-actions button:hover {
   border-color: var(--accent);

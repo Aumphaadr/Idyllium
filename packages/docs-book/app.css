@@ -206,6 +206,28 @@ body.light-theme .docs-topbar {
   font-weight: 700;
 }
 
+/* Кнопка темы — иконка вместо текста (решение владельца, 2026-08-15):
+   в тёмной теме предлагается солнце, в светлой — луна; подпись — в title. */
+#theme-toggle {
+  padding: 0 9px;
+}
+
+#theme-toggle svg {
+  display: block;
+}
+
+#theme-toggle .icon-moon {
+  display: none;
+}
+
+body.light-theme #theme-toggle .icon-sun {
+  display: none;
+}
+
+body.light-theme #theme-toggle .icon-moon {
+  display: block;
+}
+
 .topbar-link:hover,
 .icon-button:hover {
   background: var(--bg-panel-3);
