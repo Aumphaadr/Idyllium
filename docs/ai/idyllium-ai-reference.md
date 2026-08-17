@@ -2598,7 +2598,7 @@ the source.
 `image.Vector` (SVG, Idyllium 1.3.3+):
 
 ```idyllium
-load_from_file(path)                    // SVG only; evt.g. files from turtle.save_svg()
+load_from_file(path)                    // SVG only; e.g. files from turtle.save_svg()
 to_static(width, height = 0) -> image.Static
 src: string        // read-only
 width: int         // read-only: native size from viewBox / width+height attrs
