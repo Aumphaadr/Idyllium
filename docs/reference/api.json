@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "languageVersion": "1.3.6",
-  "generatedAt": "2026-08-15T22:24:13.216Z",
+  "languageVersion": "1.4.0",
+  "generatedAt": "2026-08-17T19:00:40.868Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "general": [
     {
@@ -11135,6 +11135,128 @@
       "types": []
     },
     {
+      "name": "http",
+      "title": "http",
+      "description": "Стандартная библиотека http.",
+      "notes": [],
+      "example": "",
+      "fullExamples": [],
+      "functions": [
+        {
+          "name": "get",
+          "signature": "get(address: string): http.Response",
+          "returnType": "http.Response",
+          "parameters": [
+            {
+              "name": "address",
+              "type": "string",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Отправляет GET-запрос и возвращает http.Response. Только http/https. Таймаут — 10 секунд (меняется http.set_timeout). В Web IDE работает для сайтов, разрешающих браузерные запросы (CORS); иначе — читаемая ошибка с подсказкой про консольный запуск."
+        },
+        {
+          "name": "post",
+          "signature": "post(address: string, body: string): http.Response",
+          "returnType": "http.Response",
+          "parameters": [
+            {
+              "name": "address",
+              "type": "string",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            },
+            {
+              "name": "body",
+              "type": "string",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Отправляет POST-запрос с текстовым телом (Content-Type: text/plain; charset=utf-8) и возвращает http.Response."
+        },
+        {
+          "name": "set_timeout",
+          "signature": "set_timeout(seconds: int): void",
+          "returnType": "void",
+          "parameters": [
+            {
+              "name": "seconds",
+              "type": "int",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Таймаут сетевых запросов в секундах (1–300, по умолчанию 10). Действует на все последующие get/post."
+        }
+      ],
+      "constants": [],
+      "types": [
+        {
+          "name": "Response",
+          "qualifiedName": "http.Response",
+          "baseType": "",
+          "description": "",
+          "notes": [],
+          "example": "",
+          "properties": [
+            {
+              "name": "ok",
+              "type": "bool",
+              "readonly": true,
+              "documentation": "true, если статус в диапазоне 200–299.",
+              "callbacks": []
+            },
+            {
+              "name": "status",
+              "type": "int",
+              "readonly": true,
+              "documentation": "HTTP-статус ответа: 200, 404, 500…",
+              "callbacks": []
+            },
+            {
+              "name": "text",
+              "type": "string",
+              "readonly": true,
+              "documentation": "Тело ответа как текст. Для JSON — дальше json.parse(r.text).",
+              "callbacks": []
+            }
+          ],
+          "methods": [
+            {
+              "name": "header",
+              "signature": "header(name: string): string",
+              "returnType": "string",
+              "parameters": [
+                {
+                  "name": "name",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Значение заголовка ответа по имени (регистр не важен); пустая строка, если заголовка нет."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "sqlite",
       "title": "sqlite",
       "description": "Стандартная библиотека sqlite.",
@@ -11844,7 +11966,7 @@
           "returnType": "string",
           "parameters": [],
           "variadic": false,
-          "documentation": "Версия Idyllium, например \"1.3.6\"."
+          "documentation": "Версия Idyllium, например \"1.4.0\"."
         }
       ],
       "constants": [],

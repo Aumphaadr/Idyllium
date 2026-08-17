@@ -10,6 +10,17 @@ export {
 export { runCli, CliIO } from './cli';
 
 export {
+  RuntimeNetworkService,
+  RuntimeNetworkRequest,
+  RuntimeNetworkResponse,
+  RuntimeNetworkError,
+  createFetchNetworkService,
+  createMemoryNetworkService,
+  MemoryNetworkService,
+  MemoryNetworkRoute,
+} from './runtime/network-service';
+
+export {
   IDYLLIUM_VERSION,
   DEFAULT_RECURSION_DEPTH,
   createRuntime,

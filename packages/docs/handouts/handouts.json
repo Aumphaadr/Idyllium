@@ -968,7 +968,7 @@
           "items": [
             {
               "file": "guild.json",
-              "note": "Гильдия: пять героев (name/class/level/coins) — главная таблица раздела"
+              "note": "Гильдия: пять героев (name/class/level/coins) — главная таблица раздела (сетевой канон 1.4.0: URL вечный, содержимое не менять — на него смотрят http-уроки)"
             },
             {
               "file": "rival_guild_full.json",

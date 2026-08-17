@@ -1,4 +1,4 @@
-import { IDYLLIUM_VERSION, compileIdyllium, runIdyllium, IdylliumLanguageService, IdylliumProject, compileProject, createRuntime, createMemoryRuntimeFileSystem, createNodeImageService, createDefaultStandardLibrary, formatIdyllium, runIdylliumInBrowser, IDYLLIUM_SEMANTIC_TOKEN_TYPES, IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS, parseIdylliumStyle } from '../src';
+import { IDYLLIUM_VERSION, compileIdyllium, runIdyllium, IdylliumLanguageService, IdylliumProject, compileProject, createRuntime, createMemoryRuntimeFileSystem, createMemoryNetworkService, createNodeImageService, createDefaultStandardLibrary, formatIdyllium, runIdylliumInBrowser, IDYLLIUM_SEMANTIC_TOKEN_TYPES, IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS, parseIdylliumStyle } from '../src';
 import { scaleRaster } from '../src/runtime/image-service';
 
 const fs: any = require('fs');
@@ -8309,6 +8309,88 @@ main() {
   assert(
     (empty.runtimeError ?? '').includes('Canvas.save_svg() region is empty (canvas is 100x100'),
     `empty region: ${empty.runtimeError}`,
+  );
+});
+
+test('http client works over the mock network service', async () => {
+  const network = createMemoryNetworkService({
+    'https://example.org/guild.json': {
+      status: 200,
+      body: '{"name":"Ночная стража","members":3}',
+      headers: { 'Content-Type': 'application/json' },
+    },
+    'https://example.org/missing': { status: 404, body: 'not here' },
+    'https://slow.example.org/': { fail: 'timeout' },
+    'https://cors.example.org/': { fail: 'blocked' },
+    'https://down.example.org/': { fail: 'unreachable' },
+  });
+
+  const ok = await runIdyllium(`
+use console;
+use http;
+use json;
+
+main() {
+    http.Response r = http.get("https://example.org/guild.json");
+    console.writeln(r.status, " ", r.ok, " ", r.header("content-type"));
+    json.Object guild = json.parse(r.text).to_object();
+    console.writeln(guild.get("name").to_string(), " ", guild.get("members").to_int());
+
+    http.Response miss = http.get("https://example.org/missing");
+    console.writeln(miss.status, " ", miss.ok, " [", miss.text, "]");
+
+    http.set_timeout(30);
+    http.Response posted = http.post("https://example.org/guild.json", "{\\"vote\\": 1}");
+    console.writeln("post: ", posted.status);
+}
+`, { platform: 'cli', networkService: network }, { file: 'main.idyl' });
+  assert(ok.success, ok.runtimeError ?? ok.compilation.diagnosticsText);
+  assert(
+    ok.output === '200 true application/json\nНочная стража 3\n404 false [not here]\npost: 200\n',
+    `http outputs: ${JSON.stringify(ok.output)}`,
+  );
+  const posted = network.requests[network.requests.length - 1];
+  assert(posted.method === 'POST' && posted.timeoutMs === 30000 && posted.body === '{"vote": 1}',
+    `recorded post: ${JSON.stringify(posted)}`);
+
+  const failing: Array<[string, string]> = [
+    ['https://slow.example.org/', "http.get() timed out after 10 seconds for 'https://slow.example.org/'"],
+    ['https://cors.example.org/', "http.get() was blocked by the browser for 'https://cors.example.org/': the site does not allow browser requests (CORS) — this address works in console runs"],
+    ['https://down.example.org/', "http.get() cannot reach 'https://down.example.org/': connection refused"],
+  ];
+  for (const [address, expected] of failing) {
+    const result = await runIdyllium(`
+use http;
+
+main() {
+    http.Response r = http.get("${address}");
+}
+`, { platform: 'cli', networkService: network }, { file: 'main.idyl' });
+    assert((result.runtimeError ?? '').includes(expected), `for ${address}: ${result.runtimeError}`);
+  }
+
+  const badScheme = await runIdyllium(`
+use http;
+
+main() {
+    http.Response r = http.get("ftp://old.example.org/");
+}
+`, { platform: 'cli', networkService: network }, { file: 'main.idyl' });
+  assert(
+    (badScheme.runtimeError ?? '').includes("http.get() supports only http and https addresses, got 'ftp'"),
+    `bad scheme: ${badScheme.runtimeError}`,
+  );
+
+  const badTimeout = await runIdyllium(`
+use http;
+
+main() {
+    http.set_timeout(500);
+}
+`, { platform: 'cli', networkService: network }, { file: 'main.idyl' });
+  assert(
+    (badTimeout.runtimeError ?? '').includes('http.set_timeout() expects seconds from 1 to 300, got 500'),
+    `bad timeout: ${badTimeout.runtimeError}`,
   );
 });
 

@@ -22,6 +22,12 @@ import {
   tintRaster,
 } from './image-service';
 import {
+  RuntimeNetworkError,
+  RuntimeNetworkRequest,
+  RuntimeNetworkService,
+  createFetchNetworkService,
+} from './network-service';
+import {
   RuntimeSqliteBindable,
   RuntimeSqliteDatabase,
   RuntimeSqliteExecution,
@@ -63,7 +69,7 @@ export class IdylliumRuntimeError extends Error {
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-export const IDYLLIUM_VERSION = '1.3.6';
+export const IDYLLIUM_VERSION = '1.4.0';
 
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform(): string {
@@ -1925,6 +1931,8 @@ export interface RuntimeOptions {
   readonly sqliteService?: RuntimeSqliteService;
   /** Открывалка ссылок: WebIDE и VS Code внедряют свою, CLI берёт системную. */
   readonly urlOpener?: RuntimeUrlOpener;
+  /** Сетевой сервис (библиотека http). Node и браузер получают fetch-реализацию по умолчанию; тесты подставляют createMemoryNetworkService. */
+  readonly networkService?: RuntimeNetworkService;
   readonly abortSignal?: RuntimeAbortSignal;
   /** Стартовый предел глубины вызовов; программа может поменять его через system. */
   readonly maxRecursionDepth?: number;
@@ -2386,6 +2394,7 @@ export interface IdylliumRuntime {
     readonly encoding: Record<string, unknown>;
     readonly hash: Record<string, unknown>;
     readonly url: Record<string, unknown>;
+  readonly http: Record<string, unknown>;
     readonly json: Record<string, unknown>;
     readonly sqlite: Record<string, unknown>;
     readonly audio: Record<string, unknown>;
@@ -2424,6 +2433,12 @@ function defaultRuntimeUrlOpener(): RuntimeUrlOpener | undefined {
   }
 }
 
+function defaultRuntimeNetworkService(): RuntimeNetworkService | undefined {
+  // Глобальный fetch есть в Node ≥18 и в любом браузере; CORS-подсказки
+  // включает только браузерная сборка (src/browser.ts).
+  return createFetchNetworkService();
+}
+
 function defaultRuntimeImageService(): RuntimeImageService | undefined {
   const nodeProcess = typeof process === 'object' ? process as any : null;
   if (!nodeProcess?.versions?.node) return undefined;
@@ -2453,6 +2468,8 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
   // По умолчанию float печатается с точностью до 8 знаков после запятой
   // (хвостовые нули отбрасываются); console.set_precision() меняет точность.
   let precision: number | null = 8;
+  // Таймаут библиотеки http; живёт до return, иначе TDZ (функции хойстятся, let — нет).
+  let httpTimeoutSeconds = 10;
   let randomSeed: number | null = null;
   // Собственное 32-битное состояние mulberry32; set_seed() сбрасывает его
   // вместе с LCG, чтобы прогоны с сидом были воспроизводимы.
@@ -3217,6 +3234,22 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
         from_bin: contextFunction((bits: string, typeName: string, file: string, line: number) => typesFromBin(bits, typeName, file, line)),
         from_hex: contextFunction((hex: string, typeName: string, file: string, line: number) => typesFromHex(hex, typeName, file, line)),
       },
+      http: {
+        get: contextFunction(async (address: unknown, file: string, line: number) => (
+          httpRequest('GET', address, undefined, 'http.get()', file, line)
+        )),
+        post: contextFunction(async (address: unknown, body: unknown, file: string, line: number) => {
+          const bodyText = stringArgument(body, 'http.post() body', file, line);
+          return httpRequest('POST', address, bodyText, 'http.post()', file, line);
+        }),
+        set_timeout: contextFunction((seconds: unknown, file: string, line: number) => {
+          const value = integerNumber(seconds, 'http.set_timeout() seconds', file, line);
+          if (value < 1 || value > 300) {
+            throw new IdylliumRuntimeError(file, line, `http.set_timeout() expects seconds from 1 to 300, got ${value}`);
+          }
+          httpTimeoutSeconds = value;
+        }),
+      },
       url: {
         open: contextFunction(async (address: unknown, file: string, line: number) => {
           const target = urlAddress(address, 'url.open()', file, line);
@@ -3523,6 +3556,68 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       }
     },
   };
+
+  // ─── Библиотека http (1.4.0): клиент поверх RuntimeNetworkService ───────
+
+  async function httpRequest(
+    method: 'GET' | 'POST',
+    address: unknown,
+    body: string | undefined,
+    methodName: string,
+    file: string,
+    line: number,
+  ): Promise<Record<string, unknown>> {
+    const target = urlAddress(address, methodName, file, line);
+    const scheme = target.protocol.replace(/:$/u, '');
+    if (scheme !== 'http' && scheme !== 'https') {
+      throw new IdylliumRuntimeError(file, line, `${methodName} supports only http and https addresses, got '${scheme}'`);
+    }
+    const service = options.networkService ?? defaultRuntimeNetworkService();
+    if (!service) {
+      throw new IdylliumRuntimeError(file, line, `${methodName} is not supported by this runtime`);
+    }
+    const request: RuntimeNetworkRequest = {
+      method,
+      url: target.href,
+      headers: method === 'POST' ? { 'content-type': 'text/plain; charset=utf-8' } : undefined,
+      body,
+      timeoutMs: httpTimeoutSeconds * 1000,
+    };
+    try {
+      const response = await service.fetch(request);
+      return createHttpResponse(response.status, response.headers, response.text);
+    } catch (error) {
+      if (error instanceof RuntimeNetworkError) {
+        if (error.kind === 'timeout') {
+          throw new IdylliumRuntimeError(file, line, `${methodName} timed out after ${httpTimeoutSeconds} seconds for '${target.href}'`);
+        }
+        if (error.kind === 'blocked') {
+          throw new IdylliumRuntimeError(file, line, `${methodName} was blocked by the browser for '${target.href}': the site does not allow browser requests (CORS) — this address works in console runs`);
+        }
+        throw new IdylliumRuntimeError(file, line, `${methodName} cannot reach '${target.href}': ${error.message}`);
+      }
+      throw new IdylliumRuntimeError(file, line, `${methodName} cannot reach '${target.href}': ${String((error as Error)?.message ?? error)}`);
+    }
+  }
+
+  function createHttpResponse(
+    status: number,
+    headers: Readonly<Record<string, string>>,
+    text: string,
+  ): Record<string, unknown> {
+    const response: Record<string, unknown> = {
+      __idylliumType: 'http.Response',
+      status,
+      ok: status >= 200 && status <= 299,
+      text,
+      header: contextFunction((name: unknown, file: string, line: number) => {
+        const key = stringArgument(name, 'Response.header() name', file, line).toLowerCase();
+        return headers[key] ?? '';
+      }),
+      to_string: () => `http.Response(status: ${status})`,
+    };
+    return response;
+  }
 
   function randomUnit(): number {
     if (randomSeed === null) return Math.random();

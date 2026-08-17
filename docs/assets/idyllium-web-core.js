@@ -20,6 +20,7 @@ Object.defineProperty(exports, "IdylliumProject", { enumerable: true, get: funct
 const runtime_1 = require("./runtime/runtime");
 const browser_image_service_1 = require("./runtime/browser-image-service");
 const browser_sqlite_service_1 = require("./runtime/browser-sqlite-service");
+const network_service_1 = require("./runtime/network-service");
 const sqlite_inspector_1 = require("./runtime/sqlite-inspector");
 const browserSqliteService = (0, browser_sqlite_service_1.createBrowserSqliteService)();
 async function runIdylliumInBrowser(options) {
@@ -117,6 +118,7 @@ function createMemoryRuntime(options, fileSystem) {
         input: options.input,
         fileSystem,
         imageService: (0, browser_image_service_1.createBrowserImageService)(),
+        networkService: (0, network_service_1.createFetchNetworkService)({ corsHints: true }),
         sqliteService: browserSqliteService,
         urlOpener: {
             open(address) {
@@ -5636,7 +5638,7 @@ function createDefaultStandardLibrary() {
             documentation: 'Где выполняется программа: "cli", "web" или "vscode".',
         }),
         functionSpec('version', [], types_1.STRING, {
-            documentation: 'Версия Idyllium, например "1.3.6".',
+            documentation: 'Версия Idyllium, например "1.4.0".',
         }),
     ]));
     registry.registerModule(moduleSpec('console', [
@@ -5859,6 +5861,31 @@ function createDefaultStandardLibrary() {
         functionSpec('sha256_bytes', [hashDataParameter], (0, types_1.arrayType)(types_1.INT, null, true), {
             documentation: 'Тот же SHA-256, но в виде массива из 32 байтов.',
         }),
+    ]));
+    const httpResponse = (0, types_1.qualified)('http', 'Response');
+    registry.registerModule(moduleSpec('http', [
+        functionSpec('get', [{ name: 'address', type: types_1.STRING }], httpResponse, {
+            documentation: 'Отправляет GET-запрос и возвращает http.Response. Только http/https. Таймаут — 10 секунд (меняется http.set_timeout). В Web IDE работает для сайтов, разрешающих браузерные запросы (CORS); иначе — читаемая ошибка с подсказкой про консольный запуск.',
+        }),
+        functionSpec('post', [
+            { name: 'address', type: types_1.STRING },
+            { name: 'body', type: types_1.STRING },
+        ], httpResponse, {
+            documentation: 'Отправляет POST-запрос с текстовым телом (Content-Type: text/plain; charset=utf-8) и возвращает http.Response.',
+        }),
+        functionSpec('set_timeout', [{ name: 'seconds', type: types_1.INT }], types_1.VOID, {
+            documentation: 'Таймаут сетевых запросов в секундах (1–300, по умолчанию 10). Действует на все последующие get/post.',
+        }),
+    ], [], [
+        typeSpec('Response', [
+            propertySpec('status', types_1.INT, true, 'HTTP-статус ответа: 200, 404, 500…'),
+            propertySpec('ok', types_1.BOOL, true, 'true, если статус в диапазоне 200–299.'),
+            propertySpec('text', types_1.STRING, true, 'Тело ответа как текст. Для JSON — дальше json.parse(r.text).'),
+        ], [
+            functionSpec('header', [{ name: 'name', type: types_1.STRING }], types_1.STRING, {
+                documentation: 'Значение заголовка ответа по имени (регистр не важен); пустая строка, если заголовка нет.',
+            }),
+        ]),
     ]));
     registry.registerModule(moduleSpec('url', [
         functionSpec('open', [{ name: 'address', type: types_1.STRING }], types_1.VOID, {
@@ -10174,6 +10201,121 @@ function readUint32(bytes, offset) {
 }
 //# sourceMappingURL=image-service.js.map
 },
+"dist/src/runtime/network-service.js": function(require, module, exports) {
+"use strict";
+// ───────────────────────────────────────────────────────────────────────────
+// Сетевой сервис рантайма (фаза 0 дорожной карты, 2026-08-15).
+//
+// Один интерфейс на все хосты: node и браузер используют глобальный fetch
+// (Node ≥18, VS Code ^1.85 — есть везде), тесты — записанные ответы через
+// createMemoryNetworkService. Живая сеть в тестах не используется никогда.
+// ───────────────────────────────────────────────────────────────────────────
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RuntimeNetworkError = void 0;
+exports.createFetchNetworkService = createFetchNetworkService;
+exports.createMemoryNetworkService = createMemoryNetworkService;
+/** Типизированная сетевая беда; рантайм переводит kind в детский текст. */
+class RuntimeNetworkError extends Error {
+    kind;
+    constructor(message, kind) {
+        super(message);
+        this.kind = kind;
+        this.name = 'RuntimeNetworkError';
+    }
+}
+exports.RuntimeNetworkError = RuntimeNetworkError;
+function createFetchNetworkService(options = {}) {
+    const globalFetch = globalThis.fetch;
+    if (typeof globalFetch !== 'function')
+        return undefined;
+    return {
+        async fetch(request) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), Math.max(1, request.timeoutMs));
+            try {
+                const response = await globalFetch(request.url, {
+                    method: request.method,
+                    headers: request.headers,
+                    body: request.method === 'POST' ? request.body ?? '' : undefined,
+                    signal: controller.signal,
+                    redirect: 'follow',
+                });
+                const text = await response.text();
+                const headers = {};
+                response.headers.forEach((value, name) => {
+                    headers[name.toLowerCase()] = value;
+                });
+                return { status: response.status, headers, text };
+            }
+            catch (error) {
+                if (controller.signal.aborted) {
+                    throw new RuntimeNetworkError('request timed out', 'timeout');
+                }
+                if (options.corsHints === true) {
+                    // В браузере сетевой сбой и CORS-запрет неразличимы на уровне
+                    // fetch; для учебной среды подсказка про CORS полезнее молчания.
+                    throw new RuntimeNetworkError('blocked by the browser', 'blocked');
+                }
+                throw new RuntimeNetworkError(errorText(error), 'unreachable');
+            }
+            finally {
+                clearTimeout(timer);
+            }
+        },
+    };
+}
+function createMemoryNetworkService(routes = {}) {
+    const requests = [];
+    return {
+        requests,
+        async fetch(request) {
+            requests.push(request);
+            const route = routes[request.url];
+            if (!route) {
+                throw new RuntimeNetworkError(`no recorded response for '${request.url}'`, 'unreachable');
+            }
+            if (route.fail === 'timeout')
+                throw new RuntimeNetworkError('request timed out', 'timeout');
+            if (route.fail === 'blocked')
+                throw new RuntimeNetworkError('blocked by the browser', 'blocked');
+            if (route.fail === 'unreachable')
+                throw new RuntimeNetworkError('connection refused', 'unreachable');
+            const headers = {};
+            for (const [name, value] of Object.entries(route.headers ?? {})) {
+                headers[name.toLowerCase()] = value;
+            }
+            return {
+                status: route.status ?? 200,
+                headers,
+                text: route.body ?? '',
+            };
+        },
+    };
+}
+function errorText(error) {
+    if (error instanceof Error) {
+        // node fetch заворачивает системную причину в cause.
+        const cause = error.cause;
+        if (cause?.code)
+            return humanizeNetworkCode(cause.code);
+        if (cause?.message)
+            return cause.message;
+        return error.message;
+    }
+    return String(error);
+}
+function humanizeNetworkCode(code) {
+    switch (code) {
+        case 'ECONNREFUSED': return 'connection refused';
+        case 'ENOTFOUND': return 'host not found';
+        case 'ECONNRESET': return 'connection reset';
+        case 'ETIMEDOUT': return 'connection timed out';
+        case 'EAI_AGAIN': return 'host not found (DNS is unavailable)';
+        default: return code;
+    }
+}
+//# sourceMappingURL=network-service.js.map
+},
 "dist/src/runtime/run.js": function(require, module, exports) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -10326,6 +10468,7 @@ const nodeFs = require('fs');
 const nodePath = require('path');
 const nodeBuffer = require('buffer').Buffer;
 const image_service_1 = require("./image-service");
+const network_service_1 = require("./network-service");
 const drawable_geometry_1 = require("./drawable-geometry");
 const font_metrics_service_1 = require("./font-metrics-service");
 const style_1 = require("./style");
@@ -10350,7 +10493,7 @@ exports.IdylliumRuntimeError = IdylliumRuntimeError;
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-exports.IDYLLIUM_VERSION = '1.3.6';
+exports.IDYLLIUM_VERSION = '1.4.0';
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform() {
     const nodeProcess = typeof process === 'object' ? process : null;
@@ -12170,6 +12313,11 @@ function defaultRuntimeUrlOpener() {
         return undefined;
     }
 }
+function defaultRuntimeNetworkService() {
+    // Глобальный fetch есть в Node ≥18 и в любом браузере; CORS-подсказки
+    // включает только браузерная сборка (src/browser.ts).
+    return (0, network_service_1.createFetchNetworkService)();
+}
 function defaultRuntimeImageService() {
     const nodeProcess = typeof process === 'object' ? process : null;
     if (!nodeProcess?.versions?.node)
@@ -12201,6 +12349,8 @@ function createRuntime(options = {}) {
     // По умолчанию float печатается с точностью до 8 знаков после запятой
     // (хвостовые нули отбрасываются); console.set_precision() меняет точность.
     let precision = 8;
+    // Таймаут библиотеки http; живёт до return, иначе TDZ (функции хойстятся, let — нет).
+    let httpTimeoutSeconds = 10;
     let randomSeed = null;
     // Собственное 32-битное состояние mulberry32; set_seed() сбрасывает его
     // вместе с LCG, чтобы прогоны с сидом были воспроизводимы.
@@ -12919,6 +13069,20 @@ function createRuntime(options = {}) {
                 from_bin: contextFunction((bits, typeName, file, line) => typesFromBin(bits, typeName, file, line)),
                 from_hex: contextFunction((hex, typeName, file, line) => typesFromHex(hex, typeName, file, line)),
             },
+            http: {
+                get: contextFunction(async (address, file, line) => (httpRequest('GET', address, undefined, 'http.get()', file, line))),
+                post: contextFunction(async (address, body, file, line) => {
+                    const bodyText = stringArgument(body, 'http.post() body', file, line);
+                    return httpRequest('POST', address, bodyText, 'http.post()', file, line);
+                }),
+                set_timeout: contextFunction((seconds, file, line) => {
+                    const value = integerNumber(seconds, 'http.set_timeout() seconds', file, line);
+                    if (value < 1 || value > 300) {
+                        throw new IdylliumRuntimeError(file, line, `http.set_timeout() expects seconds from 1 to 300, got ${value}`);
+                    }
+                    httpTimeoutSeconds = value;
+                }),
+            },
             url: {
                 open: contextFunction(async (address, file, line) => {
                     const target = urlAddress(address, 'url.open()', file, line);
@@ -13204,6 +13368,55 @@ function createRuntime(options = {}) {
             }
         },
     };
+    // ─── Библиотека http (1.4.0): клиент поверх RuntimeNetworkService ───────
+    async function httpRequest(method, address, body, methodName, file, line) {
+        const target = urlAddress(address, methodName, file, line);
+        const scheme = target.protocol.replace(/:$/u, '');
+        if (scheme !== 'http' && scheme !== 'https') {
+            throw new IdylliumRuntimeError(file, line, `${methodName} supports only http and https addresses, got '${scheme}'`);
+        }
+        const service = options.networkService ?? defaultRuntimeNetworkService();
+        if (!service) {
+            throw new IdylliumRuntimeError(file, line, `${methodName} is not supported by this runtime`);
+        }
+        const request = {
+            method,
+            url: target.href,
+            headers: method === 'POST' ? { 'content-type': 'text/plain; charset=utf-8' } : undefined,
+            body,
+            timeoutMs: httpTimeoutSeconds * 1000,
+        };
+        try {
+            const response = await service.fetch(request);
+            return createHttpResponse(response.status, response.headers, response.text);
+        }
+        catch (error) {
+            if (error instanceof network_service_1.RuntimeNetworkError) {
+                if (error.kind === 'timeout') {
+                    throw new IdylliumRuntimeError(file, line, `${methodName} timed out after ${httpTimeoutSeconds} seconds for '${target.href}'`);
+                }
+                if (error.kind === 'blocked') {
+                    throw new IdylliumRuntimeError(file, line, `${methodName} was blocked by the browser for '${target.href}': the site does not allow browser requests (CORS) — this address works in console runs`);
+                }
+                throw new IdylliumRuntimeError(file, line, `${methodName} cannot reach '${target.href}': ${error.message}`);
+            }
+            throw new IdylliumRuntimeError(file, line, `${methodName} cannot reach '${target.href}': ${String(error?.message ?? error)}`);
+        }
+    }
+    function createHttpResponse(status, headers, text) {
+        const response = {
+            __idylliumType: 'http.Response',
+            status,
+            ok: status >= 200 && status <= 299,
+            text,
+            header: contextFunction((name, file, line) => {
+                const key = stringArgument(name, 'Response.header() name', file, line).toLowerCase();
+                return headers[key] ?? '';
+            }),
+            to_string: () => `http.Response(status: ${status})`,
+        };
+        return response;
+    }
     function randomUnit() {
         if (randomSeed === null)
             return Math.random();
@@ -54407,7 +54620,7 @@ UPNG.encode.alphaMul = function(img, roundA) {
   };
   var cache = {};
   var builtins = createBuiltins();
-  var resolutions = {"dist/src/browser.js\u0000./core/semantics":"dist/src/core/semantics.js","dist/src/browser.js\u0000./language/formatter":"dist/src/language/formatter.js","dist/src/browser.js\u0000./language/project":"dist/src/language/project.js","dist/src/browser.js\u0000./runtime/browser-image-service":"dist/src/runtime/browser-image-service.js","dist/src/browser.js\u0000./runtime/browser-sqlite-service":"dist/src/runtime/browser-sqlite-service.js","dist/src/browser.js\u0000./runtime/gui-interval":"dist/src/runtime/gui-interval.js","dist/src/browser.js\u0000./runtime/run":"dist/src/runtime/run.js","dist/src/browser.js\u0000./runtime/runtime":"dist/src/runtime/runtime.js","dist/src/browser.js\u0000./runtime/sqlite-inspector":"dist/src/runtime/sqlite-inspector.js","dist/src/core/codegen.js\u0000./stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/core/codegen.js\u0000./types":"dist/src/core/types.js","dist/src/core/lexer.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/lexer.js\u0000./tokens":"dist/src/core/tokens.js","dist/src/core/parser.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/parser.js\u0000./tokens":"dist/src/core/tokens.js","dist/src/core/project.js\u0000./lexer":"dist/src/core/lexer.js","dist/src/core/project.js\u0000./modules":"dist/src/core/modules.js","dist/src/core/project.js\u0000./parser":"dist/src/core/parser.js","dist/src/core/project.js\u0000./types":"dist/src/core/types.js","dist/src/core/semantics.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/semantics.js\u0000./modules":"dist/src/core/modules.js","dist/src/core/semantics.js\u0000./stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/core/semantics.js\u0000./types":"dist/src/core/types.js","dist/src/core/stdlib/registry.js\u0000../types":"dist/src/core/types.js","dist/src/language/project.js\u0000../core/diagnostics":"dist/src/core/diagnostics.js","dist/src/language/project.js\u0000../core/project":"dist/src/core/project.js","dist/src/language/project.js\u0000../core/semantics":"dist/src/core/semantics.js","dist/src/language/project.js\u0000../core/stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/language/project.js\u0000../core/types":"dist/src/core/types.js","dist/src/language/project.js\u0000../runtime/run":"dist/src/runtime/run.js","dist/src/runtime/browser-image-service.js\u0000./image-service":"dist/src/runtime/image-service.js","dist/src/runtime/browser-sqlite-service.js\u0000./sqlite-service":"dist/src/runtime/sqlite-service.js","dist/src/runtime/browser-sqlite-service.js\u0000sql.js/dist/sql-wasm-browser.js":"node_modules/sql.js/dist/sql-wasm-browser.js","dist/src/runtime/font-metrics-service.js\u0000./default-font-metrics":"dist/src/runtime/default-font-metrics.js","dist/src/runtime/font-metrics-service.js\u0000fontkit":"node_modules/fontkit/dist/browser.cjs","dist/src/runtime/font-metrics-service.js\u0000pako":"node_modules/pako/index.js","dist/src/runtime/image-service.js\u0000gifenc":"node_modules/gifenc/dist/gifenc.js","dist/src/runtime/image-service.js\u0000gifuct-js":"node_modules/gifuct-js/lib/index.js","dist/src/runtime/image-service.js\u0000upng-js":"node_modules/upng-js/UPNG.js","dist/src/runtime/run.js\u0000../core/codegen":"dist/src/core/codegen.js","dist/src/runtime/run.js\u0000../core/diagnostics":"dist/src/core/diagnostics.js","dist/src/runtime/run.js\u0000../core/project":"dist/src/core/project.js","dist/src/runtime/run.js\u0000../core/semantics":"dist/src/core/semantics.js","dist/src/runtime/run.js\u0000../core/stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/runtime/run.js\u0000./runtime":"dist/src/runtime/runtime.js","dist/src/runtime/runtime.js\u0000./drawable-geometry":"dist/src/runtime/drawable-geometry.js","dist/src/runtime/runtime.js\u0000./font-metrics-service":"dist/src/runtime/font-metrics-service.js","dist/src/runtime/runtime.js\u0000./hash":"dist/src/runtime/hash.js","dist/src/runtime/runtime.js\u0000./image-service":"dist/src/runtime/image-service.js","dist/src/runtime/runtime.js\u0000./style":"dist/src/runtime/style.js","node_modules/@swc/helpers/cjs/_ts_decorate.cjs\u0000tslib":"node_modules/tslib/tslib.js","node_modules/brotli/dec/decode.js\u0000./bit_reader":"node_modules/brotli/dec/bit_reader.js","node_modules/brotli/dec/decode.js\u0000./context":"node_modules/brotli/dec/context.js","node_modules/brotli/dec/decode.js\u0000./dictionary":"node_modules/brotli/dec/dictionary.js","node_modules/brotli/dec/decode.js\u0000./huffman":"node_modules/brotli/dec/huffman.js","node_modules/brotli/dec/decode.js\u0000./prefix":"node_modules/brotli/dec/prefix.js","node_modules/brotli/dec/decode.js\u0000./streams":"node_modules/brotli/dec/streams.js","node_modules/brotli/dec/decode.js\u0000./transform":"node_modules/brotli/dec/transform.js","node_modules/brotli/dec/dictionary.js\u0000./dictionary-data":"node_modules/brotli/dec/dictionary-data.js","node_modules/brotli/dec/transform.js\u0000./dictionary":"node_modules/brotli/dec/dictionary.js","node_modules/brotli/decompress.js\u0000./dec/decode":"node_modules/brotli/dec/decode.js","node_modules/fontkit/dist/browser.cjs\u0000@swc/helpers/cjs/_define_property.cjs":"node_modules/@swc/helpers/cjs/_define_property.cjs","node_modules/fontkit/dist/browser.cjs\u0000@swc/helpers/cjs/_ts_decorate.cjs":"node_modules/@swc/helpers/cjs/_ts_decorate.cjs","node_modules/fontkit/dist/browser.cjs\u0000brotli/decompress.js":"node_modules/brotli/decompress.js","node_modules/fontkit/dist/browser.cjs\u0000clone":"node_modules/clone/clone.js","node_modules/fontkit/dist/browser.cjs\u0000dfa":"node_modules/dfa/index.js","node_modules/fontkit/dist/browser.cjs\u0000fast-deep-equal":"node_modules/fast-deep-equal/index.js","node_modules/fontkit/dist/browser.cjs\u0000restructure":"node_modules/restructure/dist/main.cjs","node_modules/fontkit/dist/browser.cjs\u0000tiny-inflate":"node_modules/tiny-inflate/index.js","node_modules/fontkit/dist/browser.cjs\u0000unicode-properties":"node_modules/unicode-properties/dist/main.cjs","node_modules/fontkit/dist/browser.cjs\u0000unicode-trie":"node_modules/unicode-trie/index.js","node_modules/gifuct-js/lib/index.js\u0000./deinterlace":"node_modules/gifuct-js/lib/deinterlace.js","node_modules/gifuct-js/lib/index.js\u0000./lzw":"node_modules/gifuct-js/lib/lzw.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser":"node_modules/js-binary-schema-parser/lib/index.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser/lib/parsers/uint8":"node_modules/js-binary-schema-parser/lib/parsers/uint8.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser/lib/schemas/gif":"node_modules/js-binary-schema-parser/lib/schemas/gif.js","node_modules/js-binary-schema-parser/lib/schemas/gif.js\u0000../":"node_modules/js-binary-schema-parser/lib/index.js","node_modules/js-binary-schema-parser/lib/schemas/gif.js\u0000../parsers/uint8":"node_modules/js-binary-schema-parser/lib/parsers/uint8.js","node_modules/pako/index.js\u0000./lib/deflate":"node_modules/pako/lib/deflate.js","node_modules/pako/index.js\u0000./lib/inflate":"node_modules/pako/lib/inflate.js","node_modules/pako/index.js\u0000./lib/utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/index.js\u0000./lib/zlib/constants":"node_modules/pako/lib/zlib/constants.js","node_modules/pako/lib/deflate.js\u0000./utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/deflate.js\u0000./utils/strings":"node_modules/pako/lib/utils/strings.js","node_modules/pako/lib/deflate.js\u0000./zlib/deflate":"node_modules/pako/lib/zlib/deflate.js","node_modules/pako/lib/deflate.js\u0000./zlib/messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/deflate.js\u0000./zlib/zstream":"node_modules/pako/lib/zlib/zstream.js","node_modules/pako/lib/deflate.js\u0000pako":"node_modules/pako/index.js","node_modules/pako/lib/inflate.js\u0000./utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/inflate.js\u0000./utils/strings":"node_modules/pako/lib/utils/strings.js","node_modules/pako/lib/inflate.js\u0000./zlib/constants":"node_modules/pako/lib/zlib/constants.js","node_modules/pako/lib/inflate.js\u0000./zlib/gzheader":"node_modules/pako/lib/zlib/gzheader.js","node_modules/pako/lib/inflate.js\u0000./zlib/inflate":"node_modules/pako/lib/zlib/inflate.js","node_modules/pako/lib/inflate.js\u0000./zlib/messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/inflate.js\u0000./zlib/zstream":"node_modules/pako/lib/zlib/zstream.js","node_modules/pako/lib/inflate.js\u0000pako":"node_modules/pako/index.js","node_modules/pako/lib/utils/strings.js\u0000./common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/deflate.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/deflate.js\u0000./adler32":"node_modules/pako/lib/zlib/adler32.js","node_modules/pako/lib/zlib/deflate.js\u0000./crc32":"node_modules/pako/lib/zlib/crc32.js","node_modules/pako/lib/zlib/deflate.js\u0000./messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/zlib/deflate.js\u0000./trees":"node_modules/pako/lib/zlib/trees.js","node_modules/pako/lib/zlib/inflate.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/inflate.js\u0000./adler32":"node_modules/pako/lib/zlib/adler32.js","node_modules/pako/lib/zlib/inflate.js\u0000./crc32":"node_modules/pako/lib/zlib/crc32.js","node_modules/pako/lib/zlib/inflate.js\u0000./inffast":"node_modules/pako/lib/zlib/inffast.js","node_modules/pako/lib/zlib/inflate.js\u0000./inftrees":"node_modules/pako/lib/zlib/inftrees.js","node_modules/pako/lib/zlib/inftrees.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/trees.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/unicode-properties/dist/main.cjs\u0000base64-js":"node_modules/base64-js/index.js","node_modules/unicode-properties/dist/main.cjs\u0000unicode-trie":"node_modules/unicode-trie/index.js","node_modules/unicode-trie/index.js\u0000./swap":"node_modules/unicode-trie/swap.js","node_modules/unicode-trie/index.js\u0000tiny-inflate":"node_modules/tiny-inflate/index.js","node_modules/upng-js/UPNG.js\u0000pako":"node_modules/pako/index.js"};
+  var resolutions = {"dist/src/browser.js\u0000./core/semantics":"dist/src/core/semantics.js","dist/src/browser.js\u0000./language/formatter":"dist/src/language/formatter.js","dist/src/browser.js\u0000./language/project":"dist/src/language/project.js","dist/src/browser.js\u0000./runtime/browser-image-service":"dist/src/runtime/browser-image-service.js","dist/src/browser.js\u0000./runtime/browser-sqlite-service":"dist/src/runtime/browser-sqlite-service.js","dist/src/browser.js\u0000./runtime/gui-interval":"dist/src/runtime/gui-interval.js","dist/src/browser.js\u0000./runtime/network-service":"dist/src/runtime/network-service.js","dist/src/browser.js\u0000./runtime/run":"dist/src/runtime/run.js","dist/src/browser.js\u0000./runtime/runtime":"dist/src/runtime/runtime.js","dist/src/browser.js\u0000./runtime/sqlite-inspector":"dist/src/runtime/sqlite-inspector.js","dist/src/core/codegen.js\u0000./stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/core/codegen.js\u0000./types":"dist/src/core/types.js","dist/src/core/lexer.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/lexer.js\u0000./tokens":"dist/src/core/tokens.js","dist/src/core/parser.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/parser.js\u0000./tokens":"dist/src/core/tokens.js","dist/src/core/project.js\u0000./lexer":"dist/src/core/lexer.js","dist/src/core/project.js\u0000./modules":"dist/src/core/modules.js","dist/src/core/project.js\u0000./parser":"dist/src/core/parser.js","dist/src/core/project.js\u0000./types":"dist/src/core/types.js","dist/src/core/semantics.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/semantics.js\u0000./modules":"dist/src/core/modules.js","dist/src/core/semantics.js\u0000./stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/core/semantics.js\u0000./types":"dist/src/core/types.js","dist/src/core/stdlib/registry.js\u0000../types":"dist/src/core/types.js","dist/src/language/project.js\u0000../core/diagnostics":"dist/src/core/diagnostics.js","dist/src/language/project.js\u0000../core/project":"dist/src/core/project.js","dist/src/language/project.js\u0000../core/semantics":"dist/src/core/semantics.js","dist/src/language/project.js\u0000../core/stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/language/project.js\u0000../core/types":"dist/src/core/types.js","dist/src/language/project.js\u0000../runtime/run":"dist/src/runtime/run.js","dist/src/runtime/browser-image-service.js\u0000./image-service":"dist/src/runtime/image-service.js","dist/src/runtime/browser-sqlite-service.js\u0000./sqlite-service":"dist/src/runtime/sqlite-service.js","dist/src/runtime/browser-sqlite-service.js\u0000sql.js/dist/sql-wasm-browser.js":"node_modules/sql.js/dist/sql-wasm-browser.js","dist/src/runtime/font-metrics-service.js\u0000./default-font-metrics":"dist/src/runtime/default-font-metrics.js","dist/src/runtime/font-metrics-service.js\u0000fontkit":"node_modules/fontkit/dist/browser.cjs","dist/src/runtime/font-metrics-service.js\u0000pako":"node_modules/pako/index.js","dist/src/runtime/image-service.js\u0000gifenc":"node_modules/gifenc/dist/gifenc.js","dist/src/runtime/image-service.js\u0000gifuct-js":"node_modules/gifuct-js/lib/index.js","dist/src/runtime/image-service.js\u0000upng-js":"node_modules/upng-js/UPNG.js","dist/src/runtime/run.js\u0000../core/codegen":"dist/src/core/codegen.js","dist/src/runtime/run.js\u0000../core/diagnostics":"dist/src/core/diagnostics.js","dist/src/runtime/run.js\u0000../core/project":"dist/src/core/project.js","dist/src/runtime/run.js\u0000../core/semantics":"dist/src/core/semantics.js","dist/src/runtime/run.js\u0000../core/stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/runtime/run.js\u0000./runtime":"dist/src/runtime/runtime.js","dist/src/runtime/runtime.js\u0000./drawable-geometry":"dist/src/runtime/drawable-geometry.js","dist/src/runtime/runtime.js\u0000./font-metrics-service":"dist/src/runtime/font-metrics-service.js","dist/src/runtime/runtime.js\u0000./hash":"dist/src/runtime/hash.js","dist/src/runtime/runtime.js\u0000./image-service":"dist/src/runtime/image-service.js","dist/src/runtime/runtime.js\u0000./network-service":"dist/src/runtime/network-service.js","dist/src/runtime/runtime.js\u0000./style":"dist/src/runtime/style.js","node_modules/@swc/helpers/cjs/_ts_decorate.cjs\u0000tslib":"node_modules/tslib/tslib.js","node_modules/brotli/dec/decode.js\u0000./bit_reader":"node_modules/brotli/dec/bit_reader.js","node_modules/brotli/dec/decode.js\u0000./context":"node_modules/brotli/dec/context.js","node_modules/brotli/dec/decode.js\u0000./dictionary":"node_modules/brotli/dec/dictionary.js","node_modules/brotli/dec/decode.js\u0000./huffman":"node_modules/brotli/dec/huffman.js","node_modules/brotli/dec/decode.js\u0000./prefix":"node_modules/brotli/dec/prefix.js","node_modules/brotli/dec/decode.js\u0000./streams":"node_modules/brotli/dec/streams.js","node_modules/brotli/dec/decode.js\u0000./transform":"node_modules/brotli/dec/transform.js","node_modules/brotli/dec/dictionary.js\u0000./dictionary-data":"node_modules/brotli/dec/dictionary-data.js","node_modules/brotli/dec/transform.js\u0000./dictionary":"node_modules/brotli/dec/dictionary.js","node_modules/brotli/decompress.js\u0000./dec/decode":"node_modules/brotli/dec/decode.js","node_modules/fontkit/dist/browser.cjs\u0000@swc/helpers/cjs/_define_property.cjs":"node_modules/@swc/helpers/cjs/_define_property.cjs","node_modules/fontkit/dist/browser.cjs\u0000@swc/helpers/cjs/_ts_decorate.cjs":"node_modules/@swc/helpers/cjs/_ts_decorate.cjs","node_modules/fontkit/dist/browser.cjs\u0000brotli/decompress.js":"node_modules/brotli/decompress.js","node_modules/fontkit/dist/browser.cjs\u0000clone":"node_modules/clone/clone.js","node_modules/fontkit/dist/browser.cjs\u0000dfa":"node_modules/dfa/index.js","node_modules/fontkit/dist/browser.cjs\u0000fast-deep-equal":"node_modules/fast-deep-equal/index.js","node_modules/fontkit/dist/browser.cjs\u0000restructure":"node_modules/restructure/dist/main.cjs","node_modules/fontkit/dist/browser.cjs\u0000tiny-inflate":"node_modules/tiny-inflate/index.js","node_modules/fontkit/dist/browser.cjs\u0000unicode-properties":"node_modules/unicode-properties/dist/main.cjs","node_modules/fontkit/dist/browser.cjs\u0000unicode-trie":"node_modules/unicode-trie/index.js","node_modules/gifuct-js/lib/index.js\u0000./deinterlace":"node_modules/gifuct-js/lib/deinterlace.js","node_modules/gifuct-js/lib/index.js\u0000./lzw":"node_modules/gifuct-js/lib/lzw.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser":"node_modules/js-binary-schema-parser/lib/index.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser/lib/parsers/uint8":"node_modules/js-binary-schema-parser/lib/parsers/uint8.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser/lib/schemas/gif":"node_modules/js-binary-schema-parser/lib/schemas/gif.js","node_modules/js-binary-schema-parser/lib/schemas/gif.js\u0000../":"node_modules/js-binary-schema-parser/lib/index.js","node_modules/js-binary-schema-parser/lib/schemas/gif.js\u0000../parsers/uint8":"node_modules/js-binary-schema-parser/lib/parsers/uint8.js","node_modules/pako/index.js\u0000./lib/deflate":"node_modules/pako/lib/deflate.js","node_modules/pako/index.js\u0000./lib/inflate":"node_modules/pako/lib/inflate.js","node_modules/pako/index.js\u0000./lib/utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/index.js\u0000./lib/zlib/constants":"node_modules/pako/lib/zlib/constants.js","node_modules/pako/lib/deflate.js\u0000./utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/deflate.js\u0000./utils/strings":"node_modules/pako/lib/utils/strings.js","node_modules/pako/lib/deflate.js\u0000./zlib/deflate":"node_modules/pako/lib/zlib/deflate.js","node_modules/pako/lib/deflate.js\u0000./zlib/messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/deflate.js\u0000./zlib/zstream":"node_modules/pako/lib/zlib/zstream.js","node_modules/pako/lib/deflate.js\u0000pako":"node_modules/pako/index.js","node_modules/pako/lib/inflate.js\u0000./utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/inflate.js\u0000./utils/strings":"node_modules/pako/lib/utils/strings.js","node_modules/pako/lib/inflate.js\u0000./zlib/constants":"node_modules/pako/lib/zlib/constants.js","node_modules/pako/lib/inflate.js\u0000./zlib/gzheader":"node_modules/pako/lib/zlib/gzheader.js","node_modules/pako/lib/inflate.js\u0000./zlib/inflate":"node_modules/pako/lib/zlib/inflate.js","node_modules/pako/lib/inflate.js\u0000./zlib/messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/inflate.js\u0000./zlib/zstream":"node_modules/pako/lib/zlib/zstream.js","node_modules/pako/lib/inflate.js\u0000pako":"node_modules/pako/index.js","node_modules/pako/lib/utils/strings.js\u0000./common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/deflate.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/deflate.js\u0000./adler32":"node_modules/pako/lib/zlib/adler32.js","node_modules/pako/lib/zlib/deflate.js\u0000./crc32":"node_modules/pako/lib/zlib/crc32.js","node_modules/pako/lib/zlib/deflate.js\u0000./messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/zlib/deflate.js\u0000./trees":"node_modules/pako/lib/zlib/trees.js","node_modules/pako/lib/zlib/inflate.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/inflate.js\u0000./adler32":"node_modules/pako/lib/zlib/adler32.js","node_modules/pako/lib/zlib/inflate.js\u0000./crc32":"node_modules/pako/lib/zlib/crc32.js","node_modules/pako/lib/zlib/inflate.js\u0000./inffast":"node_modules/pako/lib/zlib/inffast.js","node_modules/pako/lib/zlib/inflate.js\u0000./inftrees":"node_modules/pako/lib/zlib/inftrees.js","node_modules/pako/lib/zlib/inftrees.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/trees.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/unicode-properties/dist/main.cjs\u0000base64-js":"node_modules/base64-js/index.js","node_modules/unicode-properties/dist/main.cjs\u0000unicode-trie":"node_modules/unicode-trie/index.js","node_modules/unicode-trie/index.js\u0000./swap":"node_modules/unicode-trie/swap.js","node_modules/unicode-trie/index.js\u0000tiny-inflate":"node_modules/tiny-inflate/index.js","node_modules/upng-js/UPNG.js\u0000pako":"node_modules/pako/index.js"};
 
   function load(id) {
     if (cache[id]) return cache[id].exports;
