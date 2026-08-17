@@ -45,20 +45,20 @@ void function init(gui.Canvas canvas) {
     redraw(canvas);
 }
 
-void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
-    if (e.key == "R") {
+void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent evt) {
+    if (evt.key == "R") {
         player.border_color = colors.RED;
     }
-    if (e.key == "G") {
+    if (evt.key == "G") {
         player.border_color = colors.GREEN;
     }
-    if (e.key == "B") {
+    if (evt.key == "B") {
         player.border_color = colors.BLUE;
     }
     redraw(canvas);
 }
 
-void function on_key_released(gui.Canvas canvas, gui.KeyboardEvent e) {
+void function on_key_released(gui.Canvas canvas, gui.KeyboardEvent evt) {
     player.border_color = colors.TRANSPARENT;
     redraw(canvas);
 }
@@ -88,7 +88,7 @@ main() {
   </p>
 
   <div class="tip-box">
-    <strong>💡 Важно:</strong> в <code>e.key</code> буква всегда приходит
+    <strong>💡 Важно:</strong> в <code>evt.key</code> буква всегда приходит
     ЗАГЛАВНОЙ, даже если Caps Lock выключен. Проверяйте <code>"R"</code>,
     а не <code>"r"</code>.
   </div>
@@ -101,15 +101,15 @@ main() {
   </p>
 
   <idyl-code-block><script type="text/plain">
-if (e.key == "r") {
+if (evt.key == "r") {
     player.border_color = colors.RED;
 }
 </script></idyl-code-block>
 
   <div class="warning-message">
     Ошибок нет: программа компилируется и запускается. Но рамка никогда не
-    станет красной — в <code>e.key</code> приходит <code>"R"</code>, и условие
-    <code>e.key == "r"</code> не выполнится ни разу.
+    станет красной — в <code>evt.key</code> приходит <code>"R"</code>, и условие
+    <code>evt.key == "r"</code> не выполнится ни разу.
   </div>
 
   <p>

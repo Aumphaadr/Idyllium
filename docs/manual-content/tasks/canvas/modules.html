@@ -24,9 +24,9 @@ void function init(gui.Canvas canvas) {
     redraw(canvas);
 }
 
-void function on_mouse_move(gui.Canvas canvas, gui.MouseEvent e) {
-    ball.x = e.x;
-    ball.y = e.y;
+void function on_mouse_move(gui.Canvas canvas, gui.MouseEvent evt) {
+    ball.x = evt.x;
+    ball.y = evt.y;
     redraw(canvas);
 }
 </script></idyl-code-block>
@@ -78,10 +78,10 @@ main() {
   <h2>Блок 3. Сцена и ввод</h2>
   <h3 class="task-group">Практика с преподавателем</h3>
   <h4 class="task-item">Задание 9. Три файла — три заботы</h4>
-  <p>Канон раздела — у доски. Проект из трёх файлов: <code>scene.idyl</code> — объекты, redraw и <strong>функции-ручки</strong> <code>move_ball(canvas, x, y)</code> и <code>reset_ball(canvas)</code> (двигают шар и сами перерисовывают); <code>input.idyl</code> — обработчики: пишет <code>use scene;</code> и <strong>только дёргает ручки</strong> (<code>scene.move_ball(canvas, e.x, e.y)</code> из движения мыши, <code>scene.reset_ball(canvas)</code> по клавише C); <code>main.idyl</code> — окно и подписки <code>scene.init</code> + <code>input.on_key_pressed</code> + <code>input.on_mouse_move</code>. Проговорите разделение труда: <strong>сцена умеет, ввод решает, main знакомит</strong> — и обратите внимание: модуль подключил модуль, и это нормально (стрелки: main → input → scene, дерево без колец).</p>
+  <p>Канон раздела — у доски. Проект из трёх файлов: <code>scene.idyl</code> — объекты, redraw и <strong>функции-ручки</strong> <code>move_ball(canvas, x, y)</code> и <code>reset_ball(canvas)</code> (двигают шар и сами перерисовывают); <code>input.idyl</code> — обработчики: пишет <code>use scene;</code> и <strong>только дёргает ручки</strong> (<code>scene.move_ball(canvas, evt.x, evt.y)</code> из движения мыши, <code>scene.reset_ball(canvas)</code> по клавише C); <code>main.idyl</code> — окно и подписки <code>scene.init</code> + <code>input.on_key_pressed</code> + <code>input.on_mouse_move</code>. Проговорите разделение труда: <strong>сцена умеет, ввод решает, main знакомит</strong> — и обратите внимание: модуль подключил модуль, и это нормально (стрелки: main → input → scene, дерево без колец).</p>
   <h3 class="task-group">Самостоятельная практика</h3>
   <h4 class="task-item">Задание 10. Ручка для колеса</h4>
-  <p>Расширьте канон з.9: в scene — ручка <code>grow_ball(canvas, int amount)</code>, меняющая радиус со сторожами <strong>внутри</strong> (10…90, и не забудьте обновить origin — ритуал из №7!); в input — обработчик колеса, дёргающий <code>scene.grow_ball(canvas, e.delta * 4);</code>; в main — одна подписка. Заметьте красоту: сторожа живут в ручке, и <strong>никакой ввод не сможет сломать шар</strong> — хоть колесом, хоть клавишей, все входы проходят одну дверь.</p>
+  <p>Расширьте канон з.9: в scene — ручка <code>grow_ball(canvas, int amount)</code>, меняющая радиус со сторожами <strong>внутри</strong> (10…90, и не забудьте обновить origin — ритуал из №7!); в input — обработчик колеса, дёргающий <code>scene.grow_ball(canvas, evt.delta * 4);</code>; в main — одна подписка. Заметьте красоту: сторожа живут в ручке, и <strong>никакой ввод не сможет сломать шар</strong> — хоть колесом, хоть клавишей, все входы проходят одну дверь.</p>
   <h4 class="task-item">Задание 11. Кисть в футляре</h4>
   <p>Пересадка кисти из №7 (з.12 — рисование при зажатой кнопке): всё состояние кисти — фигура, <code>bool drawing</code> — прячется в <code>brush.idyl</code>; наружу торчат ручки <code>start_drawing()</code>, <code>stop_drawing()</code>, <code>paint_at(canvas, x, y)</code> (рисует только если флаг поднят — if внутри ручки!); main подписывает три мышиных события на... стоп, обработчики тоже в brush или в main? Решите сами и обоснуйте комментарием (оба варианта законны; эталон держит обработчики в brush — файл ввода тут не нужен, кисть сама и есть ввод). Приёмка прежняя: мазок — пауза — мазок.</p>
   <h4 class="task-item">Задание 12. Первая библиотека</h4>

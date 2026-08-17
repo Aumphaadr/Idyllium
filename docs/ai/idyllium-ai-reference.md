@@ -2456,12 +2456,12 @@ Canvas callbacks:
 ```idyllium
 void function init(gui.Canvas canvas) {}
 void function update(gui.Canvas canvas, float delta_time) {}
-void function key_down(gui.Canvas canvas, gui.KeyboardEvent e) {}
-void function key_up(gui.Canvas canvas, gui.KeyboardEvent e) {}
-void function mouse_down(gui.Canvas canvas, gui.MouseEvent e) {}
-void function mouse_up(gui.Canvas canvas, gui.MouseEvent e) {}
-void function mouse_move(gui.Canvas canvas, gui.MouseEvent e) {}
-void function mouse_scroll(gui.Canvas canvas, gui.MouseScrollEvent e) {}
+void function key_down(gui.Canvas canvas, gui.KeyboardEvent evt) {}
+void function key_up(gui.Canvas canvas, gui.KeyboardEvent evt) {}
+void function mouse_down(gui.Canvas canvas, gui.MouseEvent evt) {}
+void function mouse_up(gui.Canvas canvas, gui.MouseEvent evt) {}
+void function mouse_move(gui.Canvas canvas, gui.MouseEvent evt) {}
+void function mouse_scroll(gui.Canvas canvas, gui.MouseScrollEvent evt) {}
 ```
 
 ### Drawable Types
@@ -2598,7 +2598,7 @@ the source.
 `image.Vector` (SVG, Idyllium 1.3.3+):
 
 ```idyllium
-load_from_file(path)                    // SVG only; e.g. files from turtle.save_svg()
+load_from_file(path)                    // SVG only; evt.g. files from turtle.save_svg()
 to_static(width, height = 0) -> image.Static
 src: string        // read-only
 width: int         // read-only: native size from viewBox / width+height attrs
@@ -2803,15 +2803,15 @@ void function init(gui.Canvas canvas) {
     player.fill_color = colors.GREEN;
 }
 
-void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
-    if (not(pressed_keys.contains(e.key))) {
-        pressed_keys.add(e.key);
+void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent evt) {
+    if (not(pressed_keys.contains(evt.key))) {
+        pressed_keys.add(evt.key);
     }
 }
 
-void function on_key_released(gui.Canvas canvas, gui.KeyboardEvent e) {
-    if (pressed_keys.contains(e.key)) {
-        pressed_keys.remove_at(pressed_keys.find(e.key));
+void function on_key_released(gui.Canvas canvas, gui.KeyboardEvent evt) {
+    if (pressed_keys.contains(evt.key)) {
+        pressed_keys.remove_at(pressed_keys.find(evt.key));
     }
 }
 

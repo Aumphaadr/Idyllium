@@ -5525,14 +5525,14 @@ test('gui canvas events update state and next frame snapshot', async () => {
       player.fill_color = colors.WHITE;
     }
 
-    void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
-      if (e.key == "D") {
+    void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent evt) {
+      if (evt.key == "D") {
         player.x += 5;
       }
     }
 
-    void function on_mouse_scroll(gui.Canvas canvas, gui.MouseScrollEvent e) {
-      player.y += e.delta;
+    void function on_mouse_scroll(gui.Canvas canvas, gui.MouseScrollEvent evt) {
+      player.y += evt.delta;
     }
 
     void function update(gui.Canvas canvas, float delta_time) {

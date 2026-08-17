@@ -35,8 +35,8 @@ void function init(gui.Canvas canvas) {
     redraw(canvas);
 }
 
-void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
-    if (e.key == "R") {
+void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent evt) {
+    if (evt.key == "R") {
         for (int i = 0; i < blocks.length; i = i + 1) {
             blocks[i].rotate(8);
         }

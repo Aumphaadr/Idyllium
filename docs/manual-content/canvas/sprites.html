@@ -33,17 +33,17 @@ void function init(gui.Canvas canvas) {
     redraw(canvas);
 }
 
-void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
-    if (e.key == "W") {
+void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent evt) {
+    if (evt.key == "W") {
         hero.move(0, -8);
     }
-    if (e.key == "S") {
+    if (evt.key == "S") {
         hero.move(0, 8);
     }
-    if (e.key == "A") {
+    if (evt.key == "A") {
         hero.move(-8, 0);
     }
-    if (e.key == "D") {
+    if (evt.key == "D") {
         hero.move(8, 0);
     }
     redraw(canvas);

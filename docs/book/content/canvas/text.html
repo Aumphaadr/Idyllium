@@ -72,10 +72,10 @@ void function init(gui.Canvas canvas) {
     redraw(canvas);
 }
 
-void function on_mouse_move(gui.Canvas canvas, gui.MouseEvent e) {
-    marker.x = e.x;
-    marker.y = e.y;
-    coordinates.text = "x=" + to_string(e.x) + ", y=" + to_string(e.y);
+void function on_mouse_move(gui.Canvas canvas, gui.MouseEvent evt) {
+    marker.x = evt.x;
+    marker.y = evt.y;
+    coordinates.text = "x=" + to_string(evt.x) + ", y=" + to_string(evt.y);
     redraw(canvas);
 }
 

@@ -62,9 +62,9 @@ void function init(gui.Canvas canvas) {
     redraw(canvas);
 }
 
-void function on_mouse_move(gui.Canvas canvas, gui.MouseEvent e) {
-    ball.x = e.x;
-    ball.y = e.y;
+void function on_mouse_move(gui.Canvas canvas, gui.MouseEvent evt) {
+    ball.x = evt.x;
+    ball.y = evt.y;
     redraw(canvas);
 }
 </script></idyl-code-block>

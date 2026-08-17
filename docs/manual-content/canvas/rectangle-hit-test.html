@@ -39,11 +39,11 @@ void function init(gui.Canvas canvas) {
     redraw(canvas);
 }
 
-void function on_mouse_move(gui.Canvas canvas, gui.MouseEvent e) {
-    bool inside = e.x >= rect.x
-        and e.x <= rect.x + rect.width
-        and e.y >= rect.y
-        and e.y <= rect.y + rect.height;
+void function on_mouse_move(gui.Canvas canvas, gui.MouseEvent evt) {
+    bool inside = evt.x >= rect.x
+        and evt.x <= rect.x + rect.width
+        and evt.y >= rect.y
+        and evt.y <= rect.y + rect.height;
 
     if (inside) {
         rect.fill_color = colors.RGB(255, 210, 80);

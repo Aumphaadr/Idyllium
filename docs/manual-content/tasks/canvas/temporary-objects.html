@@ -6,14 +6,14 @@
   <idyl-code-block><script type="text/plain">
 dyn_array<drawable.Circle> circles;
 
-void function on_mouse_pressed(gui.Canvas canvas, gui.MouseEvent e) {
-    if (e.mouse_button == "LEFT") {
+void function on_mouse_pressed(gui.Canvas canvas, gui.MouseEvent evt) {
+    if (evt.mouse_button == "LEFT") {
         drawable.Circle tmp;
         tmp.radius = 20;
         tmp.set_origin(20, 20);
         tmp.fill_color = colors.WHITE;
-        tmp.x = e.x;
-        tmp.y = e.y;
+        tmp.x = evt.x;
+        tmp.y = evt.y;
         circles.add(tmp);
         redraw(canvas);
     }

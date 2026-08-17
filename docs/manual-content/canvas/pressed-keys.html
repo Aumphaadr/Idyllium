@@ -42,22 +42,22 @@
   <idyl-code-block><script type="text/plain">
 dyn_array<string> pressed_keys;
 
-void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
-    if (not(pressed_keys.contains(e.key))) {
-        pressed_keys.add(e.key);
+void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent evt) {
+    if (not(pressed_keys.contains(evt.key))) {
+        pressed_keys.add(evt.key);
     }
 }
 
-void function on_key_released(gui.Canvas canvas, gui.KeyboardEvent e) {
-    if (pressed_keys.contains(e.key)) {
-        int index = pressed_keys.find(e.key);
+void function on_key_released(gui.Canvas canvas, gui.KeyboardEvent evt) {
+    if (pressed_keys.contains(evt.key)) {
+        int index = pressed_keys.find(evt.key);
         pressed_keys.remove_at(index);
     }
 }
 </script></idyl-code-block>
 
   <p>
-    Проверка <code>not(pressed_keys.contains(e.key))</code> нужна, чтобы одна и
+    Проверка <code>not(pressed_keys.contains(evt.key))</code> нужна, чтобы одна и
     та же клавиша не добавлялась в массив много раз. Нам нужно хранить факт
     «клавиша зажата», а не считать, сколько раз система прислала событие.
   </p>
@@ -146,15 +146,15 @@ void function init(gui.Canvas canvas) {
     player.fill_color = colors.RGB(140, 255, 140);
 }
 
-void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
-    if (not(pressed_keys.contains(e.key))) {
-        pressed_keys.add(e.key);
+void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent evt) {
+    if (not(pressed_keys.contains(evt.key))) {
+        pressed_keys.add(evt.key);
     }
 }
 
-void function on_key_released(gui.Canvas canvas, gui.KeyboardEvent e) {
-    if (pressed_keys.contains(e.key)) {
-        int index = pressed_keys.find(e.key);
+void function on_key_released(gui.Canvas canvas, gui.KeyboardEvent evt) {
+    if (pressed_keys.contains(evt.key)) {
+        int index = pressed_keys.find(evt.key);
         pressed_keys.remove_at(index);
     }
 }

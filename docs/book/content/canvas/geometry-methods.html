@@ -19,12 +19,12 @@
   </p>
   <p>
     Фрагмент ниже живёт внутри обработчика мыши: прямоугольник
-    <code>button_shape</code> объявлен заранее, а событие <code>e</code>
+    <code>button_shape</code> объявлен заранее, а событие <code>evt</code>
     приходит параметром.
   </p>
 
   <idyl-code-block><script type="text/plain">
-if (button_shape.contains(e.x, e.y)) {
+if (button_shape.contains(evt.x, evt.y)) {
     button_shape.fill_color = colors.GREEN;
 } else {
     button_shape.fill_color = colors.BLUE;
@@ -84,7 +84,7 @@ bool function objects_touch(
   </p>
   <p>
     Код ниже — снова внутри обработчика мыши: текст можно объявить прямо там,
-    а <code>e</code> приходит параметром.
+    а <code>evt</code> приходит параметром.
   </p>
 
   <idyl-code-block><script type="text/plain">
@@ -92,7 +92,7 @@ drawable.Text hint;
 hint.text = "Нажми Enter";
 hint.font_size = 28;
 
-bool mouse_over_hint = hint.contains(e.x, e.y);
+bool mouse_over_hint = hint.contains(evt.x, evt.y);
 </script></idyl-code-block>
 
   <p>
@@ -114,7 +114,7 @@ heading.font = heading_font;
 heading.text = "Новая игра";
 heading.font_size = 48;
 
-bool mouse_over_text = heading.contains(e.x, e.y);
+bool mouse_over_text = heading.contains(evt.x, evt.y);
 </script></idyl-code-block>
 
   <h3>Точка и маленький круг дают разные ответы</h3>
@@ -156,11 +156,11 @@ void function init(gui.Canvas canvas) {
     redraw(canvas);
 }
 
-void function mouse_move(gui.Canvas canvas, gui.MouseEvent e) {
-    probe.x = e.x;
-    probe.y = e.y;
+void function mouse_move(gui.Canvas canvas, gui.MouseEvent evt) {
+    probe.x = evt.x;
+    probe.y = evt.y;
 
-    if (target.contains(e.x, e.y)) {
+    if (target.contains(evt.x, evt.y)) {
         target.border_color = colors.WHITE;
     } else {
         target.border_color = colors.TRANSPARENT;
