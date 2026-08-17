@@ -357,7 +357,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       documentation: 'Где выполняется программа: "cli", "web" или "vscode".',
     }),
     functionSpec('version', [], STRING, {
-      documentation: 'Версия Idyllium, например "1.3.6".',
+      documentation: 'Версия Idyllium, например "1.4.0".',
     }),
   ]));
 
@@ -587,6 +587,32 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     functionSpec('sha256_bytes', [hashDataParameter], arrayType(INT, null, true), {
       documentation: 'Тот же SHA-256, но в виде массива из 32 байтов.',
     }),
+  ]));
+
+  const httpResponse = qualified('http', 'Response');
+  registry.registerModule(moduleSpec('http', [
+    functionSpec('get', [{ name: 'address', type: STRING }], httpResponse, {
+      documentation: 'Отправляет GET-запрос и возвращает http.Response. Только http/https. Таймаут — 10 секунд (меняется http.set_timeout). В Web IDE работает для сайтов, разрешающих браузерные запросы (CORS); иначе — читаемая ошибка с подсказкой про консольный запуск.',
+    }),
+    functionSpec('post', [
+      { name: 'address', type: STRING },
+      { name: 'body', type: STRING },
+    ], httpResponse, {
+      documentation: 'Отправляет POST-запрос с текстовым телом (Content-Type: text/plain; charset=utf-8) и возвращает http.Response.',
+    }),
+    functionSpec('set_timeout', [{ name: 'seconds', type: INT }], VOID, {
+      documentation: 'Таймаут сетевых запросов в секундах (1–300, по умолчанию 10). Действует на все последующие get/post.',
+    }),
+  ], [], [
+    typeSpec('Response', [
+      propertySpec('status', INT, true, 'HTTP-статус ответа: 200, 404, 500…'),
+      propertySpec('ok', BOOL, true, 'true, если статус в диапазоне 200–299.'),
+      propertySpec('text', STRING, true, 'Тело ответа как текст. Для JSON — дальше json.parse(r.text).'),
+    ], [
+      functionSpec('header', [{ name: 'name', type: STRING }], STRING, {
+        documentation: 'Значение заголовка ответа по имени (регистр не важен); пустая строка, если заголовка нет.',
+      }),
+    ]),
   ]));
 
   registry.registerModule(moduleSpec('url', [

@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: Idyllium 1.3.6.
+Current language target: Idyllium 1.4.0.
 
 This reference describes implemented behavior. Ideas from `BACKLOG.md` and
 exploratory files under `spec/some_*` are not language features until they are
@@ -1156,7 +1156,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, never returns
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.3.6"
+system.version()                    // "1.4.0"
 ```
 
 **Recursion depth.** Idyllium counts call depth itself instead of relying on the
@@ -1498,6 +1498,40 @@ launch a browser (for example on a headless server). `path()` and `fragment()`
 return human-readable text (percent-escapes decoded); `query()` stays raw
 because it is a compound string — use `query_value()` for a single parameter.
 There are no network requests in this library: it only parses and opens.
+
+## 21c. Library `http` (since 1.4.0)
+
+HTTP client. Works on every host; in the Web IDE requests succeed only for
+CORS-friendly sites (the Idyllium site itself serves handouts with
+`Access-Control-Allow-Origin: *`, so handout JSON files double as a teaching
+API). Only `http`/`https` addresses.
+
+```idyllium
+use http;
+use json;
+
+main() {
+    http.Response r = http.get("https://aumphaadr.github.io/Idyllium/handouts/files/guild.json");
+    console.writeln(r.status);            // 200
+    console.writeln(r.ok);                // true for 200-299
+    console.writeln(r.header("content-type"));
+    json.Array members = json.parse(r.text).to_array();
+
+    http.Response posted = http.post("https://example.org/api", "{\"vote\": 1}");
+
+    http.set_timeout(30);                 // seconds, 1-300, default 10
+}
+```
+
+`http.Response`: read-only `status` (int), `ok` (bool), `text` (string);
+method `header(name)` returns the response header (case-insensitive) or an
+empty string. A non-2xx status is NOT an error — check `ok` or `status`.
+Runtime errors are readable and typed by cause: timeout (`timed out after N
+seconds`), browser CORS block (`was blocked by the browser … works in console
+runs`), network failure (`cannot reach '…': connection refused` / `host not
+found`). `http.post` sends the body as `text/plain; charset=utf-8`. There is
+no built-in rate limiting (matching Python/C#/C++ standard clients); default
+timeouts only.
 
 ## 21b. Library `hash`
 

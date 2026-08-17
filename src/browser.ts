@@ -19,6 +19,7 @@ import {
 } from './runtime/runtime';
 import { createBrowserImageService } from './runtime/browser-image-service';
 import { createBrowserSqliteService } from './runtime/browser-sqlite-service';
+import { createFetchNetworkService } from './runtime/network-service';
 import {
   SqliteDatabaseDescription,
   SqliteObjectPreview,
@@ -174,6 +175,7 @@ function createMemoryRuntime(options: BrowserRunOptions, fileSystem: RuntimeFile
     input: options.input,
     fileSystem,
     imageService: createBrowserImageService(),
+    networkService: createFetchNetworkService({ corsHints: true }),
     sqliteService: browserSqliteService,
     urlOpener: {
       open(address: string): void {
