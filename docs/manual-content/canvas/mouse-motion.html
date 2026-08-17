@@ -37,15 +37,15 @@ void function init(gui.Canvas canvas) {
     redraw(canvas);
 }
 
-void function on_mouse_move(gui.Canvas canvas, gui.MouseEvent e) {
-    cursor_circle.x = e.x;
-    cursor_circle.y = e.y;
+void function on_mouse_move(gui.Canvas canvas, gui.MouseEvent evt) {
+    cursor_circle.x = evt.x;
+    cursor_circle.y = evt.y;
     redraw(canvas);
 }
 
-void function on_mouse_scroll(gui.Canvas canvas, gui.MouseScrollEvent e) {
-    box.width = box.width + e.delta * 10;
-    box.height = box.height + e.delta * 6;
+void function on_mouse_scroll(gui.Canvas canvas, gui.MouseScrollEvent evt) {
+    box.width = box.width + evt.delta * 10;
+    box.height = box.height + evt.delta * 6;
     redraw(canvas);
 }
 
@@ -74,7 +74,7 @@ main() {
     <code>x</code> и <code>y</code> ставит под курсор именно центр круга.
   </p>
   <p>
-    Свойство <code>e.delta</code> — целое число: его знак показывает
+    Свойство <code>evt.delta</code> — целое число: его знак показывает
     направление прокрутки, а каким будет шаг за один щелчок колеса — зависит
     от мыши. Если долго крутить колесо «на уменьшение», <code>box.width</code>
     уйдёт ниже нуля — не удивляйтесь, если бокс исчезнет.

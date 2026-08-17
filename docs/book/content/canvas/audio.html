@@ -49,10 +49,10 @@ void function init(gui.Canvas canvas) {
     redraw(canvas);
 }
 
-void function on_mouse_pressed(gui.Canvas canvas, gui.MouseEvent e) {
-    if (e.mouse_button == "LEFT") {
-        ball.x = e.x;
-        ball.y = e.y;
+void function on_mouse_pressed(gui.Canvas canvas, gui.MouseEvent evt) {
+    if (evt.mouse_button == "LEFT") {
+        ball.x = evt.x;
+        ball.y = evt.y;
         click.play();
         redraw(canvas);
     }

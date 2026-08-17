@@ -19,15 +19,15 @@ void function init(gui.Canvas canvas) {
     player.fill_color = colors.RGB(140, 255, 140);
 }
 
-void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
-    if (not(pressed_keys.contains(e.key))) {
-        pressed_keys.add(e.key);
+void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent evt) {
+    if (not(pressed_keys.contains(evt.key))) {
+        pressed_keys.add(evt.key);
     }
 }
 
-void function on_key_released(gui.Canvas canvas, gui.KeyboardEvent e) {
-    if (pressed_keys.contains(e.key)) {
-        int index = pressed_keys.find(e.key);
+void function on_key_released(gui.Canvas canvas, gui.KeyboardEvent evt) {
+    if (pressed_keys.contains(evt.key)) {
+        int index = pressed_keys.find(evt.key);
         pressed_keys.remove_at(index);
     }
 }
@@ -77,7 +77,7 @@ main() {
   <h4 class="task-item">Задание 5. Выплата долга</h4>
   <p>В книге №4 (з.7) мы зажимали клавишу и смотрели, как события идут очередью: символ — пауза — очередь. Теперь у вас есть обе программы мира. Перенесите движение из <code>on_update</code> обратно в <code>on_key_pressed</code> (по нажатию D — <code>player.x = player.x + 2;</code>) и зажмите D: рывок — замирание — дёрганая очередь. Верните движение в <code>on_update</code> — шёлк. Сформулируйте в тетради своими словами, почему так: <strong>события приходят, когда решит операционная система, а <code>on_update</code> тикает ровно, кадр за кадром.</strong> Долг книги №4 погашен.</p>
   <h4 class="task-item">Задание 6. Залипшая клавиша</h4>
-  <p>Ломаем сторож — намеренно. Уберите проверку <code>not(contains)</code> и оставьте в <code>on_key_pressed</code> голое <code>pressed_keys.add(e.key);</code>. Включите шпиона из з.2 и зажмите D на пару секунд: автоповтор из з.5 набивает список дублями — <code>[&quot;D&quot;, &quot;D&quot;, &quot;D&quot;, ...]</code>. А теперь отпустите: <code>remove_at</code> вычеркнул <strong>одну</strong> копию, остальные лежат — <code>contains</code> по-прежнему истинен, и герой <strong>едет сам, без рук</strong>! Классическая «залипшая клавиша». Верните сторож и запишите диагноз: <strong>герой движется сам → печатай список → ищи дубли.</strong></p>
+  <p>Ломаем сторож — намеренно. Уберите проверку <code>not(contains)</code> и оставьте в <code>on_key_pressed</code> голое <code>pressed_keys.add(evt.key);</code>. Включите шпиона из з.2 и зажмите D на пару секунд: автоповтор из з.5 набивает список дублями — <code>[&quot;D&quot;, &quot;D&quot;, &quot;D&quot;, ...]</code>. А теперь отпустите: <code>remove_at</code> вычеркнул <strong>одну</strong> копию, остальные лежат — <code>contains</code> по-прежнему истинен, и герой <strong>едет сам, без рук</strong>! Классическая «залипшая клавиша». Верните сторож и запишите диагноз: <strong>герой движется сам → печатай список → ищи дубли.</strong></p>
   <h4 class="task-item">Задание 7. Сухой тренажёр списка</h4>
   <p>Консольная программа без окна — препарируем <code>find</code> и <code>remove_at</code> в тишине. Заведите <code>dyn_array&lt;string&gt; keys;</code>, добавьте <code>&quot;W&quot;</code> и <code>&quot;D&quot;</code>, напечатайте массив. Напечатайте <code>keys.find(&quot;W&quot;)</code> (будет 0) и — внимание — <code>keys.find(&quot;X&quot;)</code>: клавиши нет, и find возвращает <strong>−1</strong> (урок про это молчит — запомните). Теперь удалите <code>&quot;W&quot;</code> по-урочному (find → remove_at), напечатайте остаток. Финальный эксперимент: попробуйте <code>keys.remove_at(keys.find(&quot;X&quot;))</code> — промах даёт −1, и программа падает с честной ошибкой <code>array index -1 out of bounds</code>. Вот <strong>зачем</strong> урок ставит сторож <code>contains</code> перед удалением: он прикрывает remove_at от минус первого номера.</p>
   <h4 class="task-item">Задание 8. Немой учётчик</h4>

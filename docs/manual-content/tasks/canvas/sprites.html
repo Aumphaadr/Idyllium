@@ -25,11 +25,11 @@ void function init(gui.Canvas canvas) {
     redraw(canvas);
 }
 
-void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
-    if (e.key == "W") { hero.move(0, -8); }
-    if (e.key == "S") { hero.move(0, 8); }
-    if (e.key == "A") { hero.move(-8, 0); }
-    if (e.key == "D") { hero.move(8, 0); }
+void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent evt) {
+    if (evt.key == "W") { hero.move(0, -8); }
+    if (evt.key == "S") { hero.move(0, 8); }
+    if (evt.key == "A") { hero.move(-8, 0); }
+    if (evt.key == "D") { hero.move(8, 0); }
     redraw(canvas);
 }
 
@@ -58,7 +58,7 @@ main() {
   <h4 class="task-item">Задание 2. Фотолаборатория</h4>
   <p>Консольная разведка ресурсов — без окна: загрузите <code>cat.png</code> и напечатайте <code>cat.width</code> и <code>cat.height</code> (99×100 — теперь вы знаете кота в пикселях!); затем <code>image.Static big = cat.scale(2, 2);</code> и его размеры (198×200). Добавьте в опись <code>red_stickman.png</code> и <code>travolta.jpeg</code> — и запишите размеры в тетрадь: они пригодятся для расстановки. Урок замера ресурсов: <strong>прежде чем ставить артиста на сцену, узнай его рост.</strong></p>
   <h4 class="task-item">Задание 3. Кот на поводке</h4>
-  <p>Кот телепортируется за курсором (<code>on_mouse_move</code> из №7: <code>hero.x = e.x; hero.y = e.y;</code>). Запустите — и присмотритесь: кот висит на курсоре <strong>левым верхним углом</strong>, а не серединой! У кругов нас выручал origin, у спрайта он — тема отдельного урока; сегодня живём честным подбором: вычтите из координат примерно половину видимого размера (<code>hero.x = e.x - 30;</code> — а почему 30, если кот 99 пикселей? Масштаб 0.6!). Подберите смещения, чтобы курсор оказался у кота на носу.</p>
+  <p>Кот телепортируется за курсором (<code>on_mouse_move</code> из №7: <code>hero.x = evt.x; hero.y = evt.y;</code>). Запустите — и присмотритесь: кот висит на курсоре <strong>левым верхним углом</strong>, а не серединой! У кругов нас выручал origin, у спрайта он — тема отдельного урока; сегодня живём честным подбором: вычтите из координат примерно половину видимого размера (<code>hero.x = evt.x - 30;</code> — а почему 30, если кот 99 пикселей? Масштаб 0.6!). Подберите смещения, чтобы курсор оказался у кота на носу.</p>
   <h4 class="task-item">Задание 4. Семейный портрет</h4>
   <p>Один ресурс — целая семья: три спрайта от одного <code>cat_picture</code> — папа (<code>set_scale(1.2, 1.2)</code>), мама (0.9), котёнок (0.4) — на зелёной лужайке, в ряд по росту. И вишенка из урока: в то же окно добавьте <code>gui.ImageBox</code> с тем же ресурсом — аватарка семьи над холстом (GUI и Canvas делят одну картинку — миры дружат!). Файл загружен <strong>один раз</strong> — а котов четыре: ресурс не копируется, копируются очки.</p>
 </div>

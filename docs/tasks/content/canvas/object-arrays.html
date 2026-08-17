@@ -29,8 +29,8 @@ void function init(gui.Canvas canvas) {
     redraw(canvas);
 }
 
-void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
-    if (e.key == "R") {
+void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent evt) {
+    if (evt.key == "R") {
         for (int i = 0; i < blocks.length; i = i + 1) {
             blocks[i].rotate(8);
         }
@@ -45,7 +45,7 @@ void function on_key_pressed(gui.Canvas canvas, gui.KeyboardEvent e) {
   <h4 class="task-item">Задание 3. Орган</h4>
   <p>Формула от индекса — теперь высота: десять труб (<code>array&lt;drawable.Rectangle, 10&gt;</code>) стоят в ряд, ширина одинаковая, <strong>высота растёт с номером</strong>: <code>height = 30 + i * 18</code>, а y подобран так, чтобы трубы стояли на общей «земле» (вспомните №2: y = земля − высота — формула из книги фигур наконец-то в цикле!). Получилась лесенка органных труб — или диаграмма, как посмотреть. Клавиши 1/2/3 — три цветовые схемы (цикл + if).</p>
   <h4 class="task-item">Задание 4. Адресная доставка</h4>
-  <p>Строй из пяти кругов, клавиши 1–5 красят <strong>только свой</strong> круг: секрет изящества — <code>int index = to_int(e.key) - 1;</code> (клавиша-строка превращается в число — консольный багаж <code>to_int</code> работает и тут!), затем одна проверка диапазона (0…4 — чужие клавиши игнорируем!) и адресное <code>circles[index]</code>. Пять веток if не понадобились. Приёмка обходом: клавиши 1–5 красят свои круги, буквы и прочее — молчание.</p>
+  <p>Строй из пяти кругов, клавиши 1–5 красят <strong>только свой</strong> круг: секрет изящества — <code>int index = to_int(evt.key) - 1;</code> (клавиша-строка превращается в число — консольный багаж <code>to_int</code> работает и тут!), затем одна проверка диапазона (0…4 — чужие клавиши игнорируем!) и адресное <code>circles[index]</code>. Пять веток if не понадобились. Приёмка обходом: клавиши 1–5 красят свои круги, буквы и прочее — молчание.</p>
 </div>
 
 <div class="docs-section">

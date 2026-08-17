@@ -15,13 +15,13 @@
 use console;
 use gui;
 
-void function on_mouse_pressed(gui.Canvas canvas, gui.MouseEvent e) {
-    console.writeln("Нажата кнопка: ", e.mouse_button);
-    console.writeln("Координаты: x=", e.x, ", y=", e.y);
+void function on_mouse_pressed(gui.Canvas canvas, gui.MouseEvent evt) {
+    console.writeln("Нажата кнопка: ", evt.mouse_button);
+    console.writeln("Координаты: x=", evt.x, ", y=", evt.y);
 }
 
-void function on_mouse_released(gui.Canvas canvas, gui.MouseEvent e) {
-    console.writeln("Отпущена кнопка: ", e.mouse_button);
+void function on_mouse_released(gui.Canvas canvas, gui.MouseEvent evt) {
+    console.writeln("Отпущена кнопка: ", evt.mouse_button);
 }
 
 main() {
@@ -83,17 +83,17 @@ void function init(gui.Canvas canvas) {
     marker.set_origin(16, 16);
 }
 
-void function on_mouse_pressed(gui.Canvas canvas, gui.MouseEvent e) {
-    marker.x = e.x;
-    marker.y = e.y;
+void function on_mouse_pressed(gui.Canvas canvas, gui.MouseEvent evt) {
+    marker.x = evt.x;
+    marker.y = evt.y;
 
-    if (e.mouse_button == "LEFT") {
+    if (evt.mouse_button == "LEFT") {
         marker.fill_color = colors.RGB(255, 210, 80);
     }
-    if (e.mouse_button == "RIGHT") {
+    if (evt.mouse_button == "RIGHT") {
         marker.fill_color = colors.RGB(230, 92, 110);
     }
-    if (e.mouse_button == "MIDDLE") {
+    if (evt.mouse_button == "MIDDLE") {
         marker.fill_color = colors.RGB(140, 255, 140);
     }
 

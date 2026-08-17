@@ -564,7 +564,7 @@
         {
           "title": "Canvas с событием клавиатуры",
           "description": "Нажатия R, G и B меняют цвет границы прямоугольника.",
-          "code": "use colors;\nuse drawable;\nuse gui;\n\ndrawable.Rectangle player;\n\nvoid function redraw(gui.Canvas canvas) {\n    canvas.fill(colors.RGB(20, 24, 32));\n    canvas.draw(player);\n}\n\nvoid function init(gui.Canvas canvas) {\n    player.x = 160;\n    player.y = 85;\n    player.width = 90;\n    player.height = 60;\n    player.fill_color = colors.RGB(34, 145, 188);\n    player.border_width = 5;\n    player.border_color = colors.TRANSPARENT;\n    redraw(canvas);\n}\n\nvoid function key_pressed(gui.Canvas canvas, gui.KeyboardEvent event) {\n    if (event.key == \"R\") {\n        player.border_color = colors.RED;\n    }\n    if (event.key == \"G\") {\n        player.border_color = colors.GREEN;\n    }\n    if (event.key == \"B\") {\n        player.border_color = colors.BLUE;\n    }\n    redraw(canvas);\n}\n\nmain() {\n    gui.Window win;\n    win.width = 450;\n    win.height = 290;\n    win.title = \"Клавиатура\";\n\n    gui.Canvas canvas;\n    canvas.x = 20;\n    canvas.y = 20;\n    canvas.width = 400;\n    canvas.height = 220;\n    canvas.on_init = init;\n    canvas.on_key_pressed = key_pressed;\n\n    win.add_child(canvas);\n    win.show();\n}"
+          "code": "use colors;\nuse drawable;\nuse gui;\n\ndrawable.Rectangle player;\n\nvoid function redraw(gui.Canvas canvas) {\n    canvas.fill(colors.RGB(20, 24, 32));\n    canvas.draw(player);\n}\n\nvoid function init(gui.Canvas canvas) {\n    player.x = 160;\n    player.y = 85;\n    player.width = 90;\n    player.height = 60;\n    player.fill_color = colors.RGB(34, 145, 188);\n    player.border_width = 5;\n    player.border_color = colors.TRANSPARENT;\n    redraw(canvas);\n}\n\nvoid function key_pressed(gui.Canvas canvas, gui.KeyboardEvent evt) {\n    if (evt.key == \"R\") {\n        player.border_color = colors.RED;\n    }\n    if (evt.key == \"G\") {\n        player.border_color = colors.GREEN;\n    }\n    if (evt.key == \"B\") {\n        player.border_color = colors.BLUE;\n    }\n    redraw(canvas);\n}\n\nmain() {\n    gui.Window win;\n    win.width = 450;\n    win.height = 290;\n    win.title = \"Клавиатура\";\n\n    gui.Canvas canvas;\n    canvas.x = 20;\n    canvas.y = 20;\n    canvas.width = 400;\n    canvas.height = 220;\n    canvas.on_init = init;\n    canvas.on_key_pressed = key_pressed;\n\n    win.add_child(canvas);\n    win.show();\n}"
         }
       ]
     },
@@ -760,7 +760,7 @@
     },
     "gui.KeyboardEvent": {
       "description": "Данные события клавиатуры с именем нажатой или отпущенной клавиши.",
-      "example": "canvas.on_key_pressed = void function(gui.Canvas cvs, gui.KeyboardEvent event) {\n    console.writeln(event.key);\n};"
+      "example": "canvas.on_key_pressed = void function(gui.Canvas cvs, gui.KeyboardEvent evt) {\n    console.writeln(evt.key);\n};"
     },
     "gui.Label": {
       "description": "Текстовая надпись, которая также может реагировать на клик.",
@@ -776,11 +776,11 @@
     },
     "gui.MouseEvent": {
       "description": "Координаты и кнопка мыши для событий нажатия и отпускания.",
-      "example": "canvas.on_mouse_pressed = void function(gui.Canvas cvs, gui.MouseEvent event) {\n    console.writeln(event.mouse_button, \": \", event.x, \", \", event.y);\n};"
+      "example": "canvas.on_mouse_pressed = void function(gui.Canvas cvs, gui.MouseEvent evt) {\n    console.writeln(evt.mouse_button, \": \", evt.x, \", \", evt.y);\n};"
     },
     "gui.MouseScrollEvent": {
       "description": "Координаты курсора и направление прокрутки колеса мыши.",
-      "example": "canvas.on_mouse_scroll = void function(gui.Canvas cvs, gui.MouseScrollEvent event) {\n    zoom = zoom + event.delta;\n};"
+      "example": "canvas.on_mouse_scroll = void function(gui.Canvas cvs, gui.MouseScrollEvent evt) {\n    zoom = zoom + evt.delta;\n};"
     },
     "gui.ProgressBar": {
       "description": "Полоса прогресса с диапазоном, текущим значением и настраиваемыми цветами.",
