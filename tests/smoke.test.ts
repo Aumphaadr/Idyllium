@@ -1,4 +1,4 @@
-import { IDYLLIUM_VERSION, compileIdyllium, runIdyllium, IdylliumLanguageService, IdylliumProject, compileProject, createRuntime, createMemoryRuntimeFileSystem, createMemoryNetworkService, createNodeImageService, createDefaultStandardLibrary, formatIdyllium, runIdylliumInBrowser, IDYLLIUM_SEMANTIC_TOKEN_TYPES, IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS, parseIdylliumStyle } from '../src';
+import { IDYLLIUM_VERSION, compileIdyllium, runIdyllium, IdylliumLanguageService, IdylliumProject, compileProject, createRuntime, createMemoryRuntimeFileSystem, createMemoryNetworkService, createMemoryChannelBus, createNodeImageService, createDefaultStandardLibrary, formatIdyllium, runIdylliumInBrowser, IDYLLIUM_SEMANTIC_TOKEN_TYPES, IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS, parseIdylliumStyle } from '../src';
 import { scaleRaster } from '../src/runtime/image-service';
 
 const fs: any = require('fs');
@@ -8391,6 +8391,97 @@ main() {
   assert(
     (badTimeout.runtimeError ?? '').includes('http.set_timeout() expects seconds from 1 to 300, got 500'),
     `bad timeout: ${badTimeout.runtimeError}`,
+  );
+});
+
+test('channel posts talk over one bus and self-mail never arrives', async () => {
+  const bus = createMemoryChannelBus();
+
+  async function startProgram(source: string, write: (text: string) => void) {
+    const compilation = compileIdyllium(source, { file: '/main.idyl' });
+    assert(compilation.diagnostics.length === 0, compilation.diagnosticsText);
+    const runtime = createRuntime({ channelService: bus.service(), console: { write } });
+    const AsyncFunction = Object.getPrototypeOf(async function idle() {}).constructor;
+    const program = await (new AsyncFunction(compilation.jsCode))();
+    await program(runtime);
+    return runtime;
+  }
+
+  let outListener = '';
+  const listener = await startProgram(`use channel;
+use console;
+
+void function on_letter(string text) {
+    console.writeln("Пришло: ", text);
+}
+
+main() {
+    channel.Post office;
+    office.open("комната-101");
+    office.on_message = on_letter;
+}
+`, (text) => { outListener += text; });
+
+  let outSender = '';
+  const sender = await startProgram(`use channel;
+use console;
+
+void function echo(string text) {
+    console.writeln("СЕБЕ: ", text);
+}
+
+main() {
+    channel.Post office;
+    office.open("комната-101");
+    office.on_message = echo;
+    office.send("Привет из первой вкладки!");
+    office.send("Второе письмо");
+    office.close();
+    console.writeln("готово, is_open=", office.is_open);
+}
+`, (text) => { outSender += text; });
+
+  // Открытый канал держит программу живой; закрытый — отпускает.
+  assert(listener.hasGui() === true, 'open channel must keep the listener alive');
+  assert(listener.hasOpenChannels() === true, 'listener reports open channels');
+  assert(sender.hasGui() === false, 'closed channel must release the sender');
+
+  // Почта доставляется в GUI-такте — как клики и таймеры.
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  await listener.stepGui(0);
+  await sender.stepGui(0);
+
+  assert(
+    outListener === 'Пришло: Привет из первой вкладки!\nПришло: Второе письмо\n',
+    `listener mail: ${JSON.stringify(outListener)}`,
+  );
+  assert(outSender === 'готово, is_open=false\n', `self-mail must not arrive: ${JSON.stringify(outSender)}`);
+
+  // Без сервиса (CLI) — честный отказ с подсказкой.
+  const refusal = await runIdyllium(`use channel;
+
+main() {
+    channel.Post office;
+    office.open("x");
+}
+`, {}, { file: '/main.idyl' });
+  assert(refusal.success === false, 'CLI open must refuse');
+  assert(
+    (refusal.runtimeError ?? '').includes('Post.open() is not available in the console host — run the program in the Web IDE or VS Code'),
+    `CLI refusal text: ${refusal.runtimeError}`,
+  );
+
+  // send до open — читаемая ошибка.
+  const early = await runIdyllium(`use channel;
+
+main() {
+    channel.Post office;
+    office.send("рано");
+}
+`, {}, { file: '/main.idyl' });
+  assert(
+    (early.runtimeError ?? '').includes("Post.send() the post is not open — call open(name) first"),
+    `early send text: ${early.runtimeError}`,
   );
 });
 

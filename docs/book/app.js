@@ -596,6 +596,7 @@
       canvas: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="6" cy="6" r="1.3" fill="currentColor"/><path d="M4 12l3.2-3 2 1.8L12 8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
       json: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3H5a2 2 0 0 0-2 2v1a2 2 0 0 1-1 2 2 2 0 0 1 1 2v1a2 2 0 0 0 2 2h1M10 3h1a2 2 0 0 1 2 2v1a2 2 0 0 0 1 2 2 2 0 0 0-1 2v1a2 2 0 0 1-2 2h-1" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
       turtle: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.8 12.6 12.2H3.4z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="8" cy="9.6" r="1.2" fill="currentColor"/></svg>',
+      network: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="1.4"/><ellipse cx="8" cy="8" rx="2.4" ry="5.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M2.8 8h10.4" stroke="currentColor" stroke-width="1.2"/></svg>',
       examples: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 3 2.5 8l3 5M10.5 3l3 5-3 5M7 13l2-10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     };
     return icons[icon] ?? icons.examples;

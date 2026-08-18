@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "languageVersion": "1.4.0",
-  "generatedAt": "2026-08-17T19:54:31.801Z",
+  "languageVersion": "1.4.1",
+  "generatedAt": "2026-08-18T17:47:08.924Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "general": [
     {
@@ -11023,6 +11023,89 @@
       ]
     },
     {
+      "name": "channel",
+      "title": "channel",
+      "description": "Стандартная библиотека channel.",
+      "notes": [],
+      "example": "",
+      "fullExamples": [],
+      "functions": [],
+      "constants": [],
+      "types": [
+        {
+          "name": "Post",
+          "qualifiedName": "channel.Post",
+          "baseType": "",
+          "description": "",
+          "notes": [],
+          "example": "",
+          "properties": [
+            {
+              "name": "is_open",
+              "type": "bool",
+              "readonly": true,
+              "documentation": "true, пока почтовое отделение открыто. Свойство доступно только для чтения.",
+              "callbacks": []
+            },
+            {
+              "name": "on_message",
+              "type": "any",
+              "readonly": false,
+              "documentation": "Обработчик входящего письма: вызывается с текстом письма, когда его отправила другая программа этого канала. Собственные письма не приходят.",
+              "callbacks": [
+                "function(): void",
+                "function(string): void"
+              ]
+            }
+          ],
+          "methods": [
+            {
+              "name": "close",
+              "signature": "close(): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "Закрывает почтовое отделение: письма больше не приходят, программа может завершиться. Повторный close() безвреден."
+            },
+            {
+              "name": "open",
+              "signature": "open(name: string): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "name",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Открывает канал с именем: все программы этого компьютера, открывшие канал с тем же именем, слышат друг друга. Открытое отделение держит программу живой (как окно). Работает в Web IDE (между вкладками) и VS Code (между запусками одного окна); в консольном запуске — читаемый отказ."
+            },
+            {
+              "name": "send",
+              "signature": "send(text: string): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "text",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Отправляет письмо всем остальным участникам канала. Письмо себе не приходит. Письма не хранятся: кто открыл канал позже отправки — письмо не получит."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "hash",
       "title": "hash",
       "description": "Стандартная библиотека hash.",
@@ -11966,7 +12049,7 @@
           "returnType": "string",
           "parameters": [],
           "variadic": false,
-          "documentation": "Версия Idyllium, например \"1.4.0\"."
+          "documentation": "Версия Idyllium, например \"1.4.1\"."
         }
       ],
       "constants": [],

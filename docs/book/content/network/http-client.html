@@ -1,0 +1,357 @@
+<div class="docs-section">
+  <h2>Данные не у вас</h2>
+  <p>
+    Весь третий курс данные жили рядом с программой: файлы в папке проекта,
+    база данных на том же диске. Но самые интересные данные мира лежат не у
+    вас. Прогноз погоды — на сервере метеослужбы. Курс валют — на сервере
+    банка. Страница любимого сайта — на компьютере, который может стоять на
+    другом континенте.
+  </p>
+  <p>
+    Люди ходят за такими данными через браузер. Программы ходят за ними
+    напрямую — по сети, без браузера и без человека. Сегодня ваша программа
+    впервые постучится на настоящий сервер в настоящем интернете.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Запрос и ответ</h2>
+  <p>
+    Разговор по сети устроен как разговор в справочном бюро. Программа-клиент
+    задаёт вопрос: «дайте мне вот это» — это называется <strong>запрос</strong>.
+    Сервер отвечает: «держите» или «такого нет» — это <strong>ответ</strong>.
+    Один вопрос — один ответ; сервер не звонит первым.
+  </p>
+  <p>
+    Адрес, по которому стучится программа, вам давно знаком — это тот самый
+    адрес из строки браузера. Подключаем библиотеку <code>http</code> и
+    спрашиваем:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use http;
+
+main() {
+    http.Response r = http.get("https://aumphaadr.github.io/Idyllium/handouts/files/guild.json");
+    console.writeln("Статус: ", r.status);
+    console.writeln("Получилось: ", r.ok);
+}
+</script></idyl-code-block>
+  <idyl-output-block>Статус: 200
+Получилось: true</idyl-output-block>
+
+  <p>
+    Присмотритесь к адресу: это же <code>guild.json</code> — файл гильдии из
+    раздатки, который вы читали с диска в разделе JSON! Раздатка нашего
+    учебника лежит на настоящем веб-сервере, и теперь ваша программа достаёт
+    её по сети сама. Между запуском программы и словом «Статус» на экране
+    запрос успел слетать до сервера и вернуться с ответом.
+  </p>
+  <p>
+    <code>http.get(адрес)</code> возвращает объект <code>http.Response</code> —
+    конверт с ответом сервера. Внутри конверта:
+  </p>
+  <table>
+    <thead>
+      <tr><th>Поле</th><th>Тип</th><th>Что лежит</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>status</code></td><td>int</td><td>код ответа сервера: 200 — «всё хорошо», 404 — «такого нет»</td></tr>
+      <tr><td><code>ok</code></td><td>bool</td><td><code>true</code>, если статус от 200 до 299 — короткая проверка «получилось?»</td></tr>
+      <tr><td><code>text</code></td><td>string</td><td>само содержимое ответа — текст, JSON, страница</td></tr>
+      <tr><td><code>header(имя)</code></td><td>string</td><td>служебная пометка ответа; регистр имени не важен, нет такой — пустая строка</td></tr>
+    </tbody>
+  </table>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use http;
+
+main() {
+    http.Response r = http.get("https://aumphaadr.github.io/Idyllium/handouts/files/guild.json");
+    console.writeln("Тип содержимого: ", r.header("content-type"));
+    console.writeln("Первые символы: ", r.text.substring(0, 20));
+}
+</script></idyl-code-block>
+  <idyl-output-block>Тип содержимого: application/json; charset=utf-8
+Первые символы: [
+    {
+        "name</idyl-output-block>
+
+  <p>
+    Заголовок <code>content-type</code> — сервер честно предупреждает, что
+    прислал: здесь — JSON в кодировке UTF-8. А в <code>text</code> лежит
+    знакомая гильдия, символ в символ такая же, как в файле.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>404 — это ответ, а не крах</h2>
+  <p>
+    Спросим у сервера файл, которого нет:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use http;
+
+main() {
+    http.Response r = http.get("https://aumphaadr.github.io/Idyllium/handouts/files/ghost.json");
+    console.writeln("Статус: ", r.status);
+    console.writeln("Получилось: ", r.ok);
+    console.writeln("Программа жива и работает дальше");
+}
+</script></idyl-code-block>
+  <idyl-output-block>Статус: 404
+Получилось: false
+Программа жива и работает дальше</idyl-output-block>
+
+  <p>
+    Заметьте: программа <strong>не упала</strong>. Сервер снял трубку,
+    выслушал вопрос и вежливо ответил: «такого файла нет, код 404». Это
+    полноценный ответ — просто с плохой новостью. Поэтому после каждого
+    запроса воспитанная программа смотрит на <code>ok</code> или
+    <code>status</code>, прежде чем читать <code>text</code>.
+  </p>
+  <p>
+    Кодов у серверов много: 200 «хорошо», 404 «не найдено», 403 «не пущу»,
+    500 «у меня самого всё сломалось». Запоминать таблицу не нужно — нужно
+    запомнить правило: <strong>двухсотые — успех, остальные — повод
+    разбираться</strong>. Ровно это и проверяет <code>ok</code>.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Два адреса беды: дозвонился или нет</h2>
+  <p>
+    А теперь сломаем по-настоящему — опечатаемся в имени сайта:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use http;
+
+main() {
+    http.Response r = http.get("https://takogo-sajta-net.invalid/guild.json");
+    console.writeln(r.status);
+}
+</script></idyl-code-block>
+  <idyl-error-block>main.idyl:5:23: runtime error: http.get() cannot reach 'https://takogo-sajta-net.invalid/guild.json': host not found</idyl-error-block>
+
+  <p>
+    Вот это уже <strong>ошибка времени выполнения</strong>: до сервера не
+    дозвонились вовсе. Некому было отвечать — нет ни статуса, ни текста,
+    программа падает с сообщением о причине.
+  </p>
+  <p>
+    Разница принципиальная, запишите её в тетрадь двумя строками:
+  </p>
+  <table>
+    <thead>
+      <tr><th>Что случилось</th><th>Как выглядит</th><th>Что делать</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Сервер ответил плохой новостью</td><td><code>status</code> 404, 403, 500…; <code>ok</code> = <code>false</code></td><td>читать статус и решать</td></tr>
+      <tr><td>До сервера не дозвонились</td><td>runtime error: <code>cannot reach…</code></td><td>ловить через <code>try</code>/<code>catch</code></td></tr>
+    </tbody>
+  </table>
+  <p>
+    Короче: <strong>статус — читаем, недозвон — ловим.</strong> Причину
+    недозвона сообщение называет прямо: <code>host not found</code> — имя
+    сайта не существует (чаще всего опечатка), <code>connection
+    refused</code> — компьютер есть, но на этой двери никто не слушает.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>JSON приезжает по сети</h2>
+  <p>
+    В <code>r.text</code> лежит строка, а строку с JSON вы разбираете с
+    закрытыми глазами — <code>json.parse</code> работает с текстом и ему всё
+    равно, пришёл текст из файла или из-за океана:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use http;
+use json;
+
+main() {
+    http.Response r = http.get("https://aumphaadr.github.io/Idyllium/handouts/files/guild.json");
+
+    if (not(r.ok)) {
+        console.writeln("Сервер ответил: ", r.status);
+        return;
+    }
+
+    json.Array members = json.parse(r.text).to_array();
+    console.writeln("В гильдии ", members.length, " героев:");
+
+    for (int i = 0; i < members.length; i = i + 1) {
+        json.Object member = members.at(i).to_object();
+        console.writeln("- ", member.get("name").to_string(),
+                        ", уровень ", member.get("level").to_int());
+    }
+}
+</script></idyl-code-block>
+  <idyl-output-block>В гильдии 5 героев:
+- Мира, уровень 12
+- Кай, уровень 9
+- Лея, уровень 14
+- Борис, уровень 3
+- Ника, уровень 21</idyl-output-block>
+
+  <p>
+    Сравните с программой из раздела JSON, которая читала этот же файл с
+    диска: разбор — тот же, данные — те же, поменялась только доставка.
+    Полсотни настоящих сервисов — погода, расписания, словари — отдают данные
+    ровно так: JSON по HTTP-адресу. Вы сейчас научились главному жанру
+    современного интернета.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Сеть капризна: страховка через try/catch</h2>
+  <p>
+    Файл на диске никуда не денется, а сеть — живая: вайфай отвалился, сервер
+    перегружен, кабель перекопали. Программа, которой данные нужны обязательно,
+    держит запасной план — и это знакомый <code>try</code>/<code>catch</code>:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use http;
+
+main() {
+    string data = "";
+
+    try {
+        http.Response r = http.get("https://aumphaadr.github.io/Idyllium/handouts/files/guild.json");
+        data = r.text;
+        console.writeln("Данные пришли из сети");
+    } catch {
+        console.writeln("Сеть недоступна — работаем без неё");
+    }
+}
+</script></idyl-code-block>
+
+  <p>
+    В классе без интернета такая программа не падает, а честно говорит, что
+    случилось. Запасным планом может быть и локальная копия: тот же
+    <code>guild.json</code> из раздатки лежит рядом с программой, и в
+    <code>catch</code> его можно прочитать файлом. Данные одинаковые — падать
+    незачем.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Web IDE и браузерная клетка</h2>
+  <p>
+    Запустите сегодняшние программы в Web IDE — гильдия придёт как ни в чём
+    не бывало. А вот запрос к большинству чужих сайтов оттуда закончится так:
+  </p>
+  <idyl-error-block>main.idyl:5:23: runtime error: http.get() was blocked by the browser for 'https://example.com/': the site does not allow browser requests (CORS) — this address works in console runs</idyl-error-block>
+  <p>
+    Это не поломка и не каприз Idyllium. Web IDE живёт внутри браузера, а у
+    браузеров железное правило безопасности: страница может запрашивать чужой
+    сайт, только если тот сам разрешил (правило называется CORS). Наш сайт с
+    раздаткой — разрешил, поэтому учебные адреса работают везде. Большинство
+    сайтов — не разрешают чужим страницам себя читать.
+  </p>
+  <p>
+    В консольном запуске и VS Code никакого браузера нет — там программа
+    ходит на любые адреса. Сообщение об ошибке само подсказывает выход:
+    «this address works in console runs».
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Таймаут: сколько ждать молчуна</h2>
+  <p>
+    Бывает третья беда: сервер не отвечает и не отказывает — просто молчит.
+    Без защиты программа ждала бы вечно. Поэтому у каждого запроса есть
+    <strong>таймаут</strong> — предел терпения. По умолчанию — 10 секунд:
+    не дождались — запрос падает с ошибкой
+    <code>timed out after 10 seconds</code> (и её тоже можно поймать через
+    <code>try</code>/<code>catch</code>).
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use http;
+
+main() {
+    http.set_timeout(30);   // терпения на 30 секунд — для медленных сетей
+}
+</script></idyl-code-block>
+
+  <p>
+    <code>http.set_timeout(секунды)</code> действует на все запросы после
+    вызова; разрешено от 1 до 300 секунд.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>POST: отдать, а не забрать</h2>
+  <p>
+    <code>http.get</code> — «дайте мне». Второй глагол сети —
+    <code>http.post(адрес, текст)</code>: «примите от меня». Так отправляют
+    формы, сообщения, результаты игр. Наш сайт с раздаткой — витрина: он
+    только выдаёт файлы, и на попытку что-то ему вручить честно отвечает
+    кодом 405 — «так со мной нельзя»:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use http;
+
+main() {
+    http.Response r = http.post("https://aumphaadr.github.io/Idyllium/handouts/files/guild.json", "привет");
+    console.writeln("Статус: ", r.status);
+}
+</script></idyl-code-block>
+  <idyl-output-block>Статус: 405</idyl-output-block>
+
+  <p>
+    Заметьте: это снова <em>ответ</em>, а не крах — правило «статус читаем»
+    работает и здесь. Настоящее применение <code>post</code> начнётся, когда
+    на другом конце появится сервер, готовый принимать, — в следующих
+    разделах мы построим его сами.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Сетевая вежливость</h2>
+  <p>
+    Язык не ограничивает ваши запросы — как не ограничивают их Python, C# и
+    другие взрослые языки. Значит, вежливость — на совести программиста.
+    Правила простые: не стучаться к чужому серверу в цикле без пауз (сотня
+    запросов в секунду для сервера — как сто звонков в дверь подряд), а если
+    нужен опрос по расписанию — ставить <code>time.sleep</code> между
+    запросами. К своей раздатке на уроке стучитесь сколько нужно — она для
+    этого и выложена.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Шпаргалка</h2>
+  <table>
+    <thead>
+      <tr><th>Что сделать</th><th>Как</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Забрать данные</td><td><code>http.Response r = http.get(адрес);</code></td></tr>
+      <tr><td>Отправить данные</td><td><code>http.Response r = http.post(адрес, текст);</code></td></tr>
+      <tr><td>Проверить успех</td><td><code>if (r.ok) { ... }</code> или точнее по <code>r.status</code></td></tr>
+      <tr><td>Прочитать содержимое</td><td><code>r.text</code>; JSON — дальше в <code>json.parse(r.text)</code></td></tr>
+      <tr><td>Прочитать заголовок</td><td><code>r.header("content-type")</code></td></tr>
+      <tr><td>Пережить недозвон</td><td><code>try { ... } catch { запасной план }</code></td></tr>
+      <tr><td>Настроить терпение</td><td><code>http.set_timeout(30);</code> — секунды, от 1 до 300</td></tr>
+    </tbody>
+  </table>
+  <ul>
+    <li>Сервер ответил плохой новостью (404, 403, 500) — программа жива, читайте <code>status</code>.</li>
+    <li>До сервера не дозвонились (<code>cannot reach</code>) или он молчал дольше таймаута — ошибка времени выполнения, ловите её.</li>
+    <li>В Web IDE работают адреса, разрешившие браузерные запросы (наша раздатка — разрешила); остальные — из консоли и VS Code.</li>
+  </ul>
+</div>

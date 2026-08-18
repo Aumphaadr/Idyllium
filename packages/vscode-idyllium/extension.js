@@ -13,6 +13,15 @@ const activeRunKeys = new Set();
 const activeRunSessions = new Map();
 let semanticTokenLegend = new vscode.SemanticTokensLegend([], []);
 let loadedCore = null;
+// Общая шина библиотеки channel: все запуски одного окна VS Code живут в одном
+// extension host и потому слышат друг друга — почтовый канал между запусками.
+let idylliumChannelBus = null;
+
+function channelServiceForRun(core) {
+  if (typeof core.createMemoryChannelBus !== 'function') return undefined;
+  if (!idylliumChannelBus) idylliumChannelBus = core.createMemoryChannelBus();
+  return idylliumChannelBus.service();
+}
 
 function activate(context) {
   outputChannel = vscode.window.createOutputChannel('Idyllium');
@@ -390,6 +399,26 @@ async function runCurrentFile(core, target) {
       return;
     }
 
+    // Открытый почтовый канал держит программу живой (жанр окна): консольный
+    // запуск качает письма, пока канал не закроют или запуск не остановят.
+    if (result.runtime && typeof result.runtime.hasOpenChannels === 'function' && result.runtime.hasOpenChannels()) {
+      runTerminal.write('\nКанал открыт — программа слушает письма. Кнопка Stop останавливает.\n');
+      while (!session.signal.aborted && result.runtime.hasOpenChannels()) {
+        try {
+          await result.runtime.stepGui(0.1);
+        } catch (error) {
+          if (session.signal.aborted || isProgramStoppedError(String(error?.message ?? error))) break;
+          runTerminal.write(`${String(error?.message ?? error)}\n`);
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      if (session.signal.aborted) {
+        writeStopNotice();
+        return;
+      }
+    }
+
     runTerminal.write('\nIdyllium program finished successfully.\n');
     await writeExitLine(runTerminal, result.runtime);
     scheduleDiagnosticsRefresh(core, 0);
@@ -742,6 +771,7 @@ async function executeIdylliumInExtension(core, runFile, files, document, option
     platform: 'vscode',
     projectRoot: path.dirname(runFile),
     abortSignal: options.abortSignal,
+    channelService: channelServiceForRun(core),
     urlOpener: {
       async open(address) {
         const opened = await vscode.env.openExternal(vscode.Uri.parse(address));

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-17T19:54:31.636Z",
+  "generatedAt": "2026-08-18T17:47:08.761Z",
   "sourceRoot": "docs/manual-content/tasks",
   "sections": [
     {
@@ -1283,6 +1283,34 @@
           "subtitle": "Практикум к уроку «Типичные ошибки»",
           "file": "content/sqlite/errors.html",
           "sourceFile": "docs/manual-content/tasks/sqlite/errors.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": true
+        }
+      ]
+    },
+    {
+      "id": "network",
+      "title": "Сеть",
+      "icon": "network",
+      "status": "ready",
+      "lessons": [
+        {
+          "id": "http-client",
+          "title": "Сеть: программа ходит в интернет",
+          "subtitle": "Практикум к уроку «Сеть: программа ходит в интернет»",
+          "file": "content/network/http-client.html",
+          "sourceFile": "docs/manual-content/tasks/network/http-client.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": true
+        },
+        {
+          "id": "channel",
+          "title": "Почтовый канал: две программы разговаривают",
+          "subtitle": "Практикум к уроку «Почтовый канал: две программы разговаривают»",
+          "file": "content/network/channel.html",
+          "sourceFile": "docs/manual-content/tasks/network/channel.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
