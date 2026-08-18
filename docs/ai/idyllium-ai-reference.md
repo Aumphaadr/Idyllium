@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: Idyllium 1.4.0.
+Current language target: Idyllium 1.4.1.
 
 This reference describes implemented behavior. Ideas from `BACKLOG.md` and
 exploratory files under `spec/some_*` are not language features until they are
@@ -1156,7 +1156,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, never returns
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.4.0"
+system.version()                    // "1.4.1"
 ```
 
 **Recursion depth.** Idyllium counts call depth itself instead of relying on the
@@ -1532,6 +1532,41 @@ runs`), network failure (`cannot reach '…': connection refused` / `host not
 found`). `http.post` sends the body as `text/plain; charset=utf-8`. There is
 no built-in rate limiting (matching Python/C#/C++ standard clients); default
 timeouts only.
+
+## 21d. Library `channel` (since 1.4.1)
+
+Mail channel between RUNNING programs on the same computer — not a network.
+Web IDE: browser tabs (BroadcastChannel); VS Code: runs inside one window
+(shared extension host). Console/CLI runs refuse with a readable error:
+`Post.open() is not available in the console host — run the program in the
+Web IDE or VS Code, where running programs can hear each other`.
+
+```idyllium
+use channel;
+use console;
+
+void function on_letter(string text) {
+    console.writeln("Received: ", text);
+}
+
+main() {
+    channel.Post office;
+    office.open("room-101");        // same name = same room, for every participant
+    office.on_message = on_letter;  // callback genre, like on_click
+    office.send("Hello neighbours!");
+}
+```
+
+`channel.Post`: `open(name)` (non-empty name; reopening an open post is a
+runtime error), `send(text)` (post must be open first), `close()`
+(idempotent), read-only `is_open`, callback property `on_message` taking
+either no parameters or one string. Semantics: a message is delivered to ALL
+other participants of the same channel name — the sender never receives its
+own message (BroadcastChannel semantics). Messages are not stored: whoever
+opens the channel after a send receives nothing. An open post keeps the
+program alive after main (window genre); `close()` releases it, Stop closes
+all posts. For structured messages (games, protocols) send JSON text and
+parse with `json.parse` — design the protocol before coding.
 
 ## 21b. Library `hash`
 

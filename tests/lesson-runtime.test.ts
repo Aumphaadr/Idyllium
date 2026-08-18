@@ -1,4 +1,4 @@
-import { createMemoryRuntimeFileSystem, runIdyllium } from '../src';
+import { createMemoryChannelBus, createMemoryNetworkService, createMemoryRuntimeFileSystem, runIdyllium } from '../src';
 
 const fs: any = require('fs');
 const path: any = require('path');
@@ -24,7 +24,23 @@ function assert(condition: boolean, message: string): asserts condition {
 
 // Разделы учебника, программы которых самодостаточны и должны не только
 // компилироваться (это проверяет lesson-spec), но и успешно выполняться.
-const RUNTIME_SECTIONS = ['sqlite', 'json'] as const;
+const RUNTIME_SECTIONS = ['sqlite', 'json', 'network'] as const;
+
+// Сетевые программы учебника ходят через мок с записанными ответами живой
+// раздатки — живая сеть в тестах не используется никогда (дорожная карта).
+function bookNetworkService() {
+  const guildJson = fs.readFileSync(
+    path.join(process.cwd(), 'packages/docs/handouts/guild.json'), 'utf8');
+  const handouts = 'https://aumphaadr.github.io/Idyllium/handouts/files/';
+  return createMemoryNetworkService({
+    [`${handouts}guild.json`]: {
+      status: 200,
+      body: guildJson,
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    },
+    [`${handouts}ghost.json`]: { status: 404, body: 'Not Found' },
+  });
+}
 
 // Программы, читающие файлы данных проекта, которых нет в голом рантайме.
 const SKIP: Readonly<Record<string, string>> = {
@@ -57,8 +73,20 @@ async function main(): Promise<void> {
     const codePath = path.join(specRoot, example.codeFile);
     const code = fs.readFileSync(codePath, 'utf8');
     const fileSystem = createMemoryRuntimeFileSystem({ [codePath]: code }, path.dirname(codePath));
-    // Книжная программа не должна открывать браузер на машине разработчика.
-    const result = await runIdyllium(code, { fileSystem, urlOpener: { open() {} } }, { file: codePath });
+    // Книжная программа не должна открывать браузер на машине разработчика,
+    // а сетевые примеры ходят в мок, не в живой интернет.
+    const result = await runIdyllium(
+      code,
+      {
+        fileSystem,
+        urlOpener: { open() {} },
+        networkService: bookNetworkService(),
+        // Каналу нужна хоть какая-то комната: партнёров в тесте нет,
+        // но open()/send() должны отработать как в Web IDE.
+        channelService: createMemoryChannelBus().service(),
+      },
+      { file: codePath },
+    );
     assert(
       result.success,
       `book program ${example.id} failed at runtime:\n${result.runtimeError ?? result.compilation.diagnosticsText}`,

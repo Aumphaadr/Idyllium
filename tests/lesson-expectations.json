@@ -766,6 +766,9 @@
         "'gui' is not imported (use 'use gui;')"
       ],
       "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "network.http-client.004": {
+      "kind": "runtime_error"
     }
   }
 }

@@ -27,6 +27,7 @@ import {
   RuntimeNetworkService,
   createFetchNetworkService,
 } from './network-service';
+import { RuntimeChannelConnection, RuntimeChannelService } from './channel-service';
 import {
   RuntimeSqliteBindable,
   RuntimeSqliteDatabase,
@@ -69,7 +70,7 @@ export class IdylliumRuntimeError extends Error {
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-export const IDYLLIUM_VERSION = '1.4.0';
+export const IDYLLIUM_VERSION = '1.4.1';
 
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform(): string {
@@ -1933,6 +1934,8 @@ export interface RuntimeOptions {
   readonly urlOpener?: RuntimeUrlOpener;
   /** Сетевой сервис (библиотека http). Node и браузер получают fetch-реализацию по умолчанию; тесты подставляют createMemoryNetworkService. */
   readonly networkService?: RuntimeNetworkService;
+  /** Почтовый канал (библиотека channel). Web IDE — BroadcastChannel, VS Code — шина extension host, тесты — createMemoryChannelBus. Без сервиса open() честно отказывает (CLI). */
+  readonly channelService?: RuntimeChannelService;
   readonly abortSignal?: RuntimeAbortSignal;
   /** Стартовый предел глубины вызовов; программа может поменять его через system. */
   readonly maxRecursionDepth?: number;
@@ -2394,6 +2397,7 @@ export interface IdylliumRuntime {
     readonly encoding: Record<string, unknown>;
     readonly hash: Record<string, unknown>;
     readonly url: Record<string, unknown>;
+    readonly channel: Record<string, unknown>;
   readonly http: Record<string, unknown>;
     readonly json: Record<string, unknown>;
     readonly sqlite: Record<string, unknown>;
@@ -2416,6 +2420,8 @@ export interface IdylliumRuntime {
   getWindows(): readonly IdylliumWindowSnapshot[];
   getModals(): readonly IdylliumModalSnapshot[];
   hasGui(): boolean;
+  /** Есть ли открытые почтовые отделения channel.Post. */
+  hasOpenChannels(): boolean;
   stepGui(deltaTime?: number): Promise<boolean>;
   dispatchGuiEvent(canvasId: number, eventName: string, payload: Readonly<Record<string, unknown>>): Promise<void>;
 }
@@ -2488,12 +2494,20 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     modals: [],
     timers: [],
     windows: [],
+    channelPosts: [],
+    channelService: options.channelService,
+    channelMailbox: [],
     nextAudioCommandId: 1,
     nextObjectId: 1,
     turtleField: null,
     turtlePlatform: String(options.platform ?? defaultRuntimePlatform()),
   };
   runtimeObjects.stopCheck = (file, line) => throwIfRuntimeStopped(file, line);
+  // Stop-кнопка закрывает почтовые отделения: BroadcastChannel не должен
+  // переживать остановленную программу.
+  options.abortSignal?.addEventListener?.('abort', () => {
+    for (const post of runtimeObjects.channelPosts) closeChannelPost(post);
+  }, { once: true });
 
   const io: ConsoleIO = {
     write(text: string): void {
@@ -3373,6 +3387,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       audio: {},
       image: {},
       gui: {},
+      channel: {},
       turtle: createTurtleModule(runtimeObjects),
       colors: {
         RGB: contextFunction((red: number, green: number, blue: number, file: string, line: number) => IdylliumColor.RGB(red, green, blue, file, line)),
@@ -3494,15 +3509,32 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     getModals(): readonly IdylliumModalSnapshot[] {
       return runtimeObjects.modals.map(modalSnapshot);
     },
+    /** Есть ли открытые почтовые отделения channel.Post — хостам для «программа слушает письма». */
+    hasOpenChannels(): boolean {
+      return runtimeObjects.channelPosts.some((post) => post.is_open === true);
+    },
     hasGui(): boolean {
       return runtimeObjects.windows.length > 0
         || runtimeObjects.canvases.length > 0
         || runtimeObjects.modals.length > 0
-        || runtimeObjects.audio.some((item) => item.is_playing === true);
+        || runtimeObjects.audio.some((item) => item.is_playing === true)
+        // Открытое почтовое отделение держит программу живой (жанр окна):
+        // письма могут прийти в любой момент, пока канал не закрыт.
+        || runtimeObjects.channelPosts.some((post) => post.is_open === true);
     },
     async stepGui(deltaTime = 0): Promise<boolean> {
       throwIfRuntimeStopped('', 0);
       let changed = false;
+      // Почта доставляется первой: письма ждали дольше всех.
+      while (runtimeObjects.channelMailbox.length > 0) {
+        const mail = runtimeObjects.channelMailbox.shift();
+        if (!mail) break;
+        const handler = mail.post.on_message;
+        if (mail.post.is_open === true && typeof handler === 'function') {
+          await handler(mail.text);
+          changed = true;
+        }
+      }
       for (const timer of runtimeObjects.timers) {
         if (await stepGuiTimer(timer, deltaTime)) changed = true;
       }
@@ -4988,6 +5020,11 @@ interface RuntimeObjectState {
   readonly modals: RuntimeObject[];
   readonly timers: RuntimeObject[];
   readonly windows: RuntimeObject[];
+  /** Почтовые отделения channel.Post; открытое отделение держит программу живой. */
+  readonly channelPosts: RuntimeObject[];
+  readonly channelService?: RuntimeChannelService;
+  /** Входящие письма; доставляются обработчикам в stepGui — как GUI-события. */
+  readonly channelMailbox: { readonly post: RuntimeObject; readonly text: string }[];
   nextAudioCommandId: number;
   nextObjectId: number;
   /** Черепашье поле; создаётся лениво первой черепахой или командой turtle.*. */
@@ -5156,7 +5193,63 @@ function createPlainRuntimeObject(moduleName: string, typeName: string, state: R
     initializeTurtleObject(obj, typeName, state);
   }
 
+  if (moduleName === 'channel') {
+    initializeChannelPost(obj, typeName, state);
+  }
+
   return obj;
+}
+
+// ─── channel.Post: почтовое отделение программы ────────────────────────────
+
+function initializeChannelPost(obj: RuntimeObject, typeName: string, state: RuntimeObjectState): void {
+  if (typeName !== 'Post') return;
+
+  obj.is_open = false;
+  obj.on_message = null;
+  obj.__channelConnection = null;
+  state.channelPosts.push(obj);
+
+  obj.open = contextFunction((name: unknown, file: string, line: number) => {
+    const channelName = stringArgument(name, 'Post.open() name', file, line);
+    if (channelName.trim() === '') {
+      throw new IdylliumRuntimeError(file, line, 'Post.open() channel name must not be empty');
+    }
+    if (obj.is_open === true) {
+      throw new IdylliumRuntimeError(file, line, 'Post.open() the post is already open — close() it before opening another channel');
+    }
+    const service = state.channelService;
+    if (!service) {
+      throw new IdylliumRuntimeError(file, line, 'Post.open() is not available in the console host — run the program in the Web IDE or VS Code, where running programs can hear each other');
+    }
+    // Письмо не обрабатывается прямо тут: оно ложится в ящик и доставляется
+    // в GUI-такте — как клики и таймеры, в предсказуемый момент.
+    obj.__channelConnection = service.connect(channelName, (text) => {
+      if (obj.is_open === true) state.channelMailbox.push({ post: obj, text: String(text) });
+    });
+    obj.is_open = true;
+  });
+
+  obj.send = contextFunction((text: unknown, file: string, line: number) => {
+    const message = stringArgument(text, 'Post.send() message', file, line);
+    if (obj.is_open !== true) {
+      throw new IdylliumRuntimeError(file, line, 'Post.send() the post is not open — call open(name) first');
+    }
+    (obj.__channelConnection as RuntimeChannelConnection).send(message);
+  });
+
+  obj.close = contextFunction(() => {
+    closeChannelPost(obj);
+  });
+
+  obj.to_string = () => (obj.is_open === true ? 'channel.Post(open)' : 'channel.Post(closed)');
+}
+
+function closeChannelPost(post: RuntimeObject): void {
+  const connection = post.__channelConnection as RuntimeChannelConnection | null;
+  post.is_open = false;
+  post.__channelConnection = null;
+  if (connection) connection.close();
 }
 
 function initializeGuiObject(obj: RuntimeObject, typeName: string, state: RuntimeObjectState): void {

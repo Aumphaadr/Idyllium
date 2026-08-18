@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-17T19:54:31.636Z",
+  "generatedAt": "2026-08-18T17:47:08.761Z",
   "sourceRoot": "packages/docs",
   "sections": [
     {
@@ -1283,6 +1283,34 @@
           "subtitle": "Непривязанные параметры, неверные методы чтения и отсутствующие колонки",
           "file": "content/sqlite/errors.html",
           "sourceFile": "docs/manual-content/sqlite/errors.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": true
+        }
+      ]
+    },
+    {
+      "id": "network",
+      "title": "Сеть",
+      "icon": "network",
+      "status": "ready",
+      "lessons": [
+        {
+          "id": "http-client",
+          "title": "Сеть: программа ходит в интернет",
+          "subtitle": "http.get, статусы ответа, JSON по сети и страховка try/catch",
+          "file": "content/network/http-client.html",
+          "sourceFile": "docs/manual-content/network/http-client.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": true
+        },
+        {
+          "id": "channel",
+          "title": "Почтовый канал: две программы разговаривают",
+          "subtitle": "channel.Post, письма между вкладками, протокол на JSON",
+          "file": "content/network/channel.html",
+          "sourceFile": "docs/manual-content/network/channel.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true

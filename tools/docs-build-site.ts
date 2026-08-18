@@ -99,7 +99,7 @@ const SLUG_OVERRIDES: Record<string, string> = {
 
 // Turtle между GUI и ООП (владелец, 2026-08-07): передышка-геометрия после
 // виджетов, а «каждая черепаха — объект» готовит почву для ООП.
-const SECTION_ORDER = ['console', 'widgets', 'turtle', 'oop', 'canvas', 'json', 'sqlite'];
+const SECTION_ORDER = ['console', 'widgets', 'turtle', 'oop', 'canvas', 'json', 'sqlite', 'network'];
 
 const MANUAL_LESSONS: readonly ManualLesson[] = [
   {
@@ -737,6 +737,25 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     title: 'Типичные ошибки',
     subtitle: 'Непривязанные параметры, неверные методы чтения и отсутствующие колонки',
     sourceFile: 'docs/manual-content/sqlite/errors.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'network',
+    id: 'http-client',
+    title: 'Сеть: программа ходит в интернет',
+    subtitle: 'http.get, статусы ответа, JSON по сети и страховка try/catch',
+    sourceFile: 'docs/manual-content/network/http-client.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'network',
+    afterLessonId: 'http-client',
+    id: 'channel',
+    title: 'Почтовый канал: две программы разговаривают',
+    subtitle: 'channel.Post, письма между вкладками, протокол на JSON',
+    sourceFile: 'docs/manual-content/network/channel.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -1585,6 +1604,14 @@ function withManualLessons(sections: readonly SiteSection[], outputRoot: string)
     'database',
     'Библиотека sqlite уже работает, а последовательная линия уроков готовится после раздела JSON.',
   );
+  ensureSection(
+    byId,
+    outputRoot,
+    'network',
+    'Сеть',
+    'network',
+    'Сетевые библиотеки: http-клиент уже в языке, дальше — канал и свой сервер.',
+  );
 
   for (const manual of MANUAL_LESSONS) {
     const section = byId.get(manual.sectionId);
@@ -1621,7 +1648,12 @@ function withManualLessons(sections: readonly SiteSection[], outputRoot: string)
     byId.set(section.id, { ...section, status: 'ready', lessons });
   }
 
-  return [...byId.values()];
+  // Секция, получившая настоящие уроки, избавляется от плановой заглушки.
+  return [...byId.values()].map((section) =>
+    section.lessons.length > 1
+      ? { ...section, lessons: section.lessons.filter((lesson) => !lesson.reviewFlags.includes('planned-section')) }
+      : section,
+  );
 }
 
 function ensureSection(

@@ -19,6 +19,13 @@ export {
   MemoryNetworkService,
   MemoryNetworkRoute,
 } from './runtime/network-service';
+export {
+  RuntimeChannelService,
+  RuntimeChannelConnection,
+  MemoryChannelBus,
+  createMemoryChannelBus,
+  createBroadcastChannelService,
+} from './runtime/channel-service';
 
 export {
   IDYLLIUM_VERSION,

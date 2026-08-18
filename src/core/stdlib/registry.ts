@@ -357,7 +357,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       documentation: 'Где выполняется программа: "cli", "web" или "vscode".',
     }),
     functionSpec('version', [], STRING, {
-      documentation: 'Версия Idyllium, например "1.4.0".',
+      documentation: 'Версия Idyllium, например "1.4.1".',
     }),
   ]));
 
@@ -611,6 +611,26 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], [
       functionSpec('header', [{ name: 'name', type: STRING }], STRING, {
         documentation: 'Значение заголовка ответа по имени (регистр не важен); пустая строка, если заголовка нет.',
+      }),
+    ]),
+  ]));
+
+  registry.registerModule(moduleSpec('channel', [], [], [
+    typeSpec('Post', [
+      propertySpec('is_open', BOOL, true, 'true, пока почтовое отделение открыто. Свойство доступно только для чтения.'),
+      callbackPropertySpec('on_message', [
+        callbackSpec([]),
+        callbackSpec([STRING]),
+      ], 'Обработчик входящего письма: вызывается с текстом письма, когда его отправила другая программа этого канала. Собственные письма не приходят.'),
+    ], [
+      functionSpec('open', [{ name: 'name', type: STRING }], VOID, {
+        documentation: 'Открывает канал с именем: все программы этого компьютера, открывшие канал с тем же именем, слышат друг друга. Открытое отделение держит программу живой (как окно). Работает в Web IDE (между вкладками) и VS Code (между запусками одного окна); в консольном запуске — читаемый отказ.',
+      }),
+      functionSpec('send', [{ name: 'text', type: STRING }], VOID, {
+        documentation: 'Отправляет письмо всем остальным участникам канала. Письмо себе не приходит. Письма не хранятся: кто открыл канал позже отправки — письмо не получит.',
+      }),
+      functionSpec('close', [], VOID, {
+        documentation: 'Закрывает почтовое отделение: письма больше не приходят, программа может завершиться. Повторный close() безвреден.',
       }),
     ]),
   ]));

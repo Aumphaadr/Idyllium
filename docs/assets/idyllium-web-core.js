@@ -20,6 +20,7 @@ Object.defineProperty(exports, "IdylliumProject", { enumerable: true, get: funct
 const runtime_1 = require("./runtime/runtime");
 const browser_image_service_1 = require("./runtime/browser-image-service");
 const browser_sqlite_service_1 = require("./runtime/browser-sqlite-service");
+const channel_service_1 = require("./runtime/channel-service");
 const network_service_1 = require("./runtime/network-service");
 const sqlite_inspector_1 = require("./runtime/sqlite-inspector");
 const browserSqliteService = (0, browser_sqlite_service_1.createBrowserSqliteService)();
@@ -119,6 +120,7 @@ function createMemoryRuntime(options, fileSystem) {
         fileSystem,
         imageService: (0, browser_image_service_1.createBrowserImageService)(),
         networkService: (0, network_service_1.createFetchNetworkService)({ corsHints: true }),
+        channelService: (0, channel_service_1.createBroadcastChannelService)(),
         sqliteService: browserSqliteService,
         urlOpener: {
             open(address) {
@@ -5638,7 +5640,7 @@ function createDefaultStandardLibrary() {
             documentation: 'Где выполняется программа: "cli", "web" или "vscode".',
         }),
         functionSpec('version', [], types_1.STRING, {
-            documentation: 'Версия Idyllium, например "1.4.0".',
+            documentation: 'Версия Idyllium, например "1.4.1".',
         }),
     ]));
     registry.registerModule(moduleSpec('console', [
@@ -5884,6 +5886,25 @@ function createDefaultStandardLibrary() {
         ], [
             functionSpec('header', [{ name: 'name', type: types_1.STRING }], types_1.STRING, {
                 documentation: 'Значение заголовка ответа по имени (регистр не важен); пустая строка, если заголовка нет.',
+            }),
+        ]),
+    ]));
+    registry.registerModule(moduleSpec('channel', [], [], [
+        typeSpec('Post', [
+            propertySpec('is_open', types_1.BOOL, true, 'true, пока почтовое отделение открыто. Свойство доступно только для чтения.'),
+            callbackPropertySpec('on_message', [
+                callbackSpec([]),
+                callbackSpec([types_1.STRING]),
+            ], 'Обработчик входящего письма: вызывается с текстом письма, когда его отправила другая программа этого канала. Собственные письма не приходят.'),
+        ], [
+            functionSpec('open', [{ name: 'name', type: types_1.STRING }], types_1.VOID, {
+                documentation: 'Открывает канал с именем: все программы этого компьютера, открывшие канал с тем же именем, слышат друг друга. Открытое отделение держит программу живой (как окно). Работает в Web IDE (между вкладками) и VS Code (между запусками одного окна); в консольном запуске — читаемый отказ.',
+            }),
+            functionSpec('send', [{ name: 'text', type: types_1.STRING }], types_1.VOID, {
+                documentation: 'Отправляет письмо всем остальным участникам канала. Письмо себе не приходит. Письма не хранятся: кто открыл канал позже отправки — письмо не получит.',
+            }),
+            functionSpec('close', [], types_1.VOID, {
+                documentation: 'Закрывает почтовое отделение: письма больше не приходят, программа может завершиться. Повторный close() безвреден.',
             }),
         ]),
     ]));
@@ -9099,6 +9120,80 @@ function createBrowserSqliteService() {
 }
 //# sourceMappingURL=browser-sqlite-service.js.map
 },
+"dist/src/runtime/channel-service.js": function(require, module, exports) {
+"use strict";
+// ───────────────────────────────────────────────────────────────────────────
+// Почтовый канал между запущенными программами (фаза 2 сетевой карты).
+//
+// Канал живёт внутри одного компьютера и не притворяется сетью: Web IDE —
+// BroadcastChannel между вкладками браузера, VS Code — общая шина внутри
+// extension host (все запуски одного окна делят один процесс), тесты — та же
+// шина, созданная на время теста. CLI сервиса не получает — честный отказ.
+//
+// Семантика единая для всех носителей и списана с BroadcastChannel:
+// письмо получают ВСЕ подписчики канала с тем же именем, КРОМЕ отправителя —
+// «письмо себе не приходит».
+// ───────────────────────────────────────────────────────────────────────────
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.createMemoryChannelBus = createMemoryChannelBus;
+exports.createBroadcastChannelService = createBroadcastChannelService;
+function createMemoryChannelBus() {
+    const subscribers = new Set();
+    return {
+        service() {
+            return {
+                connect(name, onMessage) {
+                    const self = { name, onMessage };
+                    subscribers.add(self);
+                    return {
+                        send(text) {
+                            if (!subscribers.has(self))
+                                return;
+                            for (const subscriber of subscribers) {
+                                if (subscriber === self || subscriber.name !== name)
+                                    continue;
+                                // Письмо доставляется асинхронно, как и настоящая почта:
+                                // отправитель не ждёт, пока получатель дочитает.
+                                queueMicrotask(() => {
+                                    if (subscribers.has(subscriber))
+                                        subscriber.onMessage(text);
+                                });
+                            }
+                        },
+                        close() {
+                            subscribers.delete(self);
+                        },
+                    };
+                },
+            };
+        },
+    };
+}
+function createBroadcastChannelService() {
+    const Channel = globalThis.BroadcastChannel;
+    if (typeof Channel !== 'function')
+        return undefined;
+    return {
+        connect(name, onMessage) {
+            // Префикс отделяет ученические каналы от служебных сообщений страницы.
+            const channel = new Channel(`idyllium-channel:${name}`);
+            channel.onmessage = (event) => {
+                onMessage(String(event.data ?? ''));
+            };
+            return {
+                send(text) {
+                    channel.postMessage(text);
+                },
+                close() {
+                    channel.onmessage = null;
+                    channel.close();
+                },
+            };
+        },
+    };
+}
+//# sourceMappingURL=channel-service.js.map
+},
 "dist/src/runtime/default-font-metrics.js": function(require, module, exports) {
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -10493,7 +10588,7 @@ exports.IdylliumRuntimeError = IdylliumRuntimeError;
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-exports.IDYLLIUM_VERSION = '1.4.0';
+exports.IDYLLIUM_VERSION = '1.4.1';
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform() {
     const nodeProcess = typeof process === 'object' ? process : null;
@@ -12369,12 +12464,21 @@ function createRuntime(options = {}) {
         modals: [],
         timers: [],
         windows: [],
+        channelPosts: [],
+        channelService: options.channelService,
+        channelMailbox: [],
         nextAudioCommandId: 1,
         nextObjectId: 1,
         turtleField: null,
         turtlePlatform: String(options.platform ?? defaultRuntimePlatform()),
     };
     runtimeObjects.stopCheck = (file, line) => throwIfRuntimeStopped(file, line);
+    // Stop-кнопка закрывает почтовые отделения: BroadcastChannel не должен
+    // переживать остановленную программу.
+    options.abortSignal?.addEventListener?.('abort', () => {
+        for (const post of runtimeObjects.channelPosts)
+            closeChannelPost(post);
+    }, { once: true });
     const io = {
         write(text) {
             output += text;
@@ -13187,6 +13291,7 @@ function createRuntime(options = {}) {
             audio: {},
             image: {},
             gui: {},
+            channel: {},
             turtle: createTurtleModule(runtimeObjects),
             colors: {
                 RGB: contextFunction((red, green, blue, file, line) => IdylliumColor.RGB(red, green, blue, file, line)),
@@ -13307,15 +13412,33 @@ function createRuntime(options = {}) {
         getModals() {
             return runtimeObjects.modals.map(modalSnapshot);
         },
+        /** Есть ли открытые почтовые отделения channel.Post — хостам для «программа слушает письма». */
+        hasOpenChannels() {
+            return runtimeObjects.channelPosts.some((post) => post.is_open === true);
+        },
         hasGui() {
             return runtimeObjects.windows.length > 0
                 || runtimeObjects.canvases.length > 0
                 || runtimeObjects.modals.length > 0
-                || runtimeObjects.audio.some((item) => item.is_playing === true);
+                || runtimeObjects.audio.some((item) => item.is_playing === true)
+                // Открытое почтовое отделение держит программу живой (жанр окна):
+                // письма могут прийти в любой момент, пока канал не закрыт.
+                || runtimeObjects.channelPosts.some((post) => post.is_open === true);
         },
         async stepGui(deltaTime = 0) {
             throwIfRuntimeStopped('', 0);
             let changed = false;
+            // Почта доставляется первой: письма ждали дольше всех.
+            while (runtimeObjects.channelMailbox.length > 0) {
+                const mail = runtimeObjects.channelMailbox.shift();
+                if (!mail)
+                    break;
+                const handler = mail.post.on_message;
+                if (mail.post.is_open === true && typeof handler === 'function') {
+                    await handler(mail.text);
+                    changed = true;
+                }
+            }
             for (const timer of runtimeObjects.timers) {
                 if (await stepGuiTimer(timer, deltaTime))
                     changed = true;
@@ -14812,7 +14935,57 @@ function createPlainRuntimeObject(moduleName, typeName, state) {
     if (moduleName === 'turtle') {
         initializeTurtleObject(obj, typeName, state);
     }
+    if (moduleName === 'channel') {
+        initializeChannelPost(obj, typeName, state);
+    }
     return obj;
+}
+// ─── channel.Post: почтовое отделение программы ────────────────────────────
+function initializeChannelPost(obj, typeName, state) {
+    if (typeName !== 'Post')
+        return;
+    obj.is_open = false;
+    obj.on_message = null;
+    obj.__channelConnection = null;
+    state.channelPosts.push(obj);
+    obj.open = contextFunction((name, file, line) => {
+        const channelName = stringArgument(name, 'Post.open() name', file, line);
+        if (channelName.trim() === '') {
+            throw new IdylliumRuntimeError(file, line, 'Post.open() channel name must not be empty');
+        }
+        if (obj.is_open === true) {
+            throw new IdylliumRuntimeError(file, line, 'Post.open() the post is already open — close() it before opening another channel');
+        }
+        const service = state.channelService;
+        if (!service) {
+            throw new IdylliumRuntimeError(file, line, 'Post.open() is not available in the console host — run the program in the Web IDE or VS Code, where running programs can hear each other');
+        }
+        // Письмо не обрабатывается прямо тут: оно ложится в ящик и доставляется
+        // в GUI-такте — как клики и таймеры, в предсказуемый момент.
+        obj.__channelConnection = service.connect(channelName, (text) => {
+            if (obj.is_open === true)
+                state.channelMailbox.push({ post: obj, text: String(text) });
+        });
+        obj.is_open = true;
+    });
+    obj.send = contextFunction((text, file, line) => {
+        const message = stringArgument(text, 'Post.send() message', file, line);
+        if (obj.is_open !== true) {
+            throw new IdylliumRuntimeError(file, line, 'Post.send() the post is not open — call open(name) first');
+        }
+        obj.__channelConnection.send(message);
+    });
+    obj.close = contextFunction(() => {
+        closeChannelPost(obj);
+    });
+    obj.to_string = () => (obj.is_open === true ? 'channel.Post(open)' : 'channel.Post(closed)');
+}
+function closeChannelPost(post) {
+    const connection = post.__channelConnection;
+    post.is_open = false;
+    post.__channelConnection = null;
+    if (connection)
+        connection.close();
 }
 function initializeGuiObject(obj, typeName, state) {
     if (isGuiWidget(typeName)) {
@@ -54620,7 +54793,7 @@ UPNG.encode.alphaMul = function(img, roundA) {
   };
   var cache = {};
   var builtins = createBuiltins();
-  var resolutions = {"dist/src/browser.js\u0000./core/semantics":"dist/src/core/semantics.js","dist/src/browser.js\u0000./language/formatter":"dist/src/language/formatter.js","dist/src/browser.js\u0000./language/project":"dist/src/language/project.js","dist/src/browser.js\u0000./runtime/browser-image-service":"dist/src/runtime/browser-image-service.js","dist/src/browser.js\u0000./runtime/browser-sqlite-service":"dist/src/runtime/browser-sqlite-service.js","dist/src/browser.js\u0000./runtime/gui-interval":"dist/src/runtime/gui-interval.js","dist/src/browser.js\u0000./runtime/network-service":"dist/src/runtime/network-service.js","dist/src/browser.js\u0000./runtime/run":"dist/src/runtime/run.js","dist/src/browser.js\u0000./runtime/runtime":"dist/src/runtime/runtime.js","dist/src/browser.js\u0000./runtime/sqlite-inspector":"dist/src/runtime/sqlite-inspector.js","dist/src/core/codegen.js\u0000./stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/core/codegen.js\u0000./types":"dist/src/core/types.js","dist/src/core/lexer.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/lexer.js\u0000./tokens":"dist/src/core/tokens.js","dist/src/core/parser.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/parser.js\u0000./tokens":"dist/src/core/tokens.js","dist/src/core/project.js\u0000./lexer":"dist/src/core/lexer.js","dist/src/core/project.js\u0000./modules":"dist/src/core/modules.js","dist/src/core/project.js\u0000./parser":"dist/src/core/parser.js","dist/src/core/project.js\u0000./types":"dist/src/core/types.js","dist/src/core/semantics.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/semantics.js\u0000./modules":"dist/src/core/modules.js","dist/src/core/semantics.js\u0000./stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/core/semantics.js\u0000./types":"dist/src/core/types.js","dist/src/core/stdlib/registry.js\u0000../types":"dist/src/core/types.js","dist/src/language/project.js\u0000../core/diagnostics":"dist/src/core/diagnostics.js","dist/src/language/project.js\u0000../core/project":"dist/src/core/project.js","dist/src/language/project.js\u0000../core/semantics":"dist/src/core/semantics.js","dist/src/language/project.js\u0000../core/stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/language/project.js\u0000../core/types":"dist/src/core/types.js","dist/src/language/project.js\u0000../runtime/run":"dist/src/runtime/run.js","dist/src/runtime/browser-image-service.js\u0000./image-service":"dist/src/runtime/image-service.js","dist/src/runtime/browser-sqlite-service.js\u0000./sqlite-service":"dist/src/runtime/sqlite-service.js","dist/src/runtime/browser-sqlite-service.js\u0000sql.js/dist/sql-wasm-browser.js":"node_modules/sql.js/dist/sql-wasm-browser.js","dist/src/runtime/font-metrics-service.js\u0000./default-font-metrics":"dist/src/runtime/default-font-metrics.js","dist/src/runtime/font-metrics-service.js\u0000fontkit":"node_modules/fontkit/dist/browser.cjs","dist/src/runtime/font-metrics-service.js\u0000pako":"node_modules/pako/index.js","dist/src/runtime/image-service.js\u0000gifenc":"node_modules/gifenc/dist/gifenc.js","dist/src/runtime/image-service.js\u0000gifuct-js":"node_modules/gifuct-js/lib/index.js","dist/src/runtime/image-service.js\u0000upng-js":"node_modules/upng-js/UPNG.js","dist/src/runtime/run.js\u0000../core/codegen":"dist/src/core/codegen.js","dist/src/runtime/run.js\u0000../core/diagnostics":"dist/src/core/diagnostics.js","dist/src/runtime/run.js\u0000../core/project":"dist/src/core/project.js","dist/src/runtime/run.js\u0000../core/semantics":"dist/src/core/semantics.js","dist/src/runtime/run.js\u0000../core/stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/runtime/run.js\u0000./runtime":"dist/src/runtime/runtime.js","dist/src/runtime/runtime.js\u0000./drawable-geometry":"dist/src/runtime/drawable-geometry.js","dist/src/runtime/runtime.js\u0000./font-metrics-service":"dist/src/runtime/font-metrics-service.js","dist/src/runtime/runtime.js\u0000./hash":"dist/src/runtime/hash.js","dist/src/runtime/runtime.js\u0000./image-service":"dist/src/runtime/image-service.js","dist/src/runtime/runtime.js\u0000./network-service":"dist/src/runtime/network-service.js","dist/src/runtime/runtime.js\u0000./style":"dist/src/runtime/style.js","node_modules/@swc/helpers/cjs/_ts_decorate.cjs\u0000tslib":"node_modules/tslib/tslib.js","node_modules/brotli/dec/decode.js\u0000./bit_reader":"node_modules/brotli/dec/bit_reader.js","node_modules/brotli/dec/decode.js\u0000./context":"node_modules/brotli/dec/context.js","node_modules/brotli/dec/decode.js\u0000./dictionary":"node_modules/brotli/dec/dictionary.js","node_modules/brotli/dec/decode.js\u0000./huffman":"node_modules/brotli/dec/huffman.js","node_modules/brotli/dec/decode.js\u0000./prefix":"node_modules/brotli/dec/prefix.js","node_modules/brotli/dec/decode.js\u0000./streams":"node_modules/brotli/dec/streams.js","node_modules/brotli/dec/decode.js\u0000./transform":"node_modules/brotli/dec/transform.js","node_modules/brotli/dec/dictionary.js\u0000./dictionary-data":"node_modules/brotli/dec/dictionary-data.js","node_modules/brotli/dec/transform.js\u0000./dictionary":"node_modules/brotli/dec/dictionary.js","node_modules/brotli/decompress.js\u0000./dec/decode":"node_modules/brotli/dec/decode.js","node_modules/fontkit/dist/browser.cjs\u0000@swc/helpers/cjs/_define_property.cjs":"node_modules/@swc/helpers/cjs/_define_property.cjs","node_modules/fontkit/dist/browser.cjs\u0000@swc/helpers/cjs/_ts_decorate.cjs":"node_modules/@swc/helpers/cjs/_ts_decorate.cjs","node_modules/fontkit/dist/browser.cjs\u0000brotli/decompress.js":"node_modules/brotli/decompress.js","node_modules/fontkit/dist/browser.cjs\u0000clone":"node_modules/clone/clone.js","node_modules/fontkit/dist/browser.cjs\u0000dfa":"node_modules/dfa/index.js","node_modules/fontkit/dist/browser.cjs\u0000fast-deep-equal":"node_modules/fast-deep-equal/index.js","node_modules/fontkit/dist/browser.cjs\u0000restructure":"node_modules/restructure/dist/main.cjs","node_modules/fontkit/dist/browser.cjs\u0000tiny-inflate":"node_modules/tiny-inflate/index.js","node_modules/fontkit/dist/browser.cjs\u0000unicode-properties":"node_modules/unicode-properties/dist/main.cjs","node_modules/fontkit/dist/browser.cjs\u0000unicode-trie":"node_modules/unicode-trie/index.js","node_modules/gifuct-js/lib/index.js\u0000./deinterlace":"node_modules/gifuct-js/lib/deinterlace.js","node_modules/gifuct-js/lib/index.js\u0000./lzw":"node_modules/gifuct-js/lib/lzw.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser":"node_modules/js-binary-schema-parser/lib/index.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser/lib/parsers/uint8":"node_modules/js-binary-schema-parser/lib/parsers/uint8.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser/lib/schemas/gif":"node_modules/js-binary-schema-parser/lib/schemas/gif.js","node_modules/js-binary-schema-parser/lib/schemas/gif.js\u0000../":"node_modules/js-binary-schema-parser/lib/index.js","node_modules/js-binary-schema-parser/lib/schemas/gif.js\u0000../parsers/uint8":"node_modules/js-binary-schema-parser/lib/parsers/uint8.js","node_modules/pako/index.js\u0000./lib/deflate":"node_modules/pako/lib/deflate.js","node_modules/pako/index.js\u0000./lib/inflate":"node_modules/pako/lib/inflate.js","node_modules/pako/index.js\u0000./lib/utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/index.js\u0000./lib/zlib/constants":"node_modules/pako/lib/zlib/constants.js","node_modules/pako/lib/deflate.js\u0000./utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/deflate.js\u0000./utils/strings":"node_modules/pako/lib/utils/strings.js","node_modules/pako/lib/deflate.js\u0000./zlib/deflate":"node_modules/pako/lib/zlib/deflate.js","node_modules/pako/lib/deflate.js\u0000./zlib/messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/deflate.js\u0000./zlib/zstream":"node_modules/pako/lib/zlib/zstream.js","node_modules/pako/lib/deflate.js\u0000pako":"node_modules/pako/index.js","node_modules/pako/lib/inflate.js\u0000./utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/inflate.js\u0000./utils/strings":"node_modules/pako/lib/utils/strings.js","node_modules/pako/lib/inflate.js\u0000./zlib/constants":"node_modules/pako/lib/zlib/constants.js","node_modules/pako/lib/inflate.js\u0000./zlib/gzheader":"node_modules/pako/lib/zlib/gzheader.js","node_modules/pako/lib/inflate.js\u0000./zlib/inflate":"node_modules/pako/lib/zlib/inflate.js","node_modules/pako/lib/inflate.js\u0000./zlib/messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/inflate.js\u0000./zlib/zstream":"node_modules/pako/lib/zlib/zstream.js","node_modules/pako/lib/inflate.js\u0000pako":"node_modules/pako/index.js","node_modules/pako/lib/utils/strings.js\u0000./common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/deflate.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/deflate.js\u0000./adler32":"node_modules/pako/lib/zlib/adler32.js","node_modules/pako/lib/zlib/deflate.js\u0000./crc32":"node_modules/pako/lib/zlib/crc32.js","node_modules/pako/lib/zlib/deflate.js\u0000./messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/zlib/deflate.js\u0000./trees":"node_modules/pako/lib/zlib/trees.js","node_modules/pako/lib/zlib/inflate.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/inflate.js\u0000./adler32":"node_modules/pako/lib/zlib/adler32.js","node_modules/pako/lib/zlib/inflate.js\u0000./crc32":"node_modules/pako/lib/zlib/crc32.js","node_modules/pako/lib/zlib/inflate.js\u0000./inffast":"node_modules/pako/lib/zlib/inffast.js","node_modules/pako/lib/zlib/inflate.js\u0000./inftrees":"node_modules/pako/lib/zlib/inftrees.js","node_modules/pako/lib/zlib/inftrees.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/trees.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/unicode-properties/dist/main.cjs\u0000base64-js":"node_modules/base64-js/index.js","node_modules/unicode-properties/dist/main.cjs\u0000unicode-trie":"node_modules/unicode-trie/index.js","node_modules/unicode-trie/index.js\u0000./swap":"node_modules/unicode-trie/swap.js","node_modules/unicode-trie/index.js\u0000tiny-inflate":"node_modules/tiny-inflate/index.js","node_modules/upng-js/UPNG.js\u0000pako":"node_modules/pako/index.js"};
+  var resolutions = {"dist/src/browser.js\u0000./core/semantics":"dist/src/core/semantics.js","dist/src/browser.js\u0000./language/formatter":"dist/src/language/formatter.js","dist/src/browser.js\u0000./language/project":"dist/src/language/project.js","dist/src/browser.js\u0000./runtime/browser-image-service":"dist/src/runtime/browser-image-service.js","dist/src/browser.js\u0000./runtime/browser-sqlite-service":"dist/src/runtime/browser-sqlite-service.js","dist/src/browser.js\u0000./runtime/channel-service":"dist/src/runtime/channel-service.js","dist/src/browser.js\u0000./runtime/gui-interval":"dist/src/runtime/gui-interval.js","dist/src/browser.js\u0000./runtime/network-service":"dist/src/runtime/network-service.js","dist/src/browser.js\u0000./runtime/run":"dist/src/runtime/run.js","dist/src/browser.js\u0000./runtime/runtime":"dist/src/runtime/runtime.js","dist/src/browser.js\u0000./runtime/sqlite-inspector":"dist/src/runtime/sqlite-inspector.js","dist/src/core/codegen.js\u0000./stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/core/codegen.js\u0000./types":"dist/src/core/types.js","dist/src/core/lexer.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/lexer.js\u0000./tokens":"dist/src/core/tokens.js","dist/src/core/parser.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/parser.js\u0000./tokens":"dist/src/core/tokens.js","dist/src/core/project.js\u0000./lexer":"dist/src/core/lexer.js","dist/src/core/project.js\u0000./modules":"dist/src/core/modules.js","dist/src/core/project.js\u0000./parser":"dist/src/core/parser.js","dist/src/core/project.js\u0000./types":"dist/src/core/types.js","dist/src/core/semantics.js\u0000./diagnostics":"dist/src/core/diagnostics.js","dist/src/core/semantics.js\u0000./modules":"dist/src/core/modules.js","dist/src/core/semantics.js\u0000./stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/core/semantics.js\u0000./types":"dist/src/core/types.js","dist/src/core/stdlib/registry.js\u0000../types":"dist/src/core/types.js","dist/src/language/project.js\u0000../core/diagnostics":"dist/src/core/diagnostics.js","dist/src/language/project.js\u0000../core/project":"dist/src/core/project.js","dist/src/language/project.js\u0000../core/semantics":"dist/src/core/semantics.js","dist/src/language/project.js\u0000../core/stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/language/project.js\u0000../core/types":"dist/src/core/types.js","dist/src/language/project.js\u0000../runtime/run":"dist/src/runtime/run.js","dist/src/runtime/browser-image-service.js\u0000./image-service":"dist/src/runtime/image-service.js","dist/src/runtime/browser-sqlite-service.js\u0000./sqlite-service":"dist/src/runtime/sqlite-service.js","dist/src/runtime/browser-sqlite-service.js\u0000sql.js/dist/sql-wasm-browser.js":"node_modules/sql.js/dist/sql-wasm-browser.js","dist/src/runtime/font-metrics-service.js\u0000./default-font-metrics":"dist/src/runtime/default-font-metrics.js","dist/src/runtime/font-metrics-service.js\u0000fontkit":"node_modules/fontkit/dist/browser.cjs","dist/src/runtime/font-metrics-service.js\u0000pako":"node_modules/pako/index.js","dist/src/runtime/image-service.js\u0000gifenc":"node_modules/gifenc/dist/gifenc.js","dist/src/runtime/image-service.js\u0000gifuct-js":"node_modules/gifuct-js/lib/index.js","dist/src/runtime/image-service.js\u0000upng-js":"node_modules/upng-js/UPNG.js","dist/src/runtime/run.js\u0000../core/codegen":"dist/src/core/codegen.js","dist/src/runtime/run.js\u0000../core/diagnostics":"dist/src/core/diagnostics.js","dist/src/runtime/run.js\u0000../core/project":"dist/src/core/project.js","dist/src/runtime/run.js\u0000../core/semantics":"dist/src/core/semantics.js","dist/src/runtime/run.js\u0000../core/stdlib/registry":"dist/src/core/stdlib/registry.js","dist/src/runtime/run.js\u0000./runtime":"dist/src/runtime/runtime.js","dist/src/runtime/runtime.js\u0000./drawable-geometry":"dist/src/runtime/drawable-geometry.js","dist/src/runtime/runtime.js\u0000./font-metrics-service":"dist/src/runtime/font-metrics-service.js","dist/src/runtime/runtime.js\u0000./hash":"dist/src/runtime/hash.js","dist/src/runtime/runtime.js\u0000./image-service":"dist/src/runtime/image-service.js","dist/src/runtime/runtime.js\u0000./network-service":"dist/src/runtime/network-service.js","dist/src/runtime/runtime.js\u0000./style":"dist/src/runtime/style.js","node_modules/@swc/helpers/cjs/_ts_decorate.cjs\u0000tslib":"node_modules/tslib/tslib.js","node_modules/brotli/dec/decode.js\u0000./bit_reader":"node_modules/brotli/dec/bit_reader.js","node_modules/brotli/dec/decode.js\u0000./context":"node_modules/brotli/dec/context.js","node_modules/brotli/dec/decode.js\u0000./dictionary":"node_modules/brotli/dec/dictionary.js","node_modules/brotli/dec/decode.js\u0000./huffman":"node_modules/brotli/dec/huffman.js","node_modules/brotli/dec/decode.js\u0000./prefix":"node_modules/brotli/dec/prefix.js","node_modules/brotli/dec/decode.js\u0000./streams":"node_modules/brotli/dec/streams.js","node_modules/brotli/dec/decode.js\u0000./transform":"node_modules/brotli/dec/transform.js","node_modules/brotli/dec/dictionary.js\u0000./dictionary-data":"node_modules/brotli/dec/dictionary-data.js","node_modules/brotli/dec/transform.js\u0000./dictionary":"node_modules/brotli/dec/dictionary.js","node_modules/brotli/decompress.js\u0000./dec/decode":"node_modules/brotli/dec/decode.js","node_modules/fontkit/dist/browser.cjs\u0000@swc/helpers/cjs/_define_property.cjs":"node_modules/@swc/helpers/cjs/_define_property.cjs","node_modules/fontkit/dist/browser.cjs\u0000@swc/helpers/cjs/_ts_decorate.cjs":"node_modules/@swc/helpers/cjs/_ts_decorate.cjs","node_modules/fontkit/dist/browser.cjs\u0000brotli/decompress.js":"node_modules/brotli/decompress.js","node_modules/fontkit/dist/browser.cjs\u0000clone":"node_modules/clone/clone.js","node_modules/fontkit/dist/browser.cjs\u0000dfa":"node_modules/dfa/index.js","node_modules/fontkit/dist/browser.cjs\u0000fast-deep-equal":"node_modules/fast-deep-equal/index.js","node_modules/fontkit/dist/browser.cjs\u0000restructure":"node_modules/restructure/dist/main.cjs","node_modules/fontkit/dist/browser.cjs\u0000tiny-inflate":"node_modules/tiny-inflate/index.js","node_modules/fontkit/dist/browser.cjs\u0000unicode-properties":"node_modules/unicode-properties/dist/main.cjs","node_modules/fontkit/dist/browser.cjs\u0000unicode-trie":"node_modules/unicode-trie/index.js","node_modules/gifuct-js/lib/index.js\u0000./deinterlace":"node_modules/gifuct-js/lib/deinterlace.js","node_modules/gifuct-js/lib/index.js\u0000./lzw":"node_modules/gifuct-js/lib/lzw.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser":"node_modules/js-binary-schema-parser/lib/index.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser/lib/parsers/uint8":"node_modules/js-binary-schema-parser/lib/parsers/uint8.js","node_modules/gifuct-js/lib/index.js\u0000js-binary-schema-parser/lib/schemas/gif":"node_modules/js-binary-schema-parser/lib/schemas/gif.js","node_modules/js-binary-schema-parser/lib/schemas/gif.js\u0000../":"node_modules/js-binary-schema-parser/lib/index.js","node_modules/js-binary-schema-parser/lib/schemas/gif.js\u0000../parsers/uint8":"node_modules/js-binary-schema-parser/lib/parsers/uint8.js","node_modules/pako/index.js\u0000./lib/deflate":"node_modules/pako/lib/deflate.js","node_modules/pako/index.js\u0000./lib/inflate":"node_modules/pako/lib/inflate.js","node_modules/pako/index.js\u0000./lib/utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/index.js\u0000./lib/zlib/constants":"node_modules/pako/lib/zlib/constants.js","node_modules/pako/lib/deflate.js\u0000./utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/deflate.js\u0000./utils/strings":"node_modules/pako/lib/utils/strings.js","node_modules/pako/lib/deflate.js\u0000./zlib/deflate":"node_modules/pako/lib/zlib/deflate.js","node_modules/pako/lib/deflate.js\u0000./zlib/messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/deflate.js\u0000./zlib/zstream":"node_modules/pako/lib/zlib/zstream.js","node_modules/pako/lib/deflate.js\u0000pako":"node_modules/pako/index.js","node_modules/pako/lib/inflate.js\u0000./utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/inflate.js\u0000./utils/strings":"node_modules/pako/lib/utils/strings.js","node_modules/pako/lib/inflate.js\u0000./zlib/constants":"node_modules/pako/lib/zlib/constants.js","node_modules/pako/lib/inflate.js\u0000./zlib/gzheader":"node_modules/pako/lib/zlib/gzheader.js","node_modules/pako/lib/inflate.js\u0000./zlib/inflate":"node_modules/pako/lib/zlib/inflate.js","node_modules/pako/lib/inflate.js\u0000./zlib/messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/inflate.js\u0000./zlib/zstream":"node_modules/pako/lib/zlib/zstream.js","node_modules/pako/lib/inflate.js\u0000pako":"node_modules/pako/index.js","node_modules/pako/lib/utils/strings.js\u0000./common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/deflate.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/deflate.js\u0000./adler32":"node_modules/pako/lib/zlib/adler32.js","node_modules/pako/lib/zlib/deflate.js\u0000./crc32":"node_modules/pako/lib/zlib/crc32.js","node_modules/pako/lib/zlib/deflate.js\u0000./messages":"node_modules/pako/lib/zlib/messages.js","node_modules/pako/lib/zlib/deflate.js\u0000./trees":"node_modules/pako/lib/zlib/trees.js","node_modules/pako/lib/zlib/inflate.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/inflate.js\u0000./adler32":"node_modules/pako/lib/zlib/adler32.js","node_modules/pako/lib/zlib/inflate.js\u0000./crc32":"node_modules/pako/lib/zlib/crc32.js","node_modules/pako/lib/zlib/inflate.js\u0000./inffast":"node_modules/pako/lib/zlib/inffast.js","node_modules/pako/lib/zlib/inflate.js\u0000./inftrees":"node_modules/pako/lib/zlib/inftrees.js","node_modules/pako/lib/zlib/inftrees.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/pako/lib/zlib/trees.js\u0000../utils/common":"node_modules/pako/lib/utils/common.js","node_modules/unicode-properties/dist/main.cjs\u0000base64-js":"node_modules/base64-js/index.js","node_modules/unicode-properties/dist/main.cjs\u0000unicode-trie":"node_modules/unicode-trie/index.js","node_modules/unicode-trie/index.js\u0000./swap":"node_modules/unicode-trie/swap.js","node_modules/unicode-trie/index.js\u0000tiny-inflate":"node_modules/tiny-inflate/index.js","node_modules/upng-js/UPNG.js\u0000pako":"node_modules/pako/index.js"};
 
   function load(id) {
     if (cache[id]) return cache[id].exports;
