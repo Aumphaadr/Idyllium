@@ -329,6 +329,19 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
   },
   {
     sectionId: 'oop',
+    // Контракты после this (владелец, 2026-08-21): equals требует «метода
+    // с параметром и return» — этот урок и вводит их, разгружая модули;
+    // наследование контрактов обсуждается позже, в уроке наследования.
+    afterLessonId: 'this',
+    id: 'contracts',
+    title: 'Методы-контракты',
+    subtitle: 'Методы с параметрами, договор equals для == и to_string для печати',
+    sourceFile: 'docs/manual-content/oop/contracts.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'oop',
     // «Сделай свою кнопку»: события в конце ООП, когда пройдены классы,
     // методы, конструкторы и наследование; перед каталогом ошибок.
     afterLessonId: 'static',
@@ -756,6 +769,16 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     title: 'Почтовый канал: две программы разговаривают',
     subtitle: 'channel.Post, письма между вкладками, протокол на JSON',
     sourceFile: 'docs/manual-content/network/channel.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    sectionId: 'network',
+    afterLessonId: 'channel',
+    id: 'web-server',
+    title: 'Свой сервер',
+    subtitle: 'web.Server: маршруты, query, JSON-API, статика и вечный run()',
+    sourceFile: 'docs/manual-content/network/web-server.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -1363,29 +1386,65 @@ const PROJECTS_SECTIONS: ReadonlyArray<{ id: string; title: string; icon: string
     title: 'Консоль',
     icon: 'terminal',
     lessons: [
-      { id: "quiz", title: "Знаток большого мира", subtitle: "Консольный проект · ★★" },
-      { id: "chatbot", title: "Робот Дуся", subtitle: "Консольный проект · ★★★" },
-      { id: "oracle", title: "Электронный оракул", subtitle: "Консольный проект · ★" },
-      { id: "bad-prophet", title: "Бюро прогнозов на вчера", subtitle: "Консольный проект · ★" },
+      { id: "reverse-excursion", title: "Экскурсия наоборот", subtitle: "Консольный проект · ★★" },
+      { id: "cockroach-crumb-quest", title: "Ночной дожор", subtitle: "Консольный проект · ★★" },
+      { id: "mission-babah", title: "Миссия: БАБАХ", subtitle: "Консольный проект · ★★" },
+      { id: "ancient-curse-generator", title: "Генератор древних проклятий", subtitle: "Консольный проект · ★★" },
+      { id: "rude-bot-tumbler", title: "bot.gently = false;", subtitle: "Консольный проект · ★" },
       { id: "dice-duel", title: "Кости против Железного Джо", subtitle: "Консольный проект · ★★" },
-      { id: "curse-shop", title: "Магазин мелких проклятий «Сглазик»", subtitle: "Консольный проект · ★" },
-      { id: "hero-generator", title: "Мастерская героев", subtitle: "Консольный проект · ★★" },
-      { id: "quest-cave", title: "Пещера трёх дорог", subtitle: "Консольный проект · ★★★" },
-      { id: "overlay", title: "Оверлей реальности 0.9 (бета)", subtitle: "Консольный проект · ★" },
-      { id: "space-scow", title: "Космический мусоровоз «Черепаха»", subtitle: "Консольный проект · ★★" },
-      { id: "tamagotchi", title: "Хомяк-программист Фёдор", subtitle: "Консольный проект · ★★" },
-      { id: "strict-fridge", title: "Холодильник строгого режима", subtitle: "Консольный проект · ★★" },
-      { id: "potion-shop", title: "Зельеварня бабки Ядвиги", subtitle: "Консольный проект · ★★★" },
+      { id: "pancake-toss-judge", title: "Судья соревнований по подбрасыванию блинов", subtitle: "Консольный проект · ★★" },
+      { id: "part-time-genie", title: "Джинн на пенсии", subtitle: "Консольный проект · ★" },
+      { id: "retroactive-prophecy", title: "Пророчество обратной силы", subtitle: "Консольный проект · ★" },
+      { id: "cat-quiz", title: "Викторина для кота", subtitle: "Консольный проект · ★★" },
+      { id: "ghost-castle-move", title: "Переезд призрака в новый замок", subtitle: "Консольный проект · ★★" },
+      { id: "superhero-discount-shop", title: "Секонд-хенд для супергероя", subtitle: "Консольный проект · ★" },
+      { id: "rocket-launch", title: "Запуск ракеты", subtitle: "Консольный проект · ★" },
+      { id: "wish-shop", title: "Магазин ваших желаний", subtitle: "Консольный проект · ★★" },
+      { id: "feed-sense-of-humor", title: "Покорми чувство юмора", subtitle: "Консольный проект · ★★" },
+      { id: "feed-the-machine", title: "Feed the Machine", subtitle: "Консольный проект · ★★" },
+      { id: "vacuum-rehab", title: "Бедный робот-пылесос", subtitle: "Консольный проект · ★★" },
+      { id: "ask-the-dog", title: "Где копать? Спроси пса", subtitle: "Консольный проект · ★★" },
+      { id: "good-mood-radio", title: "Радио хорошего настроения", subtitle: "Консольный проект · ★★" },
+      { id: "lighthouse-watch", title: "Дежурный по маяку", subtitle: "Консольный проект · ★★" },
+      { id: "night-hotel-desk", title: "Отель «Полночь»", subtitle: "Консольный проект · ★★" },
+      { id: "fourth-wall-repair", title: "Ремонт четвёртой стены", subtitle: "Консольный проект · ★★" },
       { id: "cat-rescue", title: "Спасите кота Батона", subtitle: "Консольный проект · ★★" },
-      { id: "submarine", title: "Охота на подлодку", subtitle: "Консольный проект · ★★" },
-      { id: "fishing", title: "Рыбалка на Тихом омуте", subtitle: "Консольный проект · ★★★" },
-      { id: "vanga-lite", title: "Бюро прогнозов «Ванга-Лайт»", subtitle: "Консольный проект · ★★" },
-      { id: "dragon-shop", title: "Лавка «Всё для драконов»: инвентаризация", subtitle: "Консольный проект · ★★" },
-      { id: "dream-map", title: "Сервер снов: ночная карта района", subtitle: "Консольный проект · ★★★" },
-      { id: "mini-sapper", title: "Сапёр-разведчик", subtitle: "Консольный проект · ★★★" },
-      { id: "grimoire", title: "Гримуар v666.2", subtitle: "Консольный проект · ★★★" },
-      { id: "mini-caesar", title: "Перехват: шифр Цезаря", subtitle: "Консольный проект · ★★★" },
-      { id: "mini-tale", title: "Сказка-матрёшка", subtitle: "Консольный проект · ★★★" }
+      { id: "programma-torguetsya", title: "Торг уместен", subtitle: "Консольный проект · ★" },
+      { id: "simulyator-ocheredi", title: "Симулятор стояния в очереди", subtitle: "Консольный проект · ★" },
+      { id: "mad-cafe-chef", title: "Шеф-повар безумного кафе", subtitle: "Консольный проект · ★★★" },
+      { id: "excuse-generator", title: "Генератор отмазок 3000", subtitle: "Консольный проект · ★★" },
+      { id: "strict-fridge", title: "Холодильник строгого режима", subtitle: "Консольный проект · ★★" },
+      { id: "pentagon-news", title: "Что нового в Пентагоне?", subtitle: "Консольный проект · ★★★" },
+      { id: "theatre-props-room", title: "За час до спектакля", subtitle: "Консольный проект · ★★" },
+      { id: "unused-forecast-depot", title: "Склад несбывшихся прогнозов погоды", subtitle: "Консольный проект · ★★" },
+      { id: "cat-on-keyboard", title: "Кот идёт по клавиатуре", subtitle: "Консольный проект · ★★★" },
+      { id: "street-garland", title: "Гирлянда длиной в улицу", subtitle: "Консольный проект · ★★" },
+      { id: "urban-legend-generator", title: "Генератор городских легенд", subtitle: "Консольный проект · ★★" },
+      { id: "sports-commentator", title: "Спортивный комментатор для некомментируемого", subtitle: "Консольный проект · ★★" },
+      { id: "baby-talk-translator", title: "Переводчик с младенческого", subtitle: "Консольный проект · ★★" },
+      { id: "cat-excuse-generator", title: "Генератор оправданий для кота", subtitle: "Консольный проект · ★★" },
+      { id: "encoding-telephone", title: "Испорченный телефон кодировок", subtitle: "Консольный проект · ★★" },
+      { id: "cannonball-flight", title: "Полёт ядра", subtitle: "Консольный проект · ★★" }
+    ],
+  },
+  {
+    id: 'windows',
+    title: 'Окна',
+    icon: 'widgets',
+    lessons: [
+      { id: "elevator-sage", title: "Лифт-философ", subtitle: "Оконный проект · ★★" },
+      { id: "overlord-reception", title: "Приёмная Тёмного Властелина", subtitle: "Оконный проект · ★★" },
+      { id: "safe-box", title: "Сейф деда Митрофана", subtitle: "Оконный проект · ★" },
+      { id: "shaurma-sim", title: "Симулятор шаурмиста", subtitle: "Оконный проект · ★★" },
+      { id: "traffic-light", title: "Действительно умный светофор", subtitle: "Оконный проект · ★★" },
+      { id: "ostrich-race", title: "Страусиные бега", subtitle: "Оконный проект · ★★" },
+      { id: "catch-the-button", title: "Поймай кнопку", subtitle: "Оконный проект · ★★" },
+      { id: "inyerface", title: "Инъерфейс", subtitle: "Оконный проект · ★★" },
+      { id: "math-test", title: "Вредный математический тест", subtitle: "Оконный проект · ★★" },
+      { id: "pump-meter-progressbar-stesnyaetsya", title: "Скромный прогрессбар", subtitle: "Оконный проект · ★★" },
+      { id: "color-guess", title: "Цветовой снайпер", subtitle: "Оконный проект · ★★" },
+      { id: "email-verifier", title: "email не пройдёт!", subtitle: "Оконный проект · ★★★" },
+      { id: "breach-protocol", title: "Взлом протокола", subtitle: "Оконный проект · ★★★" }
     ],
   },
 ];
@@ -1431,6 +1490,17 @@ function buildProjectsSite(projectsRoot: string): void {
       });
     }
     sections.push({ id: section.id, title: section.title, icon: section.icon, status: 'ready', lessons });
+
+    // Скриншоты страниц секции: manual-content/projects/<sec>/img/ →
+    // content/<sec>/img/ (пути в фрагментах — content/<sec>/img/<файл>)
+    const imagesDir = path.resolve(process.cwd(), PROJECTS_SOURCE_ROOT, section.id, 'img');
+    if (fs.existsSync(imagesDir)) {
+      const imagesOut = path.join(projectsRoot, 'content', section.id, 'img');
+      fs.mkdirSync(imagesOut, { recursive: true });
+      for (const entry of fs.readdirSync(imagesDir)) {
+        fs.copyFileSync(path.join(imagesDir, entry), path.join(imagesOut, entry));
+      }
+    }
   }
 
   const projectsManifest: SiteManifest = {

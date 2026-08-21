@@ -233,3 +233,35 @@ main() {
       </ul>
       <p>Экранирование позволяет вставлять в строку или символ управляющие последовательности и знаки пунктуации без путаницы.</p>
     </div>
+
+<div class="docs-section">
+  <h2>Кто ты такой: функция type_name()</h2>
+  <p>
+    В большой программе легко забыть, кто такой <code>vals</code> и что мы
+    добываем из него квадратными скобками: <code>vals[i]</code> — это ячейка
+    массива или символ строки? Спросить можно у самого языка: глобальная
+    функция <code>type_name()</code> называет тип любого значения строкой.
+  </p>
+  <idyl-code-block><script type="text/plain">
+use console;
+
+main() {
+    array<int, 3> vals = [10, 20, 30];
+    string word = "кот";
+
+    console.writeln(type_name(vals));
+    console.writeln(type_name(vals[0]));
+    console.writeln(type_name(word));
+    console.writeln(type_name(word[0]));
+}
+</script></idyl-code-block>
+  <idyl-output-block>array<int, 3>
+int
+string
+char</idyl-output-block>
+  <p>
+    Четыре ответа — вся сегодняшняя арифметика на месте: массив и его ячейка,
+    строка и её символ. Имена типов пишутся ровно так, как их пишет компилятор
+    в сообщениях об ошибках, — удобно сверять.
+  </p>
+</div>

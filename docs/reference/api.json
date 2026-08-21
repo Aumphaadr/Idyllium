@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "languageVersion": "1.4.1",
-  "generatedAt": "2026-08-18T17:47:08.924Z",
+  "languageVersion": "1.5.0",
+  "generatedAt": "2026-08-21T20:38:34.485Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "general": [
     {
@@ -321,7 +321,7 @@
         },
         {
           "title": "Массивы являются значениями",
-          "description": "Присваивание, передача в функцию и возврат из функции создают независимую копию массива. Вложенные массивы копируются рекурсивно.",
+          "description": "Присваивание, передача в функцию и возврат из функции создают независимую копию массива. Вложенные массивы копируются рекурсивно. Сравнение массивов — структурное: длины и ячейки попарно. Два dyn_array разной длины дают false (длина — свойство времени выполнения); два фиксированных массива разных объявленных размеров не сравниваются вовсе — это ошибка компиляции, размер входит в тип.",
           "code": "array<int, 3> first = [10, 20, 30];\narray<int, 3> second = first;\nsecond[0] = 99;\n// first по-прежнему содержит [10, 20, 30]"
         },
         {
@@ -357,8 +357,17 @@
           "code": "Counter first(5);\nCounter second = first;\nsecond.increment();\n\nconsole.writeln(first.value); // 6"
         },
         {
+          "title": "Сравнение объектов: контракт equals",
+          "description": "У объектов пользовательских классов нет встроенного равенства: a == b без договора — ошибка компиляции с подсказкой. Договор — публичный метод bool function equals(СвойКласс other), объявленный в самом классе; с ним == и != работают через него, а contains, find, count и сравнение массивов объектов ищут «по смыслу». Контракты (equals и to_string) не наследуются: каждый класс подписывает договор сам, и сравнение выполняет контракт того класса, через который на объекты смотрят. Порядка у объектов нет: sort() для массивов объектов — ошибка компиляции. equals должен отвечать, не изменяя объекты.",
+          "code": "use console;\n\nclass Hero {\n    string name;\n    int level;\n\n    bool function equals(Hero other) {\n        return this.name == other.name and this.level == other.level;\n    }\n}\n\nmain() {\n    Hero a;\n    a.name = \"Мира\";\n    a.level = 12;\n    Hero b;\n    b.name = \"Мира\";\n    b.level = 12;\n\n    console.writeln(a == b);    // true — через ваш equals\n    console.writeln(a != b);    // false — выводится сам\n}"
+        },
+        {
+          "title": "Значение или ссылка: сводная таблица",
+          "description": "Значения (присваивание копирует, == сравнивает содержимое): примитивы (int, float, string, char, bool), массивы array и dyn_array (копия — свой список, но объекты в ячейках ОБЩИЕ: «своя коробка — общие жители»), colors.Color, time.stamp (по моменту), json.Value и sqlite.Value (по содержимому). Ссылки (присваивание даёт второе имя, встроенного == нет): объекты пользовательских классов (сравнение — только через контракт equals), json.Object и json.Array, все библиотечные объекты (gui.*, image.*, sqlite.Database и родня). Встроенного копирования объектов нет: копию делает метод, который пишет автор класса (обычно copy() через собственный конструктор; глубина копии — его решение)."
+        },
+        {
           "title": "Конструктор как выражение",
-          "description": "Вызов имени пользовательского класса создаёт новый независимый объект. Ключевое слово `new` не используется. Работают позиционные, именованные и дефолтные аргументы, немедленный вызов метода и классы пользовательских модулей.",
+          "description": "Вызов имени пользовательского класса создаёт новый независимый объект. Ключевое слово `new` не используется. Работают позиционные, именованные и дефолтные аргументы, немедленный вызов метода и классы пользовательских модулей. Перегрузки конструкторов нет и не будет: один класс — одно правило рождения. Второй конструктор — ошибка компиляции (class already has a constructor); разнообразие вызовов дают значения параметров по умолчанию и именованные аргументы.",
           "code": "dyn_array<Hero> heroes;\nheroes.add(Hero(\"Kaspar\", 500));\n\nHero boss = Hero(hp=1000, name=\"Aranthir\");\nbool alive = Hero(\"Mira\").is_alive();\ngeometry.Point point = geometry.Point(10, 20);"
         },
         {
@@ -401,7 +410,7 @@
         {
           "title": "Словарь свойств (версия 1)",
           "description": "Ровно 13 свойств; всё вне словаря молча игнорируется. Пиксельные значения принимаются с «px» и без, регистр не важен.",
-          "code": "color              цвет текста\nbackground-color   цвет фона\nbackground         только градиенты: linear-gradient(...), radial-gradient(...)\nborder-color       цвет рамки\nborder-width       0–20 (px)\nborder-style       solid | dashed | dotted | none\nborder-radius      0–100 (px)\nfont-size          6–96 (px)\nfont-weight        normal | bold\nfont-style         normal | italic\ntext-align         left | center | right\nopacity            0.0–1.0\npadding            0–40 (px)"
+          "code": "color              цвет текста\nbackground-color   цвет фона\nbackground         только градиенты: linear-gradient(...), radial-gradient(...)\nborder-color       цвет рамки\nborder-width       0–20 (px)\nborder-style       solid | dashed | dotted | none\nborder-radius      0–100 (px)\nfont-size          6–96 (px)\nfont-weight        normal | bold\nfont-style         normal | italic\ntext-align         left | center | right\nopacity            0.0–1.0\npadding            0–40 (px)\nuser-select        auto | none | text | all"
         },
         {
           "title": "Значения цветов",
@@ -633,6 +642,23 @@
       ],
       "variadic": false,
       "documentation": "Преобразует значение в строку. Объект класса — только с публичным string function to_string()."
+    },
+    {
+      "name": "type_name",
+      "signature": "type_name(value: any): string",
+      "returnType": "string",
+      "parameters": [
+        {
+          "name": "value",
+          "type": "any",
+          "optional": false,
+          "defaultValue": "",
+          "acceptedTypes": [],
+          "acceptedDescription": ""
+        }
+      ],
+      "variadic": false,
+      "documentation": "Имя типа значения строкой, в той же записи, что в сообщениях компилятора: для значений — статический тип («int», «string», «array<int, 3>»), для объектов — актуальный класс, даже если на него смотрят через переменную базового типа («Cat», «zoo.Lion», «gui.Button»). Пригодится в контракте equals: сравните type_name(this) и type_name(other), чтобы тёзка другого класса не сошёл за своего."
     }
   ],
   "modules": [
@@ -4700,6 +4726,13 @@
               "callbacks": []
             },
             {
+              "name": "hint",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
+              "callbacks": []
+            },
+            {
               "name": "max_value",
               "type": "float",
               "readonly": false,
@@ -4902,6 +4935,13 @@
               "callbacks": []
             },
             {
+              "name": "hint",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
+              "callbacks": []
+            },
+            {
               "name": "on_click",
               "type": "any",
               "readonly": false,
@@ -5013,6 +5053,13 @@
               "type": "int",
               "readonly": false,
               "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "hint",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
               "callbacks": []
             },
             {
@@ -5386,6 +5433,13 @@
               "callbacks": []
             },
             {
+              "name": "hint",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
+              "callbacks": []
+            },
+            {
               "name": "is_checked",
               "type": "bool",
               "readonly": false,
@@ -5512,6 +5566,13 @@
               "type": "int",
               "readonly": false,
               "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "hint",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
               "callbacks": []
             },
             {
@@ -5667,6 +5728,13 @@
               "type": "int",
               "readonly": false,
               "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "hint",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
               "callbacks": []
             },
             {
@@ -5834,6 +5902,13 @@
               "callbacks": []
             },
             {
+              "name": "hint",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
+              "callbacks": []
+            },
+            {
               "name": "style",
               "type": "string",
               "readonly": false,
@@ -5953,6 +6028,13 @@
               "type": "int",
               "readonly": false,
               "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "hint",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
               "callbacks": []
             },
             {
@@ -6121,6 +6203,13 @@
               "callbacks": []
             },
             {
+              "name": "hint",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
+              "callbacks": []
+            },
+            {
               "name": "href",
               "type": "string",
               "readonly": false,
@@ -6232,6 +6321,13 @@
               "type": "int",
               "readonly": false,
               "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "hint",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
               "callbacks": []
             },
             {
@@ -6422,6 +6518,13 @@
               "type": "int",
               "readonly": false,
               "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "hint",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
               "callbacks": []
             },
             {
@@ -6699,6 +6802,13 @@
               "callbacks": []
             },
             {
+              "name": "hint",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
+              "callbacks": []
+            },
+            {
               "name": "show_legend",
               "type": "bool",
               "readonly": false,
@@ -6901,6 +7011,13 @@
               "callbacks": []
             },
             {
+              "name": "hint",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
+              "callbacks": []
+            },
+            {
               "name": "max",
               "type": "int",
               "readonly": false,
@@ -7033,6 +7150,13 @@
               "callbacks": []
             },
             {
+              "name": "hint",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
+              "callbacks": []
+            },
+            {
               "name": "is_selected",
               "type": "bool",
               "readonly": false,
@@ -7152,6 +7276,13 @@
               "type": "int",
               "readonly": false,
               "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "hint",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
               "callbacks": []
             },
             {
@@ -7305,6 +7436,13 @@
               "callbacks": []
             },
             {
+              "name": "hint",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
+              "callbacks": []
+            },
+            {
               "name": "max",
               "type": "int",
               "readonly": false,
@@ -7445,6 +7583,13 @@
               "type": "int",
               "readonly": false,
               "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "hint",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
               "callbacks": []
             },
             {
@@ -7655,6 +7800,13 @@
               "callbacks": []
             },
             {
+              "name": "hint",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
+              "callbacks": []
+            },
+            {
               "name": "on_change",
               "type": "any",
               "readonly": false,
@@ -7838,6 +7990,13 @@
               "type": "int",
               "readonly": false,
               "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "hint",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
               "callbacks": []
             },
             {
@@ -8030,6 +8189,13 @@
               "type": "int",
               "readonly": false,
               "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "hint",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
               "callbacks": []
             },
             {
@@ -12049,7 +12215,7 @@
           "returnType": "string",
           "parameters": [],
           "variadic": false,
-          "documentation": "Версия Idyllium, например \"1.4.1\"."
+          "documentation": "Версия Idyllium, например \"1.5.0\"."
         }
       ],
       "constants": [],
@@ -12261,6 +12427,222 @@
       ],
       "constants": [],
       "types": []
+    },
+    {
+      "name": "web",
+      "title": "web",
+      "description": "Стандартная библиотека web.",
+      "notes": [],
+      "example": "",
+      "fullExamples": [],
+      "functions": [],
+      "constants": [],
+      "types": [
+        {
+          "name": "Request",
+          "qualifiedName": "web.Request",
+          "baseType": "",
+          "description": "",
+          "notes": [],
+          "example": "",
+          "properties": [
+            {
+              "name": "body",
+              "type": "string",
+              "readonly": true,
+              "documentation": "Тело запроса (для POST). Свойство доступно только для чтения.",
+              "callbacks": []
+            },
+            {
+              "name": "path",
+              "type": "string",
+              "readonly": true,
+              "documentation": "Путь запроса, например \"/hello\". Свойство доступно только для чтения.",
+              "callbacks": []
+            }
+          ],
+          "methods": [
+            {
+              "name": "query",
+              "signature": "query(name: string): string",
+              "returnType": "string",
+              "parameters": [
+                {
+                  "name": "name",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Значение query-параметра адреса (?name=value) по имени; пустая строка, если параметра нет."
+            }
+          ]
+        },
+        {
+          "name": "Response",
+          "qualifiedName": "web.Response",
+          "baseType": "",
+          "description": "",
+          "notes": [],
+          "example": "",
+          "properties": [
+            {
+              "name": "status",
+              "type": "int",
+              "readonly": false,
+              "documentation": "Код ответа, 100–599 (по умолчанию 200). Читается в момент отправки ответа.",
+              "callbacks": []
+            }
+          ],
+          "methods": [
+            {
+              "name": "send",
+              "signature": "send(text: string): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "text",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Отправляет текст ответа как HTML-страницу (text/html). Один ответ на один запрос: повторный send — ошибка."
+            },
+            {
+              "name": "send_json",
+              "signature": "send_json(text: string): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "text",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Отправляет текст ответа как JSON (application/json) — для программ-клиентов и http.get."
+            }
+          ]
+        },
+        {
+          "name": "Server",
+          "qualifiedName": "web.Server",
+          "baseType": "",
+          "description": "",
+          "notes": [],
+          "example": "",
+          "properties": [
+            {
+              "name": "host",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Какие адреса слушать. По умолчанию \"127.0.0.1\" — только этот компьютер. \"0.0.0.0\" открывает программу ВСЕЙ локальной сети — включайте осознанно.",
+              "callbacks": []
+            },
+            {
+              "name": "is_running",
+              "type": "bool",
+              "readonly": true,
+              "documentation": "true, пока сервер запущен. Свойство доступно только для чтения.",
+              "callbacks": []
+            },
+            {
+              "name": "port",
+              "type": "int",
+              "readonly": false,
+              "documentation": "Порт сервера, 0–65535 (по умолчанию 8080; 0 — попросить у системы свободный). После run() хранит фактический порт.",
+              "callbacks": []
+            }
+          ],
+          "methods": [
+            {
+              "name": "on_get",
+              "signature": "on_get(path: string, handler: any): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "path",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "handler",
+                  "type": "any",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Регистрирует обработчик GET-запросов на точный путь (например \"/hello\"). Обработчик — функция вида void function(web.Request req, web.Response res). Повторная регистрация пути — ошибка."
+            },
+            {
+              "name": "on_post",
+              "signature": "on_post(path: string, handler: any): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "path",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "handler",
+                  "type": "any",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Регистрирует обработчик POST-запросов на точный путь. Тело запроса — в req.body."
+            },
+            {
+              "name": "run",
+              "signature": "run(): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "Запускает сервер и не возвращается: программа обслуживает запросы, пока её не остановят (Stop или Ctrl+C). Занятый порт — читаемая ошибка. Работает в консоли и VS Code; в Web IDE — честный отказ (браузер не может слушать порт)."
+            },
+            {
+              "name": "serve_directory",
+              "signature": "serve_directory(path: string): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "path",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Раздаёт файлы папки как статику (только чтение, только GET, выход из папки закрыт). Адрес \"/\" отдаёт index.html. Маршруты on_get/on_post проверяются раньше статики."
+            }
+          ]
+        }
+      ]
     }
   ]
 }

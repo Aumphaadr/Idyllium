@@ -59,6 +59,28 @@ main() {
 }
 </script></idyl-code-block>
   <idyl-output-block>Liam: 12, admin = false</idyl-output-block>
+  <p>
+    Преобразование нужно, когда со значением надо работать: складывать,
+    печатать, класть в переменную своего типа. А вот просто
+    <strong>сравнить</strong> два значения можно напрямую, без
+    <code>to_int()</code> и родни: <code>json.Value</code> сравниваются
+    знаком <code>==</code> по содержимому.
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+use json;
+
+main() {
+    json.Object save = json.parse("{\"name\":\"Liam\",\"hp\":80}").to_object();
+    json.Object backup = json.parse("{\"name\":\"Liam\",\"hp\":100}").to_object();
+
+    console.writeln("Имя совпадает: ", save.get("name") == backup.get("name"));
+    console.writeln("Здоровье совпадает: ", save.get("hp") == backup.get("hp"));
+}
+</script></idyl-code-block>
+  <idyl-output-block>Имя совпадает: true
+Здоровье совпадает: false</idyl-output-block>
 </div>
 
 <div class="docs-section">

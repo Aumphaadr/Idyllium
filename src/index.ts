@@ -18,6 +18,10 @@ export {
   createMemoryNetworkService,
   MemoryNetworkService,
   MemoryNetworkRoute,
+  RuntimeHttpServerRequest,
+  RuntimeHttpServerResponse,
+  RuntimeHttpServerHandle,
+  RuntimeHttpServerListenOptions,
 } from './runtime/network-service';
 export {
   RuntimeChannelService,

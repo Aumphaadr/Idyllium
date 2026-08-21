@@ -42,12 +42,20 @@ function bookNetworkService() {
   });
 }
 
-// Программы, читающие файлы данных проекта, которых нет в голом рантайме.
+// Программы, читающие файлы данных проекта, которых нет в голом рантайме,
+// и серверы: web.Server.run() по замыслу не возвращается (их поведение
+// покрывает smoke-тест сервера с живыми запросами).
 const SKIP: Readonly<Record<string, string>> = {
   'sqlite.scripts.004': 'reads setup.sql from the project directory',
   'json.intro.003': 'reads save.txt from the project directory',
   'json.intro.004': 'reads names.txt from the project directory',
   'json.reading.001': 'reads player.json from the project directory',
+  'network.web-server.001': 'web.Server.run() never returns',
+  'network.web-server.002': 'web.Server.run() never returns',
+  'network.web-server.003': 'web.Server.run() never returns',
+  'network.web-server.004': 'web.Server.run() never returns',
+  'network.web-server.005': 'web.Server.run() never returns',
+  'network.web-server.006': 'web.Server.run() never returns',
 };
 
 async function main(): Promise<void> {

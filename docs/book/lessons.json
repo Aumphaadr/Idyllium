@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-18T17:47:08.761Z",
+  "generatedAt": "2026-08-21T20:38:34.310Z",
   "sourceRoot": "packages/docs",
   "sections": [
     {
@@ -724,6 +724,16 @@
           "hasTasks": true
         },
         {
+          "id": "contracts",
+          "title": "Методы-контракты",
+          "subtitle": "Методы с параметрами, договор equals для == и to_string для печати",
+          "file": "content/oop/contracts.html",
+          "sourceFile": "docs/manual-content/oop/contracts.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": true
+        },
+        {
           "id": "modules",
           "title": "Разбиение проекта по файлам",
           "subtitle": "Как не заблудиться в собственном коде",
@@ -1311,6 +1321,16 @@
           "subtitle": "channel.Post, письма между вкладками, протокол на JSON",
           "file": "content/network/channel.html",
           "sourceFile": "docs/manual-content/network/channel.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": true
+        },
+        {
+          "id": "web-server",
+          "title": "Свой сервер",
+          "subtitle": "web.Server: маршруты, query, JSON-API, статика и вечный run()",
+          "file": "content/network/web-server.html",
+          "sourceFile": "docs/manual-content/network/web-server.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true

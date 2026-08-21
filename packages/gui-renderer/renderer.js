@@ -1019,6 +1019,8 @@
       for (const item of declarations) {
         if (!item || typeof item.property !== 'string' || typeof item.value !== 'string') continue;
         el.style.setProperty(item.property, item.value);
+        // Safari понимает user-select только с вебкит-префиксом.
+        if (item.property === 'user-select') el.style.setProperty('-webkit-user-select', item.value);
         if (item.property === 'text-align') {
           // Label и Button — flex-контейнеры: text-align сам по себе их
           // содержимое не двигает, зеркалим в justify-content.
@@ -1746,6 +1748,11 @@
     el.style.height = height + 'px';
     if (props.visible === false) el.style.display = 'none';
     if (props.enabled === false) el.classList.add('disabled');
+    // Всплывающая подсказка при наведении: штатный title браузера.
+    // Пустой title браузер не показывает — снятие подсказки работает так же.
+    const hint = stringValue(props.hint, '');
+    if (hint !== '') el.title = hint;
+    else if (el.title) el.title = '';
   }
 
   function applyWidgetColors(el, props, inheritedColors) {

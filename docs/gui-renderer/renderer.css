@@ -126,6 +126,14 @@ body.theme-light {
 /* Выключенный виджет (enabled == false): приглушён и не принимает ни мыши,
    ни наведения. pointer-events закрывает и содержимое контейнеров; насколько
    гасить и обесцвечивать — решает тема через свои переменные. */
+/* Кнопочные виджеты не выделяют текст при частых кликах — как нативные
+   кнопки ОС. Вернуть выделение можно стилем user-select: text. */
+button.widget,
+label.widget.choice {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 .widget.disabled {
   pointer-events: none;
   opacity: var(--w-disabled-opacity, 0.55);

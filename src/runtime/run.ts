@@ -60,22 +60,38 @@ export function compileIdyllium(source: string, options: CompileOptions = {}): C
   const userModuleRegistry = buildUserModuleRegistry(modules, stdlib, diagnostics);
 
   const nodeTypes = new Map<Expression, TypeRef>();
+  const equalsContractClasses = new Set<string>();
+  const nullableClassFields = new Map<string, Set<string>>();
+  const mergeSemantics = (semantics: ReturnType<SemanticAnalyzer['analyze']>): void => {
+    for (const [node, type] of semantics.nodeTypes) nodeTypes.set(node, type);
+    for (const name of semantics.equalsContractClasses) equalsContractClasses.add(name);
+    for (const [className, fieldNames] of semantics.nullableClassFields) {
+      let set = nullableClassFields.get(className);
+      if (!set) {
+        set = new Set<string>();
+        nullableClassFields.set(className, set);
+      }
+      for (const fieldName of fieldNames) set.add(fieldName);
+    }
+  };
   if (ast && !diagnostics.hasErrors()) {
     for (const module of modules) {
       const semantics = new SemanticAnalyzer(stdlib, userModuleRegistry).analyze(module.ast);
       addDiagnostics(diagnostics, semantics.diagnostics);
-      for (const [node, type] of semantics.nodeTypes) nodeTypes.set(node, type);
+      mergeSemantics(semantics);
     }
 
     const semantics = new SemanticAnalyzer(stdlib, userModuleRegistry).analyze(ast);
     addDiagnostics(diagnostics, semantics.diagnostics);
-    for (const [node, type] of semantics.nodeTypes) nodeTypes.set(node, type);
+    mergeSemantics(semantics);
   }
 
   if (ast && !diagnostics.hasErrors()) {
     jsCode = new JavaScriptGenerator({
       userModuleNames: new Set(modules.map((module) => module.name)),
       nodeTypes,
+      equalsContractClasses,
+      nullableClassFields,
     }).generate(ast, { modules: modules.map((module) => ({ name: module.name, program: module.ast })) }).jsCode;
   }
 

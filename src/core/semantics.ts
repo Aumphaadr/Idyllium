@@ -84,6 +84,10 @@ export interface SemanticResult {
   readonly tokens: readonly IdylliumSemanticToken[];
   /** Типы, вычисленные для узлов AST, — единственный источник типов для кодогена. */
   readonly nodeTypes: ReadonlyMap<Expression, TypeRef>;
+  /** Классы (по коротким именам), объявившие контракт equals, — кодогену для статической диспетчеризации '=='. */
+  readonly equalsContractClasses: ReadonlySet<string>;
+  /** «Пустые поля» по классам (короткое имя → имена полей) — кодогену для охраняемых чтений. */
+  readonly nullableClassFields: ReadonlyMap<string, ReadonlySet<string>>;
 }
 
 export type IdylliumSemanticTokenKind =
@@ -133,6 +137,8 @@ interface UserPropertySpec {
   readonly range: SourceRange;
   readonly owner: string;
   readonly access: AccessModifier;
+  /** «Пустое поле»: объектное поле с явным `= null` — может быть пустым по замыслу автора класса. */
+  readonly nullable?: boolean;
 }
 
 interface UserMethodAccess {
@@ -176,6 +182,10 @@ export class SemanticAnalyzer {
   private readonly scopes: Array<Map<string, SymbolInfo>> = [new Map()];
   private readonly functions = new Map<string, FunctionDeclaration>();
   private readonly classes = new Map<string, UserClassInfo>();
+  /** Короткие имена классов с контрактом equals (локальные и импортированные модульные). */
+  private readonly equalsContractClasses = new Set<string>();
+  /** «Пустые поля» по классам (короткое имя → поля с явным `= null`). */
+  private readonly nullableClassFields = new Map<string, Set<string>>();
   // Значения файловых int-констант: собираются до анализа сигнатур, чтобы
   // array<int, L> работал в параметрах функций и полях классов.
   private readonly fileConstants = new Map<string, number>();
@@ -219,6 +229,8 @@ export class SemanticAnalyzer {
       }
     }
 
+    this.checkEndlessDefaultChains(program);
+
     for (const declaration of program.declarations) {
       if (declaration.kind === 'FunctionDeclaration') {
         this.registerFunction(declaration);
@@ -256,6 +268,8 @@ export class SemanticAnalyzer {
       diagnostics: this.diagnostics,
       tokens: deduplicateSemanticTokens(this.semanticTokens),
       nodeTypes: this.nodeTypes,
+      equalsContractClasses: this.equalsContractClasses,
+      nullableClassFields: this.nullableClassFields,
     };
   }
 
@@ -277,6 +291,7 @@ export class SemanticAnalyzer {
           range: field.range,
           owner: field.owner,
           access: field.access,
+          nullable: field.nullable === true,
         });
       }
 
@@ -489,9 +504,87 @@ export class SemanticAnalyzer {
     info.membersRegistered = true;
   }
 
+  /**
+   * Поле, тип которого (прямо, через цепочку полей, фиксированные массивы или
+   * наследование) снова требует построить этот же класс, заставляет фабрику
+   * умолчаний строить бесконечную цепочку объектов — рантайм взрывался бы
+   * переполнением стека. Честная ошибка компиляции вместо взрыва.
+   * dyn_array безопасен: его умолчание — пустой список.
+   */
+  private checkEndlessDefaultChains(program: Program): void {
+    // Классы, которые фабрика умолчаний класса строит обязательно:
+    // база (фабрика потомка зовёт фабрику базы) + собственные поля.
+    const requiredClasses = (type: TypeRef, out: string[]): void => {
+      if (type.kind === 'class' && this.classes.has(type.name)) out.push(type.name);
+      else if (type.kind === 'array' && !type.dynamic) requiredClasses(type.elementType, out);
+    };
+
+    const reaches = (from: string, target: string, path: string[]): boolean => {
+      if (path.includes(from)) return false; // чужой цикл — о нём скажет своё поле
+      path.push(from);
+      const info = this.classes.get(from);
+      if (!info) { path.pop(); return false; }
+      const next: string[] = [];
+      if (info.declaration.baseName && this.classes.has(info.declaration.baseName)) {
+        next.push(info.declaration.baseName);
+      }
+      for (const fieldName of info.ownFields) {
+        const field = info.fields.get(fieldName);
+        // «Пустое поле» цепочку обрывает: фабрике нечего строить.
+        if (field && field.nullable !== true) requiredClasses(field.type, next);
+      }
+      for (const candidate of next) {
+        if (candidate === target) return true;
+        if (reaches(candidate, target, path)) return true;
+      }
+      path.pop();
+      return false;
+    };
+
+    for (const declaration of program.declarations) {
+      if (declaration.kind !== 'ClassDeclaration') continue;
+      const info = this.classes.get(declaration.name);
+      if (!info) continue;
+      for (const fieldName of info.ownFields) {
+        const field = info.fields.get(fieldName);
+        if (!field || field.nullable === true) continue;
+        const targets: string[] = [];
+        requiredClasses(field.type, targets);
+        for (const target of targets) {
+          if (target === declaration.name) {
+            this.diagnostics.error(
+              field.range,
+              `field '${fieldName}' of class '${declaration.name}' creates an endless chain of default objects — creating a '${declaration.name}' would create another '${declaration.name}' inside it`,
+            );
+            break;
+          }
+          const path: string[] = [];
+          if (reaches(target, declaration.name, path)) {
+            this.diagnostics.error(
+              field.range,
+              `field '${fieldName}' of class '${declaration.name}' creates an endless chain of default objects — creating a '${declaration.name}' would create a '${target}', which creates a '${declaration.name}' again`,
+            );
+            break;
+          }
+        }
+      }
+    }
+  }
+
   private inheritClassMembers(info: UserClassInfo, baseInfo: UserClassInfo): void {
     for (const [name, field] of baseInfo.fields) {
       info.fields.set(name, field);
+      // «Пустое поле» наследуется вместе с охраной: карта для кодогена
+      // пополняется и под именем потомка — иначе доступ через окно наследника
+      // обходил бы стража (находка адверсариальной проверки).
+      if (field.nullable === true) {
+        let set = this.nullableClassFields.get(info.declaration.name);
+        if (!set) {
+          set = new Set<string>();
+          this.nullableClassFields.set(info.declaration.name, set);
+        }
+        set.add(name);
+      }
     }
     for (const [name, method] of baseInfo.methods) {
       info.methods.set(name, method);
@@ -527,14 +620,28 @@ export class SemanticAnalyzer {
         this.diagnostics.error(field.range, `class '${info.declaration.name}' already has member '${field.name}'`);
         continue;
       }
+      // «Пустое поле»: объектное поле с явным `= null` — единственная форма,
+      // в которой классы принимают пустоту (модель A, spec/some_null).
+      const isNullInitializer = field.initializer?.kind === 'LiteralExpression'
+        && field.initializer.valueType === 'null';
+      const nullable = isNullInitializer && this.userClassBareName(fieldType) !== null;
       info.fields.set(field.name, {
         name: field.name,
         type: fieldType,
         range: field.range,
         owner: info.declaration.name,
         access: declaration.access,
+        nullable,
       });
       info.ownFields.add(field.name);
+      if (nullable) {
+        let set = this.nullableClassFields.get(info.declaration.name);
+        if (!set) {
+          set = new Set<string>();
+          this.nullableClassFields.set(info.declaration.name, set);
+        }
+        set.add(field.name);
+      }
     }
   }
 
@@ -552,8 +659,13 @@ export class SemanticAnalyzer {
 
     const inheritedMethod = info.methods.get(declaration.name);
     if (inheritedMethod && !this.methodSignatureCanOverride(inheritedMethod, declaration)) {
-      this.diagnostics.error(declaration.range, `method '${info.declaration.name}.${declaration.name}' must match inherited method signature`);
-      return;
+      // Контрактное исключение: методы-контракты не наследуются, у каждого
+      // класса — своя версия со СВОИМ типом параметра (equals(Cat) при
+      // базовом equals(Animal) — законно). Диспетчеризация — статическая.
+      if (!(declaration.name === 'equals' && this.isEqualsContractShape(info, declaration))) {
+        this.diagnostics.error(declaration.range, `method '${info.declaration.name}.${declaration.name}' must match inherited method signature`);
+        return;
+      }
     }
 
     if ((info.fields.has(declaration.name) && info.ownFields.has(declaration.name)) || (info.methods.has(declaration.name) && info.ownMethods.has(declaration.name))) {
@@ -578,6 +690,96 @@ export class SemanticAnalyzer {
       range: declaration.range,
     });
     info.ownMethods.add(declaration.name);
+
+    if (declaration.name === 'equals' && this.isEqualsContractShape(info, declaration)) {
+      if (declaration.parameters[0].defaultValue) {
+        this.diagnostics.error(declaration.parameters[0].range, "'equals' contract parameter cannot have a default value");
+      }
+      if (declaration.access === 'public') {
+        this.equalsContractClasses.add(info.declaration.name);
+      }
+    }
+  }
+
+  /** Форма контракта equals: нестатический, ровно один параметр СВОЕГО класса, возвращает bool. */
+  private isEqualsContractShape(info: UserClassInfo, declaration: ClassMethodDeclaration): boolean {
+    if (declaration.isStatic) return false;
+    if (declaration.parameters.length !== 1) return false;
+    const parameterType = this.resolveTypeName(declaration.parameters[0].paramType);
+    if (parameterType.kind !== 'class' || parameterType.name !== info.declaration.name) return false;
+    return sameType(this.resolveTypeName(declaration.returnType), BOOL);
+  }
+
+  /** Есть ли у типа (класс или модульный класс) публичный контракт equals, объявленный в нём самом. */
+  private typeOwnsEqualsContract(type: TypeRef): boolean {
+    const bare = this.userClassBareName(type);
+    if (!bare) return false;
+    if (type.kind === 'class') {
+      // Импортированный модульный класс живёт с точечным именем («hotel.Room»)
+      // — контракт смотрим в реестре модуля.
+      const dot = type.name.indexOf('.');
+      if (dot > 0) {
+        const moduleName = type.name.slice(0, dot);
+        const className = type.name.slice(dot + 1);
+        const classSpec = this.userModuleRegistry.getModule(moduleName)?.classes.get(className);
+        const method = classSpec?.methods.find((item) => item.name === 'equals');
+        const ok = method !== undefined
+          && !method.isStatic
+          && method.access === 'public'
+          && method.spec.parameters.length === 1
+          && sameType(method.spec.returnType, BOOL);
+        if (ok) this.equalsContractClasses.add(className);
+        return ok;
+      }
+      return this.equalsContractClasses.has(bare);
+    }
+    // Модульный класс: по спецификации модуля (короткое имя параметра —
+    // модульная семантика уже проверила форму при компиляции модуля).
+    if (type.kind === 'qualified' && this.userModuleRegistry.hasModule(type.moduleName)) {
+      const classSpec = this.userModuleRegistry.getModule(type.moduleName)?.classes.get(type.name);
+      const method = classSpec?.methods.find((item) => item.name === 'equals');
+      const ok = method !== undefined
+        && !method.isStatic
+        && method.access === 'public'
+        && method.spec.parameters.length === 1
+        && sameType(method.spec.returnType, BOOL);
+      if (ok) this.equalsContractClasses.add(type.name);
+      return ok;
+    }
+    return false;
+  }
+
+  /** Выражение-доступ к «пустому полю» (nullable): room.guest, где guest объявлен с `= null`. */
+  private nullableFieldAccess(expression: Expression): boolean {
+    if (expression.kind !== 'MemberExpression') return false;
+    const objectType = this.nodeTypes.get(expression.object) ?? null;
+    if (!objectType) return false;
+    if (objectType.kind === 'class') {
+      return this.classes.get(objectType.name)?.fields.get(expression.name)?.nullable === true;
+    }
+    if (objectType.kind === 'qualified' && this.userModuleRegistry.hasModule(objectType.moduleName)) {
+      const classSpec = this.userModuleRegistry.getModule(objectType.moduleName)?.classes.get(objectType.name);
+      const field = classSpec?.fields.find((item) => item.name === expression.name);
+      return field?.nullable === true;
+    }
+    return false;
+  }
+
+  /** Короткое имя пользовательского класса (локального или модульного); null для прочих типов. */
+  private userClassBareName(type: TypeRef): string | null {
+    if (type.kind === 'class') return type.name;
+    if (type.kind === 'qualified' && this.userModuleRegistry.hasModule(type.moduleName)) {
+      return this.userModuleRegistry.getModule(type.moduleName)?.classes.has(type.name) ? type.name : null;
+    }
+    return null;
+  }
+
+  /** Класс-лист массива (сквозь вложенные массивы); null, если элементы — не пользовательские классы. */
+  private arrayLeafClass(type: TypeRef): TypeRef | null {
+    if (type.kind !== 'array') return null;
+    let element: TypeRef = type.elementType;
+    while (element.kind === 'array') element = element.elementType;
+    return this.userClassBareName(element) !== null ? element : null;
   }
 
   private registerClassEvent(info: UserClassInfo, declaration: ClassEventDeclaration): void {
@@ -659,7 +861,9 @@ export class SemanticAnalyzer {
       this.pushScope();
       this.declare('this', classType(info.declaration.name), 'parameter', info.declaration.range);
       const initializerType = this.expressionType(field.initializer);
-      if (!this.canAssign(fieldType, initializerType)) {
+      const nullableField = info.fields.get(field.name)?.nullable === true
+        && initializerType.kind === 'null';
+      if (!nullableField && !this.canAssign(fieldType, initializerType)) {
         this.diagnostics.error(
           field.initializer.range,
           `cannot assign '${typeToString(initializerType)}' value to '${typeToString(fieldType)}' field`,
@@ -1160,6 +1364,11 @@ export class SemanticAnalyzer {
       this.checkCallbackAssignment(target.property, valueType, statement.value.range);
     }
 
+    // «Пустому полю» можно присвоить null («гость выехал»); прочим — нет.
+    if (assignedType.kind === 'null' && statement.operator === '='
+      && statement.target.kind === 'MemberExpression' && this.nullableFieldAccess(statement.target)) {
+      return;
+    }
     if (!this.canAssign(targetType, assignedType)) {
       this.diagnostics.error(
         statement.value.range,
@@ -1551,6 +1760,56 @@ export class SemanticAnalyzer {
     }
 
     if (['==', '!='].includes(expression.operator)) {
+      // Голый null с голым null — мёртвое выражение (всегда true/false).
+      if (left.kind === 'null' && right.kind === 'null') {
+        this.diagnostics.error(expression.range, "cannot compare 'null' and 'null'");
+        return BOOL;
+      }
+      // «Пустое поле» против null — законная проверка присутствия.
+      if ((left.kind === 'null' && this.nullableFieldAccess(expression.right))
+        || (right.kind === 'null' && this.nullableFieldAccess(expression.left))) {
+        return BOOL;
+      }
+      // Объекты пользовательских классов сравниваются ТОЛЬКО через контракт
+      // equals; диспетчеризация статическая — контракт выбирает левый операнд.
+      const leftClass = this.userClassBareName(left);
+      const rightClass = this.userClassBareName(right);
+      if (leftClass !== null || rightClass !== null) {
+        if (leftClass === null || rightClass === null) {
+          this.diagnostics.error(
+            expression.range,
+            `cannot compare '${typeToString(left)}' and '${typeToString(right)}'`,
+          );
+        } else if (!this.typeOwnsEqualsContract(left)) {
+          this.diagnostics.error(
+            expression.range,
+            `cannot compare objects of class '${typeToString(left)}' with '${expression.operator}' — declare 'bool function equals(${typeToString(left)} other)' in class '${typeToString(left)}' and the comparison will use it${left.kind === 'class' ? this.contractShapeIssue(left.name, 'equals') : ''}`,
+          );
+        } else if (!sameType(left, right) && !this.canAssign(left, right)) {
+          this.diagnostics.error(
+            expression.range,
+            `cannot compare '${typeToString(left)}' and '${typeToString(right)}' with '${expression.operator}' — '${typeToString(left)}.equals' accepts a '${typeToString(left)}', got '${typeToString(right)}'`,
+          );
+        }
+        return BOOL;
+      }
+      const leftLeaf = this.arrayLeafClass(left);
+      const rightLeaf = this.arrayLeafClass(right);
+      if (leftLeaf !== null || rightLeaf !== null) {
+        if (leftLeaf === null || rightLeaf === null
+          || (!sameType(left, right) && !this.canAssign(left, right) && !this.canAssign(right, left))) {
+          this.diagnostics.error(
+            expression.range,
+            `cannot compare '${typeToString(left)}' and '${typeToString(right)}'`,
+          );
+        } else if (!this.typeOwnsEqualsContract(leftLeaf)) {
+          this.diagnostics.error(
+            expression.range,
+            `cannot compare arrays of '${typeToString(leftLeaf)}' objects with '${expression.operator}' — declare 'bool function equals(${typeToString(leftLeaf)} other)' in class '${typeToString(leftLeaf)}' and the comparison will use it`,
+          );
+        }
+        return BOOL;
+      }
       if (!sameType(left, right) && !this.canAssign(left, right) && !this.canAssign(right, left)) {
         this.diagnostics.error(
           expression.range,
@@ -1561,6 +1820,10 @@ export class SemanticAnalyzer {
     }
 
     if (['<', '<=', '>', '>='].includes(expression.operator)) {
+      // Порядок моментов времени: оба операнда time.stamp — сравнение по моменту.
+      const isStamp = (type: TypeRef): boolean =>
+        type.kind === 'qualified' && type.moduleName === 'time' && type.name === 'stamp';
+      if (isStamp(left) && isStamp(right)) return BOOL;
       if (!isNumeric(left) || !isNumeric(right)) {
         this.diagnostics.error(expression.range, `comparison '${expression.operator}' requires numeric operands`);
       }
@@ -1895,7 +2158,25 @@ export class SemanticAnalyzer {
       if (objectType.kind === 'array') {
         this.markSemanticToken('method', callee.nameRange);
         const method = this.arrayMethodSpec(objectType, callee.name);
-        if (method) return method;
+        if (method) {
+          const leaf = this.arrayLeafClass(objectType);
+          if (leaf !== null && ['contains', 'find', 'count'].includes(callee.name)
+            && !this.typeOwnsEqualsContract(leaf)) {
+            this.diagnostics.error(
+              callee.range,
+              `${callee.name}() cannot search for '${typeToString(leaf)}' objects — declare 'bool function equals(${typeToString(leaf)} other)' in class '${typeToString(leaf)}' and the search will use it`,
+            );
+            return null;
+          }
+          if (leaf !== null && callee.name === 'sort') {
+            this.diagnostics.error(
+              callee.range,
+              `sort() cannot order '${typeToString(leaf)}' objects — objects have no built-in ordering`,
+            );
+            return null;
+          }
+          return method;
+        }
         this.reportUnknownArrayMethod(objectType, callee.name, callee.range);
         return null;
       }
@@ -2002,6 +2283,21 @@ export class SemanticAnalyzer {
     for (const item of resolved) {
       const argType = this.expressionType(item.arg.value);
       if (fn.printsValues) {
+        // Функция как значение в печати — почти всегда забытые скобки;
+        // без запрета консоль показала бы сгенерированный код (кухню).
+        if (argType.kind === 'function') {
+          const value = item.arg.value;
+          const functionName = value.kind === 'IdentifierExpression'
+            ? value.name
+            : value.kind === 'MemberExpression' ? value.name : null;
+          this.diagnostics.error(
+            item.arg.range,
+            functionName !== null
+              ? `cannot print function '${functionName}' — add '()' with its arguments to call it and print the result`
+              : "cannot print a function — add '()' with its arguments to call it and print the result",
+          );
+          continue;
+        }
         const printableError = this.printableTypeError(argType);
         if (printableError) {
           this.diagnostics.error(item.arg.range, printableError);
@@ -2018,6 +2314,26 @@ export class SemanticAnalyzer {
             );
           }
           continue;
+        }
+
+        if (parameter.rejectsClassObjects) {
+          const classType = this.userClassBareName(argType) !== null
+            ? argType
+            : this.arrayLeafClass(argType);
+          if (classType !== null) {
+            this.diagnostics.error(
+              item.arg.range,
+              `json.Value() cannot wrap an object of class '${typeToString(classType)}' — build a json.Object from its fields instead`,
+            );
+            continue;
+          }
+          if (argType.kind === 'function') {
+            this.diagnostics.error(
+              item.arg.range,
+              "json.Value() cannot wrap a function — call it with '()' and wrap the result",
+            );
+            continue;
+          }
         }
 
         if (parameter.acceptedTypes) {
@@ -2054,10 +2370,12 @@ export class SemanticAnalyzer {
   // __str__ из Python. Массивы объектов не печатаются даже с to_string():
   // инспекция массива синхронна и метод вызвать не может.
   private printableTypeError(type: TypeRef): string | null {
+    if (type.kind === 'function') {
+      return "cannot print a function — add '()' with its arguments to call it and print the result";
+    }
     if (type.kind === 'class') {
-      return this.classHasPublicToString(type.name)
-        ? null
-        : `cannot print object of class '${type.name}' directly`;
+      if (this.classHasPublicToString(type.name)) return null;
+      return `cannot print object of class '${type.name}' directly — declare 'string function to_string()' in class '${type.name}' and printing will use it${this.contractShapeIssue(type.name, 'to_string')}`;
     }
     if (type.kind === 'qualified' && this.userModuleRegistry.hasModule(type.moduleName)) {
       const classSpec = this.userModuleRegistry.getModule(type.moduleName)?.classes.get(type.name);
@@ -2068,24 +2386,64 @@ export class SemanticAnalyzer {
         && method.access === 'public'
         && method.spec.parameters.length === 0
         && sameType(method.spec.returnType, STRING);
-      return printable ? null : `cannot print object of class '${type.moduleName}.${type.name}' directly`;
+      return printable ? null : `cannot print object of class '${type.moduleName}.${type.name}' directly — declare 'string function to_string()' in class '${type.name}' and printing will use it`;
     }
     if (type.kind === 'array') {
       const element = type.elementType;
+      // Контракт to_string элемента открывает и печать массива: рантайм
+      // собирает представления элементов асинхронно (вердикт владельца
+      // 2026-08-22 — симметрия со сравнением массивов через equals).
       if (element.kind === 'class') {
-        return `cannot print an array of '${element.name}' objects directly`;
+        if (this.classHasPublicToString(element.name)) return null;
+        return `cannot print an array of '${element.name}' objects directly — declare 'string function to_string()' in class '${element.name}' and printing will use it${this.contractShapeIssue(element.name, 'to_string')}`;
       }
       if (element.kind === 'qualified' && this.userModuleRegistry.hasModule(element.moduleName)) {
-        return `cannot print an array of '${element.moduleName}.${element.name}' objects directly`;
+        if (this.printableTypeError(element) === null) return null;
+        return `cannot print an array of '${element.moduleName}.${element.name}' objects directly — declare 'string function to_string()' in class '${element.name}' and printing will use it`;
       }
       return this.printableTypeError(element);
     }
     return null;
   }
 
+  /**
+   * Почему одноимённый метод НЕ считается контрактом — хвост для диагностик.
+   * Четыре разные порчи формы (private, чужой тип, не тот возврат, static)
+   * давали неотличимые ошибки — методисты мерили цену в «полчаса сверки
+   * по буквам» (2026-08-21).
+   */
+  private contractShapeIssue(className: string, methodName: 'equals' | 'to_string'): string {
+    const info = this.classes.get(className);
+    if (!info || !info.ownMethods.has(methodName)) return '';
+    const spec = info.methods.get(methodName);
+    const access = info.methodAccess.get(methodName);
+    const issues: string[] = [];
+    if (access !== undefined && access.access !== 'public') issues.push('it is private');
+    if (access !== undefined && access.isStatic) issues.push('it is static');
+    if (methodName === 'equals') {
+      if (!spec || spec.parameters.length !== 1) {
+        issues.push(`it must take exactly one parameter of type '${className}'`);
+      } else if (!(spec.parameters[0].type.kind === 'class' && spec.parameters[0].type.name === className)) {
+        issues.push(`its parameter is '${typeToString(spec.parameters[0].type)}' instead of '${className}'`);
+      }
+      if (spec && !sameType(spec.returnType, BOOL)) {
+        issues.push(`it returns '${typeToString(spec.returnType)}' instead of 'bool'`);
+      }
+    } else {
+      if (spec && spec.parameters.length > 0) issues.push('it must take no parameters');
+      if (spec && !sameType(spec.returnType, STRING)) {
+        issues.push(`it returns '${typeToString(spec.returnType)}' instead of 'string'`);
+      }
+    }
+    if (issues.length === 0) return '';
+    return ` (class '${className}' has '${methodName}', but ${issues.join(', ')})`;
+  }
+
   private classHasPublicToString(className: string): boolean {
     const info = this.classes.get(className);
     if (!info) return false;
+    // Контракты не наследуются: to_string должен быть объявлен в самом классе.
+    if (!info.ownMethods.has('to_string')) return false;
     const spec = info.methods.get('to_string');
     if (!spec || spec.parameters.length > 0) return false;
     if (!sameType(spec.returnType, STRING)) return false;

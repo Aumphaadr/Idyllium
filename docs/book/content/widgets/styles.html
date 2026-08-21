@@ -126,6 +126,7 @@ main() {
       <tr><td><code>border-color</code></td><td>цвет</td><td>цвет рамки</td></tr>
       <tr><td><code>border-width</code></td><td><code>0</code>–<code>20</code> (px)</td><td>толщина рамки</td></tr>
       <tr><td><code>border-style</code></td><td><code>solid</code> / <code>dashed</code> / <code>dotted</code> / <code>none</code></td><td>сплошная, штриховая, точечная рамка</td></tr>
+      <tr><td><code>user-select</code></td><td><code>auto</code> / <code>none</code> / <code>text</code> / <code>all</code></td><td>можно ли выделять текст виджета мышью</td></tr>
       <tr><td><code>border-radius</code></td><td><code>0</code>–<code>100</code> (px)</td><td>скругление углов</td></tr>
       <tr><td><code>font-size</code></td><td><code>6</code>–<code>96</code> (px)</td><td>размер шрифта</td></tr>
       <tr><td><code>font-weight</code></td><td><code>normal</code> / <code>bold</code></td><td>жирность</td></tr>
@@ -346,6 +347,26 @@ main() {
     <em>темнее</em> обычного, а у наведённой — <em>светлее</em>. Так палец и
     глаз соглашаются друг с другом: «подсветилась — можно жать, потемнела —
     нажатие засчитано».
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Мелочь в довесок: всплывающая подсказка</h2>
+  <p>
+    Раз уж занялись внешним видом — вот свойство на ту же тему, только без
+    IdySS. У каждого виджета есть <code>hint</code>: строка, которая всплывает
+    рядом с курсором, если задержать его над виджетом.
+  </p>
+  <idyl-code-block><script type="text/plain">
+    gui.Button save;
+    save.text = "💾";
+    save.hint = "Сохранить игру";
+</script></idyl-code-block>
+  <p>
+    Пустая строка (она по умолчанию) — подсказки нет. С <code>placeholder</code>
+    не путайте: тот живёт внутри пустого поля ввода, а <code>hint</code>
+    всплывает над любым виджетом. Пригождается, когда кнопка маленькая и
+    вместо слова на ней иконка — как в настоящих редакторах.
   </p>
 </div>
 

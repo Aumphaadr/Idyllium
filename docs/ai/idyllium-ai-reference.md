@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: Idyllium 1.4.1.
+Current language target: Idyllium 1.5.0.
 
 This reference describes implemented behavior. Ideas from `BACKLOG.md` and
 exploratory files under `spec/some_*` are not language features until they are
@@ -243,8 +243,9 @@ int console = 5;   // compile error: variable 'console' conflicts with
 The reason is unavoidable ambiguity: `console.write(...)` is parsed as module
 access, so the same word would mean two things at once.
 
-Built-in global function names (`to_int`, `to_float`, `to_string`, `max`,
-`min`, `sum`, `avg`; `div` and `mod` are already keywords) are reserved for
+Built-in global function names (`to_int`, `to_float`, `to_string`,
+`type_name`, `max`, `min`, `sum`, `avg`; `div` and `mod` are already
+keywords) are reserved for
 **functions and classes only**:
 
 ```idyllium
@@ -281,6 +282,14 @@ Common rules:
 - Numbers are not silently converted to strings.
 - Strings are not silently converted to numbers.
 - `to_int(float_value)` truncates toward zero.
+
+`type_name(value)` returns the type as a string, written the
+same way compiler messages write types: values report their static type
+(`type_name(5)` → `"int"`, `type_name(a)` → `"array<int, 3>"`), objects
+report their ACTUAL class even when viewed through a base-typed variable
+(`Animal x = Cat(...); type_name(x)` → `"Cat"`; module classes are qualified:
+`"zoo.Lion"`; library objects: `"gui.Button"`, `"json.Value"`,
+`"time.stamp"`). Main use: type checks inside the `equals` contract (§7).
 
 Ordinary `int` arithmetic is exact: `+ - *`, `div`, and `mod` never lose
 integer precision, including values above JavaScript's 2^53 limit and beyond
@@ -343,10 +352,52 @@ if (not(is_ready)) {
 
 Use `and`, `or`, `xor`, `not`, not `&&`, `||`, `^`, `!`.
 
-Ordering comparisons `<`, `<=`, `>`, `>=` accept only numeric operands:
-comparing strings or chars with them is a compile error
-(`comparison '<' requires numeric operands`). Strings and chars support only
-`==` and `!=`.
+Ordering comparisons `<`, `<=`, `>`, `>=` accept numeric operands and
+`time.stamp` pairs (ordered by instant). Comparing strings or chars with them
+is a compile error (`comparison '<' requires numeric operands`). Strings and
+chars support only `==` and `!=`.
+
+### Equality rules
+
+`==`/`!=` compare CONTENT for every comparable type: numbers, strings, chars,
+bools, arrays (recursively), `colors.Color` (by channels), `time.stamp` (by
+instant — timezone does not participate), `json.Value` (by value, deeply for
+object/array payloads; comparing cyclic JSON values is a runtime error
+`cannot compare cyclic JSON value`), `sqlite.Value` (by SQL storage class and
+value; INTEGER and REAL compare numerically; unlike SQL itself, two SQL NULLs
+are equal — `x == null` is the taught idiom).
+
+**Objects of user classes have no built-in equality.** `a == b` on objects is
+a compile error unless the class declares the equals contract:
+
+```idyllium
+bool function equals(Hero other) {
+    return this.name == other.name and this.level == other.level;
+}
+```
+
+With the contract, `a == b` and `a != b` dispatch to it; so do `contains`,
+`find`, `count` on arrays of that class, and `==` on such arrays (structural,
+per cell). Without it: `cannot compare objects of class 'Hero' with '==' —
+declare 'bool function equals(Hero other)' in class 'Hero' and the comparison
+will use it` (searches say `contains() cannot search for 'Hero' objects — …`).
+
+Contract rules:
+- The parameter type is the class itself; dispatch is STATIC — the left
+  operand's declared type picks the contract. Comparing a `Cat` variable with
+  an `Animal` variable is a compile error (`'Cat.equals' accepts a 'Cat', got
+  'Animal'`); compare both through the same class window instead.
+- Contracts are NOT inherited: a class must declare its own `equals` (a
+  derived class may declare `equals(Derived)` alongside the base's
+  `equals(Base)` — the only case where an override may change the signature).
+  Viewing two derived objects through base-typed variables compares them with
+  the BASE contract («equals works for the class you look through»).
+- `equals` should answer, not mutate — nothing enforces purity, write it pure.
+- Inside `equals`, `type_name(this) != type_name(other)` distinguishes
+  namesakes of different classes (see `type_name` in §6).
+- `sort()` on arrays of objects is a compile error (`sort() cannot order
+  'Hero' objects — objects have no built-in ordering`): there is no ordering
+  contract yet.
 
 All logical operands must have type `bool`; Idyllium has no truthy/falsy
 conversion. Precedence from higher to lower is `not`, comparisons, `and`,
@@ -881,7 +932,7 @@ bool strong = Hero("Ornella", 750).get_hp() > 700;
 ```
 
 Declaring an object variable without parentheses NEVER runs the constructor
-(rule since 1.3.5). The object is created with default field values (numbers 0,
+(the ghost rule). The object is created with default field values (numbers 0,
 strings empty). To run the constructor, call it explicitly:
 
 ```idyllium
@@ -904,15 +955,31 @@ zero arguments, such as `Empty()`, but not with arguments. Constructor
 expressions are also valid in class field initializers.
 
 There is no `new` expression. Declaring a destructor is a friendly compile
-error (`destructors are not supported yet`). A trailing semicolon after the
+error (`destructors are not supported yet`). A field whose type is (directly
+or transitively) the class itself is a compile error (`field 'friend' of
+class 'Person' creates an endless chain of default objects — …`): default
+construction would recurse forever. `dyn_array<Person>` fields are legal
+(their default is an empty list) — use them for trees and lists. A trailing semicolon after the
 class body (`};`) is accepted and ignored, so C++ habits do not break code.
 
 ### Printing Objects: The `to_string()` Contract
 
 Passing a class object to `console.write`/`console.writeln` is a compile error
-(`cannot print object of class 'Cat' directly`) unless the class declares a
-public zero-argument method `string function to_string()`. With that method,
-the object prints through it:
+(`cannot print object of class 'Cat' directly — declare 'string function
+to_string()' in class 'Cat' and printing will use it`) unless the class
+declares a public zero-argument method `string function to_string()`. When a
+method named `equals`/`to_string` exists but has the wrong shape (private,
+static, wrong parameter or return type), the error appends the exact reason,
+e.g. `(class 'Cat' has 'to_string', but it returns 'int' instead of 'string')`.
+Contracts are not inherited: the method must be declared in the
+class itself — a derived class without its own `to_string` is not printable
+even when the base has one. With the method, the object prints through it.
+An **array of objects** whose element class owns the contract also prints:
+element representations are collected via `to_string()` and rendered like an
+array of strings (`["Герой Мира", "Герой Кай"]`).
+Without the contract the array refuses with the same teaching hint. String
+concatenation with an object stays forbidden (like `string + int`) — use the
+global `to_string(obj)`, which honours the contract:
 
 ```idyllium
 use console;
@@ -934,6 +1001,11 @@ main() {
 
 Arrays of class objects are never printable directly — print elements in a
 loop instead.
+
+Functions are not printable either: `console.writeln(abs_value)`
+— a forgotten-parentheses mistake — is a compile error (`cannot print function
+'abs_value' — add '()' with its arguments to call it and print the result`);
+the same guard covers `to_string(fn)`, file writes and `json.Value(fn)`.
 
 ### Access Modifiers
 
@@ -1103,20 +1175,50 @@ and `gui.Canvas.draw(drawable.Drawable)`.
 
 ### Value And Reference Semantics (Memory Model)
 
-Verified behavior of assignment and parameter passing:
+Verified behavior of assignment and parameter passing — the value/reference
+table (single source of truth):
+
+| Family | Assignment/argument | `==` |
+|---|---|---|
+| primitives (`int`, `float`, `string`, `char`, `bool`) | copy | by content |
+| `array` / `dyn_array` | copy (fresh cells; OBJECT cells still share the objects — «своя коробка, общие жители») | structural per cell |
+| `colors.Color`, `time.stamp`, `json.Value`, `sqlite.Value` | value-like library types | by content (stamp — by instant; JSON — deep) |
+| objects of user classes | reference (`Hero b = a;` — same object) | only via the `equals` contract (§7) |
+| `json.Object`, `json.Array` and every other library OBJECT (`gui.*`, `image.*`, `sqlite.Database`…) | reference | `json.Object`/`json.Array` wrapped as `json.Value` compare by content; other library objects are not meaningfully comparable |
+
+Details worth quoting:
 
 - **Class objects are references.** `Hero b = a;` makes `b` and `a` the same
   object: `b.hp = 5;` changes `a.hp` too. Passing an object to a function
-  passes the same object. `==` on objects compares identity (same object),
-  not field contents.
+  passes the same object. There is no built-in object copy: write your own
+  `copy()` method (shallow or deep — the class author decides).
+- **Empty fields**: a class-typed FIELD declared with an explicit
+  `= null` initializer may be empty — `class Room { Guest guest = null; }`.
+  This is the ONLY place `null` is allowed for user classes: locals,
+  parameters, returns and array cells never accept it. Rules: assign an object
+  or `null` back to such a field; test it with `room.guest == null` /
+  `!= null` (a compile error for any other object expression); ANY use of the
+  field while empty — reading through it, printing it, passing it anywhere —
+  is a runtime error naming the field (`field 'guest' of class 'Room' is
+  empty (null) — check it with '!= null' before using it`). With the equals
+  contract, empty equals only empty. `type_name(empty field)` → `"null"`.
+  Self-referencing fields become legal when nullable
+  (`class Person { Person friend = null; }`) — linked lists and trees are
+  built this way; without `= null` such a field is a compile error (endless
+  chain of default objects).
 - **Arrays are values.** `dyn_array<int> b = a;` creates a copy: `b[0] = 99;`
-  does not change `a[0]`. Passing an array to a function also copies it —
-  mutations inside the function are not visible to the caller. To let a
-  function modify shared data, wrap the array in a class object.
-- **Primitives (`int`, `float`, `string`, `char`, `bool`) are values.**
-  Strings are immutable; `s[0]` reads a `char` but cannot be assigned.
+  does not change `a[0]`. Passing an array to a function also copies it.
+  A copy of an ARRAY OF OBJECTS is a fresh array whose cells point to the
+  SAME objects: replacing a cell in the copy is invisible to the original,
+  mutating a field through a cell is visible.
+- Two `dyn_array`s of different lengths compare as `false` (lengths are a
+  runtime property); two fixed arrays of different declared sizes do not even
+  compile (`cannot compare 'array<int, 3>' and 'array<int, 2>'` — size is part
+  of the type).
 - **`colors.Color` and `time.stamp` are immutable values** — their `with_*`
-  and `in_timezone` methods return new values.
+  and `in_timezone` methods return new values; both compare by content
+  (stamps by instant, so two stamps of the same moment in different timezones
+  are equal — and order with `<`/`>` by instant too).
 
 ## 16. User Modules
 
@@ -1156,7 +1258,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, never returns
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.4.1"
+system.version()                    // "1.5.0"
 ```
 
 **Recursion depth.** Idyllium counts call depth itself instead of relying on the
@@ -1567,6 +1669,69 @@ opens the channel after a send receives nothing. An open post keeps the
 program alive after main (window genre); `close()` releases it, Stop closes
 all posts. For structured messages (games, protocols) send JSON text and
 parse with `json.parse` — design the protocol before coding.
+
+## 21e. Library `web` (since 1.5.0)
+
+HTTP server (Flask genre). Works in console runs and VS Code with a real
+port. In the Web IDE the same program starts a **rehearsal server**: a
+Service Worker intercepts `<site>/preview/<port>/...` and routes requests to
+the student's handlers, so the console prints a rehearsal address instead of
+`http://127.0.0.1:8080` and the site opens in a neighbouring tab of the SAME
+browser only (nobody else can reach it — the lesson frames it as a rehearsal
+before the real performance in VS Code/console). Student code is identical
+on all hosts. Outside the Web IDE page (plain `runIdylliumInBrowser` embeds,
+tests) there is no listen transport and `web.Server.run()` still refuses
+honestly (`web.Server.run() is not available in the Web IDE — run the
+program in VS Code or the console host, where the computer can listen on a
+port`).
+
+```idyllium
+use web;
+use json;
+
+void function hello(web.Request req, web.Response res) {
+    res.send("Hello, " + req.query("name") + "!");     // text/html
+}
+
+void function api(web.Request req, web.Response res) {
+    res.send_json("{\"players\": 3}");                 // application/json
+}
+
+void function receive(web.Request req, web.Response res) {
+    res.status = 201;                                  // read when the reply is sent
+    res.send("got: " + req.body);
+}
+
+main() {
+    web.Server app;
+    app.on_get("/hello", hello);
+    app.on_post("/mailbox", receive);
+    app.on_get("/api", api);
+    app.serve_directory("public");   // static files, GET only, "/" -> index.html
+    app.port = 8080;                 // 0-65535; 0 = ask the OS for a free port
+    app.run();                       // never returns; Stop / Ctrl+C ends it
+}
+```
+
+- `web.Server`: `on_get(path, handler)` / `on_post(path, handler)` (exact
+  path match starting with '/'; duplicate registration is a runtime error),
+  `serve_directory(path)`, `run()`, properties `port` (int; holds the actual
+  port after run), `host` (default `"127.0.0.1"` — this computer only;
+  `"0.0.0.0"` exposes the program to the whole local network, on purpose
+  only), read-only `is_running`.
+- `web.Request`: read-only `path` and `body`; `query(name)` returns the query
+  parameter or an empty string.
+- `web.Response`: `send(text)` (text/html), `send_json(text)`
+  (application/json) — one reply per request, a second send is a runtime
+  error; `status` property (100–599, default 200).
+- Built-in behavior: unknown path → 404; known path, wrong method → 405;
+  handler crash → 500 with the error text (the server keeps running and logs
+  the crash to the program console). Requests are handled one at a time in
+  arrival order. Static serving never leaves the served directory (path
+  traversal is blocked). Busy port: `web.Server.run() port 8080 is already in
+  use — choose another port or stop the other program`.
+- The natural test client is the `http` library from the same language:
+  `http.get("http://127.0.0.1:8080/api")`.
 
 ## 21b. Library `hash`
 
@@ -2013,10 +2178,16 @@ width: int
 height: int
 visible: bool
 enabled: bool
+hint: string
 text_color: colors.Color
 background_color: colors.Color
 font: fonts.Font
 ```
+
+`hint` is a tooltip: the string pops up next to the cursor when
+it rests over the widget; empty string (the default) means no tooltip. Unlike
+`placeholder` (text inside an empty input field), `hint` works on every widget
+— use it for small icon-only buttons.
 
 `visible = false` hides the widget (it stays in memory, receives no events).
 `enabled = false` keeps the widget on screen but disables it: it is rendered
@@ -2068,7 +2239,9 @@ Supported properties (everything else is ignored): `color`,
 `background-color`, `border-color`, `border-width` (0-20), `border-radius`
 (0-100), `border-style` (`solid`/`dashed`/`dotted`/`none`), `font-size`
 (6-96), `font-weight` (`normal`/`bold`), `font-style` (`normal`/`italic`),
-`text-align` (`left`/`center`/`right`), `opacity` (0.0-1.0), `padding`
+`text-align` (`left`/`center`/`right`), `opacity` (0.0-1.0), `user-select`
+(`auto`/`none`/`text`/`all` — button-like widgets ship with `none` by default;
+set `user-select: text` to restore selection), `padding`
 (0-40). Pixel values accept `12px` or plain `12`.
 
 `background` accepts ONLY gradients (solid colors go through
@@ -2861,7 +3034,7 @@ void function on_update(gui.Canvas canvas, float delta_time) {
 }
 ```
 
-### Canvas Snapshots (since 1.3.6)
+### Canvas Snapshots
 
 The canvas can hand its current picture back:
 

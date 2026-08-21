@@ -117,7 +117,7 @@ main() {
 }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:11:21: compile error: cannot print object of class 'Cat' directly</idyl-error-block>
+  <idyl-error-block>main.idyl:11:21: compile error: cannot print object of class 'Cat' directly — declare 'string function to_string()' in class 'Cat' and printing will use it</idyl-error-block>
 
   <p>Исправление: печатайте свойства по отдельности — <code>console.writeln(cat.name);</code> — или напишите в классе метод <code>info()</code>, который сам выводит всё, что нужно.</p>
 </div>

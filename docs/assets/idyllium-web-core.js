@@ -112,14 +112,24 @@ Object.defineProperty(exports, "IDYLLIUM_SEMANTIC_TOKEN_TYPES", { enumerable: tr
 Object.defineProperty(exports, "IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS", { enumerable: true, get: function () { return semantics_1.IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS; } });
 var gui_interval_1 = require("./runtime/gui-interval");
 Object.defineProperty(exports, "guiPreviewIntervalMs", { enumerable: true, get: function () { return gui_interval_1.guiPreviewIntervalMs; } });
+function buildBrowserNetworkService(networkListen) {
+    const base = (0, network_service_1.createFetchNetworkService)({ corsHints: true });
+    if (!networkListen || !base)
+        return base;
+    return { fetch: (request) => base.fetch(request), listen: networkListen };
+}
 function createMemoryRuntime(options, fileSystem) {
     return (0, runtime_1.createRuntime)({
         platform: 'web',
         console: options.console,
         input: options.input,
+        // Раньше сигнал объявлялся в опциях, но терялся по дороге: Stop бросал
+        // программу, не сообщая ей. Для web.Server это фатально — run() обязан
+        // услышать abort и закрыть транспорт (снять порт репетиции).
+        abortSignal: options.abortSignal,
         fileSystem,
         imageService: (0, browser_image_service_1.createBrowserImageService)(),
-        networkService: (0, network_service_1.createFetchNetworkService)({ corsHints: true }),
+        networkService: buildBrowserNetworkService(options.networkListen),
         channelService: (0, channel_service_1.createBroadcastChannelService)(),
         sqliteService: browserSqliteService,
         urlOpener: {
@@ -223,12 +233,61 @@ class JavaScriptGenerator {
     moduleClassNames = new Set();
     returnTypes = [];
     classFieldInitializerDepth = 0;
+    /** Имя модуля, чьи объявления сейчас генерируются, — для квалифицированной метки классов. */
+    currentModuleName = null;
     userModuleNames;
     nodeTypes;
+    equalsContractClasses;
+    nullableClassFields;
     stdlib = (0, registry_1.createDefaultStandardLibrary)();
     constructor(options = {}) {
         this.userModuleNames = options.userModuleNames ?? new Set();
         this.nodeTypes = options.nodeTypes ?? new Map();
+        this.equalsContractClasses = options.equalsContractClasses ?? new Set();
+        this.nullableClassFields = options.nullableClassFields ?? new Map();
+    }
+    /** Чтение «пустого поля» (room.guest, где guest объявлен с `= null`): описание или null. */
+    nullableFieldRead(expression) {
+        if (expression.kind !== 'MemberExpression')
+            return null;
+        const bare = this.bareClassName(this.typeOf(expression.object));
+        if (!bare || !this.nullableClassFields.get(bare)?.has(expression.name))
+            return null;
+        return { objectJs: this.expression(expression.object), field: expression.name, className: bare };
+    }
+    /** Сырое чтение операнда: для сравнения с null и контрактного '==' охрана не ставится. */
+    rawOperand(expression) {
+        const nullable = this.nullableFieldRead(expression);
+        return nullable ? `${nullable.objectJs}.${nullable.field}` : this.expression(expression);
+    }
+    /** Короткое имя класса из TypeRef: у импортированных модульных классов
+     *  kind 'class' с точечным именем («hotel.Room») — слоты и карты живут
+     *  по последнему сегменту. */
+    bareClassName(type) {
+        if (!type)
+            return null;
+        if (type.kind === 'class') {
+            const dot = type.name.lastIndexOf('.');
+            return dot >= 0 ? type.name.slice(dot + 1) : type.name;
+        }
+        if (type.kind === 'qualified' && !this.stdlib.hasModule(type.moduleName)) {
+            return type.name;
+        }
+        return null;
+    }
+    /** Короткое имя пользовательского класса с контрактом equals; null для прочих типов. */
+    contractClassBareName(type) {
+        const bare = this.bareClassName(type);
+        return bare !== null && this.equalsContractClasses.has(bare) ? bare : null;
+    }
+    /** Класс-лист массива с контрактом (сквозь вложенные массивы); null иначе. */
+    contractLeafOfArray(type) {
+        if (!type || type.kind !== 'array')
+            return null;
+        let element = type.elementType;
+        while (element.kind === 'array')
+            element = element.elementType;
+        return this.contractClassBareName(element);
     }
     typeOf(expression) {
         return this.nodeTypes.get(expression) ?? null;
@@ -245,6 +304,7 @@ class JavaScriptGenerator {
         for (const module of modules) {
             this.emitModule(module, lines, 1);
         }
+        this.currentModuleName = null;
         this.prepareProgramState(program);
         this.emitProgramDeclarations(program, lines, 1);
         if (program.main) {
@@ -264,6 +324,7 @@ class JavaScriptGenerator {
     emitModule(module, lines, indent) {
         const pad = '  '.repeat(indent);
         lines.push(`${pad}$rt.modules.${module.name} = await (async function() {`);
+        this.currentModuleName = module.name;
         this.prepareProgramState(module.program);
         this.emitProgramDeclarations(module.program, lines, indent + 1);
         lines.push(`${pad}  return {`);
@@ -478,12 +539,15 @@ class JavaScriptGenerator {
         const classObjectName = this.classObjectName(declaration.name);
         lines.push(`${pad}const ${classObjectName} = {};`);
         lines.push(`${pad}async function ${this.classDefaultFactoryName(declaration.name)}() {`);
+        // Метка класса — квалифицированная для модульных классов («zoo.Lion»):
+        // её читают type_name() и тексты ошибок рантайма.
+        const typeTag = this.currentModuleName ? `${this.currentModuleName}.${declaration.name}` : declaration.name;
         if (declaration.baseName) {
             lines.push(`${pad}  const self = await ${this.classDefaultFactoryName(declaration.baseName)}();`);
-            lines.push(`${pad}  self.__idylliumType = ${JSON.stringify(declaration.name)};`);
+            lines.push(`${pad}  self.__idylliumType = ${JSON.stringify(typeTag)};`);
         }
         else {
-            lines.push(`${pad}  const self = { __idylliumType: ${JSON.stringify(declaration.name)} };`);
+            lines.push(`${pad}  const self = { __idylliumType: ${JSON.stringify(typeTag)} };`);
         }
         for (const member of declaration.members) {
             if (member.kind === 'ClassMethodDeclaration' && !member.isStatic) {
@@ -537,9 +601,30 @@ class JavaScriptGenerator {
             lines.push(`${pad}self.${field.name} = ${value};`);
         }
     }
+    /** Контрактный equals хранится в слоте со своим классом (equals$Cat):
+     *  контракты не наследуются, у семьи классов сосуществуют свои версии,
+     *  а '==' диспетчеризуется статически — по типу, через который смотрят. */
+    isContractEqualsDeclaration(className, declaration) {
+        return declaration.name === 'equals'
+            && !declaration.isStatic
+            && declaration.parameters.length === 1
+            && this.typeNameToString(declaration.parameters[0].paramType) === className;
+    }
     emitInstanceMethod(className, declaration, lines, indent) {
         const pad = '  '.repeat(indent);
         const params = declaration.parameters.map((parameter) => parameter.name).join(', ');
+        if (this.isContractEqualsDeclaration(className, declaration)) {
+            lines.push(`${pad}self[${JSON.stringify(`equals$${className}`)}] = async function(${params}) {`);
+            this.emitCallGuardOpen(lines, indent + 1, `${className}.equals`, declaration.nameRange ?? declaration.range);
+            this.returnTypes.push(declaration.returnType);
+            this.emitParameterDefaults(declaration.parameters, lines, indent + 2);
+            this.emitParameterCasts(declaration.parameters, lines, indent + 2);
+            this.emitBlock(declaration.body, lines, indent + 2);
+            this.returnTypes.pop();
+            this.emitCallGuardClose(lines, indent + 1);
+            lines.push(`${pad}};`);
+            return;
+        }
         lines.push(`${pad}self.${declaration.name} = async function(${params}) {`);
         this.emitCallGuardOpen(lines, indent + 1, `${className}.${declaration.name}`, declaration.nameRange ?? declaration.range);
         this.returnTypes.push(declaration.returnType);
@@ -748,6 +833,32 @@ class JavaScriptGenerator {
         if (expression.operator === 'xor') {
             return `(${left} !== ${right})`;
         }
+        if (expression.operator === '==' || expression.operator === '!=') {
+            // «Пустое поле» против null: проверка присутствия читает поле сыро
+            // (охрана здесь была бы ложным срабатыванием на законной проверке).
+            const leftIsNullLiteral = expression.left.kind === 'LiteralExpression' && expression.left.valueType === 'null';
+            const rightIsNullLiteral = expression.right.kind === 'LiteralExpression' && expression.right.valueType === 'null';
+            if ((leftIsNullLiteral && this.nullableFieldRead(expression.right))
+                || (rightIsNullLiteral && this.nullableFieldRead(expression.left))) {
+                const rawLeft = leftIsNullLiteral ? left : this.rawOperand(expression.left);
+                const rawRight = rightIsNullLiteral ? right : this.rawOperand(expression.right);
+                return `$rt.core.binary(${JSON.stringify(expression.operator)}, ${rawLeft}, ${rawRight}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+            }
+            // Объекты с контрактом equals: '==' — awaited-вызов слота левого
+            // СТАТИЧЕСКОГО типа; остальные сравнения остаются синхронными.
+            // «Пустые поля» читаются сыро: null-ветку берёт на себя диспетчер.
+            const leftType = this.typeOf(expression.left);
+            const contractClass = this.contractClassBareName(leftType);
+            if (contractClass && this.contractClassBareName(this.typeOf(expression.right))) {
+                const call = `(await $rt.core.equalsObjects(${this.rawOperand(expression.left)}, ${this.rawOperand(expression.right)}, ${JSON.stringify(`equals$${contractClass}`)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line}))`;
+                return expression.operator === '==' ? call : `(!${call})`;
+            }
+            const leftLeaf = this.contractLeafOfArray(leftType);
+            if (leftLeaf && this.contractLeafOfArray(this.typeOf(expression.right))) {
+                const call = `(await $rt.core.equalsObjectArrays(${left}, ${right}, ${JSON.stringify(`equals$${leftLeaf}`)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line}))`;
+                return expression.operator === '==' ? call : `(!${call})`;
+            }
+        }
         return `$rt.core.binary(${JSON.stringify(expression.operator)}, ${left}, ${right}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
     }
     callExpression(expression) {
@@ -768,6 +879,18 @@ class JavaScriptGenerator {
             if (callee.name === 'to_string') {
                 const args = this.callArgumentValues(expression.args, this.stdlib.getGlobalFunction(callee.name)?.parameters.map((parameter) => parameter.name)).join(', ');
                 return `$rt.core.to_string(${args})`;
+            }
+            if (callee.name === 'type_name' && expression.args.length === 1) {
+                // Гибрид: значения и массивы известны статически — строка-константа
+                // в записи ошибок компилятора; объекты — рантайм-метка (актуальный
+                // класс, даже если смотрят через базовое окно).
+                const argNode = expression.args[0].value;
+                const argType = this.typeOf(argNode);
+                if (argType && argType.kind !== 'class' && argType.kind !== 'qualified' && argType.kind !== 'runtime-error') {
+                    return JSON.stringify((0, types_1.typeToString)(argType));
+                }
+                // «Пустое поле» читается сыро: type_name(пустота) — «null», не ошибка.
+                return `$rt.core.typeName(${this.rawOperand(argNode)})`;
             }
         }
         if (callee.kind === 'MemberExpression' && callee.object.kind === 'IdentifierExpression') {
@@ -823,6 +946,23 @@ class JavaScriptGenerator {
             if (typesRuntimeName && callee.name === 'bit_not') {
                 return `$rt.types.bit_not(${this.expression(callee.object)}, ${JSON.stringify(typesRuntimeName)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
             }
+            // Поиск в массивах объектов идёт через контракт equals элемента —
+            // длина фиксируется на входе, сравнение зовёт слот статического типа.
+            if (receiverType?.kind === 'array' && ['contains', 'find', 'count'].includes(callee.name)) {
+                const leaf = this.contractLeafOfArray(receiverType);
+                if (leaf) {
+                    const args = this.methodCallArgs(callee.name, expression.args, receiverType).join(', ');
+                    return `$rt.array.searchWith(${this.expression(callee.object)}, ${args}, ${JSON.stringify(`equals$${leaf}`)}, ${JSON.stringify(callee.name)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+                }
+            }
+            // Контракт equals: статическая диспетчеризация по типу получателя.
+            if (callee.name === 'equals' && expression.args.length === 1) {
+                const contractClass = this.contractClassBareName(receiverType);
+                if (contractClass) {
+                    const args = this.methodCallArgs(callee.name, expression.args, receiverType).join(', ');
+                    return `$rt.callMethod(${this.expression(callee.object)}, ${JSON.stringify(`equals$${contractClass}`)}, [${args}], ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+                }
+            }
             const args = this.methodCallArgs(callee.name, expression.args, receiverType).join(', ');
             return `$rt.callMethod(${this.expression(callee.object)}, ${JSON.stringify(callee.name)}, [${args}], ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
         }
@@ -837,6 +977,11 @@ class JavaScriptGenerator {
             if (this.userClassNames.has(moduleName)) {
                 return `${this.classObjectName(moduleName)}.${expression.name}`;
             }
+        }
+        // Чтение «пустого поля» охраняется: пустота не выходит в мир молча.
+        const nullable = this.nullableFieldRead(expression);
+        if (nullable) {
+            return `$rt.core.expectPresent(${nullable.objectJs}.${nullable.field}, ${JSON.stringify(nullable.field)}, ${JSON.stringify(nullable.className)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
         }
         return `${this.expression(expression.object)}.${expression.name}`;
     }
@@ -3048,6 +3193,9 @@ function classSpecFromDeclaration(declaration, moduleName, program, localClasses
                     owner: qualifiedName,
                     access: member.access,
                     range: field.range,
+                    nullable: field.initializer?.kind === 'LiteralExpression'
+                        && field.initializer.valueType === 'null'
+                        && (type.kind === 'class' || type.kind === 'qualified'),
                 });
             }
         }
@@ -3185,6 +3333,10 @@ class SemanticAnalyzer {
     scopes = [new Map()];
     functions = new Map();
     classes = new Map();
+    /** Короткие имена классов с контрактом equals (локальные и импортированные модульные). */
+    equalsContractClasses = new Set();
+    /** «Пустые поля» по классам (короткое имя → поля с явным `= null`). */
+    nullableClassFields = new Map();
     // Значения файловых int-констант: собираются до анализа сигнатур, чтобы
     // array<int, L> работал в параметрах функций и полях классов.
     fileConstants = new Map();
@@ -3219,6 +3371,7 @@ class SemanticAnalyzer {
                 this.registerClassMembers(declaration);
             }
         }
+        this.checkEndlessDefaultChains(program);
         for (const declaration of program.declarations) {
             if (declaration.kind === 'FunctionDeclaration') {
                 this.registerFunction(declaration);
@@ -3251,6 +3404,8 @@ class SemanticAnalyzer {
             diagnostics: this.diagnostics,
             tokens: deduplicateSemanticTokens(this.semanticTokens),
             nodeTypes: this.nodeTypes,
+            equalsContractClasses: this.equalsContractClasses,
+            nullableClassFields: this.nullableClassFields,
         };
     }
     registerImportedModuleClasses(moduleName) {
@@ -3270,6 +3425,7 @@ class SemanticAnalyzer {
                     range: field.range,
                     owner: field.owner,
                     access: field.access,
+                    nullable: field.nullable === true,
                 });
             }
             for (const method of classSpec.methods) {
@@ -3455,9 +3611,90 @@ class SemanticAnalyzer {
         info.membersRegistering = false;
         info.membersRegistered = true;
     }
+    /**
+     * Поле, тип которого (прямо, через цепочку полей, фиксированные массивы или
+     * наследование) снова требует построить этот же класс, заставляет фабрику
+     * умолчаний строить бесконечную цепочку объектов — рантайм взрывался бы
+     * переполнением стека. Честная ошибка компиляции вместо взрыва.
+     * dyn_array безопасен: его умолчание — пустой список.
+     */
+    checkEndlessDefaultChains(program) {
+        // Классы, которые фабрика умолчаний класса строит обязательно:
+        // база (фабрика потомка зовёт фабрику базы) + собственные поля.
+        const requiredClasses = (type, out) => {
+            if (type.kind === 'class' && this.classes.has(type.name))
+                out.push(type.name);
+            else if (type.kind === 'array' && !type.dynamic)
+                requiredClasses(type.elementType, out);
+        };
+        const reaches = (from, target, path) => {
+            if (path.includes(from))
+                return false; // чужой цикл — о нём скажет своё поле
+            path.push(from);
+            const info = this.classes.get(from);
+            if (!info) {
+                path.pop();
+                return false;
+            }
+            const next = [];
+            if (info.declaration.baseName && this.classes.has(info.declaration.baseName)) {
+                next.push(info.declaration.baseName);
+            }
+            for (const fieldName of info.ownFields) {
+                const field = info.fields.get(fieldName);
+                // «Пустое поле» цепочку обрывает: фабрике нечего строить.
+                if (field && field.nullable !== true)
+                    requiredClasses(field.type, next);
+            }
+            for (const candidate of next) {
+                if (candidate === target)
+                    return true;
+                if (reaches(candidate, target, path))
+                    return true;
+            }
+            path.pop();
+            return false;
+        };
+        for (const declaration of program.declarations) {
+            if (declaration.kind !== 'ClassDeclaration')
+                continue;
+            const info = this.classes.get(declaration.name);
+            if (!info)
+                continue;
+            for (const fieldName of info.ownFields) {
+                const field = info.fields.get(fieldName);
+                if (!field || field.nullable === true)
+                    continue;
+                const targets = [];
+                requiredClasses(field.type, targets);
+                for (const target of targets) {
+                    if (target === declaration.name) {
+                        this.diagnostics.error(field.range, `field '${fieldName}' of class '${declaration.name}' creates an endless chain of default objects — creating a '${declaration.name}' would create another '${declaration.name}' inside it`);
+                        break;
+                    }
+                    const path = [];
+                    if (reaches(target, declaration.name, path)) {
+                        this.diagnostics.error(field.range, `field '${fieldName}' of class '${declaration.name}' creates an endless chain of default objects — creating a '${declaration.name}' would create a '${target}', which creates a '${declaration.name}' again`);
+                        break;
+                    }
+                }
+            }
+        }
+    }
     inheritClassMembers(info, baseInfo) {
         for (const [name, field] of baseInfo.fields) {
             info.fields.set(name, field);
+            // «Пустое поле» наследуется вместе с охраной: карта для кодогена
+            // пополняется и под именем потомка — иначе доступ через окно наследника
+            // обходил бы стража (находка адверсариальной проверки).
+            if (field.nullable === true) {
+                let set = this.nullableClassFields.get(info.declaration.name);
+                if (!set) {
+                    set = new Set();
+                    this.nullableClassFields.set(info.declaration.name, set);
+                }
+                set.add(name);
+            }
         }
         for (const [name, method] of baseInfo.methods) {
             info.methods.set(name, method);
@@ -3495,14 +3732,28 @@ class SemanticAnalyzer {
                 this.diagnostics.error(field.range, `class '${info.declaration.name}' already has member '${field.name}'`);
                 continue;
             }
+            // «Пустое поле»: объектное поле с явным `= null` — единственная форма,
+            // в которой классы принимают пустоту (модель A, spec/some_null).
+            const isNullInitializer = field.initializer?.kind === 'LiteralExpression'
+                && field.initializer.valueType === 'null';
+            const nullable = isNullInitializer && this.userClassBareName(fieldType) !== null;
             info.fields.set(field.name, {
                 name: field.name,
                 type: fieldType,
                 range: field.range,
                 owner: info.declaration.name,
                 access: declaration.access,
+                nullable,
             });
             info.ownFields.add(field.name);
+            if (nullable) {
+                let set = this.nullableClassFields.get(info.declaration.name);
+                if (!set) {
+                    set = new Set();
+                    this.nullableClassFields.set(info.declaration.name, set);
+                }
+                set.add(field.name);
+            }
         }
     }
     registerClassMethod(info, declaration) {
@@ -3514,8 +3765,13 @@ class SemanticAnalyzer {
         }
         const inheritedMethod = info.methods.get(declaration.name);
         if (inheritedMethod && !this.methodSignatureCanOverride(inheritedMethod, declaration)) {
-            this.diagnostics.error(declaration.range, `method '${info.declaration.name}.${declaration.name}' must match inherited method signature`);
-            return;
+            // Контрактное исключение: методы-контракты не наследуются, у каждого
+            // класса — своя версия со СВОИМ типом параметра (equals(Cat) при
+            // базовом equals(Animal) — законно). Диспетчеризация — статическая.
+            if (!(declaration.name === 'equals' && this.isEqualsContractShape(info, declaration))) {
+                this.diagnostics.error(declaration.range, `method '${info.declaration.name}.${declaration.name}' must match inherited method signature`);
+                return;
+            }
         }
         if ((info.fields.has(declaration.name) && info.ownFields.has(declaration.name)) || (info.methods.has(declaration.name) && info.ownMethods.has(declaration.name))) {
             this.diagnostics.error(declaration.range, `class '${info.declaration.name}' already has member '${declaration.name}'`);
@@ -3538,6 +3794,101 @@ class SemanticAnalyzer {
             range: declaration.range,
         });
         info.ownMethods.add(declaration.name);
+        if (declaration.name === 'equals' && this.isEqualsContractShape(info, declaration)) {
+            if (declaration.parameters[0].defaultValue) {
+                this.diagnostics.error(declaration.parameters[0].range, "'equals' contract parameter cannot have a default value");
+            }
+            if (declaration.access === 'public') {
+                this.equalsContractClasses.add(info.declaration.name);
+            }
+        }
+    }
+    /** Форма контракта equals: нестатический, ровно один параметр СВОЕГО класса, возвращает bool. */
+    isEqualsContractShape(info, declaration) {
+        if (declaration.isStatic)
+            return false;
+        if (declaration.parameters.length !== 1)
+            return false;
+        const parameterType = this.resolveTypeName(declaration.parameters[0].paramType);
+        if (parameterType.kind !== 'class' || parameterType.name !== info.declaration.name)
+            return false;
+        return (0, types_1.sameType)(this.resolveTypeName(declaration.returnType), types_1.BOOL);
+    }
+    /** Есть ли у типа (класс или модульный класс) публичный контракт equals, объявленный в нём самом. */
+    typeOwnsEqualsContract(type) {
+        const bare = this.userClassBareName(type);
+        if (!bare)
+            return false;
+        if (type.kind === 'class') {
+            // Импортированный модульный класс живёт с точечным именем («hotel.Room»)
+            // — контракт смотрим в реестре модуля.
+            const dot = type.name.indexOf('.');
+            if (dot > 0) {
+                const moduleName = type.name.slice(0, dot);
+                const className = type.name.slice(dot + 1);
+                const classSpec = this.userModuleRegistry.getModule(moduleName)?.classes.get(className);
+                const method = classSpec?.methods.find((item) => item.name === 'equals');
+                const ok = method !== undefined
+                    && !method.isStatic
+                    && method.access === 'public'
+                    && method.spec.parameters.length === 1
+                    && (0, types_1.sameType)(method.spec.returnType, types_1.BOOL);
+                if (ok)
+                    this.equalsContractClasses.add(className);
+                return ok;
+            }
+            return this.equalsContractClasses.has(bare);
+        }
+        // Модульный класс: по спецификации модуля (короткое имя параметра —
+        // модульная семантика уже проверила форму при компиляции модуля).
+        if (type.kind === 'qualified' && this.userModuleRegistry.hasModule(type.moduleName)) {
+            const classSpec = this.userModuleRegistry.getModule(type.moduleName)?.classes.get(type.name);
+            const method = classSpec?.methods.find((item) => item.name === 'equals');
+            const ok = method !== undefined
+                && !method.isStatic
+                && method.access === 'public'
+                && method.spec.parameters.length === 1
+                && (0, types_1.sameType)(method.spec.returnType, types_1.BOOL);
+            if (ok)
+                this.equalsContractClasses.add(type.name);
+            return ok;
+        }
+        return false;
+    }
+    /** Выражение-доступ к «пустому полю» (nullable): room.guest, где guest объявлен с `= null`. */
+    nullableFieldAccess(expression) {
+        if (expression.kind !== 'MemberExpression')
+            return false;
+        const objectType = this.nodeTypes.get(expression.object) ?? null;
+        if (!objectType)
+            return false;
+        if (objectType.kind === 'class') {
+            return this.classes.get(objectType.name)?.fields.get(expression.name)?.nullable === true;
+        }
+        if (objectType.kind === 'qualified' && this.userModuleRegistry.hasModule(objectType.moduleName)) {
+            const classSpec = this.userModuleRegistry.getModule(objectType.moduleName)?.classes.get(objectType.name);
+            const field = classSpec?.fields.find((item) => item.name === expression.name);
+            return field?.nullable === true;
+        }
+        return false;
+    }
+    /** Короткое имя пользовательского класса (локального или модульного); null для прочих типов. */
+    userClassBareName(type) {
+        if (type.kind === 'class')
+            return type.name;
+        if (type.kind === 'qualified' && this.userModuleRegistry.hasModule(type.moduleName)) {
+            return this.userModuleRegistry.getModule(type.moduleName)?.classes.has(type.name) ? type.name : null;
+        }
+        return null;
+    }
+    /** Класс-лист массива (сквозь вложенные массивы); null, если элементы — не пользовательские классы. */
+    arrayLeafClass(type) {
+        if (type.kind !== 'array')
+            return null;
+        let element = type.elementType;
+        while (element.kind === 'array')
+            element = element.elementType;
+        return this.userClassBareName(element) !== null ? element : null;
     }
     registerClassEvent(info, declaration) {
         this.markSemanticToken('property', declaration.nameRange, ['declaration']);
@@ -3609,7 +3960,9 @@ class SemanticAnalyzer {
             this.pushScope();
             this.declare('this', (0, types_1.classType)(info.declaration.name), 'parameter', info.declaration.range);
             const initializerType = this.expressionType(field.initializer);
-            if (!this.canAssign(fieldType, initializerType)) {
+            const nullableField = info.fields.get(field.name)?.nullable === true
+                && initializerType.kind === 'null';
+            if (!nullableField && !this.canAssign(fieldType, initializerType)) {
                 this.diagnostics.error(field.initializer.range, `cannot assign '${(0, types_1.typeToString)(initializerType)}' value to '${(0, types_1.typeToString)(fieldType)}' field`);
             }
             this.popScope();
@@ -4030,6 +4383,11 @@ class SemanticAnalyzer {
         if (statement.operator === '=' && target.property?.callbacks) {
             this.checkCallbackAssignment(target.property, valueType, statement.value.range);
         }
+        // «Пустому полю» можно присвоить null («гость выехал»); прочим — нет.
+        if (assignedType.kind === 'null' && statement.operator === '='
+            && statement.target.kind === 'MemberExpression' && this.nullableFieldAccess(statement.target)) {
+            return;
+        }
         if (!this.canAssign(targetType, assignedType)) {
             this.diagnostics.error(statement.value.range, `cannot assign '${(0, types_1.typeToString)(assignedType)}' value to '${(0, types_1.typeToString)(targetType)}' variable`);
         }
@@ -4350,12 +4708,54 @@ class SemanticAnalyzer {
             return types_1.BOOL;
         }
         if (['==', '!='].includes(expression.operator)) {
+            // Голый null с голым null — мёртвое выражение (всегда true/false).
+            if (left.kind === 'null' && right.kind === 'null') {
+                this.diagnostics.error(expression.range, "cannot compare 'null' and 'null'");
+                return types_1.BOOL;
+            }
+            // «Пустое поле» против null — законная проверка присутствия.
+            if ((left.kind === 'null' && this.nullableFieldAccess(expression.right))
+                || (right.kind === 'null' && this.nullableFieldAccess(expression.left))) {
+                return types_1.BOOL;
+            }
+            // Объекты пользовательских классов сравниваются ТОЛЬКО через контракт
+            // equals; диспетчеризация статическая — контракт выбирает левый операнд.
+            const leftClass = this.userClassBareName(left);
+            const rightClass = this.userClassBareName(right);
+            if (leftClass !== null || rightClass !== null) {
+                if (leftClass === null || rightClass === null) {
+                    this.diagnostics.error(expression.range, `cannot compare '${(0, types_1.typeToString)(left)}' and '${(0, types_1.typeToString)(right)}'`);
+                }
+                else if (!this.typeOwnsEqualsContract(left)) {
+                    this.diagnostics.error(expression.range, `cannot compare objects of class '${(0, types_1.typeToString)(left)}' with '${expression.operator}' — declare 'bool function equals(${(0, types_1.typeToString)(left)} other)' in class '${(0, types_1.typeToString)(left)}' and the comparison will use it${left.kind === 'class' ? this.contractShapeIssue(left.name, 'equals') : ''}`);
+                }
+                else if (!(0, types_1.sameType)(left, right) && !this.canAssign(left, right)) {
+                    this.diagnostics.error(expression.range, `cannot compare '${(0, types_1.typeToString)(left)}' and '${(0, types_1.typeToString)(right)}' with '${expression.operator}' — '${(0, types_1.typeToString)(left)}.equals' accepts a '${(0, types_1.typeToString)(left)}', got '${(0, types_1.typeToString)(right)}'`);
+                }
+                return types_1.BOOL;
+            }
+            const leftLeaf = this.arrayLeafClass(left);
+            const rightLeaf = this.arrayLeafClass(right);
+            if (leftLeaf !== null || rightLeaf !== null) {
+                if (leftLeaf === null || rightLeaf === null
+                    || (!(0, types_1.sameType)(left, right) && !this.canAssign(left, right) && !this.canAssign(right, left))) {
+                    this.diagnostics.error(expression.range, `cannot compare '${(0, types_1.typeToString)(left)}' and '${(0, types_1.typeToString)(right)}'`);
+                }
+                else if (!this.typeOwnsEqualsContract(leftLeaf)) {
+                    this.diagnostics.error(expression.range, `cannot compare arrays of '${(0, types_1.typeToString)(leftLeaf)}' objects with '${expression.operator}' — declare 'bool function equals(${(0, types_1.typeToString)(leftLeaf)} other)' in class '${(0, types_1.typeToString)(leftLeaf)}' and the comparison will use it`);
+                }
+                return types_1.BOOL;
+            }
             if (!(0, types_1.sameType)(left, right) && !this.canAssign(left, right) && !this.canAssign(right, left)) {
                 this.diagnostics.error(expression.range, `cannot compare '${(0, types_1.typeToString)(left)}' and '${(0, types_1.typeToString)(right)}'`);
             }
             return types_1.BOOL;
         }
         if (['<', '<=', '>', '>='].includes(expression.operator)) {
+            // Порядок моментов времени: оба операнда time.stamp — сравнение по моменту.
+            const isStamp = (type) => type.kind === 'qualified' && type.moduleName === 'time' && type.name === 'stamp';
+            if (isStamp(left) && isStamp(right))
+                return types_1.BOOL;
             if (!(0, types_1.isNumeric)(left) || !(0, types_1.isNumeric)(right)) {
                 this.diagnostics.error(expression.range, `comparison '${expression.operator}' requires numeric operands`);
             }
@@ -4645,8 +5045,19 @@ class SemanticAnalyzer {
             if (objectType.kind === 'array') {
                 this.markSemanticToken('method', callee.nameRange);
                 const method = this.arrayMethodSpec(objectType, callee.name);
-                if (method)
+                if (method) {
+                    const leaf = this.arrayLeafClass(objectType);
+                    if (leaf !== null && ['contains', 'find', 'count'].includes(callee.name)
+                        && !this.typeOwnsEqualsContract(leaf)) {
+                        this.diagnostics.error(callee.range, `${callee.name}() cannot search for '${(0, types_1.typeToString)(leaf)}' objects — declare 'bool function equals(${(0, types_1.typeToString)(leaf)} other)' in class '${(0, types_1.typeToString)(leaf)}' and the search will use it`);
+                        return null;
+                    }
+                    if (leaf !== null && callee.name === 'sort') {
+                        this.diagnostics.error(callee.range, `sort() cannot order '${(0, types_1.typeToString)(leaf)}' objects — objects have no built-in ordering`);
+                        return null;
+                    }
                     return method;
+                }
                 this.reportUnknownArrayMethod(objectType, callee.name, callee.range);
                 return null;
             }
@@ -4731,6 +5142,18 @@ class SemanticAnalyzer {
         for (const item of resolved) {
             const argType = this.expressionType(item.arg.value);
             if (fn.printsValues) {
+                // Функция как значение в печати — почти всегда забытые скобки;
+                // без запрета консоль показала бы сгенерированный код (кухню).
+                if (argType.kind === 'function') {
+                    const value = item.arg.value;
+                    const functionName = value.kind === 'IdentifierExpression'
+                        ? value.name
+                        : value.kind === 'MemberExpression' ? value.name : null;
+                    this.diagnostics.error(item.arg.range, functionName !== null
+                        ? `cannot print function '${functionName}' — add '()' with its arguments to call it and print the result`
+                        : "cannot print a function — add '()' with its arguments to call it and print the result");
+                    continue;
+                }
                 const printableError = this.printableTypeError(argType);
                 if (printableError) {
                     this.diagnostics.error(item.arg.range, printableError);
@@ -4744,6 +5167,19 @@ class SemanticAnalyzer {
                         this.diagnostics.error(item.arg.range, this.argumentTypeError(fn, item, `'${(0, types_1.typeToString)(parameter.type)}'`, argType));
                     }
                     continue;
+                }
+                if (parameter.rejectsClassObjects) {
+                    const classType = this.userClassBareName(argType) !== null
+                        ? argType
+                        : this.arrayLeafClass(argType);
+                    if (classType !== null) {
+                        this.diagnostics.error(item.arg.range, `json.Value() cannot wrap an object of class '${(0, types_1.typeToString)(classType)}' — build a json.Object from its fields instead`);
+                        continue;
+                    }
+                    if (argType.kind === 'function') {
+                        this.diagnostics.error(item.arg.range, "json.Value() cannot wrap a function — call it with '()' and wrap the result");
+                        continue;
+                    }
                 }
                 if (parameter.acceptedTypes) {
                     const accepts = parameter.acceptedTypes.some((candidate) => this.canAssign(candidate, argType));
@@ -4767,10 +5203,13 @@ class SemanticAnalyzer {
     // __str__ из Python. Массивы объектов не печатаются даже с to_string():
     // инспекция массива синхронна и метод вызвать не может.
     printableTypeError(type) {
+        if (type.kind === 'function') {
+            return "cannot print a function — add '()' with its arguments to call it and print the result";
+        }
         if (type.kind === 'class') {
-            return this.classHasPublicToString(type.name)
-                ? null
-                : `cannot print object of class '${type.name}' directly`;
+            if (this.classHasPublicToString(type.name))
+                return null;
+            return `cannot print object of class '${type.name}' directly — declare 'string function to_string()' in class '${type.name}' and printing will use it${this.contractShapeIssue(type.name, 'to_string')}`;
         }
         if (type.kind === 'qualified' && this.userModuleRegistry.hasModule(type.moduleName)) {
             const classSpec = this.userModuleRegistry.getModule(type.moduleName)?.classes.get(type.name);
@@ -4782,23 +5221,72 @@ class SemanticAnalyzer {
                 && method.access === 'public'
                 && method.spec.parameters.length === 0
                 && (0, types_1.sameType)(method.spec.returnType, types_1.STRING);
-            return printable ? null : `cannot print object of class '${type.moduleName}.${type.name}' directly`;
+            return printable ? null : `cannot print object of class '${type.moduleName}.${type.name}' directly — declare 'string function to_string()' in class '${type.name}' and printing will use it`;
         }
         if (type.kind === 'array') {
             const element = type.elementType;
+            // Контракт to_string элемента открывает и печать массива: рантайм
+            // собирает представления элементов асинхронно (вердикт владельца
+            // 2026-08-22 — симметрия со сравнением массивов через equals).
             if (element.kind === 'class') {
-                return `cannot print an array of '${element.name}' objects directly`;
+                if (this.classHasPublicToString(element.name))
+                    return null;
+                return `cannot print an array of '${element.name}' objects directly — declare 'string function to_string()' in class '${element.name}' and printing will use it${this.contractShapeIssue(element.name, 'to_string')}`;
             }
             if (element.kind === 'qualified' && this.userModuleRegistry.hasModule(element.moduleName)) {
-                return `cannot print an array of '${element.moduleName}.${element.name}' objects directly`;
+                if (this.printableTypeError(element) === null)
+                    return null;
+                return `cannot print an array of '${element.moduleName}.${element.name}' objects directly — declare 'string function to_string()' in class '${element.name}' and printing will use it`;
             }
             return this.printableTypeError(element);
         }
         return null;
     }
+    /**
+     * Почему одноимённый метод НЕ считается контрактом — хвост для диагностик.
+     * Четыре разные порчи формы (private, чужой тип, не тот возврат, static)
+     * давали неотличимые ошибки — методисты мерили цену в «полчаса сверки
+     * по буквам» (2026-08-21).
+     */
+    contractShapeIssue(className, methodName) {
+        const info = this.classes.get(className);
+        if (!info || !info.ownMethods.has(methodName))
+            return '';
+        const spec = info.methods.get(methodName);
+        const access = info.methodAccess.get(methodName);
+        const issues = [];
+        if (access !== undefined && access.access !== 'public')
+            issues.push('it is private');
+        if (access !== undefined && access.isStatic)
+            issues.push('it is static');
+        if (methodName === 'equals') {
+            if (!spec || spec.parameters.length !== 1) {
+                issues.push(`it must take exactly one parameter of type '${className}'`);
+            }
+            else if (!(spec.parameters[0].type.kind === 'class' && spec.parameters[0].type.name === className)) {
+                issues.push(`its parameter is '${(0, types_1.typeToString)(spec.parameters[0].type)}' instead of '${className}'`);
+            }
+            if (spec && !(0, types_1.sameType)(spec.returnType, types_1.BOOL)) {
+                issues.push(`it returns '${(0, types_1.typeToString)(spec.returnType)}' instead of 'bool'`);
+            }
+        }
+        else {
+            if (spec && spec.parameters.length > 0)
+                issues.push('it must take no parameters');
+            if (spec && !(0, types_1.sameType)(spec.returnType, types_1.STRING)) {
+                issues.push(`it returns '${(0, types_1.typeToString)(spec.returnType)}' instead of 'string'`);
+            }
+        }
+        if (issues.length === 0)
+            return '';
+        return ` (class '${className}' has '${methodName}', but ${issues.join(', ')})`;
+    }
     classHasPublicToString(className) {
         const info = this.classes.get(className);
         if (!info)
+            return false;
+        // Контракты не наследуются: to_string должен быть объявлен в самом классе.
+        if (!info.ownMethods.has('to_string'))
             return false;
         const spec = info.methods.get('to_string');
         if (!spec || spec.parameters.length > 0)
@@ -5583,6 +6071,7 @@ function createDefaultStandardLibrary() {
     const widgetState = [
         propertySpec('visible', types_1.BOOL, false, 'Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.'),
         propertySpec('enabled', types_1.BOOL, false, 'Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.'),
+        propertySpec('hint', types_1.STRING, false, 'Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.'),
     ];
     const styleable = [
         propertySpec('style', types_1.STRING, false, 'IdySS-строка стилей вида "color: red; border-radius: 8px;". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.'),
@@ -5640,7 +6129,7 @@ function createDefaultStandardLibrary() {
             documentation: 'Где выполняется программа: "cli", "web" или "vscode".',
         }),
         functionSpec('version', [], types_1.STRING, {
-            documentation: 'Версия Idyllium, например "1.4.1".',
+            documentation: 'Версия Idyllium, например "1.5.0".',
         }),
     ]));
     registry.registerModule(moduleSpec('console', [
@@ -5818,7 +6307,9 @@ function createDefaultStandardLibrary() {
                 minArguments: 0,
                 documentation: 'Читает count символов либо весь оставшийся текст, если count не указан.',
             }),
-            functionSpec('read_line', [], types_1.STRING),
+            functionSpec('read_line', [], types_1.STRING, {
+                documentation: 'Читает строку целиком, включая завершающий перевод строки, если он есть в файле (симметрично write_line, который его добавляет; у последней строки без перевода — без него). Для чистого текста используйте .trim().',
+            }),
             functionSpec('read_all', [], types_1.STRING),
             functionSpec('has_next_line', [], types_1.BOOL),
             functionSpec('close', [], types_1.VOID),
@@ -5886,6 +6377,52 @@ function createDefaultStandardLibrary() {
         ], [
             functionSpec('header', [{ name: 'name', type: types_1.STRING }], types_1.STRING, {
                 documentation: 'Значение заголовка ответа по имени (регистр не важен); пустая строка, если заголовка нет.',
+            }),
+        ]),
+    ]));
+    const webRequest = (0, types_1.qualified)('web', 'Request');
+    const webResponse = (0, types_1.qualified)('web', 'Response');
+    registry.registerModule(moduleSpec('web', [], [], [
+        typeSpec('Server', [
+            propertySpec('port', types_1.INT, false, 'Порт сервера, 0–65535 (по умолчанию 8080; 0 — попросить у системы свободный). После run() хранит фактический порт.'),
+            propertySpec('host', types_1.STRING, false, 'Какие адреса слушать. По умолчанию "127.0.0.1" — только этот компьютер. "0.0.0.0" открывает программу ВСЕЙ локальной сети — включайте осознанно.'),
+            propertySpec('is_running', types_1.BOOL, true, 'true, пока сервер запущен. Свойство доступно только для чтения.'),
+        ], [
+            functionSpec('on_get', [
+                { name: 'path', type: types_1.STRING },
+                { name: 'handler', type: types_1.ANY_TYPE },
+            ], types_1.VOID, {
+                documentation: 'Регистрирует обработчик GET-запросов на точный путь (например "/hello"). Обработчик — функция вида void function(web.Request req, web.Response res). Повторная регистрация пути — ошибка.',
+            }),
+            functionSpec('on_post', [
+                { name: 'path', type: types_1.STRING },
+                { name: 'handler', type: types_1.ANY_TYPE },
+            ], types_1.VOID, {
+                documentation: 'Регистрирует обработчик POST-запросов на точный путь. Тело запроса — в req.body.',
+            }),
+            functionSpec('serve_directory', [{ name: 'path', type: types_1.STRING }], types_1.VOID, {
+                documentation: 'Раздаёт файлы папки как статику (только чтение, только GET, выход из папки закрыт). Адрес "/" отдаёт index.html. Маршруты on_get/on_post проверяются раньше статики.',
+            }),
+            functionSpec('run', [], types_1.VOID, {
+                documentation: 'Запускает сервер и не возвращается: программа обслуживает запросы, пока её не остановят (Stop или Ctrl+C). Занятый порт — читаемая ошибка. Работает в консоли и VS Code; в Web IDE — честный отказ (браузер не может слушать порт).',
+            }),
+        ]),
+        typeSpec('Request', [
+            propertySpec('path', types_1.STRING, true, 'Путь запроса, например "/hello". Свойство доступно только для чтения.'),
+            propertySpec('body', types_1.STRING, true, 'Тело запроса (для POST). Свойство доступно только для чтения.'),
+        ], [
+            functionSpec('query', [{ name: 'name', type: types_1.STRING }], types_1.STRING, {
+                documentation: 'Значение query-параметра адреса (?name=value) по имени; пустая строка, если параметра нет.',
+            }),
+        ]),
+        typeSpec('Response', [
+            propertySpec('status', types_1.INT, false, 'Код ответа, 100–599 (по умолчанию 200). Читается в момент отправки ответа.'),
+        ], [
+            functionSpec('send', [{ name: 'text', type: types_1.STRING }], types_1.VOID, {
+                documentation: 'Отправляет текст ответа как HTML-страницу (text/html). Один ответ на один запрос: повторный send — ошибка.',
+            }),
+            functionSpec('send_json', [{ name: 'text', type: types_1.STRING }], types_1.VOID, {
+                documentation: 'Отправляет текст ответа как JSON (application/json) — для программ-клиентов и http.get.',
             }),
         ]),
     ]));
@@ -5974,9 +6511,9 @@ function createDefaultStandardLibrary() {
     registry.registerModule(moduleSpec('json', [
         functionSpec('is_valid', [{ name: 'text', type: types_1.STRING }], types_1.BOOL),
         functionSpec('parse', [{ name: 'text', type: types_1.STRING }], jsonValue),
-        functionSpec('Value', [{ name: 'value', type: types_1.ANY_TYPE, defaultValue: 'null' }], jsonValue, {
+        functionSpec('Value', [{ name: 'value', type: types_1.ANY_TYPE, defaultValue: 'null', rejectsClassObjects: true }], jsonValue, {
             minArguments: 0,
-            documentation: 'Создаёт JSON-значение. Вызов без аргумента создаёт JSON null.',
+            documentation: 'Создаёт JSON-значение. Вызов без аргумента создаёт JSON null. Объект пользовательского класса завернуть нельзя — соберите json.Object из его полей.',
         }),
     ], [], [
         typeSpec('Value', [], [
@@ -6933,6 +7470,11 @@ function createDefaultStandardLibrary() {
         { name: 'left', type: types_1.INT },
         { name: 'right', type: types_1.INT },
     ], types_1.INT));
+    registry.registerGlobalFunction(functionSpec('type_name', [
+        { name: 'value', type: types_1.ANY_TYPE },
+    ], types_1.STRING, {
+        documentation: 'Имя типа значения строкой, в той же записи, что в сообщениях компилятора: для значений — статический тип («int», «string», «array<int, 3>»), для объектов — актуальный класс, даже если на него смотрят через переменную базового типа («Cat», «zoo.Lion», «gui.Button»). Пригодится в контракте equals: сравните type_name(this) и type_name(other), чтобы тёзка другого класса не сошёл за своего.',
+    }));
     registry.registerGlobalFunction(functionSpec('to_int', [
         {
             name: 'value',
@@ -10436,22 +10978,39 @@ function compileIdyllium(source, options = {}) {
     }
     const userModuleRegistry = (0, project_1.buildUserModuleRegistry)(modules, stdlib, diagnostics);
     const nodeTypes = new Map();
+    const equalsContractClasses = new Set();
+    const nullableClassFields = new Map();
+    const mergeSemantics = (semantics) => {
+        for (const [node, type] of semantics.nodeTypes)
+            nodeTypes.set(node, type);
+        for (const name of semantics.equalsContractClasses)
+            equalsContractClasses.add(name);
+        for (const [className, fieldNames] of semantics.nullableClassFields) {
+            let set = nullableClassFields.get(className);
+            if (!set) {
+                set = new Set();
+                nullableClassFields.set(className, set);
+            }
+            for (const fieldName of fieldNames)
+                set.add(fieldName);
+        }
+    };
     if (ast && !diagnostics.hasErrors()) {
         for (const module of modules) {
             const semantics = new semantics_1.SemanticAnalyzer(stdlib, userModuleRegistry).analyze(module.ast);
             (0, project_1.addDiagnostics)(diagnostics, semantics.diagnostics);
-            for (const [node, type] of semantics.nodeTypes)
-                nodeTypes.set(node, type);
+            mergeSemantics(semantics);
         }
         const semantics = new semantics_1.SemanticAnalyzer(stdlib, userModuleRegistry).analyze(ast);
         (0, project_1.addDiagnostics)(diagnostics, semantics.diagnostics);
-        for (const [node, type] of semantics.nodeTypes)
-            nodeTypes.set(node, type);
+        mergeSemantics(semantics);
     }
     if (ast && !diagnostics.hasErrors()) {
         jsCode = new codegen_1.JavaScriptGenerator({
             userModuleNames: new Set(modules.map((module) => module.name)),
             nodeTypes,
+            equalsContractClasses,
+            nullableClassFields,
         }).generate(ast, { modules: modules.map((module) => ({ name: module.name, program: module.ast })) }).jsCode;
     }
     if (diagnostics.hasErrors()) {
@@ -10588,7 +11147,7 @@ exports.IdylliumRuntimeError = IdylliumRuntimeError;
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-exports.IDYLLIUM_VERSION = '1.4.1';
+exports.IDYLLIUM_VERSION = '1.5.0';
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform() {
     const nodeProcess = typeof process === 'object' ? process : null;
@@ -10794,6 +11353,10 @@ class IdylliumTimeStamp {
     }
     get unix() {
         return Math.floor(this.epochMs / 1000);
+    }
+    /** Момент в миллисекундах — для равенства и порядка штампов (пояс не участвует). */
+    get instantMs() {
+        return this.epochMs;
     }
     get millisecond() {
         return this.epochMs - Math.floor(this.epochMs / 1000) * 1000;
@@ -11241,6 +11804,10 @@ function parseJsonValue(text, file, line) {
         return new ExactJsonParser(text).parse();
     }
     catch (error) {
+        if (error instanceof RangeError) {
+            // «Maximum call stack size exceeded» из V8 — жаргон движка
+            throw new IdylliumRuntimeError(file, line, 'json.parse() invalid JSON: the text is nested too deeply');
+        }
         throw new IdylliumRuntimeError(file, line, `json.parse() invalid JSON: ${errorMessage(error)}`);
     }
 }
@@ -12411,7 +12978,19 @@ function defaultRuntimeUrlOpener() {
 function defaultRuntimeNetworkService() {
     // Глобальный fetch есть в Node ≥18 и в любом браузере; CORS-подсказки
     // включает только браузерная сборка (src/browser.ts).
-    return (0, network_service_1.createFetchNetworkService)();
+    const service = (0, network_service_1.createFetchNetworkService)();
+    const nodeProcess = typeof process === 'object' ? process : null;
+    if (!service || !nodeProcess?.versions?.node)
+        return service;
+    try {
+        // Серверная половина (web.Server) есть только у node-хостов; загрузка
+        // через eval('require') держит node:http вне браузерного бандла.
+        const dynamicRequire = eval('require');
+        return { fetch: (request) => service.fetch(request), listen: dynamicRequire('./node-http-server').createNodeHttpListen() };
+    }
+    catch {
+        return service;
+    }
 }
 function defaultRuntimeImageService() {
     const nodeProcess = typeof process === 'object' ? process : null;
@@ -12466,6 +13045,8 @@ function createRuntime(options = {}) {
         windows: [],
         channelPosts: [],
         channelService: options.channelService,
+        networkService: options.networkService ?? defaultRuntimeNetworkService(),
+        abortSignal: options.abortSignal,
         channelMailbox: [],
         nextAudioCommandId: 1,
         nextObjectId: 1,
@@ -12495,9 +13076,32 @@ function createRuntime(options = {}) {
             return input.shift() ?? '';
         },
     };
+    runtimeObjects.consoleWrite = (text) => io.write(text);
     async function formatConsoleValue(value) {
         if (isJsonRuntimeValue(value)) {
             return formatForConsole(value, precision);
+        }
+        // Массив объектов с контрактом to_string: представления элементов
+        // собираются асинхронно (инспектор массива синхронный и сам метод
+        // ученика позвать не может) — жанр equalsObjectArrays.
+        if (value instanceof IdylliumArray) {
+            const items = value.values();
+            if (items.some((item) => item !== null && typeof item === 'object'
+                && typeof item.to_string === 'function')) {
+                const parts = [];
+                for (const item of items) {
+                    const method = item !== null && typeof item === 'object'
+                        ? item.to_string
+                        : undefined;
+                    if (typeof method === 'function') {
+                        parts.push(formatForInspect(await method.apply(item)));
+                    }
+                    else {
+                        parts.push(formatForInspect(item));
+                    }
+                }
+                return `[${parts.join(', ')}]`;
+            }
         }
         if (value !== null && typeof value === 'object') {
             const method = value.to_string;
@@ -12702,6 +13306,51 @@ function createRuntime(options = {}) {
         binary(operator, left, right, file, line) {
             return runtimeBinary(operator, left, right, file, line);
         },
+        // Имя типа для объектов — рантайм-метка (актуальный класс); значения
+        // подставляются кодогеном статически и сюда обычно не доходят.
+        typeName(value) {
+            if (value === null)
+                return 'null';
+            if (value instanceof IdylliumColor)
+                return 'colors.Color';
+            if (value instanceof IdylliumTimeStamp)
+                return 'time.stamp';
+            if (value instanceof IdylliumArray)
+                return 'array';
+            if (typeof value === 'object' && typeof value.__idylliumType === 'string') {
+                return value.__idylliumType;
+            }
+            if (typeof value === 'string')
+                return 'string';
+            if (typeof value === 'boolean')
+                return 'bool';
+            if (typeof value === 'bigint')
+                return 'int';
+            if (typeof value === 'number')
+                return Number.isInteger(value) ? 'int' : 'float';
+            return 'unknown';
+        },
+        // Страж «пустого поля»: пустота не выходит в мир молча.
+        expectPresent(value, fieldName, className, file, line) {
+            if (value === null || value === undefined) {
+                throw new IdylliumRuntimeError(file, line, `field '${fieldName}' of class '${className}' is empty (null) — check it with '!= null' before using it`);
+            }
+            return value;
+        },
+        // '==' объектов с контрактом equals: awaited-вызов слота статического типа.
+        // «Пустые поля» сравниваются и между собой: пустота равна только пустоте.
+        async equalsObjects(left, right, slot, file, line) {
+            if (left === null || right === null)
+                return left === null && right === null;
+            const contract = left?.[slot];
+            if (typeof contract !== 'function') {
+                throw new IdylliumRuntimeError(file, line, "comparison found an object without the 'equals' contract");
+            }
+            return (await contract(right)) === true;
+        },
+        async equalsObjectArrays(left, right, slot, file, line) {
+            return equalsArrayCellsWith(expectArray(left, file, line), expectArray(right, file, line), slot, file, line);
+        },
         negate(value) {
             return runtimeNegate(value);
         },
@@ -12793,6 +13442,33 @@ function createRuntime(options = {}) {
                 throw new IdylliumRuntimeError(file, line, 'string characters are read-only');
             }
             expectArray(value, file, line).set(index, item, file, line);
+        },
+        // Поиск в массиве объектов через контракт equals элемента. Длина
+        // фиксируется на входе: дописанное обработчиком в хвост не проверяется.
+        async searchWith(value, target, slot, mode, file, line) {
+            const array = expectArray(value, file, line);
+            const snapshot = array.values();
+            let matches = 0;
+            for (let index = 0; index < snapshot.length; index += 1) {
+                const item = snapshot[index];
+                const contract = item?.[slot];
+                if (typeof contract !== 'function') {
+                    throw new IdylliumRuntimeError(file, line, `${mode}() found an element without the 'equals' contract`);
+                }
+                const equal = (await contract(target)) === true;
+                if (equal) {
+                    if (mode === 'contains')
+                        return true;
+                    if (mode === 'find')
+                        return index;
+                    matches += 1;
+                }
+            }
+            if (mode === 'contains')
+                return false;
+            if (mode === 'find')
+                return -1;
+            return matches;
         },
         max(value, file, line) {
             const values = numericValues(value, 'max', file, line);
@@ -13292,6 +13968,7 @@ function createRuntime(options = {}) {
             image: {},
             gui: {},
             channel: {},
+            web: {},
             turtle: createTurtleModule(runtimeObjects),
             colors: {
                 RGB: contextFunction((red, green, blue, file, line) => IdylliumColor.RGB(red, green, blue, file, line)),
@@ -13341,6 +14018,13 @@ function createRuntime(options = {}) {
             const setter = setters[propertyName];
             if (setter) {
                 setter(value, file, line);
+                return value;
+            }
+            // Программная запись is_selected = true у радиокнопки снимает соседей
+            // группы — так же, как клик: урок обещает «одна группа по умолчанию»,
+            // и рантайм держит слово обоими путями (находка методистов 2026-08-21).
+            if (propertyName === 'is_selected' && value === true && obj.__idylliumType === 'gui.RadioButton') {
+                selectRadioButton(obj, runtimeObjects);
                 return value;
             }
             obj[propertyName] = value;
@@ -13498,7 +14182,7 @@ function createRuntime(options = {}) {
         if (scheme !== 'http' && scheme !== 'https') {
             throw new IdylliumRuntimeError(file, line, `${methodName} supports only http and https addresses, got '${scheme}'`);
         }
-        const service = options.networkService ?? defaultRuntimeNetworkService();
+        const service = runtimeObjects.networkService;
         if (!service) {
             throw new IdylliumRuntimeError(file, line, `${methodName} is not supported by this runtime`);
         }
@@ -13611,9 +14295,20 @@ function numericValues(value, functionName, file, line) {
 }
 function runtimeBinary(operator, left, right, file, line) {
     if (operator === '==')
-        return runtimeEquals(left, right);
+        return runtimeEquals(left, right, file, line);
     if (operator === '!=')
-        return !runtimeEquals(left, right);
+        return !runtimeEquals(left, right, file, line);
+    // Порядок моментов времени: штампы сравниваются по instantMs, пояс не участвует.
+    if (left instanceof IdylliumTimeStamp && right instanceof IdylliumTimeStamp
+        && ['<', '<=', '>', '>='].includes(operator)) {
+        if (operator === '<')
+            return left.instantMs < right.instantMs;
+        if (operator === '<=')
+            return left.instantMs <= right.instantMs;
+        if (operator === '>')
+            return left.instantMs > right.instantMs;
+        return left.instantMs >= right.instantMs;
+    }
     if (operator === '+' && (typeof left === 'string' || typeof right === 'string')) {
         return `${String(left)}${String(right)}`;
     }
@@ -13713,7 +14408,7 @@ function runtimeCompare(left, right) {
         return 1;
     return 0;
 }
-function runtimeEquals(left, right) {
+function runtimeEquals(left, right, file = 'program', line = 0) {
     const leftIsNull = left === null || isRuntimeNullValue(left);
     const rightIsNull = right === null || isRuntimeNullValue(right);
     if (leftIsNull || rightIsNull)
@@ -13726,13 +14421,32 @@ function runtimeEquals(left, right) {
             && left.blue === right.blue
             && left.alpha === right.alpha;
     }
+    // Штампы времени — значения: равенство по моменту, пояс не участвует
+    // («момент один — представления разные», урок о часовых поясах).
+    if (left instanceof IdylliumTimeStamp || right instanceof IdylliumTimeStamp) {
+        if (!(left instanceof IdylliumTimeStamp) || !(right instanceof IdylliumTimeStamp))
+            return false;
+        return left.instantMs === right.instantMs;
+    }
+    // JSON-значения — значения: данные сравниваются по содержимому (рекурсивно).
+    if (isJsonRuntimeValue(left) || isJsonRuntimeValue(right)) {
+        if (!isJsonRuntimeValue(left) || !isJsonRuntimeValue(right))
+            return false;
+        return jsonRuntimeValueEquals(left, right, file, line, new Set());
+    }
+    // SQL-значения — значения: род + содержимое (integer и real — численно, как в SQL).
+    if (isSqliteRuntimeValue(left) || isSqliteRuntimeValue(right)) {
+        if (!isSqliteRuntimeValue(left) || !isSqliteRuntimeValue(right))
+            return false;
+        return sqliteRuntimeValueEquals(left, right);
+    }
     if (left instanceof IdylliumArray || right instanceof IdylliumArray) {
         if (!(left instanceof IdylliumArray) || !(right instanceof IdylliumArray))
             return false;
         const leftValues = left.values();
         const rightValues = right.values();
         return leftValues.length === rightValues.length
-            && leftValues.every((value, index) => runtimeEquals(value, rightValues[index]));
+            && leftValues.every((value, index) => runtimeEquals(value, rightValues[index], file, line));
     }
     if (typeof left === 'bigint' && typeof right === 'number' && Number.isInteger(right)) {
         return left === BigInt(right);
@@ -13741,6 +14455,106 @@ function runtimeEquals(left, right) {
         return BigInt(left) === right;
     }
     return Object.is(left, right) || left === right;
+}
+function numericJsonEquals(left, right) {
+    if (typeof left === 'bigint' || typeof right === 'bigint') {
+        const l = typeof left === 'bigint' ? left : Number.isInteger(left) ? BigInt(left) : null;
+        const r = typeof right === 'bigint' ? right : Number.isInteger(right) ? BigInt(right) : null;
+        if (l !== null && r !== null)
+            return l === r;
+        return Number(left) === Number(right);
+    }
+    return Number(left) === Number(right);
+}
+/** Содержимое-равенство JSON-значений; цикл — честная ошибка (жанр to_json). */
+function jsonRuntimeValueEquals(left, right, file, line, visiting) {
+    if (left === right)
+        return true;
+    if (visiting.has(left) || visiting.has(right)) {
+        throw new IdylliumRuntimeError(file, line, 'cannot compare cyclic JSON value');
+    }
+    const leftKind = left.__jsonKind;
+    const rightKind = right.__jsonKind;
+    if (leftKind === 'int' || leftKind === 'float') {
+        if (rightKind !== 'int' && rightKind !== 'float')
+            return false;
+        return numericJsonEquals(left.__jsonValue, right.__jsonValue);
+    }
+    if (leftKind !== rightKind)
+        return false;
+    if (leftKind === 'string' || leftKind === 'bool') {
+        return left.__jsonValue === right.__jsonValue;
+    }
+    if (leftKind === 'null')
+        return true;
+    visiting.add(left);
+    visiting.add(right);
+    try {
+        if (leftKind === 'object') {
+            const leftEntries = left.__jsonEntries ?? new Map();
+            const rightEntries = right.__jsonEntries ?? new Map();
+            if (leftEntries.size !== rightEntries.size)
+                return false;
+            for (const [key, value] of leftEntries) {
+                const other = rightEntries.get(key);
+                if (!other || !jsonRuntimeValueEquals(value, other, file, line, visiting))
+                    return false;
+            }
+            return true;
+        }
+        const leftItems = left.__jsonItems ?? [];
+        const rightItems = right.__jsonItems ?? [];
+        if (leftItems.length !== rightItems.length)
+            return false;
+        return leftItems.every((value, index) => jsonRuntimeValueEquals(value, rightItems[index], file, line, visiting));
+    }
+    finally {
+        visiting.delete(left);
+        visiting.delete(right);
+    }
+}
+/** Структурное сравнение массивов объектов: ячейки — через контракт equals. */
+async function equalsArrayCellsWith(left, right, slot, file, line) {
+    const leftValues = left.values();
+    const rightValues = right.values();
+    if (leftValues.length !== rightValues.length)
+        return false;
+    for (let index = 0; index < leftValues.length; index += 1) {
+        const leftItem = leftValues[index];
+        const rightItem = rightValues[index];
+        if (leftItem instanceof IdylliumArray || rightItem instanceof IdylliumArray) {
+            if (!(leftItem instanceof IdylliumArray) || !(rightItem instanceof IdylliumArray))
+                return false;
+            if (!(await equalsArrayCellsWith(leftItem, rightItem, slot, file, line)))
+                return false;
+            continue;
+        }
+        const contract = leftItem?.[slot];
+        if (typeof contract !== 'function') {
+            throw new IdylliumRuntimeError(file, line, "comparison found an object without the 'equals' contract");
+        }
+        if ((await contract(rightItem)) !== true)
+            return false;
+    }
+    return true;
+}
+function sqliteRuntimeValueEquals(left, right) {
+    const leftKind = left.__sqliteKind;
+    const rightKind = right.__sqliteKind;
+    if (leftKind === 'integer' || leftKind === 'real') {
+        if (rightKind !== 'integer' && rightKind !== 'real')
+            return false;
+        return numericJsonEquals(left.__sqliteValue, right.__sqliteValue);
+    }
+    if (leftKind !== rightKind)
+        return false;
+    if (leftKind === 'blob') {
+        const leftBytes = left.__sqliteValue;
+        const rightBytes = right.__sqliteValue;
+        return leftBytes.length === rightBytes.length
+            && leftBytes.every((byte, index) => byte === rightBytes[index]);
+    }
+    return left.__sqliteValue === right.__sqliteValue;
 }
 function isRuntimeNullValue(value) {
     return (isJsonRuntimeValue(value) && value.__jsonKind === 'null')
@@ -13843,15 +14657,39 @@ function createNodeRuntimeFileSystem(projectRoot) {
             return nodeFs.readFileSync(filePath, 'utf8');
         },
         writeText(filePath, text) {
-            nodeFs.writeFileSync(mutationPath(filePath, 'file write'), text, 'utf8');
+            const target = mutationPath(filePath, 'file write');
+            assertNodeWritableTarget(target);
+            nodeFs.writeFileSync(target, text, 'utf8');
         },
         appendText(filePath, text) {
-            nodeFs.appendFileSync(mutationPath(filePath, 'file write'), text, 'utf8');
+            const target = mutationPath(filePath, 'file write');
+            assertNodeWritableTarget(target);
+            nodeFs.appendFileSync(target, text, 'utf8');
         },
         createDirectory(filePath, parents) {
             const target = mutationPath(filePath, 'file.create_directory()');
             if (nodeFs.existsSync(target))
                 throw new Error(`path already exists: ${target}`);
+            // предпроверки повторяют встроенную ФС веб-IDE — тексты канона едины,
+            // сырые ENOENT/ENOTDIR из mkdirSync до учеников не доезжают
+            if (!parents) {
+                const parent = nodePath.dirname(target);
+                if (!nodeFs.existsSync(parent) || !nodeFs.statSync(parent).isDirectory()) {
+                    throw new Error(`directory does not exist: ${parent}`);
+                }
+            }
+            else {
+                let current = target;
+                while (!nodeFs.existsSync(current)) {
+                    const parent = nodePath.dirname(current);
+                    if (parent === current)
+                        break;
+                    current = parent;
+                }
+                if (nodeFs.existsSync(current) && !nodeFs.statSync(current).isDirectory()) {
+                    throw new Error(`path is a file: ${current}`);
+                }
+            }
             nodeFs.mkdirSync(target, { recursive: parents });
         },
         listDirectory(filePath) {
@@ -13892,10 +14730,15 @@ function createNodeRuntimeFileSystem(projectRoot) {
             assertNodeTreeHasNoSymlinks(target, 'file.remove()');
             const stat = nodeFs.statSync(target);
             if (stat.isDirectory()) {
-                if (recursive)
+                if (recursive) {
                     nodeFs.rmSync(target, { recursive: true, force: false });
-                else
+                }
+                else {
+                    // текст канона встроенной ФС вместо сырого ENOTEMPTY из rmdirSync
+                    if (nodeFs.readdirSync(target).length > 0)
+                        throw new Error(`directory is not empty: ${target}`);
                     nodeFs.rmdirSync(target);
+                }
             }
             else if (stat.isFile()) {
                 nodeFs.unlinkSync(target);
@@ -13908,7 +14751,9 @@ function createNodeRuntimeFileSystem(projectRoot) {
             return new Uint8Array(nodeFs.readFileSync(filePath));
         },
         writeBytes(filePath, bytes) {
-            nodeFs.writeFileSync(mutationPath(filePath, 'binary file write'), bytes);
+            const target = mutationPath(filePath, 'binary file write');
+            assertNodeWritableTarget(target);
+            nodeFs.writeFileSync(target, bytes);
         },
         resourceUri(filePath) {
             return filePath;
@@ -13964,10 +14809,24 @@ function memoryBasename(filePath) {
         return '/';
     return normalized.slice(normalized.lastIndexOf('/') + 1);
 }
+function assertNodeWritableTarget(target) {
+    const humanize = (raw) => {
+        const root = process.cwd();
+        const relative = nodePath.relative(root, raw);
+        return relative && !relative.startsWith('..') ? relative : raw;
+    };
+    const parent = nodePath.dirname(target);
+    if (!nodeFs.existsSync(parent) || !nodeFs.statSync(parent).isDirectory()) {
+        throw new Error(`directory does not exist: ${humanize(parent)}`);
+    }
+    if (nodeFs.existsSync(target) && nodeFs.statSync(target).isDirectory()) {
+        throw new Error(`path is a directory: ${humanize(target)}`);
+    }
+}
 function assertMemoryProjectPath(filePath, root, operation) {
     if (filePath === root || filePath.startsWith(`${root}/`))
         return;
-    throw new Error(`${operation} path is outside the project: ${filePath}`);
+    throw new Error(`path is outside the project: ${filePath}`);
 }
 function assertMemoryMovableSource(filePath, root, operation) {
     if (filePath === root)
@@ -13993,7 +14852,7 @@ function cloneMemoryFile(file) {
 function assertNodeProjectPath(root, filePath, operation) {
     const candidate = nodePath.resolve(filePath);
     if (!isNodePathWithin(root, candidate)) {
-        throw new Error(`${operation} path is outside the project: ${candidate}`);
+        throw new Error(`path is outside the project: ${candidate}`);
     }
     let existing = candidate;
     while (!nodeFs.existsSync(existing)) {
@@ -14938,7 +15797,252 @@ function createPlainRuntimeObject(moduleName, typeName, state) {
     if (moduleName === 'channel') {
         initializeChannelPost(obj, typeName, state);
     }
+    if (moduleName === 'web') {
+        initializeWebObject(obj, typeName, state);
+    }
     return obj;
+}
+// ─── web.Server: свой веб-сервер (Flask-жанр) ──────────────────────────────
+const WEB_CONTENT_TYPES = {
+    html: 'text/html; charset=utf-8',
+    htm: 'text/html; charset=utf-8',
+    css: 'text/css; charset=utf-8',
+    js: 'text/javascript; charset=utf-8',
+    json: 'application/json; charset=utf-8',
+    svg: 'image/svg+xml',
+    txt: 'text/plain; charset=utf-8',
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    gif: 'image/gif',
+    webp: 'image/webp',
+    ico: 'image/x-icon',
+    wav: 'audio/wav',
+    mp3: 'audio/mpeg',
+    ogg: 'audio/ogg',
+    ttf: 'font/ttf',
+    otf: 'font/otf',
+    woff: 'font/woff',
+    woff2: 'font/woff2',
+};
+function webTextResponse(status, text) {
+    return { status, headers: { 'content-type': 'text/plain; charset=utf-8' }, body: text };
+}
+function createWebRequestObject(request, state) {
+    const obj = {
+        __idylliumObjectId: state.nextObjectId++,
+        __idylliumType: 'web.Request',
+        path: request.path,
+        body: request.body,
+    };
+    obj.query = contextFunction((name, file, line) => {
+        const parameter = stringArgument(name, 'web.Request.query() name', file, line);
+        return request.query[parameter] ?? '';
+    });
+    obj.to_string = () => `web.Request(${request.method} ${request.path})`;
+    return obj;
+}
+function createWebResponseObject(state) {
+    let body = '';
+    let contentType = 'text/plain; charset=utf-8';
+    let sent = false;
+    const obj = {
+        __idylliumObjectId: state.nextObjectId++,
+        __idylliumType: 'web.Response',
+    };
+    defineValidatedRuntimeProperty(obj, 'status', 200, (value, file, line) => {
+        if (typeof value !== 'number' || !Number.isInteger(value) || value < 100 || value > 599) {
+            throw new IdylliumRuntimeError(file, line, `web.Response.status must be an integer from 100 to 599, got '${String(value)}'`);
+        }
+        return value;
+    });
+    obj.send = contextFunction((text, file, line) => {
+        const payload = stringArgument(text, 'web.Response.send() text', file, line);
+        if (sent)
+            throw new IdylliumRuntimeError(file, line, 'web.Response.send() the response was already sent');
+        sent = true;
+        body = payload;
+        contentType = 'text/html; charset=utf-8';
+    });
+    obj.send_json = contextFunction((text, file, line) => {
+        const payload = stringArgument(text, 'web.Response.send_json() text', file, line);
+        if (sent)
+            throw new IdylliumRuntimeError(file, line, 'web.Response.send_json() the response was already sent');
+        sent = true;
+        body = payload;
+        contentType = 'application/json; charset=utf-8';
+    });
+    obj.to_string = () => 'web.Response';
+    return {
+        object: obj,
+        finish: () => ({ body, contentType }),
+    };
+}
+function serveWebStatic(roots, requestPath, state) {
+    let relative = requestPath.startsWith('/') ? requestPath.slice(1) : requestPath;
+    if (relative === '' || relative.endsWith('/'))
+        relative += 'index.html';
+    const segments = relative.split('/');
+    // Path traversal закрыт с первого дня: наружу из папки не выйти.
+    if (segments.some((segment) => segment === '..' || segment === '' || segment.includes('\\')))
+        return null;
+    for (const root of roots) {
+        const target = `${root}/${segments.join('/')}`;
+        if (!state.fileSystem.exists(target) || !state.fileSystem.isFile(target))
+            continue;
+        const extension = (segments[segments.length - 1].split('.').pop() ?? '').toLowerCase();
+        const contentType = WEB_CONTENT_TYPES[extension] ?? 'application/octet-stream';
+        const bytes = state.fileSystem.readBytes?.(target);
+        return {
+            status: 200,
+            headers: { 'content-type': contentType },
+            body: bytes ?? state.fileSystem.readText(target),
+        };
+    }
+    return null;
+}
+function initializeWebObject(obj, typeName, state) {
+    if (typeName !== 'Server')
+        return;
+    obj.port = 8080;
+    // Безопасность по умолчанию: слушаем только свой компьютер. Открыть класс —
+    // явное решение программиста: app.host = "0.0.0.0" (вся локальная сеть).
+    obj.host = '127.0.0.1';
+    obj.is_running = false;
+    const routes = new Map();
+    const routePaths = new Set();
+    const staticRoots = [];
+    function registerRoute(method, methodName) {
+        return contextFunction((routePath, handler, file, line) => {
+            const pathValue = stringArgument(routePath, `web.Server.${methodName}() path`, file, line);
+            if (!pathValue.startsWith('/')) {
+                throw new IdylliumRuntimeError(file, line, `web.Server.${methodName}() path must start with '/', got '${pathValue}'`);
+            }
+            if (typeof handler !== 'function') {
+                throw new IdylliumRuntimeError(file, line, `web.Server.${methodName}() handler must be a function like 'void function(web.Request req, web.Response res)'`);
+            }
+            const key = `${method} ${pathValue}`;
+            if (routes.has(key)) {
+                throw new IdylliumRuntimeError(file, line, `web.Server.${methodName}() route '${pathValue}' is already registered`);
+            }
+            routes.set(key, handler);
+            routePaths.add(pathValue);
+        });
+    }
+    obj.on_get = registerRoute('GET', 'on_get');
+    obj.on_post = registerRoute('POST', 'on_post');
+    obj.serve_directory = contextFunction((directory, file, line) => {
+        const requested = stringArgument(directory, 'web.Server.serve_directory() path', file, line);
+        const resolved = state.fileSystem.resolvePath(requested, file);
+        if (!state.fileSystem.exists(resolved) || !state.fileSystem.isDirectory(resolved)) {
+            throw new IdylliumRuntimeError(file, line, `web.Server.serve_directory() cannot serve '${requested}': directory does not exist`);
+        }
+        staticRoots.push(resolved.replace(/[\\/]+$/u, ''));
+    });
+    obj.run = contextFunction(async (file, line) => {
+        if (obj.is_running === true) {
+            throw new IdylliumRuntimeError(file, line, 'web.Server.run() the server is already running');
+        }
+        const service = state.networkService;
+        if (!service?.listen) {
+            if (state.turtlePlatform === 'web') {
+                throw new IdylliumRuntimeError(file, line, 'web.Server.run() is not available in the Web IDE — run the program in VS Code or the console host, where the computer can listen on a port');
+            }
+            throw new IdylliumRuntimeError(file, line, 'web.Server.run() is not supported by this runtime');
+        }
+        const port = obj.port;
+        if (typeof port !== 'number' || !Number.isInteger(port) || port < 0 || port > 65535) {
+            throw new IdylliumRuntimeError(file, line, `web.Server.port must be an integer from 0 to 65535, got '${String(port)}'`);
+        }
+        const host = obj.host;
+        if (typeof host !== 'string' || host.trim() === '') {
+            throw new IdylliumRuntimeError(file, line, 'web.Server.host must be a non-empty string');
+        }
+        // Запросы обрабатываются по одному, в порядке прихода: обработчики не
+        // перебивают друг друга на середине — важное для учебных программ свойство.
+        let chain = Promise.resolve();
+        const dispatch = async (request) => {
+            const handler = routes.get(`${request.method} ${request.path}`);
+            if (typeof handler === 'function') {
+                const requestObject = createWebRequestObject(request, state);
+                const response = createWebResponseObject(state);
+                try {
+                    await handler(requestObject, response.object);
+                }
+                catch (error) {
+                    // Сервер не падает от одного неудачного запроса: авария уходит
+                    // пятисоткой в браузер и строкой в консоль программы.
+                    const rawText = error instanceof IdylliumRuntimeError
+                        ? `${publicRuntimeErrorFile(error.file)}:${error.line}: runtime error: ${error.detail}`
+                        : String(error?.message ?? error);
+                    const text = state.fileSystem.humanizePaths?.(rawText) ?? rawText;
+                    state.consoleWrite?.(`[web] запрос ${request.method} ${request.path} упал: ${text}\n`);
+                    return webTextResponse(500, text);
+                }
+                const finished = response.finish();
+                return {
+                    status: Number(response.object.status ?? 200),
+                    headers: { 'content-type': finished.contentType },
+                    body: finished.body,
+                };
+            }
+            if (request.method === 'GET' && staticRoots.length > 0) {
+                const staticResponse = serveWebStatic(staticRoots, request.path, state);
+                if (staticResponse)
+                    return staticResponse;
+            }
+            if (routePaths.has(request.path)) {
+                return webTextResponse(405, `method ${request.method} is not allowed for '${request.path}'`);
+            }
+            return webTextResponse(404, `not found: '${request.path}'`);
+        };
+        const handleRequest = (request) => new Promise((resolve) => {
+            chain = chain.then(async () => resolve(await dispatch(request)));
+        });
+        let handle;
+        try {
+            handle = await service.listen({ host, port }, handleRequest);
+        }
+        catch (error) {
+            const code = error?.code;
+            if (code === 'EADDRINUSE') {
+                throw new IdylliumRuntimeError(file, line, `web.Server.run() port ${port} is already in use — choose another port or stop the other program`);
+            }
+            if (code === 'EACCES') {
+                throw new IdylliumRuntimeError(file, line, `web.Server.run() port ${port} requires administrator rights — choose a port above 1023`);
+            }
+            if (code === 'EADDRNOTAVAIL' || code === 'ENOTFOUND') {
+                throw new IdylliumRuntimeError(file, line, `web.Server.run() cannot listen on host '${host}': address is not available`);
+            }
+            throw new IdylliumRuntimeError(file, line, `web.Server.run() cannot start: ${String(error?.message ?? error)}`);
+        }
+        obj.port = handle.port;
+        obj.is_running = true;
+        if (typeof handle.announce === 'string' && handle.announce !== '') {
+            state.consoleWrite?.(`${handle.announce}\n`);
+        }
+        else if (host === '0.0.0.0') {
+            state.consoleWrite?.(`Сервер слушает порт ${handle.port} на всех адресах компьютера — программа доступна всей локальной сети\n`);
+        }
+        else {
+            state.consoleWrite?.(`Сервер слушает http://${host}:${handle.port}\n`);
+        }
+        // Вечный цикл в жанре gui-программ: run() не возвращается, пока
+        // программу не остановят (Stop / Ctrl+C).
+        await new Promise((_resolve, reject) => {
+            const stop = () => {
+                obj.is_running = false;
+                void handle.close();
+                reject(new IdylliumRuntimeError(file || 'main.idyl', line || 1, 'program was stopped', 'cancelled'));
+            };
+            if (state.abortSignal?.aborted) {
+                stop();
+                return;
+            }
+            state.abortSignal?.addEventListener?.('abort', stop, { once: true });
+        });
+    });
+    obj.to_string = () => (obj.is_running === true ? `web.Server(http://${obj.host}:${obj.port})` : 'web.Server(stopped)');
 }
 // ─── channel.Post: почтовое отделение программы ────────────────────────────
 function initializeChannelPost(obj, typeName, state) {
@@ -14996,6 +16100,7 @@ function initializeGuiObject(obj, typeName, state) {
         obj.height = size.height;
         obj.visible = true;
         obj.enabled = true;
+        obj.hint = ''; // всплывающая подсказка; пустая строка = подсказки нет
         obj.style = ''; // IdySS-наклейка; пустая строка = наклейки нет
         obj.style_hover = '';
         obj.style_active = '';
@@ -15985,8 +17090,16 @@ function createTurtleModule(state) {
         }),
         save_svg: contextFunction((pathValue, file, line) => {
             const field = ensureTurtleField(state);
-            const resolved = state.fileSystem.resolvePath(String(pathValue), file);
-            state.fileSystem.writeText(resolved, turtleSvg(field));
+            const requestedPath = stringArgument(pathValue, 'turtle.save_svg() path', file, line);
+            const resolved = state.fileSystem.resolvePath(requestedPath, file);
+            try {
+                state.fileSystem.writeText(resolved, turtleSvg(field));
+            }
+            catch (error) {
+                const reason = errorMessage(error);
+                const shown = state.fileSystem.humanizePaths?.(reason) ?? reason;
+                throw new IdylliumRuntimeError(file, line, `turtle.save_svg() cannot write '${requestedPath}': ${shown}`);
+            }
         }),
     };
 }
@@ -17984,6 +19097,10 @@ const STYLE_PROPERTIES = {
     'text-align': keywordValue('left', 'center', 'right'),
     opacity: opacityValue,
     padding: pixelValue(0, 40),
+    // Значения из CSS: у интерактивных виджетов выделение текста выключено
+    // по умолчанию (CSS рендерера) — этим свойством его можно вернуть или
+    // выключить у остальных (вердикт владельца 2026-08-22).
+    'user-select': keywordValue('auto', 'none', 'text', 'all'),
 };
 const parseCache = new Map();
 function parseIdylliumStyle(text) {
