@@ -180,6 +180,10 @@ const STYLE_PROPERTIES: Readonly<Record<string, (raw: string) => string | null>>
   'text-align': keywordValue('left', 'center', 'right'),
   opacity: opacityValue,
   padding: pixelValue(0, 40),
+  // Значения из CSS: у интерактивных виджетов выделение текста выключено
+  // по умолчанию (CSS рендерера) — этим свойством его можно вернуть или
+  // выключить у остальных (вердикт владельца 2026-08-22).
+  'user-select': keywordValue('auto', 'none', 'text', 'all'),
 };
 
 const parseCache = new Map<string, readonly IdylliumStyleDeclaration[]>();

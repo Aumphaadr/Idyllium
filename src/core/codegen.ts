@@ -42,6 +42,10 @@ export interface JavaScriptGeneratorOptions {
    * объявленные типы (аннотации в AST) и не выводит ничего сам.
    */
   readonly nodeTypes?: ReadonlyMap<Expression, TypeRef>;
+  /** Классы с контрактом equals (короткие имена) — для статической диспетчеризации '==' и поиска в массивах. */
+  readonly equalsContractClasses?: ReadonlySet<string>;
+  /** «Пустые поля» по классам (короткое имя → поля с `= null`) — для охраняемых чтений. */
+  readonly nullableClassFields?: ReadonlyMap<string, ReadonlySet<string>>;
 }
 
 export interface ModuleProgram {
@@ -67,13 +71,62 @@ export class JavaScriptGenerator {
   private moduleClassNames = new Set<string>();
   private returnTypes: TypeName[] = [];
   private classFieldInitializerDepth = 0;
+  /** Имя модуля, чьи объявления сейчас генерируются, — для квалифицированной метки классов. */
+  private currentModuleName: string | null = null;
   private readonly userModuleNames: ReadonlySet<string>;
   private readonly nodeTypes: ReadonlyMap<Expression, TypeRef>;
+  private readonly equalsContractClasses: ReadonlySet<string>;
+  private readonly nullableClassFields: ReadonlyMap<string, ReadonlySet<string>>;
   private readonly stdlib = createDefaultStandardLibrary();
 
   constructor(options: JavaScriptGeneratorOptions = {}) {
     this.userModuleNames = options.userModuleNames ?? new Set();
     this.nodeTypes = options.nodeTypes ?? new Map();
+    this.equalsContractClasses = options.equalsContractClasses ?? new Set();
+    this.nullableClassFields = options.nullableClassFields ?? new Map();
+  }
+
+  /** Чтение «пустого поля» (room.guest, где guest объявлен с `= null`): описание или null. */
+  private nullableFieldRead(expression: Expression): { objectJs: string; field: string; className: string } | null {
+    if (expression.kind !== 'MemberExpression') return null;
+    const bare = this.bareClassName(this.typeOf(expression.object));
+    if (!bare || !this.nullableClassFields.get(bare)?.has(expression.name)) return null;
+    return { objectJs: this.expression(expression.object), field: expression.name, className: bare };
+  }
+
+  /** Сырое чтение операнда: для сравнения с null и контрактного '==' охрана не ставится. */
+  private rawOperand(expression: Expression): string {
+    const nullable = this.nullableFieldRead(expression);
+    return nullable ? `${nullable.objectJs}.${nullable.field}` : this.expression(expression);
+  }
+
+  /** Короткое имя класса из TypeRef: у импортированных модульных классов
+   *  kind 'class' с точечным именем («hotel.Room») — слоты и карты живут
+   *  по последнему сегменту. */
+  private bareClassName(type: TypeRef | null): string | null {
+    if (!type) return null;
+    if (type.kind === 'class') {
+      const dot = type.name.lastIndexOf('.');
+      return dot >= 0 ? type.name.slice(dot + 1) : type.name;
+    }
+    if (type.kind === 'qualified' && !this.stdlib.hasModule(type.moduleName)) {
+      return type.name;
+    }
+    return null;
+  }
+
+  /** Короткое имя пользовательского класса с контрактом equals; null для прочих типов. */
+  private contractClassBareName(type: TypeRef | null): string | null {
+    const bare = this.bareClassName(type);
+    return bare !== null && this.equalsContractClasses.has(bare) ? bare : null;
+  }
+
+  /** Класс-лист массива с контрактом (сквозь вложенные массивы); null иначе. */
+  private contractLeafOfArray(type: TypeRef | null): string | null {
+    if (!type || type.kind !== 'array') return null;
+    let element: TypeRef = type.elementType;
+    while (element.kind === 'array') element = element.elementType;
+    return this.contractClassBareName(element);
   }
 
   private typeOf(expression: Expression): TypeRef | null {
@@ -94,6 +147,7 @@ export class JavaScriptGenerator {
       this.emitModule(module, lines, 1);
     }
 
+    this.currentModuleName = null;
     this.prepareProgramState(program);
     this.emitProgramDeclarations(program, lines, 1);
 
@@ -116,6 +170,7 @@ export class JavaScriptGenerator {
   private emitModule(module: ModuleProgram, lines: string[], indent: number): void {
     const pad = '  '.repeat(indent);
     lines.push(`${pad}$rt.modules.${module.name} = await (async function() {`);
+    this.currentModuleName = module.name;
     this.prepareProgramState(module.program);
     this.emitProgramDeclarations(module.program, lines, indent + 1);
     lines.push(`${pad}  return {`);
@@ -349,11 +404,14 @@ export class JavaScriptGenerator {
 
     lines.push(`${pad}const ${classObjectName} = {};`);
     lines.push(`${pad}async function ${this.classDefaultFactoryName(declaration.name)}() {`);
+    // Метка класса — квалифицированная для модульных классов («zoo.Lion»):
+    // её читают type_name() и тексты ошибок рантайма.
+    const typeTag = this.currentModuleName ? `${this.currentModuleName}.${declaration.name}` : declaration.name;
     if (declaration.baseName) {
       lines.push(`${pad}  const self = await ${this.classDefaultFactoryName(declaration.baseName)}();`);
-      lines.push(`${pad}  self.__idylliumType = ${JSON.stringify(declaration.name)};`);
+      lines.push(`${pad}  self.__idylliumType = ${JSON.stringify(typeTag)};`);
     } else {
-      lines.push(`${pad}  const self = { __idylliumType: ${JSON.stringify(declaration.name)} };`);
+      lines.push(`${pad}  const self = { __idylliumType: ${JSON.stringify(typeTag)} };`);
     }
 
     for (const member of declaration.members) {
@@ -413,9 +471,31 @@ export class JavaScriptGenerator {
     }
   }
 
+  /** Контрактный equals хранится в слоте со своим классом (equals$Cat):
+   *  контракты не наследуются, у семьи классов сосуществуют свои версии,
+   *  а '==' диспетчеризуется статически — по типу, через который смотрят. */
+  private isContractEqualsDeclaration(className: string, declaration: ClassMethodDeclaration): boolean {
+    return declaration.name === 'equals'
+      && !declaration.isStatic
+      && declaration.parameters.length === 1
+      && this.typeNameToString(declaration.parameters[0].paramType) === className;
+  }
+
   private emitInstanceMethod(className: string, declaration: ClassMethodDeclaration, lines: string[], indent: number): void {
     const pad = '  '.repeat(indent);
     const params = declaration.parameters.map((parameter) => parameter.name).join(', ');
+    if (this.isContractEqualsDeclaration(className, declaration)) {
+      lines.push(`${pad}self[${JSON.stringify(`equals$${className}`)}] = async function(${params}) {`);
+      this.emitCallGuardOpen(lines, indent + 1, `${className}.equals`, declaration.nameRange ?? declaration.range);
+      this.returnTypes.push(declaration.returnType);
+      this.emitParameterDefaults(declaration.parameters, lines, indent + 2);
+      this.emitParameterCasts(declaration.parameters, lines, indent + 2);
+      this.emitBlock(declaration.body, lines, indent + 2);
+      this.returnTypes.pop();
+      this.emitCallGuardClose(lines, indent + 1);
+      lines.push(`${pad}};`);
+      return;
+    }
     lines.push(`${pad}self.${declaration.name} = async function(${params}) {`);
     this.emitCallGuardOpen(lines, indent + 1, `${className}.${declaration.name}`, declaration.nameRange ?? declaration.range);
     this.returnTypes.push(declaration.returnType);
@@ -648,6 +728,32 @@ export class JavaScriptGenerator {
     if (expression.operator === 'xor') {
       return `(${left} !== ${right})`;
     }
+    if (expression.operator === '==' || expression.operator === '!=') {
+      // «Пустое поле» против null: проверка присутствия читает поле сыро
+      // (охрана здесь была бы ложным срабатыванием на законной проверке).
+      const leftIsNullLiteral = expression.left.kind === 'LiteralExpression' && expression.left.valueType === 'null';
+      const rightIsNullLiteral = expression.right.kind === 'LiteralExpression' && expression.right.valueType === 'null';
+      if ((leftIsNullLiteral && this.nullableFieldRead(expression.right))
+        || (rightIsNullLiteral && this.nullableFieldRead(expression.left))) {
+        const rawLeft = leftIsNullLiteral ? left : this.rawOperand(expression.left);
+        const rawRight = rightIsNullLiteral ? right : this.rawOperand(expression.right);
+        return `$rt.core.binary(${JSON.stringify(expression.operator)}, ${rawLeft}, ${rawRight}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+      }
+      // Объекты с контрактом equals: '==' — awaited-вызов слота левого
+      // СТАТИЧЕСКОГО типа; остальные сравнения остаются синхронными.
+      // «Пустые поля» читаются сыро: null-ветку берёт на себя диспетчер.
+      const leftType = this.typeOf(expression.left);
+      const contractClass = this.contractClassBareName(leftType);
+      if (contractClass && this.contractClassBareName(this.typeOf(expression.right))) {
+        const call = `(await $rt.core.equalsObjects(${this.rawOperand(expression.left)}, ${this.rawOperand(expression.right)}, ${JSON.stringify(`equals$${contractClass}`)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line}))`;
+        return expression.operator === '==' ? call : `(!${call})`;
+      }
+      const leftLeaf = this.contractLeafOfArray(leftType);
+      if (leftLeaf && this.contractLeafOfArray(this.typeOf(expression.right))) {
+        const call = `(await $rt.core.equalsObjectArrays(${left}, ${right}, ${JSON.stringify(`equals$${leftLeaf}`)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line}))`;
+        return expression.operator === '==' ? call : `(!${call})`;
+      }
+    }
     return `$rt.core.binary(${JSON.stringify(expression.operator)}, ${left}, ${right}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
   }
 
@@ -673,6 +779,18 @@ export class JavaScriptGenerator {
       if (callee.name === 'to_string') {
         const args = this.callArgumentValues(expression.args, this.stdlib.getGlobalFunction(callee.name)?.parameters.map((parameter) => parameter.name)).join(', ');
         return `$rt.core.to_string(${args})`;
+      }
+      if (callee.name === 'type_name' && expression.args.length === 1) {
+        // Гибрид: значения и массивы известны статически — строка-константа
+        // в записи ошибок компилятора; объекты — рантайм-метка (актуальный
+        // класс, даже если смотрят через базовое окно).
+        const argNode = expression.args[0].value;
+        const argType = this.typeOf(argNode);
+        if (argType && argType.kind !== 'class' && argType.kind !== 'qualified' && argType.kind !== 'runtime-error') {
+          return JSON.stringify(typeToString(argType));
+        }
+        // «Пустое поле» читается сыро: type_name(пустота) — «null», не ошибка.
+        return `$rt.core.typeName(${this.rawOperand(argNode)})`;
       }
     }
 
@@ -737,6 +855,25 @@ export class JavaScriptGenerator {
         return `$rt.types.bit_not(${this.expression(callee.object)}, ${JSON.stringify(typesRuntimeName)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
       }
 
+      // Поиск в массивах объектов идёт через контракт equals элемента —
+      // длина фиксируется на входе, сравнение зовёт слот статического типа.
+      if (receiverType?.kind === 'array' && ['contains', 'find', 'count'].includes(callee.name)) {
+        const leaf = this.contractLeafOfArray(receiverType);
+        if (leaf) {
+          const args = this.methodCallArgs(callee.name, expression.args, receiverType).join(', ');
+          return `$rt.array.searchWith(${this.expression(callee.object)}, ${args}, ${JSON.stringify(`equals$${leaf}`)}, ${JSON.stringify(callee.name)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+        }
+      }
+
+      // Контракт equals: статическая диспетчеризация по типу получателя.
+      if (callee.name === 'equals' && expression.args.length === 1) {
+        const contractClass = this.contractClassBareName(receiverType);
+        if (contractClass) {
+          const args = this.methodCallArgs(callee.name, expression.args, receiverType).join(', ');
+          return `$rt.callMethod(${this.expression(callee.object)}, ${JSON.stringify(`equals$${contractClass}`)}, [${args}], ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+        }
+      }
+
       const args = this.methodCallArgs(callee.name, expression.args, receiverType).join(', ');
       return `$rt.callMethod(${this.expression(callee.object)}, ${JSON.stringify(callee.name)}, [${args}], ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
     }
@@ -753,6 +890,11 @@ export class JavaScriptGenerator {
       if (this.userClassNames.has(moduleName)) {
         return `${this.classObjectName(moduleName)}.${expression.name}`;
       }
+    }
+    // Чтение «пустого поля» охраняется: пустота не выходит в мир молча.
+    const nullable = this.nullableFieldRead(expression);
+    if (nullable) {
+      return `$rt.core.expectPresent(${nullable.objectJs}.${nullable.field}, ${JSON.stringify(nullable.field)}, ${JSON.stringify(nullable.className)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
     }
     return `${this.expression(expression.object)}.${expression.name}`;
   }

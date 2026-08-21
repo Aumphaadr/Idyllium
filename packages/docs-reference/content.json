@@ -242,7 +242,7 @@
         },
         {
           "title": "Массивы являются значениями",
-          "description": "Присваивание, передача в функцию и возврат из функции создают независимую копию массива. Вложенные массивы копируются рекурсивно.",
+          "description": "Присваивание, передача в функцию и возврат из функции создают независимую копию массива. Вложенные массивы копируются рекурсивно. Сравнение массивов — структурное: длины и ячейки попарно. Два dyn_array разной длины дают false (длина — свойство времени выполнения); два фиксированных массива разных объявленных размеров не сравниваются вовсе — это ошибка компиляции, размер входит в тип.",
           "code": "array<int, 3> first = [10, 20, 30];\narray<int, 3> second = first;\nsecond[0] = 99;\n// first по-прежнему содержит [10, 20, 30]"
         },
         {
@@ -278,8 +278,17 @@
           "code": "Counter first(5);\nCounter second = first;\nsecond.increment();\n\nconsole.writeln(first.value); // 6"
         },
         {
+          "title": "Сравнение объектов: контракт equals",
+          "description": "У объектов пользовательских классов нет встроенного равенства: a == b без договора — ошибка компиляции с подсказкой. Договор — публичный метод bool function equals(СвойКласс other), объявленный в самом классе; с ним == и != работают через него, а contains, find, count и сравнение массивов объектов ищут «по смыслу». Контракты (equals и to_string) не наследуются: каждый класс подписывает договор сам, и сравнение выполняет контракт того класса, через который на объекты смотрят. Порядка у объектов нет: sort() для массивов объектов — ошибка компиляции. equals должен отвечать, не изменяя объекты.",
+          "code": "use console;\n\nclass Hero {\n    string name;\n    int level;\n\n    bool function equals(Hero other) {\n        return this.name == other.name and this.level == other.level;\n    }\n}\n\nmain() {\n    Hero a;\n    a.name = \"Мира\";\n    a.level = 12;\n    Hero b;\n    b.name = \"Мира\";\n    b.level = 12;\n\n    console.writeln(a == b);    // true — через ваш equals\n    console.writeln(a != b);    // false — выводится сам\n}"
+        },
+        {
+          "title": "Значение или ссылка: сводная таблица",
+          "description": "Значения (присваивание копирует, == сравнивает содержимое): примитивы (int, float, string, char, bool), массивы array и dyn_array (копия — свой список, но объекты в ячейках ОБЩИЕ: «своя коробка — общие жители»), colors.Color, time.stamp (по моменту), json.Value и sqlite.Value (по содержимому). Ссылки (присваивание даёт второе имя, встроенного == нет): объекты пользовательских классов (сравнение — только через контракт equals), json.Object и json.Array, все библиотечные объекты (gui.*, image.*, sqlite.Database и родня). Встроенного копирования объектов нет: копию делает метод, который пишет автор класса (обычно copy() через собственный конструктор; глубина копии — его решение)."
+        },
+        {
           "title": "Конструктор как выражение",
-          "description": "Вызов имени пользовательского класса создаёт новый независимый объект. Ключевое слово `new` не используется. Работают позиционные, именованные и дефолтные аргументы, немедленный вызов метода и классы пользовательских модулей.",
+          "description": "Вызов имени пользовательского класса создаёт новый независимый объект. Ключевое слово `new` не используется. Работают позиционные, именованные и дефолтные аргументы, немедленный вызов метода и классы пользовательских модулей. Перегрузки конструкторов нет и не будет: один класс — одно правило рождения. Второй конструктор — ошибка компиляции (class already has a constructor); разнообразие вызовов дают значения параметров по умолчанию и именованные аргументы.",
           "code": "dyn_array<Hero> heroes;\nheroes.add(Hero(\"Kaspar\", 500));\n\nHero boss = Hero(hp=1000, name=\"Aranthir\");\nbool alive = Hero(\"Mira\").is_alive();\ngeometry.Point point = geometry.Point(10, 20);"
         },
         {
@@ -322,7 +331,7 @@
         {
           "title": "Словарь свойств (версия 1)",
           "description": "Ровно 13 свойств; всё вне словаря молча игнорируется. Пиксельные значения принимаются с «px» и без, регистр не важен.",
-          "code": "color              цвет текста\nbackground-color   цвет фона\nbackground         только градиенты: linear-gradient(...), radial-gradient(...)\nborder-color       цвет рамки\nborder-width       0–20 (px)\nborder-style       solid | dashed | dotted | none\nborder-radius      0–100 (px)\nfont-size          6–96 (px)\nfont-weight        normal | bold\nfont-style         normal | italic\ntext-align         left | center | right\nopacity            0.0–1.0\npadding            0–40 (px)"
+          "code": "color              цвет текста\nbackground-color   цвет фона\nbackground         только градиенты: linear-gradient(...), radial-gradient(...)\nborder-color       цвет рамки\nborder-width       0–20 (px)\nborder-style       solid | dashed | dotted | none\nborder-radius      0–100 (px)\nfont-size          6–96 (px)\nfont-weight        normal | bold\nfont-style         normal | italic\ntext-align         left | center | right\nopacity            0.0–1.0\npadding            0–40 (px)\nuser-select        auto | none | text | all"
         },
         {
           "title": "Значения цветов",

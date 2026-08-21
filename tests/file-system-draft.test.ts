@@ -17,6 +17,8 @@ async function main(): Promise<void> {
   await testMemoryRenameSnapshot();
   await testSafeRemovalErrors();
   await testNodeProjectBoundary();
+  await testNodeReadableErrors();
+  await testTurtleSaveErrors();
   testStreamPropertyIsReadonly();
   console.log('file-system draft tests: ok');
 }
@@ -164,6 +166,89 @@ async function testNodeProjectBoundary(): Promise<void> {
     assert(!escaped.success, 'file.remove() escaped the project root');
     assert(escaped.runtimeError?.includes('outside the project'), `unexpected boundary error: ${escaped.runtimeError}`);
     assert(fs.readFileSync(outside, 'utf8') === 'keep me', 'outside file was modified');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+}
+
+// turtle.save_svg пишет через тот же Node-адаптер: раньше тёк голый ENOENT
+// без префикса и file:line (свип 2026-08-21).
+async function testTurtleSaveErrors(): Promise<void> {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'idyllium-turtle-errors-'));
+  const project = path.join(root, 'project');
+  fs.mkdirSync(project);
+  try {
+    const sourceFile = path.join(project, 'main.idyl');
+    const source = [
+      'use turtle;',
+      'main() {',
+      '    turtle.Turtle t;',
+      '    t.forward(50);',
+      '    turtle.save_svg("нет-папки/рисунок.svg");',
+      '}',
+    ].join('\n');
+    const result = await runIdyllium(source, { projectRoot: project }, { file: sourceFile });
+    assert(!result.success, 'turtle.save_svg into a missing directory unexpectedly succeeded');
+    assert(
+      result.runtimeError?.includes("turtle.save_svg() cannot write 'нет-папки/рисунок.svg': directory does not exist: нет-папки"),
+      `turtle.save_svg error is off canon: ${result.runtimeError}`,
+    );
+    assert(!/EN[A-Z]+:/u.test(result.runtimeError ?? ''), `raw Node error leaked: ${result.runtimeError}`);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+}
+
+// Тексты отказов Node-адаптера совпадают с каноном встроенной ФС веб-IDE:
+// сырые ENOENT/ENOTDIR/ENOTEMPTY из Node до учеников доезжать не должны
+// (находка методистов, 2026-08-21).
+async function testNodeReadableErrors(): Promise<void> {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'idyllium-file-errors-'));
+  const project = path.join(root, 'project');
+  fs.mkdirSync(project);
+
+  try {
+    const sourceFile = path.join(project, 'main.idyl');
+    const check = async (body: readonly string[], expected: string, label: string) => {
+      const source = ['use file;', 'main() {', ...body, '}'].join('\n');
+      const result = await runIdyllium(source, { projectRoot: project }, { file: sourceFile });
+      assert(!result.success, `${label}: program unexpectedly succeeded`);
+      assert(
+        result.runtimeError?.includes(expected),
+        `${label}: expected «${expected}», got: ${result.runtimeError}`,
+      );
+      assert(
+        !/EN[A-Z]+:/u.test(result.runtimeError ?? ''),
+        `${label}: raw Node error leaked: ${result.runtimeError}`,
+      );
+    };
+
+    await check(
+      ['    file.create_directory("а/б/в");'],
+      "directory does not exist: а/б",
+      'create_directory without parents',
+    );
+
+    fs.writeFileSync(path.join(project, 'стена.txt'), 'x', 'utf8');
+    await check(
+      ['    file.create_directory("стена.txt/внутри", parents=true);'],
+      'path is a file: стена.txt',
+      'create_directory across a file',
+    );
+
+    fs.mkdirSync(path.join(project, 'сейвы'));
+    fs.writeFileSync(path.join(project, 'сейвы/один.txt'), 'x', 'utf8');
+    await check(
+      ['    file.remove("сейвы");'],
+      'directory is not empty: сейвы',
+      'remove of a non-empty directory',
+    );
+
+    await check(
+      ['    file.ostream fout = file.open("экспорт.txt", "write");', '    fout.close();', '    file.remove("экспорт.txt");', '    file.create_directory("х/у");'],
+      "directory does not exist: х",
+      'create_directory second raw check',
+    );
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

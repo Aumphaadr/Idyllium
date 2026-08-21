@@ -308,6 +308,9 @@ function classSpecFromDeclaration(
           owner: qualifiedName,
           access: member.access,
           range: field.range,
+          nullable: field.initializer?.kind === 'LiteralExpression'
+            && field.initializer.valueType === 'null'
+            && (type.kind === 'class' || type.kind === 'qualified'),
         });
       }
     }

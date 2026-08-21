@@ -1,0 +1,57 @@
+<div class="docs-section">
+  <p class="project-meta">
+    <span class="project-chip"><strong>Сцена:</strong> окна</span>
+    <span class="project-chip"><strong>Сложность:</strong> ★★★ (мини-проект)</span>
+    <span class="project-chip"><strong>Место:</strong> когда пройдены методы строк — это их парад</span>
+  </p>
+  <p>Один LineEdit, одна кнопка — и полный досмотр адреса электронной почты: пробелы, количество собак, позиция собаки, вырезка домена, крайние точки, двойные точки. Правило проекта — <strong>все претензии разом</strong>: контролёр не останавливается на первой ошибке, а перечисляет всё (так работают настоящие формы, и это UX-принцип, а не каприз).</p>
+</div>
+<div class="docs-section">
+  <h2>Как это выглядит</h2>
+  <p>Контролёр ждёт — и выдаёт пропуск чистому адресу:</p>
+  <p class="project-screen"><img src="content/windows/img/email-verifier-1.png" alt="Старт: поле ввода и обещание перечислить всё" loading="lazy"></p>
+  <p class="project-screen"><img src="content/windows/img/email-verifier-2.png" alt="kot@pochta.ru: претензий нет, пропуск выдан" loading="lazy"></p>
+  <p><strong>Что происходит:</strong></p>
+  <ol>
+    <li>Адрес проходит парад проверок: <code>trim</code>, пустота, пробелы, <code>count("@")</code> (ноль — «нет собаки», больше одной — «питомник»), позиция собаки, вырезка домена <code>substring</code>, крайние точки, «..».</li>
+    <li>Каждая претензия — строка в отчёте с юмором («собака без дома»); счётчик претензий подводит итог.</li>
+    <li>Ноль претензий — пропуск выдан.</li>
+  </ol>
+</div>
+<div class="docs-section">
+  <h2>Что понадобится</h2>
+  <p><strong>Темы:</strong> LineEdit, TextEdit, методы строк (<code>trim</code>, <code>contains</code>, <code>count</code>, <code>find</code>, <code>substring</code>, посимвольный доступ), накопление отчёта строкой с <code>\n</code>.</p>
+  <p><strong>Напоминалка:</strong></p>
+  <idyl-code-block><script type="text/plain">
+int at_pos = email.find("@");
+string domain = email.substring(at_pos + 1, email.length);
+</script></idyl-code-block>
+  <p>Вырезка домена: <code>find</code> даёт индекс, арифметика — границы. Посчитайте на бумаге для «kot@pochta.ru», прежде чем доверять коду.</p>
+</div>
+<div class="docs-section">
+  <h2>Этапы</h2>
+  <h4 class="stage-item">Этап 1. Простые проверки.</h4>
+  <p>Каркас и три претензии: пусто, пробел, нет собаки.</p>
+  <p class="stage-done"><em>Готово, когда:</em> три плохих адреса получают три разных претензии, а не одну общую.</p>
+  <h4 class="stage-item">Этап 2. Жёсткая логика.</h4>
+  <p>Ровно одна собака, домен, крайние точки, двойные точки — и полный отчёт всех претензий разом. Тест-лист: <code>kot@pochta.ru</code> ✔, <code>@pochta.ru</code>, <code>kot@</code>, <code>kot@@r.u</code>, <code>kot pochta.ru</code>, <code>kot@.ru</code>, <code>kot@ru.</code>, <code>a@b..ru</code>.</p>
+  <p class="stage-done"><em>Готово, когда:</em> весь тест-лист даёт ожидаемые отчёты, и у <code>kot@@r.u</code> претензий больше одной.</p>
+</div>
+<div class="docs-section">
+  <h2>Переодень сюжет</h2>
+  <p>Механика общая, слова и темы — твои: проверка заклинаний на опечатки, контроль позывных радиолюбителей, приёмка адресов совиной почты.</p>
+</div>
+<div class="docs-section">
+  <h2>Фишки и красивости</h2>
+  <p>★ — пять минут, ★★ — полчаса, ★★★ — конфетка.</p>
+  <p><strong>После этапа 1:</strong> ★ счётчик проверенных адресов за сессию.</p>
+  <p><strong>После этапа 2:</strong> ★★ подсветка вердикта цветом; ★★★ «исправитель»: контролёр не только ругает, но и предлагает починку («может, вы имели в виду kot@pochta.ru?» — уберите пробел, склейте).</p>
+</div>
+<div class="docs-section">
+  <h2>Грабли</h2>
+  <ul>
+    <li>Домен режется ТОЛЬКО при ровно одной собаке — иначе <code>substring</code> вырежет чепуху. Порядок проверок — часть алгоритма.</li>
+    <li>«Валидный по нашим правилам» не значит «существующий»: настоящая проверка почты — это письмо со ссылкой. Честный финал проекта — сказать об этом вслух.</li>
+    <li>Пустая строка после <code>trim</code> — первая проверка, все остальные — после неё: досматривать пустоту бессмысленно.</li>
+  </ul>
+</div>

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-18T17:47:08.761Z",
+  "generatedAt": "2026-08-21T20:38:34.310Z",
   "sourceRoot": "docs/manual-content/tasks",
   "sections": [
     {
@@ -724,6 +724,16 @@
           "hasTasks": true
         },
         {
+          "id": "contracts",
+          "title": "Методы-контракты",
+          "subtitle": "Практикум к уроку «Методы-контракты»",
+          "file": "content/oop/contracts.html",
+          "sourceFile": "docs/manual-content/tasks/oop/contracts.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": true
+        },
+        {
           "id": "modules",
           "title": "Разбиение проекта по файлам",
           "subtitle": "Практикум к уроку «Разбиение проекта по файлам»",
@@ -1311,6 +1321,16 @@
           "subtitle": "Практикум к уроку «Почтовый канал: две программы разговаривают»",
           "file": "content/network/channel.html",
           "sourceFile": "docs/manual-content/tasks/network/channel.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": true
+        },
+        {
+          "id": "web-server",
+          "title": "Свой сервер",
+          "subtitle": "Практикум к уроку «Свой сервер»",
+          "file": "content/network/web-server.html",
+          "sourceFile": "docs/manual-content/tasks/network/web-server.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true

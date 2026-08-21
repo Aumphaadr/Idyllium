@@ -1,0 +1,272 @@
+<div class="docs-section">
+  <h2>Методы догоняют функции</h2>
+  <p>
+    В ваших классах методы пока скромные: без параметров и без результата —
+    напечатал визитку, изменил своё поле, и всё. А функции давно умеют больше:
+    принимают аргументы, возвращают ответ. Пора уравнять в правах — метод
+    тоже может принять параметр и вернуть значение:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Hero {
+    string name;
+    int level;
+
+    bool function stronger_than(Hero other) {
+        return this.level > other.level;
+    }
+}
+
+main() {
+    Hero mira;
+    mira.name = "Мира";
+    mira.level = 12;
+
+    Hero kai;
+    kai.name = "Кай";
+    kai.level = 9;
+
+    console.writeln(mira.stronger_than(kai));
+}
+</script></idyl-code-block>
+  <idyl-output-block>true</idyl-output-block>
+
+  <p>
+    Присмотритесь к паре слов внутри метода: <code>this</code> — «я, кого
+    позвали», это вы знаете с прошлого урока. А <code>other</code> — обычный
+    параметр, в котором приехал <em>второй</em> герой. Один метод — два
+    объекта: свой доступен через <code>this</code>, чужой — через параметр.
+    Именно эта пара открывает сегодняшнюю тему.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Проблема: равны ли двое?</h2>
+  <p>
+    Попробуем спросить у языка, равны ли два героя, привычным знаком:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Hero {
+    string name;
+    int level;
+}
+
+main() {
+    Hero a;
+    a.name = "Мира";
+    a.level = 12;
+
+    Hero b;
+    b.name = "Мира";
+    b.level = 12;
+
+    console.writeln(a == b);
+}
+</script></idyl-code-block>
+  <idyl-error-block>main.idyl:17:21: compile error: cannot compare objects of class 'Hero' with '==' — declare 'bool function equals(Hero other)' in class 'Hero' and the comparison will use it</idyl-error-block>
+
+  <p>
+    Компилятор отказывается — и не из вредности. Числа и строки язык сравнивает
+    сам, потому что там равенство очевидно. А что значит «равны» для двух
+    героев? Совпали имена? Имена и уровни? Или это вообще должен быть один и
+    тот же герой? У равенства объектов нет единственно правильного ответа —
+    ответ знает только автор класса. Поэтому язык не гадает, а прямо в ошибке
+    называет условия договора.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Контракт equals</h2>
+  <p>
+    Договор такой: объявите в классе публичный метод <strong>ровно такой
+    формы</strong> — <code>bool function equals(СвойКласс other)</code> —
+    и знак <code>==</code> начнёт работать, вызывая ваш метод:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Hero {
+    string name;
+    int level;
+
+    bool function equals(Hero other) {
+        return this.name == other.name and this.level == other.level;
+    }
+}
+
+main() {
+    Hero a;
+    a.name = "Мира";
+    a.level = 12;
+
+    Hero b;
+    b.name = "Мира";
+    b.level = 12;
+
+    Hero c;
+    c.name = "Кай";
+    c.level = 9;
+
+    console.writeln(a == b);
+    console.writeln(a == c);
+    console.writeln(a != c);
+}
+</script></idyl-code-block>
+  <idyl-output-block>true
+false
+true</idyl-output-block>
+
+  <p>
+    Такой метод-договор называется <strong>контрактом</strong>: вы обещаете
+    языку метод условленной формы — язык за это подключает к нему свой знак.
+    Заметьте, что решаете именно вы: напишете в <code>equals</code> сравнение
+    только имён — тёзки станут «равны»; сравните все поля — равенство станет
+    строже. Знак один, а смысл ему назначает автор класса.
+  </p>
+  <p>
+    <code>!=</code> отдельного контракта не требует: это «не equals», язык
+    выводит его сам. И одно правило хорошего тона, которое стоит записать:
+    <strong>equals отвечает на вопрос и ничего не меняет</strong>. Метод
+    сравнения, который двигает поля, — источник самых загадочных ошибок.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Контракт оживляет поиск</h2>
+  <p>
+    Вместе со знаком <code>==</code> договор подключает и поиск в массивах —
+    <code>contains</code>, <code>find</code> и <code>count</code> начинают
+    искать «по смыслу», через ваш <code>equals</code>:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Hero {
+    string name;
+    int level;
+
+    bool function equals(Hero other) {
+        return this.name == other.name and this.level == other.level;
+    }
+}
+
+main() {
+    dyn_array<Hero> guild;
+
+    Hero mira;
+    mira.name = "Мира";
+    mira.level = 12;
+    guild.add(mira);
+
+    Hero kai;
+    kai.name = "Кай";
+    kai.level = 9;
+    guild.add(kai);
+
+    Hero wanted;
+    wanted.name = "Кай";
+    wanted.level = 9;
+
+    console.writeln(guild.contains(wanted));
+    console.writeln(guild.find(wanted));
+}
+</script></idyl-code-block>
+  <idyl-output-block>true
+1</idyl-output-block>
+
+  <p>
+    Обратите внимание: <code>wanted</code> — не тот объект, что лежит в
+    массиве, а собранный заново образец с теми же полями. Без контракта такой
+    поиск был бы невозможен (компилятор отказал бы с той же подсказкой про
+    equals) — а с контрактом «найди героя по описанию» пишется одной строкой.
+    Сравнение двух <em>массивов</em> героев знаком <code>==</code> тоже
+    оживает: массивы равны, когда попарно равны их жители — по вашему же
+    контракту. А вот <code>sort()</code> для объектов так и остаётся под
+    запретом: равенство вы объявили, но «кто больше» — отдельный вопрос, и
+    его у объектов пока не бывает.
+  </p>
+  <p>
+    И ещё одна дверь, которую открывает второй контракт из следующего
+    раздела: массив объектов с контрактом печати выводится целиком —
+    <code>console.writeln(guild)</code> покажет представления всех жителей
+    списком, как массив строк.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Второй контракт: to_string</h2>
+  <p>
+    Договор с <code>equals</code> — не единственный. Помните запрет
+    <code>cannot print object of class 'Hero' directly</code> и
+    метод-визитку <code>info()</code>? У печати есть свой контракт: назовите
+    визитку <code>to_string</code>, пусть она <em>возвращает</em> строку —
+    и <code>writeln</code> научится печатать объект сам:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Hero {
+    string name;
+    int level;
+
+    string function to_string() {
+        return this.name + " (уровень " + to_string(this.level) + ")";
+    }
+}
+
+main() {
+    Hero mira;
+    mira.name = "Мира";
+    mira.level = 12;
+
+    console.writeln(mira);
+}
+</script></idyl-code-block>
+  <idyl-output-block>Мира (уровень 12)</idyl-output-block>
+
+  <p>
+    Разница с <code>info()</code> принципиальная: визитка <em>печатала</em>
+    сама, а контракт <em>возвращает</em> строку — и ею распоряжается тот, кто
+    печатает. Внутри метода можно спокойно звать глобальную
+    <code>to_string(число)</code> — это разные вещи: глобальная превращает
+    значение в строку, а ваш метод-контракт описывает, как выглядит объект.
+  </p>
+  <p>
+    Один соблазн контракт не открывает: <code>"строка" + объект</code>
+    по-прежнему запрещён — ровно так же, как запрещена склейка строки с
+    числом. Лечение то же самое: глобальная <code>to_string(объект)</code> —
+    при контракте она использует ваш метод, и
+    <code>"Встречайте: " + to_string(mira)</code> собирается честно.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Шпаргалка</h2>
+  <table>
+    <thead>
+      <tr><th>Что сделать</th><th>Как</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Метод с параметром и ответом</td><td><code>bool function stronger_than(Hero other) { return ...; }</code></td></tr>
+      <tr><td>Открыть объектам <code>==</code> и <code>!=</code></td><td>контракт <code>bool function equals(Hero other)</code> — публичный, параметр своего класса</td></tr>
+      <tr><td>Открыть поиск в массивах</td><td>тот же контракт — <code>contains</code>/<code>find</code>/<code>count</code> и сравнение массивов работают через него</td></tr>
+      <tr><td>Открыть печать объекта</td><td>контракт <code>string function to_string()</code> — без параметров, возвращает строку; открывает и печать массива таких объектов</td></tr>
+    </tbody>
+  </table>
+  <ul>
+    <li>Контракт — договор с языком: метод условленной формы подключает встроенный знак или механизм.</li>
+    <li>Что значит «равны» — решает автор класса: тёзки или полные двойники, выбор за вами.</li>
+    <li><code>equals</code> отвечает, но не меняет; <code>!=</code> достаётся бесплатно.</li>
+    <li><code>sort()</code> для объектов по-прежнему запрещён: равенство есть, порядка нет.</li>
+    <li>Склейка <code>"строка" + объект</code> запрещена, как и с числом: собирайте через <code>to_string(объект)</code>.</li>
+    <li>О судьбе контрактов при наследовании — в уроке про наследование.</li>
+  </ul>
+</div>

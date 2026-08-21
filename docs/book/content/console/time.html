@@ -214,7 +214,7 @@ main() {
     console.writeln("UTC: ", utc);
     console.writeln("Екатеринбург: ", ekaterinburg);
     console.writeln("Зона: ", ekaterinburg.timezone);
-    console.writeln("Момент тот же: ", utc.unix == ekaterinburg.unix);
+    console.writeln("Момент тот же: ", utc == ekaterinburg);
 }
 </script></idyl-code-block>
 
@@ -224,6 +224,31 @@ main() {
 Момент тот же: true</idyl-output-block>
 
       <p>Метод <code>in_timezone()</code> не двигает время вперёд или назад. Он создаёт новую метку того же момента, но показывает её для другого места. Желаемую зону также можно сразу передать в <code>time.now("Asia/Yekaterinburg")</code> или <code>time.from_unix(n, "Asia/Yekaterinburg")</code>.</p>
+      <p>Обратите внимание на последнюю строку: две метки сравниваются знаком <code>==</code> напрямую — и они равны, хотя показывают разные цифры. Метки времени сравниваются <strong>по моменту</strong>: часовой пояс — только способ записи, на равенство он не влияет. Работают и остальные знаки — раньше значит меньше:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use time;
+
+main() {
+    time.stamp lunch = time.from_unix(1000000);
+    time.stamp dinner = time.from_unix(2000000);
+
+    console.writeln(lunch < dinner);
+    console.writeln(lunch <= dinner);
+    console.writeln(dinner > lunch);
+    console.writeln(dinner >= lunch);
+    console.writeln(lunch == dinner);
+    console.writeln(lunch != dinner);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>true
+true
+true
+true
+false
+true</idyl-output-block>
       <p>Имя зоны должно быть настоящим. Попробуем переехать в несуществующий часовой пояс:</p>
 
       <idyl-code-block><script type="text/plain">

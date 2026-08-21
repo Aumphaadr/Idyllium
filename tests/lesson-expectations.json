@@ -769,6 +769,12 @@
     },
     "network.http-client.004": {
       "kind": "runtime_error"
+    },
+    "oop.contracts.002": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot compare objects of class 'Hero' with '=='"
+      ]
     }
   }
 }

@@ -125,12 +125,38 @@ else {
 }
 </script></idyl-code-block>
   <p>
+    И одна честность напоследок, чтобы не запутаться между двумя мирами.
+    В Idyllium две неизвестности равны: <code>null == null</code> в смысле
+    «оба значения пусты» даёт <code>true</code> — так удобнее программе.
+    А в самом SQL закон другой: там <code>NULL = NULL</code> — НЕ истина
+    (неизвестное нельзя приравнять к неизвестному), поэтому
+    <code>WHERE nickname = NULL</code> не найдёт ничего никогда — для поиска
+    пустых ячеек SQL требует особые слова <code>IS NULL</code>. Две правды,
+    два мира: в языке пустоту сравнивают знаком, в запросе — словами.
+  </p>
+  <p>
     Также доступны проверки <code>is_null()</code>, <code>is_int()</code>,
     <code>is_float()</code> и <code>is_string()</code>, а после проверки —
     преобразования <code>to_int()</code>, <code>to_int64()</code>,
     <code>to_float()</code>, <code>to_string()</code> и
     <code>to_bool()</code>.
   </p>
+  <p>
+    Преобразования нужны для работы со значением. А для простого сравнения
+    они не обязательны: два <code>sqlite.Value</code> сравниваются знаком
+    <code>==</code> напрямую, по содержимому — удобно проверить, совпадает
+    ли ячейка сегодняшней выборки со вчерашней, не разворачивая обе:
+  </p>
+  <idyl-code-block><script type="text/plain">
+sqlite.Result today = db.execute("SELECT nickname FROM players WHERE name = 'Mira'");
+sqlite.Result backup = old_db.execute("SELECT nickname FROM players WHERE name = 'Mira'");
+today.next();
+backup.next();
+
+if (today.get("nickname") == backup.get("nickname")) {
+    console.writeln("Прозвище не менялось");
+}
+</script></idyl-code-block>
 </div>
 
 <div class="docs-section">

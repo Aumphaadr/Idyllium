@@ -38,6 +38,12 @@ export interface BrowserRunOptions {
   readonly input?: readonly string[];
   readonly console?: Partial<ConsoleIO>;
   readonly abortSignal?: import('./runtime/runtime').RuntimeAbortSignal;
+  /**
+   * Транспорт web.Server для браузера. Задаёт его страница-хозяин (Web IDE —
+   * мост в SW-песочницу «сервер-репетиция»); без него web.Server честно
+   * отказывает, как раньше.
+   */
+  readonly networkListen?: import('./runtime/network-service').RuntimeNetworkService['listen'];
 }
 
 export interface BrowserRunResult {
@@ -169,14 +175,26 @@ export {
 export { IDYLLIUM_SEMANTIC_TOKEN_TYPES, IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS } from './core/semantics';
 export { guiPreviewIntervalMs } from './runtime/gui-interval';
 
+function buildBrowserNetworkService(
+  networkListen: BrowserRunOptions['networkListen'],
+): import('./runtime/network-service').RuntimeNetworkService | undefined {
+  const base = createFetchNetworkService({ corsHints: true });
+  if (!networkListen || !base) return base;
+  return { fetch: (request) => base.fetch(request), listen: networkListen };
+}
+
 function createMemoryRuntime(options: BrowserRunOptions, fileSystem: RuntimeFileSystem): IdylliumRuntime {
   return createRuntime({
     platform: 'web',
     console: options.console,
     input: options.input,
+    // Раньше сигнал объявлялся в опциях, но терялся по дороге: Stop бросал
+    // программу, не сообщая ей. Для web.Server это фатально — run() обязан
+    // услышать abort и закрыть транспорт (снять порт репетиции).
+    abortSignal: options.abortSignal,
     fileSystem,
     imageService: createBrowserImageService(),
-    networkService: createFetchNetworkService({ corsHints: true }),
+    networkService: buildBrowserNetworkService(options.networkListen),
     channelService: createBroadcastChannelService(),
     sqliteService: browserSqliteService,
     urlOpener: {

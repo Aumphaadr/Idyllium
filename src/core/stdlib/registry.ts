@@ -7,6 +7,8 @@ export interface ParameterSpec {
   readonly acceptedDescription?: string;
   readonly exactType?: boolean;
   readonly defaultValue?: string;
+  /** ANY-параметр, которому нельзя передавать объекты пользовательских классов (json.Value). */
+  readonly rejectsClassObjects?: boolean;
 }
 
 export interface FunctionSpec {
@@ -296,6 +298,8 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       'Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.'),
     propertySpec('enabled', BOOL, false,
       'Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.'),
+    propertySpec('hint', STRING, false,
+      'Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.'),
   ];
   const styleable = [
     propertySpec('style', STRING, false,
@@ -357,7 +361,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       documentation: 'Где выполняется программа: "cli", "web" или "vscode".',
     }),
     functionSpec('version', [], STRING, {
-      documentation: 'Версия Idyllium, например "1.4.1".',
+      documentation: 'Версия Idyllium, например "1.5.0".',
     }),
   ]));
 
@@ -540,7 +544,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
         minArguments: 0,
         documentation: 'Читает count символов либо весь оставшийся текст, если count не указан.',
       }),
-      functionSpec('read_line', [], STRING),
+      functionSpec('read_line', [], STRING, {
+        documentation: 'Читает строку целиком, включая завершающий перевод строки, если он есть в файле (симметрично write_line, который его добавляет; у последней строки без перевода — без него). Для чистого текста используйте .trim().',
+      }),
       functionSpec('read_all', [], STRING),
       functionSpec('has_next_line', [], BOOL),
       functionSpec('close', [], VOID),
@@ -611,6 +617,53 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], [
       functionSpec('header', [{ name: 'name', type: STRING }], STRING, {
         documentation: 'Значение заголовка ответа по имени (регистр не важен); пустая строка, если заголовка нет.',
+      }),
+    ]),
+  ]));
+
+  const webRequest = qualified('web', 'Request');
+  const webResponse = qualified('web', 'Response');
+  registry.registerModule(moduleSpec('web', [], [], [
+    typeSpec('Server', [
+      propertySpec('port', INT, false, 'Порт сервера, 0–65535 (по умолчанию 8080; 0 — попросить у системы свободный). После run() хранит фактический порт.'),
+      propertySpec('host', STRING, false, 'Какие адреса слушать. По умолчанию "127.0.0.1" — только этот компьютер. "0.0.0.0" открывает программу ВСЕЙ локальной сети — включайте осознанно.'),
+      propertySpec('is_running', BOOL, true, 'true, пока сервер запущен. Свойство доступно только для чтения.'),
+    ], [
+      functionSpec('on_get', [
+        { name: 'path', type: STRING },
+        { name: 'handler', type: ANY_TYPE },
+      ], VOID, {
+        documentation: 'Регистрирует обработчик GET-запросов на точный путь (например "/hello"). Обработчик — функция вида void function(web.Request req, web.Response res). Повторная регистрация пути — ошибка.',
+      }),
+      functionSpec('on_post', [
+        { name: 'path', type: STRING },
+        { name: 'handler', type: ANY_TYPE },
+      ], VOID, {
+        documentation: 'Регистрирует обработчик POST-запросов на точный путь. Тело запроса — в req.body.',
+      }),
+      functionSpec('serve_directory', [{ name: 'path', type: STRING }], VOID, {
+        documentation: 'Раздаёт файлы папки как статику (только чтение, только GET, выход из папки закрыт). Адрес "/" отдаёт index.html. Маршруты on_get/on_post проверяются раньше статики.',
+      }),
+      functionSpec('run', [], VOID, {
+        documentation: 'Запускает сервер и не возвращается: программа обслуживает запросы, пока её не остановят (Stop или Ctrl+C). Занятый порт — читаемая ошибка. Работает в консоли и VS Code; в Web IDE — честный отказ (браузер не может слушать порт).',
+      }),
+    ]),
+    typeSpec('Request', [
+      propertySpec('path', STRING, true, 'Путь запроса, например "/hello". Свойство доступно только для чтения.'),
+      propertySpec('body', STRING, true, 'Тело запроса (для POST). Свойство доступно только для чтения.'),
+    ], [
+      functionSpec('query', [{ name: 'name', type: STRING }], STRING, {
+        documentation: 'Значение query-параметра адреса (?name=value) по имени; пустая строка, если параметра нет.',
+      }),
+    ]),
+    typeSpec('Response', [
+      propertySpec('status', INT, false, 'Код ответа, 100–599 (по умолчанию 200). Читается в момент отправки ответа.'),
+    ], [
+      functionSpec('send', [{ name: 'text', type: STRING }], VOID, {
+        documentation: 'Отправляет текст ответа как HTML-страницу (text/html). Один ответ на один запрос: повторный send — ошибка.',
+      }),
+      functionSpec('send_json', [{ name: 'text', type: STRING }], VOID, {
+        documentation: 'Отправляет текст ответа как JSON (application/json) — для программ-клиентов и http.get.',
       }),
     ]),
   ]));
@@ -703,9 +756,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   registry.registerModule(moduleSpec('json', [
     functionSpec('is_valid', [{ name: 'text', type: STRING }], BOOL),
     functionSpec('parse', [{ name: 'text', type: STRING }], jsonValue),
-    functionSpec('Value', [{ name: 'value', type: ANY_TYPE, defaultValue: 'null' }], jsonValue, {
+    functionSpec('Value', [{ name: 'value', type: ANY_TYPE, defaultValue: 'null', rejectsClassObjects: true }], jsonValue, {
       minArguments: 0,
-      documentation: 'Создаёт JSON-значение. Вызов без аргумента создаёт JSON null.',
+      documentation: 'Создаёт JSON-значение. Вызов без аргумента создаёт JSON null. Объект пользовательского класса завернуть нельзя — соберите json.Object из его полей.',
     }),
   ], [], [
     typeSpec('Value', [], [
@@ -1678,6 +1731,11 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     { name: 'left', type: INT },
     { name: 'right', type: INT },
   ], INT));
+  registry.registerGlobalFunction(functionSpec('type_name', [
+    { name: 'value', type: ANY_TYPE },
+  ], STRING, {
+    documentation: 'Имя типа значения строкой, в той же записи, что в сообщениях компилятора: для значений — статический тип («int», «string», «array<int, 3>»), для объектов — актуальный класс, даже если на него смотрят через переменную базового типа («Cat», «zoo.Lion», «gui.Button»). Пригодится в контракте equals: сравните type_name(this) и type_name(other), чтобы тёзка другого класса не сошёл за своего.',
+  }));
   registry.registerGlobalFunction(functionSpec('to_int', [
     {
       name: 'value',

@@ -31,8 +31,49 @@ export class RuntimeNetworkError extends Error {
   }
 }
 
+// ─── Серверная половина сервиса (библиотека web, фаза 3) ───────────────────
+
+export interface RuntimeHttpServerRequest {
+  readonly method: string;
+  /** Раскодированный путь без query-части, например '/hello'. */
+  readonly path: string;
+  /** Query-параметры; при повторе имени берётся первое значение. */
+  readonly query: Readonly<Record<string, string>>;
+  readonly body: string;
+}
+
+export interface RuntimeHttpServerResponse {
+  readonly status: number;
+  readonly headers: Readonly<Record<string, string>>;
+  readonly body: string | Uint8Array;
+}
+
+export interface RuntimeHttpServerHandle {
+  /** Фактический порт (при запрошенном 0 система выбирает свободный). */
+  readonly port: number;
+  /**
+   * Что напечатать ученику вместо стандартного «Сервер слушает…» —
+   * SW-песочница Web IDE сообщает адрес репетиции и её честные границы.
+   */
+  readonly announce?: string;
+  close(): Promise<void>;
+}
+
+export interface RuntimeHttpServerListenOptions {
+  readonly host: string;
+  readonly port: number;
+}
+
 export interface RuntimeNetworkService {
   fetch(request: RuntimeNetworkRequest): Promise<RuntimeNetworkResponse>;
+  /**
+   * Слушать порт (web.Server). Есть только у node-хостов (CLI, VS Code);
+   * браузер порт слушать не может — web.Server.run() честно отказывает.
+   */
+  listen?(
+    options: RuntimeHttpServerListenOptions,
+    handler: (request: RuntimeHttpServerRequest) => Promise<RuntimeHttpServerResponse>,
+  ): Promise<RuntimeHttpServerHandle>;
 }
 
 export interface FetchNetworkServiceOptions {

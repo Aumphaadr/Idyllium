@@ -649,6 +649,19 @@ body.light-theme .lesson-body .task-item.task-star {
   font-weight: 700;
 }
 
+/* Скриншоты оконных и канвовых проектов: пара кадров «старт → успех». */
+.lesson-body .project-screen {
+  margin: 14px 0;
+}
+
+.lesson-body .project-screen img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
 .task-note {
   margin: 0;
   padding: 12px 18px;

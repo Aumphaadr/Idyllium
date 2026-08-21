@@ -32,7 +32,7 @@ if (!fs.existsSync(browserEntry)) {
 fs.rmSync(outputWebDir, { recursive: true, force: true });
 fs.mkdirSync(outputAssetsDir, { recursive: true });
 
-for (const item of ['index.html', 'app.css', 'app.js']) {
+for (const item of ['index.html', 'app.css', 'app.js', 'sw-preview.js']) {
   fs.copyFileSync(path.join(sourceWebDir, item), path.join(outputWebDir, item));
 }
 // Версия берётся из корневого package.json (единственный источник) и

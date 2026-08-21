@@ -22,6 +22,8 @@ import {
   tintRaster,
 } from './image-service';
 import {
+  RuntimeHttpServerRequest,
+  RuntimeHttpServerResponse,
   RuntimeNetworkError,
   RuntimeNetworkRequest,
   RuntimeNetworkService,
@@ -70,7 +72,7 @@ export class IdylliumRuntimeError extends Error {
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-export const IDYLLIUM_VERSION = '1.4.1';
+export const IDYLLIUM_VERSION = '1.5.0';
 
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform(): string {
@@ -370,6 +372,11 @@ export class IdylliumTimeStamp {
 
   get unix(): number {
     return Math.floor(this.epochMs / 1000);
+  }
+
+  /** Момент в миллисекундах — для равенства и порядка штампов (пояс не участвует). */
+  get instantMs(): number {
+    return this.epochMs;
   }
 
   get millisecond(): number {
@@ -892,6 +899,10 @@ function parseJsonValue(text: string, file: string, line: number): JsonRuntimeVa
   try {
     return new ExactJsonParser(text).parse();
   } catch (error) {
+    if (error instanceof RangeError) {
+      // «Maximum call stack size exceeded» из V8 — жаргон движка
+      throw new IdylliumRuntimeError(file, line, 'json.parse() invalid JSON: the text is nested too deeply');
+    }
     throw new IdylliumRuntimeError(file, line, `json.parse() invalid JSON: ${errorMessage(error)}`);
   }
 }
@@ -2341,6 +2352,10 @@ export interface IdylliumRuntime {
   readonly core: {
     tick(file: string, line: number): Promise<void> | null;
     binary(operator: string, left: unknown, right: unknown, file: string, line: number): unknown;
+    typeName(value: unknown): string;
+    expectPresent(value: unknown, fieldName: string, className: string, file: string, line: number): unknown;
+    equalsObjects(left: unknown, right: unknown, slot: string, file: string, line: number): Promise<boolean>;
+    equalsObjectArrays(left: unknown, right: unknown, slot: string, file: string, line: number): Promise<boolean>;
     negate(value: unknown): number | bigint;
     divide(left: unknown, right: unknown, file: string, line: number): number;
     div(left: unknown, right: unknown, file: string, line: number): number | bigint;
@@ -2372,6 +2387,7 @@ export interface IdylliumRuntime {
     min(array: unknown, file: string, line: number): number | bigint;
     sum(array: unknown, file: string, line: number): number | bigint;
     avg(array: unknown, file: string, line: number): number;
+    searchWith(array: unknown, value: unknown, slot: string, mode: string, file: string, line: number): Promise<boolean | number>;
   };
   readonly types: {
     cast(value: unknown, typeName: string): number | bigint;
@@ -2398,6 +2414,7 @@ export interface IdylliumRuntime {
     readonly hash: Record<string, unknown>;
     readonly url: Record<string, unknown>;
     readonly channel: Record<string, unknown>;
+    readonly web: Record<string, unknown>;
   readonly http: Record<string, unknown>;
     readonly json: Record<string, unknown>;
     readonly sqlite: Record<string, unknown>;
@@ -2442,7 +2459,17 @@ function defaultRuntimeUrlOpener(): RuntimeUrlOpener | undefined {
 function defaultRuntimeNetworkService(): RuntimeNetworkService | undefined {
   // Глобальный fetch есть в Node ≥18 и в любом браузере; CORS-подсказки
   // включает только браузерная сборка (src/browser.ts).
-  return createFetchNetworkService();
+  const service = createFetchNetworkService();
+  const nodeProcess = typeof process === 'object' ? process as unknown as { versions?: { node?: string } } : null;
+  if (!service || !nodeProcess?.versions?.node) return service;
+  try {
+    // Серверная половина (web.Server) есть только у node-хостов; загрузка
+    // через eval('require') держит node:http вне браузерного бандла.
+    const dynamicRequire = eval('require') as (request: string) => { createNodeHttpListen(): RuntimeNetworkService['listen'] };
+    return { fetch: (request) => service.fetch(request), listen: dynamicRequire('./node-http-server').createNodeHttpListen() };
+  } catch {
+    return service;
+  }
 }
 
 function defaultRuntimeImageService(): RuntimeImageService | undefined {
@@ -2496,6 +2523,8 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     windows: [],
     channelPosts: [],
     channelService: options.channelService,
+    networkService: options.networkService ?? defaultRuntimeNetworkService(),
+    abortSignal: options.abortSignal,
     channelMailbox: [],
     nextAudioCommandId: 1,
     nextObjectId: 1,
@@ -2525,10 +2554,32 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       return input.shift() ?? '';
     },
   };
+  runtimeObjects.consoleWrite = (text) => io.write(text);
 
   async function formatConsoleValue(value: unknown): Promise<string> {
     if (isJsonRuntimeValue(value)) {
       return formatForConsole(value, precision);
+    }
+    // Массив объектов с контрактом to_string: представления элементов
+    // собираются асинхронно (инспектор массива синхронный и сам метод
+    // ученика позвать не может) — жанр equalsObjectArrays.
+    if (value instanceof IdylliumArray) {
+      const items = value.values();
+      if (items.some((item) => item !== null && typeof item === 'object'
+        && typeof (item as Record<string, unknown>).to_string === 'function')) {
+        const parts: string[] = [];
+        for (const item of items) {
+          const method = item !== null && typeof item === 'object'
+            ? (item as Record<string, unknown>).to_string
+            : undefined;
+          if (typeof method === 'function') {
+            parts.push(formatForInspect(await method.apply(item)));
+          } else {
+            parts.push(formatForInspect(item));
+          }
+        }
+        return `[${parts.join(', ')}]`;
+      }
     }
     if (value !== null && typeof value === 'object') {
       const method = (value as Record<string, unknown>).to_string;
@@ -2740,6 +2791,52 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     binary(operator: string, left: unknown, right: unknown, file: string, line: number): unknown {
       return runtimeBinary(operator, left, right, file, line);
     },
+    // Имя типа для объектов — рантайм-метка (актуальный класс); значения
+    // подставляются кодогеном статически и сюда обычно не доходят.
+    typeName(value: unknown): string {
+      if (value === null) return 'null';
+      if (value instanceof IdylliumColor) return 'colors.Color';
+      if (value instanceof IdylliumTimeStamp) return 'time.stamp';
+      if (value instanceof IdylliumArray) return 'array';
+      if (typeof value === 'object' && typeof (value as Record<string, unknown>).__idylliumType === 'string') {
+        return (value as Record<string, unknown>).__idylliumType as string;
+      }
+      if (typeof value === 'string') return 'string';
+      if (typeof value === 'boolean') return 'bool';
+      if (typeof value === 'bigint') return 'int';
+      if (typeof value === 'number') return Number.isInteger(value) ? 'int' : 'float';
+      return 'unknown';
+    },
+    // Страж «пустого поля»: пустота не выходит в мир молча.
+    expectPresent(value: unknown, fieldName: string, className: string, file: string, line: number): unknown {
+      if (value === null || value === undefined) {
+        throw new IdylliumRuntimeError(
+          file,
+          line,
+          `field '${fieldName}' of class '${className}' is empty (null) — check it with '!= null' before using it`,
+        );
+      }
+      return value;
+    },
+    // '==' объектов с контрактом equals: awaited-вызов слота статического типа.
+    // «Пустые поля» сравниваются и между собой: пустота равна только пустоте.
+    async equalsObjects(left: unknown, right: unknown, slot: string, file: string, line: number): Promise<boolean> {
+      if (left === null || right === null) return left === null && right === null;
+      const contract = (left as Record<string, unknown> | null)?.[slot];
+      if (typeof contract !== 'function') {
+        throw new IdylliumRuntimeError(file, line, "comparison found an object without the 'equals' contract");
+      }
+      return (await (contract as (other: unknown) => Promise<unknown>)(right)) === true;
+    },
+    async equalsObjectArrays(left: unknown, right: unknown, slot: string, file: string, line: number): Promise<boolean> {
+      return equalsArrayCellsWith(
+        expectArray(left, file, line),
+        expectArray(right, file, line),
+        slot,
+        file,
+        line,
+      );
+    },
     negate(value: unknown): number | bigint {
       return runtimeNegate(value);
     },
@@ -2860,6 +2957,29 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
         throw new IdylliumRuntimeError(file, line, 'string characters are read-only');
       }
       expectArray(value, file, line).set(index, item, file, line);
+    },
+    // Поиск в массиве объектов через контракт equals элемента. Длина
+    // фиксируется на входе: дописанное обработчиком в хвост не проверяется.
+    async searchWith(value: unknown, target: unknown, slot: string, mode: string, file: string, line: number): Promise<boolean | number> {
+      const array = expectArray(value, file, line);
+      const snapshot = array.values();
+      let matches = 0;
+      for (let index = 0; index < snapshot.length; index += 1) {
+        const item = snapshot[index] as Record<string, unknown> | null;
+        const contract = item?.[slot];
+        if (typeof contract !== 'function') {
+          throw new IdylliumRuntimeError(file, line, `${mode}() found an element without the 'equals' contract`);
+        }
+        const equal = (await (contract as (other: unknown) => Promise<unknown>)(target)) === true;
+        if (equal) {
+          if (mode === 'contains') return true;
+          if (mode === 'find') return index;
+          matches += 1;
+        }
+      }
+      if (mode === 'contains') return false;
+      if (mode === 'find') return -1;
+      return matches;
     },
     max(value: unknown, file: string, line: number): number | bigint {
       const values = numericValues(value, 'max', file, line);
@@ -3388,6 +3508,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       image: {},
       gui: {},
       channel: {},
+      web: {},
       turtle: createTurtleModule(runtimeObjects),
       colors: {
         RGB: contextFunction((red: number, green: number, blue: number, file: string, line: number) => IdylliumColor.RGB(red, green, blue, file, line)),
@@ -3438,6 +3559,14 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       const setter = setters[propertyName];
       if (setter) {
         setter(value, file, line);
+        return value;
+      }
+
+      // Программная запись is_selected = true у радиокнопки снимает соседей
+      // группы — так же, как клик: урок обещает «одна группа по умолчанию»,
+      // и рантайм держит слово обоими путями (находка методистов 2026-08-21).
+      if (propertyName === 'is_selected' && value === true && obj.__idylliumType === 'gui.RadioButton') {
+        selectRadioButton(obj, runtimeObjects);
         return value;
       }
 
@@ -3604,7 +3733,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     if (scheme !== 'http' && scheme !== 'https') {
       throw new IdylliumRuntimeError(file, line, `${methodName} supports only http and https addresses, got '${scheme}'`);
     }
-    const service = options.networkService ?? defaultRuntimeNetworkService();
+    const service = runtimeObjects.networkService;
     if (!service) {
       throw new IdylliumRuntimeError(file, line, `${methodName} is not supported by this runtime`);
     }
@@ -3723,8 +3852,17 @@ function numericValues(value: unknown, functionName: string, file: string, line:
 }
 
 function runtimeBinary(operator: string, left: unknown, right: unknown, file: string, line: number): unknown {
-  if (operator === '==') return runtimeEquals(left, right);
-  if (operator === '!=') return !runtimeEquals(left, right);
+  if (operator === '==') return runtimeEquals(left, right, file, line);
+  if (operator === '!=') return !runtimeEquals(left, right, file, line);
+
+  // Порядок моментов времени: штампы сравниваются по instantMs, пояс не участвует.
+  if (left instanceof IdylliumTimeStamp && right instanceof IdylliumTimeStamp
+    && ['<', '<=', '>', '>='].includes(operator)) {
+    if (operator === '<') return left.instantMs < right.instantMs;
+    if (operator === '<=') return left.instantMs <= right.instantMs;
+    if (operator === '>') return left.instantMs > right.instantMs;
+    return left.instantMs >= right.instantMs;
+  }
 
   if (operator === '+' && (typeof left === 'string' || typeof right === 'string')) {
     return `${String(left)}${String(right)}`;
@@ -3829,7 +3967,7 @@ function runtimeCompare(left: number | bigint, right: number | bigint): number {
   return 0;
 }
 
-function runtimeEquals(left: unknown, right: unknown): boolean {
+function runtimeEquals(left: unknown, right: unknown, file = 'program', line = 0): boolean {
   const leftIsNull = left === null || isRuntimeNullValue(left);
   const rightIsNull = right === null || isRuntimeNullValue(right);
   if (leftIsNull || rightIsNull) return leftIsNull && rightIsNull;
@@ -3842,12 +3980,31 @@ function runtimeEquals(left: unknown, right: unknown): boolean {
       && left.alpha === right.alpha;
   }
 
+  // Штампы времени — значения: равенство по моменту, пояс не участвует
+  // («момент один — представления разные», урок о часовых поясах).
+  if (left instanceof IdylliumTimeStamp || right instanceof IdylliumTimeStamp) {
+    if (!(left instanceof IdylliumTimeStamp) || !(right instanceof IdylliumTimeStamp)) return false;
+    return left.instantMs === right.instantMs;
+  }
+
+  // JSON-значения — значения: данные сравниваются по содержимому (рекурсивно).
+  if (isJsonRuntimeValue(left) || isJsonRuntimeValue(right)) {
+    if (!isJsonRuntimeValue(left) || !isJsonRuntimeValue(right)) return false;
+    return jsonRuntimeValueEquals(left, right, file, line, new Set());
+  }
+
+  // SQL-значения — значения: род + содержимое (integer и real — численно, как в SQL).
+  if (isSqliteRuntimeValue(left) || isSqliteRuntimeValue(right)) {
+    if (!isSqliteRuntimeValue(left) || !isSqliteRuntimeValue(right)) return false;
+    return sqliteRuntimeValueEquals(left, right);
+  }
+
   if (left instanceof IdylliumArray || right instanceof IdylliumArray) {
     if (!(left instanceof IdylliumArray) || !(right instanceof IdylliumArray)) return false;
     const leftValues = left.values();
     const rightValues = right.values();
     return leftValues.length === rightValues.length
-      && leftValues.every((value, index) => runtimeEquals(value, rightValues[index]));
+      && leftValues.every((value, index) => runtimeEquals(value, rightValues[index], file, line));
   }
   if (typeof left === 'bigint' && typeof right === 'number' && Number.isInteger(right)) {
     return left === BigInt(right);
@@ -3856,6 +4013,107 @@ function runtimeEquals(left: unknown, right: unknown): boolean {
     return BigInt(left) === right;
   }
   return Object.is(left, right) || left === right;
+}
+
+function numericJsonEquals(left: unknown, right: unknown): boolean {
+  if (typeof left === 'bigint' || typeof right === 'bigint') {
+    const l = typeof left === 'bigint' ? left : Number.isInteger(left as number) ? BigInt(left as number) : null;
+    const r = typeof right === 'bigint' ? right : Number.isInteger(right as number) ? BigInt(right as number) : null;
+    if (l !== null && r !== null) return l === r;
+    return Number(left) === Number(right);
+  }
+  return Number(left) === Number(right);
+}
+
+/** Содержимое-равенство JSON-значений; цикл — честная ошибка (жанр to_json). */
+function jsonRuntimeValueEquals(
+  left: JsonRuntimeValue,
+  right: JsonRuntimeValue,
+  file: string,
+  line: number,
+  visiting: Set<JsonRuntimeValue>,
+): boolean {
+  if (left === right) return true;
+  if (visiting.has(left) || visiting.has(right)) {
+    throw new IdylliumRuntimeError(file, line, 'cannot compare cyclic JSON value');
+  }
+  const leftKind = left.__jsonKind;
+  const rightKind = right.__jsonKind;
+  if (leftKind === 'int' || leftKind === 'float') {
+    if (rightKind !== 'int' && rightKind !== 'float') return false;
+    return numericJsonEquals(left.__jsonValue, right.__jsonValue);
+  }
+  if (leftKind !== rightKind) return false;
+  if (leftKind === 'string' || leftKind === 'bool') {
+    return left.__jsonValue === right.__jsonValue;
+  }
+  if (leftKind === 'null') return true;
+  visiting.add(left);
+  visiting.add(right);
+  try {
+    if (leftKind === 'object') {
+      const leftEntries = left.__jsonEntries ?? new Map<string, JsonRuntimeValue>();
+      const rightEntries = right.__jsonEntries ?? new Map<string, JsonRuntimeValue>();
+      if (leftEntries.size !== rightEntries.size) return false;
+      for (const [key, value] of leftEntries) {
+        const other = rightEntries.get(key);
+        if (!other || !jsonRuntimeValueEquals(value, other, file, line, visiting)) return false;
+      }
+      return true;
+    }
+    const leftItems = left.__jsonItems ?? [];
+    const rightItems = right.__jsonItems ?? [];
+    if (leftItems.length !== rightItems.length) return false;
+    return leftItems.every((value, index) => jsonRuntimeValueEquals(value, rightItems[index], file, line, visiting));
+  } finally {
+    visiting.delete(left);
+    visiting.delete(right);
+  }
+}
+
+/** Структурное сравнение массивов объектов: ячейки — через контракт equals. */
+async function equalsArrayCellsWith(
+  left: IdylliumArray,
+  right: IdylliumArray,
+  slot: string,
+  file: string,
+  line: number,
+): Promise<boolean> {
+  const leftValues = left.values();
+  const rightValues = right.values();
+  if (leftValues.length !== rightValues.length) return false;
+  for (let index = 0; index < leftValues.length; index += 1) {
+    const leftItem = leftValues[index];
+    const rightItem = rightValues[index];
+    if (leftItem instanceof IdylliumArray || rightItem instanceof IdylliumArray) {
+      if (!(leftItem instanceof IdylliumArray) || !(rightItem instanceof IdylliumArray)) return false;
+      if (!(await equalsArrayCellsWith(leftItem, rightItem, slot, file, line))) return false;
+      continue;
+    }
+    const contract = (leftItem as Record<string, unknown> | null)?.[slot];
+    if (typeof contract !== 'function') {
+      throw new IdylliumRuntimeError(file, line, "comparison found an object without the 'equals' contract");
+    }
+    if ((await (contract as (other: unknown) => Promise<unknown>)(rightItem)) !== true) return false;
+  }
+  return true;
+}
+
+function sqliteRuntimeValueEquals(left: SqliteRuntimeValueObject, right: SqliteRuntimeValueObject): boolean {
+  const leftKind = left.__sqliteKind;
+  const rightKind = right.__sqliteKind;
+  if (leftKind === 'integer' || leftKind === 'real') {
+    if (rightKind !== 'integer' && rightKind !== 'real') return false;
+    return numericJsonEquals(left.__sqliteValue, right.__sqliteValue);
+  }
+  if (leftKind !== rightKind) return false;
+  if (leftKind === 'blob') {
+    const leftBytes = left.__sqliteValue as Uint8Array;
+    const rightBytes = right.__sqliteValue as Uint8Array;
+    return leftBytes.length === rightBytes.length
+      && leftBytes.every((byte, index) => byte === rightBytes[index]);
+  }
+  return left.__sqliteValue === right.__sqliteValue;
 }
 
 function isRuntimeNullValue(value: unknown): boolean {
@@ -3980,14 +4238,36 @@ function createNodeRuntimeFileSystem(projectRoot?: string): RuntimeFileSystem {
       return nodeFs.readFileSync(filePath, 'utf8');
     },
     writeText(filePath: string, text: string): void {
-      nodeFs.writeFileSync(mutationPath(filePath, 'file write'), text, 'utf8');
+      const target = mutationPath(filePath, 'file write');
+      assertNodeWritableTarget(target);
+      nodeFs.writeFileSync(target, text, 'utf8');
     },
     appendText(filePath: string, text: string): void {
-      nodeFs.appendFileSync(mutationPath(filePath, 'file write'), text, 'utf8');
+      const target = mutationPath(filePath, 'file write');
+      assertNodeWritableTarget(target);
+      nodeFs.appendFileSync(target, text, 'utf8');
     },
     createDirectory(filePath: string, parents: boolean): void {
       const target = mutationPath(filePath, 'file.create_directory()');
       if (nodeFs.existsSync(target)) throw new Error(`path already exists: ${target}`);
+      // предпроверки повторяют встроенную ФС веб-IDE — тексты канона едины,
+      // сырые ENOENT/ENOTDIR из mkdirSync до учеников не доезжают
+      if (!parents) {
+        const parent = nodePath.dirname(target);
+        if (!nodeFs.existsSync(parent) || !nodeFs.statSync(parent).isDirectory()) {
+          throw new Error(`directory does not exist: ${parent}`);
+        }
+      } else {
+        let current = target;
+        while (!nodeFs.existsSync(current)) {
+          const parent = nodePath.dirname(current);
+          if (parent === current) break;
+          current = parent;
+        }
+        if (nodeFs.existsSync(current) && !nodeFs.statSync(current).isDirectory()) {
+          throw new Error(`path is a file: ${current}`);
+        }
+      }
       nodeFs.mkdirSync(target, { recursive: parents });
     },
     listDirectory(filePath: string): readonly string[] {
@@ -4026,8 +4306,13 @@ function createNodeRuntimeFileSystem(projectRoot?: string): RuntimeFileSystem {
       assertNodeTreeHasNoSymlinks(target, 'file.remove()');
       const stat = nodeFs.statSync(target);
       if (stat.isDirectory()) {
-        if (recursive) nodeFs.rmSync(target, { recursive: true, force: false });
-        else nodeFs.rmdirSync(target);
+        if (recursive) {
+          nodeFs.rmSync(target, { recursive: true, force: false });
+        } else {
+          // текст канона встроенной ФС вместо сырого ENOTEMPTY из rmdirSync
+          if (nodeFs.readdirSync(target).length > 0) throw new Error(`directory is not empty: ${target}`);
+          nodeFs.rmdirSync(target);
+        }
       } else if (stat.isFile()) {
         nodeFs.unlinkSync(target);
       } else {
@@ -4038,7 +4323,9 @@ function createNodeRuntimeFileSystem(projectRoot?: string): RuntimeFileSystem {
       return new Uint8Array(nodeFs.readFileSync(filePath));
     },
     writeBytes(filePath: string, bytes: Uint8Array): void {
-      nodeFs.writeFileSync(mutationPath(filePath, 'binary file write'), bytes);
+      const target = mutationPath(filePath, 'binary file write');
+      assertNodeWritableTarget(target);
+      nodeFs.writeFileSync(target, bytes);
     },
     resourceUri(filePath: string): string {
       return filePath;
@@ -4109,9 +4396,24 @@ function memoryBasename(filePath: string): string {
   return normalized.slice(normalized.lastIndexOf('/') + 1);
 }
 
+function assertNodeWritableTarget(target: string): void {
+  const humanize = (raw: string): string => {
+    const root = process.cwd();
+    const relative = nodePath.relative(root, raw);
+    return relative && !relative.startsWith('..') ? relative : raw;
+  };
+  const parent = nodePath.dirname(target);
+  if (!nodeFs.existsSync(parent) || !nodeFs.statSync(parent).isDirectory()) {
+    throw new Error(`directory does not exist: ${humanize(parent)}`);
+  }
+  if (nodeFs.existsSync(target) && nodeFs.statSync(target).isDirectory()) {
+    throw new Error(`path is a directory: ${humanize(target)}`);
+  }
+}
+
 function assertMemoryProjectPath(filePath: string, root: string, operation: string): void {
   if (filePath === root || filePath.startsWith(`${root}/`)) return;
-  throw new Error(`${operation} path is outside the project: ${filePath}`);
+  throw new Error(`path is outside the project: ${filePath}`);
 }
 
 function assertMemoryMovableSource(filePath: string, root: string, operation: string): void {
@@ -4146,7 +4448,7 @@ function cloneMemoryFile(
 function assertNodeProjectPath(root: string, filePath: string, operation: string): string {
   const candidate = nodePath.resolve(filePath);
   if (!isNodePathWithin(root, candidate)) {
-    throw new Error(`${operation} path is outside the project: ${candidate}`);
+    throw new Error(`path is outside the project: ${candidate}`);
   }
 
   let existing = candidate;
@@ -5023,6 +5325,11 @@ interface RuntimeObjectState {
   /** Почтовые отделения channel.Post; открытое отделение держит программу живой. */
   readonly channelPosts: RuntimeObject[];
   readonly channelService?: RuntimeChannelService;
+  /** Сетевой сервис — общий для http-клиента и web.Server. */
+  readonly networkService?: RuntimeNetworkService;
+  readonly abortSignal?: RuntimeAbortSignal;
+  /** Печать в консоль программы (банер web.Server, аварии обработчиков). */
+  consoleWrite?: (text: string) => void;
   /** Входящие письма; доставляются обработчикам в stepGui — как GUI-события. */
   readonly channelMailbox: { readonly post: RuntimeObject; readonly text: string }[];
   nextAudioCommandId: number;
@@ -5197,7 +5504,267 @@ function createPlainRuntimeObject(moduleName: string, typeName: string, state: R
     initializeChannelPost(obj, typeName, state);
   }
 
+  if (moduleName === 'web') {
+    initializeWebObject(obj, typeName, state);
+  }
+
   return obj;
+}
+
+// ─── web.Server: свой веб-сервер (Flask-жанр) ──────────────────────────────
+
+const WEB_CONTENT_TYPES: Readonly<Record<string, string>> = {
+  html: 'text/html; charset=utf-8',
+  htm: 'text/html; charset=utf-8',
+  css: 'text/css; charset=utf-8',
+  js: 'text/javascript; charset=utf-8',
+  json: 'application/json; charset=utf-8',
+  svg: 'image/svg+xml',
+  txt: 'text/plain; charset=utf-8',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  ico: 'image/x-icon',
+  wav: 'audio/wav',
+  mp3: 'audio/mpeg',
+  ogg: 'audio/ogg',
+  ttf: 'font/ttf',
+  otf: 'font/otf',
+  woff: 'font/woff',
+  woff2: 'font/woff2',
+};
+
+function webTextResponse(status: number, text: string): RuntimeHttpServerResponse {
+  return { status, headers: { 'content-type': 'text/plain; charset=utf-8' }, body: text };
+}
+
+function createWebRequestObject(request: RuntimeHttpServerRequest, state: RuntimeObjectState): RuntimeObject {
+  const obj: RuntimeObject = {
+    __idylliumObjectId: state.nextObjectId++,
+    __idylliumType: 'web.Request',
+    path: request.path,
+    body: request.body,
+  };
+  obj.query = contextFunction((name: unknown, file: string, line: number) => {
+    const parameter = stringArgument(name, 'web.Request.query() name', file, line);
+    return request.query[parameter] ?? '';
+  });
+  obj.to_string = () => `web.Request(${request.method} ${request.path})`;
+  return obj;
+}
+
+interface WebResponseInternals {
+  readonly object: RuntimeObject;
+  finish(): { readonly body: string; readonly contentType: string };
+}
+
+function createWebResponseObject(state: RuntimeObjectState): WebResponseInternals {
+  let body = '';
+  let contentType = 'text/plain; charset=utf-8';
+  let sent = false;
+
+  const obj: RuntimeObject = {
+    __idylliumObjectId: state.nextObjectId++,
+    __idylliumType: 'web.Response',
+  };
+  defineValidatedRuntimeProperty(obj, 'status', 200, (value, file, line) => {
+    if (typeof value !== 'number' || !Number.isInteger(value) || value < 100 || value > 599) {
+      throw new IdylliumRuntimeError(file, line, `web.Response.status must be an integer from 100 to 599, got '${String(value)}'`);
+    }
+    return value;
+  });
+  obj.send = contextFunction((text: unknown, file: string, line: number) => {
+    const payload = stringArgument(text, 'web.Response.send() text', file, line);
+    if (sent) throw new IdylliumRuntimeError(file, line, 'web.Response.send() the response was already sent');
+    sent = true;
+    body = payload;
+    contentType = 'text/html; charset=utf-8';
+  });
+  obj.send_json = contextFunction((text: unknown, file: string, line: number) => {
+    const payload = stringArgument(text, 'web.Response.send_json() text', file, line);
+    if (sent) throw new IdylliumRuntimeError(file, line, 'web.Response.send_json() the response was already sent');
+    sent = true;
+    body = payload;
+    contentType = 'application/json; charset=utf-8';
+  });
+  obj.to_string = () => 'web.Response';
+
+  return {
+    object: obj,
+    finish: () => ({ body, contentType }),
+  };
+}
+
+function serveWebStatic(roots: readonly string[], requestPath: string, state: RuntimeObjectState): RuntimeHttpServerResponse | null {
+  let relative = requestPath.startsWith('/') ? requestPath.slice(1) : requestPath;
+  if (relative === '' || relative.endsWith('/')) relative += 'index.html';
+  const segments = relative.split('/');
+  // Path traversal закрыт с первого дня: наружу из папки не выйти.
+  if (segments.some((segment) => segment === '..' || segment === '' || segment.includes('\\'))) return null;
+
+  for (const root of roots) {
+    const target = `${root}/${segments.join('/')}`;
+    if (!state.fileSystem.exists(target) || !state.fileSystem.isFile(target)) continue;
+    const extension = (segments[segments.length - 1].split('.').pop() ?? '').toLowerCase();
+    const contentType = WEB_CONTENT_TYPES[extension] ?? 'application/octet-stream';
+    const bytes = state.fileSystem.readBytes?.(target);
+    return {
+      status: 200,
+      headers: { 'content-type': contentType },
+      body: bytes ?? state.fileSystem.readText(target),
+    };
+  }
+  return null;
+}
+
+function initializeWebObject(obj: RuntimeObject, typeName: string, state: RuntimeObjectState): void {
+  if (typeName !== 'Server') return;
+
+  obj.port = 8080;
+  // Безопасность по умолчанию: слушаем только свой компьютер. Открыть класс —
+  // явное решение программиста: app.host = "0.0.0.0" (вся локальная сеть).
+  obj.host = '127.0.0.1';
+  obj.is_running = false;
+  const routes = new Map<string, unknown>();
+  const routePaths = new Set<string>();
+  const staticRoots: string[] = [];
+
+  function registerRoute(method: 'GET' | 'POST', methodName: string) {
+    return contextFunction((routePath: unknown, handler: unknown, file: string, line: number) => {
+      const pathValue = stringArgument(routePath, `web.Server.${methodName}() path`, file, line);
+      if (!pathValue.startsWith('/')) {
+        throw new IdylliumRuntimeError(file, line, `web.Server.${methodName}() path must start with '/', got '${pathValue}'`);
+      }
+      if (typeof handler !== 'function') {
+        throw new IdylliumRuntimeError(file, line, `web.Server.${methodName}() handler must be a function like 'void function(web.Request req, web.Response res)'`);
+      }
+      const key = `${method} ${pathValue}`;
+      if (routes.has(key)) {
+        throw new IdylliumRuntimeError(file, line, `web.Server.${methodName}() route '${pathValue}' is already registered`);
+      }
+      routes.set(key, handler);
+      routePaths.add(pathValue);
+    });
+  }
+  obj.on_get = registerRoute('GET', 'on_get');
+  obj.on_post = registerRoute('POST', 'on_post');
+
+  obj.serve_directory = contextFunction((directory: unknown, file: string, line: number) => {
+    const requested = stringArgument(directory, 'web.Server.serve_directory() path', file, line);
+    const resolved = state.fileSystem.resolvePath(requested, file);
+    if (!state.fileSystem.exists(resolved) || !state.fileSystem.isDirectory(resolved)) {
+      throw new IdylliumRuntimeError(file, line, `web.Server.serve_directory() cannot serve '${requested}': directory does not exist`);
+    }
+    staticRoots.push(resolved.replace(/[\\/]+$/u, ''));
+  });
+
+  obj.run = contextFunction(async (file: string, line: number) => {
+    if (obj.is_running === true) {
+      throw new IdylliumRuntimeError(file, line, 'web.Server.run() the server is already running');
+    }
+    const service = state.networkService;
+    if (!service?.listen) {
+      if (state.turtlePlatform === 'web') {
+        throw new IdylliumRuntimeError(file, line, 'web.Server.run() is not available in the Web IDE — run the program in VS Code or the console host, where the computer can listen on a port');
+      }
+      throw new IdylliumRuntimeError(file, line, 'web.Server.run() is not supported by this runtime');
+    }
+    const port = obj.port;
+    if (typeof port !== 'number' || !Number.isInteger(port) || port < 0 || port > 65535) {
+      throw new IdylliumRuntimeError(file, line, `web.Server.port must be an integer from 0 to 65535, got '${String(port)}'`);
+    }
+    const host = obj.host;
+    if (typeof host !== 'string' || host.trim() === '') {
+      throw new IdylliumRuntimeError(file, line, 'web.Server.host must be a non-empty string');
+    }
+
+    // Запросы обрабатываются по одному, в порядке прихода: обработчики не
+    // перебивают друг друга на середине — важное для учебных программ свойство.
+    let chain: Promise<void> = Promise.resolve();
+    const dispatch = async (request: RuntimeHttpServerRequest): Promise<RuntimeHttpServerResponse> => {
+      const handler = routes.get(`${request.method} ${request.path}`);
+      if (typeof handler === 'function') {
+        const requestObject = createWebRequestObject(request, state);
+        const response = createWebResponseObject(state);
+        try {
+          await handler(requestObject, response.object);
+        } catch (error) {
+          // Сервер не падает от одного неудачного запроса: авария уходит
+          // пятисоткой в браузер и строкой в консоль программы.
+          const rawText = error instanceof IdylliumRuntimeError
+            ? `${publicRuntimeErrorFile(error.file)}:${error.line}: runtime error: ${error.detail}`
+            : String((error as Error | undefined)?.message ?? error);
+          const text = state.fileSystem.humanizePaths?.(rawText) ?? rawText;
+          state.consoleWrite?.(`[web] запрос ${request.method} ${request.path} упал: ${text}\n`);
+          return webTextResponse(500, text);
+        }
+        const finished = response.finish();
+        return {
+          status: Number(response.object.status ?? 200),
+          headers: { 'content-type': finished.contentType },
+          body: finished.body,
+        };
+      }
+      if (request.method === 'GET' && staticRoots.length > 0) {
+        const staticResponse = serveWebStatic(staticRoots, request.path, state);
+        if (staticResponse) return staticResponse;
+      }
+      if (routePaths.has(request.path)) {
+        return webTextResponse(405, `method ${request.method} is not allowed for '${request.path}'`);
+      }
+      return webTextResponse(404, `not found: '${request.path}'`);
+    };
+    const handleRequest = (request: RuntimeHttpServerRequest): Promise<RuntimeHttpServerResponse> =>
+      new Promise((resolve) => {
+        chain = chain.then(async () => resolve(await dispatch(request)));
+      });
+
+    let handle;
+    try {
+      handle = await service.listen({ host, port }, handleRequest);
+    } catch (error) {
+      const code = (error as { code?: string } | undefined)?.code;
+      if (code === 'EADDRINUSE') {
+        throw new IdylliumRuntimeError(file, line, `web.Server.run() port ${port} is already in use — choose another port or stop the other program`);
+      }
+      if (code === 'EACCES') {
+        throw new IdylliumRuntimeError(file, line, `web.Server.run() port ${port} requires administrator rights — choose a port above 1023`);
+      }
+      if (code === 'EADDRNOTAVAIL' || code === 'ENOTFOUND') {
+        throw new IdylliumRuntimeError(file, line, `web.Server.run() cannot listen on host '${host}': address is not available`);
+      }
+      throw new IdylliumRuntimeError(file, line, `web.Server.run() cannot start: ${String((error as Error | undefined)?.message ?? error)}`);
+    }
+
+    obj.port = handle.port;
+    obj.is_running = true;
+    if (typeof handle.announce === 'string' && handle.announce !== '') {
+      state.consoleWrite?.(`${handle.announce}\n`);
+    } else if (host === '0.0.0.0') {
+      state.consoleWrite?.(`Сервер слушает порт ${handle.port} на всех адресах компьютера — программа доступна всей локальной сети\n`);
+    } else {
+      state.consoleWrite?.(`Сервер слушает http://${host}:${handle.port}\n`);
+    }
+
+    // Вечный цикл в жанре gui-программ: run() не возвращается, пока
+    // программу не остановят (Stop / Ctrl+C).
+    await new Promise<never>((_resolve, reject) => {
+      const stop = () => {
+        obj.is_running = false;
+        void handle.close();
+        reject(new IdylliumRuntimeError(file || 'main.idyl', line || 1, 'program was stopped', 'cancelled'));
+      };
+      if (state.abortSignal?.aborted) {
+        stop();
+        return;
+      }
+      state.abortSignal?.addEventListener?.('abort', stop, { once: true });
+    });
+  });
+
+  obj.to_string = () => (obj.is_running === true ? `web.Server(http://${obj.host}:${obj.port})` : 'web.Server(stopped)');
 }
 
 // ─── channel.Post: почтовое отделение программы ────────────────────────────
@@ -5261,6 +5828,7 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
     obj.height = size.height;
     obj.visible = true;
     obj.enabled = true;
+    obj.hint = ''; // всплывающая подсказка; пустая строка = подсказки нет
     obj.style = ''; // IdySS-наклейка; пустая строка = наклейки нет
     obj.style_hover = '';
     obj.style_active = '';
@@ -6379,8 +6947,15 @@ function createTurtleModule(state: RuntimeObjectState): Record<string, unknown> 
     }),
     save_svg: contextFunction((pathValue: unknown, file: string, line: number) => {
       const field = ensureTurtleField(state);
-      const resolved = state.fileSystem.resolvePath(String(pathValue), file);
-      state.fileSystem.writeText(resolved, turtleSvg(field));
+      const requestedPath = stringArgument(pathValue, 'turtle.save_svg() path', file, line);
+      const resolved = state.fileSystem.resolvePath(requestedPath, file);
+      try {
+        state.fileSystem.writeText(resolved, turtleSvg(field));
+      } catch (error) {
+        const reason = errorMessage(error);
+        const shown = state.fileSystem.humanizePaths?.(reason) ?? reason;
+        throw new IdylliumRuntimeError(file, line, `turtle.save_svg() cannot write '${requestedPath}': ${shown}`);
+      }
     }),
   };
 }

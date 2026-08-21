@@ -116,7 +116,12 @@ function singleFileArgument(command: string, args: readonly string[], io: CliIO)
 }
 
 function readSource(file: string, io: CliIO): string {
-  return io.readFile(resolveFilePath(file, io.cwd()));
+  try {
+    return io.readFile(resolveFilePath(file, io.cwd()));
+  } catch (_error) {
+    // сырой ENOENT из readFileSync — не для учеников
+    throw new Error(`cannot open '${file}': file does not exist`);
+  }
 }
 
 function compileOptions(file: string, io: CliIO) {

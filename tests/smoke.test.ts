@@ -8485,4 +8485,702 @@ main() {
   );
 });
 
+test('web server serves routes, statics and survives handler crashes', async () => {
+  const nodeNet: any = require('net');
+  const serverCode = `use web;
+use console;
+
+void function hello(web.Request req, web.Response res) {
+    res.send("Привет, " + req.query("name") + "!");
+}
+
+void function api(web.Request req, web.Response res) {
+    res.send_json("{\\"players\\": 3}");
+}
+
+void function echo(web.Request req, web.Response res) {
+    res.status = 201;
+    res.send("тело: " + req.body);
+}
+
+void function broken(web.Request req, web.Response res) {
+    int zero = 0;
+    res.send(to_string(1 / zero));
+}
+
+main() {
+    web.Server app;
+    app.on_get("/hello", hello);
+    app.on_get("/api", api);
+    app.on_post("/echo", echo);
+    app.on_get("/broken", broken);
+    app.serve_directory("public");
+    app.port = 0;
+    app.run();
+}
+`;
+  const fileSystem = createMemoryRuntimeFileSystem({
+    '/workspace/main.idyl': serverCode,
+    '/workspace/public/index.html': '<h1>Гильдия онлайн</h1>',
+    '/workspace/secret.txt': 'СЕКРЕТ',
+  }, '/workspace');
+  const controller = new AbortController();
+  let output = '';
+  const finished = runIdyllium(serverCode, {
+    abortSignal: controller.signal,
+    fileSystem,
+    console: { write: (text) => { output += text; } },
+  }, { file: '/workspace/main.idyl' });
+
+  for (let i = 0; i < 200 && !/Сервер слушает/.test(output); i++) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  const portMatch = output.match(/:(\d+)/);
+  assert(portMatch !== null, `server banner missing: ${JSON.stringify(output)}`);
+  const port = Number(portMatch![1]);
+
+  const base = `http://127.0.0.1:${port}`;
+  const get = async (path: string) => {
+    const reply = await fetch(base + path);
+    return { status: reply.status, text: await reply.text(), type: reply.headers.get('content-type') ?? '' };
+  };
+
+  const hello = await get('/hello?name=%D0%9C%D0%B8%D1%80%D0%B0');
+  assert(hello.status === 200 && hello.text === 'Привет, Мира!' && hello.type.includes('text/html'), `hello: ${hello.status} ${hello.text}`);
+
+  const api = await get('/api');
+  assert(api.type.includes('application/json') && api.text === '{"players": 3}', `api: ${api.text} ${api.type}`);
+
+  const posted = await fetch(base + '/echo', { method: 'POST', body: 'привет' });
+  assert(posted.status === 201 && (await posted.text()) === 'тело: привет', 'post echo with res.status');
+
+  const missing = await get('/ghost');
+  assert(missing.status === 404 && missing.text.includes("not found: '/ghost'"), `404: ${missing.text}`);
+
+  const wrongMethod = await fetch(base + '/hello', { method: 'POST', body: 'x' });
+  assert(wrongMethod.status === 405 && (await wrongMethod.text()).includes("method POST is not allowed for '/hello'"), '405 on GET route');
+
+  const index = await get('/');
+  assert(index.status === 200 && index.text.includes('Гильдия онлайн'), 'static index.html');
+
+  // Path traversal: сырым сокетом, чтобы клиент не нормализовал путь.
+  const rawRequest = (rawPath: string) => new Promise<string>((resolve) => {
+    const socket = nodeNet.connect(port, '127.0.0.1', () => {
+      socket.write(`GET ${rawPath} HTTP/1.1\r\nHost: x\r\nConnection: close\r\n\r\n`);
+    });
+    let data = '';
+    socket.on('data', (chunk: unknown) => { data += String(chunk); });
+    socket.on('close', () => resolve(data));
+  });
+  for (const rawPath of ['/../secret.txt', '/%2e%2e/secret.txt', '/..%2Fsecret.txt']) {
+    const reply = await rawRequest(rawPath);
+    assert(!reply.includes('СЕКРЕТ'), `path traversal leaked via ${rawPath}`);
+  }
+
+  // Авария обработчика — пятисотка без падения сервера.
+  const crashed = await get('/broken');
+  assert(crashed.status === 500 && crashed.text.includes('division by zero'), `crash: ${crashed.status} ${crashed.text}`);
+  const alive = await get('/hello?name=X');
+  assert(alive.text === 'Привет, X!', 'server must survive a handler crash');
+  assert(output.includes('[web] запрос GET /broken упал'), 'crash must be logged to the console');
+
+  // Занятый порт — читаемая ошибка второй программы.
+  const busy = await runIdyllium(`use web;
+
+void function noop(web.Request req, web.Response res) {
+    res.send("x");
+}
+
+main() {
+    web.Server app;
+    app.on_get("/", noop);
+    app.port = ${port};
+    app.run();
+}
+`, {}, { file: '/main.idyl' });
+  assert(
+    (busy.runtimeError ?? '').includes(`web.Server.run() port ${port} is already in use — choose another port or stop the other program`),
+    `busy port: ${busy.runtimeError}`,
+  );
+
+  // Stop гасит вечный run() и освобождает порт.
+  controller.abort();
+  const result = await finished;
+  assert(result.success === false && (result.runtimeError ?? '').includes('program was stopped'), 'Stop must end run()');
+
+  // Web IDE (сервис без listen) — честный отказ с подсказкой.
+  const refusal = await runIdyllium(`use web;
+
+main() {
+    web.Server app;
+    app.run();
+}
+`, { platform: 'web', networkService: createMemoryNetworkService() }, { file: '/main.idyl' });
+  assert(
+    (refusal.runtimeError ?? '').includes('web.Server.run() is not available in the Web IDE — run the program in VS Code'),
+    `web refusal: ${refusal.runtimeError}`,
+  );
+});
+
+test('widget hint reaches the gui snapshot', async () => {
+  const result = await runWithInspectableRuntime([
+    'use gui;',
+    '',
+    'main() {',
+    '    gui.Window win;',
+    '    gui.Button switcher;',
+    '    switcher.text = "🌙";',
+    '    switcher.hint = "Тёмная тема";',
+    '    win.add_child(switcher);',
+    '    win.show();',
+    '}',
+  ].join('\n'));
+  const button = result.runtime.getWindows()[0].children.find((child: { type: string }) => child.type === 'gui.Button') as
+    { properties: Record<string, unknown> } | undefined;
+  assert(button !== undefined, 'button missing from snapshot');
+  assert(button.properties.hint === 'Тёмная тема', `hint in snapshot: ${JSON.stringify(button.properties.hint)}`);
+});
+
+test('equals contract: static dispatch, arrays, search and library values', async () => {
+  // 1. Контракт работает: ==, !=, массивы, contains/find/count, явный вызов.
+  const contract = await runIdyllium(`use console;
+
+class Hero {
+    string name;
+    int level;
+
+    constructor Hero(string ex_name, int ex_level) {
+        this.name = ex_name;
+        this.level = ex_level;
+    }
+
+    bool function equals(Hero other) {
+        return this.name == other.name and this.level == other.level;
+    }
+}
+
+main() {
+    Hero a = Hero("Мира", 12);
+    Hero b = Hero("Мира", 12);
+    Hero c = Hero("Кай", 9);
+    console.write(a == b, ":", a != c, ":", a == a, ":", a.equals(c), ":");
+
+    dyn_array<Hero> guild;
+    guild.add(a);
+    guild.add(c);
+    console.write(guild.contains(Hero("Кай", 9)), ":", guild.find(Hero("Кай", 9)), ":", guild.count(b), ":");
+
+    array<Hero, 2> left = [Hero("Мира", 12), Hero("Кай", 9)];
+    array<Hero, 2> right = [Hero("Мира", 12), Hero("Кай", 9)];
+    console.write(left == right);
+}
+`, {}, { file: '/main.idyl' });
+  assert(contract.success, contract.runtimeError ?? contract.compilation.diagnosticsText);
+  assert(contract.output === 'true:true:true:false:true:1:1:true', `contract matrix: ${contract.output}`);
+
+  // 2. Наследование: свои контракты сосуществуют, окно выбирает контракт.
+  const family = await runIdyllium(`use console;
+
+class Animal {
+    string name;
+
+    constructor Animal(string ex_name) {
+        this.name = ex_name;
+    }
+
+    bool function equals(Animal other) {
+        return this.name == other.name;
+    }
+}
+
+class Cat extends Animal {
+    int whiskers;
+
+    constructor Cat(string ex_name, int ex_whiskers) {
+        parent(ex_name);
+        this.whiskers = ex_whiskers;
+    }
+
+    bool function equals(Cat other) {
+        return this.name == other.name and this.whiskers == other.whiskers;
+    }
+}
+
+main() {
+    Cat a = Cat("Барсик", 12);
+    Cat b = Cat("Барсик", 7);
+    Animal wa = a;
+    Animal wb = b;
+    console.write(a == b, ":", wa == wb, ":", wa == b, ":", type_name(wa));
+}
+`, {}, { file: '/main.idyl' });
+  assert(family.success, family.runtimeError ?? family.compilation.diagnosticsText);
+  assert(family.output === 'false:true:true:Cat', `family matrix: ${family.output}`);
+
+  // 3. Без контракта — обучающие ошибки компиляции (объект, массив, поиск, sort).
+  const forbidden: Array<[string, string]> = [
+    ['console.write(a == b);', "cannot compare objects of class 'Pet' with '==' — declare 'bool function equals(Pet other)' in class 'Pet'"],
+    ['array<Pet, 1> x = [a];\n    array<Pet, 1> y = [b];\n    console.write(x == y);', "cannot compare arrays of 'Pet' objects with '=='"],
+    ['dyn_array<Pet> zoo;\n    console.write(zoo.contains(a));', "contains() cannot search for 'Pet' objects"],
+    ['dyn_array<Pet> zoo;\n    zoo.sort();', "sort() cannot order 'Pet' objects — objects have no built-in ordering"],
+  ];
+  for (const [body, expected] of forbidden) {
+    const result = compileIdyllium(`class Pet { string name; }\nmain() {\n    Pet a;\n    Pet b;\n    ${body}\n}\n`, { file: '/main.idyl' });
+    assert(result.diagnosticsText.includes(expected), `expected «${expected}», got:\n${result.diagnosticsText}`);
+  }
+
+  // 4. Несовпадение окна: контракт выбирает левый операнд.
+  const window = compileIdyllium(`class Animal {
+    string name;
+    bool function equals(Animal other) { return this.name == other.name; }
+}
+class Cat extends Animal {
+    bool function equals(Cat other) { return this.name == other.name; }
+}
+main() {
+    Cat c;
+    Animal a;
+    bool same = c == a;
+}
+`, { file: '/main.idyl' });
+  assert(
+    window.diagnosticsText.includes("'Cat.equals' accepts a 'Cat', got 'Animal'"),
+    `window mismatch: ${window.diagnosticsText}`,
+  );
+
+  // 5. Контракты не наследуются: to_string тоже требует собственного объявления.
+  const inheritedPrint = compileIdyllium(`use console;
+
+class Animal {
+    string function to_string() { return "зверь"; }
+}
+class Cat extends Animal { }
+main() {
+    Cat c;
+    console.writeln(c);
+}
+`, { file: '/main.idyl' });
+  assert(
+    inheritedPrint.diagnosticsText.includes("cannot print object of class 'Cat' directly"),
+    `to_string non-inherit: ${inheritedPrint.diagnosticsText}`,
+  );
+
+  // 6. Библиотечные значения: содержимое, null-ветки, момент и порядок штампов.
+  const library = await runIdyllium(`use console;
+use json;
+use time;
+
+main() {
+    console.write(json.Value(5) == json.Value(5), ":");
+    console.write(json.Value("а") != json.Value("б"), ":");
+    json.Object a = json.parse("{\\"hero\\": \\"Мира\\", \\"hp\\": 40}").to_object();
+    json.Object b = json.parse("{\\"hp\\": 40, \\"hero\\": \\"Мира\\"}").to_object();
+    console.write(a.get("hp") == b.get("hp"), ":");
+    json.Object with_null = json.parse("{\\"bonus\\": null}").to_object();
+    console.write(with_null.get("bonus") == null, ":");
+
+    time.stamp utc = time.from_unix(1000000, "UTC");
+    time.stamp ekb = time.from_unix(1000000, "Asia/Yekaterinburg");
+    time.stamp later = time.from_unix(2000000, "UTC");
+    console.write(utc == ekb, ":", utc < later, ":", later >= utc, ":", utc < utc);
+}
+`, {}, { file: '/main.idyl' });
+  assert(library.success, library.runtimeError ?? library.compilation.diagnosticsText);
+  assert(library.output === 'true:true:true:true:true:true:true:false', `library values: ${library.output}`);
+
+  // 7. Цикл в json — честная ошибка на == (жанр to_json).
+  const cyclic = await runIdyllium(`use json;
+
+main() {
+    json.Object o1;
+    o1.add("self", json.Value(o1));
+    json.Object o2;
+    o2.add("self", json.Value(o2));
+    bool same = o1.get("self") == o2.get("self");
+}
+`, {}, { file: '/main.idyl' });
+  assert(
+    (cyclic.runtimeError ?? '').includes('cannot compare cyclic JSON value'),
+    `cyclic ==: ${cyclic.runtimeError}`,
+  );
+
+  // 8. json.Value(объект) — ошибка компиляции.
+  const wrap = compileIdyllium(`use json;
+class Pet { string name; }
+main() {
+    Pet p;
+    json.Value v = json.Value(p);
+}
+`, { file: '/main.idyl' });
+  assert(
+    wrap.diagnosticsText.includes("json.Value() cannot wrap an object of class 'Pet' — build a json.Object from its fields instead"),
+    `json.Value(class): ${wrap.diagnosticsText}`,
+  );
+
+  // 9. Само-ссылочные типы полей — ошибка компиляции; dyn_array — законен.
+  const selfRef = compileIdyllium(`class Person {
+    string name;
+    Person friend;
+}
+main() { }
+`, { file: '/main.idyl' });
+  assert(
+    selfRef.diagnosticsText.includes("field 'friend' of class 'Person' creates an endless chain of default objects"),
+    `self-ref: ${selfRef.diagnosticsText}`,
+  );
+  const tree = compileIdyllium(`class Node {
+    string label;
+    dyn_array<Node> children;
+}
+main() { }
+`, { file: '/main.idyl' });
+  assert(tree.success, `dyn_array self-type must stay legal:\n${tree.diagnosticsText}`);
+});
+
+test('nullable fields: empty fields, boundaries and linked structures', async () => {
+  // 1. Набросок владельца: пустое поле, заселение, доступ сквозь пустоту.
+  const sketch = await runIdyllium(`use console;
+
+class Guest {
+    string name;
+}
+
+class Room {
+    int number;
+    Guest guest = null;
+}
+
+main() {
+    Room r1;
+    r1.number = 101;
+    Guest g1;
+    g1.name = "Дракон";
+    r1.guest = g1;
+    console.writeln("гость ", r1.guest.name);
+
+    Room r2;
+    r2.number = 102;
+    console.writeln("гость ", r2.guest.name);
+}
+`, {}, { file: '/main.idyl' });
+  assert(sketch.output.trim() === 'гость Дракон', `sketch output: ${sketch.output}`);
+  assert(
+    (sketch.runtimeError ?? '').includes("field 'guest' of class 'Room' is empty (null) — check it with '!= null' before using it"),
+    `empty access: ${sketch.runtimeError}`,
+  );
+
+  // 2. Проверка/выселение/type_name + связный список (анти-6 пропускает nullable).
+  const list = await runIdyllium(`use console;
+
+class Person {
+    string name;
+    Person friend = null;
+}
+
+main() {
+    Person a;
+    a.name = "Мира";
+    Person b;
+    b.name = "Кай";
+    a.friend = b;
+    console.write(a.friend != null, ":", type_name(b.friend), ":");
+    a.friend = null;
+    console.write(a.friend == null, ":");
+
+    Person head;
+    head.name = "1";
+    Person tail;
+    tail.name = "2";
+    head.friend = tail;
+    Person current = head;
+    console.write(current.name);
+    while (current.friend != null) {
+        current = current.friend;
+        console.write("->", current.name);
+    }
+}
+`, {}, { file: '/main.idyl' });
+  assert(list.success, list.runtimeError ?? list.compilation.diagnosticsText);
+  assert(list.output === 'true:null:true:1->2', `linked list: ${list.output}`);
+
+  // 3. Границы: аргумент и печать пустоты падают именной ошибкой.
+  for (const body of ['greet(r.guest);', 'console.writeln(r.guest);']) {
+    const boundary = await runIdyllium(`use console;
+
+class Guest {
+    string name;
+
+    string function to_string() { return this.name; }
+}
+
+class Room {
+    Guest guest = null;
+}
+
+void function greet(Guest g) {
+    console.writeln(g.name);
+}
+
+main() {
+    Room r;
+    ${body}
+}
+`, {}, { file: '/main.idyl' });
+    assert(
+      (boundary.runtimeError ?? '').includes("field 'guest' of class 'Room' is empty (null)"),
+      `boundary [${body}]: ${boundary.runtimeError}`,
+    );
+  }
+
+  // 3б. Наследование (находка адверсариальной проверки): охрана унаследованного
+  // пустого поля работает через окно потомка — все манифестации.
+  const inherited = await runIdyllium(`use console;
+
+class Guest {
+    string name;
+}
+
+class Room {
+    Guest guest = null;
+}
+
+class Suite extends Room {
+}
+
+main() {
+    Suite s;
+    console.write(s.guest == null, ":");
+    Guest g;
+    g.name = "Мира";
+    s.guest = g;
+    console.write(s.guest.name, ":");
+    s.guest = null;
+    Guest leak = s.guest;
+    console.write("не должно напечататься");
+}
+`, {}, { file: '/main.idyl' });
+  assert(inherited.output === 'true:Мира:', `inherited surface: ${inherited.output}`);
+  assert(
+    (inherited.runtimeError ?? '').includes("field 'guest' of class 'Suite' is empty (null)"),
+    `inherited guard: ${inherited.runtimeError}`,
+  );
+
+  // 3в. null == null — мёртвое выражение, ошибка компиляции.
+  const deadNull = compileIdyllium('main() {\n    bool b = null == null;\n}\n', { file: '/main.idyl' });
+  assert(deadNull.diagnosticsText.includes("cannot compare 'null' and 'null'"), `null==null: ${deadNull.diagnosticsText}`);
+
+  // 4. Компильные ворота: обычное поле, локал, сравнение не-nullable.
+  const gates: Array<[string, string]> = [
+    ['class Room { Guest guest; }\nmain() {\n    Room r;\n    r.guest = null;\n}', "cannot assign 'null' value to 'Guest'"],
+    ['main() {\n    Guest g = null;\n}', "cannot assign 'null' value to 'Guest'"],
+    ['class Room { Guest guest; }\nmain() {\n    Room r;\n    bool b = r.guest == null;\n}', "cannot compare 'Guest' and 'null'"],
+  ];
+  for (const [body, expected] of gates) {
+    const result = compileIdyllium(`class Guest { string name; }\n${body}\n`, { file: '/main.idyl' });
+    assert(result.diagnosticsText.includes(expected), `gate: ожидалось «${expected}», получено:\n${result.diagnosticsText}`);
+  }
+
+  // 5. Пустота и контракт equals: пустота равна только пустоте.
+  const equality = await runIdyllium(`use console;
+
+class Guest {
+    string name;
+
+    bool function equals(Guest other) {
+        return this.name == other.name;
+    }
+}
+
+class Room {
+    Guest guest = null;
+}
+
+main() {
+    Room a;
+    Room b;
+    console.write(a.guest == b.guest, ":");
+    Guest g;
+    g.name = "Мира";
+    b.guest = g;
+    console.write(a.guest == b.guest, ":", a.guest != b.guest);
+}
+`, {}, { file: '/main.idyl' });
+  assert(equality.success, equality.runtimeError ?? equality.compilation.diagnosticsText);
+  assert(equality.output === 'true:false:true', `empty equality: ${equality.output}`);
+
+  // 6. Модульные классы: пустое поле и контракт equals работают через границу модуля.
+  const moduleFiles = {
+    'main.idyl': `use console;
+use hotel;
+
+main() {
+    hotel.Room r;
+    console.write(r.guest == null, ":");
+    hotel.Guest g;
+    g.name = "Мира";
+    r.guest = g;
+    hotel.Guest g2;
+    g2.name = "Мира";
+    console.write(r.guest.name, ":", g == g2);
+}
+`,
+    'hotel.idyl': `class Guest {
+    string name;
+
+    bool function equals(Guest other) {
+        return this.name == other.name;
+    }
+}
+
+class Room {
+    Guest guest = null;
+}
+`,
+  };
+  const project = compileProject({ entryFile: 'main.idyl', files: moduleFiles });
+  assert(project.success, project.diagnosticsText);
+  let moduleOut = '';
+  const moduleRuntime = createRuntime({ console: { write: (text) => { moduleOut += text; } } });
+  const AsyncFunction = Object.getPrototypeOf(async function idle() {}).constructor;
+  await (await (new AsyncFunction(project.jsCode))())(moduleRuntime);
+  assert(moduleOut === 'true:Мира:true', `module nullable+equals: ${moduleOut}`);
+});
+
+test('printing a function is a compile error, not a source leak', async () => {
+  const cases: Array<[string, string]> = [
+    ['use console;\nint function twice(int x) { return x * 2; }\nmain() {\n    console.writeln(twice);\n}\n',
+      "cannot print function 'twice' — add '()' with its arguments to call it and print the result"],
+    ['use console;\nuse math;\nmain() {\n    console.writeln(math.sqrt);\n}\n',
+      "cannot print function 'sqrt'"],
+    ['use console;\nclass Pet {\n    void function meow() { console.writeln("мяу"); }\n}\nmain() {\n    Pet p;\n    console.writeln(p.meow);\n}\n',
+      "cannot print function 'meow'"],
+    ['use console;\nint function twice(int x) { return x * 2; }\nmain() {\n    console.writeln(to_string(twice));\n}\n',
+      "cannot print function 'twice'"],
+    ['use file;\nint function twice(int x) { return x * 2; }\nmain() {\n    file.ostream fout = file.open("out.txt", "write");\n    fout.write_line(twice);\n}\n',
+      "cannot print function 'twice'"],
+    ['use json;\nint function twice(int x) { return x * 2; }\nmain() {\n    json.Value v = json.Value(twice);\n}\n',
+      "json.Value() cannot wrap a function — call it with '()' and wrap the result"],
+  ];
+  for (const [source, expected] of cases) {
+    const result = compileIdyllium(source, { file: '/main.idyl' });
+    assert(result.diagnosticsText.includes(expected), `ожидалось «${expected}», получено:\n${result.diagnosticsText}`);
+    assert(!result.success, 'must not compile');
+  }
+  // Легитимные колбэки не задеты: присваивание обработчика и передача в on_get.
+  const legit = compileIdyllium(`use console;
+use gui;
+use web;
+
+void function clicked() { console.writeln("клик"); }
+
+void function hello(web.Request req, web.Response res) { res.send("привет"); }
+
+main() {
+    gui.Button b;
+    b.on_click = clicked;
+    web.Server app;
+    app.on_get("/hello", hello);
+}
+`, { file: '/main.idyl' });
+  assert(legit.success, `legit callbacks broke:\n${legit.diagnosticsText}`);
+});
+
+test('radio group: programmatic is_selected deselects the neighbours', async () => {
+  // Находка методистов (2026-08-21): клик снимал соседей, программная
+  // запись — нет. Урок обещает «одна группа по умолчанию» — держим слово.
+  const result = await runIdyllium(`use console;
+use gui;
+use system;
+
+main() {
+    gui.Window w;
+    gui.RadioButton a;
+    gui.RadioButton b;
+    gui.RadioButton c;
+    c.group = "other";
+    w.add_child(a);
+    w.add_child(b);
+    w.add_child(c);
+    a.is_selected = true;
+    c.is_selected = true;
+    b.is_selected = true;
+    console.writeln(a.is_selected, " ", b.is_selected, " ", c.is_selected);
+    b.is_selected = false;
+    console.writeln(a.is_selected, " ", b.is_selected, " ", c.is_selected);
+    system.exit(0);
+}
+`, {}, { file: 'main.idyl' });
+  assert(
+    result.output.startsWith('false true true\nfalse false true'),
+    `radio group deselect is off: ${JSON.stringify(result.output)}`,
+  );
+});
+
+test('printing an array of objects goes through the to_string contract', async () => {
+  // Вердикт владельца 2026-08-22: контракт to_string элемента открывает
+  // печать массива (симметрия со сравнением массивов через equals).
+  const ok = await runIdyllium(`use console;
+
+class Hero {
+    string name;
+    string function to_string() { return "Герой " + this.name; }
+}
+
+main() {
+    dyn_array<Hero> guild;
+    Hero a;
+    a.name = "Мира";
+    guild.add(a);
+    Hero b;
+    b.name = "Кай";
+    guild.add(b);
+    console.writeln(guild);
+    console.writeln(to_string(guild));
+}
+`, {}, { file: 'main.idyl' });
+  assert(ok.success, ok.runtimeError ?? ok.compilation.diagnosticsText);
+  assert(
+    ok.output === '["Герой Мира", "Герой Кай"]\n["Герой Мира", "Герой Кай"]\n',
+    `array printing via contract is off: ${JSON.stringify(ok.output)}`,
+  );
+
+  // без контракта — отказ с обучающим хвостом; кривая форма — с уточнением
+  const refuse = compileIdyllium(`use console;
+class Kot { string name; }
+main() { dyn_array<Kot> koty; console.writeln(koty); }
+`, { file: '/main.idyl' });
+  assert(!refuse.success, 'array of contractless objects unexpectedly printed');
+  assert(
+    refuse.diagnosticsText.includes("cannot print an array of 'Kot' objects directly — declare 'string function to_string()' in class 'Kot' and printing will use it"),
+    `array refusal hint is off:\n${refuse.diagnosticsText}`,
+  );
+
+  const crooked = compileIdyllium(`use console;
+class H {
+    int lvl;
+private:
+    bool function equals(H other) { return this.lvl == other.lvl; }
+}
+main() { H a; H b; console.writeln(a == b); }
+`, { file: '/main.idyl' });
+  assert(!crooked.success, 'private equals unexpectedly acted as a contract');
+  assert(
+    crooked.diagnosticsText.includes("(class 'H' has 'equals', but it is private)"),
+    `shape diagnostics tail is off:\n${crooked.diagnosticsText}`,
+  );
+});
+
+test('user-select joins the IdySS dictionary', async () => {
+  // Вердикт владельца 2026-08-22: значения из CSS; кнопочным виджетам
+  // рендерер выключает выделение по умолчанию (CSS рендерера).
+  const { parseIdylliumStyle } = await import('../src/runtime/style');
+  const ok = parseIdylliumStyle('user-select: none');
+  assert(ok.length === 1 && ok[0].property === 'user-select' && ok[0].value === 'none',
+    `user-select: none was not parsed: ${JSON.stringify(ok)}`);
+  const all = parseIdylliumStyle('user-select: all');
+  assert(all.length === 1 && all[0].value === 'all', 'user-select: all was not parsed');
+  const junk = parseIdylliumStyle('user-select: bananas');
+  assert(junk.length === 0, 'invalid user-select value slipped through');
+});
+
 void runTests();

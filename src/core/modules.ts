@@ -9,6 +9,8 @@ export interface UserModuleFieldSpec {
   readonly owner: string;
   readonly access: AccessModifier;
   readonly range: SourceRange;
+  /** «Пустое поле»: объявлено с явным `= null`. */
+  readonly nullable?: boolean;
 }
 
 export interface UserModuleMethodSpec {
