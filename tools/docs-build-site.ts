@@ -84,6 +84,7 @@ const MANAGED_PATHS = [
   'version.js',
   'version.json',
   '404.html',
+  '.nojekyll',
 ];
 
 const SECTION_RENAMES: Record<string, { readonly id: string; readonly title: string; readonly icon: string }> = {
@@ -1939,6 +1940,11 @@ function writeLegacyIdeRedirect(outputRoot: string): void {
 }
 
 function writeSite404(outputRoot: string): void {
+  // Сайт печётся целиком здесь — Jekyll на GitHub Pages не нужен и ОПАСЕН:
+  // Liquid в нём считает {{…}} и {% for %} своими тегами, а с 1.5.1 наши
+  // доки шаблонизатора полны таких последовательностей (упавший деплой
+  // 2026-08-22: «Liquid syntax error … in ai/idyllium-ai-reference.md»).
+  fs.writeFileSync(path.join(outputRoot, '.nojekyll'), '', 'utf8');
   fs.writeFileSync(path.join(outputRoot, '404.html'), `<!doctype html>
 <html lang="ru">
 <head>
