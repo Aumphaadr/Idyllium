@@ -56,6 +56,13 @@ const SKIP: Readonly<Record<string, string>> = {
   'network.web-server.004': 'web.Server.run() never returns',
   'network.web-server.005': 'web.Server.run() never returns',
   'network.web-server.006': 'web.Server.run() never returns',
+  'network.web-templates.001': 'web.Server.run() never returns',
+  'network.web-templates.002': 'web.Server.run() never returns',
+  'network.web-templates.003': 'web.Server.run() never returns',
+  'network.web-templates.004': 'web.Server.run() never returns',
+  'network.web-templates.005': 'web.Server.run() never returns',
+  'network.web-templates.006': 'web.Server.run() never returns',
+  'network.web-templates.007': 'web.Server.run() never returns',
 };
 
 async function main(): Promise<void> {

@@ -1,0 +1,432 @@
+<div class="docs-section">
+  <h2>Кавычки утомили</h2>
+  <p>
+    В уроке о сервере вы отдавали HTML прямо из кода:
+    <code>res.send("&lt;h1&gt;Гильдия&lt;/h1&gt;...")</code>. Для двух строк — нормально.
+    Но попробуйте собрать так страницу с заголовком, тремя абзацами и списком
+    из данных — и код превратится в клей из кавычек, плюсов и
+    <code>to_string</code>. На третьей странице вы возненавидите кавычки, и
+    будете правы: <strong>вёрстка — не дело кода</strong>. У этой боли есть
+    классическое лекарство, и сегодня оно у вас появится: шаблоны.
+  </p>
+  <p>
+    Идея проста: страница живёт в отдельном HTML-файле, а в местах, где должны
+    оказаться данные, стоят дырки с именами. Программа берёт файл, вставляет в
+    дырки значения — и отправляет готовую страницу.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Первый шаблон</h2>
+  <p>
+    Заведите в проекте файл <code>templates/card.html</code>. Это обычный файл
+    в обычной папке — никакого тайного правила «шаблоны обязаны лежать в
+    особом месте» нет, путь вы называете сами, как в библиотеке
+    <code>file</code>:
+  </p>
+  <div class="file">&lt;h1&gt;{{name}}&lt;/h1&gt;
+&lt;p&gt;Город: {{city}} · Уровень: {{level}}&lt;/p&gt;</div>
+  <p>
+    Двойные фигурные скобки — те самые дырки: <code>{{name}}</code> значит
+    «сюда программа подставит значение по имени <code>name</code>». Откуда
+    берутся значения? Из старого знакомого — <code>json.Object</code>:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use web;
+use json;
+
+void function card(web.Request req, web.Response res) {
+    json.Object values;
+    values.add("name", json.Value("Мира"));
+    values.add("city", json.Value("Дубровск"));
+    values.add("level", json.Value(12));
+
+    res.send_template("templates/card.html", values);
+}
+
+main() {
+    web.Server app;
+    app.on_get("/", card);
+    app.run();
+}
+</script></idyl-code-block>
+  <idyl-output-block>Сервер слушает http://127.0.0.1:8080</idyl-output-block>
+
+  <p>
+    Откройте адрес в браузере — и увидите страницу с именем, городом и
+    уровнем. <code>send_template(путь, значения)</code> делает три вещи:
+    читает файл, подставляет значения из объекта в дырки и отправляет
+    результат как HTML-страницу. Обработчик стал честным разделением труда:
+    <strong>код собирает данные, шаблон отвечает за внешний вид</strong>.
+    Захотелось перекрасить страницу или переставить абзацы — правится один
+    HTML-файл, программа не трогается вовсе.
+  </p>
+  <p>
+    В Web IDE всё это работает в сервере-репетиции: шаблон — файл вашего
+    проекта, и репетиция его читает как настоящий сервер.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Дырка с точкой: поле объекта</h2>
+  <p>
+    Значением в объекте может лежать другой объект — тогда в шаблоне
+    работает точка, как в коде:
+  </p>
+  <div class="file">&lt;h1&gt;Карточка героя&lt;/h1&gt;
+&lt;p&gt;{{hero.name}} из города {{hero.city}}&lt;/p&gt;</div>
+
+  <idyl-code-block><script type="text/plain">
+use web;
+use json;
+
+void function card(web.Request req, web.Response res) {
+    json.Object hero;
+    hero.add("name", json.Value("Кай"));
+    hero.add("city", json.Value("Митино"));
+
+    json.Object values;
+    values.add("hero", hero);
+    res.send_template("templates/hero.html", values);
+}
+
+main() {
+    web.Server app;
+    app.on_get("/", card);
+    app.run();
+}
+</script></idyl-code-block>
+
+  <p>
+    <code>{{hero.name}}</code> читается дословно: «возьми <code>hero</code>,
+    достань его поле <code>name</code>». Знакомая точка из мира объектов —
+    только внутри HTML-файла.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Цикл в шаблоне: {% for %}</h2>
+  <p>
+    Главная сила шаблонов — списки. Витрина из базы, таблица рекордов, лента
+    записей: в коде — <code>json.Array</code>, в шаблоне — цикл:
+  </p>
+  <div class="file">&lt;h1&gt;Состав гильдии&lt;/h1&gt;
+&lt;ul&gt;
+{% for member in members %}  &lt;li&gt;{{member.name}} — уровень {{member.level}}&lt;/li&gt;
+{% endfor %}&lt;/ul&gt;</div>
+
+  <idyl-code-block><script type="text/plain">
+use web;
+use json;
+
+void function roster(web.Request req, web.Response res) {
+    json.Array members;
+    for (int i = 1; i <= 3; i = i + 1) {
+        json.Object member;
+        member.add("name", json.Value("Боец №" + to_string(i)));
+        member.add("level", json.Value(i * 10));
+        members.add(member);
+    }
+
+    json.Object values;
+    values.add("members", members);
+    res.send_template("templates/roster.html", values);
+}
+
+main() {
+    web.Server app;
+    app.on_get("/", roster);
+    app.run();
+}
+</script></idyl-code-block>
+
+  <p>
+    Кусок шаблона между <code>{% for member in members %}</code> и
+    <code>{% endfor %}</code> повторяется для каждого элемента списка, и внутри
+    него <code>member</code> — очередной элемент. Три бойца — три
+    <code>&lt;li&gt;</code>. Пустой список — ноль строк, и это не ошибка:
+    страница просто выйдет без пунктов.
+  </p>
+  <p>
+    Заметьте разницу скобок: <code>{{...}}</code> — «напечатай значение
+    сюда», <code>{%...%}</code> — «команда»: сама она ничего не печатает, а
+    управляет куском шаблона и требует парного <code>{% endfor %}</code>.
+    Разные роли — разные скобки, глазу легче сканировать страницу.
+  </p>
+  <p>
+    А где условия? В коде. Правило нашей кухни: <strong>шаблон глупый, логика
+    в программе</strong>. «Если корзина пуста — покажи другое» решается в
+    обработчике: два шаблона и обычный <code>if</code> перед
+    <code>send_template</code> — это читаемее, чем ветвление внутри HTML.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Когда дырке нечего подставить</h2>
+  <p>
+    Опечатались в имени? Забыли положить значение? Сервер не упадёт и страница
+    не исчезнет — в месте дырки появится читаемый маркер:
+  </p>
+  <idyl-output-block>[[ нет значения 'ghost' ]]
+[[ 'title' — не объект ]]
+[[ 'members' — список: нужен {% for %} ]]</idyl-output-block>
+  <p>
+    Вёрстка — визуальный труд: полезно видеть <em>всю</em> страницу с дыркой,
+    названной по имени, а не голую ошибку вместо страницы. Взрослые
+    шаблонизаторы, к слову, в этой ситуации часто молча печатают пустоту —
+    и опечатка живёт в странице незамеченной неделями. Наш маркер кричит из
+    вёрстки сразу.
+  </p>
+  <p>
+    А вот пропавший <em>файл</em> шаблона — настоящая авария обработчика:
+    <code>web.Response.send_template() cannot read 'templates/каточка.html':
+    file does not exist</code>. Сервер переживёт и её — запрос получит 500,
+    ошибка уйдёт в консоль, остальные маршруты продолжат работать.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Данные — это текст</h2>
+  <p>
+    Важное правило подстановки: значение вставляется как <strong>текст</strong>,
+    а не как разметка. Если в данных лежит строка
+    <code>&lt;b&gt;СРОЧНО&lt;/b&gt;</code>, на странице будут видны буквы
+    <code>&lt;b&gt;СРОЧНО&lt;/b&gt;</code> — а не жирное слово. Хотите жирным —
+    жирным делает <em>шаблон</em>: <code>&lt;b&gt;{{text}}&lt;/b&gt;</code>.
+    Разметка живёт в шаблоне, данные — текст, и у каждого своя работа.
+  </p>
+  <p>
+    Это не прихоть, а взрослая гигиена. Скоро в ваши страницы начнут писать
+    посетители — форма гостевой книги уже в конце этого урока. И первый же
+    шутник отправит вместо текста <code>&lt;script&gt;...&lt;/script&gt;</code> —
+    скрипт, который выполнился бы у каждого, кто откроет страницу. У нас его
+    ждёт участь любого текста: буквы на экране. Взрослые серверы экранируют
+    подстановки ровно по этой причине — теперь вы знаете её изнутри.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Красивый адрес: параметр пути</h2>
+  <p>
+    Взгляните на адреса больших сайтов: карточка товара живёт не на
+    <code>/tovar?id=3</code>, а на <code>/tovar/3</code>. Кусок пути — тоже
+    параметр. В маршруте такой кусок объявляется в угловых скобках, а
+    достаётся методом <code>req.param</code>:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use web;
+
+void function card(web.Request req, web.Response res) {
+    string id = req.param("id");
+    res.send("<h1>Запись №" + id + "</h1><p><a href=\"/\">Назад</a></p>");
+}
+
+main() {
+    web.Server app;
+    app.on_get("/post/<id>", card);
+    app.run();
+}
+</script></idyl-code-block>
+
+  <p>
+    Запрос <code>/post/3</code> попадёт в <code>card</code>, и
+    <code>req.param("id")</code> вернёт <code>"3"</code>. Обратите внимание:
+    <strong>всегда строку</strong> — числом её, как обычно, делаете вы сами
+    через <code>to_int</code>, и «в адресе не число» остаётся вашей честной
+    проверкой, а не тайной магией маршрутов.
+  </p>
+  <p>
+    Точный путь всегда побеждает шаблонный: если рядом зарегистрирован
+    <code>on_get("/post/new", ...)</code>, запрос <code>/post/new</code> уйдёт
+    именно ему, а <code>/post/7</code> — карточке. И нет, два шаблона одной
+    формы (<code>/x/&lt;a&gt;</code> и <code>/x/&lt;b&gt;</code>) зарегистрировать
+    нельзя — сервер откажет сразу, чтобы маршруты молча не спорили.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Форма: посетитель пишет вам</h2>
+  <p>
+    До сих пор посетитель только читал. HTML-форма разворачивает движение:
+  </p>
+  <div class="file">&lt;form method="post" action="/add"&gt;
+  &lt;input name="author" placeholder="Кто вы?"&gt;
+  &lt;textarea name="text" placeholder="Что скажете?"&gt;&lt;/textarea&gt;
+  &lt;button&gt;Отправить&lt;/button&gt;
+&lt;/form&gt;</div>
+  <p>
+    Кнопка «Отправить» делает POST-запрос на <code>/add</code>, а заполненные
+    поля уезжают в теле запроса. Загляните в это тело через
+    <code>req.body</code> — и увидите суп из процентов:
+  </p>
+  <idyl-output-block>author=%D0%9C%D0%B8%D1%80%D0%B0&text=%D0%9F%D0%BE%D1%81%D0%BE%D1%85+%D0%BD%D0%B0%D1%88%D1%91%D0%BB%D1%81%D1%8F%21</idyl-output-block>
+  <p>
+    Так браузер кодирует буквы (особенно наши, кириллические), а плюсами
+    прячет пробелы. Разбирать это руками не нужно — поле достаётся методом
+    <code>req.form</code> по имени из <code>name="..."</code>:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use web;
+
+void function add(web.Request req, web.Response res) {
+    string author = req.form("author");
+    string text = req.form("text");
+
+    if (author.trim() == "" or text.trim() == "") {
+        res.status = 400;
+        res.send("<h1>Заполните оба поля</h1><p><a href=\"/\">Назад</a></p>");
+        return;
+    }
+    res.send("<h1>Принято!</h1><p>" + author + ": " + text + "</p>");
+}
+
+main() {
+    web.Server app;
+    app.on_post("/add", add);
+    app.run();
+}
+</script></idyl-code-block>
+
+  <p>
+    <code>req.form("author")</code> вернёт уже раскодированное
+    <code>"Мира"</code>. Нет такого поля — пустая строка, как у
+    <code>req.query</code>: проверка на пустоту и честный <code>400</code> —
+    ваша работа, и вы её только что сделали.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Redirect: после письма — на главную</h2>
+  <p>
+    Обработчик формы выше отвечает страницей «Принято!». У этого пути есть
+    скрытая беда, знакомая каждому взрослому сайту: нажмите теперь F5 — и
+    браузер честно спросит «отправить форму ещё раз?». Согласитесь — запись
+    уйдёт второй раз. Лекарство — классический приём
+    <strong>PRG</strong> (POST → Redirect → GET): после успешной обработки
+    формы не рисуйте страницу, а <em>отправьте браузер</em> на обычный
+    GET-адрес:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use web;
+
+void function add(web.Request req, web.Response res) {
+    string author = req.form("author");
+    if (author.trim() == "") {
+        res.status = 400;
+        res.send("Кто вы? Поле пустое.");
+        return;
+    }
+    // ...тут запись сохраняется...
+    res.redirect("/");
+}
+
+main() {
+    web.Server app;
+    app.on_post("/add", add);
+    app.run();
+}
+</script></idyl-code-block>
+
+  <p>
+    <code>res.redirect("/")</code> отвечает особым кодом <code>303 See
+    Other</code> с адресом в придачу — браузер сам делает GET на главную.
+    Теперь F5 обновляет <em>главную страницу</em>, а не повторяет отправку:
+    двойных записей не бывает. Одна строка — а сайт начинает вести себя
+    по-взрослому.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Собираем всё: гостевая книга</h2>
+  <p>
+    Все двери урока — в одном живом проекте. Шаблон
+    <code>templates/list.html</code>:
+  </p>
+  <div class="file">&lt;h1&gt;{{title}}&lt;/h1&gt;
+&lt;p&gt;Записей: {{count}}&lt;/p&gt;
+{% for post in posts %}&lt;article&gt;
+  &lt;h3&gt;{{post.author}}&lt;/h3&gt;
+  &lt;p&gt;{{post.text}}&lt;/p&gt;
+&lt;/article&gt;
+{% endfor %}&lt;form method="post" action="/add"&gt;
+  &lt;input name="author" placeholder="Кто вы?"&gt;
+  &lt;textarea name="text" placeholder="Что скажете?"&gt;&lt;/textarea&gt;
+  &lt;button&gt;Оставить запись&lt;/button&gt;
+&lt;/form&gt;</div>
+  <p>И программа целиком — записи живут в памяти, пока сервер работает:</p>
+
+  <idyl-code-block><script type="text/plain">
+use web;
+use json;
+
+json.Array posts;
+
+void function index(web.Request req, web.Response res) {
+    json.Object values;
+    values.add("title", json.Value("Гостевая книга гильдии"));
+    values.add("count", json.Value(posts.length));
+    values.add("posts", posts);
+    res.send_template("templates/list.html", values);
+}
+
+void function add(web.Request req, web.Response res) {
+    string author = req.form("author");
+    string text = req.form("text");
+    if (author.trim() == "" or text.trim() == "") {
+        res.status = 400;
+        res.send("<h1>Пустую запись книга не примет</h1><p><a href=\"/\">Назад</a></p>");
+        return;
+    }
+    json.Object post;
+    post.add("author", json.Value(author));
+    post.add("text", json.Value(text));
+    posts.add(post);
+    res.redirect("/");
+}
+
+main() {
+    web.Server app;
+    app.on_get("/", index);
+    app.on_post("/add", add);
+    app.run();
+}
+</script></idyl-code-block>
+
+  <p>
+    Пройдитесь по кругу глазами посетителя: открыл страницу — увидел записи
+    из шаблона с циклом; заполнил форму — POST ушёл на <code>/add</code>;
+    сервер разобрал поля, добавил запись и отправил браузер обратно на
+    главную; главная снова собралась из шаблона — уже с новой записью. Четыре
+    инструмента урока работают как один механизм. Захочется, чтобы записи
+    переживали перезапуск сервера, — вы уже знаете, куда смотреть: файлы или
+    база данных, обе двери из прошлых разделов.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Итог</h2>
+  <table>
+    <thead>
+      <tr><th>Инструмент</th><th>Что делает</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>res.send_template(путь, значения)</code></td><td>читает HTML-файл, подставляет значения из <code>json.Object</code>, отправляет страницу</td></tr>
+      <tr><td><code>{{имя}}</code>, <code>{{объект.поле}}</code></td><td>дырка под данные; подставляется всегда текстом</td></tr>
+      <tr><td><code>{% for x in список %}…{% endfor %}</code></td><td>повторяет кусок шаблона для каждого элемента <code>json.Array</code></td></tr>
+      <tr><td>маркер <code>[[ … ]]</code></td><td>ошибка шаблона прямо в странице; сервер жив</td></tr>
+      <tr><td><code>on_get("/post/&lt;id&gt;")</code> + <code>req.param("id")</code></td><td>параметр пути; всегда строка</td></tr>
+      <tr><td><code>req.form("имя")</code></td><td>поле HTML-формы из POST-запроса; нет поля — <code>""</code></td></tr>
+      <tr><td><code>res.redirect(адрес)</code></td><td>303 + переход браузера; PRG: после POST — redirect на GET</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Мелким шрифтом: у шаблонов есть и <code>{% if флаг %}…{% else %}…{% endif %}</code>
+    по bool-значению — дверь для тех, кто привык к другим шаблонизаторам. В наших
+    программах ветвление живёт в коде — так его видно, так его проверяет
+    компилятор.
+  </p>
+</div>

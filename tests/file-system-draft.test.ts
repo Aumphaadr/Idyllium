@@ -166,6 +166,25 @@ async function testNodeProjectBoundary(): Promise<void> {
     assert(!escaped.success, 'file.remove() escaped the project root');
     assert(escaped.runtimeError?.includes('outside the project'), `unexpected boundary error: ${escaped.runtimeError}`);
     assert(fs.readFileSync(outside, 'utf8') === 'keep me', 'outside file was modified');
+
+    // Песочница двусторонняя (E12, 2026-08-22): ЧТЕНИЕ наружу закрыто так же,
+    // как запись — задачник обещает «наружу не выберешься».
+    for (const [label, body] of [
+      ['read', 'file.open("../outside.txt", "read");'],
+      ['list', 'file.list_directory("..");'],
+      ['exists', 'file.exists("../outside.txt");'],
+    ] as const) {
+      const probe = await runIdyllium(
+        ['use file;', 'main() {', `    ${body}`, '}'].join('\n'),
+        { projectRoot: project },
+        { file: sourceFile },
+      );
+      assert(!probe.success, `${label} escaped the project root`);
+      assert(
+        probe.runtimeError?.includes('outside the project'),
+        `${label}: unexpected boundary error: ${probe.runtimeError}`,
+      );
+    }
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

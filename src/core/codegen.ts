@@ -250,6 +250,18 @@ export class JavaScriptGenerator {
   }
 
   private emitProgramDeclarations(program: Program, lines: string[], indent: number): void {
+    // Примитивные файловые константы объявляются РАНЬШЕ классов: инициализаторы
+    // статиков исполняются при объявлении класса и читают эти константы
+    // (сырой TDZ «Cannot access ... before initialization» — находка 2026-08-22).
+    const isPrimitiveConst = (declaration: Program['declarations'][number]): boolean =>
+      declaration.kind === 'VariableDeclaration'
+      && declaration.isConst
+      && declaration.declaredType.kind === 'PrimitiveTypeName';
+    for (const declaration of program.declarations) {
+      if (isPrimitiveConst(declaration)) {
+        this.emitVariableDeclaration(declaration as VariableDeclaration, lines, indent);
+      }
+    }
 
     for (const declaration of program.declarations) {
       if (declaration.kind === 'ClassDeclaration') {
@@ -258,7 +270,7 @@ export class JavaScriptGenerator {
     }
 
     for (const declaration of program.declarations) {
-      if (declaration.kind === 'VariableDeclaration') {
+      if (declaration.kind === 'VariableDeclaration' && !isPrimitiveConst(declaration)) {
         this.emitVariableDeclaration(declaration, lines, indent);
       }
     }
@@ -426,7 +438,7 @@ export class JavaScriptGenerator {
 
     this.classFieldInitializerDepth += 1;
     for (const member of declaration.members) {
-      if (member.kind === 'ClassFieldDeclaration') {
+      if (member.kind === 'ClassFieldDeclaration' && !member.isStatic) {
         this.emitClassFieldDefaults(member, lines, indent + 1);
       }
     }
@@ -455,6 +467,26 @@ export class JavaScriptGenerator {
       if (member.kind === 'ClassMethodDeclaration' && member.isStatic) {
         this.emitStaticMethod(declaration.name, member, lines, indent);
       }
+    }
+    for (const member of declaration.members) {
+      if (member.kind === 'ClassFieldDeclaration' && member.isStatic) {
+        this.emitStaticFieldDefaults(declaration.name, member, lines, indent);
+      }
+    }
+  }
+
+  // Статическое поле (и класс-константа) — слот на объекте класса,
+  // инициализатор выполняется один раз при объявлении класса.
+  private emitStaticFieldDefaults(className: string, declaration: ClassFieldDeclaration, lines: string[], indent: number): void {
+    const pad = '  '.repeat(indent);
+    for (const field of declaration.fields) {
+      const rawValue = field.initializer
+        ? this.expression(field.initializer)
+        : this.defaultValue(declaration.declaredType);
+      const value = field.initializer
+        ? this.valueForType(rawValue, declaration.declaredType, field.initializer.range)
+        : this.castForType(rawValue, declaration.declaredType);
+      lines.push(`${pad}${this.classObjectName(className)}.${field.name} = ${value};`);
     }
   }
 

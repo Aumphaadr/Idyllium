@@ -196,6 +196,10 @@ export interface ClassFieldDeclaration {
   readonly declaredType: TypeName;
   readonly fields: FieldDeclarator[];
   readonly access: AccessModifier;
+  /** Статическое поле — одно на класс (Hero.population), не на объект. */
+  readonly isStatic: boolean;
+  /** Класс-константа (const в теле класса) — всегда одна на класс. */
+  readonly isConst: boolean;
   readonly range: SourceRange;
 }
 

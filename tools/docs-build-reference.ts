@@ -78,6 +78,14 @@ export function buildReferenceSite(outputRoot: string): void {
   fs.rmSync(outputRoot, { recursive: true, force: true });
   fs.mkdirSync(outputRoot, { recursive: true });
   for (const file of ['index.html', 'app.css', 'app.js']) {
+    if (file === 'index.html') {
+      // Значок версии в статичной оболочке: без штампа читатель без JS
+      // видел бы заглушку шаблона вместо версии релиза.
+      const shell = fs.readFileSync(path.join(packageRoot, file), 'utf8')
+        .replace('<span class="version" id="version">v1.1.3</span>', `<span class="version" id="version">v${String(packageJson.version ?? '1.1.3')}</span>`);
+      fs.writeFileSync(path.join(outputRoot, file), shell, 'utf8');
+      continue;
+    }
     fs.copyFileSync(path.join(packageRoot, file), path.join(outputRoot, file));
   }
 
@@ -93,7 +101,7 @@ export function buildReferenceSite(outputRoot: string): void {
   };
   fs.writeFileSync(path.join(outputRoot, 'api.json'), `${JSON.stringify(api, null, 2)}\n`, 'utf8');
 
-  const pages = bakeReferencePages(outputRoot, path.join(packageRoot, 'index.html'), api);
+  const pages = bakeReferencePages(outputRoot, path.join(outputRoot, 'index.html'), api);
   console.log(`reference generated: ${modules.length} modules, ${globals.length} global functions, ${pages} clean URLs`);
 }
 

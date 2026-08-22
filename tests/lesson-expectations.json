@@ -32,7 +32,7 @@
     "console.array.011": {
       "kind": "compile_error",
       "diagnosticIncludes": [
-        "comparison '>' requires numeric operands"
+        "comparison '>' requires numeric operands, got 'array<int, 5>' and 'int'"
       ],
       "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
     },
@@ -164,7 +164,7 @@
     "console.errors.014": {
       "kind": "compile_error",
       "diagnosticIncludes": [
-        "comparison '>' requires numeric operands"
+        "comparison '>' requires numeric operands, got 'array<int, 3>' and 'int'"
       ]
     },
     "console.errors.015": {

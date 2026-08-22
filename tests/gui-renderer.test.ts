@@ -697,6 +697,51 @@ test('gui renderer inherits a loaded font from Window to child widgets', () => {
   assert(lineEdit?.style.fontSize === '18px', `unexpected inherited LineEdit font size: ${lineEdit?.style.fontSize}`);
 });
 
+test('window background paints the window but is not inherited by children', () => {
+  // E14 (методисты, 2026-08-22): фон окна перекрашивал плашки кнопок —
+  // «кнопки растворяются». Каскадится только text_color (как обещает урок);
+  // прозрачные виджеты показывают фон окна сквозь себя без наследования.
+  const harness = createRendererHarness();
+
+  harness.sendSnapshot({
+    generation: 1,
+    audio: [],
+    windows: [{
+      id: 1,
+      type: 'gui.Window',
+      properties: {
+        width: 320,
+        height: 180,
+        title: 'Фон',
+        background_color: '#2291bc',
+        text_color: '#ffffff',
+        __explicit_properties: ['background_color', 'text_color'],
+      },
+      children: [{
+        id: 2,
+        type: 'gui.Label',
+        properties: { x: 10, y: 20, width: 200, height: 30, visible: true, text: 'Прозрачный' },
+        children: [],
+      }, {
+        id: 3,
+        type: 'gui.Button',
+        properties: { x: 10, y: 60, width: 200, height: 40, visible: true, text: 'С плашкой темы' },
+        children: [],
+      }],
+    }],
+    canvases: [],
+    modals: [],
+  });
+
+  const windowElement = findElement(harness.stage, (element) => element.tagName === 'section');
+  const label = findElement(harness.stage, (element) => element.dataset.widgetId === '2');
+  const button = findElement(harness.stage, (element) => element.dataset.widgetId === '3');
+  assert(String(windowElement?.style.background).includes('#2291bc') || String(windowElement?.style.background).includes('34, 145, 188'), `window must paint its background: ${windowElement?.style.background}`);
+  assert(!label?.style.backgroundColor, `label must stay transparent, got: ${label?.style.backgroundColor}`);
+  assert(!button?.style.backgroundColor, `button must keep its theme plate, got: ${button?.style.backgroundColor}`);
+  assert(label?.style.color !== '', 'text_color must still cascade to the label');
+});
+
 test('gui renderer uses fonts.Font for drawable.Text on Canvas', () => {
   const harness = createRendererHarness();
 

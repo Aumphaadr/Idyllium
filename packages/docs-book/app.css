@@ -939,6 +939,16 @@ body.light-theme .lesson-body .task-item.task-star {
 .color-blue { color: #87bfff; }
 .color-magenta { color: #f0a6ff; }
 .color-cyan { color: #89ddff; }
+
+/* Цвета плёнок/выводов в светлой теме: тёмная палитра на светлом фоне
+   давала 1.1:1 (методисты, 2026-08-22); эти — ≥4.5:1. */
+body.light-theme .color-red { color: #b3261e; }
+body.light-theme .color-green { color: #17691f; }
+body.light-theme .color-yellow { color: #7a5800; }
+body.light-theme .color-blue { color: #1247a4; }
+body.light-theme .color-magenta { color: #99236d; }
+body.light-theme .color-cyan { color: #156970; }
+body.light-theme .color-bright-black { color: #57606a; }
 .color-reset { color: var(--text-main); }
 /* «Светлый чёрный» \e[90m — им же среда печатает служебные строки. */
 .color-bright-black { color: var(--text-muted); }

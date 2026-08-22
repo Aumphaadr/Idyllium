@@ -181,11 +181,14 @@ test('named constants require an initializer and reject reassignment', () => {
     }
   `, "cannot assign to constant 'answer'");
 
+  // const в теле класса с 2026-08-22 ЗАКОНЕН (класс-константа Rules.LIMIT);
+  // без инициализатора — тот же честный отказ, что и у обычных констант.
   assertFails(`
     class Rules {
-      const int LIMIT = 10;
+      const int LIMIT;
     }
-  `, 'const class fields are not supported');
+    main() { }
+  `, "class constant 'LIMIT' must have an initializer");
 
   assertFails(`
     void function show(const int value) {}
@@ -2198,14 +2201,21 @@ test('json module runtime errors are readable', async () => {
     '}',
   ].join('\n'), 'main.idyl:6: runtime error: json array index 3 out of bounds (size 1, valid indices 0-0)');
 
-  await assertRuntimeFails([
+  // С канона «int точен на любом размере» (2026-08-22) to_int() без потолка:
+  // 64-битное JSON-целое приходит точным обычным int.
+  const uncapped = await runIdyllium([
+    'use console;',
     'use json;',
     '',
     'main() {',
     '    json.Value value = json.parse("18446744073709551615");',
-    '    int number = value.to_int();',
+    '    console.writeln(value.to_int() + 1);',
     '}',
-  ].join('\n'), 'main.idyl:5: runtime error: json integer is outside the int range; use to_int64() or to_uint64()');
+  ].join('\n'), {}, { file: 'main.idyl' });
+  assert(
+    uncapped.output === '18446744073709551616\n',
+    `json to_int must be uncapped: ${JSON.stringify(uncapped.output)} ${uncapped.runtimeError}`,
+  );
 
   await assertRuntimeFails([
     'use json;',
@@ -3029,14 +3039,14 @@ test('dynamic to static array conversion errors are readable', async () => {
       dyn_array<int> source = [1, 2, 3];
       array<int, 4> target = source;
     }
-  `, "cannot convert dyn_array of size 3 to 'array<int, 4>' (expected size 4)");
+  `, "the value has 3 elements, but 'array<int, 4>' needs 4");
 
   await assertRuntimeFails(`
     main() {
       dyn_array<dyn_array<int>> source = [[1, 2], [3]];
       array<array<int, 2>, 2> target = source;
     }
-  `, "cannot convert dyn_array of size 1 to 'array<int, 2>' (expected size 2)");
+  `, "the value has 1 element, but 'array<int, 2>' needs 2");
 
   await assertRuntimeFails(`
     void function expects_four(array<int, 4> values) {
@@ -3046,7 +3056,7 @@ test('dynamic to static array conversion errors are readable', async () => {
       dyn_array<int> source = [1, 2];
       expects_four(source);
     }
-  `, "cannot convert dyn_array of size 2 to 'array<int, 4>' (expected size 4)");
+  `, "the value has 2 elements, but 'array<int, 4>' needs 4");
 });
 
 test('array out of bounds runtime error is readable', async () => {
@@ -3096,6 +3106,40 @@ test('string methods and character indexing run', async () => {
   assert(
     result.output === '4:с:ПРИВЕТ:привет:Кот и пёс и ещё пёс:BcD:2:6:true:true:true:["яблоко", "банан", "апельсин"]',
     `unexpected output: ${JSON.stringify(result.output)}`,
+  );
+});
+
+// Контракт стражей (SM1, 2026-08-22): is_int/is_float истинны РОВНО там, где
+// to_int/to_float сработают — "50".is_float() было false при живом to_float("50").
+test('is_int and is_float match to_int and to_float exactly', async () => {
+  const result = await runIdyllium(`
+    use console;
+
+    void function probe(string s) {
+      bool int_works = true;
+      try { to_int(s); } catch { int_works = false; }
+      bool float_works = true;
+      try { to_float(s); } catch { float_works = false; }
+      if (s.is_int() != int_works) { console.writeln("is_int lies about [", s, "]"); }
+      if (s.is_float() != float_works) { console.writeln("is_float lies about [", s, "]"); }
+    }
+
+    main() {
+      dyn_array<string> probes = [
+        "50", "50.0", "-5", "+5", ".5", "5.", "-.5", "5e3",
+        " 50 ", "50,5", "", "abc", "5.5.5", "0", "007"
+      ];
+      for (int i = 0; i < probes.length; i = i + 1) {
+        probe(probes[i]);
+      }
+      console.writeln("50 is_float=", "50".is_float(), " 5e3 is_float=", "5e3".is_float());
+    }
+  `);
+
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === '50 is_float=true 5e3 is_float=false\n',
+    `guard contract broken: ${JSON.stringify(result.output)}`,
   );
 });
 
@@ -4581,6 +4625,65 @@ test('user modules expose functions and classes across files', async () => {
 
   assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
   assert(result.output === '16:25:600', `unexpected output: ${JSON.stringify(result.output)}`);
+});
+
+// Static-члены модульных классов (вердикт владельца, 2026-08-22): трёхзвенный
+// доступ module.Class.member — раньше «class 'zoo.Lion' cannot be used as a value».
+test('module class statics work through module.Class.member', async () => {
+  const zooSource = `class Lion {
+    const int MAX_AGE = 25;
+    static int pride = 0;
+
+    private:
+    static int secret = 7;
+
+    public:
+    string name = "лев";
+
+    constructor Lion() {
+        Lion.pride = Lion.pride + 1;
+    }
+
+    static string function roar() {
+        return "Р-Р-Р";
+    }
+}
+`;
+  const happy = await runIdyllium(`use console;
+use zoo;
+main() {
+    console.writeln(zoo.Lion.roar(), " ", zoo.Lion.MAX_AGE);
+    zoo.Lion a();
+    zoo.Lion b();
+    console.writeln(zoo.Lion.pride);
+    zoo.Lion.pride += 8;
+    console.writeln(zoo.Lion.pride);
+}
+`, {}, { file: 'main.idyl', sources: { 'zoo.idyl': zooSource } });
+  assert(
+    happy.output === 'Р-Р-Р 25\n2\n10\n',
+    `module statics happy path: ${JSON.stringify(happy.output)} ${happy.runtimeError ?? happy.compilation.diagnosticsText}`,
+  );
+
+  const misuse = await runIdyllium(`use console;
+use zoo;
+main() {
+    zoo.Lion.MAX_AGE = 30;
+    console.writeln(zoo.Lion.secret);
+    zoo.Lion cub();
+    console.writeln(cub.pride);
+    console.writeln(zoo.Lion.name);
+}
+`, {}, { file: 'main.idyl', sources: { 'zoo.idyl': zooSource } });
+  const diagnostics = misuse.compilation.diagnosticsText;
+  for (const expected of [
+    "cannot assign to class constant 'zoo.Lion.MAX_AGE'",
+    "member 'zoo.Lion.secret' is private and can only be used inside class 'zoo.Lion'",
+    "static field 'zoo.Lion.pride' must be accessed through class 'zoo.Lion'",
+    "instance field 'zoo.Lion.name' must be accessed through an object",
+  ]) {
+    assert(diagnostics.includes(expected), `module statics refusal missing «${expected}»: ${diagnostics}`);
+  }
 });
 
 test('user modules expose readonly named constants', async () => {
@@ -8119,9 +8222,11 @@ test('forgotten parentheses and class-as-value get honest diagnostics', () => {
     },
   });
   assert(!viaModule.success, 'expected failure for class-as-value via module');
+  // Со статиками модульных классов (2026-08-22) диагностика стала точнее:
+  // это не «класс как значение», а вызов инстанс-метода без объекта.
   assert(
-    viaModule.diagnosticsText.includes("class 'cat.Cat' cannot be used as a value"),
-    `expected class-as-value diagnostic, got:\n${viaModule.diagnosticsText}`,
+    viaModule.diagnosticsText.includes("instance method 'cat.Cat.info' must be called on an object"),
+    `expected instance-method diagnostic, got:\n${viaModule.diagnosticsText}`,
   );
   assert(
     !viaModule.diagnosticsText.includes("<error>"),
@@ -8622,6 +8727,226 @@ main() {
   );
 });
 
+// Flask-пакет 1.5.1: шаблоны + параметры пути + формы + redirect.
+test('web templates, path parameters, forms and redirect work end to end', async () => {
+  const serverCode = `use web;
+use json;
+
+void function page(web.Request req, web.Response res) {
+    json.Object guest;
+    guest.add("name", json.Value("Мира <b>жирная</b>"));
+
+    json.Array items;
+    json.Object one;
+    one.add("label", json.Value("щит & плащ"));
+    items.add(one);
+
+    json.Object values;
+    values.add("title", json.Value("Гильдия"));
+    values.add("guest", guest);
+    values.add("items", items);
+    values.add("vip", json.Value(true));
+    res.send_template("templates/page.html", values);
+}
+
+void function ghost(web.Request req, web.Response res) {
+    res.send_template("templates/нет-такого.html");
+}
+
+void function card(web.Request req, web.Response res) {
+    res.send("карточка " + req.param("id") + "|" + req.param("нет"));
+}
+
+void function fresh(web.Request req, web.Response res) {
+    res.send("точный путь победил");
+}
+
+void function add(web.Request req, web.Response res) {
+    res.send("author=[" + req.form("author") + "] text=[" + req.form("text") + "] нет=[" + req.form("нет") + "] сыр=[" + req.form("сыр") + "]");
+}
+
+void function done(web.Request req, web.Response res) {
+    res.redirect("/");
+}
+
+void function cyr(web.Request req, web.Response res) {
+    res.redirect("/привет");
+}
+
+void function status_after(web.Request req, web.Response res) {
+    res.redirect("/next");
+    res.status = 302;
+}
+
+void function deep(web.Request req, web.Response res) {
+    json.Object values;
+    values.add("flag", json.Value(true));
+    res.send_template("templates/deep.html", values);
+}
+
+void function badtoken(web.Request req, web.Response res) {
+    res.send_template("templates/badtoken.html");
+}
+
+main() {
+    web.Server app;
+    app.on_get("/", page);
+    app.on_get("/ghost", ghost);
+    app.on_get("/post/<id>", card);
+    app.on_get("/post/new", fresh);
+    app.on_post("/add", add);
+    app.on_post("/done", done);
+    app.on_get("/cyr", cyr);
+    app.on_get("/status-after", status_after);
+    app.on_get("/deep", deep);
+    app.on_get("/badtoken", badtoken);
+    app.port = 0;
+    app.run();
+}
+`;
+  const deepTemplate = `${'{% if flag %}'.repeat(40)}X${'{% endif %}'.repeat(40)}`;
+  const fileSystem = createMemoryRuntimeFileSystem({
+    '/workspace/main.idyl': serverCode,
+    '/workspace/templates/page.html': [
+      '<h1>{{title}}</h1>',
+      '<p>{{guest.name}}</p>',
+      '{% for item in items %}<li>{{item.label}}</li>{% endfor %}',
+      '{% if vip %}VIP{% else %}гость{% endif %}',
+      '{{дыра}}|{{title.name}}|{{guest}}|{{items}}|{% wat %}',
+    ].join('\n'),
+    '/workspace/templates/deep.html': deepTemplate,
+    '/workspace/templates/badtoken.html': 'X{{a<b}}Y',
+  }, '/workspace');
+  const controller = new AbortController();
+  let output = '';
+  const finished = runIdyllium(serverCode, {
+    abortSignal: controller.signal,
+    fileSystem,
+    console: { write: (text) => { output += text; } },
+  }, { file: '/workspace/main.idyl' });
+
+  for (let i = 0; i < 200 && !/Сервер слушает/.test(output); i++) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  const portMatch = output.match(/:(\d+)/);
+  assert(portMatch !== null, `server banner missing: ${JSON.stringify(output)}`);
+  const base = `http://127.0.0.1:${Number(portMatch![1])}`;
+
+  // Шаблон: подстановки экранируются, for/if живые, ошибки — маркерами в страницу.
+  const page = await fetch(`${base}/`);
+  const pageText = await page.text();
+  assert((page.headers.get('content-type') ?? '').includes('text/html'), 'template page must be text/html');
+  assert(pageText.includes('<h1>Гильдия</h1>'), `template heading: ${pageText}`);
+  assert(pageText.includes('<p>Мира &lt;b&gt;жирная&lt;/b&gt;</p>'), `substitution must be escaped: ${pageText}`);
+  assert(pageText.includes('<li>щит &amp; плащ</li>'), `loop with escaping: ${pageText}`);
+  assert(pageText.includes('VIP') && !pageText.includes('гость'), `if branch: ${pageText}`);
+  for (const marker of [
+    "[[ нет значения 'дыра' ]]",
+    "[[ 'title' — не объект ]]",
+    "[[ 'guest' — объект: подставьте его поле через точку ]]",
+    "[[ 'items' — список: нужен {% for %} ]]",
+    "[[ неизвестная команда '{% wat %}' ]]",
+  ]) {
+    assert(pageText.includes(marker), `template marker missing: ${marker} in ${pageText}`);
+  }
+
+  // Пропавший файл шаблона — авария обработчика с канон-текстом, сервер жив.
+  const ghost = await fetch(`${base}/ghost`);
+  const ghostText = await ghost.text();
+  assert(ghost.status === 500 && ghostText.includes("web.Response.send_template() cannot read 'templates/нет-такого.html': file does not exist"), `ghost template: ${ghostText}`);
+
+  // Параметры пути: значение строкой, отсутствующее имя — пустая строка.
+  const card = await fetch(`${base}/post/3`);
+  assert((await card.text()) === 'карточка 3|', 'path parameter value');
+  const cyrillic = await fetch(`${base}/post/%D0%9C%D0%B8%D1%80%D0%B0`);
+  assert((await cyrillic.text()) === 'карточка Мира|', 'cyrillic path parameter');
+  const exact = await fetch(`${base}/post/new`);
+  assert((await exact.text()) === 'точный путь победил', 'exact path must beat the parameter route');
+  const wrongMethod = await fetch(`${base}/post/3`, { method: 'POST', body: 'x' });
+  assert(wrongMethod.status === 405, 'parameter route must participate in 405');
+
+  // Формы: процентный суп и плюсы разобраны, нет поля — "", мусорные проценты не роняют.
+  const form = await fetch(`${base}/add`, {
+    method: 'POST',
+    body: 'author=%D0%9C%D0%B8%D1%80%D0%B0&text=%D0%9F%D0%BE%D1%81%D0%BE%D1%85+%D0%BD%D0%B0%D1%88%D1%91%D0%BB%D1%81%D1%8F%21&%D1%81%D1%8B%D1%80=%ZZ',
+  });
+  assert((await form.text()) === 'author=[Мира] text=[Посох нашёлся!] нет=[] сыр=[%ZZ]', 'req.form parsing');
+
+  // Redirect: жёсткое 303 + Location.
+  const redirected = await fetch(`${base}/done`, { method: 'POST', body: '', redirect: 'manual' });
+  assert(redirected.status === 303 && redirected.headers.get('location') === '/', `redirect: ${redirected.status} ${redirected.headers.get('location')}`);
+
+  // Находки ломателей (2026-08-22): кириллица в Location кодируется, статус
+  // после redirect закрыт, '//x' и битые проценты не дают сырых пятисоток.
+  const cyrillicRedirect = await fetch(`${base}/cyr`, { redirect: 'manual' });
+  assert(
+    cyrillicRedirect.status === 303 && cyrillicRedirect.headers.get('location') === '/%D0%BF%D1%80%D0%B8%D0%B2%D0%B5%D1%82',
+    `cyrillic redirect: ${cyrillicRedirect.status} ${cyrillicRedirect.headers.get('location')}`,
+  );
+  const statusAfter = await fetch(`${base}/status-after`);
+  assert(
+    statusAfter.status === 500 && (await statusAfter.text()).includes('web.Response.status cannot be changed after redirect() — redirect always answers 303'),
+    'status after redirect must be a readable error',
+  );
+  const doubleSlash = await fetch(`${base.replace(/\/$/, '')}//post/3`);
+  const doubleSlashText = await doubleSlash.text();
+  assert(doubleSlash.status === 404 && doubleSlashText.includes("not found: '//post/3'"), `//path must 404 literally: ${doubleSlash.status} ${doubleSlashText}`);
+  const badPercent = await fetch(`${base}/nowhere/%zz`).catch(() => null);
+  if (badPercent !== null) {
+    assert(badPercent.status === 404 && !(await badPercent.text()).includes('internal server error'), 'broken percent must not 500');
+  }
+
+  // Глубокая вложенность шаблона — читаемый маркер, не сырой V8-текст.
+  const deep = await fetch(`${base}/deep`);
+  const deepText = await deep.text();
+  assert(deep.status === 200 && deepText.includes('шаблон вложен глубже 32 уровней'), `deep nesting marker: ${deep.status} ${deepText.slice(0, 200)}`);
+  assert(!deepText.includes('Maximum call stack'), 'raw V8 stack error leaked');
+  // Маркер с '<' в токене экранирован — диагностика видна в браузере целиком.
+  const badToken = await fetch(`${base}/badtoken`);
+  const badTokenText = await badToken.text();
+  assert(badTokenText.includes("[[ непонятная подстановка '{{a&lt;b}}' ]]"), `marker escaping: ${badTokenText}`);
+
+  controller.abort();
+  await finished;
+
+  // Конфликт двух шаблонных маршрутов одной формы — читаемая ошибка.
+  const conflict = await runIdyllium(`use web;
+
+void function noop(web.Request req, web.Response res) {
+    res.send("x");
+}
+
+main() {
+    web.Server app;
+    app.on_get("/x/<a>", noop);
+    app.on_get("/x/<b>", noop);
+    app.run();
+}
+`, {}, { file: '/main.idyl' });
+  assert(
+    (conflict.runtimeError ?? '').includes("web.Server.on_get() route '/x/<b>' conflicts with already registered '/x/<a>'"),
+    `route conflict: ${conflict.runtimeError}`,
+  );
+
+  // Параметр обязан занимать сегмент целиком.
+  const halfSegment = await runIdyllium(`use web;
+
+void function noop(web.Request req, web.Response res) {
+    res.send("x");
+}
+
+main() {
+    web.Server app;
+    app.on_get("/x/id<n>", noop);
+    app.run();
+}
+`, {}, { file: '/main.idyl' });
+  assert(
+    (halfSegment.runtimeError ?? '').includes("path parameter must occupy a whole segment between '/', like '/post/<id>', got 'id<n>' in '/x/id<n>'"),
+    `half segment: ${halfSegment.runtimeError}`,
+  );
+});
+
 test('widget hint reaches the gui snapshot', async () => {
   const result = await runWithInspectableRuntime([
     'use gui;',
@@ -9116,6 +9441,390 @@ main() {
   );
 });
 
+// E17 (методисты, ООП-волна 2026-08-22): контрактный equals у потомка —
+// компилятор отказывает сам, жанром '==', а не рантайм «has no method».
+test('inherited equals contract is refused at compile time', async () => {
+  assertFails(`
+    use console;
+    class A {
+      int n;
+      bool function equals(A other) { return this.n == other.n; }
+    }
+    class B extends A { }
+    main() {
+      B x; B y;
+      console.writeln(x.equals(y));
+    }
+  `, "'equals' is a contract and is not inherited — declare 'bool function equals(B other)' in class 'B' and the call will use it");
+
+  // Через переменную родительского типа контракт работает — как обещал урок.
+  const viaParent = await runIdyllium(`use console;
+class A {
+    int n;
+    bool function equals(A other) { return this.n == other.n; }
+}
+class B extends A { }
+main() {
+    B x; B y;
+    A r = x;
+    A q = y;
+    console.writeln(r.equals(q));
+}
+`, {}, { file: 'main.idyl' });
+  assert(viaParent.output === 'true\n', `parent-typed contract call: ${JSON.stringify(viaParent.output)}`);
+});
+
+// Зачистка строковых перечислений (заказ владельца, 2026-08-22): все четыре
+// тихих виджет-свойства стали строгими; легальные значения не задеты.
+test('widget string enums reject typos loudly', async () => {
+  const cases: ReadonlyArray<readonly [string, string]> = [
+    ['gui.Slider s;\n    s.orientation = "vertikal";', "Slider.orientation must be 'horizontal' or 'vertical', got 'vertikal'"],
+    ['gui.ProgressBar p;\n    p.orientation = "боком";', "ProgressBar.orientation must be 'horizontal' or 'vertical', got 'боком'"],
+    ['gui.ImageBox b;\n    b.resize_mode = "strech";', "ImageBox.resize_mode must be 'fit', 'fill', 'stretch' or 'original', got 'strech'"],
+    ['win.theme = "неоновый";', "Window.theme must be 'default', 'idyllium', 'dracula', 'breeze' or 'oxygen', got 'неоновый'"],
+  ];
+  for (const [snippet, expected] of cases) {
+    const result = await runIdyllium(`use gui;
+main() {
+    gui.Window win;
+    ${snippet}
+    win.show();
+}
+`, {}, { file: 'main.idyl' });
+    assert((result.runtimeError ?? '').includes(expected), `enum typo must be loud: ${expected}, got ${result.runtimeError}`);
+  }
+
+  const legal = await runIdyllium(`use gui;
+use system;
+main() {
+    gui.Window win;
+    win.theme = "dracula";
+    gui.Slider s;
+    s.orientation = "vertical";
+    gui.ProgressBar p;
+    p.orientation = "vertical";
+    gui.ImageBox b;
+    b.resize_mode = "original";
+    win.add_child(s);
+    win.add_child(p);
+    win.add_child(b);
+    win.show();
+    system.exit(0);
+}
+`, {}, { file: 'main.idyl' });
+  assert(legal.success, `legal enum values must stay legal: ${legal.runtimeError}`);
+});
+
+// W18 (методисты): опечатка в echo_mode молча оставляла пароль на виду.
+test('LineEdit echo_mode rejects unknown modes', async () => {
+  const typo = await runIdyllium(`use gui;
+main() {
+    gui.Window win;
+    gui.LineEdit secret;
+    secret.echo_mode = "pasword";
+    win.add_child(secret);
+    win.show();
+}
+`, {}, { file: 'main.idyl' });
+  assert(
+    (typo.runtimeError ?? '').includes("LineEdit.echo_mode must be 'normal', 'password' or 'no_echo', got 'pasword'"),
+    `echo_mode typo must be loud: ${typo.runtimeError}`,
+  );
+});
+
+// Канон 2026-08-22: int точен на любом размере — включая разбор строки.
+test('to_int and get_int keep precision beyond 64 bits', async () => {
+  const result = await runIdyllium(`use console;
+
+main() {
+    int big = 1267650600228229401496703205376;
+    console.writeln(to_int(to_string(big)) == big);
+    console.writeln(to_int("123456789123456789123456789") + 1);
+    console.writeln(to_int("+42"), " ", to_int("-17"), " ", to_int(" 5 "));
+}
+`, {}, { file: 'main.idyl' });
+  assert(
+    result.output === 'true\n123456789123456789123456790\n42 -17 5\n',
+    `big int round-trip is off: ${JSON.stringify(result.output)}`,
+  );
+});
+
+// Статические поля и класс-константы (вердикты владельца, 2026-08-22).
+test('static fields and class constants live on the class', async () => {
+  const result = await runIdyllium(`use console;
+
+class Hero {
+    const int MAX_LEVEL = 100;
+    static int population = 0;
+
+    string name = "безымянный";
+
+    constructor Hero(string hero_name) {
+        this.name = hero_name;
+        Hero.population = Hero.population + 1;
+    }
+
+    static int function room_left() {
+        return Hero.MAX_LEVEL - Hero.population;
+    }
+}
+
+main() {
+    console.writeln(Hero.MAX_LEVEL, " ", Hero.population);
+    Hero a("Мира");
+    Hero b("Кай");
+    console.writeln(Hero.population, " ", Hero.room_left());
+    Hero.population = 50;
+    array<int, Hero.MAX_LEVEL> levels;
+    console.writeln(Hero.population, " ", levels.length);
+}
+`, {}, { file: 'main.idyl' });
+  assert(
+    result.output === '100 0\n2 98\n50 100\n',
+    `static field story is off: ${JSON.stringify(result.output)}`,
+  );
+});
+
+// Находки ломателей (2026-08-22): порядок инициализации статиков, тени,
+// гигантские размеры, Infinity — всё ловится читаемо, ничего не течёт сырым JS.
+test('static initializer order, class-name shadowing and giant sizes are guarded', async () => {
+  // Учительский паттерн «константа наверху — класс ниже» обязан работать.
+  const teacher = await runIdyllium(`use console;
+const int GLOBAL_BONUS = 5;
+class Hero { static int bonus = GLOBAL_BONUS * 2; }
+main() { console.writeln(Hero.bonus); }
+`, {}, { file: 'main.idyl' });
+  assert(teacher.output === '10\n', `file const above class: ${JSON.stringify(teacher.output)}`);
+
+  // Вычислимая класс-константа работает размером массива.
+  const computed = await runIdyllium(`use console;
+class Hero {
+    const int BASE = 10;
+    const int TOTAL = Hero.BASE + 5;
+}
+main() {
+    array<int, Hero.TOTAL> arr;
+    console.writeln(arr.length);
+}
+`, {}, { file: 'main.idyl' });
+  assert(computed.output === '15\n', `computed class const as size: ${JSON.stringify(computed.output)}`);
+
+  assertFails(`
+    class Alpha { static int a = Beta.b + 1; }
+    class Beta { static int b = 10; }
+    main() { }
+  `, "class 'Beta' is declared later in the file — move it above 'Alpha' to use 'Beta.b' here");
+
+  assertFails(`
+    class Hero {
+      static int a = Hero.b;
+      static int b = 5;
+    }
+    main() { }
+  `, "static field 'Hero.b' is used before its declaration — declare it above 'Hero.a'");
+
+  assertFails(`
+    class Hero { static int population = 42; }
+    main() { int Hero = 5; }
+  `, "name 'Hero' is already used by a class");
+
+  assertFails(`
+    class Hero { static int population = 4; }
+    main() { array<int, Hero.population> arr; }
+  `, "array size 'Hero.population' is not a constant — only a class constant (const) works as a size");
+
+  assertFails(`
+    main() { array<int, 123456789> giant; }
+  `, 'array size 123456789 is too large (maximum 100000000)');
+});
+
+test('float overflow and library big-int boundaries are honest', async () => {
+  const infinity = await runIdyllium(`use console;
+main() {
+    int astro = to_int("1${'0'.repeat(400)}");
+    float share = astro / 3.0;
+    console.writeln(share);
+}
+`, {}, { file: 'main.idyl' });
+  assert(
+    (infinity.runtimeError ?? '').includes("operator '/' result is outside the float range"),
+    `Infinity must not leak: ${infinity.runtimeError} / ${JSON.stringify(infinity.output)}`,
+  );
+
+  const jsonBig = await runIdyllium(`use console;
+use json;
+main() {
+    json.Value v = json.Value(1267650600228229401496703205376);
+    json.Value back = json.parse(v.to_json());
+    console.writeln(back.to_int() + 1);
+}
+`, {}, { file: 'main.idyl' });
+  assert(jsonBig.output === '1267650600228229401496703205377\n', `json to_int uncapped: ${JSON.stringify(jsonBig.output)}`);
+
+  const seed = await runIdyllium(`use random;
+main() { random.set_seed(123456789012345678901234567890); }
+`, {}, { file: 'main.idyl' });
+  assert(
+    (seed.runtimeError ?? '').includes('random.set_seed() seed must be between 0 and 9007199254740991, got 123456789012345678901234567890'),
+    `seed wording: ${seed.runtimeError}`,
+  );
+});
+
+test('static field and class constant misuse gets readable refusals', () => {
+  assertFails(`
+    class Hero { const int MAX = 100; }
+    main() { Hero.MAX = 5; }
+  `, "cannot assign to class constant 'Hero.MAX'");
+
+  assertFails(`
+    use console;
+    class Hero { static int population = 0; }
+    main() {
+      Hero h;
+      console.writeln(h.population);
+    }
+  `, "static field 'Hero.population' must be accessed through class 'Hero'");
+
+  assertFails(`
+    class Hero { static const int MAX = 100; }
+    main() { }
+  `, "class constants are written without 'static' — 'const' alone already means one per class");
+
+  assertFails(`
+    class Hero { const int MAX; }
+    main() { }
+  `, "class constant 'MAX' must have an initializer");
+
+  assertFails(`
+    use console;
+    class Safe {
+      private:
+      static int code = 42;
+    }
+    main() { console.writeln(Safe.code); }
+  `, "member 'Safe.code' is private and can only be used inside class 'Safe'");
+
+  // static не наследуется — компилятор говорит об этом сам, а не рантайм
+  // (раньше Cat.kingdom() компилировался и падал «object has no method»).
+  assertFails(`
+    use console;
+    class Animal { static string function kingdom() { return "звери"; } }
+    class Cat extends Animal { }
+    main() { console.writeln(Cat.kingdom()); }
+  `, "static method 'Animal.kingdom' is not inherited — call 'Animal.kingdom()'");
+
+  assertFails(`
+    use console;
+    class Animal { static int population = 0; }
+    class Cat extends Animal { }
+    main() { console.writeln(Cat.population); }
+  `, "static field 'Animal.population' is not inherited — write 'Animal.population'");
+});
+
+// Прицельные диагностики из GUI-реестра методистов (E5/E8/E9/E13, 2026-08-22):
+// на каждом из этих отказов построено задание книг.
+test('targeted diagnostics: =+, greedy not, comparison types, initializer rows', async () => {
+  assertFails(`
+    main() {
+      int score = 0;
+      score =+ 10;
+    }
+  `, "'=+' is not an operator — did you mean '+='?");
+
+  // '=-' остаётся законным присваиванием отрицательного числа.
+  const minus = compileIdyllium(`
+main() {
+    int lives = 9;
+    lives =- 5;
+}
+`, { file: 'main.idyl' });
+  assert(minus.success, `'=-' must stay legal: ${minus.diagnosticsText}`);
+
+  assertFails(`
+    main() {
+      int coins = 50;
+      if (not coins > 100) { }
+    }
+  `, "'not' takes only what stands right after it — write 'not (coins > …)' to negate the whole comparison");
+
+  assertFails(`
+    main() {
+      array<int, 5> P = [78, 91, 63, 50, 24];
+      if (P > 50) { }
+    }
+  `, "comparison '>' requires numeric operands, got 'array<int, 5>' and 'int'");
+
+  assertFails(`
+    main() {
+      array<array<int, 3>, 2> mx = [[1, 2, 3], [4, 5]];
+    }
+  `, "row 2 of the initializer has 2 values, but 'array<int, 3>' needs 3");
+});
+
+test('radio preselect in two frames survives (groups resolve at add_child)', async () => {
+  // E15 (методисты, 2026-08-22): канон «создал → настроил → add_child»
+  // схлопывал предвыборы двух рамок в одну «бездомную» группу — жил только
+  // последний. Теперь бездомное радио никого не гасит, группа решается
+  // при переезде в коробку (последний добавленный выигрывает).
+  const result = await runIdyllium(`use console;
+use gui;
+use system;
+
+main() {
+    gui.Window w;
+    gui.Frame drinks;
+    gui.Frame snacks;
+
+    gui.RadioButton tea;    tea.is_selected = true;
+    gui.RadioButton mors;
+    gui.RadioButton sweet;  sweet.is_selected = true;
+    gui.RadioButton salty;
+
+    drinks.add_child(tea);
+    drinks.add_child(mors);
+    snacks.add_child(sweet);
+    snacks.add_child(salty);
+    w.add_child(drinks);
+    w.add_child(snacks);
+    console.writeln(tea.is_selected, " ", mors.is_selected, " ", sweet.is_selected, " ", salty.is_selected);
+
+    gui.RadioButton late;
+    late.is_selected = true;
+    drinks.add_child(late);
+    console.writeln(tea.is_selected, " ", late.is_selected, " ", sweet.is_selected);
+    system.exit(0);
+}
+`, {}, { file: 'main.idyl' });
+  assert(
+    result.output.startsWith('true false true false\nfalse true true'),
+    `radio preselect across frames is off: ${JSON.stringify(result.output)}`,
+  );
+});
+
+test('empty TabWidget answers selected_index -1 like an empty ComboBox', async () => {
+  // E16 (методисты, 2026-08-22): у пустого шкафа не бывает тайной «нулевой»
+  // вкладки — канон «-1 = ничего не выбрано» един с ComboBox (книга №16).
+  const result = await runIdyllium(`use console;
+use gui;
+use system;
+
+main() {
+    gui.TabWidget tabs;
+    console.writeln(tabs.selected_index, " ", tabs.tab_count, " [", tabs.selected_title, "]");
+    gui.Label page;
+    tabs.add_tab("Первая", page);
+    console.writeln(tabs.selected_index, " ", tabs.tab_count, " [", tabs.selected_title, "]");
+    tabs.clear_tabs();
+    console.writeln(tabs.selected_index, " ", tabs.tab_count, " [", tabs.selected_title, "]");
+    system.exit(0);
+}
+`, {}, { file: 'main.idyl' });
+  assert(
+    result.output.startsWith('-1 0 []\n0 1 [Первая]\n-1 0 []'),
+    `empty TabWidget canon is off: ${JSON.stringify(result.output)}`,
+  );
+});
+
 test('printing an array of objects goes through the to_string contract', async () => {
   // Вердикт владельца 2026-08-22: контракт to_string элемента открывает
   // печать массива (симметрия со сравнением массивов через equals).
@@ -9181,6 +9890,36 @@ test('user-select joins the IdySS dictionary', async () => {
   assert(all.length === 1 && all[0].value === 'all', 'user-select: all was not parsed');
   const junk = parseIdylliumStyle('user-select: bananas');
   assert(junk.length === 0, 'invalid user-select value slipped through');
+});
+
+test('set_seed scrambles the seed: neighbouring seeds land on different faces', async () => {
+  // Находка методистов 2026-08-22: голый LCG делал первый бросок линейной
+  // функцией сида — create_int(1,6) давал 2 для ВСЕХ сидов 0–250, а
+  // set_seed(time.now().unix) почти не менял грань между запусками.
+  const result = await runIdyllium(`use console;
+use random;
+
+main() {
+    array<int, 6> counts = [0, 0, 0, 0, 0, 0];
+    for (int seed = 0; seed <= 250; seed = seed + 1) {
+        random.set_seed(seed);
+        int roll = random.create_int(1, 6);
+        counts[roll - 1] = counts[roll - 1] + 1;
+    }
+    int faces = 0;
+    for (int i = 0; i < 6; i = i + 1) {
+        if (counts[i] > 0) {
+            faces = faces + 1;
+        }
+    }
+    console.writeln(faces);
+}
+`, {}, { file: 'main.idyl' });
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    Number(result.output.trim()) === 6,
+    `seeds 0..250 must cover all six faces, got faces=${result.output.trim()}`,
+  );
 });
 
 void runTests();

@@ -116,6 +116,13 @@ export class Lexer {
           this.hinted(TokenKind.BangEqual, start, "'=!' is not an operator — did you mean '!=' ?");
           return;
         }
+        // '=+' — та же транспозиция: унарного плюса в языке нет, легального
+        // кода с '=+' не существует, а почти всегда имелось в виду '+='.
+        // ('=-' не трогаем: 'lives =- 5' — законное присваивание -5.)
+        if (this.match('+')) {
+          this.hinted(TokenKind.PlusEqual, start, "'=+' is not an operator — did you mean '+='?");
+          return;
+        }
         this.addSimple(TokenKind.Equal, start);
         return;
       case '!':

@@ -633,13 +633,13 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
         { name: 'path', type: STRING },
         { name: 'handler', type: ANY_TYPE },
       ], VOID, {
-        documentation: 'Регистрирует обработчик GET-запросов на точный путь (например "/hello"). Обработчик — функция вида void function(web.Request req, web.Response res). Повторная регистрация пути — ошибка.',
+        documentation: 'Регистрирует обработчик GET-запросов на путь (например "/hello"). Сегмент в угловых скобках — параметр пути: "/post/<id>" совпадает с "/post/3", значение достаётся через req.param("id"). Точный путь побеждает шаблонный. Обработчик — функция вида void function(web.Request req, web.Response res). Повторная регистрация пути — ошибка.',
       }),
       functionSpec('on_post', [
         { name: 'path', type: STRING },
         { name: 'handler', type: ANY_TYPE },
       ], VOID, {
-        documentation: 'Регистрирует обработчик POST-запросов на точный путь. Тело запроса — в req.body.',
+        documentation: 'Регистрирует обработчик POST-запросов на путь (параметры пути "<id>" работают как в on_get). Тело запроса — в req.body, поля HTML-формы — через req.form("имя").',
       }),
       functionSpec('serve_directory', [{ name: 'path', type: STRING }], VOID, {
         documentation: 'Раздаёт файлы папки как статику (только чтение, только GET, выход из папки закрыт). Адрес "/" отдаёт index.html. Маршруты on_get/on_post проверяются раньше статики.',
@@ -655,6 +655,12 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       functionSpec('query', [{ name: 'name', type: STRING }], STRING, {
         documentation: 'Значение query-параметра адреса (?name=value) по имени; пустая строка, если параметра нет.',
       }),
+      functionSpec('param', [{ name: 'name', type: STRING }], STRING, {
+        documentation: 'Значение параметра пути из маршрута с угловыми скобками: для on_get("/post/<id>", …) и запроса "/post/3" вызов req.param("id") вернёт "3". Всегда строка (число делайте сами через to_int); пустая строка, если параметра нет.',
+      }),
+      functionSpec('form', [{ name: 'name', type: STRING }], STRING, {
+        documentation: 'Значение поля HTML-формы из тела POST-запроса по имени поля (input name="…"). Кодированные проценты и плюсы-пробелы разбираются сами; пустая строка, если поля нет.',
+      }),
     ]),
     typeSpec('Response', [
       propertySpec('status', INT, false, 'Код ответа, 100–599 (по умолчанию 200). Читается в момент отправки ответа.'),
@@ -664,6 +670,16 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       }),
       functionSpec('send_json', [{ name: 'text', type: STRING }], VOID, {
         documentation: 'Отправляет текст ответа как JSON (application/json) — для программ-клиентов и http.get.',
+      }),
+      functionSpec('send_template', [
+        { name: 'path', type: STRING },
+        { name: 'values', type: jsonObject, defaultValue: 'null' },
+      ], VOID, {
+        minArguments: 1,
+        documentation: 'Читает HTML-шаблон из файла (путь — как в file-библиотеке, без магических папок), подставляет значения из json.Object и отправляет страницу (text/html). В шаблоне: {{ключ}} и {{ключ.поле}} — подстановка (текст всегда экранируется: данные — текст, разметка живёт в шаблоне), {% for x in список %}…{% endfor %} — цикл по json.Array, {% if флаг %}…{% else %}…{% endif %} — ветвление по bool. Ошибка шаблона не роняет сервер: в страницу встаёт читаемый маркер [[ … ]].',
+      }),
+      functionSpec('redirect', [{ name: 'path', type: STRING }], VOID, {
+        documentation: 'Отправляет браузер на другой адрес: ответ 303 See Other с заголовком Location. Канон PRG: после успешной обработки POST-формы вызовите res.redirect на GET-страницу — тогда обновление страницы (F5) не отправит форму второй раз.',
       }),
     ]),
   ]));
@@ -1114,7 +1130,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...fontSized,
       propertySpec('title', STRING),
       propertySpec('theme', STRING, false,
-        'Тема оформления окна и всех его виджетов: "default", "idyllium", "dracula", "breeze", "oxygen". Самый низкий приоритет — прямые свойства виджета и IdySS перекрывают тему.'),
+        'Тема оформления окна и всех его виджетов: "default", "idyllium", "dracula", "breeze", "oxygen"; другое значение — ошибка выполнения. Самый низкий приоритет — прямые свойства виджета и IdySS перекрывают тему.'),
       ...styleable,
     ], [
       functionSpec('add_child', [guiChildParameter], VOID),
@@ -1220,7 +1236,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...widgetState,
       ...styleable,
-      propertySpec('resize_mode', STRING),
+      propertySpec('resize_mode', STRING, false, "Режим вписывания картинки: 'fit' (вписать целиком), 'fill' (заполнить с обрезкой), 'stretch' (растянуть), 'original' (без масштабирования). Другое значение — ошибка выполнения."),
     ], [
       functionSpec('set_image', [{ name: 'image', type: imageImage }], VOID),
     ], guiWidget),
@@ -1235,7 +1251,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       propertySpec('placeholder', STRING),
       propertySpec('placeholder_color', COLOR, false,
         'Цвет текста-подсказки (placeholder). Не задан — цвет подбирает тема окна.'),
-      propertySpec('echo_mode', STRING),
+      propertySpec('echo_mode', STRING, false, "Режим отображения ввода: 'normal', 'password' (точки) или 'no_echo' (пусто). Другое значение — ошибка выполнения."),
     ], [], guiWidget),
     typeSpec('TextEdit', [
       ...positioned,
@@ -1262,7 +1278,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       propertySpec('border_color', COLOR),
       ...fontSized,
       propertySpec('orientation', STRING, false,
-        'Ориентация: "horizontal" (по умолчанию) или "vertical". Незнакомое значение молча считается "horizontal" — как незнакомая тема окна.'),
+        'Ориентация: "horizontal" (по умолчанию) или "vertical". Другое значение — ошибка выполнения.'),
     ], [], guiWidget),
     typeSpec('SpinBox', [
       ...positioned,
@@ -1296,7 +1312,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       propertySpec('max', INT),
       propertySpec('step', INT),
       propertySpec('orientation', STRING, false,
-        'Ориентация: "horizontal" (по умолчанию) или "vertical". Незнакомое значение молча считается "horizontal" — как незнакомая тема окна.'),
+        'Ориентация: "horizontal" (по умолчанию) или "vertical". Другое значение — ошибка выполнения.'),
     ], [], guiWidget),
     typeSpec('CheckBox', [
       ...positioned,
@@ -1432,7 +1448,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...styleable,
       ...changeable,
       ...fontSized,
-      propertySpec('selected_index', INT, false, 'Номер открытой вкладки, начиная с 0.'),
+      propertySpec('selected_index', INT, false, 'Номер открытой вкладки, начиная с 0. У пустого шкафа -1 — «ничего не выбрано», как у ComboBox; первая add_tab() делает его 0.'),
       propertySpec('selected_title', STRING, true, 'Заголовок открытой вкладки; меняется через selected_index.'),
       propertySpec('tab_count', INT, true, 'Сколько вкладок сейчас создано.'),
     ], [

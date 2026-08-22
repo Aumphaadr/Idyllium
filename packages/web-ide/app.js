@@ -110,6 +110,9 @@
   let lastSnapshotJson = '';
   let lastRenderedRuntimeOutput = null;
   let fileEditState = null;
+  // Внутренний drag-n-drop дерева файлов: что тащим (пути мира workspace).
+  let internalDragPath = null;
+  let internalDragType = 'file';
   let colorPickerState = { red: 34, green: 145, blue: 188, alpha: 1 };
   let currentProjectId = '';
   let currentProjectName = DEFAULT_PROJECT_NAME;
@@ -160,6 +163,7 @@
   const newFileButton = document.getElementById('new-file-button');
   const newFolderButton = document.getElementById('new-folder-button');
   const fileContextMenu = document.getElementById('file-context-menu');
+  const filePropsModal = document.getElementById('file-props-modal');
   const uploadButton = document.getElementById('upload-button');
   const uploadMenu = document.getElementById('upload-menu');
   const dropArea = document.getElementById('drop-area');
@@ -285,6 +289,9 @@
     if (!editAppMenu.hidden && event.target instanceof Element && !event.target.closest('#edit-app-menu-wrapper')) hideEditAppMenu();
     if (!fileContextMenu.hidden && event.target instanceof Element && !event.target.closest('.file-context-menu') && !event.target.closest('.file-menu-button')) hideFileContextMenu();
   });
+  filePropsModal.addEventListener('click', (event) => {
+    if (event.target === filePropsModal) hideFileProperties();
+  });
   document.addEventListener('keydown', (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
       event.preventDefault();
@@ -292,6 +299,7 @@
       return;
     }
     if (event.key === 'Escape') {
+      hideFileProperties();
       hideFileContextMenu();
       hideThemeMenu();
       hideColorPickerMenu();
@@ -1178,6 +1186,44 @@
       event.preventDefault();
       openFileContextMenu(node, event.clientX, event.clientY);
     });
+
+    // Внутренний перенос: строку можно утащить в папку или на пустое место
+    // списка (в корень). Внешние броски файлов с компьютера это не трогает.
+    row.draggable = true;
+    row.addEventListener('dragstart', (event) => {
+      internalDragPath = node.path;
+      internalDragType = node.type === 'folder' ? 'folder' : 'file';
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', node.name);
+      }
+    });
+    row.addEventListener('dragend', () => {
+      internalDragPath = null;
+      clearMoveTargetHighlight();
+    });
+    if (node.type === 'folder') {
+      row.addEventListener('dragover', (event) => {
+        if (!internalDragPath || internalDragPath === node.path) return;
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+        row.classList.add('drag-target');
+      });
+      row.addEventListener('dragleave', () => {
+        row.classList.remove('drag-target');
+      });
+      row.addEventListener('drop', (event) => {
+        if (!internalDragPath) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const dragged = internalDragPath;
+        const draggedType = internalDragType;
+        internalDragPath = null;
+        clearMoveTargetHighlight();
+        moveProjectItemTo(dragged, draggedType, node.path);
+      });
+    }
 
     if (editing) {
       row.appendChild(createInlineFileEditor(node));
@@ -2716,7 +2762,6 @@
 
     const label = document.createElement('label');
     label.className = 'asset-font-size-label';
-    label.textContent = 'Размер';
 
     const range = document.createElement('input');
     range.type = 'range';
@@ -2741,6 +2786,31 @@
 
     label.appendChild(range);
     label.appendChild(value);
+
+    // Цвет образцов задаётся любой colors-фабрикой из курса: RGB/RGBA/HEX/HSL
+    // или именованной константой (colors.RED). Пусто — цвет темы; мусор —
+    // красная рамка, цвет не трогаем (просьба пользователей, 2026-08-22).
+    const colorField = document.createElement('input');
+    colorField.type = 'text';
+    colorField.className = 'asset-font-color-input';
+    colorField.placeholder = 'colors.RGB(120, 200, 255)';
+    colorField.spellcheck = false;
+    colorField.setAttribute('aria-label', 'Цвет текста предпросмотра — фабрика colors');
+    colorField.addEventListener('input', () => {
+      const text = colorField.value.trim();
+      if (text === '') {
+        content.style.removeProperty('--asset-font-color');
+        colorField.classList.remove('invalid');
+        return;
+      }
+      const parsed = parseColorsFactory(text);
+      if (parsed) {
+        content.style.setProperty('--asset-font-color', parsed);
+        colorField.classList.remove('invalid');
+      } else {
+        colorField.classList.add('invalid');
+      }
+    });
 
     // Caps Lock: с галочкой смотрим на заглавные буквы шрифта, без неё — на
     // строчные. Регистр меняется через CSS, поэтому исходный текст панграмм
@@ -2788,6 +2858,7 @@
     toolbar.appendChild(caps);
     toolbar.appendChild(boldButton);
     toolbar.appendChild(italicButton);
+    toolbar.appendChild(colorField);
     toolbar.appendChild(label);
     content.appendChild(toolbar);
 
@@ -2825,6 +2896,54 @@
     content.appendChild(note);
     return content;
   }
+
+  // Разбор строки-фабрики colors.* в CSS-цвет. Понимает RGB/RGBA/HEX/HSL
+  // и именованные константы модуля colors; регистр фабрик — как в курсе.
+  const COLORS_CONSTANTS = {
+    BLACK: 'rgb(0, 0, 0)', WHITE: 'rgb(255, 255, 255)', RED: 'rgb(255, 0, 0)',
+    GREEN: 'rgb(0, 255, 0)', BLUE: 'rgb(0, 0, 255)', YELLOW: 'rgb(255, 255, 0)',
+    CYAN: 'rgb(0, 255, 255)', MAGENTA: 'rgb(255, 0, 255)', GRAY: 'rgb(128, 128, 128)',
+    LIGHT_GRAY: 'rgb(192, 192, 192)', DARK_RED: 'rgb(128, 0, 0)',
+    DARK_GREEN: 'rgb(0, 128, 0)', DARK_BLUE: 'rgb(0, 0, 128)',
+    OLIVE: 'rgb(128, 128, 0)', TEAL: 'rgb(0, 128, 128)', PURPLE: 'rgb(128, 0, 128)',
+  };
+
+  function parseColorsFactory(text) {
+    const source = text.trim().replace(/;$/, '');
+    const constant = /^colors\.([A-Z_]+)$/.exec(source);
+    if (constant) return COLORS_CONSTANTS[constant[1]] ?? null;
+    const call = /^colors\.(RGB|RGBA|HEX|HSL)\s*\(([^)]*)\)$/.exec(source);
+    if (!call) return null;
+    const kind = call[1];
+    const rawArgs = call[2].split(',').map((item) => item.trim());
+    const byte = (item) => {
+      if (!/^\d{1,3}$/.test(item)) return null;
+      const n = Number(item);
+      return n <= 255 ? n : null;
+    };
+    if (kind === 'RGB' && rawArgs.length === 3) {
+      const [r, g, b] = rawArgs.map(byte);
+      return r !== null && g !== null && b !== null ? `rgb(${r}, ${g}, ${b})` : null;
+    }
+    if (kind === 'RGBA' && rawArgs.length === 4) {
+      const [r, g, b] = rawArgs.slice(0, 3).map(byte);
+      const alpha = /^(0|1|0?\.\d+|1\.0+)$/.test(rawArgs[3]) ? Number(rawArgs[3]) : null;
+      return r !== null && g !== null && b !== null && alpha !== null && alpha <= 1
+        ? `rgba(${r}, ${g}, ${b}, ${alpha})` : null;
+    }
+    if (kind === 'HEX' && rawArgs.length === 1) {
+      const m = /^"#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})"$/.exec(rawArgs[0]);
+      return m ? `#${m[1]}` : null;
+    }
+    if (kind === 'HSL' && rawArgs.length === 3) {
+      if (!rawArgs.every((item) => /^\d{1,3}$/.test(item))) return null;
+      const [h, sPct, l] = rawArgs.map(Number);
+      return h <= 360 && sPct <= 100 && l <= 100 ? `hsl(${h}, ${sPct}%, ${l}%)` : null;
+    }
+    return null;
+  }
+  // отладочная форточка для приёмки
+  window.__parseColorsFactory = parseColorsFactory;
 
   function isCurrentAssetPreview(file, preview, generation) {
     return generation === assetViewerGeneration
@@ -3174,7 +3293,7 @@
     scheduleAutosave();
   }
 
-  function renameProjectItem(path, type, newPath) {
+  function renameProjectItem(path, type, newPath, doneMessage) {
     path = normalizeWorkspacePath(path);
     newPath = normalizeWorkspacePath(newPath);
     if (path === newPath) {
@@ -3194,7 +3313,7 @@
       if (currentFile === path) currentFile = newPath;
       expandedFolders.add(parentPath(newPath));
       openFile(currentFile);
-      setStatus('Файл переименован');
+      setStatus(doneMessage || 'Файл переименован');
       scheduleAutosave();
       return;
     }
@@ -3235,8 +3354,36 @@
     if (currentFile.startsWith(prefix)) currentFile = newPath + currentFile.slice(path.length);
 
     openFile(currentFile);
-    setStatus('Папка переименована');
+    setStatus(doneMessage || 'Папка переименована');
     scheduleAutosave();
+  }
+
+  // Перенос строки дерева в папку (или в корень) внутренним drag-n-drop.
+  function moveProjectItemTo(sourcePath, type, targetFolder) {
+    sourcePath = normalizeWorkspacePath(sourcePath);
+    targetFolder = normalizeWorkspacePath(targetFolder);
+    if (targetFolder !== WORKSPACE_ROOT && !folders.has(targetFolder)) {
+      setStatus('Папка не найдена', true);
+      return;
+    }
+    if (parentPath(sourcePath) === targetFolder) return;
+    if (type === 'folder' && (targetFolder === sourcePath || targetFolder.startsWith(sourcePath + '/'))) {
+      setStatus('Нельзя переместить папку внутрь самой себя', true);
+      return;
+    }
+    expandedFolders.add(targetFolder);
+    renameProjectItem(
+      sourcePath,
+      type,
+      targetFolder + '/' + itemName(sourcePath),
+      type === 'folder' ? 'Папка перемещена' : 'Файл перемещён',
+    );
+  }
+
+  function clearMoveTargetHighlight() {
+    for (const element of fileList.querySelectorAll('.drag-target')) {
+      element.classList.remove('drag-target');
+    }
   }
 
   function duplicateProjectItem(path, type, newPath) {
@@ -3345,6 +3492,7 @@
       ? [
           ['Новый файл', () => startCreateItemInline('file', WORKSPACE_ROOT)],
           ['Новая папка', () => startCreateItemInline('folder', WORKSPACE_ROOT)],
+          ['Свойства', () => showFileProperties(WORKSPACE_ROOT, 'folder')],
         ]
       : node.type === 'folder'
       ? [
@@ -3352,12 +3500,18 @@
           ['Новая папка', () => startCreateItemInline('folder', node.path)],
           ['Переименовать', () => startRenameItemInline(node.path, 'folder')],
           ['Дублировать', () => startDuplicateItemInline(node.path, 'folder')],
+          ['Копировать имя', () => copyProjectItemText(itemName(node.path), 'Имя скопировано')],
+          ['Копировать путь', () => copyProjectItemText(studentPath(node.path), 'Путь скопирован')],
+          ['Свойства', () => showFileProperties(node.path, 'folder')],
           ['Удалить', () => openDeleteConfirm(node.path, 'folder', left, top)],
         ]
       : [
           ['Переименовать', () => startRenameItemInline(node.path, 'file')],
           ['Дублировать', () => startDuplicateItemInline(node.path, 'file')],
           ['Скачать', () => downloadProjectFile(node.path)],
+          ['Копировать имя', () => copyProjectItemText(itemName(node.path), 'Имя скопировано')],
+          ['Копировать путь', () => copyProjectItemText(studentPath(node.path), 'Путь скопирован')],
+          ['Свойства', () => showFileProperties(node.path, 'file')],
           ['Удалить', () => openDeleteConfirm(node.path, 'file', left, top)],
         ];
 
@@ -3374,6 +3528,257 @@
     }
 
     positionFileContextMenu(left, top);
+  }
+
+  function itemName(path) {
+    return normalizeWorkspacePath(path).split('/').pop() || '';
+  }
+
+  // Путь ученика — тот, что пишется в file.open(): относительно корня проекта.
+  function studentPath(path) {
+    const normalized = normalizeWorkspacePath(path);
+    if (normalized === WORKSPACE_ROOT) return '';
+    return normalized.startsWith(WORKSPACE_ROOT + '/') ? normalized.slice(WORKSPACE_ROOT.length + 1) : normalized;
+  }
+
+  function copyProjectItemText(text, doneMessage) {
+    const fallbackCopy = () => {
+      const scratch = document.createElement('textarea');
+      scratch.value = text;
+      scratch.style.position = 'fixed';
+      scratch.style.opacity = '0';
+      document.body.appendChild(scratch);
+      scratch.select();
+      let copied = false;
+      try { copied = document.execCommand('copy'); } catch (error) { copied = false; }
+      scratch.remove();
+      setStatus(copied ? doneMessage : 'Не удалось скопировать', !copied);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => setStatus(doneMessage), fallbackCopy);
+    } else {
+      fallbackCopy();
+    }
+  }
+
+  // ── «Свойства» файла и папки ──────────────────────────────────────────
+
+  function fileItemByteSize(item) {
+    if (!item) return null;
+    if (item.bytes instanceof Uint8Array) return item.bytes.length;
+    if (typeof item.content === 'string') return new TextEncoder().encode(item.content).length;
+    return null;
+  }
+
+  function formatByteSize(size) {
+    if (size === null) return 'неизвестно';
+    if (size < 1024) return `${size} Б`;
+    const units = [['КБ', 1024], ['МБ', 1024 * 1024], ['ГБ', 1024 * 1024 * 1024]];
+    for (let i = units.length - 1; i >= 0; i -= 1) {
+      if (size >= units[i][1]) {
+        const value = size / units[i][1];
+        return `${value >= 100 ? Math.round(value) : value.toFixed(1).replace('.', ',')} ${units[i][0]} (${size.toLocaleString('ru-RU')} Б)`;
+      }
+    }
+    return `${size} Б`;
+  }
+
+  const FILE_EXTENSION_TYPES = {
+    idyl: 'программа Idyllium',
+    txt: 'текстовый файл',
+    md: 'текст с разметкой (Markdown)',
+    html: 'веб-страница (HTML)',
+    css: 'таблица стилей (CSS)',
+    js: 'скрипт JavaScript',
+    json: 'данные JSON',
+    csv: 'таблица (CSV)',
+    svg: 'векторная картинка (SVG)',
+    png: 'картинка (PNG)',
+    jpg: 'картинка (JPEG)',
+    jpeg: 'картинка (JPEG)',
+    gif: 'картинка (GIF)',
+    webp: 'картинка (WebP)',
+    bmp: 'картинка (BMP)',
+    ico: 'значок (ICO)',
+    wav: 'звук (WAV)',
+    mp3: 'звук (MP3)',
+    ogg: 'звук (OGG)',
+    ttf: 'шрифт (TTF)',
+    otf: 'шрифт (OTF)',
+    woff: 'шрифт (WOFF)',
+    woff2: 'шрифт (WOFF2)',
+    db: 'база данных SQLite',
+    sqlite: 'база данных SQLite',
+    zip: 'архив ZIP',
+    pdf: 'документ PDF',
+  };
+
+  function extensionTypeLabel(name) {
+    const dot = name.lastIndexOf('.');
+    if (dot <= 0) return 'без расширения';
+    const extension = name.slice(dot + 1).toLowerCase();
+    return FILE_EXTENSION_TYPES[extension] || `неизвестное расширение «.${extension}»`;
+  }
+
+  // Двоичные файлы проекта живут с kind 'asset' и телом в bytes;
+  // всё остальное — текст (никакого kind 'binary' в IDE нет).
+  function isBinaryFileItem(item) {
+    return Boolean(item) && item.bytes instanceof Uint8Array;
+  }
+
+  // «Истинный тип» — по содержимому: магические байты для двоичных файлов,
+  // текст — как есть. Ученик видит, когда расширение врёт.
+  function sniffContentType(item) {
+    if (!item) return 'неизвестно';
+    if (!isBinaryFileItem(item)) {
+      const content = item.content || '';
+      if (/^\s*<svg[\s>]/iu.test(content)) return 'векторная картинка (SVG)';
+      return 'текст (UTF-8)';
+    }
+    const bytes = item.bytes;
+    if (bytes.length === 0) return 'двоичные данные';
+    const ascii = (start, text) => {
+      for (let i = 0; i < text.length; i += 1) {
+        if (bytes[start + i] !== text.charCodeAt(i)) return false;
+      }
+      return true;
+    };
+    if (bytes[0] === 0x89 && ascii(1, 'PNG')) return 'картинка (PNG)';
+    if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'картинка (JPEG)';
+    if (ascii(0, 'GIF87a') || ascii(0, 'GIF89a')) return 'картинка (GIF)';
+    if (ascii(0, 'RIFF') && ascii(8, 'WEBP')) return 'картинка (WebP)';
+    if (ascii(0, 'RIFF') && ascii(8, 'WAVE')) return 'звук (WAV)';
+    if (ascii(0, 'BM')) return 'картинка (BMP)';
+    if (ascii(0, 'OggS')) return 'звук (OGG)';
+    if (ascii(0, 'ID3') || (bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0)) return 'звук (MP3)';
+    if (ascii(0, 'SQLite format 3')) return 'база данных SQLite';
+    if (ascii(0, 'PK') && bytes[2] === 3 && bytes[3] === 4) return 'архив ZIP';
+    if (ascii(0, '%PDF')) return 'документ PDF';
+    if (ascii(0, 'OTTO')) return 'шрифт (OTF)';
+    if (bytes[0] === 0 && bytes[1] === 1 && bytes[2] === 0 && bytes[3] === 0) return 'шрифт (TTF)';
+    if (ascii(0, 'wOFF')) return 'шрифт (WOFF)';
+    if (ascii(0, 'wOF2')) return 'шрифт (WOFF2)';
+    if (bytes[0] === 0 && bytes[1] === 0 && bytes[2] === 1 && bytes[3] === 0) return 'значок (ICO)';
+    return 'двоичные данные';
+  }
+
+  // Расширения текстового жанра: текст внутри них — норма, не тревога.
+  const TEXTUAL_EXTENSIONS = new Set(['idyl', 'txt', 'md', 'html', 'css', 'js', 'json', 'csv', 'svg']);
+
+  // Предупреждение «файл выглядит не тем, чем назван»: текст в CSS — норма,
+  // текст в «картинке (JPEG)» и PNG-байты под именем .jpeg — тревога.
+  function filePropsMismatchNote(path, item) {
+    const name = itemName(path);
+    const extensionLabel = extensionTypeLabel(name);
+    if (extensionLabel === 'без расширения' || extensionLabel.startsWith('неизвестное')) return null;
+    const contentLabel = sniffContentType(item);
+    if (!isBinaryFileItem(item)) {
+      const dot = name.lastIndexOf('.');
+      const extension = dot > 0 ? name.slice(dot + 1).toLowerCase() : '';
+      if (TEXTUAL_EXTENSIONS.has(extension)) return null;
+    } else if (extensionLabel === contentLabel) {
+      return null;
+    }
+    return `Расширение обещает «${extensionLabel}», а внутри — «${contentLabel}»: файл выглядит не тем, чем назван.`;
+  }
+
+  function folderSummary(path) {
+    const prefix = path === WORKSPACE_ROOT ? WORKSPACE_ROOT + '/' : path + '/';
+    let fileCount = 0;
+    let totalSize = 0;
+    let sizeKnown = true;
+    for (const [file, item] of files.entries()) {
+      if (!file.startsWith(prefix)) continue;
+      fileCount += 1;
+      const size = fileItemByteSize(item);
+      if (size === null) sizeKnown = false;
+      else totalSize += size;
+    }
+    let folderCount = 0;
+    for (const folder of folders) {
+      if (folder.startsWith(prefix)) folderCount += 1;
+    }
+    return { fileCount, folderCount, totalSize: sizeKnown ? totalSize : null };
+  }
+
+  function showFileProperties(path, type) {
+    path = normalizeWorkspacePath(path);
+    const rows = [];
+    let title = itemName(path);
+    if (type === 'file') {
+      const item = files.get(path);
+      if (!item) {
+        setStatus('Файл не найден', true);
+        return;
+      }
+      rows.push(['Имя', itemName(path)]);
+      rows.push(['Путь', studentPath(path)]);
+      rows.push(['Размер', formatByteSize(fileItemByteSize(item))]);
+      rows.push(['Тип по расширению', extensionTypeLabel(itemName(path))]);
+      rows.push(['Истинный тип', sniffContentType(item)]);
+      if (!isBinaryFileItem(item) && typeof item.content === 'string') {
+        rows.push(['Строк', String(item.content === '' ? 0 : item.content.split('\n').length)]);
+        rows.push(['Символов', String(Array.from(item.content).length)]);
+      }
+    } else {
+      const isRoot = path === WORKSPACE_ROOT;
+      title = isRoot ? 'Проект' : itemName(path);
+      const summary = folderSummary(path);
+      rows.push(['Имя', isRoot ? 'проект (корень)' : itemName(path)]);
+      if (!isRoot) rows.push(['Путь', studentPath(path)]);
+      rows.push(['Файлов внутри', String(summary.fileCount)]);
+      rows.push(['Папок внутри', String(summary.folderCount)]);
+      rows.push(['Суммарный размер', formatByteSize(summary.totalSize)]);
+    }
+
+    filePropsModal.replaceChildren();
+    const card = document.createElement('div');
+    card.className = 'file-props-card';
+
+    const heading = document.createElement('h3');
+    heading.className = 'file-props-title';
+    heading.textContent = title;
+    card.appendChild(heading);
+
+    const table = document.createElement('table');
+    table.className = 'file-props-table';
+    for (const [label, value] of rows) {
+      const row = document.createElement('tr');
+      const labelCell = document.createElement('td');
+      labelCell.textContent = label;
+      const valueCell = document.createElement('td');
+      valueCell.textContent = value;
+      row.append(labelCell, valueCell);
+      table.appendChild(row);
+    }
+    card.appendChild(table);
+
+    if (type === 'file') {
+      const mismatch = filePropsMismatchNote(path, files.get(path));
+      if (mismatch) {
+        const note = document.createElement('p');
+        note.className = 'file-props-note';
+        note.textContent = mismatch;
+        card.appendChild(note);
+      }
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'file-props-actions';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.textContent = 'Закрыть';
+    close.addEventListener('click', hideFileProperties);
+    actions.appendChild(close);
+    card.appendChild(actions);
+
+    filePropsModal.appendChild(card);
+    filePropsModal.hidden = false;
+    close.focus();
+  }
+
+  function hideFileProperties() {
+    filePropsModal.hidden = true;
   }
 
   function positionFileContextMenu(left, top) {
@@ -3589,6 +3994,79 @@
     return left.localeCompare(right, 'ru');
   }
 
+  // Снимок entries обязан случиться СИНХРОННО в обработчике drop —
+  // после первого await браузер отзывает DataTransferItem.
+  function snapshotDroppedEntries(dataTransfer) {
+    const items = dataTransfer && dataTransfer.items;
+    if (!items) return null;
+    const entries = [];
+    for (const item of items) {
+      if (item.kind !== 'file') continue;
+      const entry = typeof item.webkitGetAsEntry === 'function' ? item.webkitGetAsEntry() : null;
+      if (entry) entries.push(entry);
+    }
+    return entries.length > 0 ? entries : null;
+  }
+
+  // Бросили папку с компьютера — обходим её целиком и переносим дерево
+  // в проект как есть; плоский бросок файлов идёт прежним путём.
+  async function loadDroppedTransfer(entries, plainFiles) {
+    if (!entries || !entries.some((entry) => entry.isDirectory)) {
+      await loadDroppedFiles(plainFiles);
+      return;
+    }
+
+    const collected = [];
+    const folderPaths = [];
+    const walk = async (entry, prefix) => {
+      if (entry.isFile) {
+        const file = await new Promise((resolve, reject) => entry.file(resolve, reject));
+        collected.push({ file, path: prefix + file.name });
+        return;
+      }
+      if (!entry.isDirectory) return;
+      const folderPath = prefix + entry.name;
+      folderPaths.push(folderPath);
+      const reader = entry.createReader();
+      // readEntries отдаёт пачками (обычно по 100) — читаем до пустой.
+      while (true) {
+        const batch = await new Promise((resolve, reject) => reader.readEntries(resolve, reject));
+        if (batch.length === 0) break;
+        for (const child of batch) await walk(child, folderPath + '/');
+      }
+    };
+    for (const entry of entries) await walk(entry, '');
+
+    saveCurrentEditor();
+    for (const folderPath of folderPaths) {
+      const normalized = normalizeWorkspacePath(folderPath);
+      addProjectFolder(normalized);
+      expandedFolders.add(normalized);
+    }
+    let lastPath = null;
+    let loadedCurrentFile = false;
+    let loadedCount = 0;
+    let skippedCount = 0;
+    for (const item of collected) {
+      const loadedPath = await loadExternalFile(item.file, item.path);
+      if (loadedPath) {
+        if (loadedPath === currentFile) loadedCurrentFile = true;
+        lastPath = loadedPath;
+        loadedCount++;
+      } else {
+        skippedCount++;
+      }
+    }
+
+    hideUploadMenu();
+    if (loadedCurrentFile) editorReady = false;
+    if (lastPath) openFile(lastPath);
+    else renderFiles();
+    scheduleAutosave();
+    const skippedText = skippedCount > 0 ? `, пропущено: ${skippedCount}` : '';
+    setStatus(`Загружено файлов: ${loadedCount} (папок: ${folderPaths.length})${skippedText}`);
+  }
+
   async function loadDroppedFiles(fileList) {
     const selected = Array.from(fileList || []);
     if (selected.length === 0) return;
@@ -3617,12 +4095,12 @@
     setStatus(`Загружено файлов: ${loadedCount}${skippedText}`);
   }
 
-  async function loadExternalFile(file) {
+  async function loadExternalFile(file, explicitPath) {
     if (file.name.toLowerCase().endsWith('.zip')) {
       return importProjectZip(new Uint8Array(await file.arrayBuffer()));
     }
 
-    const path = normalizeWorkspacePath(file.webkitRelativePath || file.name);
+    const path = normalizeWorkspacePath(explicitPath || file.webkitRelativePath || file.name);
     if (path === WORKSPACE_ROOT || folders.has(path) || hasFileAncestor(path)) {
       setStatus(`Нельзя загрузить файл по пути «${shortFileName(path) || path}»`, true);
       return null;
@@ -3657,7 +4135,13 @@
     if (!rehearsalWorkerPromise) {
       rehearsalWorkerPromise = (async () => {
         if (!('serviceWorker' in navigator)) return null;
-        const registration = await navigator.serviceWorker.register('sw-preview.js');
+        // Версия в query — стандартное версионирование SW: смена версии сайта
+        // гарантирует свежий воркер даже сквозь кэш GitHub Pages.
+        const siteVersion = await fetch('version.json')
+          .then((response) => (response.ok ? response.json() : null))
+          .then((data) => (data && data.version ? String(data.version) : ''))
+          .catch(() => '');
+        const registration = await navigator.serviceWorker.register(siteVersion ? `sw-preview.js?v=${siteVersion}` : 'sw-preview.js');
         await navigator.serviceWorker.ready;
         const worker = registration.active;
         if (!worker) return null;
@@ -5184,7 +5668,8 @@
       });
     }
     dropArea.addEventListener('drop', (event) => {
-      loadDroppedFiles(event.dataTransfer && event.dataTransfer.files);
+      const entries = snapshotDroppedEntries(event.dataTransfer);
+      loadDroppedTransfer(entries, event.dataTransfer && event.dataTransfer.files);
     });
 
     let fileListDragDepth = 0;
@@ -5211,7 +5696,25 @@
       event.preventDefault();
       fileListDragDepth = 0;
       fileList.classList.remove('drag-over');
-      loadDroppedFiles(event.dataTransfer && event.dataTransfer.files);
+      const entries = snapshotDroppedEntries(event.dataTransfer);
+      loadDroppedTransfer(entries, event.dataTransfer && event.dataTransfer.files);
+    });
+
+    // Внутренний перенос: строку дерева можно утащить в папку (или на пустое
+    // место списка — в корень). Механика пути — та же, что у переименования.
+    fileList.addEventListener('dragover', (event) => {
+      if (!internalDragPath) return;
+      event.preventDefault();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+    });
+    fileList.addEventListener('drop', (event) => {
+      if (!internalDragPath) return;
+      event.preventDefault();
+      const dragged = internalDragPath;
+      const draggedType = internalDragType;
+      internalDragPath = null;
+      clearMoveTargetHighlight();
+      moveProjectItemTo(dragged, draggedType, WORKSPACE_ROOT);
     });
   }
 

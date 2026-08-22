@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-21T20:38:34.310Z",
+  "generatedAt": "2026-08-22T15:10:06.309Z",
   "sourceRoot": "packages/docs",
   "sections": [
     {
@@ -1334,6 +1334,16 @@
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
+        },
+        {
+          "id": "web-templates",
+          "title": "Сайт из шаблонов",
+          "subtitle": "send_template, {{дырки}} и {% for %}, параметры пути, формы и redirect",
+          "file": "content/network/web-templates.html",
+          "sourceFile": "docs/manual-content/network/web-templates.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": false
         }
       ]
     }

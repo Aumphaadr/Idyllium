@@ -93,7 +93,7 @@ main() {
 true
 false</idyl-output-block>
 
-      <p>Сначала проверьте строку — и только потом зовите <code>to_int()</code> или <code>to_float()</code>.</p>
+      <p>Сначала проверьте строку — и только потом зовите <code>to_int()</code> или <code>to_float()</code>. Контракт простой: <code>is_int()</code> говорит «да» ровно тем строкам, которые примет <code>to_int()</code>, а <code>is_float()</code> — тем, которые примет <code>to_float()</code>. Поэтому <code>"50".is_float()</code> — тоже <code>true</code>: пятьдесят — законное число и без точки, и <code>to_float("50")</code> честно вернёт <code>50</code>.</p>
     </div>
 
     <div class="docs-section">

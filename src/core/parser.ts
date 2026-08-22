@@ -390,13 +390,21 @@ export class Parser {
         continue;
       }
 
+      // Класс-константа: const в теле класса — всегда одна на класс
+      // (Hero.MAX_LEVEL), слова static рядом не требуется и не принимается.
       if (this.check(TokenKind.KwConst)) {
-        const token = this.advance();
-        this.error(token.range, 'const class fields are not supported; use a top-level or local constant');
+        this.advance();
+        members.push(this.finishClassFieldDeclaration(this.parseTypeName(), currentAccess, true, true));
         continue;
       }
 
       const isStatic = this.match(TokenKind.KwStatic);
+      if (isStatic && this.check(TokenKind.KwConst)) {
+        this.error(this.peek().range, "class constants are written without 'static' — 'const' alone already means one per class");
+        this.advance();
+        members.push(this.finishClassFieldDeclaration(this.parseTypeName(), currentAccess, true, true));
+        continue;
+      }
       if (this.check(TokenKind.KwEvent)) {
         const eventToken = this.advance();
         if (isStatic) {
@@ -442,10 +450,7 @@ export class Parser {
         if (this.match(TokenKind.KwFunction)) {
           members.push(this.finishClassMethodDeclaration(declaredType, isStatic, currentAccess));
         } else {
-          if (isStatic) {
-            this.error(declaredType.range, 'static fields are not supported yet');
-          }
-          members.push(this.finishClassFieldDeclaration(declaredType, currentAccess));
+          members.push(this.finishClassFieldDeclaration(declaredType, currentAccess, isStatic));
         }
         continue;
       }
@@ -466,12 +471,20 @@ export class Parser {
     };
   }
 
-  private finishClassFieldDeclaration(declaredType: TypeName, access: AccessModifier): ClassFieldDeclaration {
+  private finishClassFieldDeclaration(
+    declaredType: TypeName,
+    access: AccessModifier,
+    isStatic = false,
+    isConst = false,
+  ): ClassFieldDeclaration {
     const fields: ClassFieldDeclaration['fields'] = [];
 
     do {
-      const name = this.consumeName('expected field name');
+      const name = this.consumeName(isConst ? 'expected constant name' : 'expected field name');
       const initializer = this.match(TokenKind.Equal) ? this.parseExpression() : null;
+      if (isConst && !initializer) {
+        this.error(name.range, `class constant '${name.lexeme}' must have an initializer`);
+      }
       fields.push({
         kind: 'FieldDeclarator',
         name: name.lexeme,
@@ -481,12 +494,17 @@ export class Parser {
       });
     } while (this.match(TokenKind.Comma));
 
-    const semicolon = this.consume(TokenKind.Semicolon, "expected ';' after field declaration");
+    const semicolon = this.consume(
+      TokenKind.Semicolon,
+      isConst ? "expected ';' after class constant" : "expected ';' after field declaration",
+    );
     return {
       kind: 'ClassFieldDeclaration',
       declaredType,
       fields,
       access,
+      isStatic,
+      isConst,
       range: { start: declaredType.range.start, end: semicolon.range.end },
     };
   }
@@ -1114,10 +1132,16 @@ export class Parser {
       } else {
         this.consume(TokenKind.Comma, "expected ',' after array element type");
         if (this.check(TokenKind.Identifier)) {
-          // Размер именованной константой: array<int, L>
+          // Размер именованной константой: array<int, L> — или классовой,
+          // через точку: array<int, Hero.MAX_LEVEL>.
           const nameToken = this.advance();
           sizeName = nameToken.lexeme;
           sizeRange = nameToken.range;
+          if (this.match(TokenKind.Dot)) {
+            const memberToken = this.consume(TokenKind.Identifier, 'expected constant name after \'.\'');
+            sizeName = `${sizeName}.${memberToken.lexeme}`;
+            sizeRange = { start: nameToken.range.start, end: memberToken.range.end };
+          }
         } else {
           const sizeToken = this.consume(TokenKind.IntLiteral, 'expected array size (an integer or a named constant)');
           size = typeof sizeToken.literal === 'number' ? sizeToken.literal : 0;

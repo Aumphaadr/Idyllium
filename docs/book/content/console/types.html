@@ -136,6 +136,32 @@ main() {
     </div>
 
     <div class="docs-section">
+      <h2>Кто обрезает значение?</h2>
+      <p>Важная тонкость: оборачивает число не оператор, а <strong>ячейка, в которую вы его кладёте</strong>. Операторы <code>+</code>, <code>-</code>, <code>*</code> считают в обычных, точных числах Idyllium — они не знают и не должны знать, куда вы отправите результат. Обрезка случается в момент записи в <code>types</code>-переменную:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use types;
+
+main() {
+    types.uint8 a = 200;
+    types.uint8 b = 100;
+
+    console.writeln(a + b);    // сумма ещё никуда не записана
+
+    types.uint8 c = a + b;     // а вот теперь — записана в uint8
+    console.writeln(c);
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>300
+44</idyl-output-block>
+
+      <p>Одна и та же сумма: на печать уехало честное <code>300</code>, а в ячейку <code>uint8</code> поместилось только <code>300 − 256 = 44</code>. Пока результат не положили в ограниченный тип, он остаётся обычным числом.</p>
+      <p>Методы — другое дело. <code>.shift_left()</code>, <code>.bit_and()</code> и их соседи по главе живут <em>внутри</em> ячейки и возвращают результат её типа: <code>a.shift_left(1)</code> для нашего <code>a = 200</code> даст <code>144</code>, а не <code>400</code> — бит, вышедший за восьмую позицию, отброшен сразу. Запомнить легко: оператор считает <em>числа</em>, метод крутит <em>биты ячейки</em>.</p>
+    </div>
+
+    <div class="docs-section">
       <h2>Двоичное представление: метод <code>.to_bin()</code></h2>
       <p>Любой тип из <code>types</code> умеет превращаться в строку из нулей и единиц:</p>
 
