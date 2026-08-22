@@ -26,6 +26,10 @@ const ERROR_CASES: readonly ErrorCase[] = [
     file: `${ROOT}/11_errors/03_missing_column.idyl`,
     includes: "runtime error: sqlite result has no column 'score'",
   },
+  {
+    file: `${ROOT}/11_errors/04_int64_overflow_bind.idyl`,
+    includes: "runtime error: sqlite cannot store 123456789012345678901234567890: the value is outside the INTEGER column range (types.int64)",
+  },
 ];
 
 function assert(condition: boolean, message: string): asserts condition {

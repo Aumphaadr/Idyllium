@@ -72,7 +72,7 @@ export class IdylliumRuntimeError extends Error {
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-export const IDYLLIUM_VERSION = '1.5.0';
+export const IDYLLIUM_VERSION = '1.5.1';
 
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform(): string {
@@ -478,7 +478,8 @@ export class IdylliumArray {
   }
 
   static create(size: number, defaultFactory: () => unknown, dynamic: boolean): IdylliumArray {
-    const normalizedSize = Math.max(0, Math.trunc(size));
+    assertCreatableArraySize(size);
+    const normalizedSize = Math.max(0, Math.trunc(Number(size)));
     return new IdylliumArray(
       Array.from({ length: normalizedSize }, () => defaultFactory()),
       dynamic,
@@ -492,7 +493,8 @@ export class IdylliumArray {
     defaultFactory: IdylliumArrayDefaultFactory,
     dynamic: boolean,
   ): Promise<IdylliumArray> {
-    const normalizedSize = Math.max(0, Math.trunc(size));
+    assertCreatableArraySize(size);
+    const normalizedSize = Math.max(0, Math.trunc(Number(size)));
     const items: unknown[] = [];
     for (let index = 0; index < normalizedSize; index += 1) {
       items.push(await defaultFactory());
@@ -525,11 +527,12 @@ export class IdylliumArray {
 
     const actualSize = value.items.length;
     if (!dynamic && staticSize !== null && actualSize !== staticSize) {
-      const sourceType = value.dynamic ? 'dyn_array' : 'array';
+      // Без внутреннего слова dyn_array: ученик писал литерал или массив,
+      // а не «динамический массив» из механики конвертера (E13).
       throw new IdylliumRuntimeError(
         file,
         line,
-        `cannot convert ${sourceType} of size ${actualSize} to '${targetType}' (expected size ${staticSize})`,
+        `the value has ${actualSize} element${actualSize === 1 ? '' : 's'}, but '${targetType}' needs ${staticSize}`,
       );
     }
 
@@ -819,12 +822,11 @@ function createJsonBase(typeName: JsonRuntimeValue['__idylliumType'], kind: Json
     throwJsonExpected(obj, 'string', file, line);
   });
   obj.to_int = contextFunction((file: string, line: number) => {
+    // int точен на любом размере (канон 2026-08-22) — у to_int() нет потолка;
+    // границы остались только у ЯЧЕЕК to_int64()/to_uint64().
     const integer = jsonIntegerValue(obj, 'int', file, line);
-    if (typeof integer === 'number' && Number.isSafeInteger(integer)) return integer;
-    if (typeof integer === 'bigint' && integer >= BigInt(Number.MIN_SAFE_INTEGER) && integer <= BigInt(Number.MAX_SAFE_INTEGER)) {
-      return Number(integer);
-    }
-    throw new IdylliumRuntimeError(file, line, 'json integer is outside the int range; use to_int64() or to_uint64()');
+    if (typeof integer === 'number') return integer;
+    return exactIntegerResult(integer);
   });
   obj.to_int64 = contextFunction((file: string, line: number) => {
     const integer = jsonIntegerAsBigInt(obj, 'int64', file, line);
@@ -1270,17 +1272,13 @@ function isSqliteRuntimeValue(value: unknown): value is SqliteRuntimeValueObject
     && typeof value.__sqliteKind === 'string';
 }
 
-function sqliteValueToInt(value: SqliteRuntimeValueObject, file: string, line: number): number {
+function sqliteValueToInt(value: SqliteRuntimeValueObject, file: string, line: number): number | bigint {
   expectSqliteValueKind(value, 'integer', 'int', file, line);
+  // int точен на любом размере (канон 2026-08-22) — потолка у to_int() нет;
+  // границы остались только у ячейки to_int64().
   const integer = value.__sqliteValue;
-  if (typeof integer === 'number') {
-    if (Number.isSafeInteger(integer)) return integer;
-  } else if (typeof integer === 'bigint') {
-    const min = BigInt(Number.MIN_SAFE_INTEGER);
-    const max = BigInt(Number.MAX_SAFE_INTEGER);
-    if (integer >= min && integer <= max) return Number(integer);
-  }
-  throw new IdylliumRuntimeError(file, line, 'sqlite integer is outside the int range; use to_int64()');
+  if (typeof integer === 'number') return integer;
+  return exactIntegerResult(integer as bigint);
 }
 
 function sqliteValueToInt64(value: SqliteRuntimeValueObject, file: string, line: number): bigint {
@@ -1555,7 +1553,11 @@ function createSqliteStatementObject(state: SqliteRuntimeStatementState): Runtim
     bindSqliteStatement(
       state,
       name,
-      sqliteTypedBinding('integer', runtimeInteger(value, 'sqlite.Statement.bind_int64() value', file, line)),
+      sqliteTypedBinding('integer', (() => {
+        const integer = runtimeInteger(value, 'sqlite.Statement.bind_int64() value', file, line);
+        assertSqliteInt64Range(integer, file, line);
+        return integer;
+      })()),
       file,
       line,
     );
@@ -1598,6 +1600,16 @@ function createSqliteStatementObject(state: SqliteRuntimeStatementState): Runtim
   return obj;
 }
 
+// INTEGER-колонка SQLite — ячейка int64: значение за её границей раньше
+// МОЛЧА клампилось/оборачивалось драйвером (находка ломателей 2026-08-22).
+function assertSqliteInt64Range(value: bigint, file: string, line: number): void {
+  const minimum = -(1n << 63n);
+  const maximum = (1n << 63n) - 1n;
+  if (value < minimum || value > maximum) {
+    throw new IdylliumRuntimeError(file, line, `sqlite cannot store ${value}: the value is outside the INTEGER column range (types.int64)`);
+  }
+}
+
 function sqliteBindingFromValue(value: unknown, file: string, line: number): RuntimeSqliteBindable {
   if (value === null || isRuntimeNullValue(value)) return null;
 
@@ -1613,7 +1625,10 @@ function sqliteBindingFromValue(value: unknown, file: string, line: number): Run
     if (value.__sqliteValue instanceof Uint8Array) return new Uint8Array(value.__sqliteValue);
   }
 
-  if (typeof value === 'bigint') return sqliteTypedBinding('integer', value);
+  if (typeof value === 'bigint') {
+    assertSqliteInt64Range(value, file, line);
+    return sqliteTypedBinding('integer', value);
+  }
   if (typeof value === 'number' && Number.isFinite(value)) {
     return sqliteTypedBinding(Number.isInteger(value) ? 'integer' : 'real', value);
   }
@@ -2344,7 +2359,7 @@ export interface IdylliumRuntime {
     write(...values: unknown[]): Promise<void>;
     writeln(...values: unknown[]): Promise<void>;
     clear(): Promise<void>;
-    get_int(file?: string, line?: number): Promise<number>;
+    get_int(file?: string, line?: number): Promise<number | bigint>;
     get_float(file?: string, line?: number): Promise<number>;
     get_string(): Promise<string>;
     set_precision(file: string, line: number, digits: number): Promise<void>;
@@ -2601,7 +2616,14 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
 
   function createInputFile(filePath: string, sourceFile: string, line: number): Record<string, unknown> {
     const shownPath = humanizeFsPaths(filePath);
-    if (!fileSystem.exists(filePath)) {
+    let fileExists: boolean;
+    try {
+      fileExists = fileSystem.exists(filePath);
+    } catch (error) {
+      // страж песочницы (path is outside the project) — в детской обёртке
+      throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for reading: ${humanizeFsPaths(errorMessage(error))}`);
+    }
+    if (!fileExists) {
       throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for reading: file does not exist`);
     }
     if (!runtimeIsFile(fileSystem, filePath, sourceFile, line, 'reading', shownPath)) {
@@ -3041,13 +3063,15 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       async clear(): Promise<void> {
         io.clear();
       },
-      async get_int(file = 'console', line = 0): Promise<number> {
+      async get_int(file = 'console', line = 0): Promise<number | bigint> {
         const inputText = await io.readLine();
         const normalized = inputText.trim();
         if (!/^[+-]?\d+$/u.test(normalized)) {
           throw new IdylliumRuntimeError(file, line, `cannot convert input to 'int' (expected integer, got ${JSON.stringify(inputText)})`);
         }
-        return Number.parseInt(normalized, 10);
+        // Ввод длиннее safe-диапазона не теряет разряды: тот же канон
+        // «int точен на любом размере», что у to_int.
+        return exactIntegerResult(BigInt(normalized.replace(/^\+/u, '')));
       },
       async get_float(file = 'console', line = 0): Promise<number> {
         const inputText = await io.readLine();
@@ -3207,6 +3231,9 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
           );
         }),
         set_seed: contextFunction((seed: number, file: string, line: number) => {
+          if (typeof seed === 'bigint' || (typeof seed === 'number' && !Number.isSafeInteger(seed) && Number.isFinite(seed))) {
+            throw new IdylliumRuntimeError(file, line, `random.set_seed() seed must be between 0 and 9007199254740991, got ${String(seed)}`);
+          }
           const value = integerNumber(seed, 'random.set_seed() seed', file, line);
           if (value < 0) throw new IdylliumRuntimeError(file, line, `random.set_seed() seed must be non-negative, got ${value}`);
           randomSeed = value >>> 0;
@@ -3249,7 +3276,11 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       file: {
         exists: contextFunction((targetPath: string, file: string, line: number) => {
           const requestedPath = stringArgument(targetPath, 'file.exists() path', file, line);
-          return fileSystem.exists(fileSystem.resolvePath(requestedPath, file));
+          try {
+            return fileSystem.exists(fileSystem.resolvePath(requestedPath, file));
+          } catch (error) {
+            throw new IdylliumRuntimeError(file, line, `file.exists() cannot inspect '${requestedPath}': ${humanizeFsPaths(errorMessage(error))}`);
+          }
         }),
         is_file: contextFunction((targetPath: string, file: string, line: number) => {
           const requestedPath = stringArgument(targetPath, 'file.is_file() path', file, line);
@@ -3780,18 +3811,29 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     return response;
   }
 
+  // Засеянный поток — mulberry32 (как и одноимённая учебная функция): его
+  // скрамблер размешивает сид с ПЕРВОГО же вызова. Прежний голый LCG делал
+  // первый бросок линейной функцией сида (шаг 1664525/2^32 ≈ 0.000388):
+  // create_int(1,6) давал 2 для всех сидов 0–250, а set_seed(time.now().unix)
+  // между запусками почти не менял грань — находка методистов 2026-08-22.
+  function seededRandomStep(): number {
+    randomSeed = ((randomSeed as number) + 0x6D2B79F5) >>> 0;
+    let t = randomSeed;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return (t ^ (t >>> 14)) >>> 0;
+  }
+
   function randomUnit(): number {
     if (randomSeed === null) return Math.random();
-    randomSeed = (Math.imul(randomSeed, 1664525) + 1013904223) >>> 0;
-    return randomSeed / 0x100000000;
+    return seededRandomStep() / 0x100000000;
   }
 
   // Для create_float: единичный интервал ВКЛЮЧАЯ 1.0, чтобы max был достижим
   // (как в Python). Нельзя делить с create_int: там unit 1.0 дал бы выход за max.
   function randomUnitInclusive(): number {
     if (randomSeed === null) return Math.floor(Math.random() * 0x100000000) / 0xffffffff;
-    randomSeed = (Math.imul(randomSeed, 1664525) + 1013904223) >>> 0;
-    return randomSeed / 0xffffffff;
+    return seededRandomStep() / 0xffffffff;
   }
 
   function waitForRuntimeDelay(milliseconds: number, file: string, line: number): Promise<void> {
@@ -3851,6 +3893,17 @@ function numericValues(value: unknown, functionName: string, file: string, line:
   return values as Array<number | bigint>;
 }
 
+// Массив таких размеров не создать ни в одной машине класса — честный отказ
+// вместо сырого JS «Invalid array length» (находка ломателей 2026-08-22).
+const MAX_CREATABLE_ARRAY_SIZE = 100_000_000;
+
+function assertCreatableArraySize(size: number | bigint): void {
+  const asNumber = typeof size === 'bigint' ? Number(size) : size;
+  if (!Number.isFinite(asNumber) || asNumber > MAX_CREATABLE_ARRAY_SIZE) {
+    throw new IdylliumRuntimeError('program', 0, `array size ${String(size)} is too large to create (maximum ${MAX_CREATABLE_ARRAY_SIZE})`);
+  }
+}
+
 function runtimeBinary(operator: string, left: unknown, right: unknown, file: string, line: number): unknown {
   if (operator === '==') return runtimeEquals(left, right, file, line);
   if (operator === '!=') return !runtimeEquals(left, right, file, line);
@@ -3870,15 +3923,23 @@ function runtimeBinary(operator: string, left: unknown, right: unknown, file: st
 
   const numericLeft = runtimeNumber(left, `operator '${operator}' left operand`, file, line);
   const numericRight = runtimeNumber(right, `operator '${operator}' right operand`, file, line);
+  // Результат-число обязан быть конечным: молчаливый Infinity отравлял бы
+  // соседние строки и печатался сырым JS-словом (находка ломателей).
+  const finiteResult = (value: number | bigint): number | bigint => {
+    if (typeof value === 'number' && !Number.isFinite(value)) {
+      throw new IdylliumRuntimeError(file, line, `operator '${operator}' result is outside the float range`);
+    }
+    return value;
+  };
   switch (operator) {
     case '+':
-      return runtimeAdd(numericLeft, numericRight);
+      return finiteResult(runtimeAdd(numericLeft, numericRight));
     case '-':
-      return runtimeSubtract(numericLeft, numericRight);
+      return finiteResult(runtimeSubtract(numericLeft, numericRight));
     case '*':
-      return runtimeMultiply(numericLeft, numericRight);
+      return finiteResult(runtimeMultiply(numericLeft, numericRight));
     case '/':
-      return runtimeDivide(numericLeft, numericRight, file, line);
+      return finiteResult(runtimeDivide(numericLeft, numericRight, file, line));
     case '<':
       return runtimeCompare(numericLeft, numericRight) < 0;
     case '<=':
@@ -3942,7 +4003,13 @@ function runtimeDivide(left: unknown, right: unknown, file: string, line: number
   const dividend = runtimeNumber(left, 'division left operand', file, line);
   const divisor = runtimeNumber(right, 'division right operand', file, line);
   if (divisor === 0 || divisor === 0n) throw new IdylliumRuntimeError(file, line, 'division by zero');
-  return Number(dividend) / Number(divisor);
+  const result = Number(dividend) / Number(divisor);
+  // Молчаливый Infinity отравлял бы соседние строки и печатался сырым
+  // JS-словом — честная ошибка на месте (находка ломателей 2026-08-22).
+  if (!Number.isFinite(result)) {
+    throw new IdylliumRuntimeError(file, line, "operator '/' result is outside the float range");
+  }
+  return result;
 }
 
 function runtimeIntegerDivision(left: unknown, right: unknown, file: string, line: number): number | bigint {
@@ -4150,9 +4217,9 @@ function callStringMethod(
     case 'count':
       return countInString(value, searchText(args[0], methodName, file, line));
     case 'is_int':
-      return /^[+-]?\d+$/u.test(value.trim());
+      return INT_TEXT_PATTERN.test(value.trim());
     case 'is_float':
-      return /^[+-]?(?:\d+\.\d+|\d+\.|\.\d+)$/u.test(value.trim());
+      return FLOAT_TEXT_PATTERN.test(value.trim());
     case 'to_upper':
       return value.toLocaleUpperCase();
     case 'to_lower':
@@ -4209,6 +4276,9 @@ function resolveRuntimePath(requestedPath: string, sourceFile: string): string {
 
 function createNodeRuntimeFileSystem(projectRoot?: string): RuntimeFileSystem {
   let mutationRoot = projectRoot ? nodePath.resolve(projectRoot) : null;
+  const readPath = (filePath: string, operation: string): string => (
+    assertNodeProjectPath(mutationRoot ?? process.cwd(), filePath, operation), filePath
+  );
   const mutationPath = (filePath: string, operation: string): string => (
     assertNodeProjectPath(mutationRoot ?? process.cwd(), filePath, operation)
   );
@@ -4225,17 +4295,21 @@ function createNodeRuntimeFileSystem(projectRoot?: string): RuntimeFileSystem {
       }
       return resolveRuntimePath(requestedPath, sourceFile);
     },
+    // Песочница двусторонняя: страж стоит и на чтении, а не только на
+    // изменяющих операциях — задачник обещает «наружу не выберешься»,
+    // а до 2026-08-22 file.open("../x", "read") честно читал родителя
+    // (находка методистов E12).
     exists(filePath: string): boolean {
-      return nodeFs.existsSync(filePath);
+      return nodeFs.existsSync(readPath(filePath, 'file access'));
     },
     isFile(filePath: string): boolean {
-      return nodeFs.statSync(filePath).isFile();
+      return nodeFs.statSync(readPath(filePath, 'file access')).isFile();
     },
     isDirectory(filePath: string): boolean {
-      return nodeFs.statSync(filePath).isDirectory();
+      return nodeFs.statSync(readPath(filePath, 'file access')).isDirectory();
     },
     readText(filePath: string): string {
-      return nodeFs.readFileSync(filePath, 'utf8');
+      return nodeFs.readFileSync(readPath(filePath, 'file read'), 'utf8');
     },
     writeText(filePath: string, text: string): void {
       const target = mutationPath(filePath, 'file write');
@@ -4271,6 +4345,7 @@ function createNodeRuntimeFileSystem(projectRoot?: string): RuntimeFileSystem {
       nodeFs.mkdirSync(target, { recursive: parents });
     },
     listDirectory(filePath: string): readonly string[] {
+      readPath(filePath, 'file.list_directory()');
       if (!nodeFs.existsSync(filePath)) throw new Error(`directory does not exist: ${filePath}`);
       if (!nodeFs.statSync(filePath).isDirectory()) throw new Error(`path is not a directory: ${filePath}`);
       return nodeFs.readdirSync(filePath).sort((left: string, right: string) => left.localeCompare(right));
@@ -5192,20 +5267,32 @@ function ceilWithPrecision(value: number, digits: number | undefined, file: stri
   return Number((Math.ceil(number * factor) / factor).toFixed(safeDigits));
 }
 
-function parseIntegerText(value: string, functionName: string, file: string, line: number): number {
+// Контракт стражей: "x".is_int()/"x".is_float() истинны РОВНО тогда, когда
+// to_int(x)/to_float(x) сработают — поэтому предикаты общие с парсерами.
+const INT_TEXT_PATTERN = /^[+-]?\d+$/u;
+const FLOAT_TEXT_PATTERN = /^[+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))$/u;
+
+function parseIntegerText(value: string, functionName: string, file: string, line: number): number | bigint {
   const normalized = value.trim();
-  if (!/^[+-]?\d+$/u.test(normalized)) {
+  if (!INT_TEXT_PATTERN.test(normalized)) {
     throw new IdylliumRuntimeError(file, line, `${functionName} cannot convert '${value}' to int`);
   }
-  return Number.parseInt(normalized, 10);
+  // int точен на любом размере (канон 2026-08-22): длинная строка парсится
+  // через BigInt — Number.parseInt терял бы младшие разряды молча.
+  // (BigInt не признаёт ведущий '+', паттерн его разрешает — срезаем.)
+  return exactIntegerResult(BigInt(normalized.replace(/^\+/u, '')));
 }
 
 function parseFloatText(value: string, functionName: string, file: string, line: number): number {
   const normalized = value.trim();
-  if (!/^[+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))$/u.test(normalized)) {
+  if (!FLOAT_TEXT_PATTERN.test(normalized)) {
     throw new IdylliumRuntimeError(file, line, `${functionName} cannot convert '${value}' to float`);
   }
-  return Number.parseFloat(normalized);
+  const parsed = Number.parseFloat(normalized);
+  if (!Number.isFinite(parsed)) {
+    throw new IdylliumRuntimeError(file, line, `${functionName} cannot convert '${value}' to float: the value is outside the float range`);
+  }
+  return parsed;
 }
 
 function finiteNumber(value: unknown, argumentName: string, file: string, line: number): number {
@@ -5456,6 +5543,26 @@ function defineValidatedRuntimeProperty(
   });
 }
 
+// Строгое строковое перечисление виджета: опечатка в режиме — громкая ошибка,
+// а не молчаливый откат к умолчанию (жанр LineEdit.echo_mode; зачистка
+// по заказу владельца 2026-08-22). IdySS-наклейки style сюда не относятся.
+function defineEnumRuntimeProperty(
+  obj: RuntimeObject,
+  name: string,
+  ownerLabel: string,
+  defaultValue: string,
+  accepted: readonly string[],
+): void {
+  defineValidatedRuntimeProperty(obj, name, defaultValue, (value, file, line) => {
+    if (typeof value !== 'string' || !accepted.includes(value)) {
+      const shown = accepted.map((item) => `'${item}'`);
+      const list = `${shown.slice(0, -1).join(', ')} or ${shown[shown.length - 1]}`;
+      throw new IdylliumRuntimeError(file, line, `${ownerLabel}.${name} must be ${list}, got '${String(value)}'`);
+    }
+    return value;
+  });
+}
+
 function createPlainRuntimeObject(moduleName: string, typeName: string, state: RuntimeObjectState): RuntimeObject {
   if (moduleName === 'json') {
     if (typeName === 'Value') return createJsonValue();
@@ -5540,7 +5647,242 @@ function webTextResponse(status: number, text: string): RuntimeHttpServerRespons
   return { status, headers: { 'content-type': 'text/plain; charset=utf-8' }, body: text };
 }
 
-function createWebRequestObject(request: RuntimeHttpServerRequest, state: RuntimeObjectState): RuntimeObject {
+// ─── Шаблонизатор страниц web-сервера ───────────────────────────────────────
+// Язык: {{ключ}} и {{ключ.поле}} — подстановка, {% for x in список %}…{% endfor %}
+// — цикл по json.Array, {% if флаг %}…{% else %}…{% endif %} — ветвление по bool.
+// Ошибка шаблона НЕ роняет сервер: в страницу встаёт читаемый маркер [[ … ]] —
+// вёрстка видна целиком, дырка названа по имени. Подстановки всегда
+// экранируются: данные — текст, разметка живёт в шаблоне.
+
+const WEB_TEMPLATE_NAME_PATTERN = /^[\p{L}_][\p{L}\p{N}_]*$/u;
+
+function isWebTemplatePath(expression: string): boolean {
+  const parts = expression.split('.');
+  return parts.length > 0 && parts.every((part) => WEB_TEMPLATE_NAME_PATTERN.test(part));
+}
+
+function escapeWebTemplateValue(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+type WebTemplateNode =
+  | { readonly kind: 'text'; readonly text: string }
+  | { readonly kind: 'value'; readonly expression: string }
+  | { readonly kind: 'marker'; readonly text: string }
+  | { readonly kind: 'for'; readonly item: string; readonly source: string; readonly body: readonly WebTemplateNode[] }
+  | { readonly kind: 'if'; readonly source: string; readonly then: readonly WebTemplateNode[]; readonly otherwise: readonly WebTemplateNode[] };
+
+// Глубже этого шаблон не вкладывается: предел держит и парсер, и рендер
+// в безопасной глубине JS-стека (без него — сырое «Maximum call stack…»).
+const WEB_TEMPLATE_MAX_DEPTH = 32;
+
+function parseWebTemplate(template: string): WebTemplateNode[] {
+  const tokens = template.split(/(\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\})/u);
+  let index = 0;
+  // Текст маркера уходит в HTML как есть, поэтому кусок ЧУЖОГО текста
+  // (токен шаблона) в нём экранируется — иначе '<' из опечатки съест маркер.
+  const marker = (text: string): WebTemplateNode => ({ kind: 'marker', text });
+  const shownToken = (token: string): string => escapeWebTemplateValue(token.trim());
+
+  function parseNodes(closers: readonly string[], depth: number): { nodes: WebTemplateNode[]; closer: string | null } {
+    const nodes: WebTemplateNode[] = [];
+    while (index < tokens.length) {
+      const token = tokens[index];
+      index += 1;
+      if (token === undefined || token === '') continue;
+      if (token.startsWith('{{') && token.endsWith('}}')) {
+        const expression = token.slice(2, -2).trim();
+        nodes.push(isWebTemplatePath(expression)
+          ? { kind: 'value', expression }
+          : marker(`[[ непонятная подстановка '${shownToken(token)}' ]]`));
+        continue;
+      }
+      if (token.startsWith('{%') && token.endsWith('%}')) {
+        const command = token.slice(2, -2).trim();
+        const commandWord = command.split(/\s+/u)[0];
+        if (closers.includes(commandWord)) return { nodes, closer: commandWord };
+        if (commandWord === 'endfor' || commandWord === 'endif' || commandWord === 'else') {
+          nodes.push(marker(`[[ лишний '${shownToken(token)}' ]]`));
+          continue;
+        }
+        if (commandWord === 'for') {
+          const forMatch = /^for\s+(\S+)\s+in\s+(\S+)$/u.exec(command);
+          if (!forMatch || !WEB_TEMPLATE_NAME_PATTERN.test(forMatch[1]) || !isWebTemplatePath(forMatch[2])) {
+            nodes.push(marker(`[[ непонятный цикл '${shownToken(token)}' — нужно '{% for имя in список %}' ]]`));
+            continue;
+          }
+          if (depth >= WEB_TEMPLATE_MAX_DEPTH) {
+            nodes.push(marker(`[[ шаблон вложен глубже ${WEB_TEMPLATE_MAX_DEPTH} уровней — '${shownToken(token)}' пропущен ]]`));
+            continue;
+          }
+          const body = parseNodes(['endfor'], depth + 1);
+          if (body.closer === null) nodes.push(marker(`[[ '{% for %}' без '{% endfor %}' ]]`));
+          nodes.push({ kind: 'for', item: forMatch[1], source: forMatch[2], body: body.nodes });
+          continue;
+        }
+        if (commandWord === 'if') {
+          const ifMatch = /^if\s+(\S+)$/u.exec(command);
+          if (!ifMatch || !isWebTemplatePath(ifMatch[1])) {
+            nodes.push(marker(`[[ непонятное условие '${shownToken(token)}' — нужно '{% if имя %}' ]]`));
+            continue;
+          }
+          if (depth >= WEB_TEMPLATE_MAX_DEPTH) {
+            nodes.push(marker(`[[ шаблон вложен глубже ${WEB_TEMPLATE_MAX_DEPTH} уровней — '${shownToken(token)}' пропущен ]]`));
+            continue;
+          }
+          const thenPart = parseNodes(['else', 'endif'], depth + 1);
+          let otherwise: readonly WebTemplateNode[] = [];
+          if (thenPart.closer === 'else') {
+            const elsePart = parseNodes(['endif'], depth + 1);
+            otherwise = elsePart.nodes;
+            if (elsePart.closer === null) nodes.push(marker(`[[ '{% if %}' без '{% endif %}' ]]`));
+          } else if (thenPart.closer === null) {
+            nodes.push(marker(`[[ '{% if %}' без '{% endif %}' ]]`));
+          }
+          nodes.push({ kind: 'if', source: ifMatch[1], then: thenPart.nodes, otherwise });
+          continue;
+        }
+        nodes.push(marker(`[[ неизвестная команда '${shownToken(token)}' ]]`));
+        continue;
+      }
+      nodes.push({ kind: 'text', text: token });
+    }
+    return { nodes, closer: null };
+  }
+
+  return parseNodes([], 0).nodes;
+}
+
+interface WebTemplateScope {
+  readonly root: Map<string, JsonRuntimeValue>;
+  readonly locals: Map<string, JsonRuntimeValue>[];
+}
+
+function resolveWebTemplatePath(
+  expression: string,
+  scope: WebTemplateScope,
+): { value: JsonRuntimeValue } | { marker: string } {
+  const parts = expression.split('.');
+  const head = parts[0];
+  let current: JsonRuntimeValue | undefined;
+  for (let level = scope.locals.length - 1; level >= 0; level -= 1) {
+    const local = scope.locals[level].get(head);
+    if (local !== undefined) {
+      current = local;
+      break;
+    }
+  }
+  current ??= scope.root.get(head);
+  if (current === undefined) return { marker: `[[ нет значения '${head}' ]]` };
+  let described = head;
+  for (const part of parts.slice(1)) {
+    if (current.__jsonKind !== 'object') return { marker: `[[ '${described}' — не объект ]]` };
+    const next = jsonEntries(current).get(part);
+    if (next === undefined) return { marker: `[[ у '${described}' нет поля '${part}' ]]` };
+    current = next;
+    described = `${described}.${part}`;
+  }
+  return { value: current };
+}
+
+function renderWebTemplateNodes(nodes: readonly WebTemplateNode[], scope: WebTemplateScope): string {
+  let out = '';
+  for (const node of nodes) {
+    if (node.kind === 'text' || node.kind === 'marker') {
+      out += node.text;
+      continue;
+    }
+    const resolved = resolveWebTemplatePath(node.kind === 'value' ? node.expression : node.source, scope);
+    if ('marker' in resolved) {
+      out += resolved.marker;
+      continue;
+    }
+    const value = resolved.value;
+    if (node.kind === 'value') {
+      switch (value.__jsonKind) {
+        case 'string':
+          out += escapeWebTemplateValue(value.__jsonValue as string);
+          break;
+        case 'int':
+        case 'float':
+          out += String(value.__jsonValue);
+          break;
+        case 'bool':
+          out += value.__jsonValue === true ? 'true' : 'false';
+          break;
+        case 'null':
+          out += `[[ '${node.expression}' — это null ]]`;
+          break;
+        case 'object':
+          out += `[[ '${node.expression}' — объект: подставьте его поле через точку ]]`;
+          break;
+        case 'array':
+          out += `[[ '${node.expression}' — список: нужен {% for %} ]]`;
+          break;
+      }
+      continue;
+    }
+    if (node.kind === 'for') {
+      if (value.__jsonKind !== 'array') {
+        out += `[[ '${node.source}' — не список ]]`;
+        continue;
+      }
+      for (const element of jsonItems(value)) {
+        scope.locals.push(new Map([[node.item, element]]));
+        out += renderWebTemplateNodes(node.body, scope);
+        scope.locals.pop();
+      }
+      continue;
+    }
+    if (value.__jsonKind !== 'bool') {
+      out += `[[ '${node.source}' — не bool ]]`;
+      continue;
+    }
+    out += renderWebTemplateNodes(value.__jsonValue === true ? node.then : node.otherwise, scope);
+  }
+  return out;
+}
+
+function renderWebTemplate(template: string, values: JsonRuntimeValue | null): string {
+  const root = values === null ? new Map<string, JsonRuntimeValue>() : jsonEntries(values);
+  return renderWebTemplateNodes(parseWebTemplate(template), { root, locals: [] });
+}
+
+// Тело браузерной формы (application/x-www-form-urlencoded): «процентный суп»
+// вида author=%D0%9C%D0%B8%D1%80%D0%B0&text=… с плюсами вместо пробелов.
+function decodeWebFormComponent(text: string): string {
+  const spaced = text.replace(/\+/g, ' ');
+  try {
+    return decodeURIComponent(spaced);
+  } catch {
+    return spaced;
+  }
+}
+
+function parseWebFormBody(body: string): Map<string, string> {
+  const fields = new Map<string, string>();
+  for (const pair of body.split('&')) {
+    if (pair === '') continue;
+    const separator = pair.indexOf('=');
+    const rawName = separator < 0 ? pair : pair.slice(0, separator);
+    const rawValue = separator < 0 ? '' : pair.slice(separator + 1);
+    const name = decodeWebFormComponent(rawName);
+    // Повтор имени — берётся первое значение (жанр query-параметров).
+    if (!fields.has(name)) fields.set(name, decodeWebFormComponent(rawValue));
+  }
+  return fields;
+}
+
+function createWebRequestObject(
+  request: RuntimeHttpServerRequest,
+  state: RuntimeObjectState,
+  pathParameters: Readonly<Record<string, string>> = {},
+): RuntimeObject {
   const obj: RuntimeObject = {
     __idylliumObjectId: state.nextObjectId++,
     __idylliumType: 'web.Request',
@@ -5551,25 +5893,39 @@ function createWebRequestObject(request: RuntimeHttpServerRequest, state: Runtim
     const parameter = stringArgument(name, 'web.Request.query() name', file, line);
     return request.query[parameter] ?? '';
   });
+  obj.param = contextFunction((name: unknown, file: string, line: number) => {
+    const parameter = stringArgument(name, 'web.Request.param() name', file, line);
+    return pathParameters[parameter] ?? '';
+  });
+  let formFields: Map<string, string> | null = null;
+  obj.form = contextFunction((name: unknown, file: string, line: number) => {
+    const parameter = stringArgument(name, 'web.Request.form() name', file, line);
+    formFields ??= parseWebFormBody(request.body);
+    return formFields.get(parameter) ?? '';
+  });
   obj.to_string = () => `web.Request(${request.method} ${request.path})`;
   return obj;
 }
 
 interface WebResponseInternals {
   readonly object: RuntimeObject;
-  finish(): { readonly body: string; readonly contentType: string };
+  finish(): { readonly body: string; readonly contentType: string; readonly location: string | null };
 }
 
 function createWebResponseObject(state: RuntimeObjectState): WebResponseInternals {
   let body = '';
   let contentType = 'text/plain; charset=utf-8';
   let sent = false;
+  let redirectLocation: string | null = null;
 
   const obj: RuntimeObject = {
     __idylliumObjectId: state.nextObjectId++,
     __idylliumType: 'web.Response',
   };
   defineValidatedRuntimeProperty(obj, 'status', 200, (value, file, line) => {
+    if (redirectLocation !== null) {
+      throw new IdylliumRuntimeError(file, line, 'web.Response.status cannot be changed after redirect() — redirect always answers 303');
+    }
     if (typeof value !== 'number' || !Number.isInteger(value) || value < 100 || value > 599) {
       throw new IdylliumRuntimeError(file, line, `web.Response.status must be an integer from 100 to 599, got '${String(value)}'`);
     }
@@ -5589,11 +5945,75 @@ function createWebResponseObject(state: RuntimeObjectState): WebResponseInternal
     body = payload;
     contentType = 'application/json; charset=utf-8';
   });
+  obj.send_template = contextFunction((templatePath: unknown, valuesOrFile: unknown, fileOrLine: unknown, maybeLine?: number) => {
+    // values — необязательный аргумент: контекст file/line приезжает следом
+    // за фактическими аргументами (жанр math.floor с необязательным digits).
+    const hasValues = typeof maybeLine === 'number';
+    const values = hasValues ? valuesOrFile : null;
+    const file = String(hasValues ? fileOrLine : valuesOrFile);
+    const line = hasValues ? maybeLine : Number(fileOrLine);
+    const requested = stringArgument(templatePath, 'web.Response.send_template() path', file, line);
+    if (sent) throw new IdylliumRuntimeError(file, line, 'web.Response.send_template() the response was already sent');
+    let templateValues: JsonRuntimeValue | null = null;
+    if (values !== null && values !== undefined) {
+      if (!isJsonRuntimeValue(values) || values.__jsonKind !== 'object') {
+        throw new IdylliumRuntimeError(file, line, `web.Response.send_template() values must be a json.Object, got '${runtimeTypeName(values)}'`);
+      }
+      templateValues = values;
+    }
+    const humanize = (text: string) => state.fileSystem.humanizePaths?.(text) ?? text;
+    const resolved = state.fileSystem.resolvePath(requested, file);
+    const shownPath = humanize(resolved);
+    let templateExists: boolean;
+    try {
+      templateExists = state.fileSystem.exists(resolved);
+    } catch (error) {
+      // страж песочницы (path is outside the project) — в детской обёртке
+      throw new IdylliumRuntimeError(file, line, `web.Response.send_template() cannot read '${shownPath}': ${humanize(errorMessage(error))}`);
+    }
+    if (!templateExists) {
+      throw new IdylliumRuntimeError(file, line, `web.Response.send_template() cannot read '${shownPath}': file does not exist`);
+    }
+    if (!state.fileSystem.isFile(resolved)) {
+      throw new IdylliumRuntimeError(file, line, `web.Response.send_template() cannot read '${shownPath}': path is not a file`);
+    }
+    let template: string;
+    try {
+      template = state.fileSystem.readText(resolved);
+    } catch (error) {
+      throw new IdylliumRuntimeError(file, line, `web.Response.send_template() cannot read '${shownPath}': ${humanize(errorMessage(error))}`);
+    }
+    sent = true;
+    body = renderWebTemplate(template, templateValues);
+    contentType = 'text/html; charset=utf-8';
+  });
+  obj.redirect = contextFunction((target: unknown, file: string, line: number) => {
+    const destination = stringArgument(target, 'web.Response.redirect() path', file, line);
+    if (sent) throw new IdylliumRuntimeError(file, line, 'web.Response.redirect() the response was already sent');
+    if (destination.trim() === '') {
+      throw new IdylliumRuntimeError(file, line, 'web.Response.redirect() path must not be empty');
+    }
+    sent = true;
+    // Жёсткое правило v1: redirect — всегда 303 See Other (канон PRG),
+    // выбора кода не даём; статус после redirect закрыт валидатором,
+    // поэтому 303 ставится ДО redirectLocation.
+    obj.status = 303;
+    // Location обязан быть ASCII: кириллица и управляющие символы
+    // кодируются процентами (encodeURI не трогает уже закодированные %XX),
+    // заодно умирает инъекция заголовков через перевод строки.
+    try {
+      redirectLocation = encodeURI(destination);
+    } catch {
+      sent = false;
+      throw new IdylliumRuntimeError(file, line, `web.Response.redirect() cannot send '${destination}' as an address`);
+    }
+    body = '';
+  });
   obj.to_string = () => 'web.Response';
 
   return {
     object: obj,
-    finish: () => ({ body, contentType }),
+    finish: () => ({ body, contentType, location: redirectLocation }),
   };
 }
 
@@ -5631,6 +6051,48 @@ function initializeWebObject(obj: RuntimeObject, typeName: string, state: Runtim
   const routePaths = new Set<string>();
   const staticRoots: string[] = [];
 
+  // Маршруты с параметрами пути: on_get("/post/<id>", …). Сегмент <имя>
+  // ловит один сегмент адреса; точный путь всегда побеждает шаблонный.
+  interface WebParameterRoute {
+    readonly method: 'GET' | 'POST';
+    readonly pattern: string;
+    readonly segments: readonly (string | null)[];
+    readonly parameterNames: readonly string[];
+    readonly handler: unknown;
+  }
+  const parameterRoutes: WebParameterRoute[] = [];
+  const parameterRouteShapes = new Map<string, string>();
+
+  function routeSegmentsMatch(segments: readonly (string | null)[], pathSegments: readonly string[]): boolean {
+    if (segments.length !== pathSegments.length) return false;
+    return segments.every((segment, position) => (
+      segment === null ? pathSegments[position] !== '' : segment === pathSegments[position]
+    ));
+  }
+
+  function matchParameterRoute(method: string, requestPath: string): { handler: unknown; parameters: Record<string, string> } | null {
+    const pathSegments = requestPath.slice(1).split('/');
+    for (const route of parameterRoutes) {
+      if (route.method !== method || !routeSegmentsMatch(route.segments, pathSegments)) continue;
+      const parameters: Record<string, string> = {};
+      let parameterIndex = 0;
+      route.segments.forEach((segment, position) => {
+        if (segment === null) {
+          parameters[route.parameterNames[parameterIndex]] = pathSegments[position];
+          parameterIndex += 1;
+        }
+      });
+      return { handler: route.handler, parameters };
+    }
+    return null;
+  }
+
+  function pathIsKnownRoute(requestPath: string): boolean {
+    if (routePaths.has(requestPath)) return true;
+    const pathSegments = requestPath.slice(1).split('/');
+    return parameterRoutes.some((route) => routeSegmentsMatch(route.segments, pathSegments));
+  }
+
   function registerRoute(method: 'GET' | 'POST', methodName: string) {
     return contextFunction((routePath: unknown, handler: unknown, file: string, line: number) => {
       const pathValue = stringArgument(routePath, `web.Server.${methodName}() path`, file, line);
@@ -5639,6 +6101,36 @@ function initializeWebObject(obj: RuntimeObject, typeName: string, state: Runtim
       }
       if (typeof handler !== 'function') {
         throw new IdylliumRuntimeError(file, line, `web.Server.${methodName}() handler must be a function like 'void function(web.Request req, web.Response res)'`);
+      }
+      if (pathValue.includes('<') || pathValue.includes('>')) {
+        const segments: (string | null)[] = [];
+        const parameterNames: string[] = [];
+        for (const segment of pathValue.slice(1).split('/')) {
+          const parameterMatch = /^<(.*)>$/u.exec(segment);
+          if (parameterMatch) {
+            const parameterName = parameterMatch[1];
+            if (!WEB_TEMPLATE_NAME_PATTERN.test(parameterName)) {
+              throw new IdylliumRuntimeError(file, line, `web.Server.${methodName}() path parameter '<${parameterName}>' must be a simple name, like '/post/<id>'`);
+            }
+            if (parameterNames.includes(parameterName)) {
+              throw new IdylliumRuntimeError(file, line, `web.Server.${methodName}() path parameter '<${parameterName}>' is used twice in '${pathValue}'`);
+            }
+            parameterNames.push(parameterName);
+            segments.push(null);
+          } else if (segment.includes('<') || segment.includes('>')) {
+            throw new IdylliumRuntimeError(file, line, `web.Server.${methodName}() path parameter must occupy a whole segment between '/', like '/post/<id>', got '${segment}' in '${pathValue}'`);
+          } else {
+            segments.push(segment);
+          }
+        }
+        const shape = `${method} /${segments.map((segment) => (segment === null ? '<>' : segment)).join('/')}`;
+        const registered = parameterRouteShapes.get(shape);
+        if (registered !== undefined) {
+          throw new IdylliumRuntimeError(file, line, `web.Server.${methodName}() route '${pathValue}' conflicts with already registered '${registered}'`);
+        }
+        parameterRouteShapes.set(shape, pathValue);
+        parameterRoutes.push({ method, pattern: pathValue, segments, parameterNames, handler });
+        return;
       }
       const key = `${method} ${pathValue}`;
       if (routes.has(key)) {
@@ -5684,9 +6176,17 @@ function initializeWebObject(obj: RuntimeObject, typeName: string, state: Runtim
     // перебивают друг друга на середине — важное для учебных программ свойство.
     let chain: Promise<void> = Promise.resolve();
     const dispatch = async (request: RuntimeHttpServerRequest): Promise<RuntimeHttpServerResponse> => {
-      const handler = routes.get(`${request.method} ${request.path}`);
+      let handler = routes.get(`${request.method} ${request.path}`);
+      let pathParameters: Record<string, string> = {};
+      if (typeof handler !== 'function') {
+        const parameterMatch = matchParameterRoute(request.method, request.path);
+        if (parameterMatch) {
+          handler = parameterMatch.handler;
+          pathParameters = parameterMatch.parameters;
+        }
+      }
       if (typeof handler === 'function') {
-        const requestObject = createWebRequestObject(request, state);
+        const requestObject = createWebRequestObject(request, state, pathParameters);
         const response = createWebResponseObject(state);
         try {
           await handler(requestObject, response.object);
@@ -5701,9 +6201,11 @@ function initializeWebObject(obj: RuntimeObject, typeName: string, state: Runtim
           return webTextResponse(500, text);
         }
         const finished = response.finish();
+        const headers: Record<string, string> = { 'content-type': finished.contentType };
+        if (finished.location !== null) headers.location = finished.location;
         return {
           status: Number(response.object.status ?? 200),
-          headers: { 'content-type': finished.contentType },
+          headers,
           body: finished.body,
         };
       }
@@ -5711,7 +6213,7 @@ function initializeWebObject(obj: RuntimeObject, typeName: string, state: Runtim
         const staticResponse = serveWebStatic(staticRoots, request.path, state);
         if (staticResponse) return staticResponse;
       }
-      if (routePaths.has(request.path)) {
+      if (pathIsKnownRoute(request.path)) {
         return webTextResponse(405, `method ${request.method} is not allowed for '${request.path}'`);
       }
       return webTextResponse(404, `not found: '${request.path}'`);
@@ -5848,12 +6350,18 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
       }
       child.__parent = obj;
       (obj.__children as RuntimeObject[]).push(child);
+      // Радио с предвыбором решает свою группу в момент переезда в коробку:
+      // до add_child группа неизвестна (E15), теперь родитель есть — гасим
+      // соседей по новому дому (последний добавленный выигрывает).
+      if (child.__idylliumType === 'gui.RadioButton' && child.is_selected === true) {
+        selectRadioButton(child, state);
+      }
     });
   }
 
   if (typeName === 'Window') {
     obj.title = '';
-    obj.theme = 'default';
+    defineEnumRuntimeProperty(obj, 'theme', 'Window', 'default', ['default', 'idyllium', 'dracula', 'breeze', 'oxygen']);
     setTrackedRuntimePropertyDefault(obj, 'background_color', colorWhite());
     obj.show = async () => {
       obj.__shown = true;
@@ -5986,7 +6494,9 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
   if (typeName === 'TabWidget') {
     obj.__children = [];
     obj.__tabTitles = [];
-    obj.selected_index = 0;
+    // Пустой шкаф отвечает -1 — «ничего не выбрано», как пустой ComboBox
+    // (E16): у вкладок нет тайной «нулевой», пока add_tab не принёс первую.
+    obj.selected_index = -1;
     obj.tab_count = 0;
     // Заголовок всегда вычисляется из selected_index. Хранить его отдельным
     // полем нельзя: тогда присваивание selected_index из программы оставляло
@@ -6013,12 +6523,14 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
       (obj.__children as RuntimeObject[]).push(content);
       (obj.__tabTitles as string[]).push(tabTitle);
       obj.tab_count = (obj.__tabTitles as string[]).length;
+      // Первая вкладка становится выбранной: шкаф перестаёт быть пустым.
+      if (obj.selected_index === -1) obj.selected_index = 0;
     });
     obj.clear_tabs = contextFunction(() => {
       obj.__children = [];
       obj.__tabTitles = [];
       obj.tab_count = 0;
-      obj.selected_index = 0;
+      obj.selected_index = -1;
     });
   }
 
@@ -6032,7 +6544,7 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
 
   if (typeName === 'ImageBox') {
     obj.image = null;
-    obj.resize_mode = 'fit';
+    defineEnumRuntimeProperty(obj, 'resize_mode', 'ImageBox', 'fit', ['fit', 'fill', 'stretch', 'original']);
     obj.set_image = contextFunction((image: unknown, file: string, line: number) => {
       obj.image = runtimeImageResource(image, 'ImageBox.set_image()', file, line);
     });
@@ -6042,7 +6554,8 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
     obj.text = '';
     obj.placeholder = '';
     defineTrackedRuntimeProperty(obj, 'placeholder_color', colorGray());
-    obj.echo_mode = 'normal';
+    // Опечатка в режиме молча оставляла пароль на виду (W18, методисты).
+    defineEnumRuntimeProperty(obj, 'echo_mode', 'LineEdit', 'normal', ['normal', 'password', 'no_echo']);
     setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
     setTrackedRuntimePropertyDefault(obj, 'background_color', colorWhite());
     defineTrackedRuntimeProperty(obj, 'border_color', colorGray());
@@ -6061,7 +6574,7 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
     obj.value = 0;
     obj.min = 0;
     obj.max = 100;
-    obj.orientation = 'horizontal';
+    defineEnumRuntimeProperty(obj, 'orientation', 'ProgressBar', 'horizontal', ['horizontal', 'vertical']);
     setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
     setTrackedRuntimePropertyDefault(obj, 'background_color', colorVeryLightGray());
     setTrackedRuntimePropertyDefault(obj, 'foreground_color', colorBlue());
@@ -6076,7 +6589,7 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
   }
 
   if (typeName === 'Slider') {
-    obj.orientation = 'horizontal';
+    defineEnumRuntimeProperty(obj, 'orientation', 'Slider', 'horizontal', ['horizontal', 'vertical']);
   }
 
   if (typeName === 'FloatSpinBox') {
@@ -8703,6 +9216,15 @@ function widgetEventsBlocked(target: RuntimeObject): boolean {
 function selectRadioButton(target: RuntimeObject, state: RuntimeObjectState): void {
   const group = typeof target.group === 'string' ? target.group : '';
   const parent = target.__parent;
+
+  // «Бездомное» радио (до add_child) с безымянной группой не гасит никого:
+  // группа по умолчанию — это родитель, а родителя ещё нет. Иначе канон
+  // «создал → настроил → add_child» схлопывал бы предвыборы двух рамок
+  // в одну бездомную группу (E15). Группа решится в add_child.
+  if (group === '' && !isRuntimeObject(parent)) {
+    target.is_selected = true;
+    return;
+  }
 
   for (const item of state.objects) {
     if (item === target || item.__idylliumType !== 'gui.RadioButton') continue;

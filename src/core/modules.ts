@@ -11,6 +11,12 @@ export interface UserModuleFieldSpec {
   readonly range: SourceRange;
   /** «Пустое поле»: объявлено с явным `= null`. */
   readonly nullable?: boolean;
+  /** Статическое поле — одно на класс, доступ module.Class.name. */
+  readonly isStatic?: boolean;
+  /** Класс-константа: присваивание запрещено. */
+  readonly isConst?: boolean;
+  /** Значение целочисленной класс-константы — годится размером массива. */
+  readonly constantValue?: number;
 }
 
 export interface UserModuleMethodSpec {

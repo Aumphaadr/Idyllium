@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "languageVersion": "1.5.0",
-  "generatedAt": "2026-08-21T20:38:34.485Z",
+  "languageVersion": "1.5.1",
+  "generatedAt": "2026-08-22T15:10:06.535Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "general": [
     {
@@ -53,7 +53,7 @@
       "sections": [
         {
           "title": "Библиотека types: молчаливое переполнение",
-          "description": "Обычные числа Idyllium точны. Но ячейки фиксированной ширины из types ведут себя как в C: uint8 после 255 обнуляется, отрицательное значение оборачивается, и компилятор не возмущается. Отступление сделано ради понимания: только так можно показать, как числа действительно живут в памяти. Изолировано целиком внутри types — обычный int этим не заражается.",
+          "description": "Обычные числа Idyllium точны — int не переполняется и не теряет разряды НА ЛЮБОМ размере: 2^100 считается, печатается и читается из строки честно (переполнение — свойство ячеек types, а не чисел). Но ячейки фиксированной ширины из types ведут себя как в C: uint8 после 255 обнуляется, отрицательное значение оборачивается, и компилятор не возмущается. Отступление сделано ради понимания: только так можно показать, как числа действительно живут в памяти. Изолировано целиком внутри types — обычный int этим не заражается.",
           "code": "types.uint8 n = 255;\nn = n + 1;   // 0, и это правильно\n\nint safe = 255;\nsafe = safe + 1;  // 256 — обычные числа не переполняются"
         },
         {
@@ -6041,7 +6041,7 @@
               "name": "resize_mode",
               "type": "string",
               "readonly": false,
-              "documentation": "",
+              "documentation": "Режим вписывания картинки: 'fit' (вписать целиком), 'fill' (заполнить с обрезкой), 'stretch' (растянуть), 'original' (без масштабирования). Другое значение — ошибка выполнения.",
               "callbacks": []
             },
             {
@@ -6496,7 +6496,7 @@
               "name": "echo_mode",
               "type": "string",
               "readonly": false,
-              "documentation": "",
+              "documentation": "Режим отображения ввода: 'normal', 'password' (точки) или 'no_echo' (пусто). Другое значение — ошибка выполнения.",
               "callbacks": []
             },
             {
@@ -7035,7 +7035,7 @@
               "name": "orientation",
               "type": "string",
               "readonly": false,
-              "documentation": "Ориентация: \"horizontal\" (по умолчанию) или \"vertical\". Незнакомое значение молча считается \"horizontal\" — как незнакомая тема окна.",
+              "documentation": "Ориентация: \"horizontal\" (по умолчанию) или \"vertical\". Другое значение — ошибка выполнения.",
               "callbacks": []
             },
             {
@@ -7310,7 +7310,7 @@
               "name": "orientation",
               "type": "string",
               "readonly": false,
-              "documentation": "Ориентация: \"horizontal\" (по умолчанию) или \"vertical\". Незнакомое значение молча считается \"horizontal\" — как незнакомая тема окна.",
+              "documentation": "Ориентация: \"horizontal\" (по умолчанию) или \"vertical\". Другое значение — ошибка выполнения.",
               "callbacks": []
             },
             {
@@ -7817,7 +7817,7 @@
               "name": "selected_index",
               "type": "int",
               "readonly": false,
-              "documentation": "Номер открытой вкладки, начиная с 0.",
+              "documentation": "Номер открытой вкладки, начиная с 0. У пустого шкафа -1 — «ничего не выбрано», как у ComboBox; первая add_tab() делает его 0.",
               "callbacks": []
             },
             {
@@ -8325,7 +8325,7 @@
               "name": "theme",
               "type": "string",
               "readonly": false,
-              "documentation": "Тема оформления окна и всех его виджетов: \"default\", \"idyllium\", \"dracula\", \"breeze\", \"oxygen\". Самый низкий приоритет — прямые свойства виджета и IdySS перекрывают тему.",
+              "documentation": "Тема оформления окна и всех его виджетов: \"default\", \"idyllium\", \"dracula\", \"breeze\", \"oxygen\"; другое значение — ошибка выполнения. Самый низкий приоритет — прямые свойства виджета и IdySS перекрывают тему.",
               "callbacks": []
             },
             {
@@ -9832,6 +9832,7 @@
         "Доступны int8, uint8, int16, uint16, int32, uint32, int64, uint64, float32 и float64.",
         "int64 и uint64 сохраняют весь 64-битный диапазон точно, включая значения больше 2^53.",
         "При выходе целого значения за диапазон происходит циклическое переполнение без runtime error.",
+        "Операторы (+, -, * и другие) считают в обычных точных числах Idyllium; значение обрезает потребитель — запись в types-переменную. У двух uint8 со значениями 200 и 100 writeln(a + b) печатает 300, и только uint8 c = a + b даёт 44. Методы (.shift_left(), .bit_and() и остальные) считают внутри ячейки и возвращают результат её типа.",
         "to_bin() возвращает все биты фиксированной ячейки, to_hex() — столько HEX-цифр, сколько требуется типу.",
         "shift_left() и shift_right() заполняют новые биты нулями и молча теряют вышедшие за границу; отрицательный аргумент меняет направление.",
         "bit_and(), bit_or(), bit_xor() принимают беззнаковую маску той же ширины; bit_not() инвертирует всю ячейку. Результат сохраняет тип получателя.",
@@ -12463,6 +12464,40 @@
           ],
           "methods": [
             {
+              "name": "form",
+              "signature": "form(name: string): string",
+              "returnType": "string",
+              "parameters": [
+                {
+                  "name": "name",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Значение поля HTML-формы из тела POST-запроса по имени поля (input name=\"…\"). Кодированные проценты и плюсы-пробелы разбираются сами; пустая строка, если поля нет."
+            },
+            {
+              "name": "param",
+              "signature": "param(name: string): string",
+              "returnType": "string",
+              "parameters": [
+                {
+                  "name": "name",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Значение параметра пути из маршрута с угловыми скобками: для on_get(\"/post/<id>\", …) и запроса \"/post/3\" вызов req.param(\"id\") вернёт \"3\". Всегда строка (число делайте сами через to_int); пустая строка, если параметра нет."
+            },
+            {
               "name": "query",
               "signature": "query(name: string): string",
               "returnType": "string",
@@ -12499,6 +12534,23 @@
           ],
           "methods": [
             {
+              "name": "redirect",
+              "signature": "redirect(path: string): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "path",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Отправляет браузер на другой адрес: ответ 303 See Other с заголовком Location. Канон PRG: после успешной обработки POST-формы вызовите res.redirect на GET-страницу — тогда обновление страницы (F5) не отправит форму второй раз."
+            },
+            {
               "name": "send",
               "signature": "send(text: string): void",
               "returnType": "void",
@@ -12531,6 +12583,31 @@
               ],
               "variadic": false,
               "documentation": "Отправляет текст ответа как JSON (application/json) — для программ-клиентов и http.get."
+            },
+            {
+              "name": "send_template",
+              "signature": "send_template(path: string, values: json.Object = null): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "path",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "values",
+                  "type": "json.Object",
+                  "optional": true,
+                  "defaultValue": "null",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Читает HTML-шаблон из файла (путь — как в file-библиотеке, без магических папок), подставляет значения из json.Object и отправляет страницу (text/html). В шаблоне: {{ключ}} и {{ключ.поле}} — подстановка (текст всегда экранируется: данные — текст, разметка живёт в шаблоне), {% for x in список %}…{% endfor %} — цикл по json.Array, {% if флаг %}…{% else %}…{% endif %} — ветвление по bool. Ошибка шаблона не роняет сервер: в страницу встаёт читаемый маркер [[ … ]]."
             }
           ]
         },
@@ -12588,7 +12665,7 @@
                 }
               ],
               "variadic": false,
-              "documentation": "Регистрирует обработчик GET-запросов на точный путь (например \"/hello\"). Обработчик — функция вида void function(web.Request req, web.Response res). Повторная регистрация пути — ошибка."
+              "documentation": "Регистрирует обработчик GET-запросов на путь (например \"/hello\"). Сегмент в угловых скобках — параметр пути: \"/post/<id>\" совпадает с \"/post/3\", значение достаётся через req.param(\"id\"). Точный путь побеждает шаблонный. Обработчик — функция вида void function(web.Request req, web.Response res). Повторная регистрация пути — ошибка."
             },
             {
               "name": "on_post",
@@ -12613,7 +12690,7 @@
                 }
               ],
               "variadic": false,
-              "documentation": "Регистрирует обработчик POST-запросов на точный путь. Тело запроса — в req.body."
+              "documentation": "Регистрирует обработчик POST-запросов на путь (параметры пути \"<id>\" работают как в on_get). Тело запроса — в req.body, поля HTML-формы — через req.form(\"имя\")."
             },
             {
               "name": "run",

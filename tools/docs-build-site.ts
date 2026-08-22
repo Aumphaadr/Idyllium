@@ -782,6 +782,16 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     status: 'ready',
     reviewFlags: [],
   },
+  {
+    sectionId: 'network',
+    afterLessonId: 'web-server',
+    id: 'web-templates',
+    title: 'Сайт из шаблонов',
+    subtitle: 'send_template, {{дырки}} и {% for %}, параметры пути, формы и redirect',
+    sourceFile: 'docs/manual-content/network/web-templates.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
 ];
 
 const LESSON_EXTRAS: Record<string, string> = {};

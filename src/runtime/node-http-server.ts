@@ -23,14 +23,27 @@ export function createNodeHttpListen() {
         incoming.on('end', () => {
           void (async () => {
             try {
-              const url = new URL(incoming.url ?? '/', 'http://localhost');
+              // Путь берётся из запроса ДОСЛОВНО (new URL('//x', …) читал бы
+              // '//x' как «хост x, путь /» — тихий мисроутинг), а битые
+              // процентные последовательности не роняют запрос в пятисотку:
+              // нераскодировавшийся путь идёт как есть и честно ловит 404.
+              const rawUrl = incoming.url ?? '/';
+              const questionMark = rawUrl.indexOf('?');
+              const rawPath = questionMark < 0 ? rawUrl : rawUrl.slice(0, questionMark);
+              const rawQuery = questionMark < 0 ? '' : rawUrl.slice(questionMark + 1);
               const query: Record<string, string> = {};
-              url.searchParams.forEach((value, name) => {
+              new URLSearchParams(rawQuery).forEach((value, name) => {
                 if (!(name in query)) query[name] = value;
               });
+              let path = rawPath;
+              try {
+                path = decodeURIComponent(rawPath);
+              } catch {
+                // оставляем сырой путь
+              }
               const response = await handler({
                 method: incoming.method ?? 'GET',
-                path: decodeURIComponent(url.pathname),
+                path,
                 query,
                 body: Buffer.concat(chunks).toString('utf8'),
               });

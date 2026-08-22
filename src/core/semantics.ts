@@ -32,7 +32,7 @@ import {
   WhileStatement,
 } from './ast';
 import { DiagnosticBag, SourceRange } from './diagnostics';
-import { UserModuleRegistry } from './modules';
+import { UserModuleClassSpec, UserModuleRegistry } from './modules';
 import { FunctionSpec, ParameterSpec, PropertySpec, StandardLibraryRegistry, createDefaultStandardLibrary } from './stdlib/registry';
 import {
   ANY_TYPE,
@@ -139,6 +139,12 @@ interface UserPropertySpec {
   readonly access: AccessModifier;
   /** «Пустое поле»: объектное поле с явным `= null` — может быть пустым по замыслу автора класса. */
   readonly nullable?: boolean;
+  /** Статическое поле — одно на класс, доступ по имени класса. */
+  readonly isStatic?: boolean;
+  /** Класс-константа: const в теле класса, присваивание запрещено. */
+  readonly isConst?: boolean;
+  /** Значение целочисленной класс-константы — годится размером массива. */
+  readonly constantValue?: number;
 }
 
 interface UserMethodAccess {
@@ -291,6 +297,9 @@ export class SemanticAnalyzer {
           range: field.range,
           owner: field.owner,
           access: field.access,
+          isStatic: field.isStatic,
+          isConst: field.isConst,
+          constantValue: field.constantValue,
           nullable: field.nullable === true,
         });
       }
@@ -531,7 +540,8 @@ export class SemanticAnalyzer {
       for (const fieldName of info.ownFields) {
         const field = info.fields.get(fieldName);
         // «Пустое поле» цепочку обрывает: фабрике нечего строить.
-        if (field && field.nullable !== true) requiredClasses(field.type, next);
+        // Статики тоже: они живут на классе и в фабрику объекта не входят.
+        if (field && field.nullable !== true && field.isStatic !== true) requiredClasses(field.type, next);
       }
       for (const candidate of next) {
         if (candidate === target) return true;
@@ -547,7 +557,7 @@ export class SemanticAnalyzer {
       if (!info) continue;
       for (const fieldName of info.ownFields) {
         const field = info.fields.get(fieldName);
-        if (!field || field.nullable === true) continue;
+        if (!field || field.nullable === true || field.isStatic === true) continue;
         const targets: string[] = [];
         requiredClasses(field.type, targets);
         for (const target of targets) {
@@ -625,6 +635,9 @@ export class SemanticAnalyzer {
       const isNullInitializer = field.initializer?.kind === 'LiteralExpression'
         && field.initializer.valueType === 'null';
       const nullable = isNullInitializer && this.userClassBareName(fieldType) !== null;
+      const constantValue = declaration.isConst && field.initializer
+        ? this.foldConstInt(field.initializer) ?? undefined
+        : undefined;
       info.fields.set(field.name, {
         name: field.name,
         type: fieldType,
@@ -632,6 +645,9 @@ export class SemanticAnalyzer {
         owner: info.declaration.name,
         access: declaration.access,
         nullable,
+        isStatic: declaration.isStatic,
+        isConst: declaration.isConst,
+        constantValue,
       });
       info.ownFields.add(field.name);
       if (nullable) {
@@ -840,9 +856,10 @@ export class SemanticAnalyzer {
     const info = this.classes.get(declaration.name);
     if (!info) return;
 
+    const seenStatics = new Set<string>();
     for (const member of declaration.members) {
       if (member.kind === 'ClassFieldDeclaration') {
-        this.analyzeClassFieldInitializers(info, member);
+        this.analyzeClassFieldInitializers(info, member, seenStatics);
       }
       if (member.kind === 'ClassMethodDeclaration') {
         this.analyzeClassMethod(info, member);
@@ -853,13 +870,24 @@ export class SemanticAnalyzer {
     }
   }
 
-  private analyzeClassFieldInitializers(info: UserClassInfo, declaration: ClassFieldDeclaration): void {
+  private analyzeClassFieldInitializers(
+    info: UserClassInfo,
+    declaration: ClassFieldDeclaration,
+    seenStatics: Set<string>,
+  ): void {
     const fieldType = this.resolveTypeName(declaration.declaredType);
     for (const field of declaration.fields) {
+      if (declaration.isStatic && field.initializer) {
+        this.checkStaticInitializerReferences(field.initializer, info, seenStatics, field.name);
+      }
+      if (declaration.isStatic) seenStatics.add(field.name);
       if (!field.initializer) continue;
-      this.pushClassContext(info.declaration.name, false);
+      this.pushClassContext(info.declaration.name, declaration.isStatic);
       this.pushScope();
-      this.declare('this', classType(info.declaration.name), 'parameter', info.declaration.range);
+      // У статических полей и класс-констант нет объекта — this не объявляем.
+      if (!declaration.isStatic) {
+        this.declare('this', classType(info.declaration.name), 'parameter', info.declaration.range);
+      }
       const initializerType = this.expressionType(field.initializer);
       const nullableField = info.fields.get(field.name)?.nullable === true
         && initializerType.kind === 'null';
@@ -872,6 +900,57 @@ export class SemanticAnalyzer {
       this.popScope();
       this.popClassContext();
     }
+  }
+
+  /** Инициализаторы статиков исполняются при объявлении класса — форвард-ссылки
+   *  давали бы сырой TDZ или тихий undefined (находка ломателей 2026-08-22). */
+  private checkStaticInitializerReferences(
+    expression: Expression,
+    info: UserClassInfo,
+    seenStatics: ReadonlySet<string>,
+    fieldName: string,
+  ): void {
+    const classOrder = [...this.classes.keys()];
+    const currentIndex = classOrder.indexOf(info.declaration.name);
+    const visit = (node: unknown): void => {
+      if (Array.isArray(node)) {
+        for (const item of node) visit(item);
+        return;
+      }
+      if (typeof node !== 'object' || node === null) return;
+      const kind = (node as { kind?: unknown }).kind;
+      if (typeof kind !== 'string') return;
+      // Тело функции-значения исполняется позже объявления класса — там можно всё.
+      if (kind === 'FunctionExpression') return;
+      if (kind === 'MemberExpression') {
+        const member = node as Extract<Expression, { kind: 'MemberExpression' }>;
+        if (member.object.kind === 'IdentifierExpression') {
+          const className = member.object.name;
+          if (className === info.declaration.name) {
+            const target = info.fields.get(member.name);
+            if (target?.isStatic && !seenStatics.has(member.name)) {
+              const kindWord = target.isConst ? 'class constant' : 'static field';
+              this.diagnostics.error(member.range, `${kindWord} '${className}.${member.name}' is used before its declaration — declare it above '${className}.${fieldName}'`);
+            }
+          } else if (this.classes.has(className)) {
+            const otherIndex = classOrder.indexOf(className);
+            if (otherIndex > currentIndex) {
+              this.diagnostics.error(member.range, `class '${className}' is declared later in the file — move it above '${info.declaration.name}' to use '${className}.${member.name}' here`);
+            }
+          }
+        }
+      }
+      if (kind === 'IdentifierExpression') {
+        const identifier = node as Extract<Expression, { kind: 'IdentifierExpression' }>;
+        const symbol = this.lookup(identifier.name);
+        // Файловые ПЕРЕМЕННЫЕ создаются после классов — статикам они не видны.
+        if (symbol && symbol.kind === 'variable' && !symbol.readonly) {
+          this.diagnostics.error(identifier.range, `static initializer cannot use variable '${identifier.name}' — file variables are created after classes; use a constant`);
+        }
+      }
+      for (const value of Object.values(node)) visit(value);
+    };
+    visit(expression);
   }
 
   private analyzeClassMethod(info: UserClassInfo, declaration: ClassMethodDeclaration): void {
@@ -1123,6 +1202,11 @@ export class SemanticAnalyzer {
       this.diagnostics.error(statement.range, "cannot declare variable of type 'void'");
       return;
     }
+    // Имя класса — не имя переменной: кодоген обращается к классам по имени,
+    // и тень превращалась бы в тихий хайджек (находка ломателей 2026-08-22).
+    if (this.classes.has(statement.name)) {
+      this.diagnostics.error(statement.nameRange, `name '${statement.name}' is already used by a class`);
+    }
 
     if (statement.isConst && !statement.initializer && !statement.constructorArgs) {
       this.diagnostics.error(statement.nameRange, `constant '${statement.name}' must have an initializer`);
@@ -1148,6 +1232,7 @@ export class SemanticAnalyzer {
           `cannot assign '${typeToString(initializerType)}' value to '${typeToString(declaredType)}' variable`,
         );
       }
+      this.checkNestedArrayInitializer(declaredType, statement.initializer);
     }
 
     if (statement.constructorArgs) {
@@ -1164,6 +1249,27 @@ export class SemanticAnalyzer {
       const symbol = this.currentScope().get(statement.name);
       if (value !== null && symbol) symbol.constantValue = value;
     }
+  }
+
+  // Вложенные ряды инициализатора сверяются с размером на компиляции — иначе
+  // несоответствие доезжало бы до рантайма текстом про внутренний dyn_array,
+  // которого ученик не писал (E13).
+  private checkNestedArrayInitializer(declaredType: TypeRef, initializer: Expression): void {
+    if (declaredType.kind !== 'array' || declaredType.dynamic) return;
+    if (initializer.kind !== 'ArrayLiteralExpression') return;
+    const elementType = declaredType.elementType;
+    if (elementType.kind !== 'array' || elementType.dynamic || elementType.size === null) return;
+    initializer.elements.forEach((element, index) => {
+      if (element.kind !== 'ArrayLiteralExpression') return;
+      if (element.elements.length !== elementType.size) {
+        this.diagnostics.error(
+          element.range,
+          `row ${index + 1} of the initializer has ${element.elements.length} value${element.elements.length === 1 ? '' : 's'}, but '${typeToString(elementType)}' needs ${elementType.size}`,
+        );
+        return;
+      }
+      this.checkNestedArrayInitializer(elementType, element);
+    });
   }
 
   private analyzeConstructorArguments(statement: VariableDeclaration, declaredType: TypeRef): void {
@@ -1225,6 +1331,12 @@ export class SemanticAnalyzer {
       if (symbol?.constantValue !== undefined) return symbol.constantValue;
       return this.fileConstants.get(expression.name) ?? null;
     }
+    if (expression.kind === 'MemberExpression' && expression.object.kind === 'IdentifierExpression') {
+      // Класс-константа как компайл-время значение: Hero.MAX_LEVEL.
+      const field = this.classes.get(expression.object.name)?.fields.get(expression.name);
+      if (field?.isConst && field.constantValue !== undefined) return field.constantValue;
+      return null;
+    }
     if (expression.kind === 'UnaryExpression' && expression.operator === '-') {
       const operand = this.foldConstInt(expression.operand);
       return operand === null ? null : -operand;
@@ -1262,10 +1374,39 @@ export class SemanticAnalyzer {
         this.diagnostics.error(typeName.elementType.range, "array element type cannot be 'void'");
       }
       if (!typeName.dynamic && typeName.sizeName !== null && typeName.size === null) {
-        // Размер задан именованной константой: array<int, L>
+        // Размер задан именованной константой: array<int, L> — либо
+        // классовой, через точку: array<int, Hero.MAX_LEVEL>.
         const sizeRange = typeName.sizeRange ?? typeName.range;
-        const symbol = this.lookup(typeName.sizeName);
-        const value = symbol?.constantValue ?? this.fileConstants.get(typeName.sizeName);
+        let symbol = null;
+        let value;
+        const dot = typeName.sizeName.indexOf('.');
+        if (dot > 0) {
+          const className = typeName.sizeName.slice(0, dot);
+          const constantName = typeName.sizeName.slice(dot + 1);
+          const classInfo = this.classes.get(className);
+          const field = classInfo?.fields.get(constantName);
+          if (classInfo && field) {
+            if (!field.isConst) {
+              this.diagnostics.error(sizeRange, `array size '${typeName.sizeName}' is not a constant — only a class constant (const) works as a size`);
+              return arrayType(elementType, null, false);
+            }
+            if (!sameType(field.type, INT)) {
+              this.diagnostics.error(sizeRange, `array size constant '${typeName.sizeName}' must be an int constant, got '${typeToString(field.type)}'`);
+              return arrayType(elementType, null, false);
+            }
+            if (field.constantValue === undefined) {
+              this.diagnostics.error(sizeRange, `array size constant '${typeName.sizeName}' must be initialized with a constant expression`);
+              return arrayType(elementType, null, false);
+            }
+          } else if (classInfo) {
+            this.diagnostics.error(sizeRange, `class '${className}' has no constant '${constantName}'`);
+            return arrayType(elementType, null, false);
+          }
+          value = field?.isConst ? field.constantValue : undefined;
+        } else {
+          symbol = this.lookup(typeName.sizeName);
+          value = symbol?.constantValue ?? this.fileConstants.get(typeName.sizeName);
+        }
         if (value === undefined) {
           if (symbol) {
             this.diagnostics.error(
@@ -1285,6 +1426,11 @@ export class SemanticAnalyzer {
       }
       if (!typeName.dynamic && (typeName.size === null || typeName.size < 0)) {
         this.diagnostics.error(typeName.range, 'array size must be a non-negative integer');
+      }
+      // Предел создаваемого массива (см. assertCreatableArraySize в рантайме):
+      // известный на компиляции гигантский размер отклоняется здесь же.
+      if (!typeName.dynamic && typeName.size !== null && typeName.size > 100_000_000) {
+        this.diagnostics.error(typeName.range, `array size ${typeName.size} is too large (maximum 100000000)`);
       }
       return arrayType(elementType, typeName.size, typeName.dynamic);
     }
@@ -1415,6 +1561,22 @@ export class SemanticAnalyzer {
     if (target.kind === 'MemberExpression') {
       if (target.object.kind === 'IdentifierExpression') {
         const moduleName = target.object.name;
+        const targetClassInfo = this.classes.get(moduleName);
+        const staticField = targetClassInfo?.fields.get(target.name);
+        if (staticField?.isStatic) {
+          this.markSemanticToken('class', target.object.range);
+          this.markSemanticToken('property', target.nameRange, staticField.isConst ? ['static', 'readonly'] : ['static']);
+          if (staticField.isConst) {
+            this.diagnostics.error(target.range, `cannot assign to class constant '${staticField.owner}.${target.name}'`);
+            return { type: staticField.type };
+          }
+          if (staticField.owner !== moduleName) {
+            this.diagnostics.error(target.range, `static field '${staticField.owner}.${target.name}' is not inherited — write '${staticField.owner}.${target.name}'`);
+            return { type: staticField.type };
+          }
+          this.checkClassMemberAccess(staticField, target.range);
+          return { type: staticField.type };
+        }
         const stdlibConstant = this.stdlib.getModule(moduleName)?.constants.get(target.name);
         const userConstant = this.userModuleRegistry.getModule(moduleName)?.constants.get(target.name);
         const constant = stdlibConstant ?? userConstant;
@@ -1432,6 +1594,36 @@ export class SemanticAnalyzer {
           this.diagnostics.error(target.range, `cannot assign to constant '${moduleName}.${target.name}'`);
           return { type: constant.type };
         }
+      }
+
+      // Запись в статик модульного класса: zoo.Lion.pride = ...
+      const moduleStatic = this.moduleClassStaticContext(target.object);
+      if (moduleStatic) {
+        const { moduleName, className, classSpec } = moduleStatic;
+        const qualifiedClass = `${moduleName}.${className}`;
+        const field = classSpec.fields.find((item) => item.name === target.name);
+        if (field?.isStatic) {
+          this.markSemanticToken('property', target.nameRange, field.isConst ? ['static', 'readonly'] : ['static']);
+          if (field.isConst) {
+            this.diagnostics.error(target.range, `cannot assign to class constant '${qualifiedClass}.${target.name}'`);
+            return { type: field.type };
+          }
+          if (field.access === 'private') {
+            this.diagnostics.error(target.range, `member '${qualifiedClass}.${target.name}' is private and can only be used inside class '${qualifiedClass}'`);
+            return { type: field.type };
+          }
+          return { type: field.type };
+        }
+        if (field) {
+          this.diagnostics.error(target.range, `instance field '${qualifiedClass}.${target.name}' must be accessed through an object`);
+          return { type: ERROR_TYPE };
+        }
+        if (classSpec.methods.some((item) => item.name === target.name)) {
+          this.diagnostics.error(target.range, `cannot assign to method '${qualifiedClass}.${target.name}'`);
+          return { type: ERROR_TYPE };
+        }
+        this.diagnostics.error(target.range, `class '${qualifiedClass}' has no member '${target.name}'`);
+        return { type: ERROR_TYPE };
       }
 
       const objectType = this.expressionType(target.object);
@@ -1474,6 +1666,11 @@ export class SemanticAnalyzer {
           return { type: ERROR_TYPE };
         }
         this.markSemanticToken('property', target.nameRange);
+        if (field.isStatic) {
+          const kindWord = field.isConst ? 'class constant' : 'static field';
+          this.diagnostics.error(target.range, `${kindWord} '${field.owner}.${target.name}' must be accessed through class '${field.owner}'`);
+          return { type: field.type };
+        }
         this.checkClassMemberAccess(field, target.range);
         return { type: field.type };
       }
@@ -1825,7 +2022,21 @@ export class SemanticAnalyzer {
         type.kind === 'qualified' && type.moduleName === 'time' && type.name === 'stamp';
       if (isStamp(left) && isStamp(right)) return BOOL;
       if (!isNumeric(left) || !isNumeric(right)) {
-        this.diagnostics.error(expression.range, `comparison '${expression.operator}' requires numeric operands`);
+        if (expression.left.kind === 'UnaryExpression' && expression.left.operator === 'not') {
+          // Жадный 'not' схватил только соседа, и сравнивается уже bool —
+          // подсказываем скобки, а не жалуемся на типы (E8).
+          const operand = expression.left.operand;
+          const shown = operand.kind === 'IdentifierExpression' ? operand.name : '…';
+          this.diagnostics.error(
+            expression.range,
+            `'not' takes only what stands right after it — write 'not (${shown} ${expression.operator} …)' to negate the whole comparison`,
+          );
+        } else {
+          this.diagnostics.error(
+            expression.range,
+            `comparison '${expression.operator}' requires numeric operands, got '${typeToString(left)}' and '${typeToString(right)}'`,
+          );
+        }
       }
       return BOOL;
     }
@@ -2128,6 +2339,10 @@ export class SemanticAnalyzer {
         if (method) {
           const access = classInfo.methodAccess.get(callee.name);
           if (access?.isStatic) {
+            if (access.owner !== moduleName) {
+              this.diagnostics.error(callee.range, `static method '${access.owner}.${callee.name}' is not inherited — call '${access.owner}.${callee.name}()'`);
+              return null;
+            }
             this.checkClassMemberAccess(access, callee.range);
             return method;
           }
@@ -2135,6 +2350,12 @@ export class SemanticAnalyzer {
           return null;
         }
 
+        const calledField = classInfo.fields.get(callee.name);
+        if (calledField?.isStatic) {
+          const kindWord = calledField.isConst ? 'class constant' : 'static field';
+          this.diagnostics.error(callee.range, `'${moduleName}.${callee.name}' is a ${kindWord}, not a method`);
+          return null;
+        }
         if (classInfo.fields.has(callee.name)) {
           this.diagnostics.error(callee.range, `instance field '${moduleName}.${callee.name}' must be accessed through an object`);
           return null;
@@ -2146,6 +2367,38 @@ export class SemanticAnalyzer {
     }
 
     if (callee.kind === 'MemberExpression') {
+      // Вызов статик-метода модульного класса: zoo.Lion.roar(...)
+      const moduleStatic = this.moduleClassStaticContext(callee.object);
+      if (moduleStatic) {
+        const { moduleName, className, classSpec } = moduleStatic;
+        const qualifiedClass = `${moduleName}.${className}`;
+        const method = classSpec.methods.find((item) => item.name === callee.name);
+        if (method) {
+          this.markSemanticToken('method', callee.nameRange, ['static']);
+          if (!method.isStatic) {
+            this.diagnostics.error(callee.range, `instance method '${qualifiedClass}.${callee.name}' must be called on an object`);
+            return null;
+          }
+          if (method.access === 'private') {
+            this.diagnostics.error(callee.range, `member '${qualifiedClass}.${callee.name}' is private and can only be used inside class '${qualifiedClass}'`);
+            return null;
+          }
+          return method.spec;
+        }
+        const field = classSpec.fields.find((item) => item.name === callee.name);
+        if (field?.isStatic) {
+          const kindWord = field.isConst ? 'class constant' : 'static field';
+          this.diagnostics.error(callee.range, `'${qualifiedClass}.${callee.name}' is a ${kindWord}, not a method`);
+          return null;
+        }
+        const inherited = this.moduleBaseStaticMember(moduleName, classSpec, callee.name);
+        if (inherited?.isMethod) {
+          this.diagnostics.error(callee.range, `static method '${moduleName}.${inherited.ownerClass}.${callee.name}' is not inherited — call '${moduleName}.${inherited.ownerClass}.${callee.name}()'`);
+          return null;
+        }
+        this.diagnostics.error(callee.range, `class '${qualifiedClass}' has no static method '${callee.name}'`);
+        return null;
+      }
       const objectType = this.expressionType(callee.object);
       if (objectType.kind === 'error') return null;
       if (this.isStringType(objectType)) {
@@ -2208,6 +2461,16 @@ export class SemanticAnalyzer {
         this.markSemanticToken('method', callee.nameRange);
         const method = this.getClassMethodInfo(objectType.name, callee.name);
         if (method) {
+          // Контракт equals живёт в слоте своего класса и НЕ наследуется:
+          // компилятор обязан отказать сам, а не отправлять в рантайм за
+          // «object has no method 'equals'» (E17, находка методистов).
+          if (callee.name === 'equals'
+            && method.access.owner !== objectType.name
+            && this.equalsContractClasses.has(method.access.owner)
+            && !this.equalsContractClasses.has(objectType.name)) {
+            this.diagnostics.error(callee.range, `'equals' is a contract and is not inherited — declare 'bool function equals(${objectType.name} other)' in class '${objectType.name}' and the call will use it`);
+            return null;
+          }
           this.checkClassMemberAccess(method.access, callee.range);
           return method.spec;
         }
@@ -2622,6 +2885,10 @@ export class SemanticAnalyzer {
           this.markSemanticToken('method', expression.nameRange, ['static']);
           const access = classInfo.methodAccess.get(expression.name);
           if (access?.isStatic) {
+            if (access.owner !== moduleName) {
+              this.diagnostics.error(expression.range, `static method '${access.owner}.${expression.name}' is not inherited — call '${access.owner}.${expression.name}()'`);
+              return ERROR_TYPE;
+            }
             this.checkClassMemberAccess(access, expression.range);
             return functionType(method.parameters.map((param) => param.type), method.returnType);
           }
@@ -2629,7 +2896,18 @@ export class SemanticAnalyzer {
           return ERROR_TYPE;
         }
 
-        if (classInfo.fields.has(expression.name)) {
+        const field = classInfo.fields.get(expression.name);
+        if (field) {
+          if (field.isStatic) {
+            this.markSemanticToken('property', expression.nameRange, field.isConst ? ['static', 'readonly'] : ['static']);
+            if (field.owner !== moduleName) {
+              const kindWord = field.isConst ? 'class constant' : 'static field';
+              this.diagnostics.error(expression.range, `${kindWord} '${field.owner}.${expression.name}' is not inherited — write '${field.owner}.${expression.name}'`);
+              return ERROR_TYPE;
+            }
+            this.checkClassMemberAccess(field, expression.range);
+            return field.type;
+          }
           this.diagnostics.error(expression.range, `instance field '${moduleName}.${expression.name}' must be accessed through an object`);
           return ERROR_TYPE;
         }
@@ -2637,6 +2915,47 @@ export class SemanticAnalyzer {
         this.diagnostics.error(expression.range, `class '${moduleName}' has no member '${expression.name}'`);
         return ERROR_TYPE;
       }
+    }
+
+    // Статики модульного класса: zoo.Lion.pride / zoo.Lion.MAX_AGE / zoo.Lion.roar
+    const moduleStatic = this.moduleClassStaticContext(expression.object);
+    if (moduleStatic) {
+      const { moduleName, className, classSpec } = moduleStatic;
+      const qualifiedClass = `${moduleName}.${className}`;
+      const field = classSpec.fields.find((item) => item.name === expression.name);
+      if (field) {
+        if (field.isStatic) {
+          this.markSemanticToken('property', expression.nameRange, field.isConst ? ['static', 'readonly'] : ['static']);
+          if (field.access === 'private') {
+            this.diagnostics.error(expression.range, `member '${qualifiedClass}.${expression.name}' is private and can only be used inside class '${qualifiedClass}'`);
+            return ERROR_TYPE;
+          }
+          return field.type;
+        }
+        this.diagnostics.error(expression.range, `instance field '${qualifiedClass}.${expression.name}' must be accessed through an object`);
+        return ERROR_TYPE;
+      }
+      const method = classSpec.methods.find((item) => item.name === expression.name);
+      if (method) {
+        this.markSemanticToken('method', expression.nameRange, ['static']);
+        if (!method.isStatic) {
+          this.diagnostics.error(expression.range, `instance method '${qualifiedClass}.${expression.name}' must be called on an object`);
+          return ERROR_TYPE;
+        }
+        if (method.access === 'private') {
+          this.diagnostics.error(expression.range, `member '${qualifiedClass}.${expression.name}' is private and can only be used inside class '${qualifiedClass}'`);
+          return ERROR_TYPE;
+        }
+        return functionType(method.spec.parameters.map((param) => param.type), method.spec.returnType);
+      }
+      const inherited = this.moduleBaseStaticMember(moduleName, classSpec, expression.name);
+      if (inherited) {
+        const kindWord = inherited.isMethod ? 'static method' : inherited.isConst ? 'class constant' : 'static field';
+        this.diagnostics.error(expression.range, `${kindWord} '${moduleName}.${inherited.ownerClass}.${expression.name}' is not inherited — write '${moduleName}.${inherited.ownerClass}.${expression.name}'`);
+        return ERROR_TYPE;
+      }
+      this.diagnostics.error(expression.range, `class '${qualifiedClass}' has no member '${expression.name}'`);
+      return ERROR_TYPE;
     }
 
     const objectType = this.expressionType(expression.object);
@@ -2696,6 +3015,11 @@ export class SemanticAnalyzer {
       const field = this.getClassField(objectType.name, expression.name);
       if (field) {
         this.markSemanticToken('property', expression.nameRange);
+        if (field.isStatic) {
+          const kindWord = field.isConst ? 'class constant' : 'static field';
+          this.diagnostics.error(expression.range, `${kindWord} '${field.owner}.${expression.name}' must be accessed through class '${field.owner}'`);
+          return ERROR_TYPE;
+        }
         this.checkClassMemberAccess(field, expression.range);
         return field.type;
       }
@@ -2703,6 +3027,13 @@ export class SemanticAnalyzer {
       const method = this.getClassMethodInfo(objectType.name, expression.name);
       if (method) {
         this.markSemanticToken('method', expression.nameRange);
+        if (expression.name === 'equals'
+          && method.access.owner !== objectType.name
+          && this.equalsContractClasses.has(method.access.owner)
+          && !this.equalsContractClasses.has(objectType.name)) {
+          this.diagnostics.error(expression.range, `'equals' is a contract and is not inherited — declare 'bool function equals(${objectType.name} other)' in class '${objectType.name}' and the call will use it`);
+          return ERROR_TYPE;
+        }
         this.checkClassMemberAccess(method.access, expression.range);
         return functionType(method.spec.parameters.map((param) => param.type), method.spec.returnType);
       }
@@ -2813,6 +3144,51 @@ export class SemanticAnalyzer {
     if (!access) return null;
     if (!access.isStatic) return null;
     return { spec: method, access };
+  }
+
+  /** Объект вида module.Class (zoo.Lion) — контекст статического доступа
+   *  к членам класса пользовательского модуля. */
+  private moduleClassStaticContext(objectExpression: Expression): {
+    readonly moduleName: string;
+    readonly className: string;
+    readonly classSpec: UserModuleClassSpec;
+  } | null {
+    if (objectExpression.kind !== 'MemberExpression') return null;
+    if (objectExpression.object.kind !== 'IdentifierExpression') return null;
+    const moduleName = objectExpression.object.name;
+    const module = this.userModuleRegistry.getModule(moduleName);
+    const classSpec = module?.classes.get(objectExpression.name);
+    if (!module || !classSpec) return null;
+    if (!this.imports.has(moduleName)) {
+      this.diagnostics.error(objectExpression.object.range, `'${moduleName}' is not imported (use 'use ${moduleName};')`);
+    }
+    this.markSemanticToken('namespace', objectExpression.object.range);
+    this.markSemanticToken('class', objectExpression.nameRange);
+    // Тип «объекта»-класса — квалифицированный: кодоген по нему находит
+    // имена параметров статических методов модульного класса.
+    this.nodeTypes.set(objectExpression, qualified(moduleName, objectExpression.name));
+    return { moduleName, className: objectExpression.name, classSpec };
+  }
+
+  /** Статик-член в цепочке наследования модульного класса — для честного
+   *  «is not inherited» вместо «has no member». */
+  private moduleBaseStaticMember(
+    moduleName: string,
+    classSpec: UserModuleClassSpec,
+    memberName: string,
+  ): { readonly ownerClass: string; readonly isConst: boolean; readonly isMethod: boolean } | null {
+    const module = this.userModuleRegistry.getModule(moduleName);
+    let baseName = classSpec.baseName;
+    while (baseName) {
+      const base = module?.classes.get(baseName);
+      if (!base) return null;
+      const field = base.fields.find((item) => item.name === memberName);
+      if (field?.isStatic) return { ownerClass: baseName, isConst: field.isConst === true, isMethod: false };
+      const method = base.methods.find((item) => item.name === memberName);
+      if (method?.isStatic) return { ownerClass: baseName, isConst: false, isMethod: true };
+      baseName = base.baseName;
+    }
+    return null;
   }
 
   private checkClassMemberAccess(member: UserPropertySpec | UserMethodAccess, range: SourceRange): void {

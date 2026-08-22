@@ -1762,11 +1762,7 @@
     const backgroundColor = displayedWidgetColor(props, 'background_color', inheritedColors);
     if (
       backgroundColor
-      && (
-        isExplicitProperty(props, 'background_color')
-        || inheritedColors.background_color
-        || !isTransparentColor(backgroundColor)
-      )
+      && (isExplicitProperty(props, 'background_color') || !isTransparentColor(backgroundColor))
     ) {
       el.style.backgroundColor = backgroundColor;
     }
@@ -1779,7 +1775,11 @@
 
   function childInheritedColors(props, inheritedColors) {
     const next = { ...inheritedColors };
-    for (const name of ['text_color', 'background_color']) {
+    // Наследуется только цвет текста (как обещает урок). background_color
+    // НЕ каскадируется — иначе фон окна перекрашивал бы плашки кнопок и
+    // полей («растворение», E14). Прозрачные виджеты показывают фон
+    // родителя сквозь себя без всякого наследования — как в вебе.
+    for (const name of ['text_color']) {
       if (!isExplicitProperty(props, name)) continue;
       const value = color(props[name], '');
       if (value) {

@@ -291,10 +291,16 @@ report their ACTUAL class even when viewed through a base-typed variable
 `"zoo.Lion"`; library objects: `"gui.Button"`, `"json.Value"`,
 `"time.stamp"`). Main use: type checks inside the `equals` contract (§7).
 
-Ordinary `int` arithmetic is exact: `+ - *`, `div`, and `mod` never lose
-integer precision, including values above JavaScript's 2^53 limit and beyond
-64 bits (`123456789 * 123456789 * 123456789` prints all 25 digits). Fixed
-overflow wrap-around exists only in the `types` library.
+Ordinary `int` arithmetic is exact ON ANY SIZE: `+ - *`, `div`, `mod`,
+comparisons, literals of any length, printing, `to_string`/`to_int`
+round-trips, and `console.get_int` input never lose integer precision —
+including values above JavaScript's 2^53 limit and beyond 64 bits
+(`123456789 * 123456789 * 123456789` prints all 25 digits;
+`to_int("123456789123456789123456789")` returns it exactly). This is the
+language rule: int never overflows and never lies; fixed-width overflow
+wrap-around exists only in the `types` library cells. Precision honestly
+ends where the float domain begins: `/` always returns `float`, and
+`math.*` functions work in floats.
 
 ## 7. Operators
 
@@ -354,8 +360,13 @@ Use `and`, `or`, `xor`, `not`, not `&&`, `||`, `^`, `!`.
 
 Ordering comparisons `<`, `<=`, `>`, `>=` accept numeric operands and
 `time.stamp` pairs (ordered by instant). Comparing strings or chars with them
-is a compile error (`comparison '<' requires numeric operands`). Strings and
-chars support only `==` and `!=`.
+is a compile error that names both offending types (`comparison '<' requires
+numeric operands, got 'string' and 'string'`). Strings and chars support only
+`==` and `!=`. Special targeted hints: `score =+ 10` → `'=+' is not an
+operator — did you mean '+='?` (while `lives =- 5` stays a legal assignment
+of -5); a greedy `not` before a comparison (`not coins > 100`) adds `'not'
+takes only what stands right after it — write 'not (coins > …)' to negate
+the whole comparison`.
 
 ### Equality rules
 
@@ -675,6 +686,13 @@ text.replace(old_text, new_text)
 text.split(separator)
 text.trim()
 ```
+
+`is_int()`/`is_float()` are guards with an exact contract: `is_int()` is true
+precisely for the strings `to_int()` accepts, `is_float()` precisely for the
+strings `to_float()` accepts. Integer text is valid float text, so
+`"50".is_float()` is `true` (and `to_float("50")` returns 50); `is_int()` is
+therefore a subset of `is_float()`. Neither accepts exponent notation ("5e3"),
+commas, or non-numeric text. Both ignore surrounding whitespace.
 
 Character indexing:
 
@@ -1026,21 +1044,44 @@ class Hero {
 }
 ```
 
-### Static Methods
+### Static Methods, Static Fields, Class Constants
 
 ```idyllium
 use console;
 
 class Cat {
+    const int MAX_KITTENS = 6;      // class constant: Cat.MAX_KITTENS
+    static int population = 0;      // one per class, not per object
+
     static void function meow() {
         console.writeln("Мяу");
+    }
+
+    constructor Cat() {
+        Cat.population = Cat.population + 1;
     }
 }
 
 main() {
     Cat.meow();
+    console.writeln(Cat.population, " ", Cat.MAX_KITTENS);
+    Cat.population = 3;                  // static fields are writable
+    array<int, Cat.MAX_KITTENS> basket;  // int class constants work as array sizes
 }
 ```
+
+Rules: access is ALWAYS through the class name (`Cat.population`; through an
+object — compile error `static field 'Cat.population' must be accessed
+through class 'Cat'`; same for static methods). A class constant is written
+`const` WITHOUT `static` (`static const` → compile error suggesting plain
+`const`), must have an initializer, and cannot be assigned
+(`cannot assign to class constant 'Cat.MAX_KITTENS'`). Statics are NOT
+inherited: `Kitten.population` via a subclass → compile error
+`static field 'Cat.population' is not inherited — write 'Cat.population'`
+(same genre for static methods). `this` does not exist in static context.
+`const` parameters do not exist in the language. Statics of classes from
+USER MODULES work through the full chain: `use zoo; zoo.Lion.population`,
+`zoo.Lion.MAX_AGE`, `zoo.Lion.roar()` — same rules, same refusals.
 
 ### Inheritance And Polymorphism
 
@@ -1670,7 +1711,7 @@ program alive after main (window genre); `close()` releases it, Stop closes
 all posts. For structured messages (games, protocols) send JSON text and
 parse with `json.parse` — design the protocol before coding.
 
-## 21e. Library `web` (since 1.5.0)
+## 21e. Library `web` (since 1.5.0; templates, path parameters, forms and redirect — 1.5.1)
 
 HTTP server (Flask genre). Works in console runs and VS Code with a real
 port. In the Web IDE the same program starts a **rehearsal server**: a
@@ -1713,23 +1754,57 @@ main() {
 }
 ```
 
-- `web.Server`: `on_get(path, handler)` / `on_post(path, handler)` (exact
-  path match starting with '/'; duplicate registration is a runtime error),
+- `web.Server`: `on_get(path, handler)` / `on_post(path, handler)` (path
+  starts with '/'; duplicate registration is a runtime error),
   `serve_directory(path)`, `run()`, properties `port` (int; holds the actual
   port after run), `host` (default `"127.0.0.1"` — this computer only;
   `"0.0.0.0"` exposes the program to the whole local network, on purpose
   only), read-only `is_running`.
-- `web.Request`: read-only `path` and `body`; `query(name)` returns the query
-  parameter or an empty string.
+- **Path parameters**: a route segment in angle brackets is a
+  parameter — `app.on_get("/post/<id>", card)` matches `/post/3`, and
+  `req.param("id")` returns `"3"`. Values are ALWAYS strings (convert with
+  `to_int` yourself); missing name → empty string. An exact path beats a
+  parameter route (`/post/new` wins over `/post/<id>`). A parameter must
+  occupy a whole segment; two routes of the same shape conflict (runtime
+  error at registration).
+- `web.Request`: read-only `path` and `body`; `query(name)` — query
+  parameter or empty string; `param(name)` — path parameter or empty string;
+  `form(name)` — a field of an HTML form POST body
+  (application/x-www-form-urlencoded: percent-decoding and `+`-as-space are
+  handled), empty string when the field is absent.
 - `web.Response`: `send(text)` (text/html), `send_json(text)`
-  (application/json) — one reply per request, a second send is a runtime
+  (application/json), `send_template(path, values)` and `redirect(path)` —
+  one reply per request, a second send is a runtime
   error; `status` property (100–599, default 200).
-- Built-in behavior: unknown path → 404; known path, wrong method → 405;
-  handler crash → 500 with the error text (the server keeps running and logs
-  the crash to the program console). Requests are handled one at a time in
-  arrival order. Static serving never leaves the served directory (path
-  traversal is blocked). Busy port: `web.Server.run() port 8080 is already in
-  use — choose another port or stop the other program`.
+- **Templates**: `res.send_template("templates/list.html",
+  values)` reads an HTML file (a plain project path — no magic folders, same
+  file system as the `file` library, sandboxed to the project) and renders
+  it with values from a `json.Object` (optional second argument). Template
+  language: `{{key}}` and `{{key.field}}` substitute values — substituted
+  text is ALWAYS HTML-escaped (data is text; markup lives in the template);
+  `{% for x in list %}…{% endfor %}` loops over a `json.Array` (nesting
+  works); `{% if flag %}…{% else %}…{% endif %}` branches on a json bool
+  (prefer branching in code; the `if` door exists mainly for Jinja
+  migrants). Template mistakes never crash the server — a readable marker
+  goes INTO the page instead: `[[ нет значения 'ghost' ]]`,
+  `[[ 'title' — не объект ]]`, `[[ у 'guest' нет поля 'x' ]]`,
+  `[[ 'items' — список: нужен {% for %} ]]`, `[[ 'posts' — не список ]]`,
+  `[[ неизвестная команда '{% wat %}' ]]`. A missing template file is a
+  handler error with the file-library canon (`web.Response.send_template()
+  cannot read 'x.html': file does not exist` / `path is outside the
+  project`).
+- `redirect(path)` always answers **303 See Other** with a `Location`
+  header (no status choice). Canonical PRG: after a successful POST form
+  handler call `res.redirect("/")` so refreshing the page does not resubmit
+  the form. The Web IDE rehearsal rewrites `Location` into the
+  `/preview/<port>/` sandbox automatically.
+- Built-in behavior: unknown path → 404; known path (exact or parameter),
+  wrong method → 405; handler crash → 500 with the error text (the server
+  keeps running and logs the crash to the program console). Requests are
+  handled one at a time in arrival order. Static serving never leaves the
+  served directory (path traversal is blocked). Busy port: `web.Server.run()
+  port 8080 is already in use — choose another port or stop the other
+  program`.
 - The natural test client is the `http` library from the same language:
   `http.get("http://127.0.0.1:8080/api")`.
 
@@ -1909,8 +1984,20 @@ main() {
 }
 ```
 
-Operations between integer-like `types` values and `int` first produce an
-ordinary integer result, then assignment/call converts to the target type.
+Operators (`+`, `-`, `*`, …) over `types` values compute in ordinary exact
+Idyllium numbers; the CONSUMER truncates — the wrap happens when the result is
+written into a `types` variable, not inside the operator. Methods
+(`.shift_left()`, `.bit_and()`, …) compute inside the cell and return the
+receiver's type:
+
+```idyllium
+types.uint8 a = 200;
+types.uint8 b = 100;
+console.writeln(a + b);   // 300 — not yet written into a uint8
+types.uint8 c = a + b;    // 44 — truncated by the write
+console.writeln(a.shift_left(1));  // 144, not 400 — methods stay in-type
+```
+
 `int64` and `uint64` preserve their complete 64-bit ranges exactly, including
 values above 2^53. They use the same silent wraparound at typed boundaries.
 
@@ -2281,8 +2368,9 @@ covers the whole window — titlebar, frames, buttons, inputs, checkboxes,
 sliders, progress bars, tabs and modal dialogs. It is the lowest styling layer:
 a colour the student assigns (`text_color`, `background_color`,
 `border_color`, `foreground_color`) and IdySS stickers always win over it,
-while untouched colours follow the theme. Unknown names fall back to
-`"default"`.
+while untouched colours follow the theme. An unknown theme name is a runtime
+error listing all five (`Window.theme must be 'default', 'idyllium',
+'dracula', 'breeze' or 'oxygen', got '...'`).
 
 `gui.Label`:
 
@@ -2322,7 +2410,10 @@ resize_mode
 set_image(image: image.Image)
 ```
 
-Resize modes are `"fit"`, `"fill"`, `"stretch"`, and `"original"`.
+Resize modes are `"fit"`, `"fill"`, `"stretch"`, and `"original"`; any other
+value is a runtime error naming all four. String-enum widget properties are
+STRICT across the board (echo_mode, orientation, resize_mode, theme) — only
+IdySS `style` stickers stay silent by design.
 `ImageBox` does not load files itself. Load an `image.Static` or
 `image.Animation`, then pass it to `set_image()`.
 
@@ -2380,9 +2471,10 @@ on_change
 ```
 
 `orientation` is `"horizontal"` (default) or `"vertical"`; a vertical slider
-grows bottom-to-top (minimum at the bottom). Unknown values silently fall back
-to horizontal, like an unknown window theme. `gui.ProgressBar` has the same
-property with the same rules — a vertical bar fills bottom-to-top.
+grows bottom-to-top (minimum at the bottom). Any other value is a runtime
+error (`Slider.orientation must be 'horizontal' or 'vertical', got '...'`).
+`gui.ProgressBar` has the same property with the same rules — a vertical bar
+fills bottom-to-top.
 
 SpinBox, FloatSpinBox and Slider share the defaults `value = 0`, `min = 0`,
 `max = 100`, `step = 1`. Assigning `value` outside `min..max` from code is NOT

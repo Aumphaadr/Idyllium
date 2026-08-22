@@ -158,11 +158,107 @@ main() {
 </div>
 
 <div class="docs-section">
+  <h2>Статическое поле — общая тетрадь класса</h2>
+  <p>
+    Статическими бывают не только методы. Обычное поле — у каждого объекта
+    своё: сто котов — сто имён. А <strong>статическое поле</strong> — одно
+    на весь класс, как общая тетрадь на классной доске: кто бы ни подошёл,
+    тетрадь одна. Классика — счётчик созданных объектов:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Cat {
+    static int population = 0;
+
+    string name = "безымянный";
+
+    constructor Cat(string ex_name) {
+        this.name = ex_name;
+        Cat.population = Cat.population + 1;
+    }
+}
+
+main() {
+    console.writeln("Котов: ", Cat.population);
+    Cat first("Барсик");
+    Cat second("Мурка");
+    console.writeln("Котов: ", Cat.population);
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Котов: 0
+Котов: 2</idyl-output-block>
+
+  <p>
+    Каждый конструктор дописывает в общую тетрадь — и класс сам знает,
+    сколько котов создано, без всяких глобальных переменных. Обращение —
+    <strong>всегда через имя класса</strong>: <code>Cat.population</code>.
+    Попытка спросить через объект (<code>first.population</code>) — честная
+    ошибка: <code>static field 'Cat.population' must be accessed through
+    class 'Cat'</code> — тетрадь общая, и язык не даёт притвориться, будто
+    она принадлежит одному коту.
+  </p>
+</div>
+
+<div class="docs-section">
+  <h2>Константа класса</h2>
+  <p>
+    Если значение принадлежит классу и никогда не меняется — это
+    <strong>константа класса</strong>: знакомое слово <code>const</code>,
+    только в теле класса. Слова <code>static</code> рядом не нужно —
+    константа и так одна на класс, по-другому не бывает:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Cat {
+    const int MAX_KITTENS = 6;
+}
+
+main() {
+    console.writeln("Не больше ", Cat.MAX_KITTENS, " котят");
+
+    array<int, Cat.MAX_KITTENS> weights;
+    console.writeln("Корзинка на ", weights.length);
+}
+</script></idyl-code-block>
+
+  <idyl-output-block>Не больше 6 котят
+Корзинка на 6</idyl-output-block>
+
+  <p>
+    Константа обязана получить значение прямо при объявлении, присвоить ей
+    новое нельзя (<code>cannot assign to class constant 'Cat.MAX_KITTENS'</code>),
+    а целочисленная константа класса годится размером массива — как и
+    обычные константы. Вы уже встречали этот жанр у библиотек:
+    <code>types.INT8_MAX</code> — ровно такая же константа, только чужого
+    класса. Теперь такие есть и у ваших.
+  </p>
+  <p>
+    Осталась одна честность напоследок: статические члены <strong>не
+    наследуются</strong>. У наследника <code>Kitten</code> спросить
+    <code>Kitten.population</code> нельзя — компилятор подскажет:
+    <code>static field 'Cat.population' is not inherited — write
+    'Cat.population'</code>. Общая тетрадь принадлежит тому классу, который
+    её завёл.
+  </p>
+</div>
+
+<div class="docs-section">
   <h2>Итог</h2>
   <ul>
     <li><strong>Статический метод</strong> принадлежит классу, а не объекту.</li>
     <li>Вызывается через имя класса: <code>ИмяКласса.метод()</code>.</li>
     <li>Не имеет доступа к <code>this</code> и нестатическим членам класса.</li>
     <li>Идеален для вспомогательных и утилитарных функций.</li>
+    <li><strong>Статическое поле</strong> — одно на класс: общая тетрадь
+      (<code>Cat.population</code>), доступ только через имя класса.</li>
+    <li><strong>Константа класса</strong> — <code>const</code> в теле класса:
+      значение обязательно, присваивание запрещено, целочисленная годится
+      размером массива.</li>
+    <li>Статические члены не наследуются — тетрадь принадлежит своему классу.</li>
   </ul>
 </div>

@@ -401,13 +401,24 @@ class JavaScriptGenerator {
         }
     }
     emitProgramDeclarations(program, lines, indent) {
+        // Примитивные файловые константы объявляются РАНЬШЕ классов: инициализаторы
+        // статиков исполняются при объявлении класса и читают эти константы
+        // (сырой TDZ «Cannot access ... before initialization» — находка 2026-08-22).
+        const isPrimitiveConst = (declaration) => declaration.kind === 'VariableDeclaration'
+            && declaration.isConst
+            && declaration.declaredType.kind === 'PrimitiveTypeName';
+        for (const declaration of program.declarations) {
+            if (isPrimitiveConst(declaration)) {
+                this.emitVariableDeclaration(declaration, lines, indent);
+            }
+        }
         for (const declaration of program.declarations) {
             if (declaration.kind === 'ClassDeclaration') {
                 this.emitClassDeclaration(declaration, lines, indent);
             }
         }
         for (const declaration of program.declarations) {
-            if (declaration.kind === 'VariableDeclaration') {
+            if (declaration.kind === 'VariableDeclaration' && !isPrimitiveConst(declaration)) {
                 this.emitVariableDeclaration(declaration, lines, indent);
             }
         }
@@ -560,7 +571,7 @@ class JavaScriptGenerator {
         }
         this.classFieldInitializerDepth += 1;
         for (const member of declaration.members) {
-            if (member.kind === 'ClassFieldDeclaration') {
+            if (member.kind === 'ClassFieldDeclaration' && !member.isStatic) {
                 this.emitClassFieldDefaults(member, lines, indent + 1);
             }
         }
@@ -587,6 +598,25 @@ class JavaScriptGenerator {
             if (member.kind === 'ClassMethodDeclaration' && member.isStatic) {
                 this.emitStaticMethod(declaration.name, member, lines, indent);
             }
+        }
+        for (const member of declaration.members) {
+            if (member.kind === 'ClassFieldDeclaration' && member.isStatic) {
+                this.emitStaticFieldDefaults(declaration.name, member, lines, indent);
+            }
+        }
+    }
+    // Статическое поле (и класс-константа) — слот на объекте класса,
+    // инициализатор выполняется один раз при объявлении класса.
+    emitStaticFieldDefaults(className, declaration, lines, indent) {
+        const pad = '  '.repeat(indent);
+        for (const field of declaration.fields) {
+            const rawValue = field.initializer
+                ? this.expression(field.initializer)
+                : this.defaultValue(declaration.declaredType);
+            const value = field.initializer
+                ? this.valueForType(rawValue, declaration.declaredType, field.initializer.range)
+                : this.castForType(rawValue, declaration.declaredType);
+            lines.push(`${pad}${this.classObjectName(className)}.${field.name} = ${value};`);
         }
     }
     emitClassFieldDefaults(declaration, lines, indent) {
@@ -1528,6 +1558,13 @@ class Lexer {
                     this.hinted(tokens_1.TokenKind.BangEqual, start, "'=!' is not an operator — did you mean '!=' ?");
                     return;
                 }
+                // '=+' — та же транспозиция: унарного плюса в языке нет, легального
+                // кода с '=+' не существует, а почти всегда имелось в виду '+='.
+                // ('=-' не трогаем: 'lives =- 5' — законное присваивание -5.)
+                if (this.match('+')) {
+                    this.hinted(tokens_1.TokenKind.PlusEqual, start, "'=+' is not an operator — did you mean '+='?");
+                    return;
+                }
                 this.addSimple(tokens_1.TokenKind.Equal, start);
                 return;
             case '!':
@@ -2116,12 +2153,20 @@ class Parser {
                 currentAccess = access.kind === tokens_1.TokenKind.KwPrivate ? 'private' : 'public';
                 continue;
             }
+            // Класс-константа: const в теле класса — всегда одна на класс
+            // (Hero.MAX_LEVEL), слова static рядом не требуется и не принимается.
             if (this.check(tokens_1.TokenKind.KwConst)) {
-                const token = this.advance();
-                this.error(token.range, 'const class fields are not supported; use a top-level or local constant');
+                this.advance();
+                members.push(this.finishClassFieldDeclaration(this.parseTypeName(), currentAccess, true, true));
                 continue;
             }
             const isStatic = this.match(tokens_1.TokenKind.KwStatic);
+            if (isStatic && this.check(tokens_1.TokenKind.KwConst)) {
+                this.error(this.peek().range, "class constants are written without 'static' — 'const' alone already means one per class");
+                this.advance();
+                members.push(this.finishClassFieldDeclaration(this.parseTypeName(), currentAccess, true, true));
+                continue;
+            }
             if (this.check(tokens_1.TokenKind.KwEvent)) {
                 const eventToken = this.advance();
                 if (isStatic) {
@@ -2166,10 +2211,7 @@ class Parser {
                     members.push(this.finishClassMethodDeclaration(declaredType, isStatic, currentAccess));
                 }
                 else {
-                    if (isStatic) {
-                        this.error(declaredType.range, 'static fields are not supported yet');
-                    }
-                    members.push(this.finishClassFieldDeclaration(declaredType, currentAccess));
+                    members.push(this.finishClassFieldDeclaration(declaredType, currentAccess, isStatic));
                 }
                 continue;
             }
@@ -2187,11 +2229,14 @@ class Parser {
             range: { start: classToken.range.start, end: rightBrace.range.end },
         };
     }
-    finishClassFieldDeclaration(declaredType, access) {
+    finishClassFieldDeclaration(declaredType, access, isStatic = false, isConst = false) {
         const fields = [];
         do {
-            const name = this.consumeName('expected field name');
+            const name = this.consumeName(isConst ? 'expected constant name' : 'expected field name');
             const initializer = this.match(tokens_1.TokenKind.Equal) ? this.parseExpression() : null;
+            if (isConst && !initializer) {
+                this.error(name.range, `class constant '${name.lexeme}' must have an initializer`);
+            }
             fields.push({
                 kind: 'FieldDeclarator',
                 name: name.lexeme,
@@ -2200,12 +2245,14 @@ class Parser {
                 range: { start: name.range.start, end: (initializer ?? name).range.end },
             });
         } while (this.match(tokens_1.TokenKind.Comma));
-        const semicolon = this.consume(tokens_1.TokenKind.Semicolon, "expected ';' after field declaration");
+        const semicolon = this.consume(tokens_1.TokenKind.Semicolon, isConst ? "expected ';' after class constant" : "expected ';' after field declaration");
         return {
             kind: 'ClassFieldDeclaration',
             declaredType,
             fields,
             access,
+            isStatic,
+            isConst,
             range: { start: declaredType.range.start, end: semicolon.range.end },
         };
     }
@@ -2772,10 +2819,16 @@ class Parser {
             else {
                 this.consume(tokens_1.TokenKind.Comma, "expected ',' after array element type");
                 if (this.check(tokens_1.TokenKind.Identifier)) {
-                    // Размер именованной константой: array<int, L>
+                    // Размер именованной константой: array<int, L> — или классовой,
+                    // через точку: array<int, Hero.MAX_LEVEL>.
                     const nameToken = this.advance();
                     sizeName = nameToken.lexeme;
                     sizeRange = nameToken.range;
+                    if (this.match(tokens_1.TokenKind.Dot)) {
+                        const memberToken = this.consume(tokens_1.TokenKind.Identifier, 'expected constant name after \'.\'');
+                        sizeName = `${sizeName}.${memberToken.lexeme}`;
+                        sizeRange = { start: nameToken.range.start, end: memberToken.range.end };
+                    }
                 }
                 else {
                     const sizeToken = this.consume(tokens_1.TokenKind.IntLiteral, 'expected array size (an integer or a named constant)');
@@ -3176,6 +3229,36 @@ function functionSpecFromDeclaration(declaration, moduleName, program, localClas
         minArguments: requiredParameterCount(declaration.parameters),
     };
 }
+// Целочисленное значение класс-константы модуля: литералы, минус, + - *,
+// ссылки на РАНЕЕ объявленные константы того же класса (Class.NAME).
+function foldModuleConstInt(expression, className, classConsts) {
+    if (expression.kind === 'LiteralExpression') {
+        return expression.valueType === 'int' && typeof expression.value === 'number' ? expression.value : null;
+    }
+    if (expression.kind === 'UnaryExpression' && expression.operator === '-') {
+        const operand = foldModuleConstInt(expression.operand, className, classConsts);
+        return operand === null ? null : -operand;
+    }
+    if (expression.kind === 'MemberExpression'
+        && expression.object.kind === 'IdentifierExpression'
+        && expression.object.name === className) {
+        return classConsts.get(expression.name) ?? null;
+    }
+    if (expression.kind === 'BinaryExpression') {
+        const left = foldModuleConstInt(expression.left, className, classConsts);
+        const right = foldModuleConstInt(expression.right, className, classConsts);
+        if (left === null || right === null)
+            return null;
+        if (expression.operator === '+')
+            return left + right;
+        if (expression.operator === '-')
+            return left - right;
+        if (expression.operator === '*')
+            return left * right;
+        return null;
+    }
+    return null;
+}
 function classSpecFromDeclaration(declaration, moduleName, program, localClasses, stdlib, userModules, diagnostics) {
     const qualifiedName = (0, modules_1.qualifiedUserClassName)(moduleName, declaration.name);
     const fields = [];
@@ -3183,10 +3266,16 @@ function classSpecFromDeclaration(declaration, moduleName, program, localClasses
     const events = [];
     let constructorSpec = null;
     let constructorAccess = 'public';
+    const classConstValues = new Map();
     for (const member of declaration.members) {
         if (member.kind === 'ClassFieldDeclaration') {
             const type = resolveModuleExportType(member.declaredType, moduleName, program, localClasses, stdlib, userModules, diagnostics);
             for (const field of member.fields) {
+                const constantValue = member.isConst && field.initializer
+                    ? foldModuleConstInt(field.initializer, declaration.name, classConstValues) ?? undefined
+                    : undefined;
+                if (member.isConst && constantValue !== undefined)
+                    classConstValues.set(field.name, constantValue);
                 fields.push({
                     name: field.name,
                     type,
@@ -3196,6 +3285,9 @@ function classSpecFromDeclaration(declaration, moduleName, program, localClasses
                     nullable: field.initializer?.kind === 'LiteralExpression'
                         && field.initializer.valueType === 'null'
                         && (type.kind === 'class' || type.kind === 'qualified'),
+                    isStatic: member.isStatic,
+                    isConst: member.isConst,
+                    constantValue,
                 });
             }
         }
@@ -3425,6 +3517,9 @@ class SemanticAnalyzer {
                     range: field.range,
                     owner: field.owner,
                     access: field.access,
+                    isStatic: field.isStatic,
+                    isConst: field.isConst,
+                    constantValue: field.constantValue,
                     nullable: field.nullable === true,
                 });
             }
@@ -3643,7 +3738,8 @@ class SemanticAnalyzer {
             for (const fieldName of info.ownFields) {
                 const field = info.fields.get(fieldName);
                 // «Пустое поле» цепочку обрывает: фабрике нечего строить.
-                if (field && field.nullable !== true)
+                // Статики тоже: они живут на классе и в фабрику объекта не входят.
+                if (field && field.nullable !== true && field.isStatic !== true)
                     requiredClasses(field.type, next);
             }
             for (const candidate of next) {
@@ -3663,7 +3759,7 @@ class SemanticAnalyzer {
                 continue;
             for (const fieldName of info.ownFields) {
                 const field = info.fields.get(fieldName);
-                if (!field || field.nullable === true)
+                if (!field || field.nullable === true || field.isStatic === true)
                     continue;
                 const targets = [];
                 requiredClasses(field.type, targets);
@@ -3737,6 +3833,9 @@ class SemanticAnalyzer {
             const isNullInitializer = field.initializer?.kind === 'LiteralExpression'
                 && field.initializer.valueType === 'null';
             const nullable = isNullInitializer && this.userClassBareName(fieldType) !== null;
+            const constantValue = declaration.isConst && field.initializer
+                ? this.foldConstInt(field.initializer) ?? undefined
+                : undefined;
             info.fields.set(field.name, {
                 name: field.name,
                 type: fieldType,
@@ -3744,6 +3843,9 @@ class SemanticAnalyzer {
                 owner: info.declaration.name,
                 access: declaration.access,
                 nullable,
+                isStatic: declaration.isStatic,
+                isConst: declaration.isConst,
+                constantValue,
             });
             info.ownFields.add(field.name);
             if (nullable) {
@@ -3939,9 +4041,10 @@ class SemanticAnalyzer {
         const info = this.classes.get(declaration.name);
         if (!info)
             return;
+        const seenStatics = new Set();
         for (const member of declaration.members) {
             if (member.kind === 'ClassFieldDeclaration') {
-                this.analyzeClassFieldInitializers(info, member);
+                this.analyzeClassFieldInitializers(info, member, seenStatics);
             }
             if (member.kind === 'ClassMethodDeclaration') {
                 this.analyzeClassMethod(info, member);
@@ -3951,14 +4054,22 @@ class SemanticAnalyzer {
             }
         }
     }
-    analyzeClassFieldInitializers(info, declaration) {
+    analyzeClassFieldInitializers(info, declaration, seenStatics) {
         const fieldType = this.resolveTypeName(declaration.declaredType);
         for (const field of declaration.fields) {
+            if (declaration.isStatic && field.initializer) {
+                this.checkStaticInitializerReferences(field.initializer, info, seenStatics, field.name);
+            }
+            if (declaration.isStatic)
+                seenStatics.add(field.name);
             if (!field.initializer)
                 continue;
-            this.pushClassContext(info.declaration.name, false);
+            this.pushClassContext(info.declaration.name, declaration.isStatic);
             this.pushScope();
-            this.declare('this', (0, types_1.classType)(info.declaration.name), 'parameter', info.declaration.range);
+            // У статических полей и класс-констант нет объекта — this не объявляем.
+            if (!declaration.isStatic) {
+                this.declare('this', (0, types_1.classType)(info.declaration.name), 'parameter', info.declaration.range);
+            }
             const initializerType = this.expressionType(field.initializer);
             const nullableField = info.fields.get(field.name)?.nullable === true
                 && initializerType.kind === 'null';
@@ -3968,6 +4079,57 @@ class SemanticAnalyzer {
             this.popScope();
             this.popClassContext();
         }
+    }
+    /** Инициализаторы статиков исполняются при объявлении класса — форвард-ссылки
+     *  давали бы сырой TDZ или тихий undefined (находка ломателей 2026-08-22). */
+    checkStaticInitializerReferences(expression, info, seenStatics, fieldName) {
+        const classOrder = [...this.classes.keys()];
+        const currentIndex = classOrder.indexOf(info.declaration.name);
+        const visit = (node) => {
+            if (Array.isArray(node)) {
+                for (const item of node)
+                    visit(item);
+                return;
+            }
+            if (typeof node !== 'object' || node === null)
+                return;
+            const kind = node.kind;
+            if (typeof kind !== 'string')
+                return;
+            // Тело функции-значения исполняется позже объявления класса — там можно всё.
+            if (kind === 'FunctionExpression')
+                return;
+            if (kind === 'MemberExpression') {
+                const member = node;
+                if (member.object.kind === 'IdentifierExpression') {
+                    const className = member.object.name;
+                    if (className === info.declaration.name) {
+                        const target = info.fields.get(member.name);
+                        if (target?.isStatic && !seenStatics.has(member.name)) {
+                            const kindWord = target.isConst ? 'class constant' : 'static field';
+                            this.diagnostics.error(member.range, `${kindWord} '${className}.${member.name}' is used before its declaration — declare it above '${className}.${fieldName}'`);
+                        }
+                    }
+                    else if (this.classes.has(className)) {
+                        const otherIndex = classOrder.indexOf(className);
+                        if (otherIndex > currentIndex) {
+                            this.diagnostics.error(member.range, `class '${className}' is declared later in the file — move it above '${info.declaration.name}' to use '${className}.${member.name}' here`);
+                        }
+                    }
+                }
+            }
+            if (kind === 'IdentifierExpression') {
+                const identifier = node;
+                const symbol = this.lookup(identifier.name);
+                // Файловые ПЕРЕМЕННЫЕ создаются после классов — статикам они не видны.
+                if (symbol && symbol.kind === 'variable' && !symbol.readonly) {
+                    this.diagnostics.error(identifier.range, `static initializer cannot use variable '${identifier.name}' — file variables are created after classes; use a constant`);
+                }
+            }
+            for (const value of Object.values(node))
+                visit(value);
+        };
+        visit(expression);
     }
     analyzeClassMethod(info, declaration) {
         const returnType = this.resolveTypeName(declaration.returnType);
@@ -4168,6 +4330,11 @@ class SemanticAnalyzer {
             this.diagnostics.error(statement.range, "cannot declare variable of type 'void'");
             return;
         }
+        // Имя класса — не имя переменной: кодоген обращается к классам по имени,
+        // и тень превращалась бы в тихий хайджек (находка ломателей 2026-08-22).
+        if (this.classes.has(statement.name)) {
+            this.diagnostics.error(statement.nameRange, `name '${statement.name}' is already used by a class`);
+        }
         if (statement.isConst && !statement.initializer && !statement.constructorArgs) {
             this.diagnostics.error(statement.nameRange, `constant '${statement.name}' must have an initializer`);
         }
@@ -4183,6 +4350,7 @@ class SemanticAnalyzer {
             if (!this.canAssign(declaredType, initializerType)) {
                 this.diagnostics.error(statement.initializer.range, `cannot assign '${(0, types_1.typeToString)(initializerType)}' value to '${(0, types_1.typeToString)(declaredType)}' variable`);
             }
+            this.checkNestedArrayInitializer(declaredType, statement.initializer);
         }
         if (statement.constructorArgs) {
             this.analyzeConstructorArguments(statement, declaredType);
@@ -4197,6 +4365,27 @@ class SemanticAnalyzer {
             if (value !== null && symbol)
                 symbol.constantValue = value;
         }
+    }
+    // Вложенные ряды инициализатора сверяются с размером на компиляции — иначе
+    // несоответствие доезжало бы до рантайма текстом про внутренний dyn_array,
+    // которого ученик не писал (E13).
+    checkNestedArrayInitializer(declaredType, initializer) {
+        if (declaredType.kind !== 'array' || declaredType.dynamic)
+            return;
+        if (initializer.kind !== 'ArrayLiteralExpression')
+            return;
+        const elementType = declaredType.elementType;
+        if (elementType.kind !== 'array' || elementType.dynamic || elementType.size === null)
+            return;
+        initializer.elements.forEach((element, index) => {
+            if (element.kind !== 'ArrayLiteralExpression')
+                return;
+            if (element.elements.length !== elementType.size) {
+                this.diagnostics.error(element.range, `row ${index + 1} of the initializer has ${element.elements.length} value${element.elements.length === 1 ? '' : 's'}, but '${(0, types_1.typeToString)(elementType)}' needs ${elementType.size}`);
+                return;
+            }
+            this.checkNestedArrayInitializer(elementType, element);
+        });
     }
     analyzeConstructorArguments(statement, declaredType) {
         if (declaredType.kind === 'qualified' && declaredType.moduleName === 'json' && declaredType.name === 'Value') {
@@ -4250,6 +4439,13 @@ class SemanticAnalyzer {
                 return symbol.constantValue;
             return this.fileConstants.get(expression.name) ?? null;
         }
+        if (expression.kind === 'MemberExpression' && expression.object.kind === 'IdentifierExpression') {
+            // Класс-константа как компайл-время значение: Hero.MAX_LEVEL.
+            const field = this.classes.get(expression.object.name)?.fields.get(expression.name);
+            if (field?.isConst && field.constantValue !== undefined)
+                return field.constantValue;
+            return null;
+        }
         if (expression.kind === 'UnaryExpression' && expression.operator === '-') {
             const operand = this.foldConstInt(expression.operand);
             return operand === null ? null : -operand;
@@ -4292,10 +4488,41 @@ class SemanticAnalyzer {
                 this.diagnostics.error(typeName.elementType.range, "array element type cannot be 'void'");
             }
             if (!typeName.dynamic && typeName.sizeName !== null && typeName.size === null) {
-                // Размер задан именованной константой: array<int, L>
+                // Размер задан именованной константой: array<int, L> — либо
+                // классовой, через точку: array<int, Hero.MAX_LEVEL>.
                 const sizeRange = typeName.sizeRange ?? typeName.range;
-                const symbol = this.lookup(typeName.sizeName);
-                const value = symbol?.constantValue ?? this.fileConstants.get(typeName.sizeName);
+                let symbol = null;
+                let value;
+                const dot = typeName.sizeName.indexOf('.');
+                if (dot > 0) {
+                    const className = typeName.sizeName.slice(0, dot);
+                    const constantName = typeName.sizeName.slice(dot + 1);
+                    const classInfo = this.classes.get(className);
+                    const field = classInfo?.fields.get(constantName);
+                    if (classInfo && field) {
+                        if (!field.isConst) {
+                            this.diagnostics.error(sizeRange, `array size '${typeName.sizeName}' is not a constant — only a class constant (const) works as a size`);
+                            return (0, types_1.arrayType)(elementType, null, false);
+                        }
+                        if (!(0, types_1.sameType)(field.type, types_1.INT)) {
+                            this.diagnostics.error(sizeRange, `array size constant '${typeName.sizeName}' must be an int constant, got '${(0, types_1.typeToString)(field.type)}'`);
+                            return (0, types_1.arrayType)(elementType, null, false);
+                        }
+                        if (field.constantValue === undefined) {
+                            this.diagnostics.error(sizeRange, `array size constant '${typeName.sizeName}' must be initialized with a constant expression`);
+                            return (0, types_1.arrayType)(elementType, null, false);
+                        }
+                    }
+                    else if (classInfo) {
+                        this.diagnostics.error(sizeRange, `class '${className}' has no constant '${constantName}'`);
+                        return (0, types_1.arrayType)(elementType, null, false);
+                    }
+                    value = field?.isConst ? field.constantValue : undefined;
+                }
+                else {
+                    symbol = this.lookup(typeName.sizeName);
+                    value = symbol?.constantValue ?? this.fileConstants.get(typeName.sizeName);
+                }
                 if (value === undefined) {
                     if (symbol) {
                         this.diagnostics.error(sizeRange, `array size '${typeName.sizeName}' must be an integer constant declared with 'const'`);
@@ -4315,6 +4542,11 @@ class SemanticAnalyzer {
             }
             if (!typeName.dynamic && (typeName.size === null || typeName.size < 0)) {
                 this.diagnostics.error(typeName.range, 'array size must be a non-negative integer');
+            }
+            // Предел создаваемого массива (см. assertCreatableArraySize в рантайме):
+            // известный на компиляции гигантский размер отклоняется здесь же.
+            if (!typeName.dynamic && typeName.size !== null && typeName.size > 100_000_000) {
+                this.diagnostics.error(typeName.range, `array size ${typeName.size} is too large (maximum 100000000)`);
             }
             return (0, types_1.arrayType)(elementType, typeName.size, typeName.dynamic);
         }
@@ -4420,6 +4652,22 @@ class SemanticAnalyzer {
         if (target.kind === 'MemberExpression') {
             if (target.object.kind === 'IdentifierExpression') {
                 const moduleName = target.object.name;
+                const targetClassInfo = this.classes.get(moduleName);
+                const staticField = targetClassInfo?.fields.get(target.name);
+                if (staticField?.isStatic) {
+                    this.markSemanticToken('class', target.object.range);
+                    this.markSemanticToken('property', target.nameRange, staticField.isConst ? ['static', 'readonly'] : ['static']);
+                    if (staticField.isConst) {
+                        this.diagnostics.error(target.range, `cannot assign to class constant '${staticField.owner}.${target.name}'`);
+                        return { type: staticField.type };
+                    }
+                    if (staticField.owner !== moduleName) {
+                        this.diagnostics.error(target.range, `static field '${staticField.owner}.${target.name}' is not inherited — write '${staticField.owner}.${target.name}'`);
+                        return { type: staticField.type };
+                    }
+                    this.checkClassMemberAccess(staticField, target.range);
+                    return { type: staticField.type };
+                }
                 const stdlibConstant = this.stdlib.getModule(moduleName)?.constants.get(target.name);
                 const userConstant = this.userModuleRegistry.getModule(moduleName)?.constants.get(target.name);
                 const constant = stdlibConstant ?? userConstant;
@@ -4429,6 +4677,35 @@ class SemanticAnalyzer {
                     this.diagnostics.error(target.range, `cannot assign to constant '${moduleName}.${target.name}'`);
                     return { type: constant.type };
                 }
+            }
+            // Запись в статик модульного класса: zoo.Lion.pride = ...
+            const moduleStatic = this.moduleClassStaticContext(target.object);
+            if (moduleStatic) {
+                const { moduleName, className, classSpec } = moduleStatic;
+                const qualifiedClass = `${moduleName}.${className}`;
+                const field = classSpec.fields.find((item) => item.name === target.name);
+                if (field?.isStatic) {
+                    this.markSemanticToken('property', target.nameRange, field.isConst ? ['static', 'readonly'] : ['static']);
+                    if (field.isConst) {
+                        this.diagnostics.error(target.range, `cannot assign to class constant '${qualifiedClass}.${target.name}'`);
+                        return { type: field.type };
+                    }
+                    if (field.access === 'private') {
+                        this.diagnostics.error(target.range, `member '${qualifiedClass}.${target.name}' is private and can only be used inside class '${qualifiedClass}'`);
+                        return { type: field.type };
+                    }
+                    return { type: field.type };
+                }
+                if (field) {
+                    this.diagnostics.error(target.range, `instance field '${qualifiedClass}.${target.name}' must be accessed through an object`);
+                    return { type: types_1.ERROR_TYPE };
+                }
+                if (classSpec.methods.some((item) => item.name === target.name)) {
+                    this.diagnostics.error(target.range, `cannot assign to method '${qualifiedClass}.${target.name}'`);
+                    return { type: types_1.ERROR_TYPE };
+                }
+                this.diagnostics.error(target.range, `class '${qualifiedClass}' has no member '${target.name}'`);
+                return { type: types_1.ERROR_TYPE };
             }
             const objectType = this.expressionType(target.object);
             // Тип объекта уже ошибочен — ошибка отзвучала выше, эхо с '<error>' молчит.
@@ -4471,6 +4748,11 @@ class SemanticAnalyzer {
                     return { type: types_1.ERROR_TYPE };
                 }
                 this.markSemanticToken('property', target.nameRange);
+                if (field.isStatic) {
+                    const kindWord = field.isConst ? 'class constant' : 'static field';
+                    this.diagnostics.error(target.range, `${kindWord} '${field.owner}.${target.name}' must be accessed through class '${field.owner}'`);
+                    return { type: field.type };
+                }
                 this.checkClassMemberAccess(field, target.range);
                 return { type: field.type };
             }
@@ -4757,7 +5039,16 @@ class SemanticAnalyzer {
             if (isStamp(left) && isStamp(right))
                 return types_1.BOOL;
             if (!(0, types_1.isNumeric)(left) || !(0, types_1.isNumeric)(right)) {
-                this.diagnostics.error(expression.range, `comparison '${expression.operator}' requires numeric operands`);
+                if (expression.left.kind === 'UnaryExpression' && expression.left.operator === 'not') {
+                    // Жадный 'not' схватил только соседа, и сравнивается уже bool —
+                    // подсказываем скобки, а не жалуемся на типы (E8).
+                    const operand = expression.left.operand;
+                    const shown = operand.kind === 'IdentifierExpression' ? operand.name : '…';
+                    this.diagnostics.error(expression.range, `'not' takes only what stands right after it — write 'not (${shown} ${expression.operator} …)' to negate the whole comparison`);
+                }
+                else {
+                    this.diagnostics.error(expression.range, `comparison '${expression.operator}' requires numeric operands, got '${(0, types_1.typeToString)(left)}' and '${(0, types_1.typeToString)(right)}'`);
+                }
             }
             return types_1.BOOL;
         }
@@ -5016,10 +5307,20 @@ class SemanticAnalyzer {
                 if (method) {
                     const access = classInfo.methodAccess.get(callee.name);
                     if (access?.isStatic) {
+                        if (access.owner !== moduleName) {
+                            this.diagnostics.error(callee.range, `static method '${access.owner}.${callee.name}' is not inherited — call '${access.owner}.${callee.name}()'`);
+                            return null;
+                        }
                         this.checkClassMemberAccess(access, callee.range);
                         return method;
                     }
                     this.diagnostics.error(callee.range, `instance method '${moduleName}.${callee.name}' must be called on an object`);
+                    return null;
+                }
+                const calledField = classInfo.fields.get(callee.name);
+                if (calledField?.isStatic) {
+                    const kindWord = calledField.isConst ? 'class constant' : 'static field';
+                    this.diagnostics.error(callee.range, `'${moduleName}.${callee.name}' is a ${kindWord}, not a method`);
                     return null;
                 }
                 if (classInfo.fields.has(callee.name)) {
@@ -5031,6 +5332,38 @@ class SemanticAnalyzer {
             }
         }
         if (callee.kind === 'MemberExpression') {
+            // Вызов статик-метода модульного класса: zoo.Lion.roar(...)
+            const moduleStatic = this.moduleClassStaticContext(callee.object);
+            if (moduleStatic) {
+                const { moduleName, className, classSpec } = moduleStatic;
+                const qualifiedClass = `${moduleName}.${className}`;
+                const method = classSpec.methods.find((item) => item.name === callee.name);
+                if (method) {
+                    this.markSemanticToken('method', callee.nameRange, ['static']);
+                    if (!method.isStatic) {
+                        this.diagnostics.error(callee.range, `instance method '${qualifiedClass}.${callee.name}' must be called on an object`);
+                        return null;
+                    }
+                    if (method.access === 'private') {
+                        this.diagnostics.error(callee.range, `member '${qualifiedClass}.${callee.name}' is private and can only be used inside class '${qualifiedClass}'`);
+                        return null;
+                    }
+                    return method.spec;
+                }
+                const field = classSpec.fields.find((item) => item.name === callee.name);
+                if (field?.isStatic) {
+                    const kindWord = field.isConst ? 'class constant' : 'static field';
+                    this.diagnostics.error(callee.range, `'${qualifiedClass}.${callee.name}' is a ${kindWord}, not a method`);
+                    return null;
+                }
+                const inherited = this.moduleBaseStaticMember(moduleName, classSpec, callee.name);
+                if (inherited?.isMethod) {
+                    this.diagnostics.error(callee.range, `static method '${moduleName}.${inherited.ownerClass}.${callee.name}' is not inherited — call '${moduleName}.${inherited.ownerClass}.${callee.name}()'`);
+                    return null;
+                }
+                this.diagnostics.error(callee.range, `class '${qualifiedClass}' has no static method '${callee.name}'`);
+                return null;
+            }
             const objectType = this.expressionType(callee.object);
             if (objectType.kind === 'error')
                 return null;
@@ -5086,6 +5419,16 @@ class SemanticAnalyzer {
                 this.markSemanticToken('method', callee.nameRange);
                 const method = this.getClassMethodInfo(objectType.name, callee.name);
                 if (method) {
+                    // Контракт equals живёт в слоте своего класса и НЕ наследуется:
+                    // компилятор обязан отказать сам, а не отправлять в рантайм за
+                    // «object has no method 'equals'» (E17, находка методистов).
+                    if (callee.name === 'equals'
+                        && method.access.owner !== objectType.name
+                        && this.equalsContractClasses.has(method.access.owner)
+                        && !this.equalsContractClasses.has(objectType.name)) {
+                        this.diagnostics.error(callee.range, `'equals' is a contract and is not inherited — declare 'bool function equals(${objectType.name} other)' in class '${objectType.name}' and the call will use it`);
+                        return null;
+                    }
                     this.checkClassMemberAccess(method.access, callee.range);
                     return method.spec;
                 }
@@ -5432,19 +5775,74 @@ class SemanticAnalyzer {
                     this.markSemanticToken('method', expression.nameRange, ['static']);
                     const access = classInfo.methodAccess.get(expression.name);
                     if (access?.isStatic) {
+                        if (access.owner !== moduleName) {
+                            this.diagnostics.error(expression.range, `static method '${access.owner}.${expression.name}' is not inherited — call '${access.owner}.${expression.name}()'`);
+                            return types_1.ERROR_TYPE;
+                        }
                         this.checkClassMemberAccess(access, expression.range);
                         return (0, types_1.functionType)(method.parameters.map((param) => param.type), method.returnType);
                     }
                     this.diagnostics.error(expression.range, `instance method '${moduleName}.${expression.name}' must be called on an object`);
                     return types_1.ERROR_TYPE;
                 }
-                if (classInfo.fields.has(expression.name)) {
+                const field = classInfo.fields.get(expression.name);
+                if (field) {
+                    if (field.isStatic) {
+                        this.markSemanticToken('property', expression.nameRange, field.isConst ? ['static', 'readonly'] : ['static']);
+                        if (field.owner !== moduleName) {
+                            const kindWord = field.isConst ? 'class constant' : 'static field';
+                            this.diagnostics.error(expression.range, `${kindWord} '${field.owner}.${expression.name}' is not inherited — write '${field.owner}.${expression.name}'`);
+                            return types_1.ERROR_TYPE;
+                        }
+                        this.checkClassMemberAccess(field, expression.range);
+                        return field.type;
+                    }
                     this.diagnostics.error(expression.range, `instance field '${moduleName}.${expression.name}' must be accessed through an object`);
                     return types_1.ERROR_TYPE;
                 }
                 this.diagnostics.error(expression.range, `class '${moduleName}' has no member '${expression.name}'`);
                 return types_1.ERROR_TYPE;
             }
+        }
+        // Статики модульного класса: zoo.Lion.pride / zoo.Lion.MAX_AGE / zoo.Lion.roar
+        const moduleStatic = this.moduleClassStaticContext(expression.object);
+        if (moduleStatic) {
+            const { moduleName, className, classSpec } = moduleStatic;
+            const qualifiedClass = `${moduleName}.${className}`;
+            const field = classSpec.fields.find((item) => item.name === expression.name);
+            if (field) {
+                if (field.isStatic) {
+                    this.markSemanticToken('property', expression.nameRange, field.isConst ? ['static', 'readonly'] : ['static']);
+                    if (field.access === 'private') {
+                        this.diagnostics.error(expression.range, `member '${qualifiedClass}.${expression.name}' is private and can only be used inside class '${qualifiedClass}'`);
+                        return types_1.ERROR_TYPE;
+                    }
+                    return field.type;
+                }
+                this.diagnostics.error(expression.range, `instance field '${qualifiedClass}.${expression.name}' must be accessed through an object`);
+                return types_1.ERROR_TYPE;
+            }
+            const method = classSpec.methods.find((item) => item.name === expression.name);
+            if (method) {
+                this.markSemanticToken('method', expression.nameRange, ['static']);
+                if (!method.isStatic) {
+                    this.diagnostics.error(expression.range, `instance method '${qualifiedClass}.${expression.name}' must be called on an object`);
+                    return types_1.ERROR_TYPE;
+                }
+                if (method.access === 'private') {
+                    this.diagnostics.error(expression.range, `member '${qualifiedClass}.${expression.name}' is private and can only be used inside class '${qualifiedClass}'`);
+                    return types_1.ERROR_TYPE;
+                }
+                return (0, types_1.functionType)(method.spec.parameters.map((param) => param.type), method.spec.returnType);
+            }
+            const inherited = this.moduleBaseStaticMember(moduleName, classSpec, expression.name);
+            if (inherited) {
+                const kindWord = inherited.isMethod ? 'static method' : inherited.isConst ? 'class constant' : 'static field';
+                this.diagnostics.error(expression.range, `${kindWord} '${moduleName}.${inherited.ownerClass}.${expression.name}' is not inherited — write '${moduleName}.${inherited.ownerClass}.${expression.name}'`);
+                return types_1.ERROR_TYPE;
+            }
+            this.diagnostics.error(expression.range, `class '${qualifiedClass}' has no member '${expression.name}'`);
+            return types_1.ERROR_TYPE;
         }
         const objectType = this.expressionType(expression.object);
         if (objectType.kind === 'error')
@@ -5498,12 +5896,24 @@ class SemanticAnalyzer {
             const field = this.getClassField(objectType.name, expression.name);
             if (field) {
                 this.markSemanticToken('property', expression.nameRange);
+                if (field.isStatic) {
+                    const kindWord = field.isConst ? 'class constant' : 'static field';
+                    this.diagnostics.error(expression.range, `${kindWord} '${field.owner}.${expression.name}' must be accessed through class '${field.owner}'`);
+                    return types_1.ERROR_TYPE;
+                }
                 this.checkClassMemberAccess(field, expression.range);
                 return field.type;
             }
             const method = this.getClassMethodInfo(objectType.name, expression.name);
             if (method) {
                 this.markSemanticToken('method', expression.nameRange);
+                if (expression.name === 'equals'
+                    && method.access.owner !== objectType.name
+                    && this.equalsContractClasses.has(method.access.owner)
+                    && !this.equalsContractClasses.has(objectType.name)) {
+                    this.diagnostics.error(expression.range, `'equals' is a contract and is not inherited — declare 'bool function equals(${objectType.name} other)' in class '${objectType.name}' and the call will use it`);
+                    return types_1.ERROR_TYPE;
+                }
                 this.checkClassMemberAccess(method.access, expression.range);
                 return (0, types_1.functionType)(method.spec.parameters.map((param) => param.type), method.spec.returnType);
             }
@@ -5607,6 +6017,47 @@ class SemanticAnalyzer {
         if (!access.isStatic)
             return null;
         return { spec: method, access };
+    }
+    /** Объект вида module.Class (zoo.Lion) — контекст статического доступа
+     *  к членам класса пользовательского модуля. */
+    moduleClassStaticContext(objectExpression) {
+        if (objectExpression.kind !== 'MemberExpression')
+            return null;
+        if (objectExpression.object.kind !== 'IdentifierExpression')
+            return null;
+        const moduleName = objectExpression.object.name;
+        const module = this.userModuleRegistry.getModule(moduleName);
+        const classSpec = module?.classes.get(objectExpression.name);
+        if (!module || !classSpec)
+            return null;
+        if (!this.imports.has(moduleName)) {
+            this.diagnostics.error(objectExpression.object.range, `'${moduleName}' is not imported (use 'use ${moduleName};')`);
+        }
+        this.markSemanticToken('namespace', objectExpression.object.range);
+        this.markSemanticToken('class', objectExpression.nameRange);
+        // Тип «объекта»-класса — квалифицированный: кодоген по нему находит
+        // имена параметров статических методов модульного класса.
+        this.nodeTypes.set(objectExpression, (0, types_1.qualified)(moduleName, objectExpression.name));
+        return { moduleName, className: objectExpression.name, classSpec };
+    }
+    /** Статик-член в цепочке наследования модульного класса — для честного
+     *  «is not inherited» вместо «has no member». */
+    moduleBaseStaticMember(moduleName, classSpec, memberName) {
+        const module = this.userModuleRegistry.getModule(moduleName);
+        let baseName = classSpec.baseName;
+        while (baseName) {
+            const base = module?.classes.get(baseName);
+            if (!base)
+                return null;
+            const field = base.fields.find((item) => item.name === memberName);
+            if (field?.isStatic)
+                return { ownerClass: baseName, isConst: field.isConst === true, isMethod: false };
+            const method = base.methods.find((item) => item.name === memberName);
+            if (method?.isStatic)
+                return { ownerClass: baseName, isConst: false, isMethod: true };
+            baseName = base.baseName;
+        }
+        return null;
     }
     checkClassMemberAccess(member, range) {
         if (member.access === 'public')
@@ -6392,13 +6843,13 @@ function createDefaultStandardLibrary() {
                 { name: 'path', type: types_1.STRING },
                 { name: 'handler', type: types_1.ANY_TYPE },
             ], types_1.VOID, {
-                documentation: 'Регистрирует обработчик GET-запросов на точный путь (например "/hello"). Обработчик — функция вида void function(web.Request req, web.Response res). Повторная регистрация пути — ошибка.',
+                documentation: 'Регистрирует обработчик GET-запросов на путь (например "/hello"). Сегмент в угловых скобках — параметр пути: "/post/<id>" совпадает с "/post/3", значение достаётся через req.param("id"). Точный путь побеждает шаблонный. Обработчик — функция вида void function(web.Request req, web.Response res). Повторная регистрация пути — ошибка.',
             }),
             functionSpec('on_post', [
                 { name: 'path', type: types_1.STRING },
                 { name: 'handler', type: types_1.ANY_TYPE },
             ], types_1.VOID, {
-                documentation: 'Регистрирует обработчик POST-запросов на точный путь. Тело запроса — в req.body.',
+                documentation: 'Регистрирует обработчик POST-запросов на путь (параметры пути "<id>" работают как в on_get). Тело запроса — в req.body, поля HTML-формы — через req.form("имя").',
             }),
             functionSpec('serve_directory', [{ name: 'path', type: types_1.STRING }], types_1.VOID, {
                 documentation: 'Раздаёт файлы папки как статику (только чтение, только GET, выход из папки закрыт). Адрес "/" отдаёт index.html. Маршруты on_get/on_post проверяются раньше статики.',
@@ -6414,6 +6865,12 @@ function createDefaultStandardLibrary() {
             functionSpec('query', [{ name: 'name', type: types_1.STRING }], types_1.STRING, {
                 documentation: 'Значение query-параметра адреса (?name=value) по имени; пустая строка, если параметра нет.',
             }),
+            functionSpec('param', [{ name: 'name', type: types_1.STRING }], types_1.STRING, {
+                documentation: 'Значение параметра пути из маршрута с угловыми скобками: для on_get("/post/<id>", …) и запроса "/post/3" вызов req.param("id") вернёт "3". Всегда строка (число делайте сами через to_int); пустая строка, если параметра нет.',
+            }),
+            functionSpec('form', [{ name: 'name', type: types_1.STRING }], types_1.STRING, {
+                documentation: 'Значение поля HTML-формы из тела POST-запроса по имени поля (input name="…"). Кодированные проценты и плюсы-пробелы разбираются сами; пустая строка, если поля нет.',
+            }),
         ]),
         typeSpec('Response', [
             propertySpec('status', types_1.INT, false, 'Код ответа, 100–599 (по умолчанию 200). Читается в момент отправки ответа.'),
@@ -6423,6 +6880,16 @@ function createDefaultStandardLibrary() {
             }),
             functionSpec('send_json', [{ name: 'text', type: types_1.STRING }], types_1.VOID, {
                 documentation: 'Отправляет текст ответа как JSON (application/json) — для программ-клиентов и http.get.',
+            }),
+            functionSpec('send_template', [
+                { name: 'path', type: types_1.STRING },
+                { name: 'values', type: jsonObject, defaultValue: 'null' },
+            ], types_1.VOID, {
+                minArguments: 1,
+                documentation: 'Читает HTML-шаблон из файла (путь — как в file-библиотеке, без магических папок), подставляет значения из json.Object и отправляет страницу (text/html). В шаблоне: {{ключ}} и {{ключ.поле}} — подстановка (текст всегда экранируется: данные — текст, разметка живёт в шаблоне), {% for x in список %}…{% endfor %} — цикл по json.Array, {% if флаг %}…{% else %}…{% endif %} — ветвление по bool. Ошибка шаблона не роняет сервер: в страницу встаёт читаемый маркер [[ … ]].',
+            }),
+            functionSpec('redirect', [{ name: 'path', type: types_1.STRING }], types_1.VOID, {
+                documentation: 'Отправляет браузер на другой адрес: ответ 303 See Other с заголовком Location. Канон PRG: после успешной обработки POST-формы вызовите res.redirect на GET-страницу — тогда обновление страницы (F5) не отправит форму второй раз.',
             }),
         ]),
     ]));
@@ -6862,7 +7329,7 @@ function createDefaultStandardLibrary() {
             propertySpec('font', fontsFont),
             ...fontSized,
             propertySpec('title', types_1.STRING),
-            propertySpec('theme', types_1.STRING, false, 'Тема оформления окна и всех его виджетов: "default", "idyllium", "dracula", "breeze", "oxygen". Самый низкий приоритет — прямые свойства виджета и IdySS перекрывают тему.'),
+            propertySpec('theme', types_1.STRING, false, 'Тема оформления окна и всех его виджетов: "default", "idyllium", "dracula", "breeze", "oxygen"; другое значение — ошибка выполнения. Самый низкий приоритет — прямые свойства виджета и IdySS перекрывают тему.'),
             ...styleable,
         ], [
             functionSpec('add_child', [guiChildParameter], types_1.VOID),
@@ -6967,7 +7434,7 @@ function createDefaultStandardLibrary() {
             ...positioned,
             ...widgetState,
             ...styleable,
-            propertySpec('resize_mode', types_1.STRING),
+            propertySpec('resize_mode', types_1.STRING, false, "Режим вписывания картинки: 'fit' (вписать целиком), 'fill' (заполнить с обрезкой), 'stretch' (растянуть), 'original' (без масштабирования). Другое значение — ошибка выполнения."),
         ], [
             functionSpec('set_image', [{ name: 'image', type: imageImage }], types_1.VOID),
         ], guiWidget),
@@ -6981,7 +7448,7 @@ function createDefaultStandardLibrary() {
             propertySpec('text', types_1.STRING),
             propertySpec('placeholder', types_1.STRING),
             propertySpec('placeholder_color', types_1.COLOR, false, 'Цвет текста-подсказки (placeholder). Не задан — цвет подбирает тема окна.'),
-            propertySpec('echo_mode', types_1.STRING),
+            propertySpec('echo_mode', types_1.STRING, false, "Режим отображения ввода: 'normal', 'password' (точки) или 'no_echo' (пусто). Другое значение — ошибка выполнения."),
         ], [], guiWidget),
         typeSpec('TextEdit', [
             ...positioned,
@@ -7006,7 +7473,7 @@ function createDefaultStandardLibrary() {
             propertySpec('foreground_color', types_1.COLOR),
             propertySpec('border_color', types_1.COLOR),
             ...fontSized,
-            propertySpec('orientation', types_1.STRING, false, 'Ориентация: "horizontal" (по умолчанию) или "vertical". Незнакомое значение молча считается "horizontal" — как незнакомая тема окна.'),
+            propertySpec('orientation', types_1.STRING, false, 'Ориентация: "horizontal" (по умолчанию) или "vertical". Другое значение — ошибка выполнения.'),
         ], [], guiWidget),
         typeSpec('SpinBox', [
             ...positioned,
@@ -7039,7 +7506,7 @@ function createDefaultStandardLibrary() {
             propertySpec('min', types_1.INT),
             propertySpec('max', types_1.INT),
             propertySpec('step', types_1.INT),
-            propertySpec('orientation', types_1.STRING, false, 'Ориентация: "horizontal" (по умолчанию) или "vertical". Незнакомое значение молча считается "horizontal" — как незнакомая тема окна.'),
+            propertySpec('orientation', types_1.STRING, false, 'Ориентация: "horizontal" (по умолчанию) или "vertical". Другое значение — ошибка выполнения.'),
         ], [], guiWidget),
         typeSpec('CheckBox', [
             ...positioned,
@@ -7175,7 +7642,7 @@ function createDefaultStandardLibrary() {
             ...styleable,
             ...changeable,
             ...fontSized,
-            propertySpec('selected_index', types_1.INT, false, 'Номер открытой вкладки, начиная с 0.'),
+            propertySpec('selected_index', types_1.INT, false, 'Номер открытой вкладки, начиная с 0. У пустого шкафа -1 — «ничего не выбрано», как у ComboBox; первая add_tab() делает его 0.'),
             propertySpec('selected_title', types_1.STRING, true, 'Заголовок открытой вкладки; меняется через selected_index.'),
             propertySpec('tab_count', types_1.INT, true, 'Сколько вкладок сейчас создано.'),
         ], [
@@ -11147,7 +11614,7 @@ exports.IdylliumRuntimeError = IdylliumRuntimeError;
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-exports.IDYLLIUM_VERSION = '1.5.0';
+exports.IDYLLIUM_VERSION = '1.5.1';
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform() {
     const nodeProcess = typeof process === 'object' ? process : null;
@@ -11445,11 +11912,13 @@ class IdylliumArray {
         }
     }
     static create(size, defaultFactory, dynamic) {
-        const normalizedSize = Math.max(0, Math.trunc(size));
+        assertCreatableArraySize(size);
+        const normalizedSize = Math.max(0, Math.trunc(Number(size)));
         return new IdylliumArray(Array.from({ length: normalizedSize }, () => defaultFactory()), dynamic, dynamic ? null : normalizedSize, defaultFactory);
     }
     static async createAsync(size, defaultFactory, dynamic) {
-        const normalizedSize = Math.max(0, Math.trunc(size));
+        assertCreatableArraySize(size);
+        const normalizedSize = Math.max(0, Math.trunc(Number(size)));
         const items = [];
         for (let index = 0; index < normalizedSize; index += 1) {
             items.push(await defaultFactory());
@@ -11465,8 +11934,9 @@ class IdylliumArray {
         }
         const actualSize = value.items.length;
         if (!dynamic && staticSize !== null && actualSize !== staticSize) {
-            const sourceType = value.dynamic ? 'dyn_array' : 'array';
-            throw new IdylliumRuntimeError(file, line, `cannot convert ${sourceType} of size ${actualSize} to '${targetType}' (expected size ${staticSize})`);
+            // Без внутреннего слова dyn_array: ученик писал литерал или массив,
+            // а не «динамический массив» из механики конвертера (E13).
+            throw new IdylliumRuntimeError(file, line, `the value has ${actualSize} element${actualSize === 1 ? '' : 's'}, but '${targetType}' needs ${staticSize}`);
         }
         return new IdylliumArray(value.items.map(convertElement), dynamic, dynamic ? null : staticSize, defaultFactory);
     }
@@ -11719,13 +12189,12 @@ function createJsonBase(typeName, kind) {
         throwJsonExpected(obj, 'string', file, line);
     });
     obj.to_int = contextFunction((file, line) => {
+        // int точен на любом размере (канон 2026-08-22) — у to_int() нет потолка;
+        // границы остались только у ЯЧЕЕК to_int64()/to_uint64().
         const integer = jsonIntegerValue(obj, 'int', file, line);
-        if (typeof integer === 'number' && Number.isSafeInteger(integer))
+        if (typeof integer === 'number')
             return integer;
-        if (typeof integer === 'bigint' && integer >= BigInt(Number.MIN_SAFE_INTEGER) && integer <= BigInt(Number.MAX_SAFE_INTEGER)) {
-            return Number(integer);
-        }
-        throw new IdylliumRuntimeError(file, line, 'json integer is outside the int range; use to_int64() or to_uint64()');
+        return exactIntegerResult(integer);
     });
     obj.to_int64 = contextFunction((file, line) => {
         const integer = jsonIntegerAsBigInt(obj, 'int64', file, line);
@@ -12141,18 +12610,12 @@ function isSqliteRuntimeValue(value) {
 }
 function sqliteValueToInt(value, file, line) {
     expectSqliteValueKind(value, 'integer', 'int', file, line);
+    // int точен на любом размере (канон 2026-08-22) — потолка у to_int() нет;
+    // границы остались только у ячейки to_int64().
     const integer = value.__sqliteValue;
-    if (typeof integer === 'number') {
-        if (Number.isSafeInteger(integer))
-            return integer;
-    }
-    else if (typeof integer === 'bigint') {
-        const min = BigInt(Number.MIN_SAFE_INTEGER);
-        const max = BigInt(Number.MAX_SAFE_INTEGER);
-        if (integer >= min && integer <= max)
-            return Number(integer);
-    }
-    throw new IdylliumRuntimeError(file, line, 'sqlite integer is outside the int range; use to_int64()');
+    if (typeof integer === 'number')
+        return integer;
+    return exactIntegerResult(integer);
 }
 function sqliteValueToInt64(value, file, line) {
     expectSqliteValueKind(value, 'integer', 'int64', file, line);
@@ -12370,7 +12833,11 @@ function createSqliteStatementObject(state) {
         bindSqliteStatement(state, name, sqliteTypedBinding('integer', runtimeInteger(value, 'sqlite.Statement.bind_int() value', file, line)), file, line);
     });
     obj.bind_int64 = contextFunction((name, value, file, line) => {
-        bindSqliteStatement(state, name, sqliteTypedBinding('integer', runtimeInteger(value, 'sqlite.Statement.bind_int64() value', file, line)), file, line);
+        bindSqliteStatement(state, name, sqliteTypedBinding('integer', (() => {
+            const integer = runtimeInteger(value, 'sqlite.Statement.bind_int64() value', file, line);
+            assertSqliteInt64Range(integer, file, line);
+            return integer;
+        })()), file, line);
     });
     obj.bind_float = contextFunction((name, value, file, line) => {
         bindSqliteStatement(state, name, sqliteTypedBinding('real', finiteNumber(value, 'sqlite.Statement.bind_float() value', file, line)), file, line);
@@ -12403,6 +12870,15 @@ function createSqliteStatementObject(state) {
     });
     return obj;
 }
+// INTEGER-колонка SQLite — ячейка int64: значение за её границей раньше
+// МОЛЧА клампилось/оборачивалось драйвером (находка ломателей 2026-08-22).
+function assertSqliteInt64Range(value, file, line) {
+    const minimum = -(1n << 63n);
+    const maximum = (1n << 63n) - 1n;
+    if (value < minimum || value > maximum) {
+        throw new IdylliumRuntimeError(file, line, `sqlite cannot store ${value}: the value is outside the INTEGER column range (types.int64)`);
+    }
+}
 function sqliteBindingFromValue(value, file, line) {
     if (value === null || isRuntimeNullValue(value))
         return null;
@@ -12420,8 +12896,10 @@ function sqliteBindingFromValue(value, file, line) {
         if (value.__sqliteValue instanceof Uint8Array)
             return new Uint8Array(value.__sqliteValue);
     }
-    if (typeof value === 'bigint')
+    if (typeof value === 'bigint') {
+        assertSqliteInt64Range(value, file, line);
         return sqliteTypedBinding('integer', value);
+    }
     if (typeof value === 'number' && Number.isFinite(value)) {
         return sqliteTypedBinding(Number.isInteger(value) ? 'integer' : 'real', value);
     }
@@ -13121,7 +13599,15 @@ function createRuntime(options = {}) {
     }
     function createInputFile(filePath, sourceFile, line) {
         const shownPath = humanizeFsPaths(filePath);
-        if (!fileSystem.exists(filePath)) {
+        let fileExists;
+        try {
+            fileExists = fileSystem.exists(filePath);
+        }
+        catch (error) {
+            // страж песочницы (path is outside the project) — в детской обёртке
+            throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for reading: ${humanizeFsPaths(errorMessage(error))}`);
+        }
+        if (!fileExists) {
             throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for reading: file does not exist`);
         }
         if (!runtimeIsFile(fileSystem, filePath, sourceFile, line, 'reading', shownPath)) {
@@ -13534,7 +14020,9 @@ function createRuntime(options = {}) {
                 if (!/^[+-]?\d+$/u.test(normalized)) {
                     throw new IdylliumRuntimeError(file, line, `cannot convert input to 'int' (expected integer, got ${JSON.stringify(inputText)})`);
                 }
-                return Number.parseInt(normalized, 10);
+                // Ввод длиннее safe-диапазона не теряет разряды: тот же канон
+                // «int точен на любом размере», что у to_int.
+                return exactIntegerResult(BigInt(normalized.replace(/^\+/u, '')));
             },
             async get_float(file = 'console', line = 0) {
                 const inputText = await io.readLine();
@@ -13683,6 +14171,9 @@ function createRuntime(options = {}) {
                     throw new IdylliumRuntimeError(file, line, `random.choose_from() expects a string or array, got '${runtimeTypeName(collection)}'`);
                 }),
                 set_seed: contextFunction((seed, file, line) => {
+                    if (typeof seed === 'bigint' || (typeof seed === 'number' && !Number.isSafeInteger(seed) && Number.isFinite(seed))) {
+                        throw new IdylliumRuntimeError(file, line, `random.set_seed() seed must be between 0 and 9007199254740991, got ${String(seed)}`);
+                    }
                     const value = integerNumber(seed, 'random.set_seed() seed', file, line);
                     if (value < 0)
                         throw new IdylliumRuntimeError(file, line, `random.set_seed() seed must be non-negative, got ${value}`);
@@ -13726,7 +14217,12 @@ function createRuntime(options = {}) {
             file: {
                 exists: contextFunction((targetPath, file, line) => {
                     const requestedPath = stringArgument(targetPath, 'file.exists() path', file, line);
-                    return fileSystem.exists(fileSystem.resolvePath(requestedPath, file));
+                    try {
+                        return fileSystem.exists(fileSystem.resolvePath(requestedPath, file));
+                    }
+                    catch (error) {
+                        throw new IdylliumRuntimeError(file, line, `file.exists() cannot inspect '${requestedPath}': ${humanizeFsPaths(errorMessage(error))}`);
+                    }
                 }),
                 is_file: contextFunction((targetPath, file, line) => {
                     const requestedPath = stringArgument(targetPath, 'file.is_file() path', file, line);
@@ -14224,19 +14720,29 @@ function createRuntime(options = {}) {
         };
         return response;
     }
+    // Засеянный поток — mulberry32 (как и одноимённая учебная функция): его
+    // скрамблер размешивает сид с ПЕРВОГО же вызова. Прежний голый LCG делал
+    // первый бросок линейной функцией сида (шаг 1664525/2^32 ≈ 0.000388):
+    // create_int(1,6) давал 2 для всех сидов 0–250, а set_seed(time.now().unix)
+    // между запусками почти не менял грань — находка методистов 2026-08-22.
+    function seededRandomStep() {
+        randomSeed = (randomSeed + 0x6D2B79F5) >>> 0;
+        let t = randomSeed;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return (t ^ (t >>> 14)) >>> 0;
+    }
     function randomUnit() {
         if (randomSeed === null)
             return Math.random();
-        randomSeed = (Math.imul(randomSeed, 1664525) + 1013904223) >>> 0;
-        return randomSeed / 0x100000000;
+        return seededRandomStep() / 0x100000000;
     }
     // Для create_float: единичный интервал ВКЛЮЧАЯ 1.0, чтобы max был достижим
     // (как в Python). Нельзя делить с create_int: там unit 1.0 дал бы выход за max.
     function randomUnitInclusive() {
         if (randomSeed === null)
             return Math.floor(Math.random() * 0x100000000) / 0xffffffff;
-        randomSeed = (Math.imul(randomSeed, 1664525) + 1013904223) >>> 0;
-        return randomSeed / 0xffffffff;
+        return seededRandomStep() / 0xffffffff;
     }
     function waitForRuntimeDelay(milliseconds, file, line) {
         const signal = options.abortSignal;
@@ -14293,6 +14799,15 @@ function numericValues(value, functionName, file, line) {
     }
     return values;
 }
+// Массив таких размеров не создать ни в одной машине класса — честный отказ
+// вместо сырого JS «Invalid array length» (находка ломателей 2026-08-22).
+const MAX_CREATABLE_ARRAY_SIZE = 100_000_000;
+function assertCreatableArraySize(size) {
+    const asNumber = typeof size === 'bigint' ? Number(size) : size;
+    if (!Number.isFinite(asNumber) || asNumber > MAX_CREATABLE_ARRAY_SIZE) {
+        throw new IdylliumRuntimeError('program', 0, `array size ${String(size)} is too large to create (maximum ${MAX_CREATABLE_ARRAY_SIZE})`);
+    }
+}
 function runtimeBinary(operator, left, right, file, line) {
     if (operator === '==')
         return runtimeEquals(left, right, file, line);
@@ -14314,15 +14829,23 @@ function runtimeBinary(operator, left, right, file, line) {
     }
     const numericLeft = runtimeNumber(left, `operator '${operator}' left operand`, file, line);
     const numericRight = runtimeNumber(right, `operator '${operator}' right operand`, file, line);
+    // Результат-число обязан быть конечным: молчаливый Infinity отравлял бы
+    // соседние строки и печатался сырым JS-словом (находка ломателей).
+    const finiteResult = (value) => {
+        if (typeof value === 'number' && !Number.isFinite(value)) {
+            throw new IdylliumRuntimeError(file, line, `operator '${operator}' result is outside the float range`);
+        }
+        return value;
+    };
     switch (operator) {
         case '+':
-            return runtimeAdd(numericLeft, numericRight);
+            return finiteResult(runtimeAdd(numericLeft, numericRight));
         case '-':
-            return runtimeSubtract(numericLeft, numericRight);
+            return finiteResult(runtimeSubtract(numericLeft, numericRight));
         case '*':
-            return runtimeMultiply(numericLeft, numericRight);
+            return finiteResult(runtimeMultiply(numericLeft, numericRight));
         case '/':
-            return runtimeDivide(numericLeft, numericRight, file, line);
+            return finiteResult(runtimeDivide(numericLeft, numericRight, file, line));
         case '<':
             return runtimeCompare(numericLeft, numericRight) < 0;
         case '<=':
@@ -14383,7 +14906,13 @@ function runtimeDivide(left, right, file, line) {
     const divisor = runtimeNumber(right, 'division right operand', file, line);
     if (divisor === 0 || divisor === 0n)
         throw new IdylliumRuntimeError(file, line, 'division by zero');
-    return Number(dividend) / Number(divisor);
+    const result = Number(dividend) / Number(divisor);
+    // Молчаливый Infinity отравлял бы соседние строки и печатался сырым
+    // JS-словом — честная ошибка на месте (находка ломателей 2026-08-22).
+    if (!Number.isFinite(result)) {
+        throw new IdylliumRuntimeError(file, line, "operator '/' result is outside the float range");
+    }
+    return result;
 }
 function runtimeIntegerDivision(left, right, file, line) {
     const dividend = runtimeNumber(left, 'div() left operand', file, line);
@@ -14585,9 +15114,9 @@ function callStringMethod(value, methodName, args, file, line) {
         case 'count':
             return countInString(value, searchText(args[0], methodName, file, line));
         case 'is_int':
-            return /^[+-]?\d+$/u.test(value.trim());
+            return INT_TEXT_PATTERN.test(value.trim());
         case 'is_float':
-            return /^[+-]?(?:\d+\.\d+|\d+\.|\.\d+)$/u.test(value.trim());
+            return FLOAT_TEXT_PATTERN.test(value.trim());
         case 'to_upper':
             return value.toLocaleUpperCase();
         case 'to_lower':
@@ -14630,6 +15159,7 @@ function resolveRuntimePath(requestedPath, sourceFile) {
 }
 function createNodeRuntimeFileSystem(projectRoot) {
     let mutationRoot = projectRoot ? nodePath.resolve(projectRoot) : null;
+    const readPath = (filePath, operation) => (assertNodeProjectPath(mutationRoot ?? process.cwd(), filePath, operation), filePath);
     const mutationPath = (filePath, operation) => (assertNodeProjectPath(mutationRoot ?? process.cwd(), filePath, operation));
     return {
         humanizePaths(text) {
@@ -14644,17 +15174,21 @@ function createNodeRuntimeFileSystem(projectRoot) {
             }
             return resolveRuntimePath(requestedPath, sourceFile);
         },
+        // Песочница двусторонняя: страж стоит и на чтении, а не только на
+        // изменяющих операциях — задачник обещает «наружу не выберешься»,
+        // а до 2026-08-22 file.open("../x", "read") честно читал родителя
+        // (находка методистов E12).
         exists(filePath) {
-            return nodeFs.existsSync(filePath);
+            return nodeFs.existsSync(readPath(filePath, 'file access'));
         },
         isFile(filePath) {
-            return nodeFs.statSync(filePath).isFile();
+            return nodeFs.statSync(readPath(filePath, 'file access')).isFile();
         },
         isDirectory(filePath) {
-            return nodeFs.statSync(filePath).isDirectory();
+            return nodeFs.statSync(readPath(filePath, 'file access')).isDirectory();
         },
         readText(filePath) {
-            return nodeFs.readFileSync(filePath, 'utf8');
+            return nodeFs.readFileSync(readPath(filePath, 'file read'), 'utf8');
         },
         writeText(filePath, text) {
             const target = mutationPath(filePath, 'file write');
@@ -14693,6 +15227,7 @@ function createNodeRuntimeFileSystem(projectRoot) {
             nodeFs.mkdirSync(target, { recursive: parents });
         },
         listDirectory(filePath) {
+            readPath(filePath, 'file.list_directory()');
             if (!nodeFs.existsSync(filePath))
                 throw new Error(`directory does not exist: ${filePath}`);
             if (!nodeFs.statSync(filePath).isDirectory())
@@ -15533,19 +16068,30 @@ function ceilWithPrecision(value, digits, file, line) {
     const factor = 10 ** safeDigits;
     return Number((Math.ceil(number * factor) / factor).toFixed(safeDigits));
 }
+// Контракт стражей: "x".is_int()/"x".is_float() истинны РОВНО тогда, когда
+// to_int(x)/to_float(x) сработают — поэтому предикаты общие с парсерами.
+const INT_TEXT_PATTERN = /^[+-]?\d+$/u;
+const FLOAT_TEXT_PATTERN = /^[+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))$/u;
 function parseIntegerText(value, functionName, file, line) {
     const normalized = value.trim();
-    if (!/^[+-]?\d+$/u.test(normalized)) {
+    if (!INT_TEXT_PATTERN.test(normalized)) {
         throw new IdylliumRuntimeError(file, line, `${functionName} cannot convert '${value}' to int`);
     }
-    return Number.parseInt(normalized, 10);
+    // int точен на любом размере (канон 2026-08-22): длинная строка парсится
+    // через BigInt — Number.parseInt терял бы младшие разряды молча.
+    // (BigInt не признаёт ведущий '+', паттерн его разрешает — срезаем.)
+    return exactIntegerResult(BigInt(normalized.replace(/^\+/u, '')));
 }
 function parseFloatText(value, functionName, file, line) {
     const normalized = value.trim();
-    if (!/^[+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))$/u.test(normalized)) {
+    if (!FLOAT_TEXT_PATTERN.test(normalized)) {
         throw new IdylliumRuntimeError(file, line, `${functionName} cannot convert '${value}' to float`);
     }
-    return Number.parseFloat(normalized);
+    const parsed = Number.parseFloat(normalized);
+    if (!Number.isFinite(parsed)) {
+        throw new IdylliumRuntimeError(file, line, `${functionName} cannot convert '${value}' to float: the value is outside the float range`);
+    }
+    return parsed;
 }
 function finiteNumber(value, argumentName, file, line) {
     if (typeof value === 'bigint') {
@@ -15752,6 +16298,19 @@ function defineValidatedRuntimeProperty(obj, name, defaultValue, validator, afte
         },
     });
 }
+// Строгое строковое перечисление виджета: опечатка в режиме — громкая ошибка,
+// а не молчаливый откат к умолчанию (жанр LineEdit.echo_mode; зачистка
+// по заказу владельца 2026-08-22). IdySS-наклейки style сюда не относятся.
+function defineEnumRuntimeProperty(obj, name, ownerLabel, defaultValue, accepted) {
+    defineValidatedRuntimeProperty(obj, name, defaultValue, (value, file, line) => {
+        if (typeof value !== 'string' || !accepted.includes(value)) {
+            const shown = accepted.map((item) => `'${item}'`);
+            const list = `${shown.slice(0, -1).join(', ')} or ${shown[shown.length - 1]}`;
+            throw new IdylliumRuntimeError(file, line, `${ownerLabel}.${name} must be ${list}, got '${String(value)}'`);
+        }
+        return value;
+    });
+}
 function createPlainRuntimeObject(moduleName, typeName, state) {
     if (moduleName === 'json') {
         if (typeName === 'Value')
@@ -15828,7 +16387,221 @@ const WEB_CONTENT_TYPES = {
 function webTextResponse(status, text) {
     return { status, headers: { 'content-type': 'text/plain; charset=utf-8' }, body: text };
 }
-function createWebRequestObject(request, state) {
+// ─── Шаблонизатор страниц web-сервера ───────────────────────────────────────
+// Язык: {{ключ}} и {{ключ.поле}} — подстановка, {% for x in список %}…{% endfor %}
+// — цикл по json.Array, {% if флаг %}…{% else %}…{% endif %} — ветвление по bool.
+// Ошибка шаблона НЕ роняет сервер: в страницу встаёт читаемый маркер [[ … ]] —
+// вёрстка видна целиком, дырка названа по имени. Подстановки всегда
+// экранируются: данные — текст, разметка живёт в шаблоне.
+const WEB_TEMPLATE_NAME_PATTERN = /^[\p{L}_][\p{L}\p{N}_]*$/u;
+function isWebTemplatePath(expression) {
+    const parts = expression.split('.');
+    return parts.length > 0 && parts.every((part) => WEB_TEMPLATE_NAME_PATTERN.test(part));
+}
+function escapeWebTemplateValue(text) {
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+// Глубже этого шаблон не вкладывается: предел держит и парсер, и рендер
+// в безопасной глубине JS-стека (без него — сырое «Maximum call stack…»).
+const WEB_TEMPLATE_MAX_DEPTH = 32;
+function parseWebTemplate(template) {
+    const tokens = template.split(/(\{\{[\s\S]*?\}\}|\{%[\s\S]*?%\})/u);
+    let index = 0;
+    // Текст маркера уходит в HTML как есть, поэтому кусок ЧУЖОГО текста
+    // (токен шаблона) в нём экранируется — иначе '<' из опечатки съест маркер.
+    const marker = (text) => ({ kind: 'marker', text });
+    const shownToken = (token) => escapeWebTemplateValue(token.trim());
+    function parseNodes(closers, depth) {
+        const nodes = [];
+        while (index < tokens.length) {
+            const token = tokens[index];
+            index += 1;
+            if (token === undefined || token === '')
+                continue;
+            if (token.startsWith('{{') && token.endsWith('}}')) {
+                const expression = token.slice(2, -2).trim();
+                nodes.push(isWebTemplatePath(expression)
+                    ? { kind: 'value', expression }
+                    : marker(`[[ непонятная подстановка '${shownToken(token)}' ]]`));
+                continue;
+            }
+            if (token.startsWith('{%') && token.endsWith('%}')) {
+                const command = token.slice(2, -2).trim();
+                const commandWord = command.split(/\s+/u)[0];
+                if (closers.includes(commandWord))
+                    return { nodes, closer: commandWord };
+                if (commandWord === 'endfor' || commandWord === 'endif' || commandWord === 'else') {
+                    nodes.push(marker(`[[ лишний '${shownToken(token)}' ]]`));
+                    continue;
+                }
+                if (commandWord === 'for') {
+                    const forMatch = /^for\s+(\S+)\s+in\s+(\S+)$/u.exec(command);
+                    if (!forMatch || !WEB_TEMPLATE_NAME_PATTERN.test(forMatch[1]) || !isWebTemplatePath(forMatch[2])) {
+                        nodes.push(marker(`[[ непонятный цикл '${shownToken(token)}' — нужно '{% for имя in список %}' ]]`));
+                        continue;
+                    }
+                    if (depth >= WEB_TEMPLATE_MAX_DEPTH) {
+                        nodes.push(marker(`[[ шаблон вложен глубже ${WEB_TEMPLATE_MAX_DEPTH} уровней — '${shownToken(token)}' пропущен ]]`));
+                        continue;
+                    }
+                    const body = parseNodes(['endfor'], depth + 1);
+                    if (body.closer === null)
+                        nodes.push(marker(`[[ '{% for %}' без '{% endfor %}' ]]`));
+                    nodes.push({ kind: 'for', item: forMatch[1], source: forMatch[2], body: body.nodes });
+                    continue;
+                }
+                if (commandWord === 'if') {
+                    const ifMatch = /^if\s+(\S+)$/u.exec(command);
+                    if (!ifMatch || !isWebTemplatePath(ifMatch[1])) {
+                        nodes.push(marker(`[[ непонятное условие '${shownToken(token)}' — нужно '{% if имя %}' ]]`));
+                        continue;
+                    }
+                    if (depth >= WEB_TEMPLATE_MAX_DEPTH) {
+                        nodes.push(marker(`[[ шаблон вложен глубже ${WEB_TEMPLATE_MAX_DEPTH} уровней — '${shownToken(token)}' пропущен ]]`));
+                        continue;
+                    }
+                    const thenPart = parseNodes(['else', 'endif'], depth + 1);
+                    let otherwise = [];
+                    if (thenPart.closer === 'else') {
+                        const elsePart = parseNodes(['endif'], depth + 1);
+                        otherwise = elsePart.nodes;
+                        if (elsePart.closer === null)
+                            nodes.push(marker(`[[ '{% if %}' без '{% endif %}' ]]`));
+                    }
+                    else if (thenPart.closer === null) {
+                        nodes.push(marker(`[[ '{% if %}' без '{% endif %}' ]]`));
+                    }
+                    nodes.push({ kind: 'if', source: ifMatch[1], then: thenPart.nodes, otherwise });
+                    continue;
+                }
+                nodes.push(marker(`[[ неизвестная команда '${shownToken(token)}' ]]`));
+                continue;
+            }
+            nodes.push({ kind: 'text', text: token });
+        }
+        return { nodes, closer: null };
+    }
+    return parseNodes([], 0).nodes;
+}
+function resolveWebTemplatePath(expression, scope) {
+    const parts = expression.split('.');
+    const head = parts[0];
+    let current;
+    for (let level = scope.locals.length - 1; level >= 0; level -= 1) {
+        const local = scope.locals[level].get(head);
+        if (local !== undefined) {
+            current = local;
+            break;
+        }
+    }
+    current ??= scope.root.get(head);
+    if (current === undefined)
+        return { marker: `[[ нет значения '${head}' ]]` };
+    let described = head;
+    for (const part of parts.slice(1)) {
+        if (current.__jsonKind !== 'object')
+            return { marker: `[[ '${described}' — не объект ]]` };
+        const next = jsonEntries(current).get(part);
+        if (next === undefined)
+            return { marker: `[[ у '${described}' нет поля '${part}' ]]` };
+        current = next;
+        described = `${described}.${part}`;
+    }
+    return { value: current };
+}
+function renderWebTemplateNodes(nodes, scope) {
+    let out = '';
+    for (const node of nodes) {
+        if (node.kind === 'text' || node.kind === 'marker') {
+            out += node.text;
+            continue;
+        }
+        const resolved = resolveWebTemplatePath(node.kind === 'value' ? node.expression : node.source, scope);
+        if ('marker' in resolved) {
+            out += resolved.marker;
+            continue;
+        }
+        const value = resolved.value;
+        if (node.kind === 'value') {
+            switch (value.__jsonKind) {
+                case 'string':
+                    out += escapeWebTemplateValue(value.__jsonValue);
+                    break;
+                case 'int':
+                case 'float':
+                    out += String(value.__jsonValue);
+                    break;
+                case 'bool':
+                    out += value.__jsonValue === true ? 'true' : 'false';
+                    break;
+                case 'null':
+                    out += `[[ '${node.expression}' — это null ]]`;
+                    break;
+                case 'object':
+                    out += `[[ '${node.expression}' — объект: подставьте его поле через точку ]]`;
+                    break;
+                case 'array':
+                    out += `[[ '${node.expression}' — список: нужен {% for %} ]]`;
+                    break;
+            }
+            continue;
+        }
+        if (node.kind === 'for') {
+            if (value.__jsonKind !== 'array') {
+                out += `[[ '${node.source}' — не список ]]`;
+                continue;
+            }
+            for (const element of jsonItems(value)) {
+                scope.locals.push(new Map([[node.item, element]]));
+                out += renderWebTemplateNodes(node.body, scope);
+                scope.locals.pop();
+            }
+            continue;
+        }
+        if (value.__jsonKind !== 'bool') {
+            out += `[[ '${node.source}' — не bool ]]`;
+            continue;
+        }
+        out += renderWebTemplateNodes(value.__jsonValue === true ? node.then : node.otherwise, scope);
+    }
+    return out;
+}
+function renderWebTemplate(template, values) {
+    const root = values === null ? new Map() : jsonEntries(values);
+    return renderWebTemplateNodes(parseWebTemplate(template), { root, locals: [] });
+}
+// Тело браузерной формы (application/x-www-form-urlencoded): «процентный суп»
+// вида author=%D0%9C%D0%B8%D1%80%D0%B0&text=… с плюсами вместо пробелов.
+function decodeWebFormComponent(text) {
+    const spaced = text.replace(/\+/g, ' ');
+    try {
+        return decodeURIComponent(spaced);
+    }
+    catch {
+        return spaced;
+    }
+}
+function parseWebFormBody(body) {
+    const fields = new Map();
+    for (const pair of body.split('&')) {
+        if (pair === '')
+            continue;
+        const separator = pair.indexOf('=');
+        const rawName = separator < 0 ? pair : pair.slice(0, separator);
+        const rawValue = separator < 0 ? '' : pair.slice(separator + 1);
+        const name = decodeWebFormComponent(rawName);
+        // Повтор имени — берётся первое значение (жанр query-параметров).
+        if (!fields.has(name))
+            fields.set(name, decodeWebFormComponent(rawValue));
+    }
+    return fields;
+}
+function createWebRequestObject(request, state, pathParameters = {}) {
     const obj = {
         __idylliumObjectId: state.nextObjectId++,
         __idylliumType: 'web.Request',
@@ -15839,6 +16612,16 @@ function createWebRequestObject(request, state) {
         const parameter = stringArgument(name, 'web.Request.query() name', file, line);
         return request.query[parameter] ?? '';
     });
+    obj.param = contextFunction((name, file, line) => {
+        const parameter = stringArgument(name, 'web.Request.param() name', file, line);
+        return pathParameters[parameter] ?? '';
+    });
+    let formFields = null;
+    obj.form = contextFunction((name, file, line) => {
+        const parameter = stringArgument(name, 'web.Request.form() name', file, line);
+        formFields ??= parseWebFormBody(request.body);
+        return formFields.get(parameter) ?? '';
+    });
     obj.to_string = () => `web.Request(${request.method} ${request.path})`;
     return obj;
 }
@@ -15846,11 +16629,15 @@ function createWebResponseObject(state) {
     let body = '';
     let contentType = 'text/plain; charset=utf-8';
     let sent = false;
+    let redirectLocation = null;
     const obj = {
         __idylliumObjectId: state.nextObjectId++,
         __idylliumType: 'web.Response',
     };
     defineValidatedRuntimeProperty(obj, 'status', 200, (value, file, line) => {
+        if (redirectLocation !== null) {
+            throw new IdylliumRuntimeError(file, line, 'web.Response.status cannot be changed after redirect() — redirect always answers 303');
+        }
         if (typeof value !== 'number' || !Number.isInteger(value) || value < 100 || value > 599) {
             throw new IdylliumRuntimeError(file, line, `web.Response.status must be an integer from 100 to 599, got '${String(value)}'`);
         }
@@ -15872,10 +16659,79 @@ function createWebResponseObject(state) {
         body = payload;
         contentType = 'application/json; charset=utf-8';
     });
+    obj.send_template = contextFunction((templatePath, valuesOrFile, fileOrLine, maybeLine) => {
+        // values — необязательный аргумент: контекст file/line приезжает следом
+        // за фактическими аргументами (жанр math.floor с необязательным digits).
+        const hasValues = typeof maybeLine === 'number';
+        const values = hasValues ? valuesOrFile : null;
+        const file = String(hasValues ? fileOrLine : valuesOrFile);
+        const line = hasValues ? maybeLine : Number(fileOrLine);
+        const requested = stringArgument(templatePath, 'web.Response.send_template() path', file, line);
+        if (sent)
+            throw new IdylliumRuntimeError(file, line, 'web.Response.send_template() the response was already sent');
+        let templateValues = null;
+        if (values !== null && values !== undefined) {
+            if (!isJsonRuntimeValue(values) || values.__jsonKind !== 'object') {
+                throw new IdylliumRuntimeError(file, line, `web.Response.send_template() values must be a json.Object, got '${runtimeTypeName(values)}'`);
+            }
+            templateValues = values;
+        }
+        const humanize = (text) => state.fileSystem.humanizePaths?.(text) ?? text;
+        const resolved = state.fileSystem.resolvePath(requested, file);
+        const shownPath = humanize(resolved);
+        let templateExists;
+        try {
+            templateExists = state.fileSystem.exists(resolved);
+        }
+        catch (error) {
+            // страж песочницы (path is outside the project) — в детской обёртке
+            throw new IdylliumRuntimeError(file, line, `web.Response.send_template() cannot read '${shownPath}': ${humanize(errorMessage(error))}`);
+        }
+        if (!templateExists) {
+            throw new IdylliumRuntimeError(file, line, `web.Response.send_template() cannot read '${shownPath}': file does not exist`);
+        }
+        if (!state.fileSystem.isFile(resolved)) {
+            throw new IdylliumRuntimeError(file, line, `web.Response.send_template() cannot read '${shownPath}': path is not a file`);
+        }
+        let template;
+        try {
+            template = state.fileSystem.readText(resolved);
+        }
+        catch (error) {
+            throw new IdylliumRuntimeError(file, line, `web.Response.send_template() cannot read '${shownPath}': ${humanize(errorMessage(error))}`);
+        }
+        sent = true;
+        body = renderWebTemplate(template, templateValues);
+        contentType = 'text/html; charset=utf-8';
+    });
+    obj.redirect = contextFunction((target, file, line) => {
+        const destination = stringArgument(target, 'web.Response.redirect() path', file, line);
+        if (sent)
+            throw new IdylliumRuntimeError(file, line, 'web.Response.redirect() the response was already sent');
+        if (destination.trim() === '') {
+            throw new IdylliumRuntimeError(file, line, 'web.Response.redirect() path must not be empty');
+        }
+        sent = true;
+        // Жёсткое правило v1: redirect — всегда 303 See Other (канон PRG),
+        // выбора кода не даём; статус после redirect закрыт валидатором,
+        // поэтому 303 ставится ДО redirectLocation.
+        obj.status = 303;
+        // Location обязан быть ASCII: кириллица и управляющие символы
+        // кодируются процентами (encodeURI не трогает уже закодированные %XX),
+        // заодно умирает инъекция заголовков через перевод строки.
+        try {
+            redirectLocation = encodeURI(destination);
+        }
+        catch {
+            sent = false;
+            throw new IdylliumRuntimeError(file, line, `web.Response.redirect() cannot send '${destination}' as an address`);
+        }
+        body = '';
+    });
     obj.to_string = () => 'web.Response';
     return {
         object: obj,
-        finish: () => ({ body, contentType }),
+        finish: () => ({ body, contentType, location: redirectLocation }),
     };
 }
 function serveWebStatic(roots, requestPath, state) {
@@ -15912,6 +16768,36 @@ function initializeWebObject(obj, typeName, state) {
     const routes = new Map();
     const routePaths = new Set();
     const staticRoots = [];
+    const parameterRoutes = [];
+    const parameterRouteShapes = new Map();
+    function routeSegmentsMatch(segments, pathSegments) {
+        if (segments.length !== pathSegments.length)
+            return false;
+        return segments.every((segment, position) => (segment === null ? pathSegments[position] !== '' : segment === pathSegments[position]));
+    }
+    function matchParameterRoute(method, requestPath) {
+        const pathSegments = requestPath.slice(1).split('/');
+        for (const route of parameterRoutes) {
+            if (route.method !== method || !routeSegmentsMatch(route.segments, pathSegments))
+                continue;
+            const parameters = {};
+            let parameterIndex = 0;
+            route.segments.forEach((segment, position) => {
+                if (segment === null) {
+                    parameters[route.parameterNames[parameterIndex]] = pathSegments[position];
+                    parameterIndex += 1;
+                }
+            });
+            return { handler: route.handler, parameters };
+        }
+        return null;
+    }
+    function pathIsKnownRoute(requestPath) {
+        if (routePaths.has(requestPath))
+            return true;
+        const pathSegments = requestPath.slice(1).split('/');
+        return parameterRoutes.some((route) => routeSegmentsMatch(route.segments, pathSegments));
+    }
     function registerRoute(method, methodName) {
         return contextFunction((routePath, handler, file, line) => {
             const pathValue = stringArgument(routePath, `web.Server.${methodName}() path`, file, line);
@@ -15920,6 +16806,38 @@ function initializeWebObject(obj, typeName, state) {
             }
             if (typeof handler !== 'function') {
                 throw new IdylliumRuntimeError(file, line, `web.Server.${methodName}() handler must be a function like 'void function(web.Request req, web.Response res)'`);
+            }
+            if (pathValue.includes('<') || pathValue.includes('>')) {
+                const segments = [];
+                const parameterNames = [];
+                for (const segment of pathValue.slice(1).split('/')) {
+                    const parameterMatch = /^<(.*)>$/u.exec(segment);
+                    if (parameterMatch) {
+                        const parameterName = parameterMatch[1];
+                        if (!WEB_TEMPLATE_NAME_PATTERN.test(parameterName)) {
+                            throw new IdylliumRuntimeError(file, line, `web.Server.${methodName}() path parameter '<${parameterName}>' must be a simple name, like '/post/<id>'`);
+                        }
+                        if (parameterNames.includes(parameterName)) {
+                            throw new IdylliumRuntimeError(file, line, `web.Server.${methodName}() path parameter '<${parameterName}>' is used twice in '${pathValue}'`);
+                        }
+                        parameterNames.push(parameterName);
+                        segments.push(null);
+                    }
+                    else if (segment.includes('<') || segment.includes('>')) {
+                        throw new IdylliumRuntimeError(file, line, `web.Server.${methodName}() path parameter must occupy a whole segment between '/', like '/post/<id>', got '${segment}' in '${pathValue}'`);
+                    }
+                    else {
+                        segments.push(segment);
+                    }
+                }
+                const shape = `${method} /${segments.map((segment) => (segment === null ? '<>' : segment)).join('/')}`;
+                const registered = parameterRouteShapes.get(shape);
+                if (registered !== undefined) {
+                    throw new IdylliumRuntimeError(file, line, `web.Server.${methodName}() route '${pathValue}' conflicts with already registered '${registered}'`);
+                }
+                parameterRouteShapes.set(shape, pathValue);
+                parameterRoutes.push({ method, pattern: pathValue, segments, parameterNames, handler });
+                return;
             }
             const key = `${method} ${pathValue}`;
             if (routes.has(key)) {
@@ -15962,9 +16880,17 @@ function initializeWebObject(obj, typeName, state) {
         // перебивают друг друга на середине — важное для учебных программ свойство.
         let chain = Promise.resolve();
         const dispatch = async (request) => {
-            const handler = routes.get(`${request.method} ${request.path}`);
+            let handler = routes.get(`${request.method} ${request.path}`);
+            let pathParameters = {};
+            if (typeof handler !== 'function') {
+                const parameterMatch = matchParameterRoute(request.method, request.path);
+                if (parameterMatch) {
+                    handler = parameterMatch.handler;
+                    pathParameters = parameterMatch.parameters;
+                }
+            }
             if (typeof handler === 'function') {
-                const requestObject = createWebRequestObject(request, state);
+                const requestObject = createWebRequestObject(request, state, pathParameters);
                 const response = createWebResponseObject(state);
                 try {
                     await handler(requestObject, response.object);
@@ -15980,9 +16906,12 @@ function initializeWebObject(obj, typeName, state) {
                     return webTextResponse(500, text);
                 }
                 const finished = response.finish();
+                const headers = { 'content-type': finished.contentType };
+                if (finished.location !== null)
+                    headers.location = finished.location;
                 return {
                     status: Number(response.object.status ?? 200),
-                    headers: { 'content-type': finished.contentType },
+                    headers,
                     body: finished.body,
                 };
             }
@@ -15991,7 +16920,7 @@ function initializeWebObject(obj, typeName, state) {
                 if (staticResponse)
                     return staticResponse;
             }
-            if (routePaths.has(request.path)) {
+            if (pathIsKnownRoute(request.path)) {
                 return webTextResponse(405, `method ${request.method} is not allowed for '${request.path}'`);
             }
             return webTextResponse(404, `not found: '${request.path}'`);
@@ -16119,11 +17048,17 @@ function initializeGuiObject(obj, typeName, state) {
             }
             child.__parent = obj;
             obj.__children.push(child);
+            // Радио с предвыбором решает свою группу в момент переезда в коробку:
+            // до add_child группа неизвестна (E15), теперь родитель есть — гасим
+            // соседей по новому дому (последний добавленный выигрывает).
+            if (child.__idylliumType === 'gui.RadioButton' && child.is_selected === true) {
+                selectRadioButton(child, state);
+            }
         });
     }
     if (typeName === 'Window') {
         obj.title = '';
-        obj.theme = 'default';
+        defineEnumRuntimeProperty(obj, 'theme', 'Window', 'default', ['default', 'idyllium', 'dracula', 'breeze', 'oxygen']);
         setTrackedRuntimePropertyDefault(obj, 'background_color', colorWhite());
         obj.show = async () => {
             obj.__shown = true;
@@ -16253,7 +17188,9 @@ function initializeGuiObject(obj, typeName, state) {
     if (typeName === 'TabWidget') {
         obj.__children = [];
         obj.__tabTitles = [];
-        obj.selected_index = 0;
+        // Пустой шкаф отвечает -1 — «ничего не выбрано», как пустой ComboBox
+        // (E16): у вкладок нет тайной «нулевой», пока add_tab не принёс первую.
+        obj.selected_index = -1;
         obj.tab_count = 0;
         // Заголовок всегда вычисляется из selected_index. Хранить его отдельным
         // полем нельзя: тогда присваивание selected_index из программы оставляло
@@ -16281,12 +17218,15 @@ function initializeGuiObject(obj, typeName, state) {
             obj.__children.push(content);
             obj.__tabTitles.push(tabTitle);
             obj.tab_count = obj.__tabTitles.length;
+            // Первая вкладка становится выбранной: шкаф перестаёт быть пустым.
+            if (obj.selected_index === -1)
+                obj.selected_index = 0;
         });
         obj.clear_tabs = contextFunction(() => {
             obj.__children = [];
             obj.__tabTitles = [];
             obj.tab_count = 0;
-            obj.selected_index = 0;
+            obj.selected_index = -1;
         });
     }
     if (typeName === 'Frame') {
@@ -16298,7 +17238,7 @@ function initializeGuiObject(obj, typeName, state) {
     }
     if (typeName === 'ImageBox') {
         obj.image = null;
-        obj.resize_mode = 'fit';
+        defineEnumRuntimeProperty(obj, 'resize_mode', 'ImageBox', 'fit', ['fit', 'fill', 'stretch', 'original']);
         obj.set_image = contextFunction((image, file, line) => {
             obj.image = runtimeImageResource(image, 'ImageBox.set_image()', file, line);
         });
@@ -16307,7 +17247,8 @@ function initializeGuiObject(obj, typeName, state) {
         obj.text = '';
         obj.placeholder = '';
         defineTrackedRuntimeProperty(obj, 'placeholder_color', colorGray());
-        obj.echo_mode = 'normal';
+        // Опечатка в режиме молча оставляла пароль на виду (W18, методисты).
+        defineEnumRuntimeProperty(obj, 'echo_mode', 'LineEdit', 'normal', ['normal', 'password', 'no_echo']);
         setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
         setTrackedRuntimePropertyDefault(obj, 'background_color', colorWhite());
         defineTrackedRuntimeProperty(obj, 'border_color', colorGray());
@@ -16324,7 +17265,7 @@ function initializeGuiObject(obj, typeName, state) {
         obj.value = 0;
         obj.min = 0;
         obj.max = 100;
-        obj.orientation = 'horizontal';
+        defineEnumRuntimeProperty(obj, 'orientation', 'ProgressBar', 'horizontal', ['horizontal', 'vertical']);
         setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
         setTrackedRuntimePropertyDefault(obj, 'background_color', colorVeryLightGray());
         setTrackedRuntimePropertyDefault(obj, 'foreground_color', colorBlue());
@@ -16337,7 +17278,7 @@ function initializeGuiObject(obj, typeName, state) {
         obj.step = 1;
     }
     if (typeName === 'Slider') {
-        obj.orientation = 'horizontal';
+        defineEnumRuntimeProperty(obj, 'orientation', 'Slider', 'horizontal', ['horizontal', 'vertical']);
     }
     if (typeName === 'FloatSpinBox') {
         obj.value = 0;
@@ -18460,6 +19401,14 @@ function widgetEventsBlocked(target) {
 function selectRadioButton(target, state) {
     const group = typeof target.group === 'string' ? target.group : '';
     const parent = target.__parent;
+    // «Бездомное» радио (до add_child) с безымянной группой не гасит никого:
+    // группа по умолчанию — это родитель, а родителя ещё нет. Иначе канон
+    // «создал → настроил → add_child» схлопывал бы предвыборы двух рамок
+    // в одну бездомную группу (E15). Группа решится в add_child.
+    if (group === '' && !isRuntimeObject(parent)) {
+        target.is_selected = true;
+        return;
+    }
     for (const item of state.objects) {
         if (item === target || item.__idylliumType !== 'gui.RadioButton')
             continue;

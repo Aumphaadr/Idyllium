@@ -225,8 +225,8 @@ main() {
     if (arr > 5) { }
 }
 </script></idyl-code-block>
-      <idyl-error-block>main.idyl:3:9: compile error: comparison '&gt;' requires numeric operands</idyl-error-block>
-      <p>Знак <code>&gt;</code> умеет сравнивать только числа, а <code>arr</code> — целый массив. Сравнивайте отдельные элементы: <code>arr[0] > 5</code>.</p>
+      <idyl-error-block>main.idyl:3:9: compile error: comparison '&gt;' requires numeric operands, got 'array&lt;int, 3&gt;' and 'int'</idyl-error-block>
+      <p>Знак <code>&gt;</code> умеет сравнивать только числа — и компилятор называет обоих участников по именам: слева целый массив, справа число. Сравнивайте отдельные элементы: <code>arr[0] > 5</code>.</p>
     </div>
 
     <div class="docs-section">

@@ -2,6 +2,7 @@ import {
   AccessModifier,
   ArrayTypeNameNode,
   ClassDeclaration,
+  Expression,
   FunctionDeclaration,
   ParameterDeclaration,
   Program,
@@ -282,6 +283,37 @@ function functionSpecFromDeclaration(
   };
 }
 
+// Целочисленное значение класс-константы модуля: литералы, минус, + - *,
+// ссылки на РАНЕЕ объявленные константы того же класса (Class.NAME).
+function foldModuleConstInt(
+  expression: Expression,
+  className: string,
+  classConsts: ReadonlyMap<string, number>,
+): number | null {
+  if (expression.kind === 'LiteralExpression') {
+    return expression.valueType === 'int' && typeof expression.value === 'number' ? expression.value : null;
+  }
+  if (expression.kind === 'UnaryExpression' && expression.operator === '-') {
+    const operand = foldModuleConstInt(expression.operand, className, classConsts);
+    return operand === null ? null : -operand;
+  }
+  if (expression.kind === 'MemberExpression'
+    && expression.object.kind === 'IdentifierExpression'
+    && expression.object.name === className) {
+    return classConsts.get(expression.name) ?? null;
+  }
+  if (expression.kind === 'BinaryExpression') {
+    const left = foldModuleConstInt(expression.left, className, classConsts);
+    const right = foldModuleConstInt(expression.right, className, classConsts);
+    if (left === null || right === null) return null;
+    if (expression.operator === '+') return left + right;
+    if (expression.operator === '-') return left - right;
+    if (expression.operator === '*') return left * right;
+    return null;
+  }
+  return null;
+}
+
 function classSpecFromDeclaration(
   declaration: ClassDeclaration,
   moduleName: string,
@@ -298,10 +330,15 @@ function classSpecFromDeclaration(
   let constructorSpec: FunctionSpec | null = null;
   let constructorAccess: AccessModifier = 'public';
 
+  const classConstValues = new Map<string, number>();
   for (const member of declaration.members) {
     if (member.kind === 'ClassFieldDeclaration') {
       const type = resolveModuleExportType(member.declaredType, moduleName, program, localClasses, stdlib, userModules, diagnostics);
       for (const field of member.fields) {
+        const constantValue = member.isConst && field.initializer
+          ? foldModuleConstInt(field.initializer, declaration.name, classConstValues) ?? undefined
+          : undefined;
+        if (member.isConst && constantValue !== undefined) classConstValues.set(field.name, constantValue);
         fields.push({
           name: field.name,
           type,
@@ -311,6 +348,9 @@ function classSpecFromDeclaration(
           nullable: field.initializer?.kind === 'LiteralExpression'
             && field.initializer.valueType === 'null'
             && (type.kind === 'class' || type.kind === 'qualified'),
+          isStatic: member.isStatic,
+          isConst: member.isConst,
+          constantValue,
         });
       }
     }

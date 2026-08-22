@@ -469,7 +469,7 @@ compile error: operator 'not' requires 'bool', got 'int'
 **Idyllium's answer:**
 
 ```text
-compile error: comparison '<' requires numeric operands
+compile error: comparison '<' requires numeric operands, got 'bool' and 'int'
 ```
 
 ### 7.4. The "curious student" scenario
@@ -702,7 +702,7 @@ which is the form course materials use first.
 refused rather than ignored:
 
 ```text
-compile error: comparison '<' requires numeric operands
+compile error: comparison '<' requires numeric operands, got 'string' and 'string'
 compile error: cannot compare 'string' and 'int'
 compile error: cannot compare 'string' and 'char'
 compile error: string characters are read-only
@@ -728,7 +728,7 @@ a hidden byte-order accident.
 
 ```text
 compile error: operator '+' cannot be applied to 'int' and 'bool'
-compile error: comparison '<' requires numeric operands
+compile error: comparison '<' requires numeric operands, got 'bool' and 'int'
 ```
 
 ```idyllium

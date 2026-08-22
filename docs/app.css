@@ -835,7 +835,7 @@ button:disabled:active {
 
 .font-size-control button {
   width: 32px;
-  height: 30px;
+  height: 100%;
   justify-content: center;
   border: 0;
   border-radius: 0;
@@ -848,6 +848,12 @@ button:disabled:active {
 .font-size-control button:hover {
   border-color: transparent;
   background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+/* Внутри капсулы кнопка не «подпрыгивает»: сдвиг рвал заливку от рамки. */
+.font-size-control button:active {
+  transform: none;
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
 .font-size-control input {
@@ -1138,6 +1144,12 @@ button:disabled:active {
   border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
 }
 
+/* Папка-цель при внутреннем переносе строки дерева. */
+.file-row.drag-target {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 62%, var(--border));
+}
+
 .file-main-button,
 .file-menu-button {
   min-width: 0;
@@ -1234,7 +1246,11 @@ button:disabled:active {
 .file-context-menu {
   position: fixed;
   z-index: 30;
-  min-width: 160px;
+  /* Ширина — по самому длинному пункту: grid растягивает кнопки до самой
+     широкой, а width:100% у детей не раздувает max-content-расчёт. */
+  display: grid;
+  width: max-content;
+  min-width: 0;
   padding: 6px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -1247,11 +1263,79 @@ button:disabled:active {
 }
 
 .file-context-menu button {
-  width: 100%;
   justify-content: flex-start;
   border-color: transparent;
   background: transparent;
   color: var(--text);
+  white-space: nowrap;
+}
+
+.file-props-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.file-props-backdrop[hidden] {
+  display: none;
+}
+
+.file-props-card {
+  min-width: 320px;
+  max-width: min(440px, calc(100vw - 32px));
+  max-height: calc(100vh - 64px);
+  overflow: auto;
+  padding: 16px 18px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel-raised);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.file-props-title {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  word-break: break-all;
+}
+
+.file-props-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.file-props-table td {
+  padding: 4px 0;
+  vertical-align: top;
+}
+
+.file-props-table td:first-child {
+  padding-right: 14px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.file-props-table td:last-child {
+  color: var(--text);
+  word-break: break-all;
+}
+
+.file-props-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.file-props-actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .file-delete-prompt {
@@ -2405,12 +2489,33 @@ summary.json-node-line:hover {
 
 .asset-font-size-label {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) 52px;
+  grid-template-columns: minmax(0, 1fr) 52px;
   align-items: center;
   gap: 10px;
-  width: min(300px, 100%);
+  width: min(220px, 100%);
   color: var(--muted);
   font: 600 12px var(--ui-font);
+}
+
+/* Поле colors-фабрики: цвет образцов инспектора шрифтов. */
+.asset-font-color-input {
+  width: min(230px, 100%);
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-soft);
+  color: var(--editor-text);
+  font: 12px var(--mono-font);
+  padding: 0 9px;
+  outline: 0;
+}
+
+.asset-font-color-input:focus {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+}
+
+.asset-font-color-input.invalid {
+  border-color: color-mix(in srgb, var(--danger) 65%, var(--border));
 }
 
 .asset-font-size-range {
@@ -2444,7 +2549,7 @@ summary.json-node-line:hover {
 
 .asset-font-sample-text {
   min-width: 0;
-  color: var(--editor-text);
+  color: var(--asset-font-color, var(--editor-text));
   font-size: var(--asset-font-size);
   line-height: 1.35;
   overflow-wrap: anywhere;
@@ -2805,6 +2910,78 @@ summary.json-node-line:hover {
 
 .ansi-fg-bright-white {
   color: #ffffff;
+}
+
+/* ANSI-палитра для светлой темы: тёмная задана под тёмный фон, и на
+
+   светлом зелёный/жёлтый падали до контраста 1.1:1 — цветные задания
+
+   становились невидимыми (находка методистов 2026-08-22). Все пары
+
+   ниже дают ≥4.5:1 на светлых панелях. */
+
+body.theme-light .ansi-fg-black {
+  color: #24292f;
+}
+
+body.theme-light .ansi-fg-red {
+  color: #b3261e;
+}
+
+body.theme-light .ansi-fg-green {
+  color: #17691f;
+}
+
+body.theme-light .ansi-fg-yellow {
+  color: #7a5800;
+}
+
+body.theme-light .ansi-fg-blue {
+  color: #1247a4;
+}
+
+body.theme-light .ansi-fg-magenta {
+  color: #99236d;
+}
+
+body.theme-light .ansi-fg-cyan {
+  color: #156970;
+}
+
+body.theme-light .ansi-fg-white {
+  color: #57606a;
+}
+
+body.theme-light .ansi-fg-bright-black {
+  color: #57606a;
+}
+
+body.theme-light .ansi-fg-bright-red {
+  color: #b93737;
+}
+
+body.theme-light .ansi-fg-bright-green {
+  color: #1c7032;
+}
+
+body.theme-light .ansi-fg-bright-yellow {
+  color: #855c00;
+}
+
+body.theme-light .ansi-fg-bright-blue {
+  color: #0550ae;
+}
+
+body.theme-light .ansi-fg-bright-magenta {
+  color: #7440c7;
+}
+
+body.theme-light .ansi-fg-bright-cyan {
+  color: #176b72;
+}
+
+body.theme-light .ansi-fg-bright-white {
+  color: #5c6570;
 }
 
 .console-input-panel {

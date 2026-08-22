@@ -160,7 +160,7 @@ main() {
 
 <div class="docs-section">
   <h2>Блок 4. <code>not()</code> и всё вместе</h2>
-  <p><code>not(x)</code> переворачивает логическое значение: <code>true</code> становится <code>false</code>, и наоборот. Это <strong>функция</strong> — то, что переворачивается, всегда в скобках. Заодно в этом блоке соберём операции вместе.</p>
+  <p><code>not</code> переворачивает логическое значение: <code>true</code> становится <code>false</code>, и наоборот. Это <strong>оператор</strong> — он пишется перед выражением, а скобки <code>not(x)</code> мы ставим для ясности: сразу видно, что именно отрицается.</p>
   <h3 class="task-group">Практика с преподавателем</h3>
   <h4 class="task-item">Задание 14. Гулять или дома</h4>
   <p>Соберём «шторм» из двух примет, а потом одним <code>not()</code> перевернём: гулять идём, когда шторма <strong>нет</strong>. Наберите:</p>
@@ -246,19 +246,19 @@ main() {
     console.writeln(A or B and C);
 </script></idyl-code-block>
   <p>Что посчитается первым — <code>A or B</code> или <code>B and C</code>? Запишите свою догадку, потом запустите. А теперь поставьте скобки вокруг <code>A or B</code> (<code>(A or B) and C</code>) и запустите снова — ответ изменился? (Должен: без скобок выходит <code>true</code>, со скобками — <code>false</code>.) Мораль: <strong>сомневаешься — ставь скобки</strong>, и никто (даже ты через неделю) не прочитает условие иначе.</p>
-  <h4 class="task-item task-star">Задание 20 ⭐. Почему <code>not</code> со скобками и как у соседей</h4>
-  <p>Попробуйте написать «не» без скобок, как слово:</p>
+  <h4 class="task-item task-star">Задание 20 ⭐. Жадный <code>not</code> и как у соседей</h4>
+  <p>Попробуйте отрицать сравнение без скобок:</p>
   <idyl-code-block><script type="text/plain">
     int coins = 50;
     if (not coins > 100) {
         console.writeln("мало");
     }
 </script></idyl-code-block>
-  <p>Запустите — язык откажется и объяснит почему. <code>not</code> — функция, ей нужны скобки вокруг <strong>всего</strong>, что переворачиваешь: <code>not(coins &gt; 100)</code> — «неправда, что монет больше ста».</p>
+  <p>Запустите — язык откажется: <code>operator 'not' requires 'bool', got 'int'</code>. Прочитайте внимательно: <code>not</code> — оператор, и он <strong>жадный</strong> — схватил ближайшее к себе <code>coins</code>, а число не переворачивается. Лечение — скобки вокруг <strong>всего</strong>, что переворачиваешь: <code>not(coins &gt; 100)</code> — «неправда, что монет больше ста».</p>
   <p>А у соседей по цеху иначе:</p>
   <ul>
     <li>в <strong>Python</strong> «не» пишут словом-приставкой без скобок: <code>not coins &gt; 100</code>; «и»/«или» — тоже слова <code>and</code>/<code>or</code>; а вот <code>xor</code>-слова нет — берут <code>!=</code> или значок <code>^</code>;</li>
     <li>в <strong>C++, Java и JavaScript</strong> «и»/«или»/«не» — это значки <code>&amp;&amp;</code>, <code>||</code>, <code>!</code> (например, <code>!(coins &gt; 100)</code>); отдельного <code>xor</code> для условий тоже нет.</li>
   </ul>
-  <p>Idyllium выбрал слова (<code>and</code>, <code>or</code>, <code>xor</code>, <code>not</code>) — их легко читать вслух, — а «не» сделал функцией со скобками, чтобы никто не гадал, что именно отрицается.</p>
+  <p>Idyllium выбрал слова (<code>and</code>, <code>or</code>, <code>xor</code>, <code>not</code>) — их легко читать вслух. А привычка писать <code>not</code> со скобками — тот же совет, что и в задании 19: сомневаешься — ставь скобки, и никто не гадает, что именно отрицается.</p>
 </div>

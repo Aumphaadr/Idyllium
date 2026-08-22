@@ -2,7 +2,7 @@
       <h2>Два условия сразу — как?</h2>
       <p>На самую страшную горку в парке аттракционов — «Кракен» — пускают только тех, кому <strong>уже есть 10 лет</strong> и чей рост <strong>не меньше 140 см</strong>. Два условия сразу!</p>
       <p>Оператор <code>if</code> из прошлых уроков проверяет одно сравнение. А как проверить оба? Писать <code>if</code> внутри <code>if</code>? Можно, но получится громоздко — а с тремя-четырьмя условиями превратится в лесенку до потолка.</p>
-      <p>В этом уроке появятся операции-«клеи»: <code>and</code>, <code>or</code>, <code>xor</code> и <code>not()</code>. Они склеивают несколько условий в одно — и контролёр «Кракена» поместится в одну строчку.</p>
+      <p>В этом уроке появятся операции-«клеи»: <code>and</code>, <code>or</code>, <code>xor</code> и <code>not</code>. Они склеивают несколько условий в одно — и контролёр «Кракена» поместится в одну строчку.</p>
     </div>
 
     <div class="docs-section">
@@ -273,8 +273,8 @@ true</idyl-output-block>
     </div>
 
     <div class="docs-section">
-      <h2>Операция 'not()' — инверсия</h2>
-      <p>В Idyllium операция «НЕ» реализована как <strong>функция</strong> — <code>not(выражение)</code>:</p>
+      <h2>Оператор 'not' — инверсия</h2>
+      <p>Операция «НЕ» — это оператор <code>not</code>, который пишется перед выражением:</p>
 
       <idyl-code-block><script type="text/plain">
 use console;
@@ -282,16 +282,24 @@ use console;
 main() {
     bool is_raining = true;
 
-    console.writeln(not(is_raining));
-    console.writeln(not(not(is_raining)));
+    console.writeln(not is_raining);
+    console.writeln(not not is_raining);
 }
 </script></idyl-code-block>
 
       <idyl-output-block>false
 true</idyl-output-block>
 
-      <p><code>not()</code> переворачивает значение, а двойное <code>not()</code> возвращает всё как было. Скобки чётко показывают, что именно инвертируется — никакой двусмысленности.</p>
-      <p>Таблица у <code>not()</code> самая короткая — аргумент-то один:</p>
+      <p><code>not</code> переворачивает значение, а двойной <code>not</code> возвращает всё как было. Одна тонкость: <code>not</code> — жадный, он хватает <strong>ближайшее</strong> к себе выражение. Попробуйте отрицать сравнение без скобок:</p>
+
+      <idyl-code-block><script type="text/plain">
+    if (not coins > 100) {
+</script></idyl-code-block>
+
+      <idyl-error-block>main.idyl:4:13: compile error: operator 'not' requires 'bool', got 'int'</idyl-error-block>
+
+      <p><code>not</code> схватил <code>coins</code> — а число не переворачивается. Лечение — скобки: <code>not(coins &gt; 100)</code> читается однозначно, «неправда, что монет больше ста». Поэтому в этом курсе мы пишем <code>not</code> со скобками почти всегда: не потому, что так велит язык, а потому, что так видно, что именно отрицается.</p>
+      <p>Таблица у <code>not</code> самая короткая — аргумент-то один:</p>
       <table>
         <thead>
           <tr><th>Аргумент</th><th>Результат</th></tr>
@@ -305,7 +313,7 @@ true</idyl-output-block>
 
     <div class="docs-section">
       <h2>Аналогия с математикой</h2>
-      <p>Функция <code>not()</code> работает как унарный минус в арифметике:</p>
+      <p>Оператор <code>not</code> работает как унарный минус в арифметике — тоже оператор, тоже стоит перед выражением:</p>
 
       <idyl-code-block><script type="text/plain">
 int X = 5;
@@ -321,31 +329,7 @@ bool Q = not(P); // false
 bool R = not(Q); // снова true
 </script></idyl-code-block>
 
-      <p><code>not()</code> <strong>переключает</strong> значение: <code>true</code> ↔ <code>false</code>, как минус переключает знак числа.</p>
-    </div>
-
-    <div class="docs-section">
-      <h2>Почему 'not' — функция, а не оператор?</h2>
-      <p>Представьте, что «не» можно было бы приписывать к условию просто так, без скобок: <em>не монет больше ста</em>. К чему относится это «не» — только к монетам или ко всему сравнению? Читатель такой записи вынужден гадать.</p>
-      <p>В Idyllium гадать не приходится: скобки <code>not()</code> обнимают ровно то, что инвертируется:</p>
-
-      <idyl-code-block><script type="text/plain">
-use console;
-
-main() {
-    console.write("Сколько у вас монет? ");
-    int coins = console.get_int();
-
-    if (not(coins > 100)) {
-        console.writeln("На меч не хватает. Копим дальше!");
-    }
-}
-</script></idyl-code-block>
-
-      <idyl-output-block>Сколько у вас монет? <span class="user_input">50</span>
-На меч не хватает. Копим дальше!</idyl-output-block>
-
-      <p><code>not(coins > 100)</code> читается однозначно: «неправда, что монет больше ста». Скобки — это не формальность. Это <strong>гарантия ясности</strong>: вы всегда видите, что именно отрицается, — а в спорных местах добавляете скобки и остальным операциям.</p>
+      <p><code>not</code> <strong>переключает</strong> значение: <code>true</code> ↔ <code>false</code>, как минус переключает знак числа.</p>
     </div>
 
     <div class="docs-section">
@@ -358,7 +342,7 @@ main() {
           <tr><td><code>and</code></td><td>«И»: обе стороны должны быть <code>true</code></td><td><code>true and false</code></td><td><code>false</code></td></tr>
           <tr><td><code>or</code></td><td>«ИЛИ»: хотя бы одна сторона <code>true</code></td><td><code>false or true</code></td><td><code>true</code></td></tr>
           <tr><td><code>xor</code></td><td>«либо-либо»: ровно одна сторона <code>true</code></td><td><code>true xor true</code></td><td><code>false</code></td></tr>
-          <tr><td><code>not()</code></td><td>«НЕ»: переворачивает значение</td><td><code>not(true)</code></td><td><code>false</code></td></tr>
+          <tr><td><code>not</code></td><td>«НЕ»: переворачивает значение</td><td><code>not true</code></td><td><code>false</code></td></tr>
         </tbody>
       </table>
       <p>Сравнения порождают <code>bool</code>, логические операции склеивают их в условия любой сложности — и всё это помещается в один <code>if</code>. Контролёр «Кракена» гордился бы вами.</p>
