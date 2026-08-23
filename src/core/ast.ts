@@ -33,6 +33,10 @@ export interface ArrayTypeNameNode {
   size: number | null;
   /** Имя константы из `array<int, L>`; null для числового литерала. */
   readonly sizeName: string | null;
+  /** Размер-ВЫРАЖЕНИЕ из `array<int, SIZE*SIZE>`: считается на компиляции,
+   *  результат семантика вписывает в size. Разбирается на уровне '+ - * /',
+   *  чтобы закрывающее '>' не было съедено как сравнение. */
+  readonly sizeExpression: Expression | null;
   readonly sizeRange: SourceRange | null;
   readonly dynamic: boolean;
   readonly range: SourceRange;

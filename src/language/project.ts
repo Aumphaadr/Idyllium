@@ -350,12 +350,13 @@ export class IdylliumProject {
     const source = this.files.get(file) ?? '';
     const root = parseSource(null, file, source, diagnostics);
     const modules: LoadedModule[] = [];
+    const unavailableModules = new Set<string>();
 
     if (root.ast) {
-      loadUserModules(root.ast, file, this.moduleLoadOptions(), this.stdlib, diagnostics, modules);
+      loadUserModules(root.ast, file, this.moduleLoadOptions(), this.stdlib, diagnostics, modules, unavailableModules);
     }
 
-    const userModules = buildUserModuleRegistry(modules, this.stdlib, diagnostics);
+    const userModules = buildUserModuleRegistry(modules, this.stdlib, diagnostics, unavailableModules);
     const semanticTokens = root.ast
       ? new SemanticAnalyzer(this.stdlib, userModules).analyze(root.ast).tokens
       : [];

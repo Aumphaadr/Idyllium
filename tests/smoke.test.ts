@@ -9474,6 +9474,1183 @@ main() {
   assert(viaParent.output === 'true\n', `parent-typed contract call: ${JSON.stringify(viaParent.output)}`);
 });
 
+// Жанр «свой виджет» композицией (исследование some_widget_heirs): класс-обёртка
+// с рамкой/ползунком/табло, И метод класса, повешенный колбэком напрямую —
+// this внутри метода обязан жить (тонкая механика замыкания, держим смоуком).
+test('composed custom widget updates via a method used as callback', async () => {
+  const result = await runWithInspectableRuntime(`
+    use gui;
+
+    class LabeledSlider {
+      gui.Slider slider;
+      gui.Label readout;
+
+      void function refresh() {
+        this.readout.text = to_string(this.slider.value) + " / " + to_string(this.slider.max);
+      }
+    }
+
+    LabeledSlider volume;
+
+    main() {
+      gui.Window win;
+      volume.slider.max = 20;
+      volume.slider.on_change = volume.refresh;
+      volume.refresh();
+      win.add_child(volume.slider);
+      win.add_child(volume.readout);
+      win.show();
+    }
+  `);
+  const widget = (type: string) => result.runtime.getWindows()[0].children.find((item) => item.type === type);
+  assert(widget('gui.Label')?.properties.text === '0 / 20', `initial readout: ${JSON.stringify(widget('gui.Label')?.properties)}`);
+  await result.runtime.dispatchGuiEvent(widget('gui.Slider')!.id, 'change', { value: 7 });
+  assert(widget('gui.Label')?.properties.text === '7 / 20', `readout after change: ${JSON.stringify(widget('gui.Label')?.properties)}`);
+});
+
+// Полная поддержка extends (вердикт владельца, 2026-08-22, spec/some_widget_heirs):
+// наследник виджета — настоящая кнопка (__idylliumType базы, рендер невредим),
+// но со своими полями/методами и своим именем в type_name (__idylliumClass).
+test('widget heir keeps parent mechanics and carries its own state', async () => {
+  // type_name говорит именем наследника, а не рантайм-типом базы.
+  const named = await runIdyllium(`use gui;
+use console;
+class CounterButton extends gui.Button { int clicks = 0; }
+main() {
+    CounterButton counter;
+    console.writeln(type_name(counter));
+}
+`, {}, { file: 'main.idyl' });
+  assert(named.output === 'CounterButton\n', `type_name must say the heir class: ${JSON.stringify(named.output)} ${named.runtimeError ?? named.compilation.diagnosticsText}`);
+
+  const result = await runWithInspectableRuntime(`
+    use gui;
+
+    class CounterButton extends gui.Button {
+      int clicks = 0;
+
+      void function press() {
+        this.clicks = this.clicks + 1;
+        this.text = "Нажато: " + to_string(this.clicks);
+      }
+    }
+
+    CounterButton counter;
+
+    main() {
+      gui.Window win;
+      counter.text = "Нажми меня";
+      counter.on_click = counter.press;
+      win.add_child(counter);
+      win.show();
+    }
+  `);
+  const button = result.runtime.getWindows()[0].children.find((item) => item.type === 'gui.Button');
+  assert(button?.properties.text === 'Нажми меня', `heir renders as a plain button: ${JSON.stringify(button?.properties)}`);
+  await result.runtime.dispatchGuiEvent(button!.id, 'click', {});
+  await result.runtime.dispatchGuiEvent(button!.id, 'click', {});
+  const after = result.runtime.getWindows()[0].children.find((item) => item.type === 'gui.Button');
+  assert(after?.properties.text === 'Нажато: 2', `heir state must survive clicks: ${JSON.stringify(after?.properties)}`);
+});
+
+// Составной виджет-наследник рамки: конструктор с аргументами, this.add_child,
+// метод класса колбэком — коробка И ЕСТЬ виджет, одна строка монтажа.
+test('frame heir builds a compound widget in its constructor', async () => {
+  const result = await runWithInspectableRuntime(`
+    use gui;
+
+    class LabeledSlider extends gui.Frame {
+      gui.Slider slider;
+      gui.Label readout;
+
+      constructor LabeledSlider(string box_title, int max_value) {
+        this.title = box_title;
+        this.slider.max = max_value;
+        this.slider.on_change = this.refresh;
+        this.add_child(this.slider);
+        this.add_child(this.readout);
+        this.refresh();
+      }
+
+      void function refresh() {
+        this.readout.text = to_string(this.slider.value) + " / " + to_string(this.slider.max);
+      }
+    }
+
+    main() {
+      gui.Window win;
+      LabeledSlider volume("Громкость", 20);
+      win.add_child(volume);
+      win.show();
+    }
+  `);
+  const frame = () => result.runtime.getWindows()[0].children.find((item) => item.type === 'gui.Frame');
+  assert(frame()?.properties.title === 'Громкость', `frame heir must own frame properties: ${JSON.stringify(frame()?.properties)}`);
+  const inside = (type: string) => frame()?.children?.find((item: { type: string }) => item.type === type);
+  assert(inside('gui.Label')?.properties.text === '0 / 20', `initial readout: ${JSON.stringify(inside('gui.Label')?.properties)}`);
+  await result.runtime.dispatchGuiEvent(inside('gui.Slider')!.id, 'change', { value: 7 });
+  assert(inside('gui.Label')?.properties.text === '7 / 20', `readout after change: ${JSON.stringify(inside('gui.Label')?.properties)}`);
+});
+
+// Вторая половина дыры: базовый класс из ПОЛЬЗОВАТЕЛЬСКОГО модуля.
+test('module class heir inherits fields, methods and parent()', async () => {
+  const zooSource = `class Lion {
+    string name = "лев";
+    int roars = 0;
+
+    constructor Lion(string ex_name) {
+        this.name = ex_name;
+    }
+
+    string function roar() {
+        this.roars = this.roars + 1;
+        return this.name + ": Р-Р-Р №" + to_string(this.roars);
+    }
+}
+`;
+  const result = await runIdyllium(`use console;
+use zoo;
+
+class Cub extends zoo.Lion {
+    bool sleepy = true;
+
+    constructor Cub(string ex_name) {
+        parent(ex_name);
+        this.sleepy = false;
+    }
+
+    string function play() {
+        return this.name + " играет";
+    }
+}
+
+main() {
+    Cub simba("Симба");
+    console.writeln(simba.roar());
+    console.writeln(simba.play());
+    console.writeln(simba.sleepy, " ", type_name(simba));
+}
+`, {}, { file: 'main.idyl', sources: { 'zoo.idyl': zooSource } });
+  assert(
+    result.output === 'Симба: Р-Р-Р №1\nСимба играет\nfalse Cub\n',
+    `module heir happy path: ${JSON.stringify(result.output)} ${result.runtimeError ?? result.compilation.diagnosticsText}`,
+  );
+
+  // Статики базы через потомка не ходят — как и у локальных классов.
+  const statics = await runIdyllium(`use console;
+use zoo2;
+class Cub extends zoo2.Lion { int age = 1; }
+main() {
+    console.writeln(Cub.population);
+}
+`, {}, { file: 'main.idyl', sources: { 'zoo2.idyl': 'class Lion {\n    static int population = 0;\n    string name = "лев";\n}\n' } });
+  assert(
+    statics.compilation.diagnosticsText.includes("static field 'zoo2.Lion.population' is not inherited — write 'zoo2.Lion.population'"),
+    `base statics must not travel to the heir: ${statics.compilation.diagnosticsText}`,
+  );
+});
+
+// Периметр extends: белый список виджетов, читаемые отказы, никаких каскадов.
+test('extends perimeter refuses outsiders readably', async () => {
+  assertFails(
+    'use gui;\nclass W extends gui.Window { int n = 0; }\nmain() { }',
+    "'gui.Window' cannot be extended — only ordinary widgets can: gui.Button, gui.Label, gui.Frame",
+  );
+  assertFails(
+    'use gui;\nclass T extends gui.Timer { int n = 0; }\nmain() { }',
+    "'gui.Timer' cannot be extended — only ordinary widgets can",
+  );
+  assertFails(
+    'use json;\nclass V extends json.Value { int n = 0; }\nmain() { }',
+    "'json.Value' cannot be extended — only gui widgets and your own classes can be base classes",
+  );
+  // Забытый импорт называется забытым импортом — тем же текстом, что и
+  // 'zoo.Lion l;' без use, а не «неизвестной базой».
+  assertFails(
+    'use gui;\nclass F extends zoo.Lion { int n = 0; }\nmain() { }',
+    "'zoo' is not imported (use 'use zoo;')",
+  );
+  // Имя поля наследника не смеет затенять член виджета.
+  assertFails(
+    'use gui;\nclass F extends gui.Button { string text = "hi"; }\nmain() { }',
+    "'text' is already a member of gui.Button — pick another name",
+  );
+
+  // parent() у виджет-наследника: ровно одно целевое сообщение, без каскада.
+  const parentBan = compileIdyllium(
+    'use gui;\nclass F extends gui.Button {\n    int n = 0;\n    constructor F() {\n        parent();\n    }\n}\nmain() { }',
+    { file: 'main.idyl' },
+  );
+  const text = parentBan.diagnosticsText;
+  assert(
+    text.includes("gui.Button has no constructor — configure the widget's properties instead of calling parent()"),
+    `parent ban must be targeted: ${text}`,
+  );
+  assert(!text.includes("'parent' was not declared"), `parent ban must not cascade: ${text}`);
+
+  // Неизвестная база: одно сообщение, без фантома «'parent' expects 0 arguments».
+  const unknownBase = compileIdyllium(
+    'class Cub extends nowhere.Lion {\n    constructor Cub(string n) {\n        parent(n);\n    }\n}\nmain() { }',
+    { file: 'main.idyl' },
+  );
+  assert(!unknownBase.diagnosticsText.includes("'parent' expects"), `unknown base must not cascade: ${unknownBase.diagnosticsText}`);
+
+  // Виджетная база — обращение к модулю: без 'use gui;' отказ тот же, что у
+  // 'gui.Button b;'.
+  assertFails(
+    'class Fancy extends gui.Button { int level = 1; }\nmain() { }',
+    "'gui' is not imported (use 'use gui;')",
+  );
+});
+
+// parent() вне конструктора и без базы: у каждого случая свои слова, а не
+// общее «function 'parent' was not declared in this scope».
+test('parent() explains itself outside a constructor', async () => {
+  assertFails(
+    'class Animal { string name = "зверь"; }\nclass Dog extends Animal {\n    void function speak() { parent(); }\n}\nmain() { }',
+    "parent() runs the constructor of the base class and can only be called in the constructor of class 'Dog'",
+  );
+  assertFails(
+    'class Alone {\n    int n = 0;\n    constructor Alone() { parent(); }\n}\nmain() { }',
+    "class 'Alone' has no base class — parent() needs 'extends'",
+  );
+  // У наследника виджета parent() запрещён и в методе — тем же текстом.
+  assertFails(
+    'use gui;\nclass Fancy extends gui.Button {\n    int n = 0;\n    void function m() { parent(); }\n}\nmain() { }',
+    "gui.Button has no constructor — configure the widget's properties instead of calling parent()",
+  );
+});
+
+// Улов широкой волны (2026-08-23). Переопределение не смеет забирать то, что
+// база обещала всем: ни умолчание параметра, ни публичность, ни имя события.
+test('an override keeps the promises of its base class', async () => {
+  assertFails(`use console;
+class Base {
+    string function greet(string who = "мир") { return "привет, " + who; }
+}
+class Derived extends Base {
+    string function greet(string who) { return "ПРИВЕТ, " + who; }
+}
+main() {
+    Derived d;
+    Base b = d;
+    console.writeln(b.greet());
+}`, "must keep the default value it has in class 'Base'");
+
+  // O39: страж умолчаний не смеет выходить за свой сценарий. Если потомок
+  // ДОБАВИЛ параметр, речь не об умолчаниях — такого параметра в базе нет
+  // вовсе, и подсказка «сохраните умолчание» уводила бы в тупик.
+  for (const heir of [
+    'string function greet(string who, int extra) { return who; }',   // добавил параметр
+    'string function greet(string who, int extra = 0) { return who; }', // добавил с умолчанием
+    'string function greet(int who) { return to_string(who); }',      // сменил тип параметра
+    'int function greet(string who) { return 1; }',                   // сменил тип ответа
+  ]) {
+    assertFails(
+      `use console;\nclass Base {\n    string function greet(string who) { return who; }\n}\nclass Derived extends Base {\n    ${heir}\n}\nmain() { }`,
+      "method 'Derived.greet' must match inherited method signature",
+    );
+  }
+
+  assertFails(`use console;
+class Base {
+public:
+    string function helper() { return "база"; }
+}
+class Derived extends Base {
+private:
+    string function helper() { return "секрет"; }
+}
+main() { }`, "method 'Derived.helper' cannot be private — it overrides a public method of class 'Base'");
+
+  assertFails(`use console;
+class Base {
+private:
+    string function secret() { return "механика базы"; }
+public:
+    string function run() { return this.secret(); }
+}
+class Derived extends Base {
+private:
+    string function secret() { return "подмена"; }
+}
+main() { }`, "method 'secret' is private in class 'Base' and cannot be overridden");
+
+  assertFails(`use console;
+class Base {
+    event on_tick(int n);
+}
+class Derived extends Base {
+    void function on_tick(int n) { console.writeln(n); }
+}
+main() { }`, "method 'on_tick' conflicts with inherited event 'Base.on_tick'");
+
+  // Законное переопределение (со своим умолчанием) живо и полиморфно.
+  const legal = await runIdyllium(`use console;
+class Animal {
+    string name = "зверь";
+    void function speak() { console.writeln("..."); }
+    string function describe(string prefix = "это ") { return prefix + this.name; }
+}
+class Dog extends Animal {
+    void function speak() { console.writeln(this.name, ": гав"); }
+    string function describe(string prefix = "пёс ") { return prefix + this.name; }
+}
+main() {
+    Dog d;
+    Animal a = d;
+    a.speak();
+    console.writeln(a.describe(), " / ", d.describe("собака "));
+}
+`, {}, { file: 'main.idyl' });
+  assert(legal.output === 'зверь: гав\nпёс зверь / собака зверь\n', `legal override must survive: ${JSON.stringify(legal.output)} ${legal.runtimeError ?? legal.compilation.diagnosticsText}`);
+});
+
+// Забытый тип результата: одно сообщение и на верхнем уровне, и в классе —
+// раньше верхний уровень рассыпался каскадом из девяти.
+test('a function without a result type says so once at every level', async () => {
+  const top = compileIdyllium(
+    'use console;\n\nfunction greet(string name) {\n    console.writeln("Привет, ", name, "!");\n}\n\nmain() {\n    greet("Мира");\n}\n',
+    { file: 'main.idyl' },
+  );
+  assert(
+    top.diagnosticsText.includes("function 'greet' needs a result type before 'function' — write 'void function greet()' if it returns nothing"),
+    `top-level function must be named: ${top.diagnosticsText}`,
+  );
+  assert(!top.diagnosticsText.includes('unexpected token'), `top-level function must not cascade: ${top.diagnosticsText}`);
+});
+
+// Имена из Object.prototype — обычные члены; имена на '__' принадлежат языку.
+test('prototype names work as members, double underscore is reserved', async () => {
+  const proto = await runIdyllium(`use console;
+class Box {
+    string toString = "начало";
+    int isPrototypeOf = 5;
+    int hasOwnProperty = 1;
+}
+main() {
+    Box b;
+    b.toString = "записано";
+    b.isPrototypeOf = 42;
+    b.hasOwnProperty = 10;
+    console.writeln(b.toString, " ", b.isPrototypeOf, " ", b.hasOwnProperty);
+}
+`, {}, { file: 'main.idyl' });
+  assert(proto.output === 'записано 42 10\n', `prototype-named fields must store values: ${JSON.stringify(proto.output)} ${proto.runtimeError ?? proto.compilation.diagnosticsText}`);
+
+  assertFails('use console;\nclass Box { int __proto__ = 1; }\nmain() { }', "names starting with '__' are reserved by the language");
+  assertFails('use console;\nmain() {\n    int __x = 5;\n}', "names starting with '__' are reserved by the language");
+
+  // Внутреннее имя экземпляра больше не сталкивается с переменной ученика.
+  const selfVar = await runIdyllium(`use console;
+class Hero {
+    string name = "Иван";
+    int hp = 100;
+
+    void function report() {
+        string self = "постороннее слово";
+        console.writeln(this.name, " / ", this.hp, " / ", self);
+    }
+}
+main() {
+    Hero h;
+    h.report();
+}
+`, {}, { file: 'main.idyl' });
+  assert(selfVar.output === 'Иван / 100 / постороннее слово\n', `a variable named self must not break this: ${JSON.stringify(selfVar.output)} ${selfVar.runtimeError ?? selfVar.compilation.diagnosticsText}`);
+});
+
+// Пустые заготовки объектов-ответов честны, а не undefined; вложенные массивы
+// объектов печатаются контрактом, а не JS-нутром.
+test('empty result objects and nested arrays print honestly', async () => {
+  const empties = await runIdyllium(`use console;
+use http;
+use time;
+use web;
+main() {
+    http.Response r;
+    time.stamp t;
+    web.Request q;
+    console.writeln(r.status, " / ", t, " / [", q.path, "]");
+}
+`, {}, { file: 'main.idyl' });
+  assert(
+    empties.output === '0 / 1970-01-01 00:00:00 / []\n',
+    `empty result objects must be honestly empty: ${JSON.stringify(empties.output)} ${empties.runtimeError ?? empties.compilation.diagnosticsText}`,
+  );
+
+  const nested = await runIdyllium(`use console;
+class Item {
+    string name = "меч";
+    string function to_string() { return "предмет " + this.name; }
+}
+main() {
+    array<array<Item, 2>, 1> grid;
+    console.writeln(grid);
+}
+`, {}, { file: 'main.idyl' });
+  assert(
+    nested.output === '[["предмет меч", "предмет меч"]]\n',
+    `nested arrays must use the to_string contract: ${JSON.stringify(nested.output)} ${nested.runtimeError ?? nested.compilation.diagnosticsText}`,
+  );
+});
+
+// Дерево виджетов без конца: и add_child, и add_tab отвечают словами.
+test('a widget cannot be put inside itself through any door', async () => {
+  await assertRuntimeFails(`use gui;
+main() {
+    gui.Window win;
+    gui.TabWidget tabs;
+    tabs.add_tab("сама себе", tabs);
+    win.add_child(tabs);
+    win.show();
+}
+`, 'TabWidget.add_tab() cannot put a widget inside itself');
+});
+
+// Заготовка объекта-ответа обязана быть ПОЛНОЙ формой своего типа: раньше
+// свойства у неё были, а метод падал «object has no method» (находка
+// методистов 2026-08-23).
+test('a blank result object has the whole shape of its type', async () => {
+  const result = await runIdyllium(`use console;
+use http;
+use web;
+
+main() {
+    http.Response blank;
+    console.writeln(blank.status, " ", blank.ok, " [", blank.text, "] [", blank.header("Content-Type"), "]");
+
+    web.Request q;
+    console.writeln("[", q.path, "] [", q.query("x"), "] [", q.param("id"), "] [", q.form("name"), "]");
+
+    web.Response r;
+    console.writeln(r.status);
+}
+`, {}, { file: 'main.idyl' });
+  assert(
+    result.output === '0 false [] []\n[] [] [] []\n0\n',
+    `a blank must answer with empty values, not crash: ${JSON.stringify(result.output)} ${result.runtimeError ?? result.compilation.diagnosticsText}`,
+  );
+
+  // Отвечать заготовке некому — и молчать об этом она не должна.
+  await assertRuntimeFails(`use web;
+main() {
+    web.Response r;
+    r.send("привет");
+}
+`, 'web.Response.send() has nothing to answer');
+});
+
+// Размер массива выражением (находка владельца, 2026-08-23): array<int, SIZE*SIZE>
+// раньше давал каскад из пяти сообщений про '>' — при том, что фолдер констант
+// умел считать такие выражения с самого начала.
+test('an array size may be a constant expression', async () => {
+  const result = await runIdyllium(`use console;
+
+const int SIZE = 5;
+const int PAD = 2;
+
+class Board { const int W = 3; }
+
+main() {
+    const int LOCAL = 4;
+    array<int, SIZE*SIZE> grid;
+    array<int, SIZE + PAD> row;
+    array<int, LOCAL * 2 - 1> odd;
+    array<int, Board.W * Board.W> small;
+    array<int, 10> plain;
+    array<int, SIZE> named;
+    console.writeln(grid.length, " ", row.length, " ", odd.length, " ", small.length, " ", plain.length, " ", named.length);
+}
+`, {}, { file: 'main.idyl' });
+  assert(result.output === '25 7 7 9 10 5\n', `constant expressions must size arrays: ${JSON.stringify(result.output)} ${result.runtimeError ?? result.compilation.diagnosticsText}`);
+
+  // Непосчитаемый размер и отрицательный — по одному честному сообщению,
+  // без общего эха «must be a non-negative integer».
+  for (const [source, expected] of [
+    ['use console;\nmain() {\n    int n = 5;\n    array<int, n * 2> a;\n}', 'array size must be known before the program runs'],
+    ['use console;\nconst int A = 3;\nmain() {\n    array<int, A - 10> a;\n}', 'array size must be non-negative, got -7'],
+    ['use console;\nmain() {\n    int n = 5;\n    array<int, n> a;\n}', "array size 'n' must be an integer constant declared with 'const'"],
+    ['use console;\nmain() {\n    array<int, NOPE> a;\n}', "array size constant 'NOPE' was not declared"],
+  ] as ReadonlyArray<readonly [string, string]>) {
+    const failure = compileIdyllium(source, { file: 'main.idyl' });
+    assert(failure.diagnosticsText.includes(expected), `expected «${expected}», got: ${failure.diagnosticsText}`);
+    assert(
+      !failure.diagnosticsText.includes('array size must be a non-negative integer'),
+      `the generic echo must stay silent: ${failure.diagnosticsText}`,
+    );
+  }
+});
+
+// AU1 и NET1 (методисты, 2026-08-23): звук брал ЛЮБОЙ файл молча (duration 0,
+// is_playing true, звука нет), а порт сервера проверялся только при run().
+test('audio checks the file content, and the server port is checked when set', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'idyllium-audio-'));
+  fs.writeFileSync(path.join(dir, 'notaudio.txt'), 'это просто текст, а не звук', 'utf8');
+  fs.copyFileSync(path.join(process.cwd(), 'packages/docs/book-assets/click.wav'), path.join(dir, 'click.wav'));
+  // То же содержимое под именем .wav: формат решает содержимое, а не расширение.
+  fs.writeFileSync(path.join(dir, 'fake.wav'), 'это просто текст, а не звук', 'utf8');
+
+  for (const name of ['notaudio.txt', 'fake.wav']) {
+    const refused = await runIdyllium(`use audio;
+main() {
+    audio.Sound s;
+    s.load_from_file("${name}");
+}
+`, {}, { file: path.join(dir, 'main.idyl') });
+    assert(
+      (refused.runtimeError ?? '').includes(`cannot decode '${name}': unsupported audio format`),
+      `a non-audio file must be refused: ${refused.runtimeError}`,
+    );
+  }
+
+  const loaded = await runIdyllium(`use console;
+use audio;
+main() {
+    audio.Sound s;
+    s.load_from_file("click.wav");
+    console.writeln(s.duration > 0);
+}
+`, {}, { file: path.join(dir, 'main.idyl') });
+  assert(loaded.output === 'true\n', `a real wav must still load: ${JSON.stringify(loaded.output)} ${loaded.runtimeError}`);
+
+  await assertRuntimeFails(`use web;
+main() {
+    web.Server app;
+    app.port = 99999;
+}
+`, "web.Server.port must be an integer from 0 to 65535, got '99999'");
+
+  const ports = await runIdyllium(`use console;
+use web;
+main() {
+    web.Server app;
+    console.writeln(app.port);
+    app.port = 8099;
+    console.writeln(app.port);
+    app.port = 0;
+    console.writeln(app.port);
+}
+`, {}, { file: 'main.idyl' });
+  assert(ports.output === '8080\n8099\n0\n', `legal ports must stay legal: ${JSON.stringify(ports.output)} ${ports.runtimeError}`);
+});
+
+// D4 (методисты, 2026-08-23): три правила, которые не были записаны, но на
+// которых стоит весь курс ООП. Смоук держит их, чтобы справочник не разъехался
+// с языком.
+test('privacy is class-wide, and an override picks its own default', async () => {
+  // Замок на классе, а не на объекте: чужой объект СВОЕГО класса открыт.
+  const lock = await runIdyllium(`use console;
+class Thermostat {
+private:
+    int temperature;
+
+public:
+    constructor Thermostat(int ex_temperature) {
+        this.temperature = ex_temperature;
+    }
+
+    bool function warmer_than(Thermostat other) {
+        return this.temperature > other.temperature;
+    }
+}
+main() {
+    Thermostat a(20);
+    Thermostat b(15);
+    console.writeln(a.warmer_than(b));
+}
+`, {}, { file: 'main.idyl' });
+  assert(lock.output === 'true\n', `a method must see private members of another object of its class: ${JSON.stringify(lock.output)} ${lock.runtimeError ?? lock.compilation.diagnosticsText}`);
+
+  // До первой рубрики — открыто.
+  const beforeLabel = await runIdyllium(`use console;
+class Box {
+    int hidden = 7;
+
+private:
+    int secret = 9;
+}
+main() {
+    Box b;
+    console.writeln(b.hidden);
+}
+`, {}, { file: 'main.idyl' });
+  assert(beforeLabel.output === '7\n', `members before the first modifier are public: ${JSON.stringify(beforeLabel.output)} ${beforeLabel.runtimeError ?? beforeLabel.compilation.diagnosticsText}`);
+
+  // Умолчание подставляет тот метод, который выполняется, — не тип переменной.
+  const defaults = await runIdyllium(`use console;
+class A { void function hi(int n, int extra = 0) { console.writeln("A ", n, " ", extra); } }
+class B extends A { void function hi(int n, int extra = 5) { console.writeln("B ", n, " ", extra); } }
+main() {
+    B b;
+    A a = b;
+    a.hi(2);
+    A plain;
+    plain.hi(2);
+}
+`, {}, { file: 'main.idyl' });
+  assert(defaults.output === 'B 2 5\nA 2 0\n', `the running method fills the default: ${JSON.stringify(defaults.output)} ${defaults.runtimeError ?? defaults.compilation.diagnosticsText}`);
+});
+
+// D5: заготовка sqlite.Result — ПУСТОЙ ответ, а не «уже закрытый»; база и
+// запрос-заготовка отличают «никогда не открывали» от «закрыли».
+test('blank sqlite objects tell blank from closed', async () => {
+  const blank = await runIdyllium(`use console;
+use sqlite;
+main() {
+    sqlite.Result r;
+    console.writeln(r.has_rows, " ", r.affected_rows, " ", r.column_count(), " ", r.next());
+}
+`, {}, { file: 'main.idyl' });
+  assert(blank.output === 'false 0 0 false\n', `a blank result is an empty one: ${JSON.stringify(blank.output)} ${blank.runtimeError ?? blank.compilation.diagnosticsText}`);
+
+  await assertRuntimeFails(`use sqlite;
+main() {
+    sqlite.Database db;
+    db.execute("SELECT 1");
+}
+`, 'this sqlite.Database is a blank one — open a file with sqlite.open("name.db") first');
+
+  await assertRuntimeFails(`use sqlite;
+main() {
+    sqlite.Statement st;
+    st.execute();
+}
+`, 'this sqlite.Statement is a blank one — get one from db.prepare("SQL") first');
+});
+
+// SQ1 (методисты, 2026-08-23): has_rows значил «этот запрос возвращает строки»,
+// поэтому у пустого SELECT был true — и запись «если ничего не нашлось» молча
+// печатала «нашли». Свойство отвечает на вопрос своего имени.
+test('has_rows tells whether a row actually came back', async () => {
+  // Своя папка на прогон: файл базы не должен переживать тест и мешать следующему.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'idyllium-sqlite-'));
+  const result = await runIdyllium(`use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("probe.db");
+    db.execute("CREATE TABLE heroes (name TEXT, level INTEGER)");
+
+    sqlite.Statement st = db.prepare("INSERT INTO heroes (name, level) VALUES (:n, :l)");
+    st.bind_string("n", "Мира");
+    st.bind_int("l", 5);
+    st.execute();
+    st.close();
+
+    sqlite.Result empty = db.execute("SELECT name FROM heroes WHERE level > 100");
+    sqlite.Result some = db.execute("SELECT name FROM heroes");
+    sqlite.Result upd = db.execute("DELETE FROM heroes WHERE level > 100");
+    console.writeln(empty.has_rows, " ", some.has_rows, " ", upd.has_rows);
+
+    if (empty.has_rows) {
+        console.writeln("нашли");
+    } else {
+        console.writeln("никого нет");
+    }
+
+    // Чтение has_rows не сдвигает курсор: next() начинает с первой строки.
+    while (some.next()) {
+        console.writeln("строка: ", some.get_string("name"));
+    }
+    db.close();
+}
+`, {}, { file: path.join(dir, 'main.idyl') });
+  assert(
+    result.output === 'false true false\nникого нет\nстрока: Мира\n',
+    `has_rows must answer its own question: ${JSON.stringify(result.output)} ${result.runtimeError ?? result.compilation.diagnosticsText}`,
+  );
+});
+
+// O38 (методисты, 2026-08-23): поиск члена в типе из НЕПОДКЛЮЧЁННОГО модуля
+// проваливался с «нет такого члена» — а член там есть. Ловушка коварна тем,
+// что имя модуля в программе может не встречаться вовсе: тип приезжает по
+// цепочке точек из чужого класса, и аккуратный ученик уберёт «лишний» use.
+test('a member of an unimported module names the forgotten import', async () => {
+  const sources = {
+    'engine.idyl': 'use console;\n\nclass Engine {\n    string model;\n    int power;\n\n    constructor Engine(string ex_model, int ex_power) {\n        this.model = ex_model;\n        this.power = ex_power;\n    }\n\n    void function report() {\n        console.writeln("двигатель ", this.model, ", ", this.power, " л.с.");\n    }\n}\n',
+    'car.idyl': 'use console;\nuse engine;\n\nclass Car {\n    string plate;\n    engine.Engine engine = engine.Engine("М-90", 90);\n\n    constructor Car(string ex_plate) {\n        this.plate = ex_plate;\n    }\n}\n',
+  };
+
+  for (const line of ['console.writeln(mine.engine.power);', 'mine.engine.report();']) {
+    const result = compileIdyllium(
+      `use console;\nuse car;\n\nmain() {\n    car.Car mine = car.Car("А123ВС");\n    ${line}\n}\n`,
+      { file: 'main.idyl', sources },
+    );
+    assert(
+      result.diagnosticsText.includes("'engine' is not imported (use 'use engine;')"),
+      `a chained member must name the forgotten import: ${result.diagnosticsText}`,
+    );
+    assert(
+      !result.diagnosticsText.includes('has no member') && !result.diagnosticsText.includes('has no method'),
+      `the compiler must not claim the member is missing: ${result.diagnosticsText}`,
+    );
+  }
+
+  // С подключением цепочка работает целиком.
+  const fixed = await runIdyllium(
+    'use console;\nuse car;\nuse engine;\n\nmain() {\n    car.Car mine = car.Car("А123ВС");\n    console.writeln(mine.engine.power);\n    mine.engine.report();\n}\n',
+    {}, { file: 'main.idyl', sources },
+  );
+  assert(
+    fixed.output === '90\nдвигатель М-90, 90 л.с.\n',
+    `the chain must work once imported: ${JSON.stringify(fixed.output)} ${fixed.runtimeError ?? fixed.compilation.diagnosticsText}`,
+  );
+
+  // Настоящая опечатка в имени члена по-прежнему называется своими словами.
+  const typo = compileIdyllium(
+    'use console;\nuse car;\nuse engine;\n\nmain() {\n    car.Car mine = car.Car("А123ВС");\n    console.writeln(mine.engine.powr);\n}\n',
+    { file: 'main.idyl', sources },
+  );
+  assert(
+    typo.diagnosticsText.includes("type 'engine.Engine' has no member 'powr'"),
+    `a real typo must still be named: ${typo.diagnosticsText}`,
+  );
+});
+
+// Модуль, который не собрался, называет свою беду ровно один раз: «нет такого
+// типа» после цикла импорта было бы враньём — тип там есть.
+test('a broken module does not echo a second, false reason', async () => {
+  const cycle = compileIdyllium('use console;\nuse driver;\n\nmain() {\n    driver.Driver d = driver.Driver("Мира");\n}\n', {
+    file: 'main.idyl',
+    sources: {
+      'driver.idyl': 'use console;\nuse car;\n\nclass Driver {\n    string name;\n    car.Car car;\n\n    constructor Driver(string ex_name) {\n        this.name = ex_name;\n    }\n}\n',
+      'car.idyl': 'use console;\nuse driver;\n\nclass Car {\n    string plate;\n    driver.Driver owner;\n}\n',
+    },
+  });
+  assert(cycle.diagnosticsText.includes('module import cycle detected: driver -> car -> driver'), `the cycle route must be shown: ${cycle.diagnosticsText}`);
+  assert(!cycle.diagnosticsText.includes('has no type'), `a broken module must not echo 'has no type': ${cycle.diagnosticsText}`);
+
+  // А настоящая опечатка в имени типа модуля называется по-прежнему.
+  const typo = compileIdyllium('use shapes;\nmain() {\n    shapes.Circle c;\n}\n', {
+    file: 'main.idyl',
+    sources: { 'shapes.idyl': 'class Rect {\n    int width;\n}\n' },
+  });
+  assert(
+    typo.diagnosticsText.includes("module 'shapes' has no type 'Circle'"),
+    `a real type typo must still be named: ${typo.diagnosticsText}`,
+  );
+});
+
+// Страж от расхождения: компилятор запрещает печатать библиотечный объект
+// только тогда, когда у него ДЕЙСТВИТЕЛЬНО нет текстового вида. Правду
+// спрашиваем у самого рантайма, а не у списка в компиляторе — иначе новый тип
+// с to_string молча потеряет печать (улов широкой волны: так потерялись
+// turtle.Turtle, gui.Table и ещё восемь).
+test('printable library types match the runtime', async () => {
+  const api = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'docs', 'reference', 'api.json'), 'utf8')) as {
+    modules?: ReadonlyArray<{ name: string; types?: ReadonlyArray<{ name: string }> }>;
+  };
+  const runtime = createRuntime();
+  const mismatches: string[] = [];
+
+  for (const module of api.modules ?? []) {
+    for (const type of module.types ?? []) {
+      let instance: Record<string, unknown> | null = null;
+      try {
+        instance = runtime.createObject(module.name, type.name);
+      } catch {
+        continue; // тип строится не фабрикой (значения, потоки) — его печать проверена отдельно
+      }
+      if (!instance || typeof instance.to_string !== 'function') continue;
+
+      const qualified = `${module.name}.${type.name}`;
+      const compiled = compileIdyllium(
+        `use console;\nuse ${module.name};\nmain() {\n    ${qualified} probe;\n    console.writeln(probe);\n}\n`,
+        { file: 'main.idyl' },
+      );
+      if (compiled.diagnosticsText.includes('library objects have no text form')) {
+        mismatches.push(qualified);
+      }
+    }
+  }
+
+  assert(
+    mismatches.length === 0,
+    `these types have a text form in the runtime but the compiler refuses to print them: ${mismatches.join(', ')}`,
+  );
+});
+
+// Улов второй волны ломателей: класс из модуля обязан вести себя ровно так же,
+// как тот же класс одним файлом — зеркало не смеет перекрывать СВОИ члены
+// потомка членами базы.
+test('module mirror keeps the heir own members, not the base ones', async () => {
+  // Переопределение с другой сигнатурой: снаружи модуля действует своя.
+  const signature = compileIdyllium(`use console;
+use zoo;
+main() {
+    zoo.Derived d;
+    console.writeln(d.greet());
+}
+`, {
+    file: 'main.idyl',
+    sources: {
+      'zoo.idyl': 'class Base {\npublic:\n  string function greet(string who = "мир") { return "привет, " + who + "!"; }\n}\n\nclass Derived extends Base {\npublic:\n  string function greet(string who) { return "ПРИВЕТ, " + who + "!"; }\n}\n',
+    },
+  });
+  assert(
+    signature.diagnosticsText.includes("'greet' expects 1 arguments, got 0"),
+    `heir signature must win outside the module: ${signature.diagnosticsText}`,
+  );
+
+  // Приватное переопределение публичного метода базы закрыто снаружи…
+  const hidden = compileIdyllium(`use console;
+use zoo;
+main() {
+    zoo.Derived d;
+    console.writeln(d.helper());
+}
+`, {
+    file: 'main.idyl',
+    sources: {
+      'zoo.idyl': 'class Base {\npublic:\n  string function helper() { return "base-helper"; }\n}\n\nclass Derived extends Base {\nprivate:\n  string function helper() { return "derived-secret"; }\n}\n',
+    },
+  });
+  assert(
+    hidden.diagnosticsText.includes("member 'zoo.Derived.helper' is private"),
+    `private override must stay private: ${hidden.diagnosticsText}`,
+  );
+
+  // …а приватный метод базы не переопределяется вовсе: на объекте один слот
+  // имени, и подмена молча меняла бы механику базы под ней самой.
+  const opened = compileIdyllium(`use console;
+use zoo;
+main() {
+    zoo.Derived d;
+    console.writeln(d.helper());
+}
+`, {
+    file: 'main.idyl',
+    sources: {
+      'zoo.idyl': 'class Base {\nprivate:\n  string function helper() { return "base-helper"; }\npublic:\n  string function run() { return this.helper(); }\n}\n\nclass Derived extends Base {\npublic:\n  string function helper() { return "derived-public"; }\n}\n',
+    },
+  });
+  assert(
+    opened.diagnosticsText.includes("method 'helper' is private in class 'Base' and cannot be overridden"),
+    `private base method must not be overridden: ${opened.diagnosticsText}`,
+  );
+
+  // Контракт equals не наследуется и через границу модуля — отказ на компиляции,
+  // а не рантайм-«object has no method 'equals'».
+  const contract = compileIdyllium(`use console;
+use zoo;
+main() {
+    zoo.Cub a;
+    zoo.Cub b;
+    console.writeln(a.equals(b));
+}
+`, {
+    file: 'main.idyl',
+    sources: {
+      'zoo.idyl': 'class Lion {\n    int age = 3;\n    bool function equals(Lion other) { return this.age == other.age; }\n}\n\nclass Cub extends Lion {\n    bool sleepy = true;\n}\n',
+    },
+  });
+  assert(
+    contract.diagnosticsText.includes("'equals' is a contract and is not inherited — declare 'bool function equals(zoo.Cub other)'"),
+    `contract must not travel across the module border: ${contract.diagnosticsText}`,
+  );
+
+  // Несуществующая база внутри модуля роняла компилятор в бесконечную рекурсию.
+  const brokenBase = compileIdyllium(`use console;
+use zoo;
+main() {
+    zoo.Lion l;
+    console.writeln(to_string(l.n));
+}
+`, { file: 'main.idyl', sources: { 'zoo.idyl': 'class Lion extends Animal {\n  int n = 1;\n}\n' } });
+  assert(
+    brokenBase.diagnosticsText.includes("unknown base class 'Animal'"),
+    `unknown base inside a module must be named: ${brokenBase.diagnosticsText}`,
+  );
+});
+
+// Виджет-наследник впервые вешает пользовательские поля прямо на виджет —
+// цикл ссылок ронял снимок окна голым JS-стеком (бил бы и по Web IDE).
+test('window snapshot survives cycles between widget heirs', async () => {
+  const mutual = await runWithInspectableRuntime(`
+    use gui;
+
+    class Key extends gui.Button {
+      gui.Frame owner;
+    }
+
+    class Pad extends gui.Frame {
+      Key key;
+
+      constructor Pad() {
+        this.title = "Пульт";
+        this.key.text = "жми";
+        this.key.owner = this;
+        this.add_child(this.key);
+      }
+    }
+
+    main() {
+      gui.Window win;
+      Pad pad();
+      win.add_child(pad);
+      win.show();
+    }
+  `);
+  const frame = mutual.runtime.getWindows()[0].children.find((item) => item.type === 'gui.Frame');
+  assert(frame?.properties.title === 'Пульт', `cyclic heirs must still snapshot: ${JSON.stringify(frame?.properties)}`);
+  assert(
+    JSON.stringify(mutual.runtime.getWindows()).length > 0,
+    'a window snapshot with cycles must be serializable',
+  );
+
+  // Виджет внутрь самого себя — честная idyllium-ошибка, а не RangeError.
+  await assertRuntimeFails(`use gui;
+class Panel extends gui.Frame {
+    gui.Label caption;
+
+    constructor Panel(string t) {
+        this.title = t;
+        this.add_child(this);
+    }
+}
+main() {
+    gui.Window win;
+    Panel p("Настройки");
+    win.add_child(p);
+    win.show();
+}
+`, 'add_child() cannot put a widget inside itself');
+});
+
+// Имена из прототипа Object (toString, valueOf, hasOwnProperty) — обычные
+// идентификаторы: раньше лексер выдавал их за «ключевые слова», и метод
+// toString() ронял парсер в каскад с JS-нутром '[native code]'.
+test('Object.prototype names are ordinary identifiers', async () => {
+  const result = await runIdyllium(`use gui;
+use console;
+class MyButton extends gui.Button {
+  int clicks;
+  string function toString() { return "MyButton(" + to_string(this.clicks) + ")"; }
+}
+main() {
+  MyButton b;
+  b.clicks = 3;
+  console.writeln(b.toString());
+}
+`, {}, { file: 'main.idyl' });
+  assert(result.output === 'MyButton(3)\n', `toString must be an ordinary method: ${JSON.stringify(result.output)} ${result.runtimeError ?? result.compilation.diagnosticsText}`);
+
+  const fields = await runIdyllium(`use console;
+class Box {
+    int valueOf = 1;
+    string function hasOwnProperty() { return "своё"; }
+}
+main() {
+    Box b;
+    console.writeln(b.valueOf, " ", b.hasOwnProperty());
+}
+`, {}, { file: 'main.idyl' });
+  assert(fields.output === '1 своё\n', `prototype names as members: ${JSON.stringify(fields.output)} ${fields.runtimeError ?? fields.compilation.diagnosticsText}`);
+});
+
+// Внутренний плейсхолдер '<error>' наружу не выходит: про испорченный операнд
+// уже сказано настоящей ошибкой.
+test('the internal error placeholder never reaches the reader', async () => {
+  const result = compileIdyllium(`use gui;
+use console;
+class Card extends gui.Frame {
+    gui.Label caption_label;
+}
+main() {
+    Card c;
+    console.writeln(c.caption.text + "!");
+}
+`, { file: 'main.idyl' });
+  assert(result.diagnosticsText.includes("type 'Card' has no member 'caption'"), `real error must be named: ${result.diagnosticsText}`);
+  assert(!result.diagnosticsText.includes('<error>'), `placeholder must not leak: ${result.diagnosticsText}`);
+
+  // Настоящая ошибка операторов цела.
+  assertFails(
+    'use console;\nmain() {\n    string s = "a";\n    bool b = true;\n    console.writeln(s + b);\n}',
+    "operator '+' cannot be applied to 'string' and 'bool'",
+  );
+});
+
+// Метод без типа результата давал каскад «unexpected token» на каждую скобку.
+test('a method without a result type says so once', async () => {
+  const result = compileIdyllium(
+    'class Hero {\n    int hp = 10;\n    function hit() { this.hp = this.hp - 1; }\n}\nmain() { }',
+    { file: 'main.idyl' },
+  );
+  assert(
+    result.diagnosticsText.includes("method 'hit' needs a result type before 'function' — write 'void function hit()' if it returns nothing"),
+    `missing result type must be named: ${result.diagnosticsText}`,
+  );
+  assert(
+    !result.diagnosticsText.includes('unexpected token'),
+    `missing result type must not cascade: ${result.diagnosticsText}`,
+  );
+});
+
+// Улов ломателей по свежему extends (2026-08-22): цепочка наследования не
+// смеет терять виджетную идентичность, а имена членов виджета заняты на всю
+// глубину — включая события.
+test('widget identity survives an inheritance chain', async () => {
+  const chain = await runWithInspectableRuntime(`
+    use gui;
+
+    class Fancy extends gui.Button {
+      int level = 1;
+    }
+
+    class SuperFancy extends Fancy {
+      string mood = "весёлый";
+
+      void function press() {
+        this.level = this.level + 1;
+        this.text = "уровень " + to_string(this.level) + ", " + this.mood;
+      }
+    }
+
+    main() {
+      gui.Window win;
+      SuperFancy b;
+      b.text = "внук кнопки";
+      b.on_click = b.press;
+      win.add_child(b);
+      win.show();
+    }
+  `);
+  const button = () => chain.runtime.getWindows()[0].children.find((item) => item.type === 'gui.Button');
+  assert(button() !== undefined, 'a grandchild of gui.Button must still render as a button');
+  await chain.runtime.dispatchGuiEvent(button()!.id, 'click', {});
+  assert(button()?.properties.text === 'уровень 2, весёлый', `chain heir state: ${JSON.stringify(button()?.properties)}`);
+
+  // type_name говорит именем САМОГО класса, а не среднего звена.
+  const named = await runIdyllium(`use gui;
+use console;
+class Fancy extends gui.Button { int level = 1; }
+class SuperFancy extends Fancy { string mood = "весёлый"; }
+main() {
+    SuperFancy b;
+    console.writeln(type_name(b));
+}
+`, {}, { file: 'main.idyl' });
+  assert(named.output === 'SuperFancy\n', `chain type_name: ${JSON.stringify(named.output)} ${named.runtimeError ?? named.compilation.diagnosticsText}`);
+
+  // Радиогруппа: внуки RadioButton остаются эксклюзивными.
+  const radio = await runIdyllium(`use gui;
+use console;
+use system;
+class MyRadio extends gui.RadioButton { int votes = 0; }
+class SuperRadio extends MyRadio { string tag = "внук"; }
+main() {
+    gui.Window win;
+    SuperRadio a;
+    SuperRadio b;
+    gui.RadioButton c;
+    win.add_child(a);
+    win.add_child(b);
+    win.add_child(c);
+    a.is_selected = true;
+    b.is_selected = true;
+    console.writeln(a.is_selected, " ", b.is_selected, " ", c.is_selected);
+    c.is_selected = true;
+    console.writeln(a.is_selected, " ", b.is_selected, " ", c.is_selected);
+    system.exit(0);
+}
+`, {}, { file: 'main.idyl' });
+  assert(radio.output.startsWith('false true false\nfalse false true'), `chain radio group: ${JSON.stringify(radio.output)}`);
+
+  // Имя члена виджета занято на любой глубине и для событий тоже.
+  assertFails(
+    'use gui;\nclass A extends gui.Button { int level = 1; }\nclass B extends A { int text = 5; }\nmain() { }',
+    "'text' is already a member of gui.Button — pick another name",
+  );
+  assertFails(
+    'use gui;\nclass A extends gui.Button {\n    event on_click(int n);\n}\nmain() { }',
+    "'on_click' is already a member of gui.Button — pick another name",
+  );
+});
+
+// Наследство ВНУТРИ модуля видно снаружи: потомок выглядит одинаково с обеих
+// сторон границы модуля — включая виджет-наследников.
+test('module classes carry inherited members across the module border', async () => {
+  const zooSource = `class Lion {
+    string name = "лев";
+    string function roar() { return this.name + ": Р-Р-Р"; }
+}
+
+class Cub extends Lion {
+    bool sleepy = true;
+    string function play() { return this.name + " играет"; }
+}
+`;
+  const inherited = await runIdyllium(`use console;
+use zoo;
+main() {
+    zoo.Cub c;
+    console.writeln(c.play(), " / ", c.name, " / ", c.roar(), " / ", c.sleepy);
+}
+`, {}, { file: 'main.idyl', sources: { 'zoo.idyl': zooSource } });
+  assert(
+    inherited.output === 'лев играет / лев / лев: Р-Р-Р / true\n',
+    `inherited module members outside: ${JSON.stringify(inherited.output)} ${inherited.runtimeError ?? inherited.compilation.diagnosticsText}`,
+  );
+
+  // Виджет-наследник, объявленный в модуле, снаружи — настоящий виджет.
+  const widgets = await runWithInspectableRuntime(`
+    use gui;
+    use widgets;
+
+    main() {
+      gui.Window win;
+      widgets.Fancy b;
+      b.text = "из модуля";
+      win.add_child(b);
+      win.show();
+    }
+  `, { file: 'main.idyl', sources: { 'widgets.idyl': 'use gui;\n\nclass Fancy extends gui.Button {\n    int level = 1;\n}\n' } });
+  const fancy = widgets.runtime.getWindows()[0].children.find((item) => item.type === 'gui.Button');
+  assert(fancy?.properties.text === 'из модуля', `module widget heir must render: ${JSON.stringify(fancy?.properties)}`);
+
+  // Приватный конструктор базы закрыт и для потомка — наследование не лазейка.
+  const privateCtor = compileIdyllium(`use zoo;
+class Cub extends zoo.Lion {
+    constructor Cub(string n) {
+        parent(n);
+    }
+}
+main() { }
+`, { file: 'main.idyl', sources: { 'zoo.idyl': 'class Lion {\n    string name = "лев";\n\n    private:\n    constructor Lion(string ex_name) {\n        this.name = ex_name;\n    }\n}\n' } });
+  assert(
+    privateCtor.diagnosticsText.includes("constructor 'zoo.Lion' is private and can only be used inside class 'zoo.Lion'"),
+    `private base constructor must stay private: ${privateCtor.diagnosticsText}`,
+  );
+});
+
+// Печать библиотечного ОБЪЕКТА: раньше в консоль уезжало JS-нутро
+// '[object Object]'. Значения библиотеки печатаются как печатались.
+test('library objects refuse to print, library values still print', async () => {
+  for (const [snippet, type] of [
+    ['gui.Button b;\n    console.writeln(b);', 'gui.Button'],
+    ['fonts.Font f;\n    console.writeln(f);', 'fonts.Font'],
+    ['drawable.Circle c;\n    console.writeln(to_string(c));', 'drawable.Circle'],
+  ] as ReadonlyArray<readonly [string, string]>) {
+    assertFails(
+      `use console;\nuse gui;\nuse fonts;\nuse drawable;\nmain() {\n    ${snippet}\n}`,
+      `cannot print an object of type '${type}' directly — library objects have no text form`,
+    );
+  }
+
+  const values = await runIdyllium(`use console;
+use colors;
+use json;
+use types;
+main() {
+    types.uint8 cell = 200;
+    console.writeln(colors.RGB(1, 2, 3), " ", json.parse("[1,2]"), " ", cell);
+}
+`, {}, { file: 'main.idyl' });
+  assert(values.output === '#010203 [1,2] 200\n', `library values must stay printable: ${JSON.stringify(values.output)} ${values.runtimeError ?? values.compilation.diagnosticsText}`);
+});
+
 // Зачистка строковых перечислений (заказ владельца, 2026-08-22): все четыре
 // тихих виджет-свойства стали строгими; легальные значения не задеты.
 test('widget string enums reject typos loudly', async () => {

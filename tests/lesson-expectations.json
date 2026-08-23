@@ -396,6 +396,9 @@
       ],
       "reason": "Auto-migrated 2026-07-24: teaching example fails at runtime with this message."
     },
+    "network.http-client.004": {
+      "kind": "runtime_error"
+    },
     "oop.classes.001": {
       "kind": "valid"
     },
@@ -412,6 +415,12 @@
         "'Empty' expects 0 arguments, got 1"
       ],
       "reason": "Migration 2026-07-24 (oop/canvas/json/sqlite): teaching example fails to compile with this message."
+    },
+    "oop.contracts.002": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot compare objects of class 'Hero' with '=='"
+      ]
     },
     "oop.encapsulation.001": {
       "kind": "valid"
@@ -530,6 +539,13 @@
         "module 'rect' was not found"
       ],
       "reason": "Migration 2026-07-24: multi-file example; standalone compile lacks the sibling module (book checker verifies it with materialized modules)."
+    },
+    "oop.polymorphism.004": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "must keep the default value it has in class 'Shape'"
+      ],
+      "reason": "Учебный пример урока полиморфизма: переопределение теряет умолчание параметра базы — компилятор обязан отказать (2026-08-23)."
     },
     "oop.static.002": {
       "kind": "valid"
@@ -766,15 +782,6 @@
         "'gui' is not imported (use 'use gui;')"
       ],
       "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
-    },
-    "network.http-client.004": {
-      "kind": "runtime_error"
-    },
-    "oop.contracts.002": {
-      "kind": "compile_error",
-      "diagnosticIncludes": [
-        "cannot compare objects of class 'Hero' with '=='"
-      ]
     }
   }
 }

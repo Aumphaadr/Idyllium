@@ -3,8 +3,13 @@
 // output-блок сравнивается с реальным выводом. Ошибочные программы сверяются
 // с <idyl-error-block>. Режим --fix переписывает расходящиеся output-блоки.
 //
+// У каждой программы свой лимит времени (--timeout, по умолчанию 15 секунд):
+// пример, который ждёт вечно — поднятый веб-сервер, канал, долгий сетевой
+// запрос, — снимается по abortSignal, называется в отчёте и не мешает
+// остальным. Без этого один такой блок вешал весь прогон молча.
+//
 // Использование:
-//   node dist/tools/check-lesson-outputs.js [--root docs/manual-content] [--fix]
+//   node dist/tools/check-lesson-outputs.js [--root docs/manual-content] [--fix] [--timeout 15]
 
 import { compileIdyllium, createMemoryRuntimeFileSystem, runIdyllium } from '../src';
 
@@ -75,11 +80,64 @@ function collectModuleSources(blocks: readonly LessonBlock[]): Record<string, st
   return sources;
 }
 
+interface TimedRun {
+  readonly result: Awaited<ReturnType<typeof runIdyllium>> | null;
+  readonly timedOut: boolean;
+}
+
+/** Запускает программу урока с лимитом времени. Рантайм умеет останавливаться
+ *  по abortSignal — сначала просим его вежливо, а гонка с таймером страхует на
+ *  случай, если программа зависла там, где сигнал не проверяется. */
+async function runWithTimeout(
+  code: string,
+  runtimeOptions: Record<string, unknown>,
+  compileOptions: Record<string, unknown>,
+  timeoutMs: number,
+): Promise<TimedRun> {
+  const controller = new AbortController();
+  let timer: any = null;
+  const guard = new Promise<TimedRun>((resolve) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      // Даём рантайму мгновение свернуться по сигналу, потом уходим без него.
+      setTimeout(() => resolve({ result: null, timedOut: true }), 250);
+    }, timeoutMs);
+  });
+
+  const run = (async (): Promise<TimedRun> => {
+    const result = await runIdyllium(
+      code,
+      { ...runtimeOptions, abortSignal: controller.signal } as any,
+      compileOptions as any,
+    );
+    return { result, timedOut: false };
+  })();
+
+  const outcome = await Promise.race([run, guard]);
+  if (timer !== null) clearTimeout(timer);
+  // Программа, брошенная по таймауту, могла упасть позже — её отказ никому
+  // не нужен, но и падать процессу из-за него нельзя.
+  run.catch(() => {});
+  // Рантайм послушался сигнала и снялся сам: для отчёта это тот же таймаут,
+  // просто снятие прошло вежливо.
+  if (!outcome.timedOut && outcome.result?.runtimeError?.includes('program was stopped')) {
+    return { result: null, timedOut: true };
+  }
+  return outcome;
+}
+
 async function main(): Promise<void> {
   const rootArg = process.argv.includes('--root')
     ? process.argv[process.argv.indexOf('--root') + 1]
     : 'docs/manual-content';
   const fix = process.argv.includes('--fix');
+  // Лимит на ОДНУ программу. Без него один пример, который ждёт вечно
+  // (поднятый веб-сервер, канал, долгий сетевой запрос), вешал весь прогон:
+  // инструмент молчал часами и не называл виновника.
+  const timeoutArg = process.argv.includes('--timeout')
+    ? Number(process.argv[process.argv.indexOf('--timeout') + 1])
+    : 15;
+  const timeoutMs = Number.isFinite(timeoutArg) && timeoutArg > 0 ? timeoutArg * 1000 : 15000;
   const root = path.resolve(process.cwd(), rootArg);
 
   const files: string[] = [];
@@ -98,6 +156,7 @@ async function main(): Promise<void> {
   const diffs: string[] = [];
   const errorDiffs: string[] = [];
   const infos: string[] = [];
+  const timeouts: string[] = [];
 
   const assetsRoot = path.resolve(process.cwd(), 'packages', 'docs', 'book-assets');
   const assetEntries: Record<string, { bytes: Uint8Array }> = {};
@@ -147,8 +206,21 @@ async function main(): Promise<void> {
         && moduleFileName(blocks[nextIndex]) !== null
         && !/\bmain\s*\(/u.test(unescapeHtml(blocks[nextIndex].inner))
       ) nextIndex += 1;
-      const next = blocks[nextIndex];
-      const result = await runIdyllium(code, { fileSystem, urlOpener }, { file: 'main.idyl', sources: moduleSources });
+      let next = blocks[nextIndex];
+      // В задачниках ожидаемый вывод стоит ПЕРЕД программой: сначала «что
+      // должно получиться», потом код задания. Значит блок после программы —
+      // это уже вывод СЛЕДУЮЩЕГО задания, и сверять с ним нельзя (иначе
+      // рождаются призрачные расхождения со сдвигом на одно задание).
+      // Признак границы — заголовок задания между блоками.
+      if (next !== undefined && /class="task-(?:item|group)"/u.test(html.slice(block.end, next.start))) {
+        next = undefined as unknown as LessonBlock;
+      }
+      const run = await runWithTimeout(code, { fileSystem, urlOpener }, { file: 'main.idyl', sources: moduleSources }, timeoutMs);
+      if (run.timedOut) {
+        timeouts.push(`${relative}: программа не завершилась за ${Math.round(timeoutMs / 1000)} с — проверка блока пропущена (первая строка: ${code.split('\n').find((line) => line.trim() !== '') ?? ''})`);
+        continue;
+      }
+      const result = run.result!;
 
       if (!result.compilation.success) {
         if (next?.kind === 'error') {
@@ -182,7 +254,12 @@ async function main(): Promise<void> {
         // sources. Перепроверяем в мире без модулей: совпало — засчитано.
         checkedErrors += 1;
         const expected = normalizeText(unescapeHtml(next.inner));
-        const bare = await runIdyllium(code, { fileSystem, urlOpener }, { file: 'main.idyl' });
+        const bareRun = await runWithTimeout(code, { fileSystem, urlOpener }, { file: 'main.idyl' }, timeoutMs);
+        if (bareRun.timedOut) {
+          timeouts.push(`${relative}: повторная проверка без модулей не завершилась за ${Math.round(timeoutMs / 1000)} с`);
+          continue;
+        }
+        const bare = bareRun.result!;
         const bareActual = normalizeText(
           bare.compilation.success ? (bare.runtimeError ?? '') : bare.compilation.diagnosticsText,
         );
@@ -211,7 +288,11 @@ async function main(): Promise<void> {
     if (changed) fs.writeFileSync(file, html, 'utf8');
   }
 
-  console.log(`lesson outputs: проверено output-блоков ${checkedOutputs}, error-блоков ${checkedErrors}${fix ? `, исправлено ${fixed}` : ''}`);
+  console.log(`lesson outputs: проверено output-блоков ${checkedOutputs}, error-блоков ${checkedErrors}${fix ? `, исправлено ${fixed}` : ''}${timeouts.length > 0 ? `, пропущено по времени ${timeouts.length}` : ''}`);
+  if (timeouts.length > 0) {
+    console.log(`\n--- Не уложились в ${Math.round(timeoutMs / 1000)} с (${timeouts.length}) ---`);
+    for (const line of timeouts) console.log(line);
+  }
   if (diffs.length > 0) {
     console.log(`\n--- Расхождения вывода (${diffs.length}) ---`);
     for (const diff of diffs) console.log(diff);

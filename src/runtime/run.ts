@@ -52,12 +52,13 @@ export function compileIdyllium(source: string, options: CompileOptions = {}): C
   let ast = root.ast;
   let jsCode: string | null = null;
   const modules: LoadedModule[] = [];
+  const unavailableModules = new Set<string>();
 
   if (ast && !diagnostics.hasErrors()) {
-    loadUserModules(ast, file, options, stdlib, diagnostics, modules);
+    loadUserModules(ast, file, options, stdlib, diagnostics, modules, unavailableModules);
   }
 
-  const userModuleRegistry = buildUserModuleRegistry(modules, stdlib, diagnostics);
+  const userModuleRegistry = buildUserModuleRegistry(modules, stdlib, diagnostics, unavailableModules);
 
   const nodeTypes = new Map<Expression, TypeRef>();
   const equalsContractClasses = new Set<string>();

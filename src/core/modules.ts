@@ -56,9 +56,21 @@ export interface UserModuleExports {
 
 export class UserModuleRegistry {
   private readonly modules = new Map<string, UserModuleExports>();
+  // Модули, которые не удалось загрузить (цикл импорта, нет файла). О причине
+  // уже сказано в месте use; всё, что из них дальше не нашлось, — эхо, а не
+  // отдельная беда, и говорить «нет такого типа» было бы неправдой.
+  private readonly unavailable = new Set<string>();
 
   register(module: UserModuleExports): void {
     this.modules.set(module.name, module);
+  }
+
+  markUnavailable(name: string): void {
+    this.unavailable.add(name);
+  }
+
+  isUnavailable(name: string): boolean {
+    return this.unavailable.has(name);
   }
 
   hasModule(name: string): boolean {

@@ -77,7 +77,7 @@ main() {
   <idyl-output-block>Тип содержимого: application/json; charset=utf-8
 Первые символы: [
     {
-        "name</idyl-output-block>
+        "nam</idyl-output-block>
 
   <p>
     Заголовок <code>content-type</code> — сервер честно предупреждает, что
@@ -137,7 +137,7 @@ main() {
     console.writeln(r.status);
 }
 </script></idyl-code-block>
-  <idyl-error-block>main.idyl:5:23: runtime error: http.get() cannot reach 'https://takogo-sajta-net.invalid/guild.json': host not found</idyl-error-block>
+  <idyl-error-block>main.idyl:5: runtime error: http.get() cannot reach 'https://takogo-sajta-net.invalid/guild.json': host not found</idyl-error-block>
 
   <p>
     Вот это уже <strong>ошибка времени выполнения</strong>: до сервера не
@@ -251,7 +251,7 @@ main() {
     Запустите сегодняшние программы в Web IDE — гильдия придёт как ни в чём
     не бывало. А вот запрос к большинству чужих сайтов оттуда закончится так:
   </p>
-  <idyl-error-block>main.idyl:5:23: runtime error: http.get() was blocked by the browser for 'https://example.com/': the site does not allow browser requests (CORS) — this address works in console runs</idyl-error-block>
+  <idyl-error-block>main.idyl:5: runtime error: http.get() was blocked by the browser for 'https://example.com/': the site does not allow browser requests (CORS) — this address works in console runs</idyl-error-block>
   <p>
     Это не поломка и не каприз Idyllium. Web IDE живёт внутри браузера, а у
     браузеров железное правило безопасности: страница может запрашивать чужой

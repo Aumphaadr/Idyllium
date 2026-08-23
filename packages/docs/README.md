@@ -9,7 +9,7 @@ npm run docs:migrate
 Источник:
 
 ```text
-/home/nathaniel/IdylliumProjects/Idyllium/docs
+~/IdylliumProjects/Idyllium/docs
 ```
 
 Это сырой перенос старой живой документации. Он сохраняет авторский педагогический текст и старые HTML-уроки, но ещё не приводит примеры к актуальному синтаксису Idyllium.

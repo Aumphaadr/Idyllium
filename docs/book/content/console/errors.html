@@ -305,7 +305,7 @@ main() {
 }
 </script></idyl-code-block>
       <idyl-error-block>main.idyl:4: runtime error: file.open() cannot open 'data.txt' for reading: file does not exist</idyl-error-block>
-      <p>Эта программа запущена в Web IDE — там проект живёт в папке <code>/workspace</code>, поэтому и программа, и файл показаны с полными путями. На компьютере путь поведёт в папку вашего проекта. Смысл один: файла <code>data.txt</code> рядом с программой нет. Создайте его перед чтением.</p>
+      <p>Путь в сообщении — тот же, что вы написали в программе: он всегда считается от папки проекта. Смысл один: файла <code>data.txt</code> рядом с программой нет. Создайте его перед чтением.</p>
 
       <h3>Pop из пустого массива</h3>
       <idyl-code-block><script type="text/plain">
@@ -326,7 +326,7 @@ main() {
 }
 </script></idyl-code-block>
       <idyl-error-block>main.idyl:4: runtime error: unknown encoding 'cp1337'</idyl-error-block>
-      <p>Кодировка <code>cp866</code> не поддерживается. Вызовите <code>encoding.list_encodings()</code>, чтобы увидеть список доступных кодировок.</p>
+      <p>Кодировка <code>cp1337</code> не поддерживается. Вызовите <code>encoding.list_encodings()</code>, чтобы увидеть список доступных кодировок.</p>
     </div>
 
     <div class="docs-section">

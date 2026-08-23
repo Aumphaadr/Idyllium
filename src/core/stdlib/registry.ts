@@ -370,13 +370,13 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       variadic: true,
       variadicTypes: [ANY_TYPE],
       printsValues: true,
-      documentation: 'Выводит значения подряд без автоматических пробелов и переноса строки.',
+      documentation: 'Выводит значения подряд без автоматических пробелов и переноса строки. Правила о том, что печатается, — те же, что у writeln().',
     }),
     functionSpec('writeln', [], VOID, {
       variadic: true,
       variadicTypes: [ANY_TYPE],
       printsValues: true,
-      documentation: 'Выводит значения подряд, затем переносит строку.',
+      documentation: 'Выводит значения подряд, затем переносит строку. Печатать можно значения, объекты своих классов с контрактом to_string (в том числе внутри массивов любой вложенности) и те библиотечные типы, у которых есть текстовый вид; библиотечный объект без текстового вида компилятор печатать не даст.',
     }),
     functionSpec('clear', [], VOID, {
       documentation: 'Очищает содержимое консоли.',
@@ -598,13 +598,13 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   const httpResponse = qualified('http', 'Response');
   registry.registerModule(moduleSpec('http', [
     functionSpec('get', [{ name: 'address', type: STRING }], httpResponse, {
-      documentation: 'Отправляет GET-запрос и возвращает http.Response. Только http/https. Таймаут — 10 секунд (меняется http.set_timeout). В Web IDE работает для сайтов, разрешающих браузерные запросы (CORS); иначе — читаемая ошибка с подсказкой про консольный запуск.',
+      documentation: 'Отправляет GET-запрос и возвращает http.Response — переменную этого типа обычно и объявляют сразу с вызовом; объявленная без него заготовка пуста честно: статус 0, текст пустой. Только http/https, и только GET и POST: PUT и DELETE библиотека не делает. Свои заголовки к запросу не приложить — ключ в заголовке требующие API остаются за пределами курса. Таймаут — 10 секунд (меняется http.set_timeout). В Web IDE работает для сайтов, разрешающих браузерные запросы (CORS); иначе — читаемая ошибка с подсказкой про консольный запуск.',
     }),
     functionSpec('post', [
       { name: 'address', type: STRING },
       { name: 'body', type: STRING },
     ], httpResponse, {
-      documentation: 'Отправляет POST-запрос с текстовым телом (Content-Type: text/plain; charset=utf-8) и возвращает http.Response.',
+      documentation: 'Отправляет POST-запрос с текстовым телом и возвращает http.Response. Тип содержимого всегда text/plain; charset=utf-8 — выбрать application/json или приложить свои заголовки нельзя.',
     }),
     functionSpec('set_timeout', [{ name: 'seconds', type: INT }], VOID, {
       documentation: 'Таймаут сетевых запросов в секундах (1–300, по умолчанию 10). Действует на все последующие get/post.',
@@ -625,7 +625,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   const webResponse = qualified('web', 'Response');
   registry.registerModule(moduleSpec('web', [], [], [
     typeSpec('Server', [
-      propertySpec('port', INT, false, 'Порт сервера, 0–65535 (по умолчанию 8080; 0 — попросить у системы свободный). После run() хранит фактический порт.'),
+      propertySpec('port', INT, false, 'Порт сервера, 0–65535 (по умолчанию 8080; 0 — попросить у системы свободный). Значение проверяется В МОМЕНТ ПРИСВАИВАНИЯ: за границами диапазона — читаемая ошибка там, где написано, а не при run(). После run() хранит фактический порт.'),
       propertySpec('host', STRING, false, 'Какие адреса слушать. По умолчанию "127.0.0.1" — только этот компьютер. "0.0.0.0" открывает программу ВСЕЙ локальной сети — включайте осознанно.'),
       propertySpec('is_running', BOOL, true, 'true, пока сервер запущен. Свойство доступно только для чтения.'),
     ], [
@@ -645,7 +645,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
         documentation: 'Раздаёт файлы папки как статику (только чтение, только GET, выход из папки закрыт). Адрес "/" отдаёт index.html. Маршруты on_get/on_post проверяются раньше статики.',
       }),
       functionSpec('run', [], VOID, {
-        documentation: 'Запускает сервер и не возвращается: программа обслуживает запросы, пока её не остановят (Stop или Ctrl+C). Занятый порт — читаемая ошибка. Работает в консоли и VS Code; в Web IDE — честный отказ (браузер не может слушать порт).',
+        documentation: 'Запускает сервер и не возвращается: программа обслуживает запросы, пока её не остановят (Stop или Ctrl+C). Занятый порт — читаемая ошибка. Работает в консоли и VS Code; в Web IDE — честный отказ (браузер не может слушать порт). Куки и сессий у сервера нет: «кто сейчас вошёл» он не помнит между запросами, и передавать это приходится самим — параметром адреса или скрытым полем формы.',
       }),
     ]),
     typeSpec('Request', [
@@ -676,7 +676,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
         { name: 'values', type: jsonObject, defaultValue: 'null' },
       ], VOID, {
         minArguments: 1,
-        documentation: 'Читает HTML-шаблон из файла (путь — как в file-библиотеке, без магических папок), подставляет значения из json.Object и отправляет страницу (text/html). В шаблоне: {{ключ}} и {{ключ.поле}} — подстановка (текст всегда экранируется: данные — текст, разметка живёт в шаблоне), {% for x in список %}…{% endfor %} — цикл по json.Array, {% if флаг %}…{% else %}…{% endif %} — ветвление по bool. Ошибка шаблона не роняет сервер: в страницу встаёт читаемый маркер [[ … ]].',
+        documentation: 'Читает HTML-шаблон из файла (путь — как в file-библиотеке, без магических папок), подставляет значения из json.Object и отправляет страницу (text/html). В шаблоне: {{ключ}} и {{ключ.поле}} — подстановка (текст всегда экранируется: данные — текст, разметка живёт в шаблоне), {% for x in список %}…{% endfor %} — цикл по json.Array, {% if флаг %}…{% else %}…{% endif %} — ветвление по bool. Ошибка шаблона не роняет сервер: в страницу встаёт читаемый маркер [[ … ]]. Файл перечитывается на КАЖДЫЙ запрос, кеша нет: правку шаблона видно сразу, без перезапуска сервера — удобно на уроке и стоит помнить при большой нагрузке.',
       }),
       functionSpec('redirect', [{ name: 'path', type: STRING }], VOID, {
         documentation: 'Отправляет браузер на другой адрес: ответ 303 See Other с заголовком Location. Канон PRG: после успешной обработки POST-формы вызовите res.redirect на GET-страницу — тогда обновление страницы (F5) не отправит форму второй раз.',
@@ -861,7 +861,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ]),
     typeSpec('Result', [
       propertySpec('is_open', BOOL, true),
-      propertySpec('has_rows', BOOL, true),
+      propertySpec('has_rows', BOOL, true, 'true, если в ответе есть хотя бы одна строка. У пустого SELECT — false, поэтому проверка \'если ничего не нашлось\' пишется прямо: if (rows.has_rows) … else … . У запросов, которые строк не возвращают (INSERT, UPDATE, DELETE), тоже false — там смотрят affected_rows.'),
       propertySpec('affected_rows', INT, true),
       propertySpec('last_insert_id', sqliteValue, true),
     ], [
@@ -898,7 +898,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       propertySpec('is_playing', BOOL, true),
     ], [
       functionSpec('load_from_file', [{ name: 'path', type: STRING }], VOID, {
-        documentation: 'Загружает аудиофайл или сообщает понятную runtime error.',
+        documentation: 'Загружает аудиофайл или сообщает понятную runtime error. Формат определяется ПО СОДЕРЖИМОМУ файла (WAV, MP3, OGG) — как у картинок и шрифтов: переименовать чужой файл в .wav не поможет, и молча «загрузить» не-звук нельзя.',
       }),
       functionSpec('play', [], VOID),
       functionSpec('pause', [], VOID),
@@ -918,7 +918,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ]),
     ], [
       functionSpec('load_from_file', [{ name: 'path', type: STRING }], VOID, {
-        documentation: 'Загружает аудиофайл или сообщает понятную runtime error.',
+        documentation: 'Загружает аудиофайл или сообщает понятную runtime error. Формат определяется ПО СОДЕРЖИМОМУ файла (WAV, MP3, OGG) — как у картинок и шрифтов: переименовать чужой файл в .wav не поможет, и молча «загрузить» не-звук нельзя.',
       }),
       functionSpec('play', [], VOID),
       functionSpec('pause', [], VOID),
@@ -1133,7 +1133,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
         'Тема оформления окна и всех его виджетов: "default", "idyllium", "dracula", "breeze", "oxygen"; другое значение — ошибка выполнения. Самый низкий приоритет — прямые свойства виджета и IdySS перекрывают тему.'),
       ...styleable,
     ], [
-      functionSpec('add_child', [guiChildParameter], VOID),
+      functionSpec('add_child', [guiChildParameter], VOID, { documentation: 'Кладёт виджет внутрь. Виджет нельзя положить внутрь самого себя или внутрь своего же ребёнка — у такого дерева не было бы конца, и рантайм честно об этом скажет.' }),
       functionSpec('show', [], VOID),
       functionSpec('close', [], VOID, {
         documentation: 'Закрывает окно. Когда закрыто последнее окно, программа завершается.',
@@ -1230,7 +1230,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...fontSized,
       propertySpec('title', STRING),
     ], [
-      functionSpec('add_child', [guiChildParameter], VOID),
+      functionSpec('add_child', [guiChildParameter], VOID, { documentation: 'Кладёт виджет внутрь. Виджет нельзя положить внутрь самого себя или внутрь своего же ребёнка — у такого дерева не было бы конца, и рантайм честно об этом скажет.' }),
     ], guiWidget),
     typeSpec('ImageBox', [
       ...positioned,
@@ -1456,9 +1456,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
         { name: 'title', type: STRING },
         { name: 'content', type: guiChildParameter.type, acceptedTypes: guiChildParameter.acceptedTypes, acceptedDescription: guiChildParameter.acceptedDescription },
       ], VOID, {
-        documentation: 'Добавляет вкладку с заголовком и виджетом-содержимым (обычно gui.Frame с наполнением).',
+        documentation: 'Добавляет вкладку с заголовком и виджетом-содержимым (обычно gui.Frame с наполнением). Сам шкаф вкладкой себе не подойдёт: виджет внутрь самого себя не кладётся.',
       }),
-      functionSpec('clear_tabs', [], VOID, { documentation: 'Удаляет все вкладки.' }),
+      functionSpec('clear_tabs', [], VOID, { documentation: 'Удаляет все вкладки вместе с содержимым. После этого tab_count равен нулю, а selected_index — -1: шкаф пуст, открывать нечего. Первая новая вкладка снова делает выбор нулевым.' }),
     ], guiWidget),
     typeSpec('Modal', [
       propertySpec('title', STRING),
@@ -1772,7 +1772,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     { name: 'value', type: ANY_TYPE },
   ], STRING, {
     printsValues: true,
-    documentation: 'Преобразует значение в строку. Объект класса — только с публичным string function to_string().',
+    documentation: 'Преобразует значение в строку. Объект класса — только с публичным string function to_string(). Библиотечные объекты (gui-виджеты, шрифты, фигуры, файловые потоки) текстового вида не имеют — компилятор откажет и посоветует напечатать какое-нибудь их свойство; значения библиотеки (ячейки types, colors.Color, time.stamp, json.Value, а также холст, таблица, диаграммы, черепаха, сервер и ответ http) печатаются как есть.',
   }));
 
   // Агрегатные функции массивов. Точные типы результата выводит семантика

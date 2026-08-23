@@ -185,6 +185,7 @@ export class JavaScriptGenerator {
         lines.push(`${pad}    ${JSON.stringify(declaration.name)}: ${this.classObjectName(declaration.name)},`);
         lines.push(`${pad}    ${JSON.stringify(this.exportedClassCreateName(declaration.name))}: ${this.classCreateFactoryName(declaration.name)},`);
         lines.push(`${pad}    ${JSON.stringify(this.exportedClassDefaultName(declaration.name))}: ${this.classDefaultFactoryName(declaration.name)},`);
+        lines.push(`${pad}    ${JSON.stringify(this.exportedClassInitName(declaration.name))}: ${this.classInitFunctionName(declaration.name)},`);
       }
     }
     lines.push(`${pad}  };`);
@@ -419,11 +420,25 @@ export class JavaScriptGenerator {
     // Метка класса — квалифицированная для модульных классов («zoo.Lion»):
     // её читают type_name() и тексты ошибок рантайма.
     const typeTag = this.currentModuleName ? `${this.currentModuleName}.${declaration.name}` : declaration.name;
-    if (declaration.baseName) {
-      lines.push(`${pad}  const self = await ${this.classDefaultFactoryName(declaration.baseName)}();`);
-      lines.push(`${pad}  self.__idylliumType = ${JSON.stringify(typeTag)};`);
+    if (declaration.baseName && declaration.baseName.startsWith('gui.')) {
+      // Наследник виджета: строится НАСТОЯЩИЙ виджет (валидируемые свойства,
+      // сеттеры, хуки событий), __idylliumType остаётся виджетным — по нему
+      // живут рендерер и механика (радиогруппы, Canvas, Table). Имя класса —
+      // отдельная метка, её читают type_name() и тексты ошибок.
+      const widgetName = declaration.baseName.slice(4);
+      lines.push(`${pad}  const __idyl_self = $rt.createObject('gui', ${JSON.stringify(widgetName)});`);
+      lines.push(`${pad}  __idyl_self.__idylliumClass = ${JSON.stringify(typeTag)};`);
+    } else if (declaration.baseName && declaration.baseName.includes('.')) {
+      const dot = declaration.baseName.indexOf('.');
+      const baseModule = declaration.baseName.slice(0, dot);
+      const baseClass = declaration.baseName.slice(dot + 1);
+      lines.push(`${pad}  const __idyl_self = await $rt.modules.${baseModule}[${JSON.stringify(this.exportedClassDefaultName(baseClass))}]();`);
+      lines.push(`${pad}  $rt.tagClassInstance(__idyl_self, ${JSON.stringify(typeTag)});`);
+    } else if (declaration.baseName) {
+      lines.push(`${pad}  const __idyl_self = await ${this.classDefaultFactoryName(declaration.baseName)}();`);
+      lines.push(`${pad}  $rt.tagClassInstance(__idyl_self, ${JSON.stringify(typeTag)});`);
     } else {
-      lines.push(`${pad}  const self = { __idylliumType: ${JSON.stringify(typeTag)} };`);
+      lines.push(`${pad}  const __idyl_self = { __idylliumType: ${JSON.stringify(typeTag)} };`);
     }
 
     for (const member of declaration.members) {
@@ -432,7 +447,7 @@ export class JavaScriptGenerator {
       }
       if (member.kind === 'ClassEventDeclaration') {
         // Событие без подписчика — null: запуск тогда молча ничего не делает.
-        lines.push(`${'  '.repeat(indent + 1)}self.${member.name} = null;`);
+        lines.push(`${'  '.repeat(indent + 1)}__idyl_self.${member.name} = null;`);
       }
     }
 
@@ -444,23 +459,32 @@ export class JavaScriptGenerator {
     }
     this.classFieldInitializerDepth -= 1;
 
-    lines.push(`${pad}  return self;`);
+    lines.push(`${pad}  return __idyl_self;`);
     lines.push(`${pad}}`);
     const constructor = declaration.members.find((member): member is ConstructorDeclaration => member.kind === 'ConstructorDeclaration');
-    lines.push(`${pad}async function ${this.classInitFunctionName(declaration.name)}(self, ...__args) {`);
+    lines.push(`${pad}async function ${this.classInitFunctionName(declaration.name)}(__idyl_self, ...__args) {`);
     if (constructor) {
-      if (declaration.baseName) {
+      if (declaration.baseName && declaration.baseName.startsWith('gui.')) {
+        // parent() наследнику виджета не положен — семантика уже отказала.
+      } else if (declaration.baseName && declaration.baseName.includes('.')) {
+        const dot = declaration.baseName.indexOf('.');
+        const baseModule = declaration.baseName.slice(0, dot);
+        const baseClass = declaration.baseName.slice(dot + 1);
         lines.push(`${pad}  const parent = async (...__parentArgs) => {`);
-        lines.push(`${pad}    await ${this.classInitFunctionName(declaration.baseName)}(self, ...__parentArgs);`);
+        lines.push(`${pad}    await $rt.modules.${baseModule}[${JSON.stringify(this.exportedClassInitName(baseClass))}](__idyl_self, ...__parentArgs);`);
+        lines.push(`${pad}  };`);
+      } else if (declaration.baseName) {
+        lines.push(`${pad}  const parent = async (...__parentArgs) => {`);
+        lines.push(`${pad}    await ${this.classInitFunctionName(declaration.baseName)}(__idyl_self, ...__parentArgs);`);
         lines.push(`${pad}  };`);
       }
       this.emitConstructorCall(declaration.name, constructor, lines, indent + 1);
     }
     lines.push(`${pad}}`);
     lines.push(`${pad}async function ${this.classCreateFactoryName(declaration.name)}(...__args) {`);
-    lines.push(`${pad}  const self = await ${this.classDefaultFactoryName(declaration.name)}();`);
-    lines.push(`${pad}  await ${this.classInitFunctionName(declaration.name)}(self, ...__args);`);
-    lines.push(`${pad}  return self;`);
+    lines.push(`${pad}  const __idyl_self = await ${this.classDefaultFactoryName(declaration.name)}();`);
+    lines.push(`${pad}  await ${this.classInitFunctionName(declaration.name)}(__idyl_self, ...__args);`);
+    lines.push(`${pad}  return __idyl_self;`);
     lines.push(`${pad}}`);
 
     for (const member of declaration.members) {
@@ -499,7 +523,7 @@ export class JavaScriptGenerator {
       const value = field.initializer
         ? this.valueForType(rawValue, declaration.declaredType, field.initializer.range)
         : this.castForType(rawValue, declaration.declaredType);
-      lines.push(`${pad}self.${field.name} = ${value};`);
+      lines.push(`${pad}__idyl_self.${field.name} = ${value};`);
     }
   }
 
@@ -517,7 +541,7 @@ export class JavaScriptGenerator {
     const pad = '  '.repeat(indent);
     const params = declaration.parameters.map((parameter) => parameter.name).join(', ');
     if (this.isContractEqualsDeclaration(className, declaration)) {
-      lines.push(`${pad}self[${JSON.stringify(`equals$${className}`)}] = async function(${params}) {`);
+      lines.push(`${pad}__idyl_self[${JSON.stringify(`equals$${className}`)}] = async function(${params}) {`);
       this.emitCallGuardOpen(lines, indent + 1, `${className}.equals`, declaration.nameRange ?? declaration.range);
       this.returnTypes.push(declaration.returnType);
       this.emitParameterDefaults(declaration.parameters, lines, indent + 2);
@@ -528,7 +552,7 @@ export class JavaScriptGenerator {
       lines.push(`${pad}};`);
       return;
     }
-    lines.push(`${pad}self.${declaration.name} = async function(${params}) {`);
+    lines.push(`${pad}__idyl_self.${declaration.name} = async function(${params}) {`);
     this.emitCallGuardOpen(lines, indent + 1, `${className}.${declaration.name}`, declaration.nameRange ?? declaration.range);
     this.returnTypes.push(declaration.returnType);
     this.emitParameterDefaults(declaration.parameters, lines, indent + 2);
@@ -562,7 +586,7 @@ export class JavaScriptGenerator {
     this.emitParameterCasts(declaration.parameters, lines, indent + 2);
     this.emitBlock(declaration.body, lines, indent + 2);
     this.emitCallGuardClose(lines, indent + 1);
-    lines.push(`${pad}}).apply(self, __args);`);
+    lines.push(`${pad}}).apply(__idyl_self, __args);`);
   }
 
   private emitAssignment(statement: AssignmentStatement, lines: string[], indent: number): void {
@@ -706,10 +730,10 @@ export class JavaScriptGenerator {
         }
         return JSON.stringify(expression.value);
       case 'IdentifierExpression':
-        // 'this' всегда компилируется в лексический self фабрики/инициализатора
+        // 'this' всегда компилируется в лексический __idyl_self фабрики/инициализатора
         // класса: метод остаётся привязанным к своему объекту, даже когда его
         // сохранили как значение (obj.method → колбэк) и вызвали отдельно.
-        if (expression.name === 'this') return 'self';
+        if (expression.name === 'this') return '__idyl_self';
         if (this.userClassNames.has(expression.name)) return this.classObjectName(expression.name);
         return expression.name;
       case 'UnaryExpression':
@@ -1028,6 +1052,10 @@ export class JavaScriptGenerator {
 
   private exportedClassDefaultName(className: string): string {
     return `__default_${className}`;
+  }
+
+  private exportedClassInitName(className: string): string {
+    return `__init_${className}`;
   }
 
   private emitParameterCasts(parameters: readonly ParameterDeclaration[], lines: string[], indent: number): void {

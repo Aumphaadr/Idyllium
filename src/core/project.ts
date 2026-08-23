@@ -101,6 +101,10 @@ export function loadUserModules(
   stdlib: StandardLibraryRegistry,
   diagnostics: DiagnosticBag,
   output: LoadedModule[],
+  // Сюда падают модули, которые загрузить не удалось (цикл импорта, нет файла).
+  // Реестр потом их помечает, чтобы не рождать эхо «нет такого типа» — тип-то
+  // есть, беда была одна и о ней уже сказано (жанр O38).
+  unavailable?: Set<string>,
 ): void {
   const loaded = new Map<string, LoadedModule>();
   const loading: string[] = [];
@@ -120,12 +124,14 @@ export function loadUserModules(
     if (cycleStart >= 0) {
       const cycle = [...loading.slice(cycleStart), moduleName].join(' -> ');
       diagnostics.error(range, `module import cycle detected: ${cycle}`);
+      unavailable?.add(moduleName);
       return;
     }
 
     const resolved = resolveUserModule(moduleName, fromFile, options);
     if (!resolved) {
       diagnostics.error(range, `module '${moduleName}' was not found`);
+      unavailable?.add(moduleName);
       return;
     }
 
@@ -165,11 +171,13 @@ export function buildUserModuleRegistry(
   modules: readonly LoadedModule[],
   stdlib: StandardLibraryRegistry,
   diagnostics: DiagnosticBag,
+  unavailable?: ReadonlySet<string>,
 ): UserModuleRegistry {
   const userModuleRegistry = new UserModuleRegistry();
   for (const module of modules) {
     userModuleRegistry.register(collectModuleExports(module, stdlib, userModuleRegistry, diagnostics));
   }
+  for (const name of unavailable ?? []) userModuleRegistry.markUnavailable(name);
   return userModuleRegistry;
 }
 
@@ -402,7 +410,11 @@ function classSpecFromDeclaration(
   return {
     name: declaration.name,
     qualifiedName,
-    baseName: declaration.baseName ? qualifiedUserClassName(moduleName, declaration.baseName) : null,
+    // База уже квалифицирована ('gui.Button', 'other.Lion') — своим модулем её
+    // дополнять нельзя, иначе наружу уезжает мусорное 'widgets.gui.Button'.
+    baseName: declaration.baseName
+      ? (declaration.baseName.includes('.') ? declaration.baseName : qualifiedUserClassName(moduleName, declaration.baseName))
+      : null,
     fields,
     methods,
     events,
@@ -452,6 +464,10 @@ function resolveModuleExportType(
   const importedModule = userModules.getModule(typeName.moduleName);
   const importedClass = importedModule?.classes.get(typeName.name);
   if (importedClass) return classType(importedClass.qualifiedName);
+
+  // Модуль не собрался (цикл импорта, нет файла) — о причине уже сказано там,
+  // где стоит use. Второе сообщение уверяло бы, что типа нет, а он есть.
+  if (!importedModule) return ERROR_TYPE;
 
   diagnostics.error(typeName.range, `module '${typeName.moduleName}' has no type '${typeName.name}'`);
   return ERROR_TYPE;

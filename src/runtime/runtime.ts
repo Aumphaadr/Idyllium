@@ -72,7 +72,7 @@ export class IdylliumRuntimeError extends Error {
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-export const IDYLLIUM_VERSION = '1.5.1';
+export const IDYLLIUM_VERSION = '1.5.2';
 
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform(): string {
@@ -1471,7 +1471,13 @@ function assertSqliteDatabaseOpen(
   line: number,
 ): RuntimeSqliteDatabase {
   if (!state.isOpen || !state.engine) {
-    throw new IdylliumRuntimeError(file, line, 'sqlite database is already closed');
+    throw new IdylliumRuntimeError(
+      file,
+      line,
+      state.path === ''
+        ? 'this sqlite.Database is a blank one — open a file with sqlite.open("name.db") first'
+        : 'sqlite database is already closed',
+    );
   }
   return state.engine;
 }
@@ -1656,7 +1662,13 @@ function assertSqliteStatementOpen(
   line: number,
 ): SqliteRuntimeDatabaseState {
   if (!state.isOpen || !state.database) {
-    throw new IdylliumRuntimeError(file, line, 'sqlite statement is already closed');
+    throw new IdylliumRuntimeError(
+      file,
+      line,
+      state.sql === '' && state.database === null
+        ? 'this sqlite.Statement is a blank one — get one from db.prepare("SQL") first'
+        : 'sqlite statement is already closed',
+    );
   }
   assertSqliteDatabaseOpen(state.database, file, line);
   return state.database;
@@ -1731,7 +1743,12 @@ function createSqliteResult(execution: RuntimeSqliteExecution): RuntimeObject {
   const obj: RuntimeObject = { __idylliumType: 'sqlite.Result' };
   Object.defineProperty(obj, '__sqliteResultState', { value: state });
   defineRuntimeGetter(obj, 'is_open', () => state.isOpen);
-  defineRuntimeGetter(obj, 'has_rows', () => state.columns.length > 0);
+  // has_rows отвечает ровно на вопрос своего имени: «есть ли хоть одна строка».
+  // Раньше он значил «этот запрос ВОЗВРАЩАЕТ строки» и был true у пустого
+  // SELECT — естественная запись «if (rows.has_rows) … else «никого нет»»
+  // печатала «нашли» на пустом результате, молча и неверно (SQ1, находка
+  // методистов 2026-08-23). Строки уже загружены целиком, спрашивать нечего.
+  defineRuntimeGetter(obj, 'has_rows', () => state.rows.length > 0);
   defineRuntimeGetter(obj, 'affected_rows', () => execution.affectedRows);
   defineRuntimeGetter(obj, 'last_insert_id', () => createSqliteValue(execution.lastInsertId));
 
@@ -1795,10 +1812,11 @@ function createSqliteResult(execution: RuntimeSqliteExecution): RuntimeObject {
   return obj;
 }
 
-function createClosedSqliteResult(): RuntimeObject {
-  const result = createSqliteResult({ columns: [], rows: [], affectedRows: 0, lastInsertId: null });
-  (result.__sqliteResultState as SqliteRuntimeResultState).isOpen = false;
-  return result;
+// Заготовка 'sqlite.Result r;' — это ПУСТОЙ ответ, а не закрытый: строк в нём
+// ноль, next() честно отвечает false, has_rows — false. Раньше она объявляла
+// себя «уже закрытой», хотя её никто не открывал (D5, находка методистов).
+function createBlankSqliteResult(): RuntimeObject {
+  return createSqliteResult({ columns: [], rows: [], affectedRows: 0, lastInsertId: null });
 }
 
 function assertSqliteResultOpen(state: SqliteRuntimeResultState, file: string, line: number): void {
@@ -2440,6 +2458,7 @@ export interface IdylliumRuntime {
     readonly colors: Record<string, unknown>;
   };
   createObject(moduleName: string, typeName: string): Record<string, unknown>;
+  tagClassInstance(self: Record<string, unknown>, tag: string): Record<string, unknown>;
   convertNullable(moduleName: string, typeName: string, value: unknown, file: string, line: number): unknown;
   setProperty(target: unknown, propertyName: string, value: unknown, file: string, line: number): unknown;
   callModuleFunction(moduleName: string, functionName: string, args: readonly unknown[], file: string, line: number): unknown;
@@ -2577,24 +2596,11 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     }
     // Массив объектов с контрактом to_string: представления элементов
     // собираются асинхронно (инспектор массива синхронный и сам метод
-    // ученика позвать не может) — жанр equalsObjectArrays.
-    if (value instanceof IdylliumArray) {
-      const items = value.values();
-      if (items.some((item) => item !== null && typeof item === 'object'
-        && typeof (item as Record<string, unknown>).to_string === 'function')) {
-        const parts: string[] = [];
-        for (const item of items) {
-          const method = item !== null && typeof item === 'object'
-            ? (item as Record<string, unknown>).to_string
-            : undefined;
-          if (typeof method === 'function') {
-            parts.push(formatForInspect(await method.apply(item)));
-          } else {
-            parts.push(formatForInspect(item));
-          }
-        }
-        return `[${parts.join(', ')}]`;
-      }
+    // ученика позвать не может) — жанр equalsObjectArrays. Вложенность
+    // проходится насквозь: у таблицы объектов внутренние ряды раньше
+    // печатались JS-нутром '[object Object]'.
+    if (value instanceof IdylliumArray && (await arrayHoldsContractObjects(value))) {
+      return await formatArrayWithContracts(value);
     }
     if (value !== null && typeof value === 'object') {
       const method = (value as Record<string, unknown>).to_string;
@@ -2604,6 +2610,36 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       }
     }
     return formatForConsole(value, precision);
+  }
+
+  // Есть ли в массиве (на любой глубине) объект с контрактом to_string.
+  async function arrayHoldsContractObjects(array: IdylliumArray): Promise<boolean> {
+    for (const item of array.values()) {
+      if (item instanceof IdylliumArray) {
+        if (await arrayHoldsContractObjects(item)) return true;
+        continue;
+      }
+      if (item !== null && typeof item === 'object'
+        && typeof (item as Record<string, unknown>).to_string === 'function') return true;
+    }
+    return false;
+  }
+
+  async function formatArrayWithContracts(array: IdylliumArray): Promise<string> {
+    const parts: string[] = [];
+    for (const item of array.values()) {
+      if (item instanceof IdylliumArray) {
+        parts.push(await formatArrayWithContracts(item));
+        continue;
+      }
+      const method = item !== null && typeof item === 'object'
+        ? (item as Record<string, unknown>).to_string
+        : undefined;
+      parts.push(typeof method === 'function'
+        ? formatForInspect(await (method as () => Promise<unknown>).apply(item))
+        : formatForInspect(item));
+    }
+    return `[${parts.join(', ')}]`;
   }
 
   async function formatConsoleValues(values: readonly unknown[]): Promise<string> {
@@ -2821,6 +2857,10 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       if (value instanceof IdylliumTimeStamp) return 'time.stamp';
       if (value instanceof IdylliumArray) return 'array';
       if (typeof value === 'object' && typeof (value as Record<string, unknown>).__idylliumType === 'string') {
+        // Наследник виджета носит рантайм-тип базы, а СВОЁ имя — в __idylliumClass.
+        if (typeof (value as Record<string, unknown>).__idylliumClass === 'string') {
+          return (value as Record<string, unknown>).__idylliumClass as string;
+        }
         return (value as Record<string, unknown>).__idylliumType as string;
       }
       if (typeof value === 'string') return 'string';
@@ -3568,6 +3608,19 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     createObject(moduleName: string, typeName: string): Record<string, unknown> {
       throwIfRuntimeStopped('', 0);
       return createPlainRuntimeObject(moduleName, typeName, runtimeObjects);
+    },
+    // Метка экземпляра класса. Если база (по всей цепочке, в том числе через
+    // модули) — виджет, рантайм-тип 'gui.X' НЕПРИКОСНОВЕНЕН: по нему живут
+    // рендерер и строгие сверки (радиогруппы, Canvas, Table). Имя класса тогда
+    // едет отдельной меткой, её читают type_name() и тексты ошибок.
+    tagClassInstance(self: Record<string, unknown>, tag: string): Record<string, unknown> {
+      const inherited = self.__idylliumType;
+      if (typeof inherited === 'string' && inherited.startsWith('gui.')) {
+        self.__idylliumClass = tag;
+      } else {
+        self.__idylliumType = tag;
+      }
+      return self;
     },
     convertNullable(moduleName: string, typeName: string, value: unknown, file: string, line: number): unknown {
       throwIfRuntimeStopped(file, line);
@@ -5482,7 +5535,8 @@ function setTrackedRuntimePropertyDefault(obj: RuntimeObject, name: string, valu
 
 function trackedRuntimePropertyValues(obj: RuntimeObject): Record<string, unknown> {
   if (isPlainObject(obj.__trackedPropertyValues)) return obj.__trackedPropertyValues as Record<string, unknown>;
-  const values: Record<string, unknown> = {};
+  // Без прототипа — по той же причине, что и таблица сеттеров.
+  const values: Record<string, unknown> = Object.create(null) as Record<string, unknown>;
   Object.defineProperty(obj, '__trackedPropertyValues', {
     value: values,
     enumerable: false,
@@ -5504,7 +5558,9 @@ function explicitRuntimeProperties(obj: RuntimeObject): Set<string> {
 
 function runtimePropertySetters(obj: RuntimeObject): Record<string, RuntimePropertySetter> {
   if (isPlainObject(obj.__runtimePropertySetters)) return obj.__runtimePropertySetters as Record<string, RuntimePropertySetter>;
-  const setters: Record<string, RuntimePropertySetter> = {};
+  // Таблица БЕЗ прототипа: иначе setters['toString'] отдавал функцию из
+  // Object.prototype, и запись в поле с таким именем молча пропадала.
+  const setters: Record<string, RuntimePropertySetter> = Object.create(null) as Record<string, RuntimePropertySetter>;
   Object.defineProperty(obj, '__runtimePropertySetters', {
     value: setters,
     enumerable: false,
@@ -5564,6 +5620,12 @@ function defineEnumRuntimeProperty(
 }
 
 function createPlainRuntimeObject(moduleName: string, typeName: string, state: RuntimeObjectState): RuntimeObject {
+  // 'time.stamp t;' без вызова — честный ноль эпохи, а не пустой объект,
+  // печатавшийся JS-нутром '[object Object]'.
+  if (moduleName === 'time' && typeName === 'stamp') {
+    return new IdylliumTimeStamp(0) as unknown as RuntimeObject;
+  }
+
   if (moduleName === 'json') {
     if (typeName === 'Value') return createJsonValue();
     if (typeName === 'Object') return createJsonObject();
@@ -5574,7 +5636,7 @@ function createPlainRuntimeObject(moduleName: string, typeName: string, state: R
     if (typeName === 'Value') return createSqliteValue();
     if (typeName === 'Database') return createClosedSqliteDatabase(state);
     if (typeName === 'Statement') return createClosedSqliteStatement();
-    if (typeName === 'Result') return createClosedSqliteResult();
+    if (typeName === 'Result') return createBlankSqliteResult();
   }
 
   const obj: Record<string, unknown> = {
@@ -5615,7 +5677,57 @@ function createPlainRuntimeObject(moduleName: string, typeName: string, state: R
     initializeWebObject(obj, typeName, state);
   }
 
+  initializeResultObjectDefaults(obj, moduleName, typeName);
+
   return obj;
+}
+
+/** Пустая заготовка «объекта-ответа». Такие типы приходят из вызова
+ *  (http.get(), обработчик web-маршрута), но объявить их пустыми язык
+ *  разрешает — и тогда заготовка обязана быть ПОЛНОЙ формой своего типа:
+ *  и свойства, и методы. Иначе выходило кривобоко — blank.status давал 0,
+ *  а blank.header(...) падал «object has no method» (находка методистов
+ *  2026-08-23). Пустые ответы отдают пустые строки — ровно то же, что
+ *  настоящий ответ отдаёт на неизвестное имя. */
+function initializeResultObjectDefaults(obj: RuntimeObject, moduleName: string, typeName: string): void {
+  if (moduleName === 'http' && typeName === 'Response') {
+    obj.status = 0;
+    obj.ok = false;
+    obj.text = '';
+    obj.header = contextFunction((name: unknown, file: string, line: number) => {
+      stringArgument(name, 'Response.header() name', file, line);
+      return '';
+    });
+    obj.to_string = () => 'http.Response(status: 0)';
+    return;
+  }
+  if (moduleName === 'web' && typeName === 'Request') {
+    obj.path = '';
+    obj.body = '';
+    for (const method of ['query', 'param', 'form'] as const) {
+      obj[method] = contextFunction((name: unknown, file: string, line: number) => {
+        stringArgument(name, `web.Request.${method}() name`, file, line);
+        return '';
+      });
+    }
+    obj.to_string = () => 'web.Request( )';
+    return;
+  }
+  if (moduleName === 'web' && typeName === 'Response') {
+    obj.status = 0;
+    // Отвечать этой заготовке некому: сервер выдаёт настоящий ответ в
+    // обработчик. Молча проглотить отправку было бы враньём.
+    for (const method of ['send', 'send_json', 'send_template', 'redirect'] as const) {
+      obj[method] = contextFunction((_value: unknown, file: string, line: number) => {
+        throw new IdylliumRuntimeError(
+          file,
+          line,
+          `web.Response.${method}() has nothing to answer: this response is a blank one — the server passes a real response into your on_get()/on_post() handler`,
+        );
+      });
+    }
+    obj.to_string = () => 'web.Response';
+  }
 }
 
 // ─── web.Server: свой веб-сервер (Flask-жанр) ──────────────────────────────
@@ -6042,7 +6154,18 @@ function serveWebStatic(roots: readonly string[], requestPath: string, state: Ru
 function initializeWebObject(obj: RuntimeObject, typeName: string, state: RuntimeObjectState): void {
   if (typeName !== 'Server') return;
 
-  obj.port = 8080;
+  // Порт проверяется В МОМЕНТ ПРИСВАИВАНИЯ, а не при run(): ошибку показываем
+  // там, где её сделали (NET1, находка методистов 2026-08-23).
+  defineValidatedRuntimeProperty(obj, 'port', 8080, (value, file, line) => {
+    if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > 65535) {
+      throw new IdylliumRuntimeError(
+        file,
+        line,
+        `web.Server.port must be an integer from 0 to 65535, got '${String(value)}'`,
+      );
+    }
+    return value;
+  });
   // Безопасность по умолчанию: слушаем только свой компьютер. Открыть класс —
   // явное решение программиста: app.host = "0.0.0.0" (вся локальная сеть).
   obj.host = '127.0.0.1';
@@ -6321,6 +6444,19 @@ function closeChannelPost(post: RuntimeObject): void {
   if (connection) connection.close();
 }
 
+/** Виджет внутрь себя или внутрь своего же ребёнка — дерево без конца.
+ *  Раньше это роняло рантайм голым JS-стеком уже при показе окна. */
+function refuseWidgetCycle(container: RuntimeObject, child: RuntimeObject, what: string, file: string, line: number): void {
+  if (child === container) {
+    throw new IdylliumRuntimeError(file, line, `${what} cannot put a widget inside itself`);
+  }
+  for (let ancestor = container.__parent; isRuntimeObject(ancestor); ancestor = ancestor.__parent) {
+    if (ancestor === child) {
+      throw new IdylliumRuntimeError(file, line, `${what} cannot put a widget inside its own child — the tree would have no end`);
+    }
+  }
+}
+
 function initializeGuiObject(obj: RuntimeObject, typeName: string, state: RuntimeObjectState): void {
   if (isGuiWidget(typeName)) {
     obj.x = 0;
@@ -6348,6 +6484,7 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
       if (!isRuntimeObject(child)) {
         throw new IdylliumRuntimeError(file, line, `add_child() expects gui widget, got '${String(child)}'`);
       }
+      refuseWidgetCycle(obj, child, 'add_child()', file, line);
       child.__parent = obj;
       (obj.__children as RuntimeObject[]).push(child);
       // Радио с предвыбором решает свою группу в момент переезда в коробку:
@@ -6519,6 +6656,7 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
       if (!isRuntimeObject(content)) {
         throw new IdylliumRuntimeError(file, line, `TabWidget.add_tab() expects gui widget as content, got '${runtimeTypeName(content)}'`);
       }
+      refuseWidgetCycle(obj, content, 'TabWidget.add_tab()', file, line);
       content.__parent = obj;
       (obj.__children as RuntimeObject[]).push(content);
       (obj.__tabTitles as string[]).push(tabTitle);
@@ -8518,6 +8656,18 @@ function initializeAudioObject(obj: RuntimeObject, typeName: string, state: Runt
     if (!runtimeIsFile(state.fileSystem, resolvedPath, file, line, 'reading')) {
       throw new IdylliumRuntimeError(file, line, `${typeName}.load_from_file() cannot load '${requestedPath}': path is not a file`);
     }
+    // Формат — по СОДЕРЖИМОМУ, как у картинок и шрифтов. Раньше сюда проходил
+    // любой файл: duration оставался нулём, play() рапортовал is_playing, звука
+    // не было, и ни одного слова об этом (AU1, находка методистов 2026-08-23).
+    // Смотрим именно СИГНАТУРУ, а не длительность: у валидного WAV с пустыми
+    // данными длительность тоже ноль, и отказывать ему было бы неправдой.
+    if (!looksLikeAudio(state.fileSystem, resolvedPath)) {
+      throw new IdylliumRuntimeError(
+        file,
+        line,
+        `${typeName}.load_from_file() cannot decode '${requestedPath}': unsupported audio format (WAV, MP3 and OGG are supported)`,
+      );
+    }
     obj.src = requestedPath;
     obj.resolved_path = resolvedPath;
     obj.resource_uri = state.fileSystem.resourceUri?.(resolvedPath) ?? '';
@@ -8587,6 +8737,35 @@ function audioCommands(obj: RuntimeObject): IdylliumAudioCommand[] {
     configurable: true,
   });
   return commands;
+}
+
+/** Похож ли файл на звук — по сигнатуре первых байтов, как у картинок и
+ *  шрифтов. Длительность для этого не годится: у валидного WAV без сэмплов
+ *  она ноль. */
+function looksLikeAudio(fileSystem: RuntimeFileSystem, filePath: string): boolean {
+  let bytes: any = null;
+  try {
+    if (fileSystem.readBytes) {
+      bytes = nodeBuffer.from(fileSystem.readBytes(filePath));
+    } else {
+      const text = fileSystem.readText(filePath);
+      const dataUrlMatch = /^data:audio\/[^;]+;base64,(.+)$/u.exec(text);
+      // data:audio/... — уже объявленный звук, содержимое пришло из среды.
+      if (dataUrlMatch) return true;
+      bytes = nodeBuffer.from(text, 'binary');
+    }
+  } catch {
+    return false;
+  }
+  if (!bytes || typeof bytes.length !== 'number' || bytes.length < 4) return false;
+
+  const head = bytes.toString('ascii', 0, 4);
+  if (head === 'RIFF' && bytes.length >= 12 && bytes.toString('ascii', 8, 12) === 'WAVE') return true;
+  if (head === 'OggS') return true;
+  if (head.startsWith('ID3')) return true;
+  // Кадр MP3 без тега: синхрослово 11 единиц подряд.
+  if (bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0) return true;
+  return false;
 }
 
 function audioDuration(fileSystem: RuntimeFileSystem, filePath: string): number {
@@ -9027,30 +9206,43 @@ function drawableSnapshot(value: RuntimeObject): IdylliumDrawableSnapshot {
   };
 }
 
+// Сторож циклов снимка. Наследник виджета впервые вешает ПОЛЬЗОВАТЕЛЬСКИЕ поля
+// прямо на рантайм-виджет, поэтому два виджета могут ссылаться друг на друга
+// (или на себя) — без сторожа пара objectPropertiesSnapshot/snapshotValue
+// уходила в бесконечную рекурсию и роняла предпросмотр голым JS-стеком.
+const snapshotSeen = new Set<unknown>();
+
 function objectPropertiesSnapshot(value: RuntimeObject): Readonly<Record<string, unknown>> {
   const result: Record<string, unknown> = {};
-  for (const [key, item] of Object.entries(value)) {
-    if (key.startsWith('__') || typeof item === 'function') continue;
-    result[key] = snapshotValue(item);
+  // Сам объект — уже «в работе»: поле, ведущее обратно к нему, дальше не пойдёт.
+  const alreadySeen = snapshotSeen.has(value);
+  if (!alreadySeen) snapshotSeen.add(value);
+  try {
+    for (const [key, item] of Object.entries(value)) {
+      if (key.startsWith('__') || typeof item === 'function') continue;
+      result[key] = snapshotValue(item);
+    }
+    if (Array.isArray(value.__tabTitles)) {
+      result.tab_titles = [...(value.__tabTitles as string[])];
+    }
+    if (typeof value.style === 'string' && value.style.trim() !== '') {
+      // IdySS: в браузер уезжают только провалидированные пары — рендерер
+      // строк не разбирает и произвольный CSS не видит.
+      result.style_declarations = parseIdylliumStyle(value.style);
+    }
+    if (typeof value.style_hover === 'string' && value.style_hover.trim() !== '') {
+      result.style_hover_declarations = parseIdylliumStyle(value.style_hover);
+    }
+    if (typeof value.style_active === 'string' && value.style_active.trim() !== '') {
+      result.style_active_declarations = parseIdylliumStyle(value.style_active);
+    }
+    if (value.__explicitProperties instanceof Set && value.__explicitProperties.size > 0) {
+      result.__explicit_properties = [...value.__explicitProperties].sort();
+    }
+    return result;
+  } finally {
+    if (!alreadySeen) snapshotSeen.delete(value);
   }
-  if (Array.isArray(value.__tabTitles)) {
-    result.tab_titles = [...(value.__tabTitles as string[])];
-  }
-  if (typeof value.style === 'string' && value.style.trim() !== '') {
-    // IdySS: в браузер уезжают только провалидированные пары — рендерер
-    // строк не разбирает и произвольный CSS не видит.
-    result.style_declarations = parseIdylliumStyle(value.style);
-  }
-  if (typeof value.style_hover === 'string' && value.style_hover.trim() !== '') {
-    result.style_hover_declarations = parseIdylliumStyle(value.style_hover);
-  }
-  if (typeof value.style_active === 'string' && value.style_active.trim() !== '') {
-    result.style_active_declarations = parseIdylliumStyle(value.style_active);
-  }
-  if (value.__explicitProperties instanceof Set && value.__explicitProperties.size > 0) {
-    result.__explicit_properties = [...value.__explicitProperties].sort();
-  }
-  return result;
 }
 
 function runtimeObjectId(value: RuntimeObject): number {
@@ -9062,10 +9254,20 @@ function snapshotValue(value: unknown): unknown {
   if (typeof value === 'bigint') return Number(value);
   if (value instanceof IdylliumArray) return value.values().map(snapshotValue);
   if (isRuntimeObject(value)) {
-    return {
-      type: String(value.__idylliumType ?? 'object'),
-      properties: objectPropertiesSnapshot(value),
-    };
+    // Уже встреченный объект второй раз в снимок не разворачиваем: цикл
+    // ссылок отмечается ссылкой на тип, а не бесконечной рекурсией.
+    if (snapshotSeen.has(value)) {
+      return { type: String(value.__idylliumType ?? 'object'), properties: {}, cyclic: true };
+    }
+    snapshotSeen.add(value);
+    try {
+      return {
+        type: String(value.__idylliumType ?? 'object'),
+        properties: objectPropertiesSnapshot(value),
+      };
+    } finally {
+      snapshotSeen.delete(value);
+    }
   }
   return value;
 }
@@ -9309,6 +9511,9 @@ function eventFloat(value: unknown): number {
 }
 
 function runtimeTypeName(value: unknown): string {
+  // Наследник виджета носит виджетный __idylliumType (для рендера и механики),
+  // а СВОЁ имя — в __idylliumClass: его и говорим человеку.
+  if (isRuntimeObject(value) && typeof value.__idylliumClass === 'string') return value.__idylliumClass;
   if (isRuntimeObject(value) && typeof value.__idylliumType === 'string') return value.__idylliumType;
   if (typeof value === 'bigint') return 'int';
   return String(value);
