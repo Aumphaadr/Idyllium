@@ -130,6 +130,55 @@ main() {
 </div>
 
 <div class="docs-section">
+  <h2>Переопределяя, потомок держит слово родителя</h2>
+  <p>
+    Раз через окно родителя вызов идёт по <em>его</em> правилам, потомок обязан
+    эти правила сохранить. Скажем, родитель разрешил звать метод без аргумента,
+    подставив значение по умолчанию:
+  </p>
+
+  <idyl-code-block><script type="text/plain">
+use console;
+
+class Shape {
+    string function describe(string prefix = "фигура: ") {
+        return prefix + "что-то";
+    }
+}
+
+class Circle extends Shape {
+    string function describe(string prefix) {
+        return prefix + "круг";
+    }
+}
+
+main() {
+    Circle circle;
+    Shape s = circle;
+    console.writeln(s.describe());
+}
+</script></idyl-code-block>
+
+  <idyl-error-block>main.idyl:10:30: compile error: parameter 'prefix' of 'Circle.describe' must keep the default value it has in class 'Shape' — that class allows calling 'describe' with 0 arguments</idyl-error-block>
+
+  <p>
+    Компилятор прав: <code>s.describe()</code> — законный вызов по обещанию
+    <code>Shape</code>, но управление ушло бы в тело круга, которому нечего
+    положить в <code>prefix</code>. Раньше такие программы молча печатали
+    <code>undefined</code> — теперь беда ловится до запуска. Верните кругу
+    умолчание (своё, оно не обязано совпадать с родительским) — и всё поедет.
+  </p>
+
+  <p>Остальные обещания родителя — из той же семьи:</p>
+  <ul>
+    <li>типы параметров и тип результата у переопределения те же, что у родителя;</li>
+    <li>публичный метод родителя нельзя сделать в потомке приватным: через окно родителя его всё равно было бы видно;</li>
+    <li><strong>приватный</strong> метод родителя переопределить нельзя вовсе — у объекта одно имя на один метод, и подмена тихо поменяла бы механику родителя под ним самим;</li>
+    <li>имя, занятое <code>event</code> родителя, для метода потомка закрыто.</li>
+  </ul>
+</div>
+
+<div class="docs-section">
   <h2>Зачем это нужно в Idyllium?</h2>
   <p>
     Полиморфизм нужен не только для учебных примеров. Он пригодится в стандартных

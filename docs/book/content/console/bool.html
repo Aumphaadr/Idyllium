@@ -296,7 +296,8 @@ true</idyl-output-block>
     if (not coins > 100) {
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:4:13: compile error: operator 'not' requires 'bool', got 'int'</idyl-error-block>
+      <idyl-error-block>main.idyl:4:13: compile error: operator 'not' requires 'bool', got 'int'
+main.idyl:4:9: compile error: 'not' takes only what stands right after it — write 'not (coins &gt; …)' to negate the whole comparison</idyl-error-block>
 
       <p><code>not</code> схватил <code>coins</code> — а число не переворачивается. Лечение — скобки: <code>not(coins &gt; 100)</code> читается однозначно, «неправда, что монет больше ста». Поэтому в этом курсе мы пишем <code>not</code> со скобками почти всегда: не потому, что так велит язык, а потому, что так видно, что именно отрицается.</p>
       <p>Таблица у <code>not</code> самая короткая — аргумент-то один:</p>

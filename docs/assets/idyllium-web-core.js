@@ -339,6 +339,7 @@ class JavaScriptGenerator {
                 lines.push(`${pad}    ${JSON.stringify(declaration.name)}: ${this.classObjectName(declaration.name)},`);
                 lines.push(`${pad}    ${JSON.stringify(this.exportedClassCreateName(declaration.name))}: ${this.classCreateFactoryName(declaration.name)},`);
                 lines.push(`${pad}    ${JSON.stringify(this.exportedClassDefaultName(declaration.name))}: ${this.classDefaultFactoryName(declaration.name)},`);
+                lines.push(`${pad}    ${JSON.stringify(this.exportedClassInitName(declaration.name))}: ${this.classInitFunctionName(declaration.name)},`);
             }
         }
         lines.push(`${pad}  };`);
@@ -553,12 +554,28 @@ class JavaScriptGenerator {
         // Метка класса — квалифицированная для модульных классов («zoo.Lion»):
         // её читают type_name() и тексты ошибок рантайма.
         const typeTag = this.currentModuleName ? `${this.currentModuleName}.${declaration.name}` : declaration.name;
-        if (declaration.baseName) {
-            lines.push(`${pad}  const self = await ${this.classDefaultFactoryName(declaration.baseName)}();`);
-            lines.push(`${pad}  self.__idylliumType = ${JSON.stringify(typeTag)};`);
+        if (declaration.baseName && declaration.baseName.startsWith('gui.')) {
+            // Наследник виджета: строится НАСТОЯЩИЙ виджет (валидируемые свойства,
+            // сеттеры, хуки событий), __idylliumType остаётся виджетным — по нему
+            // живут рендерер и механика (радиогруппы, Canvas, Table). Имя класса —
+            // отдельная метка, её читают type_name() и тексты ошибок.
+            const widgetName = declaration.baseName.slice(4);
+            lines.push(`${pad}  const __idyl_self = $rt.createObject('gui', ${JSON.stringify(widgetName)});`);
+            lines.push(`${pad}  __idyl_self.__idylliumClass = ${JSON.stringify(typeTag)};`);
+        }
+        else if (declaration.baseName && declaration.baseName.includes('.')) {
+            const dot = declaration.baseName.indexOf('.');
+            const baseModule = declaration.baseName.slice(0, dot);
+            const baseClass = declaration.baseName.slice(dot + 1);
+            lines.push(`${pad}  const __idyl_self = await $rt.modules.${baseModule}[${JSON.stringify(this.exportedClassDefaultName(baseClass))}]();`);
+            lines.push(`${pad}  $rt.tagClassInstance(__idyl_self, ${JSON.stringify(typeTag)});`);
+        }
+        else if (declaration.baseName) {
+            lines.push(`${pad}  const __idyl_self = await ${this.classDefaultFactoryName(declaration.baseName)}();`);
+            lines.push(`${pad}  $rt.tagClassInstance(__idyl_self, ${JSON.stringify(typeTag)});`);
         }
         else {
-            lines.push(`${pad}  const self = { __idylliumType: ${JSON.stringify(typeTag)} };`);
+            lines.push(`${pad}  const __idyl_self = { __idylliumType: ${JSON.stringify(typeTag)} };`);
         }
         for (const member of declaration.members) {
             if (member.kind === 'ClassMethodDeclaration' && !member.isStatic) {
@@ -566,7 +583,7 @@ class JavaScriptGenerator {
             }
             if (member.kind === 'ClassEventDeclaration') {
                 // Событие без подписчика — null: запуск тогда молча ничего не делает.
-                lines.push(`${'  '.repeat(indent + 1)}self.${member.name} = null;`);
+                lines.push(`${'  '.repeat(indent + 1)}__idyl_self.${member.name} = null;`);
             }
         }
         this.classFieldInitializerDepth += 1;
@@ -576,23 +593,34 @@ class JavaScriptGenerator {
             }
         }
         this.classFieldInitializerDepth -= 1;
-        lines.push(`${pad}  return self;`);
+        lines.push(`${pad}  return __idyl_self;`);
         lines.push(`${pad}}`);
         const constructor = declaration.members.find((member) => member.kind === 'ConstructorDeclaration');
-        lines.push(`${pad}async function ${this.classInitFunctionName(declaration.name)}(self, ...__args) {`);
+        lines.push(`${pad}async function ${this.classInitFunctionName(declaration.name)}(__idyl_self, ...__args) {`);
         if (constructor) {
-            if (declaration.baseName) {
+            if (declaration.baseName && declaration.baseName.startsWith('gui.')) {
+                // parent() наследнику виджета не положен — семантика уже отказала.
+            }
+            else if (declaration.baseName && declaration.baseName.includes('.')) {
+                const dot = declaration.baseName.indexOf('.');
+                const baseModule = declaration.baseName.slice(0, dot);
+                const baseClass = declaration.baseName.slice(dot + 1);
                 lines.push(`${pad}  const parent = async (...__parentArgs) => {`);
-                lines.push(`${pad}    await ${this.classInitFunctionName(declaration.baseName)}(self, ...__parentArgs);`);
+                lines.push(`${pad}    await $rt.modules.${baseModule}[${JSON.stringify(this.exportedClassInitName(baseClass))}](__idyl_self, ...__parentArgs);`);
+                lines.push(`${pad}  };`);
+            }
+            else if (declaration.baseName) {
+                lines.push(`${pad}  const parent = async (...__parentArgs) => {`);
+                lines.push(`${pad}    await ${this.classInitFunctionName(declaration.baseName)}(__idyl_self, ...__parentArgs);`);
                 lines.push(`${pad}  };`);
             }
             this.emitConstructorCall(declaration.name, constructor, lines, indent + 1);
         }
         lines.push(`${pad}}`);
         lines.push(`${pad}async function ${this.classCreateFactoryName(declaration.name)}(...__args) {`);
-        lines.push(`${pad}  const self = await ${this.classDefaultFactoryName(declaration.name)}();`);
-        lines.push(`${pad}  await ${this.classInitFunctionName(declaration.name)}(self, ...__args);`);
-        lines.push(`${pad}  return self;`);
+        lines.push(`${pad}  const __idyl_self = await ${this.classDefaultFactoryName(declaration.name)}();`);
+        lines.push(`${pad}  await ${this.classInitFunctionName(declaration.name)}(__idyl_self, ...__args);`);
+        lines.push(`${pad}  return __idyl_self;`);
         lines.push(`${pad}}`);
         for (const member of declaration.members) {
             if (member.kind === 'ClassMethodDeclaration' && member.isStatic) {
@@ -628,7 +656,7 @@ class JavaScriptGenerator {
             const value = field.initializer
                 ? this.valueForType(rawValue, declaration.declaredType, field.initializer.range)
                 : this.castForType(rawValue, declaration.declaredType);
-            lines.push(`${pad}self.${field.name} = ${value};`);
+            lines.push(`${pad}__idyl_self.${field.name} = ${value};`);
         }
     }
     /** Контрактный equals хранится в слоте со своим классом (equals$Cat):
@@ -644,7 +672,7 @@ class JavaScriptGenerator {
         const pad = '  '.repeat(indent);
         const params = declaration.parameters.map((parameter) => parameter.name).join(', ');
         if (this.isContractEqualsDeclaration(className, declaration)) {
-            lines.push(`${pad}self[${JSON.stringify(`equals$${className}`)}] = async function(${params}) {`);
+            lines.push(`${pad}__idyl_self[${JSON.stringify(`equals$${className}`)}] = async function(${params}) {`);
             this.emitCallGuardOpen(lines, indent + 1, `${className}.equals`, declaration.nameRange ?? declaration.range);
             this.returnTypes.push(declaration.returnType);
             this.emitParameterDefaults(declaration.parameters, lines, indent + 2);
@@ -655,7 +683,7 @@ class JavaScriptGenerator {
             lines.push(`${pad}};`);
             return;
         }
-        lines.push(`${pad}self.${declaration.name} = async function(${params}) {`);
+        lines.push(`${pad}__idyl_self.${declaration.name} = async function(${params}) {`);
         this.emitCallGuardOpen(lines, indent + 1, `${className}.${declaration.name}`, declaration.nameRange ?? declaration.range);
         this.returnTypes.push(declaration.returnType);
         this.emitParameterDefaults(declaration.parameters, lines, indent + 2);
@@ -687,7 +715,7 @@ class JavaScriptGenerator {
         this.emitParameterCasts(declaration.parameters, lines, indent + 2);
         this.emitBlock(declaration.body, lines, indent + 2);
         this.emitCallGuardClose(lines, indent + 1);
-        lines.push(`${pad}}).apply(self, __args);`);
+        lines.push(`${pad}}).apply(__idyl_self, __args);`);
     }
     emitAssignment(statement, lines, indent) {
         const pad = '  '.repeat(indent);
@@ -809,11 +837,11 @@ class JavaScriptGenerator {
                 }
                 return JSON.stringify(expression.value);
             case 'IdentifierExpression':
-                // 'this' всегда компилируется в лексический self фабрики/инициализатора
+                // 'this' всегда компилируется в лексический __idyl_self фабрики/инициализатора
                 // класса: метод остаётся привязанным к своему объекту, даже когда его
                 // сохранили как значение (obj.method → колбэк) и вызвали отдельно.
                 if (expression.name === 'this')
-                    return 'self';
+                    return '__idyl_self';
                 if (this.userClassNames.has(expression.name))
                     return this.classObjectName(expression.name);
                 return expression.name;
@@ -1091,6 +1119,9 @@ class JavaScriptGenerator {
     }
     exportedClassDefaultName(className) {
         return `__default_${className}`;
+    }
+    exportedClassInitName(className) {
+        return `__init_${className}`;
     }
     emitParameterCasts(parameters, lines, indent) {
         const pad = '  '.repeat(indent);
@@ -1417,6 +1448,12 @@ class DiagnosticBag {
         this.add('info', range, message, code);
     }
     add(severity, range, message, code) {
+        // Внутренний плейсхолдер испорченного типа наружу не выходит НИКОГДА
+        // (вердикт владельца 2026-08-23). Он появляется только там, где о настоящей
+        // ошибке уже сказано (неизвестное имя, чужой член, неведомый тип), поэтому
+        // такое сообщение — всегда эхо первого, и человеку оно ничего не объясняет.
+        if (message.includes('<error>'))
+            return;
         this.diagnostics.push({ severity, range, message, code });
     }
     hasErrors() {
@@ -1650,7 +1687,12 @@ class Lexer {
         while (this.isIdentifierPart(this.peek())) {
             text += this.advance();
         }
-        const kind = tokens_1.KEYWORDS[text] ?? tokens_1.TokenKind.Identifier;
+        // Только СВОИ ключи таблицы: имена вроде toString/constructor/valueOf
+        // приходят из прототипа Object и раньше выдавались за «ключевые слова»
+        // (метод toString() ронял парсер в каскад с JS-нутром '[native code]').
+        const kind = Object.prototype.hasOwnProperty.call(tokens_1.KEYWORDS, text)
+            ? tokens_1.KEYWORDS[text]
+            : tokens_1.TokenKind.Identifier;
         let literal = null;
         if (kind === tokens_1.TokenKind.KwTrue)
             literal = true;
@@ -1870,8 +1912,18 @@ exports.UserModuleRegistry = void 0;
 exports.qualifiedUserClassName = qualifiedUserClassName;
 class UserModuleRegistry {
     modules = new Map();
+    // Модули, которые не удалось загрузить (цикл импорта, нет файла). О причине
+    // уже сказано в месте use; всё, что из них дальше не нашлось, — эхо, а не
+    // отдельная беда, и говорить «нет такого типа» было бы неправдой.
+    unavailable = new Set();
     register(module) {
         this.modules.set(module.name, module);
+    }
+    markUnavailable(name) {
+        this.unavailable.add(name);
+    }
+    isUnavailable(name) {
+        return this.unavailable.has(name);
     }
     hasModule(name) {
         return this.modules.has(name);
@@ -1928,6 +1980,28 @@ class Parser {
             }
             if (this.check(tokens_1.TokenKind.KwConst)) {
                 topLevelDeclarations.push(this.parseVariableDeclaration());
+                continue;
+            }
+            // 'function greet(...) { ... }' без типа результата: раньше отсюда
+            // сыпался каскад из девяти сообщений, ни одно из которых не называло
+            // причину. Говорим один раз и разбираем функцию как void — остальной
+            // файл при этом цел (тот же жанр, что и для методов класса).
+            if (this.check(tokens_1.TokenKind.KwFunction)) {
+                const functionToken = this.peek();
+                const name = this.tokens[this.current + 1];
+                this.error(functionToken.range, name && name.kind === tokens_1.TokenKind.Identifier
+                    ? `function '${name.lexeme}' needs a result type before 'function' — write 'void function ${name.lexeme}()' if it returns nothing`
+                    : "a function needs a result type before 'function' — write 'void function' if it returns nothing");
+                this.advance();
+                const recovered = this.finishFunctionDeclaration({ kind: 'PrimitiveTypeName', name: 'void', range: functionToken.range });
+                if (recovered.name === 'main') {
+                    if (main !== null)
+                        this.error(recovered.range, "entry point 'main' is already declared");
+                    main = this.mainFromFunctionDeclaration(recovered);
+                }
+                else {
+                    topLevelDeclarations.push(recovered);
+                }
                 continue;
             }
             if (this.checkTypeStart()) {
@@ -2142,6 +2216,12 @@ class Parser {
             const base = this.consume(tokens_1.TokenKind.Identifier, 'expected base class name after extends');
             baseName = base.lexeme;
             baseNameRange = base.range;
+            // База с точкой: класс модуля (zoo.Lion) или виджет (gui.Button).
+            if (this.match(tokens_1.TokenKind.Dot)) {
+                const member = this.consume(tokens_1.TokenKind.Identifier, "expected class name after '.'");
+                baseName = `${baseName}.${member.lexeme}`;
+                baseNameRange = { start: base.range.start, end: member.range.end };
+            }
         }
         const leftBrace = this.consume(tokens_1.TokenKind.LeftBrace, "expected '{' to start class body");
         const members = [];
@@ -2213,6 +2293,19 @@ class Parser {
                 else {
                     members.push(this.finishClassFieldDeclaration(declaredType, currentAccess, isStatic));
                 }
+                continue;
+            }
+            // 'function hit() { ... }' без типа результата: раньше отсюда сыпался
+            // каскад «unexpected token» на каждую скобку. Говорим один раз и по делу,
+            // после чего разбираем метод как void — остальное тело класса цело.
+            if (this.check(tokens_1.TokenKind.KwFunction)) {
+                const functionToken = this.peek();
+                const name = this.tokens[this.current + 1];
+                this.error(functionToken.range, name && name.kind === tokens_1.TokenKind.Identifier
+                    ? `method '${name.lexeme}' needs a result type before 'function' — write 'void function ${name.lexeme}()' if it returns nothing`
+                    : "a method needs a result type before 'function' — write 'void function' if it returns nothing");
+                this.advance();
+                members.push(this.finishClassMethodDeclaration({ kind: 'PrimitiveTypeName', name: 'void', range: functionToken.range }, isStatic, currentAccess));
                 continue;
             }
             this.error(this.peek().range, `unexpected token ${(0, tokens_1.tokenDisplay)(this.peek().kind)} in class body`);
@@ -2812,12 +2905,14 @@ class Parser {
             const elementType = this.parseTypeName();
             let size = null;
             let sizeName = null;
+            let sizeExpression = null;
             let sizeRange = null;
             if (dynamic) {
                 this.consume(tokens_1.TokenKind.Greater, "expected '>' after dyn_array element type");
             }
             else {
                 this.consume(tokens_1.TokenKind.Comma, "expected ',' after array element type");
+                const sizeStart = this.current;
                 if (this.check(tokens_1.TokenKind.Identifier)) {
                     // Размер именованной константой: array<int, L> — или классовой,
                     // через точку: array<int, Hero.MAX_LEVEL>.
@@ -2834,6 +2929,17 @@ class Parser {
                     const sizeToken = this.consume(tokens_1.TokenKind.IntLiteral, 'expected array size (an integer or a named constant)');
                     size = typeof sizeToken.literal === 'number' ? sizeToken.literal : 0;
                 }
+                // Размер-выражение: array<int, SIZE*SIZE>. Одиночное имя или число уже
+                // разобраны выше — если сразу за ними стоит не '>', значит это часть
+                // выражения; перечитываем размер целиком. Уровень parseTerm ('+ - * /')
+                // взят намеренно: разбор сравнений съел бы закрывающее '>'.
+                if (!this.check(tokens_1.TokenKind.Greater)) {
+                    this.current = sizeStart;
+                    size = null;
+                    sizeName = null;
+                    sizeExpression = this.parseTerm();
+                    sizeRange = sizeExpression.range;
+                }
                 this.consume(tokens_1.TokenKind.Greater, "expected '>' after array size");
             }
             return {
@@ -2841,6 +2947,7 @@ class Parser {
                 elementType,
                 size,
                 sizeName,
+                sizeExpression,
                 sizeRange,
                 dynamic,
                 range: { start: start.range.start, end: this.previous().range.end },
@@ -3098,7 +3205,11 @@ function addDiagnostics(target, source) {
         target.add(diagnostic.severity, diagnostic.range, diagnostic.message, diagnostic.code);
     }
 }
-function loadUserModules(root, rootFile, options, stdlib, diagnostics, output) {
+function loadUserModules(root, rootFile, options, stdlib, diagnostics, output, 
+// Сюда падают модули, которые загрузить не удалось (цикл импорта, нет файла).
+// Реестр потом их помечает, чтобы не рождать эхо «нет такого типа» — тип-то
+// есть, беда была одна и о ней уже сказано (жанр O38).
+unavailable) {
     const loaded = new Map();
     const loading = [];
     const loadImports = (program, fromFile) => {
@@ -3116,11 +3227,13 @@ function loadUserModules(root, rootFile, options, stdlib, diagnostics, output) {
         if (cycleStart >= 0) {
             const cycle = [...loading.slice(cycleStart), moduleName].join(' -> ');
             diagnostics.error(range, `module import cycle detected: ${cycle}`);
+            unavailable?.add(moduleName);
             return;
         }
         const resolved = resolveUserModule(moduleName, fromFile, options);
         if (!resolved) {
             diagnostics.error(range, `module '${moduleName}' was not found`);
+            unavailable?.add(moduleName);
             return;
         }
         loading.push(moduleName);
@@ -3153,11 +3266,13 @@ function resolveUserModule(moduleName, fromFile, options) {
         return null;
     return { file, source: fs.readFileSync(file, 'utf8') };
 }
-function buildUserModuleRegistry(modules, stdlib, diagnostics) {
+function buildUserModuleRegistry(modules, stdlib, diagnostics, unavailable) {
     const userModuleRegistry = new modules_1.UserModuleRegistry();
     for (const module of modules) {
         userModuleRegistry.register(collectModuleExports(module, stdlib, userModuleRegistry, diagnostics));
     }
+    for (const name of unavailable ?? [])
+        userModuleRegistry.markUnavailable(name);
     return userModuleRegistry;
 }
 function collectModuleExports(module, stdlib, userModules, diagnostics) {
@@ -3335,7 +3450,11 @@ function classSpecFromDeclaration(declaration, moduleName, program, localClasses
     return {
         name: declaration.name,
         qualifiedName,
-        baseName: declaration.baseName ? (0, modules_1.qualifiedUserClassName)(moduleName, declaration.baseName) : null,
+        // База уже квалифицирована ('gui.Button', 'other.Lion') — своим модулем её
+        // дополнять нельзя, иначе наружу уезжает мусорное 'widgets.gui.Button'.
+        baseName: declaration.baseName
+            ? (declaration.baseName.includes('.') ? declaration.baseName : (0, modules_1.qualifiedUserClassName)(moduleName, declaration.baseName))
+            : null,
         fields,
         methods,
         events,
@@ -3371,6 +3490,10 @@ function resolveModuleExportType(typeName, moduleName, program, localClasses, st
     const importedClass = importedModule?.classes.get(typeName.name);
     if (importedClass)
         return (0, types_1.classType)(importedClass.qualifiedName);
+    // Модуль не собрался (цикл импорта, нет файла) — о причине уже сказано там,
+    // где стоит use. Второе сообщение уверяло бы, что типа нет, а он есть.
+    if (!importedModule)
+        return types_1.ERROR_TYPE;
     diagnostics.error(typeName.range, `module '${typeName.moduleName}' has no type '${typeName.name}'`);
     return types_1.ERROR_TYPE;
 }
@@ -3414,6 +3537,30 @@ exports.IDYLLIUM_SEMANTIC_TOKEN_TYPES = [
 exports.IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS = [
     'declaration', 'readonly', 'static', 'defaultLibrary',
 ];
+/** Виджеты, от которых можно наследовать свой класс (вердикт владельца
+ *  2026-08-22). Window/Canvas/Timer/диалоги живут в state-списках рантайма
+ *  своей жизнью — им наследники не положены. */
+const EXTENDABLE_WIDGETS = new Set([
+    'Button', 'Label', 'Frame', 'CheckBox', 'RadioButton', 'LineEdit',
+    'TextEdit', 'ProgressBar', 'Slider', 'SpinBox', 'ComboBox', 'ImageBox',
+]);
+/** Библиотечные типы, у которых текстовый вид есть, но реестр о нём молчит:
+ *  рантайм вешает to_string прямо на объект (runtime.ts), а colors.Color
+ *  печатается своим кодом (#010203 — класс IdylliumColor). Список сверяется
+ *  с рантаймом смоуком «printable library types match the runtime» — если в
+ *  библиотеке появится новый тип с to_string, тест назовёт его.
+ *  Остальные объекты библиотеки печати не подлежат: раньше в консоль уезжало
+ *  JS-нутро '[object Object]'. Ячейки types.* и типы с to_string в реестре
+ *  (time.stamp, json/sqlite.Value) разрешены своими признаками. */
+const PRINTABLE_LIBRARY_OBJECTS = new Set([
+    'colors.Color',
+    'turtle.Turtle',
+    'image.Vector',
+    'gui.Canvas', 'gui.Table', 'gui.BarChart', 'gui.LineChart', 'gui.PieChart',
+    'channel.Post',
+    'web.Server', 'web.Request', 'web.Response',
+    'http.Response',
+]);
 class SemanticAnalyzer {
     stdlib;
     userModuleRegistry;
@@ -3421,6 +3568,7 @@ class SemanticAnalyzer {
     semanticTokens = [];
     nodeTypes = new Map();
     imports = new Set();
+    moduleInheritanceDone = new Set();
     userModules = new Set();
     scopes = [new Map()];
     functions = new Map();
@@ -3572,6 +3720,53 @@ class SemanticAnalyzer {
                 membersRegistering: false,
             });
         }
+        // Второй проход: наследство внутри модуля. Зеркало несёт только СВОИ члены
+        // класса, а снаружи потомок обязан выглядеть ровно так же, как внутри
+        // модуля — иначе публичные поля/методы базы «пропадают», а виджет-наследник
+        // перестаёт быть виджетом (add_child отказывал). Проход по модулю —
+        // ровно один раз: он умеет звать себя для чужих модулей.
+        if (this.moduleInheritanceDone.has(moduleName))
+            return;
+        this.moduleInheritanceDone.add(moduleName);
+        for (const classSpec of module.classes.values()) {
+            if (!classSpec.baseName)
+                continue;
+            const info = this.classes.get(classSpec.qualifiedName);
+            if (!info || info.declaration.members.length > 0)
+                continue;
+            this.inheritImportedModuleClass(info, classSpec.baseName, new Set([classSpec.qualifiedName]));
+        }
+    }
+    // Тянет члены базы в зеркало импортированного класса: база может быть другим
+    // классом модуля (рекурсивно — дед тоже), классом иного модуля или виджетом.
+    inheritImportedModuleClass(info, baseName, guard) {
+        if (guard.has(baseName))
+            return;
+        guard.add(baseName);
+        if (baseName.startsWith('gui.')) {
+            const widgetName = baseName.slice(4);
+            if (EXTENDABLE_WIDGETS.has(widgetName))
+                info.builtinBase = (0, types_1.qualified)('gui', widgetName);
+            return;
+        }
+        // База из ЧУЖОГО модуля — подтягиваем его зеркало. Свой модуль повторно не
+        // трогаем: несуществующая база внутри модуля так роняла компилятор в
+        // бесконечную рекурсию (улов ломателей).
+        const dot = baseName.indexOf('.');
+        const baseModuleName = dot > 0 ? baseName.slice(0, dot) : '';
+        if (baseModuleName !== '' && !this.classes.has(baseName)) {
+            this.registerImportedModuleClasses(baseModuleName);
+        }
+        const baseInfo = this.classes.get(baseName);
+        if (!baseInfo)
+            return;
+        const baseSpecName = baseInfo.declaration.baseName;
+        if (baseSpecName && !baseInfo.builtinBase) {
+            this.inheritImportedModuleClass(baseInfo, baseSpecName, guard);
+        }
+        this.inheritClassMembers(info, baseInfo);
+        if (baseInfo.builtinBase)
+            info.builtinBase = baseInfo.builtinBase;
     }
     registerFunction(declaration) {
         this.markSemanticToken('function', declaration.nameRange, ['declaration']);
@@ -3635,6 +3830,8 @@ class SemanticAnalyzer {
         if (declaration.baseNameRange) {
             this.markSemanticToken('class', declaration.baseNameRange);
         }
+        if (this.refuseInternalName(declaration.name, 'class', declaration.range))
+            return;
         if (this.classes.has(declaration.name)) {
             this.diagnostics.error(declaration.range, `class '${declaration.name}' is already declared`);
             return;
@@ -3679,12 +3876,40 @@ class SemanticAnalyzer {
         info.membersRegistering = true;
         if (declaration.baseName) {
             const baseInfo = this.classes.get(declaration.baseName);
-            if (!baseInfo) {
-                this.diagnostics.error(declaration.range, `unknown base class '${declaration.baseName}'`);
-            }
-            else {
+            if (baseInfo) {
                 this.registerClassMembers(baseInfo.declaration);
                 this.inheritClassMembers(info, baseInfo);
+            }
+            else if (declaration.baseName.startsWith('gui.')) {
+                const widgetName = declaration.baseName.slice(4);
+                if (!this.imports.has('gui')) {
+                    // Виджетная база — такое же обращение к модулю, как 'gui.Button b;'.
+                    this.diagnostics.error(declaration.baseNameRange ?? declaration.range, "'gui' is not imported (use 'use gui;')");
+                }
+                else if (EXTENDABLE_WIDGETS.has(widgetName)) {
+                    info.builtinBase = (0, types_1.qualified)('gui', widgetName);
+                }
+                else {
+                    this.diagnostics.error(declaration.baseNameRange ?? declaration.range, `'${declaration.baseName}' cannot be extended — only ordinary widgets can: ${[...EXTENDABLE_WIDGETS].map((name) => `gui.${name}`).join(', ')}`);
+                }
+            }
+            else if (declaration.baseName.includes('.')) {
+                const dot = declaration.baseName.indexOf('.');
+                const moduleName = declaration.baseName.slice(0, dot);
+                if (this.stdlib.getModule(moduleName)) {
+                    this.diagnostics.error(declaration.baseNameRange ?? declaration.range, `'${declaration.baseName}' cannot be extended — only gui widgets and your own classes can be base classes`);
+                }
+                else if (!this.imports.has(moduleName)) {
+                    // Тот же ответ, что и на 'zoo.Lion l;' без use: забытый импорт
+                    // называется забытым импортом, а не «неизвестной базой».
+                    this.diagnostics.error(declaration.baseNameRange ?? declaration.range, `'${moduleName}' is not imported (use 'use ${moduleName};')`);
+                }
+                else {
+                    this.diagnostics.error(declaration.range, `unknown base class '${declaration.baseName}'`);
+                }
+            }
+            else {
+                this.diagnostics.error(declaration.range, `unknown base class '${declaration.baseName}'`);
             }
         }
         for (const member of declaration.members) {
@@ -3777,8 +4002,14 @@ class SemanticAnalyzer {
             }
         }
     }
+    // ВАЖНО о порядке: у локальных классов наследство приезжает ДО собственных
+    // членов, а у зеркала импортированного модуля — ПОСЛЕ. Поэтому своё чужим не
+    // перекрываем: иначе переопределение уезжало бы наружу с сигнатурой и
+    // доступом базы (улов ломателей — 'undefined' в выводе и дыра в private).
     inheritClassMembers(info, baseInfo) {
         for (const [name, field] of baseInfo.fields) {
+            if (info.ownFields.has(name))
+                continue;
             info.fields.set(name, field);
             // «Пустое поле» наследуется вместе с охраной: карта для кодогена
             // пополняется и под именем потомка — иначе доступ через окно наследника
@@ -3793,6 +4024,8 @@ class SemanticAnalyzer {
             }
         }
         for (const [name, method] of baseInfo.methods) {
+            if (info.ownMethods.has(name))
+                continue;
             info.methods.set(name, method);
             const declaration = baseInfo.methodDeclarations.get(name);
             if (declaration)
@@ -3802,6 +4035,8 @@ class SemanticAnalyzer {
                 info.methodAccess.set(name, access);
         }
         for (const [name, event] of baseInfo.events) {
+            if (info.ownEvents.has(name))
+                continue;
             info.events.set(name, event);
             const access = baseInfo.eventAccess.get(name);
             if (access)
@@ -3824,8 +4059,15 @@ class SemanticAnalyzer {
         }
         for (const field of declaration.fields) {
             this.markSemanticToken('property', field.nameRange, ['declaration']);
+            if (this.refuseInternalName(field.name, 'field', field.range))
+                continue;
             if (info.fields.has(field.name) || info.methods.has(field.name)) {
                 this.diagnostics.error(field.range, `class '${info.declaration.name}' already has member '${field.name}'`);
+                continue;
+            }
+            const fieldClash = this.widgetMemberClash(info, field.name);
+            if (fieldClash) {
+                this.diagnostics.error(field.range, `'${field.name}' is already a member of ${(0, types_1.typeToString)(fieldClash)} — pick another name`);
                 continue;
             }
             // «Пустое поле»: объектное поле с явным `= null` — единственная форма,
@@ -3860,12 +4102,37 @@ class SemanticAnalyzer {
     }
     registerClassMethod(info, declaration) {
         this.markSemanticToken('method', declaration.nameRange, declaration.isStatic ? ['declaration', 'static'] : ['declaration']);
+        if (this.refuseInternalName(declaration.name, 'method', declaration.range))
+            return;
         const inheritedField = info.fields.get(declaration.name);
         if (inheritedField && inheritedField.owner !== info.declaration.name) {
             this.diagnostics.error(declaration.range, `method '${declaration.name}' conflicts with inherited field '${inheritedField.owner}.${declaration.name}'`);
             return;
         }
+        // Событие базы и метод потомка — одно имя на двоих: раньше метод молча
+        // занимал место события, и запуск события уходил в чужое тело.
+        const inheritedEvent = info.events.get(declaration.name);
+        if (inheritedEvent && !info.ownEvents.has(declaration.name)) {
+            const owner = info.eventAccess.get(declaration.name)?.owner ?? info.declaration.name;
+            this.diagnostics.error(declaration.range, `method '${declaration.name}' conflicts with inherited event '${owner}.${declaration.name}'`);
+            return;
+        }
         const inheritedMethod = info.methods.get(declaration.name);
+        const inheritedAccess = info.methodAccess.get(declaration.name);
+        if (inheritedMethod && inheritedAccess && inheritedAccess.owner !== info.declaration.name) {
+            // Приватный метод — внутреннее дело своего класса: подменять его снаружи
+            // нельзя (иначе механика базы молча меняется под ней самой).
+            if (inheritedAccess.access === 'private') {
+                this.diagnostics.error(declaration.range, `method '${declaration.name}' is private in class '${inheritedAccess.owner}' and cannot be overridden — pick another name`);
+                return;
+            }
+            // Потомок не смеет прятать то, что база обещала всем: через переменную
+            // базового типа такой «приватный» метод всё равно звался бы снаружи.
+            if (declaration.access === 'private') {
+                this.diagnostics.error(declaration.range, `method '${info.declaration.name}.${declaration.name}' cannot be private — it overrides a public method of class '${inheritedAccess.owner}'`);
+                return;
+            }
+        }
         if (inheritedMethod && !this.methodSignatureCanOverride(inheritedMethod, declaration)) {
             // Контрактное исключение: методы-контракты не наследуются, у каждого
             // класса — своя версия со СВОИМ типом параметра (equals(Cat) при
@@ -3875,8 +4142,28 @@ class SemanticAnalyzer {
                 return;
             }
         }
+        // Умолчания параметров принадлежат обещанию базы: если база разрешала звать
+        // метод без аргумента, потомок обязан это разрешение сохранить — иначе вызов
+        // через переменную базового типа отдавал в тело потомка пустоту. Спрашиваем
+        // ПОСЛЕ сверки сигнатур: у метода с другим числом или типом параметров речь
+        // не об умолчаниях, и говорить про «умолчание, которое есть в базе» было бы
+        // враньём — такого параметра там нет вовсе (O39, находка методистов).
+        if (inheritedMethod && inheritedAccess && inheritedAccess.owner !== info.declaration.name) {
+            const required = requiredParameterCount(declaration.parameters);
+            const baseRequired = inheritedMethod.minArguments ?? inheritedMethod.parameters.length;
+            if (required > baseRequired) {
+                const parameter = declaration.parameters[baseRequired];
+                this.diagnostics.error(parameter?.range ?? declaration.range, `parameter '${parameter?.name ?? ''}' of '${info.declaration.name}.${declaration.name}' must keep the default value it has in class '${inheritedAccess.owner}' — that class allows calling '${declaration.name}' with ${baseRequired} argument${baseRequired === 1 ? '' : 's'}`);
+                return;
+            }
+        }
         if ((info.fields.has(declaration.name) && info.ownFields.has(declaration.name)) || (info.methods.has(declaration.name) && info.ownMethods.has(declaration.name))) {
             this.diagnostics.error(declaration.range, `class '${info.declaration.name}' already has member '${declaration.name}'`);
+            return;
+        }
+        const methodClash = this.widgetMemberClash(info, declaration.name);
+        if (methodClash) {
+            this.diagnostics.error(declaration.range, `'${declaration.name}' is already a member of ${(0, types_1.typeToString)(methodClash)} — pick another name`);
             return;
         }
         const parameters = declaration.parameters.map((parameter) => this.resolveTypeName(parameter.paramType));
@@ -3904,6 +4191,26 @@ class SemanticAnalyzer {
                 this.equalsContractClasses.add(info.declaration.name);
             }
         }
+    }
+    /** Объявлен ли публичный контракт equals В САМОМ классе — по имени, в том
+     *  числе точечному ('zoo.Lion'). Реестр коротких имён заполняется лениво,
+     *  поэтому модульные классы смотрим прямо в спецификации модуля: иначе
+     *  страж «контракт не наследуется» молчал через границу модуля и ученик
+     *  получал рантайм-«object has no method 'equals'» (улов ломателей). */
+    classDeclaresEqualsContract(className) {
+        const dot = className.indexOf('.');
+        if (dot > 0) {
+            const moduleName = className.slice(0, dot);
+            const bareName = className.slice(dot + 1);
+            const classSpec = this.userModuleRegistry.getModule(moduleName)?.classes.get(bareName);
+            const method = classSpec?.methods.find((item) => item.name === 'equals');
+            return method !== undefined
+                && !method.isStatic
+                && method.access === 'public'
+                && method.spec.parameters.length === 1
+                && (0, types_1.sameType)(method.spec.returnType, types_1.BOOL);
+        }
+        return this.equalsContractClasses.has(className);
     }
     /** Форма контракта equals: нестатический, ровно один параметр СВОЕГО класса, возвращает bool. */
     isEqualsContractShape(info, declaration) {
@@ -3994,6 +4301,8 @@ class SemanticAnalyzer {
     }
     registerClassEvent(info, declaration) {
         this.markSemanticToken('property', declaration.nameRange, ['declaration']);
+        if (this.refuseInternalName(declaration.name, 'event', declaration.range))
+            return;
         if (info.fields.has(declaration.name) || info.methods.has(declaration.name) || info.events.has(declaration.name)) {
             const inherited = !info.ownFields.has(declaration.name)
                 && !info.ownMethods.has(declaration.name)
@@ -4001,6 +4310,13 @@ class SemanticAnalyzer {
             this.diagnostics.error(declaration.range, inherited
                 ? `event '${declaration.name}' conflicts with an inherited member`
                 : `class '${info.declaration.name}' already has member '${declaration.name}'`);
+            return;
+        }
+        // Событие тоже занимает имя: 'event on_click' у наследника кнопки подменял
+        // контракт клика, 'event text' — уничтожал свойство.
+        const eventClash = this.widgetMemberClash(info, declaration.name);
+        if (eventClash) {
+            this.diagnostics.error(declaration.range, `'${declaration.name}' is already a member of ${(0, types_1.typeToString)(eventClash)} — pick another name`);
             return;
         }
         const parameters = declaration.parameters.map((parameter) => this.resolveTypeName(parameter.paramType));
@@ -4148,17 +4464,35 @@ class SemanticAnalyzer {
     }
     analyzeClassConstructor(info, declaration) {
         this.returnTypes.push(types_1.VOID);
-        this.pushClassContext(info.declaration.name, false);
+        this.pushClassContext(info.declaration.name, false, true);
         this.pushScope();
         this.declare('this', (0, types_1.classType)(info.declaration.name), 'parameter', declaration.range);
-        if (info.declaration.baseName) {
+        if (info.builtinBase) {
+            // У виджета нет конструктора — parent() наследнику не положен.
+            for (const call of this.findParentCalls(declaration.body)) {
+                this.diagnostics.error(call.range, `${(0, types_1.typeToString)(info.builtinBase)} has no constructor — configure the widget's properties instead of calling parent()`);
+            }
+        }
+        else if (info.declaration.baseName) {
             const baseInfo = this.classes.get(info.declaration.baseName);
-            const baseConstructor = baseInfo?.constructorSpec ?? {
-                name: 'parent',
-                parameters: [],
-                returnType: types_1.VOID,
-            };
-            this.declare('parent', (0, types_1.functionType)(baseConstructor.parameters.map((parameter) => parameter.type), types_1.VOID, baseConstructor.minArguments), 'function', declaration.range);
+            // База не нашлась — про неё уже сказано («unknown base class»); parent()
+            // тогда не объявляем вовсе, а его вызов молчит (см. вызовной путь):
+            // фантом «'parent' expects 0 arguments» только уводил бы в сторону.
+            if (baseInfo) {
+                // Приватный конструктор базы закрыт и для потомка: наследование — не
+                // лазейка мимо 'private'.
+                if (baseInfo.constructorAccess === 'private') {
+                    for (const call of this.findParentCalls(declaration.body)) {
+                        this.diagnostics.error(call.range, `constructor '${info.declaration.baseName}' is private and can only be used inside class '${baseInfo.constructorOwner}'`);
+                    }
+                }
+                const baseConstructor = baseInfo.constructorSpec ?? {
+                    name: 'parent',
+                    parameters: [],
+                    returnType: types_1.VOID,
+                };
+                this.declare('parent', (0, types_1.functionType)(baseConstructor.parameters.map((parameter) => parameter.type), types_1.VOID, baseConstructor.minArguments), 'function', declaration.range);
+            }
         }
         this.analyzeParameters(declaration.parameters);
         this.analyzeStatement(declaration.body);
@@ -4487,6 +4821,27 @@ class SemanticAnalyzer {
             if ((0, types_1.sameType)(elementType, types_1.VOID)) {
                 this.diagnostics.error(typeName.elementType.range, "array element type cannot be 'void'");
             }
+            // Размер-выражение: array<int, SIZE*SIZE>. Считаем на компиляции тем же
+            // фолдером, что и одиночные константы; если посчитать нельзя — говорим
+            // прямо, что именно требуется, вместо каскада про '>'.
+            // Точная жалоба на размер уже сказана? Тогда общая («must be a
+            // non-negative integer») — эхо, и человеку она ничего не добавляет.
+            let sizeReported = false;
+            if (!typeName.dynamic && typeName.sizeExpression !== null && typeName.size === null) {
+                const sizeRange = typeName.sizeRange ?? typeName.range;
+                const folded = this.foldConstInt(typeName.sizeExpression);
+                sizeReported = true;
+                if (folded === null) {
+                    this.diagnostics.error(sizeRange, "array size must be known before the program runs: write a number, a constant declared with 'const', or their sum, difference or product");
+                }
+                else if (folded < 0) {
+                    this.diagnostics.error(sizeRange, `array size must be non-negative, got ${folded}`);
+                }
+                else {
+                    typeName.size = folded;
+                    sizeReported = false;
+                }
+            }
             if (!typeName.dynamic && typeName.sizeName !== null && typeName.size === null) {
                 // Размер задан именованной константой: array<int, L> — либо
                 // классовой, через точку: array<int, Hero.MAX_LEVEL>.
@@ -4501,19 +4856,23 @@ class SemanticAnalyzer {
                     const field = classInfo?.fields.get(constantName);
                     if (classInfo && field) {
                         if (!field.isConst) {
+                            sizeReported = true;
                             this.diagnostics.error(sizeRange, `array size '${typeName.sizeName}' is not a constant — only a class constant (const) works as a size`);
                             return (0, types_1.arrayType)(elementType, null, false);
                         }
                         if (!(0, types_1.sameType)(field.type, types_1.INT)) {
+                            sizeReported = true;
                             this.diagnostics.error(sizeRange, `array size constant '${typeName.sizeName}' must be an int constant, got '${(0, types_1.typeToString)(field.type)}'`);
                             return (0, types_1.arrayType)(elementType, null, false);
                         }
                         if (field.constantValue === undefined) {
+                            sizeReported = true;
                             this.diagnostics.error(sizeRange, `array size constant '${typeName.sizeName}' must be initialized with a constant expression`);
                             return (0, types_1.arrayType)(elementType, null, false);
                         }
                     }
                     else if (classInfo) {
+                        sizeReported = true;
                         this.diagnostics.error(sizeRange, `class '${className}' has no constant '${constantName}'`);
                         return (0, types_1.arrayType)(elementType, null, false);
                     }
@@ -4524,14 +4883,17 @@ class SemanticAnalyzer {
                     value = symbol?.constantValue ?? this.fileConstants.get(typeName.sizeName);
                 }
                 if (value === undefined) {
+                    sizeReported = true;
                     if (symbol) {
                         this.diagnostics.error(sizeRange, `array size '${typeName.sizeName}' must be an integer constant declared with 'const'`);
                     }
                     else {
+                        sizeReported = true;
                         this.diagnostics.error(sizeRange, `array size constant '${typeName.sizeName}' was not declared`);
                     }
                 }
                 else if (value < 0) {
+                    sizeReported = true;
                     this.diagnostics.error(sizeRange, `array size constant '${typeName.sizeName}' must be non-negative, got ${value}`);
                 }
                 else {
@@ -4540,7 +4902,7 @@ class SemanticAnalyzer {
                     typeName.size = value;
                 }
             }
-            if (!typeName.dynamic && (typeName.size === null || typeName.size < 0)) {
+            if (!sizeReported && !typeName.dynamic && (typeName.size === null || typeName.size < 0)) {
                 this.diagnostics.error(typeName.range, 'array size must be a non-negative integer');
             }
             // Предел создаваемого массива (см. assertCreatableArraySize в рантайме):
@@ -4591,7 +4953,11 @@ class SemanticAnalyzer {
             }
             const classSpec = module.classes.get(typeName.name);
             if (!classSpec) {
-                this.diagnostics.error(typeName.range, `module '${typeName.moduleName}' has no type '${typeName.name}'`);
+                // Модуль не загрузился (цикл импорта, нет файла) — причина уже названа
+                // в месте use; «нет такого типа» было бы враньём: тип там есть.
+                if (!this.userModuleRegistry.isUnavailable(typeName.moduleName)) {
+                    this.diagnostics.error(typeName.range, `module '${typeName.moduleName}' has no type '${typeName.name}'`);
+                }
                 return types_1.ERROR_TYPE;
             }
             return (0, types_1.classType)(classSpec.qualifiedName);
@@ -4744,6 +5110,15 @@ class SemanticAnalyzer {
                 }
                 const field = this.getClassField(objectType.name, target.name);
                 if (!field) {
+                    const builtinBase = this.builtinBaseOf(objectType.name);
+                    const property = builtinBase ? this.stdlib.getTypeProperty(builtinBase, target.name) : undefined;
+                    if (property) {
+                        this.markSemanticToken('property', target.nameRange, ['defaultLibrary']);
+                        if (property.readonly) {
+                            this.diagnostics.error(target.range, `property '${target.name}' is read-only`);
+                        }
+                        return { type: property.type, property };
+                    }
                     this.diagnostics.error(target.range, `type '${(0, types_1.typeToString)(objectType)}' has no field '${target.name}'`);
                     return { type: types_1.ERROR_TYPE };
                 }
@@ -5254,6 +5629,26 @@ class SemanticAnalyzer {
                     minArguments: symbol.type.minArguments,
                 };
             }
+            // parent(): вместо общего «функция не объявлена» — что именно не так.
+            const contextClass = this.currentClassName();
+            const contextInfo = contextClass !== null ? this.classes.get(contextClass) : undefined;
+            if (callee.name === 'parent' && contextInfo) {
+                if (contextInfo.builtinBase) {
+                    // В конструкторе про это уже сказано целевым текстом (banParent).
+                    if (!this.currentClassContext()?.inConstructor) {
+                        this.diagnostics.error(callee.range, `${(0, types_1.typeToString)(contextInfo.builtinBase)} has no constructor — configure the widget's properties instead of calling parent()`);
+                    }
+                    return null;
+                }
+                const baseName = contextInfo.declaration.baseName;
+                // База не нашлась — про неё уже сказано («unknown base class»).
+                if (baseName && !this.classes.has(baseName))
+                    return null;
+                this.diagnostics.error(callee.range, baseName
+                    ? `parent() runs the constructor of the base class and can only be called in the constructor of class '${contextClass}'`
+                    : `class '${contextClass}' has no base class — parent() needs 'extends'`);
+                return null;
+            }
             this.diagnostics.error(callee.range, this.notDeclaredMessage(callee.name, 'function '));
             return null;
         }
@@ -5424,8 +5819,8 @@ class SemanticAnalyzer {
                     // «object has no method 'equals'» (E17, находка методистов).
                     if (callee.name === 'equals'
                         && method.access.owner !== objectType.name
-                        && this.equalsContractClasses.has(method.access.owner)
-                        && !this.equalsContractClasses.has(objectType.name)) {
+                        && this.classDeclaresEqualsContract(method.access.owner)
+                        && !this.classDeclaresEqualsContract(objectType.name)) {
                         this.diagnostics.error(callee.range, `'equals' is a contract and is not inherited — declare 'bool function equals(${objectType.name} other)' in class '${objectType.name}' and the call will use it`);
                         return null;
                     }
@@ -5437,7 +5832,18 @@ class SemanticAnalyzer {
                     this.diagnostics.error(callee.range, `static method '${staticMethod.access.owner}.${staticMethod.access.name}' must be called on class '${staticMethod.access.owner}'`);
                     return null;
                 }
-                this.diagnostics.error(callee.range, `type '${(0, types_1.typeToString)(objectType)}' has no method '${callee.name}'`);
+                const builtinBase = this.builtinBaseOf(objectType.name);
+                if (builtinBase) {
+                    const widgetMethod = this.stdlib.getTypeMethod(builtinBase, callee.name);
+                    if (widgetMethod) {
+                        this.markSemanticToken('method', callee.nameRange, ['defaultLibrary']);
+                        return widgetMethod;
+                    }
+                }
+                const unimportedMethodOwner = this.unimportedOwnerModule(objectType);
+                this.diagnostics.error(callee.range, unimportedMethodOwner !== null
+                    ? `'${unimportedMethodOwner}' is not imported (use 'use ${unimportedMethodOwner};')`
+                    : `type '${(0, types_1.typeToString)(objectType)}' has no method '${callee.name}'`);
                 return null;
             }
             const method = this.stdlib.getTypeMethod(objectType, callee.name);
@@ -5445,7 +5851,10 @@ class SemanticAnalyzer {
                 this.markSemanticToken('method', callee.nameRange, ['defaultLibrary']);
                 return method;
             }
-            this.diagnostics.error(callee.range, `type '${(0, types_1.typeToString)(objectType)}' has no method '${callee.name}'`);
+            const unimportedCalleeOwner = this.unimportedOwnerModule(objectType);
+            this.diagnostics.error(callee.range, unimportedCalleeOwner !== null
+                ? `'${unimportedCalleeOwner}' is not imported (use 'use ${unimportedCalleeOwner};')`
+                : `type '${(0, types_1.typeToString)(objectType)}' has no method '${callee.name}'`);
             return null;
         }
         this.diagnostics.error(callee.range, 'only function and method calls are supported in this compiler slice');
@@ -5553,6 +5962,20 @@ class SemanticAnalyzer {
             if (this.classHasPublicToString(type.name))
                 return null;
             return `cannot print object of class '${type.name}' directly — declare 'string function to_string()' in class '${type.name}' and printing will use it${this.contractShapeIssue(type.name, 'to_string')}`;
+        }
+        // Библиотечный объект без текстового вида: раньше в консоль уезжало
+        // JS-нутро «[object Object]». Значения библиотеки (colors.Color,
+        // time.stamp, json.Value, sqlite.Value) печатаются как печатались.
+        if (type.kind === 'qualified' && this.stdlib.hasModule(type.moduleName)) {
+            // Значения библиотеки печатаются собой: числовые ячейки types.*, цвет,
+            // и всё, у чего в реестре есть to_string (time.stamp, json/sqlite.Value).
+            if ((0, types_1.isTypesNumeric)(type))
+                return null;
+            if (this.stdlib.getTypeMethod(type, 'to_string'))
+                return null;
+            if (PRINTABLE_LIBRARY_OBJECTS.has((0, types_1.typeToString)(type)))
+                return null;
+            return `cannot print an object of type '${(0, types_1.typeToString)(type)}' directly — library objects have no text form; print one of its properties instead`;
         }
         if (type.kind === 'qualified' && this.userModuleRegistry.hasModule(type.moduleName)) {
             const classSpec = this.userModuleRegistry.getModule(type.moduleName)?.classes.get(type.name);
@@ -5909,8 +6332,8 @@ class SemanticAnalyzer {
                 this.markSemanticToken('method', expression.nameRange);
                 if (expression.name === 'equals'
                     && method.access.owner !== objectType.name
-                    && this.equalsContractClasses.has(method.access.owner)
-                    && !this.equalsContractClasses.has(objectType.name)) {
+                    && this.classDeclaresEqualsContract(method.access.owner)
+                    && !this.classDeclaresEqualsContract(objectType.name)) {
                     this.diagnostics.error(expression.range, `'equals' is a contract and is not inherited — declare 'bool function equals(${objectType.name} other)' in class '${objectType.name}' and the call will use it`);
                     return types_1.ERROR_TYPE;
                 }
@@ -5922,7 +6345,24 @@ class SemanticAnalyzer {
                 this.diagnostics.error(expression.range, `static method '${staticMethod.access.owner}.${staticMethod.access.name}' must be called on class '${staticMethod.access.owner}'`);
                 return types_1.ERROR_TYPE;
             }
-            this.diagnostics.error(expression.range, `type '${(0, types_1.typeToString)(objectType)}' has no member '${expression.name}'`);
+            // Наследник виджета: свойства и методы базы — из stdlib-реестра.
+            const builtinBase = this.builtinBaseOf(objectType.name);
+            if (builtinBase) {
+                const property = this.stdlib.getTypeProperty(builtinBase, expression.name);
+                if (property) {
+                    this.markSemanticToken('property', expression.nameRange, ['defaultLibrary']);
+                    return property.type;
+                }
+                const widgetMethod = this.stdlib.getTypeMethod(builtinBase, expression.name);
+                if (widgetMethod) {
+                    this.markSemanticToken('method', expression.nameRange, ['defaultLibrary']);
+                    return (0, types_1.functionType)(widgetMethod.parameters.map((param) => param.type), widgetMethod.returnType);
+                }
+            }
+            const unimported = this.unimportedOwnerModule(objectType);
+            this.diagnostics.error(expression.range, unimported !== null
+                ? `'${unimported}' is not imported (use 'use ${unimported};')`
+                : `type '${(0, types_1.typeToString)(objectType)}' has no member '${expression.name}'`);
             return types_1.ERROR_TYPE;
         }
         const property = this.stdlib.getTypeProperty(objectType, expression.name);
@@ -5935,8 +6375,31 @@ class SemanticAnalyzer {
             this.markSemanticToken('method', expression.nameRange, ['defaultLibrary']);
             return (0, types_1.functionType)(method.parameters.map((param) => param.type), method.returnType);
         }
-        this.diagnostics.error(expression.range, `type '${(0, types_1.typeToString)(objectType)}' has no member '${expression.name}'`);
+        const unimportedOwner = this.unimportedOwnerModule(objectType);
+        this.diagnostics.error(expression.range, unimportedOwner !== null
+            ? `'${unimportedOwner}' is not imported (use 'use ${unimportedOwner};')`
+            : `type '${(0, types_1.typeToString)(objectType)}' has no member '${expression.name}'`);
         return types_1.ERROR_TYPE;
+    }
+    /** Модуль-владелец типа, который в этом файле не подключён. Поиск члена в
+     *  таком типе проваливается по единственной причине — забытому use, и
+     *  говорить «нет такого члена» было бы неправдой: член там есть (O38,
+     *  находка методистов 2026-08-23). Ловушка коварна тем, что имя модуля в
+     *  тексте программы может не встречаться вовсе — тип приезжает по цепочке
+     *  точек из чужого класса. */
+    unimportedOwnerModule(type) {
+        let moduleName = null;
+        if (type.kind === 'qualified') {
+            moduleName = type.moduleName;
+        }
+        else if (type.kind === 'class') {
+            const dot = type.name.indexOf('.');
+            if (dot > 0)
+                moduleName = type.name.slice(0, dot);
+        }
+        if (moduleName === null || moduleName === '')
+            return null;
+        return this.imports.has(moduleName) ? null : moduleName;
     }
     isStringType(type) {
         return type.kind === 'primitive' && type.name === 'string';
@@ -6059,6 +6522,52 @@ class SemanticAnalyzer {
         }
         return null;
     }
+    /** Виджет-база класса (по цепочке локальных наследований); null для обычных классов. */
+    // Все вызовы parent() в теле конструктора — для запретов, у которых свой
+    // текст (виджет без конструктора, приватный конструктор базы).
+    findParentCalls(body) {
+        const found = [];
+        const walk = (node) => {
+            if (Array.isArray(node)) {
+                node.forEach(walk);
+                return;
+            }
+            if (typeof node !== 'object' || node === null)
+                return;
+            if (node.kind === 'CallExpression') {
+                const call = node;
+                if (call.callee.kind === 'IdentifierExpression' && call.callee.name === 'parent')
+                    found.push(call);
+            }
+            Object.values(node).forEach(walk);
+        };
+        walk(body);
+        return found;
+    }
+    // Имя занято виджетом-предком? Смотрим ВСЮ цепочку: у внука кнопки поле
+    // 'text' так же незаконно, как у прямого наследника, — иначе int тихо ляжет
+    // в строгое строковое свойство.
+    widgetMemberClash(info, name) {
+        const base = info.builtinBase
+            ?? (info.declaration.baseName ? this.builtinBaseOf(info.declaration.baseName) : null);
+        if (!base)
+            return null;
+        const taken = this.stdlib.getTypeProperty(base, name) || this.stdlib.getTypeMethod(base, name);
+        return taken ? base : null;
+    }
+    builtinBaseOf(className) {
+        let info = this.classes.get(className);
+        const guard = new Set();
+        while (info && !guard.has(info.declaration.name)) {
+            guard.add(info.declaration.name);
+            if (info.builtinBase)
+                return info.builtinBase;
+            if (!info.declaration.baseName)
+                return null;
+            info = this.classes.get(info.declaration.baseName);
+        }
+        return null;
+    }
     checkClassMemberAccess(member, range) {
         if (member.access === 'public')
             return;
@@ -6074,6 +6583,16 @@ class SemanticAnalyzer {
         }
         if (target.kind === 'class' && value.kind === 'class') {
             return this.classExtends(value.name, target.name);
+        }
+        // Наследник виджета живёт всюду, где ждут его виджет-базу или gui.Widget.
+        if (target.kind === 'qualified' && value.kind === 'class') {
+            const builtinBase = this.builtinBaseOf(value.name);
+            if (builtinBase && builtinBase.kind === 'qualified') {
+                if ((0, types_1.sameType)(target, builtinBase))
+                    return true;
+                if (target.moduleName === 'gui' && target.name === 'Widget')
+                    return true;
+            }
         }
         if (target.kind === 'qualified' && value.kind === 'qualified') {
             return this.stdlib.typeExtends(value, target);
@@ -6143,7 +6662,20 @@ class SemanticAnalyzer {
         this.diagnostics.error(range, `${symbol.kind} '${name}' hides the built-in function '${name}'`);
         return true;
     }
+    /** Имена, начинающиеся с '__', принадлежат языку: под ними живут внутренние
+     *  метки объектов и переменные сгенерированного кода. Без запрета поле
+     *  '__proto__' молча теряло значение (в JS это вход в прототип). */
+    refuseInternalName(name, what, range) {
+        if (!name.startsWith('__'))
+            return false;
+        this.diagnostics.error(range, `names starting with '__' are reserved by the language — pick another name for ${what} '${name}'`);
+        return true;
+    }
     checkReservedName(name, kind, range) {
+        if (name.startsWith('__')) {
+            this.diagnostics.error(range, `names starting with '__' are reserved by the language — pick another name for ${kind} '${name}'`);
+            return false;
+        }
         if (this.stdlib.hasModule(name)) {
             this.diagnostics.error(range, `${kind} '${name}' conflicts with a standard library module`);
             return false;
@@ -6189,8 +6721,8 @@ class SemanticAnalyzer {
     popScope() {
         this.scopes.pop();
     }
-    pushClassContext(className, isStatic) {
-        this.classContexts.push({ className, isStatic });
+    pushClassContext(className, isStatic, inConstructor = false) {
+        this.classContexts.push({ className, isStatic, inConstructor });
     }
     popClassContext() {
         this.classContexts.pop();
@@ -6588,13 +7120,13 @@ function createDefaultStandardLibrary() {
             variadic: true,
             variadicTypes: [types_1.ANY_TYPE],
             printsValues: true,
-            documentation: 'Выводит значения подряд без автоматических пробелов и переноса строки.',
+            documentation: 'Выводит значения подряд без автоматических пробелов и переноса строки. Правила о том, что печатается, — те же, что у writeln().',
         }),
         functionSpec('writeln', [], types_1.VOID, {
             variadic: true,
             variadicTypes: [types_1.ANY_TYPE],
             printsValues: true,
-            documentation: 'Выводит значения подряд, затем переносит строку.',
+            documentation: 'Выводит значения подряд, затем переносит строку. Печатать можно значения, объекты своих классов с контрактом to_string (в том числе внутри массивов любой вложенности) и те библиотечные типы, у которых есть текстовый вид; библиотечный объект без текстового вида компилятор печатать не даст.',
         }),
         functionSpec('clear', [], types_1.VOID, {
             documentation: 'Очищает содержимое консоли.',
@@ -6809,13 +7341,13 @@ function createDefaultStandardLibrary() {
     const httpResponse = (0, types_1.qualified)('http', 'Response');
     registry.registerModule(moduleSpec('http', [
         functionSpec('get', [{ name: 'address', type: types_1.STRING }], httpResponse, {
-            documentation: 'Отправляет GET-запрос и возвращает http.Response. Только http/https. Таймаут — 10 секунд (меняется http.set_timeout). В Web IDE работает для сайтов, разрешающих браузерные запросы (CORS); иначе — читаемая ошибка с подсказкой про консольный запуск.',
+            documentation: 'Отправляет GET-запрос и возвращает http.Response — переменную этого типа обычно и объявляют сразу с вызовом; объявленная без него заготовка пуста честно: статус 0, текст пустой. Только http/https, и только GET и POST: PUT и DELETE библиотека не делает. Свои заголовки к запросу не приложить — ключ в заголовке требующие API остаются за пределами курса. Таймаут — 10 секунд (меняется http.set_timeout). В Web IDE работает для сайтов, разрешающих браузерные запросы (CORS); иначе — читаемая ошибка с подсказкой про консольный запуск.',
         }),
         functionSpec('post', [
             { name: 'address', type: types_1.STRING },
             { name: 'body', type: types_1.STRING },
         ], httpResponse, {
-            documentation: 'Отправляет POST-запрос с текстовым телом (Content-Type: text/plain; charset=utf-8) и возвращает http.Response.',
+            documentation: 'Отправляет POST-запрос с текстовым телом и возвращает http.Response. Тип содержимого всегда text/plain; charset=utf-8 — выбрать application/json или приложить свои заголовки нельзя.',
         }),
         functionSpec('set_timeout', [{ name: 'seconds', type: types_1.INT }], types_1.VOID, {
             documentation: 'Таймаут сетевых запросов в секундах (1–300, по умолчанию 10). Действует на все последующие get/post.',
@@ -6835,7 +7367,7 @@ function createDefaultStandardLibrary() {
     const webResponse = (0, types_1.qualified)('web', 'Response');
     registry.registerModule(moduleSpec('web', [], [], [
         typeSpec('Server', [
-            propertySpec('port', types_1.INT, false, 'Порт сервера, 0–65535 (по умолчанию 8080; 0 — попросить у системы свободный). После run() хранит фактический порт.'),
+            propertySpec('port', types_1.INT, false, 'Порт сервера, 0–65535 (по умолчанию 8080; 0 — попросить у системы свободный). Значение проверяется В МОМЕНТ ПРИСВАИВАНИЯ: за границами диапазона — читаемая ошибка там, где написано, а не при run(). После run() хранит фактический порт.'),
             propertySpec('host', types_1.STRING, false, 'Какие адреса слушать. По умолчанию "127.0.0.1" — только этот компьютер. "0.0.0.0" открывает программу ВСЕЙ локальной сети — включайте осознанно.'),
             propertySpec('is_running', types_1.BOOL, true, 'true, пока сервер запущен. Свойство доступно только для чтения.'),
         ], [
@@ -6855,7 +7387,7 @@ function createDefaultStandardLibrary() {
                 documentation: 'Раздаёт файлы папки как статику (только чтение, только GET, выход из папки закрыт). Адрес "/" отдаёт index.html. Маршруты on_get/on_post проверяются раньше статики.',
             }),
             functionSpec('run', [], types_1.VOID, {
-                documentation: 'Запускает сервер и не возвращается: программа обслуживает запросы, пока её не остановят (Stop или Ctrl+C). Занятый порт — читаемая ошибка. Работает в консоли и VS Code; в Web IDE — честный отказ (браузер не может слушать порт).',
+                documentation: 'Запускает сервер и не возвращается: программа обслуживает запросы, пока её не остановят (Stop или Ctrl+C). Занятый порт — читаемая ошибка. Работает в консоли и VS Code; в Web IDE — честный отказ (браузер не может слушать порт). Куки и сессий у сервера нет: «кто сейчас вошёл» он не помнит между запросами, и передавать это приходится самим — параметром адреса или скрытым полем формы.',
             }),
         ]),
         typeSpec('Request', [
@@ -6886,7 +7418,7 @@ function createDefaultStandardLibrary() {
                 { name: 'values', type: jsonObject, defaultValue: 'null' },
             ], types_1.VOID, {
                 minArguments: 1,
-                documentation: 'Читает HTML-шаблон из файла (путь — как в file-библиотеке, без магических папок), подставляет значения из json.Object и отправляет страницу (text/html). В шаблоне: {{ключ}} и {{ключ.поле}} — подстановка (текст всегда экранируется: данные — текст, разметка живёт в шаблоне), {% for x in список %}…{% endfor %} — цикл по json.Array, {% if флаг %}…{% else %}…{% endif %} — ветвление по bool. Ошибка шаблона не роняет сервер: в страницу встаёт читаемый маркер [[ … ]].',
+                documentation: 'Читает HTML-шаблон из файла (путь — как в file-библиотеке, без магических папок), подставляет значения из json.Object и отправляет страницу (text/html). В шаблоне: {{ключ}} и {{ключ.поле}} — подстановка (текст всегда экранируется: данные — текст, разметка живёт в шаблоне), {% for x in список %}…{% endfor %} — цикл по json.Array, {% if флаг %}…{% else %}…{% endif %} — ветвление по bool. Ошибка шаблона не роняет сервер: в страницу встаёт читаемый маркер [[ … ]]. Файл перечитывается на КАЖДЫЙ запрос, кеша нет: правку шаблона видно сразу, без перезапуска сервера — удобно на уроке и стоит помнить при большой нагрузке.',
             }),
             functionSpec('redirect', [{ name: 'path', type: types_1.STRING }], types_1.VOID, {
                 documentation: 'Отправляет браузер на другой адрес: ответ 303 See Other с заголовком Location. Канон PRG: после успешной обработки POST-формы вызовите res.redirect на GET-страницу — тогда обновление страницы (F5) не отправит форму второй раз.',
@@ -7066,7 +7598,7 @@ function createDefaultStandardLibrary() {
         ]),
         typeSpec('Result', [
             propertySpec('is_open', types_1.BOOL, true),
-            propertySpec('has_rows', types_1.BOOL, true),
+            propertySpec('has_rows', types_1.BOOL, true, 'true, если в ответе есть хотя бы одна строка. У пустого SELECT — false, поэтому проверка \'если ничего не нашлось\' пишется прямо: if (rows.has_rows) … else … . У запросов, которые строк не возвращают (INSERT, UPDATE, DELETE), тоже false — там смотрят affected_rows.'),
             propertySpec('affected_rows', types_1.INT, true),
             propertySpec('last_insert_id', sqliteValue, true),
         ], [
@@ -7102,7 +7634,7 @@ function createDefaultStandardLibrary() {
             propertySpec('is_playing', types_1.BOOL, true),
         ], [
             functionSpec('load_from_file', [{ name: 'path', type: types_1.STRING }], types_1.VOID, {
-                documentation: 'Загружает аудиофайл или сообщает понятную runtime error.',
+                documentation: 'Загружает аудиофайл или сообщает понятную runtime error. Формат определяется ПО СОДЕРЖИМОМУ файла (WAV, MP3, OGG) — как у картинок и шрифтов: переименовать чужой файл в .wav не поможет, и молча «загрузить» не-звук нельзя.',
             }),
             functionSpec('play', [], types_1.VOID),
             functionSpec('pause', [], types_1.VOID),
@@ -7122,7 +7654,7 @@ function createDefaultStandardLibrary() {
             ]),
         ], [
             functionSpec('load_from_file', [{ name: 'path', type: types_1.STRING }], types_1.VOID, {
-                documentation: 'Загружает аудиофайл или сообщает понятную runtime error.',
+                documentation: 'Загружает аудиофайл или сообщает понятную runtime error. Формат определяется ПО СОДЕРЖИМОМУ файла (WAV, MP3, OGG) — как у картинок и шрифтов: переименовать чужой файл в .wav не поможет, и молча «загрузить» не-звук нельзя.',
             }),
             functionSpec('play', [], types_1.VOID),
             functionSpec('pause', [], types_1.VOID),
@@ -7332,7 +7864,7 @@ function createDefaultStandardLibrary() {
             propertySpec('theme', types_1.STRING, false, 'Тема оформления окна и всех его виджетов: "default", "idyllium", "dracula", "breeze", "oxygen"; другое значение — ошибка выполнения. Самый низкий приоритет — прямые свойства виджета и IdySS перекрывают тему.'),
             ...styleable,
         ], [
-            functionSpec('add_child', [guiChildParameter], types_1.VOID),
+            functionSpec('add_child', [guiChildParameter], types_1.VOID, { documentation: 'Кладёт виджет внутрь. Виджет нельзя положить внутрь самого себя или внутрь своего же ребёнка — у такого дерева не было бы конца, и рантайм честно об этом скажет.' }),
             functionSpec('show', [], types_1.VOID),
             functionSpec('close', [], types_1.VOID, {
                 documentation: 'Закрывает окно. Когда закрыто последнее окно, программа завершается.',
@@ -7428,7 +7960,7 @@ function createDefaultStandardLibrary() {
             ...fontSized,
             propertySpec('title', types_1.STRING),
         ], [
-            functionSpec('add_child', [guiChildParameter], types_1.VOID),
+            functionSpec('add_child', [guiChildParameter], types_1.VOID, { documentation: 'Кладёт виджет внутрь. Виджет нельзя положить внутрь самого себя или внутрь своего же ребёнка — у такого дерева не было бы конца, и рантайм честно об этом скажет.' }),
         ], guiWidget),
         typeSpec('ImageBox', [
             ...positioned,
@@ -7650,9 +8182,9 @@ function createDefaultStandardLibrary() {
                 { name: 'title', type: types_1.STRING },
                 { name: 'content', type: guiChildParameter.type, acceptedTypes: guiChildParameter.acceptedTypes, acceptedDescription: guiChildParameter.acceptedDescription },
             ], types_1.VOID, {
-                documentation: 'Добавляет вкладку с заголовком и виджетом-содержимым (обычно gui.Frame с наполнением).',
+                documentation: 'Добавляет вкладку с заголовком и виджетом-содержимым (обычно gui.Frame с наполнением). Сам шкаф вкладкой себе не подойдёт: виджет внутрь самого себя не кладётся.',
             }),
-            functionSpec('clear_tabs', [], types_1.VOID, { documentation: 'Удаляет все вкладки.' }),
+            functionSpec('clear_tabs', [], types_1.VOID, { documentation: 'Удаляет все вкладки вместе с содержимым. После этого tab_count равен нулю, а selected_index — -1: шкаф пуст, открывать нечего. Первая новая вкладка снова делает выбор нулевым.' }),
         ], guiWidget),
         typeSpec('Modal', [
             propertySpec('title', types_1.STRING),
@@ -7962,7 +8494,7 @@ function createDefaultStandardLibrary() {
         { name: 'value', type: types_1.ANY_TYPE },
     ], types_1.STRING, {
         printsValues: true,
-        documentation: 'Преобразует значение в строку. Объект класса — только с публичным string function to_string().',
+        documentation: 'Преобразует значение в строку. Объект класса — только с публичным string function to_string(). Библиотечные объекты (gui-виджеты, шрифты, фигуры, файловые потоки) текстового вида не имеют — компилятор откажет и посоветует напечатать какое-нибудь их свойство; значения библиотеки (ячейки types, colors.Color, time.stamp, json.Value, а также холст, таблица, диаграммы, черепаха, сервер и ответ http) печатаются как есть.',
     }));
     // Агрегатные функции массивов. Точные типы результата выводит семантика
     // (максимум/минимум/сумма повторяют тип элементов); записи в реестре питают
@@ -8708,10 +9240,11 @@ class IdylliumProject {
         const source = this.files.get(file) ?? '';
         const root = (0, project_1.parseSource)(null, file, source, diagnostics);
         const modules = [];
+        const unavailableModules = new Set();
         if (root.ast) {
-            (0, project_1.loadUserModules)(root.ast, file, this.moduleLoadOptions(), this.stdlib, diagnostics, modules);
+            (0, project_1.loadUserModules)(root.ast, file, this.moduleLoadOptions(), this.stdlib, diagnostics, modules, unavailableModules);
         }
-        const userModules = (0, project_1.buildUserModuleRegistry)(modules, this.stdlib, diagnostics);
+        const userModules = (0, project_1.buildUserModuleRegistry)(modules, this.stdlib, diagnostics, unavailableModules);
         const semanticTokens = root.ast
             ? new semantics_1.SemanticAnalyzer(this.stdlib, userModules).analyze(root.ast).tokens
             : [];
@@ -11440,10 +11973,11 @@ function compileIdyllium(source, options = {}) {
     let ast = root.ast;
     let jsCode = null;
     const modules = [];
+    const unavailableModules = new Set();
     if (ast && !diagnostics.hasErrors()) {
-        (0, project_1.loadUserModules)(ast, file, options, stdlib, diagnostics, modules);
+        (0, project_1.loadUserModules)(ast, file, options, stdlib, diagnostics, modules, unavailableModules);
     }
-    const userModuleRegistry = (0, project_1.buildUserModuleRegistry)(modules, stdlib, diagnostics);
+    const userModuleRegistry = (0, project_1.buildUserModuleRegistry)(modules, stdlib, diagnostics, unavailableModules);
     const nodeTypes = new Map();
     const equalsContractClasses = new Set();
     const nullableClassFields = new Map();
@@ -11614,7 +12148,7 @@ exports.IdylliumRuntimeError = IdylliumRuntimeError;
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-exports.IDYLLIUM_VERSION = '1.5.1';
+exports.IDYLLIUM_VERSION = '1.5.2';
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform() {
     const nodeProcess = typeof process === 'object' ? process : null;
@@ -12775,7 +13309,9 @@ function sqliteDatabaseState(obj) {
 }
 function assertSqliteDatabaseOpen(state, file, line) {
     if (!state.isOpen || !state.engine) {
-        throw new IdylliumRuntimeError(file, line, 'sqlite database is already closed');
+        throw new IdylliumRuntimeError(file, line, state.path === ''
+            ? 'this sqlite.Database is a blank one — open a file with sqlite.open("name.db") first'
+            : 'sqlite database is already closed');
     }
     return state.engine;
 }
@@ -12916,7 +13452,9 @@ function sqliteTypedBinding(storageClass, value) {
 }
 function assertSqliteStatementOpen(state, file, line) {
     if (!state.isOpen || !state.database) {
-        throw new IdylliumRuntimeError(file, line, 'sqlite statement is already closed');
+        throw new IdylliumRuntimeError(file, line, state.sql === '' && state.database === null
+            ? 'this sqlite.Statement is a blank one — get one from db.prepare("SQL") first'
+            : 'sqlite statement is already closed');
     }
     assertSqliteDatabaseOpen(state.database, file, line);
     return state.database;
@@ -12969,7 +13507,12 @@ function createSqliteResult(execution) {
     const obj = { __idylliumType: 'sqlite.Result' };
     Object.defineProperty(obj, '__sqliteResultState', { value: state });
     defineRuntimeGetter(obj, 'is_open', () => state.isOpen);
-    defineRuntimeGetter(obj, 'has_rows', () => state.columns.length > 0);
+    // has_rows отвечает ровно на вопрос своего имени: «есть ли хоть одна строка».
+    // Раньше он значил «этот запрос ВОЗВРАЩАЕТ строки» и был true у пустого
+    // SELECT — естественная запись «if (rows.has_rows) … else «никого нет»»
+    // печатала «нашли» на пустом результате, молча и неверно (SQ1, находка
+    // методистов 2026-08-23). Строки уже загружены целиком, спрашивать нечего.
+    defineRuntimeGetter(obj, 'has_rows', () => state.rows.length > 0);
     defineRuntimeGetter(obj, 'affected_rows', () => execution.affectedRows);
     defineRuntimeGetter(obj, 'last_insert_id', () => createSqliteValue(execution.lastInsertId));
     obj.next = contextFunction((file, line) => {
@@ -13023,10 +13566,11 @@ function createSqliteResult(execution) {
     });
     return obj;
 }
-function createClosedSqliteResult() {
-    const result = createSqliteResult({ columns: [], rows: [], affectedRows: 0, lastInsertId: null });
-    result.__sqliteResultState.isOpen = false;
-    return result;
+// Заготовка 'sqlite.Result r;' — это ПУСТОЙ ответ, а не закрытый: строк в нём
+// ноль, next() честно отвечает false, has_rows — false. Раньше она объявляла
+// себя «уже закрытой», хотя её никто не открывал (D5, находка методистов).
+function createBlankSqliteResult() {
+    return createSqliteResult({ columns: [], rows: [], affectedRows: 0, lastInsertId: null });
 }
 function assertSqliteResultOpen(state, file, line) {
     if (!state.isOpen)
@@ -13561,25 +14105,11 @@ function createRuntime(options = {}) {
         }
         // Массив объектов с контрактом to_string: представления элементов
         // собираются асинхронно (инспектор массива синхронный и сам метод
-        // ученика позвать не может) — жанр equalsObjectArrays.
-        if (value instanceof IdylliumArray) {
-            const items = value.values();
-            if (items.some((item) => item !== null && typeof item === 'object'
-                && typeof item.to_string === 'function')) {
-                const parts = [];
-                for (const item of items) {
-                    const method = item !== null && typeof item === 'object'
-                        ? item.to_string
-                        : undefined;
-                    if (typeof method === 'function') {
-                        parts.push(formatForInspect(await method.apply(item)));
-                    }
-                    else {
-                        parts.push(formatForInspect(item));
-                    }
-                }
-                return `[${parts.join(', ')}]`;
-            }
+        // ученика позвать не может) — жанр equalsObjectArrays. Вложенность
+        // проходится насквозь: у таблицы объектов внутренние ряды раньше
+        // печатались JS-нутром '[object Object]'.
+        if (value instanceof IdylliumArray && (await arrayHoldsContractObjects(value))) {
+            return await formatArrayWithContracts(value);
         }
         if (value !== null && typeof value === 'object') {
             const method = value.to_string;
@@ -13589,6 +14119,36 @@ function createRuntime(options = {}) {
             }
         }
         return formatForConsole(value, precision);
+    }
+    // Есть ли в массиве (на любой глубине) объект с контрактом to_string.
+    async function arrayHoldsContractObjects(array) {
+        for (const item of array.values()) {
+            if (item instanceof IdylliumArray) {
+                if (await arrayHoldsContractObjects(item))
+                    return true;
+                continue;
+            }
+            if (item !== null && typeof item === 'object'
+                && typeof item.to_string === 'function')
+                return true;
+        }
+        return false;
+    }
+    async function formatArrayWithContracts(array) {
+        const parts = [];
+        for (const item of array.values()) {
+            if (item instanceof IdylliumArray) {
+                parts.push(await formatArrayWithContracts(item));
+                continue;
+            }
+            const method = item !== null && typeof item === 'object'
+                ? item.to_string
+                : undefined;
+            parts.push(typeof method === 'function'
+                ? formatForInspect(await method.apply(item))
+                : formatForInspect(item));
+        }
+        return `[${parts.join(', ')}]`;
     }
     async function formatConsoleValues(values) {
         const parts = [];
@@ -13804,6 +14364,10 @@ function createRuntime(options = {}) {
             if (value instanceof IdylliumArray)
                 return 'array';
             if (typeof value === 'object' && typeof value.__idylliumType === 'string') {
+                // Наследник виджета носит рантайм-тип базы, а СВОЁ имя — в __idylliumClass.
+                if (typeof value.__idylliumClass === 'string') {
+                    return value.__idylliumClass;
+                }
                 return value.__idylliumType;
             }
             if (typeof value === 'string')
@@ -14493,6 +15057,20 @@ function createRuntime(options = {}) {
         createObject(moduleName, typeName) {
             throwIfRuntimeStopped('', 0);
             return createPlainRuntimeObject(moduleName, typeName, runtimeObjects);
+        },
+        // Метка экземпляра класса. Если база (по всей цепочке, в том числе через
+        // модули) — виджет, рантайм-тип 'gui.X' НЕПРИКОСНОВЕНЕН: по нему живут
+        // рендерер и строгие сверки (радиогруппы, Canvas, Table). Имя класса тогда
+        // едет отдельной меткой, её читают type_name() и тексты ошибок.
+        tagClassInstance(self, tag) {
+            const inherited = self.__idylliumType;
+            if (typeof inherited === 'string' && inherited.startsWith('gui.')) {
+                self.__idylliumClass = tag;
+            }
+            else {
+                self.__idylliumType = tag;
+            }
+            return self;
         },
         convertNullable(moduleName, typeName, value, file, line) {
             throwIfRuntimeStopped(file, line);
@@ -16245,7 +16823,8 @@ function setTrackedRuntimePropertyDefault(obj, name, value) {
 function trackedRuntimePropertyValues(obj) {
     if (isPlainObject(obj.__trackedPropertyValues))
         return obj.__trackedPropertyValues;
-    const values = {};
+    // Без прототипа — по той же причине, что и таблица сеттеров.
+    const values = Object.create(null);
     Object.defineProperty(obj, '__trackedPropertyValues', {
         value: values,
         enumerable: false,
@@ -16267,7 +16846,9 @@ function explicitRuntimeProperties(obj) {
 function runtimePropertySetters(obj) {
     if (isPlainObject(obj.__runtimePropertySetters))
         return obj.__runtimePropertySetters;
-    const setters = {};
+    // Таблица БЕЗ прототипа: иначе setters['toString'] отдавал функцию из
+    // Object.prototype, и запись в поле с таким именем молча пропадала.
+    const setters = Object.create(null);
     Object.defineProperty(obj, '__runtimePropertySetters', {
         value: setters,
         enumerable: false,
@@ -16312,6 +16893,11 @@ function defineEnumRuntimeProperty(obj, name, ownerLabel, defaultValue, accepted
     });
 }
 function createPlainRuntimeObject(moduleName, typeName, state) {
+    // 'time.stamp t;' без вызова — честный ноль эпохи, а не пустой объект,
+    // печатавшийся JS-нутром '[object Object]'.
+    if (moduleName === 'time' && typeName === 'stamp') {
+        return new IdylliumTimeStamp(0);
+    }
     if (moduleName === 'json') {
         if (typeName === 'Value')
             return createJsonValue();
@@ -16328,7 +16914,7 @@ function createPlainRuntimeObject(moduleName, typeName, state) {
         if (typeName === 'Statement')
             return createClosedSqliteStatement();
         if (typeName === 'Result')
-            return createClosedSqliteResult();
+            return createBlankSqliteResult();
     }
     const obj = {
         __idylliumObjectId: state.nextObjectId++,
@@ -16359,7 +16945,51 @@ function createPlainRuntimeObject(moduleName, typeName, state) {
     if (moduleName === 'web') {
         initializeWebObject(obj, typeName, state);
     }
+    initializeResultObjectDefaults(obj, moduleName, typeName);
     return obj;
+}
+/** Пустая заготовка «объекта-ответа». Такие типы приходят из вызова
+ *  (http.get(), обработчик web-маршрута), но объявить их пустыми язык
+ *  разрешает — и тогда заготовка обязана быть ПОЛНОЙ формой своего типа:
+ *  и свойства, и методы. Иначе выходило кривобоко — blank.status давал 0,
+ *  а blank.header(...) падал «object has no method» (находка методистов
+ *  2026-08-23). Пустые ответы отдают пустые строки — ровно то же, что
+ *  настоящий ответ отдаёт на неизвестное имя. */
+function initializeResultObjectDefaults(obj, moduleName, typeName) {
+    if (moduleName === 'http' && typeName === 'Response') {
+        obj.status = 0;
+        obj.ok = false;
+        obj.text = '';
+        obj.header = contextFunction((name, file, line) => {
+            stringArgument(name, 'Response.header() name', file, line);
+            return '';
+        });
+        obj.to_string = () => 'http.Response(status: 0)';
+        return;
+    }
+    if (moduleName === 'web' && typeName === 'Request') {
+        obj.path = '';
+        obj.body = '';
+        for (const method of ['query', 'param', 'form']) {
+            obj[method] = contextFunction((name, file, line) => {
+                stringArgument(name, `web.Request.${method}() name`, file, line);
+                return '';
+            });
+        }
+        obj.to_string = () => 'web.Request( )';
+        return;
+    }
+    if (moduleName === 'web' && typeName === 'Response') {
+        obj.status = 0;
+        // Отвечать этой заготовке некому: сервер выдаёт настоящий ответ в
+        // обработчик. Молча проглотить отправку было бы враньём.
+        for (const method of ['send', 'send_json', 'send_template', 'redirect']) {
+            obj[method] = contextFunction((_value, file, line) => {
+                throw new IdylliumRuntimeError(file, line, `web.Response.${method}() has nothing to answer: this response is a blank one — the server passes a real response into your on_get()/on_post() handler`);
+            });
+        }
+        obj.to_string = () => 'web.Response';
+    }
 }
 // ─── web.Server: свой веб-сервер (Flask-жанр) ──────────────────────────────
 const WEB_CONTENT_TYPES = {
@@ -16760,7 +17390,14 @@ function serveWebStatic(roots, requestPath, state) {
 function initializeWebObject(obj, typeName, state) {
     if (typeName !== 'Server')
         return;
-    obj.port = 8080;
+    // Порт проверяется В МОМЕНТ ПРИСВАИВАНИЯ, а не при run(): ошибку показываем
+    // там, где её сделали (NET1, находка методистов 2026-08-23).
+    defineValidatedRuntimeProperty(obj, 'port', 8080, (value, file, line) => {
+        if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > 65535) {
+            throw new IdylliumRuntimeError(file, line, `web.Server.port must be an integer from 0 to 65535, got '${String(value)}'`);
+        }
+        return value;
+    });
     // Безопасность по умолчанию: слушаем только свой компьютер. Открыть класс —
     // явное решение программиста: app.host = "0.0.0.0" (вся локальная сеть).
     obj.host = '127.0.0.1';
@@ -17020,6 +17657,18 @@ function closeChannelPost(post) {
     if (connection)
         connection.close();
 }
+/** Виджет внутрь себя или внутрь своего же ребёнка — дерево без конца.
+ *  Раньше это роняло рантайм голым JS-стеком уже при показе окна. */
+function refuseWidgetCycle(container, child, what, file, line) {
+    if (child === container) {
+        throw new IdylliumRuntimeError(file, line, `${what} cannot put a widget inside itself`);
+    }
+    for (let ancestor = container.__parent; isRuntimeObject(ancestor); ancestor = ancestor.__parent) {
+        if (ancestor === child) {
+            throw new IdylliumRuntimeError(file, line, `${what} cannot put a widget inside its own child — the tree would have no end`);
+        }
+    }
+}
 function initializeGuiObject(obj, typeName, state) {
     if (isGuiWidget(typeName)) {
         obj.x = 0;
@@ -17046,6 +17695,7 @@ function initializeGuiObject(obj, typeName, state) {
             if (!isRuntimeObject(child)) {
                 throw new IdylliumRuntimeError(file, line, `add_child() expects gui widget, got '${String(child)}'`);
             }
+            refuseWidgetCycle(obj, child, 'add_child()', file, line);
             child.__parent = obj;
             obj.__children.push(child);
             // Радио с предвыбором решает свою группу в момент переезда в коробку:
@@ -17214,6 +17864,7 @@ function initializeGuiObject(obj, typeName, state) {
             if (!isRuntimeObject(content)) {
                 throw new IdylliumRuntimeError(file, line, `TabWidget.add_tab() expects gui widget as content, got '${runtimeTypeName(content)}'`);
             }
+            refuseWidgetCycle(obj, content, 'TabWidget.add_tab()', file, line);
             content.__parent = obj;
             obj.__children.push(content);
             obj.__tabTitles.push(tabTitle);
@@ -18779,6 +19430,14 @@ function initializeAudioObject(obj, typeName, state) {
         if (!runtimeIsFile(state.fileSystem, resolvedPath, file, line, 'reading')) {
             throw new IdylliumRuntimeError(file, line, `${typeName}.load_from_file() cannot load '${requestedPath}': path is not a file`);
         }
+        // Формат — по СОДЕРЖИМОМУ, как у картинок и шрифтов. Раньше сюда проходил
+        // любой файл: duration оставался нулём, play() рапортовал is_playing, звука
+        // не было, и ни одного слова об этом (AU1, находка методистов 2026-08-23).
+        // Смотрим именно СИГНАТУРУ, а не длительность: у валидного WAV с пустыми
+        // данными длительность тоже ноль, и отказывать ему было бы неправдой.
+        if (!looksLikeAudio(state.fileSystem, resolvedPath)) {
+            throw new IdylliumRuntimeError(file, line, `${typeName}.load_from_file() cannot decode '${requestedPath}': unsupported audio format (WAV, MP3 and OGG are supported)`);
+        }
         obj.src = requestedPath;
         obj.resolved_path = resolvedPath;
         obj.resource_uri = state.fileSystem.resourceUri?.(resolvedPath) ?? '';
@@ -18839,6 +19498,41 @@ function audioCommands(obj) {
         configurable: true,
     });
     return commands;
+}
+/** Похож ли файл на звук — по сигнатуре первых байтов, как у картинок и
+ *  шрифтов. Длительность для этого не годится: у валидного WAV без сэмплов
+ *  она ноль. */
+function looksLikeAudio(fileSystem, filePath) {
+    let bytes = null;
+    try {
+        if (fileSystem.readBytes) {
+            bytes = nodeBuffer.from(fileSystem.readBytes(filePath));
+        }
+        else {
+            const text = fileSystem.readText(filePath);
+            const dataUrlMatch = /^data:audio\/[^;]+;base64,(.+)$/u.exec(text);
+            // data:audio/... — уже объявленный звук, содержимое пришло из среды.
+            if (dataUrlMatch)
+                return true;
+            bytes = nodeBuffer.from(text, 'binary');
+        }
+    }
+    catch {
+        return false;
+    }
+    if (!bytes || typeof bytes.length !== 'number' || bytes.length < 4)
+        return false;
+    const head = bytes.toString('ascii', 0, 4);
+    if (head === 'RIFF' && bytes.length >= 12 && bytes.toString('ascii', 8, 12) === 'WAVE')
+        return true;
+    if (head === 'OggS')
+        return true;
+    if (head.startsWith('ID3'))
+        return true;
+    // Кадр MP3 без тега: синхрослово 11 единиц подряд.
+    if (bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0)
+        return true;
+    return false;
 }
 function audioDuration(fileSystem, filePath) {
     try {
@@ -19229,31 +19923,46 @@ function drawableSnapshot(value) {
         properties: objectPropertiesSnapshot(value),
     };
 }
+// Сторож циклов снимка. Наследник виджета впервые вешает ПОЛЬЗОВАТЕЛЬСКИЕ поля
+// прямо на рантайм-виджет, поэтому два виджета могут ссылаться друг на друга
+// (или на себя) — без сторожа пара objectPropertiesSnapshot/snapshotValue
+// уходила в бесконечную рекурсию и роняла предпросмотр голым JS-стеком.
+const snapshotSeen = new Set();
 function objectPropertiesSnapshot(value) {
     const result = {};
-    for (const [key, item] of Object.entries(value)) {
-        if (key.startsWith('__') || typeof item === 'function')
-            continue;
-        result[key] = snapshotValue(item);
+    // Сам объект — уже «в работе»: поле, ведущее обратно к нему, дальше не пойдёт.
+    const alreadySeen = snapshotSeen.has(value);
+    if (!alreadySeen)
+        snapshotSeen.add(value);
+    try {
+        for (const [key, item] of Object.entries(value)) {
+            if (key.startsWith('__') || typeof item === 'function')
+                continue;
+            result[key] = snapshotValue(item);
+        }
+        if (Array.isArray(value.__tabTitles)) {
+            result.tab_titles = [...value.__tabTitles];
+        }
+        if (typeof value.style === 'string' && value.style.trim() !== '') {
+            // IdySS: в браузер уезжают только провалидированные пары — рендерер
+            // строк не разбирает и произвольный CSS не видит.
+            result.style_declarations = (0, style_1.parseIdylliumStyle)(value.style);
+        }
+        if (typeof value.style_hover === 'string' && value.style_hover.trim() !== '') {
+            result.style_hover_declarations = (0, style_1.parseIdylliumStyle)(value.style_hover);
+        }
+        if (typeof value.style_active === 'string' && value.style_active.trim() !== '') {
+            result.style_active_declarations = (0, style_1.parseIdylliumStyle)(value.style_active);
+        }
+        if (value.__explicitProperties instanceof Set && value.__explicitProperties.size > 0) {
+            result.__explicit_properties = [...value.__explicitProperties].sort();
+        }
+        return result;
     }
-    if (Array.isArray(value.__tabTitles)) {
-        result.tab_titles = [...value.__tabTitles];
+    finally {
+        if (!alreadySeen)
+            snapshotSeen.delete(value);
     }
-    if (typeof value.style === 'string' && value.style.trim() !== '') {
-        // IdySS: в браузер уезжают только провалидированные пары — рендерер
-        // строк не разбирает и произвольный CSS не видит.
-        result.style_declarations = (0, style_1.parseIdylliumStyle)(value.style);
-    }
-    if (typeof value.style_hover === 'string' && value.style_hover.trim() !== '') {
-        result.style_hover_declarations = (0, style_1.parseIdylliumStyle)(value.style_hover);
-    }
-    if (typeof value.style_active === 'string' && value.style_active.trim() !== '') {
-        result.style_active_declarations = (0, style_1.parseIdylliumStyle)(value.style_active);
-    }
-    if (value.__explicitProperties instanceof Set && value.__explicitProperties.size > 0) {
-        result.__explicit_properties = [...value.__explicitProperties].sort();
-    }
-    return result;
 }
 function runtimeObjectId(value) {
     return typeof value.__idylliumObjectId === 'number' ? value.__idylliumObjectId : 0;
@@ -19266,10 +19975,21 @@ function snapshotValue(value) {
     if (value instanceof IdylliumArray)
         return value.values().map(snapshotValue);
     if (isRuntimeObject(value)) {
-        return {
-            type: String(value.__idylliumType ?? 'object'),
-            properties: objectPropertiesSnapshot(value),
-        };
+        // Уже встреченный объект второй раз в снимок не разворачиваем: цикл
+        // ссылок отмечается ссылкой на тип, а не бесконечной рекурсией.
+        if (snapshotSeen.has(value)) {
+            return { type: String(value.__idylliumType ?? 'object'), properties: {}, cyclic: true };
+        }
+        snapshotSeen.add(value);
+        try {
+            return {
+                type: String(value.__idylliumType ?? 'object'),
+                properties: objectPropertiesSnapshot(value),
+            };
+        }
+        finally {
+            snapshotSeen.delete(value);
+        }
     }
     return value;
 }
@@ -19489,6 +20209,10 @@ function eventFloat(value) {
     return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 function runtimeTypeName(value) {
+    // Наследник виджета носит виджетный __idylliumType (для рендера и механики),
+    // а СВОЁ имя — в __idylliumClass: его и говорим человеку.
+    if (isRuntimeObject(value) && typeof value.__idylliumClass === 'string')
+        return value.__idylliumClass;
     if (isRuntimeObject(value) && typeof value.__idylliumType === 'string')
         return value.__idylliumType;
     if (typeof value === 'bigint')

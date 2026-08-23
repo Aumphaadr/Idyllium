@@ -12,6 +12,8 @@ instead**. It is the fourth part of a series that follows the course ladder:
 | **4 (this file)** | **Canvas and 2D games: primitives, the frame loop, keyboard, mouse, text, images, origin, sound, hit tests, collisions** | **SFML (C++), PyGame (Python), HTML Canvas (JavaScript)** |
 | 5 | JSON and saves: text saves, JSON files, serializing objects | nlohmann/json, `json` module, native JS |
 | 6 | Databases: SQLite, queries, relations | sqlite3 bindings in C++/Python/JS |
+| 7 | Networking: HTTP client, HTTP server, templates, forms, channels between programs, addresses | QtNetwork + cpp-httplib, `requests` + `http.server`, `fetch` + `node:http` |
+| 8 | time, math at the edges, fixed-width integers, encodings, hashes, colors, images as data, sound, `system` | C++ standard library, Python standard library + PIL, JavaScript/Node built-ins |
 
 The save-file and JSON half of the games course (text saves → JSON files →
 serializing game objects) belongs to part 5, not here.
@@ -361,7 +363,14 @@ runtime error: Sound.load_from_file() cannot load 'нет-такого.wav': fil
 
 `Sound` and `Music` split by *role*, like SFML's buffers and streams, but a
 resource cannot silently die: it is an ordinary object held by the student's
-variable. WAV and MP3 are the guaranteed teaching formats. `Music` adds
+variable. WAV and MP3 are the guaranteed teaching formats, and the format is
+read from the file's signature rather than its extension — a text file renamed
+to `.wav` is refused at load, with the reason and the list of what would work:
+`cannot decode 'fake.wav': unsupported audio format (WAV, MP3 and OGG are
+supported)`. The same mistake elsewhere is reported through a channel a
+beginner can ignore — a `bool` from `loadFromFile` in SFML, an `error` event or
+a rejected `play()` promise in the browser — and ignoring it leaves silence
+with no explanation (documentary, not probed here). `Music` adds
 `position` (seek in seconds), `loop`, and `on_finished` — the pieces a menu
 soundtrack needs. The browser's autoplay rule still belongs to the host: sound
 started from a click works everywhere; sound started before any interaction may

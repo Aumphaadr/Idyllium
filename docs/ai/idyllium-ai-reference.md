@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: Idyllium 1.5.0.
+Current language target: Idyllium 1.5.2.
 
 This reference describes implemented behavior. Ideas from `BACKLOG.md` and
 exploratory files under `spec/some_*` are not language features until they are
@@ -204,8 +204,8 @@ Rules for named constants:
 Readable diagnostics include:
 
 ```text
-main.idyl:2: compile error: constant 'answer' must have an initializer
-main.idyl:3: compile error: cannot assign to constant 'answer'
+main.idyl:2:15: compile error: constant 'answer' must have an initializer
+main.idyl:3:5: compile error: cannot assign to constant 'answer'
 ```
 
 A declaration without an initializer creates the value's default:
@@ -242,6 +242,14 @@ int console = 5;   // compile error: variable 'console' conflicts with
 
 The reason is unavoidable ambiguity: `console.write(...)` is parsed as module
 access, so the same word would mean two things at once.
+
+Names starting with two underscores belong to the language itself — that is
+where the runtime keeps object tags and the generated code keeps its own
+variables. No declaration accepts such a name: `names starting with '__' are
+reserved by the language — pick another name for variable '__x'`. This
+covers variables, parameters, functions, fields, methods, events and classes.
+Names that merely collide with JavaScript internals (`toString`, `valueOf`,
+`hasOwnProperty`) are ordinary identifiers and work as members.
 
 Built-in global function names (`to_int`, `to_float`, `to_string`,
 `type_name`, `max`, `min`, `sum`, `avg`; `div` and `mod` are already
@@ -568,14 +576,26 @@ array<int, 3> numbers = [10, 20, 30];
 console.writeln(numbers[0]);
 ```
 
-The size is an integer literal or a named integer constant (including a
-constant computed from other constants); plain variables are rejected at
-compile time:
+The size must be known before the program runs. Write an integer literal, a
+named integer constant (`const`, including a class constant), or a **sum,
+difference or product** of those; plain variables are rejected at compile time:
 
 ```idyllium
-const int SIZE = 6;
+const int SIZE = 5;
+const int PAD = 2;
 array<int, SIZE> cells;          // ok
+array<int, SIZE * SIZE> board;   // ok — 25
+array<int, SIZE + PAD> row;      // ok — 7
+array<int, Board.W * Board.W> b; // ok — class constants too
 // int n = 6; array<int, n> bad; // compile error: must be a 'const'
+```
+
+Division is not accepted, and neither is anything the compiler cannot fold:
+
+```text
+compile error: array size must be known before the program runs: write a number, a constant declared with 'const', or their sum, difference or product
+compile error: array size 'n' must be an integer constant declared with 'const'
+compile error: array size must be non-negative, got -1
 ```
 
 Dynamic arrays:
@@ -1017,8 +1037,11 @@ main() {
 }
 ```
 
-Arrays of class objects are never printable directly — print elements in a
-loop instead.
+An array of objects nests freely: the contract is applied at any depth, so
+`dyn_array<dyn_array<Point>>` prints as `[["(0, 0)"]]`. Without the contract
+the refusal names the element class (`cannot print an array of 'A' objects
+directly — declare 'string function to_string()' in class 'A' and printing
+will use it`).
 
 Functions are not printable either: `console.writeln(abs_value)`
 — a forgotten-parentheses mistake — is a compile error (`cannot print function
@@ -1028,7 +1051,28 @@ the same guard covers `to_string(fn)`, file writes and `json.Value(fn)`.
 ### Access Modifiers
 
 `public:` and `private:` use a colon and apply until the next modifier or the
-end of the class.
+end of the class. Members declared **before the first modifier are public** —
+a class that never writes a modifier is fully open.
+
+The lock sits on the CLASS, not on the object: a method may read and write the
+private members of ANOTHER object of the same class. Without this rule
+`equals`, comparisons and swaps could not be written at all:
+
+```idyllium
+class Thermostat {
+private:
+    int temperature;
+
+public:
+    constructor Thermostat(int ex_temperature) {
+        this.temperature = ex_temperature;
+    }
+
+    bool function warmer_than(Thermostat other) {
+        return this.temperature > other.temperature;   // legal: same class
+    }
+}
+```
 
 ```idyllium
 class Hero {
@@ -1066,7 +1110,8 @@ main() {
     Cat.meow();
     console.writeln(Cat.population, " ", Cat.MAX_KITTENS);
     Cat.population = 3;                  // static fields are writable
-    array<int, Cat.MAX_KITTENS> basket;  // int class constants work as array sizes
+    array<int, Cat.MAX_KITTENS> basket;  // int class constants work as array sizes,
+                                         // alone or in a sum/difference/product
 }
 ```
 
@@ -1119,6 +1164,105 @@ constructor. Rules:
 - The compiler does not force `parent()` to be the first statement; calling it
   first is a style recommendation, because a later `parent()` call overwrites
   fields assigned before it.
+
+The base class does not have to live in the same file. Both of these work:
+
+```idyllium
+use zoo;   // zoo.idyl defines class Lion
+use gui;
+
+class Cub extends zoo.Lion {        // base from a user module
+    constructor Cub(string ex_name) {
+        parent(ex_name);            // runs zoo.Lion's constructor
+    }
+}
+
+class CounterButton extends gui.Button {   // base is a gui widget
+    int clicks = 0;
+
+    void function press() {
+        this.clicks = this.clicks + 1;
+        this.text = "Clicked: " + to_string(this.clicks);
+    }
+}
+```
+
+Module-class inheritance follows the ordinary rules: `parent(...)`, base
+fields and methods are inherited, `private` members of the base stay
+private, static members are NOT inherited (`zoo.Lion.population`, never
+`Cub.population`).
+
+Widget inheritance has its own contract:
+
+- Only ordinary widgets can be extended: `gui.Button`, `gui.Label`,
+  `gui.Frame`, `gui.CheckBox`, `gui.RadioButton`, `gui.LineEdit`,
+  `gui.TextEdit`, `gui.ProgressBar`, `gui.Slider`, `gui.SpinBox`,
+  `gui.ComboBox`, `gui.ImageBox`. `gui.Window`, `gui.Canvas`, `gui.Timer`,
+  dialogs and non-gui library types (`json.Value`, `time.stamp`, …) are a
+  compile error.
+- The heir IS the widget: it has all widget properties/callbacks plus its
+  own fields and methods, goes straight into `add_child(...)`, renders and
+  fires events exactly like its base. `type_name()` reports the heir class
+  name (`CounterButton`).
+- Widgets have no constructor, so `parent()` in a widget heir is a compile
+  error — configure properties instead. An heir constructor
+  (`constructor CounterButton(...)`) is allowed and typically sets
+  properties / builds children.
+- A field or method may not reuse a base widget member name
+  (`'text' is already a member of gui.Button — pick another name`).
+- The canonical compound widget extends `gui.Frame`: child widgets as
+  fields, assembly in the constructor via `this.add_child(...)`, methods
+  attached as callbacks (`this.slider.on_change = this.refresh;`).
+
+Chains and modules follow the same contract: a grandchild of `gui.Button`
+is still a real button (renders, fires events, joins radio groups), and a
+widget heir declared in a user module is a full widget for the importer.
+Member names of the widget stay taken all the way down the chain, events
+included (`event on_click` in an heir is a compile error).
+
+An override must keep every promise the base class made:
+
+- the same parameter types and the same result type (the `equals` contract
+  is the single exception, see §Contracts);
+- the base's parameter defaults — `greet(string who = "мир")` in the base
+  and `greet(string who)` in the heir is a compile error, because
+  `base.greet()` would then reach a body that has nothing to put in `who`.
+  The heir may pick a DIFFERENT default, and that default wins even through a
+  base-typed variable, because the value is filled by the method that actually
+  runs: with `hi(int n, int extra = 0)` in `A` and `hi(int n, int extra = 5)`
+  in `B`, `A a = b; a.hi(2)` prints `B 2 5`. C++ binds defaults statically and
+  would print `B 2 0` — the difference matters when porting examples;
+- the base's visibility — a public method may not become `private` in the
+  heir (through a base-typed variable it would be callable anyway);
+- a `private` method of the base cannot be overridden at all: an object has
+  one slot per name, so the heir's body would silently replace the machinery
+  the base calls on itself;
+- a name taken by an `event` of the base cannot be reused by a method.
+
+A class imported from a user module behaves exactly like the same class
+written in one file: the override rules above hold across the module border
+(`method 'Cub.roar' cannot be private — it overrides a public method of
+class 'zoo.Lion'`), and contracts (`equals`, `to_string`) still do not
+travel to heirs — the refusal is a compile error on both sides of the
+module border.
+
+`parent()` says what is wrong instead of "function not declared":
+`parent() runs the constructor of the base class and can only be called in
+the constructor of class 'Dog'`; `class 'Alone' has no base class —
+parent() needs 'extends'`. A private base constructor stays private for
+heirs too — inheritance is not a way around `private`.
+
+Note on printing: objects of the library (`gui.*`, `fonts.Font`,
+`drawable.*`, streams) have no text form and printing them is a compile
+error — `cannot print an object of type 'gui.Button' directly — library
+objects have no text form; print one of its properties instead`. Library
+VALUES print as before: `types.*` cells, `colors.Color`, `time.stamp`,
+`json.Value`/`json.Object`/`json.Array`/`sqlite.Value`, plus the library
+objects that carry their own text form: `turtle.Turtle`, `gui.Canvas`,
+`gui.Table`, `gui.BarChart`, `gui.LineChart`, `gui.PieChart`,
+`image.Vector`, `channel.Post`, `web.Server`/`web.Request`/`web.Response`
+and `http.Response`. An array of objects with a `to_string` contract prints
+through that contract at any nesting depth.
 
 ### User Events
 
@@ -1299,7 +1443,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, never returns
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.5.0"
+system.version()                    // "1.5.2"
 ```
 
 **Recursion depth.** Idyllium counts call depth itself instead of relying on the
@@ -3155,10 +3299,19 @@ use audio;
 
 `audio.Sound` is for short sound effects. Multiple `play()` calls may overlap.
 
-WAV and MP3 are the guaranteed teaching formats. OGG, AAC, and M4A may work
-when the browser or VSIX Chromium runtime provides the required codec, but
-portable Idyllium projects must not rely on them. Idyllium does not transcode
-audio files.
+WAV, MP3 and OGG are the accepted formats, and the format is detected from the
+file's **signature**, not from its extension — renaming a file does not change
+what it is. Anything else (AAC, M4A, or a file that is not audio at all) is
+refused when it is loaded:
+
+```text
+runtime error: Sound.load_from_file() cannot decode 'fake.wav': unsupported audio format (WAV, MP3 and OGG are supported)
+```
+
+WAV and MP3 are the guaranteed teaching formats: OGG passes the signature gate
+everywhere, but playback still needs a codec from the host. Idyllium does not
+transcode audio files. The signature check is a gate, not a full decode — a
+truncated but correctly-headed file loads and reports `duration` 0.
 
 Properties:
 
@@ -3412,9 +3565,27 @@ supported by Idyllium's first SQLite API.
 
 ```idyllium
 is_open
-has_rows
+has_rows             // true only when at least one row came back
 affected_rows
 last_insert_id       // sqlite.Value; null when nothing was inserted
+```
+
+`has_rows` is `true` when the result holds **at least one row**, and `false`
+for an empty `SELECT` as well as for statements that return no rows at all
+(`INSERT`, `UPDATE`, `DELETE` — those report through `affected_rows`). It is
+therefore the direct answer to "did anything match", and reading it does not
+consume the result — rows are materialised when the statement runs, so `next()`
+still starts from the first row:
+
+```idyllium
+    sqlite.Result rows = db.execute("SELECT name FROM players WHERE level >= :min");
+    if (rows.has_rows) {
+        while (rows.next()) {
+            console.writeln(rows.get_string("name"));
+        }
+    } else {
+        console.writeln("никого нет");
+    }
 ```
 
 Row and column methods:
@@ -3527,8 +3698,12 @@ Prefer examples that produce clear, precise errors. Good error style:
 ```text
 main.idyl:5: runtime error: array index 5 out of bounds (size 3, valid indices 0-2)
 main.idyl:7: runtime error: cannot convert input to 'int' (expected integer, got "abc")
-main.idyl:10: compile error: cannot assign 'string' value to 'int' variable
+main.idyl:10:13: compile error: cannot assign 'string' value to 'int' variable
 ```
+
+The two shapes differ on purpose: a runtime error carries `file:line`, a
+compile error also carries the column — `main.idyl:5: runtime error: …`
+against `main.idyl:5:12: compile error: …`.
 
 When generating teaching materials, include both:
 

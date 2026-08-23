@@ -221,7 +221,12 @@ export class Lexer {
       text += this.advance();
     }
 
-    const kind = KEYWORDS[text] ?? TokenKind.Identifier;
+    // Только СВОИ ключи таблицы: имена вроде toString/constructor/valueOf
+    // приходят из прототипа Object и раньше выдавались за «ключевые слова»
+    // (метод toString() ронял парсер в каскад с JS-нутром '[native code]').
+    const kind = Object.prototype.hasOwnProperty.call(KEYWORDS, text)
+      ? KEYWORDS[text]
+      : TokenKind.Identifier;
     let literal: string | boolean | null = null;
     if (kind === TokenKind.KwTrue) literal = true;
     if (kind === TokenKind.KwFalse) literal = false;

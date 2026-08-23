@@ -352,7 +352,9 @@ main() {
   <p>
     Метод <code>clear_tabs()</code> удаляет все вкладки вместе с их содержимым.
     После него <code>tab_count</code> снова равен нулю, а
-    <code>selected_index</code> возвращается к нулю.
+    <code>selected_index</code> становится <code>-1</code>: шкаф опять пуст,
+    открывать в нём нечего. Первая же новая <code>add_tab()</code> вернёт
+    выбор на нулевую вкладку.
   </p>
 
   <idyl-code-block><script type="text/plain">
@@ -368,11 +370,13 @@ main() {
 
     tabs.clear_tabs();
     console.writeln("После очистки: ", tabs.tab_count);
+    console.writeln("Выбрана вкладка: ", tabs.selected_index);
 }
 </script></idyl-code-block>
 
   <idyl-output-block>До очистки: 1
-После очистки: 0</idyl-output-block>
+После очистки: 0
+Выбрана вкладка: -1</idyl-output-block>
 
   <p>
     Пригождается это редко — например, когда программа перестраивает набор

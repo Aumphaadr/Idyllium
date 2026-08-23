@@ -87,6 +87,30 @@ export class Parser {
         continue;
       }
 
+      // 'function greet(...) { ... }' без типа результата: раньше отсюда
+      // сыпался каскад из девяти сообщений, ни одно из которых не называло
+      // причину. Говорим один раз и разбираем функцию как void — остальной
+      // файл при этом цел (тот же жанр, что и для методов класса).
+      if (this.check(TokenKind.KwFunction)) {
+        const functionToken = this.peek();
+        const name = this.tokens[this.current + 1];
+        this.error(
+          functionToken.range,
+          name && name.kind === TokenKind.Identifier
+            ? `function '${name.lexeme}' needs a result type before 'function' — write 'void function ${name.lexeme}()' if it returns nothing`
+            : "a function needs a result type before 'function' — write 'void function' if it returns nothing",
+        );
+        this.advance();
+        const recovered = this.finishFunctionDeclaration({ kind: 'PrimitiveTypeName', name: 'void', range: functionToken.range });
+        if (recovered.name === 'main') {
+          if (main !== null) this.error(recovered.range, "entry point 'main' is already declared");
+          main = this.mainFromFunctionDeclaration(recovered);
+        } else {
+          topLevelDeclarations.push(recovered);
+        }
+        continue;
+      }
+
       if (this.checkTypeStart()) {
         const declaration = this.parseTopLevelDeclaration();
         if (declaration.kind === 'FunctionDeclaration' && declaration.name === 'main') {
@@ -376,6 +400,12 @@ export class Parser {
       const base = this.consume(TokenKind.Identifier, 'expected base class name after extends');
       baseName = base.lexeme;
       baseNameRange = base.range;
+      // База с точкой: класс модуля (zoo.Lion) или виджет (gui.Button).
+      if (this.match(TokenKind.Dot)) {
+        const member = this.consume(TokenKind.Identifier, "expected class name after '.'");
+        baseName = `${baseName}.${member.lexeme}`;
+        baseNameRange = { start: base.range.start, end: member.range.end };
+      }
     }
 
     const leftBrace = this.consume(TokenKind.LeftBrace, "expected '{' to start class body");
@@ -452,6 +482,27 @@ export class Parser {
         } else {
           members.push(this.finishClassFieldDeclaration(declaredType, currentAccess, isStatic));
         }
+        continue;
+      }
+
+      // 'function hit() { ... }' без типа результата: раньше отсюда сыпался
+      // каскад «unexpected token» на каждую скобку. Говорим один раз и по делу,
+      // после чего разбираем метод как void — остальное тело класса цело.
+      if (this.check(TokenKind.KwFunction)) {
+        const functionToken = this.peek();
+        const name = this.tokens[this.current + 1];
+        this.error(
+          functionToken.range,
+          name && name.kind === TokenKind.Identifier
+            ? `method '${name.lexeme}' needs a result type before 'function' — write 'void function ${name.lexeme}()' if it returns nothing`
+            : "a method needs a result type before 'function' — write 'void function' if it returns nothing",
+        );
+        this.advance();
+        members.push(this.finishClassMethodDeclaration(
+          { kind: 'PrimitiveTypeName', name: 'void', range: functionToken.range },
+          isStatic,
+          currentAccess,
+        ));
         continue;
       }
 
@@ -1126,11 +1177,13 @@ export class Parser {
       let size: number | null = null;
 
       let sizeName: string | null = null;
+      let sizeExpression: Expression | null = null;
       let sizeRange: SourceRange | null = null;
       if (dynamic) {
         this.consume(TokenKind.Greater, "expected '>' after dyn_array element type");
       } else {
         this.consume(TokenKind.Comma, "expected ',' after array element type");
+        const sizeStart = this.current;
         if (this.check(TokenKind.Identifier)) {
           // Размер именованной константой: array<int, L> — или классовой,
           // через точку: array<int, Hero.MAX_LEVEL>.
@@ -1146,6 +1199,17 @@ export class Parser {
           const sizeToken = this.consume(TokenKind.IntLiteral, 'expected array size (an integer or a named constant)');
           size = typeof sizeToken.literal === 'number' ? sizeToken.literal : 0;
         }
+        // Размер-выражение: array<int, SIZE*SIZE>. Одиночное имя или число уже
+        // разобраны выше — если сразу за ними стоит не '>', значит это часть
+        // выражения; перечитываем размер целиком. Уровень parseTerm ('+ - * /')
+        // взят намеренно: разбор сравнений съел бы закрывающее '>'.
+        if (!this.check(TokenKind.Greater)) {
+          this.current = sizeStart;
+          size = null;
+          sizeName = null;
+          sizeExpression = this.parseTerm();
+          sizeRange = sizeExpression.range;
+        }
         this.consume(TokenKind.Greater, "expected '>' after array size");
       }
 
@@ -1154,6 +1218,7 @@ export class Parser {
         elementType,
         size,
         sizeName,
+        sizeExpression,
         sizeRange,
         dynamic,
         range: { start: start.range.start, end: this.previous().range.end },

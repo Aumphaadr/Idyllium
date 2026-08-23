@@ -52,6 +52,7 @@ import {
   isAssignable,
   isIntegerLike,
   isNumeric,
+  isTypesNumeric,
   numericBinaryResult,
   primitive,
   qualified,
@@ -172,11 +173,40 @@ interface UserClassInfo {
   constructorOwner: string;
   membersRegistered: boolean;
   membersRegistering: boolean;
+  /** База-виджет из белого списка (extends gui.Button): члены берутся из stdlib-реестра. */
+  builtinBase?: TypeRef;
 }
+
+/** Виджеты, от которых можно наследовать свой класс (вердикт владельца
+ *  2026-08-22). Window/Canvas/Timer/диалоги живут в state-списках рантайма
+ *  своей жизнью — им наследники не положены. */
+const EXTENDABLE_WIDGETS = new Set([
+  'Button', 'Label', 'Frame', 'CheckBox', 'RadioButton', 'LineEdit',
+  'TextEdit', 'ProgressBar', 'Slider', 'SpinBox', 'ComboBox', 'ImageBox',
+]);
+
+/** Библиотечные типы, у которых текстовый вид есть, но реестр о нём молчит:
+ *  рантайм вешает to_string прямо на объект (runtime.ts), а colors.Color
+ *  печатается своим кодом (#010203 — класс IdylliumColor). Список сверяется
+ *  с рантаймом смоуком «printable library types match the runtime» — если в
+ *  библиотеке появится новый тип с to_string, тест назовёт его.
+ *  Остальные объекты библиотеки печати не подлежат: раньше в консоль уезжало
+ *  JS-нутро '[object Object]'. Ячейки types.* и типы с to_string в реестре
+ *  (time.stamp, json/sqlite.Value) разрешены своими признаками. */
+const PRINTABLE_LIBRARY_OBJECTS = new Set([
+  'colors.Color',
+  'turtle.Turtle',
+  'image.Vector',
+  'gui.Canvas', 'gui.Table', 'gui.BarChart', 'gui.LineChart', 'gui.PieChart',
+  'channel.Post',
+  'web.Server', 'web.Request', 'web.Response',
+  'http.Response',
+]);
 
 interface ClassContext {
   readonly className: string;
   readonly isStatic: boolean;
+  readonly inConstructor: boolean;
 }
 
 export class SemanticAnalyzer {
@@ -184,6 +214,7 @@ export class SemanticAnalyzer {
   private readonly semanticTokens: IdylliumSemanticToken[] = [];
   private readonly nodeTypes = new Map<Expression, TypeRef>();
   private readonly imports = new Set<string>();
+  private readonly moduleInheritanceDone = new Set<string>();
   private readonly userModules = new Set<string>();
   private readonly scopes: Array<Map<string, SymbolInfo>> = [new Map()];
   private readonly functions = new Map<string, FunctionDeclaration>();
@@ -355,6 +386,51 @@ export class SemanticAnalyzer {
         membersRegistering: false,
       });
     }
+
+    // Второй проход: наследство внутри модуля. Зеркало несёт только СВОИ члены
+    // класса, а снаружи потомок обязан выглядеть ровно так же, как внутри
+    // модуля — иначе публичные поля/методы базы «пропадают», а виджет-наследник
+    // перестаёт быть виджетом (add_child отказывал). Проход по модулю —
+    // ровно один раз: он умеет звать себя для чужих модулей.
+    if (this.moduleInheritanceDone.has(moduleName)) return;
+    this.moduleInheritanceDone.add(moduleName);
+    for (const classSpec of module.classes.values()) {
+      if (!classSpec.baseName) continue;
+      const info = this.classes.get(classSpec.qualifiedName);
+      if (!info || info.declaration.members.length > 0) continue;
+      this.inheritImportedModuleClass(info, classSpec.baseName, new Set([classSpec.qualifiedName]));
+    }
+  }
+
+  // Тянет члены базы в зеркало импортированного класса: база может быть другим
+  // классом модуля (рекурсивно — дед тоже), классом иного модуля или виджетом.
+  private inheritImportedModuleClass(info: UserClassInfo, baseName: string, guard: Set<string>): void {
+    if (guard.has(baseName)) return;
+    guard.add(baseName);
+
+    if (baseName.startsWith('gui.')) {
+      const widgetName = baseName.slice(4);
+      if (EXTENDABLE_WIDGETS.has(widgetName)) info.builtinBase = qualified('gui', widgetName);
+      return;
+    }
+
+    // База из ЧУЖОГО модуля — подтягиваем его зеркало. Свой модуль повторно не
+    // трогаем: несуществующая база внутри модуля так роняла компилятор в
+    // бесконечную рекурсию (улов ломателей).
+    const dot = baseName.indexOf('.');
+    const baseModuleName = dot > 0 ? baseName.slice(0, dot) : '';
+    if (baseModuleName !== '' && !this.classes.has(baseName)) {
+      this.registerImportedModuleClasses(baseModuleName);
+    }
+    const baseInfo = this.classes.get(baseName);
+    if (!baseInfo) return;
+
+    const baseSpecName = baseInfo.declaration.baseName;
+    if (baseSpecName && !baseInfo.builtinBase) {
+      this.inheritImportedModuleClass(baseInfo, baseSpecName, guard);
+    }
+    this.inheritClassMembers(info, baseInfo);
+    if (baseInfo.builtinBase) info.builtinBase = baseInfo.builtinBase;
   }
 
   private registerFunction(declaration: FunctionDeclaration): void {
@@ -438,6 +514,7 @@ export class SemanticAnalyzer {
     if (declaration.baseNameRange) {
       this.markSemanticToken('class', declaration.baseNameRange);
     }
+    if (this.refuseInternalName(declaration.name, 'class', declaration.range)) return;
     if (this.classes.has(declaration.name)) {
       this.diagnostics.error(declaration.range, `class '${declaration.name}' is already declared`);
       return;
@@ -485,11 +562,36 @@ export class SemanticAnalyzer {
     info.membersRegistering = true;
     if (declaration.baseName) {
       const baseInfo = this.classes.get(declaration.baseName);
-      if (!baseInfo) {
-        this.diagnostics.error(declaration.range, `unknown base class '${declaration.baseName}'`);
-      } else {
+      if (baseInfo) {
         this.registerClassMembers(baseInfo.declaration);
         this.inheritClassMembers(info, baseInfo);
+      } else if (declaration.baseName.startsWith('gui.')) {
+        const widgetName = declaration.baseName.slice(4);
+        if (!this.imports.has('gui')) {
+          // Виджетная база — такое же обращение к модулю, как 'gui.Button b;'.
+          this.diagnostics.error(declaration.baseNameRange ?? declaration.range, "'gui' is not imported (use 'use gui;')");
+        } else if (EXTENDABLE_WIDGETS.has(widgetName)) {
+          info.builtinBase = qualified('gui', widgetName);
+        } else {
+          this.diagnostics.error(
+            declaration.baseNameRange ?? declaration.range,
+            `'${declaration.baseName}' cannot be extended — only ordinary widgets can: ${[...EXTENDABLE_WIDGETS].map((name) => `gui.${name}`).join(', ')}`,
+          );
+        }
+      } else if (declaration.baseName.includes('.')) {
+        const dot = declaration.baseName.indexOf('.');
+        const moduleName = declaration.baseName.slice(0, dot);
+        if (this.stdlib.getModule(moduleName)) {
+          this.diagnostics.error(declaration.baseNameRange ?? declaration.range, `'${declaration.baseName}' cannot be extended — only gui widgets and your own classes can be base classes`);
+        } else if (!this.imports.has(moduleName)) {
+          // Тот же ответ, что и на 'zoo.Lion l;' без use: забытый импорт
+          // называется забытым импортом, а не «неизвестной базой».
+          this.diagnostics.error(declaration.baseNameRange ?? declaration.range, `'${moduleName}' is not imported (use 'use ${moduleName};')`);
+        } else {
+          this.diagnostics.error(declaration.range, `unknown base class '${declaration.baseName}'`);
+        }
+      } else {
+        this.diagnostics.error(declaration.range, `unknown base class '${declaration.baseName}'`);
       }
     }
 
@@ -581,8 +683,13 @@ export class SemanticAnalyzer {
     }
   }
 
+  // ВАЖНО о порядке: у локальных классов наследство приезжает ДО собственных
+  // членов, а у зеркала импортированного модуля — ПОСЛЕ. Поэтому своё чужим не
+  // перекрываем: иначе переопределение уезжало бы наружу с сигнатурой и
+  // доступом базы (улов ломателей — 'undefined' в выводе и дыра в private).
   private inheritClassMembers(info: UserClassInfo, baseInfo: UserClassInfo): void {
     for (const [name, field] of baseInfo.fields) {
+      if (info.ownFields.has(name)) continue;
       info.fields.set(name, field);
       // «Пустое поле» наследуется вместе с охраной: карта для кодогена
       // пополняется и под именем потомка — иначе доступ через окно наследника
@@ -597,6 +704,7 @@ export class SemanticAnalyzer {
       }
     }
     for (const [name, method] of baseInfo.methods) {
+      if (info.ownMethods.has(name)) continue;
       info.methods.set(name, method);
       const declaration = baseInfo.methodDeclarations.get(name);
       if (declaration) info.methodDeclarations.set(name, declaration);
@@ -604,6 +712,7 @@ export class SemanticAnalyzer {
       if (access) info.methodAccess.set(name, access);
     }
     for (const [name, event] of baseInfo.events) {
+      if (info.ownEvents.has(name)) continue;
       info.events.set(name, event);
       const access = baseInfo.eventAccess.get(name);
       if (access) info.eventAccess.set(name, access);
@@ -626,8 +735,14 @@ export class SemanticAnalyzer {
 
     for (const field of declaration.fields) {
       this.markSemanticToken('property', field.nameRange, ['declaration']);
+      if (this.refuseInternalName(field.name, 'field', field.range)) continue;
       if (info.fields.has(field.name) || info.methods.has(field.name)) {
         this.diagnostics.error(field.range, `class '${info.declaration.name}' already has member '${field.name}'`);
+        continue;
+      }
+      const fieldClash = this.widgetMemberClash(info, field.name);
+      if (fieldClash) {
+        this.diagnostics.error(field.range, `'${field.name}' is already a member of ${typeToString(fieldClash)} — pick another name`);
         continue;
       }
       // «Пустое поле»: объектное поле с явным `= null` — единственная форма,
@@ -667,13 +782,45 @@ export class SemanticAnalyzer {
       declaration.nameRange,
       declaration.isStatic ? ['declaration', 'static'] : ['declaration'],
     );
+    if (this.refuseInternalName(declaration.name, 'method', declaration.range)) return;
     const inheritedField = info.fields.get(declaration.name);
     if (inheritedField && inheritedField.owner !== info.declaration.name) {
       this.diagnostics.error(declaration.range, `method '${declaration.name}' conflicts with inherited field '${inheritedField.owner}.${declaration.name}'`);
       return;
     }
 
+    // Событие базы и метод потомка — одно имя на двоих: раньше метод молча
+    // занимал место события, и запуск события уходил в чужое тело.
+    const inheritedEvent = info.events.get(declaration.name);
+    if (inheritedEvent && !info.ownEvents.has(declaration.name)) {
+      const owner = info.eventAccess.get(declaration.name)?.owner ?? info.declaration.name;
+      this.diagnostics.error(declaration.range, `method '${declaration.name}' conflicts with inherited event '${owner}.${declaration.name}'`);
+      return;
+    }
+
     const inheritedMethod = info.methods.get(declaration.name);
+    const inheritedAccess = info.methodAccess.get(declaration.name);
+    if (inheritedMethod && inheritedAccess && inheritedAccess.owner !== info.declaration.name) {
+      // Приватный метод — внутреннее дело своего класса: подменять его снаружи
+      // нельзя (иначе механика базы молча меняется под ней самой).
+      if (inheritedAccess.access === 'private') {
+        this.diagnostics.error(
+          declaration.range,
+          `method '${declaration.name}' is private in class '${inheritedAccess.owner}' and cannot be overridden — pick another name`,
+        );
+        return;
+      }
+      // Потомок не смеет прятать то, что база обещала всем: через переменную
+      // базового типа такой «приватный» метод всё равно звался бы снаружи.
+      if (declaration.access === 'private') {
+        this.diagnostics.error(
+          declaration.range,
+          `method '${info.declaration.name}.${declaration.name}' cannot be private — it overrides a public method of class '${inheritedAccess.owner}'`,
+        );
+        return;
+      }
+    }
+
     if (inheritedMethod && !this.methodSignatureCanOverride(inheritedMethod, declaration)) {
       // Контрактное исключение: методы-контракты не наследуются, у каждого
       // класса — своя версия со СВОИМ типом параметра (equals(Cat) при
@@ -684,8 +831,32 @@ export class SemanticAnalyzer {
       }
     }
 
+    // Умолчания параметров принадлежат обещанию базы: если база разрешала звать
+    // метод без аргумента, потомок обязан это разрешение сохранить — иначе вызов
+    // через переменную базового типа отдавал в тело потомка пустоту. Спрашиваем
+    // ПОСЛЕ сверки сигнатур: у метода с другим числом или типом параметров речь
+    // не об умолчаниях, и говорить про «умолчание, которое есть в базе» было бы
+    // враньём — такого параметра там нет вовсе (O39, находка методистов).
+    if (inheritedMethod && inheritedAccess && inheritedAccess.owner !== info.declaration.name) {
+      const required = requiredParameterCount(declaration.parameters);
+      const baseRequired = inheritedMethod.minArguments ?? inheritedMethod.parameters.length;
+      if (required > baseRequired) {
+        const parameter = declaration.parameters[baseRequired];
+        this.diagnostics.error(
+          parameter?.range ?? declaration.range,
+          `parameter '${parameter?.name ?? ''}' of '${info.declaration.name}.${declaration.name}' must keep the default value it has in class '${inheritedAccess.owner}' — that class allows calling '${declaration.name}' with ${baseRequired} argument${baseRequired === 1 ? '' : 's'}`,
+        );
+        return;
+      }
+    }
+
     if ((info.fields.has(declaration.name) && info.ownFields.has(declaration.name)) || (info.methods.has(declaration.name) && info.ownMethods.has(declaration.name))) {
       this.diagnostics.error(declaration.range, `class '${info.declaration.name}' already has member '${declaration.name}'`);
+      return;
+    }
+    const methodClash = this.widgetMemberClash(info, declaration.name);
+    if (methodClash) {
+      this.diagnostics.error(declaration.range, `'${declaration.name}' is already a member of ${typeToString(methodClash)} — pick another name`);
       return;
     }
 
@@ -715,6 +886,27 @@ export class SemanticAnalyzer {
         this.equalsContractClasses.add(info.declaration.name);
       }
     }
+  }
+
+  /** Объявлен ли публичный контракт equals В САМОМ классе — по имени, в том
+   *  числе точечному ('zoo.Lion'). Реестр коротких имён заполняется лениво,
+   *  поэтому модульные классы смотрим прямо в спецификации модуля: иначе
+   *  страж «контракт не наследуется» молчал через границу модуля и ученик
+   *  получал рантайм-«object has no method 'equals'» (улов ломателей). */
+  private classDeclaresEqualsContract(className: string): boolean {
+    const dot = className.indexOf('.');
+    if (dot > 0) {
+      const moduleName = className.slice(0, dot);
+      const bareName = className.slice(dot + 1);
+      const classSpec = this.userModuleRegistry.getModule(moduleName)?.classes.get(bareName);
+      const method = classSpec?.methods.find((item) => item.name === 'equals');
+      return method !== undefined
+        && !method.isStatic
+        && method.access === 'public'
+        && method.spec.parameters.length === 1
+        && sameType(method.spec.returnType, BOOL);
+    }
+    return this.equalsContractClasses.has(className);
   }
 
   /** Форма контракта equals: нестатический, ровно один параметр СВОЕГО класса, возвращает bool. */
@@ -801,6 +993,7 @@ export class SemanticAnalyzer {
   private registerClassEvent(info: UserClassInfo, declaration: ClassEventDeclaration): void {
     this.markSemanticToken('property', declaration.nameRange, ['declaration']);
 
+    if (this.refuseInternalName(declaration.name, 'event', declaration.range)) return;
     if (info.fields.has(declaration.name) || info.methods.has(declaration.name) || info.events.has(declaration.name)) {
       const inherited = !info.ownFields.has(declaration.name)
         && !info.ownMethods.has(declaration.name)
@@ -811,6 +1004,14 @@ export class SemanticAnalyzer {
           ? `event '${declaration.name}' conflicts with an inherited member`
           : `class '${info.declaration.name}' already has member '${declaration.name}'`,
       );
+      return;
+    }
+
+    // Событие тоже занимает имя: 'event on_click' у наследника кнопки подменял
+    // контракт клика, 'event text' — уничтожал свойство.
+    const eventClash = this.widgetMemberClash(info, declaration.name);
+    if (eventClash) {
+      this.diagnostics.error(declaration.range, `'${declaration.name}' is already a member of ${typeToString(eventClash)} — pick another name`);
       return;
     }
 
@@ -974,27 +1175,47 @@ export class SemanticAnalyzer {
 
   private analyzeClassConstructor(info: UserClassInfo, declaration: ConstructorDeclaration): void {
     this.returnTypes.push(VOID);
-    this.pushClassContext(info.declaration.name, false);
+    this.pushClassContext(info.declaration.name, false, true);
     this.pushScope();
     this.declare('this', classType(info.declaration.name), 'parameter', declaration.range);
 
-    if (info.declaration.baseName) {
+    if (info.builtinBase) {
+      // У виджета нет конструктора — parent() наследнику не положен.
+      for (const call of this.findParentCalls(declaration.body)) {
+        this.diagnostics.error(call.range, `${typeToString(info.builtinBase)} has no constructor — configure the widget's properties instead of calling parent()`);
+      }
+    } else if (info.declaration.baseName) {
       const baseInfo = this.classes.get(info.declaration.baseName);
-      const baseConstructor = baseInfo?.constructorSpec ?? {
-        name: 'parent',
-        parameters: [],
-        returnType: VOID,
-      };
-      this.declare(
-        'parent',
-        functionType(
-          baseConstructor.parameters.map((parameter) => parameter.type),
-          VOID,
-          baseConstructor.minArguments,
-        ),
-        'function',
-        declaration.range,
-      );
+      // База не нашлась — про неё уже сказано («unknown base class»); parent()
+      // тогда не объявляем вовсе, а его вызов молчит (см. вызовной путь):
+      // фантом «'parent' expects 0 arguments» только уводил бы в сторону.
+      if (baseInfo) {
+        // Приватный конструктор базы закрыт и для потомка: наследование — не
+        // лазейка мимо 'private'.
+        if (baseInfo.constructorAccess === 'private') {
+          for (const call of this.findParentCalls(declaration.body)) {
+            this.diagnostics.error(
+              call.range,
+              `constructor '${info.declaration.baseName}' is private and can only be used inside class '${baseInfo.constructorOwner}'`,
+            );
+          }
+        }
+        const baseConstructor = baseInfo.constructorSpec ?? {
+          name: 'parent',
+          parameters: [],
+          returnType: VOID,
+        };
+        this.declare(
+          'parent',
+          functionType(
+            baseConstructor.parameters.map((parameter) => parameter.type),
+            VOID,
+            baseConstructor.minArguments,
+          ),
+          'function',
+          declaration.range,
+        );
+      }
     }
 
     this.analyzeParameters(declaration.parameters);
@@ -1373,6 +1594,28 @@ export class SemanticAnalyzer {
       if (sameType(elementType, VOID)) {
         this.diagnostics.error(typeName.elementType.range, "array element type cannot be 'void'");
       }
+      // Размер-выражение: array<int, SIZE*SIZE>. Считаем на компиляции тем же
+      // фолдером, что и одиночные константы; если посчитать нельзя — говорим
+      // прямо, что именно требуется, вместо каскада про '>'.
+      // Точная жалоба на размер уже сказана? Тогда общая («must be a
+      // non-negative integer») — эхо, и человеку она ничего не добавляет.
+      let sizeReported = false;
+      if (!typeName.dynamic && typeName.sizeExpression !== null && typeName.size === null) {
+        const sizeRange = typeName.sizeRange ?? typeName.range;
+        const folded = this.foldConstInt(typeName.sizeExpression);
+        sizeReported = true;
+        if (folded === null) {
+          this.diagnostics.error(
+            sizeRange,
+            "array size must be known before the program runs: write a number, a constant declared with 'const', or their sum, difference or product",
+          );
+        } else if (folded < 0) {
+          this.diagnostics.error(sizeRange, `array size must be non-negative, got ${folded}`);
+        } else {
+          typeName.size = folded;
+          sizeReported = false;
+        }
+      }
       if (!typeName.dynamic && typeName.sizeName !== null && typeName.size === null) {
         // Размер задан именованной константой: array<int, L> — либо
         // классовой, через точку: array<int, Hero.MAX_LEVEL>.
@@ -1387,18 +1630,22 @@ export class SemanticAnalyzer {
           const field = classInfo?.fields.get(constantName);
           if (classInfo && field) {
             if (!field.isConst) {
-              this.diagnostics.error(sizeRange, `array size '${typeName.sizeName}' is not a constant — only a class constant (const) works as a size`);
+              sizeReported = true;
+            this.diagnostics.error(sizeRange, `array size '${typeName.sizeName}' is not a constant — only a class constant (const) works as a size`);
               return arrayType(elementType, null, false);
             }
             if (!sameType(field.type, INT)) {
-              this.diagnostics.error(sizeRange, `array size constant '${typeName.sizeName}' must be an int constant, got '${typeToString(field.type)}'`);
+              sizeReported = true;
+            this.diagnostics.error(sizeRange, `array size constant '${typeName.sizeName}' must be an int constant, got '${typeToString(field.type)}'`);
               return arrayType(elementType, null, false);
             }
             if (field.constantValue === undefined) {
-              this.diagnostics.error(sizeRange, `array size constant '${typeName.sizeName}' must be initialized with a constant expression`);
+              sizeReported = true;
+            this.diagnostics.error(sizeRange, `array size constant '${typeName.sizeName}' must be initialized with a constant expression`);
               return arrayType(elementType, null, false);
             }
           } else if (classInfo) {
+            sizeReported = true;
             this.diagnostics.error(sizeRange, `class '${className}' has no constant '${constantName}'`);
             return arrayType(elementType, null, false);
           }
@@ -1408,15 +1655,18 @@ export class SemanticAnalyzer {
           value = symbol?.constantValue ?? this.fileConstants.get(typeName.sizeName);
         }
         if (value === undefined) {
+          sizeReported = true;
           if (symbol) {
             this.diagnostics.error(
               sizeRange,
               `array size '${typeName.sizeName}' must be an integer constant declared with 'const'`,
             );
           } else {
+            sizeReported = true;
             this.diagnostics.error(sizeRange, `array size constant '${typeName.sizeName}' was not declared`);
           }
         } else if (value < 0) {
+          sizeReported = true;
           this.diagnostics.error(sizeRange, `array size constant '${typeName.sizeName}' must be non-negative, got ${value}`);
         } else {
           this.markSemanticToken('variable', sizeRange, ['readonly']);
@@ -1424,7 +1674,7 @@ export class SemanticAnalyzer {
           typeName.size = value;
         }
       }
-      if (!typeName.dynamic && (typeName.size === null || typeName.size < 0)) {
+      if (!sizeReported && !typeName.dynamic && (typeName.size === null || typeName.size < 0)) {
         this.diagnostics.error(typeName.range, 'array size must be a non-negative integer');
       }
       // Предел создаваемого массива (см. assertCreatableArraySize в рантайме):
@@ -1480,7 +1730,11 @@ export class SemanticAnalyzer {
 
       const classSpec = module.classes.get(typeName.name);
       if (!classSpec) {
-        this.diagnostics.error(typeName.range, `module '${typeName.moduleName}' has no type '${typeName.name}'`);
+        // Модуль не загрузился (цикл импорта, нет файла) — причина уже названа
+        // в месте use; «нет такого типа» было бы враньём: тип там есть.
+        if (!this.userModuleRegistry.isUnavailable(typeName.moduleName)) {
+          this.diagnostics.error(typeName.range, `module '${typeName.moduleName}' has no type '${typeName.name}'`);
+        }
         return ERROR_TYPE;
       }
 
@@ -1662,6 +1916,15 @@ export class SemanticAnalyzer {
         }
         const field = this.getClassField(objectType.name, target.name);
         if (!field) {
+          const builtinBase = this.builtinBaseOf(objectType.name);
+          const property = builtinBase ? this.stdlib.getTypeProperty(builtinBase, target.name) : undefined;
+          if (property) {
+            this.markSemanticToken('property', target.nameRange, ['defaultLibrary']);
+            if (property.readonly) {
+              this.diagnostics.error(target.range, `property '${target.name}' is read-only`);
+            }
+            return { type: property.type, property };
+          }
           this.diagnostics.error(target.range, `type '${typeToString(objectType)}' has no field '${target.name}'`);
           return { type: ERROR_TYPE };
         }
@@ -2279,6 +2542,31 @@ export class SemanticAnalyzer {
         };
       }
 
+      // parent(): вместо общего «функция не объявлена» — что именно не так.
+      const contextClass = this.currentClassName();
+      const contextInfo = contextClass !== null ? this.classes.get(contextClass) : undefined;
+      if (callee.name === 'parent' && contextInfo) {
+        if (contextInfo.builtinBase) {
+          // В конструкторе про это уже сказано целевым текстом (banParent).
+          if (!this.currentClassContext()?.inConstructor) {
+            this.diagnostics.error(
+              callee.range,
+              `${typeToString(contextInfo.builtinBase)} has no constructor — configure the widget's properties instead of calling parent()`,
+            );
+          }
+          return null;
+        }
+        const baseName = contextInfo.declaration.baseName;
+        // База не нашлась — про неё уже сказано («unknown base class»).
+        if (baseName && !this.classes.has(baseName)) return null;
+        this.diagnostics.error(
+          callee.range,
+          baseName
+            ? `parent() runs the constructor of the base class and can only be called in the constructor of class '${contextClass}'`
+            : `class '${contextClass}' has no base class — parent() needs 'extends'`,
+        );
+        return null;
+      }
       this.diagnostics.error(callee.range, this.notDeclaredMessage(callee.name, 'function '));
       return null;
     }
@@ -2466,8 +2754,8 @@ export class SemanticAnalyzer {
           // «object has no method 'equals'» (E17, находка методистов).
           if (callee.name === 'equals'
             && method.access.owner !== objectType.name
-            && this.equalsContractClasses.has(method.access.owner)
-            && !this.equalsContractClasses.has(objectType.name)) {
+            && this.classDeclaresEqualsContract(method.access.owner)
+            && !this.classDeclaresEqualsContract(objectType.name)) {
             this.diagnostics.error(callee.range, `'equals' is a contract and is not inherited — declare 'bool function equals(${objectType.name} other)' in class '${objectType.name}' and the call will use it`);
             return null;
           }
@@ -2482,7 +2770,21 @@ export class SemanticAnalyzer {
           );
           return null;
         }
-        this.diagnostics.error(callee.range, `type '${typeToString(objectType)}' has no method '${callee.name}'`);
+        const builtinBase = this.builtinBaseOf(objectType.name);
+        if (builtinBase) {
+          const widgetMethod = this.stdlib.getTypeMethod(builtinBase, callee.name);
+          if (widgetMethod) {
+            this.markSemanticToken('method', callee.nameRange, ['defaultLibrary']);
+            return widgetMethod;
+          }
+        }
+        const unimportedMethodOwner = this.unimportedOwnerModule(objectType);
+        this.diagnostics.error(
+          callee.range,
+          unimportedMethodOwner !== null
+            ? `'${unimportedMethodOwner}' is not imported (use 'use ${unimportedMethodOwner};')`
+            : `type '${typeToString(objectType)}' has no method '${callee.name}'`,
+        );
         return null;
       }
       const method = this.stdlib.getTypeMethod(objectType, callee.name);
@@ -2490,7 +2792,13 @@ export class SemanticAnalyzer {
         this.markSemanticToken('method', callee.nameRange, ['defaultLibrary']);
         return method;
       }
-      this.diagnostics.error(callee.range, `type '${typeToString(objectType)}' has no method '${callee.name}'`);
+      const unimportedCalleeOwner = this.unimportedOwnerModule(objectType);
+      this.diagnostics.error(
+        callee.range,
+        unimportedCalleeOwner !== null
+          ? `'${unimportedCalleeOwner}' is not imported (use 'use ${unimportedCalleeOwner};')`
+          : `type '${typeToString(objectType)}' has no method '${callee.name}'`,
+      );
       return null;
     }
 
@@ -2639,6 +2947,17 @@ export class SemanticAnalyzer {
     if (type.kind === 'class') {
       if (this.classHasPublicToString(type.name)) return null;
       return `cannot print object of class '${type.name}' directly — declare 'string function to_string()' in class '${type.name}' and printing will use it${this.contractShapeIssue(type.name, 'to_string')}`;
+    }
+    // Библиотечный объект без текстового вида: раньше в консоль уезжало
+    // JS-нутро «[object Object]». Значения библиотеки (colors.Color,
+    // time.stamp, json.Value, sqlite.Value) печатаются как печатались.
+    if (type.kind === 'qualified' && this.stdlib.hasModule(type.moduleName)) {
+      // Значения библиотеки печатаются собой: числовые ячейки types.*, цвет,
+      // и всё, у чего в реестре есть to_string (time.stamp, json/sqlite.Value).
+      if (isTypesNumeric(type)) return null;
+      if (this.stdlib.getTypeMethod(type, 'to_string')) return null;
+      if (PRINTABLE_LIBRARY_OBJECTS.has(typeToString(type))) return null;
+      return `cannot print an object of type '${typeToString(type)}' directly — library objects have no text form; print one of its properties instead`;
     }
     if (type.kind === 'qualified' && this.userModuleRegistry.hasModule(type.moduleName)) {
       const classSpec = this.userModuleRegistry.getModule(type.moduleName)?.classes.get(type.name);
@@ -3029,8 +3348,8 @@ export class SemanticAnalyzer {
         this.markSemanticToken('method', expression.nameRange);
         if (expression.name === 'equals'
           && method.access.owner !== objectType.name
-          && this.equalsContractClasses.has(method.access.owner)
-          && !this.equalsContractClasses.has(objectType.name)) {
+          && this.classDeclaresEqualsContract(method.access.owner)
+          && !this.classDeclaresEqualsContract(objectType.name)) {
           this.diagnostics.error(expression.range, `'equals' is a contract and is not inherited — declare 'bool function equals(${objectType.name} other)' in class '${objectType.name}' and the call will use it`);
           return ERROR_TYPE;
         }
@@ -3046,7 +3365,28 @@ export class SemanticAnalyzer {
         return ERROR_TYPE;
       }
 
-      this.diagnostics.error(expression.range, `type '${typeToString(objectType)}' has no member '${expression.name}'`);
+      // Наследник виджета: свойства и методы базы — из stdlib-реестра.
+      const builtinBase = this.builtinBaseOf(objectType.name);
+      if (builtinBase) {
+        const property = this.stdlib.getTypeProperty(builtinBase, expression.name);
+        if (property) {
+          this.markSemanticToken('property', expression.nameRange, ['defaultLibrary']);
+          return property.type;
+        }
+        const widgetMethod = this.stdlib.getTypeMethod(builtinBase, expression.name);
+        if (widgetMethod) {
+          this.markSemanticToken('method', expression.nameRange, ['defaultLibrary']);
+          return functionType(widgetMethod.parameters.map((param) => param.type), widgetMethod.returnType);
+        }
+      }
+
+      const unimported = this.unimportedOwnerModule(objectType);
+      this.diagnostics.error(
+        expression.range,
+        unimported !== null
+          ? `'${unimported}' is not imported (use 'use ${unimported};')`
+          : `type '${typeToString(objectType)}' has no member '${expression.name}'`,
+      );
       return ERROR_TYPE;
     }
 
@@ -3062,8 +3402,32 @@ export class SemanticAnalyzer {
       return functionType(method.parameters.map((param) => param.type), method.returnType);
     }
 
-    this.diagnostics.error(expression.range, `type '${typeToString(objectType)}' has no member '${expression.name}'`);
+    const unimportedOwner = this.unimportedOwnerModule(objectType);
+    this.diagnostics.error(
+      expression.range,
+      unimportedOwner !== null
+        ? `'${unimportedOwner}' is not imported (use 'use ${unimportedOwner};')`
+        : `type '${typeToString(objectType)}' has no member '${expression.name}'`,
+    );
     return ERROR_TYPE;
+  }
+
+  /** Модуль-владелец типа, который в этом файле не подключён. Поиск члена в
+   *  таком типе проваливается по единственной причине — забытому use, и
+   *  говорить «нет такого члена» было бы неправдой: член там есть (O38,
+   *  находка методистов 2026-08-23). Ловушка коварна тем, что имя модуля в
+   *  тексте программы может не встречаться вовсе — тип приезжает по цепочке
+   *  точек из чужого класса. */
+  private unimportedOwnerModule(type: TypeRef): string | null {
+    let moduleName: string | null = null;
+    if (type.kind === 'qualified') {
+      moduleName = type.moduleName;
+    } else if (type.kind === 'class') {
+      const dot = type.name.indexOf('.');
+      if (dot > 0) moduleName = type.name.slice(0, dot);
+    }
+    if (moduleName === null || moduleName === '') return null;
+    return this.imports.has(moduleName) ? null : moduleName;
   }
 
   private isStringType(type: TypeRef): boolean {
@@ -3191,6 +3555,47 @@ export class SemanticAnalyzer {
     return null;
   }
 
+  /** Виджет-база класса (по цепочке локальных наследований); null для обычных классов. */
+  // Все вызовы parent() в теле конструктора — для запретов, у которых свой
+  // текст (виджет без конструктора, приватный конструктор базы).
+  private findParentCalls(body: unknown): Array<Extract<Expression, { kind: 'CallExpression' }>> {
+    const found: Array<Extract<Expression, { kind: 'CallExpression' }>> = [];
+    const walk = (node: unknown): void => {
+      if (Array.isArray(node)) { node.forEach(walk); return; }
+      if (typeof node !== 'object' || node === null) return;
+      if ((node as { kind?: unknown }).kind === 'CallExpression') {
+        const call = node as Extract<Expression, { kind: 'CallExpression' }>;
+        if (call.callee.kind === 'IdentifierExpression' && call.callee.name === 'parent') found.push(call);
+      }
+      Object.values(node).forEach(walk);
+    };
+    walk(body);
+    return found;
+  }
+
+  // Имя занято виджетом-предком? Смотрим ВСЮ цепочку: у внука кнопки поле
+  // 'text' так же незаконно, как у прямого наследника, — иначе int тихо ляжет
+  // в строгое строковое свойство.
+  private widgetMemberClash(info: UserClassInfo, name: string): TypeRef | null {
+    const base = info.builtinBase
+      ?? (info.declaration.baseName ? this.builtinBaseOf(info.declaration.baseName) : null);
+    if (!base) return null;
+    const taken = this.stdlib.getTypeProperty(base, name) || this.stdlib.getTypeMethod(base, name);
+    return taken ? base : null;
+  }
+
+  private builtinBaseOf(className: string): TypeRef | null {
+    let info = this.classes.get(className);
+    const guard = new Set<string>();
+    while (info && !guard.has(info.declaration.name)) {
+      guard.add(info.declaration.name);
+      if (info.builtinBase) return info.builtinBase;
+      if (!info.declaration.baseName) return null;
+      info = this.classes.get(info.declaration.baseName);
+    }
+    return null;
+  }
+
   private checkClassMemberAccess(member: UserPropertySpec | UserMethodAccess, range: SourceRange): void {
     if (member.access === 'public') return;
     if (this.currentClassName() === member.owner) return;
@@ -3210,6 +3615,15 @@ export class SemanticAnalyzer {
 
     if (target.kind === 'class' && value.kind === 'class') {
       return this.classExtends(value.name, target.name);
+    }
+
+    // Наследник виджета живёт всюду, где ждут его виджет-базу или gui.Widget.
+    if (target.kind === 'qualified' && value.kind === 'class') {
+      const builtinBase = this.builtinBaseOf(value.name);
+      if (builtinBase && builtinBase.kind === 'qualified') {
+        if (sameType(target, builtinBase)) return true;
+        if (target.moduleName === 'gui' && target.name === 'Widget') return true;
+      }
     }
 
     if (target.kind === 'qualified' && value.kind === 'qualified') {
@@ -3295,7 +3709,20 @@ export class SemanticAnalyzer {
     return true;
   }
 
+  /** Имена, начинающиеся с '__', принадлежат языку: под ними живут внутренние
+   *  метки объектов и переменные сгенерированного кода. Без запрета поле
+   *  '__proto__' молча теряло значение (в JS это вход в прототип). */
+  private refuseInternalName(name: string, what: string, range: SourceRange): boolean {
+    if (!name.startsWith('__')) return false;
+    this.diagnostics.error(range, `names starting with '__' are reserved by the language — pick another name for ${what} '${name}'`);
+    return true;
+  }
+
   private checkReservedName(name: string, kind: SymbolInfo['kind'], range: SourceRange): boolean {
+    if (name.startsWith('__')) {
+      this.diagnostics.error(range, `names starting with '__' are reserved by the language — pick another name for ${kind} '${name}'`);
+      return false;
+    }
     if (this.stdlib.hasModule(name)) {
       this.diagnostics.error(range, `${kind} '${name}' conflicts with a standard library module`);
       return false;
@@ -3346,8 +3773,8 @@ export class SemanticAnalyzer {
     this.scopes.pop();
   }
 
-  private pushClassContext(className: string, isStatic: boolean): void {
-    this.classContexts.push({ className, isStatic });
+  private pushClassContext(className: string, isStatic: boolean, inConstructor = false): void {
+    this.classContexts.push({ className, isStatic, inConstructor });
   }
 
   private popClassContext(): void {

@@ -21,9 +21,9 @@ main() {
   <idyl-error-block>main.idyl:4: runtime error: file.open() cannot open 'saves/player.txt' for writing: directory does not exist</idyl-error-block>
 
   <p>
-    Вместо <code>/home/user/my_game</code> компилятор подставит полный путь к
-    папке вашего проекта. Файл <code>player.txt</code> создать можно, но сначала
-    программе нужна папка <code>saves</code>.
+    Путь в сообщении — тот же самый, что вы написали в программе: он всегда
+    считается от папки проекта. Файл <code>player.txt</code> создать можно, но
+    сначала программе нужна папка <code>saves</code>.
   </p>
 </div>
 
@@ -66,7 +66,7 @@ file.create_directory("game/saves/players", parents=true);
     и она внезапно упадёт:
   </p>
 
-  <idyl-error-block>main.idyl:4: runtime error: file.create_directory() cannot create 'saves': path already exists: /home/user/my_game/saves</idyl-error-block>
+  <idyl-error-block>main.idyl:4: runtime error: file.create_directory() cannot create 'saves': path already exists: saves</idyl-error-block>
 
   <p>
     <code>create_directory()</code> отказывается создавать то, что уже

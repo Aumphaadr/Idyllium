@@ -13,6 +13,8 @@ ladder:
 | 4 | Canvas and 2D games: frame loop, sprites, input, collisions | SFML, PyGame, HTML Canvas |
 | 5 | JSON: parsing, building, saves | nlohmann/json, `json` module, native JS |
 | 6 | Databases: SQLite, queries, records | sqlite3 bindings in C++/Python/JS |
+| 7 | Networking: HTTP client, HTTP server, templates, forms, channels between programs, addresses | QtNetwork + cpp-httplib, `requests` + `http.server`, `fetch` + `node:http` |
+| 8 | time, math at the edges, fixed-width integers, encodings, hashes, colors, images as data, sound, `system` | C++ standard library, Python standard library + PIL, JavaScript/Node built-ins |
 
 Companion files: `idyllium-ai-reference.md` (what the language *is*),
 `idyllium-course-ai-reference.md` (how the course *teaches*),

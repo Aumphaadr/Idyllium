@@ -30,8 +30,8 @@ use console;
 use math;
 
 main() {
-    console.writeln("Банок нужно точно: ", 23.0 / 5.0);
-    console.writeln("Придётся купить: ", math.ceil(23.0 / 5.0));
+    console.writeln("Банок нужно точно: ", 23 / 5);
+    console.writeln("Придётся купить: ", math.ceil(23 / 5));
 }
 </script></idyl-code-block>
   <idyl-output-block>Банок нужно точно: 4.6
@@ -55,13 +55,12 @@ main() {
 Оценка 3: 4
 Средний балл: 4.33</idyl-output-block>
   <h4 class="task-item">Задание 6. Предскажи округление</h4>
-  <p>Маленький опыт. <strong>Сначала запишите догадку</strong>, а потом запустите и проверьте — что даст каждая функция для числа <code>4.6</code>:</p>
+  <p>Маленький опыт. <strong>Сначала запишите догадку</strong>, а потом запустите и проверьте — что даст каждая функция для двух чисел: <code>4.6</code> и <code>4.2</code>:</p>
   <idyl-code-block><script type="text/plain">
-    console.writeln(math.floor(4.6));
-    console.writeln(math.ceil(4.6));
-    console.writeln(math.round(4.6));
+    console.writeln(math.floor(4.6), " ", math.ceil(4.6), " ", math.round(4.6));
+    console.writeln(math.floor(4.2), " ", math.ceil(4.2), " ", math.round(4.2));
 </script></idyl-code-block>
-  <p>Где <code>floor</code> и <code>round</code> совпали, а где разошлись? Придумайте число, на котором совпадут <code>ceil</code> и <code>round</code>, но не <code>floor</code>, — и проверьте себя.</p>
+  <p>Заполните табличку в тетради: где <code>round</code> совпал с <code>floor</code>, а где — с <code>ceil</code>? Сформулируйте правило <code>round</code> своими словами и проверьте его на третьем числе, которое придумаете сами (возьмите что-нибудь ровно посередине — например, <code>4.5</code>, — и посмотрите, чью сторону выберет <code>round</code>).</p>
 </div>
 
 <div class="docs-section">
@@ -200,7 +199,7 @@ main() {
     int side = math.sqrt(49);
 </script></idyl-code-block>
   <p>Запустите и прочитайте отказ. Хотя <code>sqrt(49)</code> — это ровно <code>7</code>, функция всё равно отдаёт <strong>дробное</strong> число (<code>float</code>), а в целую коробку дробь не помещается. То же с <code>pow</code>. Мораль: результат <code>sqrt</code> и <code>pow</code> всегда кладите в <code>float</code>, даже если ответ на вид целый. Почините, заменив <code>int</code> на <code>float</code>.</p>
-  <h4 class="task-item">Минутка из внешнего мира. Как это зовут у соседей</h4>
+  <h4 class="task-item task-aside">Минутка из внешнего мира. Как это зовут у соседей</h4>
   <p><em>Это не задание — делать ничего не нужно. Просто любопытное из большого мира, читается за минуту.</em></p>
   <p>Набор математических функций есть в каждом языке — только имена и правила чуть разные:</p>
   <ul>
@@ -214,5 +213,5 @@ main() {
 <div class="docs-section">
   <h2>Дополнение: функция без скобок</h2>
   <h4 class="task-item">Задание 21. Корень без вызова</h4>
-  <p>Классическая описка, которую стоит совершить нарочно, чтобы узнать её в лицо: напечатайте корень, забыв скобки, — <code>console.writeln(math.sqrt);</code>. Компилятор: <code>cannot print function 'sqrt' — add '()' with its arguments to call it and print the result</code>. Прочитайте сообщение до конца: печатать можно ЧИСЛО-результат, а <code>math.sqrt</code> без скобок — сама функция, инструмент, а не ответ. Почините — <code>math.sqrt(25)</code> — и запомните это сообщение: вы ещё встретитесь с ним в книге о собственных функциях, где грабли те же, но лежат ближе.</p>
+  <p>Классическая описка, которую стоит совершить нарочно, чтобы узнать её в лицо: напечатайте корень, забыв скобки, — <code>console.writeln(math.sqrt);</code>. Прочитайте, что скажет компилятор, до конца: печатать можно ЧИСЛО-результат, а <code>math.sqrt</code> без скобок — сама функция, инструмент, а не ответ. Почините — <code>math.sqrt(25)</code> — и запомните это сообщение: вы ещё встретитесь с ним в книге о собственных функциях, где грабли те же, но лежат ближе.</p>
 </div>
