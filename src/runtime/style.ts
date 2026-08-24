@@ -39,8 +39,12 @@ const RGBA_RE = /^rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(0|1|
 
 function colorValue(raw: string): string | null {
   const value = raw.toLowerCase();
-  const named = NAMED_COLORS[value];
-  if (named) return named;
+  // Только СВОИ ключи палитры (см. словарь свойств): 'color: constructor'
+  // иначе доставал функцию из Object.prototype и уезжал в снимок нестрокой.
+  const named = Object.prototype.hasOwnProperty.call(NAMED_COLORS, value)
+    ? NAMED_COLORS[value]
+    : undefined;
+  if (typeof named === 'string') return named;
   if (HEX_COLOR_RE.test(value)) return value;
 
   const rgb = RGB_RE.exec(value);
@@ -184,7 +188,146 @@ const STYLE_PROPERTIES: Readonly<Record<string, (raw: string) => string | null>>
   // по умолчанию (CSS рендерера) — этим свойством его можно вернуть или
   // выключить у остальных (вердикт владельца 2026-08-22).
   'user-select': keywordValue('auto', 'none', 'text', 'all'),
+
+  // ── Пополнение 2026-08-25 (вердикты владельца, spec/some_idyss_growth) ──
+  // Текст
+  'text-decoration': keywordValue('none', 'underline', 'line-through'),
+  'text-transform': keywordValue('none', 'uppercase', 'lowercase', 'capitalize'),
+  'letter-spacing': signedPixelValue(-5, 20),
+  'line-height': ratioValue(0.8, 3),
+  'font-family': fontFamilyValue,
+  // Курсор — то, что дети замечают в «настоящих» программах первым.
+  cursor: keywordValue('default', 'pointer', 'text', 'wait', 'not-allowed', 'help'),
+  // Границы по сторонам: подчеркнуть поле снизу, поставить акцент слева.
+  'border-top-color': colorValue,
+  'border-top-width': pixelValue(0, 20),
+  'border-top-style': keywordValue('solid', 'dashed', 'dotted', 'none'),
+  'border-bottom-color': colorValue,
+  'border-bottom-width': pixelValue(0, 20),
+  'border-bottom-style': keywordValue('solid', 'dashed', 'dotted', 'none'),
+  'border-left-color': colorValue,
+  'border-left-width': pixelValue(0, 20),
+  'border-left-style': keywordValue('solid', 'dashed', 'dotted', 'none'),
+  'border-right-color': colorValue,
+  'border-right-width': pixelValue(0, 20),
+  'border-right-style': keywordValue('solid', 'dashed', 'dotted', 'none'),
+  // Отступы по сторонам.
+  'padding-top': pixelValue(0, 40),
+  'padding-bottom': pixelValue(0, 40),
+  'padding-left': pixelValue(0, 40),
+  'padding-right': pixelValue(0, 40),
+  // Обводка: рамка, не сдвигающая содержимое.
+  'outline-color': colorValue,
+  'outline-width': pixelValue(0, 20),
+  'outline-style': keywordValue('solid', 'dashed', 'dotted', 'none'),
+  // Тени — четыре части в фиксированном порядке.
+  'box-shadow': shadowValue,
+  'text-shadow': shadowValue,
+  // Плавность: оживляет style_hover и style_active.
+  'transition-duration': durationValue,
+  // Поворот и масштаб. ВАЖНО: бокс не двигается, поэтому клик остаётся по
+  // исходному прямоугольнику — это сказано в справочнике прямым текстом
+  // (вердикт владельца: берём, но предупреждаем честно).
+  rotate: angleValue(-360, 360),
+  scale: ratioValue(0.1, 5),
 };
+
+// Пиксели со знаком: letter-spacing бывает отрицательным (буквы теснее).
+function signedPixelValue(min: number, max: number): (raw: string) => string | null {
+  return (raw: string) => {
+    const match = /^(-?\d{1,4})(px)?$/u.exec(raw);
+    if (!match) return null;
+    const amount = Number(match[1]);
+    if (!Number.isFinite(amount) || amount < min || amount > max) return null;
+    return `${amount}px`;
+  };
+}
+
+// Безразмерная доля: line-height (0.8…3) и scale (0.1…5).
+function ratioValue(min: number, max: number): (raw: string) => string | null {
+  return (raw: string) => {
+    if (!/^\d+(\.\d+)?$/u.test(raw)) return null;
+    const amount = Number(raw);
+    if (!Number.isFinite(amount) || amount < min || amount > max) return null;
+    return String(amount);
+  };
+}
+
+// Угол поворота в градусах, со знаком.
+function angleValue(min: number, max: number): (raw: string) => string | null {
+  return (raw: string) => {
+    const match = /^(-?\d{1,4})(deg)?$/u.exec(raw);
+    if (!match) return null;
+    const amount = Number(match[1]);
+    if (!Number.isFinite(amount) || amount < min || amount > max) return null;
+    return `${amount}deg`;
+  };
+}
+
+// Длительность: «250ms» или «0.4s»; верхняя граница — 2 секунды, чтобы
+// «плавно» не превращалось в «зависло».
+function durationValue(raw: string): string | null {
+  const ms = /^(\d{1,5})ms$/u.exec(raw);
+  if (ms) {
+    const amount = Number(ms[1]);
+    return amount >= 0 && amount <= 2000 ? `${amount}ms` : null;
+  }
+  const seconds = /^(\d(\.\d{1,3})?)s?$/u.exec(raw);
+  if (seconds) {
+    const amount = Number(seconds[1]);
+    return amount >= 0 && amount <= 2 ? `${amount}s` : null;
+  }
+  return null;
+}
+
+// Семейство шрифта — только три слова курса; наружу уезжает готовый стек,
+// произвольных имён шрифтов в CSS не попадает.
+const FONT_FAMILIES: Readonly<Record<string, string>> = {
+  sans: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+  serif: "Georgia, 'Times New Roman', serif",
+  mono: "'Cascadia Mono', 'Consolas', 'Courier New', monospace",
+};
+
+function fontFamilyValue(raw: string): string | null {
+  const key = raw.toLowerCase();
+  if (!Object.prototype.hasOwnProperty.call(FONT_FAMILIES, key)) return null;
+  const stack = FONT_FAMILIES[key];
+  return typeof stack === 'string' ? stack : null;
+}
+
+// Тень — РОВНО четыре части в фиксированном порядке: сдвиг вправо, сдвиг вниз,
+// размытие, цвет (вердикт владельца 2026-08-24). Ни inset, ни списков теней,
+// ни spread: полная грамматика CSS не объясняется одной строкой справочника.
+function splitBySpacesOutsideParens(text: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let current = '';
+  for (const char of text.trim()) {
+    if (char === '(') depth += 1;
+    if (char === ')') depth = Math.max(0, depth - 1);
+    if (depth === 0 && /\s/u.test(char)) {
+      if (current !== '') parts.push(current);
+      current = '';
+      continue;
+    }
+    current += char;
+  }
+  if (current !== '') parts.push(current);
+  return parts;
+}
+
+function shadowValue(raw: string): string | null {
+  // Пробелы внутри rgba(...) не разделители: «0 4px 12px rgba(0, 0, 0, 0.3)» —
+  // самая естественная запись тени, и она обязана работать.
+  const parts = splitBySpacesOutsideParens(raw);
+  if (parts.length !== 4) return null;
+  const offsetX = signedPixelValue(-50, 50)(parts[0]);
+  const offsetY = signedPixelValue(-50, 50)(parts[1]);
+  const blur = pixelValue(0, 50)(parts[2]);
+  const color = colorValue(parts[3]);
+  if (offsetX === null || offsetY === null || blur === null || color === null) return null;
+  return `${offsetX} ${offsetY} ${blur} ${color}`;
+}
 
 const parseCache = new Map<string, readonly IdylliumStyleDeclaration[]>();
 
@@ -200,8 +343,12 @@ export function parseIdylliumStyle(text: string): readonly IdylliumStyleDeclarat
     if (colonIndex < 0) continue;
     const property = chunk.slice(0, colonIndex).trim().toLowerCase();
     const rawValue = chunk.slice(colonIndex + 1).trim();
-    const validator = STYLE_PROPERTIES[property];
-    if (!validator || rawValue === '') continue;
+    // Только СВОИ ключи словаря: 'constructor: red' иначе доставал функцию из
+    // Object.prototype и протаскивал в рендерер выдуманное объявление.
+    const validator = Object.prototype.hasOwnProperty.call(STYLE_PROPERTIES, property)
+      ? STYLE_PROPERTIES[property]
+      : undefined;
+    if (typeof validator !== 'function' || rawValue === '') continue;
     const value = validator(rawValue);
     if (value === null) continue;
     declarations.push({ property, value });

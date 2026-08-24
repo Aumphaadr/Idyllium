@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "languageVersion": "1.5.2",
-  "generatedAt": "2026-08-23T17:26:04.743Z",
+  "languageVersion": "1.5.3",
+  "generatedAt": "2026-08-24T08:12:28.031Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "general": [
     {
@@ -408,14 +408,14 @@
       "description": "Idyllium Style Sheets: мини-язык оформления виджетов — строки style, style_hover и style_active.",
       "sections": [
         {
-          "title": "Три наклейки на виджет",
-          "description": "IdySS-строка — пары «свойство: значение» через точку с запятой, как в упрощённом CSS. У каждого виджета три такие строки: style действует всегда, style_hover — пока курсор наведён, style_active — пока виджет зажат мышью. Наклейки-состояния дописываются поверх обычной на время состояния и снимаются сами; пустая строка снимает наклейку совсем.",
-          "code": "gui.Button btn;\nbtn.style = \"background-color: #2673D9; color: white; border-radius: 10px;\";\nbtn.style_hover = \"background-color: #3D8BFF;\";\nbtn.style_active = \"background-color: #123C73;\";"
+          "title": "Четыре наклейки на виджет",
+          "description": "IdySS-строка — пары «свойство: значение» через точку с запятой, как в упрощённом CSS. У каждого виджета четыре такие строки: style действует всегда, style_hover — пока курсор наведён, style_active — пока виджет зажат мышью, style_disabled — пока виджет выключен (enabled = false). Наклейки-состояния дописываются поверх обычной на время состояния и снимаются сами; пустая строка снимает наклейку совсем.",
+          "code": "gui.Button btn;\nbtn.style = \"background-color: #2673D9; color: white; border-radius: 10px;\";\nbtn.style_hover = \"background-color: #3D8BFF;\";\nbtn.style_active = \"background-color: #123C73;\";\nbtn.style_disabled = \"background-color: #DDDDDD; color: gray; cursor: not-allowed;\";"
         },
         {
-          "title": "Словарь свойств (версия 1)",
-          "description": "Ровно 14 свойств; всё вне словаря молча игнорируется. Пиксельные значения принимаются с «px» и без, регистр не важен.",
-          "code": "color              цвет текста\nbackground-color   цвет фона\nbackground         только градиенты: linear-gradient(...), radial-gradient(...)\nborder-color       цвет рамки\nborder-width       0–20 (px)\nborder-style       solid | dashed | dotted | none\nborder-radius      0–100 (px)\nfont-size          6–96 (px)\nfont-weight        normal | bold\nfont-style         normal | italic\ntext-align         left | center | right\nopacity            0.0–1.0\npadding            0–40 (px)\nuser-select        auto | none | text | all"
+          "title": "Словарь свойств",
+          "description": "Ровно 44 свойства; всё вне словаря молча игнорируется. Пиксельные значения принимаются с «px» и без, регистр не важен. Детскому учебнику не нужно перечислять словарь целиком — урок берёт столько, сколько ему нужно, а полный список живёт здесь.",
+          "code": "color               цвет текста\nbackground-color    цвет фона\nbackground          только градиенты: linear-gradient(...), radial-gradient(...)\nborder-color        цвет рамки\nborder-width        0–20 (px)\nborder-style        solid | dashed | dotted | none\nborder-radius       0–100 (px)\nborder-top-color    цвет верхней грани; так же -bottom-, -left-, -right-\nborder-top-width    0–20 (px); так же -bottom-, -left-, -right-\nborder-top-style    solid | dashed | dotted | none; так же по сторонам\noutline-color       цвет обводки (не сдвигает содержимое)\noutline-width       0–20 (px)\noutline-style       solid | dashed | dotted | none\nfont-size           6–96 (px)\nfont-weight         normal | bold\nfont-style          normal | italic\nfont-family         sans | serif | mono\ntext-align          left | center | right\ntext-decoration     none | underline | line-through\ntext-transform      none | uppercase | lowercase | capitalize\nletter-spacing      −5…20 (px)\nline-height         0.8–3 (доля, без единиц)\nopacity             0.0–1.0\npadding             0–40 (px)\npadding-top         0–40 (px); так же -bottom, -left, -right\nbox-shadow          сдвиг-вправо сдвиг-вниз размытие цвет — ровно четыре части\ntext-shadow         те же четыре части\ntransition-duration 0–2s (или 0–2000ms)\nrotate              −360…360 (deg)\nscale               0.1–5 (доля)\nuser-select         auto | none | text | all"
         },
         {
           "title": "Значения цветов",
@@ -4773,6 +4773,13 @@
               "callbacks": []
             },
             {
+              "name": "style_disabled",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.",
+              "callbacks": []
+            },
+            {
               "name": "style_hover",
               "type": "string",
               "readonly": false,
@@ -4968,6 +4975,13 @@
               "type": "string",
               "readonly": false,
               "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_disabled",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.",
               "callbacks": []
             },
             {
@@ -5199,6 +5213,15 @@
               "type": "string",
               "readonly": false,
               "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "style_disabled",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.",
               "callbacks": [],
               "inherited": true,
               "inheritedFrom": "gui.Widget"
@@ -5473,6 +5496,13 @@
               "callbacks": []
             },
             {
+              "name": "style_disabled",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.",
+              "callbacks": []
+            },
+            {
               "name": "style_hover",
               "type": "string",
               "readonly": false,
@@ -5613,6 +5643,13 @@
               "type": "string",
               "readonly": false,
               "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_disabled",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.",
               "callbacks": []
             },
             {
@@ -5785,6 +5822,13 @@
               "callbacks": []
             },
             {
+              "name": "style_disabled",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.",
+              "callbacks": []
+            },
+            {
               "name": "style_hover",
               "type": "string",
               "readonly": false,
@@ -5928,6 +5972,13 @@
               "callbacks": []
             },
             {
+              "name": "style_disabled",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.",
+              "callbacks": []
+            },
+            {
               "name": "style_hover",
               "type": "string",
               "readonly": false,
@@ -6061,6 +6112,13 @@
               "type": "string",
               "readonly": false,
               "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_disabled",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.",
               "callbacks": []
             },
             {
@@ -6246,6 +6304,13 @@
               "callbacks": []
             },
             {
+              "name": "style_disabled",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.",
+              "callbacks": []
+            },
+            {
               "name": "style_hover",
               "type": "string",
               "readonly": false,
@@ -6382,6 +6447,13 @@
               "type": "string",
               "readonly": false,
               "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_disabled",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.",
               "callbacks": []
             },
             {
@@ -6565,6 +6637,13 @@
               "type": "string",
               "readonly": false,
               "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_disabled",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.",
               "callbacks": []
             },
             {
@@ -6842,6 +6921,13 @@
               "callbacks": []
             },
             {
+              "name": "style_disabled",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.",
+              "callbacks": []
+            },
+            {
               "name": "style_hover",
               "type": "string",
               "readonly": false,
@@ -7058,6 +7144,13 @@
               "callbacks": []
             },
             {
+              "name": "style_disabled",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.",
+              "callbacks": []
+            },
+            {
               "name": "style_hover",
               "type": "string",
               "readonly": false,
@@ -7187,6 +7280,13 @@
               "type": "string",
               "readonly": false,
               "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_disabled",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.",
               "callbacks": []
             },
             {
@@ -7340,6 +7440,13 @@
               "callbacks": []
             },
             {
+              "name": "style_disabled",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.",
+              "callbacks": []
+            },
+            {
               "name": "style_hover",
               "type": "string",
               "readonly": false,
@@ -7490,6 +7597,13 @@
               "callbacks": []
             },
             {
+              "name": "style_disabled",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.",
+              "callbacks": []
+            },
+            {
               "name": "style_hover",
               "type": "string",
               "readonly": false,
@@ -7633,6 +7747,13 @@
               "type": "string",
               "readonly": false,
               "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_disabled",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.",
               "callbacks": []
             },
             {
@@ -7847,6 +7968,13 @@
               "callbacks": []
             },
             {
+              "name": "style_disabled",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.",
+              "callbacks": []
+            },
+            {
               "name": "style_hover",
               "type": "string",
               "readonly": false,
@@ -8040,6 +8168,13 @@
               "callbacks": []
             },
             {
+              "name": "style_disabled",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.",
+              "callbacks": []
+            },
+            {
               "name": "style_hover",
               "type": "string",
               "readonly": false,
@@ -8218,6 +8353,13 @@
               "callbacks": []
             },
             {
+              "name": "style_disabled",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.",
+              "callbacks": []
+            },
+            {
               "name": "style_hover",
               "type": "string",
               "readonly": false,
@@ -8310,6 +8452,13 @@
               "type": "string",
               "readonly": false,
               "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_disabled",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.",
               "callbacks": []
             },
             {

@@ -10035,6 +10035,112 @@ main() {
   assert(ports.output === '8080\n8099\n0\n', `legal ports must stay legal: ${JSON.stringify(ports.output)} ${ports.runtimeError}`);
 });
 
+// Пополнение IdySS (вердикты владельца, spec/some_idyss_growth): словарь вырос
+// с 14 свойств до 44. Держим и грамматику значений, и границы диапазонов.
+test('the grown IdySS dictionary accepts the new properties', async () => {
+  for (const [probe, value] of [
+    ['text-decoration: line-through', 'line-through'],
+    ['text-transform: uppercase', 'uppercase'],
+    ['letter-spacing: -2', '-2px'],
+    ['letter-spacing: 4px', '4px'],
+    ['line-height: 1.5', '1.5'],
+    ['cursor: pointer', 'pointer'],
+    ['border-bottom-width: 3px', '3px'],
+    ['border-left-color: red', '#FF0000'],
+    ['padding-left: 12', '12px'],
+    ['outline-style: dashed', 'dashed'],
+    ['transition-duration: 250ms', '250ms'],
+    ['transition-duration: 0.4s', '0.4s'],
+    ['rotate: -15', '-15deg'],
+    ['scale: 1.2', '1.2'],
+    ['box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3)', '0px 4px 12px rgba(0, 0, 0, 0.3)'],
+    ['text-shadow: 1px 1px 2px black', '1px 1px 2px #000000'],
+  ] as ReadonlyArray<readonly [string, string]>) {
+    const parsed = parseIdylliumStyle(probe);
+    assert(parsed.length === 1, `«${probe}» must be accepted: ${JSON.stringify(parsed)}`);
+    assert(parsed[0].value === value, `«${probe}» → ${JSON.stringify(parsed[0])}, expected ${value}`);
+  }
+
+  // font-family отдаёт готовый стек: произвольных имён шрифтов в CSS не уезжает.
+  const mono = parseIdylliumStyle('font-family: mono');
+  assert(mono.length === 1 && mono[0].value.includes('monospace'), `font-family: ${JSON.stringify(mono)}`);
+  assert(parseIdylliumStyle('font-family: Comic Sans').length === 0, 'arbitrary font names must be ignored');
+
+  // Границы значений и форма тени — молча отбрасываются, как весь IdySS.
+  for (const probe of [
+    'letter-spacing: 40',            // вне −5…20
+    'line-height: 5',                // вне 0.8…3
+    'scale: 9',                      // вне 0.1…5
+    'rotate: 900',                   // вне −360…360
+    'transition-duration: 10s',      // дольше двух секунд
+    'cursor: zoom-in',               // не из списка курса
+    'box-shadow: 0 4px 12px',        // три части вместо четырёх
+    'box-shadow: 0 4px 12px red extra', // пять частей
+    'box-shadow: 0 4px 999px red',   // размытие вне диапазона
+    'box-shadow: inset 0 4px 12px red', // inset за бортом
+  ]) {
+    assert(parseIdylliumStyle(probe).length === 0, `«${probe}» must be ignored, got ${JSON.stringify(parseIdylliumStyle(probe))}`);
+  }
+});
+
+// style_disabled: состояние, которое в языке было (enabled = false), а оформить
+// его было нечем. Псевдокласса у нашего бокса нет — пары едут в снимок, и
+// рендерер ставит их поверх обычной наклейки.
+test('style_disabled travels to the snapshot of a disabled widget', async () => {
+  const result = await runWithInspectableRuntime(`
+    use gui;
+
+    main() {
+      gui.Window win;
+      gui.Button off;
+      off.text = "Недоступно";
+      off.enabled = false;
+      off.style = "background-color: #2673D9";
+      off.style_disabled = "background-color: #DDDDDD; cursor: not-allowed";
+      win.add_child(off);
+      win.show();
+    }
+  `);
+  const button = result.runtime.getWindows()[0].children.find((item) => item.type === 'gui.Button');
+  assert(button?.properties.enabled === false, `the widget must be disabled: ${JSON.stringify(button?.properties.enabled)}`);
+  const disabled = button?.properties.style_disabled_declarations as ReadonlyArray<{ property: string; value: string }> | undefined;
+  assert(Array.isArray(disabled) && disabled.length === 2, `disabled declarations: ${JSON.stringify(disabled)}`);
+  assert(disabled[0].value === '#dddddd' && disabled[1].value === 'not-allowed', `disabled declarations: ${JSON.stringify(disabled)}`);
+});
+
+// IdySS молчит о незнакомых свойствах — но молчание не значит «пропустить».
+// Имена из Object.prototype доставали из словаря свойств и из палитры цветов
+// функции: 'constructor: red' протаскивал выдуманное объявление, а
+// 'color: constructor' — объявление, у которого значение вообще не строка.
+test('the IdySS dictionary and palette ignore prototype names', async () => {
+  for (const probe of [
+    'constructor: red',
+    'toString: 5',
+    '__proto__: x',
+    'color: constructor',
+    'background-color: toString',
+    'border-color: valueOf',
+  ]) {
+    assert(
+      parseIdylliumStyle(probe).length === 0,
+      `IdySS must ignore «${probe}», got ${JSON.stringify(parseIdylliumStyle(probe))}`,
+    );
+  }
+
+  // Законные пары целы, и значение всегда строка.
+  for (const [probe, property, value] of [
+    ['color: red', 'color', '#FF0000'],
+    ['color: dark-blue', 'color', '#000080'],
+    ['border-radius: 8px', 'border-radius', '8px'],
+    ['user-select: none', 'user-select', 'none'],
+  ] as ReadonlyArray<readonly [string, string, string]>) {
+    const parsed = parseIdylliumStyle(probe);
+    assert(parsed.length === 1, `«${probe}» must produce one declaration: ${JSON.stringify(parsed)}`);
+    assert(parsed[0].property === property && parsed[0].value === value, `«${probe}» → ${JSON.stringify(parsed)}`);
+    assert(typeof parsed[0].value === 'string', `a declaration value must be a string: ${JSON.stringify(parsed)}`);
+  }
+});
+
 // D4 (методисты, 2026-08-23): три правила, которые не были записаны, но на
 // которых стоит весь курс ООП. Смоук держит их, чтобы справочник не разъехался
 // с языком.

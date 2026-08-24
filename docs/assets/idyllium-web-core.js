@@ -7060,6 +7060,7 @@ function createDefaultStandardLibrary() {
         propertySpec('style', types_1.STRING, false, 'IdySS-строка стилей вида "color: red; border-radius: 8px;". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.'),
         propertySpec('style_hover', types_1.STRING, false, 'IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.'),
         propertySpec('style_active', types_1.STRING, false, 'IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.'),
+        propertySpec('style_disabled', types_1.STRING, false, 'IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.'),
     ];
     const changeable = [
         propertySpec('on_change', types_1.ANY_TYPE),
@@ -12148,7 +12149,7 @@ exports.IdylliumRuntimeError = IdylliumRuntimeError;
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-exports.IDYLLIUM_VERSION = '1.5.2';
+exports.IDYLLIUM_VERSION = '1.5.3';
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform() {
     const nodeProcess = typeof process === 'object' ? process : null;
@@ -17682,6 +17683,9 @@ function initializeGuiObject(obj, typeName, state) {
         obj.style = ''; // IdySS-наклейка; пустая строка = наклейки нет
         obj.style_hover = '';
         obj.style_active = '';
+        // Состояние, которое у языка уже есть (enabled = false), но оформить его
+        // было нечем: у всех программ выключенный виджет выглядел одинаково.
+        obj.style_disabled = '';
         defineTrackedRuntimeProperty(obj, 'text_color', colorBlack());
         defineTrackedRuntimeProperty(obj, 'background_color', colorTransparent());
         defineTrackedRuntimeProperty(obj, 'font', null);
@@ -19954,6 +19958,9 @@ function objectPropertiesSnapshot(value) {
         if (typeof value.style_active === 'string' && value.style_active.trim() !== '') {
             result.style_active_declarations = (0, style_1.parseIdylliumStyle)(value.style_active);
         }
+        if (typeof value.style_disabled === 'string' && value.style_disabled.trim() !== '') {
+            result.style_disabled_declarations = (0, style_1.parseIdylliumStyle)(value.style_disabled);
+        }
         if (value.__explicitProperties instanceof Set && value.__explicitProperties.size > 0) {
             result.__explicit_properties = [...value.__explicitProperties].sort();
         }
@@ -20624,8 +20631,12 @@ const RGB_RE = /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/u;
 const RGBA_RE = /^rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(0|1|0?\.\d+|1\.0+)\s*\)$/u;
 function colorValue(raw) {
     const value = raw.toLowerCase();
-    const named = NAMED_COLORS[value];
-    if (named)
+    // Только СВОИ ключи палитры (см. словарь свойств): 'color: constructor'
+    // иначе доставал функцию из Object.prototype и уезжал в снимок нестрокой.
+    const named = Object.prototype.hasOwnProperty.call(NAMED_COLORS, value)
+        ? NAMED_COLORS[value]
+        : undefined;
+    if (typeof named === 'string')
         return named;
     if (HEX_COLOR_RE.test(value))
         return value;
@@ -20774,7 +20785,150 @@ const STYLE_PROPERTIES = {
     // по умолчанию (CSS рендерера) — этим свойством его можно вернуть или
     // выключить у остальных (вердикт владельца 2026-08-22).
     'user-select': keywordValue('auto', 'none', 'text', 'all'),
+    // ── Пополнение 2026-08-25 (вердикты владельца, spec/some_idyss_growth) ──
+    // Текст
+    'text-decoration': keywordValue('none', 'underline', 'line-through'),
+    'text-transform': keywordValue('none', 'uppercase', 'lowercase', 'capitalize'),
+    'letter-spacing': signedPixelValue(-5, 20),
+    'line-height': ratioValue(0.8, 3),
+    'font-family': fontFamilyValue,
+    // Курсор — то, что дети замечают в «настоящих» программах первым.
+    cursor: keywordValue('default', 'pointer', 'text', 'wait', 'not-allowed', 'help'),
+    // Границы по сторонам: подчеркнуть поле снизу, поставить акцент слева.
+    'border-top-color': colorValue,
+    'border-top-width': pixelValue(0, 20),
+    'border-top-style': keywordValue('solid', 'dashed', 'dotted', 'none'),
+    'border-bottom-color': colorValue,
+    'border-bottom-width': pixelValue(0, 20),
+    'border-bottom-style': keywordValue('solid', 'dashed', 'dotted', 'none'),
+    'border-left-color': colorValue,
+    'border-left-width': pixelValue(0, 20),
+    'border-left-style': keywordValue('solid', 'dashed', 'dotted', 'none'),
+    'border-right-color': colorValue,
+    'border-right-width': pixelValue(0, 20),
+    'border-right-style': keywordValue('solid', 'dashed', 'dotted', 'none'),
+    // Отступы по сторонам.
+    'padding-top': pixelValue(0, 40),
+    'padding-bottom': pixelValue(0, 40),
+    'padding-left': pixelValue(0, 40),
+    'padding-right': pixelValue(0, 40),
+    // Обводка: рамка, не сдвигающая содержимое.
+    'outline-color': colorValue,
+    'outline-width': pixelValue(0, 20),
+    'outline-style': keywordValue('solid', 'dashed', 'dotted', 'none'),
+    // Тени — четыре части в фиксированном порядке.
+    'box-shadow': shadowValue,
+    'text-shadow': shadowValue,
+    // Плавность: оживляет style_hover и style_active.
+    'transition-duration': durationValue,
+    // Поворот и масштаб. ВАЖНО: бокс не двигается, поэтому клик остаётся по
+    // исходному прямоугольнику — это сказано в справочнике прямым текстом
+    // (вердикт владельца: берём, но предупреждаем честно).
+    rotate: angleValue(-360, 360),
+    scale: ratioValue(0.1, 5),
 };
+// Пиксели со знаком: letter-spacing бывает отрицательным (буквы теснее).
+function signedPixelValue(min, max) {
+    return (raw) => {
+        const match = /^(-?\d{1,4})(px)?$/u.exec(raw);
+        if (!match)
+            return null;
+        const amount = Number(match[1]);
+        if (!Number.isFinite(amount) || amount < min || amount > max)
+            return null;
+        return `${amount}px`;
+    };
+}
+// Безразмерная доля: line-height (0.8…3) и scale (0.1…5).
+function ratioValue(min, max) {
+    return (raw) => {
+        if (!/^\d+(\.\d+)?$/u.test(raw))
+            return null;
+        const amount = Number(raw);
+        if (!Number.isFinite(amount) || amount < min || amount > max)
+            return null;
+        return String(amount);
+    };
+}
+// Угол поворота в градусах, со знаком.
+function angleValue(min, max) {
+    return (raw) => {
+        const match = /^(-?\d{1,4})(deg)?$/u.exec(raw);
+        if (!match)
+            return null;
+        const amount = Number(match[1]);
+        if (!Number.isFinite(amount) || amount < min || amount > max)
+            return null;
+        return `${amount}deg`;
+    };
+}
+// Длительность: «250ms» или «0.4s»; верхняя граница — 2 секунды, чтобы
+// «плавно» не превращалось в «зависло».
+function durationValue(raw) {
+    const ms = /^(\d{1,5})ms$/u.exec(raw);
+    if (ms) {
+        const amount = Number(ms[1]);
+        return amount >= 0 && amount <= 2000 ? `${amount}ms` : null;
+    }
+    const seconds = /^(\d(\.\d{1,3})?)s?$/u.exec(raw);
+    if (seconds) {
+        const amount = Number(seconds[1]);
+        return amount >= 0 && amount <= 2 ? `${amount}s` : null;
+    }
+    return null;
+}
+// Семейство шрифта — только три слова курса; наружу уезжает готовый стек,
+// произвольных имён шрифтов в CSS не попадает.
+const FONT_FAMILIES = {
+    sans: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+    serif: "Georgia, 'Times New Roman', serif",
+    mono: "'Cascadia Mono', 'Consolas', 'Courier New', monospace",
+};
+function fontFamilyValue(raw) {
+    const key = raw.toLowerCase();
+    if (!Object.prototype.hasOwnProperty.call(FONT_FAMILIES, key))
+        return null;
+    const stack = FONT_FAMILIES[key];
+    return typeof stack === 'string' ? stack : null;
+}
+// Тень — РОВНО четыре части в фиксированном порядке: сдвиг вправо, сдвиг вниз,
+// размытие, цвет (вердикт владельца 2026-08-24). Ни inset, ни списков теней,
+// ни spread: полная грамматика CSS не объясняется одной строкой справочника.
+function splitBySpacesOutsideParens(text) {
+    const parts = [];
+    let depth = 0;
+    let current = '';
+    for (const char of text.trim()) {
+        if (char === '(')
+            depth += 1;
+        if (char === ')')
+            depth = Math.max(0, depth - 1);
+        if (depth === 0 && /\s/u.test(char)) {
+            if (current !== '')
+                parts.push(current);
+            current = '';
+            continue;
+        }
+        current += char;
+    }
+    if (current !== '')
+        parts.push(current);
+    return parts;
+}
+function shadowValue(raw) {
+    // Пробелы внутри rgba(...) не разделители: «0 4px 12px rgba(0, 0, 0, 0.3)» —
+    // самая естественная запись тени, и она обязана работать.
+    const parts = splitBySpacesOutsideParens(raw);
+    if (parts.length !== 4)
+        return null;
+    const offsetX = signedPixelValue(-50, 50)(parts[0]);
+    const offsetY = signedPixelValue(-50, 50)(parts[1]);
+    const blur = pixelValue(0, 50)(parts[2]);
+    const color = colorValue(parts[3]);
+    if (offsetX === null || offsetY === null || blur === null || color === null)
+        return null;
+    return `${offsetX} ${offsetY} ${blur} ${color}`;
+}
 const parseCache = new Map();
 function parseIdylliumStyle(text) {
     if (typeof text !== 'string' || text.trim() === '')
@@ -20789,8 +20943,12 @@ function parseIdylliumStyle(text) {
             continue;
         const property = chunk.slice(0, colonIndex).trim().toLowerCase();
         const rawValue = chunk.slice(colonIndex + 1).trim();
-        const validator = STYLE_PROPERTIES[property];
-        if (!validator || rawValue === '')
+        // Только СВОИ ключи словаря: 'constructor: red' иначе доставал функцию из
+        // Object.prototype и протаскивал в рендерер выдуманное объявление.
+        const validator = Object.prototype.hasOwnProperty.call(STYLE_PROPERTIES, property)
+            ? STYLE_PROPERTIES[property]
+            : undefined;
+        if (typeof validator !== 'function' || rawValue === '')
             continue;
         const value = validator(rawValue);
         if (value === null)
