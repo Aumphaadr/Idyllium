@@ -138,7 +138,18 @@ function createFakeElement(tagName: string): any {
     className: '',
     dataset: {},
     hidden: false,
-    style: {},
+    // Облегчённый CSSStyleDeclaration: настоящий рендерер ставит пары через
+    // setProperty, поэтому фиктивный стиль обязан её понимать.
+    style: (() => {
+      const declarations: any = {};
+      declarations.setProperty = (name: string, value: string) => {
+        declarations[name] = value;
+      };
+      declarations.removeProperty = (name: string) => {
+        delete declarations[name];
+      };
+      return declarations;
+    })(),
     tabIndex: 0,
     textContent: '',
     append(...items: unknown[]) {
@@ -223,8 +234,10 @@ function createRendererHarness() {
     },
   };
 
+  const styleHost = createFakeElement('head');
   const documentObject: any = {
     body: createFakeElement('body'),
+    head: styleHost,
     createElement(tagName: string) {
       const element = createFakeElement(tagName);
       if (tagName === 'canvas') {
@@ -240,7 +253,11 @@ function createRendererHarness() {
       documentListeners.set(name, listeners);
     },
     getElementById(id: string) {
-      return elements.get(id) ?? null;
+      const known = elements.get(id);
+      if (known) return known;
+      // Рендерер сам создаёт <style id="idyss-state-styles"> и ищет его по id:
+      // без этого поиска он плодил бы новый элемент на каждый кадр.
+      return styleHost.children.find((child: any) => child && child.id === id) ?? null;
     },
   };
 
@@ -264,7 +281,15 @@ function createRendererHarness() {
     }
   };
 
-  return { canvasContexts, postedMessages, sendSnapshot, stage: elements.get('stage') };
+  // Правила :hover/:active складываются в <style id="idyss-state-styles">.
+  const stateRulesText = () => {
+    const styleEl = styleHost.children.find((child: any) => child && child.id === 'idyss-state-styles');
+    return styleEl ? String(styleEl.textContent || '') : '';
+  };
+
+  const headChildren = () => styleHost.children.map((c: any) => ({ tag: c && c.tagName, id: c && c.id, text: c && c.textContent }));
+
+  return { canvasContexts, postedMessages, sendSnapshot, stage: elements.get('stage'), stateRulesText, headChildren };
 }
 
 function findElement(root: any, predicate: (element: any) => boolean): any | null {
@@ -1251,6 +1276,51 @@ test('gui renderer draws turtle.Path polygons on canvas', () => {
   assertNumberEquals(harness.canvasContexts.length, 1, 'canvas render count');
   // Треугольник: moveTo + два lineTo, затем closePath/fill — падать не должно.
   assertNumberEquals(harness.canvasContexts[0].lineToCalls, 2, 'turtle.Path lineTo count');
+});
+
+// rotate/scale в наклейках-состояниях обязаны собираться в тот же transform,
+// что и в базовой наклейке: иначе база меняет transform, а :hover — свойство
+// scale, и transition-duration плавно переходить не между чем (находка
+// владельца 2026-08-25).
+test('state stickers build the same transform as the base sticker', () => {
+  const harness = createRendererHarness();
+  harness.sendSnapshot({
+    generation: 1,
+    windows: [{
+      id: 1,
+      type: 'gui.Window',
+      properties: { x: 0, y: 0, width: 400, height: 300, title: 'T' },
+      children: [{
+        id: 2,
+        type: 'gui.Button',
+        properties: {
+          x: 0, y: 0, width: 100, height: 40, text: 'жми',
+          style_declarations: [
+            { property: 'rotate', value: '-10deg' },
+            { property: 'transition-duration', value: '300ms' },
+          ],
+          style_hover_declarations: [
+            { property: 'scale', value: '1.05' },
+            { property: 'background-color', value: '#123456' },
+          ],
+        },
+      }],
+    }],
+    canvases: [],
+    modals: [],
+    audio: [],
+  });
+
+  const rules = harness.stateRulesText();
+  assert(rules.includes('transform:'), `the hover rule must set transform, got: ${rules}`);
+  assert(!/(^|[^-])\bscale:/u.test(rules), `raw 'scale' must not reach the rule: ${rules}`);
+  // Наведение задаёт только масштаб — поворот из базы обязан уцелеть,
+  // потому что transform в CSS заменяется целиком.
+  assert(
+    rules.includes('rotate(-10deg)') && rules.includes('scale(1.05)'),
+    `the hover transform must merge base rotate with hover scale: ${rules}`,
+  );
+  assert(rules.includes('background-color'), `other declarations must stay: ${rules}`);
 });
 
 async function main(): Promise<void> {

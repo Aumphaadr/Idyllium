@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: Idyllium 1.5.2.
+Current language target: Idyllium 1.5.3.
 
 This reference describes implemented behavior. Ideas from `BACKLOG.md` and
 exploratory files under `spec/some_*` are not language features until they are
@@ -1443,7 +1443,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, never returns
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.5.2"
+system.version()                    // "1.5.3"
 ```
 
 **Recursion depth.** Idyllium counts call depth itself instead of relying on the
@@ -2462,18 +2462,42 @@ Rules of the sticker:
   properties show again. Later declarations in one string beat earlier ones.
 - The sticker is **not inherited** by child widgets; reading `style` returns
   exactly the assigned string.
-- `style_hover` and `style_active` hold stickers that apply while the pointer
-  is over the widget or while it is pressed. Same dictionary, same silence
-  about typos.
+- `style_hover`, `style_active` and `style_disabled` hold stickers that apply
+  while the pointer is over the widget, while it is pressed, and while it is
+  switched off (`enabled = false`). Same dictionary, same silence about typos;
+  the state sticker is layered on top of `style` and lifts by itself when the
+  state ends.
 
-Supported properties (everything else is ignored): `color`,
-`background-color`, `border-color`, `border-width` (0-20), `border-radius`
-(0-100), `border-style` (`solid`/`dashed`/`dotted`/`none`), `font-size`
-(6-96), `font-weight` (`normal`/`bold`), `font-style` (`normal`/`italic`),
-`text-align` (`left`/`center`/`right`), `opacity` (0.0-1.0), `user-select`
-(`auto`/`none`/`text`/`all` — button-like widgets ship with `none` by default;
-set `user-select: text` to restore selection), `padding`
-(0-40). Pixel values accept `12px` or plain `12`.
+Supported properties — 44 of them, everything else is ignored. Pixel values
+accept `12px` or plain `12`.
+
+- **Colors and background:** `color`, `background-color`, `background`
+  (gradients only, see below).
+- **Borders:** `border-color`, `border-width` (0-20), `border-style`
+  (`solid`/`dashed`/`dotted`/`none`), `border-radius` (0-100), and the same
+  colour/width/style trio per side — `border-top-*`, `border-bottom-*`,
+  `border-left-*`, `border-right-*`.
+- **Outline** (a ring that does not move the content): `outline-color`,
+  `outline-width` (0-20), `outline-style`.
+- **Text:** `font-size` (6-96), `font-weight` (`normal`/`bold`), `font-style`
+  (`normal`/`italic`), `font-family` (`sans`/`serif`/`mono` only — arbitrary
+  font names are dropped), `text-align` (`left`/`center`/`right`),
+  `text-decoration` (`none`/`underline`/`line-through`), `text-transform`
+  (`none`/`uppercase`/`lowercase`/`capitalize`), `letter-spacing` (−5…20),
+  `line-height` (0.8-3, unitless).
+- **Spacing:** `padding` (0-40) and `padding-top`/`-bottom`/`-left`/`-right`.
+- **Shadows:** `box-shadow` and `text-shadow` take EXACTLY four parts in this
+  order — `<offset-x> <offset-y> <blur> <color>` (offsets −50…50, blur 0-50).
+  `inset`, shadow lists and `spread` are not accepted.
+- **Motion:** `transition-duration` (`0`…`2s`, or `0`…`2000ms`) makes
+  `style_hover`/`style_active` fade instead of snapping; `rotate` (−360…360
+  degrees) and `scale` (0.1-5). **`rotate` and `scale` change how the widget
+  LOOKS, not where it is:** the clickable box stays the original rectangle, so
+  a rotated button is still clicked by its unrotated outline.
+- **Behaviour:** `opacity` (0.0-1.0), `cursor`
+  (`default`/`pointer`/`text`/`wait`/`not-allowed`/`help`), `user-select`
+  (`auto`/`none`/`text`/`all` — button-like widgets ship with `none` by
+  default; set `user-select: text` to restore selection).
 
 `background` accepts ONLY gradients (solid colors go through
 `background-color`): `linear-gradient([to right | 45deg,] color[, color...])`
@@ -2487,9 +2511,10 @@ Color values: the 17 palette names of the `colors` library in kebab-case
 (`red`, `dark-blue`, `light-gray`, `transparent`; `green` is `#00FF00`),
 HEX (`#RGB`, `#RRGGBB`, `#RRGGBBAA`), and `rgb(r, g, b)` /
 `rgba(r, g, b, a)` with strict ranges. CSS-only names such as `pink` or
-`salmon` are NOT supported. There is no `font-family`, no geometry
-(`width`/`margin`/`position`), no shorthand `border: 2px solid red` — use the
-three separate border properties.
+`salmon` are NOT supported. There is no geometry (`width`/`margin`/`position`
+— place and size belong to the widget's own properties), no shorthand
+`border: 2px solid red` (use the three separate border properties), no
+`content`, no `animation`, no `calc()` and no `var()`.
 
 ### GUI Types
 

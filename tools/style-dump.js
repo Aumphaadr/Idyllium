@@ -17,6 +17,7 @@ process.chdir(path.dirname(file));
     console.log(`   принято    = ${JSON.stringify(p.style_declarations || [])}`);
     if (p.style_hover) console.log(`   hover      = ${JSON.stringify(p.style_hover_declarations || [])}`);
     if (p.style_active) console.log(`   active     = ${JSON.stringify(p.style_active_declarations || [])}`);
+    if (p.style_disabled) console.log(`   disabled   = ${JSON.stringify(p.style_disabled_declarations || [])}`);
     if (p.hint) console.log(`   hint       = ${JSON.stringify(p.hint)}`);
     walk(n.children);
   } };

@@ -1013,11 +1013,60 @@
   // IdySS-наклейка: применяется ПОСЛЕДНИМ слоем поверх прямых свойств
   // (каскад «наклейка сверху»). Пары уже провалидированы рантаймом —
   // рендерер не разбирает строк и не видит произвольного CSS.
+  // rotate и scale — отдельные свойства CSS только в свежих движках, а в
+  // старых их понимает лишь transform. Ставим ОДИН transform из обоих: иначе
+  // на новом движке эффект удвоился бы (и свойство, и transform).
+  // ВАЖНО: наклейки-состояния собирают transform ТЕМ ЖЕ способом — иначе
+  // база меняла бы transform, а :hover — свойство scale, и между ними нечему
+  // плавно переходить: transition-duration не действовал бы на поворот и
+  // масштаб вовсе (находка владельца 2026-08-25).
+  function transformPair(declarations) {
+    var rotate = null;
+    var scale = null;
+    if (Array.isArray(declarations)) {
+      for (const item of declarations) {
+        if (!item || typeof item.value !== 'string') continue;
+        if (item.property === 'rotate') rotate = item.value;
+        if (item.property === 'scale') scale = item.value;
+      }
+    }
+    return { rotate: rotate, scale: scale };
+  }
+
+  function transformText(pair) {
+    const parts = [];
+    if (pair.rotate !== null) parts.push('rotate(' + pair.rotate + ')');
+    if (pair.scale !== null) parts.push('scale(' + pair.scale + ')');
+    return parts.length > 0 ? parts.join(' ') : null;
+  }
+
+  // Состояние задаёт только свою ось (часто одну — scale при наведении), а
+  // transform в CSS заменяется целиком: недостающую ось берём из базы, иначе
+  // наведение сбрасывало бы поворот, заданный в style.
+  function mergedTransformText(baseDeclarations, stateDeclarations) {
+    const base = transformPair(baseDeclarations);
+    const state = transformPair(stateDeclarations);
+    if (state.rotate === null && state.scale === null) return null;
+    return transformText({
+      rotate: state.rotate !== null ? state.rotate : base.rotate,
+      scale: state.scale !== null ? state.scale : base.scale,
+    });
+  }
+
+  function applyTransformDeclarations(el, declarations) {
+    const text = transformText(transformPair(declarations));
+    if (text === null) return;
+    el.style.setProperty('transform', text);
+  }
+
   function applyStyleDeclarations(el, props) {
     const declarations = props && props.style_declarations;
     if (Array.isArray(declarations)) {
+      applyTransformDeclarations(el, declarations);
       for (const item of declarations) {
         if (!item || typeof item.property !== 'string' || typeof item.value !== 'string') continue;
+        // Поворот и масштаб уже уехали в transform выше.
+        if (item.property === 'rotate' || item.property === 'scale') continue;
         el.style.setProperty(item.property, item.value);
         // Safari понимает user-select только с вебкит-префиксом.
         if (item.property === 'user-select') el.style.setProperty('-webkit-user-select', item.value);
@@ -1027,6 +1076,20 @@
           const justify = { left: 'flex-start', center: 'center', right: 'flex-end' }[item.value];
           if (justify) el.style.justifyContent = justify;
         }
+      }
+    }
+    // Выключенный виджет: наклейка ставится ПОСЛЕ обычной, поверх неё, и
+    // снимается сама, как только виджет включат обратно (её просто нет в
+    // следующем снимке). Псевдокласса :disabled у нашего бокса нет — виджеты
+    // рисуются div'ами, — поэтому применяем по факту enabled === false.
+    if (props && props.enabled === false && Array.isArray(props.style_disabled_declarations)) {
+      const disabledTransform = mergedTransformText(props.style_declarations, props.style_disabled_declarations);
+      if (disabledTransform !== null) el.style.setProperty('transform', disabledTransform);
+      for (const item of props.style_disabled_declarations) {
+        if (!item || typeof item.property !== 'string' || typeof item.value !== 'string') continue;
+        if (item.property === 'rotate' || item.property === 'scale') continue;
+        el.style.setProperty(item.property, item.value);
+        if (item.property === 'user-select') el.style.setProperty('-webkit-user-select', item.value);
       }
     }
     applyStateStyleDeclarations(el, props);
@@ -1045,10 +1108,13 @@
     el.classList.add(marker);
     for (const [pseudo, declarations] of [[':hover', hover], [':active', active]]) {
       if (!Array.isArray(declarations) || declarations.length === 0) continue;
-      const body = declarations
+      const parts = declarations
         .filter((item) => item && typeof item.property === 'string' && typeof item.value === 'string')
-        .map((item) => item.property + ': ' + item.value + ' !important;')
-        .join(' ');
+        .filter((item) => item.property !== 'rotate' && item.property !== 'scale')
+        .map((item) => item.property + ': ' + item.value + ' !important;');
+      const transform = mergedTransformText(props && props.style_declarations, declarations);
+      if (transform !== null) parts.push('transform: ' + transform + ' !important;');
+      const body = parts.join(' ');
       if (body) idyssStateRules.push('.' + marker + pseudo + ' { ' + body + ' }');
     }
   }

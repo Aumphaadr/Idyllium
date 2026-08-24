@@ -308,6 +308,8 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       'IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.'),
     propertySpec('style_active', STRING, false,
       'IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.'),
+    propertySpec('style_disabled', STRING, false,
+      'IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.'),
   ];
   const changeable = [
     propertySpec('on_change', ANY_TYPE),

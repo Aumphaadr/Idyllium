@@ -72,7 +72,7 @@ export class IdylliumRuntimeError extends Error {
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-export const IDYLLIUM_VERSION = '1.5.2';
+export const IDYLLIUM_VERSION = '1.5.3';
 
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform(): string {
@@ -6470,6 +6470,9 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
     obj.style = ''; // IdySS-наклейка; пустая строка = наклейки нет
     obj.style_hover = '';
     obj.style_active = '';
+    // Состояние, которое у языка уже есть (enabled = false), но оформить его
+    // было нечем: у всех программ выключенный виджет выглядел одинаково.
+    obj.style_disabled = '';
     defineTrackedRuntimeProperty(obj, 'text_color', colorBlack());
     defineTrackedRuntimeProperty(obj, 'background_color', colorTransparent());
     defineTrackedRuntimeProperty(obj, 'font', null);
@@ -9235,6 +9238,9 @@ function objectPropertiesSnapshot(value: RuntimeObject): Readonly<Record<string,
     }
     if (typeof value.style_active === 'string' && value.style_active.trim() !== '') {
       result.style_active_declarations = parseIdylliumStyle(value.style_active);
+    }
+    if (typeof value.style_disabled === 'string' && value.style_disabled.trim() !== '') {
+      result.style_disabled_declarations = parseIdylliumStyle(value.style_disabled);
     }
     if (value.__explicitProperties instanceof Set && value.__explicitProperties.size > 0) {
       result.__explicit_properties = [...value.__explicitProperties].sort();
