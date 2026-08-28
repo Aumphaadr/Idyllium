@@ -66,8 +66,10 @@ function normalizeFile(file: string): string {
 test('cli check reports success', async () => {
   const result = await runTestCli(['check', 'main.idyl'], fileMap([
     ['/work/main.idyl', [
+      'use console;',
       'main() {',
       '    int value = 42;',
+      '    console.writeln(value);',
       '}',
     ].join('\n')],
   ]));

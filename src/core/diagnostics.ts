@@ -63,9 +63,14 @@ export class DiagnosticBag {
 export function formatDiagnostic(diagnostic: Diagnostic): string {
   const { start } = diagnostic.range;
   const code = diagnostic.code ? ` ${diagnostic.code}` : '';
-  // Человеку ошибки компиляции показываются как «compile error» — чёткое
-  // противопоставление «runtime error». Внутренняя severity остаётся 'error'.
-  const label = diagnostic.severity === 'error' ? 'compile error' : diagnostic.severity;
+  // Человеку ошибки компиляции показываются как «compile error», предупреждения
+  // — «compile warning»: симметрия с «runtime error» / «runtime warning»
+  // (вердикт владельца 2026-08-28). Внутренняя severity остаётся короткой.
+  const label = diagnostic.severity === 'error'
+    ? 'compile error'
+    : diagnostic.severity === 'warning'
+      ? 'compile warning'
+      : diagnostic.severity;
   return `${start.file}:${start.line}:${start.column}: ${label}${code}: ${diagnostic.message}`;
 }
 

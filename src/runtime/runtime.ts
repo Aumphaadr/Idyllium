@@ -72,7 +72,7 @@ export class IdylliumRuntimeError extends Error {
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-export const IDYLLIUM_VERSION = '1.5.3';
+export const IDYLLIUM_VERSION = '1.5.4';
 
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform(): string {
@@ -895,6 +895,350 @@ function createJsonBase(typeName: JsonRuntimeValue['__idylliumType'], kind: Json
   });
   obj.toString = () => jsonSerialize(obj, 0, 'json', 0);
   return obj;
+}
+
+// ─── XML/HTML: чтение разметки без хитрых штучек (spec/some_xml) ────────────
+// Два входа над одним ядром: строгий xml.parse_xml (честные ошибки с позицией
+// строки и столбца, well-formedness: один корень, текст только внутри него,
+// без дубликатов атрибутов) и прощающий xml.parse_html (void-теги,
+// автозакрытие списков и таблиц, атрибуты без кавычек, любой регистр,
+// обрывы страницы перевариваются — частично скачанный http-ответ не роняет
+// разбор). За бортом сознательно: namespaces, XPath, селекторы, DTD,
+// сериализация — библиотека про чтение. Порт одобренного прототипа
+// spec/some_xml/prototype/xml-parser.mjs, дожатый ломателями 2026-08-28:
+// узлы на общем прототипе (иначе ~2,3 КБ кучи на узел и краш V8 на больших
+// страницах), обходы итеративные (иначе глубокое дерево валило стек с
+// советом «почините рекурсию» про функции, которых у ученика нет).
+
+// nbsp — сознательно обычный пробел: неразрывный на глаз неотличим, а
+// сравнение строк в детской программе обязано сходиться.
+const XML_NAMED_ENTITIES: Readonly<Record<string, string>> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+const XML_VOID_ELEMENTS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
+// Кого закрывает открытие такого же (жанр списков и таблиц).
+const XML_AUTOCLOSE: Readonly<Record<string, readonly string[]>> = {
+  li: ['li'], p: ['p'], option: ['option'], tr: ['tr', 'td', 'th'], td: ['td', 'th'], th: ['td', 'th'],
+};
+const XML_RAW_TEXT = new Set(['script', 'style']);
+// Упрощённое XML-имя: буквы любого алфавита (дети пишут <герой>), цифры не
+// первым символом. Полная продукция Name из стандарта — хитрая штучка.
+const XML_STRICT_NAME = /^[\p{L}_:][\p{L}\p{N}_:.\-]*$/u;
+
+type XmlRuntimeNode = Record<string, unknown> & {
+  __idylliumType: 'xml.Node';
+  __xmlTag: string;
+  __xmlHtml: boolean;
+  __xmlAttributes: Map<string, string>;
+  /** Элементы и текстовые куски в порядке документа. */
+  __xmlParts: Array<XmlRuntimeNode | string>;
+};
+
+function isXmlRuntimeNode(value: unknown): value is XmlRuntimeNode {
+  return typeof value === 'object' && value !== null && (value as XmlRuntimeNode).__idylliumType === 'xml.Node';
+}
+
+function decodeXmlEntities(text: string): string {
+  // Тело числовой сущности — строго цифры своей системы: «&#65a;» не сущность
+  // и остаётся литералом (раньше parseInt молча съедал мусорный хвост).
+  return text.replace(/&(#[0-9]+|#[xX][0-9a-fA-F]+|[a-zA-Z]+);/g, (whole, body: string) => {
+    if (body[0] === '#') {
+      const hex = body[1] === 'x' || body[1] === 'X';
+      const code = hex ? Number.parseInt(body.slice(2), 16) : Number.parseInt(body.slice(1), 10);
+      // Запрещённые в XML кодовые точки (NUL, суррогатные половины, за
+      // пределами Unicode) не раскрываются — сущность остаётся литералом,
+      // видимым в text, а не битым символом в строке ученика.
+      if (!Number.isFinite(code) || code === 0 || (code >= 0xd800 && code <= 0xdfff) || code > 0x10ffff) return whole;
+      return String.fromCodePoint(code);
+    }
+    return XML_NAMED_ENTITIES[body] ?? whole;
+  });
+}
+
+function xmlInnerText(node: XmlRuntimeNode): string {
+  // Обход явным стеком: глубина документа не ограничена стеком JS.
+  const pieces: string[] = [];
+  const work: Array<XmlRuntimeNode | string> = [node];
+  while (work.length > 0) {
+    const current = work.pop()!;
+    if (typeof current === 'string') {
+      pieces.push(current);
+      continue;
+    }
+    for (let i = current.__xmlParts.length - 1; i >= 0; i -= 1) {
+      work.push(current.__xmlParts[i]);
+    }
+  }
+  return pieces.join('');
+}
+
+function xmlElementChildren(node: XmlRuntimeNode): XmlRuntimeNode[] {
+  return node.__xmlParts.filter(isXmlRuntimeNode);
+}
+
+function xmlFindAll(node: XmlRuntimeNode, tag: string): XmlRuntimeNode[] {
+  // Документный порядок обходом с явным стеком — глубина не ограничена.
+  const found: XmlRuntimeNode[] = [];
+  const work: XmlRuntimeNode[] = [...xmlElementChildren(node)].reverse();
+  while (work.length > 0) {
+    const current = work.pop()!;
+    if (current.__xmlTag === tag) found.push(current);
+    const children = xmlElementChildren(current);
+    for (let i = children.length - 1; i >= 0; i -= 1) work.push(children[i]);
+  }
+  return found;
+}
+
+// Имя для поиска: в HTML теги и атрибуты нормализованы к нижнему регистру ещё
+// при разборе — аргументы приводим так же, иначе find_all("IMG") молча не
+// находил бы ничего.
+function xmlSearchName(node: XmlRuntimeNode, raw: string): string {
+  return node.__xmlHtml ? raw.toLowerCase() : raw;
+}
+
+// Методы и геттеры живут на ОБЩЕМ прототипе: узел несёт только четыре поля
+// данных. Замыкания на каждый узел стоили ~2,3 КБ кучи, и 19-мегабайтная
+// страница валила V8 без всякой метки runtime error (улов ломателя).
+const XML_NODE_PROTOTYPE: Record<string, unknown> = {};
+Object.defineProperty(XML_NODE_PROTOTYPE, '__idylliumType', { value: 'xml.Node', enumerable: false });
+Object.defineProperty(XML_NODE_PROTOTYPE, 'tag', {
+  enumerable: true,
+  get(this: XmlRuntimeNode) { return this.__xmlTag; },
+});
+Object.defineProperty(XML_NODE_PROTOTYPE, 'text', {
+  enumerable: true,
+  get(this: XmlRuntimeNode) { return xmlInnerText(this); },
+});
+Object.defineProperty(XML_NODE_PROTOTYPE, 'children', {
+  enumerable: true,
+  get(this: XmlRuntimeNode) {
+    const html = this.__xmlHtml;
+    return IdylliumArray.from(xmlElementChildren(this), true, null, () => createXmlNode('#document', html));
+  },
+});
+XML_NODE_PROTOTYPE.attr = contextFunction(function (this: XmlRuntimeNode, name: unknown, file: string, line: number) {
+  return this.__xmlAttributes.get(xmlSearchName(this, stringArgument(name, 'xml.Node.attr() name', file, line))) ?? '';
+});
+XML_NODE_PROTOTYPE.has_attr = contextFunction(function (this: XmlRuntimeNode, name: unknown, file: string, line: number) {
+  return this.__xmlAttributes.has(xmlSearchName(this, stringArgument(name, 'xml.Node.has_attr() name', file, line)));
+});
+XML_NODE_PROTOTYPE.find_all = contextFunction(function (this: XmlRuntimeNode, name: unknown, file: string, line: number) {
+  const wanted = xmlSearchName(this, stringArgument(name, 'xml.Node.find_all() tag', file, line));
+  const html = this.__xmlHtml;
+  return IdylliumArray.from(xmlFindAll(this, wanted), true, null, () => createXmlNode('#document', html));
+});
+XML_NODE_PROTOTYPE.first = contextFunction(function (this: XmlRuntimeNode, name: unknown, file: string, line: number) {
+  const wanted = xmlSearchName(this, stringArgument(name, 'xml.Node.first() tag', file, line));
+  const found = xmlFindAll(this, wanted);
+  if (found.length === 0) {
+    throw new IdylliumRuntimeError(file, line, `xml node <${this.__xmlTag}> has no <${wanted}> inside`);
+  }
+  return found[0];
+});
+XML_NODE_PROTOTYPE.has = contextFunction(function (this: XmlRuntimeNode, name: unknown, file: string, line: number) {
+  return xmlFindAll(this, xmlSearchName(this, stringArgument(name, 'xml.Node.has() tag', file, line))).length > 0;
+});
+XML_NODE_PROTOTYPE.toString = function (this: XmlRuntimeNode) { return `<${this.__xmlTag}>`; };
+
+function createXmlNode(tag: string, html: boolean): XmlRuntimeNode {
+  const node = Object.create(XML_NODE_PROTOTYPE) as XmlRuntimeNode;
+  node.__xmlTag = tag;
+  node.__xmlHtml = html;
+  node.__xmlAttributes = new Map<string, string>();
+  node.__xmlParts = [];
+  return node;
+}
+
+function parseXmlDocument(source: string, html: boolean, file: string, line: number): XmlRuntimeNode {
+  let index = 0;
+  let atLine = 1;
+  let atColumn = 1;
+  const entry = html ? 'xml.parse_html()' : 'xml.parse_xml()';
+  const language = html ? 'HTML' : 'XML';
+
+  const fail = (message: string): never => {
+    throw new IdylliumRuntimeError(file, line, `${entry} invalid ${language} at ${atLine}:${atColumn}: ${message}`);
+  };
+  const advance = (count: number): void => {
+    for (let i = 0; i < count; i += 1) {
+      if (source[index] === '\n') { atLine += 1; atColumn = 1; } else atColumn += 1;
+      index += 1;
+    }
+  };
+  const startsWith = (text: string) => source.startsWith(text, index);
+  const skipUntil = (text: string, what: string): void => {
+    const end = source.indexOf(text, index);
+    if (end < 0) {
+      if (html) { advance(source.length - index); return; }
+      fail(`${what} is never closed`);
+    }
+    advance(end + text.length - index);
+  };
+
+  const root = createXmlNode('#document', html);
+  const stack: XmlRuntimeNode[] = [root];
+  const top = () => stack[stack.length - 1];
+  const normalize = (name: string) => (html ? name.toLowerCase() : name);
+
+  // Прощающий режим переваривает обрывы: частично скачанная страница из
+  // http.get — быт настоящего веба, а не повод уронить программу.
+  const readName = (): string | null => {
+    const match = /^[^\s/>=]+/.exec(source.slice(index));
+    if (!match) {
+      if (html) return null;
+      fail('expected a name');
+    }
+    if (!html && !XML_STRICT_NAME.test(match![0])) {
+      fail(`'${match![0]}' is not a valid name`);
+    }
+    advance(match![0].length);
+    return match![0];
+  };
+
+  const readAttributes = (node: XmlRuntimeNode): void => {
+    for (;;) {
+      while (/\s/.test(source[index] ?? '')) advance(1);
+      if (index >= source.length || startsWith('>') || startsWith('/>')) return;
+      if (html && startsWith('/')) { advance(1); continue; }
+      const name = readName();
+      if (name === null) { advance(1); continue; }
+      const normalized = normalize(name);
+      let value = '';
+      while (/\s/.test(source[index] ?? '')) advance(1);
+      if (startsWith('=')) {
+        advance(1);
+        while (/\s/.test(source[index] ?? '')) advance(1);
+        const quote = source[index];
+        if (quote === '"' || quote === "'") {
+          advance(1);
+          const end = source.indexOf(quote, index);
+          if (end < 0) {
+            if (!html) fail(`attribute '${normalized}' value is never closed`);
+            value = decodeXmlEntities(source.slice(index));
+            advance(source.length - index);
+          } else {
+            value = decodeXmlEntities(source.slice(index, end));
+            advance(end + 1 - index);
+          }
+        } else if (html) {
+          const match = /^[^\s>]*/.exec(source.slice(index));
+          value = decodeXmlEntities(match![0]);
+          advance(match![0].length);
+        } else {
+          fail(`attribute '${normalized}' value must be quoted`);
+        }
+      }
+      if (node.__xmlAttributes.has(normalized)) {
+        // Строгий XML не терпит двойных атрибутов; в HTML первый выигрывает.
+        if (!html) fail(`duplicate attribute '${normalized}'`);
+      } else {
+        node.__xmlAttributes.set(normalized, value);
+      }
+    }
+  };
+
+  const pushText = (text: string): void => {
+    if (text.trim() === '') return;
+    // Well-formedness строгого XML: текст живёт только внутри корневого
+    // элемента, «privet, ya ne XML» — не документ.
+    if (!html && top() === root) fail('text outside the root element');
+    top().__xmlParts.push(text);
+  };
+
+  const pushElement = (node: XmlRuntimeNode): void => {
+    if (!html && top() === root && root.__xmlParts.some(isXmlRuntimeNode)) {
+      fail('XML must have exactly one root element');
+    }
+    top().__xmlParts.push(node);
+  };
+
+  while (index < source.length) {
+    if (startsWith('<!--')) { skipUntil('-->', 'comment'); continue; }
+    if (startsWith('<![CDATA[')) {
+      const end = source.indexOf(']]>', index);
+      if (end < 0) {
+        if (!html) fail('CDATA section is never closed');
+        // Прощающий режим: оборванная CDATA — текст до конца, как комментарий.
+        pushText(source.slice(index + 9));
+        advance(source.length - index);
+        continue;
+      }
+      pushText(source.slice(index + 9, end));
+      advance(end + 3 - index);
+      continue;
+    }
+    if (startsWith('<!')) { skipUntil('>', 'declaration'); continue; }
+    if (startsWith('<?')) { skipUntil('?>', 'processing instruction'); continue; }
+    if (startsWith('</')) {
+      advance(2);
+      const name = readName();
+      if (name === null) { skipUntil('>', 'closing tag'); continue; }
+      const normalized = normalize(name);
+      while (/\s/.test(source[index] ?? '')) advance(1);
+      if (!startsWith('>')) {
+        if (!html) fail(`expected '>' after closing tag '${normalized}'`);
+        skipUntil('>', 'closing tag');
+      } else {
+        advance(1);
+      }
+      let openIndex = -1;
+      for (let i = stack.length - 1; i >= 0; i -= 1) {
+        if (stack[i].__xmlTag === normalized) { openIndex = i; break; }
+      }
+      if (openIndex <= 0) {
+        if (html) continue; // лишний закрывающий — прощаем
+        fail(`closing tag '</${normalized}>' has no opening tag`);
+      }
+      if (!html && openIndex !== stack.length - 1) {
+        fail(`closing tag '</${normalized}>' does not match open tag '<${top().__xmlTag}>'`);
+      }
+      stack.length = openIndex; // закрывает и всех незакрытых детей (html)
+      continue;
+    }
+    if (startsWith('<')) {
+      // В прощающем режиме голый '<', за которым не имя тега, — обычный
+      // текст ("a < b" в абзаце), как в настоящем браузере.
+      if (html && !/^<[a-zA-Z]/.test(source.slice(index, index + 2))) {
+        pushText('<');
+        advance(1);
+        continue;
+      }
+      advance(1);
+      const name = readName();
+      if (name === null) { advance(source.length - index); continue; }
+      const normalized = normalize(name);
+      const node = createXmlNode(normalized, html);
+      readAttributes(node);
+      let selfClosed = false;
+      if (startsWith('/>')) { advance(2); selfClosed = true; }
+      else if (startsWith('>')) advance(1);
+      else if (!html) fail(`tag '<${normalized}>' is never closed`);
+      // html: страница оборвалась внутри тега — тег считается закрытым.
+
+      if (html && XML_AUTOCLOSE[normalized]) {
+        while (XML_AUTOCLOSE[normalized].includes(top().__xmlTag)) stack.length -= 1;
+      }
+      pushElement(node);
+      if (selfClosed || (html && XML_VOID_ELEMENTS.has(normalized))) continue;
+      if (html && XML_RAW_TEXT.has(normalized)) {
+        const close = new RegExp(`</${normalized}\\s*>`, 'i').exec(source.slice(index));
+        const end = close ? index + close.index : source.length;
+        node.__xmlParts.push(source.slice(index, end));
+        advance((close ? end + close[0].length : source.length) - index);
+        continue;
+      }
+      stack.push(node);
+      continue;
+    }
+    const nextTag = source.indexOf('<', index);
+    const end = nextTag < 0 ? source.length : nextTag;
+    pushText(decodeXmlEntities(source.slice(index, end)));
+    advance(end - index);
+  }
+
+  if (stack.length > 1 && !html) fail(`tag '<${top().__xmlTag}>' is never closed`);
+  if (!html && !root.__xmlParts.some(isXmlRuntimeNode)) {
+    fail('expected a root element');
+  }
+  return root;
 }
 
 function parseJsonValue(text: string, file: string, line: number): JsonRuntimeValue {
@@ -2450,6 +2794,7 @@ export interface IdylliumRuntime {
     readonly web: Record<string, unknown>;
   readonly http: Record<string, unknown>;
     readonly json: Record<string, unknown>;
+    readonly xml: Record<string, unknown>;
     readonly sqlite: Record<string, unknown>;
     readonly audio: Record<string, unknown>;
     readonly image: Record<string, unknown>;
@@ -2466,6 +2811,10 @@ export interface IdylliumRuntime {
   getOutput(): string;
   getExitText(): Promise<string | null>;
   getExitCode(): number | null;
+  /** Предупреждения конца программы: окно не показано, виджет не добавлен,
+   *  файл не закрыт. Пустой список, если всё в порядке или предупреждения
+   *  выключены программой (system.set_warnings(false)). */
+  collectProgramEndWarnings(): readonly string[];
   getAudio(): readonly IdylliumAudioSnapshot[];
   getCanvases(): readonly IdylliumCanvasSnapshot[];
   getWindows(): readonly IdylliumWindowSnapshot[];
@@ -2562,6 +2911,10 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     channelMailbox: [],
     nextAudioCommandId: 1,
     nextObjectId: 1,
+    warningsDisabled: false,
+    windowsCreated: 0,
+    anyWindowEverShown: false,
+    openOutputStreams: new Map(),
     turtleField: null,
     turtlePlatform: String(options.platform ?? defaultRuntimePlatform()),
   };
@@ -2773,8 +3126,12 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       close: () => {
         closed = true;
         stream.is_open = false;
+        runtimeObjects.openOutputStreams.delete(stream);
       },
     };
+    // Открытый поток записи попадает в реестр: если программа кончится, не
+    // закрыв его, — рантайм-предупреждение (данные при этом целы).
+    runtimeObjects.openOutputStreams.set(stream, shownPath);
     return stream;
   }
 
@@ -3151,6 +3508,17 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
           maxCallDepth = requested;
         }),
         recursion_depth: () => maxCallDepth,
+        // Выключатель предупреждений — сознательно запрятан сюда (вердикт
+        // владельца 2026-08-28); один универсальный метод с bool-аргументом
+        // (доработка 2026-08-28): гасит и возвращает РАНТАЙМ-предупреждения
+        // этой программы; предупреждения компиляции уже напечатаны и им
+        // не подвластны.
+        set_warnings: contextFunction((value: unknown, file: string, line: number) => {
+          if (typeof value !== 'boolean') {
+            throw new IdylliumRuntimeError(file, line, `system.set_warnings() expects 'bool', got '${runtimeTypeName(value)}'`);
+          }
+          runtimeObjects.warningsDisabled = !value;
+        }),
         exit: contextFunction((code: unknown, file: string, line: number) => {
           const value = code === undefined ? 0 : integerNumber(code, 'system.exit()', file, line);
           exitValue = value;
@@ -3570,6 +3938,14 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
           return createJsonValue(valueOrFile, fileOrLine as string, maybeLine);
         }),
       },
+      xml: {
+        parse_xml: contextFunction((text: unknown, file: string, line: number) => (
+          parseXmlDocument(stringArgument(text, 'xml.parse_xml() text', file, line), false, file, line)
+        )),
+        parse_html: contextFunction((text: unknown, file: string, line: number) => (
+          parseXmlDocument(stringArgument(text, 'xml.parse_html() text', file, line), true, file, line)
+        )),
+      },
       sqlite: {
         open: contextFunction(async (path: unknown, file: string, line: number) => (
           openSqliteDatabase(path, file, line, runtimeObjects)
@@ -3704,6 +4080,41 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       return typeof exitValue === 'string' ? JSON.stringify(exitValue) : text;
     },
     /** Целый код завершения, если он был целым; иначе null. */
+    // Предупреждения конца программы (вердикты владельца 2026-08-28):
+    // лаконичные, «что случилось», слова переживают машинный перевод.
+    collectProgramEndWarnings(): readonly string[] {
+      if (runtimeObjects.warningsDisabled) return [];
+      const warnings: string[] = [];
+
+      // Счётчики ЖИЗНИ программы, а не снимок windows: close() убирает окно
+      // из списка, и по снимку показанное-и-закрытое окно выглядело бы
+      // непоказанным, а закрытое непоказанное — несуществующим (улов
+      // ломателей 2026-08-28).
+      if (runtimeObjects.windowsCreated > 0 && !runtimeObjects.anyWindowEverShown) {
+        warnings.push('runtime warning: the program finished without showing a window');
+      }
+
+      // Виджет без родителя, не лежащий ни в одном окне. Window/Timer живут
+      // своей жизнью; диалоги и холст — тоже не «потерянные кнопки».
+      // Если хоть одно окно ПОКАЗАНО, о сиротах молчим: в живом хосте
+      // обработчик события может добавить виджет позже, и ложная тревога
+      // хуже пропуска (канон владельца).
+      if (!runtimeObjects.anyWindowEverShown) {
+        const orphanSkip = new Set(['gui.Window', 'gui.Timer', 'gui.Canvas', 'gui.Modal', 'gui.Sender']);
+        for (const obj of runtimeObjects.objects) {
+          const typeName = typeof obj.__idylliumType === 'string' ? obj.__idylliumType : '';
+          if (!typeName.startsWith('gui.') || orphanSkip.has(typeName)) continue;
+          if (obj.__parent !== undefined && obj.__parent !== null) continue;
+          warnings.push(`runtime warning: a widget ('${typeName}') was created but never added to a window`);
+        }
+      }
+
+      for (const shownPath of runtimeObjects.openOutputStreams.values()) {
+        warnings.push(`runtime warning: file '${shownPath}' was not closed`);
+      }
+
+      return warnings;
+    },
     getExitCode(): number | null {
       if (!hasExitValue) return null;
       if (typeof exitValue === 'number' && Number.isInteger(exitValue)) return exitValue;
@@ -3727,8 +4138,12 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       return runtimeObjects.channelPosts.some((post) => post.is_open === true);
     },
     hasGui(): boolean {
-      return runtimeObjects.windows.length > 0
-        || runtimeObjects.canvases.length > 0
+      // Только ПОКАЗАННЫЕ окна держат программу живой: созданное-но-не-
+      // показанное окно раньше уводило Web IDE в вечную GUI-петлю с пустым
+      // экраном — и глушило рантайм-варнинг «окно не показано», ради которого
+      // всё и затевалось (находка владельца 2026-08-28).
+      return runtimeObjects.windows.some((win) => win.__shown === true)
+        || runtimeObjects.canvases.some((canvas) => canvasKeepsProgramAlive(canvas))
         || runtimeObjects.modals.length > 0
         || runtimeObjects.audio.some((item) => item.is_playing === true)
         // Открытое почтовое отделение держит программу живой (жанр окна):
@@ -5474,6 +5889,14 @@ interface RuntimeObjectState {
   readonly channelMailbox: { readonly post: RuntimeObject; readonly text: string }[];
   nextAudioCommandId: number;
   nextObjectId: number;
+  /** Предупреждения выключены программой (system.set_warnings(false)). */
+  warningsDisabled: boolean;
+  /** Сколько окон создано за жизнь программы (close их не вычитает). */
+  windowsCreated: number;
+  /** Хоть одно окно было показано — даже если потом закрыто. */
+  anyWindowEverShown: boolean;
+  /** Открытые потоки записи — для предупреждения о незакрытом файле. */
+  readonly openOutputStreams: Map<RuntimeObject, string>;
   /** Черепашье поле; создаётся лениво первой черепахой или командой turtle.*. */
   turtleField: TurtleFieldState | null;
   /** 'cli' | 'web' | 'vscode' — в CLI черепаха работает без окна и без анимации. */
@@ -5637,6 +6060,13 @@ function createPlainRuntimeObject(moduleName: string, typeName: string, state: R
     if (typeName === 'Database') return createClosedSqliteDatabase(state);
     if (typeName === 'Statement') return createClosedSqliteStatement();
     if (typeName === 'Result') return createBlankSqliteResult();
+  }
+
+  // 'xml.Node n;' без инициализации — честный пустой документ со всеми
+  // методами, а не голый объект, печатавший 'undefined' и падавший на
+  // n.tag.length языком JavaScript (улов ломателя 2026-08-28).
+  if (moduleName === 'xml' && typeName === 'Node') {
+    return createXmlNode('#document', false) as unknown as RuntimeObject;
   }
 
   const obj: Record<string, unknown> = {
@@ -6501,10 +6931,18 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
 
   if (typeName === 'Window') {
     obj.title = '';
+    // Координаты окна на «рабочем столе» превью — с учётом явности: окно,
+    // которому программа (или перетаскивание мышью за шапку) задала x/y,
+    // рендерер ставит по координатам, остальные раскладывает сам. Явность
+    // различима только через tracked-свойство: обычное поле не отличает
+    // «не задавали» от «задали 0».
+    defineTrackedRuntimeProperty(obj, 'x', 0);
+    defineTrackedRuntimeProperty(obj, 'y', 0);
     defineEnumRuntimeProperty(obj, 'theme', 'Window', 'default', ['default', 'idyllium', 'dracula', 'breeze', 'oxygen']);
     setTrackedRuntimePropertyDefault(obj, 'background_color', colorWhite());
     obj.show = async () => {
       obj.__shown = true;
+      state.anyWindowEverShown = true;
       for (const child of obj.__children as RuntimeObject[] ?? []) {
         await initializeGuiChild(child);
       }
@@ -6517,6 +6955,7 @@ function initializeGuiObject(obj: RuntimeObject, typeName: string, state: Runtim
       if (index !== -1) state.windows.splice(index, 1);
     };
     state.windows.push(obj);
+    state.windowsCreated += 1;
   }
 
   if (typeName === 'Canvas') {
@@ -9371,6 +9810,26 @@ function applyGuiEventPayload(
     return;
   }
 
+  if (target.__idylliumType === 'gui.Window' && eventName === 'window_move') {
+    // Пользователь перетащил окно за шапку: превью сообщает финальную позицию,
+    // и win.x / win.y обновляются тем же путём, что text у LineEdit при вводе, —
+    // программа всегда читает место, где окно стоит на самом деле. Только
+    // настоящие числа: коэрция Number(null|true|[]) давала 0/1 и вдобавок
+    // помечала координату явной, выдёргивая окно из автораскладки (улов
+    // ломателя 2026-08-28).
+    if (typeof payload.x === 'number' && Number.isFinite(payload.x)) target.x = Math.trunc(payload.x);
+    if (typeof payload.y === 'number' && Number.isFinite(payload.y)) target.y = Math.trunc(payload.y);
+    return;
+  }
+
+  if (target.__idylliumType === 'gui.Window' && eventName === 'window_close') {
+    // Крестик закрывает СВОЁ окно, как в настоящих ОС. Программа живёт, пока
+    // показано хоть одно окно: завершение с последним обеспечивает hasGui() —
+    // ровно та же цепочка, что у close() из кода.
+    if (typeof target.close === 'function') target.close();
+    return;
+  }
+
   if (eventName !== 'change') return;
 
   switch (target.__idylliumType) {
@@ -9410,6 +9869,20 @@ function applyGuiEventPayload(
  * из его контейнеров-предков. Modal и Window в цепочке безвредны: у них нет
  * enabled/visible, а undefined !== false.
  */
+// Канвас держит программу живой, только пока ему есть где рисовать:
+// standalone-канвас (без окна) — сам себе экран, канвас в окне живёт и
+// умирает вместе с окном. Иначе крестик окна с канвасом оставлял бы превью
+// работать вечно с нулём окон (улов ломателя 2026-08-28).
+function canvasKeepsProgramAlive(canvas: RuntimeObject): boolean {
+  let current: RuntimeObject | undefined = canvas;
+  while (isRuntimeObject(current.__parent)) {
+    current = current.__parent as RuntimeObject;
+  }
+  if (current === canvas) return true;
+  if (current.__idylliumType === 'gui.Window') return current.__shown === true;
+  return true;
+}
+
 function widgetEventsBlocked(target: RuntimeObject): boolean {
   let current: RuntimeObject | undefined = target;
   const seen = new Set<RuntimeObject>();

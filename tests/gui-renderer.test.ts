@@ -309,13 +309,15 @@ test('gui renderer announces that it is ready for snapshots', () => {
   );
 });
 
-test('gui renderer close button asks the host to close the application', () => {
+test('gui renderer close button closes its own window, not the whole app', () => {
+  // Крестик — по-оконному (вердикт владельца 2026-08-28): событие window_close
+  // конкретного окна; программа завершается сама, когда закрыто последнее.
   const harness = createRendererHarness();
   harness.sendSnapshot({
     generation: 1,
     audio: [],
     windows: [{
-      id: 1,
+      id: 7,
       type: 'gui.Window',
       properties: { width: 320, height: 180, title: 'Close me' },
       children: [],
@@ -328,9 +330,93 @@ test('gui renderer close button asks the host to close the application', () => {
   assert(close !== null, 'expected Window close button');
   close.dispatch('click', { stopPropagation() {} });
   assert(
-    harness.postedMessages.some((message: any) => message?.type === 'closeApp'),
-    `expected closeApp host message, got ${JSON.stringify(harness.postedMessages)}`,
+    !harness.postedMessages.some((message: any) => message?.type === 'closeApp'),
+    `closeApp must not be sent by the window close button: ${JSON.stringify(harness.postedMessages)}`,
   );
+  assert(
+    harness.postedMessages.some((message: any) =>
+      message?.type === 'guiEvent' && message.objectId === 7 && message.eventName === 'window_close'),
+    `expected window_close gui event, got ${JSON.stringify(harness.postedMessages)}`,
+  );
+});
+
+test('windows lay out in a row and explicit x/y wins', () => {
+  const harness = createRendererHarness();
+  harness.sendSnapshot({
+    generation: 1,
+    audio: [],
+    windows: [
+      { id: 1, type: 'gui.Window', properties: { width: 200, height: 100, title: 'Первое' }, children: [] },
+      { id: 2, type: 'gui.Window', properties: { width: 200, height: 100, title: 'Второе' }, children: [] },
+      {
+        id: 3,
+        type: 'gui.Window',
+        properties: { width: 200, height: 100, title: 'Явное', x: 500, y: 300, __explicit_properties: ['x', 'y'] },
+        children: [],
+      },
+    ],
+    canvases: [],
+    modals: [],
+  });
+
+  const first = findElement(harness.stage, (element) => element.dataset?.windowId === '1');
+  const second = findElement(harness.stage, (element) => element.dataset?.windowId === '2');
+  const third = findElement(harness.stage, (element) => element.dataset?.windowId === '3');
+  assert(first !== null && second !== null && third !== null, 'expected three windows');
+  assert(first.style.left === '0px' && first.style.top === '0px', `first window auto-position: ${first.style.left} ${first.style.top}`);
+  // Габарит окна: ширина 200 + рамка 2, зазор 18 → второе окно в той же строке.
+  assert(second.style.left === '220px' && second.style.top === '0px', `second window sits in the row: ${second.style.left} ${second.style.top}`);
+  assert(third.style.left === '500px' && third.style.top === '300px', `explicit x/y positions the window: ${third.style.left} ${third.style.top}`);
+});
+
+test('dragging the titlebar moves the window and reports window_move', () => {
+  const harness = createRendererHarness();
+  const snapshot = {
+    generation: 1,
+    audio: [],
+    windows: [
+      { id: 5, type: 'gui.Window', properties: { width: 200, height: 100, title: 'Тащи меня' }, children: [] },
+    ],
+    canvases: [],
+    modals: [],
+  };
+  harness.sendSnapshot(snapshot);
+
+  const titlebar = findElement(harness.stage, (element) => element.className === 'titlebar');
+  const windowRoot = findElement(harness.stage, (element) => element.dataset?.windowId === '5');
+  assert(titlebar !== null && windowRoot !== null, 'expected window with titlebar');
+
+  titlebar.dispatch('pointerdown', {
+    button: 0,
+    pointerId: 1,
+    clientX: 10,
+    clientY: 10,
+    target: { closest: () => null },
+    preventDefault() {},
+  });
+  titlebar.dispatch('pointermove', { pointerId: 1, clientX: 60, clientY: 40 });
+  titlebar.dispatch('pointerup', { pointerId: 1 });
+
+  assert(windowRoot.style.left === '50px' && windowRoot.style.top === '30px', `window follows the drag: ${windowRoot.style.left} ${windowRoot.style.top}`);
+  const move = harness.postedMessages.find((message: any) =>
+    message?.type === 'guiEvent' && message.eventName === 'window_move') as any;
+  assert(move !== undefined && move.objectId === 5 && move.payload.x === 50 && move.payload.y === 30,
+    `expected window_move with final position, got ${JSON.stringify(harness.postedMessages)}`);
+
+  // Снапшот-подтверждение с теми же координатами не дёргает окно, а следующий
+  // программный сдвиг (win.x из кода) окно переставляет.
+  harness.sendSnapshot({
+    ...snapshot,
+    windows: [{ ...snapshot.windows[0], properties: { ...snapshot.windows[0].properties, x: 50, y: 30, __explicit_properties: ['x', 'y'] } }],
+  });
+  let moved = findElement(harness.stage, (element) => element.dataset?.windowId === '5');
+  assert(moved !== null && moved.style.left === '50px' && moved.style.top === '30px', `confirmed position holds: ${moved?.style.left}`);
+  harness.sendSnapshot({
+    ...snapshot,
+    windows: [{ ...snapshot.windows[0], properties: { ...snapshot.windows[0].properties, x: 70, y: 30, __explicit_properties: ['x', 'y'] } }],
+  });
+  moved = findElement(harness.stage, (element) => element.dataset?.windowId === '5');
+  assert(moved !== null && moved.style.left === '70px', `program-driven x moves the window: ${moved?.style.left}`);
 });
 
 test('gui renderer changes SpinBox with the mouse wheel', () => {

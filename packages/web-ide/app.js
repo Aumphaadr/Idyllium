@@ -673,6 +673,54 @@
         }];
       },
     });
+
+    // Сообщения диагностик — на английском, а hover Монако глух: текст не
+    // выделить, не скопировать, в переводчик не унести (находка владельца
+    // 2026-08-28). Лампочка (Ctrl+.) на подчёркнутой строке даёт три действия
+    // для КАЖДОЙ диагностики — и предупреждения, и ошибки.
+    monaco.editor.registerCommand('idyllium.copyDiagnostic', (_accessor, message) => {
+      const text = String(message || '');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(
+          () => setStatus('Сообщение скопировано'),
+          () => setStatus('Не удалось скопировать', true),
+        );
+      }
+    });
+    monaco.editor.registerCommand('idyllium.translateDiagnosticGoogle', (_accessor, message) => {
+      window.open('https://translate.google.com/?sl=en&tl=ru&op=translate&text=' + encodeURIComponent(String(message || '')), '_blank', 'noopener');
+    });
+    monaco.editor.registerCommand('idyllium.translateDiagnosticYandex', (_accessor, message) => {
+      window.open('https://translate.yandex.ru/?source_lang=en&target_lang=ru&text=' + encodeURIComponent(String(message || '')), '_blank', 'noopener');
+    });
+    monaco.languages.registerCodeActionProvider(MONACO_LANGUAGE_ID, {
+      provideCodeActions(model, range, context) {
+        const actions = [];
+        for (const marker of context.markers || []) {
+          if (typeof marker.message !== 'string' || marker.message === '') continue;
+          const label = marker.severity === monaco.MarkerSeverity.Warning ? 'предупреждения' : 'сообщения об ошибке';
+          actions.push({
+            title: 'Скопировать текст ' + label,
+            kind: 'quickfix',
+            diagnostics: [marker],
+            command: { id: 'idyllium.copyDiagnostic', title: 'copy', arguments: [marker.message] },
+          });
+          actions.push({
+            title: 'Перевести в Google Переводчике',
+            kind: 'quickfix',
+            diagnostics: [marker],
+            command: { id: 'idyllium.translateDiagnosticGoogle', title: 'translate', arguments: [marker.message] },
+          });
+          actions.push({
+            title: 'Перевести в Яндекс Переводчике',
+            kind: 'quickfix',
+            diagnostics: [marker],
+            command: { id: 'idyllium.translateDiagnosticYandex', title: 'translate', arguments: [marker.message] },
+          });
+        }
+        return { actions, dispose() {} };
+      },
+    });
     defineMonacoThemes();
   }
 
@@ -4284,6 +4332,7 @@
         stopOutputSync();
         postEmptySnapshot();
         if (!output.textContent) output.textContent = 'Программа Idyllium успешно завершилась.';
+        appendRuntimeWarnings(currentRuntime);
         await appendExitLine(currentRuntime);
         runAbortController = null;
         setRunControls(false);
@@ -4897,6 +4946,7 @@
     if (!output.textContent) output.textContent = 'Программа Idyllium успешно завершилась.';
     // Для оконной программы «завершилась» наступает только сейчас, когда
     // закрылось последнее окно, — код завершения печатается здесь.
+    appendRuntimeWarnings(finishedRuntime);
     void appendExitLine(finishedRuntime);
     setStatus('Готово');
     postEmptySnapshot();
@@ -4960,6 +5010,19 @@
     span.className = className;
     span.textContent = text;
     output.appendChild(span);
+  }
+
+  // Предупреждения конца программы — жёлтыми строками после вывода: та же
+  // роль, что stderr у CLI. Печатает их среда, не программа.
+  function appendRuntimeWarnings(runtime) {
+    if (!runtime || typeof runtime.collectProgramEndWarnings !== 'function') return;
+    try {
+      for (const warning of runtime.collectProgramEndWarnings()) {
+        appendOutput(warning, 'output-warning');
+      }
+    } catch (_error) {
+      // Предупреждения не смеют ломать завершение программы.
+    }
   }
 
   // Служебная строка о коде завершения: печатает её среда, а не программа,

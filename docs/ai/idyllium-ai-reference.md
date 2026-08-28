@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: Idyllium 1.5.3.
+Current language target: Idyllium 1.5.4.
 
 This reference describes implemented behavior. Ideas from `BACKLOG.md` and
 exploratory files under `spec/some_*` are not language features until they are
@@ -251,25 +251,53 @@ covers variables, parameters, functions, fields, methods, events and classes.
 Names that merely collide with JavaScript internals (`toString`, `valueOf`,
 `hasOwnProperty`) are ordinary identifiers and work as members.
 
-Built-in global function names (`to_int`, `to_float`, `to_string`,
+Function names are reserved for functions. Declaring your own function or
+class with a built-in global function name (`to_int`, `to_float`, `to_string`,
 `type_name`, `max`, `min`, `sum`, `avg`; `div` and `mod` are already
-keywords) are reserved for
-**functions and classes only**:
+keywords) is a compile error:
 
 ```idyllium
 int function to_string(int value) { return value; }
 // compile error: function 'to_string' conflicts with a built-in function
 ```
 
-A variable may take such a name — `int sum = a + b;` is legal and common in
-teaching code. But once the name is taken in that scope, calling the built-in
-through it is a compile error rather than a silent fallback:
+Variables and parameters cannot take function names either — neither a
+built-in one nor the name of a function declared in the current file.
+Shadowing is rejected at the declaration, because a variable named `sum`
+would make every call `sum(...)` in its scope impossible:
 
 ```idyllium
 int sum = 100;
-console.writeln(sum(nums));
-// compile error: variable 'sum' hides the built-in function 'sum'
+// compile error: variable 'sum' conflicts with the built-in function 'sum'
 ```
+
+```idyllium
+void function greet() { }
+
+main() {
+    int greet = 5;
+    // compile error: variable 'greet' conflicts with the function 'greet'
+}
+```
+
+Class fields and methods are free to use such names (they are always accessed
+through an object, so calls stay unambiguous), and a variable may share a name
+with a function from another module — those are called as `module.func()`
+only:
+
+```idyllium
+class Robot {
+    string function to_string() { ... }   // legal: called as r.to_string()
+}
+```
+
+Two more corners of the same rule. The name of an imported **user module** is
+reserved just like a standard library name (`use helper;` + `int helper = 5;`
+→ `variable 'helper' conflicts with the module 'helper'`). And `parent` —
+the base-class constructor call — cannot be taken by a file-level function
+(`function 'parent' conflicts with the base class constructor call`) or by a
+variable inside a child-class constructor; outside child constructors
+`parent` is an ordinary identifier and stays a popular name in GUI code.
 
 ## 6. Type Conversion
 
@@ -1443,7 +1471,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, never returns
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.5.3"
+system.version()                    // "1.5.4"
 ```
 
 **Recursion depth.** Idyllium counts call depth itself instead of relying on the
@@ -2370,6 +2398,54 @@ Do not write comments inside JSON files. JSON text uses double-quoted keys,
 curly braces for objects, square brackets for arrays, and `null` for missing
 values.
 
+## 24a. Library `xml` (since 1.5.4)
+
+Reading markup — strict XML and forgiving HTML — into a tree of nodes:
+
+```idyllium
+use xml;
+
+main() {
+    xml.Node feed = xml.parse_xml("<feed><item><title>Новости</title><link>https://a</link></item></feed>");
+    dyn_array<xml.Node> items = feed.find_all("item");
+    for (int i = 0; i < items.length; i = i + 1) {
+        console.writeln(items[i].first("title").text, " → ", items[i].first("link").text);
+    }
+}
+```
+
+- `xml.parse_xml(text)` — strict XML. A markup mistake stops the program with the
+  position inside the parsed text: `xml.parse_xml() invalid XML at 1:11: closing
+  tag '</a>' does not match open tag '<b>'`; unquoted attribute values,
+  never-closed tags, duplicate attributes, text outside the root and anything
+  but exactly one root element are errors too.
+- `xml.parse_html(text)` — forgiving HTML for real-web pages: unclosed `<li>`
+  and `<p>`, void `<img>` without a pair, unquoted attributes, any tag case
+  (names are lowercased, and search arguments are lowercased to match),
+  `<script>`/`<style>` bodies are kept as raw text, a bare `<` in text stays
+  text, and a page torn mid-tag (an interrupted download) still parses.
+- Both entries skip comments, `<!doctype>` and `<?xml?>`, turn CDATA into
+  text, decode `&amp; &lt; &gt; &quot; &apos; &nbsp;` and numeric `&#…;`
+  entities. The parse result's root node has `tag == "#document"`.
+
+`xml.Node` (all read-only):
+
+```idyllium
+tag, text, children
+attr(name)      // attribute value, "" when absent
+has_attr(name)
+find_all(tag)   // all descendants with this tag, any depth; empty list is fine
+first(tag)      // first such descendant; runtime error when absent
+has(tag)
+```
+
+`text` collects the text of the whole subtree with entities decoded;
+whitespace-only chunks between tags are dropped. `children` holds element
+nodes only. `first` on a missing tag is a loud error in the `json.Object.get`
+genre — `xml node <item> has no <title> inside`; guard with `has()` when the
+tag is optional. Deliberately out of scope: namespaces, XPath, CSS selectors,
+DTD and serialization — the library is for reading.
+
 ## 25. GUI
 
 Import:
@@ -2529,7 +2605,16 @@ close()
 
 `close()` removes the window from the program. When the last window closes the
 program has no GUI left and the host finishes it — that is how an «Выход»
-button is written.
+button is written. The close cross in the preview does the same for its own
+window only: with several windows shown the program keeps running until the
+last one is closed.
+
+`x` and `y` are the window's position on the preview "desktop". Until the
+program assigns them, windows are laid out automatically — in a row, wrapping
+when the row runs out. The user can also drag a window by its titlebar, like
+in a real OS: after the drag `x`/`y` hold the new position, so the program
+reads where the window actually is. Assigning `x`/`y` from code moves the
+window there.
 
 `theme` is a string: `"default"` (plain light look), `"idyllium"` and
 `"dracula"` (dark), `"breeze"` and `"oxygen"` (light KDE-flavoured). The theme
@@ -3650,6 +3735,54 @@ SQLite INTEGER values are read exactly. Use `get_int64()` / `to_int64()` for
 values outside the safe ordinary `int` range. BLOB values do not yet have a
 dedicated Idyllium type. Nested transactions and savepoints are not in the
 first API.
+
+## 28b. Warnings
+
+Since the warnings release, Idyllium has a THIRD kind of message besides
+`compile error` and `runtime error`: warnings. The rule that draws the line
+(owner's verdict): code that breaks a convention of the language is an
+**error**; code that merely **does nothing** gets a **warning** and still
+compiles and runs. Warnings never change the exit code.
+
+Labels are symmetric with errors: `compile warning` and `runtime warning`.
+
+Compile warnings (printed with `file:line:column`):
+
+```text
+compile warning: this line computes a value and does not use it        // a + 1;  "text";  a == 2;
+compile warning: assigning a variable to itself changes nothing        // a = a;
+compile warning: this line can never run — the function returns above  // code after return (also: break/continue variants)
+compile warning: variable 'x' is never used
+compile warning: two float numbers are compared with '==' — they are almost never exactly equal
+compile warning: comparing a bool with 'true' changes nothing          // flag == true
+compile warning: this condition is always true                          // if (true); while (false) says "always false"
+compile warning: the value returned by 'damage' is not used            // user functions/methods only
+```
+
+Scope notes, so generated examples stay warning-free:
+
+- `while (true)` with `break` is the canonical endless loop — no warning.
+- Library calls may drop their result freely (`db.execute("INSERT …")`) —
+  only USER functions and class methods warn when the result is dropped.
+- `variable is never used` fires only for primitive-typed variables whose
+  initializer performs no call and no indexing: `file.ostream f = file.open(…)`
+  or `int x = console.get_int();` never warn (the initializer already did real
+  work), and neither do objects, widgets or arrays (creating them IS the work).
+- When the file has compile ERRORS, warnings are suppressed entirely — fix the
+  first error, then the warnings come back.
+
+Runtime warnings are emitted when the program ends, without file:line:
+
+```text
+runtime warning: the program finished without showing a window
+runtime warning: a widget ('gui.Button') was created but never added to a window
+runtime warning: file 'notes.txt' was not closed
+```
+
+The file warning is about hygiene — the data itself IS on disk. Warnings can
+be switched with `system.set_warnings(false)` / `system.set_warnings(true)`
+(default: on); switching off silences
+only runtime warnings (compile warnings are printed before the program runs).
 
 ## 29. Errors
 

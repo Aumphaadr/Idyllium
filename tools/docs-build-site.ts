@@ -75,6 +75,7 @@ const MANAGED_PATHS = [
   'tasks',
   'projects',
   'handouts',
+  'about',
   'reference',
   'ide',
   'docs',
@@ -895,6 +896,8 @@ function main(): void {
 
   buildHandoutsPage(path.join(siteRoot, 'handouts'));
 
+  buildAboutPage(path.join(siteRoot, 'about'));
+
   const bookShell = fs.readFileSync(path.resolve(process.cwd(), 'packages', 'docs-book', 'index.html'), 'utf8');
   const bookPages = bakeCleanUrlPages(bookShell, bookRoot, manifest, 'Учебник Idyllium');
   console.log(`book clean URLs: ${bookPages} pages`);
@@ -1373,6 +1376,365 @@ ${panels.join('\n')}
 `;
   fs.writeFileSync(path.join(outputRoot, 'index.html'), page, 'utf8');
   console.log(`handouts generated: ${total} files in ${manifest.categories.length} tabs`);
+}
+
+// ─── Подсветка Idyllium-кода для запекаемых страниц ────────────────────────
+// ПОРТ лексера из packages/docs-book/app.js (KEYWORDS/TYPES/QUALIFIED_TYPES,
+// tokenize, highlightIdyllium). Уроки подсвечиваются им на клиенте; статические
+// страницы («О проекте») — этой копией на сборке. При изменении правил
+// подсветки обновлять ОБА места.
+const HL_KEYWORDS = new Set([
+  'use', 'if', 'else', 'while', 'do', 'for', 'break', 'continue', 'return', 'try', 'catch', 'finally', 'const',
+  'function', 'class', 'extends', 'this', 'constructor', 'event',
+  'public', 'private', 'static', 'parent', 'and', 'or', 'xor',
+  'not', 'true', 'false', 'null',
+]);
+
+const HL_TYPES = new Set([
+  'int', 'float', 'string', 'char', 'bool', 'void', 'array', 'dyn_array', 'set',
+]);
+
+const HL_QUALIFIED_TYPES = new Set([
+  'Animation', 'Array', 'Color', 'Database', 'Drawable', 'Font', 'Image', 'Music', 'Object', 'Result',
+  'Sound', 'Statement', 'Static', 'Value',
+  'Circle', 'Line', 'Rectangle', 'Sprite', 'Text',
+  'istream', 'ostream', 'stream', 'stamp',
+  'Window', 'Widget', 'Button', 'Label', 'SpinBox', 'FloatSpinBox',
+  'LineEdit', 'CheckBox', 'ProgressBar', 'TextEdit',
+  'ComboBox', 'Slider', 'Frame', 'Timer', 'Modal', 'RadioButton', 'ImageBox',
+  'Canvas', 'KeyboardEvent', 'MouseEvent', 'MouseScrollEvent',
+  'int8', 'int16', 'int32', 'int64',
+  'uint8', 'uint16', 'uint32', 'uint64',
+  'float32', 'float64',
+]);
+
+interface HlToken { text: string; category: string }
+
+function unescapeHtmlForBake(text: string): string {
+  return text
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&');
+}
+
+function highlightIdylliumForBake(code: string): string {
+  return tokenizeIdylliumForBake(code).map((token) => {
+    const text = escapeHtml(token.text);
+    return token.category === 'plain' ? text : `<span class="hl-${token.category}">${text}</span>`;
+  }).join('');
+}
+
+function tokenizeIdylliumForBake(source: string): HlToken[] {
+  const tokens: HlToken[] = [];
+  let pos = 0;
+  const len = source.length;
+  const isWhitespace = (ch: string) => ch === ' ' || ch === '\t' || ch === '\r' || ch === '\n';
+  const isDigit = (ch: string) => ch >= '0' && ch <= '9';
+  const isIdentStart = (ch: string) => /[a-zA-Z_Ѐ-ӿ]/.test(ch);
+  const isIdentPart = (ch: string) => /[a-zA-Z0-9_Ѐ-ӿ]/.test(ch);
+  const isPascalCase = (name: string) => name.length > 0 && name[0] >= 'A' && name[0] <= 'Z';
+  const userClasses = new Set<string>();
+  for (const match of source.matchAll(/\bclass\s+([A-Z][a-zA-Z0-9_]*)/g)) userClasses.add(match[1]);
+  const importedModules = new Set<string>();
+  for (const match of source.matchAll(/\buse\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*;/g)) importedModules.add(match[1]);
+
+  function peekNonWhitespace(startPos: number): string {
+    let p = startPos;
+    while (p < len && isWhitespace(source[p])) p++;
+    return p < len ? source[p] : '';
+  }
+
+  function lastSignificantToken(): HlToken | null {
+    for (let i = tokens.length - 1; i >= 0; i--) {
+      if (tokens[i].category !== 'plain') return tokens[i];
+    }
+    return null;
+  }
+
+  function significantToken(depth: number): HlToken | null {
+    let remaining = depth;
+    for (let i = tokens.length - 1; i >= 0; i--) {
+      if (tokens[i].category === 'plain') continue;
+      if (remaining === 0) return tokens[i];
+      remaining--;
+    }
+    return null;
+  }
+
+  function isClassNamePosition(): boolean {
+    if (/^\s+[a-zA-Z_Ѐ-ӿ][a-zA-Z0-9_Ѐ-ӿ]*\s*(?:[=;,)(\[]|$)/.test(source.slice(pos))) return true;
+    if (peekNonWhitespace(pos) === '(') return true;
+    const lastTok = lastSignificantToken();
+    if (lastTok && (lastTok.text === 'extends' || lastTok.text === 'class')) return true;
+    if (lastTok && lastTok.text === '<') {
+      const beforeAngle = significantToken(1);
+      if (beforeAngle && (beforeAngle.text === 'array' || beforeAngle.text === 'dyn_array')) return true;
+    }
+    return false;
+  }
+
+  function tokenBeforeDot(): HlToken | null {
+    let dotFound = false;
+    for (let i = tokens.length - 1; i >= 0; i--) {
+      if (tokens[i].category === 'plain') continue;
+      if (tokens[i].text === '.') {
+        dotFound = true;
+        continue;
+      }
+      if (dotFound) return tokens[i];
+    }
+    return null;
+  }
+
+  while (pos < len) {
+    const ch = source[pos];
+
+    if (isWhitespace(ch)) {
+      let text = '';
+      while (pos < len && isWhitespace(source[pos])) text += source[pos++];
+      tokens.push({ text, category: 'plain' });
+      continue;
+    }
+
+    if (ch === '/' && source[pos + 1] === '/') {
+      let text = '';
+      while (pos < len && source[pos] !== '\n') text += source[pos++];
+      tokens.push({ text, category: 'comment' });
+      continue;
+    }
+
+    if (ch === '/' && source[pos + 1] === '*') {
+      let text = '/*';
+      pos += 2;
+      while (pos < len) {
+        if (source[pos] === '*' && source[pos + 1] === '/') {
+          text += '*/';
+          pos += 2;
+          break;
+        }
+        text += source[pos++];
+      }
+      tokens.push({ text, category: 'comment' });
+      continue;
+    }
+
+    if (ch === '"' || ch === "'") {
+      const quote = ch;
+      let text = quote;
+      pos++;
+      while (pos < len && source[pos] !== quote) {
+        if (source[pos] === '\\' && pos + 1 < len) {
+          text += source[pos] + source[pos + 1];
+          pos += 2;
+        } else if (source[pos] === '\n') {
+          break;
+        } else {
+          text += source[pos++];
+        }
+      }
+      if (pos < len && source[pos] === quote) {
+        text += quote;
+        pos++;
+      }
+      tokens.push({ text, category: 'string' });
+      continue;
+    }
+
+    if (isDigit(ch)) {
+      let text = '';
+      while (pos < len && (isDigit(source[pos]) || source[pos] === '.')) text += source[pos++];
+      tokens.push({ text, category: 'number' });
+      continue;
+    }
+
+    if (isIdentStart(ch)) {
+      let text = '';
+      while (pos < len && isIdentPart(source[pos])) text += source[pos++];
+
+      let category = 'object';
+      const nextChar = peekNonWhitespace(pos);
+      const lastTok = lastSignificantToken();
+      const afterDot = lastTok !== null && lastTok.text === '.';
+
+      if (afterDot) {
+        const beforeDot = tokenBeforeDot();
+        const isAfterModule = beforeDot !== null && importedModules.has(beforeDot.text);
+        const isQualifiedTypePosition = /^\s+[a-zA-Z_][a-zA-Z0-9_]*\s*(?:[=;,)\[]|$)/.test(source.slice(pos));
+        if (HL_QUALIFIED_TYPES.has(text) || isQualifiedTypePosition) category = 'className';
+        else if (isAfterModule && isPascalCase(text)) category = 'className';
+        else if (nextChar === '(') category = 'function';
+      } else if (HL_TYPES.has(text)) {
+        category = 'typeName';
+      } else if (HL_KEYWORDS.has(text)) {
+        category = 'keyword';
+      } else if (userClasses.has(text) || (isPascalCase(text) && isClassNamePosition())) {
+        category = 'className';
+      } else if (nextChar === '(') {
+        category = 'function';
+      }
+
+      tokens.push({ text, category });
+      continue;
+    }
+
+    const twoChar = source.substring(pos, pos + 2);
+    if (['==', '!=', '<=', '>=', '+=', '-=', '*=', '/=', '%='].includes(twoChar)) {
+      tokens.push({ text: twoChar, category: 'brackets' });
+      pos += 2;
+      continue;
+    }
+
+    if ('+-*/%<>=!{}[]();,.:~'.includes(ch)) {
+      tokens.push({ text: ch, category: 'brackets' });
+      pos++;
+      continue;
+    }
+
+    tokens.push({ text: ch, category: 'plain' });
+    pos++;
+  }
+
+  return tokens;
+}
+
+// ─── «О проекте» (заказ владельца, 2026-08-28): вики-статья об Idyllium ───
+// Источник — рукописный HTML-фрагмент docs/manual-content/about/*.html
+// (конверсия методистского wiki-idyllium.md). Страница самодостаточна:
+// общая шкура сайта (../book/app.css, топбар, тема), но без app.js —
+// сайдбар и манифест статье не нужны. Раздел задуман расширяемым: новые
+// статьи добавляются в ABOUT_PAGES парой «файл → заголовок».
+const ABOUT_SOURCE_ROOT = 'docs/manual-content/about';
+
+const ABOUT_PAGES: ReadonlyArray<{ file: string; out: string; title: string }> = [
+  { file: 'wiki-idyllium.html', out: 'index.html', title: 'Idyllium — О проекте' },
+];
+
+function buildAboutPage(outputRoot: string): void {
+  const sourceRoot = path.resolve(process.cwd(), ABOUT_SOURCE_ROOT);
+  fs.mkdirSync(outputRoot, { recursive: true });
+
+  // Версия подставляется сборкой, как в справочнике: version.js сюда не
+  // годится — он ищет собственный URL приёмом «последний <script> страницы»,
+  // а здесь последним стоит инлайн-скрипт темы, и бейдж показывал бы «v?.?.?».
+  const packageVersion = String(
+    (JSON.parse(fs.readFileSync(path.resolve(process.cwd(), 'package.json'), 'utf8')) as { version?: string }).version ?? '',
+  );
+
+  for (const page of ABOUT_PAGES) {
+    const rawFragment = fs.readFileSync(path.join(sourceRoot, page.file), 'utf8');
+    // Подсветка запекается на сборке тем же лексером, что подсвечивает уроки
+    // на клиенте: app.js статье не подключён, а серые примеры на витрине
+    // проекта выглядели бы бедно.
+    const fragment = rawFragment.replace(
+      /(<code class="idyl-code">)([\s\S]*?)(<\/code>)/g,
+      (_match: string, open: string, body: string, close: string) => open + highlightIdylliumForBake(unescapeHtmlForBake(body)) + close,
+    );
+    const html = `<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${escapeHtml(page.title)}</title>
+  <meta name="description" content="Idyllium — учебный язык программирования: философия, синтаксис, среда разработки, учебные материалы.">
+  <link rel="icon" type="image/png" href="../book/favicon.png">
+  <link rel="stylesheet" href="../book/fonts/fonts.css">
+  <link rel="stylesheet" href="../book/app.css">
+  <style>
+    .about-main { max-width: 1100px; margin: 0 auto; padding: 30px 22px 90px; }
+    .wiki-article { color: var(--text-main); line-height: 1.62; }
+    .wiki-article h1 { font-size: 2.05rem; margin: 0 0 14px; padding-bottom: 10px; border-bottom: 2px solid var(--border); }
+    .wiki-article h2 { font-size: 1.42rem; margin: 2.1em 0 0.6em; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .wiki-article h3 { font-size: 1.12rem; margin: 1.6em 0 0.5em; }
+    .wiki-article h4 { font-size: 1rem; margin: 1.4em 0 0.4em; }
+    .wiki-article p { margin: 0.55em 0; }
+    .wiki-article a { color: var(--accent); }
+    .wiki-article code:not(.idyl-code):not(.plain-code) { font-family: var(--font-mono); font-size: 0.9em; background: var(--bg-code); border: 1px solid var(--border-soft); border-radius: 5px; padding: 1px 5px; }
+    .wiki-article .idyl-pre { font-size: 15px; }
+    .wiki-article .plain-code { font-family: inherit; font-size: inherit; }
+    .wiki-article blockquote { margin: 16px 0; padding: 6px 20px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 10px 10px 0; color: var(--text-soft); }
+    .wiki-article ul, .wiki-article ol { margin: 0.55em 0; padding-left: 26px; }
+    .wiki-article li { margin: 0.3em 0; }
+    .wiki-infobox { float: right; width: 380px; margin: 6px 0 18px 28px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; font-size: 0.86rem; }
+    .wiki-infobox-icon { display: block; width: 108px; height: 108px; margin: 4px auto 10px; }
+    .wiki-infobox-title { text-align: center; font-weight: 650; font-size: 1.02rem; margin-bottom: 8px; }
+    .wiki-infobox table { width: 100%; border-collapse: collapse; }
+    .wiki-infobox th, .wiki-infobox td { text-align: left; vertical-align: top; padding: 5px 0; border-top: 1px solid var(--border-soft); }
+    .wiki-infobox th { width: 40%; padding-right: 10px; color: var(--text-soft); font-weight: 550; }
+    .wiki-toc { display: inline-block; min-width: 300px; margin: 16px 0 6px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 12px 20px 14px; }
+    .wiki-toc-title { font-weight: 650; margin-bottom: 6px; }
+    .wiki-toc ol { margin: 0; padding-left: 22px; }
+    .wiki-toc a { color: var(--accent); text-decoration: none; }
+    .wiki-toc a:hover { text-decoration: underline; }
+    .wiki-table { border-collapse: collapse; margin: 12px 0; }
+    .wiki-table th, .wiki-table td { border: 1px solid var(--border); padding: 7px 13px; text-align: left; }
+    .wiki-table th { background: var(--bg-panel-2); }
+    .wiki-modules { line-height: 2; }
+    @media (max-width: 760px) {
+      .wiki-infobox { float: none; width: 100%; margin: 14px 0; }
+      .wiki-toc { display: block; }
+      .about-main { padding: 20px 14px 70px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="docs-topbar">
+    <div class="topbar-left">
+      <a class="brand" href="https://github.com/Aumphaadr/Idyllium" target="_blank" rel="noopener" title="Idyllium на GitHub">
+        <span class="brand-mark">I</span>
+        <span class="brand-text">Idyllium</span>
+        <span class="idyllium-version">v${packageVersion}</span>
+      </a>
+      <span class="topbar-badge">О проекте</span>
+    </div>
+    <nav class="topbar-actions" aria-label="Основные действия">
+      <a class="topbar-link" href="../">Открыть IDE</a>
+      <a class="topbar-link" href="../book/">Учебник</a>
+      <a class="topbar-link" href="../tasks/">Задачник</a>
+      <a class="topbar-link" href="../projects/">Проекты</a>
+      <a class="topbar-link" href="../reference/">Документация</a>
+      <button class="topbar-link" id="theme-toggle" type="button" title="Светлая тема" aria-label="Светлая тема"><svg class="icon-sun" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor" stroke="none"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5 5l1.9 1.9M17.1 17.1L19 19M19 5l-1.9 1.9M6.9 17.1L5 19"/></svg><svg class="icon-moon" viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M20.6 14.8A8.7 8.7 0 0 1 9.2 3.4a8.7 8.7 0 1 0 11.4 11.4z"/></svg></button>
+    </nav>
+  </header>
+  <main class="about-main">
+${fragment}
+  </main>
+  <script>
+    // Та же тема, что у остальных площадок: ключ и класс совпадают с
+    // packages/docs-book/app.js, поэтому выбор ученика переезжает между
+    // страницами. app.js сюда не подключён — статье не нужны сайдбар и
+    // манифест уроков, а переключателю хватает этих строк.
+    (function () {
+      var KEY = 'idyllium-docs-theme';
+      function apply(light) {
+        document.body.classList.toggle('light-theme', light);
+        var toggle = document.getElementById('theme-toggle');
+        if (toggle) {
+          var hint = light ? 'Тёмная тема' : 'Светлая тема';
+          toggle.title = hint;
+          toggle.setAttribute('aria-label', hint);
+        }
+      }
+      var saved = null;
+      try { saved = localStorage.getItem(KEY); } catch (error) {}
+      apply(saved === 'light');
+      var toggle = document.getElementById('theme-toggle');
+      if (toggle) {
+        toggle.addEventListener('click', function onToggle() {
+          var next = document.body.classList.contains('light-theme') ? 'dark' : 'light';
+          try { localStorage.setItem(KEY, next); } catch (error) {}
+          apply(next === 'light');
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
+`;
+    fs.writeFileSync(path.join(outputRoot, page.out), html, 'utf8');
+  }
+  console.log(`about generated: ${ABOUT_PAGES.length} page(s)`);
 }
 
 function pendingTasksFragment(sectionId: string, lessonId: string, lessonTitle: string): string {

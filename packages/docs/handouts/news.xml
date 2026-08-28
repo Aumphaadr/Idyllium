@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Вестник гильдии</title>
+    <link>https://guild.example/news</link>
+    <description>Новости гильдии — для программ, читающих XML</description>
+    <item>
+      <title>Турнир лучников перенесён на пятницу</title>
+      <link>https://guild.example/news/1</link>
+      <description>Мишени не просохли после дождя. Стрелы просохли.</description>
+    </item>
+    <item>
+      <title>В лавке появились малые зелья по 30 монет</title>
+      <link>https://guild.example/news/2</link>
+      <description>Великие зелья остались по 120 — гильдия не волшебник.</description>
+    </item>
+    <item>
+      <title>Casper поднял уровень до 12</title>
+      <link>https://guild.example/news/3</link>
+      <description>Отряд поздравляет и просит не задирать нос выше шлема.</description>
+    </item>
+  </channel>
+</rss>

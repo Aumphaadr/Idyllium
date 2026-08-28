@@ -51,6 +51,7 @@ import {
   functionType,
   isAssignable,
   isIntegerLike,
+  isFloatLike,
   isNumeric,
   isTypesNumeric,
   numericBinaryResult,
@@ -125,6 +126,10 @@ interface SymbolInfo {
   readonly readonly: boolean;
   /** Значение целочисленной константы, если оно вычислимо на компиляции. */
   constantValue?: number;
+  /** Имя — для предупреждения о неиспользованной переменной при закрытии скоупа. */
+  name?: string;
+  /** Хоть одно обращение по имени после объявления. */
+  used?: boolean;
 }
 
 interface AssignmentTargetInfo {
@@ -440,6 +445,16 @@ export class SemanticAnalyzer {
       return;
     }
 
+    // Свою функцию нельзя назвать 'parent': в конструкторе наследника это имя
+    // — вызов конструктора базы, и файловая функция создавала бы
+    // двусмысленность (вызов уходил бы то в базу, то в функцию). Проверка
+    // живёт здесь, а не в checkReservedName: служебное объявление самого
+    // parent в скоупе конструктора должно проходить свободно.
+    if (declaration.name === 'parent') {
+      this.diagnostics.error(declaration.nameRange, `function 'parent' conflicts with the base class constructor call`);
+      return;
+    }
+
     if (!this.checkReservedName(declaration.name, 'function', declaration.nameRange)) return;
 
     this.functions.set(declaration.name, declaration);
@@ -522,6 +537,13 @@ export class SemanticAnalyzer {
 
     if (this.stdlib.hasModule(declaration.name)) {
       this.diagnostics.error(declaration.range, `class '${declaration.name}' conflicts with a standard library module`);
+      return;
+    }
+
+    // Имя подключённого пользовательского модуля закрыто и для классов —
+    // по той же причине, что и библиотечное.
+    if (this.imports.has(declaration.name)) {
+      this.diagnostics.error(declaration.range, `class '${declaration.name}' conflicts with the module '${declaration.name}'`);
       return;
     }
 
@@ -1228,13 +1250,31 @@ export class SemanticAnalyzer {
 
   private analyzeStatement(statement: Statement): void {
     switch (statement.kind) {
-      case 'BlockStatement':
+      case 'BlockStatement': {
         this.pushScope();
+        let leftAbove: 'return' | 'break' | 'continue' | null = null;
+        let unreachableReported = false;
         for (const child of statement.statements) {
+          // Код после return/break/continue не выполнится никогда. Это
+          // предупреждение, а не ошибка (вердикт владельца 2026-08-28), и оно
+          // одно на блок: ругаться на каждую следующую строку — шум.
+          if (leftAbove !== null && !unreachableReported) {
+            unreachableReported = true;
+            const reason = leftAbove === 'return'
+              ? 'the function returns above'
+              : leftAbove === 'break'
+                ? 'the loop stops above'
+                : 'the loop restarts above';
+            this.diagnostics.warning(child.range, `this line can never run — ${reason}`);
+          }
           this.analyzeStatement(child);
+          if (child.kind === 'ReturnStatement') leftAbove = 'return';
+          else if (child.kind === 'BreakStatement') leftAbove = 'break';
+          else if (child.kind === 'ContinueStatement') leftAbove = 'continue';
         }
         this.popScope();
         return;
+      }
       case 'IfStatement':
         this.analyzeIfStatement(statement);
         return;
@@ -1276,7 +1316,31 @@ export class SemanticAnalyzer {
   // поэтому функциональный тип у выражения-statement — всегда забытые скобки.
   private analyzeExpressionStatement(statement: ExpressionStatement): void {
     const type = this.expressionType(statement.expression);
-    if (type.kind !== 'function') return;
+
+    if (type.kind !== 'function') {
+      const root = statement.expression;
+      if (root.kind === 'CallExpression') {
+        // Вызов работу выполняет; но если СВОЯ функция или метод вернули
+        // значение, а строка его выбросила — предупреждаем. Библиотеку не
+        // трогаем: db.execute("INSERT …") законно игнорирует свой Result.
+        const droppedName = !sameType(type, VOID) && type.kind !== 'error'
+          ? this.userCallName(root)
+          : null;
+        if (droppedName !== null) {
+          this.diagnostics.warning(
+            statement.range,
+            `the value returned by '${droppedName}' is not used`,
+          );
+        }
+      } else if (type.kind !== 'error') {
+        // Выражение без единого вызова в корне: посчитано и выброшено.
+        // Предупреждение, а не ошибка (вердикт владельца 2026-08-28): код,
+        // который делает ничего, не наказывается — как и «a = a + 0».
+        this.diagnostics.warning(statement.range, 'this line computes a value and does not use it');
+      }
+      return;
+    }
+
     const name = statement.expression.kind === 'MemberExpression' || statement.expression.kind === 'IdentifierExpression'
       ? statement.expression.name
       : null;
@@ -1288,7 +1352,56 @@ export class SemanticAnalyzer {
     );
   }
 
+  /** Есть ли внутри выражения действие: вызов (эффект очевиден) или
+   *  индексация (испытание границы — arr[5] может честно упасть). */
+  private containsCall(expression: Expression): boolean {
+    if (expression.kind === 'CallExpression' || expression.kind === 'IndexExpression') return true;
+    for (const value of Object.values(expression)) {
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          if (item && typeof item === 'object' && 'kind' in item && this.containsCall(item as Expression)) return true;
+        }
+      } else if (value && typeof value === 'object' && 'kind' in value && this.containsCall(value as Expression)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Имя пользовательской функции или метода класса у вызова; null для
+   *  библиотеки и всего, что не удалось узнать. Нужен предупреждению о
+   *  выброшенном результате: у СВОИХ функций возврат осмыслен, а библиотека
+   *  сама решает, обязателен ли её результат. */
+  private userCallName(call: Extract<Expression, { kind: 'CallExpression' }>): string | null {
+    const callee = call.callee;
+    if (callee.kind === 'IdentifierExpression') {
+      return this.functions.has(callee.name) ? callee.name : null;
+    }
+    if (callee.kind === 'MemberExpression') {
+      const objectType = this.nodeTypes.get(callee.object);
+      if (objectType?.kind === 'class' && this.getClassMethodInfo(objectType.name, callee.name)) {
+        return callee.name;
+      }
+      // Функция ПОЛЬЗОВАТЕЛЬСКОГО модуля — такая же своя, как локальная:
+      // mathmod.calc() с выброшенным результатом варнится (улов ломателей).
+      if (callee.object.kind === 'IdentifierExpression'
+        && this.userModuleRegistry.hasModule(callee.object.name)
+        && this.userModuleRegistry.getModule(callee.object.name)?.functions.has(callee.name)) {
+        return callee.name;
+      }
+    }
+    return null;
+  }
+
   private analyzeIfStatement(statement: IfStatement): void {
+    // Литеральное условие: if ничего не решает. Предупреждение, не ошибка —
+    // «временно всегда включено» бывает приёмом отладки.
+    if (statement.condition.kind === 'LiteralExpression' && statement.condition.valueType === 'bool') {
+      this.diagnostics.warning(
+        statement.condition.range,
+        statement.condition.value === true ? 'this condition is always true' : 'this condition is always false',
+      );
+    }
     this.expectBoolCondition(statement.condition, 'if condition');
     this.analyzeStatement(statement.thenBranch);
     if (statement.elseBranch) {
@@ -1321,6 +1434,13 @@ export class SemanticAnalyzer {
   }
 
   private analyzeWhileStatement(statement: WhileStatement): void {
+    // while (false) — тело не выполнится никогда. while (true) — законный
+    // вечный цикл с break, о нём молчим.
+    if (statement.condition.kind === 'LiteralExpression'
+      && statement.condition.valueType === 'bool'
+      && statement.condition.value === false) {
+      this.diagnostics.warning(statement.condition.range, 'this condition is always false');
+    }
     this.expectBoolCondition(statement.condition, 'while condition');
     this.loopDepth++;
     this.analyzeStatement(statement.body);
@@ -1461,6 +1581,13 @@ export class SemanticAnalyzer {
     }
 
     this.declare(statement.name, declaredType, kind, statement.range, statement.isConst);
+    // Инициализатор с вызовом — не бездействие: `file.open(...)` создаёт файл,
+    // `console.get_int()` читает ввод. Такую переменную «неиспользованной»
+    // не объявляем, даже если её имя больше не встретится.
+    if ((statement.initializer && this.containsCall(statement.initializer)) || statement.constructorArgs) {
+      const declared = this.currentScope().get(statement.name);
+      if (declared) declared.used = true;
+    }
 
     // Целочисленная константа с вычислимым значением пригодна как размер
     // массива: array<int, L>.
@@ -1750,6 +1877,17 @@ export class SemanticAnalyzer {
   }
 
   private analyzeAssignment(statement: AssignmentStatement): void {
+    // «a = a» ничего не делает — предупреждение того же семейства, что и
+    // «a + 1;»: бездействие не запрещено, о нём предупреждают.
+    if (
+      statement.operator === '='
+      && statement.target.kind === 'IdentifierExpression'
+      && statement.value.kind === 'IdentifierExpression'
+      && statement.target.name === statement.value.name
+    ) {
+      this.diagnostics.warning(statement.range, 'assigning a variable to itself changes nothing');
+    }
+
     const target = this.assignmentTargetInfo(statement.target);
     const targetType = target.type;
     // Тип цели присваивания нужен кодогену (касты types.*, конверсия массивов),
@@ -2220,6 +2358,26 @@ export class SemanticAnalyzer {
     }
 
     if (['==', '!='].includes(expression.operator)) {
+      // Дробные почти никогда не равны в точности (0.1 + 0.2 != 0.3) —
+      // предупреждаем, но не мешаем: сравнение законно.
+      // Хватает ОДНОГО дробного операнда: `average == 4` сравнивает в float
+      // (int повышается), и точного равенства почти никогда нет (улов
+      // ломателей 2026-08-28 — классический детский случай).
+      if ((isFloatLike(left) && isNumeric(right)) || (isNumeric(left) && isFloatLike(right))) {
+        this.diagnostics.warning(
+          expression.range,
+          `two float numbers are compared with '${expression.operator}' — they are almost never exactly equal`,
+        );
+      }
+      // «flag == true» — сравнение, которое ничего не меняет: результат и есть
+      // сам flag. Только литерал true: «== false» меняет смысл, его не трогаем.
+      const trueLiteral = (node: Expression): boolean => node.kind === 'LiteralExpression'
+        && node.valueType === 'bool' && node.value === true;
+      if (expression.operator === '=='
+        && sameType(left, BOOL) && sameType(right, BOOL)
+        && (trueLiteral(expression.left) || trueLiteral(expression.right))) {
+        this.diagnostics.warning(expression.range, "comparing a bool with 'true' changes nothing");
+      }
       // Голый null с голым null — мёртвое выражение (всегда true/false).
       if (left.kind === 'null' && right.kind === 'null') {
         this.diagnostics.error(expression.range, "cannot compare 'null' and 'null'");
@@ -3684,23 +3842,22 @@ export class SemanticAnalyzer {
       return;
     }
     if (!this.checkReservedName(name, kind, range)) return;
-    scope.set(name, { type, kind, range, readonly });
+    scope.set(name, { type, kind, range, readonly, name, used: false });
   }
 
   // Имя библиотеки занимать под своё нельзя никому: запись `console.write`
   // разбирается как обращение к модулю, поэтому слово `console` означало бы
   // сразу две вещи — и выбирал бы между ними не ученик, а компилятор.
   //
-  // А вот имена встроенных функций закрыты только для своих функций и классов:
-  // объявив `function to_string(...)`, ученик молча подменил бы встроенную.
-  // Переменной же назваться `sum` или `max` никто не мешает — обращение к
-  // переменной и вызов функции различаются синтаксисом, и если ученик всё-таки
-  // попробует вызвать заслонённое имя, компилятор скажет об этом прямо.
+  // Имена функций — встроенных и своих — закрыты и для переменных с
+  // параметрами (вердикт владельца 2026-08-28): переменная `greet` не мешала
+  // самой себе, но делала невозможным вызов `greet()` — и такой вызов падал в
+  // рантайме на языке JavaScript, а не Idyllium. Затенение не «ничего не
+  // делает» — оно ломает вызовы, поэтому это ошибка объявления.
   /**
-   * Переменной назваться `sum` или `max` можно — имена встроенных функций для
-   * переменных не закрыты. Но раз имя занято, вызывать по нему встроенную уже
-   * нельзя: иначе `sum(nums)` тихо звал бы встроенную поверх переменной,
-   * которую ученик только что завёл. Компилятор говорит об этом прямо.
+   * Страховочный второй эшелон: если имя встроенной функции всё же оказалось
+   * занято символом-не-функцией, вызов по нему не должен тихо звать встроенную
+   * поверх символа ученика. Основной запрет живёт в checkReservedName.
    */
   private shadowsBuiltInFunction(name: string, range: SourceRange): boolean {
     const symbol = this.lookup(name);
@@ -3727,9 +3884,43 @@ export class SemanticAnalyzer {
       this.diagnostics.error(range, `${kind} '${name}' conflicts with a standard library module`);
       return false;
     }
+    // Имя подключённого пользовательского модуля закрыто по той же причине,
+    // что и библиотечное: после `use helper;` запись `helper.boost(...)`
+    // означает модуль, и одноимённая переменная тихо раздваивала бы имя
+    // (обращение к полю шло в объект, вызов — в модуль).
+    if (this.imports.has(name) && !this.stdlib.hasModule(name)) {
+      this.diagnostics.error(range, `${kind} '${name}' conflicts with the module '${name}'`);
+      return false;
+    }
     if (kind === 'function' && this.stdlib.getGlobalFunction(name)) {
       this.diagnostics.error(range, `${kind} '${name}' conflicts with a built-in function`);
       return false;
+    }
+    if (kind !== 'function') {
+      if (this.stdlib.getGlobalFunction(name)) {
+        this.diagnostics.error(range, `${kind} '${name}' conflicts with the built-in function '${name}'`);
+        return false;
+      }
+      if (this.functions.has(name)) {
+        this.diagnostics.error(range, `${kind} '${name}' conflicts with the function '${name}'`);
+        return false;
+      }
+      // Видимый символ-функция — это ещё и 'parent' в конструкторе наследника:
+      // переменная с таким именем делала бы вызов parent(...) невозможным, а
+      // порядок «вызов выше объявления» падал в рантайме на языке JavaScript.
+      // Ищем руками, без lookup(): проверка имени — не использование символа.
+      // Останавливаемся на ближайшем найденном: переменная поверх переменной —
+      // обычное законное затенение вложенных областей.
+      for (let i = this.scopes.length - 1; i >= 0; i--) {
+        const existing = this.scopes[i].get(name);
+        if (existing) {
+          if (existing.type.kind === 'function') {
+            this.diagnostics.error(range, `${kind} '${name}' conflicts with the function '${name}'`);
+            return false;
+          }
+          break;
+        }
+      }
     }
     return true;
   }
@@ -3760,7 +3951,10 @@ export class SemanticAnalyzer {
   private lookup(name: string): SymbolInfo | null {
     for (let i = this.scopes.length - 1; i >= 0; i--) {
       const symbol = this.scopes[i].get(name);
-      if (symbol) return symbol;
+      if (symbol) {
+        symbol.used = true;
+        return symbol;
+      }
     }
     return null;
   }
@@ -3770,7 +3964,20 @@ export class SemanticAnalyzer {
   }
 
   private popScope(): void {
-    this.scopes.pop();
+    const scope = this.scopes.pop();
+    if (!scope) return;
+    // Неиспользованная ЛОКАЛЬНАЯ переменная — предупреждение (вердикт владельца
+    // 2026-08-28: код, который ничего не делает, не наказывается — о нём
+    // предупреждают). Параметры и функции не трогаем: неиспользованный параметр
+    // законен у переопределений, а функции живут в глобальном скоупе.
+    for (const symbol of scope.values()) {
+      if (symbol.kind !== 'variable' || symbol.used || symbol.name === undefined) continue;
+      // Только примитивы: объект класса и виджет СОЗДАЮТСЯ по-настоящему
+      // (конструктор, регистрация в рантайме), массив — заготовка данных;
+      // их объявление — уже действие, а не бездействие.
+      if (symbol.type.kind !== 'primitive') continue;
+      this.diagnostics.warning(symbol.range, `variable '${symbol.name}' is never used`);
+    }
   }
 
   private pushClassContext(className: string, isStatic: boolean, inConstructor = false): void {

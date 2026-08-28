@@ -7164,7 +7164,7 @@ async function runTests(): Promise<void> {
   }
 }
 
-test('library names are reserved, built-in function names only for functions', () => {
+test('library names are reserved, function names cannot be taken by variables', async () => {
   // Имя библиотеки занимать нельзя: иначе `console` значило бы сразу две вещи.
   assertFails(`
     use console;
@@ -7187,28 +7187,164 @@ test('library names are reserved, built-in function names only for functions', (
     main() {}
   `, "function 'to_string' conflicts with a built-in function");
 
-  // А переменной назваться `sum` или `max` можно — это удобные школьные имена.
-  assertCompiles(`
-    use console;
-
-    main() {
-      int sum = 20 + 30;
-      int max = 7;
-      console.writeln(sum, " ", max);
-    }
-  `);
-
-  // Но раз имя занято переменной, вызвать по нему встроенную уже нельзя.
+  // Переменным и параметрам имена функций тоже закрыты (вердикт владельца
+  // 2026-08-28): раньше `int greet = 5; greet();` компилировался и падал в
+  // рантайме голым JavaScript «greet is not a function», а вызов выше
+  // объявления — «Cannot access 'greet' before initialization».
   assertFails(`
     use console;
 
     main() {
-      dyn_array<int> nums;
-      nums.add(3);
       int sum = 100;
-      console.writeln(sum(nums));
+      console.writeln(sum);
     }
-  `, "variable 'sum' hides the built-in function 'sum'");
+  `, "variable 'sum' conflicts with the built-in function 'sum'");
+
+  assertFails(`
+    use console;
+
+    void function greet() {
+      console.writeln("привет");
+    }
+
+    main() {
+      int greet = 5;
+      console.writeln(greet);
+    }
+  `, "variable 'greet' conflicts with the function 'greet'");
+
+  assertFails(`
+    use console;
+
+    void function greet() {
+      console.writeln("привет");
+    }
+
+    main() {
+      greet();
+      int greet = 5;
+    }
+  `, "variable 'greet' conflicts with the function 'greet'");
+
+  assertFails(`
+    use console;
+
+    int function double_it(int double_it) {
+      return double_it * 2;
+    }
+
+    main() {
+      console.writeln(double_it(21));
+    }
+  `, "parameter 'double_it' conflicts with the function 'double_it'");
+
+  // Полям и методам классов имена функций разрешены: у них своё пространство
+  // (обращение только через объект), голым вызовам они не мешают — и встроенная
+  // to_string изнутри такого класса зовётся как ни в чём не бывало.
+  const classy = await runIdyllium(`
+    use console;
+
+    class Robot {
+      int charge;
+
+      string function to_string() {
+        return "заряд " + to_string(this.charge);
+      }
+    }
+
+    main() {
+      Robot r;
+      r.charge = 80;
+      console.writeln(r.to_string());
+    }
+  `, {}, { file: 'main.idyl' });
+  assert(classy.output === 'заряд 80\n', `class method may be named to_string: ${JSON.stringify(classy.output)}`);
+
+  // Переменная именем функции ЧУЖОГО модуля легальна: модульные функции
+  // зовутся только как `модуль.функция()`, голое имя им не мешает.
+  const moduleCase = compileIdyllium(`use console;
+use mathmod;
+main() {
+    int calc = mathmod.calc(2);
+    console.writeln(calc);
+}
+`, { file: 'main.idyl', sources: { 'mathmod.idyl': 'int function calc(int x) {\n    return x * 10;\n}\n' } });
+  assert(moduleCase.success, `variable may share a name with another module's function: ${moduleCase.diagnosticsText}`);
+
+  // А вот имя САМОГО подключённого модуля занимать нельзя (улов ломателя
+  // 2026-08-28): `helper.boost(...)` уходил бы в модуль, `helper.base = 1` —
+  // в объект, одно имя означало бы две вещи одновременно.
+  const moduleName = compileIdyllium(`use console;
+use mathmod;
+main() {
+    int mathmod = 777;
+    console.writeln(mathmod);
+}
+`, { file: 'main.idyl', sources: { 'mathmod.idyl': 'int function calc(int x) {\n    return x * 10;\n}\n' } });
+  assert(
+    moduleName.diagnosticsText.includes("variable 'mathmod' conflicts with the module 'mathmod'"),
+    `variable must not take an imported module's name: ${moduleName.diagnosticsText}`,
+  );
+
+  // 'parent' в конструкторе наследника — вызов конструктора базы: переменная
+  // с этим именем там запрещена (раньше порядок «вызов выше объявления» падал
+  // в рантайме голым JavaScript), файловая функция 'parent' запрещена всегда
+  // (вызов из конструктора наследника уходил бы то в базу, то в функцию).
+  // Вне конструкторов имя 'parent' свободно — это привычное имя в GUI-коде.
+  assertFails(`
+    use console;
+
+    class Base {
+      int value;
+    }
+
+    class Child extends Base {
+      constructor Child() {
+        parent();
+        int parent = 5;
+      }
+    }
+
+    main() {}
+  `, "variable 'parent' conflicts with the function 'parent'");
+
+  assertFails(`
+    int function parent(int x) { return x * 10; }
+
+    main() {}
+  `, "function 'parent' conflicts with the base class constructor call");
+
+  const parentElsewhere = await runIdyllium(`
+    use console;
+
+    class Base {
+      int value;
+
+      constructor Base(int v) {
+        this.value = v;
+      }
+    }
+
+    class Child extends Base {
+      int extra;
+
+      constructor Child() {
+        parent(7);
+        this.extra = 5;
+      }
+    }
+
+    int function shifted(int parent) {
+      return parent + 1;
+    }
+
+    main() {
+      Child c();
+      int parent = shifted(10);
+      console.writeln(c.value, " ", c.extra, " ", parent);
+    }
+  `, {}, { file: 'main.idyl' });
+  assert(parentElsewhere.output === '7 5 11\n', `'parent' stays legal outside child constructors: ${JSON.stringify(parentElsewhere.output)} ${parentElsewhere.compilation.diagnosticsText}`);
 });
 
 test('TabWidget selected_title follows selected_index', async () => {
@@ -7346,6 +7482,293 @@ test('gui window close removes it from the program', async () => {
 
   assert(runtime.getWindows().length === 0, 'expected the window to be gone after close()');
   assert(!runtime.hasGui(), 'expected the program to finish once the last window closed');
+});
+
+test('windows are draggable citizens: x/y explicitness, window_move and the close cross', async () => {
+  const { runtime } = await runWithInspectableRuntime([
+    'use gui;',
+    '',
+    'main() {',
+    '    gui.Window win;',
+    '    win.title = "Первое";',
+    '    win.show();',
+    '',
+    '    gui.Window placed;',
+    '    placed.title = "Второе";',
+    '    placed.x = 500;',
+    '    placed.y = 300;',
+    '    placed.show();',
+    '}',
+  ].join('\n'));
+
+  const [first, placed] = runtime.getWindows();
+  // Явность координат: окно без x/y раскладывает превью, окно с x/y стоит
+  // по координатам — рендерер различает их по __explicit_properties.
+  const firstExplicit = (first.properties.__explicit_properties ?? []) as string[];
+  const placedExplicit = (placed.properties.__explicit_properties ?? []) as string[];
+  assert(!firstExplicit.includes('x') && !firstExplicit.includes('y'),
+    `untouched window must not claim explicit x/y: ${JSON.stringify(firstExplicit)}`);
+  assert(placedExplicit.includes('x') && placedExplicit.includes('y'),
+    `window with assigned x/y must be explicit: ${JSON.stringify(placedExplicit)}`);
+  assert(placed.properties.x === 500 && placed.properties.y === 300,
+    `assigned coordinates ride the snapshot: ${placed.properties.x}, ${placed.properties.y}`);
+
+  // Перетаскивание за шапку: превью шлёт window_move, программа читает свежие x/y.
+  await runtime.dispatchGuiEvent(first.id, 'window_move', { x: 120, y: 40 });
+  const moved = runtime.getWindows()[0];
+  assert(moved.properties.x === 120 && moved.properties.y === 40,
+    `window_move must update x/y: ${moved.properties.x}, ${moved.properties.y}`);
+  const movedExplicit = (moved.properties.__explicit_properties ?? []) as string[];
+  assert(movedExplicit.includes('x') && movedExplicit.includes('y'),
+    'a dragged window settles at explicit coordinates');
+
+  // Грязный payload (коэрция Number(null|true) давала 0/1) не трогает
+  // координаты и НЕ помечает их явными — окно остаётся в автораскладке.
+  await runtime.dispatchGuiEvent(first.id, 'window_move', { x: null, y: true });
+  const untouched = runtime.getWindows()[0];
+  assert(untouched.properties.x === 120 && untouched.properties.y === 40,
+    `non-numeric window_move must be ignored: ${untouched.properties.x}, ${untouched.properties.y}`);
+
+  // Крестик закрывает СВОЁ окно: второе живо, программа тоже; с последним
+  // окном уходит и программа.
+  await runtime.dispatchGuiEvent(first.id, 'window_close', {});
+  assert(runtime.getWindows().length === 1, 'the cross closes only its own window');
+  assert(runtime.hasGui(), 'the program lives while another window is shown');
+  await runtime.dispatchGuiEvent(placed.id, 'window_close', {});
+  assert(runtime.getWindows().length === 0 && !runtime.hasGui(),
+    'closing the last window by its cross finishes the program');
+});
+
+test('a canvas lives and dies with its window', async () => {
+  // Канвас в окне не должен держать программу после закрытия окна: иначе
+  // крестик окна с игрой оставлял превью работать вечно с нулём окон
+  // (улов ломателя 2026-08-28). Standalone-канвас — сам себе экран и живёт.
+  const { runtime } = await runWithInspectableRuntime([
+    'use gui;',
+    '',
+    'main() {',
+    '    gui.Window win;',
+    '    gui.Canvas paper;',
+    '    win.add_child(paper);',
+    '    win.show();',
+    '}',
+  ].join('\n'));
+  assert(runtime.hasGui(), 'a shown window with a canvas keeps the program alive');
+  await runtime.dispatchGuiEvent(runtime.getWindows()[0].id, 'window_close', {});
+  assert(!runtime.hasGui(), 'a canvas inside a closed window must not keep the program alive');
+
+  const standalone = await runWithInspectableRuntime([
+    'use gui;',
+    '',
+    'main() {',
+    '    gui.Canvas paper;',
+    '    paper.width = 100;',
+    '}',
+  ].join('\n'));
+  assert(standalone.runtime.hasGui(), 'a standalone canvas is its own screen and keeps the program alive');
+});
+
+test('xml.parse and xml.parse_html read markup without tricks', async () => {
+  // Матрица спеки spec/some_xml: RSS-жанр, вольный HTML, битые входы с
+  // позициями, сущности, SVG собственной черепахи.
+  const rss = await runIdyllium(`
+use console;
+use xml;
+
+main() {
+    string source = "<feed><item><title>Новости &amp; вести</title><link>https://a</link></item><item><title>Второй</title><link>https://b</link></item></feed>";
+    xml.Node feed = xml.parse_xml(source);
+    console.writeln(feed.tag, " ", feed.children.length);
+    dyn_array<xml.Node> items = feed.find_all("item");
+    for (int i = 0; i < items.length; i = i + 1) {
+        console.writeln(items[i].first("title").text, " -> ", items[i].first("link").text);
+    }
+    console.writeln(feed.has("item"), " ", feed.has("video"));
+}
+`, {}, { file: 'main.idyl' });
+  assert(rss.output === '#document 1\nНовости & вести -> https://a\nВторой -> https://b\ntrue false\n',
+    `rss scenario: ${JSON.stringify(rss.output)} ${rss.runtimeError ?? ''}`);
+
+  const html = await runIdyllium(`
+use console;
+use xml;
+
+main() {
+    string page = "<ul><li>Мира<li>Кай<li>Борис</ul><IMG SRC=hero.png class=hero><p>Раз<p>Два<script>if (a < b) { alert(1); }</script>";
+    xml.Node doc = xml.parse_html(page);
+    console.writeln(doc.find_all("li").length, " ", doc.find_all("LI").length);
+    console.writeln(doc.first("img").attr("src"), " ", doc.first("img").attr("class"));
+    console.writeln(doc.find_all("p").length);
+    console.writeln(doc.first("script").text);
+    console.writeln("'", doc.first("img").attr("alt"), "' ", doc.first("img").has_attr("alt"));
+    console.writeln(xml.parse_html("<p>a < b &#1071;</p>").first("p").text);
+}
+`, {}, { file: 'main.idyl' });
+  assert(html.output === "3 3\nhero.png hero\n2\nif (a < b) { alert(1); }\n'' false\na < b Я\n",
+    `lenient html scenario: ${JSON.stringify(html.output)} ${html.runtimeError ?? ''}`);
+
+  // Битые входы — тексты и позиции дословно из спеки.
+  const broken: ReadonlyArray<readonly [string, string]> = [
+    ['<a><b></a>', "xml.parse_xml() invalid XML at 1:11: closing tag '</a>' does not match open tag '<b>'"],
+    ['<a>текст', "xml.parse_xml() invalid XML at 1:9: tag '<a>' is never closed"],
+    ['<a href=x>текст</a>', "xml.parse_xml() invalid XML at 1:9: attribute 'href' value must be quoted"],
+    ['<a', "xml.parse_xml() invalid XML at 1:3: tag '<a>' is never closed"],
+  ];
+  for (const [source, expected] of broken) {
+    await assertRuntimeFails(`
+use xml;
+
+main() {
+    xml.parse_xml("${source.replace(/"/g, '\\"')}");
+}
+`, expected);
+  }
+
+  // first без находки — честная ошибка жанра json.Object.get.
+  await assertRuntimeFails(`
+use xml;
+
+main() {
+    xml.parse_xml("<item><link>a</link></item>").first("item").first("title");
+}
+`, 'xml node <item> has no <title> inside');
+
+  // CDATA — сырой текст; children отдаёт только элементы.
+  const cdata = await runIdyllium(`
+use console;
+use xml;
+
+main() {
+    xml.Node doc = xml.parse_xml("<page>до <b>жирного</b> <![CDATA[a < b & c]]></page>");
+    console.writeln(doc.first("page").children.length);
+    console.writeln(doc.first("page").text);
+}
+`, {}, { file: 'main.idyl' });
+  // Чисто пробельные куски между тегами отбрасываются (канон прототипа):
+  // иначе отступы разметки замусоривали бы text.
+  assert(cdata.output === '1\nдо жирногоa < b & c\n', `cdata scenario: ${JSON.stringify(cdata.output)}`);
+
+  // Строгий режим держит well-formedness: мусор не принимается молча
+  // (уловы ломателей 2026-08-28).
+  await assertRuntimeFails(`
+use xml;
+
+main() {
+    xml.parse_xml("privet, ya ne XML");
+}
+`, 'text outside the root element');
+  await assertRuntimeFails(`
+use xml;
+
+main() {
+    xml.parse_xml("<a/><b/>");
+}
+`, 'XML must have exactly one root element');
+  await assertRuntimeFails(`
+use xml;
+
+main() {
+    xml.parse_xml("");
+}
+`, 'expected a root element');
+  await assertRuntimeFails(`
+use xml;
+
+main() {
+    xml.parse_xml("<a x=\\"1\\" x=\\"2\\"/>");
+}
+`, "duplicate attribute 'x'");
+
+  // Дефолтный узел — честный пустой документ, а не голый объект: раньше
+  // 'xml.Node n;' печатал 'undefined' и падал на n.tag.length языком JS.
+  const blank = await runIdyllium(`
+use console;
+use xml;
+
+main() {
+    xml.Node n;
+    console.writeln(n.tag, " ", n.tag.length, " ", n.has("a"), " ", n.children.length);
+}
+`, {}, { file: 'main.idyl' });
+  assert(blank.output === '#document 9 false 0\n', `default xml.Node: ${JSON.stringify(blank.output)} ${blank.runtimeError ?? ''}`);
+
+  // Глубокое дерево: разбор итеративен, и обходы тоже — text/find_all не
+  // валят стек JS с советом «почините рекурсию» про функции рантайма.
+  const deep = await runIdyllium(`
+use console;
+use xml;
+
+main() {
+    string open = "";
+    string close = "";
+    for (int i = 0; i < 20000; i = i + 1) {
+        open = open + "<a>";
+        close = close + "</a>";
+    }
+    xml.Node doc = xml.parse_xml(open + "яблочко" + close);
+    console.writeln(doc.find_all("a").length, " ", doc.text);
+}
+`, {}, { file: 'main.idyl' });
+  assert(deep.output === '20000 яблочко\n', `deep tree survives: ${JSON.stringify(deep.output)} ${deep.runtimeError ?? ''}`);
+
+  // Оборванная страница (недокачанный http-ответ) не роняет прощающий режим,
+  // а невалидные числовые сущности остаются литералами, не битыми символами.
+  const torn = await runIdyllium(`
+use console;
+use xml;
+
+main() {
+    console.writeln(xml.parse_html("<p>ok<a href=\\"x").first("p").text);
+    console.writeln(xml.parse_xml("<a>&#65a; &#xD800;</a>").text);
+}
+`, {}, { file: 'main.idyl' });
+  assert(torn.output === 'ok\n&#65a; &#xD800;\n', `torn html and bad entities: ${JSON.stringify(torn.output)} ${torn.runtimeError ?? ''}`);
+
+  // Мост курса: черепаха пишет SVG — библиотека читает собственный рисунок.
+  const memoryFs = createMemoryRuntimeFileSystem({});
+  const svgCompilation = compileIdyllium(`
+use turtle;
+use colors;
+use file;
+use xml;
+use console;
+
+main() {
+    turtle.Turtle t;
+    t.forward(100);
+    t.left(90);
+    t.pen_color = colors.RGB(255, 0, 0);
+    t.forward(50);
+    t.left(90);
+    t.pen_color = colors.RGB(0, 0, 0);
+    t.forward(100);
+    turtle.save_svg("рисунок.svg");
+
+    file.istream picture = file.open("рисунок.svg", "read");
+    xml.Node svg = xml.parse_xml(picture.read_all());
+    picture.close();
+    dyn_array<xml.Node> lines = svg.find_all("line");
+    int red = 0;
+    for (int i = 0; i < lines.length; i = i + 1) {
+        if (lines[i].attr("stroke") == "#ff0000") {
+            red = red + 1;
+        }
+    }
+    console.writeln("линий в рисунке: ", lines.length, ", красных: ", red);
+}
+`, { file: '/workspace/main.idyl' });
+  assert(svgCompilation.success, svgCompilation.diagnosticsText);
+  const svgOutput: string[] = [];
+  const svgRuntime = createRuntime({
+    platform: 'cli',
+    fileSystem: memoryFs,
+    console: { write: (text: string) => { svgOutput.push(text); } },
+  });
+  const AsyncFunction = Object.getPrototypeOf(async function idle() {}).constructor;
+  const svgProgram = await (new AsyncFunction(svgCompilation.jsCode!))();
+  await svgProgram(svgRuntime);
+  assert(svgOutput.join('') === 'линий в рисунке: 3, красных: 1\n',
+    `turtle svg roundtrip: ${JSON.stringify(svgOutput)}`);
 });
 
 
@@ -10223,6 +10646,245 @@ main() {
     st.execute();
 }
 `, 'this sqlite.Statement is a blank one — get one from db.prepare("SQL") first');
+});
+
+// Предупреждения (вердикты владельца 2026-08-28): код, который делает НИЧЕГО,
+// не наказывается — о нём предупреждают; ошибка — только нарушение конвенций.
+// Метки симметричны: compile warning / runtime warning. Код возврата не меняют.
+test('warnings fire on do-nothing code and stay silent on real work', async () => {
+  const warned = compileIdyllium(`use console;
+
+int function damage() {
+    return 5;
+}
+
+main() {
+    int a = 1;
+    a + 1;
+    a = a;
+    int unused = 42;
+    float x = 0.1;
+    float y = 0.2;
+    if (x + y == 0.3) { console.writeln("равно"); }
+    bool flag = true;
+    if (flag == true) { console.writeln("да"); }
+    if (true) { console.writeln("всегда"); }
+    while (false) { console.writeln("никогда"); }
+    damage();
+    console.writeln(a);
+}
+`, { file: 'main.idyl' });
+  assert(warned.success, `warnings must not fail the build: ${warned.diagnosticsText}`);
+  for (const expected of [
+    "compile warning: this line computes a value and does not use it",
+    "compile warning: assigning a variable to itself changes nothing",
+    "compile warning: variable 'unused' is never used",
+    "compile warning: two float numbers are compared with '==' — they are almost never exactly equal",
+    "compile warning: comparing a bool with 'true' changes nothing",
+    "compile warning: this condition is always true",
+    "compile warning: this condition is always false",
+    "compile warning: the value returned by 'damage' is not used",
+  ]) {
+    assert(warned.diagnosticsText.includes(expected), `missing «${expected}»: ${warned.diagnosticsText}`);
+  }
+
+  // Улов ломателей: одного дробного операнда хватает — average == 4
+  // сравнивает в float, и int-литерал не спасает.
+  const floatInt = compileIdyllium(`use console;
+main() {
+    float average = 8.5;
+    if (average == 4) { console.writeln("ровно"); }
+}
+`, { file: 'main.idyl' });
+  assert(
+    floatInt.diagnosticsText.includes("two float numbers are compared with '=='"),
+    `float vs int literal must warn: ${floatInt.diagnosticsText}`,
+  );
+
+  // Функция пользовательского МОДУЛЯ — такая же своя.
+  const moduleDrop = compileIdyllium(`use console;
+use mathmod;
+main() {
+    mathmod.calc();
+    console.writeln("готово");
+}
+`, { file: 'main.idyl', sources: { 'mathmod.idyl': 'int function calc() {\n    return 7;\n}\n' } });
+  assert(
+    moduleDrop.diagnosticsText.includes("the value returned by 'calc' is not used"),
+    `module function drop must warn: ${moduleDrop.diagnosticsText}`,
+  );
+
+  // Недостижимый код — по одному предупреждению на блок.
+  const unreachable = compileIdyllium(`use console;
+int function f() {
+    return 1;
+    console.writeln("после return");
+}
+main() {
+    console.writeln(f());
+}
+`, { file: 'main.idyl' });
+  assert(
+    unreachable.diagnosticsText.includes('compile warning: this line can never run — the function returns above'),
+    `unreachable code must warn: ${unreachable.diagnosticsText}`,
+  );
+
+  // НЕГАТИВЫ: настоящая работа предупреждений не собирает.
+  const clean = compileIdyllium(`use console;
+class Hero {
+    void function hello() { console.writeln("привет"); }
+}
+main() {
+    while (true) {
+        break;
+    }
+    array<int, 3> demo;
+    Hero h;
+    h.hello();
+    int typed = console.get_int();
+    console.writeln(demo.length + typed);
+}
+`, { file: 'main.idyl' });
+  assert(
+    !clean.diagnosticsText.includes('warning'),
+    `clean code must stay clean: ${clean.diagnosticsText}`,
+  );
+
+  // При ОШИБКАХ предупреждения молчат: правило первой строки.
+  const broken = compileIdyllium(`main() {
+    int unused = 42;
+    int x = "текст";
+}
+`, { file: 'main.idyl' });
+  assert(!broken.success, 'the probe must fail');
+  assert(
+    !broken.diagnosticsText.includes('warning'),
+    `warnings must stay silent next to errors: ${broken.diagnosticsText}`,
+  );
+});
+
+// Рантайм-предупреждения конца программы — и их выключатель в system.
+test('runtime warnings report silent failures and can be disabled', async () => {
+  const silent = await runIdyllium(`use gui;
+use console;
+main() {
+    gui.Window win;
+    gui.Button lost;
+    lost.text = "забыт";
+    console.writeln("конец");
+}
+`, {}, { file: 'main.idyl' });
+  const warnings = silent.runtimeWarnings ?? [];
+  assert(
+    warnings.some((w) => w.includes('runtime warning: the program finished without showing a window')),
+    `unshown window must warn: ${JSON.stringify(warnings)}`,
+  );
+  assert(
+    warnings.some((w) => w.includes("runtime warning: a widget ('gui.Button') was created but never added to a window")),
+    `orphan widget must warn: ${JSON.stringify(warnings)}`,
+  );
+
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'idyllium-warn-'));
+  const openFile = await runIdyllium(`use file;
+main() {
+    file.ostream fout = file.open("w.txt", "write");
+    fout.write_line("данные");
+}
+`, {}, { file: path.join(dir, 'main.idyl') });
+  assert(
+    (openFile.runtimeWarnings ?? []).some((w) => w.includes("runtime warning: file 'w.txt' was not closed")),
+    `open stream must warn: ${JSON.stringify(openFile.runtimeWarnings)}`,
+  );
+
+  // close() снимает предупреждение; показанное окно — тоже.
+  const tidy = await runIdyllium(`use gui;
+use file;
+main() {
+    gui.Window win;
+    win.show();
+    file.ostream fout = file.open("t.txt", "write");
+    fout.write_line("данные");
+    fout.close();
+}
+`, {}, { file: path.join(dir, 'main.idyl') });
+  assert((tidy.runtimeWarnings ?? []).length === 0, `tidy program must be quiet: ${JSON.stringify(tidy.runtimeWarnings)}`);
+
+  // system.set_warnings(false) гасит рантайм-предупреждения этой программы,
+  // system.set_warnings(true) возвращает их обратно.
+  const disabled = await runIdyllium(`use gui;
+use system;
+main() {
+    system.set_warnings(false);
+    gui.Window win;
+}
+`, {}, { file: 'main.idyl' });
+  assert((disabled.runtimeWarnings ?? []).length === 0, `set_warnings(false) must silence: ${JSON.stringify(disabled.runtimeWarnings)}`);
+
+  const reEnabled = await runIdyllium(`use gui;
+use system;
+main() {
+    system.set_warnings(false);
+    system.set_warnings(true);
+    gui.Window win;
+}
+`, {}, { file: 'main.idyl' });
+  assert(
+    (reEnabled.runtimeWarnings ?? []).some((w) => w.includes('without showing a window')),
+    `set_warnings(true) must bring warnings back: ${JSON.stringify(reEnabled.runtimeWarnings)}`,
+  );
+
+  // Не-bool аргумент — честный отказ ещё на компиляции (реестр знает тип).
+  assertFails(
+    'use system;\nmain() {\n    system.set_warnings(1);\n}',
+    "'set_warnings' argument 1 expects 'bool', got 'int'",
+  );
+
+  // Улов ломателей: показанное-и-закрытое окно — программа ПОКАЗЫВАЛА окно
+  // (счётчики жизни, не снимок), а сироты при показанном окне молчат —
+  // в живом хосте обработчик может добавить виджет позже.
+  const shownClosed = await runIdyllium(`use gui;
+main() {
+    gui.Window shown;
+    gui.Window forgotten;
+    shown.show();
+    shown.close();
+}
+`, {}, { file: 'main.idyl' });
+  assert((shownClosed.runtimeWarnings ?? []).length === 0, `a shown-then-closed window counts as shown: ${JSON.stringify(shownClosed.runtimeWarnings)}`);
+
+  const closedUnshown = await runIdyllium(`use gui;
+main() {
+    gui.Window win;
+    win.close();
+}
+`, {}, { file: 'main.idyl' });
+  assert(
+    (closedUnshown.runtimeWarnings ?? []).some((w) => w.includes('without showing a window')),
+    `closed-but-never-shown must warn: ${JSON.stringify(closedUnshown.runtimeWarnings)}`,
+  );
+
+  const lazy = await runIdyllium(`use gui;
+main() {
+    gui.Window win;
+    gui.Button pending;
+    pending.text = "добавят обработчиком";
+    win.show();
+}
+`, {}, { file: 'main.idyl' });
+  assert((lazy.runtimeWarnings ?? []).length === 0, `orphans stay silent when a window is shown: ${JSON.stringify(lazy.runtimeWarnings)}`);
+
+  // Непоказанное окно НЕ держит программу живой — иначе Web IDE уходил в
+  // вечную GUI-петлю с пустым экраном и варнинг не печатался (находка
+  // владельца 2026-08-28). Показанное — держит; закрытое — отпускает.
+  {
+    const rt = createRuntime();
+    const win = rt.createObject('gui', 'Window') as { show: () => Promise<void>; close: () => void };
+    assert(rt.hasGui() === false, 'an unshown window must not keep the program alive');
+    await win.show();
+    assert(rt.hasGui() === true, 'a shown window keeps the program alive');
+    win.close();
+    assert(rt.hasGui() === false, 'a closed window releases the program');
+  }
 });
 
 // SQ1 (методисты, 2026-08-23): has_rows значил «этот запрос возвращает строки»,

@@ -2844,6 +2844,11 @@ summary.json-node-line:hover {
   color: var(--muted);
 }
 
+/* Предупреждения времени выполнения — жёлтым, как подчёркивания в редакторе. */
+.output-warning {
+  color: #e5c07b;
+}
+
 .ansi-bold {
   font-weight: 700;
 }

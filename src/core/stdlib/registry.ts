@@ -336,6 +336,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   const fileIStream = qualified('file', 'istream');
   const fileOStream = qualified('file', 'ostream');
   const jsonValue = qualified('json', 'Value');
+  const xmlNode = qualified('xml', 'Node');
   const jsonObject = qualified('json', 'Object');
   const jsonArray = qualified('json', 'Array');
   const sqliteDatabase = qualified('sqlite', 'Database');
@@ -352,6 +353,9 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   registry.registerModule(moduleSpec('system', [
     functionSpec('set_recursion_depth', [{ name: 'depth', type: INT }], VOID, {
       documentation: 'Задаёт предел глубины вложенных вызовов (по умолчанию 20000, допустимо от 10 до 200000).',
+    }),
+    functionSpec('set_warnings', [{ name: 'enabled', type: BOOL }], VOID, {
+      documentation: 'Включает (true) или выключает (false) предупреждения времени выполнения (runtime warning) для этой программы: о непоказанном окне, о забытом виджете, о незакрытом файле. По умолчанию включены. Предупреждения компиляции выключить нельзя — они печатаются до запуска. Пользуйтесь осознанно: предупреждение — это подсказка о тихой поломке, а не помеха.',
     }),
     functionSpec('recursion_depth', [], INT, {
       documentation: 'Текущий предел глубины вложенных вызовов.',
@@ -828,6 +832,33 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       functionSpec('remove', [{ name: 'index', type: INT }], VOID),
       functionSpec('clear', [], VOID),
     ], jsonValue),
+  ]));
+
+  registry.registerModule(moduleSpec('xml', [
+    functionSpec('parse_xml', [{ name: 'text', type: STRING }], xmlNode, {
+      documentation: 'Разбирает строгий XML в дерево узлов. Ошибка разметки — честная остановка с позицией строки и столбца внутри текста.',
+    }),
+    functionSpec('parse_html', [{ name: 'text', type: STRING }], xmlNode, {
+      documentation: 'Разбирает HTML, прощая вольности настоящего веба: незакрытые <li> и <p>, одиночные <img>, атрибуты без кавычек, любой регистр тегов.',
+    }),
+  ], [], [
+    typeSpec('Node', [
+      propertySpec('tag', STRING, true, 'Имя тега. У корня документа — "#document".'),
+      propertySpec('text', STRING, true, 'Весь текст внутри узла, со всех уровней вложенности, с раскрытыми сущностями.'),
+      propertySpec('children', arrayType(xmlNode, null, true), true, 'Дети-элементы узла. Текстовые куски сюда не входят — их собирает text.'),
+    ], [
+      functionSpec('attr', [{ name: 'name', type: STRING }], STRING, {
+        documentation: 'Значение атрибута; пустая строка, если атрибута нет.',
+      }),
+      functionSpec('has_attr', [{ name: 'name', type: STRING }], BOOL),
+      functionSpec('find_all', [{ name: 'tag', type: STRING }], arrayType(xmlNode, null, true), {
+        documentation: 'Все потомки-теги с этим именем на любой глубине; пустой список — не ошибка.',
+      }),
+      functionSpec('first', [{ name: 'tag', type: STRING }], xmlNode, {
+        documentation: 'Первый потомок-тег с этим именем; если такого нет — ошибка выполнения.',
+      }),
+      functionSpec('has', [{ name: 'tag', type: STRING }], BOOL),
+    ]),
   ]));
 
   registry.registerModule(moduleSpec('sqlite', [

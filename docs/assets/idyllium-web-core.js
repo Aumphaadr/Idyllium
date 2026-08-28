@@ -1470,9 +1470,14 @@ exports.DiagnosticBag = DiagnosticBag;
 function formatDiagnostic(diagnostic) {
     const { start } = diagnostic.range;
     const code = diagnostic.code ? ` ${diagnostic.code}` : '';
-    // Человеку ошибки компиляции показываются как «compile error» — чёткое
-    // противопоставление «runtime error». Внутренняя severity остаётся 'error'.
-    const label = diagnostic.severity === 'error' ? 'compile error' : diagnostic.severity;
+    // Человеку ошибки компиляции показываются как «compile error», предупреждения
+    // — «compile warning»: симметрия с «runtime error» / «runtime warning»
+    // (вердикт владельца 2026-08-28). Внутренняя severity остаётся короткой.
+    const label = diagnostic.severity === 'error'
+        ? 'compile error'
+        : diagnostic.severity === 'warning'
+            ? 'compile warning'
+            : diagnostic.severity;
     return `${start.file}:${start.line}:${start.column}: ${label}${code}: ${diagnostic.message}`;
 }
 function formatDiagnostics(diagnostics) {
@@ -3774,6 +3779,15 @@ class SemanticAnalyzer {
             this.diagnostics.error(declaration.range, `function '${declaration.name}' is already declared`);
             return;
         }
+        // Свою функцию нельзя назвать 'parent': в конструкторе наследника это имя
+        // — вызов конструктора базы, и файловая функция создавала бы
+        // двусмысленность (вызов уходил бы то в базу, то в функцию). Проверка
+        // живёт здесь, а не в checkReservedName: служебное объявление самого
+        // parent в скоупе конструктора должно проходить свободно.
+        if (declaration.name === 'parent') {
+            this.diagnostics.error(declaration.nameRange, `function 'parent' conflicts with the base class constructor call`);
+            return;
+        }
         if (!this.checkReservedName(declaration.name, 'function', declaration.nameRange))
             return;
         this.functions.set(declaration.name, declaration);
@@ -3838,6 +3852,12 @@ class SemanticAnalyzer {
         }
         if (this.stdlib.hasModule(declaration.name)) {
             this.diagnostics.error(declaration.range, `class '${declaration.name}' conflicts with a standard library module`);
+            return;
+        }
+        // Имя подключённого пользовательского модуля закрыто и для классов —
+        // по той же причине, что и библиотечное.
+        if (this.imports.has(declaration.name)) {
+            this.diagnostics.error(declaration.range, `class '${declaration.name}' conflicts with the module '${declaration.name}'`);
             return;
         }
         if (this.stdlib.getGlobalFunction(declaration.name)) {
@@ -4502,13 +4522,34 @@ class SemanticAnalyzer {
     }
     analyzeStatement(statement) {
         switch (statement.kind) {
-            case 'BlockStatement':
+            case 'BlockStatement': {
                 this.pushScope();
+                let leftAbove = null;
+                let unreachableReported = false;
                 for (const child of statement.statements) {
+                    // Код после return/break/continue не выполнится никогда. Это
+                    // предупреждение, а не ошибка (вердикт владельца 2026-08-28), и оно
+                    // одно на блок: ругаться на каждую следующую строку — шум.
+                    if (leftAbove !== null && !unreachableReported) {
+                        unreachableReported = true;
+                        const reason = leftAbove === 'return'
+                            ? 'the function returns above'
+                            : leftAbove === 'break'
+                                ? 'the loop stops above'
+                                : 'the loop restarts above';
+                        this.diagnostics.warning(child.range, `this line can never run — ${reason}`);
+                    }
                     this.analyzeStatement(child);
+                    if (child.kind === 'ReturnStatement')
+                        leftAbove = 'return';
+                    else if (child.kind === 'BreakStatement')
+                        leftAbove = 'break';
+                    else if (child.kind === 'ContinueStatement')
+                        leftAbove = 'continue';
                 }
                 this.popScope();
                 return;
+            }
             case 'IfStatement':
                 this.analyzeIfStatement(statement);
                 return;
@@ -4549,8 +4590,27 @@ class SemanticAnalyzer {
     // поэтому функциональный тип у выражения-statement — всегда забытые скобки.
     analyzeExpressionStatement(statement) {
         const type = this.expressionType(statement.expression);
-        if (type.kind !== 'function')
+        if (type.kind !== 'function') {
+            const root = statement.expression;
+            if (root.kind === 'CallExpression') {
+                // Вызов работу выполняет; но если СВОЯ функция или метод вернули
+                // значение, а строка его выбросила — предупреждаем. Библиотеку не
+                // трогаем: db.execute("INSERT …") законно игнорирует свой Result.
+                const droppedName = !(0, types_1.sameType)(type, types_1.VOID) && type.kind !== 'error'
+                    ? this.userCallName(root)
+                    : null;
+                if (droppedName !== null) {
+                    this.diagnostics.warning(statement.range, `the value returned by '${droppedName}' is not used`);
+                }
+            }
+            else if (type.kind !== 'error') {
+                // Выражение без единого вызова в корне: посчитано и выброшено.
+                // Предупреждение, а не ошибка (вердикт владельца 2026-08-28): код,
+                // который делает ничего, не наказывается — как и «a = a + 0».
+                this.diagnostics.warning(statement.range, 'this line computes a value and does not use it');
+            }
             return;
+        }
         const name = statement.expression.kind === 'MemberExpression' || statement.expression.kind === 'IdentifierExpression'
             ? statement.expression.name
             : null;
@@ -4558,7 +4618,54 @@ class SemanticAnalyzer {
             ? `'${name}' is not called — add '()' to call it`
             : "this expression names a function but does not call it — add '()'");
     }
+    /** Есть ли внутри выражения действие: вызов (эффект очевиден) или
+     *  индексация (испытание границы — arr[5] может честно упасть). */
+    containsCall(expression) {
+        if (expression.kind === 'CallExpression' || expression.kind === 'IndexExpression')
+            return true;
+        for (const value of Object.values(expression)) {
+            if (Array.isArray(value)) {
+                for (const item of value) {
+                    if (item && typeof item === 'object' && 'kind' in item && this.containsCall(item))
+                        return true;
+                }
+            }
+            else if (value && typeof value === 'object' && 'kind' in value && this.containsCall(value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    /** Имя пользовательской функции или метода класса у вызова; null для
+     *  библиотеки и всего, что не удалось узнать. Нужен предупреждению о
+     *  выброшенном результате: у СВОИХ функций возврат осмыслен, а библиотека
+     *  сама решает, обязателен ли её результат. */
+    userCallName(call) {
+        const callee = call.callee;
+        if (callee.kind === 'IdentifierExpression') {
+            return this.functions.has(callee.name) ? callee.name : null;
+        }
+        if (callee.kind === 'MemberExpression') {
+            const objectType = this.nodeTypes.get(callee.object);
+            if (objectType?.kind === 'class' && this.getClassMethodInfo(objectType.name, callee.name)) {
+                return callee.name;
+            }
+            // Функция ПОЛЬЗОВАТЕЛЬСКОГО модуля — такая же своя, как локальная:
+            // mathmod.calc() с выброшенным результатом варнится (улов ломателей).
+            if (callee.object.kind === 'IdentifierExpression'
+                && this.userModuleRegistry.hasModule(callee.object.name)
+                && this.userModuleRegistry.getModule(callee.object.name)?.functions.has(callee.name)) {
+                return callee.name;
+            }
+        }
+        return null;
+    }
     analyzeIfStatement(statement) {
+        // Литеральное условие: if ничего не решает. Предупреждение, не ошибка —
+        // «временно всегда включено» бывает приёмом отладки.
+        if (statement.condition.kind === 'LiteralExpression' && statement.condition.valueType === 'bool') {
+            this.diagnostics.warning(statement.condition.range, statement.condition.value === true ? 'this condition is always true' : 'this condition is always false');
+        }
         this.expectBoolCondition(statement.condition, 'if condition');
         this.analyzeStatement(statement.thenBranch);
         if (statement.elseBranch) {
@@ -4581,6 +4688,13 @@ class SemanticAnalyzer {
         }
     }
     analyzeWhileStatement(statement) {
+        // while (false) — тело не выполнится никогда. while (true) — законный
+        // вечный цикл с break, о нём молчим.
+        if (statement.condition.kind === 'LiteralExpression'
+            && statement.condition.valueType === 'bool'
+            && statement.condition.value === false) {
+            this.diagnostics.warning(statement.condition.range, 'this condition is always false');
+        }
         this.expectBoolCondition(statement.condition, 'while condition');
         this.loopDepth++;
         this.analyzeStatement(statement.body);
@@ -4690,6 +4804,14 @@ class SemanticAnalyzer {
             this.analyzeConstructorArguments(statement, declaredType);
         }
         this.declare(statement.name, declaredType, kind, statement.range, statement.isConst);
+        // Инициализатор с вызовом — не бездействие: `file.open(...)` создаёт файл,
+        // `console.get_int()` читает ввод. Такую переменную «неиспользованной»
+        // не объявляем, даже если её имя больше не встретится.
+        if ((statement.initializer && this.containsCall(statement.initializer)) || statement.constructorArgs) {
+            const declared = this.currentScope().get(statement.name);
+            if (declared)
+                declared.used = true;
+        }
         // Целочисленная константа с вычислимым значением пригодна как размер
         // массива: array<int, L>.
         if (statement.isConst && statement.initializer
@@ -4969,6 +5091,14 @@ class SemanticAnalyzer {
         return (0, types_1.qualified)(typeName.moduleName, typeName.name);
     }
     analyzeAssignment(statement) {
+        // «a = a» ничего не делает — предупреждение того же семейства, что и
+        // «a + 1;»: бездействие не запрещено, о нём предупреждают.
+        if (statement.operator === '='
+            && statement.target.kind === 'IdentifierExpression'
+            && statement.value.kind === 'IdentifierExpression'
+            && statement.target.name === statement.value.name) {
+            this.diagnostics.warning(statement.range, 'assigning a variable to itself changes nothing');
+        }
         const target = this.assignmentTargetInfo(statement.target);
         const targetType = target.type;
         // Тип цели присваивания нужен кодогену (касты types.*, конверсия массивов),
@@ -5365,6 +5495,23 @@ class SemanticAnalyzer {
             return types_1.BOOL;
         }
         if (['==', '!='].includes(expression.operator)) {
+            // Дробные почти никогда не равны в точности (0.1 + 0.2 != 0.3) —
+            // предупреждаем, но не мешаем: сравнение законно.
+            // Хватает ОДНОГО дробного операнда: `average == 4` сравнивает в float
+            // (int повышается), и точного равенства почти никогда нет (улов
+            // ломателей 2026-08-28 — классический детский случай).
+            if (((0, types_1.isFloatLike)(left) && (0, types_1.isNumeric)(right)) || ((0, types_1.isNumeric)(left) && (0, types_1.isFloatLike)(right))) {
+                this.diagnostics.warning(expression.range, `two float numbers are compared with '${expression.operator}' — they are almost never exactly equal`);
+            }
+            // «flag == true» — сравнение, которое ничего не меняет: результат и есть
+            // сам flag. Только литерал true: «== false» меняет смысл, его не трогаем.
+            const trueLiteral = (node) => node.kind === 'LiteralExpression'
+                && node.valueType === 'bool' && node.value === true;
+            if (expression.operator === '=='
+                && (0, types_1.sameType)(left, types_1.BOOL) && (0, types_1.sameType)(right, types_1.BOOL)
+                && (trueLiteral(expression.left) || trueLiteral(expression.right))) {
+                this.diagnostics.warning(expression.range, "comparing a bool with 'true' changes nothing");
+            }
             // Голый null с голым null — мёртвое выражение (всегда true/false).
             if (left.kind === 'null' && right.kind === 'null') {
                 this.diagnostics.error(expression.range, "cannot compare 'null' and 'null'");
@@ -6638,22 +6785,21 @@ class SemanticAnalyzer {
         }
         if (!this.checkReservedName(name, kind, range))
             return;
-        scope.set(name, { type, kind, range, readonly });
+        scope.set(name, { type, kind, range, readonly, name, used: false });
     }
     // Имя библиотеки занимать под своё нельзя никому: запись `console.write`
     // разбирается как обращение к модулю, поэтому слово `console` означало бы
     // сразу две вещи — и выбирал бы между ними не ученик, а компилятор.
     //
-    // А вот имена встроенных функций закрыты только для своих функций и классов:
-    // объявив `function to_string(...)`, ученик молча подменил бы встроенную.
-    // Переменной же назваться `sum` или `max` никто не мешает — обращение к
-    // переменной и вызов функции различаются синтаксисом, и если ученик всё-таки
-    // попробует вызвать заслонённое имя, компилятор скажет об этом прямо.
+    // Имена функций — встроенных и своих — закрыты и для переменных с
+    // параметрами (вердикт владельца 2026-08-28): переменная `greet` не мешала
+    // самой себе, но делала невозможным вызов `greet()` — и такой вызов падал в
+    // рантайме на языке JavaScript, а не Idyllium. Затенение не «ничего не
+    // делает» — оно ломает вызовы, поэтому это ошибка объявления.
     /**
-     * Переменной назваться `sum` или `max` можно — имена встроенных функций для
-     * переменных не закрыты. Но раз имя занято, вызывать по нему встроенную уже
-     * нельзя: иначе `sum(nums)` тихо звал бы встроенную поверх переменной,
-     * которую ученик только что завёл. Компилятор говорит об этом прямо.
+     * Страховочный второй эшелон: если имя встроенной функции всё же оказалось
+     * занято символом-не-функцией, вызов по нему не должен тихо звать встроенную
+     * поверх символа ученика. Основной запрет живёт в checkReservedName.
      */
     shadowsBuiltInFunction(name, range) {
         const symbol = this.lookup(name);
@@ -6680,9 +6826,43 @@ class SemanticAnalyzer {
             this.diagnostics.error(range, `${kind} '${name}' conflicts with a standard library module`);
             return false;
         }
+        // Имя подключённого пользовательского модуля закрыто по той же причине,
+        // что и библиотечное: после `use helper;` запись `helper.boost(...)`
+        // означает модуль, и одноимённая переменная тихо раздваивала бы имя
+        // (обращение к полю шло в объект, вызов — в модуль).
+        if (this.imports.has(name) && !this.stdlib.hasModule(name)) {
+            this.diagnostics.error(range, `${kind} '${name}' conflicts with the module '${name}'`);
+            return false;
+        }
         if (kind === 'function' && this.stdlib.getGlobalFunction(name)) {
             this.diagnostics.error(range, `${kind} '${name}' conflicts with a built-in function`);
             return false;
+        }
+        if (kind !== 'function') {
+            if (this.stdlib.getGlobalFunction(name)) {
+                this.diagnostics.error(range, `${kind} '${name}' conflicts with the built-in function '${name}'`);
+                return false;
+            }
+            if (this.functions.has(name)) {
+                this.diagnostics.error(range, `${kind} '${name}' conflicts with the function '${name}'`);
+                return false;
+            }
+            // Видимый символ-функция — это ещё и 'parent' в конструкторе наследника:
+            // переменная с таким именем делала бы вызов parent(...) невозможным, а
+            // порядок «вызов выше объявления» падал в рантайме на языке JavaScript.
+            // Ищем руками, без lookup(): проверка имени — не использование символа.
+            // Останавливаемся на ближайшем найденном: переменная поверх переменной —
+            // обычное законное затенение вложенных областей.
+            for (let i = this.scopes.length - 1; i >= 0; i--) {
+                const existing = this.scopes[i].get(name);
+                if (existing) {
+                    if (existing.type.kind === 'function') {
+                        this.diagnostics.error(range, `${kind} '${name}' conflicts with the function '${name}'`);
+                        return false;
+                    }
+                    break;
+                }
+            }
         }
         return true;
     }
@@ -6710,8 +6890,10 @@ class SemanticAnalyzer {
     lookup(name) {
         for (let i = this.scopes.length - 1; i >= 0; i--) {
             const symbol = this.scopes[i].get(name);
-            if (symbol)
+            if (symbol) {
+                symbol.used = true;
                 return symbol;
+            }
         }
         return null;
     }
@@ -6719,7 +6901,23 @@ class SemanticAnalyzer {
         this.scopes.push(new Map());
     }
     popScope() {
-        this.scopes.pop();
+        const scope = this.scopes.pop();
+        if (!scope)
+            return;
+        // Неиспользованная ЛОКАЛЬНАЯ переменная — предупреждение (вердикт владельца
+        // 2026-08-28: код, который ничего не делает, не наказывается — о нём
+        // предупреждают). Параметры и функции не трогаем: неиспользованный параметр
+        // законен у переопределений, а функции живут в глобальном скоупе.
+        for (const symbol of scope.values()) {
+            if (symbol.kind !== 'variable' || symbol.used || symbol.name === undefined)
+                continue;
+            // Только примитивы: объект класса и виджет СОЗДАЮТСЯ по-настоящему
+            // (конструктор, регистрация в рантайме), массив — заготовка данных;
+            // их объявление — уже действие, а не бездействие.
+            if (symbol.type.kind !== 'primitive')
+                continue;
+            this.diagnostics.warning(symbol.range, `variable '${symbol.name}' is never used`);
+        }
     }
     pushClassContext(className, isStatic, inConstructor = false) {
         this.classContexts.push({ className, isStatic, inConstructor });
@@ -7087,6 +7285,7 @@ function createDefaultStandardLibrary() {
     const fileIStream = (0, types_1.qualified)('file', 'istream');
     const fileOStream = (0, types_1.qualified)('file', 'ostream');
     const jsonValue = (0, types_1.qualified)('json', 'Value');
+    const xmlNode = (0, types_1.qualified)('xml', 'Node');
     const jsonObject = (0, types_1.qualified)('json', 'Object');
     const jsonArray = (0, types_1.qualified)('json', 'Array');
     const sqliteDatabase = (0, types_1.qualified)('sqlite', 'Database');
@@ -7102,6 +7301,9 @@ function createDefaultStandardLibrary() {
     registry.registerModule(moduleSpec('system', [
         functionSpec('set_recursion_depth', [{ name: 'depth', type: types_1.INT }], types_1.VOID, {
             documentation: 'Задаёт предел глубины вложенных вызовов (по умолчанию 20000, допустимо от 10 до 200000).',
+        }),
+        functionSpec('set_warnings', [{ name: 'enabled', type: types_1.BOOL }], types_1.VOID, {
+            documentation: 'Включает (true) или выключает (false) предупреждения времени выполнения (runtime warning) для этой программы: о непоказанном окне, о забытом виджете, о незакрытом файле. По умолчанию включены. Предупреждения компиляции выключить нельзя — они печатаются до запуска. Пользуйтесь осознанно: предупреждение — это подсказка о тихой поломке, а не помеха.',
         }),
         functionSpec('recursion_depth', [], types_1.INT, {
             documentation: 'Текущий предел глубины вложенных вызовов.',
@@ -7565,6 +7767,32 @@ function createDefaultStandardLibrary() {
             functionSpec('remove', [{ name: 'index', type: types_1.INT }], types_1.VOID),
             functionSpec('clear', [], types_1.VOID),
         ], jsonValue),
+    ]));
+    registry.registerModule(moduleSpec('xml', [
+        functionSpec('parse_xml', [{ name: 'text', type: types_1.STRING }], xmlNode, {
+            documentation: 'Разбирает строгий XML в дерево узлов. Ошибка разметки — честная остановка с позицией строки и столбца внутри текста.',
+        }),
+        functionSpec('parse_html', [{ name: 'text', type: types_1.STRING }], xmlNode, {
+            documentation: 'Разбирает HTML, прощая вольности настоящего веба: незакрытые <li> и <p>, одиночные <img>, атрибуты без кавычек, любой регистр тегов.',
+        }),
+    ], [], [
+        typeSpec('Node', [
+            propertySpec('tag', types_1.STRING, true, 'Имя тега. У корня документа — "#document".'),
+            propertySpec('text', types_1.STRING, true, 'Весь текст внутри узла, со всех уровней вложенности, с раскрытыми сущностями.'),
+            propertySpec('children', (0, types_1.arrayType)(xmlNode, null, true), true, 'Дети-элементы узла. Текстовые куски сюда не входят — их собирает text.'),
+        ], [
+            functionSpec('attr', [{ name: 'name', type: types_1.STRING }], types_1.STRING, {
+                documentation: 'Значение атрибута; пустая строка, если атрибута нет.',
+            }),
+            functionSpec('has_attr', [{ name: 'name', type: types_1.STRING }], types_1.BOOL),
+            functionSpec('find_all', [{ name: 'tag', type: types_1.STRING }], (0, types_1.arrayType)(xmlNode, null, true), {
+                documentation: 'Все потомки-теги с этим именем на любой глубине; пустой список — не ошибка.',
+            }),
+            functionSpec('first', [{ name: 'tag', type: types_1.STRING }], xmlNode, {
+                documentation: 'Первый потомок-тег с этим именем; если такого нет — ошибка выполнения.',
+            }),
+            functionSpec('has', [{ name: 'tag', type: types_1.STRING }], types_1.BOOL),
+        ]),
     ]));
     registry.registerModule(moduleSpec('sqlite', [
         functionSpec('open', [{ name: 'path', type: types_1.STRING }], sqliteDatabase),
@@ -12018,7 +12246,11 @@ function compileIdyllium(source, options = {}) {
     if (diagnostics.hasErrors()) {
         ast = root.ast;
     }
-    const allDiagnostics = diagnostics.all();
+    // При ошибках предупреждения глушатся: правило первой строки — сначала
+    // чините ошибку, хвост из варнингов рядом с ней только сбивает.
+    const allDiagnostics = diagnostics.hasErrors()
+        ? diagnostics.all().filter((diagnostic) => diagnostic.severity !== 'warning')
+        : diagnostics.all();
     return {
         success: !diagnostics.hasErrors(),
         jsCode,
@@ -12053,6 +12285,7 @@ async function runIdyllium(source, runtimeOptions = {}, compileOptions = {}) {
             compilation,
             exitText: await runtime.getExitText(),
             exitCode: runtime.getExitCode(),
+            runtimeWarnings: runtime.collectProgramEndWarnings(),
         };
     }
     catch (error) {
@@ -12065,6 +12298,7 @@ async function runIdyllium(source, runtimeOptions = {}, compileOptions = {}) {
                 compilation,
                 exitText: await runtime.getExitText(),
                 exitCode: runtime.getExitCode(),
+                runtimeWarnings: runtime.collectProgramEndWarnings(),
             };
         }
         return {
@@ -12149,7 +12383,7 @@ exports.IdylliumRuntimeError = IdylliumRuntimeError;
  * Должна совпадать с package.json — это закреплено тестом в smoke.test.ts,
  * потому что рантайм собирается и в браузер, где package.json недоступен.
  */
-exports.IDYLLIUM_VERSION = '1.5.3';
+exports.IDYLLIUM_VERSION = '1.5.4';
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform() {
     const nodeProcess = typeof process === 'object' ? process : null;
@@ -12802,6 +13036,382 @@ function createJsonBase(typeName, kind) {
     });
     obj.toString = () => jsonSerialize(obj, 0, 'json', 0);
     return obj;
+}
+// ─── XML/HTML: чтение разметки без хитрых штучек (spec/some_xml) ────────────
+// Два входа над одним ядром: строгий xml.parse_xml (честные ошибки с позицией
+// строки и столбца, well-formedness: один корень, текст только внутри него,
+// без дубликатов атрибутов) и прощающий xml.parse_html (void-теги,
+// автозакрытие списков и таблиц, атрибуты без кавычек, любой регистр,
+// обрывы страницы перевариваются — частично скачанный http-ответ не роняет
+// разбор). За бортом сознательно: namespaces, XPath, селекторы, DTD,
+// сериализация — библиотека про чтение. Порт одобренного прототипа
+// spec/some_xml/prototype/xml-parser.mjs, дожатый ломателями 2026-08-28:
+// узлы на общем прототипе (иначе ~2,3 КБ кучи на узел и краш V8 на больших
+// страницах), обходы итеративные (иначе глубокое дерево валило стек с
+// советом «почините рекурсию» про функции, которых у ученика нет).
+// nbsp — сознательно обычный пробел: неразрывный на глаз неотличим, а
+// сравнение строк в детской программе обязано сходиться.
+const XML_NAMED_ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+const XML_VOID_ELEMENTS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
+// Кого закрывает открытие такого же (жанр списков и таблиц).
+const XML_AUTOCLOSE = {
+    li: ['li'], p: ['p'], option: ['option'], tr: ['tr', 'td', 'th'], td: ['td', 'th'], th: ['td', 'th'],
+};
+const XML_RAW_TEXT = new Set(['script', 'style']);
+// Упрощённое XML-имя: буквы любого алфавита (дети пишут <герой>), цифры не
+// первым символом. Полная продукция Name из стандарта — хитрая штучка.
+const XML_STRICT_NAME = /^[\p{L}_:][\p{L}\p{N}_:.\-]*$/u;
+function isXmlRuntimeNode(value) {
+    return typeof value === 'object' && value !== null && value.__idylliumType === 'xml.Node';
+}
+function decodeXmlEntities(text) {
+    // Тело числовой сущности — строго цифры своей системы: «&#65a;» не сущность
+    // и остаётся литералом (раньше parseInt молча съедал мусорный хвост).
+    return text.replace(/&(#[0-9]+|#[xX][0-9a-fA-F]+|[a-zA-Z]+);/g, (whole, body) => {
+        if (body[0] === '#') {
+            const hex = body[1] === 'x' || body[1] === 'X';
+            const code = hex ? Number.parseInt(body.slice(2), 16) : Number.parseInt(body.slice(1), 10);
+            // Запрещённые в XML кодовые точки (NUL, суррогатные половины, за
+            // пределами Unicode) не раскрываются — сущность остаётся литералом,
+            // видимым в text, а не битым символом в строке ученика.
+            if (!Number.isFinite(code) || code === 0 || (code >= 0xd800 && code <= 0xdfff) || code > 0x10ffff)
+                return whole;
+            return String.fromCodePoint(code);
+        }
+        return XML_NAMED_ENTITIES[body] ?? whole;
+    });
+}
+function xmlInnerText(node) {
+    // Обход явным стеком: глубина документа не ограничена стеком JS.
+    const pieces = [];
+    const work = [node];
+    while (work.length > 0) {
+        const current = work.pop();
+        if (typeof current === 'string') {
+            pieces.push(current);
+            continue;
+        }
+        for (let i = current.__xmlParts.length - 1; i >= 0; i -= 1) {
+            work.push(current.__xmlParts[i]);
+        }
+    }
+    return pieces.join('');
+}
+function xmlElementChildren(node) {
+    return node.__xmlParts.filter(isXmlRuntimeNode);
+}
+function xmlFindAll(node, tag) {
+    // Документный порядок обходом с явным стеком — глубина не ограничена.
+    const found = [];
+    const work = [...xmlElementChildren(node)].reverse();
+    while (work.length > 0) {
+        const current = work.pop();
+        if (current.__xmlTag === tag)
+            found.push(current);
+        const children = xmlElementChildren(current);
+        for (let i = children.length - 1; i >= 0; i -= 1)
+            work.push(children[i]);
+    }
+    return found;
+}
+// Имя для поиска: в HTML теги и атрибуты нормализованы к нижнему регистру ещё
+// при разборе — аргументы приводим так же, иначе find_all("IMG") молча не
+// находил бы ничего.
+function xmlSearchName(node, raw) {
+    return node.__xmlHtml ? raw.toLowerCase() : raw;
+}
+// Методы и геттеры живут на ОБЩЕМ прототипе: узел несёт только четыре поля
+// данных. Замыкания на каждый узел стоили ~2,3 КБ кучи, и 19-мегабайтная
+// страница валила V8 без всякой метки runtime error (улов ломателя).
+const XML_NODE_PROTOTYPE = {};
+Object.defineProperty(XML_NODE_PROTOTYPE, '__idylliumType', { value: 'xml.Node', enumerable: false });
+Object.defineProperty(XML_NODE_PROTOTYPE, 'tag', {
+    enumerable: true,
+    get() { return this.__xmlTag; },
+});
+Object.defineProperty(XML_NODE_PROTOTYPE, 'text', {
+    enumerable: true,
+    get() { return xmlInnerText(this); },
+});
+Object.defineProperty(XML_NODE_PROTOTYPE, 'children', {
+    enumerable: true,
+    get() {
+        const html = this.__xmlHtml;
+        return IdylliumArray.from(xmlElementChildren(this), true, null, () => createXmlNode('#document', html));
+    },
+});
+XML_NODE_PROTOTYPE.attr = contextFunction(function (name, file, line) {
+    return this.__xmlAttributes.get(xmlSearchName(this, stringArgument(name, 'xml.Node.attr() name', file, line))) ?? '';
+});
+XML_NODE_PROTOTYPE.has_attr = contextFunction(function (name, file, line) {
+    return this.__xmlAttributes.has(xmlSearchName(this, stringArgument(name, 'xml.Node.has_attr() name', file, line)));
+});
+XML_NODE_PROTOTYPE.find_all = contextFunction(function (name, file, line) {
+    const wanted = xmlSearchName(this, stringArgument(name, 'xml.Node.find_all() tag', file, line));
+    const html = this.__xmlHtml;
+    return IdylliumArray.from(xmlFindAll(this, wanted), true, null, () => createXmlNode('#document', html));
+});
+XML_NODE_PROTOTYPE.first = contextFunction(function (name, file, line) {
+    const wanted = xmlSearchName(this, stringArgument(name, 'xml.Node.first() tag', file, line));
+    const found = xmlFindAll(this, wanted);
+    if (found.length === 0) {
+        throw new IdylliumRuntimeError(file, line, `xml node <${this.__xmlTag}> has no <${wanted}> inside`);
+    }
+    return found[0];
+});
+XML_NODE_PROTOTYPE.has = contextFunction(function (name, file, line) {
+    return xmlFindAll(this, xmlSearchName(this, stringArgument(name, 'xml.Node.has() tag', file, line))).length > 0;
+});
+XML_NODE_PROTOTYPE.toString = function () { return `<${this.__xmlTag}>`; };
+function createXmlNode(tag, html) {
+    const node = Object.create(XML_NODE_PROTOTYPE);
+    node.__xmlTag = tag;
+    node.__xmlHtml = html;
+    node.__xmlAttributes = new Map();
+    node.__xmlParts = [];
+    return node;
+}
+function parseXmlDocument(source, html, file, line) {
+    let index = 0;
+    let atLine = 1;
+    let atColumn = 1;
+    const entry = html ? 'xml.parse_html()' : 'xml.parse_xml()';
+    const language = html ? 'HTML' : 'XML';
+    const fail = (message) => {
+        throw new IdylliumRuntimeError(file, line, `${entry} invalid ${language} at ${atLine}:${atColumn}: ${message}`);
+    };
+    const advance = (count) => {
+        for (let i = 0; i < count; i += 1) {
+            if (source[index] === '\n') {
+                atLine += 1;
+                atColumn = 1;
+            }
+            else
+                atColumn += 1;
+            index += 1;
+        }
+    };
+    const startsWith = (text) => source.startsWith(text, index);
+    const skipUntil = (text, what) => {
+        const end = source.indexOf(text, index);
+        if (end < 0) {
+            if (html) {
+                advance(source.length - index);
+                return;
+            }
+            fail(`${what} is never closed`);
+        }
+        advance(end + text.length - index);
+    };
+    const root = createXmlNode('#document', html);
+    const stack = [root];
+    const top = () => stack[stack.length - 1];
+    const normalize = (name) => (html ? name.toLowerCase() : name);
+    // Прощающий режим переваривает обрывы: частично скачанная страница из
+    // http.get — быт настоящего веба, а не повод уронить программу.
+    const readName = () => {
+        const match = /^[^\s/>=]+/.exec(source.slice(index));
+        if (!match) {
+            if (html)
+                return null;
+            fail('expected a name');
+        }
+        if (!html && !XML_STRICT_NAME.test(match[0])) {
+            fail(`'${match[0]}' is not a valid name`);
+        }
+        advance(match[0].length);
+        return match[0];
+    };
+    const readAttributes = (node) => {
+        for (;;) {
+            while (/\s/.test(source[index] ?? ''))
+                advance(1);
+            if (index >= source.length || startsWith('>') || startsWith('/>'))
+                return;
+            if (html && startsWith('/')) {
+                advance(1);
+                continue;
+            }
+            const name = readName();
+            if (name === null) {
+                advance(1);
+                continue;
+            }
+            const normalized = normalize(name);
+            let value = '';
+            while (/\s/.test(source[index] ?? ''))
+                advance(1);
+            if (startsWith('=')) {
+                advance(1);
+                while (/\s/.test(source[index] ?? ''))
+                    advance(1);
+                const quote = source[index];
+                if (quote === '"' || quote === "'") {
+                    advance(1);
+                    const end = source.indexOf(quote, index);
+                    if (end < 0) {
+                        if (!html)
+                            fail(`attribute '${normalized}' value is never closed`);
+                        value = decodeXmlEntities(source.slice(index));
+                        advance(source.length - index);
+                    }
+                    else {
+                        value = decodeXmlEntities(source.slice(index, end));
+                        advance(end + 1 - index);
+                    }
+                }
+                else if (html) {
+                    const match = /^[^\s>]*/.exec(source.slice(index));
+                    value = decodeXmlEntities(match[0]);
+                    advance(match[0].length);
+                }
+                else {
+                    fail(`attribute '${normalized}' value must be quoted`);
+                }
+            }
+            if (node.__xmlAttributes.has(normalized)) {
+                // Строгий XML не терпит двойных атрибутов; в HTML первый выигрывает.
+                if (!html)
+                    fail(`duplicate attribute '${normalized}'`);
+            }
+            else {
+                node.__xmlAttributes.set(normalized, value);
+            }
+        }
+    };
+    const pushText = (text) => {
+        if (text.trim() === '')
+            return;
+        // Well-formedness строгого XML: текст живёт только внутри корневого
+        // элемента, «privet, ya ne XML» — не документ.
+        if (!html && top() === root)
+            fail('text outside the root element');
+        top().__xmlParts.push(text);
+    };
+    const pushElement = (node) => {
+        if (!html && top() === root && root.__xmlParts.some(isXmlRuntimeNode)) {
+            fail('XML must have exactly one root element');
+        }
+        top().__xmlParts.push(node);
+    };
+    while (index < source.length) {
+        if (startsWith('<!--')) {
+            skipUntil('-->', 'comment');
+            continue;
+        }
+        if (startsWith('<![CDATA[')) {
+            const end = source.indexOf(']]>', index);
+            if (end < 0) {
+                if (!html)
+                    fail('CDATA section is never closed');
+                // Прощающий режим: оборванная CDATA — текст до конца, как комментарий.
+                pushText(source.slice(index + 9));
+                advance(source.length - index);
+                continue;
+            }
+            pushText(source.slice(index + 9, end));
+            advance(end + 3 - index);
+            continue;
+        }
+        if (startsWith('<!')) {
+            skipUntil('>', 'declaration');
+            continue;
+        }
+        if (startsWith('<?')) {
+            skipUntil('?>', 'processing instruction');
+            continue;
+        }
+        if (startsWith('</')) {
+            advance(2);
+            const name = readName();
+            if (name === null) {
+                skipUntil('>', 'closing tag');
+                continue;
+            }
+            const normalized = normalize(name);
+            while (/\s/.test(source[index] ?? ''))
+                advance(1);
+            if (!startsWith('>')) {
+                if (!html)
+                    fail(`expected '>' after closing tag '${normalized}'`);
+                skipUntil('>', 'closing tag');
+            }
+            else {
+                advance(1);
+            }
+            let openIndex = -1;
+            for (let i = stack.length - 1; i >= 0; i -= 1) {
+                if (stack[i].__xmlTag === normalized) {
+                    openIndex = i;
+                    break;
+                }
+            }
+            if (openIndex <= 0) {
+                if (html)
+                    continue; // лишний закрывающий — прощаем
+                fail(`closing tag '</${normalized}>' has no opening tag`);
+            }
+            if (!html && openIndex !== stack.length - 1) {
+                fail(`closing tag '</${normalized}>' does not match open tag '<${top().__xmlTag}>'`);
+            }
+            stack.length = openIndex; // закрывает и всех незакрытых детей (html)
+            continue;
+        }
+        if (startsWith('<')) {
+            // В прощающем режиме голый '<', за которым не имя тега, — обычный
+            // текст ("a < b" в абзаце), как в настоящем браузере.
+            if (html && !/^<[a-zA-Z]/.test(source.slice(index, index + 2))) {
+                pushText('<');
+                advance(1);
+                continue;
+            }
+            advance(1);
+            const name = readName();
+            if (name === null) {
+                advance(source.length - index);
+                continue;
+            }
+            const normalized = normalize(name);
+            const node = createXmlNode(normalized, html);
+            readAttributes(node);
+            let selfClosed = false;
+            if (startsWith('/>')) {
+                advance(2);
+                selfClosed = true;
+            }
+            else if (startsWith('>'))
+                advance(1);
+            else if (!html)
+                fail(`tag '<${normalized}>' is never closed`);
+            // html: страница оборвалась внутри тега — тег считается закрытым.
+            if (html && XML_AUTOCLOSE[normalized]) {
+                while (XML_AUTOCLOSE[normalized].includes(top().__xmlTag))
+                    stack.length -= 1;
+            }
+            pushElement(node);
+            if (selfClosed || (html && XML_VOID_ELEMENTS.has(normalized)))
+                continue;
+            if (html && XML_RAW_TEXT.has(normalized)) {
+                const close = new RegExp(`</${normalized}\\s*>`, 'i').exec(source.slice(index));
+                const end = close ? index + close.index : source.length;
+                node.__xmlParts.push(source.slice(index, end));
+                advance((close ? end + close[0].length : source.length) - index);
+                continue;
+            }
+            stack.push(node);
+            continue;
+        }
+        const nextTag = source.indexOf('<', index);
+        const end = nextTag < 0 ? source.length : nextTag;
+        pushText(decodeXmlEntities(source.slice(index, end)));
+        advance(end - index);
+    }
+    if (stack.length > 1 && !html)
+        fail(`tag '<${top().__xmlTag}>' is never closed`);
+    if (!html && !root.__xmlParts.some(isXmlRuntimeNode)) {
+        fail('expected a root element');
+    }
+    return root;
 }
 function parseJsonValue(text, file, line) {
     try {
@@ -14073,6 +14683,10 @@ function createRuntime(options = {}) {
         channelMailbox: [],
         nextAudioCommandId: 1,
         nextObjectId: 1,
+        warningsDisabled: false,
+        windowsCreated: 0,
+        anyWindowEverShown: false,
+        openOutputStreams: new Map(),
         turtleField: null,
         turtlePlatform: String(options.platform ?? defaultRuntimePlatform()),
     };
@@ -14283,8 +14897,12 @@ function createRuntime(options = {}) {
             close: () => {
                 closed = true;
                 stream.is_open = false;
+                runtimeObjects.openOutputStreams.delete(stream);
             },
         };
+        // Открытый поток записи попадает в реестр: если программа кончится, не
+        // закрыв его, — рантайм-предупреждение (данные при этом целы).
+        runtimeObjects.openOutputStreams.set(stream, shownPath);
         return stream;
     }
     // Кооперативная остановка циклов: щедрый быстрый путь (инкремент счётчика),
@@ -14624,6 +15242,17 @@ function createRuntime(options = {}) {
                     maxCallDepth = requested;
                 }),
                 recursion_depth: () => maxCallDepth,
+                // Выключатель предупреждений — сознательно запрятан сюда (вердикт
+                // владельца 2026-08-28); один универсальный метод с bool-аргументом
+                // (доработка 2026-08-28): гасит и возвращает РАНТАЙМ-предупреждения
+                // этой программы; предупреждения компиляции уже напечатаны и им
+                // не подвластны.
+                set_warnings: contextFunction((value, file, line) => {
+                    if (typeof value !== 'boolean') {
+                        throw new IdylliumRuntimeError(file, line, `system.set_warnings() expects 'bool', got '${runtimeTypeName(value)}'`);
+                    }
+                    runtimeObjects.warningsDisabled = !value;
+                }),
                 exit: contextFunction((code, file, line) => {
                     const value = code === undefined ? 0 : integerNumber(code, 'system.exit()', file, line);
                     exitValue = value;
@@ -15022,6 +15651,10 @@ function createRuntime(options = {}) {
                     return createJsonValue(valueOrFile, fileOrLine, maybeLine);
                 }),
             },
+            xml: {
+                parse_xml: contextFunction((text, file, line) => (parseXmlDocument(stringArgument(text, 'xml.parse_xml() text', file, line), false, file, line))),
+                parse_html: contextFunction((text, file, line) => (parseXmlDocument(stringArgument(text, 'xml.parse_html() text', file, line), true, file, line))),
+            },
             sqlite: {
                 open: contextFunction(async (path, file, line) => (openSqliteDatabase(path, file, line, runtimeObjects))),
             },
@@ -15150,6 +15783,40 @@ function createRuntime(options = {}) {
             return typeof exitValue === 'string' ? JSON.stringify(exitValue) : text;
         },
         /** Целый код завершения, если он был целым; иначе null. */
+        // Предупреждения конца программы (вердикты владельца 2026-08-28):
+        // лаконичные, «что случилось», слова переживают машинный перевод.
+        collectProgramEndWarnings() {
+            if (runtimeObjects.warningsDisabled)
+                return [];
+            const warnings = [];
+            // Счётчики ЖИЗНИ программы, а не снимок windows: close() убирает окно
+            // из списка, и по снимку показанное-и-закрытое окно выглядело бы
+            // непоказанным, а закрытое непоказанное — несуществующим (улов
+            // ломателей 2026-08-28).
+            if (runtimeObjects.windowsCreated > 0 && !runtimeObjects.anyWindowEverShown) {
+                warnings.push('runtime warning: the program finished without showing a window');
+            }
+            // Виджет без родителя, не лежащий ни в одном окне. Window/Timer живут
+            // своей жизнью; диалоги и холст — тоже не «потерянные кнопки».
+            // Если хоть одно окно ПОКАЗАНО, о сиротах молчим: в живом хосте
+            // обработчик события может добавить виджет позже, и ложная тревога
+            // хуже пропуска (канон владельца).
+            if (!runtimeObjects.anyWindowEverShown) {
+                const orphanSkip = new Set(['gui.Window', 'gui.Timer', 'gui.Canvas', 'gui.Modal', 'gui.Sender']);
+                for (const obj of runtimeObjects.objects) {
+                    const typeName = typeof obj.__idylliumType === 'string' ? obj.__idylliumType : '';
+                    if (!typeName.startsWith('gui.') || orphanSkip.has(typeName))
+                        continue;
+                    if (obj.__parent !== undefined && obj.__parent !== null)
+                        continue;
+                    warnings.push(`runtime warning: a widget ('${typeName}') was created but never added to a window`);
+                }
+            }
+            for (const shownPath of runtimeObjects.openOutputStreams.values()) {
+                warnings.push(`runtime warning: file '${shownPath}' was not closed`);
+            }
+            return warnings;
+        },
         getExitCode() {
             if (!hasExitValue)
                 return null;
@@ -15176,8 +15843,12 @@ function createRuntime(options = {}) {
             return runtimeObjects.channelPosts.some((post) => post.is_open === true);
         },
         hasGui() {
-            return runtimeObjects.windows.length > 0
-                || runtimeObjects.canvases.length > 0
+            // Только ПОКАЗАННЫЕ окна держат программу живой: созданное-но-не-
+            // показанное окно раньше уводило Web IDE в вечную GUI-петлю с пустым
+            // экраном — и глушило рантайм-варнинг «окно не показано», ради которого
+            // всё и затевалось (находка владельца 2026-08-28).
+            return runtimeObjects.windows.some((win) => win.__shown === true)
+                || runtimeObjects.canvases.some((canvas) => canvasKeepsProgramAlive(canvas))
                 || runtimeObjects.modals.length > 0
                 || runtimeObjects.audio.some((item) => item.is_playing === true)
                 // Открытое почтовое отделение держит программу живой (жанр окна):
@@ -16917,6 +17588,12 @@ function createPlainRuntimeObject(moduleName, typeName, state) {
         if (typeName === 'Result')
             return createBlankSqliteResult();
     }
+    // 'xml.Node n;' без инициализации — честный пустой документ со всеми
+    // методами, а не голый объект, печатавший 'undefined' и падавший на
+    // n.tag.length языком JavaScript (улов ломателя 2026-08-28).
+    if (moduleName === 'xml' && typeName === 'Node') {
+        return createXmlNode('#document', false);
+    }
     const obj = {
         __idylliumObjectId: state.nextObjectId++,
         __idylliumType: `${moduleName}.${typeName}`,
@@ -17712,10 +18389,18 @@ function initializeGuiObject(obj, typeName, state) {
     }
     if (typeName === 'Window') {
         obj.title = '';
+        // Координаты окна на «рабочем столе» превью — с учётом явности: окно,
+        // которому программа (или перетаскивание мышью за шапку) задала x/y,
+        // рендерер ставит по координатам, остальные раскладывает сам. Явность
+        // различима только через tracked-свойство: обычное поле не отличает
+        // «не задавали» от «задали 0».
+        defineTrackedRuntimeProperty(obj, 'x', 0);
+        defineTrackedRuntimeProperty(obj, 'y', 0);
         defineEnumRuntimeProperty(obj, 'theme', 'Window', 'default', ['default', 'idyllium', 'dracula', 'breeze', 'oxygen']);
         setTrackedRuntimePropertyDefault(obj, 'background_color', colorWhite());
         obj.show = async () => {
             obj.__shown = true;
+            state.anyWindowEverShown = true;
             for (const child of obj.__children ?? []) {
                 await initializeGuiChild(child);
             }
@@ -17729,6 +18414,7 @@ function initializeGuiObject(obj, typeName, state) {
                 state.windows.splice(index, 1);
         };
         state.windows.push(obj);
+        state.windowsCreated += 1;
     }
     if (typeName === 'Canvas') {
         obj.framerate_limit = 60;
@@ -20076,6 +20762,27 @@ function applyGuiEventPayload(target, eventName, payload, state) {
         closeModal(target, state);
         return;
     }
+    if (target.__idylliumType === 'gui.Window' && eventName === 'window_move') {
+        // Пользователь перетащил окно за шапку: превью сообщает финальную позицию,
+        // и win.x / win.y обновляются тем же путём, что text у LineEdit при вводе, —
+        // программа всегда читает место, где окно стоит на самом деле. Только
+        // настоящие числа: коэрция Number(null|true|[]) давала 0/1 и вдобавок
+        // помечала координату явной, выдёргивая окно из автораскладки (улов
+        // ломателя 2026-08-28).
+        if (typeof payload.x === 'number' && Number.isFinite(payload.x))
+            target.x = Math.trunc(payload.x);
+        if (typeof payload.y === 'number' && Number.isFinite(payload.y))
+            target.y = Math.trunc(payload.y);
+        return;
+    }
+    if (target.__idylliumType === 'gui.Window' && eventName === 'window_close') {
+        // Крестик закрывает СВОЁ окно, как в настоящих ОС. Программа живёт, пока
+        // показано хоть одно окно: завершение с последним обеспечивает hasGui() —
+        // ровно та же цепочка, что у close() из кода.
+        if (typeof target.close === 'function')
+            target.close();
+        return;
+    }
     if (eventName !== 'change')
         return;
     switch (target.__idylliumType) {
@@ -20114,6 +20821,21 @@ function applyGuiEventPayload(target, eventName, payload, state) {
  * из его контейнеров-предков. Modal и Window в цепочке безвредны: у них нет
  * enabled/visible, а undefined !== false.
  */
+// Канвас держит программу живой, только пока ему есть где рисовать:
+// standalone-канвас (без окна) — сам себе экран, канвас в окне живёт и
+// умирает вместе с окном. Иначе крестик окна с канвасом оставлял бы превью
+// работать вечно с нулём окон (улов ломателя 2026-08-28).
+function canvasKeepsProgramAlive(canvas) {
+    let current = canvas;
+    while (isRuntimeObject(current.__parent)) {
+        current = current.__parent;
+    }
+    if (current === canvas)
+        return true;
+    if (current.__idylliumType === 'gui.Window')
+        return current.__shown === true;
+    return true;
+}
 function widgetEventsBlocked(target) {
     let current = target;
     const seen = new Set();
