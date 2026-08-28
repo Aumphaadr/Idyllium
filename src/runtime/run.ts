@@ -40,6 +40,8 @@ export interface RunResult {
   readonly exitText: string | null;
   /** Целый код завершения, если он был целым; иначе null. */
   readonly exitCode: number | null;
+  /** Предупреждения времени выполнения; не влияют на success и exitCode. */
+  readonly runtimeWarnings?: readonly string[];
 }
 
 export function compileIdyllium(source: string, options: CompileOptions = {}): CompileResult {
@@ -100,7 +102,11 @@ export function compileIdyllium(source: string, options: CompileOptions = {}): C
     ast = root.ast;
   }
 
-  const allDiagnostics = diagnostics.all();
+  // При ошибках предупреждения глушатся: правило первой строки — сначала
+  // чините ошибку, хвост из варнингов рядом с ней только сбивает.
+  const allDiagnostics = diagnostics.hasErrors()
+    ? diagnostics.all().filter((diagnostic) => diagnostic.severity !== 'warning')
+    : diagnostics.all();
   return {
     success: !diagnostics.hasErrors(),
     jsCode,
@@ -142,6 +148,7 @@ export async function runIdyllium(
       compilation,
       exitText: await runtime.getExitText(),
       exitCode: runtime.getExitCode(),
+      runtimeWarnings: runtime.collectProgramEndWarnings(),
     };
   } catch (error) {
     // system.exit() — не авария, а обычное завершение: программа сама так решила.
@@ -153,6 +160,7 @@ export async function runIdyllium(
         compilation,
         exitText: await runtime.getExitText(),
         exitCode: runtime.getExitCode(),
+        runtimeWarnings: runtime.collectProgramEndWarnings(),
       };
     }
     return {

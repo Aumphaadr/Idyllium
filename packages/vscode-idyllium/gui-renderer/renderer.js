@@ -13,6 +13,18 @@
   let editingSpinBox = null;
   let deferredState = null;
   let draggingControlId = null;
+  // Оконный менеджер превью: окно с явно заданными x/y стоит по координатам,
+  // остальные раскладываются рядами; перетаскивание за шапку шлёт финальную
+  // позицию в рантайм (window_move), и до подтверждающего снапшота позиция
+  // живёт в pendingWindowMoves — иначе снапшот, ушедший до события, дёргал бы
+  // окно назад. Клик поднимает окно наверх (windowZOrder).
+  let draggingWindow = null;
+  const pendingWindowMoves = new Map();
+  const windowZOrder = new Map();
+  const windowElements = new Map();
+  const WINDOW_TITLEBAR_HEIGHT = 28;
+  const WINDOW_LAYOUT_GAP = 18;
+  const WINDOW_FRAME_BORDER = 1;
   const audioEntries = new Map();
   let fontRefreshScheduled = false;
   let imageRefreshScheduled = false;
@@ -41,8 +53,20 @@
     const generationChanged = nextState.generation !== state.generation;
     if (generationChanged) clearAudioEntries();
     if (generationChanged) editingSpinBox = null;
+    if (generationChanged) {
+      pendingWindowMoves.clear();
+      windowZOrder.clear();
+      // Перезапуск программы обрывает незавершённый драг: иначе pointerup
+      // отправил бы window_move окну НОВОГО поколения, которое пользователь
+      // не двигал, и заново загрязнил бы только что очищенный pending.
+      if (draggingWindow) {
+        draggingWindow.element.classList.remove('window-dragging');
+        draggingWindow = null;
+      }
+    }
+    confirmPendingWindowMoves(nextState);
     if (!generationChanged && patchWidgetTextOnly(nextState, nextStateJson)) return;
-    if (draggingControlId !== null) {
+    if (draggingControlId !== null || draggingWindow !== null) {
       deferredState = nextState;
       return;
     }
@@ -67,6 +91,9 @@
 
   renderAll();
   host.postMessage({ type: 'rendererReady' });
+  // Сцена сузилась или расширилась — автоокна перекладываются по новой ширине
+  // (перетащенные и окна с явными x/y стоят где стояли).
+  window.addEventListener('resize', () => layoutWindows());
 
   function normalizeState(value) {
     return {
@@ -99,9 +126,13 @@
       stage.appendChild(empty);
     }
 
+    windowElements.clear();
     for (const win of state.windows) {
-      stage.appendChild(renderWindow(win));
+      const element = renderWindow(win);
+      windowElements.set(win.id, element);
+      stage.appendChild(element);
     }
+    layoutWindows();
 
     if (state.windows.length === 0) {
       for (const canvas of state.canvases) {
@@ -203,20 +234,27 @@
     applyWidgetFont(root, win.properties, {});
     applyStyleDeclarations(root, win.properties);
 
+    root.dataset.windowId = String(win.id);
+    root.style.zIndex = String(windowZLevel(win.id));
+    root.addEventListener('pointerdown', () => bringWindowToFront(win.id));
+
     const title = document.createElement('div');
     title.className = 'titlebar';
     const titleText = document.createElement('span');
     titleText.className = 'titlebar-title';
     titleText.textContent = stringValue(win.properties.title, 'Idyllium Window');
     title.appendChild(titleText);
+    installWindowDrag(root, title, win.id);
     const close = document.createElement('button');
     close.className = 'window-close-button';
     close.type = 'button';
     close.title = 'Закрыть';
-    close.setAttribute('aria-label', 'закрыть приложение');
+    close.setAttribute('aria-label', 'закрыть окно');
     close.addEventListener('click', (event) => {
+      // Крестик закрывает СВОЁ окно, как в настоящих ОС; когда закрывается
+      // последнее, программа завершается сама — та же цепочка, что у close().
       event.stopPropagation();
-      postCloseApp();
+      postGuiEvent(win.id, 'window_close', {});
     });
     title.appendChild(close);
     root.appendChild(title);
@@ -232,6 +270,174 @@
     }
 
     return root;
+  }
+
+  // ─── Оконный менеджер превью ──────────────────────────────────────────────
+
+  function windowFrameSize(win) {
+    // Габарит окна на «столе»: содержимое + шапка + рамка с обеих сторон.
+    return {
+      width: positiveNumber(win.properties.width, 640) + WINDOW_FRAME_BORDER * 2,
+      height: positiveNumber(win.properties.height, 420) + WINDOW_TITLEBAR_HEIGHT + WINDOW_FRAME_BORDER * 2,
+    };
+  }
+
+  function windowHasExplicitPosition(win) {
+    const explicit = win.properties && win.properties.__explicit_properties;
+    return Array.isArray(explicit) && (explicit.includes('x') || explicit.includes('y'));
+  }
+
+  // Раскладка: окна с известной позицией (перетащенные или с явными x/y)
+  // стоят по координатам; остальные укладываются рядами слева направо с
+  // переносом по ширине сцены — «в строчку», пока влезают.
+  function layoutWindows() {
+    if (!state.windows.length) {
+      stage.style.removeProperty('height');
+      return;
+    }
+    const containerWidth = Number(stage.clientWidth) || 0;
+    let cursorX = 0;
+    let cursorY = 0;
+    let rowHeight = 0;
+    let maxBottom = 0;
+    for (const win of state.windows) {
+      const element = windowElements.get(win.id);
+      if (!element) continue;
+      const frame = windowFrameSize(win);
+      const pending = pendingWindowMoves.get(win.id);
+      let x;
+      let y;
+      if (pending) {
+        x = pending.x;
+        y = pending.y;
+      } else if (windowHasExplicitPosition(win)) {
+        x = numberValue(win.properties.x);
+        y = numberValue(win.properties.y);
+      } else {
+        if (cursorX > 0 && containerWidth > 0 && cursorX + frame.width > containerWidth) {
+          cursorX = 0;
+          cursorY += rowHeight + WINDOW_LAYOUT_GAP;
+          rowHeight = 0;
+        }
+        x = cursorX;
+        y = cursorY;
+        cursorX += frame.width + WINDOW_LAYOUT_GAP;
+        rowHeight = Math.max(rowHeight, frame.height);
+      }
+      element.style.left = x + 'px';
+      element.style.top = y + 'px';
+      maxBottom = Math.max(maxBottom, y + frame.height);
+    }
+    // Absolute-окна не растягивают сцену сами — высоту ей задаём мы,
+    // чтобы у страницы превью появился честный скролл до нижнего окна.
+    stage.style.height = maxBottom + 'px';
+  }
+
+  function windowZLevel(windowId) {
+    if (!windowZOrder.has(windowId)) windowZOrder.set(windowId, windowZOrder.size + 1);
+    return windowZOrder.get(windowId);
+  }
+
+  function bringWindowToFront(windowId) {
+    if (!windowZOrder.has(windowId)) windowZOrder.set(windowId, windowZOrder.size + 1);
+    // Компактная перенумерация 1..N: z-index окон не растёт бесконечно
+    // и никогда не дотягивается до модалок.
+    const raised = [...windowZOrder.entries()]
+      .sort((left, right) => left[1] - right[1])
+      .map(([id]) => id)
+      .filter((id) => id !== windowId);
+    raised.push(windowId);
+    windowZOrder.clear();
+    raised.forEach((id, index) => windowZOrder.set(id, index + 1));
+    for (const [id, element] of windowElements) {
+      element.style.zIndex = String(windowZLevel(id));
+    }
+  }
+
+  function installWindowDrag(root, titlebar, windowId) {
+    titlebar.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0) return;
+      // Один жест за раз: второе касание (другой палец, другое окно) не
+      // перехватывает драг — иначе первый жест терялся молча.
+      if (draggingWindow) return;
+      if (event.target && event.target.closest && event.target.closest('.window-close-button')) return;
+      draggingWindow = {
+        windowId,
+        element: root,
+        pointerId: event.pointerId,
+        startClientX: event.clientX,
+        startClientY: event.clientY,
+        baseLeft: parseFloat(root.style.left) || 0,
+        baseTop: parseFloat(root.style.top) || 0,
+      };
+      root.classList.add('window-dragging');
+      if (titlebar.setPointerCapture) {
+        try { titlebar.setPointerCapture(event.pointerId); } catch (error) { /* фейковый DOM тестов */ }
+      }
+      event.preventDefault();
+    });
+    titlebar.addEventListener('pointermove', (event) => {
+      if (!draggingWindow || draggingWindow.windowId !== windowId) return;
+      if (event.pointerId !== undefined && event.pointerId !== draggingWindow.pointerId) return;
+      const frameWidth = root.offsetWidth || 0;
+      let left = draggingWindow.baseLeft + (event.clientX - draggingWindow.startClientX);
+      let top = draggingWindow.baseTop + (event.clientY - draggingWindow.startClientY);
+      // Шапка должна остаться достижимой: не выше верха сцены и не дальше,
+      // чем «выглядывает уголок» по горизонтали.
+      top = Math.max(0, top);
+      left = Math.max(left, -(Math.max(frameWidth - 80, 0)));
+      const containerWidth = Number(stage.clientWidth) || 0;
+      if (containerWidth > 0) left = Math.min(left, containerWidth - 80);
+      root.style.left = left + 'px';
+      root.style.top = top + 'px';
+    });
+    const finish = (event) => {
+      if (!draggingWindow || draggingWindow.windowId !== windowId) return;
+      if (event.pointerId !== undefined && event.pointerId !== draggingWindow.pointerId) return;
+      finishWindowDrag();
+    };
+    titlebar.addEventListener('pointerup', finish);
+    titlebar.addEventListener('pointercancel', finish);
+  }
+
+  function finishWindowDrag() {
+    const drag = draggingWindow;
+    if (!drag) return;
+    draggingWindow = null;
+    drag.element.classList.remove('window-dragging');
+    const x = Math.round(parseFloat(drag.element.style.left) || 0);
+    const y = Math.round(parseFloat(drag.element.style.top) || 0);
+    // Финальная позиция уезжает в рантайм: win.x / win.y обновятся, и
+    // следующий снапшот подтвердит её. До подтверждения позицию держит
+    // pendingWindowMoves — снапшот, ушедший до события, не дёрнет окно назад.
+    pendingWindowMoves.set(drag.windowId, { x, y });
+    postGuiEvent(drag.windowId, 'window_move', { x, y });
+    if (deferredState) {
+      state = deferredState;
+      stateJson = JSON.stringify(state);
+      deferredState = null;
+      renderAll();
+    } else {
+      layoutWindows();
+    }
+  }
+
+  function confirmPendingWindowMoves(nextState) {
+    for (const [windowId, position] of [...pendingWindowMoves.entries()]) {
+      const win = (nextState.windows || []).find((item) => item.id === windowId);
+      if (!win) {
+        pendingWindowMoves.delete(windowId);
+        continue;
+      }
+      // Подтверждение — только по ЯВНЫМ координатам: снапшот, ушедший до
+      // window_move, несёт дефолтные x/y без явности, и перетащенное в (0,0)
+      // окно прыгало бы в авто-слот и обратно (улов ломателя 2026-08-28).
+      if (windowHasExplicitPosition(win)
+        && numberValue(win.properties.x) === position.x
+        && numberValue(win.properties.y) === position.y) {
+        pendingWindowMoves.delete(windowId);
+      }
+    }
   }
 
   function windowThemeClass() {

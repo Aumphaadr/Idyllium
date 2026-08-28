@@ -88,6 +88,12 @@ async function runCommand(args: readonly string[], io: CliIO): Promise<number> {
     return 1;
   }
 
+  // Предупреждения не останавливают программу и не меняют код возврата, но
+  // человеку показываются: компайл-варнинги — до вывода уже напечатанной
+  // программы поздно, поэтому в stderr; рантайм-варнинги — после завершения.
+  if (result.compilation.diagnosticsText) io.stderr(`${result.compilation.diagnosticsText}\n`);
+  for (const warning of result.runtimeWarnings ?? []) io.stderr(`${warning}\n`);
+
   // Код завершения принадлежит среде, а не программе: он идёт в stderr, чтобы
   // `idyllium run prog.idyl > out.txt` не подмешивал служебную строку в файл.
   // Серый — тот же «светлый чёрный» \e[90m, о котором рассказывает урок 06.

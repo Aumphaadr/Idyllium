@@ -146,6 +146,7 @@ main() {
 </script></idyl-code-block>
 
       <p>Свойства <code>width</code> и <code>height</code> задаются в пикселях. Свойство <code>title</code> — строка, которая отображается в заголовке окна.</p>
+      <p>У окна есть и координаты — <code>x</code> и <code>y</code>: это позиция окна на «рабочем столе» предпросмотра. Пока вы их не трогаете, окна раскладываются сами: в строчку, а когда строка кончается — с новой. Но окно можно и <strong>перетащить мышью за шапку</strong>, как в настоящей операционной системе, — тогда <code>x</code> и <code>y</code> запомнят, куда его поставили, и программа прочитает из них свежее место. Работает и обратное: присвойте <code>x</code> и <code>y</code> из кода — окно встанет ровно туда.</p>
     </div>
 
     <div class="docs-section">
@@ -381,6 +382,8 @@ win.add_child(corner_btn);
         <tbody>
           <tr><td><code>width</code></td><td><code>int</code></td><td>ширина окна в пикселях</td></tr>
           <tr><td><code>height</code></td><td><code>int</code></td><td>высота окна в пикселях</td></tr>
+          <tr><td><code>x</code></td><td><code>int</code></td><td>горизонтальная позиция окна на «рабочем столе» предпросмотра</td></tr>
+          <tr><td><code>y</code></td><td><code>int</code></td><td>вертикальная позиция окна там же</td></tr>
           <tr><td><code>title</code></td><td><code>string</code></td><td>текст в заголовке окна</td></tr>
           <tr><td><code>theme</code></td><td><code>string</code></td><td>оформление всех виджетов окна: <code>"default"</code>, <code>"idyllium"</code>, <code>"dracula"</code>, <code>"breeze"</code>, <code>"oxygen"</code></td></tr>
           <tr><td><code>add_child(виджет)</code></td><td>метод</td><td>добавляет виджет внутрь окна</td></tr>
