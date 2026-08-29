@@ -631,6 +631,72 @@ test('gui renderer updates timer labels without replacing controls', () => {
   );
 });
 
+test('gui renderer patches ProgressBar value and Button text without replacing controls', () => {
+  // Находка владельца 2026-08-29: анимация ProgressBar перерисовывала всё
+  // окно, и у активной кнопки на каждом тике мигал фокус. Значение и подпись
+  // правятся на месте — DOM-узлы живут.
+  const harness = createRendererHarness();
+  const snapshot = (value: number, buttonText: string) => ({
+    generation: 1,
+    audio: [],
+    windows: [{
+      id: 1,
+      type: 'gui.Window',
+      properties: { width: 340, height: 200, title: 'Насос' },
+      children: [{
+        id: 2,
+        type: 'gui.Button',
+        properties: { x: 20, y: 30, width: 300, height: 32, visible: true, text: buttonText },
+        children: [],
+      }, {
+        id: 3,
+        type: 'gui.ProgressBar',
+        properties: { x: 20, y: 90, width: 300, height: 24, visible: true, min: 0, max: 100, value },
+        children: [],
+      }],
+    }],
+    canvases: [],
+    modals: [],
+  });
+
+  harness.sendSnapshot(snapshot(0, 'Запустить'));
+  const originalButton = findElement(harness.stage, (element) => element.dataset?.widgetId === '2');
+  const originalBar = findElement(harness.stage, (element) => element.dataset?.widgetId === '3');
+  assert(originalButton !== null && originalBar !== null, 'expected Button and ProgressBar');
+
+  harness.sendSnapshot(snapshot(55, 'Запустить'));
+  const updatedButton = findElement(harness.stage, (element) => element.dataset?.widgetId === '2');
+  const updatedBar = findElement(harness.stage, (element) => element.dataset?.widgetId === '3');
+  assert(updatedButton === originalButton, 'progress tick must preserve the existing Button DOM node');
+  assert(updatedBar === originalBar, 'progress tick must preserve the ProgressBar DOM node');
+  const fill = findElement(updatedBar, (element) => String(element.className || '').includes('progressbar-fill'));
+  const label = findElement(updatedBar, (element) => String(element.className || '').includes('progressbar-label'));
+  assert(fill?.style?.width === '55%', `expected patched fill width 55%, got ${fill?.style?.width}`);
+  assert(label?.textContent === '55%', `expected patched label 55%, got ${label?.textContent}`);
+
+  // Финальная смена подписи кнопки — тоже на месте (btn.text = "Готово").
+  harness.sendSnapshot(snapshot(55, 'Готово'));
+  const finalButton = findElement(harness.stage, (element) => element.dataset?.widgetId === '2');
+  assert(finalButton === originalButton, 'button text change must not replace the Button DOM node');
+  assert(finalButton?.textContent === 'Готово', `expected patched Button text, got ${finalButton?.textContent}`);
+
+  // Смена направления — не «точечное» свойство: честный полный перерендер.
+  harness.sendSnapshot({
+    ...snapshot(55, 'Готово'),
+    windows: [{
+      ...snapshot(55, 'Готово').windows[0],
+      children: snapshot(55, 'Готово').windows[0].children.map((child: any) => (
+        child.id === 3
+          ? { ...child, properties: { ...child.properties, orientation: 'vertical' } }
+          : child
+      )),
+    }],
+  });
+  const verticalBar = findElement(harness.stage, (element) => element.dataset?.widgetId === '3');
+  assert(verticalBar !== originalBar, 'orientation change must rebuild the ProgressBar');
+  assert(verticalBar?.classList?.contains('vertical') === true, 'expected vertical ProgressBar after rebuild');
+});
+
 test('gui renderer displays nested image resources in ImageBox', () => {
   const harness = createRendererHarness();
 

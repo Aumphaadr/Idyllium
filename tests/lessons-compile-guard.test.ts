@@ -15,7 +15,7 @@ function assert(condition: boolean, message: string): void {
 // методической команды (from_docs_team/2026-08-21) на все секции разом.
 function main(): void {
   const root = process.cwd();
-  const manifest = JSON.parse(fs.readFileSync(path.join(root, 'spec/lessons/manifest.json'), 'utf8'));
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, 'generated/lesson-spec/manifest.json'), 'utf8'));
   const expectations = JSON.parse(fs.readFileSync(path.join(root, 'tests/lesson-expectations.json'), 'utf8'));
 
   const examples = manifest.examples.filter((example: any) => (
@@ -30,7 +30,7 @@ function main(): void {
 
   const bySection = new Map<string, number>();
   for (const example of examples) {
-    const file = path.join(root, 'spec/lessons', example.codeFile);
+    const file = path.join(root, 'generated/lesson-spec', example.codeFile);
     const source = fs.readFileSync(file, 'utf8');
     const result = compileIdyllium(source, { file: example.codeFile });
     assert(result.success, `expected ${example.id} to compile, got:\n${result.diagnosticsText}`);

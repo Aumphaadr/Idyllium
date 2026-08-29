@@ -690,14 +690,14 @@ export class JavaScriptGenerator {
       const object = this.expression(statement.target.object);
       const index = this.expression(statement.target.index);
       const current = `$rt.array.get(${object}, ${index}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
-      const rawValue = this.compoundAssignmentValue(statement.operator, current, this.expression(statement.value), statement.range);
+      const rawValue = this.compoundAssignmentValue(statement.operator, current, this.expression(statement.value), statement.range, this.isFloatType(targetType));
       const value = this.valueForOptionalTypeRef(rawValue, targetType, statement.range);
       return `$rt.array.set(${object}, ${index}, ${value}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
     }
 
     const target = this.expression(statement.target);
     const value = this.expression(statement.value);
-    const rawAssignedValue = this.compoundAssignmentValue(statement.operator, target, value, statement.range);
+    const rawAssignedValue = this.compoundAssignmentValue(statement.operator, target, value, statement.range, this.isFloatType(targetType));
     if (statement.target.kind === 'MemberExpression') {
       const assignedValue = this.valueForOptionalTypeRef(rawAssignedValue, targetType, statement.range);
       return `$rt.setProperty(${this.expression(statement.target.object)}, ${JSON.stringify(statement.target.name)}, ${assignedValue}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
@@ -710,12 +710,13 @@ export class JavaScriptGenerator {
     target: string,
     value: string,
     range: AssignmentStatement['range'],
+    floatResult: boolean,
   ): string {
     const binaryOperator = operator.slice(0, 1);
     if (binaryOperator === '/') {
       return `$rt.core.divide(${target}, ${value}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
     }
-    return `$rt.core.binary(${JSON.stringify(binaryOperator)}, ${target}, ${value}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
+    return `$rt.core.binary(${JSON.stringify(binaryOperator)}, ${target}, ${value}, ${JSON.stringify(range.start.file)}, ${range.start.line}${floatResult ? ", 'float'" : ''})`;
   }
 
   private expression(expression: Expression): string {
@@ -810,7 +811,15 @@ export class JavaScriptGenerator {
         return expression.operator === '==' ? call : `(!${call})`;
       }
     }
-    return `$rt.core.binary(${JSON.stringify(expression.operator)}, ${left}, ${right}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+    // Статический float-результат переводит арифметику рантайма в чистый
+    // double: точное BigInt-повышение — привилегия int, по значениям рантайм
+    // «float, ставший целым» от int не отличит (простыня вместо переполнения).
+    const floatMode = ['+', '-', '*'].includes(expression.operator) && this.isFloatType(this.typeOf(expression));
+    return `$rt.core.binary(${JSON.stringify(expression.operator)}, ${left}, ${right}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line}${floatMode ? ", 'float'" : ''})`;
+  }
+
+  private isFloatType(type: TypeRef | null): boolean {
+    return type?.kind === 'primitive' && type.name === 'float';
   }
 
   private callExpression(expression: CallExpression): string {
@@ -824,17 +833,10 @@ export class JavaScriptGenerator {
         ).join(', ');
         return `${this.classCreateFactoryName(callee.name)}(${args})`;
       }
-      if (callee.name === 'max' || callee.name === 'min' || callee.name === 'sum' || callee.name === 'avg') {
-        const args = this.callArgumentValues(expression.args, ['array']).join(', ');
-        return `$rt.array.${callee.name}(${args}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
-      }
-      if (callee.name === 'div' || callee.name === 'mod' || callee.name === 'to_int' || callee.name === 'to_float') {
-        const args = this.callArgumentValues(expression.args, this.stdlib.getGlobalFunction(callee.name)?.parameters.map((parameter) => parameter.name)).join(', ');
-        return `$rt.core.${callee.name}(${args}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
-      }
-      if (callee.name === 'to_string') {
-        const args = this.callArgumentValues(expression.args, this.stdlib.getGlobalFunction(callee.name)?.parameters.map((parameter) => parameter.name)).join(', ');
-        return `$rt.core.to_string(${args})`;
+      const globalSpec = this.stdlib.getGlobalFunction(callee.name);
+      if (globalSpec?.codegen) {
+        const args = this.callArgumentValues(expression.args, globalSpec.parameters.map((parameter) => parameter.name)).join(', ');
+        return this.declaredRuntimeCall(globalSpec.codegen, args, expression.range.start.file, expression.range.start.line);
       }
       if (callee.name === 'type_name' && expression.args.length === 1) {
         // Гибрид: значения и массивы известны статически — строка-константа
@@ -859,15 +861,12 @@ export class JavaScriptGenerator {
         ).join(', ');
         return `$rt.modules.${moduleName}.${this.exportedClassCreateName(callee.name)}(${args})`;
       }
-      if (this.importedModules.has(moduleName) && moduleName === 'console') {
-        const args = this.callArgumentValues(expression.args, this.stdlib.getModuleFunction(moduleName, callee.name)?.parameters.map((parameter) => parameter.name)).join(', ');
-        if (callee.name === 'get_int' || callee.name === 'get_float') {
-          return `$rt.console.${callee.name}(${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+      if (this.importedModules.has(moduleName)) {
+        const moduleFunction = this.stdlib.getModuleFunction(moduleName, callee.name);
+        if (moduleFunction?.codegen) {
+          const args = this.callArgumentValues(expression.args, moduleFunction.parameters.map((parameter) => parameter.name)).join(', ');
+          return this.declaredRuntimeCall(moduleFunction.codegen, args, expression.range.start.file, expression.range.start.line);
         }
-        if (callee.name === 'set_precision') {
-          return `$rt.console.set_precision(${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line}, ${args})`;
-        }
-        return `$rt.console.${callee.name}(${args})`;
       }
       if (this.importedModules.has(moduleName)) {
         const args = this.userModuleNames.has(moduleName)
@@ -955,6 +954,26 @@ export class JavaScriptGenerator {
     return `${this.expression(expression.object)}.${expression.name}`;
   }
 
+  /** Прямой рантайм-вызов, описанный в реестре (FunctionSpec.codegen). */
+  private declaredRuntimeCall(
+    spec: { readonly target: string; readonly shape: 'args' | 'args-context' | 'context-only' | 'context-first' },
+    args: string,
+    file: string,
+    line: number,
+  ): string {
+    const context = `${JSON.stringify(file)}, ${line}`;
+    switch (spec.shape) {
+      case 'args':
+        return `$rt.${spec.target}(${args})`;
+      case 'args-context':
+        return `$rt.${spec.target}(${args ? `${args}, ` : ''}${context})`;
+      case 'context-only':
+        return `$rt.${spec.target}(${context})`;
+      case 'context-first':
+        return `$rt.${spec.target}(${context}${args ? `, ${args}` : ''})`;
+    }
+  }
+
   private constructorInitializer(statement: VariableDeclaration): string {
     if (statement.declaredType.kind === 'QualifiedTypeName' && this.userModuleNames.has(statement.declaredType.moduleName)) {
       const args = this.callArgumentValues(statement.constructorArgs ?? [], this.constructorParameterNames(statement.declaredType)).join(', ');
@@ -962,14 +981,16 @@ export class JavaScriptGenerator {
     }
     if (
       statement.declaredType.kind === 'QualifiedTypeName'
-      && statement.declaredType.moduleName === 'json'
-      && statement.declaredType.name === 'Value'
+      && this.stdlib.getModuleFunction(statement.declaredType.moduleName, statement.declaredType.name)
     ) {
+      // Тип с одноимённой модульной функцией-конструктором (json.Value):
+      // признак читается из реестра, как и в семантике.
+      const { moduleName, name } = statement.declaredType;
       const args = this.callArgumentValues(
         statement.constructorArgs ?? [],
-        this.stdlib.getModuleFunction('json', 'Value')?.parameters.map((parameter) => parameter.name),
+        this.stdlib.getModuleFunction(moduleName, name)?.parameters.map((parameter) => parameter.name),
       ).join(', ');
-      return `$rt.callModuleFunction("json", "Value", [${args}], ${JSON.stringify(statement.range.start.file)}, ${statement.range.start.line})`;
+      return `$rt.callModuleFunction(${JSON.stringify(moduleName)}, ${JSON.stringify(name)}, [${args}], ${JSON.stringify(statement.range.start.file)}, ${statement.range.start.line})`;
     }
     if (statement.declaredType.kind !== 'ClassTypeName') return this.defaultValue(statement.declaredType);
     const args = this.callArgumentValues(statement.constructorArgs ?? [], this.constructorParameterNames(statement.declaredType)).join(', ');
@@ -1012,9 +1033,8 @@ export class JavaScriptGenerator {
       if (this.userModuleNames.has(type.moduleName)) {
         return `await $rt.modules.${type.moduleName}.${this.exportedClassDefaultName(type.name)}()`;
       }
-      if (type.moduleName === 'colors' && type.name === 'Color') {
-        return '$rt.modules.colors.TRANSPARENT';
-      }
+      const declaredDefault = this.stdlib.getQualifiedType(type.moduleName, type.name)?.codegenDefault;
+      if (declaredDefault) return declaredDefault;
       return `$rt.createObject(${JSON.stringify(type.moduleName)}, ${JSON.stringify(type.name)})`;
     }
 
@@ -1093,7 +1113,7 @@ export class JavaScriptGenerator {
       if (!arg) return 'undefined';
       const value = this.expression(arg.value);
       const parameter = parameters?.[index];
-      return parameter ? this.valueForTypeRef(value, parameter.type, arg.value.range) : value;
+      return parameter ? this.valueForTypeRef(value, parameter.type, arg.value.range, false) : value;
     });
   }
 
@@ -1232,7 +1252,7 @@ export class JavaScriptGenerator {
         if (!arg) return 'undefined';
         const value = this.expression(arg.value);
         const parameter = method?.parameters[index];
-        return parameter ? this.valueForTypeRef(value, parameter.type, arg.value.range) : value;
+        return parameter ? this.valueForTypeRef(value, parameter.type, arg.value.range, false) : value;
       });
     }
 
@@ -1289,13 +1309,21 @@ export class JavaScriptGenerator {
         return this.nullableValue(value, type.moduleName, type.name, range);
       }
     }
+    // Граница float: int-значение (в том числе большое точное) при записи во
+    // float-цель становится double или честно отказывает по диапазону.
+    if (type?.kind === 'PrimitiveTypeName' && type.name === 'float') {
+      return `$rt.core.toFloat(${value}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
+    }
     return this.castForType(value, type);
   }
 
-  private valueForTypeRef(value: string, type: TypeRef, range: SourceRange): string {
+  // floatBoundary=false — для аргументов по РЕЕСТРОВЫМ параметрам: там
+  // «float» исторически значит «numeric», int обязан пройти без конверсии
+  // (math.abs(-9007199254740993) остаётся точным, sum(int[]) — тоже).
+  private valueForTypeRef(value: string, type: TypeRef, range: SourceRange, floatBoundary = true): string {
     if (type.kind === 'array') {
       const size = type.dynamic ? 'null' : String(type.size ?? 0);
-      const convertedElement = this.valueForTypeRef('__array_item', type.elementType, range);
+      const convertedElement = this.valueForTypeRef('__array_item', type.elementType, range, floatBoundary);
       return [
         '$rt.array.convert(',
         value,
@@ -1314,6 +1342,11 @@ export class JavaScriptGenerator {
     }
     if (type.kind === 'qualified' && this.stdlib.typeAcceptsNull(type)) {
       return this.nullableValue(value, type.moduleName, type.name, range);
+    }
+    // Граница float — как в valueForType: запись во float-цель не проносит
+    // точного int-гиганта, значение живёт в double или отказывает.
+    if (floatBoundary && this.isFloatType(type)) {
+      return `$rt.core.toFloat(${value}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
     }
     return value;
   }
@@ -1341,7 +1374,8 @@ export class JavaScriptGenerator {
       if (this.userModuleNames.has(type.moduleName)) {
         return `await $rt.modules.${type.moduleName}.${this.exportedClassDefaultName(type.name)}()`;
       }
-      if (type.moduleName === 'colors' && type.name === 'Color') return '$rt.modules.colors.TRANSPARENT';
+      const declaredDefault = this.stdlib.getQualifiedType(type.moduleName, type.name)?.codegenDefault;
+      if (declaredDefault) return declaredDefault;
       return `$rt.createObject(${JSON.stringify(type.moduleName)}, ${JSON.stringify(type.name)})`;
     }
     if (type.kind === 'class') {

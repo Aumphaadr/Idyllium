@@ -23,13 +23,14 @@ Thumbs.db
 # Vite cache
 .vite/
 
-# Локальная кухня разработки — остаётся на компе, в репозиторий не попадает
-plan/
-spec/
-just_for_fun/
-from_docs_team/
-pdf_examples/
-my_images/
+# Генерируемые артефакты (пересобираются командами npm run spec:extract и др.)
+generated/
+# Копия gui-renderer в расширении кладётся сборкой (npm run build:vscode),
+# в git живёт только источник packages/gui-renderer/.
+packages/vscode-idyllium/gui-renderer/
+
+# Личные локальные файлы
 Idyllium.code-workspace
+CLAUDE.md
 *.vsix
-for_claude/
+scratch/

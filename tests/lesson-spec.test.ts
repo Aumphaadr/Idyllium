@@ -50,11 +50,11 @@ function readExpectations(file: string): LessonExpectations {
 
 async function main(): Promise<void> {
   const root = process.cwd();
-  const specRoot = path.join(root, 'spec/lessons');
+  const specRoot = path.join(root, 'generated/lesson-spec');
   const manifestPath = path.join(specRoot, 'manifest.json');
   const expectationsPath = path.join(root, 'tests/lesson-expectations.json');
 
-  assert(fs.existsSync(manifestPath), 'missing spec/lessons/manifest.json; run npm run spec:extract');
+  assert(fs.existsSync(manifestPath), 'missing generated/lesson-spec/manifest.json; run npm run spec:extract');
   assert(fs.existsSync(expectationsPath), 'missing tests/lesson-expectations.json');
 
   const manifest = readManifest(manifestPath);

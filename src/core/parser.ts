@@ -258,6 +258,22 @@ export class Parser {
       return this.parseVariableDeclaration();
     }
 
+    // Класс внутри функции — частый ритуал из других языков; безликое
+    // «expected expression, got 'class'» не объясняло, что классы живут
+    // снаружи (улов методистов, 2026-08-29). Объявление честно
+    // разбирается и выбрасывается — каскада восстановления нет.
+    if (this.check(TokenKind.KwClass)) {
+      const classToken = this.peek();
+      const declaration = this.parseClassDeclaration();
+      const range = { start: classToken.range.start, end: declaration.range.end };
+      this.error(range, `class '${declaration.name}' must be declared outside of functions`);
+      return {
+        kind: 'ExpressionStatement',
+        expression: { kind: 'LiteralExpression', value: 0, valueType: 'int', range },
+        range,
+      };
+    }
+
     if (this.checkTypeStart()) {
       return this.parseVariableDeclaration();
     }
@@ -352,6 +368,29 @@ export class Parser {
     );
   }
 
+  // Поглощает хвост вложенного объявления: скобки параметров и блок тела
+  // с балансом скобок. Только для восстановления после ошибки.
+  private skipBalancedTail(): void {
+    if (this.check(TokenKind.LeftParen)) {
+      let depth = 0;
+      while (!this.isAtEnd()) {
+        if (this.check(TokenKind.LeftParen)) depth += 1;
+        if (this.check(TokenKind.RightParen)) depth -= 1;
+        this.advance();
+        if (depth === 0) break;
+      }
+    }
+    if (this.check(TokenKind.LeftBrace)) {
+      let depth = 0;
+      while (!this.isAtEnd()) {
+        if (this.check(TokenKind.LeftBrace)) depth += 1;
+        if (this.check(TokenKind.RightBrace)) depth -= 1;
+        this.advance();
+        if (depth === 0) break;
+      }
+    }
+  }
+
   private parseVariableDeclaration(): VariableDeclaration {
     const constToken = this.match(TokenKind.KwConst) ? this.previous() : null;
     const declaredType = this.parseTypeName();
@@ -367,6 +406,28 @@ export class Parser {
     isConst: boolean,
     start: SourceRange['start'],
   ): VariableDeclaration {
+    // «int function helper(...) { ... }» внутри функции — ритуал вложенных
+    // объявлений (в Python def внутри def легален); раньше падало жаргоном
+    // «'function' is a keyword...». Сигнатура и тело поглощаются целиком.
+    if (this.check(TokenKind.KwFunction)) {
+      const functionToken = this.advance();
+      const nestedName = this.check(TokenKind.Identifier) ? this.advance().lexeme : 'function';
+      this.error(
+        { start, end: functionToken.range.end },
+        `a function must be declared outside of other functions`,
+      );
+      this.skipBalancedTail();
+      return {
+        kind: 'VariableDeclaration',
+        declaredType,
+        name: `__nested_${nestedName}`,
+        nameRange: functionToken.range,
+        isConst,
+        initializer: null,
+        constructorArgs: null,
+        range: { start, end: functionToken.range.end },
+      };
+    }
     const name = this.consumeName('expected variable name');
     let initializer: Expression | null = null;
     let constructorArgs: CallArgument[] | null = null;
@@ -1029,6 +1090,43 @@ export class Parser {
     if (this.checkTypeStart()) {
       const returnType = this.parseTypeName();
       if (!this.match(TokenKind.KwFunction)) {
+        // Несколько голых слов подряд («введите радиус круга») — почти
+        // всегда детский текст без кавычек, а не опечатка в колбэке; жаргон
+        // «callback return type» здесь только пугал (улов child_programs,
+        // 2026-08-29). Цепочка слов поглощается, чтобы не тянуть каскад
+        // ошибок восстановления.
+        if (returnType.kind === 'ClassTypeName' && this.check(TokenKind.Identifier)) {
+          const words = [returnType.name];
+          let end = returnType.range.end;
+          while (this.check(TokenKind.Identifier) && words.length < 6) {
+            const word = this.advance();
+            words.push(word.lexeme);
+            end = word.range.end;
+          }
+          const phrase = words.join(' ') + (this.check(TokenKind.Identifier) ? '…' : '');
+          const range = { start: returnType.range.start, end };
+          this.error(range, `text needs quotes — did you mean "${phrase}"?`);
+          return {
+            kind: 'LiteralExpression',
+            value: 0,
+            valueType: 'int',
+            range,
+          };
+        }
+        // Ритуальное «int a» посреди выражения — «if (int a > 0)» — это не
+        // колбэк, а повторное объявление (улов методистов по историям про
+        // tkinter, 2026-08-29). Имя поглощается и выражение продолжается
+        // с него — без каскада восстановления.
+        if (this.check(TokenKind.Identifier)) {
+          const name = this.advance();
+          const range = { start: returnType.range.start, end: name.range.end };
+          this.error(range, `a type is not needed here — did you mean just '${name.lexeme}'?`);
+          return {
+            kind: 'IdentifierExpression',
+            name: name.lexeme,
+            range,
+          };
+        }
         this.error(returnType.range, "expected 'function' after callback return type");
         return {
           kind: 'LiteralExpression',

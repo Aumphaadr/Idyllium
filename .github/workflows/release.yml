@@ -1,0 +1,56 @@
+name: Release VSIX
+
+# Релиз по пушу тега vX.Y.Z (локальная команда: npm run release:github).
+# Собирает VSIX в чистом окружении, берёт описание из блока версии в
+# CHANGELOG.md (tools/release-notes.js) и публикует GitHub Release
+# встроенным токеном — ни ручной загрузки файла, ни ручного описания.
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Сборка и публикация релиза
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Установка зависимостей
+        run: npm ci
+
+      - name: Тег обязан совпадать с версией package.json
+        run: |
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ "$PACKAGE_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::тег $GITHUB_REF_NAME не совпадает с версией package.json ($PACKAGE_VERSION)"
+            exit 1
+          fi
+
+      - name: Тесты
+        run: npm test
+
+      - name: Сборка VSIX
+        run: npm run package:vscode
+
+      - name: Описание релиза из CHANGELOG.md
+        run: node tools/release-notes.js > /tmp/release-notes.md
+
+      - name: Публикация релиза
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          gh release create "$GITHUB_REF_NAME" \
+            "packages/vscode-idyllium/idyllium-vsc-${VERSION}.vsix" \
+            --title "Idyllium-${VERSION}" \
+            --notes-file /tmp/release-notes.md
