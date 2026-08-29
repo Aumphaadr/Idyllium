@@ -27,7 +27,7 @@ interface LessonManifest {
 }
 
 const DEFAULT_SOURCE_ROOT = path.resolve(process.cwd(), 'docs/book/content');
-const DEFAULT_OUTPUT_ROOT = path.resolve(process.cwd(), 'spec/lessons');
+const DEFAULT_OUTPUT_ROOT = path.resolve(process.cwd(), 'generated/lesson-spec');
 
 function main(): void {
   const sourceRoot = path.resolve(readArg('--source') ?? DEFAULT_SOURCE_ROOT);

@@ -1,35 +1,2760 @@
+/* Собран tools/link-web-ide-app.js из packages/web-ide/src/ — править источники, не этот файл. */
 'use strict';
 
 (function () {
-  const WORKSPACE_ROOT = '/workspace';
-  const MAIN_FILE = WORKSPACE_ROOT + '/main.idyl';
+  // ── src/workspace-paths.js ──
+// Пути рабочего пространства Web IDE (/workspace) и тексты для ученика:
+// нормализация, короткие имена, срез служебного префикса из диагностик.
+
+const WORKSPACE_ROOT = '/workspace';
+const MAIN_FILE = WORKSPACE_ROOT + '/main.idyl';
+
+function itemName(path) {
+  return normalizeWorkspacePath(path).split('/').pop() || '';
+}
+
+// Путь ученика — тот, что пишется в file.open(): относительно корня проекта.
+function studentPath(path) {
+  const normalized = normalizeWorkspacePath(path);
+  if (normalized === WORKSPACE_ROOT) return '';
+  return normalized.startsWith(WORKSPACE_ROOT + '/') ? normalized.slice(WORKSPACE_ROOT.length + 1) : normalized;
+}
+
+function normalizeWorkspacePath(path) {
+  const input = String(path).replace(/\\/g, '/');
+  const raw = input === WORKSPACE_ROOT
+    ? ''
+    : input.startsWith(WORKSPACE_ROOT + '/')
+      ? input.slice((WORKSPACE_ROOT + '/').length)
+    : input.replace(/^\/+/, '');
+  const parts = raw.split('/');
+  const normalized = [];
+  for (const part of parts) {
+    if (!part || part === '.') continue;
+    if (part === '..') {
+      normalized.pop();
+      continue;
+    }
+    normalized.push(part);
+  }
+  return normalized.length === 0 ? WORKSPACE_ROOT : WORKSPACE_ROOT + '/' + normalized.join('/');
+}
+
+function shortFileName(file) {
+  const path = normalizeWorkspacePath(file);
+  return path === WORKSPACE_ROOT ? '' : path.slice((WORKSPACE_ROOT + '/').length);
+}
+
+function basename(path) {
+  const short = shortFileName(path);
+  const parts = short.split('/').filter(Boolean);
+  return parts[parts.length - 1] || 'workspace';
+}
+
+function parentPath(path) {
+  path = normalizeWorkspacePath(path);
+  if (path === WORKSPACE_ROOT) return WORKSPACE_ROOT;
+  const short = shortFileName(path);
+  const parts = short.split('/').filter(Boolean);
+  parts.pop();
+  return parts.length === 0 ? WORKSPACE_ROOT : normalizeWorkspacePath(parts.join('/'));
+}
+
+function formatThrownError(error) {
+  const text = error instanceof Error ? error.message : String(error);
+  return formatDiagnosticText(text);
+}
+
+function formatDiagnosticText(text) {
+  return String(text)
+    .replaceAll(WORKSPACE_ROOT + '/', '')
+    .replace(/(^|\n)([^:\n]+):(\d+):\d+:(?=\s)/gu, '$1$2:$3:');
+}
+
+  // ── src/idyllium-highlight.js ──
+// Однопроходная подсветка Idyllium для легаси-редактора (без Monaco):
+// словари токенов и превращение исходника в HTML со span-раскраской.
+
+const KEYWORDS = new Set([
+  'and', 'break', 'catch', 'class', 'const', 'constructor', 'continue', 'do', 'else', 'event', 'extends',
+  'false', 'finally', 'for', 'function', 'if', 'not', 'or', 'parent', 'private', 'public', 'return', 'static',
+  'this', 'true', 'null', 'try', 'use', 'while', 'xor',
+]);
+const BUILTIN_TYPES = new Set([
+  'array', 'bool', 'char', 'dyn_array', 'float', 'int', 'set', 'string', 'void',
+]);
+const CLASS_NAMES = new Set([
+  'Array', 'Button', 'Canvas', 'CheckBox', 'Circle', 'Color', 'ComboBox', 'Drawable', 'FloatSpinBox', 'Font', 'Frame',
+  'Animation', 'Bitmap', 'Image', 'ImageBox', 'KeyboardEvent', 'Label', 'Line', 'LineEdit', 'Modal', 'MouseEvent', 'MouseScrollEvent', 'Music',
+  'Database', 'Object', 'ProgressBar', 'RadioButton', 'Rectangle', 'Result', 'Slider', 'Sound', 'SpinBox', 'Sprite', 'Statement', 'Text',
+  'Static', 'TextEdit', 'Timer', 'Value', 'Widget', 'Window',
+]);
+const QUALIFIED_TYPES = new Set([
+  ...CLASS_NAMES,
+  'float32', 'float64', 'int8', 'int16', 'int32', 'int64',
+  'istream', 'ostream', 'stamp', 'stream', 'uint8', 'uint16', 'uint32', 'uint64',
+]);
+
+function highlightIdyllium(source) {
+  let html = '';
+  let index = 0;
+  while (index < source.length) {
+    const rest = source.slice(index);
+    const comment = /^\/\/[^\n]*/u.exec(rest);
+    if (comment) {
+      html += span('tok-comment', comment[0]);
+      index += comment[0].length;
+      continue;
+    }
+
+    const string = /^(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/u.exec(rest);
+    if (string) {
+      html += span('tok-string', string[0]);
+      index += string[0].length;
+      continue;
+    }
+
+    const number = /^\b\d+(?:\.\d+)?\b/u.exec(rest);
+    if (number) {
+      html += span('tok-number', number[0]);
+      index += number[0].length;
+      continue;
+    }
+
+    const member = /^(\.)([A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*)/u.exec(rest);
+    if (member) {
+      html += escapeHtml(member[1]) + span('tok-property', member[2]);
+      index += member[0].length;
+      continue;
+    }
+
+    const identifier = /^[A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*/u.exec(rest);
+    if (identifier) {
+      const word = identifier[0];
+      const afterWord = source.slice(index + word.length);
+      const beforeWord = source.slice(0, index);
+      const isDeclaredClass = /\b(?:class|extends)\s*$/u.test(beforeWord);
+      const isTypePosition = /^[A-ZА-ЯЁ]/u.test(word)
+        && /^\s+[A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*\s*(?:[=;,)\[]|$)/u.test(afterWord);
+      if (KEYWORDS.has(word)) {
+        html += span('tok-keyword', word);
+      } else if (BUILTIN_TYPES.has(word) || CLASS_NAMES.has(word) || QUALIFIED_TYPES.has(word) || isDeclaredClass || isTypePosition) {
+        html += span('tok-type', word);
+      } else if (/^\s*\(/u.test(afterWord)) {
+        html += span('tok-function', word);
+      } else {
+        html += escapeHtml(word);
+      }
+      index += word.length;
+      continue;
+    }
+
+    html += escapeHtml(source[index]);
+    index++;
+  }
+  return html.endsWith('\n') ? html + ' ' : html;
+}
+
+function span(className, text) {
+  return '<span class="' + className + '">' + escapeHtml(text) + '</span>';
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;');
+}
+
+  // ── src/zip.js ──
+// Самописный ZIP без сжатия: скачивание и импорт проекта одним файлом.
+// Хранение stored-методом — чтобы обходиться без библиотек и Worker.
+
+const CRC32_TABLE = buildCrc32Table();
+
+function zipBytes(entries) {
+  const chunks = [];
+  const central = [];
+  let offset = 0;
+
+  for (const entry of entries) {
+    const nameBytes = new TextEncoder().encode(entry.name);
+    const data = entry.bytes;
+    const crc = crc32(data);
+    const localHeader = zipHeader(30);
+    localHeader.setUint32(0, 0x04034b50, true);
+    localHeader.setUint16(4, 20, true);
+    localHeader.setUint16(6, 0x0800, true);
+    localHeader.setUint16(8, 0, true);
+    localHeader.setUint16(10, dosTime().time, true);
+    localHeader.setUint16(12, dosTime().date, true);
+    localHeader.setUint32(14, crc, true);
+    localHeader.setUint32(18, data.length, true);
+    localHeader.setUint32(22, data.length, true);
+    localHeader.setUint16(26, nameBytes.length, true);
+    localHeader.setUint16(28, 0, true);
+
+    chunks.push(new Uint8Array(localHeader.buffer), nameBytes, data);
+
+    const centralHeader = zipHeader(46);
+    centralHeader.setUint32(0, 0x02014b50, true);
+    centralHeader.setUint16(4, 20, true);
+    centralHeader.setUint16(6, 20, true);
+    centralHeader.setUint16(8, 0x0800, true);
+    centralHeader.setUint16(10, 0, true);
+    centralHeader.setUint16(12, dosTime().time, true);
+    centralHeader.setUint16(14, dosTime().date, true);
+    centralHeader.setUint32(16, crc, true);
+    centralHeader.setUint32(20, data.length, true);
+    centralHeader.setUint32(24, data.length, true);
+    centralHeader.setUint16(28, nameBytes.length, true);
+    centralHeader.setUint16(30, 0, true);
+    centralHeader.setUint16(32, 0, true);
+    centralHeader.setUint16(34, 0, true);
+    centralHeader.setUint16(36, 0, true);
+    centralHeader.setUint32(38, 0, true);
+    centralHeader.setUint32(42, offset, true);
+
+    central.push(new Uint8Array(centralHeader.buffer), nameBytes);
+    offset += localHeader.byteLength + nameBytes.length + data.length;
+  }
+
+  const centralOffset = offset;
+  const centralSize = central.reduce((sum, chunk) => sum + chunk.length, 0);
+  const end = zipHeader(22);
+  end.setUint32(0, 0x06054b50, true);
+  end.setUint16(4, 0, true);
+  end.setUint16(6, 0, true);
+  end.setUint16(8, entries.length, true);
+  end.setUint16(10, entries.length, true);
+  end.setUint32(12, centralSize, true);
+  end.setUint32(16, centralOffset, true);
+  end.setUint16(20, 0, true);
+
+  return concatBytes([...chunks, ...central, new Uint8Array(end.buffer)]);
+}
+
+function unzipStoredEntries(bytes) {
+  const entries = [];
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let offset = 0;
+  while (offset + 4 <= bytes.length) {
+    const signature = view.getUint32(offset, true);
+    if (signature === 0x02014b50 || signature === 0x06054b50) break;
+    if (signature !== 0x04034b50) throw new Error('ZIP-архив имеет неподдерживаемый формат');
+    if (offset + 30 > bytes.length) throw new Error('ZIP-архив повреждён');
+
+    const flags = view.getUint16(offset + 6, true);
+    const method = view.getUint16(offset + 8, true);
+    const expectedCrc = view.getUint32(offset + 14, true);
+    const compressedSize = view.getUint32(offset + 18, true);
+    const uncompressedSize = view.getUint32(offset + 22, true);
+    const nameLength = view.getUint16(offset + 26, true);
+    const extraLength = view.getUint16(offset + 28, true);
+    const nameStart = offset + 30;
+    const dataStart = nameStart + nameLength + extraLength;
+    const dataEnd = dataStart + compressedSize;
+
+    if ((flags & 0x0008) !== 0) throw new Error('ZIP-архив с data descriptor пока не поддерживается');
+    if (method !== 0) throw new Error('Поддерживается только ZIP без сжатия. Скачанный из IDE проект можно импортировать обратно.');
+    if (dataEnd > bytes.length) throw new Error('ZIP-архив повреждён');
+
+    const name = new TextDecoder('utf-8').decode(bytes.slice(nameStart, nameStart + nameLength));
+    const data = bytes.slice(dataStart, dataEnd);
+    if (data.length !== uncompressedSize) throw new Error(`Файл ${name} в ZIP имеет неверный размер`);
+    if (crc32(data) !== expectedCrc) throw new Error(`Файл ${name} в ZIP повреждён`);
+    entries.push({ name, bytes: data, directory: name.endsWith('/') });
+
+    offset = dataEnd;
+  }
+  return entries;
+}
+
+function zipHeader(size) {
+  return new DataView(new ArrayBuffer(size));
+}
+
+function dosTime() {
+  const now = new Date();
+  return {
+    time: (now.getHours() << 11) | (now.getMinutes() << 5) | Math.floor(now.getSeconds() / 2),
+    date: ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate(),
+  };
+}
+
+function concatBytes(chunks) {
+  const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  const result = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return result;
+}
+
+function crc32(bytes) {
+  let crc = 0xFFFFFFFF;
+  for (const byte of bytes) {
+    crc = CRC32_TABLE[(crc ^ byte) & 0xFF] ^ (crc >>> 8);
+  }
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+
+function buildCrc32Table() {
+  const table = new Uint32Array(256);
+  for (let index = 0; index < table.length; index++) {
+    let value = index;
+    for (let bit = 0; bit < 8; bit++) {
+      value = (value & 1) ? (0xEDB88320 ^ (value >>> 1)) : (value >>> 1);
+    }
+    table[index] = value >>> 0;
+  }
+  return table;
+}
+
+  // ── src/ansi.js ──
+// Раскраска ANSI-кодов консольного вывода в DOM-узлы панели вывода.
+
+const ANSI_FOREGROUND_CLASSES = new Map([
+  [30, 'ansi-fg-black'],
+  [31, 'ansi-fg-red'],
+  [32, 'ansi-fg-green'],
+  [33, 'ansi-fg-yellow'],
+  [34, 'ansi-fg-blue'],
+  [35, 'ansi-fg-magenta'],
+  [36, 'ansi-fg-cyan'],
+  [37, 'ansi-fg-white'],
+  [90, 'ansi-fg-bright-black'],
+  [91, 'ansi-fg-bright-red'],
+  [92, 'ansi-fg-bright-green'],
+  [93, 'ansi-fg-bright-yellow'],
+  [94, 'ansi-fg-bright-blue'],
+  [95, 'ansi-fg-bright-magenta'],
+  [96, 'ansi-fg-bright-cyan'],
+  [97, 'ansi-fg-bright-white'],
+]);
+
+function appendAnsiText(parent, text) {
+  for (const node of ansiTextNodes(String(text))) {
+    parent.appendChild(node);
+  }
+}
+
+function ansiTextNodes(text) {
+  let foregroundClass = '';
+  let bold = false;
+  let buffer = '';
+  const nodes = [];
+
+  const flush = () => {
+    if (!buffer) return;
+    if (!foregroundClass && !bold) {
+      nodes.push(document.createTextNode(buffer));
+    } else {
+      const span = document.createElement('span');
+      span.className = [foregroundClass, bold ? 'ansi-bold' : ''].filter(Boolean).join(' ');
+      span.textContent = buffer;
+      nodes.push(span);
+    }
+    buffer = '';
+  };
+
+  for (let index = 0; index < text.length;) {
+    if (text.charCodeAt(index) !== 27 || text[index + 1] !== '[') {
+      buffer += text[index];
+      index += 1;
+      continue;
+    }
+
+    const end = findAnsiEnd(text, index + 2);
+    if (end === -1) {
+      index += 1;
+      continue;
+    }
+
+    flush();
+    const command = text[end];
+    const rawParams = text.slice(index + 2, end);
+    const params = rawParams.length === 0 ? [0] : rawParams.split(';').map((part) => Number(part || 0));
+
+    if (command === 'm') {
+      for (const param of params) {
+        if (param === 0) {
+          foregroundClass = '';
+          bold = false;
+        } else if (param === 1) {
+          bold = true;
+        } else if (param === 22) {
+          bold = false;
+        } else if (param === 39) {
+          foregroundClass = '';
+        } else if (ANSI_FOREGROUND_CLASSES.has(param)) {
+          foregroundClass = ANSI_FOREGROUND_CLASSES.get(param);
+        }
+      }
+    } else if (command === 'J' && params.some((param) => param === 2 || param === 3)) {
+      nodes.length = 0;
+      buffer = '';
+    }
+
+    index = end + 1;
+  }
+
+  flush();
+  return nodes;
+}
+
+function findAnsiEnd(text, start) {
+  for (let index = start; index < text.length; index += 1) {
+    const code = text.charCodeAt(index);
+    if (code >= 0x40 && code <= 0x7e) return index;
+  }
+  return -1;
+}
+
+  // ── src/binary-format.js ──
+// Распознавание бинарных форматов по сигнатурам и человеческие подписи:
+// MIME по имени и байтам, альфа-канал картинок, размеры и длительности.
+
+function bytesToDataUrl(fileName, bytes) {
+  return bytesToDataUrlWithMime(mimeTypeForFile(fileName), bytes);
+}
+
+function bytesToDataUrlWithMime(mime, bytes) {
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    const chunk = bytes.slice(offset, offset + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+  return `data:${mime};base64,${btoa(binary)}`;
+}
+
+function mimeTypeForFile(fileName) {
+  const name = fileName.toLowerCase();
+  if (name.endsWith('.idyl')) return 'text/x-idyllium';
+  if (name.endsWith('.txt')) return 'text/plain';
+  if (name.endsWith('.csv')) return 'text/csv';
+  if (name.endsWith('.json')) return 'application/json';
+  if (name.endsWith('.md') || name.endsWith('.markdown')) return 'text/markdown';
+  if (name.endsWith('.xml')) return 'application/xml';
+  if (name.endsWith('.html') || name.endsWith('.htm')) return 'text/html';
+  if (name.endsWith('.css')) return 'text/css';
+  if (name.endsWith('.png')) return 'image/png';
+  if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
+  if (name.endsWith('.gif')) return 'image/gif';
+  if (name.endsWith('.webp')) return 'image/webp';
+  if (name.endsWith('.svg')) return 'image/svg+xml';
+  if (name.endsWith('.ttf')) return 'font/ttf';
+  if (name.endsWith('.otf')) return 'font/otf';
+  if (name.endsWith('.woff')) return 'font/woff';
+  if (name.endsWith('.woff2')) return 'font/woff2';
+  if (name.endsWith('.mp3')) return 'audio/mpeg';
+  if (name.endsWith('.wav')) return 'audio/wav';
+  if (name.endsWith('.ogg')) return 'audio/ogg';
+  if (name.endsWith('.aac')) return 'audio/aac';
+  if (name.endsWith('.m4a')) return 'audio/mp4';
+  if (isSqliteFile(name)) return 'application/vnd.sqlite3';
+  return 'application/octet-stream';
+}
+
+function detectAssetMimeType(fileName, bytes) {
+  if (!(bytes instanceof Uint8Array) || bytes.length === 0) return mimeTypeForFile(fileName);
+  if (asciiBytes(bytes, 0, 16) === 'SQLite format 3\0') return 'application/vnd.sqlite3';
+  if (hasBytes(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 0)) return 'image/png';
+  if (hasBytes(bytes, [0xff, 0xd8, 0xff], 0)) return 'image/jpeg';
+  const header6 = asciiBytes(bytes, 0, 6);
+  if (header6 === 'GIF87a' || header6 === 'GIF89a') return 'image/gif';
+  if (asciiBytes(bytes, 0, 4) === 'RIFF' && asciiBytes(bytes, 8, 4) === 'WEBP') return 'image/webp';
+  if (asciiBytes(bytes, 0, 4) === 'RIFF' && asciiBytes(bytes, 8, 4) === 'WAVE') return 'audio/wav';
+  if (hasBytes(bytes, [0x49, 0x44, 0x33], 0) || mp3FrameHeader(bytes)) return 'audio/mpeg';
+  if (asciiBytes(bytes, 0, 4) === 'OggS') return 'audio/ogg';
+  if (aacHeader(bytes)) return 'audio/aac';
+  if (asciiBytes(bytes, 4, 4) === 'ftyp') return 'audio/mp4';
+  if (hasBytes(bytes, [0x00, 0x01, 0x00, 0x00], 0) || asciiBytes(bytes, 0, 4) === 'true') return 'font/ttf';
+  if (asciiBytes(bytes, 0, 4) === 'OTTO') return 'font/otf';
+  if (asciiBytes(bytes, 0, 4) === 'wOFF') return 'font/woff';
+  if (asciiBytes(bytes, 0, 4) === 'wOF2') return 'font/woff2';
+  if (looksLikeSvg(bytes)) return 'image/svg+xml';
+  return mimeTypeForFile(fileName);
+}
+
+function isSqliteFile(fileName) {
+  return /\.(?:db|db3|sqlite|sqlite3)$/iu.test(fileName);
+}
+
+function fontFormatName(mime) {
+  if (mime === 'font/ttf') return 'TTF';
+  if (mime === 'font/otf') return 'OTF';
+  if (mime === 'font/woff') return 'WOFF';
+  if (mime === 'font/woff2') return 'WOFF2';
+  return 'неизвестно';
+}
+
+function mp3FrameHeader(bytes) {
+  return bytes.length >= 2 && bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0;
+}
+
+function aacHeader(bytes) {
+  return bytes.length >= 2 && bytes[0] === 0xff && (bytes[1] & 0xf6) === 0xf0;
+}
+
+function imageAlphaInfo(mime, bytes) {
+  if (mime === 'image/jpeg') return 'нет';
+  if (mime === 'image/svg+xml') return 'возможно';
+  if (mime === 'image/png') return pngAlphaInfo(bytes);
+  if (mime === 'image/gif') return gifAlphaInfo(bytes);
+  if (mime === 'image/webp') return webpAlphaInfo(bytes);
+  if (mime.startsWith('image/')) return 'неизвестно';
+  return 'нет';
+}
+
+function pngAlphaInfo(bytes) {
+  if (!(bytes instanceof Uint8Array) || bytes.length < 33 || !hasBytes(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 0)) {
+    return 'неизвестно';
+  }
+  const colorType = bytes[25];
+  if (colorType === 4 || colorType === 6) return 'есть';
+  return pngHasTransparencyChunk(bytes) ? 'есть' : 'нет';
+}
+
+function pngHasTransparencyChunk(bytes) {
+  let offset = 8;
+  while (offset + 12 <= bytes.length) {
+    const length = readUint32(bytes, offset);
+    const type = asciiBytes(bytes, offset + 4, 4);
+    if (type === 'tRNS') return true;
+    if (type === 'IEND') return false;
+    offset += 12 + length;
+  }
+  return false;
+}
+
+function gifAlphaInfo(bytes) {
+  for (let index = 0; index + 5 < bytes.length; index++) {
+    if (bytes[index] === 0x21 && bytes[index + 1] === 0xf9 && bytes[index + 2] === 0x04) {
+      if ((bytes[index + 3] & 0x01) === 0x01) return 'есть';
+    }
+  }
+  return 'нет';
+}
+
+function webpAlphaInfo(bytes) {
+  if (asciiBytes(bytes, 0, 4) !== 'RIFF' || asciiBytes(bytes, 8, 4) !== 'WEBP') return 'неизвестно';
+  if (asciiBytes(bytes, 12, 4) === 'VP8X' && bytes.length > 20) {
+    return (bytes[20] & 0x10) === 0x10 ? 'есть' : 'нет';
+  }
+  return 'неизвестно';
+}
+
+function looksLikeSvg(bytes) {
+  const sample = new TextDecoder().decode(bytes.slice(0, Math.min(bytes.length, 512))).trimStart().toLowerCase();
+  return sample.startsWith('<svg') || sample.startsWith('<?xml') && sample.includes('<svg');
+}
+
+function hasBytes(bytes, expected, offset) {
+  if (bytes.length < offset + expected.length) return false;
+  return expected.every((byte, index) => bytes[offset + index] === byte);
+}
+
+function asciiBytes(bytes, offset, length) {
+  if (bytes.length < offset + length) return '';
+  let text = '';
+  for (let index = 0; index < length; index++) text += String.fromCharCode(bytes[offset + index]);
+  return text;
+}
+
+function readUint32(bytes, offset) {
+  if (bytes.length < offset + 4) return 0;
+  return ((bytes[offset] << 24) | (bytes[offset + 1] << 16) | (bytes[offset + 2] << 8) | bytes[offset + 3]) >>> 0;
+}
+
+function formatBytes(size) {
+  if (!Number.isFinite(size) || size < 0) return 'неизвестно';
+  if (size < 1024) return `${size} Б`;
+  if (size < 1024 * 1024) return `${trimFileSize(size / 1024)} КБ`;
+  return `${trimFileSize(size / (1024 * 1024))} МБ`;
+}
+
+function trimFileSize(value) {
+  return value >= 10 ? value.toFixed(1) : value.toFixed(2);
+}
+
+function formatDuration(seconds) {
+  if (!Number.isFinite(seconds) || seconds < 0) return 'неизвестно';
+  const rounded = Math.round(seconds);
+  const minutes = Math.floor(rounded / 60);
+  const rest = rounded % 60;
+  return `${minutes}:${String(rest).padStart(2, '0')}`;
+}
+
+function dataUrlBytes(value) {
+  const comma = value.indexOf(',');
+  if (comma < 0) return new Uint8Array();
+  const meta = value.slice(0, comma);
+  const data = value.slice(comma + 1);
+  if (meta.includes(';base64')) {
+    const binary = atob(data);
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
+    return bytes;
+  }
+  return new TextEncoder().encode(decodeURIComponent(data));
+}
+
+// Байты элемента проекта: ассет отдаёт их прямо, текст кодируется UTF-8.
+function assetBytes(item) {
+  if (item.bytes instanceof Uint8Array) return item.bytes;
+  if (item.resourceUri && item.resourceUri.startsWith('data:')) return dataUrlBytes(item.resourceUri);
+  return new TextEncoder().encode(item.content || '');
+}
+
+  // ── src/project-store.js ──
+// Файлы открытого проекта: путь → элемент ({kind, content} или ассет с
+// байтами). Карта одна на всю IDE; ядро наполняет её при загрузке проекта,
+// просмотрщики читают. Начальное содержимое — минимальный «Hello, World!».
+
+
+
+const files = new Map([
+  [MAIN_FILE, {
+    kind: 'text',
+    content: [
+      'use console;',
+      '',
+      'main() {',
+      '    console.write("Hello, World!", \'\\n\');',
+      '}',
+    ].join('\n'),
+  }],
+]);
+
+  // ── src/num-util.js ──
+// Числовые мелочи, общие для ядра, просмотрщика ассетов и пипетки.
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+  // ── src/viewer-host.js ──
+// Узкий шов «просмотрщики → ядро»: рендерам нужно открыть файл по клику
+// (ссылки Markdown) и узнать текущий открытый файл (актуальность асинхронного
+// предпросмотра). Ядро регистрирует себя при старте — прямой импорт main
+// из листа дал бы цикл (прецедент шва — ValueOperations в рантайме).
+
+const viewerHost = {
+  openFile: (_file) => {},
+  currentFile: () => '',
+};
+
+function registerViewerHost(host) {
+  viewerHost.openFile = host.openFile;
+  viewerHost.currentFile = host.currentFile;
+}
+
+  // ── src/dom.js ──
+// Элементы страницы Web IDE — единожды найденные ссылки; жили в шапке
+// main.js и исполняются в том же порядке (скрипт грузится после разметки).
+
+const monacoHost = document.getElementById('monaco-editor');
+const assetViewer = document.getElementById('asset-viewer');
+const csvViewer = document.getElementById('csv-viewer');
+const jsonViewer = document.getElementById('json-viewer');
+const markdownViewer = document.getElementById('markdown-viewer');
+const legacyEditor = document.getElementById('legacy-editor');
+const editor = document.getElementById('editor');
+const highlight = document.querySelector('#highlight code');
+const lineNumbers = document.getElementById('line-numbers');
+const completionPopup = document.getElementById('completion-popup');
+const editorTitle = document.getElementById('editor-title');
+const fileList = document.getElementById('file-list');
+const output = document.getElementById('output');
+const consoleInputPanel = document.getElementById('console-input-panel');
+const consoleInput = document.getElementById('console-input');
+const consoleInputSubmit = document.getElementById('console-input-submit');
+const status = document.getElementById('status');
+const guiFrame = document.getElementById('gui-frame');
+
+const workspace = document.querySelector('.workspace');
+const runtimePane = document.querySelector('.runtime-pane');
+const runtimeRowResizer = document.getElementById('runtime-row-resizer');
+const runButton = document.getElementById('run-button');
+const stopButton = document.getElementById('stop-button');
+const formatButton = document.getElementById('format-button');
+const structuredViewToggle = document.getElementById('structured-view-toggle');
+const structuredTextViewButton = document.getElementById('structured-text-view-button');
+const structuredDataViewButton = document.getElementById('structured-data-view-button');
+const newFileButton = document.getElementById('new-file-button');
+const newFolderButton = document.getElementById('new-folder-button');
+const fileContextMenu = document.getElementById('file-context-menu');
+const filePropsModal = document.getElementById('file-props-modal');
+const uploadButton = document.getElementById('upload-button');
+const uploadMenu = document.getElementById('upload-menu');
+const dropArea = document.getElementById('drop-area');
+const uploadInput = document.getElementById('upload-input');
+const uploadConflict = document.getElementById('upload-conflict');
+const uploadConflictName = document.getElementById('upload-conflict-name');
+const uploadConflictSkip = document.getElementById('upload-conflict-skip');
+const uploadConflictReplace = document.getElementById('upload-conflict-replace');
+const themeButton = document.getElementById('theme-button');
+const themeMenu = document.getElementById('theme-menu');
+const themeDarkButton = document.getElementById('theme-dark-button');
+const themeLightButton = document.getElementById('theme-light-button');
+const fontSizeDecrease = document.getElementById('font-size-decrease');
+const fontSizeIncrease = document.getElementById('font-size-increase');
+const fontSizeInput = document.getElementById('font-size-input');
+const consoleFontSizeDecrease = document.getElementById('console-font-size-decrease');
+const consoleFontSizeIncrease = document.getElementById('console-font-size-increase');
+const consoleFontSizeInput = document.getElementById('console-font-size-input');
+const colorPickerButton = document.getElementById('color-picker-button');
+const colorPickerMenu = document.getElementById('color-picker-menu');
+const fileAppMenuWrapper = document.getElementById('file-app-menu-wrapper');
+const fileAppMenuButton = document.getElementById('file-app-menu-button');
+const fileAppMenu = document.getElementById('file-app-menu');
+const fileAppMenuMain = document.getElementById('file-app-menu-main');
+const fileAppMenuPanel = document.getElementById('file-app-menu-panel');
+const currentProjectNameElement = document.getElementById('current-project-name');
+const editAppMenuWrapper = document.getElementById('edit-app-menu-wrapper');
+const editAppMenuButton = document.getElementById('edit-app-menu-button');
+const editAppMenu = document.getElementById('edit-app-menu');
+const colorPreview = document.getElementById('color-preview');
+const colorRgbCode = document.getElementById('color-rgb-code');
+const colorHexCode = document.getElementById('color-hex-code');
+const colorSliders = {
+  red: document.getElementById('color-red-slider'),
+  green: document.getElementById('color-green-slider'),
+  blue: document.getElementById('color-blue-slider'),
+  alpha: document.getElementById('color-alpha-slider'),
+};
+const colorInputs = {
+  red: document.getElementById('color-red-input'),
+  green: document.getElementById('color-green-input'),
+  blue: document.getElementById('color-blue-input'),
+  alpha: document.getElementById('color-alpha-input'),
+};
+
+// Фабрика SVG-значков интерфейса (дерево файлов, кнопки просмотрщиков).
+function createIcon(name) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+
+  if (name === 'menu') {
+    for (const y of [6, 12, 18]) {
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', '12');
+      circle.setAttribute('cy', String(y));
+      circle.setAttribute('r', '1.5');
+      circle.setAttribute('fill', 'currentColor');
+      svg.appendChild(circle);
+    }
+    return svg;
+  }
+
+  const paths = {
+    file: ['M6 3h8l4 4v14H6z', 'M14 3v5h5'],
+    asset: ['M5 4h14v16H5z', 'M8 15l3-3 2 2 2-3 3 4', 'M9 8h.01'],
+    database: ['M4 5c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3Z', 'M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5', 'M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7'],
+    folder: ['M3 6h7l2 2h9v11H3z'],
+    'folder-open': ['M3 7h7l2 2h9l-2 10H3z', 'M3 7v12'],
+    'zoom-in': ['M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z', 'm21 21-4.35-4.35', 'M11 8v6', 'M8 11h6'],
+    'zoom-out': ['M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z', 'm21 21-4.35-4.35', 'M8 11h6'],
+    fit: ['M3 7V5a2 2 0 0 1 2-2h2', 'M17 3h2a2 2 0 0 1 2 2v2', 'M21 17v2a2 2 0 0 1-2 2h-2', 'M7 21H5a2 2 0 0 1-2-2v-2'],
+  };
+
+  for (const d of paths[name] || paths.file) {
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d);
+    svg.appendChild(path);
+  }
+  return svg;
+}
+
+  // ── src/viewer-structured.js ──
+// Рендеры структурированных текстовых файлов: таблица CSV (Papa Parse),
+// дерево JSON, предпросмотр Markdown (marked + DOMPurify). Экранные
+// обёртки show*/тумблер остаются в ядре — здесь только построение DOM.
+
+
+
+
+
+
+
+const CSV_ROW_RENDER_LIMIT = 500;
+const CSV_COLUMN_RENDER_LIMIT = 100;
+const JSON_NODE_RENDER_LIMIT = 5000;
+const JSON_DEPTH_RENDER_LIMIT = 64;
+
+const csvHeaderModes = new Map();
+
+function renderCsvTable(file, source) {
+  if (!csvViewer) return;
+  if (!window.Papa || typeof window.Papa.parse !== 'function') {
+    const unavailable = document.createElement('div');
+    unavailable.className = 'csv-empty';
+    unavailable.textContent = 'Не удалось загрузить модуль просмотра CSV';
+    csvViewer.appendChild(unavailable);
+    return;
+  }
+
+  const result = window.Papa.parse(source, {
+    delimiter: '',
+    newline: '',
+    quoteChar: '"',
+    escapeChar: '"',
+    header: false,
+    dynamicTyping: false,
+    skipEmptyLines: false,
+  });
+  const rows = source.length === 0
+    ? []
+    : result.data.map((row) => (Array.isArray(row) ? row : [row]).map((value) => String(value ?? '')));
+
+  if (/\r?\n$/u.test(source) && rows.length > 0 && rows.at(-1).every((value) => value === '')) {
+    rows.pop();
+  }
+
+  let columnCount = 0;
+  for (const row of rows) columnCount = Math.max(columnCount, row.length);
+  const firstRowIsHeader = csvHeaderModes.get(file) ?? true;
+  const dataRowCount = Math.max(0, rows.length - (firstRowIsHeader ? 1 : 0));
+  const messages = csvMessages(result.errors || [], rows, columnCount);
+  if (dataRowCount > CSV_ROW_RENDER_LIMIT) {
+    messages.push({
+      text: `Показаны первые ${CSV_ROW_RENDER_LIMIT} строк данных из ${dataRowCount}`,
+      error: false,
+    });
+  }
+  if (columnCount > CSV_COLUMN_RENDER_LIMIT) {
+    messages.push({
+      text: `Показаны первые ${CSV_COLUMN_RENDER_LIMIT} столбцов из ${columnCount}`,
+      error: false,
+    });
+  }
+
+  csvViewer.appendChild(createCsvToolbar(file, source, rows.length, columnCount, result.meta?.delimiter || '', firstRowIsHeader));
+  if (messages.length > 0) csvViewer.appendChild(createCsvMessages(messages));
+
+  if (rows.length === 0 || columnCount === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'csv-empty';
+    empty.textContent = 'CSV-файл пуст';
+    csvViewer.appendChild(empty);
+    return;
+  }
+
+  csvViewer.appendChild(createCsvTable(rows, columnCount, firstRowIsHeader));
+}
+
+function createCsvToolbar(file, source, rowCount, columnCount, delimiter, firstRowIsHeader) {
+  const toolbar = document.createElement('div');
+  toolbar.className = 'csv-toolbar';
+
+  const summary = document.createElement('div');
+  summary.className = 'csv-summary';
+  summary.textContent = `Строк: ${rowCount} · столбцов: ${columnCount} · разделитель: ${formatCsvDelimiter(delimiter)}`;
+  toolbar.appendChild(summary);
+
+  const option = document.createElement('label');
+  option.className = 'csv-header-option';
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.checked = firstRowIsHeader;
+  checkbox.disabled = rowCount === 0;
+  checkbox.addEventListener('change', () => {
+    csvHeaderModes.set(file, checkbox.checked);
+    csvViewer.replaceChildren();
+    renderCsvTable(file, source);
+  });
+  option.appendChild(checkbox);
+  option.append('Первая строка — заголовки');
+  toolbar.appendChild(option);
+  return toolbar;
+}
+
+function createCsvMessages(messages) {
+  const container = document.createElement('div');
+  container.className = 'csv-messages';
+  for (const message of messages.slice(0, 6)) {
+    const item = document.createElement('p');
+    item.className = 'csv-message' + (message.error ? ' csv-message-error' : '');
+    item.textContent = message.text;
+    container.appendChild(item);
+  }
+  if (messages.length > 6) {
+    const rest = document.createElement('p');
+    rest.className = 'csv-message';
+    rest.textContent = `И ещё предупреждений: ${messages.length - 6}`;
+    container.appendChild(rest);
+  }
+  return container;
+}
+
+function csvMessages(errors, rows, columnCount) {
+  const messages = [];
+  for (const error of errors) {
+    if (error.code === 'UndetectableDelimiter' && columnCount <= 1) continue;
+    messages.push({ text: formatCsvError(error), error: error.type === 'Quotes' });
+  }
+
+  const irregularRows = [];
+  for (let index = 0; index < rows.length; index++) {
+    if (rows[index].length !== columnCount) irregularRows.push(index + 1);
+  }
+  if (irregularRows.length > 0) {
+    const shown = irregularRows.slice(0, 8).join(', ');
+    const rest = irregularRows.length > 8 ? ` и ещё ${irregularRows.length - 8}` : '';
+    messages.push({
+      text: `В строках разное количество столбцов. Проверь строки: ${shown}${rest}`,
+      error: false,
+    });
+  }
+  return messages;
+}
+
+function formatCsvError(error) {
+  const row = Number.isInteger(error.row) ? `Строка ${error.row + 1}: ` : '';
+  const descriptions = {
+    MissingQuotes: 'не закрыта двойная кавычка',
+    InvalidQuotes: 'кавычка расположена неправильно',
+    TooFewFields: 'слишком мало значений',
+    TooManyFields: 'слишком много значений',
+    UndetectableDelimiter: 'не удалось уверенно определить разделитель',
+  };
+  return row + (descriptions[error.code] || `ошибка CSV (${error.code || error.type || 'неизвестная'})`);
+}
+
+function formatCsvDelimiter(delimiter) {
+  const names = {
+    ',': 'запятая (,)',
+    ';': 'точка с запятой (;)',
+    '\t': 'табуляция',
+    '|': 'вертикальная черта (|)',
+  };
+  return names[delimiter] || (delimiter ? `«${delimiter}»` : 'не определён');
+}
+
+function createCsvTable(rows, columnCount, firstRowIsHeader) {
+  const scroll = document.createElement('div');
+  scroll.className = 'csv-table-scroll';
+  const table = document.createElement('table');
+  table.className = 'csv-table';
+  const renderedColumnCount = Math.min(columnCount, CSV_COLUMN_RENDER_LIMIT);
+
+  const head = document.createElement('thead');
+  const headerRow = document.createElement('tr');
+  appendCsvCell(headerRow, '#', 'th', 'csv-row-number');
+  for (let column = 0; column < renderedColumnCount; column++) {
+    const value = firstRowIsHeader ? rows[0]?.[column] || `Столбец ${column + 1}` : `Столбец ${column + 1}`;
+    appendCsvCell(headerRow, value, 'th');
+  }
+  head.appendChild(headerRow);
+  table.appendChild(head);
+
+  const body = document.createElement('tbody');
+  const firstDataIndex = firstRowIsHeader ? 1 : 0;
+  const lastDataIndex = Math.min(rows.length, firstDataIndex + CSV_ROW_RENDER_LIMIT);
+  for (let rowIndex = firstDataIndex; rowIndex < lastDataIndex; rowIndex++) {
+    const rowElement = document.createElement('tr');
+    appendCsvCell(rowElement, String(rowIndex - firstDataIndex + 1), 'th', 'csv-row-number');
+    for (let column = 0; column < renderedColumnCount; column++) {
+      appendCsvCell(rowElement, rows[rowIndex][column] || '', 'td');
+    }
+    body.appendChild(rowElement);
+  }
+  table.appendChild(body);
+  scroll.appendChild(table);
+  return scroll;
+}
+
+function appendCsvCell(row, value, tagName, className = '') {
+  const cell = document.createElement(tagName);
+  if (className) cell.className = className;
+  if (tagName === 'th') cell.scope = className === 'csv-row-number' ? 'row' : 'col';
+  cell.textContent = value;
+  if (value.length > 120) cell.title = value.slice(0, 1000);
+  row.appendChild(cell);
+}
+
+function renderJsonTree(file, source) {
+  if (!jsonViewer) return;
+  if (source.trim().length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'json-empty';
+    empty.textContent = 'JSON-файл пуст';
+    jsonViewer.appendChild(empty);
+    return;
+  }
+
+  let value;
+  try {
+    value = JSON.parse(source);
+  } catch (error) {
+    jsonViewer.appendChild(createJsonError(source, error));
+    return;
+  }
+
+  const state = {
+    count: 0,
+    compositeCount: 0,
+    truncated: false,
+    limitMarkerCreated: false,
+    depthTruncated: false,
+  };
+  const tree = document.createElement('div');
+  tree.className = 'json-tree';
+  tree.appendChild(createJsonNode(value, 'Корень', 'root', 0, state));
+
+  jsonViewer.appendChild(createJsonToolbar(value, state));
+  if (state.truncated || state.depthTruncated) {
+    const warning = document.createElement('p');
+    warning.className = 'json-render-warning';
+    warning.textContent = state.truncated
+      ? `Показаны первые ${JSON_NODE_RENDER_LIMIT} узлов. Полный JSON остаётся доступен в текстовом режиме.`
+      : `Вложенность глубже ${JSON_DEPTH_RENDER_LIMIT} уровней скрыта. Полный JSON остаётся доступен в текстовом режиме.`;
+    jsonViewer.appendChild(warning);
+  }
+
+  const scroll = document.createElement('div');
+  scroll.className = 'json-tree-scroll';
+  scroll.appendChild(tree);
+  jsonViewer.appendChild(scroll);
+}
+
+function renderMarkdownPreview(file, source) {
+  if (!markdownViewer) return;
+  if (!window.marked || typeof window.marked.parse !== 'function'
+    || !window.DOMPurify || typeof window.DOMPurify.sanitize !== 'function') {
+    appendMarkdownMessage('Не удалось загрузить модуль просмотра Markdown');
+    return;
+  }
+  if (source.trim().length === 0) {
+    appendMarkdownMessage('Markdown-файл пуст');
+    return;
+  }
+
+  let rendered;
+  try {
+    rendered = window.marked.parse(source.replace(/^[\u200B-\u200F\uFEFF]/u, ''), {
+      async: false,
+      breaks: false,
+      gfm: true,
+    });
+  } catch (error) {
+    appendMarkdownMessage(`Markdown не удалось разобрать: ${error instanceof Error ? error.message : String(error)}`, true);
+    return;
+  }
+
+  const documentElement = document.createElement('article');
+  documentElement.className = 'markdown-document';
+  documentElement.innerHTML = window.DOMPurify.sanitize(String(rendered), {
+    FORBID_ATTR: ['style'],
+    FORBID_TAGS: ['style', 'script', 'iframe', 'object', 'embed', 'form'],
+    SANITIZE_NAMED_PROPS: true,
+    USE_PROFILES: { html: true },
+  });
+  prepareMarkdownLinks(documentElement, file);
+  prepareMarkdownImages(documentElement, file);
+  markdownViewer.appendChild(documentElement);
+}
+
+function appendMarkdownMessage(message, error = false) {
+  const element = document.createElement('div');
+  element.className = `markdown-empty${error ? ' markdown-error' : ''}`;
+  element.textContent = message;
+  markdownViewer.appendChild(element);
+}
+
+function prepareMarkdownLinks(documentElement, file) {
+  for (const link of documentElement.querySelectorAll('a[href]')) {
+    const href = link.getAttribute('href') || '';
+    if (/^(?:https?:|mailto:)/iu.test(href)) {
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      continue;
+    }
+    if (href.startsWith('#')) continue;
+    const target = markdownWorkspaceTarget(file, href);
+    if (!target || !files.has(target)) {
+      link.addEventListener('click', (event) => event.preventDefault());
+      link.title = 'Файл не найден в текущем проекте';
+      continue;
+    }
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      viewerHost.openFile(target);
+    });
+  }
+}
+
+function prepareMarkdownImages(documentElement, file) {
+  for (const image of documentElement.querySelectorAll('img[src]')) {
+    const source = image.getAttribute('src') || '';
+    if (/^(?:https?:|data:|blob:)/iu.test(source)) continue;
+    const target = markdownWorkspaceTarget(file, source);
+    const item = target ? files.get(target) : null;
+    if (!item || item.kind !== 'asset') continue;
+    const bytes = item.bytes instanceof Uint8Array ? item.bytes : assetBytes(item);
+    image.src = bytes.length > 0 ? bytesToDataUrl(target, bytes) : item.resourceUri || source;
+  }
+}
+
+function markdownWorkspaceTarget(file, reference) {
+  const pathOnly = String(reference).split(/[?#]/u, 1)[0];
+  if (!pathOnly) return '';
+  let decoded;
+  try {
+    decoded = decodeURIComponent(pathOnly);
+  } catch {
+    decoded = pathOnly;
+  }
+  if (decoded.startsWith('/')) return normalizeWorkspacePath(decoded);
+  const parent = shortFileName(parentPath(file));
+  return normalizeWorkspacePath(parent ? `${parent}/${decoded}` : decoded);
+}
+
+function createJsonToolbar(value, state) {
+  const toolbar = document.createElement('div');
+  toolbar.className = 'json-toolbar';
+
+  const summary = document.createElement('div');
+  summary.className = 'json-summary';
+  summary.textContent = `${describeJsonRoot(value)} · показано узлов: ${state.count}`;
+  toolbar.appendChild(summary);
+
+  const actions = document.createElement('div');
+  actions.className = 'json-toolbar-actions';
+  const expand = createJsonToolbarButton('Развернуть всё', () => {
+    for (const details of jsonViewer.querySelectorAll('details')) details.open = true;
+  });
+  const collapse = createJsonToolbarButton('Свернуть всё', () => {
+    for (const details of jsonViewer.querySelectorAll('details')) details.open = false;
+  });
+  expand.disabled = state.compositeCount === 0;
+  collapse.disabled = state.compositeCount === 0;
+  actions.append(expand, collapse);
+  toolbar.appendChild(actions);
+  return toolbar;
+}
+
+function createJsonToolbarButton(label, onClick) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'json-toolbar-button';
+  button.textContent = label;
+  button.addEventListener('click', onClick);
+  return button;
+}
+
+function createJsonNode(value, label, labelKind, depth, state) {
+  state.count++;
+  const node = document.createElement('div');
+  node.className = 'json-node';
+  const composite = value !== null && typeof value === 'object';
+
+  if (!composite) {
+    const line = document.createElement('div');
+    line.className = 'json-node-line json-leaf';
+    appendJsonLabel(line, label, labelKind);
+    appendJsonPrimitive(line, value);
+    node.appendChild(line);
+    return node;
+  }
+
+  const keys = Array.isArray(value) ? value.map((_, index) => index) : Object.keys(value);
+  const collectionKind = Array.isArray(value) ? 'array' : 'object';
+  if (keys.length === 0 || depth >= JSON_DEPTH_RENDER_LIMIT) {
+    const line = document.createElement('div');
+    line.className = 'json-node-line json-leaf';
+    appendJsonLabel(line, label, labelKind);
+    appendJsonCollectionPreview(line, collectionKind, keys.length);
+    if (depth >= JSON_DEPTH_RENDER_LIMIT && keys.length > 0) {
+      state.depthTruncated = true;
+      const hidden = document.createElement('span');
+      hidden.className = 'json-meta';
+      hidden.textContent = ' вложенность скрыта';
+      line.appendChild(hidden);
+    }
+    node.appendChild(line);
+    return node;
+  }
+
+  state.compositeCount++;
+  const details = document.createElement('details');
+  details.className = 'json-composite';
+  details.open = depth === 0;
+  const summary = document.createElement('summary');
+  summary.className = 'json-node-line';
+  appendJsonLabel(summary, label, labelKind);
+  appendJsonCollectionPreview(summary, collectionKind, keys.length);
+  details.appendChild(summary);
+
+  const children = document.createElement('div');
+  children.className = 'json-children';
+  for (const key of keys) {
+    if (state.count >= JSON_NODE_RENDER_LIMIT) {
+      state.truncated = true;
+      if (!state.limitMarkerCreated) {
+        state.limitMarkerCreated = true;
+        children.appendChild(createJsonLimitMarker());
+      }
+      break;
+    }
+    const child = Array.isArray(value)
+      ? createJsonNode(value[key], `[${key}]`, 'index', depth + 1, state)
+      : createJsonNode(value[key], key, 'key', depth + 1, state);
+    children.appendChild(child);
+  }
+  details.appendChild(children);
+  node.appendChild(details);
+  return node;
+}
+
+function appendJsonLabel(parent, label, kind) {
+  const key = document.createElement('span');
+  key.className = kind === 'root' ? 'json-root-label' : kind === 'index' ? 'json-index' : 'json-key';
+  key.textContent = kind === 'key' ? JSON.stringify(label) : label;
+  parent.appendChild(key);
+
+  const separator = document.createElement('span');
+  separator.className = 'json-punctuation';
+  separator.textContent = ': ';
+  parent.appendChild(separator);
+}
+
+function appendJsonPrimitive(parent, value) {
+  const type = value === null ? 'null' : typeof value;
+  const rendered = type === 'string' ? JSON.stringify(value) : String(value);
+  const token = document.createElement('span');
+  token.className = `json-value json-value-${type}`;
+  token.textContent = rendered;
+  parent.appendChild(token);
+}
+
+function appendJsonCollectionPreview(parent, kind, count) {
+  const punctuation = document.createElement('span');
+  punctuation.className = 'json-punctuation';
+  punctuation.textContent = kind === 'array'
+    ? count === 0 ? '[]' : '[…]'
+    : count === 0 ? '{}' : '{…}';
+  parent.appendChild(punctuation);
+
+  const meta = document.createElement('span');
+  meta.className = 'json-meta';
+  meta.textContent = kind === 'array'
+    ? ` ${formatRussianCount(count, ['элемент', 'элемента', 'элементов'])}`
+    : ` ${formatRussianCount(count, ['поле', 'поля', 'полей'])}`;
+  parent.appendChild(meta);
+}
+
+function createJsonLimitMarker() {
+  const marker = document.createElement('div');
+  marker.className = 'json-node-line json-limit-marker';
+  marker.textContent = 'Остальные узлы скрыты';
+  return marker;
+}
+
+function describeJsonRoot(value) {
+  if (Array.isArray(value)) {
+    return `Корень: массив · ${formatRussianCount(value.length, ['элемент', 'элемента', 'элементов'])}`;
+  }
+  if (value !== null && typeof value === 'object') {
+    return `Корень: объект · ${formatRussianCount(Object.keys(value).length, ['поле', 'поля', 'полей'])}`;
+  }
+  const names = {
+    string: 'строка',
+    number: 'число',
+    boolean: 'логическое значение',
+    null: 'null',
+  };
+  const type = value === null ? 'null' : typeof value;
+  return `Корень: ${names[type] || type}`;
+}
+
+function formatRussianCount(count, forms) {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  const form = mod10 === 1 && mod100 !== 11
+    ? forms[0]
+    : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)
+      ? forms[1]
+      : forms[2];
+  return `${count} ${form}`;
+}
+
+function createJsonError(source, error) {
+  const location = jsonErrorLocation(source, error);
+  const card = document.createElement('div');
+  card.className = 'json-error';
+
+  const title = document.createElement('strong');
+  title.textContent = 'JSON не удалось разобрать';
+  card.appendChild(title);
+
+  const description = document.createElement('p');
+  description.textContent = `${location.label}${describeJsonSyntaxError(error)}`;
+  card.appendChild(description);
+
+  if (location.lineText !== '') {
+    const snippet = document.createElement('pre');
+    snippet.className = 'json-error-snippet';
+    snippet.textContent = `${location.lineText}\n${' '.repeat(Math.max(0, location.column - 1))}^`;
+    card.appendChild(snippet);
+  }
+
+  const hint = document.createElement('p');
+  hint.className = 'json-error-hint';
+  hint.textContent = 'Вернитесь в режим «Текст», исправьте JSON и откройте дерево снова.';
+  card.appendChild(hint);
+  return card;
+}
+
+function jsonErrorLocation(source, error) {
+  const message = String(error?.message || '');
+  const lineColumn = message.match(/line\s+(\d+)\s+column\s+(\d+)/iu);
+  if (lineColumn) {
+    const line = Number(lineColumn[1]);
+    const column = Number(lineColumn[2]);
+    return {
+      line,
+      column,
+      lineText: source.split(/\r\n|\r|\n/u)[line - 1] || '',
+      label: `Строка ${line}, столбец ${column}: `,
+    };
+  }
+
+  const positionMatch = message.match(/position\s+(\d+)/iu);
+  const position = positionMatch ? Number(positionMatch[1]) : source.length;
+  const before = source.slice(0, position);
+  const lines = before.split(/\r\n|\r|\n/u);
+  const line = lines.length;
+  const column = (lines.at(-1)?.length || 0) + 1;
+  return {
+    line,
+    column,
+    lineText: source.split(/\r\n|\r|\n/u)[line - 1] || '',
+    label: `Строка ${line}, столбец ${column}: `,
+  };
+}
+
+function describeJsonSyntaxError(error) {
+  const message = String(error?.message || '');
+  if (/unterminated string/iu.test(message)) return 'не закрыта двойная кавычка.';
+  if (/end of JSON|unexpected end/iu.test(message)) return 'JSON неожиданно закончился. Проверьте закрывающие скобки и значения.';
+  if (/property name|double-quoted/iu.test(message)) return 'ключ объекта должен находиться в двойных кавычках.';
+  if (/expected ['"]?,['"]?|after property value|after array element/iu.test(message)) return 'между соседними значениями, полями или элементами нужна запятая.';
+  if (/non-whitespace character after JSON|after JSON data/iu.test(message)) return 'после завершённого JSON обнаружены лишние символы.';
+  return 'нарушен синтаксис JSON. Проверьте кавычки, запятые и скобки.';
+}
+
+  // ── src/viewer-assets.js ──
+// Просмотрщик ассетов: картинки, шрифты, SQLite-инспектор, детали файла.
+// Держит своё состояние (поколение предпросмотра, живые FontFace/URL).
+
+
+
+
+
+
+
+
+let assetViewerGeneration = 0;
+let assetFontCounter = 0;
+let activeAssetFontFace = null;
+let activeAssetImageCleanup = null;
+
+// Ядро зовёт это при уходе с предпросмотра на любой другой экран: асинхронные
+// дорисовки (шрифт, SQLite) сверяются с поколением и не оживляют мертвеца.
+// Поколение — наша переменная: извне модуля её не нарастить (import жёсткий).
+function invalidateAssetPreview() {
+  assetViewerGeneration += 1;
+}
+
+function showAssetViewer(file, item) {
+  if (monacoHost) monacoHost.hidden = true;
+  if (legacyEditor) legacyEditor.hidden = true;
+  if (csvViewer) {
+    csvViewer.hidden = true;
+    csvViewer.replaceChildren();
+  }
+  if (jsonViewer) {
+    jsonViewer.hidden = true;
+    jsonViewer.replaceChildren();
+  }
+  if (markdownViewer) {
+    markdownViewer.hidden = true;
+    markdownViewer.replaceChildren();
+  }
+  if (!assetViewer) return;
+
+  assetViewer.hidden = false;
+  assetViewer.replaceChildren();
+  releaseAssetViewerResources();
+  const generation = ++assetViewerGeneration;
+
+  const bytes = item.bytes instanceof Uint8Array ? item.bytes : assetBytes(item);
+  const detectedMime = detectAssetMimeType(file, bytes);
+  const extensionMime = mimeTypeForFile(file);
+  const isImage = detectedMime.startsWith('image/');
+  const isAudio = detectedMime.startsWith('audio/');
+  const isFont = detectedMime.startsWith('font/');
+  const isSqlite = detectedMime === 'application/vnd.sqlite3';
+  const alpha = isImage ? imageAlphaInfo(detectedMime, bytes) : 'нет';
+
+  const preview = document.createElement('div');
+  preview.className = 'asset-preview';
+  assetViewer.appendChild(preview);
+
+  const details = document.createElement('dl');
+  details.className = 'asset-details';
+  assetViewer.appendChild(details);
+
+  addAssetDetail(details, 'Файл', shortFileName(file));
+  addAssetDetail(details, 'Размер файла', formatBytes(bytes.length));
+  addAssetDetail(details, 'Тип по расширению', extensionMime);
+  addAssetDetail(details, 'Фактический тип', detectedMime);
+  if (isSqlite) {
+    addAssetDetail(details, 'Объекты', 'загрузка...');
+    addAssetDetail(details, 'Версия схемы', 'загрузка...');
+    addAssetDetail(details, 'Размер страницы', 'загрузка...');
+    addAssetDetail(details, 'Страниц', 'загрузка...');
+  } else if (isAudio) {
+    addAssetDetail(details, 'Длительность', 'загрузка...');
+  } else if (isFont) {
+    addAssetDetail(details, 'Формат', fontFormatName(detectedMime));
+    addAssetDetail(details, 'Состояние', 'загрузка...');
+    addAssetDetail(details, 'Проверка символов', 'визуальная');
+  } else {
+    addAssetDetail(details, 'Ширина', isImage ? 'загрузка...' : 'нет');
+    addAssetDetail(details, 'Высота', isImage ? 'загрузка...' : 'нет');
+    addAssetDetail(details, 'Альфа-канал', alpha);
+  }
+
+  if (extensionMime !== detectedMime && detectedMime !== 'application/octet-stream') {
+    addAssetDetail(details, 'Несовпадение типа', `${extensionMime} -> ${detectedMime}`, true);
+  }
+
+  if (isSqlite) {
+    void renderSqliteAssetPreview(file, bytes, preview, details, generation);
+    return;
+  }
+
+  if (isAudio) {
+    const audio = document.createElement('audio');
+    audio.className = 'asset-audio-player';
+    audio.controls = true;
+    audio.preload = 'metadata';
+    audio.addEventListener('loadedmetadata', () => {
+      updateAssetDetail(details, 'Длительность', formatDuration(audio.duration));
+    });
+    audio.addEventListener('error', () => {
+      updateAssetDetail(details, 'Длительность', 'ошибка');
+    });
+    audio.src = bytes.length > 0 ? bytesToDataUrlWithMime(detectedMime, bytes) : item.resourceUri;
+    preview.classList.add('asset-preview-audio');
+    preview.appendChild(audio);
+    return;
+  }
+
+  if (isFont) {
+    void renderFontAssetPreview(file, item, bytes, preview, details, generation);
+    return;
+  }
+
+  if (!isImage) {
+    const empty = document.createElement('div');
+    empty.className = 'asset-preview-empty';
+    empty.textContent = 'Предпросмотр для этого типа файла пока недоступен';
+    preview.appendChild(empty);
+    return;
+  }
+
+  renderImageAssetPreview(file, item, bytes, detectedMime, preview, details, generation);
+}
+
+async function renderSqliteAssetPreview(file, bytes, preview, details, generation) {
+  preview.classList.add('asset-preview-sqlite');
+  showSqliteViewerMessage(preview, 'Открываем базу данных...');
+
+  if (typeof window.Idyllium?.inspectSqliteDatabaseInBrowser !== 'function'
+    || typeof window.Idyllium?.previewSqliteObjectInBrowser !== 'function') {
+    showSqliteViewerError(preview, 'Модуль просмотра SQLite не загрузился.');
+    return;
+  }
+
+  try {
+    const description = await window.Idyllium.inspectSqliteDatabaseInBrowser(bytes);
+    if (!isCurrentAssetPreview(file, preview, generation)) return;
+
+    updateAssetDetail(details, 'Объекты', String(description.objectCount));
+    updateAssetDetail(details, 'Версия схемы', String(description.userVersion));
+    updateAssetDetail(details, 'Размер страницы', formatBytes(description.pageSize));
+    updateAssetDetail(details, 'Страниц', String(description.pageCount));
+    preview.replaceChildren(createSqliteInspector(file, bytes, description, preview, generation));
+  } catch (error) {
+    if (!isCurrentAssetPreview(file, preview, generation)) return;
+    updateAssetDetail(details, 'Объекты', 'ошибка');
+    updateAssetDetail(details, 'Версия схемы', 'неизвестно');
+    updateAssetDetail(details, 'Размер страницы', 'неизвестно');
+    updateAssetDetail(details, 'Страниц', 'неизвестно');
+    showSqliteViewerError(preview, sqliteInspectorError(error));
+  }
+}
+
+function createSqliteInspector(file, bytes, description, preview, generation) {
+  const inspector = document.createElement('div');
+  inspector.className = 'sqlite-inspector';
+
+  const sidebar = document.createElement('aside');
+  sidebar.className = 'sqlite-sidebar';
+  const sidebarHeader = document.createElement('div');
+  sidebarHeader.className = 'sqlite-sidebar-header';
+  const sidebarTitle = document.createElement('strong');
+  sidebarTitle.textContent = 'Объекты';
+  const sidebarCount = document.createElement('span');
+  sidebarCount.textContent = String(description.objectCount);
+  sidebarHeader.append(sidebarTitle, sidebarCount);
+  sidebar.appendChild(sidebarHeader);
+
+  const objectList = document.createElement('div');
+  objectList.className = 'sqlite-object-list';
+  sidebar.appendChild(objectList);
+
+  const content = document.createElement('section');
+  content.className = 'sqlite-object-view';
+  inspector.append(sidebar, content);
+
+  if (description.objects.length === 0) {
+    const emptyList = document.createElement('p');
+    emptyList.className = 'sqlite-sidebar-empty';
+    emptyList.textContent = 'Таблиц и представлений нет';
+    objectList.appendChild(emptyList);
+    showSqliteViewerMessage(content, 'База данных открылась, но пользовательских таблиц и представлений в ней пока нет.');
+    return inspector;
+  }
+
+  const buttons = new Map();
+  let selectedObject = null;
+  let selectedTab = 'data';
+  let selectionSequence = 0;
+  const previewCache = new Map();
+
+  const selectObject = (object) => {
+    selectedObject = object;
+    selectedTab = 'data';
+    selectionSequence++;
+    for (const [name, button] of buttons) button.classList.toggle('active', name === object.name);
+    renderSelectedObject();
+  };
+
+  for (const object of description.objects) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'sqlite-object-button';
+    button.title = object.name;
+
+    const badge = document.createElement('span');
+    badge.className = `sqlite-object-kind sqlite-object-kind-${object.kind}`;
+    badge.textContent = object.kind === 'table' ? 'T' : 'V';
+    badge.setAttribute('aria-hidden', 'true');
+
+    const name = document.createElement('span');
+    name.className = 'sqlite-object-name';
+    name.textContent = object.name;
+    button.append(badge, name);
+    button.addEventListener('click', () => selectObject(object));
+    objectList.appendChild(button);
+    buttons.set(object.name, button);
+  }
+
+  if (description.truncatedObjectCount > 0) {
+    const warning = document.createElement('p');
+    warning.className = 'sqlite-sidebar-note';
+    warning.textContent = `Скрыто объектов: ${description.truncatedObjectCount}`;
+    sidebar.appendChild(warning);
+  }
+  if (description.hiddenSystemObjectCount > 0) {
+    const note = document.createElement('p');
+    note.className = 'sqlite-sidebar-note';
+    note.textContent = `Системных таблиц скрыто: ${description.hiddenSystemObjectCount}`;
+    sidebar.appendChild(note);
+  }
+
+  function renderSelectedObject() {
+    if (!selectedObject) return;
+    const object = selectedObject;
+    const requestSequence = selectionSequence;
+    content.replaceChildren();
+
+    const header = document.createElement('header');
+    header.className = 'sqlite-object-header';
+    const identity = document.createElement('div');
+    identity.className = 'sqlite-object-identity';
+    const title = document.createElement('strong');
+    title.textContent = object.name;
+    const kind = document.createElement('span');
+    kind.textContent = object.kind === 'table' ? 'Таблица' : 'Представление';
+    identity.append(title, kind);
+
+    const tabs = document.createElement('div');
+    tabs.className = 'sqlite-object-tabs';
+    tabs.setAttribute('role', 'tablist');
+    const dataButton = createSqliteTabButton('Данные', 'data');
+    const schemaButton = createSqliteTabButton('Схема', 'schema');
+    tabs.append(dataButton, schemaButton);
+    header.append(identity, tabs);
+    content.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'sqlite-object-body';
+    content.appendChild(body);
+
+    function createSqliteTabButton(label, tab) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.role = 'tab';
+      button.textContent = label;
+      button.addEventListener('click', () => {
+        selectedTab = tab;
+        updateTabs();
+        renderTab();
+      });
+      return button;
+    }
+
+    function updateTabs() {
+      for (const [button, tab] of [[dataButton, 'data'], [schemaButton, 'schema']]) {
+        const active = selectedTab === tab;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-selected', String(active));
+      }
+    }
+
+    function renderTab() {
+      body.replaceChildren();
+      if (selectedTab === 'schema') {
+        renderSqliteSchema(body, object);
+        return;
+      }
+
+      const cached = previewCache.get(object.name);
+      if (cached) {
+        renderSqliteData(body, cached);
+        return;
+      }
+
+      showSqliteViewerMessage(body, 'Читаем строки...');
+      void window.Idyllium.previewSqliteObjectInBrowser(bytes, object.name, 200)
+        .then((result) => {
+          previewCache.set(object.name, result);
+          if (!isCurrentAssetPreview(file, preview, generation)
+            || selectedObject?.name !== object.name
+            || selectionSequence !== requestSequence
+            || selectedTab !== 'data') return;
+          body.replaceChildren();
+          renderSqliteData(body, result);
+        })
+        .catch((error) => {
+          if (!isCurrentAssetPreview(file, preview, generation)
+            || selectedObject?.name !== object.name
+            || selectionSequence !== requestSequence
+            || selectedTab !== 'data') return;
+          showSqliteViewerError(body, sqliteInspectorError(error));
+        });
+    }
+
+    updateTabs();
+    renderTab();
+  }
+
+  selectObject(description.objects[0]);
+  return inspector;
+}
+
+function renderSqliteSchema(parent, object) {
+  const scroll = document.createElement('div');
+  scroll.className = 'sqlite-schema-scroll';
+
+  const summary = document.createElement('p');
+  summary.className = 'sqlite-schema-summary';
+  summary.textContent = formatRussianCount(object.columns.length, ['столбец', 'столбца', 'столбцов']);
+  scroll.appendChild(summary);
+
+  if (object.sql) {
+    const sqlLabel = document.createElement('div');
+    sqlLabel.className = 'sqlite-schema-label';
+    sqlLabel.textContent = 'SQL создания';
+    const sql = document.createElement('pre');
+    sql.className = 'sqlite-schema-sql';
+    sql.textContent = object.sql;
+    scroll.append(sqlLabel, sql);
+  }
+
+  if (object.columns.length > 0) {
+    const tableScroll = document.createElement('div');
+    tableScroll.className = 'sqlite-table-scroll sqlite-schema-table-scroll';
+    const table = document.createElement('table');
+    table.className = 'sqlite-table sqlite-schema-table';
+    appendSqliteHeaderRow(table, ['#', 'Столбец', 'Тип', 'NOT NULL', 'DEFAULT', 'PK']);
+    const body = document.createElement('tbody');
+    for (const column of object.columns) {
+      const row = document.createElement('tr');
+      appendSqliteTextCell(row, String(column.index), 'th', 'sqlite-row-number');
+      appendSqliteTextCell(row, column.name, 'td');
+      appendSqliteTextCell(row, column.declaredType || 'не указан', 'td', column.declaredType ? '' : 'sqlite-muted-value');
+      appendSqliteTextCell(row, column.notNull ? 'да' : 'нет', 'td');
+      appendSqliteTextCell(row, column.defaultValue ?? 'нет', 'td', column.defaultValue === null ? 'sqlite-muted-value' : '');
+      appendSqliteTextCell(row, column.primaryKeyPosition > 0 ? String(column.primaryKeyPosition) : 'нет', 'td', column.primaryKeyPosition > 0 ? '' : 'sqlite-muted-value');
+      body.appendChild(row);
+    }
+    table.appendChild(body);
+    tableScroll.appendChild(table);
+    scroll.appendChild(tableScroll);
+  }
+
+  parent.appendChild(scroll);
+}
+
+function renderSqliteData(parent, result) {
+  const summary = document.createElement('div');
+  summary.className = 'sqlite-data-summary';
+  const shown = result.rows.length;
+  summary.textContent = `Строк: ${result.totalRows} · показано: ${shown}`;
+  parent.appendChild(summary);
+
+  if (result.truncatedRows || result.truncatedColumns) {
+    const warning = document.createElement('p');
+    warning.className = 'sqlite-preview-warning';
+    const parts = [];
+    if (result.truncatedRows) parts.push('показаны первые 200 строк');
+    if (result.truncatedColumns) parts.push(`показаны первые ${result.columns.length} столбцов из ${result.totalColumns}`);
+    warning.textContent = parts.join(' · ');
+    parent.appendChild(warning);
+  }
+
+  if (result.columns.length === 0) {
+    showSqliteViewerMessage(parent, 'У объекта нет доступных столбцов.');
+    return;
+  }
+
+  const scroll = document.createElement('div');
+  scroll.className = 'sqlite-table-scroll';
+  const table = document.createElement('table');
+  table.className = 'sqlite-table sqlite-data-table';
+  appendSqliteHeaderRow(table, ['#', ...result.columns]);
+  const body = document.createElement('tbody');
+  for (let rowIndex = 0; rowIndex < result.rows.length; rowIndex++) {
+    const row = document.createElement('tr');
+    appendSqliteTextCell(row, String(rowIndex + 1), 'th', 'sqlite-row-number');
+    for (const value of result.rows[rowIndex]) appendSqliteValueCell(row, value);
+    body.appendChild(row);
+  }
+  table.appendChild(body);
+  scroll.appendChild(table);
+  parent.appendChild(scroll);
+
+  if (result.rows.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'sqlite-empty-table';
+    empty.textContent = 'В таблице пока нет строк';
+    scroll.appendChild(empty);
+  }
+}
+
+function appendSqliteHeaderRow(table, labels) {
+  const head = document.createElement('thead');
+  const row = document.createElement('tr');
+  for (let index = 0; index < labels.length; index++) {
+    appendSqliteTextCell(row, labels[index], 'th', index === 0 ? 'sqlite-row-number' : '');
+  }
+  head.appendChild(row);
+  table.appendChild(head);
+}
+
+function appendSqliteTextCell(row, value, tagName, className = '') {
+  const cell = document.createElement(tagName);
+  if (className) cell.className = className;
+  cell.textContent = value;
+  if (value.length > 120) cell.title = value.slice(0, 1000);
+  row.appendChild(cell);
+}
+
+function appendSqliteValueCell(row, value) {
+  const cell = document.createElement('td');
+  if (value === null) {
+    cell.className = 'sqlite-value-null';
+    cell.textContent = 'null';
+  } else if (value instanceof Uint8Array) {
+    cell.className = 'sqlite-value-blob';
+    cell.textContent = `<BLOB ${formatBytes(value.length)}>`;
+  } else {
+    cell.textContent = String(value);
+    if (typeof value === 'number' || typeof value === 'bigint') cell.className = 'sqlite-value-number';
+  }
+  if (cell.textContent.length > 120) cell.title = cell.textContent.slice(0, 1000);
+  row.appendChild(cell);
+}
+
+function showSqliteViewerMessage(parent, message) {
+  parent.replaceChildren();
+  const element = document.createElement('div');
+  element.className = 'sqlite-viewer-message';
+  element.textContent = message;
+  parent.appendChild(element);
+}
+
+function showSqliteViewerError(parent, message) {
+  parent.replaceChildren();
+  const error = document.createElement('div');
+  error.className = 'sqlite-viewer-error';
+  const title = document.createElement('strong');
+  title.textContent = 'Базу данных не удалось открыть';
+  const detail = document.createElement('p');
+  detail.textContent = message;
+  error.append(title, detail);
+  parent.appendChild(error);
+}
+
+function sqliteInspectorError(error) {
+  const message = error instanceof Error ? error.message : String(error || 'неизвестная ошибка');
+  if (/not a database|file is encrypted/iu.test(message)) {
+    return 'Файл не является корректной SQLite-базой или повреждён.';
+  }
+  return message.replace(/^SQLite execution failed:\s*/iu, '');
+}
+
+function renderImageAssetPreview(file, item, bytes, detectedMime, preview, details, generation) {
+  preview.classList.add('asset-preview-image');
+
+  const toolbar = document.createElement('div');
+  toolbar.className = 'asset-image-toolbar';
+
+  const zoomOut = createAssetImageButton('zoom-out', 'Уменьшить');
+  const scaleValue = document.createElement('output');
+  scaleValue.className = 'asset-image-scale';
+  scaleValue.value = '100%';
+  scaleValue.textContent = '100%';
+  scaleValue.setAttribute('aria-live', 'polite');
+  const zoomIn = createAssetImageButton('zoom-in', 'Увеличить');
+  const actualSize = document.createElement('button');
+  actualSize.type = 'button';
+  actualSize.className = 'asset-image-button asset-image-actual-size';
+  actualSize.textContent = '1:1';
+  actualSize.title = 'Исходный размер';
+  actualSize.setAttribute('aria-label', 'Показать в исходном размере');
+  const fit = createAssetImageButton('fit', 'Вписать в область');
+  toolbar.append(zoomOut, scaleValue, zoomIn, actualSize, fit);
+
+  const viewport = document.createElement('div');
+  viewport.className = 'asset-image-viewport';
+  viewport.tabIndex = 0;
+  viewport.setAttribute('aria-label', `Предпросмотр изображения ${shortFileName(file)}`);
+
+  const image = document.createElement('img');
+  image.alt = shortFileName(file);
+  image.draggable = false;
+  viewport.appendChild(image);
+  preview.append(toolbar, viewport);
+
+  const state = {
+    scale: 1,
+    panX: 0,
+    panY: 0,
+    naturalWidth: 1,
+    naturalHeight: 1,
+    fitted: true,
+    pointerId: null,
+    pointerX: 0,
+    pointerY: 0,
+    startPanX: 0,
+    startPanY: 0,
+  };
+  const minScale = 0.01;
+  const maxScale = 16;
+
+  const applyTransform = () => {
+    const bounds = viewport.getBoundingClientRect();
+    const width = state.naturalWidth * state.scale;
+    const height = state.naturalHeight * state.scale;
+    const maxPanX = Math.max(0, (width - bounds.width) / 2);
+    const maxPanY = Math.max(0, (height - bounds.height) / 2);
+    state.panX = clamp(state.panX, -maxPanX, maxPanX);
+    state.panY = clamp(state.panY, -maxPanY, maxPanY);
+
+    image.style.width = `${width}px`;
+    image.style.height = `${height}px`;
+    image.style.left = `calc(50% + ${state.panX}px)`;
+    image.style.top = `calc(50% + ${state.panY}px)`;
+    scaleValue.value = `${Math.round(state.scale * 100)}%`;
+    scaleValue.textContent = scaleValue.value;
+    zoomOut.disabled = state.scale <= minScale + 0.0001;
+    zoomIn.disabled = state.scale >= maxScale - 0.0001;
+    viewport.classList.toggle('can-pan', maxPanX > 0 || maxPanY > 0);
+  };
+
+  const setScale = (nextScale, anchor = null) => {
+    const previousScale = state.scale;
+    const scale = clamp(nextScale, minScale, maxScale);
+    if (Math.abs(scale - previousScale) < 0.0001) return;
+
+    if (anchor) {
+      const bounds = viewport.getBoundingClientRect();
+      const centerX = bounds.width / 2;
+      const centerY = bounds.height / 2;
+      const sourceX = (anchor.x - centerX - state.panX) / previousScale;
+      const sourceY = (anchor.y - centerY - state.panY) / previousScale;
+      state.panX = anchor.x - centerX - sourceX * scale;
+      state.panY = anchor.y - centerY - sourceY * scale;
+    }
+
+    state.scale = scale;
+    state.fitted = false;
+    applyTransform();
+  };
+
+  const fitImage = () => {
+    const bounds = viewport.getBoundingClientRect();
+    const availableWidth = Math.max(1, bounds.width - 28);
+    const availableHeight = Math.max(1, bounds.height - 28);
+    state.scale = clamp(Math.min(
+      availableWidth / state.naturalWidth,
+      availableHeight / state.naturalHeight,
+      1,
+    ), minScale, maxScale);
+    state.panX = 0;
+    state.panY = 0;
+    state.fitted = true;
+    applyTransform();
+  };
+
+  zoomOut.addEventListener('click', () => setScale(state.scale / 1.25));
+  zoomIn.addEventListener('click', () => setScale(state.scale * 1.25));
+  actualSize.addEventListener('click', () => {
+    state.scale = 1;
+    state.panX = 0;
+    state.panY = 0;
+    state.fitted = false;
+    applyTransform();
+  });
+  fit.addEventListener('click', fitImage);
+
+  viewport.addEventListener('wheel', (event) => {
+    event.preventDefault();
+    const bounds = viewport.getBoundingClientRect();
+    const factor = Math.exp(-event.deltaY * 0.0015);
+    setScale(state.scale * factor, {
+      x: event.clientX - bounds.left,
+      y: event.clientY - bounds.top,
+    });
+  }, { passive: false });
+
+  viewport.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0 || !viewport.classList.contains('can-pan')) return;
+    event.preventDefault();
+    state.pointerId = event.pointerId;
+    state.pointerX = event.clientX;
+    state.pointerY = event.clientY;
+    state.startPanX = state.panX;
+    state.startPanY = state.panY;
+    viewport.setPointerCapture(event.pointerId);
+    viewport.classList.add('dragging');
+  });
+
+  viewport.addEventListener('pointermove', (event) => {
+    if (state.pointerId !== event.pointerId) return;
+    state.panX = state.startPanX + event.clientX - state.pointerX;
+    state.panY = state.startPanY + event.clientY - state.pointerY;
+    state.fitted = false;
+    applyTransform();
+  });
+
+  const finishDragging = (event) => {
+    if (state.pointerId !== event.pointerId) return;
+    if (viewport.hasPointerCapture(event.pointerId)) viewport.releasePointerCapture(event.pointerId);
+    state.pointerId = null;
+    viewport.classList.remove('dragging');
+  };
+  viewport.addEventListener('pointerup', finishDragging);
+  viewport.addEventListener('pointercancel', finishDragging);
+  viewport.addEventListener('lostpointercapture', (event) => {
+    if (state.pointerId !== event.pointerId) return;
+    state.pointerId = null;
+    viewport.classList.remove('dragging');
+  });
+
+  image.addEventListener('load', () => {
+    if (!isCurrentAssetPreview(file, preview, generation)) return;
+    state.naturalWidth = Math.max(1, image.naturalWidth);
+    state.naturalHeight = Math.max(1, image.naturalHeight);
+    updateAssetDetail(details, 'Ширина', `${image.naturalWidth}px`);
+    updateAssetDetail(details, 'Высота', `${image.naturalHeight}px`);
+    window.requestAnimationFrame(fitImage);
+
+    const resizeObserver = typeof ResizeObserver === 'function'
+      ? new ResizeObserver(() => {
+          if (!isCurrentAssetPreview(file, preview, generation)) {
+            resizeObserver.disconnect();
+            return;
+          }
+          if (state.fitted) fitImage();
+          else applyTransform();
+        })
+      : null;
+    resizeObserver?.observe(viewport);
+    activeAssetImageCleanup = () => resizeObserver?.disconnect();
+  });
+
+  image.addEventListener('error', () => {
+    if (!isCurrentAssetPreview(file, preview, generation)) return;
+    preview.classList.remove('asset-preview-image');
+    preview.replaceChildren();
+    const empty = document.createElement('div');
+    empty.className = 'asset-preview-empty';
+    empty.textContent = 'Не удалось прочитать изображение';
+    preview.appendChild(empty);
+    updateAssetDetail(details, 'Ширина', 'ошибка');
+    updateAssetDetail(details, 'Высота', 'ошибка');
+  });
+
+  image.src = bytes.length > 0 ? bytesToDataUrlWithMime(detectedMime, bytes) : item.resourceUri;
+}
+
+function createAssetImageButton(icon, label) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'icon-button asset-image-button';
+  button.title = label;
+  button.setAttribute('aria-label', label);
+  button.appendChild(createIcon(icon));
+  return button;
+}
+
+async function renderFontAssetPreview(file, item, bytes, preview, details, generation) {
+  preview.classList.add('asset-preview-font');
+
+  const loading = document.createElement('div');
+  loading.className = 'asset-preview-empty';
+  loading.textContent = 'Загружаем шрифт...';
+  preview.appendChild(loading);
+
+  if (typeof FontFace !== 'function' || !document.fonts || typeof document.fonts.add !== 'function') {
+    loading.textContent = 'Этот браузер не поддерживает предпросмотр шрифтов';
+    updateAssetDetail(details, 'Состояние', 'не поддерживается');
+    return;
+  }
+
+  const family = `IdylliumAssetPreview${++assetFontCounter}`;
+  const source = bytes.length > 0
+    ? bytes.slice().buffer
+    : `url(${JSON.stringify(item.resourceUri || '')})`;
+
+  try {
+    const face = await new FontFace(family, source).load();
+    if (!isCurrentAssetPreview(file, preview, generation)) return;
+
+    document.fonts.add(face);
+    activeAssetFontFace = face;
+    updateAssetDetail(details, 'Состояние', 'загружен');
+    preview.replaceChildren(createFontPreviewContent(family));
+  } catch (error) {
+    if (!isCurrentAssetPreview(file, preview, generation)) return;
+    loading.textContent = 'Не удалось прочитать шрифт';
+    loading.title = error instanceof Error ? error.message : String(error);
+    updateAssetDetail(details, 'Состояние', 'ошибка загрузки');
+  }
+}
+
+function createFontPreviewContent(family) {
+  const content = document.createElement('div');
+  content.className = 'asset-font-preview';
+  content.style.setProperty('--asset-font-size', '36px');
+
+  const toolbar = document.createElement('div');
+  toolbar.className = 'asset-font-toolbar';
+
+  const label = document.createElement('label');
+  label.className = 'asset-font-size-label';
+
+  const range = document.createElement('input');
+  range.type = 'range';
+  range.min = '12';
+  range.max = '96';
+  range.step = '1';
+  range.value = '36';
+  range.className = 'asset-font-size-range';
+  range.setAttribute('aria-label', 'Размер текста предпросмотра');
+
+  const value = document.createElement('output');
+  value.className = 'asset-font-size-value';
+  value.value = '36 px';
+  value.textContent = '36 px';
+
+  range.addEventListener('input', () => {
+    const size = Number(range.value);
+    content.style.setProperty('--asset-font-size', `${size}px`);
+    value.value = `${size} px`;
+    value.textContent = `${size} px`;
+  });
+
+  label.appendChild(range);
+  label.appendChild(value);
+
+  // Цвет образцов задаётся любой colors-фабрикой из курса: RGB/RGBA/HEX/HSL
+  // или именованной константой (colors.RED). Пусто — цвет темы; мусор —
+  // красная рамка, цвет не трогаем (просьба пользователей, 2026-08-22).
+  const colorField = document.createElement('input');
+  colorField.type = 'text';
+  colorField.className = 'asset-font-color-input';
+  colorField.placeholder = 'colors.RGB(120, 200, 255)';
+  colorField.spellcheck = false;
+  colorField.setAttribute('aria-label', 'Цвет текста предпросмотра — фабрика colors');
+  colorField.addEventListener('input', () => {
+    const text = colorField.value.trim();
+    if (text === '') {
+      content.style.removeProperty('--asset-font-color');
+      colorField.classList.remove('invalid');
+      return;
+    }
+    const parsed = parseColorsFactory(text);
+    if (parsed) {
+      content.style.setProperty('--asset-font-color', parsed);
+      colorField.classList.remove('invalid');
+    } else {
+      colorField.classList.add('invalid');
+    }
+  });
+
+  // Caps Lock: с галочкой смотрим на заглавные буквы шрифта, без неё — на
+  // строчные. Регистр меняется через CSS, поэтому исходный текст панграмм
+  // остаётся нетронутым.
+  const caps = document.createElement('label');
+  caps.className = 'asset-font-caps-label';
+
+  const capsInput = document.createElement('input');
+  capsInput.type = 'checkbox';
+  capsInput.className = 'asset-font-caps-input';
+  capsInput.setAttribute('aria-label', 'Показывать заглавные буквы');
+
+  const capsText = document.createElement('span');
+  capsText.textContent = 'Caps Lock';
+
+  capsInput.addEventListener('change', () => {
+    content.classList.toggle('caps-on', capsInput.checked);
+  });
+
+  caps.appendChild(capsInput);
+  caps.appendChild(capsText);
+
+  // «Ж» и «К» — отжимаемые кнопки начертания, как в текстовых редакторах.
+  // Если в файле нет жирного/курсивного начертания, браузер честно
+  // имитирует его сам — об этом предупреждает подпись под образцами.
+  const makeStyleButton = (text, className, ariaLabel, toggleClass) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `asset-font-style-button ${className}`;
+    button.textContent = text;
+    button.title = ariaLabel;
+    button.setAttribute('aria-label', ariaLabel);
+    button.setAttribute('aria-pressed', 'false');
+    button.addEventListener('click', () => {
+      const active = !content.classList.contains(toggleClass);
+      content.classList.toggle(toggleClass, active);
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+    return button;
+  };
+  const boldButton = makeStyleButton('Ж', 'asset-font-bold-button', 'Показать жирное начертание', 'bold-on');
+  const italicButton = makeStyleButton('К', 'asset-font-italic-button', 'Показать курсивное начертание', 'italic-on');
+
+  toolbar.appendChild(caps);
+  toolbar.appendChild(boldButton);
+  toolbar.appendChild(italicButton);
+  toolbar.appendChild(colorField);
+  toolbar.appendChild(label);
+  content.appendChild(toolbar);
+
+  const samples = document.createElement('div');
+  samples.className = 'asset-font-samples';
+  const fontFamily = `"${family}", sans-serif`;
+  const pangrams = [
+    ['Русская панграмма', 'Съешь же ещё этих мягких французских булок, да выпей чаю.'],
+    ['Английская панграмма', 'The quick brown fox jumps over the lazy dog.'],
+    ['Цифры и знаки', '0123456789  + - * / = < >  ( ) [ ] { }'],
+  ];
+
+  for (const [caption, text] of pangrams) {
+    const sample = document.createElement('section');
+    sample.className = 'asset-font-sample';
+
+    const heading = document.createElement('div');
+    heading.className = 'asset-font-sample-label';
+    heading.textContent = caption;
+    sample.appendChild(heading);
+
+    const line = document.createElement('div');
+    line.className = 'asset-font-sample-text';
+    line.style.fontFamily = fontFamily;
+    line.textContent = text;
+    sample.appendChild(line);
+    samples.appendChild(sample);
+  }
+
+  content.appendChild(samples);
+
+  const note = document.createElement('p');
+  note.className = 'asset-font-note';
+  note.textContent = 'Если в файле нет нужного символа, браузер может незаметно подставить его из запасного шрифта. То же с начертаниями «Ж» и «К»: когда в файле нет жирного или курсива, браузер имитирует их сам.';
+  content.appendChild(note);
+  return content;
+}
+
+// Разбор строки-фабрики colors.* в CSS-цвет. Понимает RGB/RGBA/HEX/HSL
+// и именованные константы модуля colors; регистр фабрик — как в курсе.
+const COLORS_CONSTANTS = {
+  BLACK: 'rgb(0, 0, 0)', WHITE: 'rgb(255, 255, 255)', RED: 'rgb(255, 0, 0)',
+  GREEN: 'rgb(0, 255, 0)', BLUE: 'rgb(0, 0, 255)', YELLOW: 'rgb(255, 255, 0)',
+  CYAN: 'rgb(0, 255, 255)', MAGENTA: 'rgb(255, 0, 255)', GRAY: 'rgb(128, 128, 128)',
+  LIGHT_GRAY: 'rgb(192, 192, 192)', DARK_RED: 'rgb(128, 0, 0)',
+  DARK_GREEN: 'rgb(0, 128, 0)', DARK_BLUE: 'rgb(0, 0, 128)',
+  OLIVE: 'rgb(128, 128, 0)', TEAL: 'rgb(0, 128, 128)', PURPLE: 'rgb(128, 0, 128)',
+};
+
+function parseColorsFactory(text) {
+  const source = text.trim().replace(/;$/, '');
+  const constant = /^colors\.([A-Z_]+)$/.exec(source);
+  if (constant) return COLORS_CONSTANTS[constant[1]] ?? null;
+  const call = /^colors\.(RGB|RGBA|HEX|HSL)\s*\(([^)]*)\)$/.exec(source);
+  if (!call) return null;
+  const kind = call[1];
+  const rawArgs = call[2].split(',').map((item) => item.trim());
+  const byte = (item) => {
+    if (!/^\d{1,3}$/.test(item)) return null;
+    const n = Number(item);
+    return n <= 255 ? n : null;
+  };
+  if (kind === 'RGB' && rawArgs.length === 3) {
+    const [r, g, b] = rawArgs.map(byte);
+    return r !== null && g !== null && b !== null ? `rgb(${r}, ${g}, ${b})` : null;
+  }
+  if (kind === 'RGBA' && rawArgs.length === 4) {
+    const [r, g, b] = rawArgs.slice(0, 3).map(byte);
+    const alpha = /^(0|1|0?\.\d+|1\.0+)$/.test(rawArgs[3]) ? Number(rawArgs[3]) : null;
+    return r !== null && g !== null && b !== null && alpha !== null && alpha <= 1
+      ? `rgba(${r}, ${g}, ${b}, ${alpha})` : null;
+  }
+  if (kind === 'HEX' && rawArgs.length === 1) {
+    const m = /^"#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})"$/.exec(rawArgs[0]);
+    return m ? `#${m[1]}` : null;
+  }
+  if (kind === 'HSL' && rawArgs.length === 3) {
+    if (!rawArgs.every((item) => /^\d{1,3}$/.test(item))) return null;
+    const [h, sPct, l] = rawArgs.map(Number);
+    return h <= 360 && sPct <= 100 && l <= 100 ? `hsl(${h}, ${sPct}%, ${l}%)` : null;
+  }
+  return null;
+}
+// отладочная форточка для приёмки
+window.__parseColorsFactory = parseColorsFactory;
+
+function isCurrentAssetPreview(file, preview, generation) {
+  return generation === assetViewerGeneration
+    && viewerHost.currentFile() === file
+    && assetViewer
+    && !assetViewer.hidden
+    && assetViewer.contains(preview);
+}
+
+function releaseAssetViewerFont() {
+  if (!activeAssetFontFace) return;
+  if (document.fonts && typeof document.fonts.delete === 'function') {
+    document.fonts.delete(activeAssetFontFace);
+  }
+  activeAssetFontFace = null;
+}
+
+function releaseAssetViewerResources() {
+  releaseAssetViewerFont();
+  activeAssetImageCleanup?.();
+  activeAssetImageCleanup = null;
+}
+
+function addAssetDetail(parent, label, value, warning = false) {
+  const item = document.createElement('div');
+  item.className = 'asset-detail' + (warning ? ' asset-detail-warning' : '');
+  item.dataset.assetDetail = label;
+
+  const term = document.createElement('dt');
+  term.textContent = label;
+  item.appendChild(term);
+
+  const description = document.createElement('dd');
+  description.textContent = value;
+  item.appendChild(description);
+
+  parent.appendChild(item);
+}
+
+function updateAssetDetail(parent, label, value) {
+  for (const item of parent.querySelectorAll('.asset-detail')) {
+    if (item.dataset.assetDetail !== label) continue;
+    const description = item.querySelector('dd');
+    if (description) description.textContent = value;
+    return;
+  }
+}
+
+  // ── src/color-eyedropper.js ──
+// Пипетка палитры: подбор цвета с любого места превью и самой IDE,
+// включая градиенты и картинки; чтение пикселей и разбор CSS-цветов.
+
+// applyPickedColor(picked) — колбэк ядра: подобранный цвет уходит в палитру
+// (пипетка про пиксели, состоянием пикера владеет ядро).
+
+
+function setupColorEyedropper(applyPickedColor) {
+  const button = document.getElementById('color-eyedropper-button');
+  if (!button) return;
+  let active = false;
+  let hookedDocuments = [];
+  let lens = null;
+
+  button.addEventListener('click', () => {
+    active ? deactivateEyedropper() : activateEyedropper();
+  });
+
+  function activateEyedropper() {
+    active = true;
+    button.classList.add('eyedropper-active');
+    const documents = [document];
+    for (const frame of document.querySelectorAll('iframe')) {
+      try {
+        if (frame.contentDocument) documents.push(frame.contentDocument);
+      } catch (_error) {
+        // чужеродный iframe — пипетке туда нельзя, пропускаем
+      }
+    }
+    hookedDocuments = documents.map((doc) => {
+      // курсор и pointer-events — инжектом стиля: у документа iframe наших
+      // классов нет, а элементы с pointer-events:none (превью картинок!)
+      // невидимы для elementsFromPoint — на время пипетки включаем всем
+      const cursorStyle = doc.createElement('style');
+      cursorStyle.textContent = '* { cursor: crosshair !important; pointer-events: auto !important; }\n'
+        + '#eyedropper-lens, #eyedropper-lens * { pointer-events: none !important; }';
+      (doc.head || doc.documentElement).appendChild(cursorStyle);
+      doc.addEventListener('mousedown', onEyedropperPress, true);
+      doc.addEventListener('click', onEyedropperPick, true);
+      doc.addEventListener('contextmenu', onEyedropperCancel, true);
+      doc.addEventListener('keydown', onEyedropperKey, true);
+      doc.addEventListener('mousemove', onEyedropperMove, true);
+      return { doc, cursorStyle };
+    });
+    lens = document.createElement('div');
+    lens.id = 'eyedropper-lens';
+    lens.hidden = true;
+    const swatch = document.createElement('span');
+    swatch.className = 'eyedropper-lens-swatch';
+    const label = document.createElement('span');
+    label.className = 'eyedropper-lens-label';
+    lens.append(swatch, label);
+    document.body.appendChild(lens);
+  }
+
+  function deactivateEyedropper() {
+    active = false;
+    button.classList.remove('eyedropper-active');
+    for (const { doc, cursorStyle } of hookedDocuments) {
+      try {
+        cursorStyle.remove();
+        doc.removeEventListener('mousedown', onEyedropperPress, true);
+        doc.removeEventListener('click', onEyedropperPick, true);
+        doc.removeEventListener('contextmenu', onEyedropperCancel, true);
+        doc.removeEventListener('keydown', onEyedropperKey, true);
+        doc.removeEventListener('mousemove', onEyedropperMove, true);
+      } catch (_error) {
+        // документ iframe мог быть выгружен — снимать уже нечего
+      }
+    }
+    hookedDocuments = [];
+    if (lens) {
+      lens.remove();
+      lens = null;
+    }
+  }
+
+  // Лупа у курсора: живой цвет ДО клика — иначе в тонкий глиф или узкий
+  // трек не прицелиться. Координаты события из iframe переводятся в систему
+  // родительской страницы через рамку самого iframe.
+  function onEyedropperMove(event) {
+    if (!lens) return;
+    const doc = (event.target && event.target.ownerDocument) || document;
+    let pageX = event.clientX;
+    let pageY = event.clientY;
+    if (doc !== document) {
+      try {
+        const frame = doc.defaultView && doc.defaultView.frameElement;
+        if (!frame) return;
+        const rect = frame.getBoundingClientRect();
+        pageX += rect.left + frame.clientLeft;
+        pageY += rect.top + frame.clientTop;
+      } catch (_error) {
+        return;
+      }
+    }
+    const picked = eyedropperColorAt(doc, event.clientX, event.clientY);
+    lens.hidden = false;
+    const flipX = pageX > window.innerWidth - 150;
+    const flipY = pageY > window.innerHeight - 60;
+    lens.style.left = `${pageX + (flipX ? -18 : 18)}px`;
+    lens.style.top = `${pageY + (flipY ? -46 : 22)}px`;
+    lens.style.transform = `translate(${flipX ? '-100%' : '0'}, 0)`;
+    const swatch = lens.firstElementChild;
+    const label = lens.lastElementChild;
+    if (picked) {
+      swatch.style.background = `rgb(${picked.red}, ${picked.green}, ${picked.blue})`;
+      label.textContent = `${picked.red}, ${picked.green}, ${picked.blue}`;
+    } else {
+      swatch.style.background = 'transparent';
+      label.textContent = '—';
+    }
+  }
+
+  // ВАЖНО: никаких instanceof — цель клика из iframe принадлежит ЧУЖОМУ
+  // окну, и родительские Node/Element её «не признают» (cross-realm).
+  function eyedropperTargetsButton(event) {
+    const target = event.target;
+    return Boolean(target && typeof target.closest === 'function' && target.closest('#color-eyedropper-button'));
+  }
+
+  function onEyedropperPress(event) {
+    if (eyedropperTargetsButton(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  function onEyedropperPick(event) {
+    // повторный клик по самой кнопке — выключение, им займётся её обработчик
+    if (eyedropperTargetsButton(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const doc = (event.target && event.target.ownerDocument) || document;
+    const picked = eyedropperColorAt(doc, event.clientX, event.clientY);
+    if (picked) {
+      applyPickedColor(picked);
+    }
+    deactivateEyedropper();
+  }
+
+  function onEyedropperCancel(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    deactivateEyedropper();
+  }
+
+  function onEyedropperKey(event) {
+    if (event.key !== 'Escape') return;
+    event.preventDefault();
+    event.stopPropagation();
+    deactivateEyedropper();
+  }
+}
+
+// Цвет в точке — послойно, как рисует браузер: текст (по глиф-боксу),
+// пиксели <img>/<canvas>, CSS-градиенты, фоновые цвета. Полупрозрачные
+// слои складываются альфа-композитингом, пока не наберётся непрозрачность.
+function eyedropperColorAt(doc, x, y) {
+  const layers = [];
+  collectEyedropperLayers(doc, x, y, layers);
+  if (layers.length === 0) return null;
+  let red = 0;
+  let green = 0;
+  let blue = 0;
+  let alpha = 0;
+  for (const layer of layers) {
+    const weight = layer.alpha * (1 - alpha);
+    red += layer.red * weight;
+    green += layer.green * weight;
+    blue += layer.blue * weight;
+    alpha += weight;
+    if (alpha >= 0.999) break;
+  }
+  if (alpha <= 0) return null;
+  return { red: Math.round(red / alpha), green: Math.round(green / alpha), blue: Math.round(blue / alpha), alpha };
+}
+
+function collectEyedropperLayers(doc, x, y, layers) {
+  const view = doc.defaultView || window;
+  const textLayer = eyedropperTextAt(doc, x, y);
+  if (textLayer) layers.push(textLayer);
+  const stack = doc.elementsFromPoint(x, y);
+  for (const el of stack) {
+    if (el.id === 'eyedropper-lens' || (typeof el.closest === 'function' && el.closest('#eyedropper-lens'))) continue;
+    const tag = el.tagName;
+    if (tag === 'IFRAME') {
+      try {
+        if (el.contentDocument) {
+          const rect = el.getBoundingClientRect();
+          collectEyedropperLayers(el.contentDocument, x - rect.left - el.clientLeft, y - rect.top - el.clientTop, layers);
+        }
+      } catch (_error) {
+        // чужеродный iframe недоступен — падаем на фон под ним
+      }
+      continue;
+    }
+    if (tag === 'IMG' || tag === 'CANVAS') {
+      const pixel = eyedropperPixelFrom(el, x, y);
+      if (pixel && pixel.alpha > 0) {
+        layers.push(pixel);
+        if (pixel.alpha >= 1) return;
+      }
+      // мимо или сквозь пиксели (letterbox, прозрачность) — ниже лежит
+      // CSS-фон самого элемента, проверяем и его
+    }
+    const style = view.getComputedStyle(el);
+    // фоновые слои элемента: градиенты поверх background-color
+    for (const gradient of parseCssGradients(style.backgroundImage)) {
+      const rect = el.getBoundingClientRect();
+      const layer = sampleLinearGradient(gradient, rect, x, y);
+      if (layer && layer.alpha > 0) {
+        layers.push(layer);
+        if (layer.alpha >= 1) return;
+      }
+    }
+    const background = parseCssColor(style.backgroundColor);
+    if (background && background.alpha > 0) {
+      layers.push(background);
+      if (background.alpha >= 1) return;
+    }
+  }
+}
+
+// Попадание в текст: caret-API даёт ближайший символ; если точка лежит
+// в его прямоугольнике — берём цвет текста. Бокс символа заметно крупнее
+// самого глифа, поэтому по буквам стало можно попадать.
+function eyedropperTextAt(doc, x, y) {
+  try {
+    let node = null;
+    let offset = 0;
+    if (typeof doc.caretPositionFromPoint === 'function') {
+      const position = doc.caretPositionFromPoint(x, y);
+      if (position) { node = position.offsetNode; offset = position.offset; }
+    } else if (typeof doc.caretRangeFromPoint === 'function') {
+      const range = doc.caretRangeFromPoint(x, y);
+      if (range) { node = range.startContainer; offset = range.startOffset; }
+    }
+    if (!node || node.nodeType !== 3 || !node.parentElement) return null;
+    const text = node.textContent;
+    if (!text) return null;
+    // caret даёт позицию ВСТАВКИ (между символами): клик по правой половине
+    // глифа указывает на следующий — проверяем обоих соседей позиции
+    for (const from of [offset - 1, offset]) {
+      if (from < 0 || from >= text.length) continue;
+      if (!text.slice(from, from + 1).trim()) continue;
+      const probe = doc.createRange();
+      probe.setStart(node, from);
+      probe.setEnd(node, from + 1);
+      const rect = probe.getBoundingClientRect();
+      if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) continue;
+      const view = doc.defaultView || window;
+      const color = parseCssColor(view.getComputedStyle(node.parentElement).color);
+      return color && color.alpha > 0 ? color : null;
+    }
+    return null;
+  } catch (_error) {
+    return null;
+  }
+}
+
+// Пиксель из <img>/<canvas>: клик в координатах вьюпорта переводится в
+// собственные пиксели источника, источник рисуется 1:1 в канву-однушку.
+// Для <img> учитывается object-fit (contain/cover/scale-down): клик по
+// «полям» вокруг вписанной картинки прозрачен и проваливается ниже.
+function eyedropperPixelFrom(el, x, y) {
+  try {
+    const rect = el.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return null;
+    const sourceWidth = el.tagName === 'IMG' ? el.naturalWidth : el.width;
+    const sourceHeight = el.tagName === 'IMG' ? el.naturalHeight : el.height;
+    if (!sourceWidth || !sourceHeight) return null;
+    let box = { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
+    if (el.tagName === 'IMG') {
+      const view = (el.ownerDocument && el.ownerDocument.defaultView) || window;
+      const fit = view.getComputedStyle(el).objectFit;
+      if (fit === 'contain' || fit === 'cover' || fit === 'scale-down') {
+        const cover = fit === 'cover';
+        let scale = cover
+          ? Math.max(rect.width / sourceWidth, rect.height / sourceHeight)
+          : Math.min(rect.width / sourceWidth, rect.height / sourceHeight);
+        if (fit === 'scale-down') scale = Math.min(scale, 1);
+        const boxWidth = sourceWidth * scale;
+        const boxHeight = sourceHeight * scale;
+        box = {
+          left: rect.left + (rect.width - boxWidth) / 2,
+          top: rect.top + (rect.height - boxHeight) / 2,
+          width: boxWidth,
+          height: boxHeight,
+        };
+        if (x < box.left || x > box.left + box.width || y < box.top || y > box.top + box.height) return null;
+      }
+    }
+    const px = clamp(Math.floor(((x - box.left) / box.width) * sourceWidth), 0, sourceWidth - 1);
+    const py = clamp(Math.floor(((y - box.top) / box.height) * sourceHeight), 0, sourceHeight - 1);
+    const probe = document.createElement('canvas');
+    probe.width = 1;
+    probe.height = 1;
+    const context = probe.getContext('2d', { willReadFrequently: true });
+    context.drawImage(el, px, py, 1, 1, 0, 0, 1, 1);
+    const data = context.getImageData(0, 0, 1, 1).data;
+    if (data[3] === 0) return null;
+    return { red: data[0], green: data[1], blue: data[2], alpha: data[3] / 255 };
+  } catch (_error) {
+    // канва «испорчена» чужеродной картинкой или источник не читается —
+    // честно отступаем к фоновому цвету под элементом
+    return null;
+  }
+}
+
+// Разбор computed background-image: только слои linear-gradient (в порядке
+// отрисовки — верхний первым); url(...) и прочее пропускаются насквозь.
+function parseCssGradients(backgroundImage) {
+  if (typeof backgroundImage !== 'string' || !backgroundImage.includes('linear-gradient(')) return [];
+  const gradients = [];
+  let index = 0;
+  while ((index = backgroundImage.indexOf('linear-gradient(', index)) !== -1) {
+    let depth = 0;
+    let end = index + 'linear-gradient('.length - 1;
+    for (let i = end; i < backgroundImage.length; i += 1) {
+      if (backgroundImage[i] === '(') depth += 1;
+      if (backgroundImage[i] === ')') {
+        depth -= 1;
+        if (depth === 0) { end = i; break; }
+      }
+    }
+    const body = backgroundImage.slice(index + 'linear-gradient('.length, end);
+    const gradient = parseLinearGradientBody(body);
+    if (gradient) gradients.push(gradient);
+    index = end + 1;
+  }
+  return gradients;
+}
+
+function parseLinearGradientBody(body) {
+  // деление по запятым верхнего уровня (rgb(...) внутри не рвём)
+  const parts = [];
+  let depth = 0;
+  let current = '';
+  for (const ch of body) {
+    if (ch === '(') depth += 1;
+    if (ch === ')') depth -= 1;
+    if (ch === ',' && depth === 0) { parts.push(current.trim()); current = ''; continue; }
+    current += ch;
+  }
+  if (current.trim()) parts.push(current.trim());
+  if (parts.length === 0) return null;
+  let direction = 'to bottom';
+  if (/^to |^-?[\d.]+deg$/u.test(parts[0])) direction = parts.shift();
+  if (parts.length < 2) return null;
+  const stops = [];
+  for (const part of parts) {
+    const positionMatch = /^(.*?)\s+([\d.]+)%$/u.exec(part);
+    const color = parseCssColor(positionMatch ? positionMatch[1] : part);
+    if (!color) return null;
+    stops.push({ color, position: positionMatch ? Number(positionMatch[2]) / 100 : null });
+  }
+  if (stops[0].position === null) stops[0].position = 0;
+  if (stops[stops.length - 1].position === null) stops[stops.length - 1].position = 1;
+  for (let i = 1; i < stops.length - 1; i += 1) {
+    if (stops[i].position === null) {
+      let next = i;
+      while (stops[next].position === null) next += 1;
+      const prev = stops[i - 1].position;
+      stops[i].position = prev + (stops[next].position - prev) / (next - i + 1);
+    }
+  }
+  return { direction, stops };
+}
+
+// Цвет градиента в точке: поддержаны оси to right/left/top/bottom и
+// 0/90/180/270deg; диагонали приближаются ближайшей осью — для пипетки
+// на ползунках и панелях этого достаточно.
+function sampleLinearGradient(gradient, rect, x, y) {
+  if (rect.width === 0 || rect.height === 0) return null;
+  let fraction;
+  const d = gradient.direction;
+  if (d === 'to right' || d === '90deg') fraction = (x - rect.left) / rect.width;
+  else if (d === 'to left' || d === '270deg' || d === '-90deg') fraction = (rect.right - x) / rect.width;
+  else if (d === 'to top' || d === '0deg') fraction = (rect.bottom - y) / rect.height;
+  else if (d === 'to bottom' || d === '180deg') fraction = (y - rect.top) / rect.height;
+  else {
+    const degMatch = /^(-?[\d.]+)deg$/u.exec(d);
+    if (!degMatch) return null;
+    const deg = ((Number(degMatch[1]) % 360) + 360) % 360;
+    if (deg < 45 || deg >= 315) fraction = (rect.bottom - y) / rect.height;
+    else if (deg < 135) fraction = (x - rect.left) / rect.width;
+    else if (deg < 225) fraction = (y - rect.top) / rect.height;
+    else fraction = (rect.right - x) / rect.width;
+  }
+  fraction = clamp(fraction, 0, 1);
+  const stops = gradient.stops;
+  if (fraction <= stops[0].position) return { ...stops[0].color };
+  if (fraction >= stops[stops.length - 1].position) return { ...stops[stops.length - 1].color };
+  for (let i = 1; i < stops.length; i += 1) {
+    if (fraction <= stops[i].position) {
+      const span = stops[i].position - stops[i - 1].position;
+      const t = span === 0 ? 0 : (fraction - stops[i - 1].position) / span;
+      const a = stops[i - 1].color;
+      const b = stops[i].color;
+      return {
+        red: Math.round(a.red + (b.red - a.red) * t),
+        green: Math.round(a.green + (b.green - a.green) * t),
+        blue: Math.round(a.blue + (b.blue - a.blue) * t),
+        alpha: a.alpha + (b.alpha - a.alpha) * t,
+      };
+    }
+  }
+  return null;
+}
+
+function parseCssColor(text) {
+  if (typeof text !== 'string') return null;
+  const match = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)$/u.exec(text.trim());
+  if (!match) return null;
+  return {
+    red: clamp(Number(match[1]), 0, 255),
+    green: clamp(Number(match[2]), 0, 255),
+    blue: clamp(Number(match[3]), 0, 255),
+    alpha: match[4] === undefined ? 1 : clamp(Number(match[4]), 0, 1),
+  };
+}
+
+  // ── src/main.js ──
+// Ядро Web IDE: состояние, редакторы, дерево проекта, запуск программ.
+// Исторически файл жил одним IIFE, поэтому тело пока с отступом в два
+// пробела; темы постепенно выезжают в соседние модули src/*.js.
+// Собирается в classic-скрипт app.js линкером tools/link-web-ide-app.js.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   const MONACO_LANGUAGE_ID = 'idyllium';
   const DEFAULT_EDITOR_FONT_SIZE = 16;
   const DEFAULT_CONSOLE_FONT_SIZE = 13;
   const MIN_FONT_SIZE = 10;
   const MAX_FONT_SIZE = 32;
-  const KEYWORDS = new Set([
-    'and', 'break', 'catch', 'class', 'const', 'constructor', 'continue', 'do', 'else', 'event', 'extends',
-    'false', 'finally', 'for', 'function', 'if', 'not', 'or', 'parent', 'private', 'public', 'return', 'static',
-    'this', 'true', 'null', 'try', 'use', 'while', 'xor',
-  ]);
-  const BUILTIN_TYPES = new Set([
-    'array', 'bool', 'char', 'dyn_array', 'float', 'int', 'set', 'string', 'void',
-  ]);
-  const CLASS_NAMES = new Set([
-    'Array', 'Button', 'Canvas', 'CheckBox', 'Circle', 'Color', 'ComboBox', 'Drawable', 'FloatSpinBox', 'Font', 'Frame',
-    'Animation', 'Bitmap', 'Image', 'ImageBox', 'KeyboardEvent', 'Label', 'Line', 'LineEdit', 'Modal', 'MouseEvent', 'MouseScrollEvent', 'Music',
-    'Database', 'Object', 'ProgressBar', 'RadioButton', 'Rectangle', 'Result', 'Slider', 'Sound', 'SpinBox', 'Sprite', 'Statement', 'Text',
-    'Static', 'TextEdit', 'Timer', 'Value', 'Widget', 'Window',
-  ]);
-  const QUALIFIED_TYPES = new Set([
-    ...CLASS_NAMES,
-    'float32', 'float64', 'int8', 'int16', 'int32', 'int64',
-    'istream', 'ostream', 'stamp', 'stream', 'uint8', 'uint16', 'uint32', 'uint64',
-  ]);
   const SEMANTIC_TOKEN_TYPES = [...window.Idyllium.IDYLLIUM_SEMANTIC_TOKEN_TYPES];
   const SEMANTIC_TOKEN_MODIFIERS = [...window.Idyllium.IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS];
-  const CRC32_TABLE = buildCrc32Table();
   const PROJECT_DB_NAME = 'idyllium-web-ide';
   const PROJECT_DB_STORE = 'project';
   const PROJECT_CATALOG_KEY = 'project-catalog';
@@ -41,43 +2766,8 @@
   const LAYOUT_STORAGE_KEY = 'idyllium-web-layout';
   const FONT_SIZE_STORAGE_KEY = 'idyllium-web-editor-font-size';
   const CONSOLE_FONT_SIZE_STORAGE_KEY = 'idyllium-web-console-font-size';
-  const CSV_ROW_RENDER_LIMIT = 500;
-  const CSV_COLUMN_RENDER_LIMIT = 100;
-  const JSON_NODE_RENDER_LIMIT = 5000;
-  const JSON_DEPTH_RENDER_LIMIT = 64;
   const WEB_IDE_BASE_URL = detectWebIdeBaseUrl();
   const COLOR_PICKER_CHANNELS = ['red', 'green', 'blue', 'alpha'];
-  const ANSI_FOREGROUND_CLASSES = new Map([
-    [30, 'ansi-fg-black'],
-    [31, 'ansi-fg-red'],
-    [32, 'ansi-fg-green'],
-    [33, 'ansi-fg-yellow'],
-    [34, 'ansi-fg-blue'],
-    [35, 'ansi-fg-magenta'],
-    [36, 'ansi-fg-cyan'],
-    [37, 'ansi-fg-white'],
-    [90, 'ansi-fg-bright-black'],
-    [91, 'ansi-fg-bright-red'],
-    [92, 'ansi-fg-bright-green'],
-    [93, 'ansi-fg-bright-yellow'],
-    [94, 'ansi-fg-bright-blue'],
-    [95, 'ansi-fg-bright-magenta'],
-    [96, 'ansi-fg-bright-cyan'],
-    [97, 'ansi-fg-bright-white'],
-  ]);
-
-  const files = new Map([
-    [MAIN_FILE, {
-      kind: 'text',
-      content: [
-        'use console;',
-        '',
-        'main() {',
-        '    console.write("Hello, World!", \'\\n\');',
-        '}',
-      ].join('\n'),
-    }],
-  ]);
   const folders = new Set([WORKSPACE_ROOT]);
   const expandedFolders = new Set([WORKSPACE_ROOT]);
 
@@ -101,6 +2791,7 @@
   let editorFontSize = readSavedEditorFontSize();
   let consoleFontSize = readSavedConsoleFontSize();
   let runAbortController = null;
+  let programRunning = false;
   let currentRuntimeFileSnapshot = null;
   let outputSyncTimer = null;
   let runSequence = 0;
@@ -118,97 +2809,16 @@
   let currentProjectName = DEFAULT_PROJECT_NAME;
   let projectCatalog = [];
   let projectWriteQueue = Promise.resolve();
-  let assetViewerGeneration = 0;
-  let assetFontCounter = 0;
-  let activeAssetFontFace = null;
-  let activeAssetImageCleanup = null;
   let pendingUploadConflictResolve = null;
   const colorCopyTimers = new WeakMap();
   const browserAssetUrls = new Map();
   const structuredViewModes = new Map();
-  const csvHeaderModes = new Map();
-
-  const monacoHost = document.getElementById('monaco-editor');
-  const assetViewer = document.getElementById('asset-viewer');
-  const csvViewer = document.getElementById('csv-viewer');
-  const jsonViewer = document.getElementById('json-viewer');
-  const markdownViewer = document.getElementById('markdown-viewer');
-  const legacyEditor = document.getElementById('legacy-editor');
-  const editor = document.getElementById('editor');
-  const highlight = document.querySelector('#highlight code');
-  const lineNumbers = document.getElementById('line-numbers');
-  const completionPopup = document.getElementById('completion-popup');
-  const editorTitle = document.getElementById('editor-title');
-  const fileList = document.getElementById('file-list');
-  const output = document.getElementById('output');
-  const consoleInputPanel = document.getElementById('console-input-panel');
-  const consoleInput = document.getElementById('console-input');
-  const consoleInputSubmit = document.getElementById('console-input-submit');
-  const status = document.getElementById('status');
-  const guiFrame = document.getElementById('gui-frame');
   // Превью — same-origin iframe: адресуем сообщения только своему origin
   // ('null' остаётся для экзотических хостингов без origin).
   const previewTargetOrigin = window.location.origin && window.location.origin !== 'null'
     ? window.location.origin
     : '*';
-  const workspace = document.querySelector('.workspace');
-  const runtimePane = document.querySelector('.runtime-pane');
-  const runtimeRowResizer = document.getElementById('runtime-row-resizer');
-  const runButton = document.getElementById('run-button');
-  const stopButton = document.getElementById('stop-button');
-  const formatButton = document.getElementById('format-button');
-  const structuredViewToggle = document.getElementById('structured-view-toggle');
-  const structuredTextViewButton = document.getElementById('structured-text-view-button');
-  const structuredDataViewButton = document.getElementById('structured-data-view-button');
-  const newFileButton = document.getElementById('new-file-button');
-  const newFolderButton = document.getElementById('new-folder-button');
-  const fileContextMenu = document.getElementById('file-context-menu');
-  const filePropsModal = document.getElementById('file-props-modal');
-  const uploadButton = document.getElementById('upload-button');
-  const uploadMenu = document.getElementById('upload-menu');
-  const dropArea = document.getElementById('drop-area');
-  const uploadInput = document.getElementById('upload-input');
-  const uploadConflict = document.getElementById('upload-conflict');
-  const uploadConflictName = document.getElementById('upload-conflict-name');
-  const uploadConflictSkip = document.getElementById('upload-conflict-skip');
-  const uploadConflictReplace = document.getElementById('upload-conflict-replace');
-  const themeButton = document.getElementById('theme-button');
-  const themeMenu = document.getElementById('theme-menu');
-  const themeDarkButton = document.getElementById('theme-dark-button');
-  const themeLightButton = document.getElementById('theme-light-button');
-  const fontSizeDecrease = document.getElementById('font-size-decrease');
-  const fontSizeIncrease = document.getElementById('font-size-increase');
-  const fontSizeInput = document.getElementById('font-size-input');
-  const consoleFontSizeDecrease = document.getElementById('console-font-size-decrease');
-  const consoleFontSizeIncrease = document.getElementById('console-font-size-increase');
-  const consoleFontSizeInput = document.getElementById('console-font-size-input');
-  const colorPickerButton = document.getElementById('color-picker-button');
-  const colorPickerMenu = document.getElementById('color-picker-menu');
-  const fileAppMenuWrapper = document.getElementById('file-app-menu-wrapper');
-  const fileAppMenuButton = document.getElementById('file-app-menu-button');
-  const fileAppMenu = document.getElementById('file-app-menu');
-  const fileAppMenuMain = document.getElementById('file-app-menu-main');
-  const fileAppMenuPanel = document.getElementById('file-app-menu-panel');
-  const currentProjectNameElement = document.getElementById('current-project-name');
-  const editAppMenuWrapper = document.getElementById('edit-app-menu-wrapper');
-  const editAppMenuButton = document.getElementById('edit-app-menu-button');
-  const editAppMenu = document.getElementById('edit-app-menu');
-  const colorPreview = document.getElementById('color-preview');
-  const colorRgbCode = document.getElementById('color-rgb-code');
-  const colorHexCode = document.getElementById('color-hex-code');
-  const colorSliders = {
-    red: document.getElementById('color-red-slider'),
-    green: document.getElementById('color-green-slider'),
-    blue: document.getElementById('color-blue-slider'),
-    alpha: document.getElementById('color-alpha-slider'),
-  };
-  const colorInputs = {
-    red: document.getElementById('color-red-input'),
-    green: document.getElementById('color-green-input'),
-    blue: document.getElementById('color-blue-input'),
-    alpha: document.getElementById('color-alpha-input'),
-  };
-
+  registerViewerHost({ openFile, currentFile: () => currentFile });
   applySavedTheme();
   applyEditorFontSize(editorFontSize, false);
   applyConsoleFontSize(consoleFontSize, false);
@@ -1111,8 +3721,10 @@
       startColumn,
       endLineNumber: endLine,
       endColumn,
-      code: diagnostic.code || undefined,
-      source: 'Idyllium',
+      // Машинный code и source в маркер НЕ кладём: Monaco приклеивает их к
+      // тексту хинта одной строкой («…falseIdyllium(unused-variable)»), а
+      // показ кодов людям ждёт отдельного вердикта владельца (2026-08-29).
+      // Инструментам коды доступны через structured diagnostics компилятора.
     };
   }
 
@@ -1356,13 +3968,14 @@
     }
 
     updateFormatButton();
+    updateRunButton();
     updateStructuredViewToggle();
     renderFiles();
     scheduleAutosave();
   }
 
   function showTextEditor() {
-    assetViewerGeneration++;
+    invalidateAssetPreview();
     releaseAssetViewerResources();
     if (assetViewer) {
       assetViewer.hidden = true;
@@ -1475,7 +4088,7 @@
   }
 
   function showCsvTable(file, source) {
-    assetViewerGeneration++;
+    invalidateAssetPreview();
     releaseAssetViewerResources();
     if (monacoHost) monacoHost.hidden = true;
     if (legacyEditor) legacyEditor.hidden = true;
@@ -1498,197 +4111,8 @@
     renderCsvTable(file, source);
   }
 
-  function renderCsvTable(file, source) {
-    if (!csvViewer) return;
-    if (!window.Papa || typeof window.Papa.parse !== 'function') {
-      const unavailable = document.createElement('div');
-      unavailable.className = 'csv-empty';
-      unavailable.textContent = 'Не удалось загрузить модуль просмотра CSV';
-      csvViewer.appendChild(unavailable);
-      return;
-    }
-
-    const result = window.Papa.parse(source, {
-      delimiter: '',
-      newline: '',
-      quoteChar: '"',
-      escapeChar: '"',
-      header: false,
-      dynamicTyping: false,
-      skipEmptyLines: false,
-    });
-    const rows = source.length === 0
-      ? []
-      : result.data.map((row) => (Array.isArray(row) ? row : [row]).map((value) => String(value ?? '')));
-
-    if (/\r?\n$/u.test(source) && rows.length > 0 && rows.at(-1).every((value) => value === '')) {
-      rows.pop();
-    }
-
-    let columnCount = 0;
-    for (const row of rows) columnCount = Math.max(columnCount, row.length);
-    const firstRowIsHeader = csvHeaderModes.get(file) ?? true;
-    const dataRowCount = Math.max(0, rows.length - (firstRowIsHeader ? 1 : 0));
-    const messages = csvMessages(result.errors || [], rows, columnCount);
-    if (dataRowCount > CSV_ROW_RENDER_LIMIT) {
-      messages.push({
-        text: `Показаны первые ${CSV_ROW_RENDER_LIMIT} строк данных из ${dataRowCount}`,
-        error: false,
-      });
-    }
-    if (columnCount > CSV_COLUMN_RENDER_LIMIT) {
-      messages.push({
-        text: `Показаны первые ${CSV_COLUMN_RENDER_LIMIT} столбцов из ${columnCount}`,
-        error: false,
-      });
-    }
-
-    csvViewer.appendChild(createCsvToolbar(file, source, rows.length, columnCount, result.meta?.delimiter || '', firstRowIsHeader));
-    if (messages.length > 0) csvViewer.appendChild(createCsvMessages(messages));
-
-    if (rows.length === 0 || columnCount === 0) {
-      const empty = document.createElement('div');
-      empty.className = 'csv-empty';
-      empty.textContent = 'CSV-файл пуст';
-      csvViewer.appendChild(empty);
-      return;
-    }
-
-    csvViewer.appendChild(createCsvTable(rows, columnCount, firstRowIsHeader));
-  }
-
-  function createCsvToolbar(file, source, rowCount, columnCount, delimiter, firstRowIsHeader) {
-    const toolbar = document.createElement('div');
-    toolbar.className = 'csv-toolbar';
-
-    const summary = document.createElement('div');
-    summary.className = 'csv-summary';
-    summary.textContent = `Строк: ${rowCount} · столбцов: ${columnCount} · разделитель: ${formatCsvDelimiter(delimiter)}`;
-    toolbar.appendChild(summary);
-
-    const option = document.createElement('label');
-    option.className = 'csv-header-option';
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.checked = firstRowIsHeader;
-    checkbox.disabled = rowCount === 0;
-    checkbox.addEventListener('change', () => {
-      csvHeaderModes.set(file, checkbox.checked);
-      csvViewer.replaceChildren();
-      renderCsvTable(file, source);
-    });
-    option.appendChild(checkbox);
-    option.append('Первая строка — заголовки');
-    toolbar.appendChild(option);
-    return toolbar;
-  }
-
-  function createCsvMessages(messages) {
-    const container = document.createElement('div');
-    container.className = 'csv-messages';
-    for (const message of messages.slice(0, 6)) {
-      const item = document.createElement('p');
-      item.className = 'csv-message' + (message.error ? ' csv-message-error' : '');
-      item.textContent = message.text;
-      container.appendChild(item);
-    }
-    if (messages.length > 6) {
-      const rest = document.createElement('p');
-      rest.className = 'csv-message';
-      rest.textContent = `И ещё предупреждений: ${messages.length - 6}`;
-      container.appendChild(rest);
-    }
-    return container;
-  }
-
-  function csvMessages(errors, rows, columnCount) {
-    const messages = [];
-    for (const error of errors) {
-      if (error.code === 'UndetectableDelimiter' && columnCount <= 1) continue;
-      messages.push({ text: formatCsvError(error), error: error.type === 'Quotes' });
-    }
-
-    const irregularRows = [];
-    for (let index = 0; index < rows.length; index++) {
-      if (rows[index].length !== columnCount) irregularRows.push(index + 1);
-    }
-    if (irregularRows.length > 0) {
-      const shown = irregularRows.slice(0, 8).join(', ');
-      const rest = irregularRows.length > 8 ? ` и ещё ${irregularRows.length - 8}` : '';
-      messages.push({
-        text: `В строках разное количество столбцов. Проверь строки: ${shown}${rest}`,
-        error: false,
-      });
-    }
-    return messages;
-  }
-
-  function formatCsvError(error) {
-    const row = Number.isInteger(error.row) ? `Строка ${error.row + 1}: ` : '';
-    const descriptions = {
-      MissingQuotes: 'не закрыта двойная кавычка',
-      InvalidQuotes: 'кавычка расположена неправильно',
-      TooFewFields: 'слишком мало значений',
-      TooManyFields: 'слишком много значений',
-      UndetectableDelimiter: 'не удалось уверенно определить разделитель',
-    };
-    return row + (descriptions[error.code] || `ошибка CSV (${error.code || error.type || 'неизвестная'})`);
-  }
-
-  function formatCsvDelimiter(delimiter) {
-    const names = {
-      ',': 'запятая (,)',
-      ';': 'точка с запятой (;)',
-      '\t': 'табуляция',
-      '|': 'вертикальная черта (|)',
-    };
-    return names[delimiter] || (delimiter ? `«${delimiter}»` : 'не определён');
-  }
-
-  function createCsvTable(rows, columnCount, firstRowIsHeader) {
-    const scroll = document.createElement('div');
-    scroll.className = 'csv-table-scroll';
-    const table = document.createElement('table');
-    table.className = 'csv-table';
-    const renderedColumnCount = Math.min(columnCount, CSV_COLUMN_RENDER_LIMIT);
-
-    const head = document.createElement('thead');
-    const headerRow = document.createElement('tr');
-    appendCsvCell(headerRow, '#', 'th', 'csv-row-number');
-    for (let column = 0; column < renderedColumnCount; column++) {
-      const value = firstRowIsHeader ? rows[0]?.[column] || `Столбец ${column + 1}` : `Столбец ${column + 1}`;
-      appendCsvCell(headerRow, value, 'th');
-    }
-    head.appendChild(headerRow);
-    table.appendChild(head);
-
-    const body = document.createElement('tbody');
-    const firstDataIndex = firstRowIsHeader ? 1 : 0;
-    const lastDataIndex = Math.min(rows.length, firstDataIndex + CSV_ROW_RENDER_LIMIT);
-    for (let rowIndex = firstDataIndex; rowIndex < lastDataIndex; rowIndex++) {
-      const rowElement = document.createElement('tr');
-      appendCsvCell(rowElement, String(rowIndex - firstDataIndex + 1), 'th', 'csv-row-number');
-      for (let column = 0; column < renderedColumnCount; column++) {
-        appendCsvCell(rowElement, rows[rowIndex][column] || '', 'td');
-      }
-      body.appendChild(rowElement);
-    }
-    table.appendChild(body);
-    scroll.appendChild(table);
-    return scroll;
-  }
-
-  function appendCsvCell(row, value, tagName, className = '') {
-    const cell = document.createElement(tagName);
-    if (className) cell.className = className;
-    if (tagName === 'th') cell.scope = className === 'csv-row-number' ? 'row' : 'col';
-    cell.textContent = value;
-    if (value.length > 120) cell.title = value.slice(0, 1000);
-    row.appendChild(cell);
-  }
-
   function showJsonTree(file, source) {
-    assetViewerGeneration++;
+    invalidateAssetPreview();
     releaseAssetViewerResources();
     if (monacoHost) monacoHost.hidden = true;
     if (legacyEditor) legacyEditor.hidden = true;
@@ -1711,53 +4135,8 @@
     renderJsonTree(file, source);
   }
 
-  function renderJsonTree(file, source) {
-    if (!jsonViewer) return;
-    if (source.trim().length === 0) {
-      const empty = document.createElement('div');
-      empty.className = 'json-empty';
-      empty.textContent = 'JSON-файл пуст';
-      jsonViewer.appendChild(empty);
-      return;
-    }
-
-    let value;
-    try {
-      value = JSON.parse(source);
-    } catch (error) {
-      jsonViewer.appendChild(createJsonError(source, error));
-      return;
-    }
-
-    const state = {
-      count: 0,
-      compositeCount: 0,
-      truncated: false,
-      limitMarkerCreated: false,
-      depthTruncated: false,
-    };
-    const tree = document.createElement('div');
-    tree.className = 'json-tree';
-    tree.appendChild(createJsonNode(value, 'Корень', 'root', 0, state));
-
-    jsonViewer.appendChild(createJsonToolbar(value, state));
-    if (state.truncated || state.depthTruncated) {
-      const warning = document.createElement('p');
-      warning.className = 'json-render-warning';
-      warning.textContent = state.truncated
-        ? `Показаны первые ${JSON_NODE_RENDER_LIMIT} узлов. Полный JSON остаётся доступен в текстовом режиме.`
-        : `Вложенность глубже ${JSON_DEPTH_RENDER_LIMIT} уровней скрыта. Полный JSON остаётся доступен в текстовом режиме.`;
-      jsonViewer.appendChild(warning);
-    }
-
-    const scroll = document.createElement('div');
-    scroll.className = 'json-tree-scroll';
-    scroll.appendChild(tree);
-    jsonViewer.appendChild(scroll);
-  }
-
   function showMarkdownPreview(file, source) {
-    assetViewerGeneration++;
+    invalidateAssetPreview();
     releaseAssetViewerResources();
     if (monacoHost) monacoHost.hidden = true;
     if (legacyEditor) legacyEditor.hidden = true;
@@ -1778,1266 +4157,6 @@
     markdownViewer.hidden = false;
     markdownViewer.replaceChildren();
     renderMarkdownPreview(file, source);
-  }
-
-  function renderMarkdownPreview(file, source) {
-    if (!markdownViewer) return;
-    if (!window.marked || typeof window.marked.parse !== 'function'
-      || !window.DOMPurify || typeof window.DOMPurify.sanitize !== 'function') {
-      appendMarkdownMessage('Не удалось загрузить модуль просмотра Markdown');
-      return;
-    }
-    if (source.trim().length === 0) {
-      appendMarkdownMessage('Markdown-файл пуст');
-      return;
-    }
-
-    let rendered;
-    try {
-      rendered = window.marked.parse(source.replace(/^[\u200B-\u200F\uFEFF]/u, ''), {
-        async: false,
-        breaks: false,
-        gfm: true,
-      });
-    } catch (error) {
-      appendMarkdownMessage(`Markdown не удалось разобрать: ${error instanceof Error ? error.message : String(error)}`, true);
-      return;
-    }
-
-    const documentElement = document.createElement('article');
-    documentElement.className = 'markdown-document';
-    documentElement.innerHTML = window.DOMPurify.sanitize(String(rendered), {
-      FORBID_ATTR: ['style'],
-      FORBID_TAGS: ['style', 'script', 'iframe', 'object', 'embed', 'form'],
-      SANITIZE_NAMED_PROPS: true,
-      USE_PROFILES: { html: true },
-    });
-    prepareMarkdownLinks(documentElement, file);
-    prepareMarkdownImages(documentElement, file);
-    markdownViewer.appendChild(documentElement);
-  }
-
-  function appendMarkdownMessage(message, error = false) {
-    const element = document.createElement('div');
-    element.className = `markdown-empty${error ? ' markdown-error' : ''}`;
-    element.textContent = message;
-    markdownViewer.appendChild(element);
-  }
-
-  function prepareMarkdownLinks(documentElement, file) {
-    for (const link of documentElement.querySelectorAll('a[href]')) {
-      const href = link.getAttribute('href') || '';
-      if (/^(?:https?:|mailto:)/iu.test(href)) {
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        continue;
-      }
-      if (href.startsWith('#')) continue;
-      const target = markdownWorkspaceTarget(file, href);
-      if (!target || !files.has(target)) {
-        link.addEventListener('click', (event) => event.preventDefault());
-        link.title = 'Файл не найден в текущем проекте';
-        continue;
-      }
-      link.addEventListener('click', (event) => {
-        event.preventDefault();
-        openFile(target);
-      });
-    }
-  }
-
-  function prepareMarkdownImages(documentElement, file) {
-    for (const image of documentElement.querySelectorAll('img[src]')) {
-      const source = image.getAttribute('src') || '';
-      if (/^(?:https?:|data:|blob:)/iu.test(source)) continue;
-      const target = markdownWorkspaceTarget(file, source);
-      const item = target ? files.get(target) : null;
-      if (!item || item.kind !== 'asset') continue;
-      const bytes = item.bytes instanceof Uint8Array ? item.bytes : assetBytes(item);
-      image.src = bytes.length > 0 ? bytesToDataUrl(target, bytes) : item.resourceUri || source;
-    }
-  }
-
-  function markdownWorkspaceTarget(file, reference) {
-    const pathOnly = String(reference).split(/[?#]/u, 1)[0];
-    if (!pathOnly) return '';
-    let decoded;
-    try {
-      decoded = decodeURIComponent(pathOnly);
-    } catch {
-      decoded = pathOnly;
-    }
-    if (decoded.startsWith('/')) return normalizeWorkspacePath(decoded);
-    const parent = shortFileName(parentPath(file));
-    return normalizeWorkspacePath(parent ? `${parent}/${decoded}` : decoded);
-  }
-
-  function createJsonToolbar(value, state) {
-    const toolbar = document.createElement('div');
-    toolbar.className = 'json-toolbar';
-
-    const summary = document.createElement('div');
-    summary.className = 'json-summary';
-    summary.textContent = `${describeJsonRoot(value)} · показано узлов: ${state.count}`;
-    toolbar.appendChild(summary);
-
-    const actions = document.createElement('div');
-    actions.className = 'json-toolbar-actions';
-    const expand = createJsonToolbarButton('Развернуть всё', () => {
-      for (const details of jsonViewer.querySelectorAll('details')) details.open = true;
-    });
-    const collapse = createJsonToolbarButton('Свернуть всё', () => {
-      for (const details of jsonViewer.querySelectorAll('details')) details.open = false;
-    });
-    expand.disabled = state.compositeCount === 0;
-    collapse.disabled = state.compositeCount === 0;
-    actions.append(expand, collapse);
-    toolbar.appendChild(actions);
-    return toolbar;
-  }
-
-  function createJsonToolbarButton(label, onClick) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'json-toolbar-button';
-    button.textContent = label;
-    button.addEventListener('click', onClick);
-    return button;
-  }
-
-  function createJsonNode(value, label, labelKind, depth, state) {
-    state.count++;
-    const node = document.createElement('div');
-    node.className = 'json-node';
-    const composite = value !== null && typeof value === 'object';
-
-    if (!composite) {
-      const line = document.createElement('div');
-      line.className = 'json-node-line json-leaf';
-      appendJsonLabel(line, label, labelKind);
-      appendJsonPrimitive(line, value);
-      node.appendChild(line);
-      return node;
-    }
-
-    const keys = Array.isArray(value) ? value.map((_, index) => index) : Object.keys(value);
-    const collectionKind = Array.isArray(value) ? 'array' : 'object';
-    if (keys.length === 0 || depth >= JSON_DEPTH_RENDER_LIMIT) {
-      const line = document.createElement('div');
-      line.className = 'json-node-line json-leaf';
-      appendJsonLabel(line, label, labelKind);
-      appendJsonCollectionPreview(line, collectionKind, keys.length);
-      if (depth >= JSON_DEPTH_RENDER_LIMIT && keys.length > 0) {
-        state.depthTruncated = true;
-        const hidden = document.createElement('span');
-        hidden.className = 'json-meta';
-        hidden.textContent = ' вложенность скрыта';
-        line.appendChild(hidden);
-      }
-      node.appendChild(line);
-      return node;
-    }
-
-    state.compositeCount++;
-    const details = document.createElement('details');
-    details.className = 'json-composite';
-    details.open = depth === 0;
-    const summary = document.createElement('summary');
-    summary.className = 'json-node-line';
-    appendJsonLabel(summary, label, labelKind);
-    appendJsonCollectionPreview(summary, collectionKind, keys.length);
-    details.appendChild(summary);
-
-    const children = document.createElement('div');
-    children.className = 'json-children';
-    for (const key of keys) {
-      if (state.count >= JSON_NODE_RENDER_LIMIT) {
-        state.truncated = true;
-        if (!state.limitMarkerCreated) {
-          state.limitMarkerCreated = true;
-          children.appendChild(createJsonLimitMarker());
-        }
-        break;
-      }
-      const child = Array.isArray(value)
-        ? createJsonNode(value[key], `[${key}]`, 'index', depth + 1, state)
-        : createJsonNode(value[key], key, 'key', depth + 1, state);
-      children.appendChild(child);
-    }
-    details.appendChild(children);
-    node.appendChild(details);
-    return node;
-  }
-
-  function appendJsonLabel(parent, label, kind) {
-    const key = document.createElement('span');
-    key.className = kind === 'root' ? 'json-root-label' : kind === 'index' ? 'json-index' : 'json-key';
-    key.textContent = kind === 'key' ? JSON.stringify(label) : label;
-    parent.appendChild(key);
-
-    const separator = document.createElement('span');
-    separator.className = 'json-punctuation';
-    separator.textContent = ': ';
-    parent.appendChild(separator);
-  }
-
-  function appendJsonPrimitive(parent, value) {
-    const type = value === null ? 'null' : typeof value;
-    const rendered = type === 'string' ? JSON.stringify(value) : String(value);
-    const token = document.createElement('span');
-    token.className = `json-value json-value-${type}`;
-    token.textContent = rendered;
-    parent.appendChild(token);
-  }
-
-  function appendJsonCollectionPreview(parent, kind, count) {
-    const punctuation = document.createElement('span');
-    punctuation.className = 'json-punctuation';
-    punctuation.textContent = kind === 'array'
-      ? count === 0 ? '[]' : '[…]'
-      : count === 0 ? '{}' : '{…}';
-    parent.appendChild(punctuation);
-
-    const meta = document.createElement('span');
-    meta.className = 'json-meta';
-    meta.textContent = kind === 'array'
-      ? ` ${formatRussianCount(count, ['элемент', 'элемента', 'элементов'])}`
-      : ` ${formatRussianCount(count, ['поле', 'поля', 'полей'])}`;
-    parent.appendChild(meta);
-  }
-
-  function createJsonLimitMarker() {
-    const marker = document.createElement('div');
-    marker.className = 'json-node-line json-limit-marker';
-    marker.textContent = 'Остальные узлы скрыты';
-    return marker;
-  }
-
-  function describeJsonRoot(value) {
-    if (Array.isArray(value)) {
-      return `Корень: массив · ${formatRussianCount(value.length, ['элемент', 'элемента', 'элементов'])}`;
-    }
-    if (value !== null && typeof value === 'object') {
-      return `Корень: объект · ${formatRussianCount(Object.keys(value).length, ['поле', 'поля', 'полей'])}`;
-    }
-    const names = {
-      string: 'строка',
-      number: 'число',
-      boolean: 'логическое значение',
-      null: 'null',
-    };
-    const type = value === null ? 'null' : typeof value;
-    return `Корень: ${names[type] || type}`;
-  }
-
-  function formatRussianCount(count, forms) {
-    const mod10 = count % 10;
-    const mod100 = count % 100;
-    const form = mod10 === 1 && mod100 !== 11
-      ? forms[0]
-      : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)
-        ? forms[1]
-        : forms[2];
-    return `${count} ${form}`;
-  }
-
-  function createJsonError(source, error) {
-    const location = jsonErrorLocation(source, error);
-    const card = document.createElement('div');
-    card.className = 'json-error';
-
-    const title = document.createElement('strong');
-    title.textContent = 'JSON не удалось разобрать';
-    card.appendChild(title);
-
-    const description = document.createElement('p');
-    description.textContent = `${location.label}${describeJsonSyntaxError(error)}`;
-    card.appendChild(description);
-
-    if (location.lineText !== '') {
-      const snippet = document.createElement('pre');
-      snippet.className = 'json-error-snippet';
-      snippet.textContent = `${location.lineText}\n${' '.repeat(Math.max(0, location.column - 1))}^`;
-      card.appendChild(snippet);
-    }
-
-    const hint = document.createElement('p');
-    hint.className = 'json-error-hint';
-    hint.textContent = 'Вернитесь в режим «Текст», исправьте JSON и откройте дерево снова.';
-    card.appendChild(hint);
-    return card;
-  }
-
-  function jsonErrorLocation(source, error) {
-    const message = String(error?.message || '');
-    const lineColumn = message.match(/line\s+(\d+)\s+column\s+(\d+)/iu);
-    if (lineColumn) {
-      const line = Number(lineColumn[1]);
-      const column = Number(lineColumn[2]);
-      return {
-        line,
-        column,
-        lineText: source.split(/\r\n|\r|\n/u)[line - 1] || '',
-        label: `Строка ${line}, столбец ${column}: `,
-      };
-    }
-
-    const positionMatch = message.match(/position\s+(\d+)/iu);
-    const position = positionMatch ? Number(positionMatch[1]) : source.length;
-    const before = source.slice(0, position);
-    const lines = before.split(/\r\n|\r|\n/u);
-    const line = lines.length;
-    const column = (lines.at(-1)?.length || 0) + 1;
-    return {
-      line,
-      column,
-      lineText: source.split(/\r\n|\r|\n/u)[line - 1] || '',
-      label: `Строка ${line}, столбец ${column}: `,
-    };
-  }
-
-  function describeJsonSyntaxError(error) {
-    const message = String(error?.message || '');
-    if (/unterminated string/iu.test(message)) return 'не закрыта двойная кавычка.';
-    if (/end of JSON|unexpected end/iu.test(message)) return 'JSON неожиданно закончился. Проверьте закрывающие скобки и значения.';
-    if (/property name|double-quoted/iu.test(message)) return 'ключ объекта должен находиться в двойных кавычках.';
-    if (/expected ['"]?,['"]?|after property value|after array element/iu.test(message)) return 'между соседними значениями, полями или элементами нужна запятая.';
-    if (/non-whitespace character after JSON|after JSON data/iu.test(message)) return 'после завершённого JSON обнаружены лишние символы.';
-    return 'нарушен синтаксис JSON. Проверьте кавычки, запятые и скобки.';
-  }
-
-  function showAssetViewer(file, item) {
-    if (monacoHost) monacoHost.hidden = true;
-    if (legacyEditor) legacyEditor.hidden = true;
-    if (csvViewer) {
-      csvViewer.hidden = true;
-      csvViewer.replaceChildren();
-    }
-    if (jsonViewer) {
-      jsonViewer.hidden = true;
-      jsonViewer.replaceChildren();
-    }
-    if (markdownViewer) {
-      markdownViewer.hidden = true;
-      markdownViewer.replaceChildren();
-    }
-    if (!assetViewer) return;
-
-    assetViewer.hidden = false;
-    assetViewer.replaceChildren();
-    releaseAssetViewerResources();
-    const generation = ++assetViewerGeneration;
-
-    const bytes = item.bytes instanceof Uint8Array ? item.bytes : assetBytes(item);
-    const detectedMime = detectAssetMimeType(file, bytes);
-    const extensionMime = mimeTypeForFile(file);
-    const isImage = detectedMime.startsWith('image/');
-    const isAudio = detectedMime.startsWith('audio/');
-    const isFont = detectedMime.startsWith('font/');
-    const isSqlite = detectedMime === 'application/vnd.sqlite3';
-    const alpha = isImage ? imageAlphaInfo(detectedMime, bytes) : 'нет';
-
-    const preview = document.createElement('div');
-    preview.className = 'asset-preview';
-    assetViewer.appendChild(preview);
-
-    const details = document.createElement('dl');
-    details.className = 'asset-details';
-    assetViewer.appendChild(details);
-
-    addAssetDetail(details, 'Файл', shortFileName(file));
-    addAssetDetail(details, 'Размер файла', formatBytes(bytes.length));
-    addAssetDetail(details, 'Тип по расширению', extensionMime);
-    addAssetDetail(details, 'Фактический тип', detectedMime);
-    if (isSqlite) {
-      addAssetDetail(details, 'Объекты', 'загрузка...');
-      addAssetDetail(details, 'Версия схемы', 'загрузка...');
-      addAssetDetail(details, 'Размер страницы', 'загрузка...');
-      addAssetDetail(details, 'Страниц', 'загрузка...');
-    } else if (isAudio) {
-      addAssetDetail(details, 'Длительность', 'загрузка...');
-    } else if (isFont) {
-      addAssetDetail(details, 'Формат', fontFormatName(detectedMime));
-      addAssetDetail(details, 'Состояние', 'загрузка...');
-      addAssetDetail(details, 'Проверка символов', 'визуальная');
-    } else {
-      addAssetDetail(details, 'Ширина', isImage ? 'загрузка...' : 'нет');
-      addAssetDetail(details, 'Высота', isImage ? 'загрузка...' : 'нет');
-      addAssetDetail(details, 'Альфа-канал', alpha);
-    }
-
-    if (extensionMime !== detectedMime && detectedMime !== 'application/octet-stream') {
-      addAssetDetail(details, 'Несовпадение типа', `${extensionMime} -> ${detectedMime}`, true);
-    }
-
-    if (isSqlite) {
-      void renderSqliteAssetPreview(file, bytes, preview, details, generation);
-      return;
-    }
-
-    if (isAudio) {
-      const audio = document.createElement('audio');
-      audio.className = 'asset-audio-player';
-      audio.controls = true;
-      audio.preload = 'metadata';
-      audio.addEventListener('loadedmetadata', () => {
-        updateAssetDetail(details, 'Длительность', formatDuration(audio.duration));
-      });
-      audio.addEventListener('error', () => {
-        updateAssetDetail(details, 'Длительность', 'ошибка');
-      });
-      audio.src = bytes.length > 0 ? bytesToDataUrlWithMime(detectedMime, bytes) : item.resourceUri;
-      preview.classList.add('asset-preview-audio');
-      preview.appendChild(audio);
-      return;
-    }
-
-    if (isFont) {
-      void renderFontAssetPreview(file, item, bytes, preview, details, generation);
-      return;
-    }
-
-    if (!isImage) {
-      const empty = document.createElement('div');
-      empty.className = 'asset-preview-empty';
-      empty.textContent = 'Предпросмотр для этого типа файла пока недоступен';
-      preview.appendChild(empty);
-      return;
-    }
-
-    renderImageAssetPreview(file, item, bytes, detectedMime, preview, details, generation);
-  }
-
-  async function renderSqliteAssetPreview(file, bytes, preview, details, generation) {
-    preview.classList.add('asset-preview-sqlite');
-    showSqliteViewerMessage(preview, 'Открываем базу данных...');
-
-    if (typeof window.Idyllium?.inspectSqliteDatabaseInBrowser !== 'function'
-      || typeof window.Idyllium?.previewSqliteObjectInBrowser !== 'function') {
-      showSqliteViewerError(preview, 'Модуль просмотра SQLite не загрузился.');
-      return;
-    }
-
-    try {
-      const description = await window.Idyllium.inspectSqliteDatabaseInBrowser(bytes);
-      if (!isCurrentAssetPreview(file, preview, generation)) return;
-
-      updateAssetDetail(details, 'Объекты', String(description.objectCount));
-      updateAssetDetail(details, 'Версия схемы', String(description.userVersion));
-      updateAssetDetail(details, 'Размер страницы', formatBytes(description.pageSize));
-      updateAssetDetail(details, 'Страниц', String(description.pageCount));
-      preview.replaceChildren(createSqliteInspector(file, bytes, description, preview, generation));
-    } catch (error) {
-      if (!isCurrentAssetPreview(file, preview, generation)) return;
-      updateAssetDetail(details, 'Объекты', 'ошибка');
-      updateAssetDetail(details, 'Версия схемы', 'неизвестно');
-      updateAssetDetail(details, 'Размер страницы', 'неизвестно');
-      updateAssetDetail(details, 'Страниц', 'неизвестно');
-      showSqliteViewerError(preview, sqliteInspectorError(error));
-    }
-  }
-
-  function createSqliteInspector(file, bytes, description, preview, generation) {
-    const inspector = document.createElement('div');
-    inspector.className = 'sqlite-inspector';
-
-    const sidebar = document.createElement('aside');
-    sidebar.className = 'sqlite-sidebar';
-    const sidebarHeader = document.createElement('div');
-    sidebarHeader.className = 'sqlite-sidebar-header';
-    const sidebarTitle = document.createElement('strong');
-    sidebarTitle.textContent = 'Объекты';
-    const sidebarCount = document.createElement('span');
-    sidebarCount.textContent = String(description.objectCount);
-    sidebarHeader.append(sidebarTitle, sidebarCount);
-    sidebar.appendChild(sidebarHeader);
-
-    const objectList = document.createElement('div');
-    objectList.className = 'sqlite-object-list';
-    sidebar.appendChild(objectList);
-
-    const content = document.createElement('section');
-    content.className = 'sqlite-object-view';
-    inspector.append(sidebar, content);
-
-    if (description.objects.length === 0) {
-      const emptyList = document.createElement('p');
-      emptyList.className = 'sqlite-sidebar-empty';
-      emptyList.textContent = 'Таблиц и представлений нет';
-      objectList.appendChild(emptyList);
-      showSqliteViewerMessage(content, 'База данных открылась, но пользовательских таблиц и представлений в ней пока нет.');
-      return inspector;
-    }
-
-    const buttons = new Map();
-    let selectedObject = null;
-    let selectedTab = 'data';
-    let selectionSequence = 0;
-    const previewCache = new Map();
-
-    const selectObject = (object) => {
-      selectedObject = object;
-      selectedTab = 'data';
-      selectionSequence++;
-      for (const [name, button] of buttons) button.classList.toggle('active', name === object.name);
-      renderSelectedObject();
-    };
-
-    for (const object of description.objects) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'sqlite-object-button';
-      button.title = object.name;
-
-      const badge = document.createElement('span');
-      badge.className = `sqlite-object-kind sqlite-object-kind-${object.kind}`;
-      badge.textContent = object.kind === 'table' ? 'T' : 'V';
-      badge.setAttribute('aria-hidden', 'true');
-
-      const name = document.createElement('span');
-      name.className = 'sqlite-object-name';
-      name.textContent = object.name;
-      button.append(badge, name);
-      button.addEventListener('click', () => selectObject(object));
-      objectList.appendChild(button);
-      buttons.set(object.name, button);
-    }
-
-    if (description.truncatedObjectCount > 0) {
-      const warning = document.createElement('p');
-      warning.className = 'sqlite-sidebar-note';
-      warning.textContent = `Скрыто объектов: ${description.truncatedObjectCount}`;
-      sidebar.appendChild(warning);
-    }
-    if (description.hiddenSystemObjectCount > 0) {
-      const note = document.createElement('p');
-      note.className = 'sqlite-sidebar-note';
-      note.textContent = `Системных таблиц скрыто: ${description.hiddenSystemObjectCount}`;
-      sidebar.appendChild(note);
-    }
-
-    function renderSelectedObject() {
-      if (!selectedObject) return;
-      const object = selectedObject;
-      const requestSequence = selectionSequence;
-      content.replaceChildren();
-
-      const header = document.createElement('header');
-      header.className = 'sqlite-object-header';
-      const identity = document.createElement('div');
-      identity.className = 'sqlite-object-identity';
-      const title = document.createElement('strong');
-      title.textContent = object.name;
-      const kind = document.createElement('span');
-      kind.textContent = object.kind === 'table' ? 'Таблица' : 'Представление';
-      identity.append(title, kind);
-
-      const tabs = document.createElement('div');
-      tabs.className = 'sqlite-object-tabs';
-      tabs.setAttribute('role', 'tablist');
-      const dataButton = createSqliteTabButton('Данные', 'data');
-      const schemaButton = createSqliteTabButton('Схема', 'schema');
-      tabs.append(dataButton, schemaButton);
-      header.append(identity, tabs);
-      content.appendChild(header);
-
-      const body = document.createElement('div');
-      body.className = 'sqlite-object-body';
-      content.appendChild(body);
-
-      function createSqliteTabButton(label, tab) {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.role = 'tab';
-        button.textContent = label;
-        button.addEventListener('click', () => {
-          selectedTab = tab;
-          updateTabs();
-          renderTab();
-        });
-        return button;
-      }
-
-      function updateTabs() {
-        for (const [button, tab] of [[dataButton, 'data'], [schemaButton, 'schema']]) {
-          const active = selectedTab === tab;
-          button.classList.toggle('active', active);
-          button.setAttribute('aria-selected', String(active));
-        }
-      }
-
-      function renderTab() {
-        body.replaceChildren();
-        if (selectedTab === 'schema') {
-          renderSqliteSchema(body, object);
-          return;
-        }
-
-        const cached = previewCache.get(object.name);
-        if (cached) {
-          renderSqliteData(body, cached);
-          return;
-        }
-
-        showSqliteViewerMessage(body, 'Читаем строки...');
-        void window.Idyllium.previewSqliteObjectInBrowser(bytes, object.name, 200)
-          .then((result) => {
-            previewCache.set(object.name, result);
-            if (!isCurrentAssetPreview(file, preview, generation)
-              || selectedObject?.name !== object.name
-              || selectionSequence !== requestSequence
-              || selectedTab !== 'data') return;
-            body.replaceChildren();
-            renderSqliteData(body, result);
-          })
-          .catch((error) => {
-            if (!isCurrentAssetPreview(file, preview, generation)
-              || selectedObject?.name !== object.name
-              || selectionSequence !== requestSequence
-              || selectedTab !== 'data') return;
-            showSqliteViewerError(body, sqliteInspectorError(error));
-          });
-      }
-
-      updateTabs();
-      renderTab();
-    }
-
-    selectObject(description.objects[0]);
-    return inspector;
-  }
-
-  function renderSqliteSchema(parent, object) {
-    const scroll = document.createElement('div');
-    scroll.className = 'sqlite-schema-scroll';
-
-    const summary = document.createElement('p');
-    summary.className = 'sqlite-schema-summary';
-    summary.textContent = formatRussianCount(object.columns.length, ['столбец', 'столбца', 'столбцов']);
-    scroll.appendChild(summary);
-
-    if (object.sql) {
-      const sqlLabel = document.createElement('div');
-      sqlLabel.className = 'sqlite-schema-label';
-      sqlLabel.textContent = 'SQL создания';
-      const sql = document.createElement('pre');
-      sql.className = 'sqlite-schema-sql';
-      sql.textContent = object.sql;
-      scroll.append(sqlLabel, sql);
-    }
-
-    if (object.columns.length > 0) {
-      const tableScroll = document.createElement('div');
-      tableScroll.className = 'sqlite-table-scroll sqlite-schema-table-scroll';
-      const table = document.createElement('table');
-      table.className = 'sqlite-table sqlite-schema-table';
-      appendSqliteHeaderRow(table, ['#', 'Столбец', 'Тип', 'NOT NULL', 'DEFAULT', 'PK']);
-      const body = document.createElement('tbody');
-      for (const column of object.columns) {
-        const row = document.createElement('tr');
-        appendSqliteTextCell(row, String(column.index), 'th', 'sqlite-row-number');
-        appendSqliteTextCell(row, column.name, 'td');
-        appendSqliteTextCell(row, column.declaredType || 'не указан', 'td', column.declaredType ? '' : 'sqlite-muted-value');
-        appendSqliteTextCell(row, column.notNull ? 'да' : 'нет', 'td');
-        appendSqliteTextCell(row, column.defaultValue ?? 'нет', 'td', column.defaultValue === null ? 'sqlite-muted-value' : '');
-        appendSqliteTextCell(row, column.primaryKeyPosition > 0 ? String(column.primaryKeyPosition) : 'нет', 'td', column.primaryKeyPosition > 0 ? '' : 'sqlite-muted-value');
-        body.appendChild(row);
-      }
-      table.appendChild(body);
-      tableScroll.appendChild(table);
-      scroll.appendChild(tableScroll);
-    }
-
-    parent.appendChild(scroll);
-  }
-
-  function renderSqliteData(parent, result) {
-    const summary = document.createElement('div');
-    summary.className = 'sqlite-data-summary';
-    const shown = result.rows.length;
-    summary.textContent = `Строк: ${result.totalRows} · показано: ${shown}`;
-    parent.appendChild(summary);
-
-    if (result.truncatedRows || result.truncatedColumns) {
-      const warning = document.createElement('p');
-      warning.className = 'sqlite-preview-warning';
-      const parts = [];
-      if (result.truncatedRows) parts.push('показаны первые 200 строк');
-      if (result.truncatedColumns) parts.push(`показаны первые ${result.columns.length} столбцов из ${result.totalColumns}`);
-      warning.textContent = parts.join(' · ');
-      parent.appendChild(warning);
-    }
-
-    if (result.columns.length === 0) {
-      showSqliteViewerMessage(parent, 'У объекта нет доступных столбцов.');
-      return;
-    }
-
-    const scroll = document.createElement('div');
-    scroll.className = 'sqlite-table-scroll';
-    const table = document.createElement('table');
-    table.className = 'sqlite-table sqlite-data-table';
-    appendSqliteHeaderRow(table, ['#', ...result.columns]);
-    const body = document.createElement('tbody');
-    for (let rowIndex = 0; rowIndex < result.rows.length; rowIndex++) {
-      const row = document.createElement('tr');
-      appendSqliteTextCell(row, String(rowIndex + 1), 'th', 'sqlite-row-number');
-      for (const value of result.rows[rowIndex]) appendSqliteValueCell(row, value);
-      body.appendChild(row);
-    }
-    table.appendChild(body);
-    scroll.appendChild(table);
-    parent.appendChild(scroll);
-
-    if (result.rows.length === 0) {
-      const empty = document.createElement('p');
-      empty.className = 'sqlite-empty-table';
-      empty.textContent = 'В таблице пока нет строк';
-      scroll.appendChild(empty);
-    }
-  }
-
-  function appendSqliteHeaderRow(table, labels) {
-    const head = document.createElement('thead');
-    const row = document.createElement('tr');
-    for (let index = 0; index < labels.length; index++) {
-      appendSqliteTextCell(row, labels[index], 'th', index === 0 ? 'sqlite-row-number' : '');
-    }
-    head.appendChild(row);
-    table.appendChild(head);
-  }
-
-  function appendSqliteTextCell(row, value, tagName, className = '') {
-    const cell = document.createElement(tagName);
-    if (className) cell.className = className;
-    cell.textContent = value;
-    if (value.length > 120) cell.title = value.slice(0, 1000);
-    row.appendChild(cell);
-  }
-
-  function appendSqliteValueCell(row, value) {
-    const cell = document.createElement('td');
-    if (value === null) {
-      cell.className = 'sqlite-value-null';
-      cell.textContent = 'null';
-    } else if (value instanceof Uint8Array) {
-      cell.className = 'sqlite-value-blob';
-      cell.textContent = `<BLOB ${formatBytes(value.length)}>`;
-    } else {
-      cell.textContent = String(value);
-      if (typeof value === 'number' || typeof value === 'bigint') cell.className = 'sqlite-value-number';
-    }
-    if (cell.textContent.length > 120) cell.title = cell.textContent.slice(0, 1000);
-    row.appendChild(cell);
-  }
-
-  function showSqliteViewerMessage(parent, message) {
-    parent.replaceChildren();
-    const element = document.createElement('div');
-    element.className = 'sqlite-viewer-message';
-    element.textContent = message;
-    parent.appendChild(element);
-  }
-
-  function showSqliteViewerError(parent, message) {
-    parent.replaceChildren();
-    const error = document.createElement('div');
-    error.className = 'sqlite-viewer-error';
-    const title = document.createElement('strong');
-    title.textContent = 'Базу данных не удалось открыть';
-    const detail = document.createElement('p');
-    detail.textContent = message;
-    error.append(title, detail);
-    parent.appendChild(error);
-  }
-
-  function sqliteInspectorError(error) {
-    const message = error instanceof Error ? error.message : String(error || 'неизвестная ошибка');
-    if (/not a database|file is encrypted/iu.test(message)) {
-      return 'Файл не является корректной SQLite-базой или повреждён.';
-    }
-    return message.replace(/^SQLite execution failed:\s*/iu, '');
-  }
-
-  function renderImageAssetPreview(file, item, bytes, detectedMime, preview, details, generation) {
-    preview.classList.add('asset-preview-image');
-
-    const toolbar = document.createElement('div');
-    toolbar.className = 'asset-image-toolbar';
-
-    const zoomOut = createAssetImageButton('zoom-out', 'Уменьшить');
-    const scaleValue = document.createElement('output');
-    scaleValue.className = 'asset-image-scale';
-    scaleValue.value = '100%';
-    scaleValue.textContent = '100%';
-    scaleValue.setAttribute('aria-live', 'polite');
-    const zoomIn = createAssetImageButton('zoom-in', 'Увеличить');
-    const actualSize = document.createElement('button');
-    actualSize.type = 'button';
-    actualSize.className = 'asset-image-button asset-image-actual-size';
-    actualSize.textContent = '1:1';
-    actualSize.title = 'Исходный размер';
-    actualSize.setAttribute('aria-label', 'Показать в исходном размере');
-    const fit = createAssetImageButton('fit', 'Вписать в область');
-    toolbar.append(zoomOut, scaleValue, zoomIn, actualSize, fit);
-
-    const viewport = document.createElement('div');
-    viewport.className = 'asset-image-viewport';
-    viewport.tabIndex = 0;
-    viewport.setAttribute('aria-label', `Предпросмотр изображения ${shortFileName(file)}`);
-
-    const image = document.createElement('img');
-    image.alt = shortFileName(file);
-    image.draggable = false;
-    viewport.appendChild(image);
-    preview.append(toolbar, viewport);
-
-    const state = {
-      scale: 1,
-      panX: 0,
-      panY: 0,
-      naturalWidth: 1,
-      naturalHeight: 1,
-      fitted: true,
-      pointerId: null,
-      pointerX: 0,
-      pointerY: 0,
-      startPanX: 0,
-      startPanY: 0,
-    };
-    const minScale = 0.01;
-    const maxScale = 16;
-
-    const applyTransform = () => {
-      const bounds = viewport.getBoundingClientRect();
-      const width = state.naturalWidth * state.scale;
-      const height = state.naturalHeight * state.scale;
-      const maxPanX = Math.max(0, (width - bounds.width) / 2);
-      const maxPanY = Math.max(0, (height - bounds.height) / 2);
-      state.panX = clamp(state.panX, -maxPanX, maxPanX);
-      state.panY = clamp(state.panY, -maxPanY, maxPanY);
-
-      image.style.width = `${width}px`;
-      image.style.height = `${height}px`;
-      image.style.left = `calc(50% + ${state.panX}px)`;
-      image.style.top = `calc(50% + ${state.panY}px)`;
-      scaleValue.value = `${Math.round(state.scale * 100)}%`;
-      scaleValue.textContent = scaleValue.value;
-      zoomOut.disabled = state.scale <= minScale + 0.0001;
-      zoomIn.disabled = state.scale >= maxScale - 0.0001;
-      viewport.classList.toggle('can-pan', maxPanX > 0 || maxPanY > 0);
-    };
-
-    const setScale = (nextScale, anchor = null) => {
-      const previousScale = state.scale;
-      const scale = clamp(nextScale, minScale, maxScale);
-      if (Math.abs(scale - previousScale) < 0.0001) return;
-
-      if (anchor) {
-        const bounds = viewport.getBoundingClientRect();
-        const centerX = bounds.width / 2;
-        const centerY = bounds.height / 2;
-        const sourceX = (anchor.x - centerX - state.panX) / previousScale;
-        const sourceY = (anchor.y - centerY - state.panY) / previousScale;
-        state.panX = anchor.x - centerX - sourceX * scale;
-        state.panY = anchor.y - centerY - sourceY * scale;
-      }
-
-      state.scale = scale;
-      state.fitted = false;
-      applyTransform();
-    };
-
-    const fitImage = () => {
-      const bounds = viewport.getBoundingClientRect();
-      const availableWidth = Math.max(1, bounds.width - 28);
-      const availableHeight = Math.max(1, bounds.height - 28);
-      state.scale = clamp(Math.min(
-        availableWidth / state.naturalWidth,
-        availableHeight / state.naturalHeight,
-        1,
-      ), minScale, maxScale);
-      state.panX = 0;
-      state.panY = 0;
-      state.fitted = true;
-      applyTransform();
-    };
-
-    zoomOut.addEventListener('click', () => setScale(state.scale / 1.25));
-    zoomIn.addEventListener('click', () => setScale(state.scale * 1.25));
-    actualSize.addEventListener('click', () => {
-      state.scale = 1;
-      state.panX = 0;
-      state.panY = 0;
-      state.fitted = false;
-      applyTransform();
-    });
-    fit.addEventListener('click', fitImage);
-
-    viewport.addEventListener('wheel', (event) => {
-      event.preventDefault();
-      const bounds = viewport.getBoundingClientRect();
-      const factor = Math.exp(-event.deltaY * 0.0015);
-      setScale(state.scale * factor, {
-        x: event.clientX - bounds.left,
-        y: event.clientY - bounds.top,
-      });
-    }, { passive: false });
-
-    viewport.addEventListener('pointerdown', (event) => {
-      if (event.button !== 0 || !viewport.classList.contains('can-pan')) return;
-      event.preventDefault();
-      state.pointerId = event.pointerId;
-      state.pointerX = event.clientX;
-      state.pointerY = event.clientY;
-      state.startPanX = state.panX;
-      state.startPanY = state.panY;
-      viewport.setPointerCapture(event.pointerId);
-      viewport.classList.add('dragging');
-    });
-
-    viewport.addEventListener('pointermove', (event) => {
-      if (state.pointerId !== event.pointerId) return;
-      state.panX = state.startPanX + event.clientX - state.pointerX;
-      state.panY = state.startPanY + event.clientY - state.pointerY;
-      state.fitted = false;
-      applyTransform();
-    });
-
-    const finishDragging = (event) => {
-      if (state.pointerId !== event.pointerId) return;
-      if (viewport.hasPointerCapture(event.pointerId)) viewport.releasePointerCapture(event.pointerId);
-      state.pointerId = null;
-      viewport.classList.remove('dragging');
-    };
-    viewport.addEventListener('pointerup', finishDragging);
-    viewport.addEventListener('pointercancel', finishDragging);
-    viewport.addEventListener('lostpointercapture', (event) => {
-      if (state.pointerId !== event.pointerId) return;
-      state.pointerId = null;
-      viewport.classList.remove('dragging');
-    });
-
-    image.addEventListener('load', () => {
-      if (!isCurrentAssetPreview(file, preview, generation)) return;
-      state.naturalWidth = Math.max(1, image.naturalWidth);
-      state.naturalHeight = Math.max(1, image.naturalHeight);
-      updateAssetDetail(details, 'Ширина', `${image.naturalWidth}px`);
-      updateAssetDetail(details, 'Высота', `${image.naturalHeight}px`);
-      window.requestAnimationFrame(fitImage);
-
-      const resizeObserver = typeof ResizeObserver === 'function'
-        ? new ResizeObserver(() => {
-            if (!isCurrentAssetPreview(file, preview, generation)) {
-              resizeObserver.disconnect();
-              return;
-            }
-            if (state.fitted) fitImage();
-            else applyTransform();
-          })
-        : null;
-      resizeObserver?.observe(viewport);
-      activeAssetImageCleanup = () => resizeObserver?.disconnect();
-    });
-
-    image.addEventListener('error', () => {
-      if (!isCurrentAssetPreview(file, preview, generation)) return;
-      preview.classList.remove('asset-preview-image');
-      preview.replaceChildren();
-      const empty = document.createElement('div');
-      empty.className = 'asset-preview-empty';
-      empty.textContent = 'Не удалось прочитать изображение';
-      preview.appendChild(empty);
-      updateAssetDetail(details, 'Ширина', 'ошибка');
-      updateAssetDetail(details, 'Высота', 'ошибка');
-    });
-
-    image.src = bytes.length > 0 ? bytesToDataUrlWithMime(detectedMime, bytes) : item.resourceUri;
-  }
-
-  function createAssetImageButton(icon, label) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'icon-button asset-image-button';
-    button.title = label;
-    button.setAttribute('aria-label', label);
-    button.appendChild(createIcon(icon));
-    return button;
-  }
-
-  async function renderFontAssetPreview(file, item, bytes, preview, details, generation) {
-    preview.classList.add('asset-preview-font');
-
-    const loading = document.createElement('div');
-    loading.className = 'asset-preview-empty';
-    loading.textContent = 'Загружаем шрифт...';
-    preview.appendChild(loading);
-
-    if (typeof FontFace !== 'function' || !document.fonts || typeof document.fonts.add !== 'function') {
-      loading.textContent = 'Этот браузер не поддерживает предпросмотр шрифтов';
-      updateAssetDetail(details, 'Состояние', 'не поддерживается');
-      return;
-    }
-
-    const family = `IdylliumAssetPreview${++assetFontCounter}`;
-    const source = bytes.length > 0
-      ? bytes.slice().buffer
-      : `url(${JSON.stringify(item.resourceUri || '')})`;
-
-    try {
-      const face = await new FontFace(family, source).load();
-      if (!isCurrentAssetPreview(file, preview, generation)) return;
-
-      document.fonts.add(face);
-      activeAssetFontFace = face;
-      updateAssetDetail(details, 'Состояние', 'загружен');
-      preview.replaceChildren(createFontPreviewContent(family));
-    } catch (error) {
-      if (!isCurrentAssetPreview(file, preview, generation)) return;
-      loading.textContent = 'Не удалось прочитать шрифт';
-      loading.title = error instanceof Error ? error.message : String(error);
-      updateAssetDetail(details, 'Состояние', 'ошибка загрузки');
-    }
-  }
-
-  function createFontPreviewContent(family) {
-    const content = document.createElement('div');
-    content.className = 'asset-font-preview';
-    content.style.setProperty('--asset-font-size', '36px');
-
-    const toolbar = document.createElement('div');
-    toolbar.className = 'asset-font-toolbar';
-
-    const label = document.createElement('label');
-    label.className = 'asset-font-size-label';
-
-    const range = document.createElement('input');
-    range.type = 'range';
-    range.min = '12';
-    range.max = '96';
-    range.step = '1';
-    range.value = '36';
-    range.className = 'asset-font-size-range';
-    range.setAttribute('aria-label', 'Размер текста предпросмотра');
-
-    const value = document.createElement('output');
-    value.className = 'asset-font-size-value';
-    value.value = '36 px';
-    value.textContent = '36 px';
-
-    range.addEventListener('input', () => {
-      const size = Number(range.value);
-      content.style.setProperty('--asset-font-size', `${size}px`);
-      value.value = `${size} px`;
-      value.textContent = `${size} px`;
-    });
-
-    label.appendChild(range);
-    label.appendChild(value);
-
-    // Цвет образцов задаётся любой colors-фабрикой из курса: RGB/RGBA/HEX/HSL
-    // или именованной константой (colors.RED). Пусто — цвет темы; мусор —
-    // красная рамка, цвет не трогаем (просьба пользователей, 2026-08-22).
-    const colorField = document.createElement('input');
-    colorField.type = 'text';
-    colorField.className = 'asset-font-color-input';
-    colorField.placeholder = 'colors.RGB(120, 200, 255)';
-    colorField.spellcheck = false;
-    colorField.setAttribute('aria-label', 'Цвет текста предпросмотра — фабрика colors');
-    colorField.addEventListener('input', () => {
-      const text = colorField.value.trim();
-      if (text === '') {
-        content.style.removeProperty('--asset-font-color');
-        colorField.classList.remove('invalid');
-        return;
-      }
-      const parsed = parseColorsFactory(text);
-      if (parsed) {
-        content.style.setProperty('--asset-font-color', parsed);
-        colorField.classList.remove('invalid');
-      } else {
-        colorField.classList.add('invalid');
-      }
-    });
-
-    // Caps Lock: с галочкой смотрим на заглавные буквы шрифта, без неё — на
-    // строчные. Регистр меняется через CSS, поэтому исходный текст панграмм
-    // остаётся нетронутым.
-    const caps = document.createElement('label');
-    caps.className = 'asset-font-caps-label';
-
-    const capsInput = document.createElement('input');
-    capsInput.type = 'checkbox';
-    capsInput.className = 'asset-font-caps-input';
-    capsInput.setAttribute('aria-label', 'Показывать заглавные буквы');
-
-    const capsText = document.createElement('span');
-    capsText.textContent = 'Caps Lock';
-
-    capsInput.addEventListener('change', () => {
-      content.classList.toggle('caps-on', capsInput.checked);
-    });
-
-    caps.appendChild(capsInput);
-    caps.appendChild(capsText);
-
-    // «Ж» и «К» — отжимаемые кнопки начертания, как в текстовых редакторах.
-    // Если в файле нет жирного/курсивного начертания, браузер честно
-    // имитирует его сам — об этом предупреждает подпись под образцами.
-    const makeStyleButton = (text, className, ariaLabel, toggleClass) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = `asset-font-style-button ${className}`;
-      button.textContent = text;
-      button.title = ariaLabel;
-      button.setAttribute('aria-label', ariaLabel);
-      button.setAttribute('aria-pressed', 'false');
-      button.addEventListener('click', () => {
-        const active = !content.classList.contains(toggleClass);
-        content.classList.toggle(toggleClass, active);
-        button.classList.toggle('active', active);
-        button.setAttribute('aria-pressed', String(active));
-      });
-      return button;
-    };
-    const boldButton = makeStyleButton('Ж', 'asset-font-bold-button', 'Показать жирное начертание', 'bold-on');
-    const italicButton = makeStyleButton('К', 'asset-font-italic-button', 'Показать курсивное начертание', 'italic-on');
-
-    toolbar.appendChild(caps);
-    toolbar.appendChild(boldButton);
-    toolbar.appendChild(italicButton);
-    toolbar.appendChild(colorField);
-    toolbar.appendChild(label);
-    content.appendChild(toolbar);
-
-    const samples = document.createElement('div');
-    samples.className = 'asset-font-samples';
-    const fontFamily = `"${family}", sans-serif`;
-    const pangrams = [
-      ['Русская панграмма', 'Съешь же ещё этих мягких французских булок, да выпей чаю.'],
-      ['Английская панграмма', 'The quick brown fox jumps over the lazy dog.'],
-      ['Цифры и знаки', '0123456789  + - * / = < >  ( ) [ ] { }'],
-    ];
-
-    for (const [caption, text] of pangrams) {
-      const sample = document.createElement('section');
-      sample.className = 'asset-font-sample';
-
-      const heading = document.createElement('div');
-      heading.className = 'asset-font-sample-label';
-      heading.textContent = caption;
-      sample.appendChild(heading);
-
-      const line = document.createElement('div');
-      line.className = 'asset-font-sample-text';
-      line.style.fontFamily = fontFamily;
-      line.textContent = text;
-      sample.appendChild(line);
-      samples.appendChild(sample);
-    }
-
-    content.appendChild(samples);
-
-    const note = document.createElement('p');
-    note.className = 'asset-font-note';
-    note.textContent = 'Если в файле нет нужного символа, браузер может незаметно подставить его из запасного шрифта. То же с начертаниями «Ж» и «К»: когда в файле нет жирного или курсива, браузер имитирует их сам.';
-    content.appendChild(note);
-    return content;
-  }
-
-  // Разбор строки-фабрики colors.* в CSS-цвет. Понимает RGB/RGBA/HEX/HSL
-  // и именованные константы модуля colors; регистр фабрик — как в курсе.
-  const COLORS_CONSTANTS = {
-    BLACK: 'rgb(0, 0, 0)', WHITE: 'rgb(255, 255, 255)', RED: 'rgb(255, 0, 0)',
-    GREEN: 'rgb(0, 255, 0)', BLUE: 'rgb(0, 0, 255)', YELLOW: 'rgb(255, 255, 0)',
-    CYAN: 'rgb(0, 255, 255)', MAGENTA: 'rgb(255, 0, 255)', GRAY: 'rgb(128, 128, 128)',
-    LIGHT_GRAY: 'rgb(192, 192, 192)', DARK_RED: 'rgb(128, 0, 0)',
-    DARK_GREEN: 'rgb(0, 128, 0)', DARK_BLUE: 'rgb(0, 0, 128)',
-    OLIVE: 'rgb(128, 128, 0)', TEAL: 'rgb(0, 128, 128)', PURPLE: 'rgb(128, 0, 128)',
-  };
-
-  function parseColorsFactory(text) {
-    const source = text.trim().replace(/;$/, '');
-    const constant = /^colors\.([A-Z_]+)$/.exec(source);
-    if (constant) return COLORS_CONSTANTS[constant[1]] ?? null;
-    const call = /^colors\.(RGB|RGBA|HEX|HSL)\s*\(([^)]*)\)$/.exec(source);
-    if (!call) return null;
-    const kind = call[1];
-    const rawArgs = call[2].split(',').map((item) => item.trim());
-    const byte = (item) => {
-      if (!/^\d{1,3}$/.test(item)) return null;
-      const n = Number(item);
-      return n <= 255 ? n : null;
-    };
-    if (kind === 'RGB' && rawArgs.length === 3) {
-      const [r, g, b] = rawArgs.map(byte);
-      return r !== null && g !== null && b !== null ? `rgb(${r}, ${g}, ${b})` : null;
-    }
-    if (kind === 'RGBA' && rawArgs.length === 4) {
-      const [r, g, b] = rawArgs.slice(0, 3).map(byte);
-      const alpha = /^(0|1|0?\.\d+|1\.0+)$/.test(rawArgs[3]) ? Number(rawArgs[3]) : null;
-      return r !== null && g !== null && b !== null && alpha !== null && alpha <= 1
-        ? `rgba(${r}, ${g}, ${b}, ${alpha})` : null;
-    }
-    if (kind === 'HEX' && rawArgs.length === 1) {
-      const m = /^"#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})"$/.exec(rawArgs[0]);
-      return m ? `#${m[1]}` : null;
-    }
-    if (kind === 'HSL' && rawArgs.length === 3) {
-      if (!rawArgs.every((item) => /^\d{1,3}$/.test(item))) return null;
-      const [h, sPct, l] = rawArgs.map(Number);
-      return h <= 360 && sPct <= 100 && l <= 100 ? `hsl(${h}, ${sPct}%, ${l}%)` : null;
-    }
-    return null;
-  }
-  // отладочная форточка для приёмки
-  window.__parseColorsFactory = parseColorsFactory;
-
-  function isCurrentAssetPreview(file, preview, generation) {
-    return generation === assetViewerGeneration
-      && currentFile === file
-      && assetViewer
-      && !assetViewer.hidden
-      && assetViewer.contains(preview);
-  }
-
-  function releaseAssetViewerFont() {
-    if (!activeAssetFontFace) return;
-    if (document.fonts && typeof document.fonts.delete === 'function') {
-      document.fonts.delete(activeAssetFontFace);
-    }
-    activeAssetFontFace = null;
-  }
-
-  function releaseAssetViewerResources() {
-    releaseAssetViewerFont();
-    activeAssetImageCleanup?.();
-    activeAssetImageCleanup = null;
-  }
-
-  function addAssetDetail(parent, label, value, warning = false) {
-    const item = document.createElement('div');
-    item.className = 'asset-detail' + (warning ? ' asset-detail-warning' : '');
-    item.dataset.assetDetail = label;
-
-    const term = document.createElement('dt');
-    term.textContent = label;
-    item.appendChild(term);
-
-    const description = document.createElement('dd');
-    description.textContent = value;
-    item.appendChild(description);
-
-    parent.appendChild(item);
-  }
-
-  function updateAssetDetail(parent, label, value) {
-    for (const item of parent.querySelectorAll('.asset-detail')) {
-      if (item.dataset.assetDetail !== label) continue;
-      const description = item.querySelector('dd');
-      if (description) description.textContent = value;
-      return;
-    }
   }
 
   function updateFormatButton() {
@@ -3578,17 +4697,6 @@
     positionFileContextMenu(left, top);
   }
 
-  function itemName(path) {
-    return normalizeWorkspacePath(path).split('/').pop() || '';
-  }
-
-  // Путь ученика — тот, что пишется в file.open(): относительно корня проекта.
-  function studentPath(path) {
-    const normalized = normalizeWorkspacePath(path);
-    if (normalized === WORKSPACE_ROOT) return '';
-    return normalized.startsWith(WORKSPACE_ROOT + '/') ? normalized.slice(WORKSPACE_ROOT.length + 1) : normalized;
-  }
-
   function copyProjectItemText(text, doneMessage) {
     const fallbackCopy = () => {
       const scratch = document.createElement('textarea');
@@ -3900,42 +5008,6 @@
     if (node.type === 'folder') return expandedFolders.has(node.path) ? 'folder-open' : 'folder';
     if (node.kind === 'asset' && isSqliteFile(node.name)) return 'database';
     return node.kind === 'asset' ? 'asset' : 'file';
-  }
-
-  function createIcon(name) {
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 24 24');
-    svg.setAttribute('aria-hidden', 'true');
-
-    if (name === 'menu') {
-      for (const y of [6, 12, 18]) {
-        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        circle.setAttribute('cx', '12');
-        circle.setAttribute('cy', String(y));
-        circle.setAttribute('r', '1.5');
-        circle.setAttribute('fill', 'currentColor');
-        svg.appendChild(circle);
-      }
-      return svg;
-    }
-
-    const paths = {
-      file: ['M6 3h8l4 4v14H6z', 'M14 3v5h5'],
-      asset: ['M5 4h14v16H5z', 'M8 15l3-3 2 2 2-3 3 4', 'M9 8h.01'],
-      database: ['M4 5c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3Z', 'M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5', 'M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7'],
-      folder: ['M3 6h7l2 2h9v11H3z'],
-      'folder-open': ['M3 7h7l2 2h9l-2 10H3z', 'M3 7v12'],
-      'zoom-in': ['M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z', 'm21 21-4.35-4.35', 'M11 8v6', 'M8 11h6'],
-      'zoom-out': ['M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z', 'm21 21-4.35-4.35', 'M8 11h6'],
-      fit: ['M3 7V5a2 2 0 0 1 2-2h2', 'M17 3h2a2 2 0 0 1 2 2v2', 'M21 17v2a2 2 0 0 1-2 2h-2', 'M7 21H5a2 2 0 0 1-2-2v-2'],
-    };
-
-    for (const d of paths[name] || paths.file) {
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', d);
-      svg.appendChild(path);
-    }
-    return svg;
   }
 
   function setProjectFile(path, item) {
@@ -4265,6 +5337,14 @@
   }
 
   async function runProgram() {
+    // Запускается файл, открытый в редакторе (вердикт владельца 2026-08-29;
+    // так же ведёт себя расширение VS Code). Для не-программ кнопка серая
+    // (updateRunButton); этот отказ — страховка на обходные пути запуска,
+    // работающую программу он не прерывает.
+    if (!runnableFileIsOpen()) {
+      setStatus(`«${shortFileName(currentFile)}» — не программа: запускается открытый файл .idyl`, true);
+      return;
+    }
     stopProgram(true);
     const runId = ++runSequence;
     previewGeneration++;
@@ -4282,7 +5362,7 @@
 
     try {
       const prepared = await window.Idyllium.prepareIdylliumBrowserProgram({
-        entryFile: MAIN_FILE,
+        entryFile: currentFile,
         files: browserFiles(),
         abortSignal: controller.signal,
         networkListen: browserNetworkListen,
@@ -4302,6 +5382,17 @@
       if (!prepared.compilation.success || !prepared.runtime) {
         setOutputText(formatDiagnosticText(prepared.compilation.diagnosticsText), 'output-error');
         setStatus('Ошибка компиляции', true);
+        runAbortController = null;
+        currentRuntimeFileSnapshot = null;
+        setRunControls(false);
+        return;
+      }
+
+      // Файл-модуль без main() раньше «успешно выполнялся» в тишину —
+      // честнее сказать словами, с чего начинается программа.
+      if (!prepared.compilation.ast?.main) {
+        setOutputText(`В файле «${shortFileName(currentFile)}» нет функции main() — запускать нечего.`, 'output-error');
+        setStatus('Нет main()', true);
         runAbortController = null;
         currentRuntimeFileSnapshot = null;
         setRunControls(false);
@@ -4381,9 +5472,28 @@
     }
   }
 
+  // У «Запустить» два независимых выключателя: работающая программа и
+  // не-программа в редакторе (вердикт владельца 2026-08-29 — кнопка-пустышка
+  // хуже серой кнопки). «Остановить» живёт только от состояния запуска.
   function setRunControls(active, keepStopAvailable = false) {
-    runButton.disabled = active;
+    programRunning = active;
     stopButton.disabled = !(active || keepStopAvailable);
+    updateRunButton();
+  }
+
+  function runnableFileIsOpen() {
+    const item = files.get(currentFile);
+    return Boolean(item && item.kind === 'text' && currentFile.endsWith('.idyl'));
+  }
+
+  function updateRunButton() {
+    const runnable = runnableFileIsOpen();
+    runButton.disabled = programRunning || !runnable;
+    const title = runnable || programRunning
+      ? 'Запустить: Ctrl+Enter'
+      : 'Запускается открытый файл .idyl — откройте программу';
+    runButton.title = title;
+    runButton.setAttribute('aria-label', title);
   }
 
   function startOutputSync() {
@@ -4771,74 +5881,6 @@
     return currentFile;
   }
 
-  function assetBytes(item) {
-    if (item.bytes instanceof Uint8Array) return item.bytes;
-    if (item.resourceUri && item.resourceUri.startsWith('data:')) return dataUrlBytes(item.resourceUri);
-    return new TextEncoder().encode(item.content || '');
-  }
-
-  function zipBytes(entries) {
-    const chunks = [];
-    const central = [];
-    let offset = 0;
-
-    for (const entry of entries) {
-      const nameBytes = new TextEncoder().encode(entry.name);
-      const data = entry.bytes;
-      const crc = crc32(data);
-      const localHeader = zipHeader(30);
-      localHeader.setUint32(0, 0x04034b50, true);
-      localHeader.setUint16(4, 20, true);
-      localHeader.setUint16(6, 0x0800, true);
-      localHeader.setUint16(8, 0, true);
-      localHeader.setUint16(10, dosTime().time, true);
-      localHeader.setUint16(12, dosTime().date, true);
-      localHeader.setUint32(14, crc, true);
-      localHeader.setUint32(18, data.length, true);
-      localHeader.setUint32(22, data.length, true);
-      localHeader.setUint16(26, nameBytes.length, true);
-      localHeader.setUint16(28, 0, true);
-
-      chunks.push(new Uint8Array(localHeader.buffer), nameBytes, data);
-
-      const centralHeader = zipHeader(46);
-      centralHeader.setUint32(0, 0x02014b50, true);
-      centralHeader.setUint16(4, 20, true);
-      centralHeader.setUint16(6, 20, true);
-      centralHeader.setUint16(8, 0x0800, true);
-      centralHeader.setUint16(10, 0, true);
-      centralHeader.setUint16(12, dosTime().time, true);
-      centralHeader.setUint16(14, dosTime().date, true);
-      centralHeader.setUint32(16, crc, true);
-      centralHeader.setUint32(20, data.length, true);
-      centralHeader.setUint32(24, data.length, true);
-      centralHeader.setUint16(28, nameBytes.length, true);
-      centralHeader.setUint16(30, 0, true);
-      centralHeader.setUint16(32, 0, true);
-      centralHeader.setUint16(34, 0, true);
-      centralHeader.setUint16(36, 0, true);
-      centralHeader.setUint32(38, 0, true);
-      centralHeader.setUint32(42, offset, true);
-
-      central.push(new Uint8Array(centralHeader.buffer), nameBytes);
-      offset += localHeader.byteLength + nameBytes.length + data.length;
-    }
-
-    const centralOffset = offset;
-    const centralSize = central.reduce((sum, chunk) => sum + chunk.length, 0);
-    const end = zipHeader(22);
-    end.setUint32(0, 0x06054b50, true);
-    end.setUint16(4, 0, true);
-    end.setUint16(6, 0, true);
-    end.setUint16(8, entries.length, true);
-    end.setUint16(10, entries.length, true);
-    end.setUint32(12, centralSize, true);
-    end.setUint32(16, centralOffset, true);
-    end.setUint16(20, 0, true);
-
-    return concatBytes([...chunks, ...central, new Uint8Array(end.buffer)]);
-  }
-
   function textSourceMap() {
     const result = new Map();
     for (const [file, item] of files) {
@@ -4868,31 +5910,13 @@
     }
   }
 
-  async function runRuntimeActionWithSnapshotPump(action) {
-    let finished = false;
-    let failure = null;
-    const actionPromise = Promise.resolve()
-      .then(action)
-      .catch((error) => {
-        failure = error;
-      })
-      .finally(() => {
-        finished = true;
-      });
-
-    while (!finished) {
-      await Promise.race([actionPromise, waitForSnapshotPump()]);
+  function runRuntimeActionWithSnapshotPump(action) {
+    // Механика насоса живёт в ядре (src/runtime/gui-pump.ts) — одна на
+    // Web IDE и расширение VS Code; здесь только «перекачка кадра» IDE.
+    return window.Idyllium.runActionWithSnapshotPump(action, () => {
       syncRuntimeOutput();
       syncRuntimeFilesFromSnapshot();
       sendRuntimeSnapshot();
-    }
-
-    if (failure) throw failure;
-  }
-
-  function waitForSnapshotPump() {
-    return new Promise((resolve) => {
-      window.setTimeout(resolve, 50);
     });
   }
 
@@ -5050,84 +6074,6 @@
     output.appendChild(span);
   }
 
-  function appendAnsiText(parent, text) {
-    for (const node of ansiTextNodes(String(text))) {
-      parent.appendChild(node);
-    }
-  }
-
-  function ansiTextNodes(text) {
-    let foregroundClass = '';
-    let bold = false;
-    let buffer = '';
-    const nodes = [];
-
-    const flush = () => {
-      if (!buffer) return;
-      if (!foregroundClass && !bold) {
-        nodes.push(document.createTextNode(buffer));
-      } else {
-        const span = document.createElement('span');
-        span.className = [foregroundClass, bold ? 'ansi-bold' : ''].filter(Boolean).join(' ');
-        span.textContent = buffer;
-        nodes.push(span);
-      }
-      buffer = '';
-    };
-
-    for (let index = 0; index < text.length;) {
-      if (text.charCodeAt(index) !== 27 || text[index + 1] !== '[') {
-        buffer += text[index];
-        index += 1;
-        continue;
-      }
-
-      const end = findAnsiEnd(text, index + 2);
-      if (end === -1) {
-        index += 1;
-        continue;
-      }
-
-      flush();
-      const command = text[end];
-      const rawParams = text.slice(index + 2, end);
-      const params = rawParams.length === 0 ? [0] : rawParams.split(';').map((part) => Number(part || 0));
-
-      if (command === 'm') {
-        for (const param of params) {
-          if (param === 0) {
-            foregroundClass = '';
-            bold = false;
-          } else if (param === 1) {
-            bold = true;
-          } else if (param === 22) {
-            bold = false;
-          } else if (param === 39) {
-            foregroundClass = '';
-          } else if (ANSI_FOREGROUND_CLASSES.has(param)) {
-            foregroundClass = ANSI_FOREGROUND_CLASSES.get(param);
-          }
-        }
-      } else if (command === 'J' && params.some((param) => param === 2 || param === 3)) {
-        nodes.length = 0;
-        buffer = '';
-      }
-
-      index = end + 1;
-    }
-
-    flush();
-    return nodes;
-  }
-
-  function findAnsiEnd(text, start) {
-    for (let index = start; index < text.length; index += 1) {
-      const code = text.charCodeAt(index);
-      if (code >= 0x40 && code <= 0x7e) return index;
-    }
-    return -1;
-  }
-
   function setStatus(text, isError = false) {
     if (!status) return;
     status.textContent = text;
@@ -5231,10 +6177,6 @@
   function saveLayoutWidths() {
     const current = currentLayoutWidths();
     window.localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(current));
-  }
-
-  function clamp(value, min, max) {
-    return Math.max(min, Math.min(max, value));
   }
 
   function scheduleAutosave() {
@@ -5968,77 +6910,6 @@
     updateEditorVisuals();
   }
 
-  function highlightIdyllium(source) {
-    let html = '';
-    let index = 0;
-    while (index < source.length) {
-      const rest = source.slice(index);
-      const comment = /^\/\/[^\n]*/u.exec(rest);
-      if (comment) {
-        html += span('tok-comment', comment[0]);
-        index += comment[0].length;
-        continue;
-      }
-
-      const string = /^(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/u.exec(rest);
-      if (string) {
-        html += span('tok-string', string[0]);
-        index += string[0].length;
-        continue;
-      }
-
-      const number = /^\b\d+(?:\.\d+)?\b/u.exec(rest);
-      if (number) {
-        html += span('tok-number', number[0]);
-        index += number[0].length;
-        continue;
-      }
-
-      const member = /^(\.)([A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*)/u.exec(rest);
-      if (member) {
-        html += escapeHtml(member[1]) + span('tok-property', member[2]);
-        index += member[0].length;
-        continue;
-      }
-
-      const identifier = /^[A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*/u.exec(rest);
-      if (identifier) {
-        const word = identifier[0];
-        const afterWord = source.slice(index + word.length);
-        const beforeWord = source.slice(0, index);
-        const isDeclaredClass = /\b(?:class|extends)\s*$/u.test(beforeWord);
-        const isTypePosition = /^[A-ZА-ЯЁ]/u.test(word)
-          && /^\s+[A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*\s*(?:[=;,)\[]|$)/u.test(afterWord);
-        if (KEYWORDS.has(word)) {
-          html += span('tok-keyword', word);
-        } else if (BUILTIN_TYPES.has(word) || CLASS_NAMES.has(word) || QUALIFIED_TYPES.has(word) || isDeclaredClass || isTypePosition) {
-          html += span('tok-type', word);
-        } else if (/^\s*\(/u.test(afterWord)) {
-          html += span('tok-function', word);
-        } else {
-          html += escapeHtml(word);
-        }
-        index += word.length;
-        continue;
-      }
-
-      html += escapeHtml(source[index]);
-      index++;
-    }
-    return html.endsWith('\n') ? html + ' ' : html;
-  }
-
-  function span(className, text) {
-    return '<span class="' + className + '">' + escapeHtml(text) + '</span>';
-  }
-
-  function escapeHtml(value) {
-    return String(value)
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;');
-  }
-
   function toggleFileAppMenu() {
     fileAppMenu.hidden ? showFileAppMenu() : hideFileAppMenu();
   }
@@ -6460,7 +7331,10 @@
     copyRgbButton.addEventListener('click', () => copyColorText(colorRgbCode.textContent, copyRgbButton));
     copyHexButton.addEventListener('click', () => copyColorText(colorHexCode.textContent, copyHexButton));
 
-    setupColorEyedropper();
+    setupColorEyedropper((picked) => {
+      colorPickerState = { ...colorPickerState, red: picked.red, green: picked.green, blue: picked.blue };
+      updateColorPickerUi();
+    });
   }
 
   // Пипетка: свой внутривкладочный механизм — без нативного EyeDropper
@@ -6469,422 +7343,6 @@
   // пиксель через канву, у прочих элементов — фоновый цвет по computed style;
   // same-origin iframe (GUI-превью) прозрачен для пипетки. Esc/ПКМ — отмена.
   // Альфа не трогается. Работает во всех браузерах.
-  function setupColorEyedropper() {
-    const button = document.getElementById('color-eyedropper-button');
-    if (!button) return;
-    let active = false;
-    let hookedDocuments = [];
-    let lens = null;
-
-    button.addEventListener('click', () => {
-      active ? deactivateEyedropper() : activateEyedropper();
-    });
-
-    function activateEyedropper() {
-      active = true;
-      button.classList.add('eyedropper-active');
-      const documents = [document];
-      for (const frame of document.querySelectorAll('iframe')) {
-        try {
-          if (frame.contentDocument) documents.push(frame.contentDocument);
-        } catch (_error) {
-          // чужеродный iframe — пипетке туда нельзя, пропускаем
-        }
-      }
-      hookedDocuments = documents.map((doc) => {
-        // курсор и pointer-events — инжектом стиля: у документа iframe наших
-        // классов нет, а элементы с pointer-events:none (превью картинок!)
-        // невидимы для elementsFromPoint — на время пипетки включаем всем
-        const cursorStyle = doc.createElement('style');
-        cursorStyle.textContent = '* { cursor: crosshair !important; pointer-events: auto !important; }\n'
-          + '#eyedropper-lens, #eyedropper-lens * { pointer-events: none !important; }';
-        (doc.head || doc.documentElement).appendChild(cursorStyle);
-        doc.addEventListener('mousedown', onEyedropperPress, true);
-        doc.addEventListener('click', onEyedropperPick, true);
-        doc.addEventListener('contextmenu', onEyedropperCancel, true);
-        doc.addEventListener('keydown', onEyedropperKey, true);
-        doc.addEventListener('mousemove', onEyedropperMove, true);
-        return { doc, cursorStyle };
-      });
-      lens = document.createElement('div');
-      lens.id = 'eyedropper-lens';
-      lens.hidden = true;
-      const swatch = document.createElement('span');
-      swatch.className = 'eyedropper-lens-swatch';
-      const label = document.createElement('span');
-      label.className = 'eyedropper-lens-label';
-      lens.append(swatch, label);
-      document.body.appendChild(lens);
-    }
-
-    function deactivateEyedropper() {
-      active = false;
-      button.classList.remove('eyedropper-active');
-      for (const { doc, cursorStyle } of hookedDocuments) {
-        try {
-          cursorStyle.remove();
-          doc.removeEventListener('mousedown', onEyedropperPress, true);
-          doc.removeEventListener('click', onEyedropperPick, true);
-          doc.removeEventListener('contextmenu', onEyedropperCancel, true);
-          doc.removeEventListener('keydown', onEyedropperKey, true);
-          doc.removeEventListener('mousemove', onEyedropperMove, true);
-        } catch (_error) {
-          // документ iframe мог быть выгружен — снимать уже нечего
-        }
-      }
-      hookedDocuments = [];
-      if (lens) {
-        lens.remove();
-        lens = null;
-      }
-    }
-
-    // Лупа у курсора: живой цвет ДО клика — иначе в тонкий глиф или узкий
-    // трек не прицелиться. Координаты события из iframe переводятся в систему
-    // родительской страницы через рамку самого iframe.
-    function onEyedropperMove(event) {
-      if (!lens) return;
-      const doc = (event.target && event.target.ownerDocument) || document;
-      let pageX = event.clientX;
-      let pageY = event.clientY;
-      if (doc !== document) {
-        try {
-          const frame = doc.defaultView && doc.defaultView.frameElement;
-          if (!frame) return;
-          const rect = frame.getBoundingClientRect();
-          pageX += rect.left + frame.clientLeft;
-          pageY += rect.top + frame.clientTop;
-        } catch (_error) {
-          return;
-        }
-      }
-      const picked = eyedropperColorAt(doc, event.clientX, event.clientY);
-      lens.hidden = false;
-      const flipX = pageX > window.innerWidth - 150;
-      const flipY = pageY > window.innerHeight - 60;
-      lens.style.left = `${pageX + (flipX ? -18 : 18)}px`;
-      lens.style.top = `${pageY + (flipY ? -46 : 22)}px`;
-      lens.style.transform = `translate(${flipX ? '-100%' : '0'}, 0)`;
-      const swatch = lens.firstElementChild;
-      const label = lens.lastElementChild;
-      if (picked) {
-        swatch.style.background = `rgb(${picked.red}, ${picked.green}, ${picked.blue})`;
-        label.textContent = `${picked.red}, ${picked.green}, ${picked.blue}`;
-      } else {
-        swatch.style.background = 'transparent';
-        label.textContent = '—';
-      }
-    }
-
-    // ВАЖНО: никаких instanceof — цель клика из iframe принадлежит ЧУЖОМУ
-    // окну, и родительские Node/Element её «не признают» (cross-realm).
-    function eyedropperTargetsButton(event) {
-      const target = event.target;
-      return Boolean(target && typeof target.closest === 'function' && target.closest('#color-eyedropper-button'));
-    }
-
-    function onEyedropperPress(event) {
-      if (eyedropperTargetsButton(event)) return;
-      event.preventDefault();
-      event.stopPropagation();
-    }
-
-    function onEyedropperPick(event) {
-      // повторный клик по самой кнопке — выключение, им займётся её обработчик
-      if (eyedropperTargetsButton(event)) return;
-      event.preventDefault();
-      event.stopPropagation();
-      const doc = (event.target && event.target.ownerDocument) || document;
-      const picked = eyedropperColorAt(doc, event.clientX, event.clientY);
-      if (picked) {
-        colorPickerState = { ...colorPickerState, red: picked.red, green: picked.green, blue: picked.blue };
-        updateColorPickerUi();
-      }
-      deactivateEyedropper();
-    }
-
-    function onEyedropperCancel(event) {
-      event.preventDefault();
-      event.stopPropagation();
-      deactivateEyedropper();
-    }
-
-    function onEyedropperKey(event) {
-      if (event.key !== 'Escape') return;
-      event.preventDefault();
-      event.stopPropagation();
-      deactivateEyedropper();
-    }
-  }
-
-  // Цвет в точке — послойно, как рисует браузер: текст (по глиф-боксу),
-  // пиксели <img>/<canvas>, CSS-градиенты, фоновые цвета. Полупрозрачные
-  // слои складываются альфа-композитингом, пока не наберётся непрозрачность.
-  function eyedropperColorAt(doc, x, y) {
-    const layers = [];
-    collectEyedropperLayers(doc, x, y, layers);
-    if (layers.length === 0) return null;
-    let red = 0;
-    let green = 0;
-    let blue = 0;
-    let alpha = 0;
-    for (const layer of layers) {
-      const weight = layer.alpha * (1 - alpha);
-      red += layer.red * weight;
-      green += layer.green * weight;
-      blue += layer.blue * weight;
-      alpha += weight;
-      if (alpha >= 0.999) break;
-    }
-    if (alpha <= 0) return null;
-    return { red: Math.round(red / alpha), green: Math.round(green / alpha), blue: Math.round(blue / alpha), alpha };
-  }
-
-  function collectEyedropperLayers(doc, x, y, layers) {
-    const view = doc.defaultView || window;
-    const textLayer = eyedropperTextAt(doc, x, y);
-    if (textLayer) layers.push(textLayer);
-    const stack = doc.elementsFromPoint(x, y);
-    for (const el of stack) {
-      if (el.id === 'eyedropper-lens' || (typeof el.closest === 'function' && el.closest('#eyedropper-lens'))) continue;
-      const tag = el.tagName;
-      if (tag === 'IFRAME') {
-        try {
-          if (el.contentDocument) {
-            const rect = el.getBoundingClientRect();
-            collectEyedropperLayers(el.contentDocument, x - rect.left - el.clientLeft, y - rect.top - el.clientTop, layers);
-          }
-        } catch (_error) {
-          // чужеродный iframe недоступен — падаем на фон под ним
-        }
-        continue;
-      }
-      if (tag === 'IMG' || tag === 'CANVAS') {
-        const pixel = eyedropperPixelFrom(el, x, y);
-        if (pixel && pixel.alpha > 0) {
-          layers.push(pixel);
-          if (pixel.alpha >= 1) return;
-        }
-        // мимо или сквозь пиксели (letterbox, прозрачность) — ниже лежит
-        // CSS-фон самого элемента, проверяем и его
-      }
-      const style = view.getComputedStyle(el);
-      // фоновые слои элемента: градиенты поверх background-color
-      for (const gradient of parseCssGradients(style.backgroundImage)) {
-        const rect = el.getBoundingClientRect();
-        const layer = sampleLinearGradient(gradient, rect, x, y);
-        if (layer && layer.alpha > 0) {
-          layers.push(layer);
-          if (layer.alpha >= 1) return;
-        }
-      }
-      const background = parseCssColor(style.backgroundColor);
-      if (background && background.alpha > 0) {
-        layers.push(background);
-        if (background.alpha >= 1) return;
-      }
-    }
-  }
-
-  // Попадание в текст: caret-API даёт ближайший символ; если точка лежит
-  // в его прямоугольнике — берём цвет текста. Бокс символа заметно крупнее
-  // самого глифа, поэтому по буквам стало можно попадать.
-  function eyedropperTextAt(doc, x, y) {
-    try {
-      let node = null;
-      let offset = 0;
-      if (typeof doc.caretPositionFromPoint === 'function') {
-        const position = doc.caretPositionFromPoint(x, y);
-        if (position) { node = position.offsetNode; offset = position.offset; }
-      } else if (typeof doc.caretRangeFromPoint === 'function') {
-        const range = doc.caretRangeFromPoint(x, y);
-        if (range) { node = range.startContainer; offset = range.startOffset; }
-      }
-      if (!node || node.nodeType !== 3 || !node.parentElement) return null;
-      const text = node.textContent;
-      if (!text) return null;
-      // caret даёт позицию ВСТАВКИ (между символами): клик по правой половине
-      // глифа указывает на следующий — проверяем обоих соседей позиции
-      for (const from of [offset - 1, offset]) {
-        if (from < 0 || from >= text.length) continue;
-        if (!text.slice(from, from + 1).trim()) continue;
-        const probe = doc.createRange();
-        probe.setStart(node, from);
-        probe.setEnd(node, from + 1);
-        const rect = probe.getBoundingClientRect();
-        if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) continue;
-        const view = doc.defaultView || window;
-        const color = parseCssColor(view.getComputedStyle(node.parentElement).color);
-        return color && color.alpha > 0 ? color : null;
-      }
-      return null;
-    } catch (_error) {
-      return null;
-    }
-  }
-
-  // Пиксель из <img>/<canvas>: клик в координатах вьюпорта переводится в
-  // собственные пиксели источника, источник рисуется 1:1 в канву-однушку.
-  // Для <img> учитывается object-fit (contain/cover/scale-down): клик по
-  // «полям» вокруг вписанной картинки прозрачен и проваливается ниже.
-  function eyedropperPixelFrom(el, x, y) {
-    try {
-      const rect = el.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return null;
-      const sourceWidth = el.tagName === 'IMG' ? el.naturalWidth : el.width;
-      const sourceHeight = el.tagName === 'IMG' ? el.naturalHeight : el.height;
-      if (!sourceWidth || !sourceHeight) return null;
-      let box = { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
-      if (el.tagName === 'IMG') {
-        const view = (el.ownerDocument && el.ownerDocument.defaultView) || window;
-        const fit = view.getComputedStyle(el).objectFit;
-        if (fit === 'contain' || fit === 'cover' || fit === 'scale-down') {
-          const cover = fit === 'cover';
-          let scale = cover
-            ? Math.max(rect.width / sourceWidth, rect.height / sourceHeight)
-            : Math.min(rect.width / sourceWidth, rect.height / sourceHeight);
-          if (fit === 'scale-down') scale = Math.min(scale, 1);
-          const boxWidth = sourceWidth * scale;
-          const boxHeight = sourceHeight * scale;
-          box = {
-            left: rect.left + (rect.width - boxWidth) / 2,
-            top: rect.top + (rect.height - boxHeight) / 2,
-            width: boxWidth,
-            height: boxHeight,
-          };
-          if (x < box.left || x > box.left + box.width || y < box.top || y > box.top + box.height) return null;
-        }
-      }
-      const px = clamp(Math.floor(((x - box.left) / box.width) * sourceWidth), 0, sourceWidth - 1);
-      const py = clamp(Math.floor(((y - box.top) / box.height) * sourceHeight), 0, sourceHeight - 1);
-      const probe = document.createElement('canvas');
-      probe.width = 1;
-      probe.height = 1;
-      const context = probe.getContext('2d', { willReadFrequently: true });
-      context.drawImage(el, px, py, 1, 1, 0, 0, 1, 1);
-      const data = context.getImageData(0, 0, 1, 1).data;
-      if (data[3] === 0) return null;
-      return { red: data[0], green: data[1], blue: data[2], alpha: data[3] / 255 };
-    } catch (_error) {
-      // канва «испорчена» чужеродной картинкой или источник не читается —
-      // честно отступаем к фоновому цвету под элементом
-      return null;
-    }
-  }
-
-  // Разбор computed background-image: только слои linear-gradient (в порядке
-  // отрисовки — верхний первым); url(...) и прочее пропускаются насквозь.
-  function parseCssGradients(backgroundImage) {
-    if (typeof backgroundImage !== 'string' || !backgroundImage.includes('linear-gradient(')) return [];
-    const gradients = [];
-    let index = 0;
-    while ((index = backgroundImage.indexOf('linear-gradient(', index)) !== -1) {
-      let depth = 0;
-      let end = index + 'linear-gradient('.length - 1;
-      for (let i = end; i < backgroundImage.length; i += 1) {
-        if (backgroundImage[i] === '(') depth += 1;
-        if (backgroundImage[i] === ')') {
-          depth -= 1;
-          if (depth === 0) { end = i; break; }
-        }
-      }
-      const body = backgroundImage.slice(index + 'linear-gradient('.length, end);
-      const gradient = parseLinearGradientBody(body);
-      if (gradient) gradients.push(gradient);
-      index = end + 1;
-    }
-    return gradients;
-  }
-
-  function parseLinearGradientBody(body) {
-    // деление по запятым верхнего уровня (rgb(...) внутри не рвём)
-    const parts = [];
-    let depth = 0;
-    let current = '';
-    for (const ch of body) {
-      if (ch === '(') depth += 1;
-      if (ch === ')') depth -= 1;
-      if (ch === ',' && depth === 0) { parts.push(current.trim()); current = ''; continue; }
-      current += ch;
-    }
-    if (current.trim()) parts.push(current.trim());
-    if (parts.length === 0) return null;
-    let direction = 'to bottom';
-    if (/^to |^-?[\d.]+deg$/u.test(parts[0])) direction = parts.shift();
-    if (parts.length < 2) return null;
-    const stops = [];
-    for (const part of parts) {
-      const positionMatch = /^(.*?)\s+([\d.]+)%$/u.exec(part);
-      const color = parseCssColor(positionMatch ? positionMatch[1] : part);
-      if (!color) return null;
-      stops.push({ color, position: positionMatch ? Number(positionMatch[2]) / 100 : null });
-    }
-    if (stops[0].position === null) stops[0].position = 0;
-    if (stops[stops.length - 1].position === null) stops[stops.length - 1].position = 1;
-    for (let i = 1; i < stops.length - 1; i += 1) {
-      if (stops[i].position === null) {
-        let next = i;
-        while (stops[next].position === null) next += 1;
-        const prev = stops[i - 1].position;
-        stops[i].position = prev + (stops[next].position - prev) / (next - i + 1);
-      }
-    }
-    return { direction, stops };
-  }
-
-  // Цвет градиента в точке: поддержаны оси to right/left/top/bottom и
-  // 0/90/180/270deg; диагонали приближаются ближайшей осью — для пипетки
-  // на ползунках и панелях этого достаточно.
-  function sampleLinearGradient(gradient, rect, x, y) {
-    if (rect.width === 0 || rect.height === 0) return null;
-    let fraction;
-    const d = gradient.direction;
-    if (d === 'to right' || d === '90deg') fraction = (x - rect.left) / rect.width;
-    else if (d === 'to left' || d === '270deg' || d === '-90deg') fraction = (rect.right - x) / rect.width;
-    else if (d === 'to top' || d === '0deg') fraction = (rect.bottom - y) / rect.height;
-    else if (d === 'to bottom' || d === '180deg') fraction = (y - rect.top) / rect.height;
-    else {
-      const degMatch = /^(-?[\d.]+)deg$/u.exec(d);
-      if (!degMatch) return null;
-      const deg = ((Number(degMatch[1]) % 360) + 360) % 360;
-      if (deg < 45 || deg >= 315) fraction = (rect.bottom - y) / rect.height;
-      else if (deg < 135) fraction = (x - rect.left) / rect.width;
-      else if (deg < 225) fraction = (y - rect.top) / rect.height;
-      else fraction = (rect.right - x) / rect.width;
-    }
-    fraction = clamp(fraction, 0, 1);
-    const stops = gradient.stops;
-    if (fraction <= stops[0].position) return { ...stops[0].color };
-    if (fraction >= stops[stops.length - 1].position) return { ...stops[stops.length - 1].color };
-    for (let i = 1; i < stops.length; i += 1) {
-      if (fraction <= stops[i].position) {
-        const span = stops[i].position - stops[i - 1].position;
-        const t = span === 0 ? 0 : (fraction - stops[i - 1].position) / span;
-        const a = stops[i - 1].color;
-        const b = stops[i].color;
-        return {
-          red: Math.round(a.red + (b.red - a.red) * t),
-          green: Math.round(a.green + (b.green - a.green) * t),
-          blue: Math.round(a.blue + (b.blue - a.blue) * t),
-          alpha: a.alpha + (b.alpha - a.alpha) * t,
-        };
-      }
-    }
-    return null;
-  }
-
-  function parseCssColor(text) {
-    if (typeof text !== 'string') return null;
-    const match = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)$/u.exec(text.trim());
-    if (!match) return null;
-    return {
-      red: clamp(Number(match[1]), 0, 255),
-      green: clamp(Number(match[2]), 0, 255),
-      blue: clamp(Number(match[3]), 0, 255),
-      alpha: match[4] === undefined ? 1 : clamp(Number(match[4]), 0, 1),
-    };
-  }
-
   function toggleColorPickerMenu() {
     colorPickerMenu.hidden ? showColorPickerMenu() : hideColorPickerMenu();
   }
@@ -7058,321 +7516,5 @@
       || name.endsWith('.html')
       || name.endsWith('.htm')
       || name.endsWith('.css');
-  }
-
-  function unzipStoredEntries(bytes) {
-    const entries = [];
-    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-    let offset = 0;
-    while (offset + 4 <= bytes.length) {
-      const signature = view.getUint32(offset, true);
-      if (signature === 0x02014b50 || signature === 0x06054b50) break;
-      if (signature !== 0x04034b50) throw new Error('ZIP-архив имеет неподдерживаемый формат');
-      if (offset + 30 > bytes.length) throw new Error('ZIP-архив повреждён');
-
-      const flags = view.getUint16(offset + 6, true);
-      const method = view.getUint16(offset + 8, true);
-      const expectedCrc = view.getUint32(offset + 14, true);
-      const compressedSize = view.getUint32(offset + 18, true);
-      const uncompressedSize = view.getUint32(offset + 22, true);
-      const nameLength = view.getUint16(offset + 26, true);
-      const extraLength = view.getUint16(offset + 28, true);
-      const nameStart = offset + 30;
-      const dataStart = nameStart + nameLength + extraLength;
-      const dataEnd = dataStart + compressedSize;
-
-      if ((flags & 0x0008) !== 0) throw new Error('ZIP-архив с data descriptor пока не поддерживается');
-      if (method !== 0) throw new Error('Поддерживается только ZIP без сжатия. Скачанный из IDE проект можно импортировать обратно.');
-      if (dataEnd > bytes.length) throw new Error('ZIP-архив повреждён');
-
-      const name = new TextDecoder('utf-8').decode(bytes.slice(nameStart, nameStart + nameLength));
-      const data = bytes.slice(dataStart, dataEnd);
-      if (data.length !== uncompressedSize) throw new Error(`Файл ${name} в ZIP имеет неверный размер`);
-      if (crc32(data) !== expectedCrc) throw new Error(`Файл ${name} в ZIP повреждён`);
-      entries.push({ name, bytes: data, directory: name.endsWith('/') });
-
-      offset = dataEnd;
-    }
-    return entries;
-  }
-
-  function bytesToDataUrl(fileName, bytes) {
-    return bytesToDataUrlWithMime(mimeTypeForFile(fileName), bytes);
-  }
-
-  function bytesToDataUrlWithMime(mime, bytes) {
-    let binary = '';
-    const chunkSize = 0x8000;
-    for (let offset = 0; offset < bytes.length; offset += chunkSize) {
-      const chunk = bytes.slice(offset, offset + chunkSize);
-      binary += String.fromCharCode(...chunk);
-    }
-    return `data:${mime};base64,${btoa(binary)}`;
-  }
-
-  function mimeTypeForFile(fileName) {
-    const name = fileName.toLowerCase();
-    if (name.endsWith('.idyl')) return 'text/x-idyllium';
-    if (name.endsWith('.txt')) return 'text/plain';
-    if (name.endsWith('.csv')) return 'text/csv';
-    if (name.endsWith('.json')) return 'application/json';
-    if (name.endsWith('.md') || name.endsWith('.markdown')) return 'text/markdown';
-    if (name.endsWith('.xml')) return 'application/xml';
-    if (name.endsWith('.html') || name.endsWith('.htm')) return 'text/html';
-    if (name.endsWith('.css')) return 'text/css';
-    if (name.endsWith('.png')) return 'image/png';
-    if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
-    if (name.endsWith('.gif')) return 'image/gif';
-    if (name.endsWith('.webp')) return 'image/webp';
-    if (name.endsWith('.svg')) return 'image/svg+xml';
-    if (name.endsWith('.ttf')) return 'font/ttf';
-    if (name.endsWith('.otf')) return 'font/otf';
-    if (name.endsWith('.woff')) return 'font/woff';
-    if (name.endsWith('.woff2')) return 'font/woff2';
-    if (name.endsWith('.mp3')) return 'audio/mpeg';
-    if (name.endsWith('.wav')) return 'audio/wav';
-    if (name.endsWith('.ogg')) return 'audio/ogg';
-    if (name.endsWith('.aac')) return 'audio/aac';
-    if (name.endsWith('.m4a')) return 'audio/mp4';
-    if (isSqliteFile(name)) return 'application/vnd.sqlite3';
-    return 'application/octet-stream';
-  }
-
-  function detectAssetMimeType(fileName, bytes) {
-    if (!(bytes instanceof Uint8Array) || bytes.length === 0) return mimeTypeForFile(fileName);
-    if (asciiBytes(bytes, 0, 16) === 'SQLite format 3\0') return 'application/vnd.sqlite3';
-    if (hasBytes(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 0)) return 'image/png';
-    if (hasBytes(bytes, [0xff, 0xd8, 0xff], 0)) return 'image/jpeg';
-    const header6 = asciiBytes(bytes, 0, 6);
-    if (header6 === 'GIF87a' || header6 === 'GIF89a') return 'image/gif';
-    if (asciiBytes(bytes, 0, 4) === 'RIFF' && asciiBytes(bytes, 8, 4) === 'WEBP') return 'image/webp';
-    if (asciiBytes(bytes, 0, 4) === 'RIFF' && asciiBytes(bytes, 8, 4) === 'WAVE') return 'audio/wav';
-    if (hasBytes(bytes, [0x49, 0x44, 0x33], 0) || mp3FrameHeader(bytes)) return 'audio/mpeg';
-    if (asciiBytes(bytes, 0, 4) === 'OggS') return 'audio/ogg';
-    if (aacHeader(bytes)) return 'audio/aac';
-    if (asciiBytes(bytes, 4, 4) === 'ftyp') return 'audio/mp4';
-    if (hasBytes(bytes, [0x00, 0x01, 0x00, 0x00], 0) || asciiBytes(bytes, 0, 4) === 'true') return 'font/ttf';
-    if (asciiBytes(bytes, 0, 4) === 'OTTO') return 'font/otf';
-    if (asciiBytes(bytes, 0, 4) === 'wOFF') return 'font/woff';
-    if (asciiBytes(bytes, 0, 4) === 'wOF2') return 'font/woff2';
-    if (looksLikeSvg(bytes)) return 'image/svg+xml';
-    return mimeTypeForFile(fileName);
-  }
-
-  function isSqliteFile(fileName) {
-    return /\.(?:db|db3|sqlite|sqlite3)$/iu.test(fileName);
-  }
-
-  function fontFormatName(mime) {
-    if (mime === 'font/ttf') return 'TTF';
-    if (mime === 'font/otf') return 'OTF';
-    if (mime === 'font/woff') return 'WOFF';
-    if (mime === 'font/woff2') return 'WOFF2';
-    return 'неизвестно';
-  }
-
-  function mp3FrameHeader(bytes) {
-    return bytes.length >= 2 && bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0;
-  }
-
-  function aacHeader(bytes) {
-    return bytes.length >= 2 && bytes[0] === 0xff && (bytes[1] & 0xf6) === 0xf0;
-  }
-
-  function imageAlphaInfo(mime, bytes) {
-    if (mime === 'image/jpeg') return 'нет';
-    if (mime === 'image/svg+xml') return 'возможно';
-    if (mime === 'image/png') return pngAlphaInfo(bytes);
-    if (mime === 'image/gif') return gifAlphaInfo(bytes);
-    if (mime === 'image/webp') return webpAlphaInfo(bytes);
-    if (mime.startsWith('image/')) return 'неизвестно';
-    return 'нет';
-  }
-
-  function pngAlphaInfo(bytes) {
-    if (!(bytes instanceof Uint8Array) || bytes.length < 33 || !hasBytes(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 0)) {
-      return 'неизвестно';
-    }
-    const colorType = bytes[25];
-    if (colorType === 4 || colorType === 6) return 'есть';
-    return pngHasTransparencyChunk(bytes) ? 'есть' : 'нет';
-  }
-
-  function pngHasTransparencyChunk(bytes) {
-    let offset = 8;
-    while (offset + 12 <= bytes.length) {
-      const length = readUint32(bytes, offset);
-      const type = asciiBytes(bytes, offset + 4, 4);
-      if (type === 'tRNS') return true;
-      if (type === 'IEND') return false;
-      offset += 12 + length;
-    }
-    return false;
-  }
-
-  function gifAlphaInfo(bytes) {
-    for (let index = 0; index + 5 < bytes.length; index++) {
-      if (bytes[index] === 0x21 && bytes[index + 1] === 0xf9 && bytes[index + 2] === 0x04) {
-        if ((bytes[index + 3] & 0x01) === 0x01) return 'есть';
-      }
-    }
-    return 'нет';
-  }
-
-  function webpAlphaInfo(bytes) {
-    if (asciiBytes(bytes, 0, 4) !== 'RIFF' || asciiBytes(bytes, 8, 4) !== 'WEBP') return 'неизвестно';
-    if (asciiBytes(bytes, 12, 4) === 'VP8X' && bytes.length > 20) {
-      return (bytes[20] & 0x10) === 0x10 ? 'есть' : 'нет';
-    }
-    return 'неизвестно';
-  }
-
-  function looksLikeSvg(bytes) {
-    const sample = new TextDecoder().decode(bytes.slice(0, Math.min(bytes.length, 512))).trimStart().toLowerCase();
-    return sample.startsWith('<svg') || sample.startsWith('<?xml') && sample.includes('<svg');
-  }
-
-  function hasBytes(bytes, expected, offset) {
-    if (bytes.length < offset + expected.length) return false;
-    return expected.every((byte, index) => bytes[offset + index] === byte);
-  }
-
-  function asciiBytes(bytes, offset, length) {
-    if (bytes.length < offset + length) return '';
-    let text = '';
-    for (let index = 0; index < length; index++) text += String.fromCharCode(bytes[offset + index]);
-    return text;
-  }
-
-  function readUint32(bytes, offset) {
-    if (bytes.length < offset + 4) return 0;
-    return ((bytes[offset] << 24) | (bytes[offset + 1] << 16) | (bytes[offset + 2] << 8) | bytes[offset + 3]) >>> 0;
-  }
-
-  function formatBytes(size) {
-    if (!Number.isFinite(size) || size < 0) return 'неизвестно';
-    if (size < 1024) return `${size} Б`;
-    if (size < 1024 * 1024) return `${trimFileSize(size / 1024)} КБ`;
-    return `${trimFileSize(size / (1024 * 1024))} МБ`;
-  }
-
-  function trimFileSize(value) {
-    return value >= 10 ? value.toFixed(1) : value.toFixed(2);
-  }
-
-  function formatDuration(seconds) {
-    if (!Number.isFinite(seconds) || seconds < 0) return 'неизвестно';
-    const rounded = Math.round(seconds);
-    const minutes = Math.floor(rounded / 60);
-    const rest = rounded % 60;
-    return `${minutes}:${String(rest).padStart(2, '0')}`;
-  }
-
-  function dataUrlBytes(value) {
-    const comma = value.indexOf(',');
-    if (comma < 0) return new Uint8Array();
-    const meta = value.slice(0, comma);
-    const data = value.slice(comma + 1);
-    if (meta.includes(';base64')) {
-      const binary = atob(data);
-      const bytes = new Uint8Array(binary.length);
-      for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
-      return bytes;
-    }
-    return new TextEncoder().encode(decodeURIComponent(data));
-  }
-
-  function zipHeader(size) {
-    return new DataView(new ArrayBuffer(size));
-  }
-
-  function dosTime() {
-    const now = new Date();
-    return {
-      time: (now.getHours() << 11) | (now.getMinutes() << 5) | Math.floor(now.getSeconds() / 2),
-      date: ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate(),
-    };
-  }
-
-  function concatBytes(chunks) {
-    const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-    const result = new Uint8Array(total);
-    let offset = 0;
-    for (const chunk of chunks) {
-      result.set(chunk, offset);
-      offset += chunk.length;
-    }
-    return result;
-  }
-
-  function crc32(bytes) {
-    let crc = 0xFFFFFFFF;
-    for (const byte of bytes) {
-      crc = CRC32_TABLE[(crc ^ byte) & 0xFF] ^ (crc >>> 8);
-    }
-    return (crc ^ 0xFFFFFFFF) >>> 0;
-  }
-
-  function buildCrc32Table() {
-    const table = new Uint32Array(256);
-    for (let index = 0; index < table.length; index++) {
-      let value = index;
-      for (let bit = 0; bit < 8; bit++) {
-        value = (value & 1) ? (0xEDB88320 ^ (value >>> 1)) : (value >>> 1);
-      }
-      table[index] = value >>> 0;
-    }
-    return table;
-  }
-
-  function normalizeWorkspacePath(path) {
-    const input = String(path).replace(/\\/g, '/');
-    const raw = input === WORKSPACE_ROOT
-      ? ''
-      : input.startsWith(WORKSPACE_ROOT + '/')
-        ? input.slice((WORKSPACE_ROOT + '/').length)
-      : input.replace(/^\/+/, '');
-    const parts = raw.split('/');
-    const normalized = [];
-    for (const part of parts) {
-      if (!part || part === '.') continue;
-      if (part === '..') {
-        normalized.pop();
-        continue;
-      }
-      normalized.push(part);
-    }
-    return normalized.length === 0 ? WORKSPACE_ROOT : WORKSPACE_ROOT + '/' + normalized.join('/');
-  }
-
-  function shortFileName(file) {
-    const path = normalizeWorkspacePath(file);
-    return path === WORKSPACE_ROOT ? '' : path.slice((WORKSPACE_ROOT + '/').length);
-  }
-
-  function basename(path) {
-    const short = shortFileName(path);
-    const parts = short.split('/').filter(Boolean);
-    return parts[parts.length - 1] || 'workspace';
-  }
-
-  function parentPath(path) {
-    path = normalizeWorkspacePath(path);
-    if (path === WORKSPACE_ROOT) return WORKSPACE_ROOT;
-    const short = shortFileName(path);
-    const parts = short.split('/').filter(Boolean);
-    parts.pop();
-    return parts.length === 0 ? WORKSPACE_ROOT : normalizeWorkspacePath(parts.join('/'));
-  }
-
-  function formatThrownError(error) {
-    const text = error instanceof Error ? error.message : String(error);
-    return formatDiagnosticText(text);
-  }
-
-  function formatDiagnosticText(text) {
-    return String(text)
-      .replaceAll(WORKSPACE_ROOT + '/', '')
-      .replace(/(^|\n)([^:\n]+):(\d+):\d+:(?=\s)/gu, '$1$2:$3:');
   }
 }());

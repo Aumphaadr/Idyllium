@@ -1,7 +1,7 @@
 {
   "version": 1,
   "languageVersion": "1.5.4",
-  "generatedAt": "2026-08-28T14:50:37.323Z",
+  "generatedAt": "2026-08-29T15:29:05.450Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "general": [
     {
@@ -866,8 +866,8 @@
         },
         {
           "name": "ceil",
-          "signature": "ceil(value: float): int",
-          "returnType": "int",
+          "signature": "ceil(value: float, [digits: int]): float",
+          "returnType": "float",
           "parameters": [
             {
               "name": "value",
@@ -876,10 +876,18 @@
               "defaultValue": "",
               "acceptedTypes": [],
               "acceptedDescription": ""
+            },
+            {
+              "name": "digits",
+              "type": "int",
+              "optional": true,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
             }
           ],
           "variadic": false,
-          "documentation": ""
+          "documentation": "Округляет вверх. Без digits возвращает int; с digits — float с указанным числом знаков."
         },
         {
           "name": "clamp",
@@ -933,8 +941,8 @@
         },
         {
           "name": "floor",
-          "signature": "floor(value: float): int",
-          "returnType": "int",
+          "signature": "floor(value: float, [digits: int]): float",
+          "returnType": "float",
           "parameters": [
             {
               "name": "value",
@@ -943,10 +951,18 @@
               "defaultValue": "",
               "acceptedTypes": [],
               "acceptedDescription": ""
+            },
+            {
+              "name": "digits",
+              "type": "int",
+              "optional": true,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
             }
           ],
           "variadic": false,
-          "documentation": ""
+          "documentation": "Округляет вниз. Без digits возвращает int; с digits — float, отрезанный до указанного числа знаков."
         },
         {
           "name": "log",
@@ -1009,8 +1025,8 @@
         },
         {
           "name": "round",
-          "signature": "round(value: float): int",
-          "returnType": "int",
+          "signature": "round(value: float, [digits: int]): float",
+          "returnType": "float",
           "parameters": [
             {
               "name": "value",
@@ -1019,10 +1035,18 @@
               "defaultValue": "",
               "acceptedTypes": [],
               "acceptedDescription": ""
+            },
+            {
+              "name": "digits",
+              "type": "int",
+              "optional": true,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
             }
           ],
           "variadic": false,
-          "documentation": ""
+          "documentation": "Округляет к ближайшему. Без digits возвращает int; с digits — float с указанным числом знаков после точки."
         },
         {
           "name": "sin",

@@ -3,6 +3,7 @@ import {
   compileIdyllium,
   describeRuntimeError,
 } from './runtime/run';
+import { Diagnostic, formatDiagnostics } from './core/diagnostics';
 import { formatIdyllium } from './language/formatter';
 import { IdylliumProject } from './language/project';
 import {
@@ -114,6 +115,33 @@ export async function runIdylliumInBrowser(options: BrowserRunOptions): Promise<
 export async function prepareIdylliumBrowserProgram(options: BrowserRunOptions): Promise<BrowserPreparedProgram> {
   const files = normalizeBrowserFiles(options.files);
   const entryFile = normalizeBrowserPath(options.entryFile ?? '/workspace/main.idyl');
+  // Отсутствующий стартовый файл раньше молча превращался в пустой исходник —
+  // и «успешно выполнялся» (находка владельца 2026-08-29). Отказ словами.
+  if (!(entryFile in files)) {
+    const location = { file: entryFile, line: 1, column: 1 };
+    const missing: Diagnostic = {
+      severity: 'error',
+      message: `entry file '${entryFile.split('/').pop()}' was not found in the project`,
+      range: { start: location, end: location },
+    };
+    const emptySnapshot = () => ({});
+    return {
+      compilation: {
+        success: false,
+        jsCode: null,
+        diagnostics: [missing],
+        diagnosticsText: formatDiagnostics([missing]),
+        tokens: [],
+        ast: null,
+      },
+      runtime: null,
+      fileSystemSnapshot: () => files,
+      writtenFilesSnapshot: emptySnapshot,
+      async run() {
+        // Диагностика уже в compilation — запускать нечего.
+      },
+    };
+  }
   const source = browserFileText(files[entryFile]);
   const fileSystem = createMemoryRuntimeFileSystem(files);
   const fileSystemSnapshot = () => fileSystem.snapshot?.() ?? files;
@@ -174,6 +202,7 @@ export {
 };
 export { IDYLLIUM_SEMANTIC_TOKEN_TYPES, IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS } from './core/semantics';
 export { guiPreviewIntervalMs } from './runtime/gui-interval';
+export { runActionWithSnapshotPump } from './runtime/gui-pump';
 
 function buildBrowserNetworkService(
   networkListen: BrowserRunOptions['networkListen'],

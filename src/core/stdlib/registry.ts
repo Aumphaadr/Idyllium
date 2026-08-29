@@ -25,6 +25,38 @@ export interface FunctionSpec {
    * классов допускаются только с публичным `string function to_string()`.
    */
   readonly printsValues?: boolean;
+  /**
+   * Типовое правило результата, которое не выразить одним returnType.
+   * Интерпретируется семантикой (ruleAdjustedReturnType) — вместо прежних
+   * захардкоженных по именам спец-веток:
+   * - 'int-without-digits' — int при одном аргументе, float при двух
+   *   (math.round/floor/ceil c необязательным digits);
+   * - 'match-integer-argument' — тип повторяет «целочисленность» аргумента
+   *   (math.abs);
+   * - 'int-when-all-integer-numeric' — все аргументы числовые (иначе своя
+   *   ошибка), int только если все целые (math.clamp);
+   * - 'numeric-array-aggregate' — аргумент: числовой массив (иначе свои
+   *   ошибки); тип — элемент массива, либо returnType, когда он не ANY (avg);
+   * - 'element-of-collection' — string даёт char, array<T> даёт T
+   *   (random.choose_from).
+   */
+  readonly returnTypeRule?:
+    | 'int-without-digits'
+    | 'match-integer-argument'
+    | 'int-when-all-integer-numeric'
+    | 'numeric-array-aggregate'
+    | 'element-of-collection';
+  /**
+   * Прямой рантайм-вызов для кодогена — вместо прежних захардкоженных по
+   * именам эмитов. target — путь внутри $rt; shape — форма аргументов:
+   * 'args' — только аргументы; 'args-context' — аргументы, затем file и line;
+   * 'context-only' — только file и line; 'context-first' — file, line, затем
+   * аргументы.
+   */
+  readonly codegen?: {
+    readonly target: string;
+    readonly shape: 'args' | 'args-context' | 'context-only' | 'context-first';
+  };
 }
 
 export interface ConstantSpec {
@@ -52,6 +84,8 @@ export interface TypeSpec {
   readonly acceptsNull: boolean;
   readonly properties: ReadonlyMap<string, PropertySpec>;
   readonly methods: ReadonlyMap<string, FunctionSpec>;
+  /** Выражение дефолтного значения в кодогене (например, прозрачный цвет). */
+  readonly codegenDefault?: string;
 }
 
 export interface ModuleSpec {
@@ -376,37 +410,64 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       variadic: true,
       variadicTypes: [ANY_TYPE],
       printsValues: true,
+      codegen: { target: 'console.write', shape: 'args' },
       documentation: 'Выводит значения подряд без автоматических пробелов и переноса строки. Правила о том, что печатается, — те же, что у writeln().',
     }),
     functionSpec('writeln', [], VOID, {
       variadic: true,
       variadicTypes: [ANY_TYPE],
       printsValues: true,
+      codegen: { target: 'console.writeln', shape: 'args' },
       documentation: 'Выводит значения подряд, затем переносит строку. Печатать можно значения, объекты своих классов с контрактом to_string (в том числе внутри массивов любой вложенности) и те библиотечные типы, у которых есть текстовый вид; библиотечный объект без текстового вида компилятор печатать не даст.',
     }),
     functionSpec('clear', [], VOID, {
       documentation: 'Очищает содержимое консоли.',
+      codegen: { target: 'console.clear', shape: 'args' },
     }),
-    functionSpec('get_int', [], INT),
-    functionSpec('get_float', [], FLOAT),
-    functionSpec('get_string', [], STRING),
-    functionSpec('set_precision', [{ name: 'digits', type: INT }], VOID),
+    functionSpec('get_int', [], INT, { codegen: { target: 'console.get_int', shape: 'context-only' } }),
+    functionSpec('get_float', [], FLOAT, { codegen: { target: 'console.get_float', shape: 'context-only' } }),
+    functionSpec('get_string', [], STRING, { codegen: { target: 'console.get_string', shape: 'args' } }),
+    functionSpec('set_precision', [{ name: 'digits', type: INT }], VOID, { codegen: { target: 'console.set_precision', shape: 'context-first' } }),
   ]));
 
   registry.registerModule(moduleSpec('math', [
     functionSpec('abs', [{ name: 'value', type: FLOAT }], FLOAT, {
+      returnTypeRule: 'match-integer-argument',
       documentation: 'Модуль числа. Тип результата повторяет аргумент: abs(int) даёт int, abs(float) — float.',
     }),
     functionSpec('sqrt', [{ name: 'value', type: FLOAT }], FLOAT),
-    functionSpec('round', [{ name: 'value', type: FLOAT }], INT),
-    functionSpec('floor', [{ name: 'value', type: FLOAT }], INT),
-    functionSpec('ceil', [{ name: 'value', type: FLOAT }], INT),
+    functionSpec('round', [
+      { name: 'value', type: FLOAT },
+      { name: 'digits', type: INT },
+    ], FLOAT, {
+      minArguments: 1,
+      returnTypeRule: 'int-without-digits',
+      documentation: 'Округляет к ближайшему. Без digits возвращает int; с digits — float с указанным числом знаков после точки.',
+    }),
+    functionSpec('floor', [
+      { name: 'value', type: FLOAT },
+      { name: 'digits', type: INT },
+    ], FLOAT, {
+      minArguments: 1,
+      returnTypeRule: 'int-without-digits',
+      documentation: 'Округляет вниз. Без digits возвращает int; с digits — float, отрезанный до указанного числа знаков.',
+    }),
+    functionSpec('ceil', [
+      { name: 'value', type: FLOAT },
+      { name: 'digits', type: INT },
+    ], FLOAT, {
+      minArguments: 1,
+      returnTypeRule: 'int-without-digits',
+      documentation: 'Округляет вверх. Без digits возвращает int; с digits — float с указанным числом знаков.',
+    }),
     functionSpec('pow', [{ name: 'value', type: FLOAT }, { name: 'power', type: FLOAT }], FLOAT),
     functionSpec('clamp', [
       { name: 'min', type: FLOAT },
       { name: 'value', type: FLOAT },
       { name: 'max', type: FLOAT },
-    ], FLOAT),
+    ], FLOAT, {
+      returnTypeRule: 'int-when-all-integer-numeric',
+    }),
     functionSpec('sin', [{ name: 'radians', type: FLOAT }], FLOAT),
     functionSpec('cos', [{ name: 'radians', type: FLOAT }], FLOAT),
     functionSpec('tan', [{ name: 'radians', type: FLOAT }], FLOAT),
@@ -445,6 +506,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       acceptedDescription: 'string or array',
     }], ANY_TYPE, {
       documentation: 'Выбирает случайный символ строки или случайный элемент массива.',
+      returnTypeRule: 'element-of-collection',
     }),
     functionSpec('set_seed', [{ name: 'seed', type: INT }], VOID),
   ]));
@@ -1668,7 +1730,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     { name: 'TEAL', type: COLOR },
     { name: 'PURPLE', type: COLOR },
     { name: 'TRANSPARENT', type: COLOR },
-  ], [typeSpec('Color', [
+  ], [Object.assign(typeSpec('Color', [
     propertySpec('red', INT, true, 'Красный канал от 0 до 255.'),
     propertySpec('green', INT, true, 'Зелёный канал от 0 до 255.'),
     propertySpec('blue', INT, true, 'Синий канал от 0 до 255.'),
@@ -1701,7 +1763,10 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], COLOR, {
       documentation: 'Возвращает новый цвет с указанными RGBA-каналами.',
     }),
-  ])]));
+  ]), {
+    // Дефолт значения-цвета в кодогене: прозрачный, а не пустой объект.
+    codegenDefault: '$rt.modules.colors.TRANSPARENT',
+  })]));
 
   const typesNumericTypeNames = [
     'int8', 'uint8', 'int16', 'uint16', 'int32',
@@ -1775,11 +1840,11 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   registry.registerGlobalFunction(functionSpec('div', [
     { name: 'left', type: INT },
     { name: 'right', type: INT },
-  ], INT));
+  ], INT, { codegen: { target: 'core.div', shape: 'args-context' } }));
   registry.registerGlobalFunction(functionSpec('mod', [
     { name: 'left', type: INT },
     { name: 'right', type: INT },
-  ], INT));
+  ], INT, { codegen: { target: 'core.mod', shape: 'args-context' } }));
   registry.registerGlobalFunction(functionSpec('type_name', [
     { name: 'value', type: ANY_TYPE },
   ], STRING, {
@@ -1792,7 +1857,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       acceptedTypes: [STRING, FLOAT, INT],
       acceptedDescription: 'string or numeric value',
     },
-  ], INT));
+  ], INT, { codegen: { target: 'core.to_int', shape: 'args-context' } }));
   registry.registerGlobalFunction(functionSpec('to_float', [
     {
       name: 'value',
@@ -1800,11 +1865,12 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       acceptedTypes: [STRING, FLOAT, INT],
       acceptedDescription: 'string or numeric value',
     },
-  ], FLOAT));
+  ], FLOAT, { codegen: { target: 'core.to_float', shape: 'args-context' } }));
   registry.registerGlobalFunction(functionSpec('to_string', [
     { name: 'value', type: ANY_TYPE },
   ], STRING, {
     printsValues: true,
+    codegen: { target: 'core.to_string', shape: 'args' },
     documentation: 'Преобразует значение в строку. Объект класса — только с публичным string function to_string(). Библиотечные объекты (gui-виджеты, шрифты, фигуры, файловые потоки) текстового вида не имеют — компилятор откажет и посоветует напечатать какое-нибудь их свойство; значения библиотеки (ячейки types, colors.Color, time.stamp, json.Value, а также холст, таблица, диаграммы, черепаха, сервер и ответ http) печатаются как есть.',
   }));
 
@@ -1818,15 +1884,23 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     acceptedDescription: 'numeric array',
   };
   registry.registerGlobalFunction(functionSpec('max', [numericArrayParameter], ANY_TYPE, {
+    returnTypeRule: 'numeric-array-aggregate',
+    codegen: { target: 'array.max', shape: 'args-context' },
     documentation: 'Наибольший элемент числового массива. Тип результата повторяет тип элементов.',
   }));
   registry.registerGlobalFunction(functionSpec('min', [numericArrayParameter], ANY_TYPE, {
+    returnTypeRule: 'numeric-array-aggregate',
+    codegen: { target: 'array.min', shape: 'args-context' },
     documentation: 'Наименьший элемент числового массива. Тип результата повторяет тип элементов.',
   }));
   registry.registerGlobalFunction(functionSpec('sum', [numericArrayParameter], ANY_TYPE, {
+    returnTypeRule: 'numeric-array-aggregate',
+    codegen: { target: 'array.sum', shape: 'args-context' },
     documentation: 'Сумма элементов числового массива. Тип результата повторяет тип элементов.',
   }));
   registry.registerGlobalFunction(functionSpec('avg', [numericArrayParameter], FLOAT, {
+    returnTypeRule: 'numeric-array-aggregate',
+    codegen: { target: 'array.avg', shape: 'args-context' },
     documentation: 'Среднее арифметическое элементов числового массива; всегда float.',
   }));
 

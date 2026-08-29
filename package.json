@@ -19,9 +19,10 @@
     "docs:serve": "npm run docs:site && node tools/serve-docs.js",
     "spec:extract": "npm run build && node dist/tools/extract-lesson-specs.js",
     "spec:check": "npm run spec:extract && node dist/tests/lesson-spec.test.js",
-    "manual:generate": "node tools/generate-manual-tests.js",
-    "manual:check": "npm run build && node tools/check-manual-tests.js",
-    "release": "npm run docs:site && npm run package:vscode && node dist/tools/extract-lesson-specs.js && node tools/run-tests.js"
+    "manual:generate": "node ../Idyllium-backstage/tech/manual-tests/_tools/generate-manual-tests.js",
+    "manual:check": "npm run build && node ../Idyllium-backstage/tech/manual-tests/_tools/check-manual-tests.js",
+    "release": "npm run docs:site && npm run package:vscode && node dist/tools/extract-lesson-specs.js && node tools/run-tests.js",
+    "release:github": "node tools/push-release-tag.js"
   },
   "keywords": [
     "idyllium",
@@ -33,6 +34,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/sql.js": "^1.4.11",
+    "esbuild": "0.28.2",
     "typescript": "^5.4.0"
   },
   "dependencies": {

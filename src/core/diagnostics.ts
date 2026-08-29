@@ -18,6 +18,25 @@ export interface Diagnostic {
   readonly code?: string;
 }
 
+/**
+ * Машинные коды предупреждений компилятора — slug'и по смыслу правила,
+ * не жаргон. Ими живут инструменты (structured diagnostics в CompileResult):
+ * документация правил и будущее адресное подавление. В человеческий текст
+ * коды НЕ печатаются — показывать ли их, решает владелец отдельно.
+ */
+export const IDYLLIUM_WARNING_CODES = [
+  'statement-does-nothing',
+  'result-not-used',
+  'self-assignment',
+  'code-never-runs',
+  'unused-variable',
+  'float-equality',
+  'compared-with-true',
+  'condition-always-same',
+] as const;
+
+export type IdylliumWarningCode = (typeof IDYLLIUM_WARNING_CODES)[number];
+
 export class DiagnosticBag {
   private readonly diagnostics: Diagnostic[] = [];
 
@@ -62,16 +81,17 @@ export class DiagnosticBag {
 
 export function formatDiagnostic(diagnostic: Diagnostic): string {
   const { start } = diagnostic.range;
-  const code = diagnostic.code ? ` ${diagnostic.code}` : '';
   // Человеку ошибки компиляции показываются как «compile error», предупреждения
   // — «compile warning»: симметрия с «runtime error» / «runtime warning»
   // (вердикт владельца 2026-08-28). Внутренняя severity остаётся короткой.
+  // Машинный code в текст НЕ печатается: он для инструментов (structured
+  // diagnostics); показывать ли его людям — отдельный вердикт владельца.
   const label = diagnostic.severity === 'error'
     ? 'compile error'
     : diagnostic.severity === 'warning'
       ? 'compile warning'
       : diagnostic.severity;
-  return `${start.file}:${start.line}:${start.column}: ${label}${code}: ${diagnostic.message}`;
+  return `${start.file}:${start.line}:${start.column}: ${label}: ${diagnostic.message}`;
 }
 
 export function formatDiagnostics(diagnostics: readonly Diagnostic[]): string {

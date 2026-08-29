@@ -114,8 +114,9 @@ export {
   IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS,
 } from './core/semantics';
 export { guiPreviewIntervalMs } from './runtime/gui-interval';
+export { runActionWithSnapshotPump } from './runtime/gui-pump';
 export { JavaScriptGenerator } from './core/codegen';
-export { Diagnostic, formatDiagnostics } from './core/diagnostics';
+export { Diagnostic, formatDiagnostics, IDYLLIUM_WARNING_CODES, IdylliumWarningCode } from './core/diagnostics';
 export { Token, TokenKind } from './core/tokens';
 export { Program } from './core/ast';
 export {

@@ -65,7 +65,7 @@
       }
     }
     confirmPendingWindowMoves(nextState);
-    if (!generationChanged && patchWidgetTextOnly(nextState, nextStateJson)) return;
+    if (!generationChanged && patchWidgetsInPlace(nextState, nextStateJson)) return;
     if (draggingControlId !== null || draggingWindow !== null) {
       deferredState = nextState;
       return;
@@ -149,20 +149,29 @@
     flushStateStyleRules();
   }
 
-  // Если между снапшотами изменились только тексты (подпись Label или
-  // содержимое LineEdit/TextEdit), правим их на месте: полный перерендер
-  // пересоздаёт DOM и заставляет фокус поля ввода моргать на каждом символе.
-  const TEXT_PATCHABLE_TYPES = new Set(['gui.Label', 'gui.LineEdit', 'gui.TextEdit']);
+  // Если между снапшотами изменились только «точечные» свойства виджетов
+  // (подпись, содержимое поля, значение прогрессбара), правим их на месте:
+  // полный перерендер пересоздаёт DOM — поля ввода моргали бы на каждом
+  // символе, а у активной кнопки на каждом тике анимации мигал фокус
+  // (находка владельца 2026-08-29 на анимации ProgressBar).
+  const IN_PLACE_PATCHES = new Map([
+    ['gui.Label', { properties: ['text'], apply: applyTextPatch }],
+    ['gui.LineEdit', { properties: ['text'], apply: applyTextPatch }],
+    ['gui.TextEdit', { properties: ['text'], apply: applyTextPatch }],
+    ['gui.Button', { properties: ['text'], apply: applyTextPatch }],
+    ['gui.ProgressBar', { properties: ['value', 'min', 'max'], apply: applyProgressPatch }],
+  ]);
 
-  function patchWidgetTextOnly(nextState, nextStateJson) {
-    if (textInsensitiveStateJson(state) !== textInsensitiveStateJson(nextState)) return false;
+  function patchWidgetsInPlace(nextState, nextStateJson) {
+    if (patchInsensitiveStateJson(state) !== patchInsensitiveStateJson(nextState)) return false;
 
     const patches = [];
     const visit = (widget) => {
-      if (TEXT_PATCHABLE_TYPES.has(widget.type)) {
+      const patch = IN_PLACE_PATCHES.get(widget.type);
+      if (patch) {
         const element = findWidgetElement(widget.id);
         if (!element) return false;
-        patches.push([element, stringValue(widget.properties && widget.properties.text, '')]);
+        patches.push([patch, element, widget.properties || {}]);
       }
       for (const child of widget.children || []) {
         if (!visit(child)) return false;
@@ -173,14 +182,8 @@
     for (const win of nextState.windows || []) {
       if (!visit(win)) return false;
     }
-    for (const [element, text] of patches) {
-      const tag = element.tagName ? element.tagName.toLowerCase() : '';
-      if (tag === 'input' || tag === 'textarea') {
-        // Эхо собственного ввода уже в DOM — не трогаем, чтобы не сбить курсор.
-        if (element.value !== text) element.value = text;
-      } else {
-        element.textContent = text;
-      }
+    for (const [patch, element, properties] of patches) {
+      patch.apply(element, properties);
     }
     state = nextState;
     stateJson = nextStateJson;
@@ -188,14 +191,47 @@
     return true;
   }
 
-  function textInsensitiveStateJson(snapshot) {
-    const normalizeWidget = (widget) => ({
-      ...widget,
-      properties: TEXT_PATCHABLE_TYPES.has(widget.type)
-        ? { ...(widget.properties || {}), text: null }
-        : widget.properties,
-      children: (widget.children || []).map(normalizeWidget),
-    });
+  function applyTextPatch(element, properties) {
+    const text = stringValue(properties.text, '');
+    const tag = element.tagName ? element.tagName.toLowerCase() : '';
+    if (tag === 'input' || tag === 'textarea') {
+      // Эхо собственного ввода уже в DOM — не трогаем, чтобы не сбить курсор.
+      if (element.value !== text) element.value = text;
+    } else {
+      element.textContent = text;
+    }
+  }
+
+  function applyProgressPatch(element, properties) {
+    // Направление патчируемые свойства не задают (orientation в списке нет,
+    // его смена честно ведёт к полному перерендеру) — читаем его с элемента.
+    const percent = progressPercent(properties);
+    const vertical = element.classList.contains('vertical');
+    for (const child of element.children || []) {
+      const className = String(child.className || '');
+      if (className.includes('progressbar-fill')) {
+        if (vertical) child.style.height = percent + '%';
+        else child.style.width = percent + '%';
+      } else if (className.includes('progressbar-label')) {
+        child.textContent = Math.round(percent) + '%';
+      }
+    }
+  }
+
+  function patchInsensitiveStateJson(snapshot) {
+    const normalizeWidget = (widget) => {
+      const patch = IN_PLACE_PATCHES.get(widget.type);
+      return {
+        ...widget,
+        properties: patch
+          ? {
+            ...(widget.properties || {}),
+            ...Object.fromEntries(patch.properties.map((name) => [name, null])),
+          }
+          : widget.properties,
+        children: (widget.children || []).map(normalizeWidget),
+      };
+    };
     return JSON.stringify({
       ...snapshot,
       windows: (snapshot.windows || []).map(normalizeWidget),
@@ -1131,12 +1167,18 @@
     return clipped + '…';
   }
 
+  function progressPercent(properties) {
+    const min = numberValue(properties.min, 0);
+    const max = numberValue(properties.max, 100);
+    const value = numberValue(properties.value, 0);
+    // Умножение до деления: (55/100)*100 в double даёт 55.00000000000001,
+    // а (55*100)/100 — ровно 55; хвост лез в style.width и подписи тестов.
+    return max <= min ? 0 : Math.max(0, Math.min(100, ((value - min) * 100) / (max - min)));
+  }
+
   function renderProgressBar(widget, inheritedColors) {
     const el = baseWidget('div', widget, 'progressbar', inheritedColors);
-    const min = numberValue(widget.properties.min, 0);
-    const max = numberValue(widget.properties.max, 100);
-    const value = numberValue(widget.properties.value, 0);
-    const percent = max <= min ? 0 : Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
+    const percent = progressPercent(widget.properties);
     const vertical = stringValue(widget.properties.orientation, 'horizontal') === 'vertical';
     if (vertical) el.classList.add('vertical');
     const fill = document.createElement('div');

@@ -8,7 +8,7 @@ function assert(condition: boolean, message: string): asserts condition {
 }
 
 function readExample(root: string, lesson: string, block: string): string {
-  return fs.readFileSync(path.join(root, 'spec/lessons/examples', lesson, `${block}.idyl`), 'utf8');
+  return fs.readFileSync(path.join(root, 'generated/lesson-spec/examples', lesson, `${block}.idyl`), 'utf8');
 }
 
 // Многофайловые уроки учебника: standalone-блоки таких уроков закреплены в

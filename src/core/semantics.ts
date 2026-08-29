@@ -1265,7 +1265,7 @@ export class SemanticAnalyzer {
               : leftAbove === 'break'
                 ? 'the loop stops above'
                 : 'the loop restarts above';
-            this.diagnostics.warning(child.range, `this line can never run — ${reason}`);
+            this.diagnostics.warning(child.range, `this line can never run — ${reason}`, 'code-never-runs');
           }
           this.analyzeStatement(child);
           if (child.kind === 'ReturnStatement') leftAbove = 'return';
@@ -1330,13 +1330,14 @@ export class SemanticAnalyzer {
           this.diagnostics.warning(
             statement.range,
             `the value returned by '${droppedName}' is not used`,
+            'result-not-used',
           );
         }
       } else if (type.kind !== 'error') {
         // Выражение без единого вызова в корне: посчитано и выброшено.
         // Предупреждение, а не ошибка (вердикт владельца 2026-08-28): код,
         // который делает ничего, не наказывается — как и «a = a + 0».
-        this.diagnostics.warning(statement.range, 'this line computes a value and does not use it');
+        this.diagnostics.warning(statement.range, 'this line computes a value and does not use it', 'statement-does-nothing');
       }
       return;
     }
@@ -1393,6 +1394,40 @@ export class SemanticAnalyzer {
     return null;
   }
 
+  /**
+   * Сравнение двух целых литералов решено ещё до запуска: `1 > 0` — всегда
+   * true (хотелка владельца 2026-08-29, то же правило condition-always-same).
+   * Только int-литералы: дробные ловит float-equality, строки/символы в
+   * условиях детских программ не живут.
+   */
+  private literalComparisonVerdict(condition: Expression): boolean | null {
+    if (condition.kind !== 'BinaryExpression') return null;
+    const { left, right, operator } = condition;
+    if (left.kind !== 'LiteralExpression' || right.kind !== 'LiteralExpression') return null;
+    if (left.valueType !== 'int' || right.valueType !== 'int') return null;
+    const a = BigInt(left.value as number | bigint | string);
+    const b = BigInt(right.value as number | bigint | string);
+    switch (operator) {
+      case '==': return a === b;
+      case '!=': return a !== b;
+      case '<': return a < b;
+      case '<=': return a <= b;
+      case '>': return a > b;
+      case '>=': return a >= b;
+      default: return null;
+    }
+  }
+
+  private warnConstantCondition(condition: Expression): void {
+    const verdict = this.literalComparisonVerdict(condition);
+    if (verdict === null) return;
+    this.diagnostics.warning(
+      condition.range,
+      verdict ? 'this condition is always true' : 'this condition is always false',
+      'condition-always-same',
+    );
+  }
+
   private analyzeIfStatement(statement: IfStatement): void {
     // Литеральное условие: if ничего не решает. Предупреждение, не ошибка —
     // «временно всегда включено» бывает приёмом отладки.
@@ -1400,8 +1435,10 @@ export class SemanticAnalyzer {
       this.diagnostics.warning(
         statement.condition.range,
         statement.condition.value === true ? 'this condition is always true' : 'this condition is always false',
+        'condition-always-same',
       );
     }
+    this.warnConstantCondition(statement.condition);
     this.expectBoolCondition(statement.condition, 'if condition');
     this.analyzeStatement(statement.thenBranch);
     if (statement.elseBranch) {
@@ -1439,8 +1476,9 @@ export class SemanticAnalyzer {
     if (statement.condition.kind === 'LiteralExpression'
       && statement.condition.valueType === 'bool'
       && statement.condition.value === false) {
-      this.diagnostics.warning(statement.condition.range, 'this condition is always false');
+      this.diagnostics.warning(statement.condition.range, 'this condition is always false', 'condition-always-same');
     }
+    this.warnConstantCondition(statement.condition);
     this.expectBoolCondition(statement.condition, 'while condition');
     this.loopDepth++;
     this.analyzeStatement(statement.body);
@@ -1621,8 +1659,11 @@ export class SemanticAnalyzer {
   }
 
   private analyzeConstructorArguments(statement: VariableDeclaration, declaredType: TypeRef): void {
-    if (declaredType.kind === 'qualified' && declaredType.moduleName === 'json' && declaredType.name === 'Value') {
-      const constructor = this.stdlib.getModuleFunction('json', 'Value');
+    // Тип, у чьего модуля есть одноимённая функция-конструктор (json.Value),
+    // принимает конструкторные аргументы объявления через неё — признак
+    // читается из реестра, а не из захардкоженной пары имён.
+    if (declaredType.kind === 'qualified' && this.stdlib.getModuleFunction(declaredType.moduleName, declaredType.name)) {
+      const constructor = this.stdlib.getModuleFunction(declaredType.moduleName, declaredType.name);
       if (constructor) this.checkArgumentList(statement.constructorArgs ?? [], constructor, statement.range);
       return;
     }
@@ -1885,7 +1926,7 @@ export class SemanticAnalyzer {
       && statement.value.kind === 'IdentifierExpression'
       && statement.target.name === statement.value.name
     ) {
-      this.diagnostics.warning(statement.range, 'assigning a variable to itself changes nothing');
+      this.diagnostics.warning(statement.range, 'assigning a variable to itself changes nothing', 'self-assignment');
     }
 
     const target = this.assignmentTargetInfo(statement.target);
@@ -2367,6 +2408,7 @@ export class SemanticAnalyzer {
         this.diagnostics.warning(
           expression.range,
           `two float numbers are compared with '${expression.operator}' — they are almost never exactly equal`,
+          'float-equality',
         );
       }
       // «flag == true» — сравнение, которое ничего не меняет: результат и есть
@@ -2376,7 +2418,7 @@ export class SemanticAnalyzer {
       if (expression.operator === '=='
         && sameType(left, BOOL) && sameType(right, BOOL)
         && (trueLiteral(expression.left) || trueLiteral(expression.right))) {
-        this.diagnostics.warning(expression.range, "comparing a bool with 'true' changes nothing");
+        this.diagnostics.warning(expression.range, "comparing a bool with 'true' changes nothing", 'compared-with-true');
       }
       // Голый null с голым null — мёртвое выражение (всегда true/false).
       if (left.kind === 'null' && right.kind === 'null') {
@@ -2486,21 +2528,6 @@ export class SemanticAnalyzer {
   }
 
   private callType(expression: CallExpression): TypeRef {
-    if (expression.callee.kind === 'IdentifierExpression' && this.isArrayGlobalFunction(expression.callee.name)) {
-      if (this.shadowsBuiltInFunction(expression.callee.name, expression.callee.range)) {
-        for (const arg of expression.args) this.expressionType(arg.value);
-        return ERROR_TYPE;
-      }
-      this.markSemanticToken('function', expression.callee.range, ['defaultLibrary']);
-      return this.arrayGlobalFunctionType(expression.callee.name, expression);
-    }
-
-    const specialMathType = this.specialMathCallType(expression);
-    if (specialMathType) return specialMathType;
-
-    const specialRandomType = this.specialRandomCallType(expression);
-    if (specialRandomType) return specialRandomType;
-
     const resolved = this.resolveCall(expression);
     if (!resolved) {
       for (const arg of expression.args) this.expressionType(arg.value);
@@ -2508,154 +2535,65 @@ export class SemanticAnalyzer {
     }
 
     this.checkArguments(expression, resolved);
-    return resolved.returnType;
+    return this.ruleAdjustedReturnType(resolved, expression);
   }
 
-  private isArrayGlobalFunction(name: string): boolean {
-    return name === 'max' || name === 'min' || name === 'sum' || name === 'avg';
-  }
-
-  private arrayGlobalFunctionType(name: string, expression: CallExpression): TypeRef {
-    const fn: FunctionSpec = { name, parameters: [{ name: 'array', type: ANY_TYPE }], returnType: ANY_TYPE };
-    this.checkArgumentList(expression.args, fn, expression.range);
-    const ordered = this.orderedArguments(expression.args, fn);
-    const arg = ordered[0];
-    if (!arg) {
-      return ERROR_TYPE;
-    }
-
-    const argType = this.expressionType(arg.value);
-    if (argType.kind !== 'array') {
-      this.diagnostics.error(
-        arg.range,
-        `'${name}' expects an array, got '${typeToString(argType)}'`,
-      );
-      return ERROR_TYPE;
-    }
-
-    if (!isNumeric(argType.elementType)) {
-      this.diagnostics.error(
-        arg.range,
-        `'${name}' expects a numeric array, got '${typeToString(argType)}'`,
-      );
-      return ERROR_TYPE;
-    }
-
-    return name === 'avg' ? FLOAT : argType.elementType;
-  }
-
-  private specialMathCallType(expression: CallExpression): TypeRef | null {
-    const callee = expression.callee;
-    if (callee.kind !== 'MemberExpression' || callee.object.kind !== 'IdentifierExpression') {
-      return null;
-    }
-    if (callee.object.name !== 'math') return null;
-
-    this.markSemanticToken('namespace', callee.object.range, ['defaultLibrary']);
-    this.markSemanticToken('function', callee.nameRange, ['defaultLibrary']);
-
-    if (callee.name === 'round' || callee.name === 'floor' || callee.name === 'ceil') {
-      if (!this.imports.has('math')) {
-        this.diagnostics.error(callee.object.range, "'math' is not imported (use 'use math;')");
-        return ERROR_TYPE;
+  /**
+   * Типовые правила из реестра (FunctionSpec.returnTypeRule) — прежние
+   * спец-ветки по именам math/random/агрегатов сведены в декларативные
+   * пометки спеков; здесь их единственный интерпретатор.
+   */
+  private ruleAdjustedReturnType(fn: FunctionSpec, expression: CallExpression): TypeRef {
+    switch (fn.returnTypeRule) {
+      case undefined:
+        return fn.returnType;
+      case 'int-without-digits':
+        return expression.args.length >= 2 ? FLOAT : INT;
+      case 'match-integer-argument': {
+        const argument = this.orderedArguments(expression.args, fn)[0];
+        if (!argument) return ERROR_TYPE;
+        return isIntegerLike(this.expressionType(argument.value)) ? INT : FLOAT;
       }
-
-      const fn: FunctionSpec = {
-        name: callee.name,
-        parameters: [
-          { name: 'value', type: FLOAT },
-          { name: 'digits', type: INT },
-        ],
-        returnType: FLOAT,
-        minArguments: 1,
-      };
-      this.checkArgumentList(expression.args, fn, expression.range);
-      if (expression.args.length === 2) {
-        return FLOAT;
-      }
-
-      return INT;
-    }
-
-    if (callee.name === 'abs') {
-      if (!this.imports.has('math')) {
-        this.diagnostics.error(callee.object.range, "'math' is not imported (use 'use math;')");
-        return ERROR_TYPE;
-      }
-
-      const fn: FunctionSpec = {
-        name: 'abs',
-        parameters: [{ name: 'value', type: FLOAT }],
-        returnType: FLOAT,
-      };
-      this.checkArgumentList(expression.args, fn, expression.range);
-      const ordered = this.orderedArguments(expression.args, fn);
-      const argument = ordered[0];
-      if (!argument) return ERROR_TYPE;
-
-      // Модуль числа сохраняет «целочисленность»: abs(int) — int, abs(float) — float.
-      return isIntegerLike(this.expressionType(argument.value)) ? INT : FLOAT;
-    }
-
-    if (callee.name === 'clamp') {
-      if (!this.imports.has('math')) {
-        this.diagnostics.error(callee.object.range, "'math' is not imported (use 'use math;')");
-        return ERROR_TYPE;
-      }
-
-      const fn: FunctionSpec = {
-        name: 'clamp',
-        parameters: [
-          { name: 'min', type: FLOAT },
-          { name: 'value', type: FLOAT },
-          { name: 'max', type: FLOAT },
-        ],
-        returnType: FLOAT,
-      };
-      this.checkArgumentList(expression.args, fn, expression.range);
-      const argTypes = expression.args.map((arg) => this.expressionType(arg.value));
-      for (let i = 0; i < argTypes.length; i++) {
-        if (!isNumeric(argTypes[i])) {
-          this.diagnostics.error(
-            expression.args[i].range,
-            `'clamp' argument ${i + 1} expects numeric value, got '${typeToString(argTypes[i])}'`,
-          );
+      case 'int-when-all-integer-numeric': {
+        const argTypes = expression.args.map((arg) => this.expressionType(arg.value));
+        for (let i = 0; i < argTypes.length; i++) {
+          if (!isNumeric(argTypes[i])) {
+            this.diagnostics.error(
+              expression.args[i].range,
+              `'${fn.name}' argument ${i + 1} expects numeric value, got '${typeToString(argTypes[i])}'`,
+            );
+          }
         }
+        return argTypes.every((type) => isIntegerLike(type)) ? INT : FLOAT;
       }
-
-      return argTypes.every((type) => isIntegerLike(type)) ? INT : FLOAT;
+      case 'numeric-array-aggregate': {
+        const argument = this.orderedArguments(expression.args, fn)[0];
+        if (!argument) return ERROR_TYPE;
+        const argType = this.expressionType(argument.value);
+        if (argType.kind !== 'array') {
+          // Не-массив уже отвергла общая приёмка по acceptedTypes реестра
+          // («argument 1 expects numeric array, got …») — молчим, не дублируем.
+          return ERROR_TYPE;
+        }
+        if (!isNumeric(argType.elementType)) {
+          this.diagnostics.error(
+            argument.range,
+            `'${fn.name}' expects a numeric array, got '${typeToString(argType)}'`,
+          );
+          return ERROR_TYPE;
+        }
+        // Именно ссылка на ANY_TYPE: sameType с ANY совместим со всем подряд.
+        return fn.returnType === ANY_TYPE ? argType.elementType : fn.returnType;
+      }
+      case 'element-of-collection': {
+        const argument = this.orderedArguments(expression.args, fn)[0];
+        if (!argument) return ERROR_TYPE;
+        const collectionType = this.expressionType(argument.value);
+        if (sameType(collectionType, STRING)) return CHAR;
+        if (collectionType.kind === 'array') return collectionType.elementType;
+        return ERROR_TYPE;
+      }
     }
-
-    return null;
-  }
-
-  private specialRandomCallType(expression: CallExpression): TypeRef | null {
-    const callee = expression.callee;
-    if (callee.kind !== 'MemberExpression' || callee.object.kind !== 'IdentifierExpression') {
-      return null;
-    }
-    if (callee.object.name !== 'random' || callee.name !== 'choose_from') return null;
-
-    this.markSemanticToken('namespace', callee.object.range, ['defaultLibrary']);
-    this.markSemanticToken('function', callee.nameRange, ['defaultLibrary']);
-
-    if (!this.imports.has('random')) {
-      this.diagnostics.error(callee.object.range, "'random' is not imported (use 'use random;')");
-      return ERROR_TYPE;
-    }
-
-    const fn = this.stdlib.getModuleFunction('random', 'choose_from');
-    if (!fn) return ERROR_TYPE;
-
-    this.checkArgumentList(expression.args, fn, expression.range);
-    const ordered = this.orderedArguments(expression.args, fn);
-    const argument = ordered[0];
-    if (!argument) return ERROR_TYPE;
-
-    const collectionType = this.expressionType(argument.value);
-    if (sameType(collectionType, STRING)) return CHAR;
-    if (collectionType.kind === 'array') return collectionType.elementType;
-    return ERROR_TYPE;
   }
 
   private resolveCall(expression: CallExpression): FunctionSpec | null {
@@ -3976,7 +3914,7 @@ export class SemanticAnalyzer {
       // (конструктор, регистрация в рантайме), массив — заготовка данных;
       // их объявление — уже действие, а не бездействие.
       if (symbol.type.kind !== 'primitive') continue;
-      this.diagnostics.warning(symbol.range, `variable '${symbol.name}' is never used`);
+      this.diagnostics.warning(symbol.range, `variable '${symbol.name}' is never used`, 'unused-variable');
     }
   }
 

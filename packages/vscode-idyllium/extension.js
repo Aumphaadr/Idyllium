@@ -654,30 +654,10 @@ function guiPreviewIntervalMs(windows, canvases) {
   return loadedCore.guiPreviewIntervalMs(windows, canvases);
 }
 
-async function runActionWithSnapshotPump(action, sendSnapshot) {
-  let finished = false;
-  let failure = null;
-  const actionPromise = Promise.resolve()
-    .then(action)
-    .catch((error) => {
-      failure = error;
-    })
-    .finally(() => {
-      finished = true;
-    });
-
-  while (!finished) {
-    await Promise.race([actionPromise, waitForSnapshotPump()]);
-    sendSnapshot();
-  }
-
-  if (failure) throw failure;
-}
-
-function waitForSnapshotPump() {
-  return new Promise((resolve) => {
-    setTimeout(resolve, 50);
-  });
+function runActionWithSnapshotPump(action, sendSnapshot) {
+  // Механика насоса живёт в ядре (src/runtime/gui-pump.ts) — одна на
+  // Web IDE и расширение, здесь только прокладка к загруженному ядру.
+  return loadedCore.runActionWithSnapshotPump(action, sendSnapshot);
 }
 
 function guiLocalResourceRoots(document, context, windows, canvases, audio = []) {
@@ -751,6 +731,22 @@ async function executeIdylliumInExtension(core, runFile, files, document, option
       return null;
     },
   });
+
+  // Файл-модуль без main() раньше «успешно выполнялся» в тишину — честный
+  // отказ, как в Web IDE (вердикт владельца 2026-08-29).
+  if (compilation.success && !(compilation.ast && compilation.ast.main)) {
+    return {
+      success: false,
+      output: '',
+      diagnosticsText: `В файле ${path.basename(runFile)} нет функции main() — запускать нечего.`,
+      runtimeError: null,
+      audio: [],
+      windows: [],
+      canvases: [],
+      modals: [],
+      runtime: null,
+    };
+  }
 
   if (!compilation.success || !compilation.jsCode) {
     return {
@@ -1092,7 +1088,8 @@ function toVsDiagnostic(diagnostic) {
     toVsDiagnosticSeverity(diagnostic.severity)
   );
   item.source = 'Idyllium';
-  if (diagnostic.code) item.code = diagnostic.code;
+  // Машинный code в диагностику не кладём: показ кодов людям ждёт отдельного
+  // вердикта владельца (2026-08-29); хинт остаётся чистым текстом правила.
   return item;
 }
 

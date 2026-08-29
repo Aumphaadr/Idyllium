@@ -1,0 +1,43 @@
+name: Deploy Pages
+
+# Деплой сайта (docs/ уже собран и лежит в git) на GitHub Pages.
+# ЗАПУСКАЕТСЯ ТОЛЬКО ВРУЧНУЮ (кнопка Run workflow во вкладке Actions)
+# или пушем релизного тега vX.Y.Z — обычные пуши в main сайт НЕ трогают,
+# чтобы можно было часто пушить код методистам, не выкатывая сайт.
+#
+# ВАЖНО: этот воркфлоу начинает управлять публикацией только после
+# переключения Settings → Pages → Source на «GitHub Actions»; пока там
+# «Deploy from a branch», сайт по-прежнему выкатывается каждым пушем.
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Публикация docs/ на Pages
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -67,9 +67,9 @@ const SKIP: Readonly<Record<string, string>> = {
 
 async function main(): Promise<void> {
   const root = process.cwd();
-  const specRoot = path.join(root, 'spec/lessons');
+  const specRoot = path.join(root, 'generated/lesson-spec');
   const manifestPath = path.join(specRoot, 'manifest.json');
-  assert(fs.existsSync(manifestPath), 'missing spec/lessons/manifest.json; run npm run spec:extract');
+  assert(fs.existsSync(manifestPath), 'missing generated/lesson-spec/manifest.json; run npm run spec:extract');
 
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8')) as LessonManifest;
   const expectations = JSON.parse(
