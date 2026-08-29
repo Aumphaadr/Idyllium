@@ -69,7 +69,16 @@ export function finiteNumber(value: unknown, argumentName: string, file: string,
     if (Number.isFinite(converted)) return converted;
   }
   if (typeof value === 'number' && Number.isFinite(value)) return value;
-  throw new IdylliumRuntimeError(file, line, `${argumentName} must be a finite number, got '${String(value)}'`);
+  // Нефинитное значение может прийти только из ячейки types (inf/nan-паттерн);
+  // называем его словами печати, а не JS-«Infinity» (хвост float-канона).
+  const shown = typeof value === 'number' && Number.isNaN(value)
+    ? 'nan'
+    : typeof value === 'number' && !Number.isFinite(value)
+      ? (value > 0 ? 'inf' : '-inf')
+      : typeof value === 'bigint'
+        ? `${value} (does not fit into float)`
+        : String(value);
+  throw new IdylliumRuntimeError(file, line, `${argumentName} must be a finite number, got '${shown}'`);
 }
 
 export function runtimeInteger(value: unknown, argumentName: string, file: string, line: number): bigint {

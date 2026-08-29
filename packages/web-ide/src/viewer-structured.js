@@ -574,3 +574,33 @@ export function describeJsonSyntaxError(error) {
   if (/non-whitespace character after JSON|after JSON data/iu.test(message)) return 'после завершённого JSON обнаружены лишние символы.';
   return 'нарушен синтаксис JSON. Проверьте кавычки, запятые и скобки.';
 }
+
+// Виды структурированных файлов и выбранные режимы просмотра.
+export const structuredViewModes = new Map();
+
+export function isCsvFile(file) {
+  return /\.csv$/iu.test(file);
+}
+
+export function isJsonFile(file) {
+  return /\.json$/iu.test(file);
+}
+
+export function isMarkdownFile(file) {
+  return /\.(?:md|markdown)$/iu.test(file);
+}
+
+export function isSvgFile(file) {
+  return /\.svg$/iu.test(file);
+}
+
+export function structuredViewMode(file) {
+  if (isCsvFile(file)) return 'table';
+  if (isJsonFile(file)) return 'tree';
+  if (isMarkdownFile(file)) return 'preview';
+  if (isSvgFile(file)) return 'image';
+  return '';
+}
+
+// Текстовый SVG показываем тем же ассетным просмотрщиком, что и бинарные
+// картинки: масштаб, детали и определение типа достаются бесплатно.

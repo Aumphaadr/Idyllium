@@ -168,7 +168,7 @@ import {
 import { parseIdylliumStyle } from './style';
 import { hashAdler32, hashCrc32, hashFnv1a, hashSha256Bytes, hashSha256Hex } from './hash';
 
-export const IDYLLIUM_VERSION = '1.5.4';
+export const IDYLLIUM_VERSION = '1.5.5';
 
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform(): string {
@@ -286,9 +286,9 @@ export interface IdylliumRuntime {
     searchWith(array: unknown, value: unknown, slot: string, mode: string, file: string, line: number): Promise<boolean | number>;
   };
   readonly types: {
-    cast(value: unknown, typeName: string): number | bigint;
-    to_bin(value: unknown, typeName: string): string;
-    to_hex(value: unknown, typeName: string): string;
+    cast(value: unknown, typeName: string, file?: string, line?: number): number | bigint;
+    to_bin(value: unknown, typeName: string, file?: string, line?: number): string;
+    to_hex(value: unknown, typeName: string, file?: string, line?: number): string;
     shift_left(value: unknown, typeName: string, bits: unknown, file: string, line: number): number | bigint;
     shift_right(value: unknown, typeName: string, bits: unknown, file: string, line: number): number | bigint;
     bit_and(value: unknown, typeName: string, mask: unknown, file: string, line: number): number | bigint;
@@ -952,14 +952,14 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
   };
 
   const types = {
-    cast(value: unknown, typeName: string): number | bigint {
-      return castTypesValue(value, typeName);
+    cast(value: unknown, typeName: string, file = 'types', line = 0): number | bigint {
+      return castTypesValue(value, typeName, file, line);
     },
-    to_bin(value: unknown, typeName: string): string {
-      return typesToBin(value, typeName);
+    to_bin(value: unknown, typeName: string, file = 'types', line = 0): string {
+      return typesToBin(value, typeName, file, line);
     },
-    to_hex(value: unknown, typeName: string): string {
-      return typesToHex(value, typeName);
+    to_hex(value: unknown, typeName: string, file = 'types', line = 0): string {
+      return typesToHex(value, typeName, file, line);
     },
     shift_left(value: unknown, typeName: string, bits: unknown, file: string, line: number): number | bigint {
       return typesShift(value, typeName, bits, 'left', file, line);
@@ -1168,6 +1168,30 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
             file,
             line,
             `random.choose_from() expects a string or array, got '${runtimeTypeName(collection)}'`,
+          );
+        }),
+        // Перемешанная копия (Фишер–Йетс); оригинал не меняется — массивы в
+        // языке значения, и функция обязана вернуть результат. Строка режется
+        // по видимым символам, как в choose_from (сурогатные пары не рвутся).
+        shuffle: contextFunction((collection: unknown, file: string, line: number) => {
+          const pickIndex = (bound: number): number => Math.floor(randomUnit() * bound);
+          if (typeof collection === 'string') {
+            const characters = Array.from(collection);
+            for (let index = characters.length - 1; index > 0; index -= 1) {
+              const swapWith = pickIndex(index + 1);
+              const held = characters[index];
+              characters[index] = characters[swapWith];
+              characters[swapWith] = held;
+            }
+            return characters.join('');
+          }
+          if (collection instanceof IdylliumArray) {
+            return collection.shuffledCopy(pickIndex);
+          }
+          throw new IdylliumRuntimeError(
+            file,
+            line,
+            `random.shuffle() expects a string or array, got '${runtimeTypeName(collection)}'`,
           );
         }),
         set_seed: contextFunction((seed: number, file: string, line: number) => {
@@ -2502,10 +2526,21 @@ function finiteMathResult(value: number, functionName: string, file: string, lin
 }
 
 
+// Арифметика языка бесконечность не производит (переполнение — ошибка),
+// но ячейки библиотеки types живут по машинным правилам и могут держать
+// IEEE-бесконечность или NaN (сдвиг битов, каст гиганта). Печать говорит
+// словами C-мира — 'inf'/'-inf'/'nan', а не сырым JS-«Infinity»
+// (хвост float-канона, 2026-08-29).
+function nonFiniteWord(value: number): string {
+  if (Number.isNaN(value)) return 'nan';
+  return value > 0 ? 'inf' : '-inf';
+}
+
 function formatForConsole(value: unknown, precision: number | null): string {
   if (value instanceof IdylliumArray) return value.toInspectString();
   if (isJsonRuntimeValue(value)) return jsonSerialize(value, 0, 'json', 0);
   if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'number' && !Number.isFinite(value)) return nonFiniteWord(value);
   if (typeof value === 'number' && precision !== null) {
     const rounded = Number(value.toFixed(precision));
     // Ненулевое число, округлившееся в 0 (например 3e-36 при точности 8),
@@ -2521,6 +2556,7 @@ function formatForInspect(value: unknown): string {
   if (isJsonRuntimeValue(value)) return jsonSerialize(value, 0, 'json', 0);
   if (typeof value === 'string') return JSON.stringify(value);
   if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'number' && !Number.isFinite(value)) return nonFiniteWord(value);
   return String(value);
 }
 

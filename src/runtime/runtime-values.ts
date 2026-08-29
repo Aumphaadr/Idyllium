@@ -456,6 +456,22 @@ export class IdylliumArray {
     return new IdylliumArray([...values], dynamic, dynamic ? null : staticSize, defaultFactory);
   }
 
+  /**
+   * Перемешанная копия того же вида (dyn остаётся dyn, фиксированный — той
+   * же длины). Источник случайности передаёт вызывающий — случайные числа
+   * живут в модуле random и подчиняются его сиду (random.shuffle, 2026-08-29).
+   */
+  shuffledCopy(pickIndex: (bound: number) => number): IdylliumArray {
+    const items = [...this.items];
+    for (let index = items.length - 1; index > 0; index -= 1) {
+      const swapWith = pickIndex(index + 1);
+      const held = items[index];
+      items[index] = items[swapWith];
+      items[swapWith] = held;
+    }
+    return new IdylliumArray(items, this.dynamic, this.dynamic ? null : this.staticSize, this.defaultFactory);
+  }
+
   static convert(
     value: unknown,
     dynamic: boolean,

@@ -1314,6 +1314,21 @@ export class SemanticAnalyzer {
   // Метод или функция без скобок: «v.info;» молча не делает ничего, а
   // «console.writeln;» и вовсе ронял рантайм. Значений-функций в языке нет,
   // поэтому функциональный тип у выражения-statement — всегда забытые скобки.
+  /**
+   * Библиотечный вызов, чей результат выбрасывать заведомо бессмысленно
+   * (реестровый флажок resultMustBeUsed): random.shuffle возвращает копию,
+   * строка-соло в питоньей привычке молча не делает ничего.
+   */
+  private mustUseLibraryCallName(root: CallExpression): string | null {
+    const spec = this.resolveCall(root);
+    if (!spec?.resultMustBeUsed) return null;
+    const callee = root.callee;
+    if (callee.kind === 'MemberExpression' && callee.object.kind === 'IdentifierExpression') {
+      return `${callee.object.name}.${callee.name}`;
+    }
+    return spec.name;
+  }
+
   private analyzeExpressionStatement(statement: ExpressionStatement): void {
     const type = this.expressionType(statement.expression);
 
@@ -1324,7 +1339,7 @@ export class SemanticAnalyzer {
         // значение, а строка его выбросила — предупреждаем. Библиотеку не
         // трогаем: db.execute("INSERT …") законно игнорирует свой Result.
         const droppedName = !sameType(type, VOID) && type.kind !== 'error'
-          ? this.userCallName(root)
+          ? this.userCallName(root) ?? this.mustUseLibraryCallName(root)
           : null;
         if (droppedName !== null) {
           this.diagnostics.warning(
@@ -2591,6 +2606,15 @@ export class SemanticAnalyzer {
         const collectionType = this.expressionType(argument.value);
         if (sameType(collectionType, STRING)) return CHAR;
         if (collectionType.kind === 'array') return collectionType.elementType;
+        return ERROR_TYPE;
+      }
+      // Результат — того же типа, что аргумент-коллекция: random.shuffle
+      // возвращает перемешанную копию строки/массива (fixed остаётся fixed).
+      case 'same-as-argument': {
+        const argument = this.orderedArguments(expression.args, fn)[0];
+        if (!argument) return ERROR_TYPE;
+        const argumentType = this.expressionType(argument.value);
+        if (sameType(argumentType, STRING) || argumentType.kind === 'array') return argumentType;
         return ERROR_TYPE;
       }
     }

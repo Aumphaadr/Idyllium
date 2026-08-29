@@ -836,7 +836,15 @@ export class JavaScriptGenerator {
       const globalSpec = this.stdlib.getGlobalFunction(callee.name);
       if (globalSpec?.codegen) {
         const args = this.callArgumentValues(expression.args, globalSpec.parameters.map((parameter) => parameter.name)).join(', ');
-        return this.declaredRuntimeCall(globalSpec.codegen, args, expression.range.start.file, expression.range.start.line);
+        const call = this.declaredRuntimeCall(globalSpec.codegen, args, expression.range.start.file, expression.range.start.line);
+        // Агрегат с float-результатом (sum от float-массива) внутри считает
+        // без статических типов и на целых по величине double уходит в
+        // точный BigInt; граница здесь возвращает результат в double —
+        // последний хвост float-канона (2026-08-29).
+        if (globalSpec.returnTypeRule === 'numeric-array-aggregate' && this.isFloatType(this.typeOf(expression))) {
+          return `$rt.core.toFloat(${call}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+        }
+        return call;
       }
       if (callee.name === 'type_name' && expression.args.length === 1) {
         // Гибрид: значения и массивы известны статически — строка-константа
@@ -896,7 +904,7 @@ export class JavaScriptGenerator {
       }
       const typesRuntimeName = this.typesRuntimeNameOf(receiverType);
       if (typesRuntimeName && (callee.name === 'to_bin' || callee.name === 'to_hex')) {
-        return `$rt.types.${callee.name}(${this.expression(callee.object)}, ${JSON.stringify(typesRuntimeName)})`;
+        return `$rt.types.${callee.name}(${this.expression(callee.object)}, ${JSON.stringify(typesRuntimeName)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
       }
       if (typesRuntimeName && (callee.name === 'shift_left' || callee.name === 'shift_right')) {
         const [bits] = this.methodCallArgs(callee.name, expression.args, receiverType);
@@ -1005,7 +1013,7 @@ export class JavaScriptGenerator {
     elementType: TypeName | null = null,
   ): string {
     const values = expression.elements
-      .map((element) => this.castForType(this.expression(element), elementType))
+      .map((element) => this.castForType(this.expression(element), elementType, element.range))
       .join(', ');
     const size = staticSize === null ? 'null' : String(staticSize);
     return `$rt.array.from([${values}], ${dynamic ? 'true' : 'false'}, ${size}, ${defaultFactory})`;
@@ -1338,7 +1346,7 @@ export class JavaScriptGenerator {
     }
 
     if (type.kind === 'qualified' && type.moduleName === 'types' && TYPE_RUNTIME_NAMES.has(type.name)) {
-      return `$rt.types.cast(${value}, ${JSON.stringify(type.name)})`;
+      return `$rt.types.cast(${value}, ${JSON.stringify(type.name)}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
     }
     if (type.kind === 'qualified' && this.stdlib.typeAcceptsNull(type)) {
       return this.nullableValue(value, type.moduleName, type.name, range);
@@ -1390,10 +1398,13 @@ export class JavaScriptGenerator {
     return 'null';
   }
 
-  private castForType(value: string, type: TypeName | null): string {
+  private castForType(value: string, type: TypeName | null, range?: SourceRange): string {
     const runtimeName = this.typesRuntimeName(type);
     if (!runtimeName) return value;
-    return `$rt.types.cast(${value}, ${JSON.stringify(runtimeName)})`;
+    // range нет только у дефолтных нулей (они всегда валидны) — там
+    // служебный контекст 'types' безвреден.
+    const location = range ? `, ${JSON.stringify(range.start.file)}, ${range.start.line}` : '';
+    return `$rt.types.cast(${value}, ${JSON.stringify(runtimeName)}${location})`;
   }
 
   private typesRuntimeName(type: TypeName | null): string | null {

@@ -2929,6 +2929,49 @@ main() {
     typesFloat.output === `10000000000000000\n0${'1'.repeat(8)}${'0'.repeat(23)}\n`,
     `types floats must accept big integers and overflow into the IEEE infinity pattern: ${JSON.stringify(typesFloat.output)} / ${typesFloat.runtimeError}`,
   );
+
+  // Хвосты float-канона (2026-08-29): IEEE-значения из ячеек types печатаются
+  // словами C-мира, арифметика языка отказывает им тоже словами, а агрегат
+  // от float-гигантов возвращается в double вместо точной «простыни».
+  const nonFiniteWords = await runIdyllium(`use console;
+use types;
+main() {
+    types.float32 y = 340000000000000000000000000000000000000.0;
+    types.float32 z = y * 100.0;
+    console.writeln(z);
+    console.writeln(to_string(0.0 - 1.0), " — минус живёт");
+    console.writeln(types.from_bin("0${'1'.repeat(12)}${'0'.repeat(51)}", "float64"));
+}
+`, {}, { file: 'main.idyl' });
+  assert(
+    nonFiniteWords.output === 'inf\n-1 — минус живёт\nnan\n',
+    `non-finite cells must print inf/nan words: ${JSON.stringify(nonFiniteWords.output)} / ${nonFiniteWords.runtimeError}`,
+  );
+
+  const infiniteOperand = await runIdyllium(`use console;
+use types;
+main() {
+    types.float32 y = 340000000000000000000000000000000000000.0;
+    types.float32 z = y * 100.0;
+    console.writeln(1.0 + z);
+}
+`, {}, { file: 'main.idyl' });
+  assert(
+    (infiniteOperand.runtimeError ?? '').includes("must be a finite number, got 'inf'"),
+    `infinite operand must be named with the printing word: ${infiniteOperand.runtimeError}`,
+  );
+
+  const aggregateGiant = await runIdyllium(`use console;
+main() {
+    dyn_array<float> xs;
+    xs.add(1${'0'.repeat(300)}.0);
+    console.writeln(sum(xs) + sum(xs));
+}
+`, {}, { file: 'main.idyl' });
+  assert(
+    aggregateGiant.output === '2e+300\n',
+    `float aggregate must stay double instead of exact giants: ${JSON.stringify(aggregateGiant.output)} / ${aggregateGiant.runtimeError}`,
+  );
 });
 
 test('set_seed scrambles the seed: neighbouring seeds land on different faces', async () => {
@@ -2962,3 +3005,103 @@ main() {
 });
 
 void runTests();
+
+test('sqlite enforces foreign keys from open and honors a manual OFF across writes', async () => {
+  // Вердикт владельца 2026-08-29 (вопрос методистов): PRAGMA foreign_keys
+  // включается на открытии; sql.js внутри export() пересоздаёт соединение,
+  // поэтому адаптер восстанавливает ФАКТИЧЕСКОЕ значение прагмы — явный
+  // OFF ученика переживает записи на диск.
+  const memory = await runWithMemoryFiles(`use console;
+use sqlite;
+
+main() {
+    sqlite.Database db = sqlite.open("fk.db");
+    db.execute("CREATE TABLE guilds (id INTEGER PRIMARY KEY, title TEXT)");
+    db.execute("CREATE TABLE players (id INTEGER PRIMARY KEY, name TEXT, guild_id INTEGER, FOREIGN KEY (guild_id) REFERENCES guilds(id))");
+    sqlite.Result pr = db.execute("PRAGMA foreign_keys;");
+    while (pr.next()) {
+        console.writeln("pragma: ", pr.get_int("foreign_keys"));
+    }
+    try {
+        db.execute("INSERT INTO players (name, guild_id) VALUES ('Фантом', 999)");
+    } catch (e) {
+        console.writeln("сирота: отказ");
+    }
+    db.execute("PRAGMA foreign_keys = OFF;");
+    db.execute("INSERT INTO players (name, guild_id) VALUES ('Фантом-1', 999)");
+    db.execute("INSERT INTO players (name, guild_id) VALUES ('Фантом-2', 999)");
+    console.writeln("под OFF вошли двое");
+    db.execute("PRAGMA foreign_keys = ON;");
+    try {
+        db.execute("INSERT INTO players (name, guild_id) VALUES ('Фантом-3', 999)");
+    } catch (e) {
+        console.writeln("после ON: снова отказ");
+    }
+}
+`, {});
+  const fkOutput = memory.runtime.getOutput();
+  assert(
+    fkOutput === 'pragma: 1\nсирота: отказ\nпод OFF вошли двое\nпосле ON: снова отказ\n',
+    `foreign keys lifecycle is off: ${JSON.stringify(fkOutput)}`,
+  );
+});
+
+test('random.shuffle returns a same-typed copy, follows the seed and warns when dropped', async () => {
+  // Вердикты владельца 2026-08-29 (спека some_random_shuffle): вариант А —
+  // одна функция-копия; имя shuffle; реестровый флажок resultMustBeUsed.
+  const scene = await runIdyllium(`use console;
+use random;
+
+main() {
+    random.set_seed(42);
+    dyn_array<int> xs;
+    xs.add(1); xs.add(2); xs.add(3); xs.add(4); xs.add(5);
+    dyn_array<int> mixed = random.shuffle(xs);
+    console.writeln(xs);
+    console.writeln(mixed);
+    array<string, 3> deck = ["туз", "король", "дама"];
+    console.writeln(random.shuffle(deck));
+    console.writeln(random.shuffle("привет"));
+    console.writeln(random.shuffle("🙂аб").length);
+    console.writeln(random.shuffle(""), "<пусто>");
+    random.set_seed(42);
+    console.writeln(random.shuffle(xs));
+}
+`, {}, { file: 'main.idyl' });
+  const lines = scene.output.split('\n');
+  assert(lines[0] === '[1, 2, 3, 4, 5]', `original must stay intact: ${lines[0]}`);
+  assert(lines[1] === '[1, 5, 3, 2, 4]', `seeded order drifted: ${lines[1]}`);
+  assert(lines[2] === '["дама", "король", "туз"]', `fixed array shuffle drifted: ${lines[2]}`);
+  assert(lines[3] === 'иптевр', `string shuffle drifted: ${lines[3]}`);
+  assert(lines[4] === '4', `surrogate pair must survive shuffling (length in UTF-16 units): ${lines[4]}`);
+  assert(lines[5] === '<пусто>', `empty string must pass through: ${lines[5]}`);
+  assert(lines[6] === lines[1], `same seed must reproduce the same order: ${lines[6]} vs ${lines[1]}`);
+
+  // Соло-вызов — предупреждение (копия выброшена); библиотека в целом
+  // результат ронять вправе — на db.execute голоса нет.
+  const dropped = compileIdyllium([
+    'use random;',
+    '',
+    'main() {',
+    '    dyn_array<int> xs;',
+    '    xs.add(1);',
+    '    random.shuffle(xs);',
+    '}',
+  ].join('\n'));
+  assert(dropped.success, dropped.diagnosticsText);
+  assert(
+    dropped.diagnosticsText.includes("the value returned by 'random.shuffle' is not used"),
+    `dropped shuffle must warn: ${dropped.diagnosticsText}`,
+  );
+
+  // Тип результата равен типу аргумента — приписать не туда нельзя.
+  assertFails(`
+use random;
+
+main() {
+    dyn_array<int> xs;
+    xs.add(1);
+    int bad = random.shuffle(xs);
+}
+`, "cannot assign 'dyn_array<int>' value to 'int' variable");
+});
