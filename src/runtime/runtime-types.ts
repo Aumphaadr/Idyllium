@@ -27,8 +27,8 @@ export const RUNTIME_TYPES: Record<RuntimeTypesName, RuntimeTypesSpec> = {
   float64: { kind: 'float', bits: 64, signed: true },
 };
 
-export function castTypesValue(value: unknown, typeName: string): number | bigint {
-  const name = normalizeRuntimeTypesName(typeName, 'types', 0);
+export function castTypesValue(value: unknown, typeName: string, file = 'types', line = 0): number | bigint {
+  const name = normalizeRuntimeTypesName(typeName, file, line);
   const spec = RUNTIME_TYPES[name];
 
   if (spec.kind === 'float') {
@@ -38,35 +38,35 @@ export function castTypesValue(value: unknown, typeName: string): number | bigin
     // разрядности честно становится IEEE-бесконечностью — ячейки types живут
     // по машинным правилам (сдвиг битов легально даёт inf-паттерн, есть тест).
     if (typeof value !== 'number' && typeof value !== 'bigint') {
-      throw new IdylliumRuntimeError('types', 0, `types.${name} value must be a number, got '${String(value)}'`);
+      throw new IdylliumRuntimeError(file, line, `types.${name} value must be a number, got '${String(value)}'`);
     }
     const number = Number(value);
     return name === 'float32' ? Math.fround(number) : number;
   }
 
-  const integer = runtimeInteger(value, `types.${name} value`, 'types', 0);
+  const integer = runtimeInteger(value, `types.${name} value`, file, line);
   if (spec.bits === 64) return wrapBigInteger(integer, spec);
   return wrapInteger(integer, spec);
 }
 
-export function typesToBin(value: unknown, typeName: string): string {
-  const name = normalizeRuntimeTypesName(typeName, 'types', 0);
+export function typesToBin(value: unknown, typeName: string, file = 'types', line = 0): string {
+  const name = normalizeRuntimeTypesName(typeName, file, line);
   const spec = RUNTIME_TYPES[name];
   if (spec.kind === 'float') {
-    return bytesToBinary(floatBytes(Number(castTypesValue(value, name)), name));
+    return bytesToBinary(floatBytes(Number(castTypesValue(value, name, file, line)), name));
   }
 
-  return integerToUnsigned(value, name).toString(2).padStart(spec.bits, '0');
+  return integerToUnsigned(value, name, file, line).toString(2).padStart(spec.bits, '0');
 }
 
-export function typesToHex(value: unknown, typeName: string): string {
-  const name = normalizeRuntimeTypesName(typeName, 'types', 0);
+export function typesToHex(value: unknown, typeName: string, file = 'types', line = 0): string {
+  const name = normalizeRuntimeTypesName(typeName, file, line);
   const spec = RUNTIME_TYPES[name];
   if (spec.kind === 'float') {
-    return bytesToHex(floatBytes(Number(castTypesValue(value, name)), name));
+    return bytesToHex(floatBytes(Number(castTypesValue(value, name, file, line)), name));
   }
 
-  return integerToUnsigned(value, name).toString(16).padStart(spec.bits / 4, '0').toUpperCase();
+  return integerToUnsigned(value, name, file, line).toString(16).padStart(spec.bits / 4, '0').toUpperCase();
 }
 
 export function typesShift(
@@ -86,7 +86,7 @@ export function typesShift(
     : direction;
   const amount = requestedAmount < 0n ? -requestedAmount : requestedAmount;
 
-  const source = typesToBin(value, name);
+  const source = typesToBin(value, name, file, line);
   let shifted: string;
   if (amount >= BigInt(spec.bits)) {
     shifted = '0'.repeat(spec.bits);
@@ -98,7 +98,7 @@ export function typesShift(
   }
 
   if (spec.kind === 'float') return floatFromBytes(binaryToBytes(shifted), name);
-  return castTypesValue(BigInt(`0b${shifted}`), name);
+  return castTypesValue(BigInt(`0b${shifted}`), name, file, line);
 }
 
 export function typesBitwise(
@@ -111,7 +111,7 @@ export function typesBitwise(
 ): number | bigint {
   const name = normalizeRuntimeTypesName(typeName, file, line);
   const spec = RUNTIME_TYPES[name];
-  const valueBits = BigInt(`0b${typesToBin(value, name)}`);
+  const valueBits = BigInt(`0b${typesToBin(value, name, file, line)}`);
   const cellMask = (1n << BigInt(spec.bits)) - 1n;
   let resultBits: bigint;
 
@@ -119,7 +119,7 @@ export function typesBitwise(
     resultBits = (~valueBits) & cellMask;
   } else {
     const maskName = unsignedTypesName(spec.bits);
-    const normalizedMask = BigInt(`0b${typesToBin(mask, maskName)}`);
+    const normalizedMask = BigInt(`0b${typesToBin(mask, maskName, file, line)}`);
     if (operator === 'and') resultBits = valueBits & normalizedMask;
     else if (operator === 'or') resultBits = valueBits | normalizedMask;
     else resultBits = valueBits ^ normalizedMask;
@@ -127,7 +127,7 @@ export function typesBitwise(
 
   const result = resultBits.toString(2).padStart(spec.bits, '0');
   if (spec.kind === 'float') return floatFromBytes(binaryToBytes(result), name);
-  return castTypesValue(resultBits, name);
+  return castTypesValue(resultBits, name, file, line);
 }
 
 function unsignedTypesName(bits: number): RuntimeTypesName {
@@ -144,7 +144,7 @@ export function typesFromBin(bits: unknown, typeName: unknown, file: string, lin
   if (spec.kind === 'float') {
     return floatFromBytes(binaryToBytes(normalized), name);
   }
-  return castTypesValue(BigInt(`0b${normalized}`), name);
+  return castTypesValue(BigInt(`0b${normalized}`), name, file, line);
 }
 
 export function typesFromHex(hex: unknown, typeName: unknown, file: string, line: number): number | bigint {
@@ -154,7 +154,7 @@ export function typesFromHex(hex: unknown, typeName: unknown, file: string, line
   if (spec.kind === 'float') {
     return floatFromBytes(hexToBytes(normalized), name);
   }
-  return castTypesValue(BigInt(`0x${normalized}`), name);
+  return castTypesValue(BigInt(`0x${normalized}`), name, file, line);
 }
 
 export function normalizeTypesName(value: unknown, file: string, line: number): RuntimeTypesName {
@@ -187,9 +187,9 @@ export function wrapBigInteger(value: bigint, spec: RuntimeTypesSpec): bigint {
   return wrapped;
 }
 
-function integerToUnsigned(value: unknown, typeName: RuntimeTypesName): number | bigint {
+function integerToUnsigned(value: unknown, typeName: RuntimeTypesName, file = 'types', line = 0): number | bigint {
   const spec = RUNTIME_TYPES[typeName];
-  const casted = castTypesValue(value, typeName);
+  const casted = castTypesValue(value, typeName, file, line);
   if (spec.kind !== 'integer') return casted;
   if (typeof casted === 'bigint') {
     return casted < 0n ? casted + (1n << BigInt(spec.bits)) : casted;

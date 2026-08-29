@@ -584,6 +584,16 @@ var Idyllium = (() => {
             documentation: "Выбирает случайный символ строки или случайный элемент массива.",
             returnTypeRule: "element-of-collection"
           }),
+          functionSpec("shuffle", [{
+            name: "collection",
+            type: types_1.ANY_TYPE,
+            acceptedTypes: [types_1.STRING, (0, types_1.arrayType)(types_1.ANY_TYPE, null, true)],
+            acceptedDescription: "string or array"
+          }], types_1.ANY_TYPE, {
+            documentation: "Возвращает перемешанную копию строки или массива; оригинал не меняется. Подчиняется random.set_seed().",
+            returnTypeRule: "same-as-argument",
+            resultMustBeUsed: true
+          }),
           functionSpec("set_seed", [{ name: "seed", type: types_1.INT }], types_1.VOID)
         ]));
         registry.registerModule(moduleSpec("time", [
@@ -2670,7 +2680,11 @@ var Idyllium = (() => {
             const globalSpec = this.stdlib.getGlobalFunction(callee.name);
             if (globalSpec?.codegen) {
               const args = this.callArgumentValues(expression.args, globalSpec.parameters.map((parameter) => parameter.name)).join(", ");
-              return this.declaredRuntimeCall(globalSpec.codegen, args, expression.range.start.file, expression.range.start.line);
+              const call = this.declaredRuntimeCall(globalSpec.codegen, args, expression.range.start.file, expression.range.start.line);
+              if (globalSpec.returnTypeRule === "numeric-array-aggregate" && this.isFloatType(this.typeOf(expression))) {
+                return `$rt.core.toFloat(${call}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+              }
+              return call;
             }
             if (callee.name === "type_name" && expression.args.length === 1) {
               const argNode = expression.args[0].value;
@@ -2715,7 +2729,7 @@ var Idyllium = (() => {
             }
             const typesRuntimeName = this.typesRuntimeNameOf(receiverType);
             if (typesRuntimeName && (callee.name === "to_bin" || callee.name === "to_hex")) {
-              return `$rt.types.${callee.name}(${this.expression(callee.object)}, ${JSON.stringify(typesRuntimeName)})`;
+              return `$rt.types.${callee.name}(${this.expression(callee.object)}, ${JSON.stringify(typesRuntimeName)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
             }
             if (typesRuntimeName && (callee.name === "shift_left" || callee.name === "shift_right")) {
               const [bits] = this.methodCallArgs(callee.name, expression.args, receiverType);
@@ -2793,7 +2807,7 @@ var Idyllium = (() => {
           return `await ${this.classCreateFactoryName(statement.declaredType.name)}(${args})`;
         }
         arrayLiteralExpression(expression, dynamic, staticSize, defaultFactory, elementType = null) {
-          const values = expression.elements.map((element) => this.castForType(this.expression(element), elementType)).join(", ");
+          const values = expression.elements.map((element) => this.castForType(this.expression(element), elementType, element.range)).join(", ");
           const size = staticSize === null ? "null" : String(staticSize);
           return `$rt.array.from([${values}], ${dynamic ? "true" : "false"}, ${size}, ${defaultFactory})`;
         }
@@ -3077,7 +3091,7 @@ var Idyllium = (() => {
             ].join("");
           }
           if (type.kind === "qualified" && type.moduleName === "types" && TYPE_RUNTIME_NAMES.has(type.name)) {
-            return `$rt.types.cast(${value}, ${JSON.stringify(type.name)})`;
+            return `$rt.types.cast(${value}, ${JSON.stringify(type.name)}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
           }
           if (type.kind === "qualified" && this.stdlib.typeAcceptsNull(type)) {
             return this.nullableValue(value, type.moduleName, type.name, range);
@@ -3130,11 +3144,12 @@ var Idyllium = (() => {
           }
           return "null";
         }
-        castForType(value, type) {
+        castForType(value, type, range) {
           const runtimeName = this.typesRuntimeName(type);
           if (!runtimeName)
             return value;
-          return `$rt.types.cast(${value}, ${JSON.stringify(runtimeName)})`;
+          const location = range ? `, ${JSON.stringify(range.start.file)}, ${range.start.line}` : "";
+          return `$rt.types.cast(${value}, ${JSON.stringify(runtimeName)}${location})`;
         }
         typesRuntimeName(type) {
           if (type?.kind !== "QualifiedTypeName")
@@ -6503,12 +6518,27 @@ var Idyllium = (() => {
         // Метод или функция без скобок: «v.info;» молча не делает ничего, а
         // «console.writeln;» и вовсе ронял рантайм. Значений-функций в языке нет,
         // поэтому функциональный тип у выражения-statement — всегда забытые скобки.
+        /**
+         * Библиотечный вызов, чей результат выбрасывать заведомо бессмысленно
+         * (реестровый флажок resultMustBeUsed): random.shuffle возвращает копию,
+         * строка-соло в питоньей привычке молча не делает ничего.
+         */
+        mustUseLibraryCallName(root) {
+          const spec = this.resolveCall(root);
+          if (!spec?.resultMustBeUsed)
+            return null;
+          const callee = root.callee;
+          if (callee.kind === "MemberExpression" && callee.object.kind === "IdentifierExpression") {
+            return `${callee.object.name}.${callee.name}`;
+          }
+          return spec.name;
+        }
         analyzeExpressionStatement(statement) {
           const type = this.expressionType(statement.expression);
           if (type.kind !== "function") {
             const root = statement.expression;
             if (root.kind === "CallExpression") {
-              const droppedName = !(0, types_1.sameType)(type, types_1.VOID) && type.kind !== "error" ? this.userCallName(root) : null;
+              const droppedName = !(0, types_1.sameType)(type, types_1.VOID) && type.kind !== "error" ? this.userCallName(root) ?? this.mustUseLibraryCallName(root) : null;
               if (droppedName !== null) {
                 this.diagnostics.warning(statement.range, `the value returned by '${droppedName}' is not used`, "result-not-used");
               }
@@ -7491,6 +7521,17 @@ var Idyllium = (() => {
                 return types_1.CHAR;
               if (collectionType.kind === "array")
                 return collectionType.elementType;
+              return types_1.ERROR_TYPE;
+            }
+            // Результат — того же типа, что аргумент-коллекция: random.shuffle
+            // возвращает перемешанную копию строки/массива (fixed остаётся fixed).
+            case "same-as-argument": {
+              const argument = this.orderedArguments(expression.args, fn)[0];
+              if (!argument)
+                return types_1.ERROR_TYPE;
+              const argumentType = this.expressionType(argument.value);
+              if ((0, types_1.sameType)(argumentType, types_1.STRING) || argumentType.kind === "array")
+                return argumentType;
               return types_1.ERROR_TYPE;
             }
           }
@@ -8844,7 +8885,8 @@ var Idyllium = (() => {
         }
         if (typeof value === "number" && Number.isFinite(value))
           return value;
-        throw new runtime_errors_12.IdylliumRuntimeError(file, line, `${argumentName} must be a finite number, got '${String(value)}'`);
+        const shown = typeof value === "number" && Number.isNaN(value) ? "nan" : typeof value === "number" && !Number.isFinite(value) ? value > 0 ? "inf" : "-inf" : typeof value === "bigint" ? `${value} (does not fit into float)` : String(value);
+        throw new runtime_errors_12.IdylliumRuntimeError(file, line, `${argumentName} must be a finite number, got '${shown}'`);
       }
       function runtimeInteger(value, argumentName, file, line) {
         if (typeof value === "bigint")
@@ -9269,6 +9311,21 @@ var Idyllium = (() => {
         }
         static from(values, dynamic, staticSize, defaultFactory) {
           return new _IdylliumArray([...values], dynamic, dynamic ? null : staticSize, defaultFactory);
+        }
+        /**
+         * Перемешанная копия того же вида (dyn остаётся dyn, фиксированный — той
+         * же длины). Источник случайности передаёт вызывающий — случайные числа
+         * живут в модуле random и подчиняются его сиду (random.shuffle, 2026-08-29).
+         */
+        shuffledCopy(pickIndex) {
+          const items = [...this.items];
+          for (let index = items.length - 1; index > 0; index -= 1) {
+            const swapWith = pickIndex(index + 1);
+            const held = items[index];
+            items[index] = items[swapWith];
+            items[swapWith] = held;
+          }
+          return new _IdylliumArray(items, this.dynamic, this.dynamic ? null : this.staticSize, this.defaultFactory);
         }
         static convert(value, dynamic, staticSize, defaultFactory, convertElement, targetType, file, line) {
           if (!(value instanceof _IdylliumArray)) {
@@ -11205,36 +11262,36 @@ ${outerPadding}${close}`;
         float32: { kind: "float", bits: 32, signed: true },
         float64: { kind: "float", bits: 64, signed: true }
       };
-      function castTypesValue(value, typeName) {
-        const name = normalizeRuntimeTypesName(typeName, "types", 0);
+      function castTypesValue(value, typeName, file = "types", line = 0) {
+        const name = normalizeRuntimeTypesName(typeName, file, line);
         const spec = exports2.RUNTIME_TYPES[name];
         if (spec.kind === "float") {
           if (typeof value !== "number" && typeof value !== "bigint") {
-            throw new runtime_errors_12.IdylliumRuntimeError("types", 0, `types.${name} value must be a number, got '${String(value)}'`);
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, `types.${name} value must be a number, got '${String(value)}'`);
           }
           const number = Number(value);
           return name === "float32" ? Math.fround(number) : number;
         }
-        const integer = (0, runtime_shared_12.runtimeInteger)(value, `types.${name} value`, "types", 0);
+        const integer = (0, runtime_shared_12.runtimeInteger)(value, `types.${name} value`, file, line);
         if (spec.bits === 64)
           return wrapBigInteger(integer, spec);
         return wrapInteger(integer, spec);
       }
-      function typesToBin(value, typeName) {
-        const name = normalizeRuntimeTypesName(typeName, "types", 0);
+      function typesToBin(value, typeName, file = "types", line = 0) {
+        const name = normalizeRuntimeTypesName(typeName, file, line);
         const spec = exports2.RUNTIME_TYPES[name];
         if (spec.kind === "float") {
-          return bytesToBinary(floatBytes(Number(castTypesValue(value, name)), name));
+          return bytesToBinary(floatBytes(Number(castTypesValue(value, name, file, line)), name));
         }
-        return integerToUnsigned(value, name).toString(2).padStart(spec.bits, "0");
+        return integerToUnsigned(value, name, file, line).toString(2).padStart(spec.bits, "0");
       }
-      function typesToHex(value, typeName) {
-        const name = normalizeRuntimeTypesName(typeName, "types", 0);
+      function typesToHex(value, typeName, file = "types", line = 0) {
+        const name = normalizeRuntimeTypesName(typeName, file, line);
         const spec = exports2.RUNTIME_TYPES[name];
         if (spec.kind === "float") {
-          return bytesToHex(floatBytes(Number(castTypesValue(value, name)), name));
+          return bytesToHex(floatBytes(Number(castTypesValue(value, name, file, line)), name));
         }
-        return integerToUnsigned(value, name).toString(16).padStart(spec.bits / 4, "0").toUpperCase();
+        return integerToUnsigned(value, name, file, line).toString(16).padStart(spec.bits / 4, "0").toUpperCase();
       }
       function typesShift(value, typeName, bitCount, direction, file, line) {
         const name = normalizeRuntimeTypesName(typeName, file, line);
@@ -11243,7 +11300,7 @@ ${outerPadding}${close}`;
         const requestedAmount = (0, runtime_shared_12.runtimeInteger)(bitCount, `${method} bit count`, file, line);
         const effectiveDirection = requestedAmount < 0n ? direction === "left" ? "right" : "left" : direction;
         const amount = requestedAmount < 0n ? -requestedAmount : requestedAmount;
-        const source = typesToBin(value, name);
+        const source = typesToBin(value, name, file, line);
         let shifted;
         if (amount >= BigInt(spec.bits)) {
           shifted = "0".repeat(spec.bits);
@@ -11253,19 +11310,19 @@ ${outerPadding}${close}`;
         }
         if (spec.kind === "float")
           return floatFromBytes(binaryToBytes(shifted), name);
-        return castTypesValue(BigInt(`0b${shifted}`), name);
+        return castTypesValue(BigInt(`0b${shifted}`), name, file, line);
       }
       function typesBitwise(value, typeName, mask, operator, file, line) {
         const name = normalizeRuntimeTypesName(typeName, file, line);
         const spec = exports2.RUNTIME_TYPES[name];
-        const valueBits = BigInt(`0b${typesToBin(value, name)}`);
+        const valueBits = BigInt(`0b${typesToBin(value, name, file, line)}`);
         const cellMask = (1n << BigInt(spec.bits)) - 1n;
         let resultBits;
         if (operator === "not") {
           resultBits = ~valueBits & cellMask;
         } else {
           const maskName = unsignedTypesName(spec.bits);
-          const normalizedMask = BigInt(`0b${typesToBin(mask, maskName)}`);
+          const normalizedMask = BigInt(`0b${typesToBin(mask, maskName, file, line)}`);
           if (operator === "and")
             resultBits = valueBits & normalizedMask;
           else if (operator === "or")
@@ -11276,7 +11333,7 @@ ${outerPadding}${close}`;
         const result = resultBits.toString(2).padStart(spec.bits, "0");
         if (spec.kind === "float")
           return floatFromBytes(binaryToBytes(result), name);
-        return castTypesValue(resultBits, name);
+        return castTypesValue(resultBits, name, file, line);
       }
       function unsignedTypesName(bits) {
         if (bits === 8)
@@ -11294,7 +11351,7 @@ ${outerPadding}${close}`;
         if (spec.kind === "float") {
           return floatFromBytes(binaryToBytes(normalized), name);
         }
-        return castTypesValue(BigInt(`0b${normalized}`), name);
+        return castTypesValue(BigInt(`0b${normalized}`), name, file, line);
       }
       function typesFromHex(hex, typeName, file, line) {
         const name = normalizeTypesName(typeName, file, line);
@@ -11303,7 +11360,7 @@ ${outerPadding}${close}`;
         if (spec.kind === "float") {
           return floatFromBytes(hexToBytes(normalized), name);
         }
-        return castTypesValue(BigInt(`0x${normalized}`), name);
+        return castTypesValue(BigInt(`0x${normalized}`), name, file, line);
       }
       function normalizeTypesName(value, file, line) {
         return normalizeRuntimeTypesName((0, runtime_shared_12.stringArgument)(value, "types type name", file, line), file, line);
@@ -11332,9 +11389,9 @@ ${outerPadding}${close}`;
           wrapped -= modulo;
         return wrapped;
       }
-      function integerToUnsigned(value, typeName) {
+      function integerToUnsigned(value, typeName, file = "types", line = 0) {
         const spec = exports2.RUNTIME_TYPES[typeName];
-        const casted = castTypesValue(value, typeName);
+        const casted = castTypesValue(value, typeName, file, line);
         if (spec.kind !== "integer")
           return casted;
         if (typeof casted === "bigint") {
@@ -41521,7 +41578,7 @@ ${outerPadding}${close}`;
       var network_service_1 = require_network_service();
       var font_metrics_service_1 = require_font_metrics_service();
       var hash_1 = require_hash();
-      exports.IDYLLIUM_VERSION = "1.5.4";
+      exports.IDYLLIUM_VERSION = "1.5.5";
       function defaultRuntimePlatform() {
         const nodeProcess2 = typeof process === "object" ? process : null;
         return nodeProcess2?.versions?.node ? "cli" : "web";
@@ -42051,14 +42108,14 @@ ${outerPadding}${close}`;
           }
         };
         const types = {
-          cast(value, typeName) {
-            return (0, runtime_types_1.castTypesValue)(value, typeName);
+          cast(value, typeName, file = "types", line = 0) {
+            return (0, runtime_types_1.castTypesValue)(value, typeName, file, line);
           },
-          to_bin(value, typeName) {
-            return (0, runtime_types_1.typesToBin)(value, typeName);
+          to_bin(value, typeName, file = "types", line = 0) {
+            return (0, runtime_types_1.typesToBin)(value, typeName, file, line);
           },
-          to_hex(value, typeName) {
-            return (0, runtime_types_1.typesToHex)(value, typeName);
+          to_hex(value, typeName, file = "types", line = 0) {
+            return (0, runtime_types_1.typesToHex)(value, typeName, file, line);
           },
           shift_left(value, typeName, bits, file, line) {
             return (0, runtime_types_1.typesShift)(value, typeName, bits, "left", file, line);
@@ -42253,6 +42310,26 @@ ${outerPadding}${close}`;
                   return collection.get(Math.floor(randomUnit() * collection.length), file, line);
                 }
                 throw new runtime_errors_1.IdylliumRuntimeError(file, line, `random.choose_from() expects a string or array, got '${runtimeTypeName(collection)}'`);
+              }),
+              // Перемешанная копия (Фишер–Йетс); оригинал не меняется — массивы в
+              // языке значения, и функция обязана вернуть результат. Строка режется
+              // по видимым символам, как в choose_from (сурогатные пары не рвутся).
+              shuffle: (0, runtime_shared_1.contextFunction)((collection, file, line) => {
+                const pickIndex = (bound) => Math.floor(randomUnit() * bound);
+                if (typeof collection === "string") {
+                  const characters = Array.from(collection);
+                  for (let index = characters.length - 1; index > 0; index -= 1) {
+                    const swapWith = pickIndex(index + 1);
+                    const held = characters[index];
+                    characters[index] = characters[swapWith];
+                    characters[swapWith] = held;
+                  }
+                  return characters.join("");
+                }
+                if (collection instanceof runtime_values_2.IdylliumArray) {
+                  return collection.shuffledCopy(pickIndex);
+                }
+                throw new runtime_errors_1.IdylliumRuntimeError(file, line, `random.shuffle() expects a string or array, got '${runtimeTypeName(collection)}'`);
               }),
               set_seed: (0, runtime_shared_1.contextFunction)((seed, file, line) => {
                 if (typeof seed === "bigint" || typeof seed === "number" && !Number.isSafeInteger(seed) && Number.isFinite(seed)) {
@@ -43328,6 +43405,11 @@ ${outerPadding}${close}`;
           return value;
         throw new runtime_errors_1.IdylliumRuntimeError(file, line, `${functionName} result is not a finite number`);
       }
+      function nonFiniteWord(value) {
+        if (Number.isNaN(value))
+          return "nan";
+        return value > 0 ? "inf" : "-inf";
+      }
       function formatForConsole(value, precision) {
         if (value instanceof runtime_values_2.IdylliumArray)
           return value.toInspectString();
@@ -43335,6 +43417,8 @@ ${outerPadding}${close}`;
           return (0, runtime_json_1.jsonSerialize)(value, 0, "json", 0);
         if (typeof value === "boolean")
           return value ? "true" : "false";
+        if (typeof value === "number" && !Number.isFinite(value))
+          return nonFiniteWord(value);
         if (typeof value === "number" && precision !== null) {
           const rounded = Number(value.toFixed(precision));
           if (rounded === 0 && value !== 0)
@@ -43352,6 +43436,8 @@ ${outerPadding}${close}`;
           return JSON.stringify(value);
         if (typeof value === "boolean")
           return value ? "true" : "false";
+        if (typeof value === "number" && !Number.isFinite(value))
+          return nonFiniteWord(value);
         return String(value);
       }
       function createPlainRuntimeObject(moduleName, typeName, state) {
@@ -45334,6 +45420,7 @@ ${outerPadding}${close}`;
             sqlPromise ??= initSqlJs(config);
             const SQL = await sqlPromise;
             const database = new SQL.Database(bytes);
+            database.exec("PRAGMA foreign_keys = ON;");
             return createDatabaseAdapter(database);
           }
         };
@@ -45375,7 +45462,11 @@ ${outerPadding}${close}`;
           },
           export() {
             assertOpen();
-            return new Uint8Array(database.export());
+            const pragmaRows = database.exec("PRAGMA foreign_keys;");
+            const enabled = Number(pragmaRows?.[0]?.values?.[0]?.[0] ?? 1) !== 0;
+            const bytes = new Uint8Array(database.export());
+            database.exec(`PRAGMA foreign_keys = ${enabled ? "ON" : "OFF"};`);
+            return bytes;
           },
           close() {
             if (closed)

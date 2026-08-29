@@ -711,6 +711,64 @@ test('Web IDE default project is minimal and light surfaces are subdued', () => 
   assert(cssSource.includes('--output-bg: #cfccd5;'), 'expected subdued light console surface');
 });
 
+test('Web IDE unzip accepts ordinary deflate archives, not only its own stored ones', () => {
+  // Находка владельца 2026-08-29: обычный ZIP (deflate) отвергался с
+  // «только ZIP без сжатия». Распаковку deflate делает pako (живёт в
+  // зависимостях ядра); модуль прогоняется здесь через esbuild-сборку.
+  const esbuild = require('esbuild');
+  const zlib = require('zlib') as typeof import('zlib');
+  const built = esbuild.buildSync({
+    entryPoints: [path.resolve(process.cwd(), 'packages/web-ide/src/zip.js')],
+    bundle: true,
+    write: false,
+    format: 'cjs',
+    platform: 'node',
+  });
+  const moduleObject: { exports: any } = { exports: {} };
+  new Function('module', 'exports', 'require', built.outputFiles[0].text)(moduleObject, moduleObject.exports, require);
+  const { unzipEntries, zipBytes, crc32 } = moduleObject.exports;
+
+  const own = zipBytes([{ name: 'main.idyl', bytes: new TextEncoder().encode('main() {}') }]);
+  const ownEntries = unzipEntries(own);
+  assert(ownEntries.length === 1 && ownEntries[0].name === 'main.idyl', 'own stored archive must round-trip');
+
+  const plain = new TextEncoder().encode('use console;\nmain() { console.writeln(42); }\n');
+  const packed = zlib.deflateRawSync(plain);
+  const name = new TextEncoder().encode('prog.idyl');
+  const header = new DataView(new ArrayBuffer(30));
+  header.setUint32(0, 0x04034b50, true);
+  header.setUint16(4, 20, true);
+  header.setUint16(6, 0x0800, true);
+  header.setUint16(8, 8, true); // deflate — как пишет обычный архиватор
+  header.setUint32(14, crc32(plain), true);
+  header.setUint32(18, packed.length, true);
+  header.setUint32(22, plain.length, true);
+  header.setUint16(26, name.length, true);
+  const central = new Uint8Array([0x50, 0x4b, 0x05, 0x06]);
+  const deflated = new Uint8Array(30 + name.length + packed.length + central.length);
+  deflated.set(new Uint8Array(header.buffer), 0);
+  deflated.set(name, 30);
+  deflated.set(packed, 30 + name.length);
+  deflated.set(central, 30 + name.length + packed.length);
+
+  const entries = unzipEntries(deflated);
+  assert(entries.length === 1, 'deflate archive must yield one entry');
+  assert(
+    new TextDecoder().decode(entries[0].bytes).startsWith('use console;'),
+    'deflate entry must decompress to the original text',
+  );
+
+  header.setUint32(14, 12345, true); // битый CRC — отказ словами
+  deflated.set(new Uint8Array(header.buffer), 0);
+  let refusal = '';
+  try {
+    unzipEntries(deflated);
+  } catch (error) {
+    refusal = error instanceof Error ? error.message : String(error);
+  }
+  assert(refusal.includes('повреждён'), `broken CRC must refuse in words: ${refusal}`);
+});
+
 test('project semantic tokens follow resolved symbols instead of identifier casing', () => {
   const source = [
     'use colors;',

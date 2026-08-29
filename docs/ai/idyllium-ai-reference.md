@@ -1479,7 +1479,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, never returns
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.5.4"
+system.version()                    // "1.5.5"
 system.set_warnings(enabled)        // void; switches runtime warnings off/on
 ```
 
@@ -1564,6 +1564,9 @@ char symbol = random.choose_from("ABCDEF");
 array<string, 3> names = ["Liam", "Mira", "Raven"];
 string name = random.choose_from(names);
 
+dyn_array<int> deck = random.shuffle(cards);   // since 1.5.5
+string anagram = random.shuffle("secret");
+
 random.set_seed(123);
 ```
 
@@ -1577,6 +1580,15 @@ that takes no arguments and returns an integer from `0` to `4294967295`). Invali
 ranges. `choose_from()` accepts a non-empty string, `array<T, N>`, or
 `dyn_array<T>`. It returns `char` for a string and `T` for an array. Choosing
 from an empty collection is a runtime error.
+
+`random.shuffle(x)` (since 1.5.5) takes a string or any array and returns a
+SHUFFLED COPY of the same type — the original is untouched (arrays are values
+in Idyllium; unlike Python's in-place `random.shuffle`). Write
+`xs = random.shuffle(xs);` to shuffle "in place". A bare
+`random.shuffle(xs);` statement drops the copy and triggers a compile
+warning. Strings are shuffled by visible characters (surrogate pairs stay
+whole); empty and one-element collections come back as is. The order obeys
+`random.set_seed()`.
 
 ## 19. Library `time`
 
@@ -3593,6 +3605,12 @@ use sqlite;
 `sqlite.open(path)` opens an existing SQLite file or creates a new one. Relative
 paths are resolved from the running `.idyl` file. The same API works in CLI,
 VSIX, and Web IDE; Web IDE stores the binary `.db` file in the virtual project.
+
+Foreign keys are ENFORCED from the moment a database opens (Idyllium runs
+`PRAGMA foreign_keys = ON` for you — plain SQLite keeps it off for historical
+reasons). Inserting a row whose FOREIGN KEY points at a missing parent fails
+with `FOREIGN KEY constraint failed`. A student may switch the check off and
+back with `PRAGMA foreign_keys = OFF;` / `= ON;` — the choice survives writes.
 
 Complete example:
 

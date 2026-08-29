@@ -45,7 +45,14 @@ export interface FunctionSpec {
     | 'match-integer-argument'
     | 'int-when-all-integer-numeric'
     | 'numeric-array-aggregate'
-    | 'element-of-collection';
+    | 'element-of-collection'
+    | 'same-as-argument';
+  /**
+   * Выброшенный результат этой функции — предупреждение: вызов строкой-соло
+   * заведомо бессмыслен (random.shuffle возвращает копию — привет питоньей
+   * привычке in-place). Библиотека в целом результат ронять вправе.
+   */
+  readonly resultMustBeUsed?: boolean;
   /**
    * Прямой рантайм-вызов для кодогена — вместо прежних захардкоженных по
    * именам эмитов. target — путь внутри $rt; shape — форма аргументов:
@@ -507,6 +514,16 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     }], ANY_TYPE, {
       documentation: 'Выбирает случайный символ строки или случайный элемент массива.',
       returnTypeRule: 'element-of-collection',
+    }),
+    functionSpec('shuffle', [{
+      name: 'collection',
+      type: ANY_TYPE,
+      acceptedTypes: [STRING, arrayType(ANY_TYPE, null, true)],
+      acceptedDescription: 'string or array',
+    }], ANY_TYPE, {
+      documentation: 'Возвращает перемешанную копию строки или массива; оригинал не меняется. Подчиняется random.set_seed().',
+      returnTypeRule: 'same-as-argument',
+      resultMustBeUsed: true,
     }),
     functionSpec('set_seed', [{ name: 'seed', type: INT }], VOID),
   ]));

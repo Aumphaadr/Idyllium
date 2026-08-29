@@ -610,10 +610,15 @@
 
   function renderFatalError(error) {
     console.error(error);
+    // Обычная причина — мигнувшая сеть или недокачанный файл; совет
+    // обновить страницу решает почти все такие случаи (просьба владельца,
+    // 2026-08-29).
     els.view.innerHTML = `
       <div class="error-card">
         <h1>${escapeHtml(UI.fatal)}</h1>
         <p>${escapeHtml(String(error?.message ?? error))}</p>
+        <p>Попробуйте обновить страницу — чаще всего этого достаточно.
+        Если не помогло, проверьте подключение к интернету.</p>
       </div>
     `;
   }

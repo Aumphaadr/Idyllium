@@ -67,6 +67,11 @@ export function createSqlJsRuntimeService(
       sqlPromise ??= initSqlJs(config);
       const SQL = await sqlPromise;
       const database = new SQL.Database(bytes);
+      // Внешние ключи проверяются с открытия (вердикт владельца 2026-08-29,
+      // вопрос методистов): вставка записи с несуществующим FOREIGN KEY —
+      // честная ошибка, а не молчаливое согласие. SQLite по историческим
+      // причинам держит проверку выключенной — включаем на каждой базе.
+      database.exec('PRAGMA foreign_keys = ON;');
       return createDatabaseAdapter(database);
     },
   };
@@ -119,7 +124,16 @@ function createDatabaseAdapter(database: SqlJsDatabase): RuntimeSqliteDatabase {
 
     export(): Uint8Array {
       assertOpen();
-      return new Uint8Array(database.export());
+      // sql.js внутри export() закрывает и заново открывает соединение —
+      // состояние PRAGMA слетает. Восстанавливаем ФАКТИЧЕСКОЕ значение
+      // (не безусловный ON): ученик, выключивший проверку сам
+      // (PRAGMA foreign_keys = OFF), должен сохранить свой выбор и после
+      // записи на диск.
+      const pragmaRows = (database.exec('PRAGMA foreign_keys;') as Array<{ values?: unknown[][] }>);
+      const enabled = Number(pragmaRows?.[0]?.values?.[0]?.[0] ?? 1) !== 0;
+      const bytes = new Uint8Array(database.export());
+      database.exec(`PRAGMA foreign_keys = ${enabled ? 'ON' : 'OFF'};`);
+      return bytes;
     },
 
     close(): void {
