@@ -236,10 +236,12 @@ array<int, 3> a;  // [0, 0, 0] — N элементов по умолчанию
 Имена модулей стандартной библиотеки зарезервированы для любых объявлений —
 переменных, параметров, функций и классов:
 
+<!-- @generated:stdlib-module-names -->
 ```text
-audio colors console drawable encoding file fonts gui hash image json
-math random sqlite system time turtle types url
+audio channel colors console drawable encoding file fonts gui hash http
+image json math random sqlite system time turtle types url web xml
 ```
+<!-- /@generated:stdlib-module-names -->
 
 ```idyllium
 int console = 5;   // compile error: variable 'console' conflicts with
@@ -258,24 +260,54 @@ reserved by the language — pick another name for variable '__x'`. Это
 (`toString`, `valueOf`, `hasOwnProperty`), — обычные идентификаторы и работают
 как члены.
 
-Имена встроенных глобальных функций (`to_int`, `to_float`, `to_string`,
+Имена функций зарезервированы за функциями. Объявить свою функцию или класс
+с именем встроенной глобальной функции (`to_int`, `to_float`, `to_string`,
 `type_name`, `max`, `min`, `sum`, `avg`; `div` и `mod` уже являются ключевыми
-словами) зарезервированы **только для функций и классов**:
+словами) — ошибка компиляции:
 
 ```idyllium
 int function to_string(int value) { return value; }
 // compile error: function 'to_string' conflicts with a built-in function
 ```
 
-Переменная такое имя взять может: `int sum = a + b;` законно и часто
-встречается в учебном коде. Но как только имя в этой области видимости занято,
-вызов встроенной функции через него — ошибка компиляции, а не молчаливый откат:
+Переменные и параметры тоже не могут брать имена функций — ни встроенной,
+ни функции, объявленной в текущем файле. Затенение отвергается прямо на
+объявлении, потому что переменная по имени `sum` сделала бы невозможным
+любой вызов `sum(...)` в своей области видимости:
 
 ```idyllium
 int sum = 100;
-console.writeln(sum(nums));
-// compile error: variable 'sum' hides the built-in function 'sum'
+// compile error: variable 'sum' conflicts with the built-in function 'sum'
 ```
+
+```idyllium
+void function greet() { }
+
+main() {
+    int greet = 5;
+    // compile error: variable 'greet' conflicts with the function 'greet'
+}
+```
+
+Поля и методы классов свободно берут такие имена (к ним всегда обращаются
+через объект, так что вызовы остаются однозначными), а переменная может
+совпадать по имени с функцией из другого модуля — те зовутся только как
+`module.func()`:
+
+```idyllium
+class Robot {
+    string function to_string() { ... }   // законно: зовётся как r.to_string()
+}
+```
+
+Ещё два уголка того же правила. Имя подключённого **пользовательского
+модуля** зарезервировано так же, как имя стандартной библиотеки
+(`use helper;` + `int helper = 5;` → `variable 'helper' conflicts with the
+module 'helper'`). А `parent` — вызов конструктора базового класса — не может
+достаться файловой функции (`function 'parent' conflicts with the base class
+constructor call`) и переменной внутри конструктора класса-наследника; вне
+конструкторов наследников `parent` — обычный идентификатор и остаётся
+популярным именем в GUI-коде.
 
 ## 6. Преобразование типов
 
@@ -1471,12 +1503,19 @@ main() {
 
 ## 16a. Библиотека `system`
 
+Подключение:
+
+```idyllium
+use system;
+```
+
 ```idyllium
 system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, управление не возвращает
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.5.2"
+system.version()                    // "1.5.4"
+system.set_warnings(enabled)        // void; выключает/включает runtime-предупреждения
 ```
 
 **Глубина рекурсии.** Idyllium считает глубину вызовов сам, а не полагается
@@ -2427,6 +2466,55 @@ clear()
 в двойных кавычках, фигурные скобки для объектов, квадратные для массивов
 и `null` для отсутствующих значений.
 
+## 24a. Библиотека `xml` (с 1.5.4)
+
+Чтение разметки — строгого XML и прощающего HTML — в дерево узлов:
+
+```idyllium
+use xml;
+
+main() {
+    xml.Node feed = xml.parse_xml("<feed><item><title>Новости</title><link>https://a</link></item></feed>");
+    dyn_array<xml.Node> items = feed.find_all("item");
+    for (int i = 0; i < items.length; i = i + 1) {
+        console.writeln(items[i].first("title").text, " → ", items[i].first("link").text);
+    }
+}
+```
+
+- `xml.parse_xml(text)` — строгий XML. Ошибка разметки останавливает
+  программу с позицией внутри разбираемого текста: `xml.parse_xml() invalid
+  XML at 1:11: closing tag '</a>' does not match open tag '<b>'`; значения
+  атрибутов без кавычек, незакрытые теги, повторяющиеся атрибуты, текст вне
+  корня и что угодно кроме ровно одного корневого элемента — тоже ошибки.
+- `xml.parse_html(text)` — прощающий HTML для страниц реального веба:
+  незакрытые `<li>` и `<p>`, одиночный `<img>` без пары, атрибуты без
+  кавычек, любой регистр тегов (имена приводятся к нижнему, и аргументы
+  поиска приводятся так же), тела `<script>`/`<style>` сохраняются сырым
+  текстом, голый `<` в тексте остаётся текстом, а страница, оборванная
+  посреди тега (прерванная загрузка), всё равно разбирается.
+- Оба входа пропускают комментарии, `<!doctype>` и `<?xml?>`, превращают
+  CDATA в текст, раскрывают `&amp; &lt; &gt; &quot; &apos; &nbsp;` и
+  числовые сущности `&#…;`. У корневого узла результата `tag == "#document"`.
+
+`xml.Node` (всё только для чтения):
+
+```idyllium
+tag, text, children
+attr(name)      // значение атрибута, "" если атрибута нет
+has_attr(name)
+find_all(tag)   // все потомки с этим тегом на любой глубине; пустой список — не ошибка
+first(tag)      // первый такой потомок; ошибка времени выполнения, если его нет
+has(tag)
+```
+
+`text` собирает текст всего поддерева с раскрытыми сущностями; куски из
+одних пробелов между тегами отбрасываются. `children` держит только
+узлы-элементы. `first` по отсутствующему тегу — громкая ошибка в жанре
+`json.Object.get` — `xml node <item> has no <title> inside`; когда тег
+необязателен, ограждайте `has()`. Сознательно за бортом: пространства имён,
+XPath, CSS-селекторы, DTD и сериализация — библиотека для чтения.
+
 ## 25. GUI
 
 Импорт:
@@ -2523,19 +2611,44 @@ title.style = "color: white; background-color: dark-blue; border-radius: 12px;";
   ранние.
 - Наклейка **не наследуется** дочерними виджетами; чтение `style` возвращает
   ровно присвоенную строку.
-- `style_hover` и `style_active` держат наклейки, действующие, пока указатель
-  над виджетом или пока виджет нажат. Тот же словарь, то же молчание
-  про опечатки.
+- `style_hover`, `style_active` и `style_disabled` держат наклейки,
+  действующие, пока указатель над виджетом, пока виджет нажат и пока он
+  выключен (`enabled = false`). Тот же словарь, то же молчание про опечатки;
+  наклейка состояния ложится поверх `style` и снимается сама, когда
+  состояние заканчивается.
 
-Поддерживаемые свойства (всё остальное игнорируется): `color`,
-`background-color`, `border-color`, `border-width` (0-20), `border-radius`
-(0-100), `border-style` (`solid`/`dashed`/`dotted`/`none`), `font-size`
-(6-96), `font-weight` (`normal`/`bold`), `font-style` (`normal`/`italic`),
-`text-align` (`left`/`center`/`right`), `opacity` (0.0-1.0), `user-select`
-(`auto`/`none`/`text`/`all` — кнопкоподобные виджеты поставляются с `none`
-по умолчанию; задайте `user-select: text`, чтобы вернуть выделение),
-`padding` (0-40). Пиксельные значения принимаются и как `12px`, и просто
-как `12`.
+Поддерживаемых свойств — 44, всё остальное игнорируется. Пиксельные
+значения принимаются и как `12px`, и просто как `12`.
+
+- **Цвет и фон:** `color`, `background-color`, `background` (только
+  градиенты, см. ниже).
+- **Рамки:** `border-color`, `border-width` (0-20), `border-style`
+  (`solid`/`dashed`/`dotted`/`none`), `border-radius` (0-100) и та же тройка
+  цвет/толщина/стиль на каждую сторону — `border-top-*`, `border-bottom-*`,
+  `border-left-*`, `border-right-*`.
+- **Обводка** (кольцо, не сдвигающее содержимое): `outline-color`,
+  `outline-width` (0-20), `outline-style`.
+- **Текст:** `font-size` (6-96), `font-weight` (`normal`/`bold`),
+  `font-style` (`normal`/`italic`), `font-family` (только
+  `sans`/`serif`/`mono` — произвольные имена шрифтов отбрасываются),
+  `text-align` (`left`/`center`/`right`), `text-decoration`
+  (`none`/`underline`/`line-through`), `text-transform`
+  (`none`/`uppercase`/`lowercase`/`capitalize`), `letter-spacing` (−5…20),
+  `line-height` (0.8-3, без единиц).
+- **Отступы:** `padding` (0-40) и `padding-top`/`-bottom`/`-left`/`-right`.
+- **Тени:** `box-shadow` и `text-shadow` принимают РОВНО четыре части в этом
+  порядке — `<сдвиг-x> <сдвиг-y> <размытие> <цвет>` (сдвиги −50…50, размытие
+  0-50). `inset`, списки теней и `spread` не принимаются.
+- **Движение:** `transition-duration` (`0`…`2s` или `0`…`2000ms`) заставляет
+  `style_hover`/`style_active` проявляться плавно, а не скачком; `rotate`
+  (−360…360 градусов) и `scale` (0.1-5). **`rotate` и `scale` меняют то, как
+  виджет ВЫГЛЯДИТ, а не где он находится:** кликабельная область остаётся
+  исходным прямоугольником, так что по повёрнутой кнопке попадают по её
+  неповёрнутому контуру.
+- **Поведение:** `opacity` (0.0-1.0), `cursor`
+  (`default`/`pointer`/`text`/`wait`/`not-allowed`/`help`), `user-select`
+  (`auto`/`none`/`text`/`all` — кнопкоподобные виджеты поставляются с `none`
+  по умолчанию; задайте `user-select: text`, чтобы вернуть выделение).
 
 `background` принимает ТОЛЬКО градиенты (сплошные цвета идут через
 `background-color`): `linear-gradient([to right | 45deg,] color[, color...])`
@@ -2566,7 +2679,16 @@ close()
 
 `close()` убирает окно из программы. Когда закрывается последнее окно,
 у программы не остаётся графики, и хост её завершает — именно так пишется
-кнопка «Выход».
+кнопка «Выход». Крестик в предпросмотре делает то же самое, но только для
+своего окна: пока показано несколько окон, программа продолжает работать,
+и завершается лишь с закрытием последнего.
+
+`x` и `y` — положение окна на «рабочем столе» предпросмотра. Пока программа
+их не задала, окна раскладываются автоматически — рядом, с переносом, когда
+ряд кончается. Пользователь может и сам перетащить окно за шапку, как в
+настоящей ОС: после перетаскивания `x`/`y` держат новое место, и программа
+читает, где окно НА САМОМ ДЕЛЕ. Присваивание `x`/`y` из кода переносит окно
+туда.
 
 `theme` — строка: `"default"` (простой светлый вид), `"idyllium"`
 и `"dracula"` (тёмные), `"breeze"` и `"oxygen"` (светлые, в духе KDE). Тема
@@ -2880,7 +3002,7 @@ table.add_row("Мира", "маг", to_string(12));    // по одному зн
   `min_value`/`max_value` (фиксируют масштаб для приборов), `max_points`
   (кольцевой буфер для живых графиков; 0 — хранить всё). В паре с `gui.Timer`
   получаются живые панели.
-- `gui.PieChart`: `add_slice(label, value)`, `set_slice`, `clear()`;
+- `gui.PieChart`: `add_slice(label, value)`, `set_slice(label, value)`, `clear()`;
   `show_legend`, `show_percents` (оба по умолчанию true). Проценты и цвета
   секторов вычисляются сами.
 
@@ -3714,6 +3836,57 @@ to_bool()
 диапазона обычного `int` пользуйтесь `get_int64()` и `to_int64()`. У значений
 BLOB пока нет отдельного типа в Idyllium. Вложенных транзакций и точек
 сохранения в первом API нет.
+
+## 28b. Предупреждения
+
+С релиза предупреждений в Idyllium есть ТРЕТИЙ род сообщений помимо
+`compile error` и `runtime error` — предупреждения. Правило, проводящее
+границу (вердикт владельца): код, нарушающий конвенцию языка, — **ошибка**;
+код, который всего лишь **ничего не делает**, получает **предупреждение**
+и всё равно компилируется и выполняется. Предупреждения никогда не меняют
+код завершения.
+
+Метки симметричны ошибкам: `compile warning` и `runtime warning`.
+
+Compile-предупреждения (печатаются с `file:line:column`):
+
+```text
+compile warning: this line computes a value and does not use it        // a + 1;  "text";  a == 2;
+compile warning: assigning a variable to itself changes nothing        // a = a;
+compile warning: this line can never run — the function returns above  // код после return (также варианты break/continue)
+compile warning: variable 'x' is never used
+compile warning: two float numbers are compared with '==' — they are almost never exactly equal
+compile warning: comparing a bool with 'true' changes nothing          // flag == true
+compile warning: this condition is always true                          // if (true); while (false) говорит "always false"
+compile warning: the value returned by 'damage' is not used            // только свои функции/методы
+```
+
+Границы охвата — чтобы порождаемые примеры оставались без предупреждений:
+
+- `while (true)` с `break` — канонический вечный цикл, предупреждения нет.
+- Результат библиотечного вызова можно свободно выбрасывать
+  (`db.execute("INSERT …")`) — о выброшенном результате предупреждают
+  только СВОИ функции и методы классов.
+- `variable is never used` срабатывает только для переменных примитивных
+  типов, чей инициализатор не делает ни вызова, ни индексации:
+  `file.ostream f = file.open(…)` или `int x = console.get_int();` не
+  предупреждают никогда (инициализатор уже сделал настоящую работу), как и
+  объекты, виджеты и массивы (их создание — уже работа).
+- Когда в файле есть compile-ОШИБКИ, предупреждения подавляются целиком —
+  почините первую ошибку, и предупреждения вернутся.
+
+Runtime-предупреждения печатаются на завершении программы, без file:line:
+
+```text
+runtime warning: the program finished without showing a window
+runtime warning: a widget ('gui.Button') was created but never added to a window
+runtime warning: file 'notes.txt' was not closed
+```
+
+Файловое предупреждение — про гигиену: сами данные НА диске. Предупреждения
+переключаются `system.set_warnings(false)` / `system.set_warnings(true)`
+(по умолчанию включены); выключение гасит только runtime-предупреждения
+(compile-предупреждения печатаются до запуска программы).
 
 ## 29. Ошибки
 

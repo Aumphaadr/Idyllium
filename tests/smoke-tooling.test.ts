@@ -692,73 +692,23 @@ test('VSIX themes distinguish namespaces from classes like Web IDE', () => {
 
 test('Web IDE default project is minimal and light surfaces are subdued', () => {
   const webIdeRoot = path.resolve(process.cwd(), 'packages', 'web-ide');
-  // app.js больше не лежит в git — он собирается линкером из src/;
-  // гард смотрит на собранный текст, заодно проверяя саму сборку.
-  const { linkWebIdeApp } = require(path.resolve(process.cwd(), 'tools', 'link-web-ide-app.js'));
-  const appSource: string = linkWebIdeApp(path.join(webIdeRoot, 'src'));
+  // app.js больше не лежит в git — его собирает esbuild; гард смотрит
+  // прямо в источники: карта files живёт в project-store, фабрика — в main.
+  const storeSource = fs.readFileSync(path.join(webIdeRoot, 'src', 'project-store.js'), 'utf8');
+  const mainSource = fs.readFileSync(path.join(webIdeRoot, 'src', 'main.js'), 'utf8');
   const cssSource = fs.readFileSync(path.join(webIdeRoot, 'app.css'), 'utf8');
-  const initialFilesStart = appSource.indexOf('const files = new Map([');
-  const initialFilesEnd = appSource.indexOf('const folders = new Set', initialFilesStart);
-  const factoryStart = appSource.indexOf('function createDefaultProjectState()');
-  const factoryEnd = appSource.indexOf('function copySerializedProjectState', factoryStart);
+  const initialFilesStart = storeSource.indexOf('const files = new Map([');
+  const factoryStart = mainSource.indexOf('function createDefaultProjectState()');
+  const factoryEnd = mainSource.indexOf('function copySerializedProjectState', factoryStart);
 
-  assert(initialFilesStart >= 0 && initialFilesEnd > initialFilesStart, 'expected initial Web IDE file map');
-  assert(factoryStart >= 0 && factoryEnd > factoryStart, 'expected default project factory');
-  assert(!appSource.slice(initialFilesStart, initialFilesEnd).includes('input.txt'), 'initial project must not contain input.txt');
-  assert(!appSource.slice(factoryStart, factoryEnd).includes('input.txt'), 'new project must not contain input.txt');
+  assert(initialFilesStart >= 0, 'expected initial Web IDE file map in project-store.js');
+  assert(factoryStart >= 0 && factoryEnd > factoryStart, 'expected default project factory in main.js');
+  assert(!storeSource.includes('input.txt'), 'initial project must not contain input.txt');
+  assert(!mainSource.slice(factoryStart, factoryEnd).includes('input.txt'), 'new project must not contain input.txt');
   assert(cssSource.includes('--bg: #d2cfd7;'), 'expected subdued light page background');
   assert(cssSource.includes('--panel-raised: #e7e4ea;'), 'expected subdued light raised surface');
   assert(cssSource.includes('--editor-bg: #d9d6df;'), 'expected subdued light editor surface');
   assert(cssSource.includes('--output-bg: #cfccd5;'), 'expected subdued light console surface');
-});
-
-test('Web IDE linker enforces its module subset and keeps leaves before main', () => {
-  const os = require('os') as typeof import('os');
-  const { linkWebIdeApp } = require(path.resolve(process.cwd(), 'tools', 'link-web-ide-app.js'));
-  const makeSrc = (files: Record<string, string>): string => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'idyllium-linker-'));
-    for (const [name, content] of Object.entries(files)) fs.writeFileSync(path.join(dir, name), content);
-    return dir;
-  };
-  const expectFailure = (files: Record<string, string>, fragment: string): void => {
-    const dir = makeSrc(files);
-    let message = '';
-    try {
-      linkWebIdeApp(dir);
-    } catch (error) {
-      message = error instanceof Error ? error.message : String(error);
-    } finally {
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
-    assert(message.includes(fragment), `linker must refuse with "${fragment}", got: ${message}`);
-  };
-
-  const goodDir = makeSrc({
-    'main.js': "import { greet } from './leaf.js';\nfunction start() { greet(); }\nstart();\n",
-    'leaf.js': 'export function greet() { return 1; }\n',
-  });
-  const bundle: string = linkWebIdeApp(goodDir);
-  fs.rmSync(goodDir, { recursive: true, force: true });
-  assert(bundle.indexOf('src/leaf.js') < bundle.indexOf('src/main.js'), 'leaf module must be linked before main');
-  assert(!/^\s*(import[\s('"]|export[\s{])/m.test(bundle), 'linked bundle must not contain module keywords');
-
-  expectFailure({
-    'main.js': "import './a.js';\nimport './b.js';\n",
-    'a.js': 'export const twin = 1;\n',
-    'b.js': 'export const twin = 2;\n',
-  }, "export the name 'twin' twice");
-  expectFailure({
-    'main.js': "import './a.js';\n",
-    'a.js': "import './main.js';\nexport const loop = 1;\n",
-  }, 'cycle');
-  expectFailure({
-    'main.js': "import './a.js';\n",
-    'a.js': 'export default 5;\n',
-  }, 'unsupported export form');
-  expectFailure({
-    'main.js': "import { missing } from './a.js';\n",
-    'a.js': 'export const present = 1;\n',
-  }, 'does not export it');
 });
 
 test('project semantic tokens follow resolved symbols instead of identifier casing', () => {

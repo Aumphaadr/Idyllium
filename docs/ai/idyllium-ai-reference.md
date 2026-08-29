@@ -230,10 +230,12 @@ the fields simply keep their type defaults.
 Standard library module names are reserved for every declaration —
 variables, parameters, functions and classes:
 
+<!-- @generated:stdlib-module-names -->
 ```text
-audio colors console drawable encoding file fonts gui hash image json
-math random sqlite system time turtle types url
+audio channel colors console drawable encoding file fonts gui hash http
+image json math random sqlite system time turtle types url web xml
 ```
+<!-- /@generated:stdlib-module-names -->
 
 ```idyllium
 int console = 5;   // compile error: variable 'console' conflicts with
@@ -1466,12 +1468,19 @@ main() {
 
 ## 16a. Library `system`
 
+Import:
+
+```idyllium
+use system;
+```
+
 ```idyllium
 system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, never returns
 system.platform()                   // "cli" | "web" | "vscode"
 system.version()                    // "1.5.4"
+system.set_warnings(enabled)        // void; switches runtime warnings off/on
 ```
 
 **Recursion depth.** Idyllium counts call depth itself instead of relying on the
@@ -2919,7 +2928,7 @@ table.add_row("Мира", "маг", to_string(12));    // one value per column
   `line_color`, `show_dots` (default true), `min_value`/`max_value` (fix the
   scale for instruments), `max_points` (ring buffer for live charts; 0 = keep
   all). Pair with `gui.Timer` for live dashboards.
-- `gui.PieChart`: `add_slice(label, value)`, `set_slice`, `clear()`;
+- `gui.PieChart`: `add_slice(label, value)`, `set_slice(label, value)`, `clear()`;
   `show_legend`, `show_percents` (both default true). Percentages and slice
   colors are automatic.
 

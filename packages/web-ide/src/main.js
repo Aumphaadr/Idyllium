@@ -1,7 +1,7 @@
 // Ядро Web IDE: состояние, редакторы, дерево проекта, запуск программ.
 // Исторически файл жил одним IIFE, поэтому тело пока с отступом в два
 // пробела; темы постепенно выезжают в соседние модули src/*.js.
-// Собирается в classic-скрипт app.js линкером tools/link-web-ide-app.js.
+// Собирается esbuild-ом в classic-скрипт app.js (tools/build-web-ide.js).
 
 import { WORKSPACE_ROOT, MAIN_FILE, normalizeWorkspacePath, shortFileName, basename, parentPath, itemName, studentPath, formatThrownError, formatDiagnosticText } from './workspace-paths.js';
 import { KEYWORDS, BUILTIN_TYPES, CLASS_NAMES, QUALIFIED_TYPES, highlightIdyllium, escapeHtml } from './idyllium-highlight.js';

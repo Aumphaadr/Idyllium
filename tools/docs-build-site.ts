@@ -65,6 +65,7 @@ const MANAGED_PATHS = [
   'index.html',
   'app.css',
   'app.js',
+  'ai',
   'assets',
   'fonts',
   'monaco',
@@ -115,7 +116,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'constants',
     title: 'Именованные константы',
     subtitle: 'Значения, которым программа не даст случайно измениться',
-    sourceFile: 'docs/manual-content/console/constants.html',
+    sourceFile: 'packages/docs/manual-content/console/constants.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -128,7 +129,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'bit-operations',
     title: 'Битовые операции',
     subtitle: 'Сдвиги, маски и четыре логические операции над битами',
-    sourceFile: 'docs/manual-content/console/bit-operations.html',
+    sourceFile: 'packages/docs/manual-content/console/bit-operations.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -138,7 +139,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'recursion',
     title: 'Рекурсия',
     subtitle: 'Функция, которая вызывает саму себя и умеет вовремя остановиться',
-    sourceFile: 'docs/manual-content/console/recursion.html',
+    sourceFile: 'packages/docs/manual-content/console/recursion.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -148,7 +149,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'try-catch',
     title: 'Обработка ошибок',
     subtitle: 'try, catch и finally: как встретить runtime error и продолжить работу',
-    sourceFile: 'docs/manual-content/console/try-catch.html',
+    sourceFile: 'packages/docs/manual-content/console/try-catch.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -158,7 +159,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'directories',
     title: 'Файлы и папки проекта',
     subtitle: 'Создание, просмотр, копирование, переименование и безопасное удаление',
-    sourceFile: 'docs/manual-content/console/directories.html',
+    sourceFile: 'packages/docs/manual-content/console/directories.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -168,7 +169,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'colors',
     title: 'Цвета виджетов',
     subtitle: 'text_color, background_color, border_color и библиотека colors без HEX-угадаек',
-    sourceFile: 'docs/manual-content/widgets/colors.html',
+    sourceFile: 'packages/docs/manual-content/widgets/colors.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -178,7 +179,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'fonts',
     title: 'Шрифты в GUI',
     subtitle: 'fonts.Font, наследование от окна и один ресурс для нескольких виджетов',
-    sourceFile: 'docs/manual-content/widgets/fonts.html',
+    sourceFile: 'packages/docs/manual-content/widgets/fonts.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -188,7 +189,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'image',
     title: 'Картинки в GUI',
     subtitle: 'image.Static, image.Animation, ImageBox и преобразования картинок',
-    sourceFile: 'docs/manual-content/widgets/image.html',
+    sourceFile: 'packages/docs/manual-content/widgets/image.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -200,7 +201,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'styles',
     title: 'Стили IdySS',
     subtitle: 'Idyllium Style Sheets: наклейка style, словарь свойств и градиенты',
-    sourceFile: 'docs/manual-content/widgets/styles.html',
+    sourceFile: 'packages/docs/manual-content/widgets/styles.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -212,7 +213,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'links',
     title: 'Гиперссылки',
     subtitle: 'Надпись-ссылка, url.open() и разбор адреса на части',
-    sourceFile: 'docs/manual-content/widgets/links.html',
+    sourceFile: 'packages/docs/manual-content/widgets/links.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -222,7 +223,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'audio',
     title: 'Работа со звуками',
     subtitle: 'audio.Sound, audio.Music и первые звуки в GUI-приложении',
-    sourceFile: 'docs/manual-content/widgets/audio.html',
+    sourceFile: 'packages/docs/manual-content/widgets/audio.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -236,7 +237,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'tabwidget',
     title: 'Вкладки',
     subtitle: 'gui.TabWidget: add_tab, selected_index и много виджетов на одном месте',
-    sourceFile: 'docs/manual-content/widgets/tabwidget.html',
+    sourceFile: 'packages/docs/manual-content/widgets/tabwidget.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -249,7 +250,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'timer',
     title: 'Объект Timer',
     subtitle: 'Выполнение кода через равные промежутки времени',
-    sourceFile: 'docs/manual-content/widgets/timer.html',
+    sourceFile: 'packages/docs/manual-content/widgets/timer.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -262,7 +263,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'data-widgets',
     title: 'Витрины данных',
     subtitle: 'Факультатив: gui.Table и графики — таблица, столбики, пирог и живая линия',
-    sourceFile: 'docs/manual-content/widgets/data-widgets.html',
+    sourceFile: 'packages/docs/manual-content/widgets/data-widgets.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -271,7 +272,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'intro',
     title: 'Знакомство с черепахой',
     subtitle: 'turtle.Turtle, forward и left: первая фигура за пять строк',
-    sourceFile: 'docs/manual-content/turtle/intro.html',
+    sourceFile: 'packages/docs/manual-content/turtle/intro.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -280,7 +281,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'pen',
     title: 'Перо и скорость',
     subtitle: 'pen_up/pen_down, цвет и толщина пера, speed, кляксы и команды поля',
-    sourceFile: 'docs/manual-content/turtle/pen.html',
+    sourceFile: 'packages/docs/manual-content/turtle/pen.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -289,7 +290,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'shapes',
     title: 'Углы и многоугольники',
     subtitle: 'Внешний угол, формула 360/n и звезда, которую рисует цикл',
-    sourceFile: 'docs/manual-content/turtle/shapes.html',
+    sourceFile: 'packages/docs/manual-content/turtle/shapes.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -298,7 +299,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'coordinates',
     title: 'Координаты поля',
     subtitle: 'goto и home: центр (0, 0), ось Y вверх — как на уроке математики',
-    sourceFile: 'docs/manual-content/turtle/coordinates.html',
+    sourceFile: 'packages/docs/manual-content/turtle/coordinates.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -307,7 +308,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'fill',
     title: 'Заливка и узоры',
     subtitle: 'begin_fill/end_fill, функции-фигуры и розетка из 36 квадратов',
-    sourceFile: 'docs/manual-content/turtle/fill.html',
+    sourceFile: 'packages/docs/manual-content/turtle/fill.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -316,7 +317,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'turtles',
     title: 'Несколько черепах',
     subtitle: 'Каждая черепаха — объект: парное рисование и великие гонки',
-    sourceFile: 'docs/manual-content/turtle/turtles.html',
+    sourceFile: 'packages/docs/manual-content/turtle/turtles.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -325,7 +326,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'svg',
     title: 'Векторная картинка SVG',
     subtitle: 'save_svg: рисунок уезжает в файл — даже из консольной программы',
-    sourceFile: 'docs/manual-content/turtle/svg.html',
+    sourceFile: 'packages/docs/manual-content/turtle/svg.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -338,7 +339,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'contracts',
     title: 'Методы-контракты',
     subtitle: 'Методы с параметрами, договор equals для == и to_string для печати',
-    sourceFile: 'docs/manual-content/oop/contracts.html',
+    sourceFile: 'packages/docs/manual-content/oop/contracts.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -350,7 +351,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'events',
     title: 'Свои события',
     subtitle: 'event, подписка и запуск: механизм кнопок теперь в ваших классах',
-    sourceFile: 'docs/manual-content/oop/events.html',
+    sourceFile: 'packages/docs/manual-content/oop/events.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -359,7 +360,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'intro',
     title: 'Первый Canvas',
     subtitle: 'Холст как виджет и первый нарисованный круг',
-    sourceFile: 'docs/manual-content/canvas/intro.html',
+    sourceFile: 'packages/docs/manual-content/canvas/intro.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -368,7 +369,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'drawable',
     title: 'Drawable-объекты',
     subtitle: 'Rectangle, Circle, Line и их основные свойства',
-    sourceFile: 'docs/manual-content/canvas/drawable.html',
+    sourceFile: 'packages/docs/manual-content/canvas/drawable.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -377,7 +378,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'update',
     title: 'Однократные и повторяющиеся действия',
     subtitle: 'on_init, on_update и framerate_limit',
-    sourceFile: 'docs/manual-content/canvas/update.html',
+    sourceFile: 'packages/docs/manual-content/canvas/update.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -386,7 +387,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'keyboard',
     title: 'События клавиатуры',
     subtitle: 'on_key_pressed и on_key_released на простом примере',
-    sourceFile: 'docs/manual-content/canvas/keyboard.html',
+    sourceFile: 'packages/docs/manual-content/canvas/keyboard.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -395,7 +396,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'pressed-keys',
     title: 'Плавное движение',
     subtitle: 'Массив зажатых клавиш и движение в on_update',
-    sourceFile: 'docs/manual-content/canvas/pressed-keys.html',
+    sourceFile: 'packages/docs/manual-content/canvas/pressed-keys.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -404,7 +405,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'mouse-buttons',
     title: 'Кнопки мыши',
     subtitle: 'on_mouse_pressed, on_mouse_released и координаты клика',
-    sourceFile: 'docs/manual-content/canvas/mouse-buttons.html',
+    sourceFile: 'packages/docs/manual-content/canvas/mouse-buttons.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -413,7 +414,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'mouse-motion',
     title: 'Движение мыши и колесо',
     subtitle: 'on_mouse_move, on_mouse_scroll и простая реакция объектов',
-    sourceFile: 'docs/manual-content/canvas/mouse-motion.html',
+    sourceFile: 'packages/docs/manual-content/canvas/mouse-motion.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -422,7 +423,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'modules',
     title: 'Разделение проекта на файлы',
     subtitle: 'Canvas-код отдельно, главный файл отдельно',
-    sourceFile: 'docs/manual-content/canvas/modules.html',
+    sourceFile: 'packages/docs/manual-content/canvas/modules.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -431,7 +432,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'text',
     title: 'Шрифт и текст',
     subtitle: 'fonts.Font, drawable.Text и координаты курсора',
-    sourceFile: 'docs/manual-content/canvas/text.html',
+    sourceFile: 'packages/docs/manual-content/canvas/text.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -440,7 +441,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'sprites',
     title: 'Картинки и спрайты',
     subtitle: 'image.Static, image.Animation, Sprite и управление по WASD',
-    sourceFile: 'docs/manual-content/canvas/sprites.html',
+    sourceFile: 'packages/docs/manual-content/canvas/sprites.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -449,7 +450,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'object-arrays',
     title: 'Массивы объектов',
     subtitle: 'Несколько Rectangle-объектов и метод rotate()',
-    sourceFile: 'docs/manual-content/canvas/object-arrays.html',
+    sourceFile: 'packages/docs/manual-content/canvas/object-arrays.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -458,7 +459,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'origin',
     title: 'Точка отсчёта и вращение',
     subtitle: 'Origin, движение по окружности, синус и косинус',
-    sourceFile: 'docs/manual-content/canvas/origin.html',
+    sourceFile: 'packages/docs/manual-content/canvas/origin.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -467,7 +468,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'temporary-objects',
     title: 'Временные объекты',
     subtitle: 'tmp, dyn_array и круги, появляющиеся по клику',
-    sourceFile: 'docs/manual-content/canvas/temporary-objects.html',
+    sourceFile: 'packages/docs/manual-content/canvas/temporary-objects.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -477,7 +478,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'audio',
     title: 'Звуки и музыка',
     subtitle: 'Sound, Music, loop, position и on_finished в Canvas-проектах',
-    sourceFile: 'docs/manual-content/canvas/audio.html',
+    sourceFile: 'packages/docs/manual-content/canvas/audio.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -486,7 +487,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'rectangle-hit-test',
     title: 'Точка в прямоугольной области',
     subtitle: 'Левый, правый, верхний и нижний край',
-    sourceFile: 'docs/manual-content/canvas/rectangle-hit-test.html',
+    sourceFile: 'packages/docs/manual-content/canvas/rectangle-hit-test.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -495,7 +496,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'circle-hit-test',
     title: 'Точка в круглой области',
     subtitle: 'Расстояние до центра и теорема Пифагора',
-    sourceFile: 'docs/manual-content/canvas/circle-hit-test.html',
+    sourceFile: 'packages/docs/manual-content/canvas/circle-hit-test.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -504,7 +505,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'circle-collisions',
     title: 'Круглые коллизии',
     subtitle: 'Когда два круга касаются друг друга',
-    sourceFile: 'docs/manual-content/canvas/circle-collisions.html',
+    sourceFile: 'packages/docs/manual-content/canvas/circle-collisions.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -513,7 +514,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'rectangle-collisions',
     title: 'Прямоугольные коллизии',
     subtitle: 'Алгоритм опровержения касания прямоугольников',
-    sourceFile: 'docs/manual-content/canvas/rectangle-collisions.html',
+    sourceFile: 'packages/docs/manual-content/canvas/rectangle-collisions.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -522,7 +523,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'geometry-methods',
     title: 'Готовые геометрические проверки',
     subtitle: 'contains(), collides_with(), повороты и разные типы объектов',
-    sourceFile: 'docs/manual-content/canvas/geometry-methods.html',
+    sourceFile: 'packages/docs/manual-content/canvas/geometry-methods.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -531,7 +532,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'intro',
     title: 'Работа с файлами: повторение',
     subtitle: 'Зачем вообще понадобился JSON, если у нас уже есть file',
-    sourceFile: 'docs/manual-content/json/intro.html',
+    sourceFile: 'packages/docs/manual-content/json/intro.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -540,7 +541,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'first-object',
     title: 'Первый JSON-объект',
     subtitle: 'Ключи, значения, json.Object и json.Value',
-    sourceFile: 'docs/manual-content/json/first-object.html',
+    sourceFile: 'packages/docs/manual-content/json/first-object.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -549,7 +550,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'reading',
     title: 'Чтение JSON-данных',
     subtitle: 'parse, get, to_int, to_string и проверка типов',
-    sourceFile: 'docs/manual-content/json/reading.html',
+    sourceFile: 'packages/docs/manual-content/json/reading.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -558,7 +559,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'arrays',
     title: 'JSON-массивы',
     subtitle: 'Списки значений внутри JSON',
-    sourceFile: 'docs/manual-content/json/arrays.html',
+    sourceFile: 'packages/docs/manual-content/json/arrays.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -567,7 +568,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'nested-objects',
     title: 'Вложенные объекты',
     subtitle: 'Объект как значение другого объекта',
-    sourceFile: 'docs/manual-content/json/nested-objects.html',
+    sourceFile: 'packages/docs/manual-content/json/nested-objects.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -576,7 +577,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'object-arrays',
     title: 'Массивы объектов',
     subtitle: 'Несколько игроков в одном JSON-файле',
-    sourceFile: 'docs/manual-content/json/object-arrays.html',
+    sourceFile: 'packages/docs/manual-content/json/object-arrays.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -585,7 +586,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'array-methods',
     title: 'Методы массивов',
     subtitle: 'length, at, add, set, insert, pop, remove, clear',
-    sourceFile: 'docs/manual-content/json/array-methods.html',
+    sourceFile: 'packages/docs/manual-content/json/array-methods.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -594,7 +595,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'object-methods',
     title: 'Методы объектов',
     subtitle: 'length, has, get, add, set, remove, keys',
-    sourceFile: 'docs/manual-content/json/object-methods.html',
+    sourceFile: 'packages/docs/manual-content/json/object-methods.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -603,7 +604,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'oop',
     title: 'JSON и ООП',
     subtitle: 'Методы to_json и from_json у собственного класса',
-    sourceFile: 'docs/manual-content/json/oop.html',
+    sourceFile: 'packages/docs/manual-content/json/oop.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -612,7 +613,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'errors',
     title: 'Типичные ошибки',
     subtitle: 'Невалидный JSON, лишние запятые, комментарии и неверные типы',
-    sourceFile: 'docs/manual-content/json/errors.html',
+    sourceFile: 'packages/docs/manual-content/json/errors.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -621,7 +622,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'intro',
     title: 'Первая база данных',
     subtitle: 'Файл базы, таблица players и первое подключение через sqlite.open()',
-    sourceFile: 'docs/manual-content/sqlite/intro.html',
+    sourceFile: 'packages/docs/manual-content/sqlite/intro.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -630,7 +631,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'changes',
     title: 'Таблицы и первые записи',
     subtitle: 'INSERT, UPDATE, DELETE и количество изменённых строк',
-    sourceFile: 'docs/manual-content/sqlite/changes.html',
+    sourceFile: 'packages/docs/manual-content/sqlite/changes.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -639,7 +640,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'select',
     title: 'Чтение строк',
     subtitle: 'SELECT, sqlite.Result, next() и типизированные методы чтения',
-    sourceFile: 'docs/manual-content/sqlite/select.html',
+    sourceFile: 'packages/docs/manual-content/sqlite/select.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -648,7 +649,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'parameters',
     title: 'Безопасные параметры',
     subtitle: 'prepare(), :name и bind() вместо склеивания SQL-строк',
-    sourceFile: 'docs/manual-content/sqlite/parameters.html',
+    sourceFile: 'packages/docs/manual-content/sqlite/parameters.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -657,7 +658,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'filters',
     title: 'Поиск и фильтрация',
     subtitle: 'WHERE, AND, ORDER BY, LIMIT и параметры в SELECT',
-    sourceFile: 'docs/manual-content/sqlite/filters.html',
+    sourceFile: 'packages/docs/manual-content/sqlite/filters.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -666,7 +667,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'null',
     title: 'Неизвестные значения и null',
     subtitle: 'Пустое значение в таблице, sqlite.Value и безопасная проверка',
-    sourceFile: 'docs/manual-content/sqlite/null.html',
+    sourceFile: 'packages/docs/manual-content/sqlite/null.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -675,7 +676,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'reuse',
     title: 'Много записей одним запросом',
     subtitle: 'Повторное использование Statement внутри цикла',
-    sourceFile: 'docs/manual-content/sqlite/reuse.html',
+    sourceFile: 'packages/docs/manual-content/sqlite/reuse.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -684,7 +685,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'transactions',
     title: 'Всё или ничего',
     subtitle: 'Транзакции, commit(), rollback() и целостность данных',
-    sourceFile: 'docs/manual-content/sqlite/transactions.html',
+    sourceFile: 'packages/docs/manual-content/sqlite/transactions.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -693,7 +694,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'scripts',
     title: 'SQL в отдельном файле',
     subtitle: 'read_all(), exec_script() и проект из нескольких файлов',
-    sourceFile: 'docs/manual-content/sqlite/scripts.html',
+    sourceFile: 'packages/docs/manual-content/sqlite/scripts.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -702,7 +703,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'select-tools',
     title: 'Все строки и краткая статистика',
     subtitle: 'SELECT *, DISTINCT, агрегатные функции и GROUP BY',
-    sourceFile: 'docs/manual-content/sqlite/select-tools.html',
+    sourceFile: 'packages/docs/manual-content/sqlite/select-tools.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -711,7 +712,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'defaults',
     title: 'Повторный запуск и значения по умолчанию',
     subtitle: 'IF NOT EXISTS, IF EXISTS и DEFAULT',
-    sourceFile: 'docs/manual-content/sqlite/defaults.html',
+    sourceFile: 'packages/docs/manual-content/sqlite/defaults.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -720,7 +721,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'keys',
     title: 'Ключи и уникальные значения',
     subtitle: 'PRIMARY KEY, AUTOINCREMENT и UNIQUE',
-    sourceFile: 'docs/manual-content/sqlite/keys.html',
+    sourceFile: 'packages/docs/manual-content/sqlite/keys.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -733,7 +734,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'hashing',
     title: 'Хеширование',
     subtitle: 'Отпечатки данных, контрольные суммы и пароли, которых никто не знает',
-    sourceFile: 'docs/manual-content/sqlite/hashing.html',
+    sourceFile: 'packages/docs/manual-content/sqlite/hashing.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -742,7 +743,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'joins',
     title: 'Связи между таблицами',
     subtitle: 'FOREIGN KEY, JOIN, псевдонимы таблиц и LEFT JOIN',
-    sourceFile: 'docs/manual-content/sqlite/joins.html',
+    sourceFile: 'packages/docs/manual-content/sqlite/joins.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -751,7 +752,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'errors',
     title: 'Типичные ошибки',
     subtitle: 'Непривязанные параметры, неверные методы чтения и отсутствующие колонки',
-    sourceFile: 'docs/manual-content/sqlite/errors.html',
+    sourceFile: 'packages/docs/manual-content/sqlite/errors.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -760,7 +761,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'http-client',
     title: 'Сеть: программа ходит в интернет',
     subtitle: 'http.get, статусы ответа, JSON по сети и страховка try/catch',
-    sourceFile: 'docs/manual-content/network/http-client.html',
+    sourceFile: 'packages/docs/manual-content/network/http-client.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -770,7 +771,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'channel',
     title: 'Почтовый канал: две программы разговаривают',
     subtitle: 'channel.Post, письма между вкладками, протокол на JSON',
-    sourceFile: 'docs/manual-content/network/channel.html',
+    sourceFile: 'packages/docs/manual-content/network/channel.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -780,7 +781,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'web-server',
     title: 'Свой сервер',
     subtitle: 'web.Server: маршруты, query, JSON-API, статика и вечный run()',
-    sourceFile: 'docs/manual-content/network/web-server.html',
+    sourceFile: 'packages/docs/manual-content/network/web-server.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -790,7 +791,7 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     id: 'web-templates',
     title: 'Сайт из шаблонов',
     subtitle: 'send_template, {{дырки}} и {% for %}, параметры пути, формы и redirect',
-    sourceFile: 'docs/manual-content/network/web-templates.html',
+    sourceFile: 'packages/docs/manual-content/network/web-templates.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -799,65 +800,116 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
 const LESSON_EXTRAS: Record<string, string> = {};
 
 const LESSON_REPLACEMENTS: Record<string, string> = {
-  'cli/000_setup.html': 'docs/manual-content/console/setup.html',
-  'cli/001_hello.html': 'docs/manual-content/console/hello.html',
-  'cli/002_variables.html': 'docs/manual-content/console/variables.html',
-  'cli/003_input.html': 'docs/manual-content/console/input.html',
-  'cli/004_arithmetics.html': 'docs/manual-content/console/arithmetics.html',
-  'cli/005_colors.html': 'docs/manual-content/console/colors.html',
-  'cli/006_transforms.html': 'docs/manual-content/console/transforms.html',
-  'cli/007_math.html': 'docs/manual-content/console/math-basics.html',
-  'cli/008_if.html': 'docs/manual-content/console/if.html',
-  'cli/009_increment.html': 'docs/manual-content/console/increment.html',
-  'cli/010_random.html': 'docs/manual-content/console/random.html',
-  'cli/011_bool.html': 'docs/manual-content/console/bool.html',
-  'cli/012_loops.html': 'docs/manual-content/console/loops.html',
-  'cli/013_array.html': 'docs/manual-content/console/array.html',
-  'cli/014_char.html': 'docs/manual-content/console/char.html',
-  'cli/015_dyn_array.html': 'docs/manual-content/console/dyn-array.html',
-  'cli/016_arr_functions.html': 'docs/manual-content/console/arr-functions.html',
-  'cli/017_arr_methods.html': 'docs/manual-content/console/arr-methods.html',
-  'cli/018_string_methods.html': 'docs/manual-content/console/string-methods.html',
-  'cli/019_time.html': 'docs/manual-content/console/time.html',
-  'cli/020_types.html': 'docs/manual-content/console/types.html',
-  'cli/021_encoding.html': 'docs/manual-content/console/encoding.html',
-  'cli/022_functions.html': 'docs/manual-content/console/functions.html',
-  'cli/023_libs.html': 'docs/manual-content/console/libs.html',
-  'cli/024_files.html': 'docs/manual-content/console/files.html',
-  'cli/025_math.html': 'docs/manual-content/console/math-advanced.html',
-  'cli/026_matrix.html': 'docs/manual-content/console/matrix.html',
-  'cli/027_errors.html': 'docs/manual-content/console/errors.html',
-  'widgets/000_window.html': 'docs/manual-content/widgets/window.html',
-  'widgets/001_button.html': 'docs/manual-content/widgets/button.html',
-  'widgets/002_label.html': 'docs/manual-content/widgets/label.html',
-  'widgets/003_progressbar.html': 'docs/manual-content/widgets/progressbar.html',
-  'widgets/004_spinbox.html': 'docs/manual-content/widgets/spinbox.html',
-  'widgets/005_slider.html': 'docs/manual-content/widgets/slider.html',
-  'widgets/006_lineedit.html': 'docs/manual-content/widgets/lineedit.html',
-  'widgets/007_checkbox.html': 'docs/manual-content/widgets/checkbox.html',
-  'widgets/008_radiobutton.html': 'docs/manual-content/widgets/radiobutton.html',
-  'widgets/009_frame.html': 'docs/manual-content/widgets/frame.html',
-  'widgets/010_combobox.html': 'docs/manual-content/widgets/combobox.html',
-  'widgets/011_visibility.html': 'docs/manual-content/widgets/visibility.html',
-  'widgets/012_arrays.html': 'docs/manual-content/widgets/arrays.html',
-  'widgets/013_sender.html': 'docs/manual-content/widgets/sender.html',
-  'widgets/014_timer.html': 'docs/manual-content/widgets/timer.html',
-  'widgets/015_modal.html': 'docs/manual-content/widgets/modal.html',
-  'widgets/016_errors.html': 'docs/manual-content/widgets/errors.html',
-  'oop/000_intro.html': 'docs/manual-content/oop/intro.html',
-  'oop/001_classes.html': 'docs/manual-content/oop/classes.html',
-  'oop/002_fields_methods.html': 'docs/manual-content/oop/fields-methods.html',
-  'oop/003_this.html': 'docs/manual-content/oop/this.html',
-  'oop/004_modules.html': 'docs/manual-content/oop/modules.html',
-  'oop/005_arrays.html': 'docs/manual-content/oop/arrays.html',
-  'oop/007_composition.html': 'docs/manual-content/oop/composition.html',
-  'oop/008_inheritance.html': 'docs/manual-content/oop/inheritance.html',
-  'oop/010_encapsulation.html': 'docs/manual-content/oop/encapsulation.html',
-  'oop/011_static.html': 'docs/manual-content/oop/static.html',
-  'oop/012_errors.html': 'docs/manual-content/oop/errors.html',
-  'oop/006_constructor.html': 'docs/manual-content/oop/constructor.html',
-  'oop/009_polymorphism.html': 'docs/manual-content/oop/polymorphism.html',
+  'cli/000_setup.html': 'packages/docs/manual-content/console/setup.html',
+  'cli/001_hello.html': 'packages/docs/manual-content/console/hello.html',
+  'cli/002_variables.html': 'packages/docs/manual-content/console/variables.html',
+  'cli/003_input.html': 'packages/docs/manual-content/console/input.html',
+  'cli/004_arithmetics.html': 'packages/docs/manual-content/console/arithmetics.html',
+  'cli/005_colors.html': 'packages/docs/manual-content/console/colors.html',
+  'cli/006_transforms.html': 'packages/docs/manual-content/console/transforms.html',
+  'cli/007_math.html': 'packages/docs/manual-content/console/math-basics.html',
+  'cli/008_if.html': 'packages/docs/manual-content/console/if.html',
+  'cli/009_increment.html': 'packages/docs/manual-content/console/increment.html',
+  'cli/010_random.html': 'packages/docs/manual-content/console/random.html',
+  'cli/011_bool.html': 'packages/docs/manual-content/console/bool.html',
+  'cli/012_loops.html': 'packages/docs/manual-content/console/loops.html',
+  'cli/013_array.html': 'packages/docs/manual-content/console/array.html',
+  'cli/014_char.html': 'packages/docs/manual-content/console/char.html',
+  'cli/015_dyn_array.html': 'packages/docs/manual-content/console/dyn-array.html',
+  'cli/016_arr_functions.html': 'packages/docs/manual-content/console/arr-functions.html',
+  'cli/017_arr_methods.html': 'packages/docs/manual-content/console/arr-methods.html',
+  'cli/018_string_methods.html': 'packages/docs/manual-content/console/string-methods.html',
+  'cli/019_time.html': 'packages/docs/manual-content/console/time.html',
+  'cli/020_types.html': 'packages/docs/manual-content/console/types.html',
+  'cli/021_encoding.html': 'packages/docs/manual-content/console/encoding.html',
+  'cli/022_functions.html': 'packages/docs/manual-content/console/functions.html',
+  'cli/023_libs.html': 'packages/docs/manual-content/console/libs.html',
+  'cli/024_files.html': 'packages/docs/manual-content/console/files.html',
+  'cli/025_math.html': 'packages/docs/manual-content/console/math-advanced.html',
+  'cli/026_matrix.html': 'packages/docs/manual-content/console/matrix.html',
+  'cli/027_errors.html': 'packages/docs/manual-content/console/errors.html',
+  'widgets/000_window.html': 'packages/docs/manual-content/widgets/window.html',
+  'widgets/001_button.html': 'packages/docs/manual-content/widgets/button.html',
+  'widgets/002_label.html': 'packages/docs/manual-content/widgets/label.html',
+  'widgets/003_progressbar.html': 'packages/docs/manual-content/widgets/progressbar.html',
+  'widgets/004_spinbox.html': 'packages/docs/manual-content/widgets/spinbox.html',
+  'widgets/005_slider.html': 'packages/docs/manual-content/widgets/slider.html',
+  'widgets/006_lineedit.html': 'packages/docs/manual-content/widgets/lineedit.html',
+  'widgets/007_checkbox.html': 'packages/docs/manual-content/widgets/checkbox.html',
+  'widgets/008_radiobutton.html': 'packages/docs/manual-content/widgets/radiobutton.html',
+  'widgets/009_frame.html': 'packages/docs/manual-content/widgets/frame.html',
+  'widgets/010_combobox.html': 'packages/docs/manual-content/widgets/combobox.html',
+  'widgets/011_visibility.html': 'packages/docs/manual-content/widgets/visibility.html',
+  'widgets/012_arrays.html': 'packages/docs/manual-content/widgets/arrays.html',
+  'widgets/013_sender.html': 'packages/docs/manual-content/widgets/sender.html',
+  'widgets/014_timer.html': 'packages/docs/manual-content/widgets/timer.html',
+  'widgets/015_modal.html': 'packages/docs/manual-content/widgets/modal.html',
+  'widgets/016_errors.html': 'packages/docs/manual-content/widgets/errors.html',
+  'oop/000_intro.html': 'packages/docs/manual-content/oop/intro.html',
+  'oop/001_classes.html': 'packages/docs/manual-content/oop/classes.html',
+  'oop/002_fields_methods.html': 'packages/docs/manual-content/oop/fields-methods.html',
+  'oop/003_this.html': 'packages/docs/manual-content/oop/this.html',
+  'oop/004_modules.html': 'packages/docs/manual-content/oop/modules.html',
+  'oop/005_arrays.html': 'packages/docs/manual-content/oop/arrays.html',
+  'oop/007_composition.html': 'packages/docs/manual-content/oop/composition.html',
+  'oop/008_inheritance.html': 'packages/docs/manual-content/oop/inheritance.html',
+  'oop/010_encapsulation.html': 'packages/docs/manual-content/oop/encapsulation.html',
+  'oop/011_static.html': 'packages/docs/manual-content/oop/static.html',
+  'oop/012_errors.html': 'packages/docs/manual-content/oop/errors.html',
+  'oop/006_constructor.html': 'packages/docs/manual-content/oop/constructor.html',
+  'oop/009_polymorphism.html': 'packages/docs/manual-content/oop/polymorphism.html',
 };
+
+/**
+ * AI-справки — рукописный ВХОД в packages/docs/ai/ (с 2026-08-29 вход и
+ * выход docs/ разведены); чисто механические перечни в главных файлах
+ * освежаются из реестра стандартной библиотеки между якорями @generated
+ * (первый — перечень имён модулей в Reserved Names: он тихо протухал —
+ * web/http/channel/xml когда-то в него не попали). Источник правится НА
+ * МЕСТЕ, затем весь каталог публикуется в docs/ai (managed). Полноту
+ * рукописной части стережёт tests/ai-reference-guard.
+ */
+function refreshAiReferenceGeneratedBlocks(siteRoot: string): void {
+  const aiSourceRoot = path.resolve(process.cwd(), 'packages', 'docs', 'ai');
+  for (const relative of ['idyllium-ai-reference.md', 'ru/idyllium-ai-reference.md']) {
+    refreshAiReferenceFile(path.join(aiSourceRoot, ...relative.split('/')));
+  }
+  fs.cpSync(aiSourceRoot, path.join(siteRoot, 'ai'), { recursive: true });
+}
+
+function refreshAiReferenceFile(referencePath: string): void {
+  if (!fs.existsSync(referencePath)) {
+    throw new Error(`AI reference does not exist: ${referencePath}`);
+  }
+  const { createDefaultStandardLibrary } = require('../src/index');
+  const registry = createDefaultStandardLibrary();
+  const moduleNames = registry.listModuleSpecs()
+    .map((module: { name: string }) => module.name)
+    .sort((left: string, right: string) => left.localeCompare(right));
+  const wrapped: string[] = [];
+  let line = '';
+  for (const name of moduleNames) {
+    if (line && (line + ' ' + name).length > 71) {
+      wrapped.push(line);
+      line = name;
+    } else {
+      line = line ? `${line} ${name}` : name;
+    }
+  }
+  if (line) wrapped.push(line);
+
+  const source = fs.readFileSync(referencePath, 'utf8');
+  const begin = '<!-- @generated:stdlib-module-names -->';
+  const end = '<!-- /@generated:stdlib-module-names -->';
+  const beginIndex = source.indexOf(begin);
+  const endIndex = source.indexOf(end);
+  if (beginIndex < 0 || endIndex <= beginIndex) {
+    throw new Error('AI reference lost the @generated:stdlib-module-names anchors');
+  }
+  const replacement = `${begin}\n\`\`\`text\n${wrapped.join('\n')}\n\`\`\`\n${end}`;
+  const updated = source.slice(0, beginIndex) + replacement + source.slice(endIndex + end.length);
+  if (updated !== source) fs.writeFileSync(referencePath, updated, 'utf8');
+}
 
 function main(): void {
   const sourceRoot = path.resolve(readArg('--source') ?? DEFAULT_SOURCE_ROOT);
@@ -904,6 +956,8 @@ function main(): void {
 
   buildReferenceSite(path.join(siteRoot, 'reference'));
 
+  refreshAiReferenceGeneratedBlocks(siteRoot);
+
   const lessonCount = manifest.sections.reduce((sum, section) => sum + section.lessons.length, 0);
   const needsReview = manifest.sections.flatMap((section) => section.lessons).filter((lesson) => lesson.status === 'needs-review').length;
   console.log(`book generated: ${manifest.sections.length} sections, ${lessonCount} lessons`);
@@ -911,14 +965,14 @@ function main(): void {
   console.log(`site output: ${siteRoot}`);
 }
 
-const TASKS_SOURCE_ROOT = 'docs/manual-content/tasks';
+const TASKS_SOURCE_ROOT = 'packages/docs/manual-content/tasks';
 
 /**
  * Собирает «Задачник» — сайт-близнец учебника по адресу /tasks/.
  *
  * Оболочка не копируется, а ссылается на файлы учебника (../book/app.js и
  * компанию): разметка страницы у них одна и та же, и разъезжаться ей незачем.
- * Содержимое берётся из docs/manual-content/tasks/<раздел>/<урок>.html —
+ * Содержимое берётся из packages/docs/manual-content/tasks/<раздел>/<урок>.html —
  * обычных HTML-фрагментов, которые правятся руками так же, как уроки.
  */
 function buildTasksSite(tasksRoot: string, manifest: SiteManifest): void {
@@ -1600,12 +1654,12 @@ function tokenizeIdylliumForBake(source: string): HlToken[] {
 }
 
 // ─── «О проекте» (заказ владельца, 2026-08-28): вики-статья об Idyllium ───
-// Источник — рукописный HTML-фрагмент docs/manual-content/about/*.html
+// Источник — рукописный HTML-фрагмент packages/docs/manual-content/about/*.html
 // (конверсия методистского wiki-idyllium.md). Страница самодостаточна:
 // общая шкура сайта (../book/app.css, топбар, тема), но без app.js —
 // сайдбар и манифест статье не нужны. Раздел задуман расширяемым: новые
 // статьи добавляются в ABOUT_PAGES парой «файл → заголовок».
-const ABOUT_SOURCE_ROOT = 'docs/manual-content/about';
+const ABOUT_SOURCE_ROOT = 'packages/docs/manual-content/about';
 
 const ABOUT_PAGES: ReadonlyArray<{ file: string; out: string; title: string }> = [
   { file: 'wiki-idyllium.html', out: 'index.html', title: 'Idyllium — О проекте' },
@@ -1749,9 +1803,9 @@ function pendingTasksFragment(sectionId: string, lessonId: string, lessonTitle: 
 
 // ─── Проекты (решение владельца, 2026-08-15): третий режим оболочки ────────
 // Страницы-руководства проектной деятельности; источники фрагментов —
-// docs/manual-content/projects/<раздел>/<имя>.html (пекутся из методистских
+// packages/docs/manual-content/projects/<раздел>/<имя>.html (пекутся из методистских
 // MD по регламенту projects_md/00-page-rules.md). Пока — только «Консоль».
-const PROJECTS_SOURCE_ROOT = 'docs/manual-content/projects';
+const PROJECTS_SOURCE_ROOT = 'packages/docs/manual-content/projects';
 
 const PROJECTS_SECTIONS: ReadonlyArray<{ id: string; title: string; icon: string; lessons: ReadonlyArray<{ id: string; title: string; subtitle: string }> }> = [
   {

@@ -22,7 +22,8 @@
     "manual:generate": "node ../Idyllium-backstage/tech/manual-tests/_tools/generate-manual-tests.js",
     "manual:check": "npm run build && node ../Idyllium-backstage/tech/manual-tests/_tools/check-manual-tests.js",
     "release": "npm run docs:site && npm run package:vscode && node dist/tools/extract-lesson-specs.js && node tools/run-tests.js",
-    "release:github": "node tools/push-release-tag.js"
+    "release:github": "node tools/push-release-tag.js",
+    "deploy": "node tools/deploy-site.js"
   },
   "keywords": [
     "idyllium",

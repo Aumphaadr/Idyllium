@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-29T15:29:05.266Z",
-  "sourceRoot": "docs/manual-content/tasks",
+  "generatedAt": "2026-08-29T16:27:42.181Z",
+  "sourceRoot": "packages/docs/manual-content/tasks",
   "sections": [
     {
       "id": "console",
@@ -14,7 +14,7 @@
           "title": "Установка Idyllium",
           "subtitle": "Практикум к уроку «Установка Idyllium»",
           "file": "content/console/setup.html",
-          "sourceFile": "docs/manual-content/tasks/console/setup.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/setup.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -24,7 +24,7 @@
           "title": "Первая программа",
           "subtitle": "Практикум к уроку «Первая программа»",
           "file": "content/console/hello.html",
-          "sourceFile": "docs/manual-content/tasks/console/hello.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/hello.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -34,7 +34,7 @@
           "title": "Переменные и типы данных",
           "subtitle": "Практикум к уроку «Переменные и типы данных»",
           "file": "content/console/variables.html",
-          "sourceFile": "docs/manual-content/tasks/console/variables.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/variables.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -44,7 +44,7 @@
           "title": "Ввод данных",
           "subtitle": "Практикум к уроку «Ввод данных»",
           "file": "content/console/input.html",
-          "sourceFile": "docs/manual-content/tasks/console/input.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/input.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -54,7 +54,7 @@
           "title": "Арифметика",
           "subtitle": "Практикум к уроку «Арифметика»",
           "file": "content/console/arithmetics.html",
-          "sourceFile": "docs/manual-content/tasks/console/arithmetics.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/arithmetics.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -64,7 +64,7 @@
           "title": "Улучшенный вывод текста",
           "subtitle": "Практикум к уроку «Улучшенный вывод текста»",
           "file": "content/console/colors.html",
-          "sourceFile": "docs/manual-content/tasks/console/colors.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/colors.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -74,7 +74,7 @@
           "title": "Преобразования данных",
           "subtitle": "Практикум к уроку «Преобразования данных»",
           "file": "content/console/transforms.html",
-          "sourceFile": "docs/manual-content/tasks/console/transforms.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/transforms.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -84,7 +84,7 @@
           "title": "Базовые математические функции",
           "subtitle": "Практикум к уроку «Базовые математические функции»",
           "file": "content/console/math-basics.html",
-          "sourceFile": "docs/manual-content/tasks/console/math-basics.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/math-basics.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -94,7 +94,7 @@
           "title": "Условный оператор и тип bool",
           "subtitle": "Практикум к уроку «Условный оператор и тип bool»",
           "file": "content/console/if.html",
-          "sourceFile": "docs/manual-content/tasks/console/if.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/if.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -104,7 +104,7 @@
           "title": "Инкремент и декремент",
           "subtitle": "Практикум к уроку «Инкремент и декремент»",
           "file": "content/console/increment.html",
-          "sourceFile": "docs/manual-content/tasks/console/increment.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/increment.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -114,7 +114,7 @@
           "title": "Случайные числа",
           "subtitle": "Практикум к уроку «Случайные числа»",
           "file": "content/console/random.html",
-          "sourceFile": "docs/manual-content/tasks/console/random.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/random.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -124,7 +124,7 @@
           "title": "Логические операции",
           "subtitle": "Практикум к уроку «Логические операции»",
           "file": "content/console/bool.html",
-          "sourceFile": "docs/manual-content/tasks/console/bool.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/bool.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -134,7 +134,7 @@
           "title": "Циклы",
           "subtitle": "Практикум к уроку «Циклы»",
           "file": "content/console/loops.html",
-          "sourceFile": "docs/manual-content/tasks/console/loops.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/loops.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -144,7 +144,7 @@
           "title": "Библиотека time",
           "subtitle": "Практикум к уроку «Библиотека time»",
           "file": "content/console/time.html",
-          "sourceFile": "docs/manual-content/tasks/console/time.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/time.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -154,7 +154,7 @@
           "title": "Именованные константы",
           "subtitle": "Практикум к уроку «Именованные константы»",
           "file": "content/console/constants.html",
-          "sourceFile": "docs/manual-content/tasks/console/constants.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/constants.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -164,7 +164,7 @@
           "title": "Массивы",
           "subtitle": "Практикум к уроку «Массивы»",
           "file": "content/console/array.html",
-          "sourceFile": "docs/manual-content/tasks/console/array.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/array.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -174,7 +174,7 @@
           "title": "Тип char как элемент строки",
           "subtitle": "Практикум к уроку «Тип char как элемент строки»",
           "file": "content/console/char.html",
-          "sourceFile": "docs/manual-content/tasks/console/char.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/char.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -184,7 +184,7 @@
           "title": "Динамические массивы",
           "subtitle": "Практикум к уроку «Динамические массивы»",
           "file": "content/console/dyn-array.html",
-          "sourceFile": "docs/manual-content/tasks/console/dyn-array.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/dyn-array.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -194,7 +194,7 @@
           "title": "Функции для работы с массивами",
           "subtitle": "Практикум к уроку «Функции для работы с массивами»",
           "file": "content/console/arr-functions.html",
-          "sourceFile": "docs/manual-content/tasks/console/arr-functions.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/arr-functions.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -204,7 +204,7 @@
           "title": "Методы массивов",
           "subtitle": "Практикум к уроку «Методы массивов»",
           "file": "content/console/arr-methods.html",
-          "sourceFile": "docs/manual-content/tasks/console/arr-methods.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/arr-methods.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -214,7 +214,7 @@
           "title": "Методы строк",
           "subtitle": "Практикум к уроку «Методы строк»",
           "file": "content/console/string-methods.html",
-          "sourceFile": "docs/manual-content/tasks/console/string-methods.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/string-methods.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -224,7 +224,7 @@
           "title": "Библиотека types",
           "subtitle": "Практикум к уроку «Библиотека types»",
           "file": "content/console/types.html",
-          "sourceFile": "docs/manual-content/tasks/console/types.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/types.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -234,7 +234,7 @@
           "title": "Битовые операции",
           "subtitle": "Практикум к уроку «Битовые операции»",
           "file": "content/console/bit-operations.html",
-          "sourceFile": "docs/manual-content/tasks/console/bit-operations.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/bit-operations.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -244,7 +244,7 @@
           "title": "Библиотека encoding",
           "subtitle": "Практикум к уроку «Библиотека encoding»",
           "file": "content/console/encoding.html",
-          "sourceFile": "docs/manual-content/tasks/console/encoding.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/encoding.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -254,7 +254,7 @@
           "title": "Создание собственных функций",
           "subtitle": "Практикум к уроку «Создание собственных функций»",
           "file": "content/console/functions.html",
-          "sourceFile": "docs/manual-content/tasks/console/functions.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/functions.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -264,7 +264,7 @@
           "title": "Создание собственных библиотек",
           "subtitle": "Практикум к уроку «Создание собственных библиотек»",
           "file": "content/console/libs.html",
-          "sourceFile": "docs/manual-content/tasks/console/libs.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/libs.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -274,7 +274,7 @@
           "title": "Работа с файлами",
           "subtitle": "Практикум к уроку «Работа с файлами»",
           "file": "content/console/files.html",
-          "sourceFile": "docs/manual-content/tasks/console/files.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/files.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -284,7 +284,7 @@
           "title": "Файлы и папки проекта",
           "subtitle": "Практикум к уроку «Файлы и папки проекта»",
           "file": "content/console/directories.html",
-          "sourceFile": "docs/manual-content/tasks/console/directories.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/directories.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -294,7 +294,7 @@
           "title": "Продвинутые инструменты math",
           "subtitle": "Практикум к уроку «Продвинутые инструменты math»",
           "file": "content/console/math-advanced.html",
-          "sourceFile": "docs/manual-content/tasks/console/math-advanced.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/math-advanced.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -304,7 +304,7 @@
           "title": "Двумерные массивы",
           "subtitle": "Практикум к уроку «Двумерные массивы»",
           "file": "content/console/matrix.html",
-          "sourceFile": "docs/manual-content/tasks/console/matrix.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/matrix.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -314,7 +314,7 @@
           "title": "Рекурсия",
           "subtitle": "Практикум к уроку «Рекурсия»",
           "file": "content/console/recursion.html",
-          "sourceFile": "docs/manual-content/tasks/console/recursion.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/recursion.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -324,7 +324,7 @@
           "title": "Типичные ошибки",
           "subtitle": "Практикум к уроку «Типичные ошибки»",
           "file": "content/console/errors.html",
-          "sourceFile": "docs/manual-content/tasks/console/errors.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/errors.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -334,7 +334,7 @@
           "title": "Обработка ошибок",
           "subtitle": "Практикум к уроку «Обработка ошибок»",
           "file": "content/console/try-catch.html",
-          "sourceFile": "docs/manual-content/tasks/console/try-catch.html",
+          "sourceFile": "packages/docs/manual-content/tasks/console/try-catch.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -352,7 +352,7 @@
           "title": "Первое графическое приложение",
           "subtitle": "Практикум к уроку «Первое графическое приложение»",
           "file": "content/widgets/window.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/window.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/window.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -362,7 +362,7 @@
           "title": "Кнопки и события",
           "subtitle": "Практикум к уроку «Кнопки и события»",
           "file": "content/widgets/button.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/button.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/button.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -372,7 +372,7 @@
           "title": "Виджет Label",
           "subtitle": "Практикум к уроку «Виджет Label»",
           "file": "content/widgets/label.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/label.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/label.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -382,7 +382,7 @@
           "title": "Виджет ProgressBar",
           "subtitle": "Практикум к уроку «Виджет ProgressBar»",
           "file": "content/widgets/progressbar.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/progressbar.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/progressbar.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -392,7 +392,7 @@
           "title": "Цвета виджетов",
           "subtitle": "Практикум к уроку «Цвета виджетов»",
           "file": "content/widgets/colors.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/colors.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/colors.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -402,7 +402,7 @@
           "title": "Шрифты в GUI",
           "subtitle": "Практикум к уроку «Шрифты в GUI»",
           "file": "content/widgets/fonts.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/fonts.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/fonts.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -412,7 +412,7 @@
           "title": "Виджеты SpinBox и FloatSpinBox",
           "subtitle": "Практикум к уроку «Виджеты SpinBox и FloatSpinBox»",
           "file": "content/widgets/spinbox.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/spinbox.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/spinbox.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -422,7 +422,7 @@
           "title": "Виджет Slider",
           "subtitle": "Практикум к уроку «Виджет Slider»",
           "file": "content/widgets/slider.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/slider.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/slider.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -432,7 +432,7 @@
           "title": "Виджет LineEdit",
           "subtitle": "Практикум к уроку «Виджет LineEdit»",
           "file": "content/widgets/lineedit.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/lineedit.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/lineedit.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -442,7 +442,7 @@
           "title": "Картинки в GUI",
           "subtitle": "Практикум к уроку «Картинки в GUI»",
           "file": "content/widgets/image.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/image.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/image.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -452,7 +452,7 @@
           "title": "Стили IdySS",
           "subtitle": "Практикум к уроку «Стили IdySS»",
           "file": "content/widgets/styles.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/styles.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/styles.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -462,7 +462,7 @@
           "title": "Гиперссылки",
           "subtitle": "Практикум к уроку «Гиперссылки»",
           "file": "content/widgets/links.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/links.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/links.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -472,7 +472,7 @@
           "title": "Виджет CheckBox",
           "subtitle": "Практикум к уроку «Виджет CheckBox»",
           "file": "content/widgets/checkbox.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/checkbox.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/checkbox.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -482,7 +482,7 @@
           "title": "Виджет RadioButton",
           "subtitle": "Практикум к уроку «Виджет RadioButton»",
           "file": "content/widgets/radiobutton.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/radiobutton.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/radiobutton.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -492,7 +492,7 @@
           "title": "Виджет Frame",
           "subtitle": "Практикум к уроку «Виджет Frame»",
           "file": "content/widgets/frame.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/frame.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/frame.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -502,7 +502,7 @@
           "title": "Виджет ComboBox",
           "subtitle": "Практикум к уроку «Виджет ComboBox»",
           "file": "content/widgets/combobox.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/combobox.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/combobox.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -512,7 +512,7 @@
           "title": "Видимость виджетов",
           "subtitle": "Практикум к уроку «Видимость виджетов»",
           "file": "content/widgets/visibility.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/visibility.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/visibility.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -522,7 +522,7 @@
           "title": "Объект Timer",
           "subtitle": "Практикум к уроку «Объект Timer»",
           "file": "content/widgets/timer.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/timer.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/timer.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -532,7 +532,7 @@
           "title": "Работа со звуками",
           "subtitle": "Практикум к уроку «Работа со звуками»",
           "file": "content/widgets/audio.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/audio.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/audio.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -542,7 +542,7 @@
           "title": "Вкладки",
           "subtitle": "Практикум к уроку «Вкладки»",
           "file": "content/widgets/tabwidget.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/tabwidget.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/tabwidget.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -552,7 +552,7 @@
           "title": "Массивы виджетов",
           "subtitle": "Практикум к уроку «Массивы виджетов»",
           "file": "content/widgets/arrays.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/arrays.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/arrays.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -562,7 +562,7 @@
           "title": "Отправители",
           "subtitle": "Практикум к уроку «Отправители»",
           "file": "content/widgets/sender.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/sender.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/sender.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -572,7 +572,7 @@
           "title": "Модальные окна",
           "subtitle": "Практикум к уроку «Модальные окна»",
           "file": "content/widgets/modal.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/modal.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/modal.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -582,7 +582,7 @@
           "title": "Витрины данных",
           "subtitle": "Практикум к уроку «Витрины данных»",
           "file": "content/widgets/data-widgets.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/data-widgets.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/data-widgets.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -592,7 +592,7 @@
           "title": "Типичные ошибки",
           "subtitle": "Практикум к уроку «Типичные ошибки»",
           "file": "content/widgets/errors.html",
-          "sourceFile": "docs/manual-content/tasks/widgets/errors.html",
+          "sourceFile": "packages/docs/manual-content/tasks/widgets/errors.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -610,7 +610,7 @@
           "title": "Знакомство с черепахой",
           "subtitle": "Практикум к уроку «Знакомство с черепахой»",
           "file": "content/turtle/intro.html",
-          "sourceFile": "docs/manual-content/tasks/turtle/intro.html",
+          "sourceFile": "packages/docs/manual-content/tasks/turtle/intro.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -620,7 +620,7 @@
           "title": "Перо и скорость",
           "subtitle": "Практикум к уроку «Перо и скорость»",
           "file": "content/turtle/pen.html",
-          "sourceFile": "docs/manual-content/tasks/turtle/pen.html",
+          "sourceFile": "packages/docs/manual-content/tasks/turtle/pen.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -630,7 +630,7 @@
           "title": "Углы и многоугольники",
           "subtitle": "Практикум к уроку «Углы и многоугольники»",
           "file": "content/turtle/shapes.html",
-          "sourceFile": "docs/manual-content/tasks/turtle/shapes.html",
+          "sourceFile": "packages/docs/manual-content/tasks/turtle/shapes.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -640,7 +640,7 @@
           "title": "Координаты поля",
           "subtitle": "Практикум к уроку «Координаты поля»",
           "file": "content/turtle/coordinates.html",
-          "sourceFile": "docs/manual-content/tasks/turtle/coordinates.html",
+          "sourceFile": "packages/docs/manual-content/tasks/turtle/coordinates.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -650,7 +650,7 @@
           "title": "Заливка и узоры",
           "subtitle": "Практикум к уроку «Заливка и узоры»",
           "file": "content/turtle/fill.html",
-          "sourceFile": "docs/manual-content/tasks/turtle/fill.html",
+          "sourceFile": "packages/docs/manual-content/tasks/turtle/fill.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -660,7 +660,7 @@
           "title": "Несколько черепах",
           "subtitle": "Практикум к уроку «Несколько черепах»",
           "file": "content/turtle/turtles.html",
-          "sourceFile": "docs/manual-content/tasks/turtle/turtles.html",
+          "sourceFile": "packages/docs/manual-content/tasks/turtle/turtles.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -670,7 +670,7 @@
           "title": "Векторная картинка SVG",
           "subtitle": "Практикум к уроку «Векторная картинка SVG»",
           "file": "content/turtle/svg.html",
-          "sourceFile": "docs/manual-content/tasks/turtle/svg.html",
+          "sourceFile": "packages/docs/manual-content/tasks/turtle/svg.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -688,7 +688,7 @@
           "title": "Введение в ООП",
           "subtitle": "Практикум к уроку «Введение в ООП»",
           "file": "content/oop/intro.html",
-          "sourceFile": "docs/manual-content/tasks/oop/intro.html",
+          "sourceFile": "packages/docs/manual-content/tasks/oop/intro.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -698,7 +698,7 @@
           "title": "Создание класса",
           "subtitle": "Практикум к уроку «Создание класса»",
           "file": "content/oop/classes.html",
-          "sourceFile": "docs/manual-content/tasks/oop/classes.html",
+          "sourceFile": "packages/docs/manual-content/tasks/oop/classes.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -708,7 +708,7 @@
           "title": "Свойства и методы",
           "subtitle": "Практикум к уроку «Свойства и методы»",
           "file": "content/oop/fields-methods.html",
-          "sourceFile": "docs/manual-content/tasks/oop/fields-methods.html",
+          "sourceFile": "packages/docs/manual-content/tasks/oop/fields-methods.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -718,7 +718,7 @@
           "title": "Идентификатор this",
           "subtitle": "Практикум к уроку «Идентификатор this»",
           "file": "content/oop/this.html",
-          "sourceFile": "docs/manual-content/tasks/oop/this.html",
+          "sourceFile": "packages/docs/manual-content/tasks/oop/this.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -728,7 +728,7 @@
           "title": "Методы-контракты",
           "subtitle": "Практикум к уроку «Методы-контракты»",
           "file": "content/oop/contracts.html",
-          "sourceFile": "docs/manual-content/tasks/oop/contracts.html",
+          "sourceFile": "packages/docs/manual-content/tasks/oop/contracts.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -738,7 +738,7 @@
           "title": "Разбиение проекта по файлам",
           "subtitle": "Практикум к уроку «Разбиение проекта по файлам»",
           "file": "content/oop/modules.html",
-          "sourceFile": "docs/manual-content/tasks/oop/modules.html",
+          "sourceFile": "packages/docs/manual-content/tasks/oop/modules.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -748,7 +748,7 @@
           "title": "Массивы объектов",
           "subtitle": "Практикум к уроку «Массивы объектов»",
           "file": "content/oop/arrays.html",
-          "sourceFile": "docs/manual-content/tasks/oop/arrays.html",
+          "sourceFile": "packages/docs/manual-content/tasks/oop/arrays.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -758,7 +758,7 @@
           "title": "Конструктор",
           "subtitle": "Практикум к уроку «Конструктор»",
           "file": "content/oop/constructor.html",
-          "sourceFile": "docs/manual-content/tasks/oop/constructor.html",
+          "sourceFile": "packages/docs/manual-content/tasks/oop/constructor.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -768,7 +768,7 @@
           "title": "Композиция",
           "subtitle": "Практикум к уроку «Композиция»",
           "file": "content/oop/composition.html",
-          "sourceFile": "docs/manual-content/tasks/oop/composition.html",
+          "sourceFile": "packages/docs/manual-content/tasks/oop/composition.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -778,7 +778,7 @@
           "title": "Наследование",
           "subtitle": "Практикум к уроку «Наследование»",
           "file": "content/oop/inheritance.html",
-          "sourceFile": "docs/manual-content/tasks/oop/inheritance.html",
+          "sourceFile": "packages/docs/manual-content/tasks/oop/inheritance.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -788,7 +788,7 @@
           "title": "Полиморфизм",
           "subtitle": "Практикум к уроку «Полиморфизм»",
           "file": "content/oop/polymorphism.html",
-          "sourceFile": "docs/manual-content/tasks/oop/polymorphism.html",
+          "sourceFile": "packages/docs/manual-content/tasks/oop/polymorphism.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -798,7 +798,7 @@
           "title": "Инкапсуляция",
           "subtitle": "Практикум к уроку «Инкапсуляция»",
           "file": "content/oop/encapsulation.html",
-          "sourceFile": "docs/manual-content/tasks/oop/encapsulation.html",
+          "sourceFile": "packages/docs/manual-content/tasks/oop/encapsulation.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -808,7 +808,7 @@
           "title": "Статические методы",
           "subtitle": "Практикум к уроку «Статические методы»",
           "file": "content/oop/static.html",
-          "sourceFile": "docs/manual-content/tasks/oop/static.html",
+          "sourceFile": "packages/docs/manual-content/tasks/oop/static.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -818,7 +818,7 @@
           "title": "Свои события",
           "subtitle": "Практикум к уроку «Свои события»",
           "file": "content/oop/events.html",
-          "sourceFile": "docs/manual-content/tasks/oop/events.html",
+          "sourceFile": "packages/docs/manual-content/tasks/oop/events.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -828,7 +828,7 @@
           "title": "Типичные ошибки",
           "subtitle": "Практикум к уроку «Типичные ошибки»",
           "file": "content/oop/errors.html",
-          "sourceFile": "docs/manual-content/tasks/oop/errors.html",
+          "sourceFile": "packages/docs/manual-content/tasks/oop/errors.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -846,7 +846,7 @@
           "title": "Первый Canvas",
           "subtitle": "Практикум к уроку «Первый Canvas»",
           "file": "content/canvas/intro.html",
-          "sourceFile": "docs/manual-content/tasks/canvas/intro.html",
+          "sourceFile": "packages/docs/manual-content/tasks/canvas/intro.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -856,7 +856,7 @@
           "title": "Drawable-объекты",
           "subtitle": "Практикум к уроку «Drawable-объекты»",
           "file": "content/canvas/drawable.html",
-          "sourceFile": "docs/manual-content/tasks/canvas/drawable.html",
+          "sourceFile": "packages/docs/manual-content/tasks/canvas/drawable.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -866,7 +866,7 @@
           "title": "Однократные и повторяющиеся действия",
           "subtitle": "Практикум к уроку «Однократные и повторяющиеся действия»",
           "file": "content/canvas/update.html",
-          "sourceFile": "docs/manual-content/tasks/canvas/update.html",
+          "sourceFile": "packages/docs/manual-content/tasks/canvas/update.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -876,7 +876,7 @@
           "title": "События клавиатуры",
           "subtitle": "Практикум к уроку «События клавиатуры»",
           "file": "content/canvas/keyboard.html",
-          "sourceFile": "docs/manual-content/tasks/canvas/keyboard.html",
+          "sourceFile": "packages/docs/manual-content/tasks/canvas/keyboard.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -886,7 +886,7 @@
           "title": "Плавное движение",
           "subtitle": "Практикум к уроку «Плавное движение»",
           "file": "content/canvas/pressed-keys.html",
-          "sourceFile": "docs/manual-content/tasks/canvas/pressed-keys.html",
+          "sourceFile": "packages/docs/manual-content/tasks/canvas/pressed-keys.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -896,7 +896,7 @@
           "title": "Кнопки мыши",
           "subtitle": "Практикум к уроку «Кнопки мыши»",
           "file": "content/canvas/mouse-buttons.html",
-          "sourceFile": "docs/manual-content/tasks/canvas/mouse-buttons.html",
+          "sourceFile": "packages/docs/manual-content/tasks/canvas/mouse-buttons.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -906,7 +906,7 @@
           "title": "Движение мыши и колесо",
           "subtitle": "Практикум к уроку «Движение мыши и колесо»",
           "file": "content/canvas/mouse-motion.html",
-          "sourceFile": "docs/manual-content/tasks/canvas/mouse-motion.html",
+          "sourceFile": "packages/docs/manual-content/tasks/canvas/mouse-motion.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -916,7 +916,7 @@
           "title": "Разделение проекта на файлы",
           "subtitle": "Практикум к уроку «Разделение проекта на файлы»",
           "file": "content/canvas/modules.html",
-          "sourceFile": "docs/manual-content/tasks/canvas/modules.html",
+          "sourceFile": "packages/docs/manual-content/tasks/canvas/modules.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -926,7 +926,7 @@
           "title": "Шрифт и текст",
           "subtitle": "Практикум к уроку «Шрифт и текст»",
           "file": "content/canvas/text.html",
-          "sourceFile": "docs/manual-content/tasks/canvas/text.html",
+          "sourceFile": "packages/docs/manual-content/tasks/canvas/text.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -936,7 +936,7 @@
           "title": "Картинки и спрайты",
           "subtitle": "Практикум к уроку «Картинки и спрайты»",
           "file": "content/canvas/sprites.html",
-          "sourceFile": "docs/manual-content/tasks/canvas/sprites.html",
+          "sourceFile": "packages/docs/manual-content/tasks/canvas/sprites.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -946,7 +946,7 @@
           "title": "Массивы объектов",
           "subtitle": "Практикум к уроку «Массивы объектов»",
           "file": "content/canvas/object-arrays.html",
-          "sourceFile": "docs/manual-content/tasks/canvas/object-arrays.html",
+          "sourceFile": "packages/docs/manual-content/tasks/canvas/object-arrays.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -956,7 +956,7 @@
           "title": "Точка отсчёта и вращение",
           "subtitle": "Практикум к уроку «Точка отсчёта и вращение»",
           "file": "content/canvas/origin.html",
-          "sourceFile": "docs/manual-content/tasks/canvas/origin.html",
+          "sourceFile": "packages/docs/manual-content/tasks/canvas/origin.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -966,7 +966,7 @@
           "title": "Временные объекты",
           "subtitle": "Практикум к уроку «Временные объекты»",
           "file": "content/canvas/temporary-objects.html",
-          "sourceFile": "docs/manual-content/tasks/canvas/temporary-objects.html",
+          "sourceFile": "packages/docs/manual-content/tasks/canvas/temporary-objects.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -976,7 +976,7 @@
           "title": "Звуки и музыка",
           "subtitle": "Практикум к уроку «Звуки и музыка»",
           "file": "content/canvas/audio.html",
-          "sourceFile": "docs/manual-content/tasks/canvas/audio.html",
+          "sourceFile": "packages/docs/manual-content/tasks/canvas/audio.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -986,7 +986,7 @@
           "title": "Точка в прямоугольной области",
           "subtitle": "Практикум к уроку «Точка в прямоугольной области»",
           "file": "content/canvas/rectangle-hit-test.html",
-          "sourceFile": "docs/manual-content/tasks/canvas/rectangle-hit-test.html",
+          "sourceFile": "packages/docs/manual-content/tasks/canvas/rectangle-hit-test.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -996,7 +996,7 @@
           "title": "Точка в круглой области",
           "subtitle": "Практикум к уроку «Точка в круглой области»",
           "file": "content/canvas/circle-hit-test.html",
-          "sourceFile": "docs/manual-content/tasks/canvas/circle-hit-test.html",
+          "sourceFile": "packages/docs/manual-content/tasks/canvas/circle-hit-test.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1006,7 +1006,7 @@
           "title": "Круглые коллизии",
           "subtitle": "Практикум к уроку «Круглые коллизии»",
           "file": "content/canvas/circle-collisions.html",
-          "sourceFile": "docs/manual-content/tasks/canvas/circle-collisions.html",
+          "sourceFile": "packages/docs/manual-content/tasks/canvas/circle-collisions.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1016,7 +1016,7 @@
           "title": "Прямоугольные коллизии",
           "subtitle": "Практикум к уроку «Прямоугольные коллизии»",
           "file": "content/canvas/rectangle-collisions.html",
-          "sourceFile": "docs/manual-content/tasks/canvas/rectangle-collisions.html",
+          "sourceFile": "packages/docs/manual-content/tasks/canvas/rectangle-collisions.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1026,7 +1026,7 @@
           "title": "Готовые геометрические проверки",
           "subtitle": "Практикум к уроку «Готовые геометрические проверки»",
           "file": "content/canvas/geometry-methods.html",
-          "sourceFile": "docs/manual-content/tasks/canvas/geometry-methods.html",
+          "sourceFile": "packages/docs/manual-content/tasks/canvas/geometry-methods.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1044,7 +1044,7 @@
           "title": "Работа с файлами: повторение",
           "subtitle": "Практикум к уроку «Работа с файлами: повторение»",
           "file": "content/json/intro.html",
-          "sourceFile": "docs/manual-content/tasks/json/intro.html",
+          "sourceFile": "packages/docs/manual-content/tasks/json/intro.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1054,7 +1054,7 @@
           "title": "Первый JSON-объект",
           "subtitle": "Практикум к уроку «Первый JSON-объект»",
           "file": "content/json/first-object.html",
-          "sourceFile": "docs/manual-content/tasks/json/first-object.html",
+          "sourceFile": "packages/docs/manual-content/tasks/json/first-object.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1064,7 +1064,7 @@
           "title": "Чтение JSON-данных",
           "subtitle": "Практикум к уроку «Чтение JSON-данных»",
           "file": "content/json/reading.html",
-          "sourceFile": "docs/manual-content/tasks/json/reading.html",
+          "sourceFile": "packages/docs/manual-content/tasks/json/reading.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1074,7 +1074,7 @@
           "title": "JSON-массивы",
           "subtitle": "Практикум к уроку «JSON-массивы»",
           "file": "content/json/arrays.html",
-          "sourceFile": "docs/manual-content/tasks/json/arrays.html",
+          "sourceFile": "packages/docs/manual-content/tasks/json/arrays.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1084,7 +1084,7 @@
           "title": "Вложенные объекты",
           "subtitle": "Практикум к уроку «Вложенные объекты»",
           "file": "content/json/nested-objects.html",
-          "sourceFile": "docs/manual-content/tasks/json/nested-objects.html",
+          "sourceFile": "packages/docs/manual-content/tasks/json/nested-objects.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1094,7 +1094,7 @@
           "title": "Массивы объектов",
           "subtitle": "Практикум к уроку «Массивы объектов»",
           "file": "content/json/object-arrays.html",
-          "sourceFile": "docs/manual-content/tasks/json/object-arrays.html",
+          "sourceFile": "packages/docs/manual-content/tasks/json/object-arrays.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1104,7 +1104,7 @@
           "title": "Методы массивов",
           "subtitle": "Практикум к уроку «Методы массивов»",
           "file": "content/json/array-methods.html",
-          "sourceFile": "docs/manual-content/tasks/json/array-methods.html",
+          "sourceFile": "packages/docs/manual-content/tasks/json/array-methods.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1114,7 +1114,7 @@
           "title": "Методы объектов",
           "subtitle": "Практикум к уроку «Методы объектов»",
           "file": "content/json/object-methods.html",
-          "sourceFile": "docs/manual-content/tasks/json/object-methods.html",
+          "sourceFile": "packages/docs/manual-content/tasks/json/object-methods.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1124,7 +1124,7 @@
           "title": "JSON и ООП",
           "subtitle": "Практикум к уроку «JSON и ООП»",
           "file": "content/json/oop.html",
-          "sourceFile": "docs/manual-content/tasks/json/oop.html",
+          "sourceFile": "packages/docs/manual-content/tasks/json/oop.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1134,7 +1134,7 @@
           "title": "Типичные ошибки",
           "subtitle": "Практикум к уроку «Типичные ошибки»",
           "file": "content/json/errors.html",
-          "sourceFile": "docs/manual-content/tasks/json/errors.html",
+          "sourceFile": "packages/docs/manual-content/tasks/json/errors.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1152,7 +1152,7 @@
           "title": "Первая база данных",
           "subtitle": "Практикум к уроку «Первая база данных»",
           "file": "content/sqlite/intro.html",
-          "sourceFile": "docs/manual-content/tasks/sqlite/intro.html",
+          "sourceFile": "packages/docs/manual-content/tasks/sqlite/intro.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1162,7 +1162,7 @@
           "title": "Таблицы и первые записи",
           "subtitle": "Практикум к уроку «Таблицы и первые записи»",
           "file": "content/sqlite/changes.html",
-          "sourceFile": "docs/manual-content/tasks/sqlite/changes.html",
+          "sourceFile": "packages/docs/manual-content/tasks/sqlite/changes.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1172,7 +1172,7 @@
           "title": "Чтение строк",
           "subtitle": "Практикум к уроку «Чтение строк»",
           "file": "content/sqlite/select.html",
-          "sourceFile": "docs/manual-content/tasks/sqlite/select.html",
+          "sourceFile": "packages/docs/manual-content/tasks/sqlite/select.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1182,7 +1182,7 @@
           "title": "Безопасные параметры",
           "subtitle": "Практикум к уроку «Безопасные параметры»",
           "file": "content/sqlite/parameters.html",
-          "sourceFile": "docs/manual-content/tasks/sqlite/parameters.html",
+          "sourceFile": "packages/docs/manual-content/tasks/sqlite/parameters.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1192,7 +1192,7 @@
           "title": "Поиск и фильтрация",
           "subtitle": "Практикум к уроку «Поиск и фильтрация»",
           "file": "content/sqlite/filters.html",
-          "sourceFile": "docs/manual-content/tasks/sqlite/filters.html",
+          "sourceFile": "packages/docs/manual-content/tasks/sqlite/filters.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1202,7 +1202,7 @@
           "title": "Неизвестные значения и null",
           "subtitle": "Практикум к уроку «Неизвестные значения и null»",
           "file": "content/sqlite/null.html",
-          "sourceFile": "docs/manual-content/tasks/sqlite/null.html",
+          "sourceFile": "packages/docs/manual-content/tasks/sqlite/null.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1212,7 +1212,7 @@
           "title": "Много записей одним запросом",
           "subtitle": "Практикум к уроку «Много записей одним запросом»",
           "file": "content/sqlite/reuse.html",
-          "sourceFile": "docs/manual-content/tasks/sqlite/reuse.html",
+          "sourceFile": "packages/docs/manual-content/tasks/sqlite/reuse.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1222,7 +1222,7 @@
           "title": "Всё или ничего",
           "subtitle": "Практикум к уроку «Всё или ничего»",
           "file": "content/sqlite/transactions.html",
-          "sourceFile": "docs/manual-content/tasks/sqlite/transactions.html",
+          "sourceFile": "packages/docs/manual-content/tasks/sqlite/transactions.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1232,7 +1232,7 @@
           "title": "SQL в отдельном файле",
           "subtitle": "Практикум к уроку «SQL в отдельном файле»",
           "file": "content/sqlite/scripts.html",
-          "sourceFile": "docs/manual-content/tasks/sqlite/scripts.html",
+          "sourceFile": "packages/docs/manual-content/tasks/sqlite/scripts.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1242,7 +1242,7 @@
           "title": "Все строки и краткая статистика",
           "subtitle": "Практикум к уроку «Все строки и краткая статистика»",
           "file": "content/sqlite/select-tools.html",
-          "sourceFile": "docs/manual-content/tasks/sqlite/select-tools.html",
+          "sourceFile": "packages/docs/manual-content/tasks/sqlite/select-tools.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1252,7 +1252,7 @@
           "title": "Повторный запуск и значения по умолчанию",
           "subtitle": "Практикум к уроку «Повторный запуск и значения по умолчанию»",
           "file": "content/sqlite/defaults.html",
-          "sourceFile": "docs/manual-content/tasks/sqlite/defaults.html",
+          "sourceFile": "packages/docs/manual-content/tasks/sqlite/defaults.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1262,7 +1262,7 @@
           "title": "Ключи и уникальные значения",
           "subtitle": "Практикум к уроку «Ключи и уникальные значения»",
           "file": "content/sqlite/keys.html",
-          "sourceFile": "docs/manual-content/tasks/sqlite/keys.html",
+          "sourceFile": "packages/docs/manual-content/tasks/sqlite/keys.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1272,7 +1272,7 @@
           "title": "Хеширование",
           "subtitle": "Практикум к уроку «Хеширование»",
           "file": "content/sqlite/hashing.html",
-          "sourceFile": "docs/manual-content/tasks/sqlite/hashing.html",
+          "sourceFile": "packages/docs/manual-content/tasks/sqlite/hashing.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1282,7 +1282,7 @@
           "title": "Связи между таблицами",
           "subtitle": "Практикум к уроку «Связи между таблицами»",
           "file": "content/sqlite/joins.html",
-          "sourceFile": "docs/manual-content/tasks/sqlite/joins.html",
+          "sourceFile": "packages/docs/manual-content/tasks/sqlite/joins.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1292,7 +1292,7 @@
           "title": "Типичные ошибки",
           "subtitle": "Практикум к уроку «Типичные ошибки»",
           "file": "content/sqlite/errors.html",
-          "sourceFile": "docs/manual-content/tasks/sqlite/errors.html",
+          "sourceFile": "packages/docs/manual-content/tasks/sqlite/errors.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1310,7 +1310,7 @@
           "title": "Сеть: программа ходит в интернет",
           "subtitle": "Практикум к уроку «Сеть: программа ходит в интернет»",
           "file": "content/network/http-client.html",
-          "sourceFile": "docs/manual-content/tasks/network/http-client.html",
+          "sourceFile": "packages/docs/manual-content/tasks/network/http-client.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1320,7 +1320,7 @@
           "title": "Почтовый канал: две программы разговаривают",
           "subtitle": "Практикум к уроку «Почтовый канал: две программы разговаривают»",
           "file": "content/network/channel.html",
-          "sourceFile": "docs/manual-content/tasks/network/channel.html",
+          "sourceFile": "packages/docs/manual-content/tasks/network/channel.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
@@ -1330,7 +1330,7 @@
           "title": "Свой сервер",
           "subtitle": "Практикум к уроку «Свой сервер»",
           "file": "content/network/web-server.html",
-          "sourceFile": "docs/manual-content/tasks/network/web-server.html",
+          "sourceFile": "packages/docs/manual-content/tasks/network/web-server.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true
