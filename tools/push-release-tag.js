@@ -13,7 +13,15 @@ const fs = require('fs');
 const path = require('path');
 
 const rootDir = path.resolve(__dirname, '..');
-const git = (...args) => execFileSync('git', args, { cwd: rootDir, encoding: 'utf8' }).trim();
+const git = (...args) => {
+  try {
+    return execFileSync('git', args, { cwd: rootDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  } catch (error) {
+    const stderr = error && error.stderr ? String(error.stderr).trim() : '';
+    console.error(`git ${args[0]} не удался${stderr ? `:\n${stderr}` : ''}`);
+    process.exit(1);
+  }
+};
 
 const version = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8')).version;
 const tag = `v${version}`;
@@ -34,7 +42,7 @@ if (git('ls-remote', '--tags', 'origin', tag)) {
 // 3. HEAD запушен: тег должен указывать на коммит, который есть на origin
 //    (релиз из незапушенного состояния собрал бы в облаке другой код).
 const head = git('rev-parse', 'HEAD');
-git('fetch', 'origin', 'main');
+git('fetch', '--quiet', 'origin', 'main');
 const remoteContainsHead = git('branch', '-r', '--contains', head, '--list', 'origin/main');
 if (!remoteContainsHead) {
   console.error('текущий HEAD не запушен в origin/main — сначала git push, затем релиз');

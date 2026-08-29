@@ -13,7 +13,7 @@ function assert(condition: boolean, message: string): asserts condition {
 // прогон с числами, ВЫРЕЗАННЫМИ ИЗ САМОЙ КНИГИ. Страж двусторонний: ловит и
 // дрейф генератора, и правку чисел в книге без пересчёта.
 
-const WORKBOOK = 'docs/manual-content/tasks/console/random.html';
+const WORKBOOK = 'packages/docs/manual-content/tasks/console/random.html';
 
 /** Первый <idyl-output-block> после заголовка задания. */
 function expectedOutput(html: string, taskTitle: string): string {

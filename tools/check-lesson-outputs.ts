@@ -9,7 +9,7 @@
 // остальным. Без этого один такой блок вешал весь прогон молча.
 //
 // Использование:
-//   node dist/tools/check-lesson-outputs.js [--root docs/manual-content] [--fix] [--timeout 15]
+//   node dist/tools/check-lesson-outputs.js [--root packages/docs/manual-content] [--fix] [--timeout 15]
 
 import { compileIdyllium, createMemoryRuntimeFileSystem, runIdyllium } from '../src';
 
@@ -129,7 +129,7 @@ async function runWithTimeout(
 async function main(): Promise<void> {
   const rootArg = process.argv.includes('--root')
     ? process.argv[process.argv.indexOf('--root') + 1]
-    : 'docs/manual-content';
+    : 'packages/docs/manual-content';
   const fix = process.argv.includes('--fix');
   // Лимит на ОДНУ программу. Без него один пример, который ждёт вечно
   // (поднятый веб-сервер, канал, долгий сетевой запрос), вешал весь прогон:

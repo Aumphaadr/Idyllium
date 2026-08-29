@@ -4,7 +4,7 @@
   // даёт ~150 известных DOM-шумов (window.Idyllium/monaco/Papa и свойства
   // HTMLElement), но ноль «Cannot find name» — после вырезки темы в новый
   // модуль любое недоимпортированное имя всплывает именно этой ошибкой.
-  // Сборку app.js делает tools/link-web-ide-app.js, ему этот файл не нужен.
+  // Сборку app.js делает esbuild (tools/build-web-ide.js), ему этот файл не нужен.
   "compilerOptions": {
     "noEmit": true,
     "allowJs": true,

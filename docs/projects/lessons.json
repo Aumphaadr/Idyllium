@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-29T15:29:05.319Z",
-  "sourceRoot": "docs/manual-content/projects",
+  "generatedAt": "2026-08-29T16:27:42.238Z",
+  "sourceRoot": "packages/docs/manual-content/projects",
   "sections": [
     {
       "id": "console",
@@ -14,7 +14,7 @@
           "title": "Экскурсия наоборот",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/reverse-excursion.html",
-          "sourceFile": "docs/manual-content/projects/console/reverse-excursion.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/reverse-excursion.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -24,7 +24,7 @@
           "title": "Ночной дожор",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/cockroach-crumb-quest.html",
-          "sourceFile": "docs/manual-content/projects/console/cockroach-crumb-quest.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/cockroach-crumb-quest.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -34,7 +34,7 @@
           "title": "Миссия: БАБАХ",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/mission-babah.html",
-          "sourceFile": "docs/manual-content/projects/console/mission-babah.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/mission-babah.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -44,7 +44,7 @@
           "title": "Генератор древних проклятий",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/ancient-curse-generator.html",
-          "sourceFile": "docs/manual-content/projects/console/ancient-curse-generator.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/ancient-curse-generator.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -54,7 +54,7 @@
           "title": "bot.gently = false;",
           "subtitle": "Консольный проект · ★",
           "file": "content/console/rude-bot-tumbler.html",
-          "sourceFile": "docs/manual-content/projects/console/rude-bot-tumbler.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/rude-bot-tumbler.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -64,7 +64,7 @@
           "title": "Кости против Железного Джо",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/dice-duel.html",
-          "sourceFile": "docs/manual-content/projects/console/dice-duel.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/dice-duel.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -74,7 +74,7 @@
           "title": "Судья соревнований по подбрасыванию блинов",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/pancake-toss-judge.html",
-          "sourceFile": "docs/manual-content/projects/console/pancake-toss-judge.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/pancake-toss-judge.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -84,7 +84,7 @@
           "title": "Джинн на пенсии",
           "subtitle": "Консольный проект · ★",
           "file": "content/console/part-time-genie.html",
-          "sourceFile": "docs/manual-content/projects/console/part-time-genie.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/part-time-genie.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -94,7 +94,7 @@
           "title": "Пророчество обратной силы",
           "subtitle": "Консольный проект · ★",
           "file": "content/console/retroactive-prophecy.html",
-          "sourceFile": "docs/manual-content/projects/console/retroactive-prophecy.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/retroactive-prophecy.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -104,7 +104,7 @@
           "title": "Викторина для кота",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/cat-quiz.html",
-          "sourceFile": "docs/manual-content/projects/console/cat-quiz.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/cat-quiz.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -114,7 +114,7 @@
           "title": "Переезд призрака в новый замок",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/ghost-castle-move.html",
-          "sourceFile": "docs/manual-content/projects/console/ghost-castle-move.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/ghost-castle-move.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -124,7 +124,7 @@
           "title": "Секонд-хенд для супергероя",
           "subtitle": "Консольный проект · ★",
           "file": "content/console/superhero-discount-shop.html",
-          "sourceFile": "docs/manual-content/projects/console/superhero-discount-shop.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/superhero-discount-shop.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -134,7 +134,7 @@
           "title": "Запуск ракеты",
           "subtitle": "Консольный проект · ★",
           "file": "content/console/rocket-launch.html",
-          "sourceFile": "docs/manual-content/projects/console/rocket-launch.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/rocket-launch.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -144,7 +144,7 @@
           "title": "Магазин ваших желаний",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/wish-shop.html",
-          "sourceFile": "docs/manual-content/projects/console/wish-shop.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/wish-shop.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -154,7 +154,7 @@
           "title": "Покорми чувство юмора",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/feed-sense-of-humor.html",
-          "sourceFile": "docs/manual-content/projects/console/feed-sense-of-humor.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/feed-sense-of-humor.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -164,7 +164,7 @@
           "title": "Feed the Machine",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/feed-the-machine.html",
-          "sourceFile": "docs/manual-content/projects/console/feed-the-machine.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/feed-the-machine.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -174,7 +174,7 @@
           "title": "Бедный робот-пылесос",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/vacuum-rehab.html",
-          "sourceFile": "docs/manual-content/projects/console/vacuum-rehab.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/vacuum-rehab.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -184,7 +184,7 @@
           "title": "Где копать? Спроси пса",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/ask-the-dog.html",
-          "sourceFile": "docs/manual-content/projects/console/ask-the-dog.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/ask-the-dog.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -194,7 +194,7 @@
           "title": "Радио хорошего настроения",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/good-mood-radio.html",
-          "sourceFile": "docs/manual-content/projects/console/good-mood-radio.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/good-mood-radio.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -204,7 +204,7 @@
           "title": "Дежурный по маяку",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/lighthouse-watch.html",
-          "sourceFile": "docs/manual-content/projects/console/lighthouse-watch.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/lighthouse-watch.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -214,7 +214,7 @@
           "title": "Отель «Полночь»",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/night-hotel-desk.html",
-          "sourceFile": "docs/manual-content/projects/console/night-hotel-desk.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/night-hotel-desk.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -224,7 +224,7 @@
           "title": "Ремонт четвёртой стены",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/fourth-wall-repair.html",
-          "sourceFile": "docs/manual-content/projects/console/fourth-wall-repair.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/fourth-wall-repair.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -234,7 +234,7 @@
           "title": "Спасите кота Батона",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/cat-rescue.html",
-          "sourceFile": "docs/manual-content/projects/console/cat-rescue.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/cat-rescue.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -244,7 +244,7 @@
           "title": "Торг уместен",
           "subtitle": "Консольный проект · ★",
           "file": "content/console/programma-torguetsya.html",
-          "sourceFile": "docs/manual-content/projects/console/programma-torguetsya.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/programma-torguetsya.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -254,7 +254,7 @@
           "title": "Симулятор стояния в очереди",
           "subtitle": "Консольный проект · ★",
           "file": "content/console/simulyator-ocheredi.html",
-          "sourceFile": "docs/manual-content/projects/console/simulyator-ocheredi.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/simulyator-ocheredi.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -264,7 +264,7 @@
           "title": "Шеф-повар безумного кафе",
           "subtitle": "Консольный проект · ★★★",
           "file": "content/console/mad-cafe-chef.html",
-          "sourceFile": "docs/manual-content/projects/console/mad-cafe-chef.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/mad-cafe-chef.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -274,7 +274,7 @@
           "title": "Генератор отмазок 3000",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/excuse-generator.html",
-          "sourceFile": "docs/manual-content/projects/console/excuse-generator.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/excuse-generator.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -284,7 +284,7 @@
           "title": "Холодильник строгого режима",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/strict-fridge.html",
-          "sourceFile": "docs/manual-content/projects/console/strict-fridge.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/strict-fridge.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -294,7 +294,7 @@
           "title": "Что нового в Пентагоне?",
           "subtitle": "Консольный проект · ★★★",
           "file": "content/console/pentagon-news.html",
-          "sourceFile": "docs/manual-content/projects/console/pentagon-news.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/pentagon-news.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -304,7 +304,7 @@
           "title": "За час до спектакля",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/theatre-props-room.html",
-          "sourceFile": "docs/manual-content/projects/console/theatre-props-room.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/theatre-props-room.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -314,7 +314,7 @@
           "title": "Склад несбывшихся прогнозов погоды",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/unused-forecast-depot.html",
-          "sourceFile": "docs/manual-content/projects/console/unused-forecast-depot.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/unused-forecast-depot.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -324,7 +324,7 @@
           "title": "Кот идёт по клавиатуре",
           "subtitle": "Консольный проект · ★★★",
           "file": "content/console/cat-on-keyboard.html",
-          "sourceFile": "docs/manual-content/projects/console/cat-on-keyboard.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/cat-on-keyboard.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -334,7 +334,7 @@
           "title": "Гирлянда длиной в улицу",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/street-garland.html",
-          "sourceFile": "docs/manual-content/projects/console/street-garland.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/street-garland.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -344,7 +344,7 @@
           "title": "Генератор городских легенд",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/urban-legend-generator.html",
-          "sourceFile": "docs/manual-content/projects/console/urban-legend-generator.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/urban-legend-generator.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -354,7 +354,7 @@
           "title": "Спортивный комментатор для некомментируемого",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/sports-commentator.html",
-          "sourceFile": "docs/manual-content/projects/console/sports-commentator.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/sports-commentator.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -364,7 +364,7 @@
           "title": "Переводчик с младенческого",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/baby-talk-translator.html",
-          "sourceFile": "docs/manual-content/projects/console/baby-talk-translator.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/baby-talk-translator.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -374,7 +374,7 @@
           "title": "Генератор оправданий для кота",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/cat-excuse-generator.html",
-          "sourceFile": "docs/manual-content/projects/console/cat-excuse-generator.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/cat-excuse-generator.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -384,7 +384,7 @@
           "title": "Испорченный телефон кодировок",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/encoding-telephone.html",
-          "sourceFile": "docs/manual-content/projects/console/encoding-telephone.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/encoding-telephone.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -394,7 +394,7 @@
           "title": "Полёт ядра",
           "subtitle": "Консольный проект · ★★",
           "file": "content/console/cannonball-flight.html",
-          "sourceFile": "docs/manual-content/projects/console/cannonball-flight.html",
+          "sourceFile": "packages/docs/manual-content/projects/console/cannonball-flight.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -412,7 +412,7 @@
           "title": "Лифт-философ",
           "subtitle": "Оконный проект · ★★",
           "file": "content/windows/elevator-sage.html",
-          "sourceFile": "docs/manual-content/projects/windows/elevator-sage.html",
+          "sourceFile": "packages/docs/manual-content/projects/windows/elevator-sage.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -422,7 +422,7 @@
           "title": "Приёмная Тёмного Властелина",
           "subtitle": "Оконный проект · ★★",
           "file": "content/windows/overlord-reception.html",
-          "sourceFile": "docs/manual-content/projects/windows/overlord-reception.html",
+          "sourceFile": "packages/docs/manual-content/projects/windows/overlord-reception.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -432,7 +432,7 @@
           "title": "Сейф деда Митрофана",
           "subtitle": "Оконный проект · ★",
           "file": "content/windows/safe-box.html",
-          "sourceFile": "docs/manual-content/projects/windows/safe-box.html",
+          "sourceFile": "packages/docs/manual-content/projects/windows/safe-box.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -442,7 +442,7 @@
           "title": "Симулятор шаурмиста",
           "subtitle": "Оконный проект · ★★",
           "file": "content/windows/shaurma-sim.html",
-          "sourceFile": "docs/manual-content/projects/windows/shaurma-sim.html",
+          "sourceFile": "packages/docs/manual-content/projects/windows/shaurma-sim.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -452,7 +452,7 @@
           "title": "Действительно умный светофор",
           "subtitle": "Оконный проект · ★★",
           "file": "content/windows/traffic-light.html",
-          "sourceFile": "docs/manual-content/projects/windows/traffic-light.html",
+          "sourceFile": "packages/docs/manual-content/projects/windows/traffic-light.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -462,7 +462,7 @@
           "title": "Страусиные бега",
           "subtitle": "Оконный проект · ★★",
           "file": "content/windows/ostrich-race.html",
-          "sourceFile": "docs/manual-content/projects/windows/ostrich-race.html",
+          "sourceFile": "packages/docs/manual-content/projects/windows/ostrich-race.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -472,7 +472,7 @@
           "title": "Поймай кнопку",
           "subtitle": "Оконный проект · ★★",
           "file": "content/windows/catch-the-button.html",
-          "sourceFile": "docs/manual-content/projects/windows/catch-the-button.html",
+          "sourceFile": "packages/docs/manual-content/projects/windows/catch-the-button.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -482,7 +482,7 @@
           "title": "Инъерфейс",
           "subtitle": "Оконный проект · ★★",
           "file": "content/windows/inyerface.html",
-          "sourceFile": "docs/manual-content/projects/windows/inyerface.html",
+          "sourceFile": "packages/docs/manual-content/projects/windows/inyerface.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -492,7 +492,7 @@
           "title": "Вредный математический тест",
           "subtitle": "Оконный проект · ★★",
           "file": "content/windows/math-test.html",
-          "sourceFile": "docs/manual-content/projects/windows/math-test.html",
+          "sourceFile": "packages/docs/manual-content/projects/windows/math-test.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -502,7 +502,7 @@
           "title": "Скромный прогрессбар",
           "subtitle": "Оконный проект · ★★",
           "file": "content/windows/pump-meter-progressbar-stesnyaetsya.html",
-          "sourceFile": "docs/manual-content/projects/windows/pump-meter-progressbar-stesnyaetsya.html",
+          "sourceFile": "packages/docs/manual-content/projects/windows/pump-meter-progressbar-stesnyaetsya.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -512,7 +512,7 @@
           "title": "Цветовой снайпер",
           "subtitle": "Оконный проект · ★★",
           "file": "content/windows/color-guess.html",
-          "sourceFile": "docs/manual-content/projects/windows/color-guess.html",
+          "sourceFile": "packages/docs/manual-content/projects/windows/color-guess.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -522,7 +522,7 @@
           "title": "email не пройдёт!",
           "subtitle": "Оконный проект · ★★★",
           "file": "content/windows/email-verifier.html",
-          "sourceFile": "docs/manual-content/projects/windows/email-verifier.html",
+          "sourceFile": "packages/docs/manual-content/projects/windows/email-verifier.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false
@@ -532,7 +532,7 @@
           "title": "Взлом протокола",
           "subtitle": "Оконный проект · ★★★",
           "file": "content/windows/breach-protocol.html",
-          "sourceFile": "docs/manual-content/projects/windows/breach-protocol.html",
+          "sourceFile": "packages/docs/manual-content/projects/windows/breach-protocol.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": false

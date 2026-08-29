@@ -4,7 +4,6 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const { linkWebIdeApp } = require('./link-web-ide-app.js');
 
 const rootDir = path.resolve(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
@@ -36,8 +35,11 @@ fs.mkdirSync(outputAssetsDir, { recursive: true });
 for (const item of ['index.html', 'app.css', 'sw-preview.js']) {
   fs.copyFileSync(path.join(sourceWebDir, item), path.join(outputWebDir, item));
 }
-// app.js не копируется, а собирается из ES-модулей packages/web-ide/src/.
-fs.writeFileSync(path.join(outputWebDir, 'app.js'), linkWebIdeApp(path.join(sourceWebDir, 'src')), 'utf8');
+// app.js не копируется, а собирается esbuild'ом из ES-модулей
+// packages/web-ide/src/ (наивный линкер ушёл на пенсию 2026-08-29,
+// когда ядро переехало на esbuild). Артефакт — прежний одиночный
+// classic-скрипт: file:// и index.html не меняются.
+fs.writeFileSync(path.join(outputWebDir, 'app.js'), bundleWebIdeApp(path.join(sourceWebDir, 'src', 'main.js')), 'utf8');
 // Версия берётся из корневого package.json (единственный источник) и
 // подставляется в шапку IDE скриптом version.js через version.json.
 fs.copyFileSync(path.join(rootDir, 'packages', 'docs', 'version.js'), path.join(outputWebDir, 'version.js'));
@@ -93,6 +95,25 @@ validateBrowserBundle(bundledCore)
 // его собственное поле "browser". Без минификации (вердикт владельца):
 // docs/ в git, диффы должны оставаться читаемыми; charset=utf8 — русские
 // тексты ошибок хранятся буквами, не эскейпами.
+function bundleWebIdeApp(entryFile) {
+  const esbuild = require('esbuild');
+  const result = esbuild.buildSync({
+    entryPoints: [entryFile],
+    bundle: true,
+    write: false,
+    format: 'iife',
+    platform: 'browser',
+    target: 'es2022',
+    charset: 'utf8',
+    banner: { js: '/* Собран tools/build-web-ide.js (esbuild) из packages/web-ide/src/ — править источники, не этот файл. */' },
+    logLevel: 'warning',
+  });
+  if (result.errors.length > 0) {
+    throw new Error(`esbuild failed on app.js: ${result.errors.map((error) => error.text).join('; ')}`);
+  }
+  return result.outputFiles[0].text;
+}
+
 function browserBundle(entryFile) {
   const esbuild = require('esbuild');
   const result = esbuild.buildSync({
