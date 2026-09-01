@@ -64,10 +64,14 @@ export function compileIdyllium(source: string, options: CompileOptions = {}): C
 
   const nodeTypes = new Map<Expression, TypeRef>();
   const equalsContractClasses = new Set<string>();
+  const lessContractClasses = new Set<string>();
+  const greaterContractClasses = new Set<string>();
   const nullableClassFields = new Map<string, Set<string>>();
   const mergeSemantics = (semantics: ReturnType<SemanticAnalyzer['analyze']>): void => {
     for (const [node, type] of semantics.nodeTypes) nodeTypes.set(node, type);
     for (const name of semantics.equalsContractClasses) equalsContractClasses.add(name);
+    for (const name of semantics.lessContractClasses) lessContractClasses.add(name);
+    for (const name of semantics.greaterContractClasses) greaterContractClasses.add(name);
     for (const [className, fieldNames] of semantics.nullableClassFields) {
       let set = nullableClassFields.get(className);
       if (!set) {
@@ -94,6 +98,8 @@ export function compileIdyllium(source: string, options: CompileOptions = {}): C
       userModuleNames: new Set(modules.map((module) => module.name)),
       nodeTypes,
       equalsContractClasses,
+      lessContractClasses,
+      greaterContractClasses,
       nullableClassFields,
     }).generate(ast, { modules: modules.map((module) => ({ name: module.name, program: module.ast })) }).jsCode;
   }

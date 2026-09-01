@@ -422,6 +422,12 @@
         "cannot compare objects of class 'Hero' with '=='"
       ]
     },
+    "oop.contracts.005": {
+      "kind": "compile_error",
+      "diagnosticIncludes": [
+        "cannot order objects of class 'Hero' with '<'"
+      ]
+    },
     "oop.encapsulation.001": {
       "kind": "valid"
     },

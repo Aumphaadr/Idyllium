@@ -80,6 +80,12 @@ function normalizeHomoglyphs(name: string): string {
   return result;
 }
 
+/** Контракты сравнения: одна форма (public, нестатический, один параметр
+ *  своего класса, bool) — три имени. less обслуживает '<' и '>=',
+ *  greater — '>' и '<=' (вердикт владельца 2026-09-01: пара, не один метод). */
+const COMPARISON_CONTRACT_NAMES = ['equals', 'less', 'greater'] as const;
+type ComparisonContractName = (typeof COMPARISON_CONTRACT_NAMES)[number];
+
 export interface SemanticResult {
   readonly success: boolean;
   readonly diagnostics: DiagnosticBag;
@@ -88,6 +94,8 @@ export interface SemanticResult {
   readonly nodeTypes: ReadonlyMap<Expression, TypeRef>;
   /** Классы (по коротким именам), объявившие контракт equals, — кодогену для статической диспетчеризации '=='. */
   readonly equalsContractClasses: ReadonlySet<string>;
+  readonly lessContractClasses: ReadonlySet<string>;
+  readonly greaterContractClasses: ReadonlySet<string>;
   /** «Пустые поля» по классам (короткое имя → имена полей) — кодогену для охраняемых чтений. */
   readonly nullableClassFields: ReadonlyMap<string, ReadonlySet<string>>;
 }
@@ -226,6 +234,8 @@ export class SemanticAnalyzer {
   private readonly classes = new Map<string, UserClassInfo>();
   /** Короткие имена классов с контрактом equals (локальные и импортированные модульные). */
   private readonly equalsContractClasses = new Set<string>();
+  private readonly lessContractClasses = new Set<string>();
+  private readonly greaterContractClasses = new Set<string>();
   /** «Пустые поля» по классам (короткое имя → поля с явным `= null`). */
   private readonly nullableClassFields = new Map<string, Set<string>>();
   // Значения файловых int-констант: собираются до анализа сигнатур, чтобы
@@ -311,6 +321,8 @@ export class SemanticAnalyzer {
       tokens: deduplicateSemanticTokens(this.semanticTokens),
       nodeTypes: this.nodeTypes,
       equalsContractClasses: this.equalsContractClasses,
+      lessContractClasses: this.lessContractClasses,
+      greaterContractClasses: this.greaterContractClasses,
       nullableClassFields: this.nullableClassFields,
     };
   }
@@ -900,14 +912,21 @@ export class SemanticAnalyzer {
     });
     info.ownMethods.add(declaration.name);
 
-    if (declaration.name === 'equals' && this.isEqualsContractShape(info, declaration)) {
+    if (COMPARISON_CONTRACT_NAMES.includes(declaration.name as ComparisonContractName)
+      && this.isEqualsContractShape(info, declaration)) {
       if (declaration.parameters[0].defaultValue) {
-        this.diagnostics.error(declaration.parameters[0].range, "'equals' contract parameter cannot have a default value");
+        this.diagnostics.error(declaration.parameters[0].range, `'${declaration.name}' contract parameter cannot have a default value`);
       }
       if (declaration.access === 'public') {
-        this.equalsContractClasses.add(info.declaration.name);
+        this.comparisonContractSet(declaration.name as ComparisonContractName).add(info.declaration.name);
       }
     }
+  }
+
+  private comparisonContractSet(contract: ComparisonContractName): Set<string> {
+    if (contract === 'less') return this.lessContractClasses;
+    if (contract === 'greater') return this.greaterContractClasses;
+    return this.equalsContractClasses;
   }
 
   /** Объявлен ли публичный контракт equals В САМОМ классе — по имени, в том
@@ -915,20 +934,20 @@ export class SemanticAnalyzer {
    *  поэтому модульные классы смотрим прямо в спецификации модуля: иначе
    *  страж «контракт не наследуется» молчал через границу модуля и ученик
    *  получал рантайм-«object has no method 'equals'» (улов ломателей). */
-  private classDeclaresEqualsContract(className: string): boolean {
+  private classDeclaresEqualsContract(className: string, contract: ComparisonContractName = 'equals'): boolean {
     const dot = className.indexOf('.');
     if (dot > 0) {
       const moduleName = className.slice(0, dot);
       const bareName = className.slice(dot + 1);
       const classSpec = this.userModuleRegistry.getModule(moduleName)?.classes.get(bareName);
-      const method = classSpec?.methods.find((item) => item.name === 'equals');
+      const method = classSpec?.methods.find((item) => item.name === contract);
       return method !== undefined
         && !method.isStatic
         && method.access === 'public'
         && method.spec.parameters.length === 1
         && sameType(method.spec.returnType, BOOL);
     }
-    return this.equalsContractClasses.has(className);
+    return this.comparisonContractSet(contract).has(className);
   }
 
   /** Форма контракта equals: нестатический, ровно один параметр СВОЕГО класса, возвращает bool. */
@@ -940,8 +959,8 @@ export class SemanticAnalyzer {
     return sameType(this.resolveTypeName(declaration.returnType), BOOL);
   }
 
-  /** Есть ли у типа (класс или модульный класс) публичный контракт equals, объявленный в нём самом. */
-  private typeOwnsEqualsContract(type: TypeRef): boolean {
+  /** Есть ли у типа (класс или модульный класс) публичный контракт сравнения, объявленный в нём самом. */
+  private typeOwnsEqualsContract(type: TypeRef, contract: ComparisonContractName = 'equals'): boolean {
     const bare = this.userClassBareName(type);
     if (!bare) return false;
     if (type.kind === 'class') {
@@ -952,28 +971,28 @@ export class SemanticAnalyzer {
         const moduleName = type.name.slice(0, dot);
         const className = type.name.slice(dot + 1);
         const classSpec = this.userModuleRegistry.getModule(moduleName)?.classes.get(className);
-        const method = classSpec?.methods.find((item) => item.name === 'equals');
+        const method = classSpec?.methods.find((item) => item.name === contract);
         const ok = method !== undefined
           && !method.isStatic
           && method.access === 'public'
           && method.spec.parameters.length === 1
           && sameType(method.spec.returnType, BOOL);
-        if (ok) this.equalsContractClasses.add(className);
+        if (ok) this.comparisonContractSet(contract).add(className);
         return ok;
       }
-      return this.equalsContractClasses.has(bare);
+      return this.comparisonContractSet(contract).has(bare);
     }
     // Модульный класс: по спецификации модуля (короткое имя параметра —
     // модульная семантика уже проверила форму при компиляции модуля).
     if (type.kind === 'qualified' && this.userModuleRegistry.hasModule(type.moduleName)) {
       const classSpec = this.userModuleRegistry.getModule(type.moduleName)?.classes.get(type.name);
-      const method = classSpec?.methods.find((item) => item.name === 'equals');
+      const method = classSpec?.methods.find((item) => item.name === contract);
       const ok = method !== undefined
         && !method.isStatic
         && method.access === 'public'
         && method.spec.parameters.length === 1
         && sameType(method.spec.returnType, BOOL);
-      if (ok) this.equalsContractClasses.add(type.name);
+      if (ok) this.comparisonContractSet(contract).add(type.name);
       return ok;
     }
     return false;
@@ -2499,6 +2518,31 @@ export class SemanticAnalyzer {
       const isStamp = (type: TypeRef): boolean =>
         type.kind === 'qualified' && type.moduleName === 'time' && type.name === 'stamp';
       if (isStamp(left) && isStamp(right)) return BOOL;
+      // Объекты упорядочиваются контрактами: less обслуживает '<' и '>='
+      // (второй — отрицанием), greater — '>' и '<='.
+      const leftOrderClass = this.userClassBareName(left);
+      const rightOrderClass = this.userClassBareName(right);
+      if (leftOrderClass !== null || rightOrderClass !== null) {
+        const contract: ComparisonContractName =
+          expression.operator === '<' || expression.operator === '>=' ? 'less' : 'greater';
+        if (leftOrderClass === null || rightOrderClass === null) {
+          this.diagnostics.error(
+            expression.range,
+            `cannot compare '${typeToString(left)}' and '${typeToString(right)}'`,
+          );
+        } else if (!this.typeOwnsEqualsContract(left, contract)) {
+          this.diagnostics.error(
+            expression.range,
+            `cannot order objects of class '${typeToString(left)}' with '${expression.operator}' — declare 'bool function ${contract}(${typeToString(left)} other)' in class '${typeToString(left)}' and '${expression.operator}' will use it${left.kind === 'class' ? this.contractShapeIssue(left.name, contract) : ''}`,
+          );
+        } else if (!sameType(left, right) && !this.canAssign(left, right)) {
+          this.diagnostics.error(
+            expression.range,
+            `cannot compare '${typeToString(left)}' and '${typeToString(right)}' with '${expression.operator}' — '${typeToString(left)}.${contract}' accepts a '${typeToString(left)}', got '${typeToString(right)}'`,
+          );
+        }
+        return BOOL;
+      }
       if (!isNumeric(left) || !isNumeric(right)) {
         if (expression.left.kind === 'UnaryExpression' && expression.left.operator === 'not') {
           // Жадный 'not' схватил только соседа, и сравнивается уже bool —
@@ -2829,10 +2873,10 @@ export class SemanticAnalyzer {
             );
             return null;
           }
-          if (leaf !== null && callee.name === 'sort') {
+          if (leaf !== null && callee.name === 'sort' && !this.typeOwnsEqualsContract(leaf, 'less')) {
             this.diagnostics.error(
               callee.range,
-              `sort() cannot order '${typeToString(leaf)}' objects — objects have no built-in ordering`,
+              `sort() cannot order '${typeToString(leaf)}' objects — declare 'bool function less(${typeToString(leaf)} other)' in class '${typeToString(leaf)}' and sort() will use it${leaf.kind === 'class' ? this.contractShapeIssue(leaf.name, 'less') : ''}`,
             );
             return null;
           }
@@ -2872,11 +2916,11 @@ export class SemanticAnalyzer {
           // Контракт equals живёт в слоте своего класса и НЕ наследуется:
           // компилятор обязан отказать сам, а не отправлять в рантайм за
           // «object has no method 'equals'» (E17, находка методистов).
-          if (callee.name === 'equals'
+          if (COMPARISON_CONTRACT_NAMES.includes(callee.name as ComparisonContractName)
             && method.access.owner !== objectType.name
-            && this.classDeclaresEqualsContract(method.access.owner)
-            && !this.classDeclaresEqualsContract(objectType.name)) {
-            this.diagnostics.error(callee.range, `'equals' is a contract and is not inherited — declare 'bool function equals(${objectType.name} other)' in class '${objectType.name}' and the call will use it`);
+            && this.classDeclaresEqualsContract(method.access.owner, callee.name as ComparisonContractName)
+            && !this.classDeclaresEqualsContract(objectType.name, callee.name as ComparisonContractName)) {
+            this.diagnostics.error(callee.range, `'${callee.name}' is a contract and is not inherited — declare 'bool function ${callee.name}(${objectType.name} other)' in class '${objectType.name}' and the call will use it`);
             return null;
           }
           this.checkClassMemberAccess(method.access, callee.range);
@@ -3114,7 +3158,7 @@ export class SemanticAnalyzer {
    * давали неотличимые ошибки — методисты мерили цену в «полчаса сверки
    * по буквам» (2026-08-21).
    */
-  private contractShapeIssue(className: string, methodName: 'equals' | 'to_string'): string {
+  private contractShapeIssue(className: string, methodName: 'equals' | 'less' | 'greater' | 'to_string'): string {
     const info = this.classes.get(className);
     if (!info || !info.ownMethods.has(methodName)) return '';
     const spec = info.methods.get(methodName);
@@ -3122,7 +3166,7 @@ export class SemanticAnalyzer {
     const issues: string[] = [];
     if (access !== undefined && access.access !== 'public') issues.push('it is private');
     if (access !== undefined && access.isStatic) issues.push('it is static');
-    if (methodName === 'equals') {
+    if (methodName !== 'to_string') {
       if (!spec || spec.parameters.length !== 1) {
         issues.push(`it must take exactly one parameter of type '${className}'`);
       } else if (!(spec.parameters[0].type.kind === 'class' && spec.parameters[0].type.name === className)) {

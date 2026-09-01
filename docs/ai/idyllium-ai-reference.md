@@ -396,8 +396,10 @@ if (not(is_ready)) {
 
 Use `and`, `or`, `xor`, `not`, not `&&`, `||`, `^`, `!`.
 
-Ordering comparisons `<`, `<=`, `>`, `>=` accept numeric operands and
-`time.stamp` pairs (ordered by instant). Comparing strings or chars with them
+Ordering comparisons `<`, `<=`, `>`, `>=` accept numeric operands,
+`time.stamp` pairs (ordered by instant), and objects of a class that declares
+the matching ordering contract (`less`/`greater`, see §7). Comparing strings
+or chars with them
 is a compile error that names both offending types (`comparison '<' requires
 numeric operands, got 'string' and 'string'`). Strings and chars support only
 `==` and `!=`. Special targeted hints: `score =+ 10` → `'=+' is not an
@@ -444,9 +446,29 @@ Contract rules:
 - `equals` should answer, not mutate — nothing enforces purity, write it pure.
 - Inside `equals`, `type_name(this) != type_name(other)` distinguishes
   namesakes of different classes (see `type_name` in §6).
-- `sort()` on arrays of objects is a compile error (`sort() cannot order
-  'Hero' objects — objects have no built-in ordering`): there is no ordering
-  contract yet.
+**Ordering contracts (`less` and `greater`).** Objects of user classes have
+no built-in ordering either; `<`/`>`/`<=`/`>=` on objects are compile errors
+unless the class declares the matching ordering contract — same shape as
+`equals`, same rules (static dispatch by the left operand's declared type,
+NOT inherited, keep it pure):
+
+```idyllium
+bool function less(Hero other) {
+    return this.level < other.level;
+}
+```
+
+With `less` declared, `a < b` dispatches to it and `a >= b` is its negation
+(`not a.less(b)`); `sort()` on arrays of that class also unlocks and sorts by
+`less` (stable: elements the contract cannot tell apart keep their original
+order). Without it: `cannot order objects of class 'Hero' with '<' — declare
+'bool function less(Hero other)' in class 'Hero' and '<' will use it`
+(`sort()` says `sort() cannot order 'Hero' objects — …`). The `greater`
+contract works the same way and serves the other sign pair: `a > b` dispatches
+to `greater`, `a <= b` is its negation. The contracts are independent — `less`
+alone covers `<`, `>=` and `sort()`; `greater` alone covers `>` and `<=`;
+nothing is derived from the other one, and nothing checks that a class
+declaring both keeps them consistent.
 
 All logical operands must have type `bool`; Idyllium has no truthy/falsy
 conversion. Precedence from higher to lower is `not`, comparisons, `and`,

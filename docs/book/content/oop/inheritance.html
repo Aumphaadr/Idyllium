@@ -193,7 +193,8 @@ main() {
   <h2>Контракты не наследуются</h2>
   <p>
     Обычные методы потомок получает по наследству целиком. А вот
-    методы-контракты — <code>equals</code> и <code>to_string</code> — ведут
+    методы-контракты — <code>equals</code>, <code>less</code>,
+    <code>greater</code> и <code>to_string</code> — ведут
     себя иначе: <strong>договор с языком каждый класс подписывает сам</strong>.
     Потомок объявляет свой <code>equals(Потомок other)</code> рядом с
     родительским <code>equals(Родитель other)</code> — и сравнивает в нём

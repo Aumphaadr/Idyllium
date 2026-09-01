@@ -533,9 +533,10 @@ exceptions, below.
    `@staticmethod`, `#private` or `Q_OBJECT`.** Overriding is by matching name
    and signature; the parent constructor is `parent(...)`; statics are `static`;
    privacy is a `private:` section.
-5. **Declare contracts when the type is printed or compared** — `to_string()`
-   and `equals()` — and remember they are **not inherited**: a descendant that
-   is printed or compared needs its own.
+5. **Declare contracts when the type is printed or compared** — `to_string()`,
+   `equals()`, and the ordering pair `less()`/`greater()` when objects are
+   ordered or sorted — and remember they are **not inherited**: a descendant
+   that is printed or compared needs its own.
 6. **Access statics through the class**, never through an instance, and do not
    expect a descendant to inherit them.
 7. **Do not simulate abstract classes with comments.** If a parent method must

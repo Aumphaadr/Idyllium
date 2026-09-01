@@ -533,6 +533,35 @@ export class IdylliumArray {
     this.items.reverse();
   }
 
+  /**
+   * Стабильная сортировка асинхронным компаратором «строго меньше»
+   * (контракт less учеников — awaited): сортировка слиянием, при
+   * «не меньше» первым идёт левый — равные сохраняют исходный порядок.
+   */
+  async sortWithComparator(lessThan: (left: unknown, right: unknown) => Promise<boolean>): Promise<void> {
+    const merge = async (chunk: unknown[]): Promise<unknown[]> => {
+      if (chunk.length < 2) return chunk;
+      const middle = Math.floor(chunk.length / 2);
+      const left = await merge(chunk.slice(0, middle));
+      const right = await merge(chunk.slice(middle));
+      const result: unknown[] = [];
+      let leftIndex = 0;
+      let rightIndex = 0;
+      while (leftIndex < left.length && rightIndex < right.length) {
+        if (await lessThan(right[rightIndex], left[leftIndex])) {
+          result.push(right[rightIndex]);
+          rightIndex += 1;
+        } else {
+          result.push(left[leftIndex]);
+          leftIndex += 1;
+        }
+      }
+      return result.concat(left.slice(leftIndex), right.slice(rightIndex));
+    };
+    const sorted = await merge([...this.items]);
+    this.items.splice(0, this.items.length, ...sorted);
+  }
+
   sort(): void {
     if (this.items.every((item) => typeof item === 'number' || typeof item === 'bigint')) {
       this.items.sort((left, right) => valueOps.compare(left as number | bigint, right as number | bigint));
