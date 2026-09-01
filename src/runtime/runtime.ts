@@ -251,6 +251,7 @@ export interface IdylliumRuntime {
     typeName(value: unknown): string;
     expectPresent(value: unknown, fieldName: string, className: string, file: string, line: number): unknown;
     equalsObjects(left: unknown, right: unknown, slot: string, file: string, line: number): Promise<boolean>;
+    orderObjects(left: unknown, right: unknown, slot: string, contract: string, file: string, line: number): Promise<boolean>;
     equalsObjectArrays(left: unknown, right: unknown, slot: string, file: string, line: number): Promise<boolean>;
     negate(value: unknown): number | bigint;
     divide(left: unknown, right: unknown, file: string, line: number): number;
@@ -284,6 +285,7 @@ export interface IdylliumRuntime {
     sum(array: unknown, file: string, line: number): number | bigint;
     avg(array: unknown, file: string, line: number): number;
     searchWith(array: unknown, value: unknown, slot: string, mode: string, file: string, line: number): Promise<boolean | number>;
+    sortObjects(array: unknown, slot: string, file: string, line: number): Promise<void>;
   };
   readonly types: {
     cast(value: unknown, typeName: string, file?: string, line?: number): number | bigint;
@@ -779,6 +781,18 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       }
       return (await (contract as (other: unknown) => Promise<unknown>)(right)) === true;
     },
+    // Контракты порядка (less/greater): null упорядочивать нечем — честная
+    // ошибка, в отличие от equals, где null == null осмысленно истинен.
+    async orderObjects(left: unknown, right: unknown, slot: string, contract: string, file: string, line: number): Promise<boolean> {
+      if (left === null || right === null) {
+        throw new IdylliumRuntimeError(file, line, 'comparison found null instead of an object');
+      }
+      const method = (left as Record<string, unknown>)[slot];
+      if (typeof method !== 'function') {
+        throw new IdylliumRuntimeError(file, line, `comparison found an object without the '${contract}' contract`);
+      }
+      return (await (method as (other: unknown) => Promise<unknown>)(right)) === true;
+    },
     async equalsObjectArrays(left: unknown, right: unknown, slot: string, file: string, line: number): Promise<boolean> {
       return equalsArrayCellsWith(
         expectArray(left, file, line),
@@ -911,6 +925,21 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     },
     // Поиск в массиве объектов через контракт equals элемента. Длина
     // фиксируется на входе: дописанное обработчиком в хвост не проверяется.
+    // Сортировка массива объектов по контракту less (стабильная): равные по
+    // контракту элементы сохраняют исходный порядок — важно для витрин ООП.
+    async sortObjects(value: unknown, slot: string, file: string, line: number): Promise<void> {
+      const array = expectArray(value, file, line);
+      await array.sortWithComparator(async (left, right) => {
+        if (left === null || right === null) {
+          throw new IdylliumRuntimeError(file, line, 'sort() found null instead of an object');
+        }
+        const method = (left as Record<string, unknown>)[slot];
+        if (typeof method !== 'function') {
+          throw new IdylliumRuntimeError(file, line, "sort() found an object without the 'less' contract");
+        }
+        return (await (method as (other: unknown) => Promise<unknown>)(right)) === true;
+      });
+    },
     async searchWith(value: unknown, target: unknown, slot: string, mode: string, file: string, line: number): Promise<boolean | number> {
       const array = expectArray(value, file, line);
       const snapshot = array.values();

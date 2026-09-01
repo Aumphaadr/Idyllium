@@ -2043,12 +2043,16 @@ var Idyllium = (() => {
         userModuleNames;
         nodeTypes;
         equalsContractClasses;
+        lessContractClasses;
+        greaterContractClasses;
         nullableClassFields;
         stdlib = (0, registry_1.createDefaultStandardLibrary)();
         constructor(options = {}) {
           this.userModuleNames = options.userModuleNames ?? /* @__PURE__ */ new Set();
           this.nodeTypes = options.nodeTypes ?? /* @__PURE__ */ new Map();
           this.equalsContractClasses = options.equalsContractClasses ?? /* @__PURE__ */ new Set();
+          this.lessContractClasses = options.lessContractClasses ?? /* @__PURE__ */ new Set();
+          this.greaterContractClasses = options.greaterContractClasses ?? /* @__PURE__ */ new Set();
           this.nullableClassFields = options.nullableClassFields ?? /* @__PURE__ */ new Map();
         }
         /** Чтение «пустого поля» (room.guest, где guest объявлен с `= null`): описание или null. */
@@ -2081,18 +2085,25 @@ var Idyllium = (() => {
           return null;
         }
         /** Короткое имя пользовательского класса с контрактом equals; null для прочих типов. */
-        contractClassBareName(type) {
+        contractSet(contract) {
+          if (contract === "less")
+            return this.lessContractClasses;
+          if (contract === "greater")
+            return this.greaterContractClasses;
+          return this.equalsContractClasses;
+        }
+        contractClassBareName(type, contract = "equals") {
           const bare = this.bareClassName(type);
-          return bare !== null && this.equalsContractClasses.has(bare) ? bare : null;
+          return bare !== null && this.contractSet(contract).has(bare) ? bare : null;
         }
         /** Класс-лист массива с контрактом (сквозь вложенные массивы); null иначе. */
-        contractLeafOfArray(type) {
+        contractLeafOfArray(type, contract = "equals") {
           if (!type || type.kind !== "array")
             return null;
           let element = type.elementType;
           while (element.kind === "array")
             element = element.elementType;
-          return this.contractClassBareName(element);
+          return this.contractClassBareName(element, contract);
         }
         typeOf(expression) {
           return this.nodeTypes.get(expression) ?? null;
@@ -2433,15 +2444,15 @@ var Idyllium = (() => {
         /** Контрактный equals хранится в слоте со своим классом (equals$Cat):
          *  контракты не наследуются, у семьи классов сосуществуют свои версии,
          *  а '==' диспетчеризуется статически — по типу, через который смотрят. */
-        isContractEqualsDeclaration(className, declaration) {
-          return declaration.name === "equals" && !declaration.isStatic && declaration.parameters.length === 1 && this.typeNameToString(declaration.parameters[0].paramType) === className;
+        isContractComparisonDeclaration(className, declaration) {
+          return ["equals", "less", "greater"].includes(declaration.name) && !declaration.isStatic && declaration.parameters.length === 1 && this.typeNameToString(declaration.parameters[0].paramType) === className;
         }
         emitInstanceMethod(className, declaration, lines, indent) {
           const pad = "  ".repeat(indent);
           const params = declaration.parameters.map((parameter) => parameter.name).join(", ");
-          if (this.isContractEqualsDeclaration(className, declaration)) {
-            lines.push(`${pad}__idyl_self[${JSON.stringify(`equals$${className}`)}] = async function(${params}) {`);
-            this.emitCallGuardOpen(lines, indent + 1, `${className}.equals`, declaration.nameRange ?? declaration.range);
+          if (this.isContractComparisonDeclaration(className, declaration)) {
+            lines.push(`${pad}__idyl_self[${JSON.stringify(`${declaration.name}$${className}`)}] = async function(${params}) {`);
+            this.emitCallGuardOpen(lines, indent + 1, `${className}.${declaration.name}`, declaration.nameRange ?? declaration.range);
             this.returnTypes.push(declaration.returnType);
             this.emitParameterDefaults(declaration.parameters, lines, indent + 2);
             this.emitParameterCasts(declaration.parameters, lines, indent + 2);
@@ -2664,6 +2675,14 @@ var Idyllium = (() => {
               return expression.operator === "==" ? call : `(!${call})`;
             }
           }
+          if (["<", "<=", ">", ">="].includes(expression.operator)) {
+            const contract = expression.operator === "<" || expression.operator === ">=" ? "less" : "greater";
+            const orderClass = this.contractClassBareName(this.typeOf(expression.left), contract);
+            if (orderClass && this.contractClassBareName(this.typeOf(expression.right), contract)) {
+              const call = `(await $rt.core.orderObjects(${this.rawOperand(expression.left)}, ${this.rawOperand(expression.right)}, ${JSON.stringify(`${contract}$${orderClass}`)}, ${JSON.stringify(contract)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line}))`;
+              return expression.operator === "<=" || expression.operator === ">=" ? `(!${call})` : call;
+            }
+          }
           const floatMode = ["+", "-", "*"].includes(expression.operator) && this.isFloatType(this.typeOf(expression));
           return `$rt.core.binary(${JSON.stringify(expression.operator)}, ${left}, ${right}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line}${floatMode ? ", 'float'" : ""})`;
         }
@@ -2749,11 +2768,17 @@ var Idyllium = (() => {
                 return `$rt.array.searchWith(${this.expression(callee.object)}, ${args2}, ${JSON.stringify(`equals$${leaf}`)}, ${JSON.stringify(callee.name)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
               }
             }
-            if (callee.name === "equals" && expression.args.length === 1) {
-              const contractClass = this.contractClassBareName(receiverType);
+            if (receiverType?.kind === "array" && callee.name === "sort" && expression.args.length === 0) {
+              const sortLeaf = this.contractLeafOfArray(receiverType, "less");
+              if (sortLeaf) {
+                return `$rt.array.sortObjects(${this.expression(callee.object)}, ${JSON.stringify(`less$${sortLeaf}`)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+              }
+            }
+            if (["equals", "less", "greater"].includes(callee.name) && expression.args.length === 1) {
+              const contractClass = this.contractClassBareName(receiverType, callee.name);
               if (contractClass) {
                 const args2 = this.methodCallArgs(callee.name, expression.args, receiverType).join(", ");
-                return `$rt.callMethod(${this.expression(callee.object)}, ${JSON.stringify(`equals$${contractClass}`)}, [${args2}], ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+                return `$rt.callMethod(${this.expression(callee.object)}, ${JSON.stringify(`${callee.name}$${contractClass}`)}, [${args2}], ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
               }
             }
             const args = this.methodCallArgs(callee.name, expression.args, receiverType).join(", ");
@@ -5550,6 +5575,7 @@ var Idyllium = (() => {
         }
         return result;
       }
+      var COMPARISON_CONTRACT_NAMES = ["equals", "less", "greater"];
       exports2.IDYLLIUM_SEMANTIC_TOKEN_TYPES = [
         "namespace",
         "class",
@@ -5608,6 +5634,8 @@ var Idyllium = (() => {
         classes = /* @__PURE__ */ new Map();
         /** Короткие имена классов с контрактом equals (локальные и импортированные модульные). */
         equalsContractClasses = /* @__PURE__ */ new Set();
+        lessContractClasses = /* @__PURE__ */ new Set();
+        greaterContractClasses = /* @__PURE__ */ new Set();
         /** «Пустые поля» по классам (короткое имя → поля с явным `= null`). */
         nullableClassFields = /* @__PURE__ */ new Map();
         // Значения файловых int-констант: собираются до анализа сигнатур, чтобы
@@ -5674,6 +5702,8 @@ var Idyllium = (() => {
             tokens: deduplicateSemanticTokens(this.semanticTokens),
             nodeTypes: this.nodeTypes,
             equalsContractClasses: this.equalsContractClasses,
+            lessContractClasses: this.lessContractClasses,
+            greaterContractClasses: this.greaterContractClasses,
             nullableClassFields: this.nullableClassFields
           };
         }
@@ -6174,30 +6204,37 @@ var Idyllium = (() => {
             range: declaration.range
           });
           info.ownMethods.add(declaration.name);
-          if (declaration.name === "equals" && this.isEqualsContractShape(info, declaration)) {
+          if (COMPARISON_CONTRACT_NAMES.includes(declaration.name) && this.isEqualsContractShape(info, declaration)) {
             if (declaration.parameters[0].defaultValue) {
-              this.diagnostics.error(declaration.parameters[0].range, "'equals' contract parameter cannot have a default value");
+              this.diagnostics.error(declaration.parameters[0].range, `'${declaration.name}' contract parameter cannot have a default value`);
             }
             if (declaration.access === "public") {
-              this.equalsContractClasses.add(info.declaration.name);
+              this.comparisonContractSet(declaration.name).add(info.declaration.name);
             }
           }
+        }
+        comparisonContractSet(contract) {
+          if (contract === "less")
+            return this.lessContractClasses;
+          if (contract === "greater")
+            return this.greaterContractClasses;
+          return this.equalsContractClasses;
         }
         /** Объявлен ли публичный контракт equals В САМОМ классе — по имени, в том
          *  числе точечному ('zoo.Lion'). Реестр коротких имён заполняется лениво,
          *  поэтому модульные классы смотрим прямо в спецификации модуля: иначе
          *  страж «контракт не наследуется» молчал через границу модуля и ученик
          *  получал рантайм-«object has no method 'equals'» (улов ломателей). */
-        classDeclaresEqualsContract(className) {
+        classDeclaresEqualsContract(className, contract = "equals") {
           const dot = className.indexOf(".");
           if (dot > 0) {
             const moduleName = className.slice(0, dot);
             const bareName = className.slice(dot + 1);
             const classSpec = this.userModuleRegistry.getModule(moduleName)?.classes.get(bareName);
-            const method = classSpec?.methods.find((item) => item.name === "equals");
+            const method = classSpec?.methods.find((item) => item.name === contract);
             return method !== void 0 && !method.isStatic && method.access === "public" && method.spec.parameters.length === 1 && (0, types_1.sameType)(method.spec.returnType, types_1.BOOL);
           }
-          return this.equalsContractClasses.has(className);
+          return this.comparisonContractSet(contract).has(className);
         }
         /** Форма контракта equals: нестатический, ровно один параметр СВОЕГО класса, возвращает bool. */
         isEqualsContractShape(info, declaration) {
@@ -6210,8 +6247,8 @@ var Idyllium = (() => {
             return false;
           return (0, types_1.sameType)(this.resolveTypeName(declaration.returnType), types_1.BOOL);
         }
-        /** Есть ли у типа (класс или модульный класс) публичный контракт equals, объявленный в нём самом. */
-        typeOwnsEqualsContract(type) {
+        /** Есть ли у типа (класс или модульный класс) публичный контракт сравнения, объявленный в нём самом. */
+        typeOwnsEqualsContract(type, contract = "equals") {
           const bare = this.userClassBareName(type);
           if (!bare)
             return false;
@@ -6221,20 +6258,20 @@ var Idyllium = (() => {
               const moduleName = type.name.slice(0, dot);
               const className = type.name.slice(dot + 1);
               const classSpec = this.userModuleRegistry.getModule(moduleName)?.classes.get(className);
-              const method = classSpec?.methods.find((item) => item.name === "equals");
+              const method = classSpec?.methods.find((item) => item.name === contract);
               const ok = method !== void 0 && !method.isStatic && method.access === "public" && method.spec.parameters.length === 1 && (0, types_1.sameType)(method.spec.returnType, types_1.BOOL);
               if (ok)
-                this.equalsContractClasses.add(className);
+                this.comparisonContractSet(contract).add(className);
               return ok;
             }
-            return this.equalsContractClasses.has(bare);
+            return this.comparisonContractSet(contract).has(bare);
           }
           if (type.kind === "qualified" && this.userModuleRegistry.hasModule(type.moduleName)) {
             const classSpec = this.userModuleRegistry.getModule(type.moduleName)?.classes.get(type.name);
-            const method = classSpec?.methods.find((item) => item.name === "equals");
+            const method = classSpec?.methods.find((item) => item.name === contract);
             const ok = method !== void 0 && !method.isStatic && method.access === "public" && method.spec.parameters.length === 1 && (0, types_1.sameType)(method.spec.returnType, types_1.BOOL);
             if (ok)
-              this.equalsContractClasses.add(type.name);
+              this.comparisonContractSet(contract).add(type.name);
             return ok;
           }
           return false;
@@ -7434,6 +7471,19 @@ var Idyllium = (() => {
             const isStamp = (type) => type.kind === "qualified" && type.moduleName === "time" && type.name === "stamp";
             if (isStamp(left) && isStamp(right))
               return types_1.BOOL;
+            const leftOrderClass = this.userClassBareName(left);
+            const rightOrderClass = this.userClassBareName(right);
+            if (leftOrderClass !== null || rightOrderClass !== null) {
+              const contract = expression.operator === "<" || expression.operator === ">=" ? "less" : "greater";
+              if (leftOrderClass === null || rightOrderClass === null) {
+                this.diagnostics.error(expression.range, `cannot compare '${(0, types_1.typeToString)(left)}' and '${(0, types_1.typeToString)(right)}'`);
+              } else if (!this.typeOwnsEqualsContract(left, contract)) {
+                this.diagnostics.error(expression.range, `cannot order objects of class '${(0, types_1.typeToString)(left)}' with '${expression.operator}' — declare 'bool function ${contract}(${(0, types_1.typeToString)(left)} other)' in class '${(0, types_1.typeToString)(left)}' and '${expression.operator}' will use it${left.kind === "class" ? this.contractShapeIssue(left.name, contract) : ""}`);
+              } else if (!(0, types_1.sameType)(left, right) && !this.canAssign(left, right)) {
+                this.diagnostics.error(expression.range, `cannot compare '${(0, types_1.typeToString)(left)}' and '${(0, types_1.typeToString)(right)}' with '${expression.operator}' — '${(0, types_1.typeToString)(left)}.${contract}' accepts a '${(0, types_1.typeToString)(left)}', got '${(0, types_1.typeToString)(right)}'`);
+              }
+              return types_1.BOOL;
+            }
             if (!(0, types_1.isNumeric)(left) || !(0, types_1.isNumeric)(right)) {
               if (expression.left.kind === "UnaryExpression" && expression.left.operator === "not") {
                 const operand = expression.left.operand;
@@ -7718,8 +7768,8 @@ var Idyllium = (() => {
                   this.diagnostics.error(callee.range, `${callee.name}() cannot search for '${(0, types_1.typeToString)(leaf)}' objects — declare 'bool function equals(${(0, types_1.typeToString)(leaf)} other)' in class '${(0, types_1.typeToString)(leaf)}' and the search will use it`);
                   return null;
                 }
-                if (leaf !== null && callee.name === "sort") {
-                  this.diagnostics.error(callee.range, `sort() cannot order '${(0, types_1.typeToString)(leaf)}' objects — objects have no built-in ordering`);
+                if (leaf !== null && callee.name === "sort" && !this.typeOwnsEqualsContract(leaf, "less")) {
+                  this.diagnostics.error(callee.range, `sort() cannot order '${(0, types_1.typeToString)(leaf)}' objects — declare 'bool function less(${(0, types_1.typeToString)(leaf)} other)' in class '${(0, types_1.typeToString)(leaf)}' and sort() will use it${leaf.kind === "class" ? this.contractShapeIssue(leaf.name, "less") : ""}`);
                   return null;
                 }
                 return method2;
@@ -7751,8 +7801,8 @@ var Idyllium = (() => {
               this.markSemanticToken("method", callee.nameRange);
               const method2 = this.getClassMethodInfo(objectType.name, callee.name);
               if (method2) {
-                if (callee.name === "equals" && method2.access.owner !== objectType.name && this.classDeclaresEqualsContract(method2.access.owner) && !this.classDeclaresEqualsContract(objectType.name)) {
-                  this.diagnostics.error(callee.range, `'equals' is a contract and is not inherited — declare 'bool function equals(${objectType.name} other)' in class '${objectType.name}' and the call will use it`);
+                if (COMPARISON_CONTRACT_NAMES.includes(callee.name) && method2.access.owner !== objectType.name && this.classDeclaresEqualsContract(method2.access.owner, callee.name) && !this.classDeclaresEqualsContract(objectType.name, callee.name)) {
+                  this.diagnostics.error(callee.range, `'${callee.name}' is a contract and is not inherited — declare 'bool function ${callee.name}(${objectType.name} other)' in class '${objectType.name}' and the call will use it`);
                   return null;
                 }
                 this.checkClassMemberAccess(method2.access, callee.range);
@@ -7930,7 +7980,7 @@ var Idyllium = (() => {
             issues.push("it is private");
           if (access !== void 0 && access.isStatic)
             issues.push("it is static");
-          if (methodName === "equals") {
+          if (methodName !== "to_string") {
             if (!spec || spec.parameters.length !== 1) {
               issues.push(`it must take exactly one parameter of type '${className}'`);
             } else if (!(spec.parameters[0].type.kind === "class" && spec.parameters[0].type.name === className)) {
@@ -9357,6 +9407,35 @@ var Idyllium = (() => {
         }
         reverse() {
           this.items.reverse();
+        }
+        /**
+         * Стабильная сортировка асинхронным компаратором «строго меньше»
+         * (контракт less учеников — awaited): сортировка слиянием, при
+         * «не меньше» первым идёт левый — равные сохраняют исходный порядок.
+         */
+        async sortWithComparator(lessThan) {
+          const merge = async (chunk) => {
+            if (chunk.length < 2)
+              return chunk;
+            const middle = Math.floor(chunk.length / 2);
+            const left = await merge(chunk.slice(0, middle));
+            const right = await merge(chunk.slice(middle));
+            const result = [];
+            let leftIndex = 0;
+            let rightIndex = 0;
+            while (leftIndex < left.length && rightIndex < right.length) {
+              if (await lessThan(right[rightIndex], left[leftIndex])) {
+                result.push(right[rightIndex]);
+                rightIndex += 1;
+              } else {
+                result.push(left[leftIndex]);
+                leftIndex += 1;
+              }
+            }
+            return result.concat(left.slice(leftIndex), right.slice(rightIndex));
+          };
+          const sorted = await merge([...this.items]);
+          this.items.splice(0, this.items.length, ...sorted);
         }
         sort() {
           if (this.items.every((item) => typeof item === "number" || typeof item === "bigint")) {
@@ -41972,6 +42051,18 @@ ${outerPadding}${close}`;
             }
             return await contract(right) === true;
           },
+          // Контракты порядка (less/greater): null упорядочивать нечем — честная
+          // ошибка, в отличие от equals, где null == null осмысленно истинен.
+          async orderObjects(left, right, slot, contract, file, line) {
+            if (left === null || right === null) {
+              throw new runtime_errors_1.IdylliumRuntimeError(file, line, "comparison found null instead of an object");
+            }
+            const method = left[slot];
+            if (typeof method !== "function") {
+              throw new runtime_errors_1.IdylliumRuntimeError(file, line, `comparison found an object without the '${contract}' contract`);
+            }
+            return await method(right) === true;
+          },
           async equalsObjectArrays(left, right, slot, file, line) {
             return equalsArrayCellsWith((0, runtime_values_2.expectArray)(left, file, line), (0, runtime_values_2.expectArray)(right, file, line), slot, file, line);
           },
@@ -42065,6 +42156,21 @@ ${outerPadding}${close}`;
           },
           // Поиск в массиве объектов через контракт equals элемента. Длина
           // фиксируется на входе: дописанное обработчиком в хвост не проверяется.
+          // Сортировка массива объектов по контракту less (стабильная): равные по
+          // контракту элементы сохраняют исходный порядок — важно для витрин ООП.
+          async sortObjects(value, slot, file, line) {
+            const array2 = (0, runtime_values_2.expectArray)(value, file, line);
+            await array2.sortWithComparator(async (left, right) => {
+              if (left === null || right === null) {
+                throw new runtime_errors_1.IdylliumRuntimeError(file, line, "sort() found null instead of an object");
+              }
+              const method = left[slot];
+              if (typeof method !== "function") {
+                throw new runtime_errors_1.IdylliumRuntimeError(file, line, "sort() found an object without the 'less' contract");
+              }
+              return await method(right) === true;
+            });
+          },
           async searchWith(value, target, slot, mode, file, line) {
             const array2 = (0, runtime_values_2.expectArray)(value, file, line);
             const snapshot = array2.values();
@@ -43590,12 +43696,18 @@ ${outerPadding}${close}`;
         const userModuleRegistry = (0, project_1.buildUserModuleRegistry)(modules, stdlib, diagnostics, unavailableModules);
         const nodeTypes = /* @__PURE__ */ new Map();
         const equalsContractClasses = /* @__PURE__ */ new Set();
+        const lessContractClasses = /* @__PURE__ */ new Set();
+        const greaterContractClasses = /* @__PURE__ */ new Set();
         const nullableClassFields = /* @__PURE__ */ new Map();
         const mergeSemantics = (semantics) => {
           for (const [node, type] of semantics.nodeTypes)
             nodeTypes.set(node, type);
           for (const name of semantics.equalsContractClasses)
             equalsContractClasses.add(name);
+          for (const name of semantics.lessContractClasses)
+            lessContractClasses.add(name);
+          for (const name of semantics.greaterContractClasses)
+            greaterContractClasses.add(name);
           for (const [className, fieldNames] of semantics.nullableClassFields) {
             let set = nullableClassFields.get(className);
             if (!set) {
@@ -43621,6 +43733,8 @@ ${outerPadding}${close}`;
             userModuleNames: new Set(modules.map((module3) => module3.name)),
             nodeTypes,
             equalsContractClasses,
+            lessContractClasses,
+            greaterContractClasses,
             nullableClassFields
           }).generate(ast, { modules: modules.map((module3) => ({ name: module3.name, program: module3.ast })) }).jsCode;
         }

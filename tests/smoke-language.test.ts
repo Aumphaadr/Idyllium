@@ -3269,7 +3269,7 @@ main() {
     ['console.write(a == b);', "cannot compare objects of class 'Pet' with '==' — declare 'bool function equals(Pet other)' in class 'Pet'"],
     ['array<Pet, 1> x = [a];\n    array<Pet, 1> y = [b];\n    console.write(x == y);', "cannot compare arrays of 'Pet' objects with '=='"],
     ['dyn_array<Pet> zoo;\n    console.write(zoo.contains(a));', "contains() cannot search for 'Pet' objects"],
-    ['dyn_array<Pet> zoo;\n    zoo.sort();', "sort() cannot order 'Pet' objects — objects have no built-in ordering"],
+    ['dyn_array<Pet> zoo;\n    zoo.sort();', "sort() cannot order 'Pet' objects — declare 'bool function less(Pet other)' in class 'Pet' and sort() will use it"],
   ];
   for (const [body, expected] of forbidden) {
     const result = compileIdyllium(`class Pet { string name; }\nmain() {\n    Pet a;\n    Pet b;\n    ${body}\n}\n`, { file: '/main.idyl' });
@@ -3661,6 +3661,87 @@ main() {
 }
 `, {}, { file: 'main.idyl' });
   assert(viaParent.output === 'true\n', `parent-typed contract call: ${JSON.stringify(viaParent.output)}`);
+});
+
+test('order contracts: less/greater pair, sign expansion, stable sort', async () => {
+  // 1. Пара контрактов: четыре знака, явные вызовы, sort() со стабильностью
+  // (Ника и Лиам равны по уровню — Ника добавлена раньше и остаётся раньше).
+  const pair = await runIdyllium(`use console;
+
+class Hero {
+    string name;
+    int level;
+
+    constructor Hero(string ex_name, int ex_level) {
+        this.name = ex_name;
+        this.level = ex_level;
+    }
+
+    bool function less(Hero other) {
+        return this.level < other.level;
+    }
+
+    bool function greater(Hero other) {
+        return this.level > other.level;
+    }
+
+    string function to_string() {
+        return this.name;
+    }
+}
+
+main() {
+    Hero a = Hero("Мира", 7);
+    Hero b = Hero("Лиам", 9);
+    console.write(a < b, ":", a > b, ":", a <= b, ":", a >= b, ":", a.less(b), ":", b.greater(a), ":");
+
+    dyn_array<Hero> guild;
+    guild.add(Hero("Ника", 9));
+    guild.add(Hero("Мира", 3));
+    guild.add(Hero("Лиам", 9));
+    guild.sort();
+    console.write(guild);
+}
+`, {}, { file: '/main.idyl' });
+  assert(pair.success, pair.runtimeError ?? pair.compilation.diagnosticsText);
+  assert(pair.output === 'true:false:true:false:true:true:["Мира", "Ника", "Лиам"]', `order matrix: ${pair.output}`);
+
+  // 2. Контракты независимы: одного less хватает для '<', '>=' и sort(),
+  // а '>' честно просит greater (и наоборот ничего не дорисовывается сам).
+  const lessOnly = await runIdyllium(`use console;
+
+class Card {
+    int rank;
+    constructor Card(int ex_rank) { this.rank = ex_rank; }
+    bool function less(Card other) { return this.rank < other.rank; }
+}
+
+main() {
+    Card a = Card(3);
+    Card b = Card(5);
+    console.write(a < b, ":", a >= b);
+}
+`, {}, { file: '/main.idyl' });
+  assert(lessOnly.success, lessOnly.runtimeError ?? lessOnly.compilation.diagnosticsText);
+  assert(lessOnly.output === 'true:false', `less-only matrix: ${lessOnly.output}`);
+
+  // 3. Обучающие отказы: нет контракта, кривая форма, смешение типов, наследник.
+  const refused: Array<[string, string]> = [
+    ['class P { int v; }\nmain() {\n    P a; P b;\n    bool q = a < b;\n}',
+      "cannot order objects of class 'P' with '<' — declare 'bool function less(P other)' in class 'P' and '<' will use it"],
+    ['class P {\n    bool function less(P other) { return true; }\n}\nmain() {\n    P a; P b;\n    bool q = a > b;\n}',
+      "cannot order objects of class 'P' with '>' — declare 'bool function greater(P other)' in class 'P' and '>' will use it"],
+    ['class P {\n    bool function less(P other, int extra) { return true; }\n}\nmain() {\n    P a; P b;\n    bool q = a < b;\n}',
+      "(class 'P' has 'less', but it must take exactly one parameter of type 'P')"],
+    ['class P {\n    bool function less(P other) { return true; }\n}\nmain() {\n    P a;\n    bool q = a < 5;\n}',
+      "cannot compare 'P' and 'int'"],
+    ['class P {\n    bool function less(P other) { return true; }\n}\nclass Q extends P { }\nmain() {\n    Q a; Q b;\n    bool q = a < b;\n}',
+      "cannot order objects of class 'Q' with '<' — declare 'bool function less(Q other)' in class 'Q' and '<' will use it"],
+  ];
+  for (const [source, expected] of refused) {
+    const result = compileIdyllium(source, { file: '/main.idyl' });
+    assert(result.diagnosticsText.includes(expected), `expected «${expected}», got:\n${result.diagnosticsText}`);
+  }
 });
 
 // Жанр «свой виджет» композицией (исследование some_widget_heirs): класс-обёртка

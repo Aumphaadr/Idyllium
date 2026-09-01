@@ -44,6 +44,8 @@ export interface JavaScriptGeneratorOptions {
   readonly nodeTypes?: ReadonlyMap<Expression, TypeRef>;
   /** Классы с контрактом equals (короткие имена) — для статической диспетчеризации '==' и поиска в массивах. */
   readonly equalsContractClasses?: ReadonlySet<string>;
+  readonly lessContractClasses?: ReadonlySet<string>;
+  readonly greaterContractClasses?: ReadonlySet<string>;
   /** «Пустые поля» по классам (короткое имя → поля с `= null`) — для охраняемых чтений. */
   readonly nullableClassFields?: ReadonlyMap<string, ReadonlySet<string>>;
 }
@@ -76,6 +78,8 @@ export class JavaScriptGenerator {
   private readonly userModuleNames: ReadonlySet<string>;
   private readonly nodeTypes: ReadonlyMap<Expression, TypeRef>;
   private readonly equalsContractClasses: ReadonlySet<string>;
+  private readonly lessContractClasses: ReadonlySet<string>;
+  private readonly greaterContractClasses: ReadonlySet<string>;
   private readonly nullableClassFields: ReadonlyMap<string, ReadonlySet<string>>;
   private readonly stdlib = createDefaultStandardLibrary();
 
@@ -83,6 +87,8 @@ export class JavaScriptGenerator {
     this.userModuleNames = options.userModuleNames ?? new Set();
     this.nodeTypes = options.nodeTypes ?? new Map();
     this.equalsContractClasses = options.equalsContractClasses ?? new Set();
+    this.lessContractClasses = options.lessContractClasses ?? new Set();
+    this.greaterContractClasses = options.greaterContractClasses ?? new Set();
     this.nullableClassFields = options.nullableClassFields ?? new Map();
   }
 
@@ -116,17 +122,23 @@ export class JavaScriptGenerator {
   }
 
   /** Короткое имя пользовательского класса с контрактом equals; null для прочих типов. */
-  private contractClassBareName(type: TypeRef | null): string | null {
+  private contractSet(contract: 'equals' | 'less' | 'greater'): ReadonlySet<string> {
+    if (contract === 'less') return this.lessContractClasses;
+    if (contract === 'greater') return this.greaterContractClasses;
+    return this.equalsContractClasses;
+  }
+
+  private contractClassBareName(type: TypeRef | null, contract: 'equals' | 'less' | 'greater' = 'equals'): string | null {
     const bare = this.bareClassName(type);
-    return bare !== null && this.equalsContractClasses.has(bare) ? bare : null;
+    return bare !== null && this.contractSet(contract).has(bare) ? bare : null;
   }
 
   /** Класс-лист массива с контрактом (сквозь вложенные массивы); null иначе. */
-  private contractLeafOfArray(type: TypeRef | null): string | null {
+  private contractLeafOfArray(type: TypeRef | null, contract: 'equals' | 'less' | 'greater' = 'equals'): string | null {
     if (!type || type.kind !== 'array') return null;
     let element: TypeRef = type.elementType;
     while (element.kind === 'array') element = element.elementType;
-    return this.contractClassBareName(element);
+    return this.contractClassBareName(element, contract);
   }
 
   private typeOf(expression: Expression): TypeRef | null {
@@ -530,8 +542,8 @@ export class JavaScriptGenerator {
   /** Контрактный equals хранится в слоте со своим классом (equals$Cat):
    *  контракты не наследуются, у семьи классов сосуществуют свои версии,
    *  а '==' диспетчеризуется статически — по типу, через который смотрят. */
-  private isContractEqualsDeclaration(className: string, declaration: ClassMethodDeclaration): boolean {
-    return declaration.name === 'equals'
+  private isContractComparisonDeclaration(className: string, declaration: ClassMethodDeclaration): boolean {
+    return ['equals', 'less', 'greater'].includes(declaration.name)
       && !declaration.isStatic
       && declaration.parameters.length === 1
       && this.typeNameToString(declaration.parameters[0].paramType) === className;
@@ -540,9 +552,9 @@ export class JavaScriptGenerator {
   private emitInstanceMethod(className: string, declaration: ClassMethodDeclaration, lines: string[], indent: number): void {
     const pad = '  '.repeat(indent);
     const params = declaration.parameters.map((parameter) => parameter.name).join(', ');
-    if (this.isContractEqualsDeclaration(className, declaration)) {
-      lines.push(`${pad}__idyl_self[${JSON.stringify(`equals$${className}`)}] = async function(${params}) {`);
-      this.emitCallGuardOpen(lines, indent + 1, `${className}.equals`, declaration.nameRange ?? declaration.range);
+    if (this.isContractComparisonDeclaration(className, declaration)) {
+      lines.push(`${pad}__idyl_self[${JSON.stringify(`${declaration.name}$${className}`)}] = async function(${params}) {`);
+      this.emitCallGuardOpen(lines, indent + 1, `${className}.${declaration.name}`, declaration.nameRange ?? declaration.range);
       this.returnTypes.push(declaration.returnType);
       this.emitParameterDefaults(declaration.parameters, lines, indent + 2);
       this.emitParameterCasts(declaration.parameters, lines, indent + 2);
@@ -811,6 +823,16 @@ export class JavaScriptGenerator {
         return expression.operator === '==' ? call : `(!${call})`;
       }
     }
+    // Контракты порядка: less обслуживает '<' и '>=' (второй — отрицанием),
+    // greater — '>' и '<='. Слот — статического типа левого, как у equals.
+    if (['<', '<=', '>', '>='].includes(expression.operator)) {
+      const contract = expression.operator === '<' || expression.operator === '>=' ? 'less' : 'greater';
+      const orderClass = this.contractClassBareName(this.typeOf(expression.left), contract);
+      if (orderClass && this.contractClassBareName(this.typeOf(expression.right), contract)) {
+        const call = `(await $rt.core.orderObjects(${this.rawOperand(expression.left)}, ${this.rawOperand(expression.right)}, ${JSON.stringify(`${contract}$${orderClass}`)}, ${JSON.stringify(contract)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line}))`;
+        return expression.operator === '<=' || expression.operator === '>=' ? `(!${call})` : call;
+      }
+    }
     // Статический float-результат переводит арифметику рантайма в чистый
     // double: точное BigInt-повышение — привилегия int, по значениям рантайм
     // «float, ставший целым» от int не отличит (простыня вместо переполнения).
@@ -928,12 +950,21 @@ export class JavaScriptGenerator {
         }
       }
 
-      // Контракт equals: статическая диспетчеризация по типу получателя.
-      if (callee.name === 'equals' && expression.args.length === 1) {
-        const contractClass = this.contractClassBareName(receiverType);
+      // Сортировка массива объектов — по контракту less элемента (вердикт
+      // владельца 2026-09-01: для сортировки хватает одного less).
+      if (receiverType?.kind === 'array' && callee.name === 'sort' && expression.args.length === 0) {
+        const sortLeaf = this.contractLeafOfArray(receiverType, 'less');
+        if (sortLeaf) {
+          return `$rt.array.sortObjects(${this.expression(callee.object)}, ${JSON.stringify(`less$${sortLeaf}`)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+        }
+      }
+
+      // Контракты сравнения: статическая диспетчеризация по типу получателя.
+      if (['equals', 'less', 'greater'].includes(callee.name) && expression.args.length === 1) {
+        const contractClass = this.contractClassBareName(receiverType, callee.name as 'equals' | 'less' | 'greater');
         if (contractClass) {
           const args = this.methodCallArgs(callee.name, expression.args, receiverType).join(', ');
-          return `$rt.callMethod(${this.expression(callee.object)}, ${JSON.stringify(`equals$${contractClass}`)}, [${args}], ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+          return `$rt.callMethod(${this.expression(callee.object)}, ${JSON.stringify(`${callee.name}$${contractClass}`)}, [${args}], ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
         }
       }
 

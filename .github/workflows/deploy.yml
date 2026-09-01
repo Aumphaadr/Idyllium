@@ -11,6 +11,13 @@ name: Deploy Pages
 # ВАЖНО: этот воркфлоу начинает управлять публикацией только после
 # переключения Settings → Pages → Source на «GitHub Actions»; пока там
 # «Deploy from a branch», сайт по-прежнему выкатывается каждым пушем.
+#
+# ЗАЩИТА ОКРУЖЕНИЯ: environment github-pages по умолчанию разрешает
+# деплой только с выбранных веток — тег v1.5.5 отбило именно это
+# («not allowed to deploy … due to environment protection rules»,
+# 2026-08-29). Разовая настройка: Settings → Environments → github-pages
+# → Deployment branches and tags → добавить tag-правило «v*» и
+# branch-правило «deploy» (для npm run deploy).
 
 on:
   workflow_dispatch:
