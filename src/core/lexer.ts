@@ -6,6 +6,36 @@ export interface LexResult {
   readonly diagnostics: DiagnosticBag;
 }
 
+/** Символы, которые в сообщении об ошибке выглядят пробелом или пустотой, —
+ *  их надо называть по имени, иначе виновника не разглядеть. */
+const INVISIBLE_CHARACTER_NAMES = new Map<string, string>([
+  [' ', 'a non-breaking space (U+00A0)'],
+  [' ', 'a figure space (U+2007)'],
+  [' ', 'a narrow non-breaking space (U+202F)'],
+  [' ', 'an invisible space character (U+2000)'],
+  [' ', 'an invisible space character (U+2001)'],
+  [' ', 'an invisible space character (U+2002)'],
+  [' ', 'an invisible space character (U+2003)'],
+  [' ', 'an invisible space character (U+2004)'],
+  [' ', 'an invisible space character (U+2005)'],
+  [' ', 'an invisible space character (U+2006)'],
+  [' ', 'an invisible space character (U+2008)'],
+  [' ', 'an invisible space character (U+2009)'],
+  [' ', 'an invisible space character (U+200A)'],
+  ['​', 'an invisible zero-width space (U+200B)'],
+  ['‌', 'an invisible zero-width character (U+200C)'],
+  ['‍', 'an invisible zero-width character (U+200D)'],
+  ['⁠', 'an invisible word joiner (U+2060)'],
+  ['　', 'an ideographic space (U+3000)'],
+  ['﻿', 'an invisible byte-order mark (U+FEFF)'],
+]);
+
+function describeInvisibleCharacter(char: string): string | null {
+  const named = INVISIBLE_CHARACTER_NAMES.get(char);
+  if (named) return `${named} — replace it with a regular space`;
+  return null;
+}
+
 export class Lexer {
   private readonly tokens: Token[] = [];
   private readonly diagnostics = new DiagnosticBag();
@@ -23,6 +53,9 @@ export class Lexer {
   ) {}
 
   tokenize(): LexResult {
+    // BOM в начале файла — след «Блокнота» и других редакторов Windows;
+    // это не символ программы, молча пропускаем.
+    if (this.peek() === '﻿') this.advance();
     while (!this.isAtEnd()) {
       this.scanToken();
     }
@@ -188,7 +221,10 @@ export class Lexer {
           this.scanIdentifier(start, char);
           return;
         }
-        this.bad(start, `unexpected character '${char}'`);
+        // Невидимку нельзя показывать «как есть»: в сообщении она выглядит
+        // обычным пробелом, и ученик, скопировавший код из чата или Word,
+        // не увидит виновника. Называем такой символ по имени.
+        this.bad(start, `unexpected character ${describeInvisibleCharacter(char) ?? `'${char}'`}`);
     }
   }
 

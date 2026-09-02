@@ -53,6 +53,18 @@ export class Parser {
   private current = 0;
   // Позиция последней подсказки про кавычку в строке — защита от повтора.
   private quoteHintAt = -1;
+  // Пределы глубины: парсер, семантика и кодоген обходят дерево рекурсивно,
+  // и без предела программа-матрёшка роняла компилятор голым V8-текстом
+  // «Maximum call stack size exceeded» (жанр предела — как у веб-шаблонов).
+  private nestingDepth = 0;
+  private depthErrorReported = false;
+  // Длинная цепочка операций (`1+1+…` тысячами) строит глубокое дерево и
+  // роняет уже семантику — считаем узлы одного выражения-оператора.
+  private expressionNodes = 0;
+  private chainErrorReported = false;
+
+  private static readonly MAX_NESTING_DEPTH = 300;
+  private static readonly MAX_EXPRESSION_NODES = 2000;
 
   constructor(private readonly tokens: readonly Token[]) {}
 
@@ -254,6 +266,51 @@ export class Parser {
   }
 
   private parseStatement(): Statement {
+    // Каждый оператор — свежий счёт выражения-цепочки.
+    if (this.nestingDepth === 0) {
+      this.expressionNodes = 0;
+      this.chainErrorReported = false;
+    }
+    if (this.nestingDepth >= Parser.MAX_NESTING_DEPTH) {
+      return this.refuseDeepNesting();
+    }
+    this.nestingDepth = this.nestingDepth + 1;
+    try {
+      return this.parseStatementInner();
+    } finally {
+      this.nestingDepth = this.nestingDepth - 1;
+    }
+  }
+
+  /** Глубина превышена: одна ошибка словами, хвост матрёшки съедается до
+   *  конца оператора — без каскада «expected …» на каждую скобку. */
+  private refuseDeepNesting(): Statement {
+    const range = this.peek().range;
+    if (!this.depthErrorReported) {
+      this.error(range, `the code is nested more than ${Parser.MAX_NESTING_DEPTH} levels deep — simplify it`);
+      this.depthErrorReported = true;
+    }
+    let braces = 0;
+    while (!this.isAtEnd()) {
+      if (this.check(TokenKind.LeftBrace)) braces = braces + 1;
+      if (this.check(TokenKind.RightBrace)) {
+        if (braces === 0) break;
+        braces = braces - 1;
+      }
+      if (braces === 0 && this.check(TokenKind.Semicolon)) {
+        this.advance();
+        break;
+      }
+      this.advance();
+    }
+    return {
+      kind: 'ExpressionStatement',
+      expression: { kind: 'LiteralExpression', value: 0, valueType: 'int', range },
+      range,
+    };
+  }
+
+  private parseStatementInner(): Statement {
     if (this.check(TokenKind.KwConst)) {
       return this.parseVariableDeclaration();
     }
@@ -948,7 +1005,23 @@ export class Parser {
   }
 
   private parseExpression(): Expression {
-    return this.parseOr();
+    if (this.nestingDepth >= Parser.MAX_NESTING_DEPTH) {
+      const range = this.peek().range;
+      if (!this.depthErrorReported) {
+        this.error(range, `the expression is nested more than ${Parser.MAX_NESTING_DEPTH} levels deep — simplify it`);
+        this.depthErrorReported = true;
+      }
+      // Прогресс обязателен: съедаем токен, дальше матрёшку доедят
+      // закрывающие скобки вызывающих без новых сообщений.
+      if (!this.isAtEnd()) this.advance();
+      return { kind: 'LiteralExpression', value: 0, valueType: 'int', range };
+    }
+    this.nestingDepth = this.nestingDepth + 1;
+    try {
+      return this.parseOr();
+    } finally {
+      this.nestingDepth = this.nestingDepth - 1;
+    }
   }
 
   private parseOr(): Expression {
@@ -1222,7 +1295,20 @@ export class Parser {
     };
   }
 
-  private binary(left: Expression, operator: Token, right: Expression): BinaryExpression {
+  private binary(left: Expression, operator: Token, right: Expression): Expression {
+    this.expressionNodes = this.expressionNodes + 1;
+    if (this.expressionNodes > Parser.MAX_EXPRESSION_NODES) {
+      if (!this.chainErrorReported) {
+        this.chainErrorReported = true;
+        this.error(
+          operator.range,
+          `the expression chains more than ${Parser.MAX_EXPRESSION_NODES} operations — split it into steps`,
+        );
+      }
+      // Дерево дальше не растёт: возвращаем левую часть, чтобы обходы
+      // компилятора не утонули в матрёшке, о которой уже сказано.
+      return left;
+    }
     return {
       kind: 'BinaryExpression',
       operator: this.operatorText(operator.kind),
@@ -1568,6 +1654,10 @@ export class Parser {
   }
 
   private error(range: SourceRange, message: string): void {
+    // После ошибки о превышении глубины остальной разбор — заведомо руины
+    // той же матрёшки: каскад из тысяч «expected ')'» только хоронил бы
+    // главную строку. Про бомбу сказано один раз — дальше молчим.
+    if (this.depthErrorReported) return;
     this.diagnostics.error(range, message);
   }
 }

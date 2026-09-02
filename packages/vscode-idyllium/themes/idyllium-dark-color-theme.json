@@ -38,61 +38,68 @@
     {
       "scope": [
         "keyword.control.idyllium",
+        "keyword.control.import.idyllium",
         "keyword.declaration.idyllium",
-        "keyword.declaration.import.idyllium",
-        "keyword.declaration.class.idyllium",
-        "keyword.declaration.extends.idyllium",
         "keyword.operator.logical.idyllium",
-        "constant.language.boolean.idyllium"
+        "constant.language.idyllium",
+        "variable.language.idyllium"
       ],
-      "settings": { "foreground": "#b892ff" }
+      "settings": {
+        "foreground": "#b892ff"
+      }
     },
     {
       "scope": [
-        "storage.type.primitive.idyllium",
-        "storage.type.numeric.idyllium"
+        "storage.type.primitive.idyllium"
       ],
-      "settings": { "foreground": "#63b3ff" }
+      "settings": {
+        "foreground": "#63b3ff"
+      }
     },
     {
       "scope": [
-        "entity.name.type.class.idyllium",
-        "entity.other.inherited-class.idyllium"
+        "entity.name.type.class.idyllium"
       ],
-      "settings": { "foreground": "#59d4b8" }
+      "settings": {
+        "foreground": "#59d4b8"
+      }
     },
     {
       "scope": [
         "entity.name.function.idyllium",
-        "entity.name.function.main.idyllium",
-        "entity.name.function.member.idyllium",
-        "support.function.builtin.idyllium"
+        "entity.name.function.member.idyllium"
       ],
-      "settings": { "foreground": "#e4d87e" }
+      "settings": {
+        "foreground": "#e4d87e"
+      }
     },
     {
       "scope": [
         "entity.name.namespace.idyllium",
-        "variable.language.this.idyllium",
-        "variable.language.parent.idyllium",
         "variable.other.member.idyllium",
-        "constant.other.color.idyllium"
+        "variable.other.idyllium"
       ],
-      "settings": { "foreground": "#8bdfff" }
+      "settings": {
+        "foreground": "#8bdfff"
+      }
     },
     {
       "scope": [
         "string.quoted.double.idyllium",
-        "string.quoted.single.idyllium"
+        "string.quoted.single.idyllium",
+        "constant.character.escape.idyllium"
       ],
-      "settings": { "foreground": "#d99a6c" }
+      "settings": {
+        "foreground": "#d99a6c"
+      }
     },
     {
       "scope": [
-        "constant.numeric.float.idyllium",
-        "constant.numeric.integer.idyllium"
+        "constant.numeric.idyllium"
       ],
-      "settings": { "foreground": "#c5d979" }
+      "settings": {
+        "foreground": "#c5d979"
+      }
     },
     {
       "scope": [
@@ -107,9 +114,12 @@
     {
       "scope": [
         "keyword.operator.idyllium",
-        "punctuation.idyllium"
+        "punctuation.idyllium",
+        "punctuation.accessor.idyllium"
       ],
-      "settings": { "foreground": "#d0d6e6" }
+      "settings": {
+        "foreground": "#d0d6e6"
+      }
     }
   ]
 }

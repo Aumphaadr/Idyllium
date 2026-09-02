@@ -260,6 +260,19 @@ reserved by the language — pick another name for variable '__x'`. Это
 (`toString`, `valueOf`, `hasOwnProperty`), — обычные идентификаторы и работают
 как члены.
 
+Набор слов мира под капотом зарезервирован для **связываний** (переменных,
+параметров, функций, классов) с ошибкой `'X' is a reserved word and cannot
+be used as a name`: `await`, `case`, `debugger`, `default`, `delete`,
+`enum`, `export`, `import`, `in`, `instanceof`, `new`, `super`, `switch`,
+`throw`, `typeof`, `var`, `with`, `let`, `yield`, `implements`,
+`interface`, `package`, `protected`, `arguments`, `eval`, `undefined`.
+Полям и методам эти слова по-прежнему доступны (через объект они
+безвредны). Одно исключение среди членов: `then` запрещён для методов и
+событий (`the name 'then' is reserved by the language — pick another name
+for method 'then'` — метод `then` делал бы объект «обещанием» для мира под
+капотом и ломал вызовы). Обычное поле-значение по имени `then` или
+`undefined` остаётся законным.
+
 Имена функций зарезервированы за функциями. Объявить свою функцию или класс
 с именем встроенной глобальной функции (`to_int`, `to_float`, `to_string`,
 `type_name`, `max`, `min`, `sum`, `avg`; `div` и `mod` уже являются ключевыми
