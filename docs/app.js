@@ -7270,6 +7270,12 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     pendingGuiEvents.push(message);
     await drainGuiEvents();
   }
+  function reportGuiEventFailure(error) {
+    syncRuntimeOutput();
+    syncRuntimeFilesFromSnapshot();
+    appendOutput(formatThrownError(error), "output-error");
+    setStatus("Ошибка события GUI", true);
+  }
   async function drainGuiEvents() {
     if (!currentRuntime || guiBusy) return;
     guiBusy = true;
@@ -7310,6 +7316,8 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
           finishCompletedRuntime();
         }
       } catch (error) {
+        syncRuntimeOutput();
+        syncRuntimeFilesFromSnapshot();
         stopOutputSync();
         appendOutput(formatThrownError(error), "output-error");
         setStatus("Ошибка GUI-шага", true);
@@ -7320,7 +7328,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
         postEmptySnapshot();
       } finally {
         guiBusy = false;
-        if (pendingGuiEvents.length > 0) void drainGuiEvents();
+        if (pendingGuiEvents.length > 0) void drainGuiEvents().catch(reportGuiEventFailure);
       }
     }, intervalMs);
   }
@@ -8138,10 +8146,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       return;
     }
     if (data.message.type !== "guiEvent") return;
-    enqueueGuiEvent(data.message).catch((error) => {
-      setStatus("Ошибка события GUI", true);
-      appendOutput(formatThrownError(error), "output-error");
-    });
+    enqueueGuiEvent(data.message).catch(reportGuiEventFailure);
   });
   window.addEventListener("beforeunload", revokeAllBrowserAssetUrls);
   try {

@@ -595,6 +595,16 @@ export async function enqueueGuiEvent(message) {
   await drainGuiEvents();
 }
 
+/** Ошибка ученического обработчика события: вывод — в панель ДО текста
+ *  ошибки (иначе терялся хвост без \n), программа продолжает жить —
+ *  как при любой мягкой ошибке события. */
+export function reportGuiEventFailure(error) {
+  syncRuntimeOutput();
+  syncRuntimeFilesFromSnapshot();
+  appendOutput(formatThrownError(error), 'output-error');
+  setStatus('Ошибка события GUI', true);
+}
+
 export async function drainGuiEvents() {
   if (!currentRuntime || guiBusy) return;
   guiBusy = true;
@@ -639,6 +649,11 @@ export function startGuiLoop() {
         finishCompletedRuntime();
       }
     } catch (error) {
+      // Сначала — вывод, накопленный упавшим шагом: без синка терялась
+      // незавершённая console.write-строка и весь вывод шага (находка
+      // методистов, 2026-09-03).
+      syncRuntimeOutput();
+      syncRuntimeFilesFromSnapshot();
       stopOutputSync();
       appendOutput(formatThrownError(error), 'output-error');
       setStatus('Ошибка GUI-шага', true);
@@ -649,7 +664,9 @@ export function startGuiLoop() {
       postEmptySnapshot();
     } finally {
       guiBusy = false;
-      if (pendingGuiEvents.length > 0) void drainGuiEvents();
+      // Ошибка хвостового события без catch улетала бы в консоль браузера
+      // unhandled rejection — панель вывода молчала бы вовсе.
+      if (pendingGuiEvents.length > 0) void drainGuiEvents().catch(reportGuiEventFailure);
     }
   }, intervalMs);
 }

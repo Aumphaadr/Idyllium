@@ -3100,4 +3100,43 @@ test('user-select joins the IdySS dictionary', async () => {
   assert(junk.length === 0, 'invalid user-select value slipped through');
 });
 
+test('output written before a handler crash survives in getOutput', async () => {
+  // Находка методистов 2026-09-03: «при runtime-ошибке теряется
+  // незавершённая console.write-строка». Ядро хвост ХРАНИТ — этот страж
+  // фиксирует контракт, на который опираются хосты (Web IDE синкает вывод
+  // в catch, расширение VS Code печатает result.output при аварии).
+  const result = await runWithInspectableRuntime([
+    'use console;',
+    'use gui;',
+    'main() {',
+    '    gui.Window win;',
+    '    win.title = "Окно";',
+    '    gui.Button b;',
+    '    b.text = "Жми";',
+    '    win.add_child(b);',
+    '    b.on_click = void function() {',
+    '        console.write("Приглашение: ");',
+    '        dyn_array<int> xs;',
+    '        int boom = xs[5];',
+    '    };',
+    '    win.show();',
+    '}',
+  ].join('\n'), { file: 'g.idyl' });
+  const window = result.runtime.getWindows()[0];
+  const button = window.children.find((child) => child.type === 'gui.Button');
+  assert(button !== undefined, 'expected the button in the window');
+  let thrown = '';
+  try {
+    await result.runtime.dispatchGuiEvent(button.id, 'click', {});
+    await result.runtime.stepGui(0.016);
+  } catch (error) {
+    thrown = String((error as Error).message ?? error);
+  }
+  assert(thrown.includes('array index 5 out of bounds'), `expected the handler crash, got: ${thrown}`);
+  assert(
+    result.runtime.getOutput() === 'Приглашение: ',
+    `pre-crash output lost: ${JSON.stringify(result.runtime.getOutput())}`,
+  );
+});
+
 void runTests();

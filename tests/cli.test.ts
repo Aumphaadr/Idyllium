@@ -153,6 +153,29 @@ test('cli run returns readable runtime errors', async () => {
   );
 });
 
+test('cli run finishes an unterminated console.write line before the error', async () => {
+  // Находка методистов 2026-09-03: приглашение без \n клеилось к тексту
+  // runtime-ошибки в одну строку терминала.
+  const result = await runTestCli(['run', 'main.idyl'], fileMap([
+    ['/work/main.idyl', [
+      'use console;',
+      '',
+      'main() {',
+      '    console.write("Приглашение: ");',
+      '    dyn_array<int> values;',
+      '    console.write(values[5]);',
+      '}',
+    ].join('\n')],
+  ]));
+
+  assert(result.code === 1, `unexpected exit code: ${result.code}`);
+  assert(result.stdout === 'Приглашение: \n', `unexpected stdout: ${JSON.stringify(result.stdout)}`);
+  assert(
+    result.stderr.includes('main.idyl:6: runtime error: array index 5 out of bounds'),
+    `unexpected stderr:\n${result.stderr}`,
+  );
+});
+
 test('cli run returns readable numeric input errors', async () => {
   const result = await runTestCli(['run', 'main.idyl'], fileMap([
     ['/work/main.idyl', [

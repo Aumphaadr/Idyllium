@@ -84,7 +84,12 @@ async function runCommand(args: readonly string[], io: CliIO): Promise<number> {
 
   if (!result.success) {
     if (result.compilation.diagnosticsText) io.stderr(`${result.compilation.diagnosticsText}\n`);
-    if (result.runtimeError) io.stderr(`${result.runtimeError}\n`);
+    if (result.runtimeError) {
+      // Ошибка не должна клеиться к незавершённой console.write-строке:
+      // «Приглашение: file:5: runtime error…» читается как один текст.
+      if (result.output.length > 0 && !result.output.endsWith('\n')) io.stdout('\n');
+      io.stderr(`${result.runtimeError}\n`);
+    }
     return 1;
   }
 

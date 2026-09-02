@@ -392,7 +392,9 @@ async function runCurrentFile(core, target) {
         return;
       }
       const errorText = [result.diagnosticsText, result.runtimeError].filter(Boolean).join('\n');
-      if (errorText) runTerminal.write(`${errorText}\n`);
+      // Ошибка не должна клеиться к незавершённой console.write-строке.
+      const needsNewline = typeof result.output === 'string' && result.output.length > 0 && !result.output.endsWith('\n');
+      if (errorText) runTerminal.write(`${needsNewline ? '\n' : ''}${errorText}\n`);
       const appliedDiagnostics = applyCliDiagnostics(errorText, document);
       if (!appliedDiagnostics) scheduleDiagnosticsRefresh(core, 0);
       vscode.window.showErrorMessage('Idyllium program failed. See the Idyllium terminal.');
@@ -466,6 +468,13 @@ async function runCurrentFileWithGui(core, target, context) {
       if (session.signal.aborted || isProgramStoppedError(result.runtimeError)) {
         outputChannel.appendLine('Приложение остановлено пользователем.');
         return;
+      }
+      // Вывод, накопленный до аварии, обязан дойти до человека: без него
+      // программа «падала молча на полуслове» — приглашение без \n и весь
+      // прочий вывод терялись (находка методистов, 2026-09-03).
+      if (result.output) {
+        outputChannel.append(result.output);
+        if (!result.output.endsWith('\n')) outputChannel.appendLine('');
       }
       if (result.diagnosticsText) outputChannel.appendLine(result.diagnosticsText);
       if (result.runtimeError) outputChannel.appendLine(result.runtimeError);
