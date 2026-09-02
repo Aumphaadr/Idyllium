@@ -880,6 +880,58 @@ test('callback signatures are checked', () => {
   `, "callback property 'on_click' expects function(): void or function(gui.Button): void");
 });
 
+test('on_change checks its callback shape like on_click does', async () => {
+  // Находка методистов 2026-09-03: on_change был свободным ANY-свойством и
+  // молча принимал колбэк любой сигнатуры (и вовсе не-функцию), хотя
+  // лестница №22 обещает отказ для всех callback-свойств. Теперь формы —
+  // как у on_click: без параметров или с sender СВОЕГО виджета.
+  assertFails(`
+    use gui;
+
+    main() {
+      gui.SpinBox spin;
+      spin.on_change = void function(gui.Button sender) { };
+    }
+  `, "callback property 'on_change' expects function(): void or function(gui.SpinBox): void, got function(gui.Button): void");
+  assertFails(`
+    use gui;
+
+    main() {
+      gui.Slider slider;
+      slider.on_change = 5;
+    }
+  `, "callback property 'on_change' expects a function, got 'int'");
+
+  // Обе законные формы живут на каждом из девяти changeable-виджетов.
+  const legal = await runIdyllium(`use console;
+use gui;
+main() {
+    gui.LineEdit edit;
+    gui.TextEdit textedit;
+    gui.SpinBox spin;
+    gui.FloatSpinBox fspin;
+    gui.Slider slider;
+    gui.CheckBox check;
+    gui.RadioButton radio;
+    gui.ComboBox combo;
+    gui.TabWidget tabs;
+    edit.on_change = void function(gui.LineEdit sender) { };
+    textedit.on_change = void function(gui.TextEdit sender) { };
+    spin.on_change = void function(gui.SpinBox sender) { };
+    fspin.on_change = void function(gui.FloatSpinBox sender) { };
+    slider.on_change = void function(gui.Slider sender) { };
+    check.on_change = void function(gui.CheckBox sender) { };
+    radio.on_change = void function(gui.RadioButton sender) { };
+    combo.on_change = void function(gui.ComboBox sender) { };
+    tabs.on_change = void function(gui.TabWidget sender) { };
+    spin.on_change = void function() { };
+    console.write("ок");
+}
+`, {}, { file: '/main.idyl' });
+  assert(legal.success, legal.runtimeError ?? legal.compilation.diagnosticsText);
+  assert(legal.output === 'ок', `legal on_change forms: ${legal.output}`);
+});
+
 test('gui widget polymorphism works for variables callbacks and add_child', async () => {
   const result = await runIdyllium(`
     use console;

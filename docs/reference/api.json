@@ -1,7 +1,7 @@
 {
   "version": 1,
   "languageVersion": "1.5.5",
-  "generatedAt": "2026-09-02T19:23:17.159Z",
+  "generatedAt": "2026-09-02T22:18:38.775Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "general": [
     {
@@ -5533,7 +5533,10 @@
               "type": "any",
               "readonly": false,
               "documentation": "",
-              "callbacks": []
+              "callbacks": [
+                "function(): void",
+                "function(gui.CheckBox): void"
+              ]
             },
             {
               "name": "style",
@@ -5669,7 +5672,10 @@
               "type": "any",
               "readonly": false,
               "documentation": "",
-              "callbacks": []
+              "callbacks": [
+                "function(): void",
+                "function(gui.ComboBox): void"
+              ]
             },
             {
               "name": "selected_index",
@@ -5852,7 +5858,10 @@
               "type": "any",
               "readonly": false,
               "documentation": "",
-              "callbacks": []
+              "callbacks": [
+                "function(): void",
+                "function(gui.FloatSpinBox): void"
+              ]
             },
             {
               "name": "step",
@@ -6663,7 +6672,10 @@
               "type": "any",
               "readonly": false,
               "documentation": "",
-              "callbacks": []
+              "callbacks": [
+                "function(): void",
+                "function(gui.LineEdit): void"
+              ]
             },
             {
               "name": "placeholder",
@@ -7320,7 +7332,10 @@
               "type": "any",
               "readonly": false,
               "documentation": "",
-              "callbacks": []
+              "callbacks": [
+                "function(): void",
+                "function(gui.RadioButton): void"
+              ]
             },
             {
               "name": "style",
@@ -7463,7 +7478,10 @@
               "type": "any",
               "readonly": false,
               "documentation": "",
-              "callbacks": []
+              "callbacks": [
+                "function(): void",
+                "function(gui.Slider): void"
+              ]
             },
             {
               "name": "orientation",
@@ -7627,7 +7645,10 @@
               "type": "any",
               "readonly": false,
               "documentation": "",
-              "callbacks": []
+              "callbacks": [
+                "function(): void",
+                "function(gui.SpinBox): void"
+              ]
             },
             {
               "name": "step",
@@ -7991,7 +8012,10 @@
               "type": "any",
               "readonly": false,
               "documentation": "",
-              "callbacks": []
+              "callbacks": [
+                "function(): void",
+                "function(gui.TabWidget): void"
+              ]
             },
             {
               "name": "selected_index",
@@ -8191,7 +8215,10 @@
               "type": "any",
               "readonly": false,
               "documentation": "Вызывается после изменения многострочного текста пользователем.",
-              "callbacks": []
+              "callbacks": [
+                "function(): void",
+                "function(gui.TextEdit): void"
+              ]
             },
             {
               "name": "placeholder",

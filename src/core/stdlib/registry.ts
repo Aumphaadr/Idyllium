@@ -352,8 +352,15 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     propertySpec('style_disabled', STRING, false,
       'IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.'),
   ];
-  const changeable = [
-    propertySpec('on_change', ANY_TYPE),
+  // Форма как у on_click: без параметров или с sender СВОЕГО виджета.
+  // Раньше on_change был свободным ANY-свойством и молча принимал колбэк
+  // любой сигнатуры (и вообще любое значение) — находка методистов
+  // 2026-09-03: «сигнатура проверяется у on_click, но не у on_change».
+  const changeableFor = (widget: QualifiedType) => [
+    callbackPropertySpec('on_change', [
+      callbackSpec([]),
+      callbackSpec([widget]),
+    ]),
   ];
   const inheritableColorRoles = [
     propertySpec('text_color', COLOR),
@@ -1356,7 +1363,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...widgetState,
       ...styleable,
-      ...changeable,
+      ...changeableFor(guiLineEdit),
       ...colorRoles,
       ...fontSized,
       propertySpec('text', STRING),
@@ -1369,7 +1376,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...widgetState,
       ...styleable,
-      ...changeable,
+      ...changeableFor(guiTextEdit),
       ...colorRoles,
       ...fontSized,
       propertySpec('text', STRING),
@@ -1396,7 +1403,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...widgetState,
       ...styleable,
-      ...changeable,
+      ...changeableFor(guiSpinBox),
       propertySpec('value', INT),
       propertySpec('min', INT),
       propertySpec('max', INT),
@@ -1407,7 +1414,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...widgetState,
       ...styleable,
-      ...changeable,
+      ...changeableFor(guiFloatSpinBox),
       propertySpec('value', FLOAT),
       propertySpec('min', FLOAT),
       propertySpec('max', FLOAT),
@@ -1418,7 +1425,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...widgetState,
       ...styleable,
-      ...changeable,
+      ...changeableFor(guiSlider),
       propertySpec('value', INT),
       propertySpec('min', INT),
       propertySpec('max', INT),
@@ -1430,7 +1437,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...widgetState,
       ...styleable,
-      ...changeable,
+      ...changeableFor(guiCheckBox),
       ...fontSized,
       propertySpec('text', STRING),
       propertySpec('is_checked', BOOL),
@@ -1439,7 +1446,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...widgetState,
       ...styleable,
-      ...changeable,
+      ...changeableFor(guiRadioButton),
       ...fontSized,
       propertySpec('text', STRING),
       propertySpec('is_selected', BOOL),
@@ -1449,7 +1456,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...widgetState,
       ...styleable,
-      ...changeable,
+      ...changeableFor(guiComboBox),
       ...fontSized,
       propertySpec('selected_index', INT),
       propertySpec('selected_text', STRING, true, 'Текст выбранного пункта; изменяется через selected_index.'),
@@ -1558,7 +1565,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...positioned,
       ...widgetState,
       ...styleable,
-      ...changeable,
+      ...changeableFor(qualified('gui', 'TabWidget')),
       ...fontSized,
       propertySpec('selected_index', INT, false, 'Номер открытой вкладки, начиная с 0. У пустого шкафа -1 — «ничего не выбрано», как у ComboBox; первая add_tab() делает его 0.'),
       propertySpec('selected_title', STRING, true, 'Заголовок открытой вкладки; меняется через selected_index.'),

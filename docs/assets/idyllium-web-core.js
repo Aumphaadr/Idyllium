@@ -425,8 +425,11 @@ var Idyllium = (() => {
           propertySpec("style_active", types_1.STRING, false, "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style."),
           propertySpec("style_disabled", types_1.STRING, false, "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.")
         ];
-        const changeable = [
-          propertySpec("on_change", types_1.ANY_TYPE)
+        const changeableFor = (widget) => [
+          callbackPropertySpec("on_change", [
+            callbackSpec([]),
+            callbackSpec([widget])
+          ])
         ];
         const inheritableColorRoles = [
           propertySpec("text_color", types_1.COLOR),
@@ -1406,7 +1409,7 @@ var Idyllium = (() => {
             ...positioned,
             ...widgetState,
             ...styleable,
-            ...changeable,
+            ...changeableFor(guiLineEdit),
             ...colorRoles,
             ...fontSized,
             propertySpec("text", types_1.STRING),
@@ -1418,7 +1421,7 @@ var Idyllium = (() => {
             ...positioned,
             ...widgetState,
             ...styleable,
-            ...changeable,
+            ...changeableFor(guiTextEdit),
             ...colorRoles,
             ...fontSized,
             propertySpec("text", types_1.STRING),
@@ -1443,7 +1446,7 @@ var Idyllium = (() => {
             ...positioned,
             ...widgetState,
             ...styleable,
-            ...changeable,
+            ...changeableFor(guiSpinBox),
             propertySpec("value", types_1.INT),
             propertySpec("min", types_1.INT),
             propertySpec("max", types_1.INT),
@@ -1454,7 +1457,7 @@ var Idyllium = (() => {
             ...positioned,
             ...widgetState,
             ...styleable,
-            ...changeable,
+            ...changeableFor(guiFloatSpinBox),
             propertySpec("value", types_1.FLOAT),
             propertySpec("min", types_1.FLOAT),
             propertySpec("max", types_1.FLOAT),
@@ -1465,7 +1468,7 @@ var Idyllium = (() => {
             ...positioned,
             ...widgetState,
             ...styleable,
-            ...changeable,
+            ...changeableFor(guiSlider),
             propertySpec("value", types_1.INT),
             propertySpec("min", types_1.INT),
             propertySpec("max", types_1.INT),
@@ -1476,7 +1479,7 @@ var Idyllium = (() => {
             ...positioned,
             ...widgetState,
             ...styleable,
-            ...changeable,
+            ...changeableFor(guiCheckBox),
             ...fontSized,
             propertySpec("text", types_1.STRING),
             propertySpec("is_checked", types_1.BOOL)
@@ -1485,7 +1488,7 @@ var Idyllium = (() => {
             ...positioned,
             ...widgetState,
             ...styleable,
-            ...changeable,
+            ...changeableFor(guiRadioButton),
             ...fontSized,
             propertySpec("text", types_1.STRING),
             propertySpec("is_selected", types_1.BOOL),
@@ -1495,7 +1498,7 @@ var Idyllium = (() => {
             ...positioned,
             ...widgetState,
             ...styleable,
-            ...changeable,
+            ...changeableFor(guiComboBox),
             ...fontSized,
             propertySpec("selected_index", types_1.INT),
             propertySpec("selected_text", types_1.STRING, true, "Текст выбранного пункта; изменяется через selected_index.")
@@ -1604,7 +1607,7 @@ var Idyllium = (() => {
             ...positioned,
             ...widgetState,
             ...styleable,
-            ...changeable,
+            ...changeableFor((0, types_1.qualified)("gui", "TabWidget")),
             ...fontSized,
             propertySpec("selected_index", types_1.INT, false, "Номер открытой вкладки, начиная с 0. У пустого шкафа -1 — «ничего не выбрано», как у ComboBox; первая add_tab() делает его 0."),
             propertySpec("selected_title", types_1.STRING, true, "Заголовок открытой вкладки; меняется через selected_index."),
