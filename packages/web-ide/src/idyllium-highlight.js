@@ -10,10 +10,10 @@ export const BUILTIN_TYPES = new Set([
   'array', 'bool', 'char', 'dyn_array', 'float', 'int', 'set', 'string', 'void',
 ]);
 export const CLASS_NAMES = new Set([
-  'Array', 'Button', 'Canvas', 'CheckBox', 'Circle', 'Color', 'ComboBox', 'Drawable', 'FloatSpinBox', 'Font', 'Frame',
-  'Animation', 'Bitmap', 'Image', 'ImageBox', 'KeyboardEvent', 'Label', 'Line', 'LineEdit', 'Modal', 'MouseEvent', 'MouseScrollEvent', 'Music',
-  'Database', 'Object', 'ProgressBar', 'RadioButton', 'Rectangle', 'Result', 'Slider', 'Sound', 'SpinBox', 'Sprite', 'Statement', 'Text',
-  'Static', 'TextEdit', 'Timer', 'Value', 'Widget', 'Window',
+  'Array', 'BarChart', 'Button', 'Canvas', 'CheckBox', 'Circle', 'Color', 'ComboBox', 'Drawable', 'FloatSpinBox', 'Font', 'Frame',
+  'Animation', 'Bitmap', 'Image', 'ImageBox', 'KeyboardEvent', 'Label', 'Line', 'LineChart', 'LineEdit', 'Modal', 'MouseEvent', 'MouseScrollEvent', 'Music',
+  'Database', 'Node', 'Object', 'PieChart', 'Post', 'ProgressBar', 'RadioButton', 'Rectangle', 'Request', 'Response', 'Result', 'Server',
+  'Slider', 'Sound', 'SpinBox', 'Sprite', 'Statement', 'Static', 'TabWidget', 'Table', 'Text', 'TextEdit', 'Timer', 'Turtle', 'Value', 'Vector', 'Widget', 'Window',
 ]);
 export const QUALIFIED_TYPES = new Set([
   ...CLASS_NAMES,

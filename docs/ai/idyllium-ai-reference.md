@@ -253,6 +253,19 @@ covers variables, parameters, functions, fields, methods, events and classes.
 Names that merely collide with JavaScript internals (`toString`, `valueOf`,
 `hasOwnProperty`) are ordinary identifiers and work as members.
 
+A set of words from the world under the hood is reserved for **bindings**
+(variables, parameters, functions, classes) with `'X' is a reserved word and
+cannot be used as a name`: `await`, `case`, `debugger`, `default`, `delete`,
+`enum`, `export`, `import`, `in`, `instanceof`, `new`, `super`, `switch`,
+`throw`, `typeof`, `var`, `with`, `let`, `yield`, `implements`, `interface`,
+`package`, `protected`, `arguments`, `eval`, `undefined`. Fields and methods
+may still use these words (accessed through an object, they stay harmless).
+One member name is the exception: `then` is refused for methods and events
+(`the name 'then' is reserved by the language — pick another name for method
+'then'` — a `then` method would make the object a thenable and break calls
+under the hood). A plain value field named `then` or `undefined` remains
+legal.
+
 Function names are reserved for functions. Declaring your own function or
 class with a built-in global function name (`to_int`, `to_float`, `to_string`,
 `type_name`, `max`, `min`, `sum`, `avg`; `div` and `mod` are already

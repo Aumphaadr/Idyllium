@@ -591,6 +591,22 @@ test('project API compiles files and powers user module completions', () => {
   assert(symbols.some((item) => item.name === 'getArea' && item.kind === 'method'), 'expected getArea document symbol');
 });
 
+test('vscode tm grammar is generated from the web-ide highlight dictionaries', () => {
+  // Грамматика VS Code — генерат из словарей Monaco-подсветки (единый
+  // источник packages/web-ide/src/idyllium-highlight.js): раньше она жила
+  // отдельной копией и отстала от языка на несколько библиотек. Страж
+  // роняет тест, если словари поменяли, а генератор не перезапустили.
+  const { spawnSync } = require('child_process') as typeof import('child_process');
+  const result = spawnSync('node', ['tools/build-tm-grammar.js', '--check'], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+  });
+  assert(
+    result.status === 0,
+    `tm grammar drifted from the dictionaries:\n${result.stdout}${result.stderr}`,
+  );
+});
+
 test('single-source metadata stays in sync across packages', () => {
   const root = process.cwd();
   const rootPackage = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));

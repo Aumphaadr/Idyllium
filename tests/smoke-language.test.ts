@@ -3742,6 +3742,219 @@ main() {
     const result = compileIdyllium(source, { file: '/main.idyl' });
     assert(result.diagnosticsText.includes(expected), `expected «${expected}», got:\n${result.diagnosticsText}`);
   }
+
+  // 4. Наследник объявляет СВОЙ less рядом с базовым — единственное законное
+  // изменение сигнатуры, как у equals (улов ломателей 2026-09-02: страж
+  // сигнатур знал исключение только для equals).
+  const family = await runIdyllium(`use console;
+class Animal {
+    int age;
+    bool function less(Animal other) { return this.age < other.age; }
+}
+class Cat extends Animal {
+    int whiskers;
+    bool function less(Cat other) { return this.whiskers < other.whiskers; }
+}
+main() {
+    Cat a; Cat b;
+    a.age = 1; a.whiskers = 9;
+    b.age = 2; b.whiskers = 3;
+    console.write(a < b, ":");
+    Animal wa = a;
+    Animal wb = b;
+    console.write(wa < wb);
+}
+`, {}, { file: '/main.idyl' });
+  assert(family.success, family.runtimeError ?? family.compilation.diagnosticsText);
+  assert(family.output === 'false:true', `less family windows: ${family.output}`);
+});
+
+test('sort() is honest about what has an order', async () => {
+  // Улов ломателей 2026-09-02: sort() вложенных массивов молча сортировал
+  // по печатному виду — ровно та JS-ловушка «[10, 9, 1] → [1, 10, 9]», от
+  // которой урок arr-methods обещает защищать; цвета сортировались по
+  // hex-строке; моменты времени — по строке с поясом (враньё при разных
+  // поясах). Теперь: вложенные и бес-порядочные значения — отказ словами,
+  // моменты времени сортируются по мгновению, как их же знаки сравнения.
+  assertFails(
+    'main() {\n    dyn_array<dyn_array<int>> grid;\n    grid.sort();\n}',
+    'sort() cannot order arrays of arrays — sort each inner array on its own',
+  );
+  assertFails(
+    'use colors;\nmain() {\n    dyn_array<colors.Color> xs;\n    xs.sort();\n}',
+    "sort() cannot order 'colors.Color' values — they have no order",
+  );
+  const stamps = await runIdyllium(`use console;
+use time;
+main() {
+    dyn_array<time.stamp> xs;
+    xs.add(time.from_unix(3600));
+    xs.add(time.from_unix(0, "Asia/Yekaterinburg"));
+    xs.sort();
+    console.write(xs[0].unix, ":", xs[1].unix);
+}
+`, {}, { file: '/main.idyl' });
+  assert(stamps.success, stamps.runtimeError ?? stamps.compilation.diagnosticsText);
+  assert(stamps.output === '0:3600', `stamp sort by instant: ${stamps.output}`);
+});
+
+test('host reserved words and thenable members are refused readably', async () => {
+  // Улов ломателей 2026-09-02: `int await = 1;` ронял программу голым
+  // «Unexpected reserved word» без file:line, а метод then превращал объект
+  // в thenable — await молча вызывал его, и программа завершалась пустой.
+  for (const word of ['await', 'new', 'typeof', 'var', 'in', 'delete', 'enum', 'switch', 'import', 'yield']) {
+    assertFails(
+      `main() {\n    int ${word} = 1;\n}`,
+      `'${word}' is a reserved word and cannot be used as a name`,
+    );
+  }
+  assertFails(
+    'class await { int v; }\nmain() { }',
+    "'await' is a reserved word and cannot be used as a name",
+  );
+  assertFails(
+    'void function work(int new) { }\nmain() { work(1); }',
+    "'new' is a reserved word and cannot be used as a name",
+  );
+  assertFails(
+    'class Box {\n    int function then() { return 1; }\n}\nmain() { }',
+    "the name 'then' is reserved by the language — pick another name for method 'then'",
+  );
+  assertFails(
+    'class Box {\n    event then();\n}\nmain() { }',
+    "the name 'then' is reserved by the language — pick another name for event 'then'",
+  );
+  // Обычное поле-значение по имени then безвредно и остаётся законным.
+  const field = await runIdyllium(
+    'use console;\nclass Box { int then; }\nmain() {\n    Box b;\n    b.then = 5;\n    console.write(b.then);\n}\n',
+    {},
+    { file: '/main.idyl' },
+  );
+  assert(field.success && field.output === '5', `plain then field: ${field.output}`);
+
+  // `undefined` — не ключевое слово JS, но единственный голый глобал в
+  // сгенерированном коде (сравнение умолчаний параметров): параметр по
+  // имени undefined МОЛЧА перетирал переданный аргумент умолчанием, а
+  // локальная тень роняла программу TDZ-ошибкой без file:line.
+  assertFails(
+    'int function f(int undefined = 5) {\n    return undefined;\n}\nmain() { f(4); }',
+    "'undefined' is a reserved word and cannot be used as a name",
+  );
+  assertFails(
+    'int function f(int x = 7) {\n    int undefined = 0;\n    return x + undefined;\n}\nmain() { f(); }',
+    "'undefined' is a reserved word and cannot be used as a name",
+  );
+  // Поле-свойство с этим именем — легально (живёт на объекте, не биндингом).
+  const undefinedField = await runIdyllium(
+    'use console;\nclass C { int undefined; }\nmain() {\n    C a;\n    a.undefined = 8;\n    console.write(a.undefined);\n}\n',
+    {},
+    { file: '/main.idyl' },
+  );
+  assert(undefinedField.success && undefinedField.output === '8', `undefined field: ${undefinedField.output}`);
+});
+
+test('generated code leans only on $rt and undefined, not other bare globals', () => {
+  // Страж будущих эмитов: тень ученика безвредна, пока сгенерированный код
+  // не пользуется голыми глобальными именами. Сегодня единственное такое
+  // имя — undefined (уже зарезервировано); появится новое — этот тест
+  // назовёт его, и слово надо будет либо укрыть в $rt, либо зарезервировать.
+  const rich = compileIdyllium(`use console;
+class Hero {
+    int level;
+    constructor Hero(int ex_level) { this.level = ex_level; }
+    bool function less(Hero other) { return this.level < other.level; }
+    bool function equals(Hero other) { return this.level == other.level; }
+    string function to_string() { return to_string(this.level); }
+    int function boosted(int extra = 2) { return this.level + extra; }
+}
+int function pick(int a = 1) { return a; }
+main() {
+    dyn_array<Hero> xs;
+    xs.add(Hero(3));
+    xs.sort();
+    float f = 1.5 / 0.5;
+    array<int, 2> pair = [1, 2];
+    try {
+        int q = mod(3, 2);
+    } catch (err) {
+        console.writeln("не бывать");
+    }
+    console.writeln(xs, f, pair, pick(), xs[0].boosted(), xs[0] < xs[0]);
+}
+`, { file: '/main.idyl' });
+  assert(rich.success && rich.jsCode !== null, rich.diagnosticsText);
+  // Строковые литералы убираем, чтобы "Array" внутри JSON.stringify-строк
+  // не считался идентификатором.
+  const withoutStrings = (rich.jsCode ?? '').replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, '""');
+  const bareGlobals = ['NaN', 'Infinity', 'globalThis', 'Object', 'Array', 'Promise', 'Math', 'JSON',
+    'Number', 'String', 'Boolean', 'Symbol', 'BigInt', 'Reflect', 'Proxy', 'Map', 'Set', 'Date', 'RegExp'];
+  for (const name of bareGlobals) {
+    assert(
+      !new RegExp(`\\b${name}\\b`).test(withoutStrings),
+      `generated code uses bare global '${name}' — hide it behind $rt or reserve the name`,
+    );
+  }
+});
+
+test('nesting bombs get one readable refusal instead of a V8 stack', () => {
+  // Улов ломателей 2026-09-02: матрёшки из скобок/блоков и цепочки из
+  // тысяч операций роняли компилятор голым «Maximum call stack size
+  // exceeded»; после предела каскад эх глушится — про бомбу одна строка.
+  const parens = compileIdyllium(
+    `main() {\n    int a = ${'('.repeat(2000)}1${')'.repeat(2000)};\n}`,
+    { file: '/main.idyl' },
+  );
+  const parenLines = parens.diagnosticsText.trim().split('\n');
+  assert(
+    parenLines[0].includes('the expression is nested more than 300 levels deep — simplify it'),
+    `deep parens first line: ${parenLines[0]}`,
+  );
+  assert(parenLines.length <= 3, `deep parens cascade: ${parenLines.length} lines`);
+
+  const blocks = compileIdyllium(
+    `main() {\n${'if (true) {\n'.repeat(2000)}${'}\n'.repeat(2000)}}`,
+    { file: '/main.idyl' },
+  );
+  assert(
+    blocks.diagnosticsText.includes('the code is nested more than 300 levels deep — simplify it'),
+    `deep blocks: ${blocks.diagnosticsText.split('\n')[0]}`,
+  );
+
+  const chain = compileIdyllium(
+    `main() {\n    int a = ${Array(5000).fill('1').join(' + ')};\n}`,
+    { file: '/main.idyl' },
+  );
+  assert(
+    chain.diagnosticsText.includes('the expression chains more than 2000 operations — split it into steps'),
+    `long chain: ${chain.diagnosticsText.split('\n')[0]}`,
+  );
+});
+
+test('resize() respects the creatable-array-size cap', async () => {
+  // Улов ломателей 2026-09-02: страж размеров стоял на создании массива,
+  // а resize() шёл мимо него и падал голым JS «Invalid array length».
+  const huge = await runIdyllium(
+    'main() {\n    dyn_array<int> xs;\n    xs.resize(2000000000);\n}',
+    {},
+    { file: '/main.idyl' },
+  );
+  assert(
+    huge.runtimeError?.includes('array size 2000000000 is too large to create (maximum 100000000)') === true,
+    `resize cap: ${huge.runtimeError}`,
+  );
+});
+
+test('BOM is swallowed and invisible characters are named', async () => {
+  // Улов ломателей 2026-09-02: файл из «Блокнота» с BOM падал «unexpected
+  // character», а неразрывный пробел из Word печатался в ошибке как
+  // обычный пробел — виновника было не разглядеть.
+  const bom = await runIdyllium('\uFEFFuse console;\nmain() {\n    console.write("живой");\n}\n', {}, { file: '/main.idyl' });
+  assert(bom.success && bom.output === 'живой', `BOM program: ${bom.output ?? bom.compilation.diagnosticsText}`);
+
+  assertFails(
+    'main() {\n    int\u00A0a = 5;\n}',
+    'unexpected character a non-breaking space (U+00A0) — replace it with a regular space',
+  );
 });
 
 // Жанр «свой виджет» композицией (исследование some_widget_heirs): класс-обёртка

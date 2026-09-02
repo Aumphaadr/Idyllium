@@ -86,6 +86,22 @@ function normalizeHomoglyphs(name: string): string {
 const COMPARISON_CONTRACT_NAMES = ['equals', 'less', 'greater'] as const;
 type ComparisonContractName = (typeof COMPARISON_CONTRACT_NAMES)[number];
 
+/** Слова, зарезервированные миром под капотом: как имя переменной, параметра,
+ *  функции или класса они роняли бы сгенерированную программу голой ошибкой
+ *  без file:line (`int await = 1;` умирал «Unexpected reserved word»).
+ *  Ключевые слова самого Idyllium сюда не входят — их ловит лексер. */
+const HOST_RESERVED_NAMES = new Set([
+  'await', 'case', 'debugger', 'default', 'delete', 'enum', 'export',
+  'import', 'in', 'instanceof', 'new', 'super', 'switch', 'throw', 'typeof',
+  'var', 'with', 'let', 'yield', 'implements', 'interface', 'package',
+  'protected', 'arguments', 'eval',
+  // Не ключевое слово, но единственный голый глобал в сгенерированном коде:
+  // умолчания параметров сравниваются с `undefined`, и ученическая тень
+  // либо роняла программу TDZ-ошибкой без file:line, либо — параметром по
+  // имени undefined — молча перетирала переданный аргумент умолчанием.
+  'undefined',
+]);
+
 export interface SemanticResult {
   readonly success: boolean;
   readonly diagnostics: DiagnosticBag;
@@ -542,6 +558,10 @@ export class SemanticAnalyzer {
       this.markSemanticToken('class', declaration.baseNameRange);
     }
     if (this.refuseInternalName(declaration.name, 'class', declaration.range)) return;
+    if (HOST_RESERVED_NAMES.has(declaration.name)) {
+      this.diagnostics.error(declaration.range, `'${declaration.name}' is a reserved word and cannot be used as a name`);
+      return;
+    }
     if (this.classes.has(declaration.name)) {
       this.diagnostics.error(declaration.range, `class '${declaration.name}' is already declared`);
       return;
@@ -770,6 +790,7 @@ export class SemanticAnalyzer {
     for (const field of declaration.fields) {
       this.markSemanticToken('property', field.nameRange, ['declaration']);
       if (this.refuseInternalName(field.name, 'field', field.range)) continue;
+      if (fieldType.kind === 'function' && this.refuseThenableMember(field.name, 'field', field.range)) continue;
       if (info.fields.has(field.name) || info.methods.has(field.name)) {
         this.diagnostics.error(field.range, `class '${info.declaration.name}' already has member '${field.name}'`);
         continue;
@@ -817,6 +838,7 @@ export class SemanticAnalyzer {
       declaration.isStatic ? ['declaration', 'static'] : ['declaration'],
     );
     if (this.refuseInternalName(declaration.name, 'method', declaration.range)) return;
+    if (this.refuseThenableMember(declaration.name, 'method', declaration.range)) return;
     const inheritedField = info.fields.get(declaration.name);
     if (inheritedField && inheritedField.owner !== info.declaration.name) {
       this.diagnostics.error(declaration.range, `method '${declaration.name}' conflicts with inherited field '${inheritedField.owner}.${declaration.name}'`);
@@ -858,8 +880,10 @@ export class SemanticAnalyzer {
     if (inheritedMethod && !this.methodSignatureCanOverride(inheritedMethod, declaration)) {
       // Контрактное исключение: методы-контракты не наследуются, у каждого
       // класса — своя версия со СВОИМ типом параметра (equals(Cat) при
-      // базовом equals(Animal) — законно). Диспетчеризация — статическая.
-      if (!(declaration.name === 'equals' && this.isEqualsContractShape(info, declaration))) {
+      // базовом equals(Animal) — законно; less и greater — так же).
+      // Диспетчеризация — статическая.
+      if (!(COMPARISON_CONTRACT_NAMES.includes(declaration.name as ComparisonContractName)
+        && this.isEqualsContractShape(info, declaration))) {
         this.diagnostics.error(declaration.range, `method '${info.declaration.name}.${declaration.name}' must match inherited method signature`);
         return;
       }
@@ -1035,6 +1059,7 @@ export class SemanticAnalyzer {
     this.markSemanticToken('property', declaration.nameRange, ['declaration']);
 
     if (this.refuseInternalName(declaration.name, 'event', declaration.range)) return;
+    if (this.refuseThenableMember(declaration.name, 'event', declaration.range)) return;
     if (info.fields.has(declaration.name) || info.methods.has(declaration.name) || info.events.has(declaration.name)) {
       const inherited = !info.ownFields.has(declaration.name)
         && !info.ownMethods.has(declaration.name)
@@ -2873,6 +2898,27 @@ export class SemanticAnalyzer {
             );
             return null;
           }
+          // sort() честен только там, где у элементов есть порядок: числа,
+          // строки, символы, логические значения, моменты времени и классы
+          // с контрактом less. Вложенные массивы и библиотечные значения без
+          // порядка отказываются на компиляции — иначе сортировка молча шла
+          // бы по печатному виду (ровно та JS-ловушка, от которой язык
+          // обещает защищать).
+          if (callee.name === 'sort' && objectType.elementType.kind === 'array') {
+            this.diagnostics.error(
+              callee.range,
+              'sort() cannot order arrays of arrays — sort each inner array on its own',
+            );
+            return null;
+          }
+          if (callee.name === 'sort' && objectType.elementType.kind === 'qualified'
+            && !(objectType.elementType.moduleName === 'time' && objectType.elementType.name === 'stamp')) {
+            this.diagnostics.error(
+              callee.range,
+              `sort() cannot order '${typeToString(objectType.elementType)}' values — they have no order`,
+            );
+            return null;
+          }
           if (leaf !== null && callee.name === 'sort' && !this.typeOwnsEqualsContract(leaf, 'less')) {
             this.diagnostics.error(
               callee.range,
@@ -3881,9 +3927,23 @@ export class SemanticAnalyzer {
     return true;
   }
 
+  /** Слот 'then' на объекте делает его thenable для мира под капотом:
+   *  await такого значения молча вызывал бы ученический метод и терял
+   *  объект (программа завершалась без вывода и без ошибки). Запрещаем
+   *  функциональные члены с этим именем; обычное поле-значение безвредно. */
+  private refuseThenableMember(name: string, what: string, range: SourceRange): boolean {
+    if (name !== 'then') return false;
+    this.diagnostics.error(range, `the name 'then' is reserved by the language — pick another name for ${what} 'then'`);
+    return true;
+  }
+
   private checkReservedName(name: string, kind: SymbolInfo['kind'], range: SourceRange): boolean {
     if (name.startsWith('__')) {
       this.diagnostics.error(range, `names starting with '__' are reserved by the language — pick another name for ${kind} '${name}'`);
+      return false;
+    }
+    if (HOST_RESERVED_NAMES.has(name)) {
+      this.diagnostics.error(range, `'${name}' is a reserved word and cannot be used as a name`);
       return false;
     }
     if (this.stdlib.hasModule(name)) {

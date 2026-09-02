@@ -88,6 +88,10 @@ if (extensionPackage.version !== rootVersion) {
   console.log(`Extension version synced to ${rootVersion}`);
 }
 
+// Грамматика подсветки — генерат из словарей Web IDE (единый источник).
+const { execFileSync } = require('child_process');
+execFileSync(process.execPath, [path.join(__dirname, 'build-tm-grammar.js')], { stdio: 'inherit' });
+
 console.log(`Idyllium VS Code extension prepared at ${extensionDir}`);
 console.log(`Core copied to ${path.relative(rootDir, packagedCoreDir)}`);
 console.log(`GUI renderer copied to ${path.relative(rootDir, packagedRendererDir)}`);

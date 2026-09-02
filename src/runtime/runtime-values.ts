@@ -567,6 +567,12 @@ export class IdylliumArray {
       this.items.sort((left, right) => valueOps.compare(left as number | bigint, right as number | bigint));
       return;
     }
+    // Моменты времени упорядочены по мгновению — ровно как знаки сравнения;
+    // печатная строка зависит от пояса и порядку не судья.
+    if (this.items.every((item) => item instanceof IdylliumTimeStamp)) {
+      this.items.sort((left, right) => (left as IdylliumTimeStamp).instantMs - (right as IdylliumTimeStamp).instantMs);
+      return;
+    }
     this.items.sort((left, right) => valueOps.inspect(left).localeCompare(valueOps.inspect(right)));
   }
 
@@ -679,6 +685,11 @@ export class IdylliumArray {
     const size = integerNumber(value, 'array size', file, line);
     if (size < 0) {
       throw new IdylliumRuntimeError(file, line, `array size must be non-negative, got ${size}`);
+    }
+    // Тот же предел, что при создании массива: resize(2000000000) падал
+    // мимо стража голым JS «Invalid array length» (улов ломателей 2026-09-02).
+    if (size > MAX_CREATABLE_ARRAY_SIZE) {
+      throw new IdylliumRuntimeError(file, line, `array size ${size} is too large to create (maximum ${MAX_CREATABLE_ARRAY_SIZE})`);
     }
     return size;
   }

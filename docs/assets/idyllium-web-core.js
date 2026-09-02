@@ -3456,6 +3456,33 @@ var Idyllium = (() => {
       exports2.Lexer = void 0;
       var diagnostics_1 = require_diagnostics();
       var tokens_1 = require_tokens();
+      var INVISIBLE_CHARACTER_NAMES = /* @__PURE__ */ new Map([
+        [" ", "a non-breaking space (U+00A0)"],
+        [" ", "a figure space (U+2007)"],
+        [" ", "a narrow non-breaking space (U+202F)"],
+        [" ", "an invisible space character (U+2000)"],
+        [" ", "an invisible space character (U+2001)"],
+        [" ", "an invisible space character (U+2002)"],
+        [" ", "an invisible space character (U+2003)"],
+        [" ", "an invisible space character (U+2004)"],
+        [" ", "an invisible space character (U+2005)"],
+        [" ", "an invisible space character (U+2006)"],
+        [" ", "an invisible space character (U+2008)"],
+        [" ", "an invisible space character (U+2009)"],
+        [" ", "an invisible space character (U+200A)"],
+        ["​", "an invisible zero-width space (U+200B)"],
+        ["‌", "an invisible zero-width character (U+200C)"],
+        ["‍", "an invisible zero-width character (U+200D)"],
+        ["⁠", "an invisible word joiner (U+2060)"],
+        ["　", "an ideographic space (U+3000)"],
+        ["\uFEFF", "an invisible byte-order mark (U+FEFF)"]
+      ]);
+      function describeInvisibleCharacter(char) {
+        const named = INVISIBLE_CHARACTER_NAMES.get(char);
+        if (named)
+          return `${named} — replace it with a regular space`;
+        return null;
+      }
       var Lexer = class {
         source;
         file;
@@ -3473,6 +3500,8 @@ var Idyllium = (() => {
           this.file = file;
         }
         tokenize() {
+          if (this.peek() === "\uFEFF")
+            this.advance();
           while (!this.isAtEnd()) {
             this.scanToken();
           }
@@ -3613,7 +3642,7 @@ var Idyllium = (() => {
                 this.scanIdentifier(start, char);
                 return;
               }
-              this.bad(start, `unexpected character '${char}'`);
+              this.bad(start, `unexpected character ${describeInvisibleCharacter(char) ?? `'${char}'`}`);
           }
         }
         scanNumber(start, first) {
@@ -3896,12 +3925,23 @@ var Idyllium = (() => {
       exports2.Parser = void 0;
       var diagnostics_1 = require_diagnostics();
       var tokens_1 = require_tokens();
-      var Parser = class {
+      var Parser = class _Parser {
         tokens;
         diagnostics = new diagnostics_1.DiagnosticBag();
         current = 0;
         // Позиция последней подсказки про кавычку в строке — защита от повтора.
         quoteHintAt = -1;
+        // Пределы глубины: парсер, семантика и кодоген обходят дерево рекурсивно,
+        // и без предела программа-матрёшка роняла компилятор голым V8-текстом
+        // «Maximum call stack size exceeded» (жанр предела — как у веб-шаблонов).
+        nestingDepth = 0;
+        depthErrorReported = false;
+        // Длинная цепочка операций (`1+1+…` тысячами) строит глубокое дерево и
+        // роняет уже семантику — считаем узлы одного выражения-оператора.
+        expressionNodes = 0;
+        chainErrorReported = false;
+        static MAX_NESTING_DEPTH = 300;
+        static MAX_EXPRESSION_NODES = 2e3;
         constructor(tokens) {
           this.tokens = tokens;
         }
@@ -4067,6 +4107,50 @@ var Idyllium = (() => {
           };
         }
         parseStatement() {
+          if (this.nestingDepth === 0) {
+            this.expressionNodes = 0;
+            this.chainErrorReported = false;
+          }
+          if (this.nestingDepth >= _Parser.MAX_NESTING_DEPTH) {
+            return this.refuseDeepNesting();
+          }
+          this.nestingDepth = this.nestingDepth + 1;
+          try {
+            return this.parseStatementInner();
+          } finally {
+            this.nestingDepth = this.nestingDepth - 1;
+          }
+        }
+        /** Глубина превышена: одна ошибка словами, хвост матрёшки съедается до
+         *  конца оператора — без каскада «expected …» на каждую скобку. */
+        refuseDeepNesting() {
+          const range = this.peek().range;
+          if (!this.depthErrorReported) {
+            this.error(range, `the code is nested more than ${_Parser.MAX_NESTING_DEPTH} levels deep — simplify it`);
+            this.depthErrorReported = true;
+          }
+          let braces = 0;
+          while (!this.isAtEnd()) {
+            if (this.check(tokens_1.TokenKind.LeftBrace))
+              braces = braces + 1;
+            if (this.check(tokens_1.TokenKind.RightBrace)) {
+              if (braces === 0)
+                break;
+              braces = braces - 1;
+            }
+            if (braces === 0 && this.check(tokens_1.TokenKind.Semicolon)) {
+              this.advance();
+              break;
+            }
+            this.advance();
+          }
+          return {
+            kind: "ExpressionStatement",
+            expression: { kind: "LiteralExpression", value: 0, valueType: "int", range },
+            range
+          };
+        }
+        parseStatementInner() {
           if (this.check(tokens_1.TokenKind.KwConst)) {
             return this.parseVariableDeclaration();
           }
@@ -4615,7 +4699,22 @@ var Idyllium = (() => {
           };
         }
         parseExpression() {
-          return this.parseOr();
+          if (this.nestingDepth >= _Parser.MAX_NESTING_DEPTH) {
+            const range = this.peek().range;
+            if (!this.depthErrorReported) {
+              this.error(range, `the expression is nested more than ${_Parser.MAX_NESTING_DEPTH} levels deep — simplify it`);
+              this.depthErrorReported = true;
+            }
+            if (!this.isAtEnd())
+              this.advance();
+            return { kind: "LiteralExpression", value: 0, valueType: "int", range };
+          }
+          this.nestingDepth = this.nestingDepth + 1;
+          try {
+            return this.parseOr();
+          } finally {
+            this.nestingDepth = this.nestingDepth - 1;
+          }
         }
         parseOr() {
           let expression = this.parseXor();
@@ -4861,6 +4960,14 @@ var Idyllium = (() => {
           };
         }
         binary(left, operator, right) {
+          this.expressionNodes = this.expressionNodes + 1;
+          if (this.expressionNodes > _Parser.MAX_EXPRESSION_NODES) {
+            if (!this.chainErrorReported) {
+              this.chainErrorReported = true;
+              this.error(operator.range, `the expression chains more than ${_Parser.MAX_EXPRESSION_NODES} operations — split it into steps`);
+            }
+            return left;
+          }
           return {
             kind: "BinaryExpression",
             operator: this.operatorText(operator.kind),
@@ -5144,6 +5251,8 @@ var Idyllium = (() => {
           return this.tokens[this.current - 1];
         }
         error(range, message) {
+          if (this.depthErrorReported)
+            return;
           this.diagnostics.error(range, message);
         }
       };
@@ -5576,6 +5685,38 @@ var Idyllium = (() => {
         return result;
       }
       var COMPARISON_CONTRACT_NAMES = ["equals", "less", "greater"];
+      var HOST_RESERVED_NAMES = /* @__PURE__ */ new Set([
+        "await",
+        "case",
+        "debugger",
+        "default",
+        "delete",
+        "enum",
+        "export",
+        "import",
+        "in",
+        "instanceof",
+        "new",
+        "super",
+        "switch",
+        "throw",
+        "typeof",
+        "var",
+        "with",
+        "let",
+        "yield",
+        "implements",
+        "interface",
+        "package",
+        "protected",
+        "arguments",
+        "eval",
+        // Не ключевое слово, но единственный голый глобал в сгенерированном коде:
+        // умолчания параметров сравниваются с `undefined`, и ученическая тень
+        // либо роняла программу TDZ-ошибкой без file:line, либо — параметром по
+        // имени undefined — молча перетирала переданный аргумент умолчанием.
+        "undefined"
+      ]);
       exports2.IDYLLIUM_SEMANTIC_TOKEN_TYPES = [
         "namespace",
         "class",
@@ -5886,6 +6027,10 @@ var Idyllium = (() => {
           }
           if (this.refuseInternalName(declaration.name, "class", declaration.range))
             return;
+          if (HOST_RESERVED_NAMES.has(declaration.name)) {
+            this.diagnostics.error(declaration.range, `'${declaration.name}' is a reserved word and cannot be used as a name`);
+            return;
+          }
           if (this.classes.has(declaration.name)) {
             this.diagnostics.error(declaration.range, `class '${declaration.name}' is already declared`);
             return;
@@ -6102,6 +6247,8 @@ var Idyllium = (() => {
             this.markSemanticToken("property", field.nameRange, ["declaration"]);
             if (this.refuseInternalName(field.name, "field", field.range))
               continue;
+            if (fieldType.kind === "function" && this.refuseThenableMember(field.name, "field", field.range))
+              continue;
             if (info.fields.has(field.name) || info.methods.has(field.name)) {
               this.diagnostics.error(field.range, `class '${info.declaration.name}' already has member '${field.name}'`);
               continue;
@@ -6140,6 +6287,8 @@ var Idyllium = (() => {
           this.markSemanticToken("method", declaration.nameRange, declaration.isStatic ? ["declaration", "static"] : ["declaration"]);
           if (this.refuseInternalName(declaration.name, "method", declaration.range))
             return;
+          if (this.refuseThenableMember(declaration.name, "method", declaration.range))
+            return;
           const inheritedField = info.fields.get(declaration.name);
           if (inheritedField && inheritedField.owner !== info.declaration.name) {
             this.diagnostics.error(declaration.range, `method '${declaration.name}' conflicts with inherited field '${inheritedField.owner}.${declaration.name}'`);
@@ -6164,7 +6313,7 @@ var Idyllium = (() => {
             }
           }
           if (inheritedMethod && !this.methodSignatureCanOverride(inheritedMethod, declaration)) {
-            if (!(declaration.name === "equals" && this.isEqualsContractShape(info, declaration))) {
+            if (!(COMPARISON_CONTRACT_NAMES.includes(declaration.name) && this.isEqualsContractShape(info, declaration))) {
               this.diagnostics.error(declaration.range, `method '${info.declaration.name}.${declaration.name}' must match inherited method signature`);
               return;
             }
@@ -6314,6 +6463,8 @@ var Idyllium = (() => {
         registerClassEvent(info, declaration) {
           this.markSemanticToken("property", declaration.nameRange, ["declaration"]);
           if (this.refuseInternalName(declaration.name, "event", declaration.range))
+            return;
+          if (this.refuseThenableMember(declaration.name, "event", declaration.range))
             return;
           if (info.fields.has(declaration.name) || info.methods.has(declaration.name) || info.events.has(declaration.name)) {
             const inherited = !info.ownFields.has(declaration.name) && !info.ownMethods.has(declaration.name) && !info.ownEvents.has(declaration.name);
@@ -7768,6 +7919,14 @@ var Idyllium = (() => {
                   this.diagnostics.error(callee.range, `${callee.name}() cannot search for '${(0, types_1.typeToString)(leaf)}' objects — declare 'bool function equals(${(0, types_1.typeToString)(leaf)} other)' in class '${(0, types_1.typeToString)(leaf)}' and the search will use it`);
                   return null;
                 }
+                if (callee.name === "sort" && objectType.elementType.kind === "array") {
+                  this.diagnostics.error(callee.range, "sort() cannot order arrays of arrays — sort each inner array on its own");
+                  return null;
+                }
+                if (callee.name === "sort" && objectType.elementType.kind === "qualified" && !(objectType.elementType.moduleName === "time" && objectType.elementType.name === "stamp")) {
+                  this.diagnostics.error(callee.range, `sort() cannot order '${(0, types_1.typeToString)(objectType.elementType)}' values — they have no order`);
+                  return null;
+                }
                 if (leaf !== null && callee.name === "sort" && !this.typeOwnsEqualsContract(leaf, "less")) {
                   this.diagnostics.error(callee.range, `sort() cannot order '${(0, types_1.typeToString)(leaf)}' objects — declare 'bool function less(${(0, types_1.typeToString)(leaf)} other)' in class '${(0, types_1.typeToString)(leaf)}' and sort() will use it${leaf.kind === "class" ? this.contractShapeIssue(leaf.name, "less") : ""}`);
                   return null;
@@ -8598,9 +8757,23 @@ var Idyllium = (() => {
           this.diagnostics.error(range, `names starting with '__' are reserved by the language — pick another name for ${what} '${name}'`);
           return true;
         }
+        /** Слот 'then' на объекте делает его thenable для мира под капотом:
+         *  await такого значения молча вызывал бы ученический метод и терял
+         *  объект (программа завершалась без вывода и без ошибки). Запрещаем
+         *  функциональные члены с этим именем; обычное поле-значение безвредно. */
+        refuseThenableMember(name, what, range) {
+          if (name !== "then")
+            return false;
+          this.diagnostics.error(range, `the name 'then' is reserved by the language — pick another name for ${what} 'then'`);
+          return true;
+        }
         checkReservedName(name, kind, range) {
           if (name.startsWith("__")) {
             this.diagnostics.error(range, `names starting with '__' are reserved by the language — pick another name for ${kind} '${name}'`);
+            return false;
+          }
+          if (HOST_RESERVED_NAMES.has(name)) {
+            this.diagnostics.error(range, `'${name}' is a reserved word and cannot be used as a name`);
             return false;
           }
           if (this.stdlib.hasModule(name)) {
@@ -9442,6 +9615,10 @@ var Idyllium = (() => {
             this.items.sort((left, right) => exports2.valueOps.compare(left, right));
             return;
           }
+          if (this.items.every((item) => item instanceof IdylliumTimeStamp)) {
+            this.items.sort((left, right) => left.instantMs - right.instantMs);
+            return;
+          }
           this.items.sort((left, right) => exports2.valueOps.inspect(left).localeCompare(exports2.valueOps.inspect(right)));
         }
         add(value, file, line) {
@@ -9540,6 +9717,9 @@ var Idyllium = (() => {
           const size = (0, runtime_shared_12.integerNumber)(value, "array size", file, line);
           if (size < 0) {
             throw new runtime_errors_12.IdylliumRuntimeError(file, line, `array size must be non-negative, got ${size}`);
+          }
+          if (size > exports2.MAX_CREATABLE_ARRAY_SIZE) {
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, `array size ${size} is too large to create (maximum ${exports2.MAX_CREATABLE_ARRAY_SIZE})`);
           }
           return size;
         }
