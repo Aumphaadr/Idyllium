@@ -82,6 +82,14 @@ async function runCommand(args: readonly string[], io: CliIO): Promise<number> {
     compileOptions(file, io),
   );
 
+  // Файл-модуль без main() «успешно выполнялся» в тишину — честный отказ, как
+  // в Web IDE и расширении VS Code (вердикт владельца 2026-08-29); CLI отстал
+  // и был пойман многофайловым прогоном задачника 026 (2026-09-03).
+  if (result.compilation.success && !result.compilation.ast?.main) {
+    io.stderr(`В файле ${path.basename(file)} нет функции main() — запускать нечего.\n`);
+    return 1;
+  }
+
   if (!result.success) {
     if (result.compilation.diagnosticsText) io.stderr(`${result.compilation.diagnosticsText}\n`);
     if (result.runtimeError) {

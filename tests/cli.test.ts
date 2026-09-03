@@ -176,6 +176,27 @@ test('cli run finishes an unterminated console.write line before the error', asy
   );
 });
 
+test('cli run refuses a module file without main() instead of running emptiness', async () => {
+  // CLI отставал от Web IDE и VS Code (вердикт 2026-08-29): библиотека без
+  // main() «успешно» завершалась в тишину с кодом 0.
+  const result = await runTestCli(['run', 'greetings.idyl'], fileMap([
+    ['/work/greetings.idyl', [
+      'use console;',
+      '',
+      'void function hello(string name) {',
+      '    console.writeln("Привет, ", name, "!");',
+      '}',
+    ].join('\n')],
+  ]));
+
+  assert(result.code === 1, `unexpected exit code: ${result.code}`);
+  assert(result.stdout === '', `unexpected stdout: ${JSON.stringify(result.stdout)}`);
+  assert(
+    result.stderr === 'В файле greetings.idyl нет функции main() — запускать нечего.\n',
+    `unexpected stderr: ${JSON.stringify(result.stderr)}`,
+  );
+});
+
 test('cli run returns readable numeric input errors', async () => {
   const result = await runTestCli(['run', 'main.idyl'], fileMap([
     ['/work/main.idyl', [
