@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "languageVersion": "1.5.5",
-  "generatedAt": "2026-09-02T22:18:38.775Z",
+  "languageVersion": "1.5.6",
+  "generatedAt": "2026-09-07T19:29:00.004Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "general": [
     {
@@ -338,6 +338,21 @@
           "title": "Границы",
           "description": "Индекс обязан находиться между `0` и `length - 1`. Выход за границы приводит к понятной runtime error, а не к `undefined`.",
           "code": "dyn_array<int> values = [44, 35, 122];\nconsole.writeln(values[5]);\n// runtime error: array index 5 out of bounds"
+        },
+        {
+          "title": "Словарь: map<K, V>",
+          "description": "Словарь — коллекция-значение, как массивы, с теми же правилами: копия при присваивании, передаче и возврате, а индексация меняет хранимый элемент на месте. Всегда два параметра типа (map — ключевое слово). Литерал {ключ: значение, …} берёт тип из контекста; дубль ключа в литерале — ошибка компиляции. Квадратные скобки вставляют или заменяют; чтение отсутствующего ключа — ошибка выполнения `map has no key \"Хома\"`, страховка — has() и get_or(key, fallback). Порядок обхода — порядок вставки; keys() и values() отдают dyn_array-копии в этом порядке.",
+          "code": "use console;\n\nmain() {\n    map<string, int> ages = {\"Мира\": 12, \"Кай\": 9};\n    ages[\"Тася\"] = 15;                // вставка\n    ages[\"Мира\"] = ages[\"Мира\"] + 1; // замена\n    console.writeln(ages);            // {\"Мира\": 13, \"Кай\": 9, \"Тася\": 15}\n    console.writeln(ages.has(\"Кай\"), \" \", ages.get_or(\"Хома\", 0));\n\n    map<string, int> count;\n    dyn_array<string> words = [\"а\", \"б\", \"а\"];\n    for (int i = 0; i < words.length; i = i + 1) {\n        count[words[i]] = count.get_or(words[i], 0) + 1;\n    }\n    console.writeln(count);           // {\"а\": 2, \"б\": 1}\n    console.writeln(ages[\"Хома\"]);    // runtime error: map has no key \"Хома\"\n}"
+        },
+        {
+          "title": "Ключи словаря и его члены",
+          "description": "Ключом может быть тип с точным встроенным равенством: int, string, char или bool. float — нет навсегда (сам язык предупреждает, что такие числа почти никогда не равны), объекты классов — нет (нет хеш-контракта), коллекции — нет. Ключи int точны и за пределами 2^53. Члены: length, has(key), get_or(key, fallback), remove(key) (отсутствующий ключ — ошибка), keys(), values(), clear(), join(other) (все пары other, при совпадении побеждает other). Равенство == сравнивает содержимое без учёта порядка; объекты-значения сравниваются через контракт equals и печатаются через to_string, как в массивах. Знаков порядка и sort() у словарей нет: сортируйте keys().",
+          "code": "use console;\n\nmain() {\n    map<int, string> ranks = {1: \"золото\", 2: \"серебро\"};\n    map<bool, string> flags = {true: \"да\", false: \"нет\"};\n    console.writeln(ranks, flags[false]);   // {1: \"золото\", 2: \"серебро\"}нет\n\n    map<string, int> a = {\"x\": 1, \"y\": 2};\n    map<string, int> b = {\"y\": 2, \"x\": 1};\n    console.writeln(a == b);                // true — порядок не важен\n\n    dyn_array<string> ks = a.keys();\n    ks.sort();\n    console.writeln(ks);                    // [\"x\", \"y\"]\n\n    // map<float, int> bad;   // compile error: cannot use 'float' as a map key — …\n}"
+        },
+        {
+          "title": "Множество: set<T>",
+          "description": "Множество хранит каждый элемент один раз, в порядке вставки. Правила значения — как у массивов и словарей; элементы — те же типы, что ключи словаря (int, string, char, bool). `set` — контекстное слово: типом становится только в форме set<T>, методы с именем set (json.Object.set) живут; переменная или функция с именем set — отказ. Литерал {1, 2, 3}, дубль в литерале — ошибка компиляции. Члены: length, add (повтор — молча), has, remove (отсутствующий — ошибка выполнения), clear, values() (копия в порядке вставки), чистая алгебра union/intersection/difference (новое множество) и is_subset. Индексации, join и sort нет; равенство не зависит от порядка. Пустые {} — пустая коллекция по объявленному типу (словарь или множество); без объявленного типа — ошибка компиляции.",
+          "code": "use console;\n\nmain() {\n    set<int> a = {1, 2, 3};\n    a.add(2);                             // уже есть — ничего не меняется\n    console.writeln(a, \" \", a.has(3));    // {1, 2, 3} true\n\n    set<int> b = {3, 4};\n    console.writeln(a.union(b));          // {1, 2, 3, 4}\n    console.writeln(a.intersection(b));   // {3}\n    console.writeln(a.difference(b));     // {1, 2}\n    console.writeln(a == b, \" \", b.is_subset(a));   // false false\n\n    set<string> seen = {};\n    dyn_array<string> words = [\"а\", \"б\", \"а\"];\n    for (int i = 0; i < words.length; i = i + 1) {\n        seen.add(words[i]);\n    }\n    console.writeln(seen, \" \", seen.length);   // {\"а\", \"б\"} 2\n}"
         }
       ]
     },
@@ -768,12 +783,14 @@
     {
       "name": "math",
       "title": "Математика",
-      "description": "Округление, степени, корни, тригонометрия, логарифмы и математические константы.",
+      "description": "Округление, степени, корни, тригонометрия, логарифмы, целочисленная арифметика (НОД, НОК, факториал, простые числа, делители) и математические константы.",
       "notes": [
         "Тригонометрические функции принимают углы в радианах.",
-        "Для перевода градусов используйте to_radians(), для обратного перевода — to_degrees()."
+        "Для перевода градусов используйте to_radians(), для обратного перевода — to_degrees().",
+        "Целочисленные функции gcd(), lcm(), factorial() считают точно при любом размере чисел — 100! печатает все 158 цифр; is_prime() отвечает точно (без «вероятно простое») для чисел до 3317044064679887385961980, для больших — честная ошибка.",
+        "sign() повторяет тип аргумента, как abs(): sign(-5) — int -1, sign(-2.5) — float -1."
       ],
-      "example": "float root = math.sqrt(81);       // 9\nint rounded = math.round(3.6);     // 4\nfloat angle = math.to_radians(90);",
+      "example": "float root = math.sqrt(81);       // 9\nint rounded = math.round(3.6);     // 4\nfloat angle = math.to_radians(90);\nint common = math.gcd(12, 18);      // 6\nbool prime = math.is_prime(97);     // true\ndyn_array<int> parts = math.divisors(12); // [1, 2, 3, 4, 6, 12]",
       "fullExamples": [],
       "functions": [
         {
@@ -945,6 +962,40 @@
           "documentation": ""
         },
         {
+          "name": "divisors",
+          "signature": "divisors(n: int): dyn_array<int>",
+          "returnType": "dyn_array<int>",
+          "parameters": [
+            {
+              "name": "n",
+              "type": "int",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Все делители положительного числа по возрастанию: divisors(12) — [1, 2, 3, 4, 6, 12]. n — от 1 до 9007199254740991."
+        },
+        {
+          "name": "factorial",
+          "signature": "factorial(n: int): int",
+          "returnType": "int",
+          "parameters": [
+            {
+              "name": "n",
+              "type": "int",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "n! — произведение чисел от 1 до n; factorial(0) — 1. Считается точно: 100! печатает все 158 цифр. n — от 0 до 10000."
+        },
+        {
           "name": "floor",
           "signature": "floor(value: float, [digits: int]): float",
           "returnType": "float",
@@ -968,6 +1019,98 @@
           ],
           "variadic": false,
           "documentation": "Округляет вниз. Без digits возвращает int; с digits — float, отрезанный до указанного числа знаков."
+        },
+        {
+          "name": "gcd",
+          "signature": "gcd(a: int, b: int): int",
+          "returnType": "int",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "int",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            },
+            {
+              "name": "b",
+              "type": "int",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Наибольший общий делитель двух целых. Знак не важен: gcd(-12, 18) — 6; gcd(0, 0) — 0. Точен при любом размере чисел."
+        },
+        {
+          "name": "hypot",
+          "signature": "hypot(a: float, b: float): float",
+          "returnType": "float",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "float",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            },
+            {
+              "name": "b",
+              "type": "float",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Длина гипотенузы по двум катетам — sqrt(a² + b²): расстояние между точками на холсте без ручного возведения в квадрат."
+        },
+        {
+          "name": "is_prime",
+          "signature": "is_prime(n: int): bool",
+          "returnType": "bool",
+          "parameters": [
+            {
+              "name": "n",
+              "type": "int",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Простое ли число: true для 2, 3, 5, 7…; false для 0, 1, отрицательных и составных. Проверка точная (без вероятностных «почти простых») для чисел до 3317044064679887385961980."
+        },
+        {
+          "name": "lcm",
+          "signature": "lcm(a: int, b: int): int",
+          "returnType": "int",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "int",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            },
+            {
+              "name": "b",
+              "type": "int",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Наименьшее общее кратное двух целых; если одно из них 0 — 0. Точен при любом размере чисел."
         },
         {
           "name": "log",
@@ -1052,6 +1195,23 @@
           ],
           "variadic": false,
           "documentation": "Округляет к ближайшему. Без digits возвращает int; с digits — float с указанным числом знаков после точки."
+        },
+        {
+          "name": "sign",
+          "signature": "sign(value: float): float",
+          "returnType": "float",
+          "parameters": [
+            {
+              "name": "value",
+              "type": "float",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Знак числа: -1, 0 или 1. Тип результата повторяет аргумент: sign(int) даёт int, sign(float) — float."
         },
         {
           "name": "sin",
@@ -11592,6 +11752,329 @@
               ],
               "variadic": false,
               "documentation": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "csv",
+      "title": "CSV-таблицы",
+      "description": "Чтение и запись таблиц с разделителями — файлов Excel, Google Таблиц и учебных наборов данных — без ручного разрезания строк.",
+      "notes": [
+        "Первая строка файла — заголовки колонок; данные читаются по имени колонки: table.get(0, \"уровень\"). Все ячейки — строки: число получают через to_int(), а записывают через to_string(), как в gui.Table.",
+        "Разделитель угадывается по первой строке (точка с запятой русского Excel, запятая или табуляция) и запоминается в table.separator; вторым аргументом csv.parse/csv.read его можно задать явно. Таблица пишется тем же разделителем.",
+        "Кавычки понимаются по правилам CSV: ячейка в кавычках может содержать разделитель, перенос строки и удвоенную кавычку «\"\"». BOM в начале файла Excel пропускается.",
+        "Строка с лишними ячейками — ошибка выполнения с номером строки (разъехался разделитель), недостающие ячейки в конце строки считаются пустыми.",
+        "Файлы читаются и пишутся в UTF-8. Русский Excel сохраняет CSV в Windows-1251 — такой файл сначала перекодируйте (библиотека encoding) или сохраните из Excel как «CSV UTF-8»."
+      ],
+      "example": "use console;\nuse csv;\n\nmain() {\n    csv.Table heroes = csv.read(\"heroes.csv\");\n    for (int i = 0; i < heroes.row_count; i = i + 1) {\n        console.writeln(heroes.get(i, \"имя\"), \": уровень \", heroes.get(i, \"уровень\"));\n    }\n    heroes.add_row(\"Тася\", \"лучник\", \"15\");\n    csv.write(\"heroes.csv\", heroes);\n}",
+      "fullExamples": [],
+      "functions": [
+        {
+          "name": "parse",
+          "signature": "parse(text: string, [separator: string]): csv.Table",
+          "returnType": "csv.Table",
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            },
+            {
+              "name": "separator",
+              "type": "string",
+              "optional": true,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Разбирает текст CSV в таблицу: первая строка — заголовки колонок. Разделитель угадывается по первой строке (; , или табуляция) и запоминается в таблице; второй аргумент задаёт его явно. Кавычки, «\"\"» и переносы строк внутри кавычек понимаются; BOM Excel пропускается."
+        },
+        {
+          "name": "read",
+          "signature": "read(path: string, [separator: string]): csv.Table",
+          "returnType": "csv.Table",
+          "parameters": [
+            {
+              "name": "path",
+              "type": "string",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            },
+            {
+              "name": "separator",
+              "type": "string",
+              "optional": true,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Читает CSV-файл проекта (UTF-8) в таблицу — как csv.parse над содержимым файла. Отсутствующий файл — ошибка выполнения."
+        },
+        {
+          "name": "write",
+          "signature": "write(path: string, table: csv.Table): void",
+          "returnType": "void",
+          "parameters": [
+            {
+              "name": "path",
+              "type": "string",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            },
+            {
+              "name": "table",
+              "type": "csv.Table",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Записывает таблицу в файл проекта (UTF-8): заголовок и строки, разделитель — table.separator; ячейки с разделителем, кавычками или переносами строк берутся в кавычки. Существующий файл перезаписывается."
+        }
+      ],
+      "constants": [],
+      "types": [
+        {
+          "name": "Table",
+          "qualifiedName": "csv.Table",
+          "baseType": "",
+          "description": "Таблица CSV: заголовок и строки ячеек-строк. Библиотечный объект — присваивание не копирует таблицу, а даёт вторую ссылку на неё.",
+          "notes": [
+            "get() и set() адресуют ячейку номером строки (с нуля, заголовок не считается) и ИМЕНЕМ колонки; нет такой колонки — ошибка выполнения «csv table has no column …», проверяйте has_column().",
+            "find(column, text) ищет строку по точному совпадению ячейки и отдаёт её номер или -1 — идиома «найти героя по имени».",
+            "row() и column() отдают копии (dyn_array<string>); изменение копии таблицу не трогает.",
+            "Объявленная без вызова таблица (csv.Table t;) пуста: set_columns() задаёт заголовок (и очищает строки), add_row() требует ровно по значению на колонку.",
+            "Печать таблицы (console.write(t)) и to_string() дают текст CSV с текущим separator."
+          ],
+          "example": "csv.Table t;\nt.set_columns(\"имя\", \"уровень\");\nt.add_row(\"Мира\", to_string(12));\nt.add_row(\"Кай\", to_string(9));\nint row = t.find(\"имя\", \"Кай\");\nt.set(row, \"уровень\", \"10\");\nconsole.write(t);   // имя;уровень / Мира;12 / Кай;10",
+          "properties": [
+            {
+              "name": "column_count",
+              "type": "int",
+              "readonly": true,
+              "documentation": "Сколько колонок в заголовке.",
+              "callbacks": []
+            },
+            {
+              "name": "columns",
+              "type": "dyn_array<string>",
+              "readonly": true,
+              "documentation": "Имена колонок по порядку — копия заголовка.",
+              "callbacks": []
+            },
+            {
+              "name": "row_count",
+              "type": "int",
+              "readonly": true,
+              "documentation": "Сколько строк данных в таблице (заголовок не считается).",
+              "callbacks": []
+            },
+            {
+              "name": "separator",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Разделитель ячеек — один символ. После csv.parse/csv.read — угаданный или заданный; у новой таблицы \";\". Им пишут to_string() и csv.write().",
+              "callbacks": []
+            }
+          ],
+          "methods": [
+            {
+              "name": "add_row",
+              "signature": "add_row(...values: string): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": true,
+              "documentation": "Добавляет строку. Значений должно быть ровно столько, сколько колонок; числа переводите через to_string()."
+            },
+            {
+              "name": "clear",
+              "signature": "clear(): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "Удаляет все строки, заголовок остаётся."
+            },
+            {
+              "name": "column",
+              "signature": "column(column: string): dyn_array<string>",
+              "returnType": "dyn_array<string>",
+              "parameters": [
+                {
+                  "name": "column",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Все значения одной колонки сверху вниз — копия."
+            },
+            {
+              "name": "find",
+              "signature": "find(column: string, text: string): int",
+              "returnType": "int",
+              "parameters": [
+                {
+                  "name": "column",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "text",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Номер первой строки, где в колонке стоит ровно этот текст; -1, если такой нет."
+            },
+            {
+              "name": "get",
+              "signature": "get(row: int, column: string): string",
+              "returnType": "string",
+              "parameters": [
+                {
+                  "name": "row",
+                  "type": "int",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "column",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Ячейка по номеру строки (с нуля) и имени колонки. Всегда строка: число получите через to_int(). Нет такой колонки или строки — ошибка выполнения."
+            },
+            {
+              "name": "has_column",
+              "signature": "has_column(column: string): bool",
+              "returnType": "bool",
+              "parameters": [
+                {
+                  "name": "column",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Есть ли колонка с таким именем — проверка перед get()."
+            },
+            {
+              "name": "remove_row",
+              "signature": "remove_row(row: int): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "row",
+                  "type": "int",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Удаляет строку по номеру (с нуля)."
+            },
+            {
+              "name": "row",
+              "signature": "row(row: int): dyn_array<string>",
+              "returnType": "dyn_array<string>",
+              "parameters": [
+                {
+                  "name": "row",
+                  "type": "int",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Все ячейки строки по порядку колонок — копия."
+            },
+            {
+              "name": "set",
+              "signature": "set(row: int, column: string, text: string): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "row",
+                  "type": "int",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "column",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "text",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Заменяет текст одной ячейки."
+            },
+            {
+              "name": "set_columns",
+              "signature": "set_columns(...values: string): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": true,
+              "documentation": "Задаёт заголовки колонок; строки при этом удаляются."
+            },
+            {
+              "name": "to_string",
+              "signature": "to_string(): string",
+              "returnType": "string",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "Таблица как текст CSV — тем же, что запишет csv.write()."
             }
           ]
         }

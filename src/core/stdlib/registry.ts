@@ -385,6 +385,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   const fileOStream = qualified('file', 'ostream');
   const jsonValue = qualified('json', 'Value');
   const xmlNode = qualified('xml', 'Node');
+  const csvTable = qualified('csv', 'Table');
   const jsonObject = qualified('json', 'Object');
   const jsonArray = qualified('json', 'Array');
   const sqliteDatabase = qualified('sqlite', 'Database');
@@ -498,6 +499,28 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     functionSpec('log10', [{ name: 'value', type: FLOAT }], FLOAT),
     functionSpec('to_radians', [{ name: 'degrees', type: FLOAT }], FLOAT),
     functionSpec('to_degrees', [{ name: 'radians', type: FLOAT }], FLOAT),
+    functionSpec('gcd', [{ name: 'a', type: INT }, { name: 'b', type: INT }], INT, {
+      documentation: 'Наибольший общий делитель двух целых. Знак не важен: gcd(-12, 18) — 6; gcd(0, 0) — 0. Точен при любом размере чисел.',
+    }),
+    functionSpec('lcm', [{ name: 'a', type: INT }, { name: 'b', type: INT }], INT, {
+      documentation: 'Наименьшее общее кратное двух целых; если одно из них 0 — 0. Точен при любом размере чисел.',
+    }),
+    functionSpec('factorial', [{ name: 'n', type: INT }], INT, {
+      documentation: 'n! — произведение чисел от 1 до n; factorial(0) — 1. Считается точно: 100! печатает все 158 цифр. n — от 0 до 10000.',
+    }),
+    functionSpec('is_prime', [{ name: 'n', type: INT }], BOOL, {
+      documentation: 'Простое ли число: true для 2, 3, 5, 7…; false для 0, 1, отрицательных и составных. Проверка точная (без вероятностных «почти простых») для чисел до 3317044064679887385961980.',
+    }),
+    functionSpec('divisors', [{ name: 'n', type: INT }], arrayType(INT, null, true), {
+      documentation: 'Все делители положительного числа по возрастанию: divisors(12) — [1, 2, 3, 4, 6, 12]. n — от 1 до 9007199254740991.',
+    }),
+    functionSpec('sign', [{ name: 'value', type: FLOAT }], FLOAT, {
+      returnTypeRule: 'match-integer-argument',
+      documentation: 'Знак числа: -1, 0 или 1. Тип результата повторяет аргумент: sign(int) даёт int, sign(float) — float.',
+    }),
+    functionSpec('hypot', [{ name: 'a', type: FLOAT }, { name: 'b', type: FLOAT }], FLOAT, {
+      documentation: 'Длина гипотенузы по двум катетам — sqrt(a² + b²): расстояние между точками на холсте без ручного возведения в квадрат.',
+    }),
   ], [
     { name: 'pi', type: FLOAT, documentation: 'Число π.' },
     { name: 'e', type: FLOAT, documentation: 'Число Эйлера.' },
@@ -944,6 +967,86 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
         documentation: 'Первый потомок-тег с этим именем; если такого нет — ошибка выполнения.',
       }),
       functionSpec('has', [{ name: 'tag', type: STRING }], BOOL),
+    ]),
+  ]));
+
+  registry.registerModule(moduleSpec('csv', [
+    functionSpec('parse', [
+      { name: 'text', type: STRING },
+      { name: 'separator', type: STRING },
+    ], csvTable, {
+      minArguments: 1,
+      documentation: 'Разбирает текст CSV в таблицу: первая строка — заголовки колонок. Разделитель угадывается по первой строке (; , или табуляция) и запоминается в таблице; второй аргумент задаёт его явно. Кавычки, «""» и переносы строк внутри кавычек понимаются; BOM Excel пропускается.',
+    }),
+    functionSpec('read', [
+      { name: 'path', type: STRING },
+      { name: 'separator', type: STRING },
+    ], csvTable, {
+      minArguments: 1,
+      documentation: 'Читает CSV-файл проекта (UTF-8) в таблицу — как csv.parse над содержимым файла. Отсутствующий файл — ошибка выполнения.',
+    }),
+    functionSpec('write', [
+      { name: 'path', type: STRING },
+      { name: 'table', type: csvTable },
+    ], VOID, {
+      documentation: 'Записывает таблицу в файл проекта (UTF-8): заголовок и строки, разделитель — table.separator; ячейки с разделителем, кавычками или переносами строк берутся в кавычки. Существующий файл перезаписывается.',
+    }),
+  ], [], [
+    typeSpec('Table', [
+      propertySpec('row_count', INT, true, 'Сколько строк данных в таблице (заголовок не считается).'),
+      propertySpec('column_count', INT, true, 'Сколько колонок в заголовке.'),
+      propertySpec('columns', arrayType(STRING, null, true), true, 'Имена колонок по порядку — копия заголовка.'),
+      propertySpec('separator', STRING, false, 'Разделитель ячеек — один символ. После csv.parse/csv.read — угаданный или заданный; у новой таблицы ";". Им пишут to_string() и csv.write().'),
+    ], [
+      functionSpec('set_columns', [], VOID, {
+        variadic: true,
+        variadicTypes: [STRING],
+        minArguments: 1,
+        documentation: 'Задаёт заголовки колонок; строки при этом удаляются.',
+      }),
+      functionSpec('add_row', [], VOID, {
+        variadic: true,
+        variadicTypes: [STRING],
+        minArguments: 1,
+        documentation: 'Добавляет строку. Значений должно быть ровно столько, сколько колонок; числа переводите через to_string().',
+      }),
+      functionSpec('get', [
+        { name: 'row', type: INT },
+        { name: 'column', type: STRING },
+      ], STRING, {
+        documentation: 'Ячейка по номеру строки (с нуля) и имени колонки. Всегда строка: число получите через to_int(). Нет такой колонки или строки — ошибка выполнения.',
+      }),
+      functionSpec('set', [
+        { name: 'row', type: INT },
+        { name: 'column', type: STRING },
+        { name: 'text', type: STRING },
+      ], VOID, {
+        documentation: 'Заменяет текст одной ячейки.',
+      }),
+      functionSpec('row', [{ name: 'row', type: INT }], arrayType(STRING, null, true), {
+        documentation: 'Все ячейки строки по порядку колонок — копия.',
+      }),
+      functionSpec('column', [{ name: 'column', type: STRING }], arrayType(STRING, null, true), {
+        documentation: 'Все значения одной колонки сверху вниз — копия.',
+      }),
+      functionSpec('has_column', [{ name: 'column', type: STRING }], BOOL, {
+        documentation: 'Есть ли колонка с таким именем — проверка перед get().',
+      }),
+      functionSpec('find', [
+        { name: 'column', type: STRING },
+        { name: 'text', type: STRING },
+      ], INT, {
+        documentation: 'Номер первой строки, где в колонке стоит ровно этот текст; -1, если такой нет.',
+      }),
+      functionSpec('remove_row', [{ name: 'row', type: INT }], VOID, {
+        documentation: 'Удаляет строку по номеру (с нуля).',
+      }),
+      functionSpec('clear', [], VOID, {
+        documentation: 'Удаляет все строки, заголовок остаётся.',
+      }),
+      functionSpec('to_string', [], STRING, {
+        documentation: 'Таблица как текст CSV — тем же, что запишет csv.write().',
+      }),
     ]),
   ]));
 

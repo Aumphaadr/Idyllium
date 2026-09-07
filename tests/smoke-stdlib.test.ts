@@ -3105,3 +3105,186 @@ main() {
 }
 `, "cannot assign 'dyn_array<int>' value to 'int' variable");
 });
+
+test('math integer helpers are exact and refuse out-of-range arguments', async () => {
+  // 1.5.6, карточка 3.1 спеки some_libraries: gcd/lcm/factorial/is_prime/
+  // divisors/sign/hypot. Канон бесконечного int — 100! целиком, gcd гигантов.
+  const scene = await runIdyllium(`use console;
+use math;
+
+main() {
+    console.writeln(math.gcd(12, 18), " ", math.gcd(-12, 18), " ", math.gcd(0, 0), " ", math.gcd(0, 7));
+    console.writeln(math.lcm(4, 6), " ", math.lcm(0, 5), " ", math.lcm(-3, 7));
+    console.writeln(math.factorial(0), " ", math.factorial(5), " ", math.factorial(25));
+    console.writeln(math.factorial(100));
+    console.writeln(math.is_prime(2), " ", math.is_prime(1), " ", math.is_prime(0), " ", math.is_prime(-7), " ", math.is_prime(97), " ", math.is_prime(1000000007), " ", math.is_prime(1000000008));
+    console.writeln(math.is_prime(2305843009213693951), " ", math.is_prime(2305843009213693953));
+    console.writeln(math.divisors(12), " ", math.divisors(1), " ", math.divisors(97), " ", math.divisors(36));
+    console.writeln(math.sign(-5), " ", math.sign(0), " ", math.sign(7), " ", math.sign(-2.5));
+    console.writeln(type_name(math.sign(3)), " ", type_name(math.sign(3.0)));
+    console.writeln(math.hypot(3, 4), " ", math.hypot(1, 1));
+    console.writeln(math.gcd(123456789123456789123456789, 987654321987654321));
+    int common = math.gcd(8, 12);
+    bool prime = math.is_prime(13);
+    dyn_array<int> parts = math.divisors(6);
+    console.writeln(common, " ", prime, " ", parts.length);
+}
+`, {}, { file: 'main.idyl' });
+  assert(scene.success, scene.runtimeError ?? scene.compilation.diagnosticsText);
+  const expected = [
+    '6 6 0 7',
+    '12 0 21',
+    '1 120 15511210043330985984000000',
+    '93326215443944152681699238856266700490715968264381621468592963895217599993229915608941463976156518286253697920827223758251185210916864000000000000000000000000',
+    'true false false false true true false',
+    'true false', // 2^61 - 1 — простое Мерсенна; 2^61 + 1 делится на 3
+    '[1, 2, 3, 4, 6, 12] [1] [1, 97] [1, 2, 3, 4, 6, 9, 12, 18, 36]',
+    '-1 0 1 -1',
+    'int float',
+    '5 1.41421356',
+    '9',
+    '4 true 4',
+    '',
+  ].join('\n');
+  assert(scene.output === expected, `math helpers drifted: ${JSON.stringify(scene.output)}`);
+
+  await assertRuntimeFails('use math;\nmain() {\n    math.factorial(-1);\n}', 'math.factorial() n must be between 0 and 10000, got -1');
+  await assertRuntimeFails('use math;\nmain() {\n    math.factorial(20000);\n}', 'math.factorial() n must be between 0 and 10000, got 20000');
+  await assertRuntimeFails('use math;\nmain() {\n    math.divisors(0);\n}', 'math.divisors() n must be a positive number, got 0');
+  await assertRuntimeFails(
+    'use math;\nmain() {\n    math.is_prime(3317044064679887385961981);\n}',
+    'math.is_prime() n must be at most 3317044064679887385961980, got 3317044064679887385961981',
+  );
+  // Целочисленные помощники принимают только int — дробь не усекается молча.
+  assertFails('use math;\nmain() {\n    math.gcd(2.5, 3);\n}', "'gcd' argument 1 expects 'int', got 'float'");
+  assertFails('use math;\nmain() {\n    int bad = math.hypot(3, 4);\n}', "cannot assign 'float' value to 'int' variable");
+});
+
+test('csv parses, edits, prints and round-trips tables', async () => {
+  // 1.5.6, карточка 3.4 спеки some_libraries / дизайн some_csv/01: RFC-кавычки,
+  // переносы внутри кавычек, автоопределение разделителя, BOM и CRLF Excel,
+  // ячейки — строки, ошибки с номером строки.
+  const parsed = await runIdyllium(`use console;
+use csv;
+
+main() {
+    csv.Table t = csv.parse("name,comment,score\\nAlice,\\"Любит числа, запятые и таблицы\\",42\\nБорис,\\"Первая строка\\nвторая строка\\",17\\n\\"Лиам \\"\\"Молния\\"\\"\\",\\"Кавычки внутри значения\\",99\\n");
+    console.writeln(t.row_count, " ", t.column_count, " ", t.columns, " [", t.separator, "]");
+    console.writeln(t.get(0, "comment"));
+    console.writeln(t.get(1, "comment"));
+    console.writeln(t.get(2, "name"), " ", to_int(t.get(2, "score")) + 1);
+    console.writeln(t.row(0));
+    console.writeln(t.column("score"));
+    console.writeln(t.find("name", "Борис"), " ", t.find("name", "Хома"), " ", t.has_column("score"), " ", t.has_column("x"));
+    console.write(t);
+    console.writeln(t.to_string() == to_string(t));
+}
+`, {}, { file: 'main.idyl' });
+  assert(parsed.success, parsed.runtimeError ?? parsed.compilation.diagnosticsText);
+  assert(parsed.output === [
+    '3 3 ["name", "comment", "score"] [,]',
+    'Любит числа, запятые и таблицы',
+    'Первая строка',
+    'вторая строка',
+    'Лиам "Молния" 100',
+    '["Alice", "Любит числа, запятые и таблицы", "42"]',
+    '["42", "17", "99"]',
+    '1 -1 true false',
+    'name,comment,score',
+    'Alice,"Любит числа, запятые и таблицы",42',
+    'Борис,"Первая строка',
+    'вторая строка",17',
+    '"Лиам ""Молния""",Кавычки внутри значения,99',
+    'true',
+    '',
+  ].join('\n'), `csv parse scenario drifted: ${JSON.stringify(parsed.output)}`);
+
+  // Excel-жанр: BOM, CRLF, точка с запятой, короткая строка дополняется пустой
+  // ячейкой; правки; смена разделителя меняет печать; таблица — ссылка.
+  const excel = await runIdyllium(`use console;
+use csv;
+
+main() {
+    csv.Table e = csv.parse("\uFEFFимя;класс;уровень\\r\\nМира;маг;12\\r\\nКай;воин\\r\\n");
+    console.writeln(e.columns, " [", e.separator, "] ", e.row_count, " '", e.get(1, "уровень"), "'");
+    e.set(1, "уровень", "9");
+    e.add_row("Тася", "лучник", "15");
+    e.remove_row(0);
+    console.write(e);
+    e.separator = ",";
+    console.write(e);
+    csv.Table same = e;
+    same.set(0, "класс", "паладин");
+    console.writeln(e.get(0, "класс"), " ", type_name(e));
+    csv.Table tab = csv.parse("a\\tb\\n1\\t2\\n");
+    console.writeln(tab.get(0, "b"), " ", tab.separator == "\\t");
+    csv.Table forced = csv.parse("a;b,c\\n1;2,3\\n", ",");
+    console.writeln(forced.columns);
+    csv.Table empty = csv.parse("");
+    console.writeln(empty.row_count, " ", empty.column_count, " '", empty, "'");
+    e.clear();
+    console.writeln(e.row_count, " ", e.column_count);
+}
+`, {}, { file: 'main.idyl' });
+  assert(excel.success, excel.runtimeError ?? excel.compilation.diagnosticsText);
+  assert(excel.output === [
+    '["имя", "класс", "уровень"] [;] 2 \'\'',
+    'имя;класс;уровень',
+    'Кай;воин;9',
+    'Тася;лучник;15',
+    'имя,класс,уровень',
+    'Кай,воин,9',
+    'Тася,лучник,15',
+    'паладин csv.Table',
+    '2 true',
+    '["a;b", "c"]',
+    "0 0 ''",
+    '0 3',
+    '',
+  ].join('\n'), `csv excel scenario drifted: ${JSON.stringify(excel.output)}`);
+
+  // Пустая заготовка, кавычки при записи, файловый раунд-трип через read/write.
+  const memory = await runWithMemoryFiles(`use console;
+use csv;
+
+main() {
+    csv.Table fresh;
+    console.writeln(fresh.row_count, " ", fresh.column_count, " [", fresh.separator, "] '", fresh, "'");
+    fresh.set_columns("a", "b");
+    fresh.add_row("x;y", "");
+    fresh.add_row("", "q\\"r");
+    csv.write("out.csv", fresh);
+    csv.Table back = csv.read("out.csv");
+    console.writeln(back.row_count, " ", back.get(0, "a"), " ", back.get(1, "b"), " [", back.separator, "]");
+    csv.Table given = csv.read("heroes.csv");
+    console.writeln(given.get(given.find("имя", "Кай"), "уровень"));
+}
+`, { 'heroes.csv': 'имя,уровень\nМира,12\nКай,9\n' });
+  const memoryOutput = memory.runtime.getOutput();
+  assert(
+    memoryOutput === "0 0 [;] ''\n2 x;y q\"r [;]\n9\n",
+    `csv file round-trip drifted: ${JSON.stringify(memoryOutput)}`,
+  );
+
+  // Ошибки — словами и с номером строки (спека some_csv/01).
+  const broken: ReadonlyArray<readonly [string, string]> = [
+    ['csv.parse("a,b\\n1,2,3\\n");', 'csv.parse() line 2 has 3 values, but the header has 2 columns'],
+    ['csv.parse("a,b\\n1,2\\n\\"x\\ny\\",2,3\\n");', 'csv.parse() line 3 has 3 values, but the header has 2 columns'],
+    ['csv.parse("a,a\\n1,2\\n");', 'csv.parse() header has duplicate column "a"'],
+    ['csv.parse("a,b\\n\\"oops,2\\n");', 'csv.parse() line 2: quote is never closed'],
+    ['csv.parse("a,b\\n\\"x\\"y,2\\n");', 'csv.parse() line 2: unexpected text after a closing quote'],
+    ['csv.parse("a,b\\n1,2\\n").get(0, "c");', 'csv table has no column "c"'],
+    ['csv.parse("a,b\\n1,2\\n").get(5, "a");', 'csv.Table.get() row 5 is out of range 0..0'],
+    ['csv.Table t; t.add_row("1");', 'csv.Table.add_row() before set_columns() — set the columns first'],
+    ['csv.Table t; t.set_columns("a", "b"); t.add_row("1");', 'csv.Table.add_row() expects 2 values (one per column), got 1'],
+    ['csv.Table t; t.separator = ";;";', 'csv.Table.separator must be one character (like ";" or ","), got ";;"'],
+    ['csv.parse("a,b\\n1,2\\n", "ab");', 'csv.parse() separator must be one character (like ";" or ","), got "ab"'],
+    ['csv.read("missing.csv");', "csv.read() cannot read 'missing.csv': file does not exist"],
+    ['csv.Table t; csv.write("nodir/x.csv", t);', "csv.write() cannot write 'nodir/x.csv': directory does not exist"],
+  ];
+  for (const [statement, expected] of broken) {
+    await assertRuntimeFails(`use csv;\n\nmain() {\n    ${statement}\n}\n`, expected);
+  }
+  // Ячейка — строка: в int без to_int не ляжет.
+  assertFails('use csv;\nmain() {\n    csv.Table t = csv.parse("a\\n1\\n");\n    int x = t.get(0, "a");\n}', "cannot assign 'string' value to 'int' variable");
+});

@@ -1,7 +1,7 @@
 import { ClassDeclaration, FunctionDeclaration, Program, Statement, TypeName } from '../core/ast';
 import { Diagnostic, DiagnosticBag, SourceRange, formatDiagnostics } from '../core/diagnostics';
 import { UserModuleClassSpec } from '../core/modules';
-import { IdylliumSemanticToken, SemanticAnalyzer, arrayMemberMethodSpec, stringMemberMethodSpec } from '../core/semantics';
+import { IdylliumSemanticToken, SemanticAnalyzer, arrayMemberMethodSpec, mapMemberMethodSpec, setMemberMethodSpec, stringMemberMethodSpec } from '../core/semantics';
 import {
   LoadedModule,
   ModuleLoadOptions,
@@ -11,7 +11,7 @@ import {
   parseSource,
 } from '../core/project';
 import { createDefaultStandardLibrary, CompletionItem, FunctionSpec, StandardLibraryRegistry } from '../core/stdlib/registry';
-import { CHAR, INT, RUNTIME_ERROR_VALUE, STRING, TypeRef, arrayType, classType, qualified, typeToString } from '../core/types';
+import { CHAR, INT, RUNTIME_ERROR_VALUE, STRING, TypeRef, arrayType, classType, mapType, qualified, setType, typeToString } from '../core/types';
 import { compileIdyllium, CompileResult } from '../runtime/run';
 
 const path: any = require('path');
@@ -423,6 +423,8 @@ export class IdylliumProject {
     if (type.kind === 'runtime-error') return runtimeErrorMemberCompletions();
     if (type.kind === 'primitive' && type.name === 'string') return stringMemberCompletions();
     if (type.kind === 'array') return arrayMemberCompletions(type);
+    if (type.kind === 'map') return mapMemberCompletions(type);
+    if (type.kind === 'set') return setMemberCompletions(type);
 
     if (type.kind === 'qualified') {
       if (this.stdlib.hasQualifiedType(type.moduleName, type.name)) {
@@ -547,6 +549,12 @@ export class IdylliumProject {
     if (type.kind === 'array') {
       return arrayMemberMethodSpec(type, name)?.returnType ?? null;
     }
+    if (type.kind === 'map') {
+      return mapMemberMethodSpec(type, name)?.returnType ?? null;
+    }
+    if (type.kind === 'set') {
+      return setMemberMethodSpec(type, name)?.returnType ?? null;
+    }
     if (type.kind === 'qualified') {
       const stdlibMethod = this.stdlib.getTypeMethod(qualified(type.moduleName, type.name), name);
       if (stdlibMethod) return stdlibMethod.returnType;
@@ -567,7 +575,7 @@ export class IdylliumProject {
 
   private chainPropertyType(index: ProjectIndex, type: TypeRef, name: string): TypeRef | null {
     if (type.kind === 'primitive' && type.name === 'string') return name === 'length' ? INT : null;
-    if (type.kind === 'array') return name === 'length' ? INT : null;
+    if (type.kind === 'array' || type.kind === 'map' || type.kind === 'set') return name === 'length' ? INT : null;
     if (type.kind === 'qualified') {
       const stdlibProperty = this.stdlib.getTypeProperty(qualified(type.moduleName, type.name), name);
       if (stdlibProperty) return stdlibProperty.type;
@@ -1002,6 +1010,39 @@ function stringMemberCompletions(): CompletionItem[] {
     { name: 'split', kind: 'method', detail: 'split(separator: string): dyn_array<string>' },
     { name: 'trim', kind: 'method', detail: 'trim(): string' },
   ];
+}
+
+function setMemberCompletions(type: Extract<TypeRef, { kind: 'set' }>): CompletionItem[] {
+  const element = typeToString(type.elementType);
+  const items: CompletionItem[] = [
+    { name: 'length', kind: 'property', detail: 'length: int' },
+    { name: 'add', kind: 'method', detail: `add(value: ${element}): void` },
+    { name: 'has', kind: 'method', detail: `has(value: ${element}): bool` },
+    { name: 'remove', kind: 'method', detail: `remove(value: ${element}): void` },
+    { name: 'clear', kind: 'method', detail: 'clear(): void' },
+    { name: 'values', kind: 'method', detail: `values(): dyn_array<${element}>` },
+    { name: 'union', kind: 'method', detail: `union(other: set<${element}>): set<${element}>` },
+    { name: 'intersection', kind: 'method', detail: `intersection(other: set<${element}>): set<${element}>` },
+    { name: 'difference', kind: 'method', detail: `difference(other: set<${element}>): set<${element}>` },
+    { name: 'is_subset', kind: 'method', detail: `is_subset(other: set<${element}>): bool` },
+  ];
+  return items.sort((left, right) => left.name.localeCompare(right.name));
+}
+
+function mapMemberCompletions(type: Extract<TypeRef, { kind: 'map' }>): CompletionItem[] {
+  const key = typeToString(type.keyType);
+  const value = typeToString(type.valueType);
+  const items: CompletionItem[] = [
+    { name: 'length', kind: 'property', detail: 'length: int' },
+    { name: 'has', kind: 'method', detail: `has(key: ${key}): bool` },
+    { name: 'get_or', kind: 'method', detail: `get_or(key: ${key}, fallback: ${value}): ${value}` },
+    { name: 'remove', kind: 'method', detail: `remove(key: ${key}): void` },
+    { name: 'keys', kind: 'method', detail: `keys(): dyn_array<${key}>` },
+    { name: 'values', kind: 'method', detail: `values(): dyn_array<${value}>` },
+    { name: 'clear', kind: 'method', detail: 'clear(): void' },
+    { name: 'join', kind: 'method', detail: `join(other: map<${key}, ${value}>): void` },
+  ];
+  return items.sort((left, right) => left.name.localeCompare(right.name));
 }
 
 function arrayMemberCompletions(type: Extract<TypeRef, { kind: 'array' }>): CompletionItem[] {
@@ -1598,6 +1639,10 @@ function typeRefFromTypeName(typeName: TypeName): TypeRef {
       return classType(typeName.name);
     case 'ArrayTypeName':
       return arrayType(typeRefFromTypeName(typeName.elementType), typeName.size, typeName.dynamic);
+    case 'MapTypeName':
+      return mapType(typeRefFromTypeName(typeName.keyType), typeRefFromTypeName(typeName.valueType));
+    case 'SetTypeName':
+      return setType(typeRefFromTypeName(typeName.elementType));
   }
 }
 
@@ -1656,6 +1701,12 @@ function typeNameText(typeName: TypeName): string {
   if (typeName.kind === 'ArrayTypeName') {
     const element = typeNameText(typeName.elementType);
     return typeName.dynamic ? `dyn_array<${element}>` : `array<${element}, ${typeName.size ?? '?'}>`;
+  }
+  if (typeName.kind === 'MapTypeName') {
+    return `map<${typeNameText(typeName.keyType)}, ${typeNameText(typeName.valueType)}>`;
+  }
+  if (typeName.kind === 'SetTypeName') {
+    return `set<${typeNameText(typeName.elementType)}>`;
   }
   return 'unknown';
 }

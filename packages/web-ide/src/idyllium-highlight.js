@@ -7,7 +7,7 @@ export const KEYWORDS = new Set([
   'this', 'true', 'null', 'try', 'use', 'while', 'xor',
 ]);
 export const BUILTIN_TYPES = new Set([
-  'array', 'bool', 'char', 'dyn_array', 'float', 'int', 'set', 'string', 'void',
+  'array', 'bool', 'char', 'dyn_array', 'float', 'int', 'map', 'set', 'string', 'void',
 ]);
 export const CLASS_NAMES = new Set([
   'Array', 'BarChart', 'Button', 'Canvas', 'CheckBox', 'Circle', 'Color', 'ComboBox', 'Drawable', 'FloatSpinBox', 'Font', 'Frame',
