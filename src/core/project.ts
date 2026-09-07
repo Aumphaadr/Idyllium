@@ -30,6 +30,8 @@ import {
   classType,
   primitive,
   qualified,
+  mapType,
+  setType,
 } from './types';
 
 const fs: any = require('fs');
@@ -444,6 +446,17 @@ function resolveModuleExportType(
 
   if (typeName.kind === 'ArrayTypeName') {
     return resolveModuleArrayType(typeName, moduleName, program, localClasses, stdlib, userModules, diagnostics);
+  }
+
+  if (typeName.kind === 'SetTypeName') {
+    return setType(resolveModuleExportType(typeName.elementType, moduleName, program, localClasses, stdlib, userModules, diagnostics));
+  }
+
+  if (typeName.kind === 'MapTypeName') {
+    return mapType(
+      resolveModuleExportType(typeName.keyType, moduleName, program, localClasses, stdlib, userModules, diagnostics),
+      resolveModuleExportType(typeName.valueType, moduleName, program, localClasses, stdlib, userModules, diagnostics),
+    );
   }
 
   if (typeName.kind === 'ClassTypeName') {

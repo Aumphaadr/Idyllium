@@ -706,6 +706,294 @@ export class IdylliumArray {
   }
 }
 
+interface IdylliumMapEntry {
+  readonly key: unknown;
+  value: unknown;
+}
+
+/** Канонический тег ключа словаря/элемента множества: двуликий int
+ *  (number/BigInt) — один тег, строки/символы/логические — свои. */
+export function canonicalCollectionKey(key: unknown): string {
+  if (typeof key === 'string') return `s:${key}`;
+  if (typeof key === 'boolean') return `b:${key ? 'true' : 'false'}`;
+  if (typeof key === 'bigint') return `i:${key.toString()}`;
+  if (typeof key === 'number') return Number.isInteger(key) ? `i:${BigInt(key).toString()}` : `f:${String(key)}`;
+  return `o:${String(key)}`;
+}
+
+/**
+ * Множество set<T> (спека some_set/01, 2026-09-07): порядок вставки, тот же
+ * канонический тег, что у ключей словаря; значение-коллекция — копируется
+ * на границах присваивания через convert. Алгебра — чистая: union,
+ * intersection, difference возвращают новые множества.
+ */
+export class IdylliumSet {
+  private readonly entries = new Map<string, unknown>();
+
+  static create(): IdylliumSet {
+    return new IdylliumSet();
+  }
+
+  static fromValues(values: readonly unknown[]): IdylliumSet {
+    const set = new IdylliumSet();
+    for (const value of values) set.add(value);
+    return set;
+  }
+
+  /** Пустые `{}` приезжают пустым словарём — для множества это пустое множество. */
+  static convert(value: unknown, targetType: string, file: string, line: number): IdylliumSet {
+    if (value instanceof IdylliumMap && value.length === 0) return new IdylliumSet();
+    if (!(value instanceof IdylliumSet)) {
+      throw new IdylliumRuntimeError(file, line, `cannot convert '${valueOps.typeName(value)}' to '${targetType}'`);
+    }
+    const copy = new IdylliumSet();
+    for (const item of value.entries.values()) copy.add(item);
+    return copy;
+  }
+
+  add(value: unknown): void {
+    const tag = canonicalCollectionKey(value);
+    if (!this.entries.has(tag)) this.entries.set(tag, value);
+  }
+
+  has(value: unknown): boolean {
+    return this.entries.has(canonicalCollectionKey(value));
+  }
+
+  remove(value: unknown, file: string, line: number): void {
+    if (!this.entries.delete(canonicalCollectionKey(value))) {
+      throw new IdylliumRuntimeError(file, line, `set has no element ${valueOps.inspect(value)}`);
+    }
+  }
+
+  clear(): void {
+    this.entries.clear();
+  }
+
+  values(): IdylliumArray {
+    const values = [...this.entries.values()];
+    return IdylliumArray.from(values, true, null, () => IdylliumSet.defaultLike(values[0]));
+  }
+
+  private static defaultLike(sample: unknown): unknown {
+    if (typeof sample === 'string') return '';
+    if (typeof sample === 'boolean') return false;
+    return 0;
+  }
+
+  union(other: IdylliumSet): IdylliumSet {
+    const result = IdylliumSet.fromValues([...this.entries.values()]);
+    for (const item of other.entries.values()) result.add(item);
+    return result;
+  }
+
+  intersection(other: IdylliumSet): IdylliumSet {
+    return IdylliumSet.fromValues([...this.entries.values()].filter((item) => other.has(item)));
+  }
+
+  difference(other: IdylliumSet): IdylliumSet {
+    return IdylliumSet.fromValues([...this.entries.values()].filter((item) => !other.has(item)));
+  }
+
+  isSubset(other: IdylliumSet): boolean {
+    return [...this.entries.values()].every((item) => other.has(item));
+  }
+
+  get length(): number {
+    return this.entries.size;
+  }
+
+  items(): readonly unknown[] {
+    return [...this.entries.values()];
+  }
+
+  private expectSetArgument(value: unknown, method: string, file: string, line: number): IdylliumSet {
+    if (!(value instanceof IdylliumSet)) {
+      throw new IdylliumRuntimeError(file, line, `${method}() expects a set, got '${valueOps.typeName(value)}'`);
+    }
+    return value;
+  }
+
+  callMethod(name: string, args: readonly unknown[], file: string, line: number): unknown {
+    switch (name) {
+      case 'add':
+        return this.add(args[0]);
+      case 'has':
+        return this.has(args[0]);
+      case 'remove':
+        return this.remove(args[0], file, line);
+      case 'clear':
+        return this.clear();
+      case 'values':
+        return this.values();
+      case 'union':
+        return this.union(this.expectSetArgument(args[0], 'union', file, line));
+      case 'intersection':
+        return this.intersection(this.expectSetArgument(args[0], 'intersection', file, line));
+      case 'difference':
+        return this.difference(this.expectSetArgument(args[0], 'difference', file, line));
+      case 'is_subset':
+        return this.isSubset(this.expectSetArgument(args[0], 'is_subset', file, line));
+      default:
+        throw new IdylliumRuntimeError(file, line, `set has no method '${name}'`);
+    }
+  }
+
+  toString(): string {
+    return valueOps.inspect(this);
+  }
+
+  toInspectString(): string {
+    return `{${[...this.entries.values()].map((item) => valueOps.inspect(item)).join(', ')}}`;
+  }
+}
+
+/**
+ * Словарь map<K, V> (спека some_map/02, 2026-09-07): порядок обхода — порядок
+ * вставки; ключ хранится под каноническим тегом, поэтому двуликий int
+ * (number/BigInt) не распадается на два ключа; значение — как элемент
+ * массива. Словарь — значение: на границах присваивания копируется через
+ * convert, а индексация отдаёт хранимый элемент (как у массивов).
+ */
+export class IdylliumMap {
+  private readonly entries = new Map<string, IdylliumMapEntry>();
+
+  static create(): IdylliumMap {
+    return new IdylliumMap();
+  }
+
+  /** Литерал {k: v, …}: при совпадении ключей побеждает последний. */
+  static fromPairs(pairs: readonly (readonly [unknown, unknown])[]): IdylliumMap {
+    const map = new IdylliumMap();
+    for (const [key, value] of pairs) map.setEntry(key, value);
+    return map;
+  }
+
+  static convert(
+    value: unknown,
+    convertValue: (value: unknown) => unknown,
+    targetType: string,
+    file: string,
+    line: number,
+  ): IdylliumMap {
+    if (!(value instanceof IdylliumMap)) {
+      throw new IdylliumRuntimeError(file, line, `cannot convert '${valueOps.typeName(value)}' to '${targetType}'`);
+    }
+    const copy = new IdylliumMap();
+    for (const entry of value.entries.values()) copy.setEntry(entry.key, convertValue(entry.value));
+    return copy;
+  }
+
+  private static canonicalKey(key: unknown): string {
+    return canonicalCollectionKey(key);
+  }
+
+  private setEntry(key: unknown, value: unknown): void {
+    const tag = IdylliumMap.canonicalKey(key);
+    const existing = this.entries.get(tag);
+    if (existing) {
+      existing.value = value; // замена значения место в порядке не меняет
+    } else {
+      this.entries.set(tag, { key, value });
+    }
+  }
+
+  private missingKey(key: unknown, file: string, line: number): IdylliumRuntimeError {
+    return new IdylliumRuntimeError(file, line, `map has no key ${valueOps.inspect(key)}`);
+  }
+
+  get(key: unknown, file: string, line: number): unknown {
+    const entry = this.entries.get(IdylliumMap.canonicalKey(key));
+    if (!entry) throw this.missingKey(key, file, line);
+    return entry.value;
+  }
+
+  set(key: unknown, value: unknown): void {
+    this.setEntry(key, value);
+  }
+
+  has(key: unknown): boolean {
+    return this.entries.has(IdylliumMap.canonicalKey(key));
+  }
+
+  getOr(key: unknown, fallback: unknown): unknown {
+    const entry = this.entries.get(IdylliumMap.canonicalKey(key));
+    return entry ? entry.value : fallback;
+  }
+
+  remove(key: unknown, file: string, line: number): void {
+    if (!this.entries.delete(IdylliumMap.canonicalKey(key))) throw this.missingKey(key, file, line);
+  }
+
+  clear(): void {
+    this.entries.clear();
+  }
+
+  /** Добавить все пары other; при совпадении ключа побеждает other. */
+  join(other: IdylliumMap): void {
+    for (const entry of other.entries.values()) this.setEntry(entry.key, entry.value);
+  }
+
+  keys(): IdylliumArray {
+    const keys = [...this.entries.values()].map((entry) => entry.key);
+    return IdylliumArray.from(keys, true, null, () => IdylliumMap.defaultLike(keys[0]));
+  }
+
+  values(): IdylliumArray {
+    const values = [...this.entries.values()].map((entry) => entry.value);
+    return IdylliumArray.from(values, true, null, () => IdylliumMap.defaultLike(values[0]));
+  }
+
+  /** Умолчание для dyn_array, собранного из ключей/значений: статический
+   *  тип узнает convert на границе присваивания; здесь — лишь заготовка. */
+  private static defaultLike(sample: unknown): unknown {
+    if (typeof sample === 'string') return '';
+    if (typeof sample === 'boolean') return false;
+    return 0;
+  }
+
+  get length(): number {
+    return this.entries.size;
+  }
+
+  entriesList(): readonly IdylliumMapEntry[] {
+    return [...this.entries.values()];
+  }
+
+  callMethod(name: string, args: readonly unknown[], file: string, line: number): unknown {
+    switch (name) {
+      case 'has':
+        return this.has(args[0]);
+      case 'get_or':
+        return this.getOr(args[0], args[1]);
+      case 'remove':
+        return this.remove(args[0], file, line);
+      case 'keys':
+        return this.keys();
+      case 'values':
+        return this.values();
+      case 'clear':
+        return this.clear();
+      case 'join':
+        if (!(args[0] instanceof IdylliumMap)) {
+          throw new IdylliumRuntimeError(file, line, `join() expects a map, got '${valueOps.typeName(args[0])}'`);
+        }
+        return this.join(args[0]);
+      default:
+        throw new IdylliumRuntimeError(file, line, `map has no method '${name}'`);
+    }
+  }
+
+  toString(): string {
+    return valueOps.inspect(this);
+  }
+
+  toInspectString(): string {
+    const parts = [...this.entries.values()].map((entry) => `${valueOps.inspect(entry.key)}: ${valueOps.inspect(entry.value)}`);
+    return `{${parts.join(', ')}}`;
+  }
+}
+
 // Массив таких размеров не создать ни в одной машине класса — честный отказ
 // вместо сырого JS «Invalid array length» (находка ломателей 2026-08-22).
 export const MAX_CREATABLE_ARRAY_SIZE = 100_000_000;
@@ -748,6 +1036,20 @@ export function trimFloat(value: number): string {
 export function expectArray(value: unknown, file: string, line: number): IdylliumArray {
   if (value instanceof IdylliumArray) return value;
   throw new IdylliumRuntimeError(file, line, `expected array, got '${String(value)}'`);
+}
+
+export function expectMap(value: unknown, file: string, line: number): IdylliumMap {
+  if (!(value instanceof IdylliumMap)) {
+    throw new IdylliumRuntimeError(file, line, `expected a map, got '${valueOps.typeName(value)}'`);
+  }
+  return value;
+}
+
+export function expectSet(value: unknown, file: string, line: number): IdylliumSet {
+  if (!(value instanceof IdylliumSet)) {
+    throw new IdylliumRuntimeError(file, line, `expected a set, got '${valueOps.typeName(value)}'`);
+  }
+  return value;
 }
 
 export function colorToCss(value: unknown, argumentName: string, file: string, line: number): string {

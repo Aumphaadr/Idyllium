@@ -136,8 +136,15 @@ export class JavaScriptGenerator {
   /** Класс-лист массива с контрактом (сквозь вложенные массивы); null иначе. */
   private contractLeafOfArray(type: TypeRef | null, contract: 'equals' | 'less' | 'greater' = 'equals'): string | null {
     if (!type || type.kind !== 'array') return null;
-    let element: TypeRef = type.elementType;
-    while (element.kind === 'array') element = element.elementType;
+    return this.contractLeafOfCollection(type.elementType, contract);
+  }
+
+  /** Класс-лист коллекции сквозь массивы и словари (для контрактов). */
+  private contractLeafOfCollection(type: TypeRef | null, contract: 'equals' | 'less' | 'greater' = 'equals'): string | null {
+    let element: TypeRef | null = type;
+    while (element && (element.kind === 'array' || element.kind === 'map')) {
+      element = element.kind === 'array' ? element.elementType : element.valueType;
+    }
     return this.contractClassBareName(element, contract);
   }
 
@@ -689,7 +696,8 @@ export class JavaScriptGenerator {
     if (statement.operator === '=') {
       if (statement.target.kind === 'IndexExpression') {
         const value = this.valueForOptionalTypeRef(this.expression(statement.value), targetType, statement.value.range);
-        return `$rt.array.set(${this.expression(statement.target.object)}, ${this.expression(statement.target.index)}, ${value}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
+        const container = this.typeOf(statement.target.object)?.kind === 'map' ? '$rt.map' : '$rt.array';
+        return `${container}.set(${this.expression(statement.target.object)}, ${this.expression(statement.target.index)}, ${value}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
       }
       if (statement.target.kind === 'MemberExpression') {
         const value = this.valueForOptionalTypeRef(this.expression(statement.value), targetType, statement.value.range);
@@ -701,10 +709,11 @@ export class JavaScriptGenerator {
     if (statement.target.kind === 'IndexExpression') {
       const object = this.expression(statement.target.object);
       const index = this.expression(statement.target.index);
-      const current = `$rt.array.get(${object}, ${index}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
+      const container = this.typeOf(statement.target.object)?.kind === 'map' ? '$rt.map' : '$rt.array';
+      const current = `${container}.get(${object}, ${index}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
       const rawValue = this.compoundAssignmentValue(statement.operator, current, this.expression(statement.value), statement.range, this.isFloatType(targetType));
       const value = this.valueForOptionalTypeRef(rawValue, targetType, statement.range);
-      return `$rt.array.set(${object}, ${index}, ${value}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
+      return `${container}.set(${object}, ${index}, ${value}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
     }
 
     const target = this.expression(statement.target);
@@ -757,7 +766,21 @@ export class JavaScriptGenerator {
         return this.binaryExpression(expression);
       case 'ArrayLiteralExpression':
         return this.arrayLiteralExpression(expression, true, null, '() => 0');
+      case 'SetLiteralExpression':
+        return `$rt.set.fromValues([${expression.elements.map((element) => this.expression(element)).join(', ')}])`;
+      case 'EmptyBraceLiteral':
+        // Пустая коллекция: словарь или множество решает convert по типу цели.
+        return '$rt.map.fromPairs([])';
+      case 'MapLiteralExpression': {
+        const pairs = expression.entries
+          .map((entry) => `[${this.expression(entry.key)}, ${this.expression(entry.value)}]`)
+          .join(', ');
+        return `$rt.map.fromPairs([${pairs}])`;
+      }
       case 'IndexExpression':
+        if (this.typeOf(expression.object)?.kind === 'map') {
+          return `$rt.map.get(${this.expression(expression.object)}, ${this.expression(expression.index)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+        }
         return `$rt.array.get(${this.expression(expression.object)}, ${this.expression(expression.index)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
       case 'FunctionExpression':
         return this.functionExpression(expression);
@@ -821,6 +844,13 @@ export class JavaScriptGenerator {
       if (leftLeaf && this.contractLeafOfArray(this.typeOf(expression.right))) {
         const call = `(await $rt.core.equalsObjectArrays(${left}, ${right}, ${JSON.stringify(`equals$${leftLeaf}`)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line}))`;
         return expression.operator === '==' ? call : `(!${call})`;
+      }
+      if (leftType?.kind === 'map') {
+        const mapLeaf = this.contractLeafOfCollection(leftType);
+        if (mapLeaf && this.contractLeafOfCollection(this.typeOf(expression.right))) {
+          const call = `(await $rt.core.equalsObjectMaps(${left}, ${right}, ${JSON.stringify(`equals$${mapLeaf}`)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line}))`;
+          return expression.operator === '==' ? call : `(!${call})`;
+        }
       }
     }
     // Контракты порядка: less обслуживает '<' и '>=' (второй — отрицанием),
@@ -1058,6 +1088,9 @@ export class JavaScriptGenerator {
       const size = type.dynamic ? 0 : type.size ?? 0;
       return `await $rt.array.createAsync(${size}, async () => ${this.defaultValue(type.elementType)}, ${type.dynamic ? 'true' : 'false'})`;
     }
+
+    if (type.kind === 'MapTypeName') return '$rt.map.create()';
+    if (type.kind === 'SetTypeName') return '$rt.set.create()';
 
     if (type.kind === 'ClassTypeName') {
       // Объявление без аргументов НИКОГДА не зовёт конструктор — поля
@@ -1327,6 +1360,13 @@ export class JavaScriptGenerator {
   }
 
   private valueForType(value: string, type: TypeName | null, range: SourceRange): string {
+    if (type?.kind === 'SetTypeName') {
+      return `$rt.set.convert(${value}, ${JSON.stringify(this.typeNameToString(type))}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
+    }
+    if (type?.kind === 'MapTypeName') {
+      const convertedValue = this.valueForType('__map_value', type.valueType, range);
+      return `$rt.map.convert(${value}, (__map_value) => ${convertedValue}, ${JSON.stringify(this.typeNameToString(type))}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
+    }
     if (type?.kind === 'ArrayTypeName') {
       const size = type.dynamic ? 'null' : String(type.size ?? 0);
       const convertedElement = this.valueForType('__array_item', type.elementType, range);
@@ -1360,6 +1400,13 @@ export class JavaScriptGenerator {
   // «float» исторически значит «numeric», int обязан пройти без конверсии
   // (math.abs(-9007199254740993) остаётся точным, sum(int[]) — тоже).
   private valueForTypeRef(value: string, type: TypeRef, range: SourceRange, floatBoundary = true): string {
+    if (type.kind === 'set') {
+      return `$rt.set.convert(${value}, ${JSON.stringify(typeToString(type))}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
+    }
+    if (type.kind === 'map') {
+      const convertedValue = this.valueForTypeRef('__map_value', type.valueType, range, floatBoundary);
+      return `$rt.map.convert(${value}, (__map_value) => ${convertedValue}, ${JSON.stringify(typeToString(type))}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
+    }
     if (type.kind === 'array') {
       const size = type.dynamic ? 'null' : String(type.size ?? 0);
       const convertedElement = this.valueForTypeRef('__array_item', type.elementType, range, floatBoundary);
@@ -1397,11 +1444,15 @@ export class JavaScriptGenerator {
   private typeNameToString(type: TypeName): string {
     if (type.kind === 'PrimitiveTypeName' || type.kind === 'ClassTypeName') return type.name;
     if (type.kind === 'QualifiedTypeName') return `${type.moduleName}.${type.name}`;
+    if (type.kind === 'MapTypeName') return `map<${this.typeNameToString(type.keyType)}, ${this.typeNameToString(type.valueType)}>`;
+    if (type.kind === 'SetTypeName') return `set<${this.typeNameToString(type.elementType)}>`;
     if (type.dynamic) return `dyn_array<${this.typeNameToString(type.elementType)}>`;
     return `array<${this.typeNameToString(type.elementType)}, ${type.size ?? '?'}>`;
   }
 
   private defaultValueForTypeRef(type: TypeRef): string {
+    if (type.kind === 'map') return '$rt.map.create()';
+    if (type.kind === 'set') return '$rt.set.create()';
     if (type.kind === 'array') {
       const size = type.dynamic ? 0 : type.size ?? 0;
       return `await $rt.array.createAsync(${size}, async () => ${this.defaultValueForTypeRef(type.elementType)}, ${type.dynamic ? 'true' : 'false'})`;

@@ -212,7 +212,7 @@
       "patterns": [
         {
           "name": "storage.type.primitive.idyllium",
-          "match": "\\b(?:array|bool|char|dyn_array|float|int|set|string|void)\\b"
+          "match": "\\b(?:array|bool|char|dyn_array|float|int|map|set|string|void)\\b"
         },
         {
           "name": "entity.name.type.class.idyllium",

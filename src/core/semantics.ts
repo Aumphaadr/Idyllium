@@ -30,6 +30,7 @@ import {
   TypeName,
   VariableDeclaration,
   WhileStatement,
+  MapLiteralExpression,
 } from './ast';
 import { DiagnosticBag, SourceRange } from './diagnostics';
 import { UserModuleClassSpec, UserModuleRegistry } from './modules';
@@ -59,6 +60,11 @@ import {
   qualified,
   sameType,
   typeToString,
+  mapType,
+  isMapKeyType,
+  MapType,
+  setType,
+  SetType,
 } from './types';
 
 // Кириллические буквы, неотличимые на глаз от латинских. Идентификаторы на
@@ -230,6 +236,7 @@ const PRINTABLE_LIBRARY_OBJECTS = new Set([
   'channel.Post',
   'web.Server', 'web.Request', 'web.Response',
   'http.Response',
+  'csv.Table',
 ]);
 
 interface ClassContext {
@@ -560,6 +567,10 @@ export class SemanticAnalyzer {
     if (this.refuseInternalName(declaration.name, 'class', declaration.range)) return;
     if (HOST_RESERVED_NAMES.has(declaration.name)) {
       this.diagnostics.error(declaration.range, `'${declaration.name}' is a reserved word and cannot be used as a name`);
+      return;
+    }
+    if (declaration.name === 'set') {
+      this.diagnostics.error(declaration.range, "'set' is reserved for the set type — pick another name");
       return;
     }
     if (this.classes.has(declaration.name)) {
@@ -1050,9 +1061,7 @@ export class SemanticAnalyzer {
   /** Класс-лист массива (сквозь вложенные массивы); null, если элементы — не пользовательские классы. */
   private arrayLeafClass(type: TypeRef): TypeRef | null {
     if (type.kind !== 'array') return null;
-    let element: TypeRef = type.elementType;
-    while (element.kind === 'array') element = element.elementType;
-    return this.userClassBareName(element) !== null ? element : null;
+    return this.collectionLeafClass(type.elementType);
   }
 
   private registerClassEvent(info: UserClassInfo, declaration: ClassEventDeclaration): void {
@@ -1816,6 +1825,31 @@ export class SemanticAnalyzer {
       return primitive(typeName.name);
     }
 
+    if (typeName.kind === 'SetTypeName') {
+      const elementType = this.resolveTypeName(typeName.elementType);
+      if (!isMapKeyType(elementType)) {
+        this.diagnostics.error(typeName.elementType.range, this.setElementRefusal(elementType));
+      }
+      return setType(elementType);
+    }
+
+    if (typeName.kind === 'ClassTypeName' && typeName.name === 'set') {
+      this.diagnostics.error(typeName.range, 'set needs a type parameter — write set<int>');
+      return ERROR_TYPE;
+    }
+
+    if (typeName.kind === 'MapTypeName') {
+      const keyType = this.resolveTypeName(typeName.keyType);
+      const valueType = this.resolveTypeName(typeName.valueType);
+      if (!isMapKeyType(keyType)) {
+        this.diagnostics.error(typeName.keyType.range, this.mapKeyRefusal(keyType));
+      }
+      if (sameType(valueType, VOID)) {
+        this.diagnostics.error(typeName.valueType.range, "map value type cannot be 'void'");
+      }
+      return mapType(keyType, valueType);
+    }
+
     if (typeName.kind === 'ArrayTypeName') {
       const elementType = this.resolveTypeName(typeName.elementType);
       if (sameType(elementType, VOID)) {
@@ -2256,6 +2290,12 @@ export class SemanticAnalyzer {
         return this.binaryType(expression);
       case 'ArrayLiteralExpression':
         return this.arrayLiteralType(expression);
+      case 'MapLiteralExpression':
+        return this.mapLiteralType(expression);
+      case 'SetLiteralExpression':
+        return this.setLiteralType(expression);
+      case 'EmptyBraceLiteral':
+        return mapType(ANY_TYPE, ANY_TYPE);
       case 'IndexExpression':
         return this.indexExpressionType(expression);
       case 'FunctionExpression':
@@ -2356,10 +2396,131 @@ export class SemanticAnalyzer {
     return ERROR_TYPE;
   }
 
+  /** Ключ словаря — тип с полным точным встроенным равенством (int, string,
+   *  char, bool). Отказы называют причину: float — сам язык предупреждает,
+   *  что такие числа «почти никогда не равны»; объекты — нет хеш-контракта. */
+  private mapKeyRefusal(keyType: TypeRef): string {
+    if (isFloatLike(keyType)) {
+      return `cannot use '${typeToString(keyType)}' as a map key — float numbers are almost never exactly equal; use int or string`;
+    }
+    if (this.userClassBareName(keyType) !== null) {
+      return `cannot use objects of class '${typeToString(keyType)}' as map keys — use a field with an int or string value`;
+    }
+    return `cannot use '${typeToString(keyType)}' as a map key — keys can be int, string, char or bool`;
+  }
+
+  private setElementRefusal(elementType: TypeRef): string {
+    if (isFloatLike(elementType)) {
+      return `cannot use '${typeToString(elementType)}' as a set element — float numbers are almost never exactly equal; use int or string`;
+    }
+    if (this.userClassBareName(elementType) !== null) {
+      return `cannot use objects of class '${typeToString(elementType)}' as set elements — use a field with an int or string value`;
+    }
+    return `cannot use '${typeToString(elementType)}' as a set element — elements can be int, string, char or bool`;
+  }
+
+  private setLiteralType(expression: Extract<Expression, { kind: 'SetLiteralExpression' }>): TypeRef {
+    let elementType: TypeRef = ANY_TYPE;
+    const seenLiterals = new Set<string>();
+    for (const element of expression.elements) {
+      const currentType = this.expressionType(element);
+      if (currentType.kind !== 'error' && currentType.kind !== 'any' && !isMapKeyType(currentType)) {
+        this.diagnostics.error(element.range, this.setElementRefusal(currentType));
+      } else if (elementType.kind === 'any') {
+        elementType = currentType;
+      } else if (currentType.kind !== 'error' && !sameType(elementType, currentType)) {
+        this.diagnostics.error(
+          element.range,
+          `set element type '${typeToString(currentType)}' does not match '${typeToString(elementType)}'`,
+        );
+      }
+      if (element.kind === 'LiteralExpression') {
+        const tag = `${element.valueType}:${String(element.value)}`;
+        if (seenLiterals.has(tag)) {
+          this.diagnostics.error(element.range, `duplicate element ${this.literalKeyText(element)} in set literal`);
+        }
+        seenLiterals.add(tag);
+      }
+    }
+    return setType(elementType);
+  }
+
+  private literalKeyText(key: Extract<Expression, { kind: 'LiteralExpression' }>): string {
+    if (key.valueType === 'string') return JSON.stringify(key.value);
+    if (key.valueType === 'char') return `'${String(key.value)}'`;
+    return String(key.value);
+  }
+
+  private mapLiteralType(expression: MapLiteralExpression): TypeRef {
+    let keyType: TypeRef = ANY_TYPE;
+    let valueType: TypeRef = ANY_TYPE;
+    const seenLiteralKeys = new Set<string>();
+    for (const entry of expression.entries) {
+      const currentKey = this.expressionType(entry.key);
+      const currentValue = this.expressionType(entry.value);
+      if (currentKey.kind !== 'error' && currentKey.kind !== 'any' && !isMapKeyType(currentKey)) {
+        this.diagnostics.error(entry.key.range, this.mapKeyRefusal(currentKey));
+      } else if (keyType.kind === 'any') {
+        keyType = currentKey;
+      } else if (currentKey.kind !== 'error' && !sameType(keyType, currentKey)) {
+        this.diagnostics.error(
+          entry.key.range,
+          `map key type '${typeToString(currentKey)}' does not match '${typeToString(keyType)}'`,
+        );
+      }
+      if (valueType.kind === 'any') {
+        valueType = currentValue;
+      } else {
+        const merged = this.mergeArrayElementTypes(valueType, currentValue);
+        if (merged.kind === 'error') {
+          this.diagnostics.error(
+            entry.value.range,
+            `map value type '${typeToString(currentValue)}' does not match '${typeToString(valueType)}'`,
+          );
+        } else {
+          valueType = merged;
+        }
+      }
+      // Дубль ключа в литерале — всегда опечатка, ловим на компиляции.
+      if (entry.key.kind === 'LiteralExpression') {
+        const tag = `${entry.key.valueType}:${String(entry.key.value)}`;
+        if (seenLiteralKeys.has(tag)) {
+          this.diagnostics.error(entry.key.range, `duplicate key ${this.literalKeyText(entry.key)} in map literal`);
+        }
+        seenLiteralKeys.add(tag);
+      }
+    }
+    return mapType(keyType, valueType);
+  }
+
+  /** Класс-лист коллекции любой вложенности (массивы и словари насквозь). */
+  private collectionLeafClass(type: TypeRef): TypeRef | null {
+    let element: TypeRef = type;
+    while (element.kind === 'array' || element.kind === 'map') {
+      element = element.kind === 'array' ? element.elementType : element.valueType;
+    }
+    return this.userClassBareName(element) !== null ? element : null;
+  }
+
   private indexExpressionType(expression: IndexExpression): TypeRef {
     const objectType = this.expressionType(expression.object);
     const indexType = this.expressionType(expression.index);
     if (objectType.kind === 'error') return ERROR_TYPE;
+
+    if (objectType.kind === 'set') {
+      this.diagnostics.error(expression.range, 'sets have no index — use has() or values()');
+      return ERROR_TYPE;
+    }
+
+    if (objectType.kind === 'map') {
+      if (indexType.kind !== 'error' && !this.canAssign(objectType.keyType, indexType)) {
+        this.diagnostics.error(
+          expression.index.range,
+          `map key must be '${typeToString(objectType.keyType)}', got '${typeToString(indexType)}'`,
+        );
+      }
+      return objectType.valueType;
+    }
 
     if (!isIntegerLike(indexType)) {
       this.diagnostics.error(
@@ -2479,6 +2640,22 @@ export class SemanticAnalyzer {
         && (trueLiteral(expression.left) || trueLiteral(expression.right))) {
         this.diagnostics.warning(expression.range, "comparing a bool with 'true' changes nothing", 'compared-with-true');
       }
+      if (expression.left.kind === 'EmptyBraceLiteral' || expression.right.kind === 'EmptyBraceLiteral') {
+        this.diagnostics.error(
+          (expression.left.kind === 'EmptyBraceLiteral' ? expression.left : expression.right).range,
+          'empty {} needs a declared map or set type',
+        );
+        return BOOL;
+      }
+      if (left.kind === 'set' || right.kind === 'set') {
+        if (left.kind !== 'set' || right.kind !== 'set' || !sameType(left, right)) {
+          this.diagnostics.error(
+            expression.range,
+            `cannot compare '${typeToString(left)}' and '${typeToString(right)}'`,
+          );
+        }
+        return BOOL;
+      }
       // Голый null с голым null — мёртвое выражение (всегда true/false).
       if (left.kind === 'null' && right.kind === 'null') {
         this.diagnostics.error(expression.range, "cannot compare 'null' and 'null'");
@@ -2509,6 +2686,26 @@ export class SemanticAnalyzer {
             expression.range,
             `cannot compare '${typeToString(left)}' and '${typeToString(right)}' with '${expression.operator}' — '${typeToString(left)}.equals' accepts a '${typeToString(left)}', got '${typeToString(right)}'`,
           );
+        }
+        return BOOL;
+      }
+      // Словари сравниваются по содержимому (без учёта порядка); значения-
+      // объекты — через контракт equals, как в массивах.
+      if (left.kind === 'map' || right.kind === 'map') {
+        if (left.kind !== 'map' || right.kind !== 'map'
+          || (!sameType(left, right) && !this.canAssign(left, right) && !this.canAssign(right, left))) {
+          this.diagnostics.error(
+            expression.range,
+            `cannot compare '${typeToString(left)}' and '${typeToString(right)}'`,
+          );
+        } else {
+          const leaf = this.collectionLeafClass(left);
+          if (leaf !== null && !this.typeOwnsEqualsContract(leaf)) {
+            this.diagnostics.error(
+              expression.range,
+              `cannot compare maps of '${typeToString(leaf)}' values with '${expression.operator}' — declare 'bool function equals(${typeToString(leaf)} other)' in class '${typeToString(leaf)}' and the comparison will use it`,
+            );
+          }
         }
         return BOOL;
       }
@@ -2885,6 +3082,20 @@ export class SemanticAnalyzer {
         this.diagnostics.error(callee.range, `type 'string' has no method '${callee.name}'`);
         return null;
       }
+      if (objectType.kind === 'set') {
+        this.markSemanticToken('method', callee.nameRange);
+        const method = setMemberMethodSpec(objectType, callee.name);
+        if (method) return method;
+        this.diagnostics.error(callee.range, `type '${typeToString(objectType)}' has no method '${callee.name}'`);
+        return null;
+      }
+      if (objectType.kind === 'map') {
+        this.markSemanticToken('method', callee.nameRange);
+        const method = mapMemberMethodSpec(objectType, callee.name);
+        if (method) return method;
+        this.diagnostics.error(callee.range, `type '${typeToString(objectType)}' has no method '${callee.name}'`);
+        return null;
+      }
       if (objectType.kind === 'array') {
         this.markSemanticToken('method', callee.nameRange);
         const method = this.arrayMethodSpec(objectType, callee.name);
@@ -2908,6 +3119,13 @@ export class SemanticAnalyzer {
             this.diagnostics.error(
               callee.range,
               'sort() cannot order arrays of arrays — sort each inner array on its own',
+            );
+            return null;
+          }
+          if (callee.name === 'sort' && (objectType.elementType.kind === 'map' || objectType.elementType.kind === 'set')) {
+            this.diagnostics.error(
+              callee.range,
+              `sort() cannot order '${typeToString(objectType.elementType)}' values — they have no order`,
             );
             return null;
           }
@@ -3128,6 +3346,10 @@ export class SemanticAnalyzer {
           continue;
         }
 
+        if (item.arg.value.kind === 'EmptyBraceLiteral' && parameter.type.kind !== 'map' && parameter.type.kind !== 'set') {
+          this.diagnostics.error(item.arg.range, 'empty {} needs a declared map or set type');
+          continue;
+        }
         if (!this.canAssign(parameter.type, argType)) {
           this.diagnostics.error(
             item.arg.range,
@@ -3137,6 +3359,10 @@ export class SemanticAnalyzer {
         continue;
       }
 
+      if (item.arg.value.kind === 'EmptyBraceLiteral') {
+        this.diagnostics.error(item.arg.range, 'empty {} needs a declared map or set type');
+        continue;
+      }
       if (fn.variadicTypes && !fn.variadicTypes.some((candidate) => this.canAssign(candidate, argType))) {
         this.diagnostics.error(
           item.arg.range,
@@ -3179,6 +3405,18 @@ export class SemanticAnalyzer {
         && method.spec.parameters.length === 0
         && sameType(method.spec.returnType, STRING);
       return printable ? null : `cannot print object of class '${type.moduleName}.${type.name}' directly — declare 'string function to_string()' in class '${type.name}' and printing will use it`;
+    }
+    if (type.kind === 'map') {
+      const value = type.valueType;
+      if (value.kind === 'class') {
+        if (this.classHasPublicToString(value.name)) return null;
+        return `cannot print a map of '${value.name}' values directly — declare 'string function to_string()' in class '${value.name}' and printing will use it${this.contractShapeIssue(value.name, 'to_string')}`;
+      }
+      if (value.kind === 'qualified' && this.userModuleRegistry.hasModule(value.moduleName)) {
+        if (this.printableTypeError(value) === null) return null;
+        return `cannot print a map of '${value.moduleName}.${value.name}' values directly — declare 'string function to_string()' in class '${value.name}' and printing will use it`;
+      }
+      return this.printableTypeError(value);
     }
     if (type.kind === 'array') {
       const element = type.elementType;
@@ -3503,6 +3741,34 @@ export class SemanticAnalyzer {
       return ERROR_TYPE;
     }
 
+    if (objectType.kind === 'set') {
+      if (expression.name === 'length') {
+        this.markSemanticToken('property', expression.nameRange, ['readonly', 'defaultLibrary']);
+        return INT;
+      }
+      const method = setMemberMethodSpec(objectType, expression.name);
+      if (method) {
+        this.markSemanticToken('method', expression.nameRange, ['defaultLibrary']);
+        return functionType(method.parameters.map((param) => param.type), method.returnType);
+      }
+      this.diagnostics.error(expression.range, `type '${typeToString(objectType)}' has no member '${expression.name}'`);
+      return ERROR_TYPE;
+    }
+
+    if (objectType.kind === 'map') {
+      if (expression.name === 'length') {
+        this.markSemanticToken('property', expression.nameRange, ['readonly', 'defaultLibrary']);
+        return INT;
+      }
+      const method = mapMemberMethodSpec(objectType, expression.name);
+      if (method) {
+        this.markSemanticToken('method', expression.nameRange, ['defaultLibrary']);
+        return functionType(method.parameters.map((param) => param.type), method.returnType);
+      }
+      this.diagnostics.error(expression.range, `type '${typeToString(objectType)}' has no member '${expression.name}'`);
+      return ERROR_TYPE;
+    }
+
     if (objectType.kind === 'array') {
       if (expression.name === 'length') {
         this.markSemanticToken('property', expression.nameRange, ['readonly', 'defaultLibrary']);
@@ -3645,7 +3911,7 @@ export class SemanticAnalyzer {
   }
 
   private isBuiltinLengthProperty(type: TypeRef, name: string): boolean {
-    return name === 'length' && (this.isStringType(type) || type.kind === 'array');
+    return name === 'length' && (this.isStringType(type) || type.kind === 'array' || type.kind === 'map' || type.kind === 'set');
   }
 
   private runtimeErrorPropertySpec(type: TypeRef, name: string): PropertySpec | null {
@@ -3845,6 +4111,10 @@ export class SemanticAnalyzer {
       return sizeMatches && this.canAssign(target.elementType, value.elementType);
     }
 
+    if (target.kind === 'map' && value.kind === 'map') {
+      return sameType(target.keyType, value.keyType) && this.canAssign(target.valueType, value.valueType);
+    }
+
     return false;
   }
 
@@ -3944,6 +4214,10 @@ export class SemanticAnalyzer {
     }
     if (HOST_RESERVED_NAMES.has(name)) {
       this.diagnostics.error(range, `'${name}' is a reserved word and cannot be used as a name`);
+      return false;
+    }
+    if (name === 'set') {
+      this.diagnostics.error(range, "'set' is reserved for the set type — pick another name");
       return false;
     }
     if (this.stdlib.hasModule(name)) {
@@ -4124,6 +4398,56 @@ export function stringMemberMethodSpec(name: string): FunctionSpec | null {
       return { name, parameters: [{ name: 'old_text', type: STRING }, { name: 'new_text', type: STRING }], returnType: STRING };
     case 'split':
       return { name, parameters: [{ name: 'separator', type: STRING }], returnType: arrayType(STRING, null, true) };
+    default:
+      return null;
+  }
+}
+
+/** Типизированные спеки методов множества: add/has/remove/clear/values +
+ *  чистая алгебра union/intersection/difference и is_subset. */
+export function setMemberMethodSpec(type: SetType, name: string): FunctionSpec | null {
+  const value = { name: 'value', type: type.elementType };
+  const other = { name: 'other', type: setType(type.elementType) };
+  switch (name) {
+    case 'add':
+    case 'remove':
+      return { name, parameters: [value], returnType: VOID };
+    case 'has':
+      return { name, parameters: [value], returnType: BOOL };
+    case 'clear':
+      return { name, parameters: [], returnType: VOID };
+    case 'values':
+      return { name, parameters: [], returnType: arrayType(type.elementType, null, true) };
+    case 'union':
+    case 'intersection':
+    case 'difference':
+      return { name, parameters: [other], returnType: setType(type.elementType) };
+    case 'is_subset':
+      return { name, parameters: [other], returnType: BOOL };
+    default:
+      return null;
+  }
+}
+
+/** Типизированные спеки встроенных методов словаря: имена — зеркало
+ *  json.Object там, где смысл совпадает (has, remove, keys, length). */
+export function mapMemberMethodSpec(type: MapType, name: string): FunctionSpec | null {
+  const key = { name: 'key', type: type.keyType };
+  switch (name) {
+    case 'has':
+      return { name, parameters: [key], returnType: BOOL };
+    case 'get_or':
+      return { name, parameters: [key, { name: 'fallback', type: type.valueType }], returnType: type.valueType };
+    case 'remove':
+      return { name, parameters: [key], returnType: VOID };
+    case 'keys':
+      return { name, parameters: [], returnType: arrayType(type.keyType, null, true) };
+    case 'values':
+      return { name, parameters: [], returnType: arrayType(type.valueType, null, true) };
+    case 'clear':
+      return { name, parameters: [], returnType: VOID };
+    case 'join':
+      return { name, parameters: [{ name: 'other', type: mapType(type.keyType, type.valueType) }], returnType: VOID };
     default:
       return null;
   }

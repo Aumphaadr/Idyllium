@@ -1167,6 +1167,232 @@ test('dynamic arrays can satisfy fixed array parameters after a size check', asy
   assert(result.output === '[1, 2, 3, 4]:[40, 2, 3, 4]', `unexpected fixed parameter output: ${JSON.stringify(result.output)}`);
 });
 
+test('map: literals, access, methods and insertion order', async () => {
+  // Спека some_map/02 (вердикты владельца 2026-09-07): словарь как значение,
+  // ключи int|string|char|bool, порядок вставки, чтение чужого ключа — ошибка.
+  const result = await runIdyllium(`use console;
+main() {
+    map<string, int> ages = {"Мира": 12, "Кай": 9};
+    ages["Тася"] = 15;
+    ages["Мира"] = ages["Мира"] + 1;
+    console.write(ages, "|", ages.length, "|", ages.has("Кай"), ages.has("Хома"), "|", ages.get_or("Хома", 0), "|");
+    console.write(ages.keys(), ages.values(), "|");
+    ages.remove("Кай");
+    map<string, int> more = {"Лиам": 7, "Мира": 100};
+    ages.join(more);
+    console.write(ages, "|");
+    ages.clear();
+    console.write(ages, ages.length);
+}
+`, {}, { file: '/main.idyl' });
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === '{"Мира": 13, "Кай": 9, "Тася": 15}|3|truefalse|0|["Мира", "Кай", "Тася"][13, 9, 15]|{"Мира": 100, "Тася": 15, "Лиам": 7}|{}0',
+    `map basics: ${result.output}`,
+  );
+
+  const missing = await runIdyllium('use console;\nmain() {\n    map<string, int> m;\n    console.write(m["Хома"]);\n}\n', {}, { file: '/main.idyl' });
+  assert(missing.runtimeError?.includes('map has no key "Хома"') === true, `missing key: ${missing.runtimeError}`);
+  const missingRemove = await runIdyllium('main() {\n    map<int, int> m;\n    m.remove(5);\n}\n', {}, { file: '/main.idyl' });
+  assert(missingRemove.runtimeError?.includes('map has no key 5') === true, `remove missing: ${missingRemove.runtimeError}`);
+
+  // Идиома подсчёта через get_or и сортировка ключей отдельным массивом.
+  const counting = await runIdyllium(`use console;
+main() {
+    map<string, int> count;
+    dyn_array<string> words = ["а", "б", "а", "в", "а", "б"];
+    for (int i = 0; i < words.length; i = i + 1) {
+        count[words[i]] = count.get_or(words[i], 0) + 1;
+    }
+    dyn_array<string> ks = count.keys();
+    ks.sort();
+    console.write(count, ks);
+}
+`, {}, { file: '/main.idyl' });
+  assert(counting.output === '{"а": 3, "б": 2, "в": 1}["а", "б", "в"]', `counting idiom: ${counting.output}`);
+});
+
+test('map is a value like arrays, and indexing edits the stored element', async () => {
+  const result = await runIdyllium(`use console;
+map<string, int> function bump(map<string, int> m) {
+    m["x"] = 99;
+    return m;
+}
+main() {
+    map<string, int> a = {"x": 1};
+    map<string, int> b = a;
+    b["x"] = 2;
+    map<string, int> c = bump(a);
+    console.write(a, b, c, "|");
+    map<string, dyn_array<int>> marks = {"Мира": [5]};
+    marks["Мира"].add(4);
+    dyn_array<int> copy = marks["Мира"];
+    copy.add(3);
+    console.write(marks, copy, "|");
+    map<string, map<string, int>> table = {"а": {"x": 1}, "б": {}};
+    table["б"]["y"] = 2;
+    table["а"]["x"] += 10;
+    console.write(table);
+}
+`, {}, { file: '/main.idyl' });
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === '{"x": 1}{"x": 2}{"x": 99}|{"Мира": [5, 4]}[5, 4, 3]|{"а": {"x": 11}, "б": {"y": 2}}',
+    `map value semantics: ${result.output}`,
+  );
+});
+
+test('map keys: int (canonical beyond 2^53), char, bool; refused: float, objects, mismatch', async () => {
+  const keys = await runIdyllium(`use console;
+main() {
+    map<int, string> names;
+    names[9007199254740993] = "большой";
+    int same = 9007199254740992 + 1;
+    names[-0] = "ноль";
+    map<char, int> letters = {'а': 1};
+    map<bool, string> flags = {true: "да", false: "нет"};
+    console.write(names.has(same), names[same], names.has(0), "|", letters, flags, flags[false]);
+}
+`, {}, { file: '/main.idyl' });
+  assert(keys.success, keys.runtimeError ?? keys.compilation.diagnosticsText);
+  assert(keys.output === 'trueбольшойtrue|{"а": 1}{true: "да", false: "нет"}нет', `map keys: ${keys.output}`);
+
+  assertFails('main() {\n    map<float, int> bad;\n}', "cannot use 'float' as a map key — float numbers are almost never exactly equal; use int or string");
+  assertFails('class Hero { int level; }\nmain() {\n    map<Hero, int> bad;\n}', "cannot use objects of class 'Hero' as map keys — use a field with an int or string value");
+  assertFails('main() {\n    map<string, int> ages;\n    ages[5] = 1;\n}', "map key must be 'string', got 'int'");
+  assertFails('main() {\n    map<string, int> ages = {"Мира": 1, "Мира": 2};\n}', 'duplicate key "Мира" in map literal');
+  assertFails('main() {\n    map<string> bad;\n}', 'map needs two type parameters — write map<string, int>');
+  assertFails('main() {\n    int map = 1;\n}', "'map' is a keyword and cannot be used as a name");
+});
+
+test('map equality ignores order, values use the equals contract, printing uses to_string', async () => {
+  const equality = await runIdyllium(`use console;
+main() {
+    map<string, int> a = {"x": 1, "y": 2};
+    map<string, int> b = {"y": 2, "x": 1};
+    map<string, int> c = {"x": 1};
+    dyn_array<map<string, int>> rows = [a, c];
+    console.write(a == b, a != b, a == c, "|", rows.contains(b), rows.find(c), "|", type_name(a));
+}
+`, {}, { file: '/main.idyl' });
+  assert(equality.success, equality.runtimeError ?? equality.compilation.diagnosticsText);
+  assert(equality.output === 'truefalsefalse|true1|map<string, int>', `map equality: ${equality.output}`);
+
+  const contracts = await runIdyllium(`use console;
+class Hero {
+    string name;
+    int level;
+    bool function equals(Hero other) { return this.name == other.name; }
+    string function to_string() { return this.name + "(" + to_string(this.level) + ")"; }
+}
+main() {
+    Hero a; a.name = "Мира"; a.level = 1;
+    Hero b; b.name = "Мира"; b.level = 2;
+    map<string, Hero> x = {"герой": a};
+    map<string, Hero> y = {"герой": b};
+    map<string, dyn_array<Hero>> squads = {"первый": [a, b]};
+    console.write(x == y, x, squads);
+}
+`, {}, { file: '/main.idyl' });
+  assert(contracts.success, contracts.runtimeError ?? contracts.compilation.diagnosticsText);
+  assert(
+    contracts.output === 'true{"герой": "Мира(1)"}{"первый": ["Мира(1)", "Мира(2)"]}',
+    `map contracts: ${contracts.output}`,
+  );
+
+  assertFails('use console;\nclass Pet { int v; }\nmain() {\n    map<string, Pet> pets;\n    console.writeln(pets);\n}', "cannot print a map of 'Pet' values directly — declare 'string function to_string()' in class 'Pet' and printing will use it");
+  assertFails('class Pet { int v; }\nmain() {\n    map<string, Pet> a;\n    map<string, Pet> b;\n    bool q = a == b;\n}', "cannot compare maps of 'Pet' values with '==' — declare 'bool function equals(Pet other)' in class 'Pet' and the comparison will use it");
+  assertFails('main() {\n    dyn_array<map<string, int>> rows;\n    rows.sort();\n}', "sort() cannot order 'map<string, int>' values — they have no order");
+  assertFails('main() {\n    map<string, int> m;\n    bool q = m < m;\n}', "comparison '<' requires numeric operands");
+});
+
+test('set: literal, add/has/remove, insertion order, pure algebra', async () => {
+  // Спека some_set/01 (вердикты владельца 2026-09-07): множество — младший
+  // брат словаря; алгебра чистая, join нет, индексации нет.
+  const result = await runIdyllium(`use console;
+main() {
+    set<int> s = {3, 1, 2};
+    s.add(2);
+    s.add(5);
+    console.write(s, s.length, s.has(1), s.has(7), "|");
+    s.remove(1);
+    console.write(s, s.values(), "|");
+    s.clear();
+    console.write(s, s.length, "|");
+    set<int> a = {1, 2, 3};
+    set<int> b = {3, 4};
+    console.write(a.union(b), a.intersection(b), a.difference(b), b.difference(a), "|", a, b, "|");
+    set<int> c = {1, 2};
+    console.write(c.is_subset(a), a.is_subset(c), a.is_subset(a), "|", type_name(a));
+}
+`, {}, { file: '/main.idyl' });
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === '{3, 1, 2, 5}4truefalse|{3, 2, 5}[3, 2, 5]|{}0|{1, 2, 3, 4}{3}{1, 2}{4}|{1, 2, 3}{3, 4}|truefalsetrue|set<int>',
+    `set basics: ${result.output}`,
+  );
+  const missing = await runIdyllium('main() {\n    set<int> s = {1};\n    s.remove(9);\n}\n', {}, { file: '/main.idyl' });
+  assert(missing.runtimeError?.includes('set has no element 9') === true, `remove missing: ${missing.runtimeError}`);
+});
+
+test('set is a value; empty braces follow the declared type; set stays a method name', async () => {
+  const result = await runIdyllium(`use console;
+set<int> function grow(set<int> s) {
+    s.add(99);
+    return s;
+}
+void function take(set<int> s) { console.write(s.length, "|"); }
+main() {
+    set<int> a = {1};
+    set<int> b = a;
+    b.add(2);
+    set<int> c = grow(a);
+    console.write(a, b, c, "|");
+    map<string, set<int>> groups = {"x": {}, "y": {7}};
+    groups["x"].add(5);
+    set<int> copy = groups["y"];
+    copy.add(8);
+    console.write(groups, copy, "|");
+    dyn_array<set<char>> rows = [{}, {'а'}];
+    rows[0].add('б');
+    console.write(rows, "|");
+    map<string, int> m = {};
+    set<int> empty = {};
+    take({});
+    console.write(m, empty, "|");
+    set<int> x = {1, 2};
+    set<int> y = {2, 1};
+    dyn_array<set<int>> list = [x, {1}];
+    console.write(x == y, x != y, list.contains(y), list.find({1}));
+}
+`, {}, { file: '/main.idyl' });
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(
+    result.output === '{1}{1, 2}{1, 99}|{"x": {5}, "y": {7}}{7, 8}|[{"б"}, {"а"}]|0|{}{}|truefalsetrue1',
+    `set values: ${result.output}`,
+  );
+  // `set` как имя метода живёт (json.Object.set и свой метод) — слово контекстное.
+  const methodNamedSet = compileIdyllium(
+    'use json;\nclass Box {\n    int v;\n    void function set(int value) { this.v = value; }\n}\nmain() {\n    json.Object o;\n    o.set("a", json.Value(1));\n    Box b;\n    b.set(4);\n}\n',
+    { file: '/main.idyl' },
+  );
+  assert(methodNamedSet.success, `set as method name: ${methodNamedSet.diagnosticsText}`);
+});
+
+test('set refusals are worded in the language', () => {
+  assertFails('main() {\n    set<float> bad;\n}', "cannot use 'float' as a set element — float numbers are almost never exactly equal; use int or string");
+  assertFails('class Hero { int v; }\nmain() {\n    set<Hero> bad;\n}', "cannot use objects of class 'Hero' as set elements — use a field with an int or string value");
+  assertFails('main() {\n    set<int> s = {1, "два"};\n}', "set element type 'string' does not match 'int'");
+  assertFails('main() {\n    set<int> s = {1, 1};\n}', 'duplicate element 1 in set literal');
+  assertFails('main() {\n    set s;\n}', 'set needs a type parameter — write set<int>');
+  assertFails('main() {\n    set<int> s = {1};\n    int x = s[0];\n}', 'sets have no index — use has() or values()');
+  assertFails('main() {\n    dyn_array<set<int>> rows;\n    rows.sort();\n}', "sort() cannot order 'set<int>' values — they have no order");
+  assertFails('main() {\n    int set = 1;\n}', "'set' is reserved for the set type — pick another name");
+  assertFails('main() {\n    set<int> a;\n    set<string> b;\n    bool q = a == b;\n}', "cannot compare 'set<int>' and 'set<string>'");
+  assertFails('use console;\nmain() {\n    console.writeln({});\n}', 'empty {} needs a declared map or set type');
+  assertFails('main() {\n    set<int> s;\n    bool q = s == {};\n}', 'empty {} needs a declared map or set type');
+});
+
 test('nested static and dynamic arrays convert recursively', async () => {
   const result = await runIdyllium(`
     use console;

@@ -4345,6 +4345,7 @@
     "dyn_array",
     "float",
     "int",
+    "map",
     "set",
     "string",
     "void"

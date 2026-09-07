@@ -34,7 +34,7 @@ import {
 } from './runtime-shared';
 
 export { IdylliumRuntimeError };
-export { IdylliumColor, IdylliumTimeStamp, IdylliumArray } from './runtime-values';
+export { IdylliumColor, IdylliumTimeStamp, IdylliumArray, IdylliumMap, IdylliumSet } from './runtime-values';
 import {
   IdylliumColor,
   IdylliumTimeStamp,
@@ -52,8 +52,13 @@ import {
   trimFloat,
   registerValueOperations,
   expectArray,
+  expectMap,
+  IdylliumMap,
+  expectSet,
+  IdylliumSet,
 } from './runtime-values';
 import { createXmlNode, parseXmlDocument } from './runtime-xml';
+import { createCsvTable, csvParseSeparator, isCsvRuntimeTable, parseCsvTable, serializeCsvTable } from './runtime-csv';
 import { ExactJsonParser, JsonRuntimeValue, createJsonArray, createJsonObject, createJsonValue, expectJsonValue, isJsonRuntimeValue, jsonEntries, jsonIntegerAsBigInt, jsonIntegerValue, jsonItems, jsonSerialize, parseJsonValue } from './runtime-json';
 import { SqliteRuntimeDatabaseState, SqliteRuntimeValueObject, createBlankSqliteResult, createClosedSqliteDatabase, createClosedSqliteStatement, createSqliteResult, createSqliteValue, executeSqliteDatabase, isSqliteRuntimeValue, openSqliteDatabase, persistSqliteDatabase, sqliteDatabaseState, sqliteValueToString } from './runtime-sqlite';
 import { RuntimeEncoding, SINGLE_BYTE_ENCODINGS, decodeUtf8, encodingCharToCodepoint, encodingCodepointToChar, encodingDecode, encodingEncode, formatByte, isUnicodeScalarValue, normalizeEncoding, singleCharacter } from './runtime-encoding';
@@ -168,7 +173,7 @@ import {
 import { parseIdylliumStyle } from './style';
 import { hashAdler32, hashCrc32, hashFnv1a, hashSha256Bytes, hashSha256Hex } from './hash';
 
-export const IDYLLIUM_VERSION = '1.5.5';
+export const IDYLLIUM_VERSION = '1.5.6';
 
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform(): string {
@@ -253,6 +258,7 @@ export interface IdylliumRuntime {
     equalsObjects(left: unknown, right: unknown, slot: string, file: string, line: number): Promise<boolean>;
     orderObjects(left: unknown, right: unknown, slot: string, contract: string, file: string, line: number): Promise<boolean>;
     equalsObjectArrays(left: unknown, right: unknown, slot: string, file: string, line: number): Promise<boolean>;
+    equalsObjectMaps(left: unknown, right: unknown, slot: string, file: string, line: number): Promise<boolean>;
     negate(value: unknown): number | bigint;
     divide(left: unknown, right: unknown, file: string, line: number): number;
     div(left: unknown, right: unknown, file: string, line: number): number | bigint;
@@ -287,6 +293,18 @@ export interface IdylliumRuntime {
     searchWith(array: unknown, value: unknown, slot: string, mode: string, file: string, line: number): Promise<boolean | number>;
     sortObjects(array: unknown, slot: string, file: string, line: number): Promise<void>;
   };
+  readonly set: {
+    create(): IdylliumSet;
+    fromValues(values: readonly unknown[]): IdylliumSet;
+    convert(value: unknown, targetType: string, file: string, line: number): IdylliumSet;
+  };
+  readonly map: {
+    create(): IdylliumMap;
+    fromPairs(pairs: readonly (readonly [unknown, unknown])[]): IdylliumMap;
+    convert(value: unknown, convertValue: (value: unknown) => unknown, targetType: string, file: string, line: number): IdylliumMap;
+    get(map: unknown, key: unknown, file: string, line: number): unknown;
+    set(map: unknown, key: unknown, value: unknown, file: string, line: number): void;
+  };
   readonly types: {
     cast(value: unknown, typeName: string, file?: string, line?: number): number | bigint;
     to_bin(value: unknown, typeName: string, file?: string, line?: number): string;
@@ -316,6 +334,7 @@ export interface IdylliumRuntime {
   readonly http: Record<string, unknown>;
     readonly json: Record<string, unknown>;
     readonly xml: Record<string, unknown>;
+    readonly csv: Record<string, unknown>;
     readonly sqlite: Record<string, unknown>;
     readonly audio: Record<string, unknown>;
     readonly image: Record<string, unknown>;
@@ -473,8 +492,8 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     // ученика позвать не может) — жанр equalsObjectArrays. Вложенность
     // проходится насквозь: у таблицы объектов внутренние ряды раньше
     // печатались JS-нутром '[object Object]'.
-    if (value instanceof IdylliumArray && (await arrayHoldsContractObjects(value))) {
-      return await formatArrayWithContracts(value);
+    if ((value instanceof IdylliumArray || value instanceof IdylliumMap) && (await collectionHoldsContractObjects(value))) {
+      return await formatCollectionWithContracts(value);
     }
     if (value !== null && typeof value === 'object') {
       const method = (value as Record<string, unknown>).to_string;
@@ -486,11 +505,15 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     return formatForConsole(value, precision);
   }
 
-  // Есть ли в массиве (на любой глубине) объект с контрактом to_string.
-  async function arrayHoldsContractObjects(array: IdylliumArray): Promise<boolean> {
-    for (const item of array.values()) {
-      if (item instanceof IdylliumArray) {
-        if (await arrayHoldsContractObjects(item)) return true;
+  // Есть ли в коллекции (массив/словарь, на любой глубине) объект с
+  // контрактом to_string.
+  async function collectionHoldsContractObjects(collection: IdylliumArray | IdylliumMap): Promise<boolean> {
+    const items = collection instanceof IdylliumArray
+      ? collection.values()
+      : collection.entriesList().map((entry) => entry.value);
+    for (const item of items) {
+      if (item instanceof IdylliumArray || item instanceof IdylliumMap) {
+        if (await collectionHoldsContractObjects(item)) return true;
         continue;
       }
       if (item !== null && typeof item === 'object'
@@ -499,21 +522,27 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     return false;
   }
 
-  async function formatArrayWithContracts(array: IdylliumArray): Promise<string> {
-    const parts: string[] = [];
-    for (const item of array.values()) {
-      if (item instanceof IdylliumArray) {
-        parts.push(await formatArrayWithContracts(item));
-        continue;
-      }
-      const method = item !== null && typeof item === 'object'
-        ? (item as Record<string, unknown>).to_string
-        : undefined;
-      parts.push(typeof method === 'function'
-        ? formatForInspect(await (method as () => Promise<unknown>).apply(item))
-        : formatForInspect(item));
+  async function formatItemWithContracts(item: unknown): Promise<string> {
+    if (item instanceof IdylliumArray || item instanceof IdylliumMap) return formatCollectionWithContracts(item);
+    const method = item !== null && typeof item === 'object'
+      ? (item as Record<string, unknown>).to_string
+      : undefined;
+    return typeof method === 'function'
+      ? formatForInspect(await (method as () => Promise<unknown>).apply(item))
+      : formatForInspect(item);
+  }
+
+  async function formatCollectionWithContracts(collection: IdylliumArray | IdylliumMap): Promise<string> {
+    if (collection instanceof IdylliumArray) {
+      const parts: string[] = [];
+      for (const item of collection.values()) parts.push(await formatItemWithContracts(item));
+      return `[${parts.join(', ')}]`;
     }
-    return `[${parts.join(', ')}]`;
+    const parts: string[] = [];
+    for (const entry of collection.entriesList()) {
+      parts.push(`${formatForInspect(entry.key)}: ${await formatItemWithContracts(entry.value)}`);
+    }
+    return `{${parts.join(', ')}}`;
   }
 
   async function formatConsoleValues(values: readonly unknown[]): Promise<string> {
@@ -747,6 +776,8 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       if (value instanceof IdylliumColor) return 'colors.Color';
       if (value instanceof IdylliumTimeStamp) return 'time.stamp';
       if (value instanceof IdylliumArray) return 'array';
+      if (value instanceof IdylliumMap) return 'map';
+      if (value instanceof IdylliumSet) return 'set';
       if (typeof value === 'object' && typeof (value as Record<string, unknown>).__idylliumType === 'string') {
         // Наследник виджета носит рантайм-тип базы, а СВОЁ имя — в __idylliumClass.
         if (typeof (value as Record<string, unknown>).__idylliumClass === 'string') {
@@ -797,6 +828,15 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       return equalsArrayCellsWith(
         expectArray(left, file, line),
         expectArray(right, file, line),
+        slot,
+        file,
+        line,
+      );
+    },
+    async equalsObjectMaps(left: unknown, right: unknown, slot: string, file: string, line: number): Promise<boolean> {
+      return equalsMapEntriesWith(
+        expectMap(left, file, line),
+        expectMap(right, file, line),
         slot,
         file,
         line,
@@ -946,11 +986,11 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       let matches = 0;
       for (let index = 0; index < snapshot.length; index += 1) {
         const item = snapshot[index] as Record<string, unknown> | null;
-        const contract = item?.[slot];
-        if (typeof contract !== 'function') {
+        const isCollection = item instanceof IdylliumArray || item instanceof IdylliumMap;
+        if (!isCollection && typeof item?.[slot] !== 'function') {
           throw new IdylliumRuntimeError(file, line, `${mode}() found an element without the 'equals' contract`);
         }
-        const equal = (await (contract as (other: unknown) => Promise<unknown>)(target)) === true;
+        const equal = await equalsCellWith(item, target, slot, file, line);
         if (equal) {
           if (mode === 'contains') return true;
           if (mode === 'find') return index;
@@ -977,6 +1017,36 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       const values = numericValues(value, 'avg', file, line);
       const total = values.reduce<number | bigint>((sum, item) => runtimeAdd(sum, item), 0);
       return Number(total) / values.length;
+    },
+  };
+
+  const set = {
+    create(): IdylliumSet {
+      return IdylliumSet.create();
+    },
+    fromValues(values: readonly unknown[]): IdylliumSet {
+      return IdylliumSet.fromValues(values);
+    },
+    convert(value: unknown, targetType: string, file: string, line: number): IdylliumSet {
+      return IdylliumSet.convert(value, targetType, file, line);
+    },
+  };
+
+  const map = {
+    create(): IdylliumMap {
+      return IdylliumMap.create();
+    },
+    fromPairs(pairs: readonly (readonly [unknown, unknown])[]): IdylliumMap {
+      return IdylliumMap.fromPairs(pairs);
+    },
+    convert(value: unknown, convertValue: (value: unknown) => unknown, targetType: string, file: string, line: number): IdylliumMap {
+      return IdylliumMap.convert(value, convertValue, targetType, file, line);
+    },
+    get(value: unknown, key: unknown, file: string, line: number): unknown {
+      return expectMap(value, file, line).get(key, file, line);
+    },
+    set(value: unknown, key: unknown, item: unknown, file: string, line: number): void {
+      expectMap(value, file, line).set(key, item);
     },
   };
 
@@ -1048,6 +1118,8 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     },
     core,
     array,
+    map,
+    set,
     types,
     errors: {
       catchValue(error: unknown): RuntimeObject {
@@ -1159,6 +1231,56 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
         }),
         to_radians: contextFunction((degrees: number, file: string, line: number) => finiteNumber(degrees, 'math.to_radians() degrees', file, line) * Math.PI / 180),
         to_degrees: contextFunction((radians: number, file: string, line: number) => finiteNumber(radians, 'math.to_degrees() radians', file, line) * 180 / Math.PI),
+        gcd: contextFunction((a: unknown, b: unknown, file: string, line: number) => exactIntegerResult(bigGcd(
+          runtimeInteger(a, 'math.gcd() a', file, line),
+          runtimeInteger(b, 'math.gcd() b', file, line),
+        ))),
+        lcm: contextFunction((a: unknown, b: unknown, file: string, line: number) => {
+          const x = bigAbs(runtimeInteger(a, 'math.lcm() a', file, line));
+          const y = bigAbs(runtimeInteger(b, 'math.lcm() b', file, line));
+          if (x === 0n || y === 0n) return 0;
+          return exactIntegerResult((x / bigGcd(x, y)) * y);
+        }),
+        factorial: contextFunction((n: unknown, file: string, line: number) => {
+          const count = integerNumber(n, 'math.factorial() n', file, line);
+          if (count < 0 || count > 10000) {
+            throw new IdylliumRuntimeError(file, line, `math.factorial() n must be between 0 and 10000, got ${count}`);
+          }
+          let result = 1n;
+          for (let factor = 2n; factor <= BigInt(count); factor += 1n) result *= factor;
+          return exactIntegerResult(result);
+        }),
+        is_prime: contextFunction((n: unknown, file: string, line: number) => {
+          const value = runtimeInteger(n, 'math.is_prime() n', file, line);
+          if (value > IS_PRIME_EXACT_LIMIT) {
+            throw new IdylliumRuntimeError(file, line, `math.is_prime() n must be at most ${IS_PRIME_EXACT_LIMIT}, got ${value}`);
+          }
+          return bigIsPrime(value);
+        }),
+        divisors: contextFunction((n: unknown, file: string, line: number) => {
+          const value = integerNumber(n, 'math.divisors() n', file, line);
+          if (value < 1) {
+            throw new IdylliumRuntimeError(file, line, `math.divisors() n must be a positive number, got ${value}`);
+          }
+          const small: number[] = [];
+          const large: number[] = [];
+          for (let candidate = 1; candidate * candidate <= value; candidate += 1) {
+            if (value % candidate === 0) {
+              small.push(candidate);
+              if (candidate * candidate !== value) large.push(value / candidate);
+            }
+          }
+          return IdylliumArray.from([...small, ...large.reverse()], true, null, () => 0);
+        }),
+        sign: contextFunction((value: unknown, file: string, line: number) => {
+          if (typeof value === 'bigint') return value < 0n ? -1 : value > 0n ? 1 : 0;
+          const number = finiteNumber(value, 'math.sign() value', file, line);
+          return number < 0 ? -1 : number > 0 ? 1 : 0;
+        }),
+        hypot: contextFunction((a: unknown, b: unknown, file: string, line: number) => finiteMathResult(Math.hypot(
+          finiteNumber(a, 'math.hypot() a', file, line),
+          finiteNumber(b, 'math.hypot() b', file, line),
+        ), 'math.hypot()', file, line)),
       },
       random: {
         create_int: contextFunction((min: number, max: number, file: string, line: number) => {
@@ -1531,6 +1653,55 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
           parseXmlDocument(stringArgument(text, 'xml.parse_html() text', file, line), true, file, line)
         )),
       },
+      csv: {
+        parse: contextFunction((...rawArgs: unknown[]) => {
+          const { values, file, line } = splitContextArgs(rawArgs);
+          const text = stringArgument(values[0], 'csv.parse() text', file, line);
+          return parseCsvTable(text, csvParseSeparator(values[1], 'csv.parse()', file, line), 'csv.parse()', file, line);
+        }),
+        read: contextFunction((...rawArgs: unknown[]) => {
+          const { values, file, line } = splitContextArgs(rawArgs);
+          const requestedPath = stringArgument(values[0], 'csv.read() path', file, line);
+          const separator = csvParseSeparator(values[1], 'csv.read()', file, line);
+          const resolvedPath = fileSystem.resolvePath(requestedPath, file);
+          const shownPath = humanizeFsPaths(resolvedPath);
+          let text: string;
+          try {
+            if (!fileSystem.exists(resolvedPath)) {
+              throw new IdylliumRuntimeError(file, line, `csv.read() cannot read '${shownPath}': file does not exist`);
+            }
+            if (!fileSystem.isFile(resolvedPath)) {
+              throw new IdylliumRuntimeError(file, line, `csv.read() cannot read '${shownPath}': path is not a file`);
+            }
+            text = fileSystem.readText(resolvedPath);
+          } catch (error) {
+            if (error instanceof IdylliumRuntimeError) throw error;
+            throw new IdylliumRuntimeError(file, line, `csv.read() cannot read '${shownPath}': ${humanizeFsPaths(errorMessage(error))}`);
+          }
+          return parseCsvTable(text, separator, 'csv.read()', file, line);
+        }),
+        write: contextFunction((targetPath: unknown, table: unknown, file: string, line: number) => {
+          const requestedPath = stringArgument(targetPath, 'csv.write() path', file, line);
+          if (!isCsvRuntimeTable(table)) {
+            throw new IdylliumRuntimeError(file, line, `csv.write() expects a csv.Table, got '${runtimeTypeName(table)}'`);
+          }
+          const resolvedPath = fileSystem.resolvePath(requestedPath, file);
+          const shownPath = humanizeFsPaths(resolvedPath);
+          const parent = runtimeDirname(resolvedPath);
+          try {
+            if (!fileSystem.exists(parent)) {
+              throw new IdylliumRuntimeError(file, line, `csv.write() cannot write '${shownPath}': directory does not exist`);
+            }
+            if (fileSystem.exists(resolvedPath) && !fileSystem.isFile(resolvedPath)) {
+              throw new IdylliumRuntimeError(file, line, `csv.write() cannot write '${shownPath}': path is not a file`);
+            }
+            fileSystem.writeText(resolvedPath, serializeCsvTable(table));
+          } catch (error) {
+            if (error instanceof IdylliumRuntimeError) throw error;
+            throw new IdylliumRuntimeError(file, line, `csv.write() cannot write '${shownPath}': ${humanizeFsPaths(errorMessage(error))}`);
+          }
+        }),
+      },
       sqlite: {
         open: contextFunction(async (path: unknown, file: string, line: number) => (
           openSqliteDatabase(path, file, line, runtimeObjects)
@@ -1632,6 +1803,14 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     callMethod(target: unknown, methodName: string, args: readonly unknown[], file: string, line: number): unknown {
       throwIfRuntimeStopped(file, line);
       if (target instanceof IdylliumArray) {
+        return target.callMethod(methodName, args, file, line);
+      }
+
+      if (target instanceof IdylliumMap) {
+        return target.callMethod(methodName, args, file, line);
+      }
+
+      if (target instanceof IdylliumSet) {
         return target.callMethod(methodName, args, file, line);
       }
 
@@ -2118,6 +2297,16 @@ function runtimeEquals(left: unknown, right: unknown, file = 'program', line = 0
     return leftValues.length === rightValues.length
       && leftValues.every((value, index) => runtimeEquals(value, rightValues[index], file, line));
   }
+  if (left instanceof IdylliumSet || right instanceof IdylliumSet) {
+    if (!(left instanceof IdylliumSet) || !(right instanceof IdylliumSet)) return false;
+    return left.length === right.length && left.items().every((item) => right.has(item));
+  }
+  if (left instanceof IdylliumMap || right instanceof IdylliumMap) {
+    if (!(left instanceof IdylliumMap) || !(right instanceof IdylliumMap)) return false;
+    if (left.length !== right.length) return false;
+    return left.entriesList().every((entry) => right.has(entry.key)
+      && runtimeEquals(entry.value, right.getOr(entry.key, undefined), file, line));
+  }
   if (typeof left === 'bigint' && typeof right === 'number' && Number.isInteger(right)) {
     return left === BigInt(right);
   }
@@ -2195,20 +2384,43 @@ async function equalsArrayCellsWith(
   const rightValues = right.values();
   if (leftValues.length !== rightValues.length) return false;
   for (let index = 0; index < leftValues.length; index += 1) {
-    const leftItem = leftValues[index];
-    const rightItem = rightValues[index];
-    if (leftItem instanceof IdylliumArray || rightItem instanceof IdylliumArray) {
-      if (!(leftItem instanceof IdylliumArray) || !(rightItem instanceof IdylliumArray)) return false;
-      if (!(await equalsArrayCellsWith(leftItem, rightItem, slot, file, line))) return false;
-      continue;
-    }
-    const contract = (leftItem as Record<string, unknown> | null)?.[slot];
-    if (typeof contract !== 'function') {
-      throw new IdylliumRuntimeError(file, line, "comparison found an object without the 'equals' contract");
-    }
-    if ((await (contract as (other: unknown) => Promise<unknown>)(rightItem)) !== true) return false;
+    if (!(await equalsCellWith(leftValues[index], rightValues[index], slot, file, line))) return false;
   }
   return true;
+}
+
+/** Словари с объектами-значениями: по содержимому, без учёта порядка,
+ *  значения — через контракт equals (жанр equalsArrayCellsWith). */
+async function equalsMapEntriesWith(
+  left: IdylliumMap,
+  right: IdylliumMap,
+  slot: string,
+  file: string,
+  line: number,
+): Promise<boolean> {
+  if (left.length !== right.length) return false;
+  for (const entry of left.entriesList()) {
+    if (!right.has(entry.key)) return false;
+    if (!(await equalsCellWith(entry.value, right.getOr(entry.key, undefined), slot, file, line))) return false;
+  }
+  return true;
+}
+
+/** Одна ячейка коллекции: вложенная коллекция — рекурсивно, объект — контрактом. */
+async function equalsCellWith(leftItem: unknown, rightItem: unknown, slot: string, file: string, line: number): Promise<boolean> {
+  if (leftItem instanceof IdylliumArray || rightItem instanceof IdylliumArray) {
+    if (!(leftItem instanceof IdylliumArray) || !(rightItem instanceof IdylliumArray)) return false;
+    return equalsArrayCellsWith(leftItem, rightItem, slot, file, line);
+  }
+  if (leftItem instanceof IdylliumMap || rightItem instanceof IdylliumMap) {
+    if (!(leftItem instanceof IdylliumMap) || !(rightItem instanceof IdylliumMap)) return false;
+    return equalsMapEntriesWith(leftItem, rightItem, slot, file, line);
+  }
+  const contract = (leftItem as Record<string, unknown> | null)?.[slot];
+  if (typeof contract !== 'function') {
+    throw new IdylliumRuntimeError(file, line, "comparison found an object without the 'equals' contract");
+  }
+  return (await (contract as (other: unknown) => Promise<unknown>)(rightItem)) === true;
 }
 
 function sqliteRuntimeValueEquals(left: SqliteRuntimeValueObject, right: SqliteRuntimeValueObject): boolean {
@@ -2549,6 +2761,63 @@ function parseFloatText(value: string, functionName: string, file: string, line:
 
 
 
+function bigAbs(value: bigint): bigint {
+  return value < 0n ? -value : value;
+}
+
+function bigGcd(a: bigint, b: bigint): bigint {
+  let x = bigAbs(a);
+  let y = bigAbs(b);
+  while (y !== 0n) {
+    const rest = x % y;
+    x = y;
+    y = rest;
+  }
+  return x;
+}
+
+function bigModPow(base: bigint, exponent: bigint, modulus: bigint): bigint {
+  let result = 1n;
+  let b = base % modulus;
+  let e = exponent;
+  while (e > 0n) {
+    if (e & 1n) result = (result * b) % modulus;
+    b = (b * b) % modulus;
+    e >>= 1n;
+  }
+  return result;
+}
+
+// Детерминированный Миллер — Рабин: с этими двенадцатью основаниями ответ
+// ТОЧЕН для всех n < 3 317 044 064 679 887 385 961 981 (Sorenson & Webster,
+// 2015). Выше — честный отказ, а не «скорее всего простое».
+const IS_PRIME_WITNESSES: readonly bigint[] = [2n, 3n, 5n, 7n, 11n, 13n, 17n, 19n, 23n, 29n, 31n, 37n];
+const IS_PRIME_EXACT_LIMIT = 3317044064679887385961980n;
+
+function bigIsPrime(n: bigint): boolean {
+  if (n < 2n) return false;
+  for (const witness of IS_PRIME_WITNESSES) {
+    if (n === witness) return true;
+    if (n % witness === 0n) return false;
+  }
+  let d = n - 1n;
+  let r = 0n;
+  while ((d & 1n) === 0n) {
+    d >>= 1n;
+    r += 1n;
+  }
+  witnessLoop: for (const witness of IS_PRIME_WITNESSES) {
+    let x = bigModPow(witness, d, n);
+    if (x === 1n || x === n - 1n) continue;
+    for (let i = 1n; i < r; i += 1n) {
+      x = (x * x) % n;
+      if (x === n - 1n) continue witnessLoop;
+    }
+    return false;
+  }
+  return true;
+}
+
 function finiteMathResult(value: number, functionName: string, file: string, line: number): number {
   if (Number.isFinite(value)) return value;
   throw new IdylliumRuntimeError(file, line, `${functionName} result is not a finite number`);
@@ -2567,6 +2836,8 @@ function nonFiniteWord(value: number): string {
 
 function formatForConsole(value: unknown, precision: number | null): string {
   if (value instanceof IdylliumArray) return value.toInspectString();
+  if (value instanceof IdylliumMap) return value.toInspectString();
+  if (value instanceof IdylliumSet) return value.toInspectString();
   if (isJsonRuntimeValue(value)) return jsonSerialize(value, 0, 'json', 0);
   if (typeof value === 'boolean') return value ? 'true' : 'false';
   if (typeof value === 'number' && !Number.isFinite(value)) return nonFiniteWord(value);
@@ -2582,6 +2853,8 @@ function formatForConsole(value: unknown, precision: number | null): string {
 
 function formatForInspect(value: unknown): string {
   if (value instanceof IdylliumArray) return value.toInspectString();
+  if (value instanceof IdylliumMap) return value.toInspectString();
+  if (value instanceof IdylliumSet) return value.toInspectString();
   if (isJsonRuntimeValue(value)) return jsonSerialize(value, 0, 'json', 0);
   if (typeof value === 'string') return JSON.stringify(value);
   if (typeof value === 'boolean') return value ? 'true' : 'false';
@@ -2626,6 +2899,11 @@ function createPlainRuntimeObject(moduleName: string, typeName: string, state: R
   // n.tag.length языком JavaScript (улов ломателя 2026-08-28).
   if (moduleName === 'xml' && typeName === 'Node') {
     return createXmlNode('#document', false) as unknown as RuntimeObject;
+  }
+
+  // 'csv.Table t;' без вызова — честная пустая таблица с разделителем ';'.
+  if (moduleName === 'csv' && typeName === 'Table') {
+    return createCsvTable() as unknown as RuntimeObject;
   }
 
   const obj: Record<string, unknown> = {
@@ -2882,6 +3160,8 @@ function runtimeTypeName(value: unknown): string {
   // а СВОЁ имя — в __idylliumClass: его и говорим человеку.
   if (isRuntimeObject(value) && typeof value.__idylliumClass === 'string') return value.__idylliumClass;
   if (isRuntimeObject(value) && typeof value.__idylliumType === 'string') return value.__idylliumType;
+  if (value instanceof IdylliumMap) return 'map';
+  if (value instanceof IdylliumSet) return 'set';
   if (typeof value === 'bigint') return 'int';
   return String(value);
 }

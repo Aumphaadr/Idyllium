@@ -23,6 +23,21 @@ export interface ArrayType {
   readonly dynamic: boolean;
 }
 
+/** Словарь map<K, V>: ключ — тип с полным точным встроенным равенством
+ *  (int, string, char, bool), значение — любой тип. Значение-коллекция,
+ *  как массивы: копия при присваивании и передаче. */
+export interface MapType {
+  readonly kind: 'map';
+  readonly keyType: TypeRef;
+  readonly valueType: TypeRef;
+}
+
+/** Множество set<T>: элементы — те же типы, что ключи словаря. */
+export interface SetType {
+  readonly kind: 'set';
+  readonly elementType: TypeRef;
+}
+
 export interface ErrorType {
   readonly kind: 'error';
 }
@@ -46,7 +61,7 @@ export interface FunctionType {
   readonly minArguments?: number;
 }
 
-export type TypeRef = PrimitiveType | QualifiedType | ClassType | ArrayType | FunctionType | AnyType | NullType | RuntimeErrorValueType | ErrorType;
+export type TypeRef = PrimitiveType | QualifiedType | ClassType | ArrayType | MapType | SetType | FunctionType | AnyType | NullType | RuntimeErrorValueType | ErrorType;
 
 export const INT: PrimitiveType = { kind: 'primitive', name: 'int' };
 export const FLOAT: PrimitiveType = { kind: 'primitive', name: 'float' };
@@ -91,6 +106,8 @@ export function typeToString(type: TypeRef): string {
     if (type.dynamic) return `dyn_array<${typeToString(type.elementType)}>`;
     return `array<${typeToString(type.elementType)}, ${type.size ?? '?'}>`;
   }
+  if (type.kind === 'map') return `map<${typeToString(type.keyType)}, ${typeToString(type.valueType)}>`;
+  if (type.kind === 'set') return `set<${typeToString(type.elementType)}>`;
   if (type.kind === 'class') return type.name;
   if (type.kind === 'qualified') return `${type.moduleName}.${type.name}`;
   return type.name;
@@ -117,6 +134,12 @@ export function sameType(left: TypeRef, right: TypeRef): boolean {
     return left.dynamic === right.dynamic
       && left.size === right.size
       && sameType(left.elementType, right.elementType);
+  }
+  if (left.kind === 'map' && right.kind === 'map') {
+    return sameType(left.keyType, right.keyType) && sameType(left.valueType, right.valueType);
+  }
+  if (left.kind === 'set' && right.kind === 'set') {
+    return sameType(left.elementType, right.elementType);
   }
   return left.kind === 'primitive' && right.kind === 'primitive' && left.name === right.name;
 }
@@ -155,7 +178,19 @@ export function isAssignable(target: TypeRef, value: TypeRef): boolean {
     const sizeMatches = target.dynamic || value.dynamic || target.size === value.size;
     return sizeMatches && isAssignable(target.elementType, value.elementType);
   }
+  if (target.kind === 'map' && value.kind === 'map') {
+    return sameType(target.keyType, value.keyType) && isAssignable(target.valueType, value.valueType);
+  }
+  if (target.kind === 'set' && value.kind === 'set') {
+    return sameType(target.elementType, value.elementType);
+  }
+  // Пустые `{}` типизируются как map<any, any> и подходят и множеству.
+  if (target.kind === 'set' && isEmptyBracesType(value)) return true;
   return false;
+}
+
+export function isEmptyBracesType(type: TypeRef): boolean {
+  return type.kind === 'map' && type.keyType.kind === 'any' && type.valueType.kind === 'any';
 }
 
 export function numericBinaryResult(operator: string, left: TypeRef, right: TypeRef): TypeRef {
@@ -174,6 +209,24 @@ export function classType(name: string): ClassType {
 
 export function arrayType(elementType: TypeRef, size: number | null, dynamic: boolean): ArrayType {
   return { kind: 'array', elementType, size, dynamic };
+}
+
+export function mapType(keyType: TypeRef, valueType: TypeRef): MapType {
+  return { kind: 'map', keyType, valueType };
+}
+
+export function setType(elementType: TypeRef): SetType {
+  return { kind: 'set', elementType };
+}
+
+export const MAP_KEY_TYPE_NAMES: readonly PrimitiveTypeName[] = ['int', 'string', 'char', 'bool'];
+
+/** Ключом словаря может быть тип, чьё равенство полное, точное и встроенное:
+ *  float исключён навсегда (сам язык предупреждает о `float ==`), объекты
+ *  классов — пока нет хеш-контракта, библиотечные значения и коллекции — нет. */
+export function isMapKeyType(type: TypeRef): boolean {
+  if (type.kind === 'error' || type.kind === 'any') return true;
+  return type.kind === 'primitive' && MAP_KEY_TYPE_NAMES.includes(type.name);
 }
 
 export function functionType(parameters: readonly TypeRef[], returnType: TypeRef, minArguments?: number): FunctionType {

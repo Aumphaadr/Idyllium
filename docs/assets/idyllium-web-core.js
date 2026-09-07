@@ -46,7 +46,7 @@ var Idyllium = (() => {
     "dist/src/core/types.js"(exports2) {
       "use strict";
       Object.defineProperty(exports2, "__esModule", { value: true });
-      exports2.ANY_VALUE_TYPES = exports2.COLOR = exports2.RUNTIME_ERROR_VALUE = exports2.NULL_TYPE = exports2.ANY_TYPE = exports2.ERROR_TYPE = exports2.VOID = exports2.BOOL = exports2.CHAR = exports2.STRING = exports2.FLOAT = exports2.INT = void 0;
+      exports2.MAP_KEY_TYPE_NAMES = exports2.ANY_VALUE_TYPES = exports2.COLOR = exports2.RUNTIME_ERROR_VALUE = exports2.NULL_TYPE = exports2.ANY_TYPE = exports2.ERROR_TYPE = exports2.VOID = exports2.BOOL = exports2.CHAR = exports2.STRING = exports2.FLOAT = exports2.INT = void 0;
       exports2.primitive = primitive;
       exports2.typeToString = typeToString;
       exports2.sameType = sameType;
@@ -55,10 +55,14 @@ var Idyllium = (() => {
       exports2.isFloatLike = isFloatLike;
       exports2.isTypesNumeric = isTypesNumeric;
       exports2.isAssignable = isAssignable;
+      exports2.isEmptyBracesType = isEmptyBracesType;
       exports2.numericBinaryResult = numericBinaryResult;
       exports2.qualified = qualified;
       exports2.classType = classType;
       exports2.arrayType = arrayType;
+      exports2.mapType = mapType;
+      exports2.setType = setType;
+      exports2.isMapKeyType = isMapKeyType;
       exports2.functionType = functionType;
       exports2.INT = { kind: "primitive", name: "int" };
       exports2.FLOAT = { kind: "primitive", name: "float" };
@@ -105,6 +109,10 @@ var Idyllium = (() => {
             return `dyn_array<${typeToString(type.elementType)}>`;
           return `array<${typeToString(type.elementType)}, ${type.size ?? "?"}>`;
         }
+        if (type.kind === "map")
+          return `map<${typeToString(type.keyType)}, ${typeToString(type.valueType)}>`;
+        if (type.kind === "set")
+          return `set<${typeToString(type.elementType)}>`;
         if (type.kind === "class")
           return type.name;
         if (type.kind === "qualified")
@@ -135,6 +143,12 @@ var Idyllium = (() => {
         }
         if (left.kind === "array" && right.kind === "array") {
           return left.dynamic === right.dynamic && left.size === right.size && sameType(left.elementType, right.elementType);
+        }
+        if (left.kind === "map" && right.kind === "map") {
+          return sameType(left.keyType, right.keyType) && sameType(left.valueType, right.valueType);
+        }
+        if (left.kind === "set" && right.kind === "set") {
+          return sameType(left.elementType, right.elementType);
         }
         return left.kind === "primitive" && right.kind === "primitive" && left.name === right.name;
       }
@@ -169,7 +183,18 @@ var Idyllium = (() => {
           const sizeMatches = target.dynamic || value.dynamic || target.size === value.size;
           return sizeMatches && isAssignable(target.elementType, value.elementType);
         }
+        if (target.kind === "map" && value.kind === "map") {
+          return sameType(target.keyType, value.keyType) && isAssignable(target.valueType, value.valueType);
+        }
+        if (target.kind === "set" && value.kind === "set") {
+          return sameType(target.elementType, value.elementType);
+        }
+        if (target.kind === "set" && isEmptyBracesType(value))
+          return true;
         return false;
+      }
+      function isEmptyBracesType(type) {
+        return type.kind === "map" && type.keyType.kind === "any" && type.valueType.kind === "any";
       }
       function numericBinaryResult(operator, left, right) {
         if (!isNumeric(left) || !isNumeric(right))
@@ -186,6 +211,18 @@ var Idyllium = (() => {
       }
       function arrayType(elementType, size, dynamic) {
         return { kind: "array", elementType, size, dynamic };
+      }
+      function mapType(keyType, valueType) {
+        return { kind: "map", keyType, valueType };
+      }
+      function setType(elementType) {
+        return { kind: "set", elementType };
+      }
+      exports2.MAP_KEY_TYPE_NAMES = ["int", "string", "char", "bool"];
+      function isMapKeyType(type) {
+        if (type.kind === "error" || type.kind === "any")
+          return true;
+        return type.kind === "primitive" && exports2.MAP_KEY_TYPE_NAMES.includes(type.name);
       }
       function functionType(parameters, returnType, minArguments) {
         return { kind: "function", parameters, returnType, minArguments };
@@ -454,6 +491,7 @@ var Idyllium = (() => {
         const fileOStream = (0, types_1.qualified)("file", "ostream");
         const jsonValue = (0, types_1.qualified)("json", "Value");
         const xmlNode = (0, types_1.qualified)("xml", "Node");
+        const csvTable = (0, types_1.qualified)("csv", "Table");
         const jsonObject = (0, types_1.qualified)("json", "Object");
         const jsonArray = (0, types_1.qualified)("json", "Array");
         const sqliteDatabase = (0, types_1.qualified)("sqlite", "Database");
@@ -563,7 +601,29 @@ var Idyllium = (() => {
           functionSpec("log", [{ name: "value", type: types_1.FLOAT }], types_1.FLOAT),
           functionSpec("log10", [{ name: "value", type: types_1.FLOAT }], types_1.FLOAT),
           functionSpec("to_radians", [{ name: "degrees", type: types_1.FLOAT }], types_1.FLOAT),
-          functionSpec("to_degrees", [{ name: "radians", type: types_1.FLOAT }], types_1.FLOAT)
+          functionSpec("to_degrees", [{ name: "radians", type: types_1.FLOAT }], types_1.FLOAT),
+          functionSpec("gcd", [{ name: "a", type: types_1.INT }, { name: "b", type: types_1.INT }], types_1.INT, {
+            documentation: "Наибольший общий делитель двух целых. Знак не важен: gcd(-12, 18) — 6; gcd(0, 0) — 0. Точен при любом размере чисел."
+          }),
+          functionSpec("lcm", [{ name: "a", type: types_1.INT }, { name: "b", type: types_1.INT }], types_1.INT, {
+            documentation: "Наименьшее общее кратное двух целых; если одно из них 0 — 0. Точен при любом размере чисел."
+          }),
+          functionSpec("factorial", [{ name: "n", type: types_1.INT }], types_1.INT, {
+            documentation: "n! — произведение чисел от 1 до n; factorial(0) — 1. Считается точно: 100! печатает все 158 цифр. n — от 0 до 10000."
+          }),
+          functionSpec("is_prime", [{ name: "n", type: types_1.INT }], types_1.BOOL, {
+            documentation: "Простое ли число: true для 2, 3, 5, 7…; false для 0, 1, отрицательных и составных. Проверка точная (без вероятностных «почти простых») для чисел до 3317044064679887385961980."
+          }),
+          functionSpec("divisors", [{ name: "n", type: types_1.INT }], (0, types_1.arrayType)(types_1.INT, null, true), {
+            documentation: "Все делители положительного числа по возрастанию: divisors(12) — [1, 2, 3, 4, 6, 12]. n — от 1 до 9007199254740991."
+          }),
+          functionSpec("sign", [{ name: "value", type: types_1.FLOAT }], types_1.FLOAT, {
+            returnTypeRule: "match-integer-argument",
+            documentation: "Знак числа: -1, 0 или 1. Тип результата повторяет аргумент: sign(int) даёт int, sign(float) — float."
+          }),
+          functionSpec("hypot", [{ name: "a", type: types_1.FLOAT }, { name: "b", type: types_1.FLOAT }], types_1.FLOAT, {
+            documentation: "Длина гипотенузы по двум катетам — sqrt(a² + b²): расстояние между точками на холсте без ручного возведения в квадрат."
+          })
         ], [
           { name: "pi", type: types_1.FLOAT, documentation: "Число π." },
           { name: "e", type: types_1.FLOAT, documentation: "Число Эйлера." }
@@ -998,6 +1058,85 @@ var Idyllium = (() => {
               documentation: "Первый потомок-тег с этим именем; если такого нет — ошибка выполнения."
             }),
             functionSpec("has", [{ name: "tag", type: types_1.STRING }], types_1.BOOL)
+          ])
+        ]));
+        registry.registerModule(moduleSpec("csv", [
+          functionSpec("parse", [
+            { name: "text", type: types_1.STRING },
+            { name: "separator", type: types_1.STRING }
+          ], csvTable, {
+            minArguments: 1,
+            documentation: 'Разбирает текст CSV в таблицу: первая строка — заголовки колонок. Разделитель угадывается по первой строке (; , или табуляция) и запоминается в таблице; второй аргумент задаёт его явно. Кавычки, «""» и переносы строк внутри кавычек понимаются; BOM Excel пропускается.'
+          }),
+          functionSpec("read", [
+            { name: "path", type: types_1.STRING },
+            { name: "separator", type: types_1.STRING }
+          ], csvTable, {
+            minArguments: 1,
+            documentation: "Читает CSV-файл проекта (UTF-8) в таблицу — как csv.parse над содержимым файла. Отсутствующий файл — ошибка выполнения."
+          }),
+          functionSpec("write", [
+            { name: "path", type: types_1.STRING },
+            { name: "table", type: csvTable }
+          ], types_1.VOID, {
+            documentation: "Записывает таблицу в файл проекта (UTF-8): заголовок и строки, разделитель — table.separator; ячейки с разделителем, кавычками или переносами строк берутся в кавычки. Существующий файл перезаписывается."
+          })
+        ], [], [
+          typeSpec("Table", [
+            propertySpec("row_count", types_1.INT, true, "Сколько строк данных в таблице (заголовок не считается)."),
+            propertySpec("column_count", types_1.INT, true, "Сколько колонок в заголовке."),
+            propertySpec("columns", (0, types_1.arrayType)(types_1.STRING, null, true), true, "Имена колонок по порядку — копия заголовка."),
+            propertySpec("separator", types_1.STRING, false, 'Разделитель ячеек — один символ. После csv.parse/csv.read — угаданный или заданный; у новой таблицы ";". Им пишут to_string() и csv.write().')
+          ], [
+            functionSpec("set_columns", [], types_1.VOID, {
+              variadic: true,
+              variadicTypes: [types_1.STRING],
+              minArguments: 1,
+              documentation: "Задаёт заголовки колонок; строки при этом удаляются."
+            }),
+            functionSpec("add_row", [], types_1.VOID, {
+              variadic: true,
+              variadicTypes: [types_1.STRING],
+              minArguments: 1,
+              documentation: "Добавляет строку. Значений должно быть ровно столько, сколько колонок; числа переводите через to_string()."
+            }),
+            functionSpec("get", [
+              { name: "row", type: types_1.INT },
+              { name: "column", type: types_1.STRING }
+            ], types_1.STRING, {
+              documentation: "Ячейка по номеру строки (с нуля) и имени колонки. Всегда строка: число получите через to_int(). Нет такой колонки или строки — ошибка выполнения."
+            }),
+            functionSpec("set", [
+              { name: "row", type: types_1.INT },
+              { name: "column", type: types_1.STRING },
+              { name: "text", type: types_1.STRING }
+            ], types_1.VOID, {
+              documentation: "Заменяет текст одной ячейки."
+            }),
+            functionSpec("row", [{ name: "row", type: types_1.INT }], (0, types_1.arrayType)(types_1.STRING, null, true), {
+              documentation: "Все ячейки строки по порядку колонок — копия."
+            }),
+            functionSpec("column", [{ name: "column", type: types_1.STRING }], (0, types_1.arrayType)(types_1.STRING, null, true), {
+              documentation: "Все значения одной колонки сверху вниз — копия."
+            }),
+            functionSpec("has_column", [{ name: "column", type: types_1.STRING }], types_1.BOOL, {
+              documentation: "Есть ли колонка с таким именем — проверка перед get()."
+            }),
+            functionSpec("find", [
+              { name: "column", type: types_1.STRING },
+              { name: "text", type: types_1.STRING }
+            ], types_1.INT, {
+              documentation: "Номер первой строки, где в колонке стоит ровно этот текст; -1, если такой нет."
+            }),
+            functionSpec("remove_row", [{ name: "row", type: types_1.INT }], types_1.VOID, {
+              documentation: "Удаляет строку по номеру (с нуля)."
+            }),
+            functionSpec("clear", [], types_1.VOID, {
+              documentation: "Удаляет все строки, заголовок остаётся."
+            }),
+            functionSpec("to_string", [], types_1.STRING, {
+              documentation: "Таблица как текст CSV — тем же, что запишет csv.write()."
+            })
           ])
         ]));
         registry.registerModule(moduleSpec("sqlite", [
@@ -2103,9 +2242,14 @@ var Idyllium = (() => {
         contractLeafOfArray(type, contract = "equals") {
           if (!type || type.kind !== "array")
             return null;
-          let element = type.elementType;
-          while (element.kind === "array")
-            element = element.elementType;
+          return this.contractLeafOfCollection(type.elementType, contract);
+        }
+        /** Класс-лист коллекции сквозь массивы и словари (для контрактов). */
+        contractLeafOfCollection(type, contract = "equals") {
+          let element = type;
+          while (element && (element.kind === "array" || element.kind === "map")) {
+            element = element.kind === "array" ? element.elementType : element.valueType;
+          }
           return this.contractClassBareName(element, contract);
         }
         typeOf(expression) {
@@ -2569,7 +2713,8 @@ var Idyllium = (() => {
           if (statement.operator === "=") {
             if (statement.target.kind === "IndexExpression") {
               const value2 = this.valueForOptionalTypeRef(this.expression(statement.value), targetType, statement.value.range);
-              return `$rt.array.set(${this.expression(statement.target.object)}, ${this.expression(statement.target.index)}, ${value2}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
+              const container = this.typeOf(statement.target.object)?.kind === "map" ? "$rt.map" : "$rt.array";
+              return `${container}.set(${this.expression(statement.target.object)}, ${this.expression(statement.target.index)}, ${value2}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
             }
             if (statement.target.kind === "MemberExpression") {
               const value2 = this.valueForOptionalTypeRef(this.expression(statement.value), targetType, statement.value.range);
@@ -2580,10 +2725,11 @@ var Idyllium = (() => {
           if (statement.target.kind === "IndexExpression") {
             const object = this.expression(statement.target.object);
             const index = this.expression(statement.target.index);
-            const current = `$rt.array.get(${object}, ${index}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
+            const container = this.typeOf(statement.target.object)?.kind === "map" ? "$rt.map" : "$rt.array";
+            const current = `${container}.get(${object}, ${index}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
             const rawValue = this.compoundAssignmentValue(statement.operator, current, this.expression(statement.value), statement.range, this.isFloatType(targetType));
             const value2 = this.valueForOptionalTypeRef(rawValue, targetType, statement.range);
-            return `$rt.array.set(${object}, ${index}, ${value2}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
+            return `${container}.set(${object}, ${index}, ${value2}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
           }
           const target = this.expression(statement.target);
           const value = this.expression(statement.value);
@@ -2620,7 +2766,18 @@ var Idyllium = (() => {
               return this.binaryExpression(expression);
             case "ArrayLiteralExpression":
               return this.arrayLiteralExpression(expression, true, null, "() => 0");
+            case "SetLiteralExpression":
+              return `$rt.set.fromValues([${expression.elements.map((element) => this.expression(element)).join(", ")}])`;
+            case "EmptyBraceLiteral":
+              return "$rt.map.fromPairs([])";
+            case "MapLiteralExpression": {
+              const pairs = expression.entries.map((entry) => `[${this.expression(entry.key)}, ${this.expression(entry.value)}]`).join(", ");
+              return `$rt.map.fromPairs([${pairs}])`;
+            }
             case "IndexExpression":
+              if (this.typeOf(expression.object)?.kind === "map") {
+                return `$rt.map.get(${this.expression(expression.object)}, ${this.expression(expression.index)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+              }
               return `$rt.array.get(${this.expression(expression.object)}, ${this.expression(expression.index)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
             case "FunctionExpression":
               return this.functionExpression(expression);
@@ -2676,6 +2833,13 @@ var Idyllium = (() => {
             if (leftLeaf && this.contractLeafOfArray(this.typeOf(expression.right))) {
               const call = `(await $rt.core.equalsObjectArrays(${left}, ${right}, ${JSON.stringify(`equals$${leftLeaf}`)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line}))`;
               return expression.operator === "==" ? call : `(!${call})`;
+            }
+            if (leftType?.kind === "map") {
+              const mapLeaf = this.contractLeafOfCollection(leftType);
+              if (mapLeaf && this.contractLeafOfCollection(this.typeOf(expression.right))) {
+                const call = `(await $rt.core.equalsObjectMaps(${left}, ${right}, ${JSON.stringify(`equals$${mapLeaf}`)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line}))`;
+                return expression.operator === "==" ? call : `(!${call})`;
+              }
             }
           }
           if (["<", "<=", ">", ">="].includes(expression.operator)) {
@@ -2847,6 +3011,10 @@ var Idyllium = (() => {
             const size = type.dynamic ? 0 : type.size ?? 0;
             return `await $rt.array.createAsync(${size}, async () => ${this.defaultValue(type.elementType)}, ${type.dynamic ? "true" : "false"})`;
           }
+          if (type.kind === "MapTypeName")
+            return "$rt.map.create()";
+          if (type.kind === "SetTypeName")
+            return "$rt.set.create()";
           if (type.kind === "ClassTypeName") {
             return `await ${this.classDefaultFactoryName(type.name)}()`;
           }
@@ -3073,6 +3241,13 @@ var Idyllium = (() => {
           return `${className}.${memberName}`;
         }
         valueForType(value, type, range) {
+          if (type?.kind === "SetTypeName") {
+            return `$rt.set.convert(${value}, ${JSON.stringify(this.typeNameToString(type))}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
+          }
+          if (type?.kind === "MapTypeName") {
+            const convertedValue = this.valueForType("__map_value", type.valueType, range);
+            return `$rt.map.convert(${value}, (__map_value) => ${convertedValue}, ${JSON.stringify(this.typeNameToString(type))}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
+          }
           if (type?.kind === "ArrayTypeName") {
             const size = type.dynamic ? "null" : String(type.size ?? 0);
             const convertedElement = this.valueForType("__array_item", type.elementType, range);
@@ -3103,6 +3278,13 @@ var Idyllium = (() => {
         // «float» исторически значит «numeric», int обязан пройти без конверсии
         // (math.abs(-9007199254740993) остаётся точным, sum(int[]) — тоже).
         valueForTypeRef(value, type, range, floatBoundary = true) {
+          if (type.kind === "set") {
+            return `$rt.set.convert(${value}, ${JSON.stringify((0, types_1.typeToString)(type))}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
+          }
+          if (type.kind === "map") {
+            const convertedValue = this.valueForTypeRef("__map_value", type.valueType, range, floatBoundary);
+            return `$rt.map.convert(${value}, (__map_value) => ${convertedValue}, ${JSON.stringify((0, types_1.typeToString)(type))}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
+          }
           if (type.kind === "array") {
             const size = type.dynamic ? "null" : String(type.size ?? 0);
             const convertedElement = this.valueForTypeRef("__array_item", type.elementType, range, floatBoundary);
@@ -3137,11 +3319,19 @@ var Idyllium = (() => {
             return type.name;
           if (type.kind === "QualifiedTypeName")
             return `${type.moduleName}.${type.name}`;
+          if (type.kind === "MapTypeName")
+            return `map<${this.typeNameToString(type.keyType)}, ${this.typeNameToString(type.valueType)}>`;
+          if (type.kind === "SetTypeName")
+            return `set<${this.typeNameToString(type.elementType)}>`;
           if (type.dynamic)
             return `dyn_array<${this.typeNameToString(type.elementType)}>`;
           return `array<${this.typeNameToString(type.elementType)}, ${type.size ?? "?"}>`;
         }
         defaultValueForTypeRef(type) {
+          if (type.kind === "map")
+            return "$rt.map.create()";
+          if (type.kind === "set")
+            return "$rt.set.create()";
           if (type.kind === "array") {
             const size = type.dynamic ? 0 : type.size ?? 0;
             return `await $rt.array.createAsync(${size}, async () => ${this.defaultValueForTypeRef(type.elementType)}, ${type.dynamic ? "true" : "false"})`;
@@ -3310,6 +3500,7 @@ var Idyllium = (() => {
         TokenKind2["KwMod"] = "KwMod";
         TokenKind2["KwArray"] = "KwArray";
         TokenKind2["KwDynArray"] = "KwDynArray";
+        TokenKind2["KwMap"] = "KwMap";
         TokenKind2["KwClass"] = "KwClass";
         TokenKind2["KwConstructor"] = "KwConstructor";
         TokenKind2["KwThis"] = "KwThis";
@@ -3380,6 +3571,7 @@ var Idyllium = (() => {
         mod: TokenKind.KwMod,
         array: TokenKind.KwArray,
         dyn_array: TokenKind.KwDynArray,
+        map: TokenKind.KwMap,
         class: TokenKind.KwClass,
         constructor: TokenKind.KwConstructor,
         this: TokenKind.KwThis,
@@ -4915,6 +5107,44 @@ var Idyllium = (() => {
               range: { start: leftBracket.range.start, end: rightBracket.range.end }
             };
           }
+          if (this.match(tokens_1.TokenKind.LeftBrace)) {
+            const leftBrace = this.previous();
+            if (this.match(tokens_1.TokenKind.RightBrace)) {
+              return {
+                kind: "EmptyBraceLiteral",
+                range: { start: leftBrace.range.start, end: this.previous().range.end }
+              };
+            }
+            const first = this.parseExpression();
+            if (this.match(tokens_1.TokenKind.Colon)) {
+              const entries = [];
+              let key = first;
+              for (; ; ) {
+                const value = this.parseExpression();
+                entries.push({ key, value, range: { start: key.range.start, end: value.range.end } });
+                if (!this.match(tokens_1.TokenKind.Comma))
+                  break;
+                key = this.parseExpression();
+                this.consume(tokens_1.TokenKind.Colon, "expected ':' between map key and value");
+              }
+              const rightBrace2 = this.consume(tokens_1.TokenKind.RightBrace, "expected '}' after map literal");
+              return {
+                kind: "MapLiteralExpression",
+                entries,
+                range: { start: leftBrace.range.start, end: rightBrace2.range.end }
+              };
+            }
+            const elements = [first];
+            while (this.match(tokens_1.TokenKind.Comma)) {
+              elements.push(this.parseExpression());
+            }
+            const rightBrace = this.consume(tokens_1.TokenKind.RightBrace, "expected '}' after set literal");
+            return {
+              kind: "SetLiteralExpression",
+              elements,
+              range: { start: leftBrace.range.start, end: rightBrace.range.end }
+            };
+          }
           if (this.match(tokens_1.TokenKind.Identifier, tokens_1.TokenKind.KwDiv, tokens_1.TokenKind.KwMod, tokens_1.TokenKind.KwThis)) {
             const token2 = this.previous();
             return {
@@ -5060,12 +5290,36 @@ var Idyllium = (() => {
               range: { start: start.range.start, end: this.previous().range.end }
             };
           }
+          if (this.match(tokens_1.TokenKind.KwMap)) {
+            this.consume(tokens_1.TokenKind.Less, "map needs two type parameters — write map<string, int>");
+            const keyType = this.parseTypeName();
+            this.consume(tokens_1.TokenKind.Comma, "map needs two type parameters — write map<string, int>");
+            const valueType = this.parseTypeName();
+            this.consume(tokens_1.TokenKind.Greater, "expected '>' after map value type");
+            return {
+              kind: "MapTypeName",
+              keyType,
+              valueType,
+              range: { start: start.range.start, end: this.previous().range.end }
+            };
+          }
           if (this.checkTypeKeyword()) {
             const token = this.advance();
             return {
               kind: "PrimitiveTypeName",
               name: this.typeNameFromToken(token.kind),
               range: token.range
+            };
+          }
+          if (this.checkSetTypeStart()) {
+            this.advance();
+            this.consume(tokens_1.TokenKind.Less, "set needs a type parameter — write set<int>");
+            const elementType = this.parseTypeName();
+            this.consume(tokens_1.TokenKind.Greater, "expected '>' after set element type");
+            return {
+              kind: "SetTypeName",
+              elementType,
+              range: { start: start.range.start, end: this.previous().range.end }
             };
           }
           const moduleToken = this.consume(tokens_1.TokenKind.Identifier, "expected type name");
@@ -5108,8 +5362,13 @@ var Idyllium = (() => {
         checkTypeKeyword() {
           return this.check(tokens_1.TokenKind.KwInt, tokens_1.TokenKind.KwFloat, tokens_1.TokenKind.KwString, tokens_1.TokenKind.KwChar, tokens_1.TokenKind.KwBool, tokens_1.TokenKind.KwVoid);
         }
+        /** `set` — контекстное слово: тип только в форме `set<T>` (json.Object.set
+         *  и прочие методы с этим именем живут как ни в чём не бывало). */
+        checkSetTypeStart() {
+          return this.check(tokens_1.TokenKind.Identifier) && this.peek().lexeme === "set" && this.checkNext(tokens_1.TokenKind.Less);
+        }
         checkTypeStart() {
-          return this.checkTypeKeyword() || this.check(tokens_1.TokenKind.KwArray, tokens_1.TokenKind.KwDynArray) || this.check(tokens_1.TokenKind.Identifier) && this.checkNext(tokens_1.TokenKind.Dot) && this.checkAhead(2, tokens_1.TokenKind.Identifier) && (this.checkAhead(3, tokens_1.TokenKind.Identifier) || this.checkAhead(3, tokens_1.TokenKind.KwFunction)) || this.check(tokens_1.TokenKind.Identifier) && (this.checkNext(tokens_1.TokenKind.Identifier) || this.checkNext(tokens_1.TokenKind.KwFunction));
+          return this.checkTypeKeyword() || this.check(tokens_1.TokenKind.KwArray, tokens_1.TokenKind.KwDynArray, tokens_1.TokenKind.KwMap) || this.checkSetTypeStart() || this.check(tokens_1.TokenKind.Identifier) && this.checkNext(tokens_1.TokenKind.Dot) && this.checkAhead(2, tokens_1.TokenKind.Identifier) && (this.checkAhead(3, tokens_1.TokenKind.Identifier) || this.checkAhead(3, tokens_1.TokenKind.KwFunction)) || this.check(tokens_1.TokenKind.Identifier) && (this.checkNext(tokens_1.TokenKind.Identifier) || this.checkNext(tokens_1.TokenKind.KwFunction));
         }
         parseArgumentListAfterLeftParen() {
           const args = [];
@@ -5617,6 +5876,12 @@ var Idyllium = (() => {
         if (typeName.kind === "ArrayTypeName") {
           return resolveModuleArrayType(typeName, moduleName, program, localClasses, stdlib, userModules, diagnostics);
         }
+        if (typeName.kind === "SetTypeName") {
+          return (0, types_1.setType)(resolveModuleExportType(typeName.elementType, moduleName, program, localClasses, stdlib, userModules, diagnostics));
+        }
+        if (typeName.kind === "MapTypeName") {
+          return (0, types_1.mapType)(resolveModuleExportType(typeName.keyType, moduleName, program, localClasses, stdlib, userModules, diagnostics), resolveModuleExportType(typeName.valueType, moduleName, program, localClasses, stdlib, userModules, diagnostics));
+        }
         if (typeName.kind === "ClassTypeName") {
           return localClasses.has(typeName.name) ? (0, types_1.classType)((0, modules_1.qualifiedUserClassName)(moduleName, typeName.name)) : (0, types_1.classType)(typeName.name);
         }
@@ -5649,6 +5914,8 @@ var Idyllium = (() => {
       Object.defineProperty(exports2, "__esModule", { value: true });
       exports2.SemanticAnalyzer = exports2.IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS = exports2.IDYLLIUM_SEMANTIC_TOKEN_TYPES = void 0;
       exports2.stringMemberMethodSpec = stringMemberMethodSpec;
+      exports2.setMemberMethodSpec = setMemberMethodSpec;
+      exports2.mapMemberMethodSpec = mapMemberMethodSpec;
       exports2.arrayMemberMethodSpec = arrayMemberMethodSpec;
       var diagnostics_1 = require_diagnostics();
       var modules_1 = require_modules();
@@ -5762,7 +6029,8 @@ var Idyllium = (() => {
         "web.Server",
         "web.Request",
         "web.Response",
-        "http.Response"
+        "http.Response",
+        "csv.Table"
       ]);
       var SemanticAnalyzer = class {
         stdlib;
@@ -6032,6 +6300,10 @@ var Idyllium = (() => {
             return;
           if (HOST_RESERVED_NAMES.has(declaration.name)) {
             this.diagnostics.error(declaration.range, `'${declaration.name}' is a reserved word and cannot be used as a name`);
+            return;
+          }
+          if (declaration.name === "set") {
+            this.diagnostics.error(declaration.range, "'set' is reserved for the set type — pick another name");
             return;
           }
           if (this.classes.has(declaration.name)) {
@@ -6458,10 +6730,7 @@ var Idyllium = (() => {
         arrayLeafClass(type) {
           if (type.kind !== "array")
             return null;
-          let element = type.elementType;
-          while (element.kind === "array")
-            element = element.elementType;
-          return this.userClassBareName(element) !== null ? element : null;
+          return this.collectionLeafClass(type.elementType);
         }
         registerClassEvent(info, declaration) {
           this.markSemanticToken("property", declaration.nameRange, ["declaration"]);
@@ -7075,6 +7344,28 @@ var Idyllium = (() => {
           if (typeName.kind === "PrimitiveTypeName") {
             return (0, types_1.primitive)(typeName.name);
           }
+          if (typeName.kind === "SetTypeName") {
+            const elementType = this.resolveTypeName(typeName.elementType);
+            if (!(0, types_1.isMapKeyType)(elementType)) {
+              this.diagnostics.error(typeName.elementType.range, this.setElementRefusal(elementType));
+            }
+            return (0, types_1.setType)(elementType);
+          }
+          if (typeName.kind === "ClassTypeName" && typeName.name === "set") {
+            this.diagnostics.error(typeName.range, "set needs a type parameter — write set<int>");
+            return types_1.ERROR_TYPE;
+          }
+          if (typeName.kind === "MapTypeName") {
+            const keyType = this.resolveTypeName(typeName.keyType);
+            const valueType = this.resolveTypeName(typeName.valueType);
+            if (!(0, types_1.isMapKeyType)(keyType)) {
+              this.diagnostics.error(typeName.keyType.range, this.mapKeyRefusal(keyType));
+            }
+            if ((0, types_1.sameType)(valueType, types_1.VOID)) {
+              this.diagnostics.error(typeName.valueType.range, "map value type cannot be 'void'");
+            }
+            return (0, types_1.mapType)(keyType, valueType);
+          }
           if (typeName.kind === "ArrayTypeName") {
             const elementType = this.resolveTypeName(typeName.elementType);
             if ((0, types_1.sameType)(elementType, types_1.VOID)) {
@@ -7421,6 +7712,12 @@ var Idyllium = (() => {
               return this.binaryType(expression);
             case "ArrayLiteralExpression":
               return this.arrayLiteralType(expression);
+            case "MapLiteralExpression":
+              return this.mapLiteralType(expression);
+            case "SetLiteralExpression":
+              return this.setLiteralType(expression);
+            case "EmptyBraceLiteral":
+              return (0, types_1.mapType)(types_1.ANY_TYPE, types_1.ANY_TYPE);
             case "IndexExpression":
               return this.indexExpressionType(expression);
             case "FunctionExpression":
@@ -7502,11 +7799,113 @@ var Idyllium = (() => {
           }
           return types_1.ERROR_TYPE;
         }
+        /** Ключ словаря — тип с полным точным встроенным равенством (int, string,
+         *  char, bool). Отказы называют причину: float — сам язык предупреждает,
+         *  что такие числа «почти никогда не равны»; объекты — нет хеш-контракта. */
+        mapKeyRefusal(keyType) {
+          if ((0, types_1.isFloatLike)(keyType)) {
+            return `cannot use '${(0, types_1.typeToString)(keyType)}' as a map key — float numbers are almost never exactly equal; use int or string`;
+          }
+          if (this.userClassBareName(keyType) !== null) {
+            return `cannot use objects of class '${(0, types_1.typeToString)(keyType)}' as map keys — use a field with an int or string value`;
+          }
+          return `cannot use '${(0, types_1.typeToString)(keyType)}' as a map key — keys can be int, string, char or bool`;
+        }
+        setElementRefusal(elementType) {
+          if ((0, types_1.isFloatLike)(elementType)) {
+            return `cannot use '${(0, types_1.typeToString)(elementType)}' as a set element — float numbers are almost never exactly equal; use int or string`;
+          }
+          if (this.userClassBareName(elementType) !== null) {
+            return `cannot use objects of class '${(0, types_1.typeToString)(elementType)}' as set elements — use a field with an int or string value`;
+          }
+          return `cannot use '${(0, types_1.typeToString)(elementType)}' as a set element — elements can be int, string, char or bool`;
+        }
+        setLiteralType(expression) {
+          let elementType = types_1.ANY_TYPE;
+          const seenLiterals = /* @__PURE__ */ new Set();
+          for (const element of expression.elements) {
+            const currentType = this.expressionType(element);
+            if (currentType.kind !== "error" && currentType.kind !== "any" && !(0, types_1.isMapKeyType)(currentType)) {
+              this.diagnostics.error(element.range, this.setElementRefusal(currentType));
+            } else if (elementType.kind === "any") {
+              elementType = currentType;
+            } else if (currentType.kind !== "error" && !(0, types_1.sameType)(elementType, currentType)) {
+              this.diagnostics.error(element.range, `set element type '${(0, types_1.typeToString)(currentType)}' does not match '${(0, types_1.typeToString)(elementType)}'`);
+            }
+            if (element.kind === "LiteralExpression") {
+              const tag = `${element.valueType}:${String(element.value)}`;
+              if (seenLiterals.has(tag)) {
+                this.diagnostics.error(element.range, `duplicate element ${this.literalKeyText(element)} in set literal`);
+              }
+              seenLiterals.add(tag);
+            }
+          }
+          return (0, types_1.setType)(elementType);
+        }
+        literalKeyText(key) {
+          if (key.valueType === "string")
+            return JSON.stringify(key.value);
+          if (key.valueType === "char")
+            return `'${String(key.value)}'`;
+          return String(key.value);
+        }
+        mapLiteralType(expression) {
+          let keyType = types_1.ANY_TYPE;
+          let valueType = types_1.ANY_TYPE;
+          const seenLiteralKeys = /* @__PURE__ */ new Set();
+          for (const entry of expression.entries) {
+            const currentKey = this.expressionType(entry.key);
+            const currentValue = this.expressionType(entry.value);
+            if (currentKey.kind !== "error" && currentKey.kind !== "any" && !(0, types_1.isMapKeyType)(currentKey)) {
+              this.diagnostics.error(entry.key.range, this.mapKeyRefusal(currentKey));
+            } else if (keyType.kind === "any") {
+              keyType = currentKey;
+            } else if (currentKey.kind !== "error" && !(0, types_1.sameType)(keyType, currentKey)) {
+              this.diagnostics.error(entry.key.range, `map key type '${(0, types_1.typeToString)(currentKey)}' does not match '${(0, types_1.typeToString)(keyType)}'`);
+            }
+            if (valueType.kind === "any") {
+              valueType = currentValue;
+            } else {
+              const merged = this.mergeArrayElementTypes(valueType, currentValue);
+              if (merged.kind === "error") {
+                this.diagnostics.error(entry.value.range, `map value type '${(0, types_1.typeToString)(currentValue)}' does not match '${(0, types_1.typeToString)(valueType)}'`);
+              } else {
+                valueType = merged;
+              }
+            }
+            if (entry.key.kind === "LiteralExpression") {
+              const tag = `${entry.key.valueType}:${String(entry.key.value)}`;
+              if (seenLiteralKeys.has(tag)) {
+                this.diagnostics.error(entry.key.range, `duplicate key ${this.literalKeyText(entry.key)} in map literal`);
+              }
+              seenLiteralKeys.add(tag);
+            }
+          }
+          return (0, types_1.mapType)(keyType, valueType);
+        }
+        /** Класс-лист коллекции любой вложенности (массивы и словари насквозь). */
+        collectionLeafClass(type) {
+          let element = type;
+          while (element.kind === "array" || element.kind === "map") {
+            element = element.kind === "array" ? element.elementType : element.valueType;
+          }
+          return this.userClassBareName(element) !== null ? element : null;
+        }
         indexExpressionType(expression) {
           const objectType = this.expressionType(expression.object);
           const indexType = this.expressionType(expression.index);
           if (objectType.kind === "error")
             return types_1.ERROR_TYPE;
+          if (objectType.kind === "set") {
+            this.diagnostics.error(expression.range, "sets have no index — use has() or values()");
+            return types_1.ERROR_TYPE;
+          }
+          if (objectType.kind === "map") {
+            if (indexType.kind !== "error" && !this.canAssign(objectType.keyType, indexType)) {
+              this.diagnostics.error(expression.index.range, `map key must be '${(0, types_1.typeToString)(objectType.keyType)}', got '${(0, types_1.typeToString)(indexType)}'`);
+            }
+            return objectType.valueType;
+          }
           if (!(0, types_1.isIntegerLike)(indexType)) {
             this.diagnostics.error(expression.index.range, `array index must be integer, got '${(0, types_1.typeToString)(indexType)}'`);
           }
@@ -7587,6 +7986,16 @@ var Idyllium = (() => {
             if (expression.operator === "==" && (0, types_1.sameType)(left, types_1.BOOL) && (0, types_1.sameType)(right, types_1.BOOL) && (trueLiteral(expression.left) || trueLiteral(expression.right))) {
               this.diagnostics.warning(expression.range, "comparing a bool with 'true' changes nothing", "compared-with-true");
             }
+            if (expression.left.kind === "EmptyBraceLiteral" || expression.right.kind === "EmptyBraceLiteral") {
+              this.diagnostics.error((expression.left.kind === "EmptyBraceLiteral" ? expression.left : expression.right).range, "empty {} needs a declared map or set type");
+              return types_1.BOOL;
+            }
+            if (left.kind === "set" || right.kind === "set") {
+              if (left.kind !== "set" || right.kind !== "set" || !(0, types_1.sameType)(left, right)) {
+                this.diagnostics.error(expression.range, `cannot compare '${(0, types_1.typeToString)(left)}' and '${(0, types_1.typeToString)(right)}'`);
+              }
+              return types_1.BOOL;
+            }
             if (left.kind === "null" && right.kind === "null") {
               this.diagnostics.error(expression.range, "cannot compare 'null' and 'null'");
               return types_1.BOOL;
@@ -7603,6 +8012,17 @@ var Idyllium = (() => {
                 this.diagnostics.error(expression.range, `cannot compare objects of class '${(0, types_1.typeToString)(left)}' with '${expression.operator}' — declare 'bool function equals(${(0, types_1.typeToString)(left)} other)' in class '${(0, types_1.typeToString)(left)}' and the comparison will use it${left.kind === "class" ? this.contractShapeIssue(left.name, "equals") : ""}`);
               } else if (!(0, types_1.sameType)(left, right) && !this.canAssign(left, right)) {
                 this.diagnostics.error(expression.range, `cannot compare '${(0, types_1.typeToString)(left)}' and '${(0, types_1.typeToString)(right)}' with '${expression.operator}' — '${(0, types_1.typeToString)(left)}.equals' accepts a '${(0, types_1.typeToString)(left)}', got '${(0, types_1.typeToString)(right)}'`);
+              }
+              return types_1.BOOL;
+            }
+            if (left.kind === "map" || right.kind === "map") {
+              if (left.kind !== "map" || right.kind !== "map" || !(0, types_1.sameType)(left, right) && !this.canAssign(left, right) && !this.canAssign(right, left)) {
+                this.diagnostics.error(expression.range, `cannot compare '${(0, types_1.typeToString)(left)}' and '${(0, types_1.typeToString)(right)}'`);
+              } else {
+                const leaf = this.collectionLeafClass(left);
+                if (leaf !== null && !this.typeOwnsEqualsContract(leaf)) {
+                  this.diagnostics.error(expression.range, `cannot compare maps of '${(0, types_1.typeToString)(leaf)}' values with '${expression.operator}' — declare 'bool function equals(${(0, types_1.typeToString)(leaf)} other)' in class '${(0, types_1.typeToString)(leaf)}' and the comparison will use it`);
+                }
               }
               return types_1.BOOL;
             }
@@ -7913,6 +8333,22 @@ var Idyllium = (() => {
               this.diagnostics.error(callee.range, `type 'string' has no method '${callee.name}'`);
               return null;
             }
+            if (objectType.kind === "set") {
+              this.markSemanticToken("method", callee.nameRange);
+              const method2 = setMemberMethodSpec(objectType, callee.name);
+              if (method2)
+                return method2;
+              this.diagnostics.error(callee.range, `type '${(0, types_1.typeToString)(objectType)}' has no method '${callee.name}'`);
+              return null;
+            }
+            if (objectType.kind === "map") {
+              this.markSemanticToken("method", callee.nameRange);
+              const method2 = mapMemberMethodSpec(objectType, callee.name);
+              if (method2)
+                return method2;
+              this.diagnostics.error(callee.range, `type '${(0, types_1.typeToString)(objectType)}' has no method '${callee.name}'`);
+              return null;
+            }
             if (objectType.kind === "array") {
               this.markSemanticToken("method", callee.nameRange);
               const method2 = this.arrayMethodSpec(objectType, callee.name);
@@ -7924,6 +8360,10 @@ var Idyllium = (() => {
                 }
                 if (callee.name === "sort" && objectType.elementType.kind === "array") {
                   this.diagnostics.error(callee.range, "sort() cannot order arrays of arrays — sort each inner array on its own");
+                  return null;
+                }
+                if (callee.name === "sort" && (objectType.elementType.kind === "map" || objectType.elementType.kind === "set")) {
+                  this.diagnostics.error(callee.range, `sort() cannot order '${(0, types_1.typeToString)(objectType.elementType)}' values — they have no order`);
                   return null;
                 }
                 if (callee.name === "sort" && objectType.elementType.kind === "qualified" && !(objectType.elementType.moduleName === "time" && objectType.elementType.name === "stamp")) {
@@ -8069,9 +8509,17 @@ var Idyllium = (() => {
                 }
                 continue;
               }
+              if (item.arg.value.kind === "EmptyBraceLiteral" && parameter.type.kind !== "map" && parameter.type.kind !== "set") {
+                this.diagnostics.error(item.arg.range, "empty {} needs a declared map or set type");
+                continue;
+              }
               if (!this.canAssign(parameter.type, argType)) {
                 this.diagnostics.error(item.arg.range, this.argumentTypeError(fn, item, `'${(0, types_1.typeToString)(parameter.type)}'`, argType));
               }
+              continue;
+            }
+            if (item.arg.value.kind === "EmptyBraceLiteral") {
+              this.diagnostics.error(item.arg.range, "empty {} needs a declared map or set type");
               continue;
             }
             if (fn.variadicTypes && !fn.variadicTypes.some((candidate) => this.canAssign(candidate, argType))) {
@@ -8108,6 +8556,20 @@ var Idyllium = (() => {
             const method = classSpec.methods.find((item) => item.name === "to_string");
             const printable = method !== void 0 && !method.isStatic && method.access === "public" && method.spec.parameters.length === 0 && (0, types_1.sameType)(method.spec.returnType, types_1.STRING);
             return printable ? null : `cannot print object of class '${type.moduleName}.${type.name}' directly — declare 'string function to_string()' in class '${type.name}' and printing will use it`;
+          }
+          if (type.kind === "map") {
+            const value = type.valueType;
+            if (value.kind === "class") {
+              if (this.classHasPublicToString(value.name))
+                return null;
+              return `cannot print a map of '${value.name}' values directly — declare 'string function to_string()' in class '${value.name}' and printing will use it${this.contractShapeIssue(value.name, "to_string")}`;
+            }
+            if (value.kind === "qualified" && this.userModuleRegistry.hasModule(value.moduleName)) {
+              if (this.printableTypeError(value) === null)
+                return null;
+              return `cannot print a map of '${value.moduleName}.${value.name}' values directly — declare 'string function to_string()' in class '${value.name}' and printing will use it`;
+            }
+            return this.printableTypeError(value);
           }
           if (type.kind === "array") {
             const element = type.elementType;
@@ -8396,6 +8858,32 @@ var Idyllium = (() => {
             this.diagnostics.error(expression.range, `type 'string' has no member '${expression.name}'`);
             return types_1.ERROR_TYPE;
           }
+          if (objectType.kind === "set") {
+            if (expression.name === "length") {
+              this.markSemanticToken("property", expression.nameRange, ["readonly", "defaultLibrary"]);
+              return types_1.INT;
+            }
+            const method2 = setMemberMethodSpec(objectType, expression.name);
+            if (method2) {
+              this.markSemanticToken("method", expression.nameRange, ["defaultLibrary"]);
+              return (0, types_1.functionType)(method2.parameters.map((param) => param.type), method2.returnType);
+            }
+            this.diagnostics.error(expression.range, `type '${(0, types_1.typeToString)(objectType)}' has no member '${expression.name}'`);
+            return types_1.ERROR_TYPE;
+          }
+          if (objectType.kind === "map") {
+            if (expression.name === "length") {
+              this.markSemanticToken("property", expression.nameRange, ["readonly", "defaultLibrary"]);
+              return types_1.INT;
+            }
+            const method2 = mapMemberMethodSpec(objectType, expression.name);
+            if (method2) {
+              this.markSemanticToken("method", expression.nameRange, ["defaultLibrary"]);
+              return (0, types_1.functionType)(method2.parameters.map((param) => param.type), method2.returnType);
+            }
+            this.diagnostics.error(expression.range, `type '${(0, types_1.typeToString)(objectType)}' has no member '${expression.name}'`);
+            return types_1.ERROR_TYPE;
+          }
           if (objectType.kind === "array") {
             if (expression.name === "length") {
               this.markSemanticToken("property", expression.nameRange, ["readonly", "defaultLibrary"]);
@@ -8509,7 +8997,7 @@ var Idyllium = (() => {
           return type.kind === "primitive" && type.name === "string";
         }
         isBuiltinLengthProperty(type, name) {
-          return name === "length" && (this.isStringType(type) || type.kind === "array");
+          return name === "length" && (this.isStringType(type) || type.kind === "array" || type.kind === "map" || type.kind === "set");
         }
         runtimeErrorPropertySpec(type, name) {
           if (type.kind !== "runtime-error")
@@ -8695,6 +9183,9 @@ var Idyllium = (() => {
             const sizeMatches = target.dynamic || value.dynamic || target.size === value.size;
             return sizeMatches && this.canAssign(target.elementType, value.elementType);
           }
+          if (target.kind === "map" && value.kind === "map") {
+            return (0, types_1.sameType)(target.keyType, value.keyType) && this.canAssign(target.valueType, value.valueType);
+          }
           return false;
         }
         markSemanticToken(kind, range, modifiers = []) {
@@ -8777,6 +9268,10 @@ var Idyllium = (() => {
           }
           if (HOST_RESERVED_NAMES.has(name)) {
             this.diagnostics.error(range, `'${name}' is a reserved word and cannot be used as a name`);
+            return false;
+          }
+          if (name === "set") {
+            this.diagnostics.error(range, "'set' is reserved for the set type — pick another name");
             return false;
           }
           if (this.stdlib.hasModule(name)) {
@@ -8925,6 +9420,50 @@ var Idyllium = (() => {
             return { name, parameters: [{ name: "old_text", type: types_1.STRING }, { name: "new_text", type: types_1.STRING }], returnType: types_1.STRING };
           case "split":
             return { name, parameters: [{ name: "separator", type: types_1.STRING }], returnType: (0, types_1.arrayType)(types_1.STRING, null, true) };
+          default:
+            return null;
+        }
+      }
+      function setMemberMethodSpec(type, name) {
+        const value = { name: "value", type: type.elementType };
+        const other = { name: "other", type: (0, types_1.setType)(type.elementType) };
+        switch (name) {
+          case "add":
+          case "remove":
+            return { name, parameters: [value], returnType: types_1.VOID };
+          case "has":
+            return { name, parameters: [value], returnType: types_1.BOOL };
+          case "clear":
+            return { name, parameters: [], returnType: types_1.VOID };
+          case "values":
+            return { name, parameters: [], returnType: (0, types_1.arrayType)(type.elementType, null, true) };
+          case "union":
+          case "intersection":
+          case "difference":
+            return { name, parameters: [other], returnType: (0, types_1.setType)(type.elementType) };
+          case "is_subset":
+            return { name, parameters: [other], returnType: types_1.BOOL };
+          default:
+            return null;
+        }
+      }
+      function mapMemberMethodSpec(type, name) {
+        const key = { name: "key", type: type.keyType };
+        switch (name) {
+          case "has":
+            return { name, parameters: [key], returnType: types_1.BOOL };
+          case "get_or":
+            return { name, parameters: [key, { name: "fallback", type: type.valueType }], returnType: type.valueType };
+          case "remove":
+            return { name, parameters: [key], returnType: types_1.VOID };
+          case "keys":
+            return { name, parameters: [], returnType: (0, types_1.arrayType)(type.keyType, null, true) };
+          case "values":
+            return { name, parameters: [], returnType: (0, types_1.arrayType)(type.valueType, null, true) };
+          case "clear":
+            return { name, parameters: [], returnType: types_1.VOID };
+          case "join":
+            return { name, parameters: [{ name: "other", type: (0, types_1.mapType)(type.keyType, type.valueType) }], returnType: types_1.VOID };
           default:
             return null;
         }
@@ -9214,10 +9753,11 @@ var Idyllium = (() => {
     "dist/src/runtime/runtime-values.js"(exports2) {
       "use strict";
       Object.defineProperty(exports2, "__esModule", { value: true });
-      exports2.MAX_CREATABLE_ARRAY_SIZE = exports2.IdylliumArray = exports2.IdylliumTimeStamp = exports2.IdylliumColor = exports2.valueOps = void 0;
+      exports2.MAX_CREATABLE_ARRAY_SIZE = exports2.IdylliumMap = exports2.IdylliumSet = exports2.IdylliumArray = exports2.IdylliumTimeStamp = exports2.IdylliumColor = exports2.valueOps = void 0;
       exports2.registerValueOperations = registerValueOperations;
       exports2.normalizeTimeZone = normalizeTimeZone;
       exports2.timeStampComponents = timeStampComponents;
+      exports2.canonicalCollectionKey = canonicalCollectionKey;
       exports2.assertCreatableArraySize = assertCreatableArraySize;
       exports2.channel = channel;
       exports2.opacity = opacity;
@@ -9226,6 +9766,8 @@ var Idyllium = (() => {
       exports2.hex = hex;
       exports2.trimFloat = trimFloat;
       exports2.expectArray = expectArray;
+      exports2.expectMap = expectMap;
+      exports2.expectSet = expectSet;
       exports2.colorToCss = colorToCss;
       exports2.colorBlack = colorBlack;
       exports2.colorWhite = colorWhite;
@@ -9738,6 +10280,245 @@ var Idyllium = (() => {
         }
       };
       exports2.IdylliumArray = IdylliumArray;
+      function canonicalCollectionKey(key) {
+        if (typeof key === "string")
+          return `s:${key}`;
+        if (typeof key === "boolean")
+          return `b:${key ? "true" : "false"}`;
+        if (typeof key === "bigint")
+          return `i:${key.toString()}`;
+        if (typeof key === "number")
+          return Number.isInteger(key) ? `i:${BigInt(key).toString()}` : `f:${String(key)}`;
+        return `o:${String(key)}`;
+      }
+      var IdylliumSet = class _IdylliumSet {
+        entries = /* @__PURE__ */ new Map();
+        static create() {
+          return new _IdylliumSet();
+        }
+        static fromValues(values) {
+          const set = new _IdylliumSet();
+          for (const value of values)
+            set.add(value);
+          return set;
+        }
+        /** Пустые `{}` приезжают пустым словарём — для множества это пустое множество. */
+        static convert(value, targetType, file, line) {
+          if (value instanceof IdylliumMap && value.length === 0)
+            return new _IdylliumSet();
+          if (!(value instanceof _IdylliumSet)) {
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, `cannot convert '${exports2.valueOps.typeName(value)}' to '${targetType}'`);
+          }
+          const copy = new _IdylliumSet();
+          for (const item of value.entries.values())
+            copy.add(item);
+          return copy;
+        }
+        add(value) {
+          const tag = canonicalCollectionKey(value);
+          if (!this.entries.has(tag))
+            this.entries.set(tag, value);
+        }
+        has(value) {
+          return this.entries.has(canonicalCollectionKey(value));
+        }
+        remove(value, file, line) {
+          if (!this.entries.delete(canonicalCollectionKey(value))) {
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, `set has no element ${exports2.valueOps.inspect(value)}`);
+          }
+        }
+        clear() {
+          this.entries.clear();
+        }
+        values() {
+          const values = [...this.entries.values()];
+          return IdylliumArray.from(values, true, null, () => _IdylliumSet.defaultLike(values[0]));
+        }
+        static defaultLike(sample) {
+          if (typeof sample === "string")
+            return "";
+          if (typeof sample === "boolean")
+            return false;
+          return 0;
+        }
+        union(other) {
+          const result = _IdylliumSet.fromValues([...this.entries.values()]);
+          for (const item of other.entries.values())
+            result.add(item);
+          return result;
+        }
+        intersection(other) {
+          return _IdylliumSet.fromValues([...this.entries.values()].filter((item) => other.has(item)));
+        }
+        difference(other) {
+          return _IdylliumSet.fromValues([...this.entries.values()].filter((item) => !other.has(item)));
+        }
+        isSubset(other) {
+          return [...this.entries.values()].every((item) => other.has(item));
+        }
+        get length() {
+          return this.entries.size;
+        }
+        items() {
+          return [...this.entries.values()];
+        }
+        expectSetArgument(value, method, file, line) {
+          if (!(value instanceof _IdylliumSet)) {
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, `${method}() expects a set, got '${exports2.valueOps.typeName(value)}'`);
+          }
+          return value;
+        }
+        callMethod(name, args, file, line) {
+          switch (name) {
+            case "add":
+              return this.add(args[0]);
+            case "has":
+              return this.has(args[0]);
+            case "remove":
+              return this.remove(args[0], file, line);
+            case "clear":
+              return this.clear();
+            case "values":
+              return this.values();
+            case "union":
+              return this.union(this.expectSetArgument(args[0], "union", file, line));
+            case "intersection":
+              return this.intersection(this.expectSetArgument(args[0], "intersection", file, line));
+            case "difference":
+              return this.difference(this.expectSetArgument(args[0], "difference", file, line));
+            case "is_subset":
+              return this.isSubset(this.expectSetArgument(args[0], "is_subset", file, line));
+            default:
+              throw new runtime_errors_12.IdylliumRuntimeError(file, line, `set has no method '${name}'`);
+          }
+        }
+        toString() {
+          return exports2.valueOps.inspect(this);
+        }
+        toInspectString() {
+          return `{${[...this.entries.values()].map((item) => exports2.valueOps.inspect(item)).join(", ")}}`;
+        }
+      };
+      exports2.IdylliumSet = IdylliumSet;
+      var IdylliumMap = class _IdylliumMap {
+        entries = /* @__PURE__ */ new Map();
+        static create() {
+          return new _IdylliumMap();
+        }
+        /** Литерал {k: v, …}: при совпадении ключей побеждает последний. */
+        static fromPairs(pairs) {
+          const map = new _IdylliumMap();
+          for (const [key, value] of pairs)
+            map.setEntry(key, value);
+          return map;
+        }
+        static convert(value, convertValue, targetType, file, line) {
+          if (!(value instanceof _IdylliumMap)) {
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, `cannot convert '${exports2.valueOps.typeName(value)}' to '${targetType}'`);
+          }
+          const copy = new _IdylliumMap();
+          for (const entry of value.entries.values())
+            copy.setEntry(entry.key, convertValue(entry.value));
+          return copy;
+        }
+        static canonicalKey(key) {
+          return canonicalCollectionKey(key);
+        }
+        setEntry(key, value) {
+          const tag = _IdylliumMap.canonicalKey(key);
+          const existing = this.entries.get(tag);
+          if (existing) {
+            existing.value = value;
+          } else {
+            this.entries.set(tag, { key, value });
+          }
+        }
+        missingKey(key, file, line) {
+          return new runtime_errors_12.IdylliumRuntimeError(file, line, `map has no key ${exports2.valueOps.inspect(key)}`);
+        }
+        get(key, file, line) {
+          const entry = this.entries.get(_IdylliumMap.canonicalKey(key));
+          if (!entry)
+            throw this.missingKey(key, file, line);
+          return entry.value;
+        }
+        set(key, value) {
+          this.setEntry(key, value);
+        }
+        has(key) {
+          return this.entries.has(_IdylliumMap.canonicalKey(key));
+        }
+        getOr(key, fallback) {
+          const entry = this.entries.get(_IdylliumMap.canonicalKey(key));
+          return entry ? entry.value : fallback;
+        }
+        remove(key, file, line) {
+          if (!this.entries.delete(_IdylliumMap.canonicalKey(key)))
+            throw this.missingKey(key, file, line);
+        }
+        clear() {
+          this.entries.clear();
+        }
+        /** Добавить все пары other; при совпадении ключа побеждает other. */
+        join(other) {
+          for (const entry of other.entries.values())
+            this.setEntry(entry.key, entry.value);
+        }
+        keys() {
+          const keys = [...this.entries.values()].map((entry) => entry.key);
+          return IdylliumArray.from(keys, true, null, () => _IdylliumMap.defaultLike(keys[0]));
+        }
+        values() {
+          const values = [...this.entries.values()].map((entry) => entry.value);
+          return IdylliumArray.from(values, true, null, () => _IdylliumMap.defaultLike(values[0]));
+        }
+        /** Умолчание для dyn_array, собранного из ключей/значений: статический
+         *  тип узнает convert на границе присваивания; здесь — лишь заготовка. */
+        static defaultLike(sample) {
+          if (typeof sample === "string")
+            return "";
+          if (typeof sample === "boolean")
+            return false;
+          return 0;
+        }
+        get length() {
+          return this.entries.size;
+        }
+        entriesList() {
+          return [...this.entries.values()];
+        }
+        callMethod(name, args, file, line) {
+          switch (name) {
+            case "has":
+              return this.has(args[0]);
+            case "get_or":
+              return this.getOr(args[0], args[1]);
+            case "remove":
+              return this.remove(args[0], file, line);
+            case "keys":
+              return this.keys();
+            case "values":
+              return this.values();
+            case "clear":
+              return this.clear();
+            case "join":
+              if (!(args[0] instanceof _IdylliumMap)) {
+                throw new runtime_errors_12.IdylliumRuntimeError(file, line, `join() expects a map, got '${exports2.valueOps.typeName(args[0])}'`);
+              }
+              return this.join(args[0]);
+            default:
+              throw new runtime_errors_12.IdylliumRuntimeError(file, line, `map has no method '${name}'`);
+          }
+        }
+        toString() {
+          return exports2.valueOps.inspect(this);
+        }
+        toInspectString() {
+          const parts = [...this.entries.values()].map((entry) => `${exports2.valueOps.inspect(entry.key)}: ${exports2.valueOps.inspect(entry.value)}`);
+          return `{${parts.join(", ")}}`;
+        }
+      };
+      exports2.IdylliumMap = IdylliumMap;
       exports2.MAX_CREATABLE_ARRAY_SIZE = 1e8;
       function assertCreatableArraySize(size) {
         const asNumber = typeof size === "bigint" ? Number(size) : size;
@@ -9771,6 +10552,18 @@ var Idyllium = (() => {
         if (value instanceof IdylliumArray)
           return value;
         throw new runtime_errors_12.IdylliumRuntimeError(file, line, `expected array, got '${String(value)}'`);
+      }
+      function expectMap(value, file, line) {
+        if (!(value instanceof IdylliumMap)) {
+          throw new runtime_errors_12.IdylliumRuntimeError(file, line, `expected a map, got '${exports2.valueOps.typeName(value)}'`);
+        }
+        return value;
+      }
+      function expectSet(value, file, line) {
+        if (!(value instanceof IdylliumSet)) {
+          throw new runtime_errors_12.IdylliumRuntimeError(file, line, `expected a set, got '${exports2.valueOps.typeName(value)}'`);
+        }
+        return value;
       }
       function colorToCss(value, argumentName, file, line) {
         if (value instanceof IdylliumColor)
@@ -10152,6 +10945,458 @@ var Idyllium = (() => {
           fail("expected a root element");
         }
         return root;
+      }
+    }
+  });
+
+  // dist/src/runtime/runtime-state.js
+  var require_runtime_state = __commonJS({
+    "dist/src/runtime/runtime-state.js"(exports2) {
+      "use strict";
+      Object.defineProperty(exports2, "__esModule", { value: true });
+      exports2.objectFactory = void 0;
+      exports2.createRuntimeErrorValue = createRuntimeErrorValue;
+      exports2.publicRuntimeErrorFile = publicRuntimeErrorFile;
+      exports2.defineTrackedRuntimeProperty = defineTrackedRuntimeProperty;
+      exports2.setTrackedRuntimePropertyDefault = setTrackedRuntimePropertyDefault;
+      exports2.trackedRuntimePropertyValues = trackedRuntimePropertyValues;
+      exports2.explicitRuntimeProperties = explicitRuntimeProperties;
+      exports2.runtimePropertySetters = runtimePropertySetters;
+      exports2.defineValidatedRuntimeProperty = defineValidatedRuntimeProperty;
+      exports2.defineEnumRuntimeProperty = defineEnumRuntimeProperty;
+      exports2.canvasCommands = canvasCommands;
+      exports2.registerObjectFactory = registerObjectFactory;
+      var runtime_errors_12 = require_runtime_errors();
+      var runtime_shared_12 = require_runtime_shared();
+      function createRuntimeErrorValue(error) {
+        const file = publicRuntimeErrorFile(error.file);
+        const result = {
+          __idylliumType: "RuntimeError",
+          to_string: () => `${file}:${error.line}: runtime error: ${error.detail}`
+        };
+        (0, runtime_shared_12.defineRuntimeGetter)(result, "message", () => error.detail);
+        (0, runtime_shared_12.defineRuntimeGetter)(result, "file", () => file);
+        (0, runtime_shared_12.defineRuntimeGetter)(result, "line", () => error.line);
+        return result;
+      }
+      function publicRuntimeErrorFile(file) {
+        const normalized = file.replace(/\\/gu, "/");
+        if (normalized.startsWith("/workspace/"))
+          return normalized.slice("/workspace/".length);
+        if (normalized.startsWith("workspace/"))
+          return normalized.slice("workspace/".length);
+        return normalized;
+      }
+      function defineTrackedRuntimeProperty(obj, name, defaultValue) {
+        const values = trackedRuntimePropertyValues(obj);
+        values[name] = defaultValue;
+        Object.defineProperty(obj, name, {
+          enumerable: true,
+          configurable: true,
+          get() {
+            return values[name];
+          },
+          set(value) {
+            values[name] = value;
+            explicitRuntimeProperties(obj).add(name);
+          }
+        });
+      }
+      function setTrackedRuntimePropertyDefault(obj, name, value) {
+        const values = obj.__trackedPropertyValues;
+        if ((0, runtime_shared_12.isPlainObject)(values) && Object.prototype.hasOwnProperty.call(values, name)) {
+          values[name] = value;
+          return;
+        }
+        defineTrackedRuntimeProperty(obj, name, value);
+      }
+      function trackedRuntimePropertyValues(obj) {
+        if ((0, runtime_shared_12.isPlainObject)(obj.__trackedPropertyValues))
+          return obj.__trackedPropertyValues;
+        const values = /* @__PURE__ */ Object.create(null);
+        Object.defineProperty(obj, "__trackedPropertyValues", {
+          value: values,
+          enumerable: false,
+          configurable: true
+        });
+        return values;
+      }
+      function explicitRuntimeProperties(obj) {
+        if (obj.__explicitProperties instanceof Set)
+          return obj.__explicitProperties;
+        const properties = /* @__PURE__ */ new Set();
+        Object.defineProperty(obj, "__explicitProperties", {
+          value: properties,
+          enumerable: false,
+          configurable: true
+        });
+        return properties;
+      }
+      function runtimePropertySetters(obj) {
+        if ((0, runtime_shared_12.isPlainObject)(obj.__runtimePropertySetters))
+          return obj.__runtimePropertySetters;
+        const setters = /* @__PURE__ */ Object.create(null);
+        Object.defineProperty(obj, "__runtimePropertySetters", {
+          value: setters,
+          enumerable: false,
+          configurable: true
+        });
+        return setters;
+      }
+      function defineValidatedRuntimeProperty(obj, name, defaultValue, validator, afterSet) {
+        const values = trackedRuntimePropertyValues(obj);
+        values[name] = defaultValue;
+        runtimePropertySetters(obj)[name] = (value, file, line) => {
+          const validated = validator(value, file, line);
+          values[name] = validated;
+          explicitRuntimeProperties(obj).add(name);
+          afterSet?.(validated, file, line);
+        };
+        Object.defineProperty(obj, name, {
+          enumerable: true,
+          configurable: true,
+          get() {
+            return values[name];
+          },
+          set(value) {
+            const validated = validator(value, "runtime", 0);
+            values[name] = validated;
+            explicitRuntimeProperties(obj).add(name);
+            afterSet?.(validated, "runtime", 0);
+          }
+        });
+      }
+      function defineEnumRuntimeProperty(obj, name, ownerLabel, defaultValue, accepted) {
+        defineValidatedRuntimeProperty(obj, name, defaultValue, (value, file, line) => {
+          if (typeof value !== "string" || !accepted.includes(value)) {
+            const shown = accepted.map((item) => `'${item}'`);
+            const list = `${shown.slice(0, -1).join(", ")} or ${shown[shown.length - 1]}`;
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, `${ownerLabel}.${name} must be ${list}, got '${String(value)}'`);
+          }
+          return value;
+        });
+      }
+      function canvasCommands(canvas) {
+        const commands = canvas.__commands;
+        if (Array.isArray(commands))
+          return commands;
+        canvas.__commands = [];
+        return canvas.__commands;
+      }
+      exports2.objectFactory = {
+        create() {
+          throw new Error("runtime core is not loaded: object factory is not registered");
+        }
+      };
+      function registerObjectFactory(factory) {
+        exports2.objectFactory.create = factory.create;
+      }
+    }
+  });
+
+  // dist/src/runtime/runtime-csv.js
+  var require_runtime_csv = __commonJS({
+    "dist/src/runtime/runtime-csv.js"(exports2) {
+      "use strict";
+      Object.defineProperty(exports2, "__esModule", { value: true });
+      exports2.isCsvRuntimeTable = isCsvRuntimeTable;
+      exports2.detectCsvSeparator = detectCsvSeparator;
+      exports2.serializeCsvTable = serializeCsvTable;
+      exports2.parseCsvTable = parseCsvTable;
+      exports2.createCsvTable = createCsvTable;
+      exports2.csvParseSeparator = csvParseSeparator;
+      var runtime_errors_12 = require_runtime_errors();
+      var runtime_shared_12 = require_runtime_shared();
+      var runtime_values_12 = require_runtime_values();
+      var runtime_state_12 = require_runtime_state();
+      function isCsvRuntimeTable(value) {
+        return typeof value === "object" && value !== null && value.__idylliumType === "csv.Table";
+      }
+      var CSV_SEPARATOR_CANDIDATES = [";", ",", "	"];
+      function detectCsvSeparator(text) {
+        const counts = new Map(CSV_SEPARATOR_CANDIDATES.map((candidate) => [candidate, 0]));
+        let quoted = false;
+        for (const character of text) {
+          if (character === '"') {
+            quoted = !quoted;
+            continue;
+          }
+          if (!quoted && (character === "\n" || character === "\r"))
+            break;
+          if (!quoted && counts.has(character))
+            counts.set(character, counts.get(character) + 1);
+        }
+        let best = ";";
+        let bestCount = 0;
+        for (const candidate of CSV_SEPARATOR_CANDIDATES) {
+          const count = counts.get(candidate);
+          if (count > bestCount) {
+            best = candidate;
+            bestCount = count;
+          }
+        }
+        return best;
+      }
+      function csvSeparatorArgument(value, argumentName, file, line) {
+        const separator = (0, runtime_shared_12.stringArgument)(value, argumentName, file, line);
+        if (Array.from(separator).length !== 1) {
+          throw new runtime_errors_12.IdylliumRuntimeError(file, line, `${argumentName} must be one character (like ";" or ","), got "${separator}"`);
+        }
+        if (separator === '"' || separator === "\n" || separator === "\r") {
+          throw new runtime_errors_12.IdylliumRuntimeError(file, line, `${argumentName} cannot be a quote or a line break`);
+        }
+        return separator;
+      }
+      function parseCsvRecords(text, separator, functionName, file, line) {
+        const source = text.startsWith("\uFEFF") ? text.slice(1) : text;
+        const records = [];
+        let record = [];
+        let recordLine = 1;
+        let field = "";
+        let index = 0;
+        let lineNumber = 1;
+        let fieldStartLine = 1;
+        const length = source.length;
+        const finishRecord = () => {
+          record.push(field);
+          field = "";
+          if (!(record.length === 1 && record[0] === ""))
+            records.push({ cells: record, line: recordLine });
+          record = [];
+          recordLine = lineNumber + 1;
+        };
+        while (index < length) {
+          const character = source[index];
+          if (character === '"' && field === "") {
+            fieldStartLine = lineNumber;
+            index += 1;
+            let closed = false;
+            while (index < length) {
+              const inner = source[index];
+              if (inner === '"') {
+                if (source[index + 1] === '"') {
+                  field += '"';
+                  index += 2;
+                  continue;
+                }
+                index += 1;
+                closed = true;
+                break;
+              }
+              if (inner === "\n")
+                lineNumber += 1;
+              if (inner === "\r") {
+                if (source[index + 1] !== "\n")
+                  lineNumber += 1;
+              }
+              field += inner;
+              index += 1;
+            }
+            if (!closed) {
+              throw new runtime_errors_12.IdylliumRuntimeError(file, line, `${functionName} line ${fieldStartLine}: quote is never closed`);
+            }
+            const next = source[index];
+            if (next !== void 0 && next !== separator && next !== "\n" && next !== "\r") {
+              throw new runtime_errors_12.IdylliumRuntimeError(file, line, `${functionName} line ${lineNumber}: unexpected text after a closing quote`);
+            }
+            continue;
+          }
+          if (character === separator) {
+            record.push(field);
+            field = "";
+            index += 1;
+            continue;
+          }
+          if (character === "\r") {
+            finishRecord();
+            index += source[index + 1] === "\n" ? 2 : 1;
+            lineNumber += 1;
+            continue;
+          }
+          if (character === "\n") {
+            finishRecord();
+            index += 1;
+            lineNumber += 1;
+            continue;
+          }
+          field += character;
+          index += 1;
+        }
+        if (field !== "" || record.length > 0)
+          finishRecord();
+        return { records };
+      }
+      function csvQuoteField(value, separator) {
+        if (value === "")
+          return value;
+        if (value.includes(separator) || value.includes('"') || value.includes("\n") || value.includes("\r")) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value;
+      }
+      function serializeCsvTable(table) {
+        const separator = table.__csvSeparator;
+        const lines = [];
+        if (table.__csvColumns.length > 0) {
+          lines.push(table.__csvColumns.map((column) => csvQuoteField(column, separator)).join(separator));
+        }
+        for (const row of table.__csvRows) {
+          lines.push(row.map((cell) => csvQuoteField(cell, separator)).join(separator));
+        }
+        return lines.length === 0 ? "" : `${lines.join("\n")}
+`;
+      }
+      function parseCsvTable(text, separator, functionName, file, line) {
+        const chosen = separator ?? detectCsvSeparator(text.startsWith("\uFEFF") ? text.slice(1) : text);
+        const { records } = parseCsvRecords(text, chosen, functionName, file, line);
+        const table = createCsvTable(chosen);
+        if (records.length === 0)
+          return table;
+        const header = records[0].cells;
+        const seen = /* @__PURE__ */ new Set();
+        for (const column of header) {
+          if (seen.has(column)) {
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, `${functionName} header has duplicate column "${column}"`);
+          }
+          seen.add(column);
+        }
+        table.__csvColumns = [...header];
+        for (let recordIndex = 1; recordIndex < records.length; recordIndex += 1) {
+          const record = records[recordIndex].cells;
+          if (record.length > header.length) {
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, `${functionName} line ${records[recordIndex].line} has ${record.length} values, but the header has ${header.length} columns`);
+          }
+          const row = [...record];
+          while (row.length < header.length)
+            row.push("");
+          table.__csvRows.push(row);
+        }
+        return table;
+      }
+      function stringCells(values) {
+        return values.map((value) => typeof value === "string" ? value : String(value));
+      }
+      function columnIndex(table, name, methodName, file, line) {
+        const column = (0, runtime_shared_12.stringArgument)(name, `${methodName} column`, file, line);
+        const index = table.__csvColumns.indexOf(column);
+        if (index < 0) {
+          throw new runtime_errors_12.IdylliumRuntimeError(file, line, `csv table has no column "${column}"`);
+        }
+        return index;
+      }
+      function rowIndex(table, value, methodName, file, line) {
+        const index = (0, runtime_shared_12.integerNumber)(value, `${methodName} row`, file, line);
+        if (index < 0 || index >= table.__csvRows.length) {
+          if (table.__csvRows.length === 0) {
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, `${methodName} row ${index} is out of range — the table has no rows`);
+          }
+          throw new runtime_errors_12.IdylliumRuntimeError(file, line, `${methodName} row ${index} is out of range 0..${table.__csvRows.length - 1}`);
+        }
+        return index;
+      }
+      function stringArray(values) {
+        return runtime_values_12.IdylliumArray.from([...values], true, null, () => "");
+      }
+      var CSV_TABLE_PROTOTYPE = {};
+      Object.defineProperty(CSV_TABLE_PROTOTYPE, "__idylliumType", { value: "csv.Table", enumerable: false });
+      Object.defineProperty(CSV_TABLE_PROTOTYPE, "row_count", {
+        enumerable: true,
+        get() {
+          return this.__csvRows.length;
+        }
+      });
+      Object.defineProperty(CSV_TABLE_PROTOTYPE, "column_count", {
+        enumerable: true,
+        get() {
+          return this.__csvColumns.length;
+        }
+      });
+      Object.defineProperty(CSV_TABLE_PROTOTYPE, "columns", {
+        enumerable: true,
+        get() {
+          return stringArray(this.__csvColumns);
+        }
+      });
+      Object.defineProperty(CSV_TABLE_PROTOTYPE, "separator", {
+        enumerable: true,
+        get() {
+          return this.__csvSeparator;
+        },
+        set(value) {
+          this.__csvSeparator = csvSeparatorArgument(value, "csv.Table.separator", "runtime", 0);
+        }
+      });
+      CSV_TABLE_PROTOTYPE.set_columns = (0, runtime_shared_12.contextFunction)(function(...callArgs) {
+        callArgs.pop();
+        callArgs.pop();
+        const columns = stringCells(callArgs);
+        this.__csvColumns = columns;
+        this.__csvRows = [];
+      });
+      CSV_TABLE_PROTOTYPE.add_row = (0, runtime_shared_12.contextFunction)(function(...callArgs) {
+        const line = callArgs.pop();
+        const file = callArgs.pop();
+        if (this.__csvColumns.length === 0) {
+          throw new runtime_errors_12.IdylliumRuntimeError(file, line, "csv.Table.add_row() before set_columns() — set the columns first");
+        }
+        if (callArgs.length !== this.__csvColumns.length) {
+          throw new runtime_errors_12.IdylliumRuntimeError(file, line, `csv.Table.add_row() expects ${this.__csvColumns.length} values (one per column), got ${callArgs.length}`);
+        }
+        this.__csvRows.push(stringCells(callArgs));
+      });
+      CSV_TABLE_PROTOTYPE.get = (0, runtime_shared_12.contextFunction)(function(row, column, file, line) {
+        const index = columnIndex(this, column, "csv.Table.get()", file, line);
+        return this.__csvRows[rowIndex(this, row, "csv.Table.get()", file, line)][index];
+      });
+      CSV_TABLE_PROTOTYPE.set = (0, runtime_shared_12.contextFunction)(function(row, column, text, file, line) {
+        const index = columnIndex(this, column, "csv.Table.set()", file, line);
+        const value = (0, runtime_shared_12.stringArgument)(text, "csv.Table.set() text", file, line);
+        this.__csvRows[rowIndex(this, row, "csv.Table.set()", file, line)][index] = value;
+      });
+      CSV_TABLE_PROTOTYPE.row = (0, runtime_shared_12.contextFunction)(function(row, file, line) {
+        return stringArray(this.__csvRows[rowIndex(this, row, "csv.Table.row()", file, line)]);
+      });
+      CSV_TABLE_PROTOTYPE.column = (0, runtime_shared_12.contextFunction)(function(column, file, line) {
+        const index = columnIndex(this, column, "csv.Table.column()", file, line);
+        return stringArray(this.__csvRows.map((cells) => cells[index]));
+      });
+      CSV_TABLE_PROTOTYPE.has_column = (0, runtime_shared_12.contextFunction)(function(column, file, line) {
+        return this.__csvColumns.includes((0, runtime_shared_12.stringArgument)(column, "csv.Table.has_column() column", file, line));
+      });
+      CSV_TABLE_PROTOTYPE.find = (0, runtime_shared_12.contextFunction)(function(column, text, file, line) {
+        const index = columnIndex(this, column, "csv.Table.find()", file, line);
+        const wanted = (0, runtime_shared_12.stringArgument)(text, "csv.Table.find() text", file, line);
+        return this.__csvRows.findIndex((cells) => cells[index] === wanted);
+      });
+      CSV_TABLE_PROTOTYPE.remove_row = (0, runtime_shared_12.contextFunction)(function(row, file, line) {
+        this.__csvRows.splice(rowIndex(this, row, "csv.Table.remove_row()", file, line), 1);
+      });
+      CSV_TABLE_PROTOTYPE.clear = (0, runtime_shared_12.contextFunction)(function() {
+        this.__csvRows = [];
+      });
+      CSV_TABLE_PROTOTYPE.to_string = function() {
+        return serializeCsvTable(this);
+      };
+      CSV_TABLE_PROTOTYPE.toString = function() {
+        return serializeCsvTable(this);
+      };
+      function createCsvTable(separator = ";") {
+        const table = Object.create(CSV_TABLE_PROTOTYPE);
+        table.__csvColumns = [];
+        table.__csvRows = [];
+        table.__csvSeparator = separator;
+        (0, runtime_state_12.runtimePropertySetters)(table).separator = (value, file, line) => {
+          table.__csvSeparator = csvSeparatorArgument(value, "csv.Table.separator", file, line);
+        };
+        return table;
+      }
+      function csvParseSeparator(value, functionName, file, line) {
+        if (value === void 0)
+          return null;
+        const separator = (0, runtime_shared_12.stringArgument)(value, `${functionName} separator`, file, line);
+        if (separator === "")
+          return null;
+        return csvSeparatorArgument(separator, `${functionName} separator`, file, line);
       }
     }
   });
@@ -11717,151 +12962,6 @@ ${outerPadding}${close}`;
         if (typeName === "float32")
           return Math.fround(buffer.readFloatBE(0));
         return buffer.readDoubleBE(0);
-      }
-    }
-  });
-
-  // dist/src/runtime/runtime-state.js
-  var require_runtime_state = __commonJS({
-    "dist/src/runtime/runtime-state.js"(exports2) {
-      "use strict";
-      Object.defineProperty(exports2, "__esModule", { value: true });
-      exports2.objectFactory = void 0;
-      exports2.createRuntimeErrorValue = createRuntimeErrorValue;
-      exports2.publicRuntimeErrorFile = publicRuntimeErrorFile;
-      exports2.defineTrackedRuntimeProperty = defineTrackedRuntimeProperty;
-      exports2.setTrackedRuntimePropertyDefault = setTrackedRuntimePropertyDefault;
-      exports2.trackedRuntimePropertyValues = trackedRuntimePropertyValues;
-      exports2.explicitRuntimeProperties = explicitRuntimeProperties;
-      exports2.runtimePropertySetters = runtimePropertySetters;
-      exports2.defineValidatedRuntimeProperty = defineValidatedRuntimeProperty;
-      exports2.defineEnumRuntimeProperty = defineEnumRuntimeProperty;
-      exports2.canvasCommands = canvasCommands;
-      exports2.registerObjectFactory = registerObjectFactory;
-      var runtime_errors_12 = require_runtime_errors();
-      var runtime_shared_12 = require_runtime_shared();
-      function createRuntimeErrorValue(error) {
-        const file = publicRuntimeErrorFile(error.file);
-        const result = {
-          __idylliumType: "RuntimeError",
-          to_string: () => `${file}:${error.line}: runtime error: ${error.detail}`
-        };
-        (0, runtime_shared_12.defineRuntimeGetter)(result, "message", () => error.detail);
-        (0, runtime_shared_12.defineRuntimeGetter)(result, "file", () => file);
-        (0, runtime_shared_12.defineRuntimeGetter)(result, "line", () => error.line);
-        return result;
-      }
-      function publicRuntimeErrorFile(file) {
-        const normalized = file.replace(/\\/gu, "/");
-        if (normalized.startsWith("/workspace/"))
-          return normalized.slice("/workspace/".length);
-        if (normalized.startsWith("workspace/"))
-          return normalized.slice("workspace/".length);
-        return normalized;
-      }
-      function defineTrackedRuntimeProperty(obj, name, defaultValue) {
-        const values = trackedRuntimePropertyValues(obj);
-        values[name] = defaultValue;
-        Object.defineProperty(obj, name, {
-          enumerable: true,
-          configurable: true,
-          get() {
-            return values[name];
-          },
-          set(value) {
-            values[name] = value;
-            explicitRuntimeProperties(obj).add(name);
-          }
-        });
-      }
-      function setTrackedRuntimePropertyDefault(obj, name, value) {
-        const values = obj.__trackedPropertyValues;
-        if ((0, runtime_shared_12.isPlainObject)(values) && Object.prototype.hasOwnProperty.call(values, name)) {
-          values[name] = value;
-          return;
-        }
-        defineTrackedRuntimeProperty(obj, name, value);
-      }
-      function trackedRuntimePropertyValues(obj) {
-        if ((0, runtime_shared_12.isPlainObject)(obj.__trackedPropertyValues))
-          return obj.__trackedPropertyValues;
-        const values = /* @__PURE__ */ Object.create(null);
-        Object.defineProperty(obj, "__trackedPropertyValues", {
-          value: values,
-          enumerable: false,
-          configurable: true
-        });
-        return values;
-      }
-      function explicitRuntimeProperties(obj) {
-        if (obj.__explicitProperties instanceof Set)
-          return obj.__explicitProperties;
-        const properties = /* @__PURE__ */ new Set();
-        Object.defineProperty(obj, "__explicitProperties", {
-          value: properties,
-          enumerable: false,
-          configurable: true
-        });
-        return properties;
-      }
-      function runtimePropertySetters(obj) {
-        if ((0, runtime_shared_12.isPlainObject)(obj.__runtimePropertySetters))
-          return obj.__runtimePropertySetters;
-        const setters = /* @__PURE__ */ Object.create(null);
-        Object.defineProperty(obj, "__runtimePropertySetters", {
-          value: setters,
-          enumerable: false,
-          configurable: true
-        });
-        return setters;
-      }
-      function defineValidatedRuntimeProperty(obj, name, defaultValue, validator, afterSet) {
-        const values = trackedRuntimePropertyValues(obj);
-        values[name] = defaultValue;
-        runtimePropertySetters(obj)[name] = (value, file, line) => {
-          const validated = validator(value, file, line);
-          values[name] = validated;
-          explicitRuntimeProperties(obj).add(name);
-          afterSet?.(validated, file, line);
-        };
-        Object.defineProperty(obj, name, {
-          enumerable: true,
-          configurable: true,
-          get() {
-            return values[name];
-          },
-          set(value) {
-            const validated = validator(value, "runtime", 0);
-            values[name] = validated;
-            explicitRuntimeProperties(obj).add(name);
-            afterSet?.(validated, "runtime", 0);
-          }
-        });
-      }
-      function defineEnumRuntimeProperty(obj, name, ownerLabel, defaultValue, accepted) {
-        defineValidatedRuntimeProperty(obj, name, defaultValue, (value, file, line) => {
-          if (typeof value !== "string" || !accepted.includes(value)) {
-            const shown = accepted.map((item) => `'${item}'`);
-            const list = `${shown.slice(0, -1).join(", ")} or ${shown[shown.length - 1]}`;
-            throw new runtime_errors_12.IdylliumRuntimeError(file, line, `${ownerLabel}.${name} must be ${list}, got '${String(value)}'`);
-          }
-          return value;
-        });
-      }
-      function canvasCommands(canvas) {
-        const commands = canvas.__commands;
-        if (Array.isArray(commands))
-          return commands;
-        canvas.__commands = [];
-        return canvas.__commands;
-      }
-      exports2.objectFactory = {
-        create() {
-          throw new Error("runtime core is not loaded: object factory is not registered");
-        }
-      };
-      function registerObjectFactory(factory) {
-        exports2.objectFactory.create = factory.create;
       }
     }
   });
@@ -41796,7 +42896,7 @@ ${outerPadding}${close}`;
     "dist/src/runtime/runtime.js"(exports, module) {
       "use strict";
       Object.defineProperty(exports, "__esModule", { value: true });
-      exports.MAX_RECURSION_DEPTH = exports.MIN_RECURSION_DEPTH = exports.DEFAULT_RECURSION_DEPTH = exports.IDYLLIUM_VERSION = exports.createMemoryRuntimeFileSystem = exports.IdylliumArray = exports.IdylliumTimeStamp = exports.IdylliumColor = exports.IdylliumRuntimeError = void 0;
+      exports.MAX_RECURSION_DEPTH = exports.MIN_RECURSION_DEPTH = exports.DEFAULT_RECURSION_DEPTH = exports.IDYLLIUM_VERSION = exports.createMemoryRuntimeFileSystem = exports.IdylliumSet = exports.IdylliumMap = exports.IdylliumArray = exports.IdylliumTimeStamp = exports.IdylliumColor = exports.IdylliumRuntimeError = void 0;
       exports.clampRecursionDepth = clampRecursionDepth;
       exports.createRuntime = createRuntime;
       var nodeFs = require_fs();
@@ -41817,8 +42917,15 @@ ${outerPadding}${close}`;
       Object.defineProperty(exports, "IdylliumArray", { enumerable: true, get: function() {
         return runtime_values_1.IdylliumArray;
       } });
+      Object.defineProperty(exports, "IdylliumMap", { enumerable: true, get: function() {
+        return runtime_values_1.IdylliumMap;
+      } });
+      Object.defineProperty(exports, "IdylliumSet", { enumerable: true, get: function() {
+        return runtime_values_1.IdylliumSet;
+      } });
       var runtime_values_2 = require_runtime_values();
       var runtime_xml_1 = require_runtime_xml();
+      var runtime_csv_1 = require_runtime_csv();
       var runtime_json_1 = require_runtime_json();
       var runtime_sqlite_1 = require_runtime_sqlite();
       var runtime_encoding_1 = require_runtime_encoding();
@@ -41840,7 +42947,7 @@ ${outerPadding}${close}`;
       var network_service_1 = require_network_service();
       var font_metrics_service_1 = require_font_metrics_service();
       var hash_1 = require_hash();
-      exports.IDYLLIUM_VERSION = "1.5.5";
+      exports.IDYLLIUM_VERSION = "1.5.6";
       function defaultRuntimePlatform() {
         const nodeProcess2 = typeof process === "object" ? process : null;
         return nodeProcess2?.versions?.node ? "cli" : "web";
@@ -41958,8 +43065,8 @@ ${outerPadding}${close}`;
           if ((0, runtime_json_1.isJsonRuntimeValue)(value)) {
             return formatForConsole(value, precision);
           }
-          if (value instanceof runtime_values_2.IdylliumArray && await arrayHoldsContractObjects(value)) {
-            return await formatArrayWithContracts(value);
+          if ((value instanceof runtime_values_2.IdylliumArray || value instanceof runtime_values_2.IdylliumMap) && await collectionHoldsContractObjects(value)) {
+            return await formatCollectionWithContracts(value);
           }
           if (value !== null && typeof value === "object") {
             const method = value.to_string;
@@ -41970,10 +43077,11 @@ ${outerPadding}${close}`;
           }
           return formatForConsole(value, precision);
         }
-        async function arrayHoldsContractObjects(array2) {
-          for (const item of array2.values()) {
-            if (item instanceof runtime_values_2.IdylliumArray) {
-              if (await arrayHoldsContractObjects(item))
+        async function collectionHoldsContractObjects(collection) {
+          const items = collection instanceof runtime_values_2.IdylliumArray ? collection.values() : collection.entriesList().map((entry) => entry.value);
+          for (const item of items) {
+            if (item instanceof runtime_values_2.IdylliumArray || item instanceof runtime_values_2.IdylliumMap) {
+              if (await collectionHoldsContractObjects(item))
                 return true;
               continue;
             }
@@ -41982,17 +43090,24 @@ ${outerPadding}${close}`;
           }
           return false;
         }
-        async function formatArrayWithContracts(array2) {
-          const parts = [];
-          for (const item of array2.values()) {
-            if (item instanceof runtime_values_2.IdylliumArray) {
-              parts.push(await formatArrayWithContracts(item));
-              continue;
-            }
-            const method = item !== null && typeof item === "object" ? item.to_string : void 0;
-            parts.push(typeof method === "function" ? formatForInspect(await method.apply(item)) : formatForInspect(item));
+        async function formatItemWithContracts(item) {
+          if (item instanceof runtime_values_2.IdylliumArray || item instanceof runtime_values_2.IdylliumMap)
+            return formatCollectionWithContracts(item);
+          const method = item !== null && typeof item === "object" ? item.to_string : void 0;
+          return typeof method === "function" ? formatForInspect(await method.apply(item)) : formatForInspect(item);
+        }
+        async function formatCollectionWithContracts(collection) {
+          if (collection instanceof runtime_values_2.IdylliumArray) {
+            const parts2 = [];
+            for (const item of collection.values())
+              parts2.push(await formatItemWithContracts(item));
+            return `[${parts2.join(", ")}]`;
           }
-          return `[${parts.join(", ")}]`;
+          const parts = [];
+          for (const entry of collection.entriesList()) {
+            parts.push(`${formatForInspect(entry.key)}: ${await formatItemWithContracts(entry.value)}`);
+          }
+          return `{${parts.join(", ")}}`;
         }
         async function formatConsoleValues(values) {
           const parts = [];
@@ -42200,6 +43315,10 @@ ${outerPadding}${close}`;
               return "time.stamp";
             if (value instanceof runtime_values_2.IdylliumArray)
               return "array";
+            if (value instanceof runtime_values_2.IdylliumMap)
+              return "map";
+            if (value instanceof runtime_values_2.IdylliumSet)
+              return "set";
             if (typeof value === "object" && typeof value.__idylliumType === "string") {
               if (typeof value.__idylliumClass === "string") {
                 return value.__idylliumClass;
@@ -42248,6 +43367,9 @@ ${outerPadding}${close}`;
           },
           async equalsObjectArrays(left, right, slot, file, line) {
             return equalsArrayCellsWith((0, runtime_values_2.expectArray)(left, file, line), (0, runtime_values_2.expectArray)(right, file, line), slot, file, line);
+          },
+          async equalsObjectMaps(left, right, slot, file, line) {
+            return equalsMapEntriesWith((0, runtime_values_2.expectMap)(left, file, line), (0, runtime_values_2.expectMap)(right, file, line), slot, file, line);
           },
           negate(value) {
             return runtimeNegate(value);
@@ -42360,11 +43482,11 @@ ${outerPadding}${close}`;
             let matches = 0;
             for (let index = 0; index < snapshot.length; index += 1) {
               const item = snapshot[index];
-              const contract = item?.[slot];
-              if (typeof contract !== "function") {
+              const isCollection = item instanceof runtime_values_2.IdylliumArray || item instanceof runtime_values_2.IdylliumMap;
+              if (!isCollection && typeof item?.[slot] !== "function") {
                 throw new runtime_errors_1.IdylliumRuntimeError(file, line, `${mode}() found an element without the 'equals' contract`);
               }
-              const equal = await contract(target) === true;
+              const equal = await equalsCellWith(item, target, slot, file, line);
               if (equal) {
                 if (mode === "contains")
                   return true;
@@ -42394,6 +43516,34 @@ ${outerPadding}${close}`;
             const values = numericValues(value, "avg", file, line);
             const total = values.reduce((sum, item) => runtimeAdd(sum, item), 0);
             return Number(total) / values.length;
+          }
+        };
+        const set = {
+          create() {
+            return runtime_values_2.IdylliumSet.create();
+          },
+          fromValues(values) {
+            return runtime_values_2.IdylliumSet.fromValues(values);
+          },
+          convert(value, targetType, file, line) {
+            return runtime_values_2.IdylliumSet.convert(value, targetType, file, line);
+          }
+        };
+        const map = {
+          create() {
+            return runtime_values_2.IdylliumMap.create();
+          },
+          fromPairs(pairs) {
+            return runtime_values_2.IdylliumMap.fromPairs(pairs);
+          },
+          convert(value, convertValue, targetType, file, line) {
+            return runtime_values_2.IdylliumMap.convert(value, convertValue, targetType, file, line);
+          },
+          get(value, key, file, line) {
+            return (0, runtime_values_2.expectMap)(value, file, line).get(key, file, line);
+          },
+          set(value, key, item, file, line) {
+            (0, runtime_values_2.expectMap)(value, file, line).set(key, item);
           }
         };
         const types = {
@@ -42462,6 +43612,8 @@ ${outerPadding}${close}`;
           },
           core,
           array,
+          map,
+          set,
           types,
           errors: {
             catchValue(error) {
@@ -42565,7 +43717,55 @@ ${outerPadding}${close}`;
                 return Math.log10(number);
               }),
               to_radians: (0, runtime_shared_1.contextFunction)((degrees, file, line) => (0, runtime_shared_1.finiteNumber)(degrees, "math.to_radians() degrees", file, line) * Math.PI / 180),
-              to_degrees: (0, runtime_shared_1.contextFunction)((radians, file, line) => (0, runtime_shared_1.finiteNumber)(radians, "math.to_degrees() radians", file, line) * 180 / Math.PI)
+              to_degrees: (0, runtime_shared_1.contextFunction)((radians, file, line) => (0, runtime_shared_1.finiteNumber)(radians, "math.to_degrees() radians", file, line) * 180 / Math.PI),
+              gcd: (0, runtime_shared_1.contextFunction)((a, b, file, line) => (0, runtime_shared_1.exactIntegerResult)(bigGcd((0, runtime_shared_1.runtimeInteger)(a, "math.gcd() a", file, line), (0, runtime_shared_1.runtimeInteger)(b, "math.gcd() b", file, line)))),
+              lcm: (0, runtime_shared_1.contextFunction)((a, b, file, line) => {
+                const x = bigAbs((0, runtime_shared_1.runtimeInteger)(a, "math.lcm() a", file, line));
+                const y = bigAbs((0, runtime_shared_1.runtimeInteger)(b, "math.lcm() b", file, line));
+                if (x === 0n || y === 0n)
+                  return 0;
+                return (0, runtime_shared_1.exactIntegerResult)(x / bigGcd(x, y) * y);
+              }),
+              factorial: (0, runtime_shared_1.contextFunction)((n, file, line) => {
+                const count = (0, runtime_shared_1.integerNumber)(n, "math.factorial() n", file, line);
+                if (count < 0 || count > 1e4) {
+                  throw new runtime_errors_1.IdylliumRuntimeError(file, line, `math.factorial() n must be between 0 and 10000, got ${count}`);
+                }
+                let result = 1n;
+                for (let factor = 2n; factor <= BigInt(count); factor += 1n)
+                  result *= factor;
+                return (0, runtime_shared_1.exactIntegerResult)(result);
+              }),
+              is_prime: (0, runtime_shared_1.contextFunction)((n, file, line) => {
+                const value = (0, runtime_shared_1.runtimeInteger)(n, "math.is_prime() n", file, line);
+                if (value > IS_PRIME_EXACT_LIMIT) {
+                  throw new runtime_errors_1.IdylliumRuntimeError(file, line, `math.is_prime() n must be at most ${IS_PRIME_EXACT_LIMIT}, got ${value}`);
+                }
+                return bigIsPrime(value);
+              }),
+              divisors: (0, runtime_shared_1.contextFunction)((n, file, line) => {
+                const value = (0, runtime_shared_1.integerNumber)(n, "math.divisors() n", file, line);
+                if (value < 1) {
+                  throw new runtime_errors_1.IdylliumRuntimeError(file, line, `math.divisors() n must be a positive number, got ${value}`);
+                }
+                const small = [];
+                const large = [];
+                for (let candidate = 1; candidate * candidate <= value; candidate += 1) {
+                  if (value % candidate === 0) {
+                    small.push(candidate);
+                    if (candidate * candidate !== value)
+                      large.push(value / candidate);
+                  }
+                }
+                return runtime_values_2.IdylliumArray.from([...small, ...large.reverse()], true, null, () => 0);
+              }),
+              sign: (0, runtime_shared_1.contextFunction)((value, file, line) => {
+                if (typeof value === "bigint")
+                  return value < 0n ? -1 : value > 0n ? 1 : 0;
+                const number = (0, runtime_shared_1.finiteNumber)(value, "math.sign() value", file, line);
+                return number < 0 ? -1 : number > 0 ? 1 : 0;
+              }),
+              hypot: (0, runtime_shared_1.contextFunction)((a, b, file, line) => finiteMathResult(Math.hypot((0, runtime_shared_1.finiteNumber)(a, "math.hypot() a", file, line), (0, runtime_shared_1.finiteNumber)(b, "math.hypot() b", file, line)), "math.hypot()", file, line))
             },
             random: {
               create_int: (0, runtime_shared_1.contextFunction)((min, max, file, line) => {
@@ -42890,6 +44090,57 @@ ${outerPadding}${close}`;
               parse_xml: (0, runtime_shared_1.contextFunction)((text, file, line) => (0, runtime_xml_1.parseXmlDocument)((0, runtime_shared_1.stringArgument)(text, "xml.parse_xml() text", file, line), false, file, line)),
               parse_html: (0, runtime_shared_1.contextFunction)((text, file, line) => (0, runtime_xml_1.parseXmlDocument)((0, runtime_shared_1.stringArgument)(text, "xml.parse_html() text", file, line), true, file, line))
             },
+            csv: {
+              parse: (0, runtime_shared_1.contextFunction)((...rawArgs) => {
+                const { values, file, line } = (0, runtime_shared_1.splitContextArgs)(rawArgs);
+                const text = (0, runtime_shared_1.stringArgument)(values[0], "csv.parse() text", file, line);
+                return (0, runtime_csv_1.parseCsvTable)(text, (0, runtime_csv_1.csvParseSeparator)(values[1], "csv.parse()", file, line), "csv.parse()", file, line);
+              }),
+              read: (0, runtime_shared_1.contextFunction)((...rawArgs) => {
+                const { values, file, line } = (0, runtime_shared_1.splitContextArgs)(rawArgs);
+                const requestedPath = (0, runtime_shared_1.stringArgument)(values[0], "csv.read() path", file, line);
+                const separator = (0, runtime_csv_1.csvParseSeparator)(values[1], "csv.read()", file, line);
+                const resolvedPath = fileSystem.resolvePath(requestedPath, file);
+                const shownPath = humanizeFsPaths(resolvedPath);
+                let text;
+                try {
+                  if (!fileSystem.exists(resolvedPath)) {
+                    throw new runtime_errors_1.IdylliumRuntimeError(file, line, `csv.read() cannot read '${shownPath}': file does not exist`);
+                  }
+                  if (!fileSystem.isFile(resolvedPath)) {
+                    throw new runtime_errors_1.IdylliumRuntimeError(file, line, `csv.read() cannot read '${shownPath}': path is not a file`);
+                  }
+                  text = fileSystem.readText(resolvedPath);
+                } catch (error) {
+                  if (error instanceof runtime_errors_1.IdylliumRuntimeError)
+                    throw error;
+                  throw new runtime_errors_1.IdylliumRuntimeError(file, line, `csv.read() cannot read '${shownPath}': ${humanizeFsPaths((0, runtime_shared_1.errorMessage)(error))}`);
+                }
+                return (0, runtime_csv_1.parseCsvTable)(text, separator, "csv.read()", file, line);
+              }),
+              write: (0, runtime_shared_1.contextFunction)((targetPath, table, file, line) => {
+                const requestedPath = (0, runtime_shared_1.stringArgument)(targetPath, "csv.write() path", file, line);
+                if (!(0, runtime_csv_1.isCsvRuntimeTable)(table)) {
+                  throw new runtime_errors_1.IdylliumRuntimeError(file, line, `csv.write() expects a csv.Table, got '${runtimeTypeName(table)}'`);
+                }
+                const resolvedPath = fileSystem.resolvePath(requestedPath, file);
+                const shownPath = humanizeFsPaths(resolvedPath);
+                const parent = (0, runtime_shared_1.runtimeDirname)(resolvedPath);
+                try {
+                  if (!fileSystem.exists(parent)) {
+                    throw new runtime_errors_1.IdylliumRuntimeError(file, line, `csv.write() cannot write '${shownPath}': directory does not exist`);
+                  }
+                  if (fileSystem.exists(resolvedPath) && !fileSystem.isFile(resolvedPath)) {
+                    throw new runtime_errors_1.IdylliumRuntimeError(file, line, `csv.write() cannot write '${shownPath}': path is not a file`);
+                  }
+                  fileSystem.writeText(resolvedPath, (0, runtime_csv_1.serializeCsvTable)(table));
+                } catch (error) {
+                  if (error instanceof runtime_errors_1.IdylliumRuntimeError)
+                    throw error;
+                  throw new runtime_errors_1.IdylliumRuntimeError(file, line, `csv.write() cannot write '${shownPath}': ${humanizeFsPaths((0, runtime_shared_1.errorMessage)(error))}`);
+                }
+              })
+            },
             sqlite: {
               open: (0, runtime_shared_1.contextFunction)(async (path, file, line) => (0, runtime_sqlite_1.openSqliteDatabase)(path, file, line, runtimeObjects))
             },
@@ -42984,6 +44235,12 @@ ${outerPadding}${close}`;
           callMethod(target, methodName, args, file, line) {
             throwIfRuntimeStopped(file, line);
             if (target instanceof runtime_values_2.IdylliumArray) {
+              return target.callMethod(methodName, args, file, line);
+            }
+            if (target instanceof runtime_values_2.IdylliumMap) {
+              return target.callMethod(methodName, args, file, line);
+            }
+            if (target instanceof runtime_values_2.IdylliumSet) {
               return target.callMethod(methodName, args, file, line);
             }
             if (target instanceof runtime_values_2.IdylliumColor) {
@@ -43389,6 +44646,18 @@ ${outerPadding}${close}`;
           const rightValues = right.values();
           return leftValues.length === rightValues.length && leftValues.every((value, index) => runtimeEquals(value, rightValues[index], file, line));
         }
+        if (left instanceof runtime_values_2.IdylliumSet || right instanceof runtime_values_2.IdylliumSet) {
+          if (!(left instanceof runtime_values_2.IdylliumSet) || !(right instanceof runtime_values_2.IdylliumSet))
+            return false;
+          return left.length === right.length && left.items().every((item) => right.has(item));
+        }
+        if (left instanceof runtime_values_2.IdylliumMap || right instanceof runtime_values_2.IdylliumMap) {
+          if (!(left instanceof runtime_values_2.IdylliumMap) || !(right instanceof runtime_values_2.IdylliumMap))
+            return false;
+          if (left.length !== right.length)
+            return false;
+          return left.entriesList().every((entry) => right.has(entry.key) && runtimeEquals(entry.value, right.getOr(entry.key, void 0), file, line));
+        }
         if (typeof left === "bigint" && typeof right === "number" && Number.isInteger(right)) {
           return left === BigInt(right);
         }
@@ -43458,23 +44727,38 @@ ${outerPadding}${close}`;
         if (leftValues.length !== rightValues.length)
           return false;
         for (let index = 0; index < leftValues.length; index += 1) {
-          const leftItem = leftValues[index];
-          const rightItem = rightValues[index];
-          if (leftItem instanceof runtime_values_2.IdylliumArray || rightItem instanceof runtime_values_2.IdylliumArray) {
-            if (!(leftItem instanceof runtime_values_2.IdylliumArray) || !(rightItem instanceof runtime_values_2.IdylliumArray))
-              return false;
-            if (!await equalsArrayCellsWith(leftItem, rightItem, slot, file, line))
-              return false;
-            continue;
-          }
-          const contract = leftItem?.[slot];
-          if (typeof contract !== "function") {
-            throw new runtime_errors_1.IdylliumRuntimeError(file, line, "comparison found an object without the 'equals' contract");
-          }
-          if (await contract(rightItem) !== true)
+          if (!await equalsCellWith(leftValues[index], rightValues[index], slot, file, line))
             return false;
         }
         return true;
+      }
+      async function equalsMapEntriesWith(left, right, slot, file, line) {
+        if (left.length !== right.length)
+          return false;
+        for (const entry of left.entriesList()) {
+          if (!right.has(entry.key))
+            return false;
+          if (!await equalsCellWith(entry.value, right.getOr(entry.key, void 0), slot, file, line))
+            return false;
+        }
+        return true;
+      }
+      async function equalsCellWith(leftItem, rightItem, slot, file, line) {
+        if (leftItem instanceof runtime_values_2.IdylliumArray || rightItem instanceof runtime_values_2.IdylliumArray) {
+          if (!(leftItem instanceof runtime_values_2.IdylliumArray) || !(rightItem instanceof runtime_values_2.IdylliumArray))
+            return false;
+          return equalsArrayCellsWith(leftItem, rightItem, slot, file, line);
+        }
+        if (leftItem instanceof runtime_values_2.IdylliumMap || rightItem instanceof runtime_values_2.IdylliumMap) {
+          if (!(leftItem instanceof runtime_values_2.IdylliumMap) || !(rightItem instanceof runtime_values_2.IdylliumMap))
+            return false;
+          return equalsMapEntriesWith(leftItem, rightItem, slot, file, line);
+        }
+        const contract = leftItem?.[slot];
+        if (typeof contract !== "function") {
+          throw new runtime_errors_1.IdylliumRuntimeError(file, line, "comparison found an object without the 'equals' contract");
+        }
+        return await contract(rightItem) === true;
       }
       function sqliteRuntimeValueEquals(left, right) {
         const leftKind = left.__sqliteKind;
@@ -43689,6 +44973,61 @@ ${outerPadding}${close}`;
         }
         return parsed;
       }
+      function bigAbs(value) {
+        return value < 0n ? -value : value;
+      }
+      function bigGcd(a, b) {
+        let x = bigAbs(a);
+        let y = bigAbs(b);
+        while (y !== 0n) {
+          const rest = x % y;
+          x = y;
+          y = rest;
+        }
+        return x;
+      }
+      function bigModPow(base, exponent, modulus) {
+        let result = 1n;
+        let b = base % modulus;
+        let e = exponent;
+        while (e > 0n) {
+          if (e & 1n)
+            result = result * b % modulus;
+          b = b * b % modulus;
+          e >>= 1n;
+        }
+        return result;
+      }
+      var IS_PRIME_WITNESSES = [2n, 3n, 5n, 7n, 11n, 13n, 17n, 19n, 23n, 29n, 31n, 37n];
+      var IS_PRIME_EXACT_LIMIT = 3317044064679887385961980n;
+      function bigIsPrime(n) {
+        if (n < 2n)
+          return false;
+        for (const witness of IS_PRIME_WITNESSES) {
+          if (n === witness)
+            return true;
+          if (n % witness === 0n)
+            return false;
+        }
+        let d = n - 1n;
+        let r = 0n;
+        while ((d & 1n) === 0n) {
+          d >>= 1n;
+          r += 1n;
+        }
+        witnessLoop: for (const witness of IS_PRIME_WITNESSES) {
+          let x = bigModPow(witness, d, n);
+          if (x === 1n || x === n - 1n)
+            continue;
+          for (let i = 1n; i < r; i += 1n) {
+            x = x * x % n;
+            if (x === n - 1n)
+              continue witnessLoop;
+          }
+          return false;
+        }
+        return true;
+      }
       function finiteMathResult(value, functionName, file, line) {
         if (Number.isFinite(value))
           return value;
@@ -43701,6 +45040,10 @@ ${outerPadding}${close}`;
       }
       function formatForConsole(value, precision) {
         if (value instanceof runtime_values_2.IdylliumArray)
+          return value.toInspectString();
+        if (value instanceof runtime_values_2.IdylliumMap)
+          return value.toInspectString();
+        if (value instanceof runtime_values_2.IdylliumSet)
           return value.toInspectString();
         if ((0, runtime_json_1.isJsonRuntimeValue)(value))
           return (0, runtime_json_1.jsonSerialize)(value, 0, "json", 0);
@@ -43718,6 +45061,10 @@ ${outerPadding}${close}`;
       }
       function formatForInspect(value) {
         if (value instanceof runtime_values_2.IdylliumArray)
+          return value.toInspectString();
+        if (value instanceof runtime_values_2.IdylliumMap)
+          return value.toInspectString();
+        if (value instanceof runtime_values_2.IdylliumSet)
           return value.toInspectString();
         if ((0, runtime_json_1.isJsonRuntimeValue)(value))
           return (0, runtime_json_1.jsonSerialize)(value, 0, "json", 0);
@@ -43753,6 +45100,9 @@ ${outerPadding}${close}`;
         }
         if (moduleName === "xml" && typeName === "Node") {
           return (0, runtime_xml_1.createXmlNode)("#document", false);
+        }
+        if (moduleName === "csv" && typeName === "Table") {
+          return (0, runtime_csv_1.createCsvTable)();
         }
         const obj = {
           __idylliumObjectId: state.nextObjectId++,
@@ -43843,6 +45193,10 @@ ${outerPadding}${close}`;
           return value.__idylliumClass;
         if ((0, runtime_shared_1.isRuntimeObject)(value) && typeof value.__idylliumType === "string")
           return value.__idylliumType;
+        if (value instanceof runtime_values_2.IdylliumMap)
+          return "map";
+        if (value instanceof runtime_values_2.IdylliumSet)
+          return "set";
         if (typeof value === "bigint")
           return "int";
         return String(value);
@@ -44408,6 +45762,10 @@ ${outerPadding}${close}`;
             return stringMemberCompletions();
           if (type.kind === "array")
             return arrayMemberCompletions(type);
+          if (type.kind === "map")
+            return mapMemberCompletions(type);
+          if (type.kind === "set")
+            return setMemberCompletions(type);
           if (type.kind === "qualified") {
             if (this.stdlib.hasQualifiedType(type.moduleName, type.name)) {
               return this.stdlib.listTypeMembers((0, types_1.qualified)(type.moduleName, type.name));
@@ -44530,6 +45888,12 @@ ${outerPadding}${close}`;
           if (type.kind === "array") {
             return (0, semantics_1.arrayMemberMethodSpec)(type, name)?.returnType ?? null;
           }
+          if (type.kind === "map") {
+            return (0, semantics_1.mapMemberMethodSpec)(type, name)?.returnType ?? null;
+          }
+          if (type.kind === "set") {
+            return (0, semantics_1.setMemberMethodSpec)(type, name)?.returnType ?? null;
+          }
           if (type.kind === "qualified") {
             const stdlibMethod = this.stdlib.getTypeMethod((0, types_1.qualified)(type.moduleName, type.name), name);
             if (stdlibMethod)
@@ -44551,7 +45915,7 @@ ${outerPadding}${close}`;
         chainPropertyType(index, type, name) {
           if (type.kind === "primitive" && type.name === "string")
             return name === "length" ? types_1.INT : null;
-          if (type.kind === "array")
+          if (type.kind === "array" || type.kind === "map" || type.kind === "set")
             return name === "length" ? types_1.INT : null;
           if (type.kind === "qualified") {
             const stdlibProperty = this.stdlib.getTypeProperty((0, types_1.qualified)(type.moduleName, type.name), name);
@@ -44960,6 +46324,37 @@ ${outerPadding}${close}`;
           { name: "split", kind: "method", detail: "split(separator: string): dyn_array<string>" },
           { name: "trim", kind: "method", detail: "trim(): string" }
         ];
+      }
+      function setMemberCompletions(type) {
+        const element = (0, types_1.typeToString)(type.elementType);
+        const items = [
+          { name: "length", kind: "property", detail: "length: int" },
+          { name: "add", kind: "method", detail: `add(value: ${element}): void` },
+          { name: "has", kind: "method", detail: `has(value: ${element}): bool` },
+          { name: "remove", kind: "method", detail: `remove(value: ${element}): void` },
+          { name: "clear", kind: "method", detail: "clear(): void" },
+          { name: "values", kind: "method", detail: `values(): dyn_array<${element}>` },
+          { name: "union", kind: "method", detail: `union(other: set<${element}>): set<${element}>` },
+          { name: "intersection", kind: "method", detail: `intersection(other: set<${element}>): set<${element}>` },
+          { name: "difference", kind: "method", detail: `difference(other: set<${element}>): set<${element}>` },
+          { name: "is_subset", kind: "method", detail: `is_subset(other: set<${element}>): bool` }
+        ];
+        return items.sort((left, right) => left.name.localeCompare(right.name));
+      }
+      function mapMemberCompletions(type) {
+        const key = (0, types_1.typeToString)(type.keyType);
+        const value = (0, types_1.typeToString)(type.valueType);
+        const items = [
+          { name: "length", kind: "property", detail: "length: int" },
+          { name: "has", kind: "method", detail: `has(key: ${key}): bool` },
+          { name: "get_or", kind: "method", detail: `get_or(key: ${key}, fallback: ${value}): ${value}` },
+          { name: "remove", kind: "method", detail: `remove(key: ${key}): void` },
+          { name: "keys", kind: "method", detail: `keys(): dyn_array<${key}>` },
+          { name: "values", kind: "method", detail: `values(): dyn_array<${value}>` },
+          { name: "clear", kind: "method", detail: "clear(): void" },
+          { name: "join", kind: "method", detail: `join(other: map<${key}, ${value}>): void` }
+        ];
+        return items.sort((left, right) => left.name.localeCompare(right.name));
       }
       function arrayMemberCompletions(type) {
         const element = (0, types_1.typeToString)(type.elementType);
@@ -45471,6 +46866,10 @@ ${outerPadding}${close}`;
             return (0, types_1.classType)(typeName.name);
           case "ArrayTypeName":
             return (0, types_1.arrayType)(typeRefFromTypeName(typeName.elementType), typeName.size, typeName.dynamic);
+          case "MapTypeName":
+            return (0, types_1.mapType)(typeRefFromTypeName(typeName.keyType), typeRefFromTypeName(typeName.valueType));
+          case "SetTypeName":
+            return (0, types_1.setType)(typeRefFromTypeName(typeName.elementType));
         }
       }
       function useModuleNameAtWord(source, word) {
@@ -45525,6 +46924,12 @@ ${outerPadding}${close}`;
         if (typeName.kind === "ArrayTypeName") {
           const element = typeNameText(typeName.elementType);
           return typeName.dynamic ? `dyn_array<${element}>` : `array<${element}, ${typeName.size ?? "?"}>`;
+        }
+        if (typeName.kind === "MapTypeName") {
+          return `map<${typeNameText(typeName.keyType)}, ${typeNameText(typeName.valueType)}>`;
+        }
+        if (typeName.kind === "SetTypeName") {
+          return `set<${typeNameText(typeName.elementType)}>`;
         }
         return "unknown";
       }

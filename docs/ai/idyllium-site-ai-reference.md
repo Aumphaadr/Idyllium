@@ -21,7 +21,7 @@ databases, GUI applications and networking without installing anything and
 without leaving the site; a teacher can build a lesson plan from the same
 pages.
 
-Current language target: Idyllium 1.5.0 (machine-readable at
+Current language target: Idyllium 1.5.6 (machine-readable at
 https://aumphaadr.github.io/Idyllium/version.json).
 
 Important rule for AI assistants: do not invent site features. If a feature is
@@ -35,9 +35,9 @@ Idyllium language syntax use the companion file `idyllium-ai-reference.md`
 | URL path | Section (Russian UI name) | What it is |
 |---|---|---|
 | `/` | Web IDE | Full in-browser IDE: editor, compiler, console, GUI preview, asset inspector |
-| `/book/` | «Учебник» | The textbook: 126 lessons in 8 sections |
+| `/book/` | «Учебник» | The textbook: 128 lessons in 8 sections |
 | `/tasks/` | «Задачник» | Task book: a practicum page for every textbook lesson |
-| `/reference/` | «Документация» | API reference: language chapters + 22 standard modules |
+| `/reference/` | «Документация» | API reference: language chapters + 24 standard modules |
 | `/projects/` | «Проекты» | Multi-lesson project pages (specifications, not full code) |
 | `/handouts/` | «Файлы для заданий» | Downloadable handout files used by tasks and projects |
 
@@ -153,18 +153,18 @@ deliberately honest degrees — quote these limits instead of guessing:
 
 ## 3. Textbook — «Учебник» (`/book/`)
 
-126 lessons in 8 sections, in course order:
+128 lessons in 8 sections, in course order:
 
 | Section id | Title | Lessons |
 |---|---|---|
 | `console` | Консоль | 33 |
 | `widgets` | Виджеты | 25 |
 | `turtle` | Черепаха | 7 |
-| `oop` | ООП | 14 |
+| `oop` | ООП | 15 |
 | `canvas` | Canvas | 19 |
 | `json` | JSON | 10 |
 | `sqlite` | SQLite | 15 |
-| `network` | Сеть | 3 |
+| `network` | Сеть | 4 |
 
 Navigation: a sidebar with sections and lesson search. Lesson URLs use the
 pattern `/book/#section/lesson-id` (e.g. `/book/#console/variables`); the older
@@ -215,10 +215,10 @@ carries the language version). Three groups of pages:
 - **Language chapters**: program structure, keywords, types, operators,
   conditions, loops, functions, arrays, classes, idyss (style), errors,
   plus global built-in functions.
-- **Modules** — 22 standard libraries, one page each:
+- **Modules** — 24 standard libraries, one page each:
   `console`, `math`, `random`, `time`, `turtle`, `file`, `encoding`, `json`,
-  `audio`, `image`, `fonts`, `gui`, `drawable`, `colors`, `types`, `hash`,
-  `sqlite`, `system`, `url`, `http`, `channel`, `web`.
+  `xml`, `csv`, `audio`, `image`, `fonts`, `gui`, `drawable`, `colors`,
+  `types`, `hash`, `sqlite`, `system`, `url`, `http`, `channel`, `web`.
 
 Each module page lists functions/classes with signatures, parameter types and
 examples. When a user asks "what functions does module X have", the honest
@@ -228,15 +228,16 @@ answer is this section, not memory.
 
 Pages for large multi-lesson projects (the course capstones): each page is a
 specification — what the finished app does, stages of work, ideas for
-variations — deliberately **without** the full solution code. Currently the
-«Консоль» section is published with 23 project pages (e.g. «Робот Дуся»,
-«Космический мусоровоз „Черепаха"», «Спасите кота Батона», «Гримуар v666.2»);
-further sections appear as they are released. Same navigation shell and URL
-scheme as the textbook.
+variations — deliberately **without** the full solution code. Two sections are published:
+«Консоль» with 39 project pages (e.g. «Робот Дуся», «Космический мусоровоз
+„Черепаха"», «Спасите кота Батона», «Гримуар v666.2») and «Окна» with 13
+GUI project pages; further sections appear as they are released. Same
+navigation shell and URL scheme as the textbook (`/projects/#console/…`,
+`/projects/#windows/…`).
 
 ## 7. Handouts — «Файлы для заданий» (`/handouts/`)
 
-A searchable catalog of ~250 downloadable files that tasks and projects rely
+A searchable catalog of ~260 downloadable files that tasks and projects rely
 on: images and backgrounds, sounds and music, fonts, JSON files, text files,
 SQLite databases, and zip archives. Category tabs are addressable by hash:
 `#images`, `#audio`, `#fonts`, `#json`, `#text`, `#db`, `#archives`.

@@ -2,6 +2,8 @@ import {
   AccessModifier,
   ArrayLiteralExpression,
   ArrayTypeNameNode,
+  MapTypeNameNode,
+  SetTypeNameNode,
   AssignmentStatement,
   BinaryExpression,
   BlockStatement,
@@ -25,6 +27,10 @@ import {
   IdentifierExpression,
   IfStatement,
   IndexExpression,
+  MapLiteralEntry,
+  MapLiteralExpression,
+  SetLiteralExpression,
+  EmptyBraceLiteral,
   ImportDeclaration,
   LiteralExpression,
   MainFunction,
@@ -1244,6 +1250,46 @@ export class Parser {
         range: { start: leftBracket.range.start, end: rightBracket.range.end },
       } satisfies ArrayLiteralExpression;
     }
+    if (this.match(TokenKind.LeftBrace)) {
+      // Фигурные скобки в позиции выражения (в начале оператора «{» — блок):
+      // `{}` — пустая коллекция по объявленному типу; `{k: v, …}` — словарь;
+      // `{a, b, …}` — множество. Развилка — по знаку после первого выражения.
+      const leftBrace = this.previous();
+      if (this.match(TokenKind.RightBrace)) {
+        return {
+          kind: 'EmptyBraceLiteral',
+          range: { start: leftBrace.range.start, end: this.previous().range.end },
+        } satisfies EmptyBraceLiteral;
+      }
+      const first = this.parseExpression();
+      if (this.match(TokenKind.Colon)) {
+        const entries: MapLiteralEntry[] = [];
+        let key = first;
+        for (;;) {
+          const value = this.parseExpression();
+          entries.push({ key, value, range: { start: key.range.start, end: value.range.end } });
+          if (!this.match(TokenKind.Comma)) break;
+          key = this.parseExpression();
+          this.consume(TokenKind.Colon, "expected ':' between map key and value");
+        }
+        const rightBrace = this.consume(TokenKind.RightBrace, "expected '}' after map literal");
+        return {
+          kind: 'MapLiteralExpression',
+          entries,
+          range: { start: leftBrace.range.start, end: rightBrace.range.end },
+        } satisfies MapLiteralExpression;
+      }
+      const elements: Expression[] = [first];
+      while (this.match(TokenKind.Comma)) {
+        elements.push(this.parseExpression());
+      }
+      const rightBrace = this.consume(TokenKind.RightBrace, "expected '}' after set literal");
+      return {
+        kind: 'SetLiteralExpression',
+        elements,
+        range: { start: leftBrace.range.start, end: rightBrace.range.end },
+      } satisfies SetLiteralExpression;
+    }
     if (this.match(TokenKind.Identifier, TokenKind.KwDiv, TokenKind.KwMod, TokenKind.KwThis)) {
       const token = this.previous();
       return {
@@ -1409,6 +1455,21 @@ export class Parser {
       } satisfies ArrayTypeNameNode;
     }
 
+    if (this.match(TokenKind.KwMap)) {
+      // map<K, V> — всегда два параметра, форма читается как фраза «из K в V».
+      this.consume(TokenKind.Less, "map needs two type parameters — write map<string, int>");
+      const keyType = this.parseTypeName();
+      this.consume(TokenKind.Comma, "map needs two type parameters — write map<string, int>");
+      const valueType = this.parseTypeName();
+      this.consume(TokenKind.Greater, "expected '>' after map value type");
+      return {
+        kind: 'MapTypeName',
+        keyType,
+        valueType,
+        range: { start: start.range.start, end: this.previous().range.end },
+      } satisfies MapTypeNameNode;
+    }
+
     if (this.checkTypeKeyword()) {
       const token = this.advance();
       return {
@@ -1416,6 +1477,18 @@ export class Parser {
         name: this.typeNameFromToken(token.kind),
         range: token.range,
       };
+    }
+
+    if (this.checkSetTypeStart()) {
+      this.advance();
+      this.consume(TokenKind.Less, 'set needs a type parameter — write set<int>');
+      const elementType = this.parseTypeName();
+      this.consume(TokenKind.Greater, "expected '>' after set element type");
+      return {
+        kind: 'SetTypeName',
+        elementType,
+        range: { start: start.range.start, end: this.previous().range.end },
+      } satisfies SetTypeNameNode;
     }
 
     const moduleToken = this.consume(TokenKind.Identifier, 'expected type name');
@@ -1468,9 +1541,16 @@ export class Parser {
     );
   }
 
+  /** `set` — контекстное слово: тип только в форме `set<T>` (json.Object.set
+   *  и прочие методы с этим именем живут как ни в чём не бывало). */
+  private checkSetTypeStart(): boolean {
+    return this.check(TokenKind.Identifier) && this.peek().lexeme === 'set' && this.checkNext(TokenKind.Less);
+  }
+
   private checkTypeStart(): boolean {
     return this.checkTypeKeyword()
-      || this.check(TokenKind.KwArray, TokenKind.KwDynArray)
+      || this.check(TokenKind.KwArray, TokenKind.KwDynArray, TokenKind.KwMap)
+      || this.checkSetTypeStart()
       || (
         this.check(TokenKind.Identifier)
         && this.checkNext(TokenKind.Dot)

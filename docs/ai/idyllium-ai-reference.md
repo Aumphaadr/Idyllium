@@ -4,11 +4,11 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: Idyllium 1.5.4.
+Current language target: Idyllium 1.5.6.
 
-This reference describes implemented behavior. Ideas from `BACKLOG.md` and
-exploratory files under `spec/some_*` are not language features until they are
-implemented and documented here.
+This reference describes implemented behavior. Ideas from planning documents
+and exploratory specs are not language features until they are implemented and
+documented here.
 
 Important rule for AI assistants: Idyllium is a child-friendly educational
 language. Do not invent syntax. Do not replace Idyllium syntax with C++, C#,
@@ -137,10 +137,11 @@ Supported escapes are `\n`, `\t`, `\r`, `\e` (ESC), `\0`, `\\`, `\"`, and
 `\'`. Unknown escape sequences are compile errors.
 
 `null` is a language literal, but it is not a general-purpose primitive type.
-Only library value containers that explicitly support an absent value may
-receive or compare equal to it. Currently these are `json.Value` and
-`sqlite.Value`; ordinary variables, arrays, user-class objects, `json.Object`,
-and `json.Array` are not nullable.
+Only values that explicitly support an absent state may receive or compare
+equal to it: the library containers `json.Value` and `sqlite.Value`, and
+class-typed fields declared with `= null` ("empty fields", see §15). Ordinary
+variables, parameters, arrays, maps, sets, `json.Object` and `json.Array` are
+not nullable — `string s = null;` is a compile error.
 
 ## 5. Variables And Assignment
 
@@ -198,7 +199,8 @@ Rules for named constants:
 - For arrays and objects, `const` protects the binding, not the complete object
   graph. `items[0] = value` and mutating methods remain valid, while
   `items = other_items` is forbidden.
-- `const` is not currently a class-field or parameter modifier.
+- `const` inside a class declares a class constant (`const int MAX = 6;`),
+  accessed as `ClassName.MAX` (see §15); `const` is not a parameter modifier.
 - Uppercase names such as `MAX_LEVEL` are a convention, not a parser rule.
 
 Readable diagnostics include:
@@ -217,13 +219,16 @@ string name;      // ""
 char letter;      // '\0'
 bool ready;       // false
 array<int, 3> a;  // [0, 0, 0] — N default elements
+dyn_array<int> d; // []
+map<string, int> m; // {}
+set<int> s;       // {}
 ```
 
 A class-typed declaration (`Hero h;`) creates an object with default field
-values. If the class has a constructor callable without arguments (no
-parameters, or every parameter has a default), that constructor runs;
-a constructor with required parameters is NOT run by a bare declaration —
-the fields simply keep their type defaults.
+values and NEVER runs a constructor — not even one callable without
+arguments. Constructors run only on an explicit call: `Hero h = Hero(...)` or
+`Hero h(...)` (see §15). The same rule covers array elements and fields of
+class type.
 
 ### Reserved Names
 
@@ -232,8 +237,8 @@ variables, parameters, functions and classes:
 
 <!-- @generated:stdlib-module-names -->
 ```text
-audio channel colors console drawable encoding file fonts gui hash http
-image json math random sqlite system time turtle types url web xml
+audio channel colors console csv drawable encoding file fonts gui hash
+http image json math random sqlite system time turtle types url web xml
 ```
 <!-- /@generated:stdlib-module-names -->
 
@@ -264,7 +269,10 @@ One member name is the exception: `then` is refused for methods and events
 (`the name 'then' is reserved by the language — pick another name for method
 'then'` — a `then` method would make the object a thenable and break calls
 under the hood). A plain value field named `then` or `undefined` remains
-legal.
+legal. `map` is a keyword (like `array` and `dyn_array`), and `set` is
+reserved for bindings (`'set' is reserved for the set type — pick another
+name`) while staying a legal member name — `json.Object.set(...)` and your own
+`set` methods keep working.
 
 Function names are reserved for functions. Declaring your own function or
 class with a built-in global function name (`to_int`, `to_float`, `to_string`,
@@ -424,7 +432,7 @@ the whole comparison`.
 ### Equality rules
 
 `==`/`!=` compare CONTENT for every comparable type: numbers, strings, chars,
-bools, arrays (recursively), `colors.Color` (by channels), `time.stamp` (by
+bools, arrays (recursively), maps and sets (by content, ignoring order), `colors.Color` (by channels), `time.stamp` (by
 instant — timezone does not participate), `json.Value` (by value, deeply for
 object/array payloads; comparing cyclic JSON values is a runtime error
 `cannot compare cyclic JSON value`), `sqlite.Value` (by SQL storage class and
@@ -459,6 +467,7 @@ Contract rules:
 - `equals` should answer, not mutate — nothing enforces purity, write it pure.
 - Inside `equals`, `type_name(this) != type_name(other)` distinguishes
   namesakes of different classes (see `type_name` in §6).
+
 **Ordering contracts (`less` and `greater`).** Objects of user classes have
 no built-in ordering either; `<`/`>`/`<=`/`>=` on objects are compile errors
 unless the class declares the matching ordering contract — same shape as
@@ -693,6 +702,17 @@ values.reverse()
 values.sort()
 ```
 
+`sort()` is honest about what has an order: numbers sort numerically, strings
+and chars alphabetically, bools `false` before `true`, `time.stamp` values by
+instant, and objects of a user class by its `less` contract (§7, stable).
+Everything else is refused at compile time instead of being sorted by its
+printed text: `sort() cannot order arrays of arrays — sort each inner array on
+its own`, `sort() cannot order 'colors.Color' values — they have no order`
+(same for `map`/`set` elements), `sort() cannot order 'Hero' objects — declare
+'bool function less(Hero other)' …`. `contains`/`find`/`count` on arrays of
+objects need the `equals` contract (§7); on arrays of arrays, maps or sets they
+compare the nested collections by content.
+
 Dynamic-array-only methods:
 
 ```idyllium
@@ -704,6 +724,10 @@ values.join(other)
 values.clear()
 values.pop()
 ```
+
+Array sizes are capped: creating or resizing beyond 100000000 elements is a
+readable runtime error (`array size 2000000000 is too large to create (maximum
+100000000)`), a fixed size that large is a compile error.
 
 Arrays have value semantics. Assignment, a function argument, and a function return
 create an independent array copy. Nested array containers are copied recursively;
@@ -747,6 +771,80 @@ and escaped control characters, for example:
 ```
 
 This is intentional and helps students see hidden newline characters.
+
+### Maps: `map<K, V>`
+
+A map is a dictionary — a value collection like arrays, with the same rules
+(copy on assignment, on passing and on return; indexing edits the stored
+element in place). Always two type parameters, read as "from K to V":
+
+```idyllium
+map<string, int> ages = {"Mira": 12, "Kai": 9};   // literal, type from context
+map<int, string> ranks;                            // empty by default
+map<string, dyn_array<int>> marks;                 // any value type, nesting allowed
+ages["Tasya"] = 15;                                // insert or replace
+ages["Mira"] = ages["Mira"] + 1;                   // read; a missing key is a runtime error
+int c = ages.get_or("Homa", 0);                    // read with a fallback
+count[word] = count.get_or(word, 0) + 1;           // the counting idiom
+```
+
+Keys: **`int`, `string`, `char` or `bool`** — types whose equality is exact and
+built in. `float` keys are refused for good (`cannot use 'float' as a map key —
+float numbers are almost never exactly equal; use int or string`), and so are
+objects of user classes (`cannot use objects of class 'Hero' as map keys — use a
+field with an int or string value`). `int` keys stay exact beyond 2^53. Reading
+an absent key is a loud error: `map has no key "Homa"`; `remove` of an absent key
+fails the same way. A duplicate key inside a literal is a compile error
+(`duplicate key "Mira" in map literal`).
+
+Members: `length` (read-only), `has(key)`, `get_or(key, fallback)`,
+`remove(key)`, `keys()` → `dyn_array<K>`, `values()` → `dyn_array<V>` (both in
+insertion order, both copies), `clear()`, `join(other)` (adds every pair of
+`other`; on a shared key `other` wins). There is no `add`/`set` — brackets do
+that — and no `sort()`: iteration order is insertion order, sort `keys()` when
+you need order. `map` is a keyword.
+
+Equality `==`/`!=` compares content **ignoring order** (`{"x": 1, "y": 2} ==
+{"y": 2, "x": 1}` is true); values compare with their own equality — objects
+through the `equals` contract, otherwise `cannot compare maps of 'Hero' values
+with '=='…`. Printing gives `{"Mira": 12, "Kai": 9}` (int keys bare:
+`{1: "gold"}`; empty: `{}`); object values need the `to_string` contract, as in
+arrays. Ordering signs and `sort()` on arrays of maps are refused: maps have no
+order.
+
+### Sets: `set<T>`
+
+A set keeps each element once, in insertion order. Same value rules as
+arrays and maps (copy on assignment, on passing and on return), same element
+border as map keys — `int`, `string`, `char` or `bool` (`cannot use 'float' as
+a set element — …`, `cannot use objects of class 'Hero' as set elements — …`).
+`set` is a contextual word: it names the type only as `set<T>`, so methods
+called `set` (like `json.Object.set`) keep working; a variable, parameter,
+function or class named `set` is refused (`'set' is reserved for the set type
+— pick another name`).
+
+```idyllium
+set<int> seen = {3, 1, 2};      // literal; a duplicate inside a literal is a compile error
+seen.add(2);                    // already there — nothing happens
+seen.add(5);
+console.writeln(seen);          // {3, 1, 2, 5}
+console.writeln(seen.has(1));   // true
+seen.remove(1);                 // an absent element is a runtime error: set has no element 9
+dyn_array<int> sorted = seen.values();   // insertion order, a copy
+sorted.sort();
+```
+
+Members: `length`, `add(value)`, `has(value)`, `remove(value)`, `clear()`,
+`values()` → `dyn_array<T>`, and pure set algebra that returns a new set —
+`union(other)`, `intersection(other)`, `difference(other)` — plus
+`is_subset(other)`. There is no indexing (`sets have no index — use has() or
+values()`), no `join` and no `sort()`. Equality ignores order (`{1, 2} == {2,
+1}`); ordering signs and `sort()` on arrays of sets are refused.
+
+Empty braces `{}` are an empty collection whose kind comes from the declared
+type: `map<string, int> m = {};` and `set<int> s = {};` are both fine, while
+`console.writeln({})` or `s == {}` is a compile error (`empty {} needs a
+declared map or set type`).
 
 ## 11. Strings And Characters
 
@@ -941,6 +1039,11 @@ in the console output, in redirected files, or in lesson output blocks:
 - For a GUI program the message appears when the last window closes, not when
   `main` returns.
 
+A file without `main()` — a library module — cannot be run. Every host (Web
+IDE, VS Code, CLI) refuses instead of "finishing" silently:
+`В файле helper.idyl нет функции main() — запускать нечего.` Run the file that
+imports it.
+
 ## 14. Inline Callback Functions
 
 Some GUI/Canvas/audio properties accept callbacks. You may assign an inline
@@ -966,6 +1069,16 @@ main() {
     button.on_click = handle_click;
 }
 ```
+
+Every callback property checks the shape of the function it receives. A widget
+callback accepts either `function(): void` or `function(<the widget's own
+type>): void` — the `sender` parameter must be the widget's class, not another
+widget: `callback property 'on_click' expects function(): void or
+function(gui.Button): void, got function(gui.Label): void`. The same check
+guards `on_change` of every editable widget (`gui.LineEdit`, `gui.SpinBox`,
+`gui.Slider`, `gui.CheckBox`, `gui.ComboBox`, …), the Canvas and Timer
+callbacks and `on_message` of `channel.Post`; assigning a non-function is
+refused too (`callback property 'on_change' expects a function, got 'int'`).
 
 ## 15. Classes And OOP
 
@@ -1039,9 +1152,9 @@ Declaring an object variable without parentheses NEVER runs the constructor
 strings empty). To run the constructor, call it explicitly:
 
 ```idyllium
-Hero ghost;                  // constructor NOT called: fields are "" and 0
-Hero named = Hero("Mira");   // constructor called explicitly
-Hero short_form("Mira");     // parenthesized declaration also calls it
+Hero ghost;                       // constructor NOT called: fields are "" and 0
+Hero named = Hero("Mira", 100);   // constructor called explicitly
+Hero short_form("Mira", 100);     // parenthesized declaration also calls it
 ```
 
 The same rule applies to arrays of objects (`array<Hero, 3> team;` creates
@@ -1287,8 +1400,10 @@ included (`event on_click` in an heir is a compile error).
 
 An override must keep every promise the base class made:
 
-- the same parameter types and the same result type (the `equals` contract
-  is the single exception, see §Contracts);
+- the same parameter types and the same result type (the comparison
+  contracts `equals`, `less` and `greater` are the single exception — an heir
+  may declare its own `equals(Heir other)` next to the base's
+  `equals(Base other)`, see §7);
 - the base's parameter defaults — `greet(string who = "мир")` in the base
   and `greet(string who)` in the heir is a compile error, because
   `base.greet()` would then reach a body that has nothing to put in `who`.
@@ -1307,9 +1422,9 @@ An override must keep every promise the base class made:
 A class imported from a user module behaves exactly like the same class
 written in one file: the override rules above hold across the module border
 (`method 'Cub.roar' cannot be private — it overrides a public method of
-class 'zoo.Lion'`), and contracts (`equals`, `to_string`) still do not
-travel to heirs — the refusal is a compile error on both sides of the
-module border.
+class 'zoo.Lion'`), and contracts (`equals`, `less`, `greater`, `to_string`)
+still do not travel to heirs — the refusal is a compile error on both sides of
+the module border.
 
 `parent()` says what is wrong instead of "function not declared":
 `parent() runs the constructor of the base class and can only be called in
@@ -1432,6 +1547,7 @@ table (single source of truth):
 |---|---|---|
 | primitives (`int`, `float`, `string`, `char`, `bool`) | copy | by content |
 | `array` / `dyn_array` | copy (fresh cells; OBJECT cells still share the objects — «своя коробка, общие жители») | structural per cell |
+| `map` / `set` | copy, like arrays (indexing a map edits the stored value in place; object values are shared) | by content, ignoring order |
 | `colors.Color`, `time.stamp`, `json.Value`, `sqlite.Value` | value-like library types | by content (stamp — by instant; JSON — deep) |
 | objects of user classes | reference (`Hero b = a;` — same object) | only via the `equals` contract (§7) |
 | `json.Object`, `json.Array` and every other library OBJECT (`gui.*`, `image.*`, `sqlite.Database`…) | reference | `json.Object`/`json.Array` wrapped as `json.Value` compare by content; other library objects are not meaningfully comparable |
@@ -1514,7 +1630,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, never returns
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.5.5"
+system.version()                    // "1.5.6"
 system.set_warnings(enabled)        // void; switches runtime warnings off/on
 ```
 
@@ -1577,15 +1693,30 @@ math.log(value)
 math.log10(value)
 math.to_radians(degrees)
 math.to_degrees(radians)
+math.gcd(a, b)       // greatest common divisor; gcd(-12, 18) = 6, gcd(0, 0) = 0
+math.lcm(a, b)       // least common multiple; 0 when either argument is 0
+math.factorial(n)    // exact at any size: factorial(100) prints all 158 digits; n is 0..10000
+math.is_prime(n)     // exact answer (no "probably prime") for n up to 3317044064679887385961980, larger n is a runtime error
+math.divisors(n)     // dyn_array<int> ascending: divisors(12) = [1, 2, 3, 4, 6, 12]; n >= 1
+math.sign(value)     // -1, 0 or 1; int for int, float for float (like abs)
+math.hypot(a, b)     // sqrt(a² + b²) — distance between points without squaring by hand
 ```
 
-Angles for trigonometric functions are in radians.
+Angles for trigonometric functions are in radians. The integer helpers (since
+1.5.6) take `int` arguments only — `math.gcd(2.5, 3)` is a compile error
+(`'gcd' argument 1 expects 'int', got 'float'`) — and follow the exact-int
+rule: `math.gcd(123456789123456789123456789, 987654321987654321)` is exact.
+Out-of-range arguments are readable runtime errors: `math.factorial() n must
+be between 0 and 10000, got -1`, `math.divisors() n must be a positive number,
+got 0`.
 
 Result types: `math.abs` keeps the argument's numeric type (`int` stays `int`,
 `float` stays `float`). `math.round`, `math.floor` and `math.ceil` return `int`
 when called with one argument and `float` when the optional digits argument is
 provided. `math.clamp` returns `int` when all three arguments are integers,
-otherwise `float`. The remaining math functions return `float`.
+otherwise `float`. `math.sign` mirrors `math.abs`; `gcd`, `lcm`, `factorial`
+return `int`, `is_prime` returns `bool`, `divisors` returns `dyn_array<int>`.
+The remaining math functions return `float`.
 
 ## 18. Library `random`
 
@@ -1751,10 +1882,11 @@ supplied values and then appends `\n`, like `console.writeln(...)`.
 Opening in `"write"` mode creates or truncates the file. Its parent directory
 must already exist; use `file.create_directory(..., parents=true)` when needed.
 
-Common modes:
+Modes:
 
 - `"read"`
 - `"write"`
+- `"append"`
 
 Always close streams in examples.
 
@@ -2319,9 +2451,10 @@ json.Value()
 json.Value(value)
 ```
 
-`null` is a language literal, but it is assignable only to library types that
-explicitly support an absent value. Currently `json.Value` and `sqlite.Value`
-support it; primitive types, user classes, `json.Object`, and `json.Array` do not.
+`null` is a language literal, but it is assignable only where an absent value
+is explicitly supported: `json.Value`, `sqlite.Value`, and class-typed fields
+declared with `= null` (§15). Primitive types, ordinary object variables,
+`json.Object`, and `json.Array` do not accept it.
 `json.Value()` without arguments also creates JSON null.
 Both `value == null` and `value.is_null()` are valid checks for a nullable
 `json.Value`; keeping `is_null()` is often clearer in teaching material.
@@ -2501,6 +2634,70 @@ nodes only. `first` on a missing tag is a loud error in the `json.Object.get`
 genre — `xml node <item> has no <title> inside`; guard with `has()` when the
 tag is optional. Deliberately out of scope: namespaces, XPath, CSS selectors,
 DTD and serialization — the library is for reading.
+
+## 24b. Library `csv` (since 1.5.6)
+
+Tables with separators — files from Excel, Google Sheets and teaching
+datasets. The first line is the header; cells are addressed by row number
+(from 0, header not counted) and column NAME. Every cell is a `string`:
+convert with `to_int()` when reading and `to_string()` when writing, exactly
+as with `gui.Table`.
+
+```idyllium
+use console;
+use csv;
+
+main() {
+    csv.Table heroes = csv.read("heroes.csv");          // or csv.parse(text)
+    console.writeln(heroes.columns);                     // ["имя", "класс", "уровень"]
+    for (int i = 0; i < heroes.row_count; i = i + 1) {
+        console.writeln(heroes.get(i, "имя"), ": ", to_int(heroes.get(i, "уровень")) + 1);
+    }
+    int row = heroes.find("имя", "Кай");                // first row with that cell, -1 if none
+    if (row >= 0) {
+        heroes.set(row, "уровень", "10");
+    }
+    heroes.add_row("Тася", "лучник", "15");              // exactly one value per column
+    csv.write("heroes.csv", heroes);
+}
+```
+
+- `csv.parse(text)` / `csv.parse(text, separator)`, `csv.read(path)` /
+  `csv.read(path, separator)` → `csv.Table`; `csv.write(path, table)`
+  overwrites the project file (UTF-8, `\n` line ends, no BOM). Files are read
+  as UTF-8; Russian Excel saves CSV in Windows-1251 — re-encode such a file
+  first (library `encoding`) or save it from Excel as «CSV UTF-8».
+- **Separator** is detected from the header line (`;` of Russian Excel, `,`,
+  tab — the most frequent wins, `;` when none) and stored in
+  `table.separator` (a writable one-character string); `to_string()` and
+  `csv.write()` use it, so a file does not silently change dialect. The
+  optional second argument forces a separator.
+- **Quotes** follow CSV rules: a quoted cell may contain the separator, line
+  breaks and a doubled quote `""`. `\r\n`, `\n` and `\r` line ends are all
+  accepted; a leading BOM (Excel) is skipped; empty lines are skipped.
+- `csv.Table` (a library OBJECT — assignment shares, like `json.Object`):
+  read-only `row_count`, `column_count`, `columns` (copy, `dyn_array<string>`);
+  `separator`; methods `set_columns(...)` (variadic; clears rows),
+  `add_row(...)` (variadic; exactly one value per column), `get(row, column)`,
+  `set(row, column, text)`, `row(index)` and `column(name)` (copies),
+  `has_column(name)`, `find(column, text)` → row index or -1,
+  `remove_row(index)`, `clear()` (rows only, header stays), `to_string()`.
+  Printing a table (`console.write(t)`) gives the same CSV text.
+- A table declared without a call (`csv.Table t;`) is empty with separator
+  `;`; `csv.parse("")` is an empty table too (no columns, no rows).
+- Errors are loud and named: `csv.parse() line 3 has 4 values, but the header
+  has 3 columns` (a short row is padded with empty cells instead — nothing is
+  invented, but nothing is dropped either), `csv.parse() header has duplicate
+  column "имя"`, `csv.parse() line 2: quote is never closed`, `csv.parse()
+  line 2: unexpected text after a closing quote`, `csv table has no column
+  "x"`, `csv.Table.get() row 5 is out of range 0..2`, `csv.Table.add_row()
+  expects 3 values (one per column), got 2`, `csv.Table.add_row() before
+  set_columns() — set the columns first`, `csv.Table.separator must be one
+  character (like ";" or ","), got ";;"`, `csv.read() cannot read 'x.csv':
+  file does not exist`, `csv.write() cannot write 'nodir/x.csv': directory
+  does not exist`.
+- Do not invent `csv.Row` objects, `for (row in table)`, `table[0]["имя"]`,
+  numeric cells or `to_json()` — none of that exists.
 
 ## 25. GUI
 
@@ -3800,7 +3997,7 @@ first API.
 
 ## 28b. Warnings
 
-Since the warnings release, Idyllium has a THIRD kind of message besides
+Since 1.5.4, Idyllium has a THIRD kind of message besides
 `compile error` and `runtime error`: warnings. The rule that draws the line
 (owner's verdict): code that breaks a convention of the language is an
 **error**; code that merely **does nothing** gets a **warning** and still
@@ -3825,7 +4022,9 @@ Scope notes, so generated examples stay warning-free:
 
 - `while (true)` with `break` is the canonical endless loop — no warning.
 - Library calls may drop their result freely (`db.execute("INSERT …")`) —
-  only USER functions and class methods warn when the result is dropped.
+  only USER functions and class methods warn when the result is dropped. The
+  one library exception is `random.shuffle(xs);`: it returns a shuffled COPY,
+  so dropping the result is always a mistake and warns.
 - `variable is never used` fires only for primitive-typed variables whose
   initializer performs no call and no indexing: `file.ostream f = file.open(…)`
   or `int x = console.get_int();` never warn (the initializer already did real
@@ -3968,10 +4167,11 @@ print("hi")               // wrong: not Python
 let x = 10;               // wrong: not JavaScript
 ```
 
-Do not invent dictionaries/maps, async/await, lambdas with arrow syntax,
-interfaces, generics for user classes, `throw`/user exceptions, namespaces,
-package imports, or operator overloading unless the current project spec
-explicitly adds them.
+Do not invent async/await, lambdas with arrow syntax, interfaces, generics for
+user classes, `throw`/user exceptions, namespaces, package imports, or operator
+overloading. Maps and sets DO exist (`map<K, V>`, `set<T>`, §10) — but do not
+invent methods for them beyond the listed ones (no `items()`, no `for (k in m)`,
+no `m[k] += 1` on a missing key, no `set` indexing).
 
 ## 31. Good AI Behavior For Idyllium Tasks
 
@@ -3994,8 +4194,9 @@ When asked to generate Idyllium code:
 10. For educational explanations, prefer small steps and clear motivation.
 11. If syntax is uncertain, say so and ask for the project spec instead of
     inventing syntax.
-12. Treat `BACKLOG.md` and `spec/some_*` as design discussions, not implemented
-    syntax, unless the user explicitly asks to discuss those proposals.
+12. This reference describes the shipped language. Anything not described
+    here (a library, a method, a syntax form) should be treated as absent
+    until the user shows it in a lesson or the reference site.
 
 ## 32. Compact Program Templates
 

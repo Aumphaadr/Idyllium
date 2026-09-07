@@ -1,7 +1,7 @@
 import { SourceRange } from './diagnostics';
 import { PrimitiveTypeName } from './types';
 
-export type TypeName = PrimitiveTypeNameNode | QualifiedTypeNameNode | ClassTypeNameNode | ArrayTypeNameNode;
+export type TypeName = PrimitiveTypeNameNode | QualifiedTypeNameNode | ClassTypeNameNode | ArrayTypeNameNode | MapTypeNameNode | SetTypeNameNode;
 
 export interface PrimitiveTypeNameNode {
   readonly kind: 'PrimitiveTypeName';
@@ -39,6 +39,19 @@ export interface ArrayTypeNameNode {
   readonly sizeExpression: Expression | null;
   readonly sizeRange: SourceRange | null;
   readonly dynamic: boolean;
+  readonly range: SourceRange;
+}
+
+export interface MapTypeNameNode {
+  readonly kind: 'MapTypeName';
+  readonly keyType: TypeName;
+  readonly valueType: TypeName;
+  readonly range: SourceRange;
+}
+
+export interface SetTypeNameNode {
+  readonly kind: 'SetTypeName';
+  readonly elementType: TypeName;
   readonly range: SourceRange;
 }
 
@@ -267,6 +280,9 @@ export type Expression =
   | UnaryExpression
   | BinaryExpression
   | ArrayLiteralExpression
+  | MapLiteralExpression
+  | SetLiteralExpression
+  | EmptyBraceLiteral
   | IndexExpression
   | FunctionExpression
   | CallExpression
@@ -304,6 +320,31 @@ export interface BinaryExpression {
 export interface ArrayLiteralExpression {
   readonly kind: 'ArrayLiteralExpression';
   readonly elements: Expression[];
+  readonly range: SourceRange;
+}
+
+export interface MapLiteralEntry {
+  readonly key: Expression;
+  readonly value: Expression;
+  readonly range: SourceRange;
+}
+
+export interface MapLiteralExpression {
+  readonly kind: 'MapLiteralExpression';
+  readonly entries: MapLiteralEntry[];
+  readonly range: SourceRange;
+}
+
+export interface SetLiteralExpression {
+  readonly kind: 'SetLiteralExpression';
+  readonly elements: Expression[];
+  readonly range: SourceRange;
+}
+
+/** Пустые фигурные скобки `{}` — пустая коллекция, общая для словаря и
+ *  множества: тип берётся из объявления. */
+export interface EmptyBraceLiteral {
+  readonly kind: 'EmptyBraceLiteral';
   readonly range: SourceRange;
 }
 
