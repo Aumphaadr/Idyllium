@@ -3863,6 +3863,52 @@ main() {
 }
 ```
 
+### Сочинённый звук: `audio.Melody`
+
+Звук, которого нет ни в одном файле: программа сочиняет его из нот, а среда
+синтезирует клип (четыре формы волны — честный «звук игровой приставки»,
+а не пианино). Ведёт себя как `Sound` (копии накладываются) плюс `loop`;
+работает на всех хостах, а `export_to_file()` пишет настоящий WAV даже при
+запуске в консоли.
+
+```idyllium
+use audio;
+use gui;
+
+audio.Melody tune;
+
+main() {
+    tune.instrument = "square";          // "sine" (по умолчанию) | "square" | "triangle" | "saw"
+    tune.tempo = 120;                    // ударов в минуту; длительности нот — в долях
+    tune.add_note("до", 1);              // до ре ми фа соль ля си или C…B; октава цифрой после имени
+    tune.add_note("фа#5", 0.5);          // # и b — полутоны; без цифры — четвёртая октава («ля» = 440 Гц)
+    tune.add_rest(0.5);
+    tune.add_frequency(440, 1);          // сырая частота в герцах (20–20000) — физика звука, «бипы» в играх
+    tune.add_notes("ми ми фа соль | соль фа ми ре | до:2 -:1");   // текст: нота[:доли], «-» — пауза, «|» — украшение
+    tune.volume = 0.6;
+    tune.loop = false;
+    console.writeln(tune.duration);      // секунды — по темпу и долям
+    tune.play();                         // как Sound: pause(), resume(), stop(), is_playing
+    tune.export_to_file("tune.wav");     // файл проекта; работает и в CLI
+    tune.transpose(12);                  // все ноты на октаву выше (-48…48 полутонов)
+    tune.clear();
+}
+```
+
+Правила: `duration` только для чтения; `instrument` — строгое перечисление
+(`Melody.instrument must be 'sine', 'square', 'triangle' or 'saw', got
+'piano'`); `tempo` 20–400; пределы — 30 секунд и 2000 нот на мелодию
+(`Melody.add_note() the melody would be 50 seconds long — the limit is 30;
+split it into several melodies`); неверное имя ноты — ошибка выполнения
+с рецептом (`Melody.add_note() unknown note 'дo' — write до, ре, ми, фа,
+соль, ля, си (or C…B), then an octave digit and # or b, like "фа#5"`);
+`play()` пустой мелодии отказывает (`the melody is empty — add notes
+first`); `export_to_file()` требует имя с `.wav`. Изменение нот, темпа или
+инструмента после `play()` не трогает уже играющие копии. Идиома
+«Пианино»: семь мелодий по одной ноте, созданных при старте, без единого
+файла в проекте. Не выдумывайте `add_chord`, ударных, MIDI-номеров
+и `Melody.load_from_file`.
+
 ## 27a. Черепашья графика
 
 Импорт:

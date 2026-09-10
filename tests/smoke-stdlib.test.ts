@@ -3288,3 +3288,87 @@ main() {
   // Ячейка — строка: в int без to_int не ляжет.
   assertFails('use csv;\nmain() {\n    csv.Table t = csv.parse("a\\n1\\n");\n    int x = t.get(0, "a");\n}', "cannot assign 'string' value to 'int' variable");
 });
+
+test('audio.Melody composes notes, renders WAV and refuses nonsense in words', async () => {
+  // Вердикты владельца 2026-09-10 по спеке some_music/01 (вариант А): синтез в
+  // рантайме, клип жанра Sound с loop, экспорт в WAV работает и безголово.
+  const { melodyNoteFrequency, renderMelodyWav } = require('../src/runtime/runtime-melody') as typeof import('../src/runtime/runtime-melody');
+  const hz = (name: string) => Math.round((melodyNoteFrequency(name) ?? -1) * 100) / 100;
+  assert(hz('ля') === 440 && hz('A4') === 440 && hz('a') === 440, 'ля4 must be 440 Hz');
+  assert(hz('до') === 261.63 && hz('C4') === 261.63, 'до4 must be 261.63 Hz');
+  assert(hz('до#') === 277.18 && hz('ре♭') === 277.18 && hz('сиb') === 466.16 && hz('Bb4') === 466.16, 'accidentals');
+  assert(hz('фа#5') === 739.99 && hz('си') === 493.88, 'octaves');
+  assert(melodyNoteFrequency('h') === null && melodyNoteFrequency('ля-1') === null && melodyNoteFrequency('дo') === null, 'unknown names are null');
+  const wav = renderMelodyWav([{ frequency: 440, beats: 1 }, { frequency: 0, beats: 0.5 }], 120, 'sine');
+  assert(wav.length === 44 + Math.round(0.75 * 22050) * 2, `wav size drifted: ${wav.length}`);
+  assert(String.fromCharCode(...wav.subarray(0, 4)) === 'RIFF' && new DataView(wav.buffer).getUint32(24, true) === 22050, 'wav header');
+
+  const memory = await runWithMemoryFiles(`use console;
+use audio;
+
+main() {
+    audio.Melody tune;
+    console.writeln(tune.instrument, " ", tune.tempo, " ", tune.volume, " ", tune.loop, " ", tune.is_playing, " ", tune.duration);
+    tune.add_note("до", 1);
+    tune.add_note("ре", 0.5);
+    tune.add_rest(0.5);
+    tune.add_note("ля5", 2);
+    tune.add_frequency(440, 1);
+    console.writeln(tune.duration);
+    tune.add_notes("ми ми фа соль | соль фа ми ре | до:2 -:1");
+    console.writeln(tune.duration);
+    tune.tempo = 60;
+    console.writeln(tune.duration);
+    tune.instrument = "square";
+    tune.volume = 0.6;
+    tune.play();
+    console.writeln(tune.is_playing);
+    tune.stop();
+    console.writeln(tune.is_playing);
+    tune.export_to_file("tune.wav");
+    audio.Sound check;
+    check.load_from_file("tune.wav");
+    console.writeln(check.duration, " ", check.src);
+    tune.transpose(12);
+    tune.clear();
+    console.writeln(tune.duration);
+    audio.Melody key;
+    key.add_note("Фа#5", 0.5);
+    key.add_note("C", 0.5);
+    key.add_note("сиb3", 0.5);
+    key.add_note("A", 0.25);
+    console.writeln(key.duration);
+    key.loop = true;
+    key.play();
+    key.pause();
+    key.resume();
+    console.writeln(key.is_playing);
+    key.stop();
+}
+`, {});
+  const output = memory.runtime.getOutput();
+  assert(
+    output === 'sine 120 1 false false 0\n2.5\n8\n16\ntrue\nfalse\n16 tune.wav\n0\n0.875\ntrue\n',
+    `melody scenario drifted: ${JSON.stringify(output)}`,
+  );
+
+  const broken: ReadonlyArray<readonly [string, string]> = [
+    ['m.add_note("дo", 1);', "Melody.add_note() unknown note 'дo' — write до, ре, ми, фа, соль, ля, си (or C…B), then an octave digit and # or b, like \"фа#5\""],
+    ['m.add_note("до", 0);', 'Melody.add_note() beats must be positive, got 0'],
+    ['m.add_frequency(5, 1);', 'Melody.add_frequency() frequency must be between 20 and 20000, got 5'],
+    ['m.add_notes("до ре:x");', "Melody.add_notes() cannot read 'ре:x' — the length after ':' must be a positive number, like \"до:2\""],
+    ['m.add_notes("до зю");', "Melody.add_notes() cannot read 'зю' — write до, ре, ми, фа, соль, ля, си (or C…B), then an octave digit and # or b, like \"фа#5\"; '-' is a rest"],
+    ['m.play();', 'Melody.play() the melody is empty — add notes first'],
+    ['m.add_note("до", 1); m.export_to_file("x.mp3");', "Melody.export_to_file() writes WAV — name the file with .wav, got 'x.mp3'"],
+    ['m.instrument = "piano";', "Melody.instrument must be 'sine', 'square', 'triangle' or 'saw', got 'piano'"],
+    ['m.tempo = 10;', 'Melody.tempo must be between 20 and 400, got 10'],
+    ['m.add_note("до", 100);', 'Melody.add_note() the melody would be 50 seconds long — the limit is 30; split it into several melodies'],
+    ['m.add_note("до", 50); m.tempo = 20;', 'Melody.tempo 20 would make the melody 150 seconds long — the limit is 30'],
+    ['m.transpose(100);', 'Melody.transpose() semitones must be between -48 and 48, got 100'],
+  ];
+  for (const [statement, expected] of broken) {
+    await assertRuntimeFails(`use audio;\n\nmain() {\n    audio.Melody m;\n    ${statement}\n}\n`, expected);
+  }
+  assertFails('use audio;\nmain() {\n    audio.Melody m;\n    m.duration = 5;\n}', "property 'duration' is read-only");
+  assertFails('use audio;\nmain() {\n    audio.Melody m;\n    m.transpose(2.5);\n}', "'transpose' argument 1 expects 'int', got 'float'");
+});

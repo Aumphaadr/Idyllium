@@ -3776,6 +3776,50 @@ main() {
 }
 ```
 
+### Composed sound: `audio.Melody`
+
+A sound that is not in any file: the program composes it from notes and the
+runtime synthesizes the clip (four waveforms — an honest "game console" sound,
+not a piano). Behaves like `Sound` (copies overlap) plus `loop`; works on
+every host, and `export_to_file()` writes a real WAV even in console runs.
+
+```idyllium
+use audio;
+use gui;
+
+audio.Melody tune;
+
+main() {
+    tune.instrument = "square";          // "sine" (default) | "square" | "triangle" | "saw"
+    tune.tempo = 120;                    // beats per minute; note lengths are in beats
+    tune.add_note("до", 1);              // до ре ми фа соль ля си or C…B; octave digit after the name
+    tune.add_note("фа#5", 0.5);          // # and b for semitones; no digit = 4th octave ("ля" = 440 Hz)
+    tune.add_rest(0.5);
+    tune.add_frequency(440, 1);          // raw hertz (20–20000) — physics of sound, game beeps
+    tune.add_notes("ми ми фа соль | соль фа ми ре | до:2 -:1");   // text: note[:beats], "-" rest, "|" decoration
+    tune.volume = 0.6;
+    tune.loop = false;
+    console.writeln(tune.duration);      // seconds, from tempo and beats
+    tune.play();                         // like Sound: pause(), resume(), stop(), is_playing
+    tune.export_to_file("tune.wav");     // project file; also in the CLI
+    tune.transpose(12);                  // all notes an octave up (-48…48 semitones)
+    tune.clear();
+}
+```
+
+Rules: `duration` is read-only; `instrument` is a strict enumeration
+(`Melody.instrument must be 'sine', 'square', 'triangle' or 'saw', got
+'piano'`); `tempo` 20–400; limits 30 seconds and 2000 notes per melody
+(`Melody.add_note() the melody would be 50 seconds long — the limit is 30;
+split it into several melodies`); a wrong note name is a runtime error with
+the recipe (`Melody.add_note() unknown note 'дo' — write до, ре, ми, фа,
+соль, ля, си (or C…B), then an octave digit and # or b, like "фа#5"`);
+`play()` on an empty melody refuses (`the melody is empty — add notes
+first`); `export_to_file()` requires a `.wav` name. Changing notes, tempo or
+instrument after `play()` does not affect copies already playing. Piano
+idiom: seven one-note melodies created at startup, no files in the project.
+Do not invent `add_chord`, drums, MIDI numbers or `Melody.load_from_file`.
+
 ## 27a. Turtle Graphics
 
 Import:

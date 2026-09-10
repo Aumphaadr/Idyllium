@@ -1,7 +1,7 @@
 {
   "version": 1,
   "languageVersion": "1.5.6",
-  "generatedAt": "2026-09-07T19:29:00.004Z",
+  "generatedAt": "2026-09-10T11:13:57.411Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "general": [
     {
@@ -3746,17 +3746,235 @@
     {
       "name": "audio",
       "title": "Звук",
-      "description": "Короткие звуковые эффекты и потоковое воспроизведение музыки.",
+      "description": "Короткие звуковые эффекты, потоковое воспроизведение музыки и сочинённые программой мелодии.",
       "notes": [
-        "Sound подходит для коротких эффектов, Music — для продолжительных записей.",
+        "Sound подходит для коротких эффектов, Music — для продолжительных записей, Melody — для звука, которого нет в файле: программа сочиняет его из нот.",
         "volume принимает значения от 0.0 до 1.0.",
-        "Гарантированные учебные форматы — WAV и MP3; OGG, AAC и M4A зависят от кодеков браузера или VSIX webview."
+        "Гарантированные учебные форматы — WAV и MP3; OGG, AAC и M4A зависят от кодеков браузера или VSIX webview.",
+        "Melody звучит четырьмя формами волны (sine, square, triangle, saw) — честный «звук игровой приставки», а не пианино; export_to_file() сохраняет мелодию в WAV, и это работает даже при запуске в консоли."
       ],
-      "example": "audio.Sound click;\nclick.load_from_file(\"click.wav\");\nclick.volume = 0.4;\nclick.play();",
+      "example": "audio.Sound click;\nclick.load_from_file(\"click.wav\");\nclick.volume = 0.4;\nclick.play();\n\naudio.Melody tune;\ntune.add_notes(\"до ре ми фа соль:2\");\ntune.play();",
       "fullExamples": [],
       "functions": [],
       "constants": [],
       "types": [
+        {
+          "name": "Melody",
+          "qualifiedName": "audio.Melody",
+          "baseType": "",
+          "description": "Мелодия, сочинённая программой: ноты копятся в объекте, а звук синтезируется при play() или export_to_file(). Ведёт себя как Sound (копии накладываются), плюс loop.",
+          "notes": [
+            "Имена нот: до, ре, ми, фа, соль, ля, си или C…B; октава цифрой после имени (без цифры — четвёртая: «ля» = 440 Гц), полутоны # и b: \"фа#5\", \"сиb\". Опечатка в имени — ошибка выполнения с подсказкой.",
+            "Длительности — в долях при tempo (ударов в минуту): при 120 одна доля — полсекунды. add_notes() принимает мелодию текстом: ноты через пробел, длина после двоеточия, «-» — пауза.",
+            "Пределы: 30 секунд и 2000 нот на мелодию — ошибка словами, а не молчаливая обрезка. Изменение нот, темпа или инструмента после play() не трогает уже играющие копии.",
+            "Для «Пианино» — семь мелодий по одной ноте, созданных при старте: клавиши звучат без единого файла в проекте."
+          ],
+          "example": "audio.Melody tune;\ntune.instrument = \"square\";\ntune.tempo = 140;\ntune.add_notes(\"ми ми фа соль | соль фа ми ре | до до ре ми | ми:1.5 ре:0.5 ре:2\");\ntune.play();\ntune.export_to_file(\"ode.wav\");",
+          "properties": [
+            {
+              "name": "duration",
+              "type": "float",
+              "readonly": true,
+              "documentation": "Длительность мелодии в секундах — по темпу и долям.",
+              "callbacks": []
+            },
+            {
+              "name": "instrument",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Форма волны: \"sine\" (по умолчанию, мягкий), \"square\" (игровая приставка), \"triangle\", \"saw\". Другое значение — ошибка выполнения.",
+              "callbacks": []
+            },
+            {
+              "name": "is_playing",
+              "type": "bool",
+              "readonly": true,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "loop",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "true — играть по кругу, пока не остановят (фоновая музыка без файла).",
+              "callbacks": []
+            },
+            {
+              "name": "tempo",
+              "type": "float",
+              "readonly": false,
+              "documentation": "Темп в ударах в минуту (20–400, по умолчанию 120): длительности нот заданы в долях, одна доля при 120 — полсекунды.",
+              "callbacks": []
+            },
+            {
+              "name": "volume",
+              "type": "float",
+              "readonly": false,
+              "documentation": "Громкость 0.0–1.0.",
+              "callbacks": []
+            }
+          ],
+          "methods": [
+            {
+              "name": "add_frequency",
+              "signature": "add_frequency(frequency: float, beats: float): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "frequency",
+                  "type": "float",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "beats",
+                  "type": "float",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Добавляет звук заданной частоты в герцах (20–20000) — для физики звука и «бипов» в играх."
+            },
+            {
+              "name": "add_note",
+              "signature": "add_note(note: string, beats: float): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "note",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                },
+                {
+                  "name": "beats",
+                  "type": "float",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Добавляет ноту: имя — до, ре, ми, фа, соль, ля, си (или C…B), октава цифрой после имени (без цифры — четвёртая, «ля» = 440 Гц), полутоны # и b: \"фа#5\", \"сиb\". Длительность — в долях при текущем tempo."
+            },
+            {
+              "name": "add_notes",
+              "signature": "add_notes(text: string): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "text",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Мелодия текстом: ноты через пробел, длина после двоеточия в долях, «-» — пауза, «|» — просто украшение: \"ми ми фа соль | соль фа ми ре | до:2 -:1\"."
+            },
+            {
+              "name": "add_rest",
+              "signature": "add_rest(beats: float): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "beats",
+                  "type": "float",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Добавляет паузу заданной длины в долях."
+            },
+            {
+              "name": "clear",
+              "signature": "clear(): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "Удаляет все ноты."
+            },
+            {
+              "name": "export_to_file",
+              "signature": "export_to_file(path: string): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "path",
+                  "type": "string",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Записывает мелодию в WAV-файл проекта (имя — с .wav). Работает и при запуске в консоли: программа сочиняет файл, который можно послушать в инспекторе Web IDE или загрузить в audio.Sound."
+            },
+            {
+              "name": "pause",
+              "signature": "pause(): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": false,
+              "documentation": ""
+            },
+            {
+              "name": "play",
+              "signature": "play(): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "Играет мелодию — как Sound: повторный вызов накладывает вторую копию. Пустая мелодия — ошибка выполнения."
+            },
+            {
+              "name": "resume",
+              "signature": "resume(): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": false,
+              "documentation": ""
+            },
+            {
+              "name": "stop",
+              "signature": "stop(): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": false,
+              "documentation": ""
+            },
+            {
+              "name": "transpose",
+              "signature": "transpose(semitones: int): void",
+              "returnType": "void",
+              "parameters": [
+                {
+                  "name": "semitones",
+                  "type": "int",
+                  "optional": false,
+                  "defaultValue": "",
+                  "acceptedTypes": [],
+                  "acceptedDescription": ""
+                }
+              ],
+              "variadic": false,
+              "documentation": "Сдвигает все ноты на столько полутонов (-48…48): +12 — на октаву выше."
+            }
+          ]
+        },
         {
           "name": "Music",
           "qualifiedName": "audio.Music",

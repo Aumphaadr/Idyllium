@@ -113,6 +113,7 @@ import { colorBlack, colorBlue, colorGray, colorLightGray, colorToCss, colorTran
 import { initializeWebObject, renderWebTemplate, webTextResponse } from './runtime-web';
 import { closeChannelPost, initializeChannelPost } from './runtime-channel';
 import { audioCommands, audioDuration, initializeAudioObject, looksLikeAudio } from './runtime-audio';
+import { initializeMelodyObject } from './runtime-melody';
 import { StoredBitmap, initializeImageObject, imageResourceUri, imageService, readRuntimeBytes, runtimeImageResource, storedAnimation, storedBitmap, storedStaticImage, svgPassport, imageRuntimeError, resolveImageInputPath , setImageMetadata, ensureImageSize, writeRuntimeImageBytes, StoredStaticImage, createGeneratedStaticImage } from './runtime-image';
 import { RuntimeFontFormat, attachDrawableGeometry, createDefaultDrawableFont, detectFontFormat, drawableCollisionShape, drawableTextMetrics, drawableTransform, fontMimeType, initializeDrawableObject, initializeFontObject, isDrawableObject, runtimeFontBytes } from './runtime-drawable';
 import { applyGuiEventPayload, canvasKeepsProgramAlive, closeModal, defaultGuiWidgetSize, eventFloat, eventNumber, guiCallbackName, guiEventObject, guiObjectUsesFontSize, initializeGuiChild, initializeGuiObject, isGuiWidget, refuseWidgetCycle, selectRadioButton, showModal, widgetEventsBlocked } from './runtime-gui';
@@ -2926,6 +2927,7 @@ function createPlainRuntimeObject(moduleName: string, typeName: string, state: R
 
   if (moduleName === 'audio') {
     initializeAudioObject(obj, typeName, state);
+    initializeMelodyObject(obj, typeName, state);
   }
 
   if (moduleName === 'image') {

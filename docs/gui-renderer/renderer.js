@@ -1680,6 +1680,8 @@
     const uri = String(props.webview_uri || props.resource_uri || '');
     if (!uri || typeof Audio !== 'function') return;
     const element = new Audio(uri);
+    // audio.Melody — звук жанра Sound с loop (фоновый чиптюн без файла).
+    element.loop = props.loop === true;
     const volume = normalizedVolume(props.volume);
     applyElementVolume(element, volume);
     installVolumeGuards(element, () => volume);
