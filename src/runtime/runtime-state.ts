@@ -286,6 +286,7 @@ export function defineEnumRuntimeProperty(
   ownerLabel: string,
   defaultValue: string,
   accepted: readonly string[],
+  afterSet?: (value: unknown, file: string, line: number) => void,
 ): void {
   defineValidatedRuntimeProperty(obj, name, defaultValue, (value, file, line) => {
     if (typeof value !== 'string' || !accepted.includes(value)) {
@@ -294,7 +295,7 @@ export function defineEnumRuntimeProperty(
       throw new IdylliumRuntimeError(file, line, `${ownerLabel}.${name} must be ${list}, got '${String(value)}'`);
     }
     return value;
-  });
+  }, afterSet);
 }
 
 export function canvasCommands(canvas: RuntimeObject): IdylliumCanvasCommand[] {

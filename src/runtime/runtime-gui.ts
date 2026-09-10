@@ -750,7 +750,7 @@ export function applyGuiEventPayload(
     return;
   }
 
-  if (target.__idylliumType === 'audio.Sound' && eventName === 'sound_finished') {
+  if ((target.__idylliumType === 'audio.Sound' || target.__idylliumType === 'audio.Melody') && eventName === 'sound_finished') {
     target.is_playing = false;
     return;
   }

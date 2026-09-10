@@ -1113,6 +1113,48 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   ]));
 
   registry.registerModule(moduleSpec('audio', [], [], [
+    typeSpec('Melody', [
+      propertySpec('instrument', STRING, false, 'Форма волны: "sine" (по умолчанию, мягкий), "square" (игровая приставка), "triangle", "saw". Другое значение — ошибка выполнения.'),
+      propertySpec('tempo', FLOAT, false, 'Темп в ударах в минуту (20–400, по умолчанию 120): длительности нот заданы в долях, одна доля при 120 — полсекунды.'),
+      propertySpec('volume', FLOAT, false, 'Громкость 0.0–1.0.'),
+      propertySpec('loop', BOOL, false, 'true — играть по кругу, пока не остановят (фоновая музыка без файла).'),
+      propertySpec('is_playing', BOOL, true),
+      propertySpec('duration', FLOAT, true, 'Длительность мелодии в секундах — по темпу и долям.'),
+    ], [
+      functionSpec('add_note', [
+        { name: 'note', type: STRING },
+        { name: 'beats', type: FLOAT },
+      ], VOID, {
+        documentation: 'Добавляет ноту: имя — до, ре, ми, фа, соль, ля, си (или C…B), октава цифрой после имени (без цифры — четвёртая, «ля» = 440 Гц), полутоны # и b: "фа#5", "сиb". Длительность — в долях при текущем tempo.',
+      }),
+      functionSpec('add_rest', [{ name: 'beats', type: FLOAT }], VOID, {
+        documentation: 'Добавляет паузу заданной длины в долях.',
+      }),
+      functionSpec('add_frequency', [
+        { name: 'frequency', type: FLOAT },
+        { name: 'beats', type: FLOAT },
+      ], VOID, {
+        documentation: 'Добавляет звук заданной частоты в герцах (20–20000) — для физики звука и «бипов» в играх.',
+      }),
+      functionSpec('add_notes', [{ name: 'text', type: STRING }], VOID, {
+        documentation: 'Мелодия текстом: ноты через пробел, длина после двоеточия в долях, «-» — пауза, «|» — просто украшение: "ми ми фа соль | соль фа ми ре | до:2 -:1".',
+      }),
+      functionSpec('transpose', [{ name: 'semitones', type: INT }], VOID, {
+        documentation: 'Сдвигает все ноты на столько полутонов (-48…48): +12 — на октаву выше.',
+      }),
+      functionSpec('clear', [], VOID, {
+        documentation: 'Удаляет все ноты.',
+      }),
+      functionSpec('play', [], VOID, {
+        documentation: 'Играет мелодию — как Sound: повторный вызов накладывает вторую копию. Пустая мелодия — ошибка выполнения.',
+      }),
+      functionSpec('pause', [], VOID),
+      functionSpec('resume', [], VOID),
+      functionSpec('stop', [], VOID),
+      functionSpec('export_to_file', [{ name: 'path', type: STRING }], VOID, {
+        documentation: 'Записывает мелодию в WAV-файл проекта (имя — с .wav). Работает и при запуске в консоли: программа сочиняет файл, который можно послушать в инспекторе Web IDE или загрузить в audio.Sound.',
+      }),
+    ]),
     typeSpec('Sound', [
       propertySpec('src', STRING, true),
       propertySpec('duration', FLOAT, true),
