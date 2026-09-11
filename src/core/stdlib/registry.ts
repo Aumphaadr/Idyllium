@@ -648,8 +648,10 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     functionSpec('open', [
       { name: 'path', type: STRING },
       { name: 'mode', type: STRING },
+      { name: 'encoding', type: STRING, defaultValue: '"utf-8"' },
     ], ANY_TYPE, {
-      documentation: 'Открывает файл. Режимы: "read" — чтение (file.istream); "write" — запись с чистого листа, прежнее содержимое стирается (file.ostream); "append" — дозапись в конец, существующее содержимое сохраняется, отсутствующий файл создаётся пустым (file.ostream).',
+      minArguments: 2,
+      documentation: 'Открывает файл. Режимы: "read" — чтение (file.istream); "write" — запись с чистого листа, прежнее содержимое стирается (file.ostream); "append" — дозапись в конец, существующее содержимое сохраняется, отсутствующий файл создаётся пустым (file.ostream). Третий аргумент — кодировка файла (любая из encoding.list_encodings()); без него — UTF-8. Чтение строгое: файл в другой кодировке — ошибка с подсказкой, на что он похож, а не ромбики; при записи непредставимый символ — ошибка.',
     }),
   ], [], [
     typeSpec('istream', [
@@ -867,12 +869,12 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       { name: 'codepoint', type: INT },
     ], CHAR),
     functionSpec('encode', [
-      { name: 'text', type: STRING },
+      { name: 'text', type: ANY_TYPE, acceptedTypes: [STRING, CHAR], acceptedDescription: 'string or char' },
       { name: 'encoding', type: STRING },
       { name: 'safe', type: BOOL, defaultValue: 'true' },
     ], arrayType(INT, null, true), {
       minArguments: 2,
-      documentation: 'Превращает строку в байты. safe=false заменяет непредставимые символы знаком вопроса вместо остановки с ошибкой.',
+      documentation: 'Превращает строку (или один символ) в байты. safe=false заменяет непредставимые символы знаком вопроса вместо остановки с ошибкой.',
     }),
     functionSpec('decode', [
       { name: 'codes', type: arrayType(INT, null, true) },
@@ -881,6 +883,30 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], STRING, {
       minArguments: 2,
       documentation: 'Собирает строку из байтов. safe=false заменяет негодные байты символом \u{FFFD} вместо остановки с ошибкой.',
+    }),
+    functionSpec('is_valid', [
+      { name: 'codes', type: arrayType(INT, null, true) },
+      { name: 'encoding', type: STRING },
+    ], BOOL, {
+      documentation: 'Можно ли прочитать эти байты в этой кодировке без ошибок — проверка перед decode() вместо try/catch.',
+    }),
+    functionSpec('convert', [
+      { name: 'codes', type: arrayType(INT, null, true) },
+      { name: 'from', type: STRING },
+      { name: 'to', type: STRING },
+      { name: 'safe', type: BOOL, defaultValue: 'true' },
+    ], arrayType(INT, null, true), {
+      minArguments: 3,
+      documentation: 'Перекодирует байты из одной кодировки в другую (decode + encode одним вызовом). Строго; safe=false — потери знаками ? и \u{FFFD}.',
+    }),
+    functionSpec('guess', [{ name: 'codes', type: arrayType(INT, null, true) }], STRING, {
+      documentation: 'Угадывает кодировку байтов: "ascii", "utf-8" или одна из кириллических страниц (windows-1251, koi8-r, cp866, mac-cyrillic, iso-8859-5, koi8-u) — по тому, похож ли текст на русский. Пустая строка, когда уверенности нет: угадывание не выдаёт себя за знание.',
+    }),
+    functionSpec('to_base64', [{ name: 'codes', type: arrayType(INT, null, true) }], STRING, {
+      documentation: 'Записывает байты текстом Base64 (буквы, цифры, + и /, дополнение =). Это транспортное кодирование байтов, а не кодировка символов — поэтому его нет в list_encodings().',
+    }),
+    functionSpec('from_base64', [{ name: 'text', type: STRING }], arrayType(INT, null, true), {
+      documentation: 'Разбирает текст Base64 обратно в байты; пробелы и переносы строк пропускаются, чужой символ или неверная длина — ошибка выполнения.',
     }),
   ]));
 
@@ -980,16 +1006,19 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     }),
     functionSpec('read', [
       { name: 'path', type: STRING },
-      { name: 'separator', type: STRING },
+      { name: 'separator', type: STRING, defaultValue: '""' },
+      { name: 'encoding', type: STRING, defaultValue: '"utf-8"' },
     ], csvTable, {
       minArguments: 1,
-      documentation: 'Читает CSV-файл проекта (UTF-8) в таблицу — как csv.parse над содержимым файла. Отсутствующий файл — ошибка выполнения.',
+      documentation: 'Читает CSV-файл проекта в таблицу — как csv.parse над содержимым файла. Кодировка по умолчанию UTF-8; файл русского Excel читайте с encoding="windows-1251". Отсутствующий файл или чужая кодировка — ошибка выполнения.',
     }),
     functionSpec('write', [
       { name: 'path', type: STRING },
       { name: 'table', type: csvTable },
+      { name: 'encoding', type: STRING, defaultValue: '"utf-8"' },
     ], VOID, {
-      documentation: 'Записывает таблицу в файл проекта (UTF-8): заголовок и строки, разделитель — table.separator; ячейки с разделителем, кавычками или переносами строк берутся в кавычки. Существующий файл перезаписывается.',
+      minArguments: 2,
+      documentation: 'Записывает таблицу в файл проекта: заголовок и строки, разделитель — table.separator; ячейки с разделителем, кавычками или переносами строк берутся в кавычки. Кодировка по умолчанию UTF-8 (для Excel — "windows-1251"). Существующий файл перезаписывается.',
     }),
   ], [], [
     typeSpec('Table', [

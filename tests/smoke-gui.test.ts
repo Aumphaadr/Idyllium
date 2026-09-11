@@ -3142,7 +3142,7 @@ main() {
 test('user-select joins the IdySS dictionary', async () => {
   // Вердикт владельца 2026-08-22: значения из CSS; кнопочным виджетам
   // рендерер выключает выделение по умолчанию (CSS рендерера).
-  const { parseIdylliumStyle } = await import('../src/runtime/style');
+  const { parseIdylliumStyle } = await import('../src/runtime/style.js');
   const ok = parseIdylliumStyle('user-select: none');
   assert(ok.length === 1 && ok[0].property === 'user-select' && ok[0].value === 'none',
     `user-select: none was not parsed: ${JSON.stringify(ok)}`);

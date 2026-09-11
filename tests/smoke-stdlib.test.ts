@@ -408,7 +408,7 @@ test('extended encodings round-trip and reproduce classic mojibake', async () =>
 
   assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
   assert(
-    result.output === 'Íîðìàëüíûé òåêñò\n═юЁьры№э√щ ЄхъёЄ\nПривет, DOS!\nIş günü\ncafé £5\n[201, 205, 187]\n╔═╗\n8\n',
+    result.output === 'Íîðìàëüíûé òåêñò\n═юЁьры№э√щ ЄхъёЄ\nПривет, DOS!\nIş günü\ncafé £5\n[201, 205, 187]\n╔═╗\n41\n',
     `unexpected encoding output: ${JSON.stringify(result.output)}`,
   );
 
@@ -1254,6 +1254,11 @@ test('encoding is strict and round-trips complete single-byte tables', async () 
       int count = 0;
       for (int byte = 0; byte < 256; byte += 1) {
         dyn_array<int> source = [byte];
+        // 1.5.7: незанятые позиции (0x98 в windows-1251) — честный отказ,
+        // а не управляющий символ; is_valid — проверка перед decode.
+        if (not encoding.is_valid(source, name)) {
+          continue;
+        }
         string decoded = encoding.decode(source, name);
         dyn_array<int> encoded = encoding.encode(decoded, name);
         if (encoded.length == 1 and encoded[0] == byte) {
@@ -1274,7 +1279,7 @@ test('encoding is strict and round-trips complete single-byte tables', async () 
   `);
 
   assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
-  assert(result.output === '256:256:1073:б', `unexpected strict encoding output: ${JSON.stringify(result.output)}`);
+  assert(result.output === '255:256:1073:б', `unexpected strict encoding output: ${JSON.stringify(result.output)}`);
 
   await assertRuntimeFails(`
     use encoding;
@@ -3371,4 +3376,185 @@ main() {
   }
   assertFails('use audio;\nmain() {\n    audio.Melody m;\n    m.duration = 5;\n}', "property 'duration' is read-only");
   assertFails('use audio;\nmain() {\n    audio.Melody m;\n    m.transpose(2.5);\n}', "'transpose' argument 1 expects 'int', got 'float'");
+});
+
+test('encoding 1.5.7: 41 encodings from own tables, Unicode forms, helpers and Base64', async () => {
+  // Вердикты владельца 2026-09-11 (спека some_encoding_growth/01): список и
+  // имена как у Charsets, таблицы-генерат, незанятые байты — ошибка (safe=false
+  // — �), utf-16/utf-32 «с BOM», is_valid/convert/guess/char, Base64 функциями.
+  const { ENCODING_UPPER_HALVES } = require('../src/runtime/encoding-tables') as typeof import('../src/runtime/encoding-tables');
+  assert(ENCODING_UPPER_HALVES.length === 34, `expected 34 code pages, got ${ENCODING_UPPER_HALVES.length}`);
+  for (const [id, high] of ENCODING_UPPER_HALVES) {
+    assert(Array.from(high).length === 128, `${id}: upper half must hold 128 characters`);
+  }
+  // Страж хостовой честности: там, где TextDecoder этого Node знает страницу и
+  // не подменяет её (не Windows C1, не ASCII/Latin-1), таблицы совпадают.
+  const decoderLabels: ReadonlyArray<readonly [string, string]> = [
+    ['cp866', 'ibm866'], ['koi8-r', 'koi8-r'], ['koi8-u', 'koi8-u'], ['iso-8859-2', 'iso-8859-2'],
+    ['iso-8859-5', 'iso-8859-5'], ['iso-8859-15', 'iso-8859-15'], ['mac-roman', 'macintosh'], ['mac-cyrillic', 'x-mac-cyrillic'],
+  ];
+  for (const [id, label] of decoderLabels) {
+    let decoder: TextDecoder;
+    try {
+      decoder = new TextDecoder(label, { fatal: true });
+    } catch {
+      continue; // small-icu — нечего сверять
+    }
+    const high = Array.from(ENCODING_UPPER_HALVES.find(([name]) => name === id)![1]);
+    for (let byte = 0x80; byte <= 0xff; byte += 1) {
+      let expected = '￿';
+      try {
+        expected = decoder.decode(Uint8Array.of(byte));
+      } catch {
+        expected = '￿';
+      }
+      assert(high[byte - 0x80] === expected, `${id}: byte ${byte} differs from TextDecoder (${JSON.stringify(high[byte - 0x80])} vs ${JSON.stringify(expected)})`);
+    }
+  }
+  // Генерат свеж: json → ts без ручных правок.
+  const { execFileSync } = require('child_process') as typeof import('child_process');
+  execFileSync(process.execPath, [path.join(process.cwd(), 'tools', 'build-encoding-tables.js'), '--check'], { stdio: 'pipe' });
+
+  const scene = await runIdyllium(`use console;
+use encoding;
+
+main() {
+    dyn_array<string> names = encoding.list_encodings();
+    console.writeln(names.length, " ", names[0], " ", names[15], " ", names[34], " ", names[40]);
+    console.writeln(encoding.encode("€“", "windows-1252"), " ", encoding.decode([128, 147], "windows-1252"), " ", encoding.decode([129], "windows-1252", safe=false));
+    console.writeln(encoding.encode('Ю', "koi8-u"), " ", encoding.encode("Ґ", "koi8-u"), " ", encoding.decode([173], "koi8-u"));
+    console.writeln(encoding.encode("Ğış", "iso-8859-9"), " ", encoding.decode([208], "latin5"), " ", encoding.decode([233], "latin1"), " ", encoding.decode([233], "ISO_8859-1"));
+    console.writeln(encoding.decode(encoding.encode("Привет", "mac-cyrillic"), "windows-1251"), " ", encoding.decode(encoding.encode("Café", "MACINTOSH"), "mac-roman"));
+    console.writeln(encoding.encode("A€", "utf-16le"), " ", encoding.encode("A", "utf-16be"), " ", encoding.encode("A", "utf-16"), " ", encoding.encode("🙂", "utf-16le"), " ", encoding.encode("A", "utf-32"), " ", encoding.encode("🙂", "utf-32be"));
+    console.writeln(encoding.decode([255, 254, 65, 0], "utf-16"), encoding.decode([254, 255, 0, 65], "utf-16"), encoding.decode([61, 216, 66, 222], "utf-16le"), encoding.decode([0, 1, 246, 66], "utf-32be"), encoding.decode([255, 254, 0, 0, 65, 0, 0, 0], "utf-32"));
+    console.writeln(encoding.is_valid([208, 159], "utf-8"), " ", encoding.is_valid([208], "utf-8"), " ", encoding.is_valid([129], "windows-1252"), " ", encoding.is_valid([65, 0, 66], "utf-16le"));
+    console.writeln(encoding.convert(encoding.encode("Ёж", "koi8-r"), "koi8-r", "windows-1251"), " ", encoding.convert([200], "windows-1251", "windows-1252", safe=false));
+    console.writeln(encoding.guess(encoding.encode("Нормальный текст, «кавычки» — тире.", "windows-1251")), " ", encoding.guess(encoding.encode("Нормальный текст", "koi8-r")), " ", encoding.guess(encoding.encode("Нормальный текст", "cp866")), " ", encoding.guess(encoding.encode("Нормальный текст", "mac-cyrillic")), " ", encoding.guess(encoding.encode("Нормальный текст", "iso-8859-5")));
+    console.writeln(encoding.guess(encoding.encode("Привет", "utf-8")), " ", encoding.guess([72, 105]), " '", encoding.guess([]), "' '", encoding.guess([200, 129]), "' ", encoding.guess([255, 254, 65, 0]), " ", encoding.guess([239, 187, 191, 65]));
+    console.writeln(encoding.to_base64(encoding.encode("Привет", "utf-8")), " ", encoding.to_base64([77]), " ", encoding.to_base64([77, 97]), " '", encoding.to_base64([]), "' ", encoding.decode(encoding.from_base64("0J/RgNC40LLQtdGC"), "utf-8"), " ", encoding.from_base64("TQ==\\n"));
+    console.writeln(encoding.encode('Ж', "utf-8"), " ", encoding.decode([239, 187, 191, 65], "utf-8").length, " ", encoding.decode(encoding.encode("Нормальный", "windows-1251"), "utf-8", safe=false).length);
+}
+`, {}, { file: 'main.idyl' });
+  assert(scene.success, scene.runtimeError ?? scene.compilation.diagnosticsText);
+  assert(scene.output === [
+    '41 cp437 ascii utf-8 utf-32be',
+    '[128, 147] €“ �',
+    '[224] [189] ґ',
+    '[208, 253, 254] Ğ é é',
+    'Џривет Café',
+    '[65, 0, 172, 32] [0, 65] [255, 254, 65, 0] [61, 216, 66, 222] [255, 254, 0, 0, 65, 0, 0, 0] [0, 1, 246, 66]',
+    'AA🙂🙂A',
+    'true false false false',
+    '[168, 230] [63]',
+    'windows-1251 koi8-r cp866 mac-cyrillic iso-8859-5',
+    "utf-8 ascii '' 'utf-8' utf-16 utf-8", // [200, 129] — валидный UTF-8 (U+0201), guess честно говорит utf-8
+    "0J/RgNC40LLQtdGC TQ== TWE= '' Привет [77]",
+    '[208, 150] 2 10',
+    '',
+  ].join('\n'), `encoding growth scene drifted: ${JSON.stringify(scene.output)}`);
+
+  const broken: ReadonlyArray<readonly [string, string]> = [
+    ['encoding.decode([129], "windows-1252");', 'byte 129 is not valid windows-1252 at index 0'],
+    ['encoding.decode([255], "ascii");', 'byte 255 is not valid ASCII at index 0'],
+    ['encoding.decode([65, 0], "utf-16");', 'encoding.decode() utf-16 needs a byte order mark — use utf-16le or utf-16be for bytes without one'],
+    ['encoding.decode([65, 0, 66], "utf-16le");', 'encoding.decode() invalid utf-16le at byte 2: half of a code unit'],
+    ['encoding.decode([0, 216, 65, 0], "utf-16le");', 'encoding.decode() invalid utf-16le at byte 0: lone surrogate'],
+    ['encoding.decode([0, 0, 17, 0], "utf-32le");', 'encoding.decode() invalid utf-32le at byte 0: code point 1114112 is outside Unicode'],
+    ['encoding.decode([65], "latin");', "unknown encoding 'latin' — did you mean 'iso-8859-1'?"],
+    ['encoding.decode([65], "koi-8r");', "unknown encoding 'koi-8r' — did you mean 'koi8-r'?"],
+    ['encoding.decode([65], "klingon");', "unknown encoding 'klingon' — see encoding.list_encodings()"],
+    ['encoding.encode("€", "koi8-r");', "character '€' is not valid koi8-r at position 0"], // в windows-1251 евро есть (0x88)
+    ['encoding.from_base64("TQ=x");', "encoding.from_base64() unexpected character 'x' after padding at position 3"],
+    ['encoding.from_base64("T");', 'encoding.from_base64() text length must be a multiple of 4 (pad with = if needed)'],
+    ['encoding.from_base64("T$==");', "encoding.from_base64() invalid Base64 character '$' at position 1"],
+    ['encoding.convert([200], "windows-1251", "ascii");', "encoding.convert() character 'И' is not valid ASCII at position 0"],
+  ];
+  for (const [statement, expected] of broken) {
+    await assertRuntimeFails(`use encoding;\n\nmain() {\n    ${statement}\n}\n`, expected);
+  }
+});
+
+test('file.open and csv take an encoding, and reading is strict instead of silent mojibake', async () => {
+  // Граница файлов (спека some_encoding_growth/01 §4.5): третий аргумент —
+  // кодировка; без него UTF-8 строго, с подсказкой, на что похожи байты.
+  const win1251 = 'Привет, мир!';
+  const memory = await runWithMemoryFiles(`use console;
+use encoding;
+use file;
+use csv;
+
+main() {
+    file.ostream fout = file.open("win.txt", "write", "windows-1251");
+    fout.write_line("Привет, мир!");
+    fout.write("Ёж");
+    fout.close();
+    file.ostream more = file.open("win.txt", "append", "cp1251");
+    more.write_line("!");
+    more.close();
+    file.istream fin = file.open("win.txt", "read", "windows-1251");
+    console.write(fin.read_all());
+    fin.close();
+    file.istream raw = file.open("win.txt", "read", "koi8-r");
+    console.writeln(raw.read_line());
+    raw.close();
+    file.ostream bom = file.open("bom.txt", "write", "utf-16");
+    bom.write("Ab");
+    bom.close();
+    file.istream bomin = file.open("bom.txt", "read", "utf-16");
+    console.writeln(bomin.read_all());
+    bomin.close();
+    file.istream utf8bom = file.open("utf8bom.txt", "read");
+    string first = utf8bom.read_all();
+    utf8bom.close();
+    console.writeln(first.length, " ", first);
+
+    csv.Table t;
+    t.set_columns("имя", "уровень");
+    t.add_row("Мира", "12");
+    csv.write("excel.csv", t, "windows-1251");
+    csv.Table back = csv.read("excel.csv", encoding="windows-1251");
+    console.writeln(back.get(0, "имя"), " ", back.separator);
+    try {
+        csv.Table bad = csv.read("excel.csv");
+    } catch (error) {
+        console.writeln(error.message);
+    }
+    try {
+        file.istream wrong = file.open("old.txt", "read");
+    } catch (error) {
+        console.writeln(error.message);
+    }
+    try {
+        file.istream wrong = file.open("bom.txt", "read");
+    } catch (error) {
+        console.writeln(error.message);
+    }
+    try {
+        file.ostream narrow = file.open("narrow.txt", "write", "ascii");
+        narrow.write_line("Привет");
+        narrow.close();
+    } catch (error) {
+        console.writeln(error.message);
+    }
+}
+`, {
+    'old.txt': { kind: 'file', content: '', bytes: Uint8Array.from([0xcf, 0xf0, 0xe8, 0xe2, 0xe5, 0xf2, 0x2c, 0x20, 0xec, 0xe8, 0xf0, 0x21]) },
+    'utf8bom.txt': { kind: 'file', content: '', bytes: Uint8Array.from([0xef, 0xbb, 0xbf, 0x41, 0x42]) },
+  } as unknown as Record<string, string>);
+  const output = memory.runtime.getOutput();
+  assert(output === [
+    `${win1251}`,
+    'Ёж!',
+    'оПХБЕР, ЛХП!',
+    '',
+    'Ab',
+    '2 AB',
+    'Мира ;',
+    "csv.read() cannot read 'excel.csv' as utf-8: invalid UTF-8 at byte 1 (0xEC): invalid continuation byte — the file looks like windows-1251; open it with csv.read(path, encoding=\"windows-1251\")",
+    "file.open() cannot read 'old.txt' as utf-8: invalid UTF-8 at byte 1 (0xF0): invalid continuation byte — the file looks like windows-1251; open it with file.open(path, \"read\", \"windows-1251\")",
+    "file.open() cannot read 'bom.txt' as utf-8: invalid UTF-8 at byte 0 (0xFF): invalid leading byte — the file looks like utf-16; open it with file.open(path, \"read\", \"utf-16\")",
+    "ostream.write_line() character 'П' is not valid ASCII at position 0",
+    '',
+  ].join('\n'), `file encoding scene drifted: ${JSON.stringify(output)}`);
+  await assertRuntimeFails('use file;\nmain() {\n    file.open("x.txt", "read", "klingon");\n}', "unknown encoding 'klingon' — see encoding.list_encodings()");
 });

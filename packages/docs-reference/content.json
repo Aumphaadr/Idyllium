@@ -486,26 +486,34 @@
         "write() не добавляет перенос строки, write_line() добавляет его автоматически.",
         "После завершения работы поток следует закрыть методом close().",
         "copy() и rename() не перезаписывают существующий путь назначения.",
-        "Непустой каталог удаляется только при явном recursive=true."
+        "Непустой каталог удаляется только при явном recursive=true.",
+        "Третий аргумент file.open() — кодировка файла (любая из encoding.list_encodings()); без него — UTF-8. Чтение строгое: файл в другой кодировке — ошибка с подсказкой, на что он похож; при записи непредставимый символ — ошибка. Метка BOM у UTF-8 при чтении пропускается."
       ],
       "example": "file.create_directory(\"saves\");\nfile.ostream out = file.open(\"saves/result.txt\", \"write\");\nout.write_line(\"Счёт: \", 120);\nout.close();"
     },
     "encoding": {
       "title": "Кодировки",
-      "description": "Работа с Unicode-кодовыми точками и строгие преобразования между текстом и байтами.",
+      "description": "Unicode-кодовые точки, 41 кодировка в пяти семействах, строгие преобразования между текстом и байтами, угадывание кодировки и Base64.",
       "notes": [
-        "Поддерживаются ascii, utf-8, windows-1251 и koi8-r.",
+        "Кодировки — те же 38 кодовых страниц и форм Unicode, что в обозревателе сайта «Кодировки символов» (Charsets), плюс формы utf-16 и utf-32 «с меткой порядка байтов»: семейства DOS (cp437…cp866), Windows (windows-1250…1258), ISO 8859 и ASCII, КОИ-8 и Macintosh (koi8-r, koi8-u, mac-roman, mac-cyrillic), Unicode (utf-8, utf-16/le/be, utf-32/le/be). Имена принимаются в любом регистре и с привычными псевдонимами (cp1251, latin1, ibm866, macintosh).",
+        "Таблицы лежат в самом Idyllium и одинаковы в консоли, Web IDE и VS Code — они не зависят от того, какие кодировки знает браузер или Node.",
         "Кодовая точка Unicode не зависит от кодировки: у буквы 'б' это 1073, а её UTF-8-представление состоит из байтов [208, 177].",
-        "char_to_codepoint() принимает один символ; codepoint_to_char() принимает Unicode scalar value и отвергает суррогаты.",
-        "encode() выдаёт runtime error для символа, которого нет в выбранной однобайтовой кодировке.",
-        "decode() принимает только байты 0..255. Битая UTF-8-последовательность является runtime error; символ � молча не подставляется."
+        "encode() и decode() строги: непредставимый символ, битая последовательность или незанятый байт кодовой страницы (0x81 в windows-1252) — runtime error с позицией. safe=false заменяет потери знаком ? при записи и символом � при чтении.",
+        "utf-16 и utf-32 без суффикса — «с меткой порядка байтов»: decode читает BOM и отказывает, если его нет; encode пишет BOM и little-endian (как «Unicode» в Блокноте). utf-16le/be и utf-32le/be — без метки.",
+        "is_valid() проверяет байты перед decode(), convert() перекодирует за один вызов, guess() угадывает кодировку русского текста (или честно отдаёт пустую строку), to_base64()/from_base64() — транспортное кодирование байтов, не кодировка символов.",
+        "Неизвестное имя — ошибка с подсказкой: unknown encoding 'koi-8r' — did you mean 'koi8-r'?"
       ],
-      "example": "int point = encoding.char_to_codepoint('б'); // 1073\nchar letter = encoding.codepoint_to_char(point); // 'б'\n\ndyn_array<int> bytes = encoding.encode(\"б\", \"utf-8\"); // [208, 177]\nstring text = encoding.decode(bytes, \"utf-8\"); // \"б\"",
+      "example": "int point = encoding.char_to_codepoint('б'); // 1073\nchar letter = encoding.codepoint_to_char(point); // 'б'\n\ndyn_array<int> bytes = encoding.encode(\"б\", \"utf-8\"); // [208, 177]\nstring text = encoding.decode(bytes, \"utf-8\"); // \"б\"\n\ndyn_array<int> old = encoding.encode(\"Привет\", \"windows-1251\");\nconsole.writeln(encoding.guess(old));          // windows-1251\nconsole.writeln(encoding.is_valid(old, \"utf-8\")); // false\nconsole.writeln(encoding.to_base64(bytes));   // 0LE=",
       "fullExamples": [
         {
           "title": "Строгое декодирование UTF-8",
           "description": "Незавершённая двухбайтовая последовательность не превращается в символ замены.",
           "code": "dyn_array<int> broken = [208];\nstring text = encoding.decode(broken, \"utf-8\");\n// runtime error: invalid UTF-8 at byte 0"
+        },
+        {
+          "title": "Файл из старого Excel",
+          "description": "file.open и csv.read принимают кодировку; без неё чтение строгое, и чужой файл называется по имени вместо ромбиков.",
+          "code": "file.istream fin = file.open(\"notes.txt\", \"read\", \"windows-1251\");\nstring text = fin.read_all();\nfin.close();\n\ncsv.Table table = csv.read(\"excel.csv\", encoding=\"windows-1251\");\n// file.open(\"notes.txt\", \"read\") на таком файле:\n// runtime error: file.open() cannot read 'notes.txt' as utf-8: invalid UTF-8 at byte 1 (0xF0): invalid continuation byte — the file looks like windows-1251; open it with file.open(path, \"read\", \"windows-1251\")"
         }
       ]
     },

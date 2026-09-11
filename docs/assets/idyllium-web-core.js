@@ -747,9 +747,11 @@ var Idyllium = (() => {
           }),
           functionSpec("open", [
             { name: "path", type: types_1.STRING },
-            { name: "mode", type: types_1.STRING }
+            { name: "mode", type: types_1.STRING },
+            { name: "encoding", type: types_1.STRING, defaultValue: '"utf-8"' }
           ], types_1.ANY_TYPE, {
-            documentation: 'Открывает файл. Режимы: "read" — чтение (file.istream); "write" — запись с чистого листа, прежнее содержимое стирается (file.ostream); "append" — дозапись в конец, существующее содержимое сохраняется, отсутствующий файл создаётся пустым (file.ostream).'
+            minArguments: 2,
+            documentation: 'Открывает файл. Режимы: "read" — чтение (file.istream); "write" — запись с чистого листа, прежнее содержимое стирается (file.ostream); "append" — дозапись в конец, существующее содержимое сохраняется, отсутствующий файл создаётся пустым (file.ostream). Третий аргумент — кодировка файла (любая из encoding.list_encodings()); без него — UTF-8. Чтение строгое: файл в другой кодировке — ошибка с подсказкой, на что он похож, а не ромбики; при записи непредставимый символ — ошибка.'
           })
         ], [], [
           typeSpec("istream", [
@@ -960,12 +962,12 @@ var Idyllium = (() => {
             { name: "codepoint", type: types_1.INT }
           ], types_1.CHAR),
           functionSpec("encode", [
-            { name: "text", type: types_1.STRING },
+            { name: "text", type: types_1.ANY_TYPE, acceptedTypes: [types_1.STRING, types_1.CHAR], acceptedDescription: "string or char" },
             { name: "encoding", type: types_1.STRING },
             { name: "safe", type: types_1.BOOL, defaultValue: "true" }
           ], (0, types_1.arrayType)(types_1.INT, null, true), {
             minArguments: 2,
-            documentation: "Превращает строку в байты. safe=false заменяет непредставимые символы знаком вопроса вместо остановки с ошибкой."
+            documentation: "Превращает строку (или один символ) в байты. safe=false заменяет непредставимые символы знаком вопроса вместо остановки с ошибкой."
           }),
           functionSpec("decode", [
             { name: "codes", type: (0, types_1.arrayType)(types_1.INT, null, true) },
@@ -974,6 +976,30 @@ var Idyllium = (() => {
           ], types_1.STRING, {
             minArguments: 2,
             documentation: "Собирает строку из байтов. safe=false заменяет негодные байты символом � вместо остановки с ошибкой."
+          }),
+          functionSpec("is_valid", [
+            { name: "codes", type: (0, types_1.arrayType)(types_1.INT, null, true) },
+            { name: "encoding", type: types_1.STRING }
+          ], types_1.BOOL, {
+            documentation: "Можно ли прочитать эти байты в этой кодировке без ошибок — проверка перед decode() вместо try/catch."
+          }),
+          functionSpec("convert", [
+            { name: "codes", type: (0, types_1.arrayType)(types_1.INT, null, true) },
+            { name: "from", type: types_1.STRING },
+            { name: "to", type: types_1.STRING },
+            { name: "safe", type: types_1.BOOL, defaultValue: "true" }
+          ], (0, types_1.arrayType)(types_1.INT, null, true), {
+            minArguments: 3,
+            documentation: "Перекодирует байты из одной кодировки в другую (decode + encode одним вызовом). Строго; safe=false — потери знаками ? и �."
+          }),
+          functionSpec("guess", [{ name: "codes", type: (0, types_1.arrayType)(types_1.INT, null, true) }], types_1.STRING, {
+            documentation: 'Угадывает кодировку байтов: "ascii", "utf-8" или одна из кириллических страниц (windows-1251, koi8-r, cp866, mac-cyrillic, iso-8859-5, koi8-u) — по тому, похож ли текст на русский. Пустая строка, когда уверенности нет: угадывание не выдаёт себя за знание.'
+          }),
+          functionSpec("to_base64", [{ name: "codes", type: (0, types_1.arrayType)(types_1.INT, null, true) }], types_1.STRING, {
+            documentation: "Записывает байты текстом Base64 (буквы, цифры, + и /, дополнение =). Это транспортное кодирование байтов, а не кодировка символов — поэтому его нет в list_encodings()."
+          }),
+          functionSpec("from_base64", [{ name: "text", type: types_1.STRING }], (0, types_1.arrayType)(types_1.INT, null, true), {
+            documentation: "Разбирает текст Base64 обратно в байты; пробелы и переносы строк пропускаются, чужой символ или неверная длина — ошибка выполнения."
           })
         ]));
         registry.registerModule(moduleSpec("json", [
@@ -1070,16 +1096,19 @@ var Idyllium = (() => {
           }),
           functionSpec("read", [
             { name: "path", type: types_1.STRING },
-            { name: "separator", type: types_1.STRING }
+            { name: "separator", type: types_1.STRING, defaultValue: '""' },
+            { name: "encoding", type: types_1.STRING, defaultValue: '"utf-8"' }
           ], csvTable, {
             minArguments: 1,
-            documentation: "Читает CSV-файл проекта (UTF-8) в таблицу — как csv.parse над содержимым файла. Отсутствующий файл — ошибка выполнения."
+            documentation: 'Читает CSV-файл проекта в таблицу — как csv.parse над содержимым файла. Кодировка по умолчанию UTF-8; файл русского Excel читайте с encoding="windows-1251". Отсутствующий файл или чужая кодировка — ошибка выполнения.'
           }),
           functionSpec("write", [
             { name: "path", type: types_1.STRING },
-            { name: "table", type: csvTable }
+            { name: "table", type: csvTable },
+            { name: "encoding", type: types_1.STRING, defaultValue: '"utf-8"' }
           ], types_1.VOID, {
-            documentation: "Записывает таблицу в файл проекта (UTF-8): заголовок и строки, разделитель — table.separator; ячейки с разделителем, кавычками или переносами строк берутся в кавычки. Существующий файл перезаписывается."
+            minArguments: 2,
+            documentation: 'Записывает таблицу в файл проекта: заголовок и строки, разделитель — table.separator; ячейки с разделителем, кавычками или переносами строк берутся в кавычки. Кодировка по умолчанию UTF-8 (для Excel — "windows-1251"). Существующий файл перезаписывается.'
           })
         ], [], [
           typeSpec("Table", [
@@ -12516,34 +12545,208 @@ ${outerPadding}${close}`;
     }
   });
 
+  // dist/src/runtime/encoding-tables.js
+  var require_encoding_tables = __commonJS({
+    "dist/src/runtime/encoding-tables.js"(exports2) {
+      "use strict";
+      Object.defineProperty(exports2, "__esModule", { value: true });
+      exports2.ENCODING_UPPER_HALVES = exports2.ENCODING_UNASSIGNED = void 0;
+      exports2.ENCODING_UNASSIGNED = "￿";
+      exports2.ENCODING_UPPER_HALVES = [
+        ["cp437", "ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜ¢£¥₧ƒáíóúñÑªº¿⌐¬½¼¡«»░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞φε∩≡±≥≤⌠⌡÷≈°∙·√ⁿ²■ "],
+        ["cp850", "ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜø£Ø×ƒáíóúñÑªº¿®¬½¼¡«»░▒▓│┤ÁÂÀ©╣║╗╝¢¥┐└┴┬├─┼ãÃ╚╔╩╦╠═╬¤ðÐÊËÈıÍÎÏ┘┌█▄¦Ì▀ÓßÔÒõÕµþÞÚÛÙýÝ¯´­±‗¾¶§÷¸°¨·¹³²■ "],
+        ["cp852", "ÇüéâäůćçłëŐőîŹÄĆÉĹĺôöĽľŚśÖÜŤťŁ×čáíóúĄąŽžĘę¬źČş«»░▒▓│┤ÁÂĚŞ╣║╗╝Żż┐└┴┬├─┼Ăă╚╔╩╦╠═╬¤đĐĎËďŇÍÎě┘┌█▄ŢŮ▀ÓßÔŃńňŠšŔÚŕŰýÝţ´­˝˛ˇ˘§÷¸°¨˙űŘř■ "],
+        ["cp855", "ђЂѓЃёЁєЄѕЅіІїЇјЈљЉњЊћЋќЌўЎџЏюЮъЪаАбБцЦдДеЕфФгГ«»░▒▓│┤хХиИ╣║╗╝йЙ┐└┴┬├─┼кК╚╔╩╦╠═╬¤лЛмМнНоОп┘┌█▄Пя▀ЯрРсСтТуУжЖвВьЬ№­ыЫзЗшШэЭщЩчЧ§■ "],
+        ["cp857", "ÇüéâäàåçêëèïîıÄÅÉæÆôöòûùİÖÜø£ØŞşáíóúñÑĞğ¿®¬½¼¡«»░▒▓│┤ÁÂÀ©╣║╗╝¢¥┐└┴┬├─┼ãÃ╚╔╩╦╠═╬¤ºªÊËÈ￿ÍÎÏ┘┌█▄¦Ì▀ÓßÔÒõÕµ￿×ÚÛÙìÿ¯´­±￿¾¶§÷¸°¨·¹³²■ "],
+        ["cp866", "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмноп░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀рстуфхцчшщъыьэюяЁёЄєЇїЎў°∙·√№¤■ "],
+        ["windows-1250", "€￿‚￿„…†‡￿‰Š‹ŚŤŽŹ￿‘’“”•–—￿™š›śťžź ˇ˘Ł¤Ą¦§¨©Ş«¬­®Ż°±˛ł´µ¶·¸ąş»Ľ˝ľżŔÁÂĂÄĹĆÇČÉĘËĚÍÎĎĐŃŇÓÔŐÖ×ŘŮÚŰÜÝŢßŕáâăäĺćçčéęëěíîďđńňóôőö÷řůúűüýţ˙"],
+        ["windows-1251", "ЂЃ‚ѓ„…†‡€‰Љ‹ЊЌЋЏђ‘’“”•–—￿™љ›њќћџ ЎўЈ¤Ґ¦§Ё©Є«¬­®Ї°±Ііґµ¶·ё№є»јЅѕїАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюя"],
+        ["windows-1252", "€￿‚ƒ„…†‡ˆ‰Š‹Œ￿Ž￿￿‘’“”•–—˜™š›œ￿žŸ ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ"],
+        ["windows-1253", "€￿‚ƒ„…†‡￿‰￿‹￿￿￿￿￿‘’“”•–—￿™￿›￿￿￿￿ ΅Ά£¤¥¦§¨©￿«¬­®―°±²³΄µ¶·ΈΉΊ»Ό½ΎΏΐΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡ￿ΣΤΥΦΧΨΩΪΫάέήίΰαβγδεζηθικλμνξοπρςστυφχψωϊϋόύώ￿"],
+        ["windows-1254", "€￿‚ƒ„…†‡ˆ‰Š‹Œ￿￿￿￿‘’“”•–—˜™š›œ￿￿Ÿ ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏĞÑÒÓÔÕÖ×ØÙÚÛÜİŞßàáâãäåæçèéêëìíîïğñòóôõö÷øùúûüışÿ"],
+        ["windows-1255", "€￿‚ƒ„…†‡ˆ‰￿‹￿￿￿￿￿‘’“”•–—˜™￿›￿￿￿￿ ¡¢£₪¥¦§¨©×«¬­®¯°±²³´µ¶·¸¹÷»¼½¾¿ְֱֲֳִֵֶַָֹ￿ֻּֽ־ֿ׀ׁׂ׃װױײ׳״￿￿￿￿￿￿￿אבגדהוזחטיךכלםמןנסעףפץצקרשת￿￿‎‏￿"],
+        ["windows-1256", "€پ‚ƒ„…†‡ˆ‰ٹ‹Œچژڈگ‘’“”•–—ک™ڑ›œ‌‍ں ،¢£¤¥¦§¨©ھ«¬­®¯°±²³´µ¶·¸¹؛»¼½¾؟ہءآأؤإئابةتثجحخدذرزسشصض×طظعغـفقكàلâمنهوçèéêëىيîïًٌٍَôُِ÷ّùْûü‎‏ے"],
+        ["windows-1257", "€￿‚￿„…†‡￿‰￿‹￿¨ˇ¸￿‘’“”•–—￿™￿›￿¯˛￿ ￿¢£¤￿¦§Ø©Ŗ«¬­®Æ°±²³´µ¶·ø¹ŗ»¼½¾æĄĮĀĆÄÅĘĒČÉŹĖĢĶĪĻŠŃŅÓŌÕÖ×ŲŁŚŪÜŻŽßąįāćäåęēčéźėģķīļšńņóōõö÷ųłśūüżž˙"],
+        ["windows-1258", "€￿‚ƒ„…†‡ˆ‰￿‹Œ￿￿￿￿‘’“”•–—˜™￿›œ￿￿Ÿ ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂĂÄÅÆÇÈÉÊË̀ÍÎÏĐÑ̉ÓÔƠÖ×ØÙÚÛÜỮßàáâăäåæçèéêë́íîïđṇ̃óôơö÷øùúûüư₫ÿ"],
+        ["ascii", "￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿"],
+        ["iso-8859-1", " ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ"],
+        ["iso-8859-2", " Ą˘Ł¤ĽŚ§¨ŠŞŤŹ­ŽŻ°ą˛ł´ľśˇ¸šşťź˝žżŔÁÂĂÄĹĆÇČÉĘËĚÍÎĎĐŃŇÓÔŐÖ×ŘŮÚŰÜÝŢßŕáâăäĺćçčéęëěíîďđńňóôőö÷řůúűüýţ˙"],
+        ["iso-8859-3", " Ħ˘£¤￿Ĥ§¨İŞĞĴ­￿Ż°ħ²³´µĥ·¸ışğĵ½￿żÀÁÂ￿ÄĊĈÇÈÉÊËÌÍÎÏ￿ÑÒÓÔĠÖ×ĜÙÚÛÜŬŜßàáâ￿äċĉçèéêëìíîï￿ñòóôġö÷ĝùúûüŭŝ˙"],
+        ["iso-8859-4", " ĄĸŖ¤ĨĻ§¨ŠĒĢŦ­Ž¯°ą˛ŗ´ĩļˇ¸šēģŧŊžŋĀÁÂÃÄÅÆĮČÉĘËĖÍÎĪĐŅŌĶÔÕÖ×ØŲÚÛÜŨŪßāáâãäåæįčéęëėíîīđņōķôõö÷øųúûüũū˙"],
+        ["iso-8859-5", " ЁЂЃЄЅІЇЈЉЊЋЌ­ЎЏАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюя№ёђѓєѕіїјљњћќ§ўџ"],
+        ["iso-8859-6", " ￿￿￿¤￿￿￿￿￿￿￿،­￿￿￿￿￿￿￿￿￿￿￿￿￿؛￿￿￿؟￿ءآأؤإئابةتثجحخدذرزسشصضطظعغ￿￿￿￿￿ـفقكلمنهوىيًٌٍَُِّْ￿￿￿￿￿￿￿￿￿￿￿￿￿"],
+        ["iso-8859-7", " ‘’£€₯¦§¨©ͺ«¬­￿―°±²³΄΅Ά·ΈΉΊ»Ό½ΎΏΐΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡ￿ΣΤΥΦΧΨΩΪΫάέήίΰαβγδεζηθικλμνξοπρςστυφχψωϊϋόύώ￿"],
+        ["iso-8859-8", " ￿¢£¤¥¦§¨©×«¬­®¯°±²³´µ¶·¸¹÷»¼½¾￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿￿‗אבגדהוזחטיךכלםמןנסעףפץצקרשת￿￿‎‏￿"],
+        ["iso-8859-9", " ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏĞÑÒÓÔÕÖ×ØÙÚÛÜİŞßàáâãäåæçèéêëìíîïğñòóôõö÷øùúûüışÿ"],
+        ["iso-8859-10", " ĄĒĢĪĨĶ§ĻĐŠŦŽ­ŪŊ°ąēģīĩķ·ļđšŧž―ūŋĀÁÂÃÄÅÆĮČÉĘËĖÍÎÏÐŅŌÓÔÕÖŨØŲÚÛÜÝÞßāáâãäåæįčéęëėíîïðņōóôõöũøųúûüýþĸ"],
+        ["iso-8859-13", " ”¢£¤„¦§Ø©Ŗ«¬­®Æ°±²³“µ¶·ø¹ŗ»¼½¾æĄĮĀĆÄÅĘĒČÉŹĖĢĶĪĻŠŃŅÓŌÕÖ×ŲŁŚŪÜŻŽßąįāćäåęēčéźėģķīļšńņóōõö÷ųłśūüżž’"],
+        ["iso-8859-14", " Ḃḃ£ĊċḊ§Ẁ©ẂḋỲ­®ŸḞḟĠġṀṁ¶ṖẁṗẃṠỳẄẅṡÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏŴÑÒÓÔÕÖṪØÙÚÛÜÝŶßàáâãäåæçèéêëìíîïŵñòóôõöṫøùúûüýŷÿ"],
+        ["iso-8859-15", " ¡¢£€¥Š§š©ª«¬­®¯°±²³Žµ¶·ž¹º»ŒœŸ¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ"],
+        ["iso-8859-16", " ĄąŁ€„Š§š©Ș«Ź­źŻ°±ČłŽ”¶·žčș»ŒœŸżÀÁÂĂÄĆÆÇÈÉÊËÌÍÎÏĐŃÒÓÔŐÖŚŰÙÚÛÜĘȚßàáâăäćæçèéêëìíîïđńòóôőöśűùúûüęțÿ"],
+        ["koi8-r", "─│┌┐└┘├┤┬┴┼▀▄█▌▐░▒▓⌠■∙√≈≤≥ ⌡°²·÷═║╒ё╓╔╕╖╗╘╙╚╛╜╝╞╟╠╡Ё╢╣╤╥╦╧╨╩╪╫╬©юабцдефгхийклмнопярстужвьызшэщчъЮАБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЫЗШЭЩЧЪ"],
+        ["koi8-u", "─│┌┐└┘├┤┬┴┼▀▄█▌▐░▒▓⌠■∙√≈≤≥ ⌡°²·÷═║╒ёє╔ії╗╘╙╚╛ґ╝╞╟╠╡ЁЄ╣ІЇ╦╧╨╩╪Ґ╬©юабцдефгхийклмнопярстужвьызшэщчъЮАБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЫЗШЭЩЧЪ"],
+        ["mac-roman", "ÄÅÇÉÑÖÜáàâäãåçéèêëíìîïñóòôöõúùûü†°¢£§•¶ß®©™´¨≠ÆØ∞±≤≥¥µ∂∑∏π∫ªºΩæø¿¡¬√ƒ≈∆«»… ÀÃÕŒœ–—“”‘’÷◊ÿŸ⁄€‹›ﬁﬂ‡·‚„‰ÂÊÁËÈÍÎÏÌÓÔÒÚÛÙıˆ˜¯˘˙˚¸˝˛ˇ"],
+        ["mac-cyrillic", "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ†°Ґ£§•¶І®©™Ђђ≠Ѓѓ∞±≤≥іµґЈЄєЇїЉљЊњјЅ¬√ƒ≈∆«»… ЋћЌќѕ–—“”‘’÷„ЎўЏџ№Ёёяабвгдежзийклмнопрстуфхцчшщъыьэю€"]
+      ];
+    }
+  });
+
   // dist/src/runtime/runtime-encoding.js
   var require_runtime_encoding = __commonJS({
     "dist/src/runtime/runtime-encoding.js"(exports2) {
       "use strict";
       Object.defineProperty(exports2, "__esModule", { value: true });
-      exports2.SINGLE_BYTE_ENCODINGS = void 0;
+      exports2.EncodingFailure = exports2.ENCODINGS = void 0;
+      exports2.listEncodingNames = listEncodingNames;
+      exports2.encodingFamily = encodingFamily;
+      exports2.normalizeEncoding = normalizeEncoding;
       exports2.encodingCharToCodepoint = encodingCharToCodepoint;
       exports2.encodingCodepointToChar = encodingCodepointToChar;
-      exports2.encodingEncode = encodingEncode;
-      exports2.encodingDecode = encodingDecode;
-      exports2.normalizeEncoding = normalizeEncoding;
       exports2.singleCharacter = singleCharacter;
       exports2.isUnicodeScalarValue = isUnicodeScalarValue;
-      exports2.decodeUtf8 = decodeUtf8;
       exports2.formatByte = formatByte;
+      exports2.encodeText = encodeText;
+      exports2.encodingEncode = encodingEncode;
+      exports2.decodeBytes = decodeBytes;
+      exports2.encodingDecode = encodingDecode;
+      exports2.decodeUtf8Bytes = decodeUtf8Bytes;
+      exports2.decodeUtf8 = decodeUtf8;
+      exports2.encodingIsValid = encodingIsValid;
+      exports2.encodingConvert = encodingConvert;
+      exports2.guessEncodingOfBytes = guessEncodingOfBytes;
+      exports2.encodingGuess = encodingGuess;
+      exports2.bytesToBase64 = bytesToBase64;
+      exports2.base64ToBytes = base64ToBytes;
+      exports2.decodeFileBytes = decodeFileBytes;
+      exports2.guessFileEncoding = guessFileEncoding;
       var runtime_errors_12 = require_runtime_errors();
       var runtime_shared_12 = require_runtime_shared();
       var runtime_values_12 = require_runtime_values();
-      var nodeBuffer2 = require_buffer().Buffer;
-      var CP437_HIGH_HALF = "ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜ¢£¥₧ƒáíóúñÑªº¿⌐¬½¼¡«»░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞φε∩≡±≥≤⌠⌡÷≈°∙·√ⁿ²■ ";
-      exports2.SINGLE_BYTE_ENCODINGS = /* @__PURE__ */ new Map([
-        ["windows-1251", buildSingleByteEncoding("windows-1251")],
-        ["koi8-r", buildSingleByteEncoding("koi8-r")],
-        ["cp866", buildSingleByteEncoding("ibm866")],
-        ["windows-1252", buildSingleByteEncoding("windows-1252")],
-        ["windows-1254", buildSingleByteEncoding("windows-1254")],
-        ["cp437", buildCp437Encoding()]
-      ]);
+      var encoding_tables_1 = require_encoding_tables();
+      var utf8Encoder = new TextEncoder();
+      var FAMILY_DOS = "DOS";
+      var FAMILY_WINDOWS = "Windows";
+      var FAMILY_ISO = "ISO 8859 и ASCII";
+      var FAMILY_KOI_MAC = "КОИ-8 и Macintosh";
+      var FAMILY_UNICODE = "Формы Unicode";
+      function sbcsSpec(id, family, aliases) {
+        return { id, family, kind: "sbcs", aliases };
+      }
+      var DOS_PAGES = ["437", "850", "852", "855", "857", "866"];
+      var WINDOWS_PAGES = ["1250", "1251", "1252", "1253", "1254", "1255", "1256", "1257", "1258"];
+      var ISO_PAGES = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "13", "14", "15", "16"];
+      var LATIN_NUMBERS = {
+        "1": "1",
+        "2": "2",
+        "3": "3",
+        "4": "4",
+        "9": "5",
+        "10": "6",
+        "13": "7",
+        "14": "8",
+        "15": "9",
+        "16": "10"
+      };
+      exports2.ENCODINGS = [
+        ...DOS_PAGES.map((page) => sbcsSpec(`cp${page}`, FAMILY_DOS, [`ibm${page}`, `dos${page}`, `ibm-${page}`, `cp-${page}`])),
+        ...WINDOWS_PAGES.map((page) => sbcsSpec(`windows-${page}`, FAMILY_WINDOWS, [`cp${page}`, `win${page}`, `cp-${page}`, `win-${page}`, `windows${page}`])),
+        sbcsSpec("ascii", FAMILY_ISO, ["us-ascii", "ansi_x3.4-1968"]),
+        ...ISO_PAGES.map((page) => sbcsSpec(`iso-8859-${page}`, FAMILY_ISO, [
+          `iso8859-${page}`,
+          `iso_8859-${page}`,
+          `iso8859${page}`,
+          `8859-${page}`,
+          ...LATIN_NUMBERS[page] ? [`latin${LATIN_NUMBERS[page]}`, `latin-${LATIN_NUMBERS[page]}`] : []
+        ])),
+        sbcsSpec("koi8-r", FAMILY_KOI_MAC, ["koi8r", "koi8", "koi-8"]),
+        sbcsSpec("koi8-u", FAMILY_KOI_MAC, ["koi8u"]),
+        sbcsSpec("mac-roman", FAMILY_KOI_MAC, ["macintosh", "macroman", "mac"]),
+        sbcsSpec("mac-cyrillic", FAMILY_KOI_MAC, ["x-mac-cyrillic", "maccyrillic", "mac-cyr"]),
+        { id: "utf-8", family: FAMILY_UNICODE, kind: "utf-8", aliases: ["utf8", "unicode-1-1-utf-8"] },
+        { id: "utf-16", family: FAMILY_UNICODE, kind: "utf-16", bigEndian: null, aliases: ["utf16", "ucs-2", "unicode"] },
+        { id: "utf-16le", family: FAMILY_UNICODE, kind: "utf-16", bigEndian: false, aliases: ["utf16le", "utf-16-le"] },
+        { id: "utf-16be", family: FAMILY_UNICODE, kind: "utf-16", bigEndian: true, aliases: ["utf16be", "utf-16-be"] },
+        { id: "utf-32", family: FAMILY_UNICODE, kind: "utf-32", bigEndian: null, aliases: ["utf32", "ucs-4"] },
+        { id: "utf-32le", family: FAMILY_UNICODE, kind: "utf-32", bigEndian: false, aliases: ["utf32le", "utf-32-le"] },
+        { id: "utf-32be", family: FAMILY_UNICODE, kind: "utf-32", bigEndian: true, aliases: ["utf32be", "utf-32-be"] }
+      ];
+      var ENCODING_BY_NAME = (() => {
+        const map = /* @__PURE__ */ new Map();
+        for (const spec of exports2.ENCODINGS) {
+          map.set(spec.id, spec);
+          for (const alias of spec.aliases)
+            map.set(alias, spec);
+        }
+        return map;
+      })();
+      var SINGLE_BYTE_TABLES = (() => {
+        const map = /* @__PURE__ */ new Map();
+        for (const [id, high] of encoding_tables_1.ENCODING_UPPER_HALVES) {
+          const chars = Array.from(high);
+          const byteToChar = [];
+          const charToByte = /* @__PURE__ */ new Map();
+          for (let byte = 0; byte < 128; byte += 1) {
+            const char = String.fromCharCode(byte);
+            byteToChar.push(char);
+            charToByte.set(char, byte);
+          }
+          for (let index = 0; index < 128; index += 1) {
+            const char = chars[index] === encoding_tables_1.ENCODING_UNASSIGNED ? null : chars[index];
+            byteToChar.push(char);
+            if (char !== null && !charToByte.has(char))
+              charToByte.set(char, 128 + index);
+          }
+          map.set(id, { byteToChar, charToByte });
+        }
+        return map;
+      })();
+      function listEncodingNames() {
+        return exports2.ENCODINGS.map((spec) => spec.id);
+      }
+      function encodingFamily(id) {
+        return ENCODING_BY_NAME.get(id)?.family ?? "";
+      }
+      function encodingLabel(spec) {
+        return spec.id === "ascii" ? "ASCII" : spec.id;
+      }
+      function editDistance(left, right) {
+        const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
+        for (let i = 1; i <= left.length; i += 1) {
+          let diagonal = previous[0];
+          previous[0] = i;
+          for (let j = 1; j <= right.length; j += 1) {
+            const held = previous[j];
+            previous[j] = Math.min(previous[j] + 1, previous[j - 1] + 1, diagonal + (left[i - 1] === right[j - 1] ? 0 : 1));
+            diagonal = held;
+          }
+        }
+        return previous[right.length];
+      }
+      function closestEncodingName(name) {
+        const compact = name.replace(/[\s_-]/gu, "");
+        let best = null;
+        let bestDistance = 3;
+        for (const spec of exports2.ENCODINGS) {
+          for (const candidate of [spec.id, ...spec.aliases]) {
+            const distance = Math.min(editDistance(name, candidate), editDistance(compact, candidate.replace(/[\s_-]/gu, "")));
+            if (distance < bestDistance) {
+              bestDistance = distance;
+              best = spec.id;
+            }
+          }
+        }
+        return best;
+      }
+      function normalizeEncoding(value, file, line) {
+        const raw = (0, runtime_shared_12.stringArgument)(value, "encoding name", file, line);
+        const name = raw.trim().toLowerCase();
+        const spec = ENCODING_BY_NAME.get(name);
+        if (spec)
+          return spec;
+        const closest = closestEncodingName(name);
+        const hint = closest ? ` — did you mean '${closest}'?` : " — see encoding.list_encodings()";
+        throw new runtime_errors_12.IdylliumRuntimeError(file, line, `unknown encoding '${raw}'${hint}`);
+      }
       function encodingCharToCodepoint(character, file, line) {
         const char = singleCharacter(character, "encoding.char_to_codepoint() character", file, line);
         const codepoint = char.codePointAt(0) ?? 0;
@@ -12559,218 +12762,477 @@ ${outerPadding}${close}`;
         }
         return String.fromCodePoint(value);
       }
-      var REPLACEMENT_BYTE = 63;
-      function encodingEncode(text, encoding, safe, file, line) {
-        const value = (0, runtime_shared_12.stringArgument)(text, "encoding.encode() text", file, line);
-        const name = normalizeEncoding(encoding, file, line);
-        const characters = Array.from(value);
-        if (name === "ascii") {
-          return characters.map((char, index) => {
-            const code = char.codePointAt(0) ?? 0;
-            if (code <= 127)
-              return code;
-            if (!safe)
-              return REPLACEMENT_BYTE;
-            return asciiCode(char, file, line, index);
-          });
+      function singleCharacter(value, argumentName, file, line) {
+        const text = (0, runtime_shared_12.stringArgument)(value, argumentName, file, line);
+        const characters = Array.from(text);
+        if (characters.length !== 1) {
+          throw new runtime_errors_12.IdylliumRuntimeError(file, line, `${argumentName} must be a single character, got ${JSON.stringify(text)}`);
         }
-        if (name === "utf-8") {
-          for (let index = 0; index < characters.length; index++) {
+        return characters[0];
+      }
+      function isUnicodeScalarValue(value) {
+        return Number.isInteger(value) && value >= 0 && value <= 1114111 && !(value >= 55296 && value <= 57343);
+      }
+      function formatByte(value) {
+        return `0x${value.toString(16).toUpperCase().padStart(2, "0")}`;
+      }
+      var REPLACEMENT_BYTE = 63;
+      var REPLACEMENT_CHAR = "�";
+      var EncodingFailure = class extends Error {
+        constructor(message) {
+          super(message);
+          this.name = "EncodingFailure";
+        }
+      };
+      exports2.EncodingFailure = EncodingFailure;
+      function encodeText(text, spec, safe) {
+        const characters = Array.from(text);
+        if (spec.kind === "utf-8") {
+          for (let index = 0; index < characters.length; index += 1) {
             const codepoint = characters[index].codePointAt(0) ?? 0;
             if (!isUnicodeScalarValue(codepoint)) {
               if (!safe) {
                 characters[index] = "?";
                 continue;
               }
-              throw new runtime_errors_12.IdylliumRuntimeError(file, line, `encoding.encode() invalid Unicode character at position ${index}`);
+              throw new EncodingFailure(`invalid Unicode character at position ${index}`);
             }
           }
-          return [...nodeBuffer2.from(characters.join(""), "utf8")];
+          return Array.from(utf8Encoder.encode(characters.join("")));
         }
-        const table = exports2.SINGLE_BYTE_ENCODINGS.get(name);
-        if (!table)
-          throw new runtime_errors_12.IdylliumRuntimeError(file, line, `unknown encoding '${name}'`);
+        if (spec.kind === "utf-16" || spec.kind === "utf-32") {
+          const bigEndian = spec.bigEndian === true;
+          const bytes = [];
+          if (spec.bigEndian === null) {
+            bytes.push(...spec.kind === "utf-16" ? [255, 254] : [255, 254, 0, 0]);
+          }
+          for (let index = 0; index < characters.length; index += 1) {
+            let codepoint = characters[index].codePointAt(0) ?? 0;
+            if (!isUnicodeScalarValue(codepoint)) {
+              if (!safe)
+                codepoint = REPLACEMENT_BYTE;
+              else
+                throw new EncodingFailure(`invalid Unicode character at position ${index}`);
+            }
+            if (spec.kind === "utf-32") {
+              const quad = [codepoint >>> 24 & 255, codepoint >>> 16 & 255, codepoint >>> 8 & 255, codepoint & 255];
+              bytes.push(...bigEndian ? quad : quad.reverse());
+              continue;
+            }
+            const units = codepoint > 65535 ? [55296 + (codepoint - 65536 >> 10), 56320 + (codepoint - 65536 & 1023)] : [codepoint];
+            for (const unit of units)
+              bytes.push(...bigEndian ? [unit >> 8, unit & 255] : [unit & 255, unit >> 8]);
+          }
+          return bytes;
+        }
+        const table = SINGLE_BYTE_TABLES.get(spec.id);
         return characters.map((char, index) => {
-          if (!safe && !table.charToByte.has(char))
+          const byte = table.charToByte.get(char);
+          if (byte !== void 0)
+            return byte;
+          if (!safe)
             return REPLACEMENT_BYTE;
-          return singleByteCharToInt(char, table, name, file, line, index);
+          throw new EncodingFailure(`character '${char}' is not valid ${encodingLabel(spec)} at position ${index}`);
         });
+      }
+      function encodingEncode(text, encoding, safe, file, line) {
+        const value = (0, runtime_shared_12.stringArgument)(text, "encoding.encode() text", file, line);
+        const spec = normalizeEncoding(encoding, file, line);
+        try {
+          return encodeText(value, spec, safe);
+        } catch (error) {
+          if (error instanceof EncodingFailure) {
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, spec.kind === "utf-8" ? `encoding.encode() ${error.message}` : error.message);
+          }
+          throw error;
+        }
+      }
+      function decodeBytes(bytes, spec, safe) {
+        if (spec.kind === "utf-8")
+          return decodeUtf8Bytes(bytes, safe);
+        if (spec.kind === "utf-16")
+          return decodeUtf16(bytes, spec, safe);
+        if (spec.kind === "utf-32")
+          return decodeUtf32(bytes, spec, safe);
+        const table = SINGLE_BYTE_TABLES.get(spec.id);
+        let out = "";
+        for (let index = 0; index < bytes.length; index += 1) {
+          const char = table.byteToChar[bytes[index]];
+          if (char !== null && char !== void 0) {
+            out += char;
+            continue;
+          }
+          if (!safe) {
+            out += REPLACEMENT_CHAR;
+            continue;
+          }
+          throw new EncodingFailure(`byte ${bytes[index]} is not valid ${encodingLabel(spec)} at index ${index}`);
+        }
+        return out;
       }
       function encodingDecode(codes, encoding, safe, file, line) {
         const array = (0, runtime_values_12.expectArray)(codes, file, line);
-        const name = normalizeEncoding(encoding, file, line);
+        const spec = normalizeEncoding(encoding, file, line);
         const bytes = array.values().map((code, index) => {
           const value = (0, runtime_shared_12.integerNumber)(code, `encoding.decode() byte at index ${index}`, file, line);
           return (0, runtime_shared_12.byteRange)(value, `encoding.decode() byte at index ${index}`, 0, 255, file, line);
         });
-        if (name === "ascii") {
-          return bytes.map((code, index) => {
-            if (code > 127 && !safe)
-              return "�";
-            (0, runtime_shared_12.byteRange)(code, `encoding.decode() ASCII byte at index ${index}`, 0, 127, file, line);
-            return String.fromCodePoint(code);
-          }).join("");
+        try {
+          return decodeBytes(bytes, spec, safe);
+        } catch (error) {
+          if (error instanceof EncodingFailure) {
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, spec.kind === "sbcs" ? error.message : `encoding.decode() ${error.message}`);
+          }
+          throw error;
         }
-        if (name === "utf-8") {
-          return decodeUtf8(bytes, safe, file, line);
-        }
-        const table = exports2.SINGLE_BYTE_ENCODINGS.get(name);
-        if (!table)
-          throw new runtime_errors_12.IdylliumRuntimeError(file, line, `unknown encoding '${name}'`);
-        return bytes.map((code, index) => singleByteIntToChar(code, table, name, file, line, index)).join("");
       }
-      function normalizeEncoding(value, file, line) {
-        const name = (0, runtime_shared_12.stringArgument)(value, "encoding name", file, line).toLowerCase();
-        if (name === "ascii")
-          return "ascii";
-        if (name === "utf-8" || name === "utf8")
-          return "utf-8";
-        if (name === "windows-1251" || name === "cp1251" || name === "win1251")
-          return "windows-1251";
-        if (name === "koi8-r" || name === "koi8r")
-          return "koi8-r";
-        if (name === "cp866" || name === "ibm866" || name === "dos866")
-          return "cp866";
-        if (name === "cp437" || name === "ibm437" || name === "dos437")
-          return "cp437";
-        if (name === "windows-1252" || name === "cp1252" || name === "win1252")
-          return "windows-1252";
-        if (name === "windows-1254" || name === "cp1254" || name === "win1254")
-          return "windows-1254";
-        throw new runtime_errors_12.IdylliumRuntimeError(file, line, `unknown encoding '${value}'`);
+      function invalidUtf8(bytes, index, reason) {
+        const shown = index < bytes.length ? ` (${formatByte(bytes[index])})` : "";
+        throw new EncodingFailure(`invalid UTF-8 at byte ${index}${shown}: ${reason}`);
       }
-      function singleCharacter(value, argumentName, file, line) {
-        const text = (0, runtime_shared_12.stringArgument)(value, argumentName, file, line);
-        const chars = Array.from(text);
-        if (chars.length !== 1) {
-          throw new runtime_errors_12.IdylliumRuntimeError(file, line, `${argumentName} must contain exactly one character, got ${JSON.stringify(text)}`);
-        }
-        return chars[0];
-      }
-      function asciiCode(char, file, line, position) {
-        const code = char.codePointAt(0) ?? 0;
-        if (code <= 127)
-          return code;
-        const suffix = position === void 0 ? "" : ` at position ${position}`;
-        throw new runtime_errors_12.IdylliumRuntimeError(file, line, `character '${char}' is not valid ASCII${suffix}`);
-      }
-      function singleByteCharToInt(char, table, encoding, file, line, position) {
-        const byte = table.charToByte.get(char);
-        if (byte !== void 0)
-          return byte;
-        const suffix = position === void 0 ? "" : ` at position ${position}`;
-        throw new runtime_errors_12.IdylliumRuntimeError(file, line, `character '${char}' is not valid ${encoding}${suffix}`);
-      }
-      function singleByteIntToChar(code, table, encoding, file, line, position) {
-        const char = table.byteToChar.get(code);
-        if (char !== void 0)
-          return char;
-        const suffix = position === void 0 ? "" : ` at index ${position}`;
-        throw new runtime_errors_12.IdylliumRuntimeError(file, line, `byte ${code} is not valid ${encoding}${suffix}`);
-      }
-      function buildSingleByteEncoding(label) {
-        const charToByte = /* @__PURE__ */ new Map();
-        const byteToChar = /* @__PURE__ */ new Map();
-        const decoder = new TextDecoder(label, { fatal: true });
-        for (let byte = 0; byte <= 255; byte++) {
-          const char = decoder.decode(Uint8Array.of(byte));
-          charToByte.set(char, byte);
-          byteToChar.set(byte, char);
-        }
-        return { charToByte, byteToChar };
-      }
-      function buildCp437Encoding() {
-        const charToByte = /* @__PURE__ */ new Map();
-        const byteToChar = /* @__PURE__ */ new Map();
-        const high = Array.from(CP437_HIGH_HALF);
-        for (let byte = 0; byte <= 255; byte++) {
-          const char = byte < 128 ? String.fromCharCode(byte) : high[byte - 128];
-          if (!charToByte.has(char))
-            charToByte.set(char, byte);
-          byteToChar.set(byte, char);
-        }
-        return { charToByte, byteToChar };
-      }
-      function isUnicodeScalarValue(value) {
-        return value >= 0 && value <= 1114111 && !(value >= 55296 && value <= 57343);
-      }
-      function decodeUtf8(bytes, safe, file, line) {
-        let result = "";
-        for (let index = 0; index < bytes.length; ) {
-          const first = bytes[index];
-          if (first <= 127) {
-            result += String.fromCodePoint(first);
-            index++;
+      function decodeUtf8Bytes(bytes, safe) {
+        let out = "";
+        let index = 0;
+        const fail = (at, reason, _skip) => {
+          if (!safe) {
+            out += REPLACEMENT_CHAR;
+            index = (reason === "invalid continuation byte" ? at - 1 : at) + 1;
+            if (index <= at - 1)
+              index = at;
+            return;
+          }
+          invalidUtf8(bytes, at, reason);
+        };
+        while (index < bytes.length) {
+          const lead = bytes[index];
+          if (lead < 128) {
+            out += String.fromCharCode(lead);
+            index += 1;
             continue;
           }
-          let length = 0;
+          let need = 0;
           let codepoint = 0;
-          let secondMin = 128;
-          let secondMax = 191;
-          if (first >= 194 && first <= 223) {
-            length = 2;
-            codepoint = first & 31;
-          } else if (first >= 224 && first <= 239) {
-            length = 3;
-            codepoint = first & 15;
-            if (first === 224)
-              secondMin = 160;
-            if (first === 237)
-              secondMax = 159;
-          } else if (first >= 240 && first <= 244) {
-            length = 4;
-            codepoint = first & 7;
-            if (first === 240)
-              secondMin = 144;
-            if (first === 244)
-              secondMax = 143;
+          let secondLow = 128;
+          let secondHigh = 191;
+          if (lead >= 194 && lead <= 223) {
+            need = 1;
+            codepoint = lead & 31;
+          } else if (lead >= 224 && lead <= 239) {
+            need = 2;
+            codepoint = lead & 15;
+            if (lead === 224)
+              secondLow = 160;
+            if (lead === 237)
+              secondHigh = 159;
+          } else if (lead >= 240 && lead <= 244) {
+            need = 3;
+            codepoint = lead & 7;
+            if (lead === 240)
+              secondLow = 144;
+            if (lead === 244)
+              secondHigh = 143;
           } else {
-            if (!safe) {
-              result += "�";
-              index++;
-              continue;
-            }
-            invalidUtf8(bytes, index, "invalid leading byte", file, line);
+            fail(index, "invalid leading byte", 1);
+            continue;
           }
-          if (index + length > bytes.length) {
-            if (!safe) {
-              result += "�";
-              index++;
-              continue;
-            }
-            invalidUtf8(bytes, index, "incomplete sequence", file, line);
+          if (index + need >= bytes.length) {
+            fail(index, "incomplete sequence", bytes.length - index);
+            continue;
           }
           let broken = false;
-          for (let offset = 1; offset < length; offset++) {
-            const byte = bytes[index + offset];
-            const min = offset === 1 ? secondMin : 128;
-            const max = offset === 1 ? secondMax : 191;
-            if (byte < min || byte > max) {
-              if (!safe) {
-                broken = true;
-                break;
-              }
-              invalidUtf8(bytes, index + offset, "invalid continuation byte", file, line);
+          for (let offset = 1; offset <= need; offset += 1) {
+            const next = bytes[index + offset];
+            const low = offset === 1 ? secondLow : 128;
+            const high = offset === 1 ? secondHigh : 191;
+            if (next < low || next > high) {
+              fail(index + offset, "invalid continuation byte", offset);
+              broken = true;
+              break;
             }
-            codepoint = codepoint << 6 | byte & 63;
+            codepoint = codepoint << 6 | next & 63;
           }
-          if (broken) {
-            result += "�";
-            index++;
+          if (broken)
+            continue;
+          const overlong = need === 1 && codepoint < 128 || need === 2 && codepoint < 2048 || need === 3 && codepoint < 65536;
+          if (overlong) {
+            fail(index, "overlong sequence", need + 1);
             continue;
           }
-          result += String.fromCodePoint(codepoint);
-          index += length;
+          if (codepoint >= 55296 && codepoint <= 57343) {
+            fail(index, "surrogate code point", need + 1);
+            continue;
+          }
+          if (codepoint > 1114111) {
+            fail(index, "code point beyond Unicode", need + 1);
+            continue;
+          }
+          out += String.fromCodePoint(codepoint);
+          index += need + 1;
         }
-        return result;
+        return out;
       }
-      function invalidUtf8(bytes, index, reason, file, line) {
-        const byte = bytes[index];
-        const suffix = byte === void 0 ? "" : ` (${formatByte(byte)})`;
-        throw new runtime_errors_12.IdylliumRuntimeError(file, line, `encoding.decode() invalid UTF-8 at byte ${index}${suffix}: ${reason}`);
+      function decodeUtf8(bytes, safe, file, line) {
+        try {
+          return decodeUtf8Bytes(bytes, safe);
+        } catch (error) {
+          if (error instanceof EncodingFailure)
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, `encoding.decode() ${error.message}`);
+          throw error;
+        }
       }
-      function formatByte(value) {
-        return `0x${value.toString(16).toUpperCase().padStart(2, "0")}`;
+      function decodeUtf16(bytes, spec, safe) {
+        let bigEndian = spec.bigEndian === true;
+        let start = 0;
+        if (spec.bigEndian === null) {
+          if (bytes.length >= 2 && bytes[0] === 255 && bytes[1] === 254) {
+            bigEndian = false;
+            start = 2;
+          } else if (bytes.length >= 2 && bytes[0] === 254 && bytes[1] === 255) {
+            bigEndian = true;
+            start = 2;
+          } else if (bytes.length === 0)
+            return "";
+          else if (safe)
+            throw new EncodingFailure("utf-16 needs a byte order mark — use utf-16le or utf-16be for bytes without one");
+          else
+            bigEndian = false;
+        }
+        let out = "";
+        for (let index = start; index < bytes.length; index += 2) {
+          if (index + 1 >= bytes.length) {
+            if (!safe) {
+              out += REPLACEMENT_CHAR;
+              break;
+            }
+            throw new EncodingFailure(`invalid ${spec.id} at byte ${index}: half of a code unit`);
+          }
+          const unit = bigEndian ? bytes[index] << 8 | bytes[index + 1] : bytes[index + 1] << 8 | bytes[index];
+          if (unit >= 55296 && unit <= 56319) {
+            const nextIndex = index + 2;
+            const next = nextIndex + 1 < bytes.length ? bigEndian ? bytes[nextIndex] << 8 | bytes[nextIndex + 1] : bytes[nextIndex + 1] << 8 | bytes[nextIndex] : -1;
+            if (next >= 56320 && next <= 57343) {
+              out += String.fromCharCode(unit, next);
+              index += 2;
+              continue;
+            }
+          }
+          if (unit >= 55296 && unit <= 57343) {
+            if (!safe) {
+              out += REPLACEMENT_CHAR;
+              continue;
+            }
+            throw new EncodingFailure(`invalid ${spec.id} at byte ${index}: lone surrogate`);
+          }
+          out += String.fromCharCode(unit);
+        }
+        return out;
+      }
+      function decodeUtf32(bytes, spec, safe) {
+        let bigEndian = spec.bigEndian === true;
+        let start = 0;
+        if (spec.bigEndian === null) {
+          if (bytes.length >= 4 && bytes[0] === 255 && bytes[1] === 254 && bytes[2] === 0 && bytes[3] === 0) {
+            bigEndian = false;
+            start = 4;
+          } else if (bytes.length >= 4 && bytes[0] === 0 && bytes[1] === 0 && bytes[2] === 254 && bytes[3] === 255) {
+            bigEndian = true;
+            start = 4;
+          } else if (bytes.length === 0)
+            return "";
+          else if (safe)
+            throw new EncodingFailure("utf-32 needs a byte order mark — use utf-32le or utf-32be for bytes without one");
+          else
+            bigEndian = false;
+        }
+        let out = "";
+        for (let index = start; index < bytes.length; index += 4) {
+          if (index + 3 >= bytes.length) {
+            if (!safe) {
+              out += REPLACEMENT_CHAR;
+              break;
+            }
+            throw new EncodingFailure(`invalid ${spec.id} at byte ${index}: part of a code unit`);
+          }
+          const quad = bytes.slice(index, index + 4);
+          const ordered = bigEndian ? quad : [...quad].reverse();
+          const codepoint = (ordered[0] << 24 >>> 0) + (ordered[1] << 16) + (ordered[2] << 8) + ordered[3];
+          if (!isUnicodeScalarValue(codepoint)) {
+            if (!safe) {
+              out += REPLACEMENT_CHAR;
+              continue;
+            }
+            throw new EncodingFailure(`invalid ${spec.id} at byte ${index}: code point ${codepoint} is outside Unicode`);
+          }
+          out += String.fromCodePoint(codepoint);
+        }
+        return out;
+      }
+      function encodingIsValid(codes, encoding, file, line) {
+        const array = (0, runtime_values_12.expectArray)(codes, file, line);
+        const spec = normalizeEncoding(encoding, file, line);
+        const bytes = array.values().map((code, index) => {
+          const value = (0, runtime_shared_12.integerNumber)(code, `encoding.is_valid() byte at index ${index}`, file, line);
+          return (0, runtime_shared_12.byteRange)(value, `encoding.is_valid() byte at index ${index}`, 0, 255, file, line);
+        });
+        try {
+          decodeBytes(bytes, spec, true);
+          return true;
+        } catch (error) {
+          if (error instanceof EncodingFailure)
+            return false;
+          throw error;
+        }
+      }
+      function encodingConvert(codes, from, to, safe, file, line) {
+        const text = encodingDecode(codes, from, safe, file, line);
+        const target = normalizeEncoding(to, file, line);
+        try {
+          return encodeText(text, target, safe);
+        } catch (error) {
+          if (error instanceof EncodingFailure)
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, `encoding.convert() ${error.message}`);
+          throw error;
+        }
+      }
+      var GUESS_CANDIDATES = ["windows-1251", "koi8-r", "cp866", "mac-cyrillic", "iso-8859-5", "koi8-u"];
+      function isRussianLetter(code) {
+        return code >= 1040 && code <= 1103 || code === 1025 || code === 1105;
+      }
+      function isUkrainianLetter(code) {
+        return code >= 1028 && code <= 1031 || code >= 1108 && code <= 1111 || code === 1168 || code === 1169;
+      }
+      function isCyrillicLowercase(code) {
+        return code >= 1072 && code <= 1103 || code === 1105 || code >= 1108 && code <= 1111 || code === 1169;
+      }
+      function isRussianTypography(code) {
+        return code === 171 || code === 187 || code === 8212 || code === 8211 || code === 8230 || code === 8220 || code === 8221 || code === 8470 || code === 160 || code === 176;
+      }
+      function cyrillicScore(text) {
+        let good = 0;
+        let bad = 0;
+        let letters = 0;
+        let lowercase = 0;
+        for (const char of text) {
+          const code = char.codePointAt(0) ?? 0;
+          if (code < 128)
+            continue;
+          if (isRussianLetter(code)) {
+            good += 1;
+            letters += 1;
+            if (isCyrillicLowercase(code))
+              lowercase += 1;
+          } else if (isUkrainianLetter(code)) {
+            good += 0.3;
+            bad += 0.7;
+            letters += 1;
+            if (isCyrillicLowercase(code))
+              lowercase += 1;
+          } else if (isRussianTypography(code)) {
+            good += 1;
+          } else {
+            bad += 1;
+          }
+        }
+        const total = good + bad;
+        if (total < 4)
+          return 0;
+        const share = good / total * (good / total);
+        const caseShare = letters === 0 ? 1 : lowercase / letters;
+        return share * (0.5 + 0.5 * caseShare);
+      }
+      function guessEncodingOfBytes(bytes) {
+        if (bytes.length === 0)
+          return "";
+        if (bytes.length >= 4 && bytes[0] === 255 && bytes[1] === 254 && bytes[2] === 0 && bytes[3] === 0)
+          return "utf-32";
+        if (bytes.length >= 4 && bytes[0] === 0 && bytes[1] === 0 && bytes[2] === 254 && bytes[3] === 255)
+          return "utf-32";
+        if (bytes.length >= 2 && (bytes[0] === 255 && bytes[1] === 254 || bytes[0] === 254 && bytes[1] === 255))
+          return "utf-16";
+        if (bytes.length >= 3 && bytes[0] === 239 && bytes[1] === 187 && bytes[2] === 191)
+          return "utf-8";
+        if (bytes.every((byte) => byte < 128))
+          return "ascii";
+        if (bytes.includes(0))
+          return "";
+        try {
+          decodeUtf8Bytes(bytes, true);
+          return "utf-8";
+        } catch (error) {
+          if (!(error instanceof EncodingFailure))
+            throw error;
+        }
+        const ranked = GUESS_CANDIDATES.map((id) => {
+          const text = decodeBytes(bytes, ENCODING_BY_NAME.get(id), false);
+          return { id, text, score: cyrillicScore(text) };
+        }).sort((left, right) => right.score - left.score);
+        const best = ranked[0];
+        if (best.score < 0.8)
+          return "";
+        const rival = ranked.find((item) => item !== best && item.score >= best.score - 0.05 && item.text !== best.text);
+        return rival ? "" : best.id;
+      }
+      function encodingGuess(codes, file, line) {
+        const array = (0, runtime_values_12.expectArray)(codes, file, line);
+        const bytes = array.values().map((code, index) => {
+          const value = (0, runtime_shared_12.integerNumber)(code, `encoding.guess() byte at index ${index}`, file, line);
+          return (0, runtime_shared_12.byteRange)(value, `encoding.guess() byte at index ${index}`, 0, 255, file, line);
+        });
+        return guessEncodingOfBytes(bytes);
+      }
+      var BASE64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+      function bytesToBase64(bytes) {
+        let out = "";
+        for (let index = 0; index < bytes.length; index += 3) {
+          const a = bytes[index];
+          const b = bytes[index + 1];
+          const c = bytes[index + 2];
+          const triple = a << 16 | (b ?? 0) << 8 | (c ?? 0);
+          out += BASE64_ALPHABET[triple >> 18 & 63] + BASE64_ALPHABET[triple >> 12 & 63];
+          out += b === void 0 ? "=" : BASE64_ALPHABET[triple >> 6 & 63];
+          out += c === void 0 ? "=" : BASE64_ALPHABET[triple & 63];
+        }
+        return out;
+      }
+      function base64ToBytes(text, file, line) {
+        const clean = text.replace(/\s+/gu, "");
+        const bytes = [];
+        let buffer = 0;
+        let bits = 0;
+        let padding = 0;
+        for (let index = 0; index < clean.length; index += 1) {
+          const char = clean[index];
+          if (char === "=") {
+            padding += 1;
+            continue;
+          }
+          if (padding > 0) {
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, `encoding.from_base64() unexpected character '${char}' after padding at position ${index}`);
+          }
+          const value = BASE64_ALPHABET.indexOf(char);
+          if (value < 0) {
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, `encoding.from_base64() invalid Base64 character '${char}' at position ${index}`);
+          }
+          buffer = buffer << 6 | value;
+          bits += 6;
+          if (bits >= 8) {
+            bits -= 8;
+            bytes.push(buffer >> bits & 255);
+          }
+        }
+        if (clean.length % 4 !== 0 || padding > 2) {
+          throw new runtime_errors_12.IdylliumRuntimeError(file, line, "encoding.from_base64() text length must be a multiple of 4 (pad with = if needed)");
+        }
+        return bytes;
+      }
+      function decodeFileBytes(bytes, spec) {
+        if (spec.kind === "utf-8" && bytes.length >= 3 && bytes[0] === 239 && bytes[1] === 187 && bytes[2] === 191) {
+          return decodeBytes(bytes.slice(3), spec, true);
+        }
+        return decodeBytes(bytes, spec, true);
+      }
+      function guessFileEncoding(bytes) {
+        return guessEncodingOfBytes(bytes.length > 4096 ? bytes.slice(0, 4096) : bytes);
       }
     }
   });
@@ -13268,6 +13730,19 @@ ${outerPadding}${close}`;
             });
             touchedPaths.add(normalized);
           },
+          appendBytes(filePath, bytes) {
+            const normalized = (0, runtime_shared_12.normalizeMemoryPath)(filePath, normalizedCwd);
+            assertMemoryProjectPath(normalized, normalizedCwd, "binary file write");
+            const file = files.get(normalized);
+            if (!file)
+              throw new Error(`file does not exist: ${normalized}`);
+            const existing = file.bytes ? file.bytes : new TextEncoder().encode(file.content);
+            const joined = new Uint8Array(existing.length + bytes.length);
+            joined.set(existing, 0);
+            joined.set(bytes, existing.length);
+            files.set(normalized, { content: "", bytes: joined, resourceUri: null });
+            touchedPaths.add(normalized);
+          },
           resourceUri(filePath) {
             return files.get((0, runtime_shared_12.normalizeMemoryPath)(filePath, normalizedCwd))?.resourceUri ?? null;
           },
@@ -13436,6 +13911,11 @@ ${outerPadding}${close}`;
             const target = mutationPath(filePath, "binary file write");
             assertNodeWritableTarget(target);
             nodeFs2.writeFileSync(target, bytes);
+          },
+          appendBytes(filePath, bytes) {
+            const target = mutationPath(filePath, "binary file write");
+            assertNodeWritableTarget(target);
+            nodeFs2.appendFileSync(target, bytes);
           },
           resourceUri(filePath) {
             return filePath;
@@ -43257,7 +43737,7 @@ ${outerPadding}${close}`;
       var network_service_1 = require_network_service();
       var font_metrics_service_1 = require_font_metrics_service();
       var hash_1 = require_hash();
-      exports.IDYLLIUM_VERSION = "1.5.6";
+      exports.IDYLLIUM_VERSION = "1.5.7";
       function defaultRuntimePlatform() {
         const nodeProcess2 = typeof process === "object" ? process : null;
         return nodeProcess2?.versions?.node ? "cli" : "web";
@@ -43426,7 +43906,24 @@ ${outerPadding}${close}`;
           }
           return parts.join("");
         }
-        function createInputFile(filePath, sourceFile, line) {
+        function readFileBytes(filePath) {
+          if (fileSystem.readBytes)
+            return Array.from(fileSystem.readBytes(filePath));
+          return Array.from(new TextEncoder().encode(fileSystem.readText(filePath)));
+        }
+        function decodeFileText(bytes, encodingSpec, functionName, shownPath, sourceFile, line) {
+          try {
+            return (0, runtime_encoding_1.decodeFileBytes)(bytes, encodingSpec);
+          } catch (error) {
+            if (!(error instanceof runtime_encoding_1.EncodingFailure))
+              throw error;
+            const guessed = (0, runtime_encoding_1.guessFileEncoding)(bytes);
+            const recipe = functionName === "csv.read()" ? `csv.read(path, encoding="${guessed}")` : `file.open(path, "read", "${guessed}")`;
+            const hint = guessed !== "" && guessed !== encodingSpec.id ? ` — the file looks like ${guessed}; open it with ${recipe}` : "";
+            throw new runtime_errors_1.IdylliumRuntimeError(sourceFile, line, `${functionName} cannot read '${shownPath}' as ${encodingSpec.id}: ${error.message}${hint}`);
+          }
+        }
+        function createInputFile(filePath, sourceFile, line, encodingSpec) {
           const shownPath = humanizeFsPaths(filePath);
           let fileExists;
           try {
@@ -43440,12 +43937,13 @@ ${outerPadding}${close}`;
           if (!(0, runtime_fs_1.runtimeIsFile)(fileSystem, filePath, sourceFile, line, "reading", shownPath)) {
             throw new runtime_errors_1.IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for reading: path is not a file`);
           }
-          let characters;
+          let rawBytes;
           try {
-            characters = Array.from(fileSystem.readText(filePath));
+            rawBytes = readFileBytes(filePath);
           } catch (error) {
             throw new runtime_errors_1.IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for reading: ${humanizeFsPaths((0, runtime_shared_1.errorMessage)(error))}`);
           }
+          const characters = Array.from(decodeFileText(rawBytes, encodingSpec, "file.open()", shownPath, sourceFile, line));
           let offset = 0;
           let closed = false;
           const readRemaining = () => {
@@ -43505,8 +44003,29 @@ ${outerPadding}${close}`;
           };
           return stream;
         }
-        function createOutputFile(filePath, sourceFile, line, append = false) {
+        function createOutputFile(filePath, sourceFile, line, append = false, encodingSpec) {
           const shownPath = humanizeFsPaths(filePath);
+          const appendEncoded = (text, methodName, file, callLine) => {
+            if (!encodingSpec || encodingSpec.kind === "utf-8") {
+              fileSystem.appendText(filePath, text);
+              return;
+            }
+            let bytes;
+            try {
+              bytes = (0, runtime_encoding_1.encodeText)(text, encodingSpec, true);
+            } catch (error) {
+              if (!(error instanceof runtime_encoding_1.EncodingFailure))
+                throw error;
+              throw new runtime_errors_1.IdylliumRuntimeError(file, callLine, `${methodName} ${error.message}`);
+            }
+            if (fileSystem.appendBytes) {
+              fileSystem.appendBytes(filePath, Uint8Array.from(bytes));
+            } else if (fileSystem.writeBytes) {
+              fileSystem.writeBytes(filePath, Uint8Array.from([...readFileBytes(filePath), ...bytes]));
+            } else {
+              throw new runtime_errors_1.IdylliumRuntimeError(file, callLine, `${methodName} requires binary file support in this runtime`);
+            }
+          };
           const action = append ? "appending" : "writing";
           const parent = (0, runtime_shared_1.runtimeDirname)(filePath);
           if (!fileSystem.exists(parent)) {
@@ -43533,13 +44052,13 @@ ${outerPadding}${close}`;
             write: (0, runtime_shared_1.contextFunction)(async (...rawArgs) => {
               const { values, file, line: callLine } = (0, runtime_shared_1.splitContextArgs)(rawArgs);
               (0, runtime_shared_1.expectOpen)(!closed, "ostream.write()", file, callLine);
-              fileSystem.appendText(filePath, await formatConsoleValues(values));
+              appendEncoded(await formatConsoleValues(values), "ostream.write()", file, callLine);
             }),
             write_line: (0, runtime_shared_1.contextFunction)(async (...rawArgs) => {
               const { values, file, line: callLine } = (0, runtime_shared_1.splitContextArgs)(rawArgs);
               (0, runtime_shared_1.expectOpen)(!closed, "ostream.write_line()", file, callLine);
-              fileSystem.appendText(filePath, `${await formatConsoleValues(values)}
-`);
+              appendEncoded(`${await formatConsoleValues(values)}
+`, "ostream.write_line()", file, callLine);
             }),
             close: () => {
               closed = true;
@@ -44261,16 +44780,18 @@ ${outerPadding}${close}`;
                   throw new runtime_errors_1.IdylliumRuntimeError(file, line, `file.remove() cannot remove '${requestedPath}': ${humanizeFsPaths((0, runtime_shared_1.errorMessage)(error))}`);
                 }
               }),
-              open: (0, runtime_shared_1.contextFunction)((targetPath, mode, file, line) => {
-                const requestedPath = (0, runtime_shared_1.stringArgument)(targetPath, "file.open() path", file, line);
-                const openMode = (0, runtime_shared_1.stringArgument)(mode, "file.open() mode", file, line);
+              open: (0, runtime_shared_1.contextFunction)((...rawArgs) => {
+                const { values, file, line } = (0, runtime_shared_1.splitContextArgs)(rawArgs);
+                const requestedPath = (0, runtime_shared_1.stringArgument)(values[0], "file.open() path", file, line);
+                const openMode = (0, runtime_shared_1.stringArgument)(values[1], "file.open() mode", file, line);
+                const encodingSpec = (0, runtime_encoding_1.normalizeEncoding)(values[2] === void 0 ? "utf-8" : values[2], file, line);
                 const resolvedPath = fileSystem.resolvePath(requestedPath, file);
                 if (openMode === "read")
-                  return createInputFile(resolvedPath, file, line);
+                  return createInputFile(resolvedPath, file, line, encodingSpec);
                 if (openMode === "write")
-                  return createOutputFile(resolvedPath, file, line);
+                  return createOutputFile(resolvedPath, file, line, false, encodingSpec);
                 if (openMode === "append")
-                  return createOutputFile(resolvedPath, file, line, true);
+                  return createOutputFile(resolvedPath, file, line, true, encodingSpec);
                 throw new runtime_errors_1.IdylliumRuntimeError(file, line, `file.open() mode must be 'read', 'write' or 'append', got '${openMode}'`);
               })
             },
@@ -44364,7 +44885,7 @@ ${outerPadding}${close}`;
               sha256_bytes: (0, runtime_shared_1.contextFunction)((data, file, line) => runtime_values_2.IdylliumArray.from((0, hash_1.hashSha256Bytes)(hashInputBytes(data, "hash.sha256_bytes()", file, line)), true, null, () => 0))
             },
             encoding: {
-              list_encodings: (0, runtime_shared_1.contextFunction)(() => runtime_values_2.IdylliumArray.from(["ascii", "utf-8", "windows-1251", "koi8-r", "cp866", "cp437", "windows-1252", "windows-1254"], true, null, () => "")),
+              list_encodings: (0, runtime_shared_1.contextFunction)(() => runtime_values_2.IdylliumArray.from((0, runtime_encoding_1.listEncodingNames)(), true, null, () => "")),
               char_to_codepoint: (0, runtime_shared_1.contextFunction)((character, file, line) => (0, runtime_encoding_1.encodingCharToCodepoint)(character, file, line)),
               codepoint_to_char: (0, runtime_shared_1.contextFunction)((codepoint, file, line) => (0, runtime_encoding_1.encodingCodepointToChar)(codepoint, file, line)),
               encode: (0, runtime_shared_1.contextFunction)((...rawArgs) => {
@@ -44376,7 +44897,23 @@ ${outerPadding}${close}`;
                 const { values, file, line } = (0, runtime_shared_1.splitContextArgs)(rawArgs);
                 const safe = values[2] === void 0 ? true : (0, runtime_shared_1.booleanArgument)(values[2], "encoding.decode() safe", file, line);
                 return (0, runtime_encoding_1.encodingDecode)(values[0], values[1], safe, file, line);
-              })
+              }),
+              is_valid: (0, runtime_shared_1.contextFunction)((codes, encoding, file, line) => (0, runtime_encoding_1.encodingIsValid)(codes, encoding, file, line)),
+              convert: (0, runtime_shared_1.contextFunction)((...rawArgs) => {
+                const { values, file, line } = (0, runtime_shared_1.splitContextArgs)(rawArgs);
+                const safe = values[3] === void 0 ? true : (0, runtime_shared_1.booleanArgument)(values[3], "encoding.convert() safe", file, line);
+                return runtime_values_2.IdylliumArray.from((0, runtime_encoding_1.encodingConvert)(values[0], values[1], values[2], safe, file, line), true, null, () => 0);
+              }),
+              guess: (0, runtime_shared_1.contextFunction)((codes, file, line) => (0, runtime_encoding_1.encodingGuess)(codes, file, line)),
+              to_base64: (0, runtime_shared_1.contextFunction)((codes, file, line) => {
+                const array2 = (0, runtime_values_2.expectArray)(codes, file, line);
+                const bytes = array2.values().map((code, index) => {
+                  const value = (0, runtime_shared_1.integerNumber)(code, `encoding.to_base64() byte at index ${index}`, file, line);
+                  return (0, runtime_shared_1.byteRange)(value, `encoding.to_base64() byte at index ${index}`, 0, 255, file, line);
+                });
+                return (0, runtime_encoding_1.bytesToBase64)(bytes);
+              }),
+              from_base64: (0, runtime_shared_1.contextFunction)((text, file, line) => runtime_values_2.IdylliumArray.from((0, runtime_encoding_1.base64ToBytes)((0, runtime_shared_1.stringArgument)(text, "encoding.from_base64() text", file, line), file, line), true, null, () => 0))
             },
             json: {
               is_valid: (0, runtime_shared_1.contextFunction)((text, file, line) => {
@@ -44410,9 +44947,10 @@ ${outerPadding}${close}`;
                 const { values, file, line } = (0, runtime_shared_1.splitContextArgs)(rawArgs);
                 const requestedPath = (0, runtime_shared_1.stringArgument)(values[0], "csv.read() path", file, line);
                 const separator = (0, runtime_csv_1.csvParseSeparator)(values[1], "csv.read()", file, line);
+                const encodingSpec = (0, runtime_encoding_1.normalizeEncoding)(values[2] === void 0 ? "utf-8" : values[2], file, line);
                 const resolvedPath = fileSystem.resolvePath(requestedPath, file);
                 const shownPath = humanizeFsPaths(resolvedPath);
-                let text;
+                let rawBytes;
                 try {
                   if (!fileSystem.exists(resolvedPath)) {
                     throw new runtime_errors_1.IdylliumRuntimeError(file, line, `csv.read() cannot read '${shownPath}': file does not exist`);
@@ -44420,15 +44958,20 @@ ${outerPadding}${close}`;
                   if (!fileSystem.isFile(resolvedPath)) {
                     throw new runtime_errors_1.IdylliumRuntimeError(file, line, `csv.read() cannot read '${shownPath}': path is not a file`);
                   }
-                  text = fileSystem.readText(resolvedPath);
+                  rawBytes = readFileBytes(resolvedPath);
                 } catch (error) {
                   if (error instanceof runtime_errors_1.IdylliumRuntimeError)
                     throw error;
                   throw new runtime_errors_1.IdylliumRuntimeError(file, line, `csv.read() cannot read '${shownPath}': ${humanizeFsPaths((0, runtime_shared_1.errorMessage)(error))}`);
                 }
+                const text = decodeFileText(rawBytes, encodingSpec, "csv.read()", shownPath, file, line);
                 return (0, runtime_csv_1.parseCsvTable)(text, separator, "csv.read()", file, line);
               }),
-              write: (0, runtime_shared_1.contextFunction)((targetPath, table, file, line) => {
+              write: (0, runtime_shared_1.contextFunction)((...rawArgs) => {
+                const { values, file, line } = (0, runtime_shared_1.splitContextArgs)(rawArgs);
+                const targetPath = values[0];
+                const table = values[1];
+                const encodingSpec = (0, runtime_encoding_1.normalizeEncoding)(values[2] === void 0 ? "utf-8" : values[2], file, line);
                 const requestedPath = (0, runtime_shared_1.stringArgument)(targetPath, "csv.write() path", file, line);
                 if (!(0, runtime_csv_1.isCsvRuntimeTable)(table)) {
                   throw new runtime_errors_1.IdylliumRuntimeError(file, line, `csv.write() expects a csv.Table, got '${runtimeTypeName(table)}'`);
@@ -44443,7 +44986,22 @@ ${outerPadding}${close}`;
                   if (fileSystem.exists(resolvedPath) && !fileSystem.isFile(resolvedPath)) {
                     throw new runtime_errors_1.IdylliumRuntimeError(file, line, `csv.write() cannot write '${shownPath}': path is not a file`);
                   }
-                  fileSystem.writeText(resolvedPath, (0, runtime_csv_1.serializeCsvTable)(table));
+                  const csvText = (0, runtime_csv_1.serializeCsvTable)(table);
+                  if (encodingSpec.kind === "utf-8") {
+                    fileSystem.writeText(resolvedPath, csvText);
+                  } else {
+                    if (!fileSystem.writeBytes)
+                      throw new runtime_errors_1.IdylliumRuntimeError(file, line, "csv.write() requires binary file support in this runtime");
+                    let bytes;
+                    try {
+                      bytes = (0, runtime_encoding_1.encodeText)(csvText, encodingSpec, true);
+                    } catch (error) {
+                      if (!(error instanceof runtime_encoding_1.EncodingFailure))
+                        throw error;
+                      throw new runtime_errors_1.IdylliumRuntimeError(file, line, `csv.write() ${error.message}`);
+                    }
+                    fileSystem.writeBytes(resolvedPath, Uint8Array.from(bytes));
+                  }
                 } catch (error) {
                   if (error instanceof runtime_errors_1.IdylliumRuntimeError)
                     throw error;

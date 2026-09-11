@@ -251,6 +251,18 @@ export function createMemoryRuntimeFileSystem(
       });
       touchedPaths.add(normalized);
     },
+    appendBytes(filePath: string, bytes: Uint8Array): void {
+      const normalized = normalizeMemoryPath(filePath, normalizedCwd);
+      assertMemoryProjectPath(normalized, normalizedCwd, 'binary file write');
+      const file = files.get(normalized);
+      if (!file) throw new Error(`file does not exist: ${normalized}`);
+      const existing = file.bytes ? file.bytes : new TextEncoder().encode(file.content);
+      const joined = new Uint8Array(existing.length + bytes.length);
+      joined.set(existing, 0);
+      joined.set(bytes, existing.length);
+      files.set(normalized, { content: '', bytes: joined, resourceUri: null });
+      touchedPaths.add(normalized);
+    },
     resourceUri(filePath: string): string | null {
       return files.get(normalizeMemoryPath(filePath, normalizedCwd))?.resourceUri ?? null;
     },
@@ -424,6 +436,11 @@ export function createNodeRuntimeFileSystem(projectRoot?: string): RuntimeFileSy
       const target = mutationPath(filePath, 'binary file write');
       assertNodeWritableTarget(target);
       nodeFs.writeFileSync(target, bytes);
+    },
+    appendBytes(filePath: string, bytes: Uint8Array): void {
+      const target = mutationPath(filePath, 'binary file write');
+      assertNodeWritableTarget(target);
+      nodeFs.appendFileSync(target, bytes);
     },
     resourceUri(filePath: string): string {
       return filePath;

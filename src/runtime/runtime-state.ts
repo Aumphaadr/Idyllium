@@ -42,6 +42,8 @@ export interface RuntimeFileSystem {
   remove?(filePath: string, recursive: boolean): void;
   readBytes?(filePath: string): Uint8Array;
   writeBytes?(filePath: string, bytes: Uint8Array, resourceUri?: string): void;
+  /** Дозапись байтов в конец (потоки записи в однобайтовых кодировках). */
+  appendBytes?(filePath: string, bytes: Uint8Array): void;
   resourceUri?(filePath: string): string | null;
   snapshot?(): Record<string, MemoryRuntimeFile>;
   writtenFilesSnapshot?(): Record<string, MemoryRuntimeFile>;

@@ -1444,6 +1444,20 @@ import { monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyE
 
   // «Истинный тип» — по содержимому: магические байты для двоичных файлов,
   // текст — как есть. Ученик видит, когда расширение врёт.
+  // Байты, не прошедшие UTF-8, но без управляющих кодов — текст в какой-то
+  // однобайтовой кодировке; программа прочтёт его через file.open с кодировкой.
+  function looksLikeSingleByteText(bytes) {
+    if (decodeUtf8Strict(bytes) !== null) return false;
+    const sample = bytes.subarray(0, Math.min(bytes.length, 4096));
+    let high = 0;
+    for (const byte of sample) {
+      if (byte === 0) return false;
+      if (byte < 0x20 && byte !== 9 && byte !== 10 && byte !== 13) return false;
+      if (byte >= 0x80) high += 1;
+    }
+    return high > 0;
+  }
+
   function sniffContentType(item) {
     if (!item) return 'неизвестно';
     if (!isBinaryFileItem(item)) {
@@ -1453,6 +1467,7 @@ import { monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyE
     }
     const bytes = item.bytes;
     if (bytes.length === 0) return 'двоичные данные';
+    if (looksLikeSingleByteText(bytes)) return 'текст не в UTF-8 (однобайтовая кодировка?)';
     const ascii = (start, text) => {
       for (let i = 0; i < text.length; i += 1) {
         if (bytes[start + i] !== text.charCodeAt(i)) return false;
@@ -1898,9 +1913,21 @@ import { monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyE
     if (files.has(path) && !await requestUploadReplacement(path)) return null;
 
     if (isEditableTextFile(file)) {
+      // Текст принимается как текст только если это настоящий UTF-8: файл
+      // в Windows-1251 раньше превращался в ромбики уже при импорте, и
+      // программа ученика читала испорченные байты. Теперь такой файл
+      // хранится байтами — file.open(path, "read", "windows-1251") его прочтёт.
+      const rawBytes = new Uint8Array(await file.arrayBuffer());
+      const utf8Text = decodeUtf8Strict(rawBytes);
+      if (utf8Text !== null) {
+        setProjectFile(path, { kind: 'text', content: utf8Text });
+        return path;
+      }
       setProjectFile(path, {
-        kind: 'text',
-        content: await readFileAsText(file),
+        kind: 'asset',
+        content: '',
+        bytes: rawBytes,
+        resourceUri: bytesToDataUrl(file.name, rawBytes),
       });
       return path;
     }
@@ -2029,10 +2056,11 @@ import { monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyE
         continue;
       }
       if (!firstPath) firstPath = path;
-      if (isEditableTextName(entry.name)) {
+      const zipText = isEditableTextName(entry.name) ? decodeUtf8Strict(entry.bytes) : null;
+      if (zipText !== null) {
         setProjectFile(path, {
           kind: 'text',
-          content: new TextDecoder('utf-8').decode(entry.bytes),
+          content: zipText,
         });
       } else {
         setProjectFile(path, {
@@ -3452,6 +3480,16 @@ import { monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyE
       reader.addEventListener('error', () => reject(reader.error || new Error('file read failed')));
       reader.readAsDataURL(file);
     });
+  }
+
+  // Строгий UTF-8: null, когда байты — не UTF-8 (тогда файл остаётся байтами).
+  function decodeUtf8Strict(bytes) {
+    try {
+      const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+      return text.startsWith('\uFEFF') ? text.slice(1) : text;
+    } catch (_error) {
+      return null;
+    }
   }
 
   function readFileAsText(file) {

@@ -61,7 +61,7 @@ import { createXmlNode, parseXmlDocument } from './runtime-xml';
 import { createCsvTable, csvParseSeparator, isCsvRuntimeTable, parseCsvTable, serializeCsvTable } from './runtime-csv';
 import { ExactJsonParser, JsonRuntimeValue, createJsonArray, createJsonObject, createJsonValue, expectJsonValue, isJsonRuntimeValue, jsonEntries, jsonIntegerAsBigInt, jsonIntegerValue, jsonItems, jsonSerialize, parseJsonValue } from './runtime-json';
 import { SqliteRuntimeDatabaseState, SqliteRuntimeValueObject, createBlankSqliteResult, createClosedSqliteDatabase, createClosedSqliteStatement, createSqliteResult, createSqliteValue, executeSqliteDatabase, isSqliteRuntimeValue, openSqliteDatabase, persistSqliteDatabase, sqliteDatabaseState, sqliteValueToString } from './runtime-sqlite';
-import { RuntimeEncoding, SINGLE_BYTE_ENCODINGS, decodeUtf8, encodingCharToCodepoint, encodingCodepointToChar, encodingDecode, encodingEncode, formatByte, isUnicodeScalarValue, normalizeEncoding, singleCharacter } from './runtime-encoding';
+import { EncodingFailure, EncodingSpec, base64ToBytes, bytesToBase64, decodeFileBytes, encodeText, encodingCharToCodepoint, encodingCodepointToChar, encodingConvert, encodingDecode, encodingEncode, encodingGuess, encodingIsValid, guessFileEncoding, listEncodingNames, normalizeEncoding } from './runtime-encoding';
 import { RUNTIME_TYPES, RuntimeTypesName, bytesToBinary, bytesToHex, castTypesValue, floatBytes, floatFromBytes, normalizeRuntimeTypesName, normalizeTypesName, typesBitwise, typesFromBin, typesFromHex, typesShift, typesToBin, typesToHex, wrapBigInteger, wrapInteger } from './runtime-types';
 import {
   ConsoleIO,
@@ -174,7 +174,7 @@ import {
 import { parseIdylliumStyle } from './style';
 import { hashAdler32, hashCrc32, hashFnv1a, hashSha256Bytes, hashSha256Hex } from './hash';
 
-export const IDYLLIUM_VERSION = '1.5.6';
+export const IDYLLIUM_VERSION = '1.5.7';
 
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform(): string {
@@ -554,7 +554,31 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     return parts.join('');
   }
 
-  function createInputFile(filePath: string, sourceFile: string, line: number): Record<string, unknown> {
+  /** Байты файла: readBytes хоста либо UTF-8 текста (память-ФС хранит текст строкой). */
+  function readFileBytes(filePath: string): number[] {
+    if (fileSystem.readBytes) return Array.from(fileSystem.readBytes(filePath));
+    return Array.from(new TextEncoder().encode(fileSystem.readText(filePath)));
+  }
+
+  /** Текст файла в кодировке — строго: чужая кодировка не превращается в ромбики
+   *  молча, а называется вместе с подсказкой, на что похожи байты. */
+  function decodeFileText(bytes: number[], encodingSpec: EncodingSpec, functionName: string, shownPath: string, sourceFile: string, line: number): string {
+    try {
+      return decodeFileBytes(bytes, encodingSpec);
+    } catch (error) {
+      if (!(error instanceof EncodingFailure)) throw error;
+      const guessed = guessFileEncoding(bytes);
+      const recipe = functionName === 'csv.read()'
+        ? `csv.read(path, encoding="${guessed}")`
+        : `file.open(path, "read", "${guessed}")`;
+      const hint = guessed !== '' && guessed !== encodingSpec.id
+        ? ` — the file looks like ${guessed}; open it with ${recipe}`
+        : '';
+      throw new IdylliumRuntimeError(sourceFile, line, `${functionName} cannot read '${shownPath}' as ${encodingSpec.id}: ${error.message}${hint}`);
+    }
+  }
+
+  function createInputFile(filePath: string, sourceFile: string, line: number, encodingSpec: EncodingSpec): Record<string, unknown> {
     const shownPath = humanizeFsPaths(filePath);
     let fileExists: boolean;
     try {
@@ -570,12 +594,13 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for reading: path is not a file`);
     }
 
-    let characters: string[];
+    let rawBytes: number[];
     try {
-      characters = Array.from(fileSystem.readText(filePath));
+      rawBytes = readFileBytes(filePath);
     } catch (error) {
       throw new IdylliumRuntimeError(sourceFile, line, `file.open() cannot open '${shownPath}' for reading: ${humanizeFsPaths(errorMessage(error))}`);
     }
+    const characters = Array.from(decodeFileText(rawBytes, encodingSpec, 'file.open()', shownPath, sourceFile, line));
 
     let offset = 0;
     let closed = false;
@@ -635,8 +660,29 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     return stream;
   }
 
-  function createOutputFile(filePath: string, sourceFile: string, line: number, append = false): Record<string, unknown> {
+  function createOutputFile(filePath: string, sourceFile: string, line: number, append = false, encodingSpec?: EncodingSpec): Record<string, unknown> {
     const shownPath = humanizeFsPaths(filePath);
+    // Запись не в UTF-8: текст кодируется строго и дописывается байтами.
+    const appendEncoded = (text: string, methodName: string, file: string, callLine: number): void => {
+      if (!encodingSpec || encodingSpec.kind === 'utf-8') {
+        fileSystem.appendText(filePath, text);
+        return;
+      }
+      let bytes: number[];
+      try {
+        bytes = encodeText(text, encodingSpec, true);
+      } catch (error) {
+        if (!(error instanceof EncodingFailure)) throw error;
+        throw new IdylliumRuntimeError(file, callLine, `${methodName} ${error.message}`);
+      }
+      if (fileSystem.appendBytes) {
+        fileSystem.appendBytes(filePath, Uint8Array.from(bytes));
+      } else if (fileSystem.writeBytes) {
+        fileSystem.writeBytes(filePath, Uint8Array.from([...readFileBytes(filePath), ...bytes]));
+      } else {
+        throw new IdylliumRuntimeError(file, callLine, `${methodName} requires binary file support in this runtime`);
+      }
+    };
     // Режим 'append' дозаписывает в конец: существующее содержимое не
     // стирается, отсутствующий файл создаётся пустым.
     const action = append ? 'appending' : 'writing';
@@ -667,12 +713,12 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       write: contextFunction(async (...rawArgs: unknown[]) => {
         const { values, file, line: callLine } = splitContextArgs(rawArgs);
         expectOpen(!closed, 'ostream.write()', file, callLine);
-        fileSystem.appendText(filePath, await formatConsoleValues(values));
+        appendEncoded(await formatConsoleValues(values), 'ostream.write()', file, callLine);
       }),
       write_line: contextFunction(async (...rawArgs: unknown[]) => {
         const { values, file, line: callLine } = splitContextArgs(rawArgs);
         expectOpen(!closed, 'ostream.write_line()', file, callLine);
-        fileSystem.appendText(filePath, `${await formatConsoleValues(values)}\n`);
+        appendEncoded(`${await formatConsoleValues(values)}\n`, 'ostream.write_line()', file, callLine);
       }),
       close: () => {
         closed = true;
@@ -1488,13 +1534,16 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
             throw new IdylliumRuntimeError(file, line, `file.remove() cannot remove '${requestedPath}': ${humanizeFsPaths(errorMessage(error))}`);
           }
         }),
-        open: contextFunction((targetPath: string, mode: string, file: string, line: number) => {
-          const requestedPath = stringArgument(targetPath, 'file.open() path', file, line);
-          const openMode = stringArgument(mode, 'file.open() mode', file, line);
+        open: contextFunction((...rawArgs: unknown[]) => {
+          const { values, file, line } = splitContextArgs(rawArgs);
+          const requestedPath = stringArgument(values[0], 'file.open() path', file, line);
+          const openMode = stringArgument(values[1], 'file.open() mode', file, line);
+          // Третий аргумент — кодировка файла (1.5.7); без него — UTF-8, строго.
+          const encodingSpec = normalizeEncoding(values[2] === undefined ? 'utf-8' : values[2], file, line);
           const resolvedPath = fileSystem.resolvePath(requestedPath, file);
-          if (openMode === 'read') return createInputFile(resolvedPath, file, line);
-          if (openMode === 'write') return createOutputFile(resolvedPath, file, line);
-          if (openMode === 'append') return createOutputFile(resolvedPath, file, line, true);
+          if (openMode === 'read') return createInputFile(resolvedPath, file, line, encodingSpec);
+          if (openMode === 'write') return createOutputFile(resolvedPath, file, line, false, encodingSpec);
+          if (openMode === 'append') return createOutputFile(resolvedPath, file, line, true, encodingSpec);
           throw new IdylliumRuntimeError(file, line, `file.open() mode must be 'read', 'write' or 'append', got '${openMode}'`);
         }),
       },
@@ -1605,10 +1654,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
         )),
       },
       encoding: {
-        list_encodings: contextFunction(() => IdylliumArray.from(
-          ['ascii', 'utf-8', 'windows-1251', 'koi8-r', 'cp866', 'cp437', 'windows-1252', 'windows-1254'],
-          true, null, () => '',
-        )),
+        list_encodings: contextFunction(() => IdylliumArray.from(listEncodingNames(), true, null, () => '')),
         char_to_codepoint: contextFunction((character: string, file: string, line: number) => (
           encodingCharToCodepoint(character, file, line)
         )),
@@ -1625,6 +1671,26 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
           const safe = values[2] === undefined ? true : booleanArgument(values[2], 'encoding.decode() safe', file, line);
           return encodingDecode(values[0], values[1], safe, file, line);
         }),
+        is_valid: contextFunction((codes: unknown, encoding: unknown, file: string, line: number) => (
+          encodingIsValid(codes, encoding, file, line)
+        )),
+        convert: contextFunction((...rawArgs: unknown[]) => {
+          const { values, file, line } = splitContextArgs(rawArgs);
+          const safe = values[3] === undefined ? true : booleanArgument(values[3], 'encoding.convert() safe', file, line);
+          return IdylliumArray.from(encodingConvert(values[0], values[1], values[2], safe, file, line), true, null, () => 0);
+        }),
+        guess: contextFunction((codes: unknown, file: string, line: number) => encodingGuess(codes, file, line)),
+        to_base64: contextFunction((codes: unknown, file: string, line: number) => {
+          const array = expectArray(codes, file, line);
+          const bytes = array.values().map((code: unknown, index: number) => {
+            const value = integerNumber(code, `encoding.to_base64() byte at index ${index}`, file, line);
+            return byteRange(value, `encoding.to_base64() byte at index ${index}`, 0, 255, file, line);
+          });
+          return bytesToBase64(bytes);
+        }),
+        from_base64: contextFunction((text: unknown, file: string, line: number) => (
+          IdylliumArray.from(base64ToBytes(stringArgument(text, 'encoding.from_base64() text', file, line), file, line), true, null, () => 0)
+        )),
       },
       json: {
         is_valid: contextFunction((text: unknown, file: string, line: number) => {
@@ -1664,9 +1730,10 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
           const { values, file, line } = splitContextArgs(rawArgs);
           const requestedPath = stringArgument(values[0], 'csv.read() path', file, line);
           const separator = csvParseSeparator(values[1], 'csv.read()', file, line);
+          const encodingSpec = normalizeEncoding(values[2] === undefined ? 'utf-8' : values[2], file, line);
           const resolvedPath = fileSystem.resolvePath(requestedPath, file);
           const shownPath = humanizeFsPaths(resolvedPath);
-          let text: string;
+          let rawBytes: number[];
           try {
             if (!fileSystem.exists(resolvedPath)) {
               throw new IdylliumRuntimeError(file, line, `csv.read() cannot read '${shownPath}': file does not exist`);
@@ -1674,14 +1741,19 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
             if (!fileSystem.isFile(resolvedPath)) {
               throw new IdylliumRuntimeError(file, line, `csv.read() cannot read '${shownPath}': path is not a file`);
             }
-            text = fileSystem.readText(resolvedPath);
+            rawBytes = readFileBytes(resolvedPath);
           } catch (error) {
             if (error instanceof IdylliumRuntimeError) throw error;
             throw new IdylliumRuntimeError(file, line, `csv.read() cannot read '${shownPath}': ${humanizeFsPaths(errorMessage(error))}`);
           }
+          const text = decodeFileText(rawBytes, encodingSpec, 'csv.read()', shownPath, file, line);
           return parseCsvTable(text, separator, 'csv.read()', file, line);
         }),
-        write: contextFunction((targetPath: unknown, table: unknown, file: string, line: number) => {
+        write: contextFunction((...rawArgs: unknown[]) => {
+          const { values, file, line } = splitContextArgs(rawArgs);
+          const targetPath = values[0];
+          const table = values[1];
+          const encodingSpec = normalizeEncoding(values[2] === undefined ? 'utf-8' : values[2], file, line);
           const requestedPath = stringArgument(targetPath, 'csv.write() path', file, line);
           if (!isCsvRuntimeTable(table)) {
             throw new IdylliumRuntimeError(file, line, `csv.write() expects a csv.Table, got '${runtimeTypeName(table)}'`);
@@ -1696,7 +1768,20 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
             if (fileSystem.exists(resolvedPath) && !fileSystem.isFile(resolvedPath)) {
               throw new IdylliumRuntimeError(file, line, `csv.write() cannot write '${shownPath}': path is not a file`);
             }
-            fileSystem.writeText(resolvedPath, serializeCsvTable(table));
+            const csvText = serializeCsvTable(table);
+            if (encodingSpec.kind === 'utf-8') {
+              fileSystem.writeText(resolvedPath, csvText);
+            } else {
+              if (!fileSystem.writeBytes) throw new IdylliumRuntimeError(file, line, 'csv.write() requires binary file support in this runtime');
+              let bytes: number[];
+              try {
+                bytes = encodeText(csvText, encodingSpec, true);
+              } catch (error) {
+                if (!(error instanceof EncodingFailure)) throw error;
+                throw new IdylliumRuntimeError(file, line, `csv.write() ${error.message}`);
+              }
+              fileSystem.writeBytes(resolvedPath, Uint8Array.from(bytes));
+            }
           } catch (error) {
             if (error instanceof IdylliumRuntimeError) throw error;
             throw new IdylliumRuntimeError(file, line, `csv.write() cannot write '${shownPath}': ${humanizeFsPaths(errorMessage(error))}`);
