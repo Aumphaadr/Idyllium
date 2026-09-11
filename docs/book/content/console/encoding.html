@@ -29,18 +29,15 @@ use encoding;
 
     <div class="docs-section">
       <h2>Поддерживаемые кодировки</h2>
-      <p>Idyllium поддерживает восемь кодировок:</p>
+      <p>Idyllium знает 41 кодировку, и все они собраны в пять семейств — ровно тех, что живут в обозревателе сайта «Кодировки символов», о котором речь в конце урока:</p>
       <ul>
-        <li><code>ascii</code> — маленькая кодировка с латиницей, цифрами и основными знаками, использующая значения от 0 до 127;</li>
-        <li><code>utf-8</code> — современная универсальная кодировка, способная хранить все символы Unicode;</li>
-        <li><code>windows-1251</code> — однобайтовая кириллическая кодировка из старых Windows-программ;</li>
-        <li><code>koi8-r</code> — ещё одна однобайтовая кириллическая кодировка, известная по Unix-системам;</li>
-        <li><code>cp866</code> — кириллическая кодировка эпохи DOS: в ней же хранятся символы-«кирпичики» псевдографики;</li>
-        <li><code>cp437</code> — самая первая кодировка IBM PC: латиница, псевдографика и математические значки;</li>
-        <li><code>windows-1252</code> — западноевропейская кодировка Windows (именно через неё русский текст превращается в знаменитое «Íîðìàëüíûé òåêñò»);</li>
-        <li><code>windows-1254</code> — турецкая кодировка Windows, родня windows-1252.</li>
+        <li><strong>DOS</strong>: <code>cp437</code> — самая первая кодировка IBM PC (латиница, псевдографика, математические значки); <code>cp866</code> — кириллическая кодировка эпохи DOS с теми же «кирпичиками»; <code>cp850</code>, <code>cp852</code>, <code>cp855</code>, <code>cp857</code> — её европейские родственники;</li>
+        <li><strong>Windows</strong>: <code>windows-1251</code> — однобайтовая кириллическая кодировка старых Windows-программ; <code>windows-1252</code> — западноевропейская (именно через неё русский текст превращается в знаменитое «Íîðìàëüíûé òåêñò»); <code>windows-1250</code> и <code>windows-1253</code>…<code>windows-1258</code> — центральноевропейская, греческая, турецкая, ивритская, арабская, балтийская и вьетнамская;</li>
+        <li><strong>ISO 8859 и ASCII</strong>: <code>ascii</code> — маленькая кодировка с латиницей, цифрами и основными знаками, значения от 0 до 127; <code>iso-8859-1</code>…<code>iso-8859-16</code> — международные однобайтовые стандарты, среди них кириллическая <code>iso-8859-5</code>;</li>
+        <li><strong>КОИ-8 и Macintosh</strong>: <code>koi8-r</code> — ещё одна кириллическая кодировка, известная по Unix-системам; <code>koi8-u</code> — её украинская родня; <code>mac-roman</code> и <code>mac-cyrillic</code> — кодировки старых компьютеров Apple;</li>
+        <li><strong>Формы Unicode</strong>: <code>utf-8</code> — современная универсальная кодировка, способная хранить все символы Unicode; <code>utf-16</code> и <code>utf-32</code> — тот же Unicode, записанный по два и по четыре байта на символ.</li>
       </ul>
-      <p>Список можно получить и прямо из программы:</p>
+      <p>Имена можно писать в любом регистре и в привычных сокращениях: <code>cp1251</code>, <code>latin1</code>, <code>ibm866</code> — Idyllium поймёт. Список можно получить и прямо из программы:</p>
 
       <idyl-code-block><script type="text/plain">
 use console;
@@ -48,20 +45,15 @@ use encoding;
 
 main() {
     dyn_array<string> encodings = encoding.list_encodings();
-    for (int i = 0; i < encodings.length; i = i + 1) {
-        console.writeln(encodings[i]);
-    }
+    console.writeln("Кодировок: ", encodings.length);
+    console.writeln("Первая: ", encodings[0], ", последняя: ", encodings[encodings.length - 1]);
+    console.writeln("Есть ли windows-1251: ", encodings.contains("windows-1251"));
 }
 </script></idyl-code-block>
 
-      <idyl-output-block>ascii
-utf-8
-windows-1251
-koi8-r
-cp866
-cp437
-windows-1252
-windows-1254</idyl-output-block>
+      <idyl-output-block>Кодировок: 41
+Первая: cp437, последняя: utf-32be
+Есть ли windows-1251: true</idyl-output-block>
     </div>
 
     <div class="docs-section">
@@ -222,7 +214,36 @@ main() {
     encoding.encode("A", "cp1337");
 }
 </script></idyl-code-block>
-      <idyl-error-block>main.idyl:4: runtime error: unknown encoding 'cp1337'</idyl-error-block>
+      <idyl-error-block>main.idyl:4: runtime error: unknown encoding 'cp1337' — did you mean 'cp437'?</idyl-error-block>
+      <p>Подсказка после тире — не приговор, а догадка: Idyllium ищет среди своих кодировок имя, похожее на написанное. Опечатались в <code>koi8-r</code> — он предложит <code>koi8-r</code>; написали нечто совсем чужое — отправит смотреть <code>encoding.list_encodings()</code>.</p>
+    </div>
+
+    <div class="docs-section">
+      <h2>Проверить, перекодировать, угадать</h2>
+      <p>Три помощника на случаи, когда байты пришли неизвестно откуда. <code>encoding.is_valid(байты, кодировка)</code> отвечает, прочитаются ли байты без ошибки, — проверка перед <code>decode()</code>, как <code>is_int()</code> перед <code>to_int()</code>. <code>encoding.convert(байты, откуда, куда)</code> перекодирует за один шаг. А <code>encoding.guess(байты)</code> пробует угадать, в какой кодировке записан русский текст, — и честно отдаёт пустую строку, когда уверенности нет:</p>
+
+      <idyl-code-block><script type="text/plain">
+use console;
+use encoding;
+
+main() {
+    dyn_array<int> secret = encoding.encode("Нормальный текст", "koi8-r");
+
+    console.writeln(encoding.is_valid(secret, "utf-8"));
+    console.writeln(encoding.guess(secret));
+
+    dyn_array<int> modern = encoding.convert(secret, "koi8-r", "utf-8");
+    console.writeln(encoding.decode(modern, "utf-8"));
+    console.writeln(encoding.guess(modern));
+}
+</script></idyl-code-block>
+
+      <idyl-output-block>false
+koi8-r
+Нормальный текст
+utf-8</idyl-output-block>
+
+      <p>Угадывание работает на обычном русском тексте, где есть строчные буквы; два-три байта или сплошные заглавные для него слишком мало — тогда ответом будет пустая строка, и это нормально: лучше «не знаю», чем уверенная ошибка.</p>
     </div>
 
     <div class="docs-section">
@@ -276,9 +297,10 @@ main() {
         <li><code>encoding.codepoint_to_char(число)</code> — символ по кодовой точке;</li>
         <li><code>encoding.encode(строка, кодировка)</code> — строка в массив байтов;</li>
         <li><code>encoding.decode(байты, кодировка)</code> — массив байтов в строку;</li>
-        <li><code>encoding.list_encodings()</code> — список поддерживаемых кодировок.</li>
+        <li><code>encoding.list_encodings()</code> — список поддерживаемых кодировок;</li>
+        <li><code>encoding.is_valid(байты, кодировка)</code>, <code>encoding.convert(байты, откуда, куда)</code>, <code>encoding.guess(байты)</code> — проверить, перекодировать, угадать.</li>
       </ul>
       <p>Запомните главное: кодовая точка описывает символ, а кодировка описывает его запись в байтах. Это похожие, но не одинаковые вещи.</p>
-      <p>А чтобы разглядеть кодировки во всех подробностях, загляните на сайт <a href="https://aumphaadr.github.io/Charsets/" target="_blank" rel="noopener">«Кодировки символов»</a>. Там живут таблицы тридцати девяти кодировок — в «Обозревателе» их можно ставить рядом и сравнивать построчно, а в «Перекодировщике» собран знакомый вам конвейер «текст → байты → текст», только с кнопками вместо кода. Все восемь кодировок, которые знает Idyllium, там тоже есть — и в задачнике этой ссылке найдётся работа.</p>
+      <p>А чтобы разглядеть кодировки во всех подробностях, загляните на сайт <a href="https://aumphaadr.github.io/Charsets/" target="_blank" rel="noopener">«Кодировки символов»</a>. Там живут таблицы тех же кодировок — в «Обозревателе» их можно ставить рядом и сравнивать построчно, а в «Перекодировщике» собран знакомый вам конвейер «текст → байты → текст», только с кнопками вместо кода. Имена на сайте и в Idyllium совпадают: посмотрели таблицу — то же слово пишете в программе. В задачнике этой ссылке найдётся работа.</p>
       <p>И небольшой анонс: по-настоящему кодировки развернутся при работе с файлами — до неё осталось всего два урока.</p>
     </div>

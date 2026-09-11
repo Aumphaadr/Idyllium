@@ -8,7 +8,7 @@
 в каталоге уровнем выше. **Сообщения компилятора и среды выполнения оставлены
 по-английски** — именно в таком виде их видит на экране ученик.*
 
-Текущая версия языка: Idyllium 1.5.6.
+Текущая версия языка: Idyllium 1.5.7.
 
 Этот справочник описывает реализованное поведение. Всё, что здесь не описано
 (библиотека, метод, форма синтаксиса), считается отсутствующим, пока
@@ -1668,7 +1668,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, управление не возвращает
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.5.6"
+system.version()                    // "1.5.7"
 system.set_warnings(enabled)        // void; выключает/включает runtime-предупреждения
 ```
 
@@ -1931,6 +1931,17 @@ JSON третьего года и везде остальное уместен.
 - `"write"`
 - `"append"`
 
+**Кодировка (с 1.5.7).** `file.open(path, mode, encoding)` принимает
+необязательный третий аргумент — любое имя из `encoding.list_encodings()`;
+без него файл — UTF-8. Чтение строгое: файл в другой кодировке не
+превращается в `�` молча, а отвергается по имени с догадкой — `file.open()
+cannot read 'notes.txt' as utf-8: invalid UTF-8 at byte 1 (0xF0): invalid
+continuation byte — the file looks like windows-1251; open it with
+file.open(path, "read", "windows-1251")`. Метка BOM у UTF-8 при чтении
+пропускается. Запись в кодовую страницу отвергает непредставимые символы
+(`ostream.write_line() character 'П' is not valid ASCII at position 0`);
+`"append"` работает в любой кодировке.
+
 В примерах всегда закрывайте потоки.
 
 У потоков есть свойство только для чтения типа `bool` — `is_open`:
@@ -1977,47 +1988,81 @@ file.remove("archive", recursive=true);
 ```idyllium
 use encoding;
 
-dyn_array<string> names = encoding.list_encodings();
+dyn_array<string> names = encoding.list_encodings();   // 41 имя, по семействам
 int codepoint = encoding.char_to_codepoint('б'); // 1073
 char ch = encoding.codepoint_to_char(1073); // 'б'
-dyn_array<int> bytes = encoding.encode("кот", "utf-8");
+dyn_array<int> bytes = encoding.encode("кот", "utf-8");   // строка или символ
 string text = encoding.decode(bytes, "utf-8");
+bool ok = encoding.is_valid(bytes, "windows-1251");        // прочитаются ли байты?
+dyn_array<int> moved = encoding.convert(bytes, "utf-8", "koi8-r");   // decode + encode одним вызовом
+string guessed = encoding.guess(bytes);                    // "utf-8", "windows-1251", … или ""
+string packed = encoding.to_base64(bytes);                 // текст Base64
+dyn_array<int> unpacked = encoding.from_base64(packed);
 ```
 
-Канонические имена кодировок, которые возвращает
-`encoding.list_encodings()`:
+Кодировки (с 1.5.7) — те же 38 кодовых страниц и форм Unicode, что на
+сайте-спутнике «Кодировки символов» (Charsets), плюс `utf-16` / `utf-32`
+«с меткой порядка байтов». `list_encodings()` отдаёт их по семействам:
 
-- `"ascii"`
-- `"utf-8"`
-- `"windows-1251"`
-- `"koi8-r"`
-- `"cp866"` (DOS-кириллица с псевдографикой)
-- `"cp437"` (исходный IBM PC: латиница, псевдографика, математические знаки)
-- `"windows-1252"` (западноевропейская)
-- `"windows-1254"` (турецкая)
+- **DOS**: `cp437`, `cp850`, `cp852`, `cp855`, `cp857`, `cp866`;
+- **Windows**: `windows-1250` … `windows-1258` (`windows-1251` — кириллица,
+  `windows-1252` — западная, `windows-1254` — турецкая, …);
+- **ISO 8859 и ASCII**: `ascii`, `iso-8859-1` … `iso-8859-16` (номера
+  1–10, 13–16; `iso-8859-5` — кириллица);
+- **КОИ-8 и Macintosh**: `koi8-r`, `koi8-u`, `mac-roman`, `mac-cyrillic`;
+- **Формы Unicode**: `utf-8`, `utf-16`, `utf-16le`, `utf-16be`, `utf-32`,
+  `utf-32le`, `utf-32be`.
 
-На входе принимаются также псевдонимы `"utf8"`, `"cp1251"`, `"win1251"`,
-`"koi8r"`, `"ibm866"`, `"dos866"`, `"ibm437"`, `"dos437"`, `"cp1252"`,
-`"win1252"`, `"cp1254"` и `"win1254"`. Кодовая позиция Unicode не зависит
-от последовательности байтов кодировки: `б` — это позиция `1073`, а его
-байты в UTF-8 — `[208, 177]`.
+Имена не зависят от регистра и принимают привычные псевдонимы (`cp1251`,
+`win1251`, `ibm866`, `dos866`, `latin1`…`latin10`, `iso8859-5`, `koi8r`,
+`macintosh`, `x-mac-cyrillic`, `utf8`, `utf16`). Неизвестное имя — ошибка
+выполнения с подсказкой: `unknown encoding 'koi-8r' — did you mean
+'koi8-r'?` или `… — see encoding.list_encodings()`. Таблицы лежат в самом
+Idyllium и одинаковы на всех хостах (CLI, Web IDE, VS Code).
 
-`char_to_codepoint()` принимает ровно один символ Unicode.
+Кодовая точка Unicode не зависит от последовательности байтов кодировки:
+`б` — это позиция `1073`, а его байты в UTF-8 — `[208, 177]`.
+`char_to_codepoint()` принимает ровно один символ Unicode;
 `codepoint_to_char()` принимает скалярные значения Unicode `0..1114111`,
-исключая суррогатный диапазон `55296..57343`. Неизвестное имя кодировки, целое
-за пределами байтового диапазона `0..255`, непредставимый символ или кривой
-UTF-8 — ошибки времени выполнения. Все однобайтовые кодировки используют
-полные таблицы на 256 байт.
+исключая суррогатный диапазон `55296..57343`.
 
-У `encode()` и `decode()` есть необязательный параметр `safe` (по умолчанию
-`true`). По умолчанию преобразование строгое и никогда не вставляет молча
-символ-заменитель Unicode `�`. С `safe=false` ученик явно отказывается
-от страховки: нераскодируемые байты становятся `�`, а непредставимые символы
-кодируются в `?` (байт 63) вместо ошибки времени выполнения:
+**Строгость.** `encode()` и `decode()` ничего не выдумывают: непредставимый
+символ (`character 'Ю' is not valid ASCII at position 0`), кривой UTF-8
+(`encoding.decode() invalid UTF-8 at byte 0 (0xD0): incomplete sequence`),
+незанятый байт кодовой страницы (`byte 129 is not valid windows-1252 at
+index 0` — у 0x81 в cp1252 нет символа), нечётный хвост UTF-16 (`invalid
+utf-16le at byte 2: half of a code unit`) или одинокий суррогат — ошибки
+выполнения с позицией. Необязательный параметр `safe` (по умолчанию `true`)
+превращает потери в знаки: при `safe=false` непредставимые символы
+кодируются в `?` (байт 63), а негодные байты становятся `�` — по одному `�`
+на каждый негодный байт, так что байты Windows-1251, прочитанные как
+UTF-8, дают десять ромбиков на десять букв:
 
 ```idyllium
 string mojibake = encoding.decode(bytes, "utf-8", safe=false);
 ```
+
+**Формы Unicode и BOM.** `utf-16le`/`utf-16be`/`utf-32le`/`utf-32be` — с
+фиксированным порядком байтов, без метки. `utf-16` и `utf-32` — «с BOM»:
+`decode` читает метку и по ней выбирает порядок, а байты без метки
+отвергает (`utf-16 needs a byte order mark — use utf-16le or utf-16be for
+bytes without one`); `encode` пишет метку и little-endian (то, что Блокнот
+Windows зовёт «Unicode»). `decode(…, "utf-8")` буквален: метка в начале
+остаётся в строке символом U+FEFF (при чтении файлов её снимает
+`file.open`, см. §20).
+
+**Помощники.** `is_valid(bytes, encoding)` — проверка перед decode в жанре
+`json.is_valid` / `is_int()`. `convert(bytes, from, to, safe=true)`
+перекодирует одним вызовом. `guess(bytes)` отдаёт `"ascii"` для чистого
+ASCII, `"utf-8"` для валидного UTF-8 (или метки BOM UTF-8/16/32), одну из
+кириллических страниц (`windows-1251`, `koi8-r`, `cp866`, `mac-cyrillic`,
+`iso-8859-5`, `koi8-u`), когда байты читаются как обычный русский текст со
+строчными буквами, и `""`, когда не уверен, — угадывание не выдаёт себя за
+знание (пары байтов или сплошных ЗАГЛАВНЫХ ему мало). `to_base64(bytes)` /
+`from_base64(text)` — транспортное кодирование байтов (буквы, цифры, `+`,
+`/`, дополнение `=`); `from_base64` пропускает пробелы и отвергает чужие
+символы и длину, не кратную четырём. Base64 — не кодировка символов, и в
+`list_encodings()` его нет.
 
 ## 21a. Библиотека `url`
 
@@ -2721,11 +2766,12 @@ main() {
 ```
 
 - `csv.parse(text)` / `csv.parse(text, separator)`, `csv.read(path)` /
-  `csv.read(path, separator)` → `csv.Table`; `csv.write(path, table)`
-  перезаписывает файл проекта (UTF-8, концы строк `\n`, без BOM). Файлы
-  читаются как UTF-8; русский Excel сохраняет CSV в Windows-1251 — такой файл
-  сначала перекодируйте (библиотека `encoding`) или сохраните из Excel как
-  «CSV UTF-8».
+  `csv.read(path, separator, encoding)` → `csv.Table`; `csv.write(path, table, encoding)`
+  перезаписывает файл проекта (концы строк `\n`, без BOM). Необязательная
+  `encoding` (по умолчанию `"utf-8"`) читает и пишет файлы русского Excel:
+  `csv.read("excel.csv", encoding="windows-1251")`, `csv.write("out.csv", t,
+  "windows-1251")`. Чтение строгое, как у `file.open` (§20): файл в чужой
+  кодировке отвергается по имени с догадкой.
 - **Разделитель** угадывается по строке заголовка (`;` русского Excel, `,`,
   табуляция — побеждает самый частый, `;` когда их нет) и хранится в
   `table.separator` (записываемая строка из одного символа); им пользуются

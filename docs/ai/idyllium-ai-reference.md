@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: Idyllium 1.5.6.
+Current language target: Idyllium 1.5.7.
 
 This reference describes implemented behavior. Ideas from planning documents
 and exploratory specs are not language features until they are implemented and
@@ -1630,7 +1630,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, never returns
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.5.6"
+system.version()                    // "1.5.7"
 system.set_warnings(enabled)        // void; switches runtime warnings off/on
 ```
 
@@ -1888,6 +1888,17 @@ Modes:
 - `"write"`
 - `"append"`
 
+**Encoding (since 1.5.7).** `file.open(path, mode, encoding)` takes an optional
+third argument — any name from `encoding.list_encodings()`; without it the
+file is UTF-8. Reading is strict: a file in another encoding is not turned
+into `�` silently but refused by name, with a guess attached — `file.open()
+cannot read 'notes.txt' as utf-8: invalid UTF-8 at byte 1 (0xF0): invalid
+continuation byte — the file looks like windows-1251; open it with
+file.open(path, "read", "windows-1251")`. A UTF-8 BOM is skipped when
+reading. Writing in a code page refuses unrepresentable characters
+(`ostream.write_line() character 'П' is not valid ASCII at position 0`);
+`"append"` works in any encoding.
+
 Always close streams in examples.
 
 Streams expose a read-only `bool` property `is_open`:
@@ -1934,44 +1945,79 @@ Rules:
 ```idyllium
 use encoding;
 
-dyn_array<string> names = encoding.list_encodings();
+dyn_array<string> names = encoding.list_encodings();   // 41 names, grouped by family
 int codepoint = encoding.char_to_codepoint('б'); // 1073
 char ch = encoding.codepoint_to_char(1073); // 'б'
-dyn_array<int> bytes = encoding.encode("кот", "utf-8");
+dyn_array<int> bytes = encoding.encode("кот", "utf-8");   // a string or a char
 string text = encoding.decode(bytes, "utf-8");
+bool ok = encoding.is_valid(bytes, "windows-1251");        // can these bytes be decoded?
+dyn_array<int> moved = encoding.convert(bytes, "utf-8", "koi8-r");   // decode + encode in one call
+string guessed = encoding.guess(bytes);                    // "utf-8", "windows-1251", … or ""
+string packed = encoding.to_base64(bytes);                 // Base64 text
+dyn_array<int> unpacked = encoding.from_base64(packed);
 ```
 
-Canonical encoding names returned by `encoding.list_encodings()`:
+Encodings (since 1.5.7) — the same 38 code pages and Unicode forms as the
+companion site «Кодировки символов» (Charsets), plus `utf-16` / `utf-32`
+"with byte order mark". `list_encodings()` returns them in family order:
 
-- `"ascii"`
-- `"utf-8"`
-- `"windows-1251"`
-- `"koi8-r"`
-- `"cp866"` (DOS Cyrillic with box-drawing characters)
-- `"cp437"` (original IBM PC: Latin, box drawing, math symbols)
-- `"windows-1252"` (Western European)
-- `"windows-1254"` (Turkish)
+- **DOS**: `cp437`, `cp850`, `cp852`, `cp855`, `cp857`, `cp866`;
+- **Windows**: `windows-1250` … `windows-1258` (`windows-1251` Cyrillic,
+  `windows-1252` Western, `windows-1254` Turkish, …);
+- **ISO 8859 and ASCII**: `ascii`, `iso-8859-1` … `iso-8859-16` (numbers
+  1–10, 13–16; `iso-8859-5` is Cyrillic);
+- **KOI-8 and Macintosh**: `koi8-r`, `koi8-u`, `mac-roman`, `mac-cyrillic`;
+- **Unicode forms**: `utf-8`, `utf-16`, `utf-16le`, `utf-16be`, `utf-32`,
+  `utf-32le`, `utf-32be`.
 
-Input also accepts the aliases `"utf8"`, `"cp1251"`, `"win1251"`, `"koi8r"`,
-`"ibm866"`, `"dos866"`, `"ibm437"`, `"dos437"`, `"cp1252"`, `"win1252"`,
-`"cp1254"`, and `"win1254"`. A Unicode code point is independent of its encoded byte sequence:
+Names are case-insensitive and accept the usual aliases (`cp1251`,
+`win1251`, `ibm866`, `dos866`, `latin1`…`latin10`, `iso8859-5`, `koi8r`,
+`macintosh`, `x-mac-cyrillic`, `utf8`, `utf16`). An unknown name is a runtime
+error with a hint: `unknown encoding 'koi-8r' — did you mean 'koi8-r'?` or
+`… — see encoding.list_encodings()`. The tables live inside Idyllium and are
+identical on every host (CLI, Web IDE, VS Code).
+
+A Unicode code point is independent of its encoded byte sequence:
 `б` is code point `1073`, but its UTF-8 bytes are `[208, 177]`.
-
-`char_to_codepoint()` accepts exactly one Unicode character.
+`char_to_codepoint()` accepts exactly one Unicode character;
 `codepoint_to_char()` accepts Unicode scalar values `0..1114111`, excluding
-the surrogate range `55296..57343`. An unknown encoding name, an integer
-outside byte range `0..255`, an unrepresentable character, or malformed UTF-8
-is a runtime error. All single-byte encodings use complete 256-byte tables.
+the surrogate range `55296..57343`.
 
-`encode()` and `decode()` take an optional `safe` parameter (default `true`).
-By default conversion is strict and never silently inserts the Unicode
-replacement character `�`. With `safe=false` the student explicitly opts out
-of the safety net: undecodable bytes become `�` and unrepresentable
-characters encode to `?` (byte 63) instead of raising a runtime error:
+**Strictness.** `encode()` and `decode()` never invent data: an unrepresentable
+character (`character 'Ю' is not valid ASCII at position 0`), malformed UTF-8
+(`encoding.decode() invalid UTF-8 at byte 0 (0xD0): incomplete sequence`), an
+unassigned byte of a code page (`byte 129 is not valid windows-1252 at index
+0` — 0x81 has no character in cp1252), an odd UTF-16 tail (`invalid utf-16le
+at byte 2: half of a code unit`) or a lone surrogate are runtime errors with
+the position. The optional `safe` parameter (default `true`) turns losses
+into marks instead: with `safe=false` unrepresentable characters encode to
+`?` (byte 63) and undecodable bytes become `�` — one `�` per bad byte, so
+Windows-1251 bytes read as UTF-8 give ten diamonds for ten letters:
 
 ```idyllium
 string mojibake = encoding.decode(bytes, "utf-8", safe=false);
 ```
+
+**Unicode forms and BOM.** `utf-16le`/`utf-16be`/`utf-32le`/`utf-32be` are
+byte-order-fixed and have no mark. `utf-16` and `utf-32` are "with BOM":
+`decode` reads the mark to pick the byte order and refuses bytes without one
+(`utf-16 needs a byte order mark — use utf-16le or utf-16be for bytes without
+one`); `encode` writes the mark plus little-endian (what Windows Notepad calls
+"Unicode"). `decode(…, "utf-8")` is literal: a leading BOM stays in the string
+as U+FEFF (`file.open` strips it when reading files, see §20).
+
+**Helpers.** `is_valid(bytes, encoding)` is the check-before-decode in the
+`json.is_valid` / `is_int()` genre. `convert(bytes, from, to, safe=true)`
+re-encodes in one call. `guess(bytes)` returns `"ascii"` for pure ASCII,
+`"utf-8"` for valid UTF-8 (or a UTF-8/16/32 BOM), one of the Cyrillic pages
+(`windows-1251`, `koi8-r`, `cp866`, `mac-cyrillic`, `iso-8859-5`, `koi8-u`)
+when the bytes read as ordinary Russian text with lowercase letters, and `""`
+when it is not sure — it never pretends to know (a few bytes or ALL-CAPS
+shouting are not enough). `to_base64(bytes)` / `from_base64(text)` are the
+transport encoding of bytes (letters, digits, `+`, `/`, `=` padding);
+`from_base64` skips whitespace and refuses foreign characters or a length not
+divisible by 4. Base64 is not a character encoding and is not in
+`list_encodings()`.
 
 ## 21a. Library `url`
 
@@ -2663,10 +2709,12 @@ main() {
 ```
 
 - `csv.parse(text)` / `csv.parse(text, separator)`, `csv.read(path)` /
-  `csv.read(path, separator)` → `csv.Table`; `csv.write(path, table)`
-  overwrites the project file (UTF-8, `\n` line ends, no BOM). Files are read
-  as UTF-8; Russian Excel saves CSV in Windows-1251 — re-encode such a file
-  first (library `encoding`) or save it from Excel as «CSV UTF-8».
+  `csv.read(path, separator, encoding)` → `csv.Table`; `csv.write(path, table, encoding)`
+  overwrites the project file (`\n` line ends, no BOM). The optional
+  `encoding` (default `"utf-8"`) reads and writes files of Russian Excel:
+  `csv.read("excel.csv", encoding="windows-1251")`, `csv.write("out.csv", t,
+  "windows-1251")`. Reading is strict, like `file.open` (§20): a file in the
+  wrong encoding is refused by name with a guess attached.
 - **Separator** is detected from the header line (`;` of Russian Excel, `,`,
   tab — the most frequent wins, `;` when none) and stored in
   `table.separator` (a writable one-character string); `to_string()` and

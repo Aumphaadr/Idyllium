@@ -9152,6 +9152,17 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
   function isBinaryFileItem(item) {
     return Boolean(item) && item.bytes instanceof Uint8Array;
   }
+  function looksLikeSingleByteText(bytes) {
+    if (decodeUtf8Strict(bytes) !== null) return false;
+    const sample = bytes.subarray(0, Math.min(bytes.length, 4096));
+    let high = 0;
+    for (const byte of sample) {
+      if (byte === 0) return false;
+      if (byte < 32 && byte !== 9 && byte !== 10 && byte !== 13) return false;
+      if (byte >= 128) high += 1;
+    }
+    return high > 0;
+  }
   function sniffContentType(item) {
     if (!item) return "неизвестно";
     if (!isBinaryFileItem(item)) {
@@ -9161,6 +9172,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     }
     const bytes = item.bytes;
     if (bytes.length === 0) return "двоичные данные";
+    if (looksLikeSingleByteText(bytes)) return "текст не в UTF-8 (однобайтовая кодировка?)";
     const ascii = (start, text) => {
       for (let i = 0; i < text.length; i += 1) {
         if (bytes[start + i] !== text.charCodeAt(i)) return false;
@@ -9538,9 +9550,17 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     }
     if (files.has(path) && !await requestUploadReplacement(path)) return null;
     if (isEditableTextFile(file)) {
+      const rawBytes = new Uint8Array(await file.arrayBuffer());
+      const utf8Text = decodeUtf8Strict(rawBytes);
+      if (utf8Text !== null) {
+        setProjectFile(path, { kind: "text", content: utf8Text });
+        return path;
+      }
       setProjectFile(path, {
-        kind: "text",
-        content: await readFileAsText(file)
+        kind: "asset",
+        content: "",
+        bytes: rawBytes,
+        resourceUri: bytesToDataUrl(file.name, rawBytes)
       });
       return path;
     }
@@ -9637,10 +9657,11 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
         continue;
       }
       if (!firstPath) firstPath = path;
-      if (isEditableTextName(entry.name)) {
+      const zipText = isEditableTextName(entry.name) ? decodeUtf8Strict(entry.bytes) : null;
+      if (zipText !== null) {
         setProjectFile(path, {
           kind: "text",
-          content: new TextDecoder("utf-8").decode(entry.bytes)
+          content: zipText
         });
       } else {
         setProjectFile(path, {
@@ -10901,13 +10922,13 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       reader.readAsDataURL(file);
     });
   }
-  function readFileAsText(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.addEventListener("load", () => resolve(String(reader.result || "")));
-      reader.addEventListener("error", () => reject(reader.error || new Error("file read failed")));
-      reader.readAsText(file, "utf-8");
-    });
+  function decodeUtf8Strict(bytes) {
+    try {
+      const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+      return text.startsWith("\uFEFF") ? text.slice(1) : text;
+    } catch (_error) {
+      return null;
+    }
   }
   function isEditableTextFile(file) {
     return isEditableTextName(file.name, file.type);

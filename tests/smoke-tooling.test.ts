@@ -448,7 +448,8 @@ test('project API compiles files and powers user module completions', () => {
   });
   const fileSignature = fileSignatureProject.signatureHelp({ file: 'main.idyl', offset: fileSignatureSource.length });
   assert(fileSignature !== null, 'expected file.open signature help');
-  assert(fileSignature.signatures[0].label === 'open(path: string, mode: string): any', `unexpected file.open signature: ${fileSignature.signatures[0].label}`);
+  // 1.5.7: третий аргумент — кодировка файла (необязательный).
+  assert(fileSignature.signatures[0].label === 'open(path: string, mode: string, encoding: string): any', `unexpected file.open signature: ${fileSignature.signatures[0].label}`);
   assert(fileSignature.activeParameter === 1, `expected second active parameter, got ${fileSignature.activeParameter}`);
 
   const arraySignatureSource = 'main() {\n  dyn_array<int> values = [1, 2];\n  values.add(';
