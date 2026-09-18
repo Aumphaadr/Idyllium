@@ -33,6 +33,7 @@ export const IDYLLIUM_WARNING_CODES = [
   'float-equality',
   'compared-with-true',
   'condition-always-same',
+  'contract-changes-operand',
 ] as const;
 
 export type IdylliumWarningCode = (typeof IDYLLIUM_WARNING_CODES)[number];

@@ -68,7 +68,7 @@ main() {
     console.writeln(a == b);
 }
 </script></idyl-code-block>
-  <idyl-error-block>main.idyl:17:21: compile error: cannot compare objects of class 'Hero' with '==' — declare 'bool function equals(Hero other)' in class 'Hero' and the comparison will use it</idyl-error-block>
+  <idyl-error-block>main.idyl:17:21: compile error: cannot compare objects of class 'Hero' with '==' — declare 'contract bool function equals(Hero other)' in class 'Hero' and the comparison will use it</idyl-error-block>
 
   <p>
     Компилятор отказывается — и не из вредности. Числа и строки язык сравнивает
@@ -84,8 +84,9 @@ main() {
   <h2>Контракт equals</h2>
   <p>
     Договор такой: объявите в классе публичный метод <strong>ровно такой
-    формы</strong> — <code>bool function equals(СвойКласс other)</code> —
-    и знак <code>==</code> начнёт работать, вызывая ваш метод:
+    формы</strong> — <code>contract bool function equals(СвойКласс other)</code> —
+    и знак <code>==</code> начнёт работать, вызывая ваш метод. Новое слово
+    здесь одно — <code>contract</code> в самом начале:
   </p>
 
   <idyl-code-block><script type="text/plain">
@@ -95,7 +96,7 @@ class Hero {
     string name;
     int level;
 
-    bool function equals(Hero other) {
+    contract bool function equals(Hero other) {
         return this.name == other.name and this.level == other.level;
     }
 }
@@ -130,6 +131,15 @@ true</idyl-output-block>
     строже. Знак один, а смысл ему назначает автор класса.
   </p>
   <p>
+    Слово <code>contract</code> — пометка и для языка, и для читателя:
+    «этот метод зовут не только по имени — его вызывает знак». Пометка
+    обязательна: имена контрактов в классах заняты, и метод
+    <code>equals</code> без неё компилятор не примет — подскажет, как
+    записать договор. Зато и ошибиться молча не выйдет: лишний параметр или
+    не тот тип результата в помеченном методе — и ошибка прозвучит прямо у
+    объявления, а не когда-нибудь потом, на знаке <code>==</code>.
+  </p>
+  <p>
     <code>!=</code> отдельного контракта не требует: это «не equals», язык
     выводит его сам. И одно правило хорошего тона, которое стоит записать:
     <strong>equals отвечает на вопрос и ничего не меняет</strong>. Метод
@@ -152,7 +162,7 @@ class Hero {
     string name;
     int level;
 
-    bool function equals(Hero other) {
+    contract bool function equals(Hero other) {
         return this.name == other.name and this.level == other.level;
     }
 }
@@ -229,13 +239,13 @@ main() {
     console.writeln(kai < mira);
 }
 </script></idyl-code-block>
-  <idyl-error-block>main.idyl:17:21: compile error: cannot order objects of class 'Hero' with '<' — declare 'bool function less(Hero other)' in class 'Hero' and '<' will use it</idyl-error-block>
+  <idyl-error-block>main.idyl:17:21: compile error: cannot order objects of class 'Hero' with '<' — declare 'contract bool function less(Hero other)' in class 'Hero' and '<' will use it</idyl-error-block>
 
   <p>
     Знакомая картина: у порядка объектов, как и у равенства, нет
     единственно правильного ответа. Кто «меньше» — герой с меньшим уровнем?
     Тот, чьё имя раньше по алфавиту? Решает автор класса, и договор тот же:
-    метод условленной формы — <code>bool function less(СвойКласс
+    метод условленной формы — <code>contract bool function less(СвойКласс
     other)</code>, «я меньше, чем other?»:
   </p>
 
@@ -246,7 +256,7 @@ class Hero {
     string name;
     int level;
 
-    bool function less(Hero other) {
+    contract bool function less(Hero other) {
         return this.level < other.level;
     }
 }
@@ -286,7 +296,7 @@ class Hero {
     string name;
     int level;
 
-    bool function less(Hero other) {
+    contract bool function less(Hero other) {
         return this.level < other.level;
     }
 }
@@ -335,7 +345,7 @@ main() {
 <div class="docs-section">
   <h2>Контракт greater</h2>
   <p>
-    У знака <code>&gt;</code> — свой отдельный контракт: <code>bool
+    У знака <code>&gt;</code> — свой отдельный контракт: <code>contract bool
     function greater(СвойКласс other)</code>, «я больше, чем other?».
     Работает точь-в-точь как <code>less</code>: <code>&gt;</code> вызывает
     ваш <code>greater</code>, а <code>&lt;=</code> достаётся отрицанием:
@@ -348,7 +358,7 @@ class Hero {
     string name;
     int level;
 
-    bool function greater(Hero other) {
+    contract bool function greater(Hero other) {
         return this.level > other.level;
     }
 }
@@ -384,8 +394,9 @@ false</idyl-output-block>
     Остался ещё один договор — у печати. Помните запрет
     <code>cannot print object of class 'Hero' directly</code> и
     метод-визитку <code>info()</code>? У печати есть свой контракт: назовите
-    визитку <code>to_string</code>, пусть она <em>возвращает</em> строку —
-    и <code>writeln</code> научится печатать объект сам:
+    визитку <code>to_string</code>, пометьте её тем же словом
+    <code>contract</code>, пусть она <em>возвращает</em> строку — и
+    <code>writeln</code> научится печатать объект сам:
   </p>
 
   <idyl-code-block><script type="text/plain">
@@ -395,7 +406,7 @@ class Hero {
     string name;
     int level;
 
-    string function to_string() {
+    contract string function to_string() {
         return this.name + " (уровень " + to_string(this.level) + ")";
     }
 }
@@ -434,15 +445,16 @@ main() {
     </thead>
     <tbody>
       <tr><td>Метод с параметром и ответом</td><td><code>bool function stronger_than(Hero other) { return ...; }</code></td></tr>
-      <tr><td>Открыть объектам <code>==</code> и <code>!=</code></td><td>контракт <code>bool function equals(Hero other)</code> — публичный, параметр своего класса</td></tr>
+      <tr><td>Открыть объектам <code>==</code> и <code>!=</code></td><td>контракт <code>contract bool function equals(Hero other)</code> — публичный, параметр своего класса</td></tr>
       <tr><td>Открыть поиск в массивах</td><td>тот же контракт — <code>contains</code>/<code>find</code>/<code>count</code> и сравнение массивов работают через него</td></tr>
-      <tr><td>Открыть <code>&lt;</code>, <code>&gt;=</code> и <code>sort()</code></td><td>контракт <code>bool function less(Hero other)</code> — «я меньше?»; <code>&gt;=</code> и сортировка достаются вместе с ним</td></tr>
-      <tr><td>Открыть <code>&gt;</code> и <code>&lt;=</code></td><td>контракт <code>bool function greater(Hero other)</code> — работает так же, как <code>less</code></td></tr>
-      <tr><td>Открыть печать объекта</td><td>контракт <code>string function to_string()</code> — без параметров, возвращает строку; открывает и печать массива таких объектов</td></tr>
+      <tr><td>Открыть <code>&lt;</code>, <code>&gt;=</code> и <code>sort()</code></td><td>контракт <code>contract bool function less(Hero other)</code> — «я меньше?»; <code>&gt;=</code> и сортировка достаются вместе с ним</td></tr>
+      <tr><td>Открыть <code>&gt;</code> и <code>&lt;=</code></td><td>контракт <code>contract bool function greater(Hero other)</code> — работает так же, как <code>less</code></td></tr>
+      <tr><td>Открыть печать объекта</td><td>контракт <code>contract string function to_string()</code> — без параметров, возвращает строку; открывает и печать массива таких объектов</td></tr>
     </tbody>
   </table>
   <ul>
     <li>Контракт — договор с языком: метод условленной формы подключает встроенный знак или механизм.</li>
+    <li>Контракт помечается словом <code>contract</code>. Имена контрактов в классах заняты: метод <code>equals</code>, <code>less</code>, <code>greater</code> или <code>to_string</code> без пометки компилятор не примет, а ошибку формы назовёт прямо у объявления.</li>
     <li>Что значит «равны» и «меньше» — решает автор класса: по уровню, по имени, по всем полям — выбор за вами.</li>
     <li>Контракты отвечают, но не меняют; отрицания достаются бесплатно: <code>!=</code> — от <code>equals</code>, <code>&gt;=</code> — от <code>less</code>, <code>&lt;=</code> — от <code>greater</code>.</li>
     <li><code>sort()</code> сортирует объекты по контракту <code>less</code>; равных он оставляет в исходном порядке.</li>

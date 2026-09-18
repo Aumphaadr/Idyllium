@@ -17,7 +17,7 @@ import { setupColorEyedropper } from './color-eyedropper.js';
 import { setOutputText, appendOutput, setStatus } from './console-output.js';
 import { MONACO_LANGUAGE_ID, registerMonacoIdyllium, defineMonacoThemes, monacoCompletionRequest, projectCompletions, projectSignatureHelp, projectSemanticTokens, encodeMonacoSemanticTokens, deduplicateCompletions, SEMANTIC_TOKEN_TYPES, SEMANTIC_TOKEN_MODIFIERS } from './monaco-lang.js';
 import { runProgram, stopProgram, stopGuiLoop, markGuiFrameReady, enqueueGuiEvent, reportGuiEventFailure, postEmptySnapshot, previewTargetOrigin, updateRunButton, setRunControls, submitConsoleInput, syncRuntimeFilesFromSnapshot, revokeAllBrowserAssetUrls, currentRuntime, formatCurrentFile, textSourceMap, registerRunHost, browserAssetUrls } from './run-preview.js';
-import { monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyEditor, editor, highlight, lineNumbers, completionPopup, editorTitle, fileList, output, consoleInputPanel, consoleInput, consoleInputSubmit, status, guiFrame, workspace, runtimePane, runtimeRowResizer, runButton, stopButton, formatButton, structuredViewToggle, structuredTextViewButton, structuredDataViewButton, newFileButton, newFolderButton, fileContextMenu, filePropsModal, uploadButton, uploadMenu, dropArea, uploadInput, uploadConflict, uploadConflictName, uploadConflictSkip, uploadConflictReplace, themeButton, themeMenu, themeDarkButton, themeLightButton, fontSizeDecrease, fontSizeIncrease, fontSizeInput, consoleFontSizeDecrease, consoleFontSizeIncrease, consoleFontSizeInput, colorPickerButton, colorPickerMenu, fileAppMenuWrapper, fileAppMenuButton, fileAppMenu, fileAppMenuMain, fileAppMenuPanel, currentProjectNameElement, editAppMenuWrapper, editAppMenuButton, editAppMenu, colorPreview, colorRgbCode, colorHexCode, colorSliders, colorInputs, createIcon } from './dom.js';
+import { monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyEditor, editor, highlight, lineNumbers, completionPopup, editorTitle, fileList, output, consoleInputPanel, consoleInput, consoleInputSubmit, status, guiFrame, workspace, runtimePane, runtimeRowResizer, runButton, stopButton, formatButton, structuredViewToggle, structuredTextViewButton, structuredDataViewButton, newFileButton, newFolderButton, fileContextMenu, filePropsModal, uploadButton, uploadMenu, dropArea, uploadInput, uploadConflict, uploadConflictName, uploadConflictSkip, uploadConflictReplace, themeButton, themeMenu, themeDarkButton, themeLightButton, fontSizeDecrease, fontSizeIncrease, fontSizeInput, consoleFontSizeDecrease, consoleFontSizeIncrease, consoleFontSizeInput, autocompleteToggle, colorPickerButton, colorPickerMenu, fileAppMenuWrapper, fileAppMenuButton, fileAppMenu, fileAppMenuMain, fileAppMenuPanel, currentProjectNameElement, editAppMenuWrapper, editAppMenuButton, editAppMenu, colorPreview, colorRgbCode, colorHexCode, colorSliders, colorInputs, createIcon } from './dom.js';
 
   const DEFAULT_EDITOR_FONT_SIZE = 16;
   const DEFAULT_CONSOLE_FONT_SIZE = 13;
@@ -34,6 +34,7 @@ import { monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyE
   const LAYOUT_STORAGE_KEY = 'idyllium-web-layout';
   const FONT_SIZE_STORAGE_KEY = 'idyllium-web-editor-font-size';
   const CONSOLE_FONT_SIZE_STORAGE_KEY = 'idyllium-web-console-font-size';
+  const AUTOCOMPLETE_STORAGE_KEY = 'idyllium-web-autocomplete';
   const WEB_IDE_BASE_URL = detectWebIdeBaseUrl();
   const COLOR_PICKER_CHANNELS = ['red', 'green', 'blue', 'alpha'];
   const folders = new Set([WORKSPACE_ROOT]);
@@ -51,6 +52,9 @@ import { monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyE
   let monacoModelSyncDepth = 0;
   let editorFontSize = readSavedEditorFontSize();
   let consoleFontSize = readSavedConsoleFontSize();
+  // Автодополнение «само» (после точки и по мере ввода); Ctrl+Пробел — явная
+  // просьба, он работает и при выключенной настройке.
+  let autocompleteEnabled = window.localStorage.getItem(AUTOCOMPLETE_STORAGE_KEY) !== 'off';
   let fileEditState = null;
   // Внутренний drag-n-drop дерева файлов: что тащим (пути мира workspace).
   let internalDragPath = null;
@@ -89,6 +93,7 @@ import { monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyE
   applySavedTheme();
   applyEditorFontSize(editorFontSize, false);
   applyConsoleFontSize(consoleFontSize, false);
+  autocompleteToggle.checked = autocompleteEnabled;
   applySavedLayout();
   updateColorPickerUi();
 
@@ -131,6 +136,12 @@ import { monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyE
       applyEditorFontSize(Number(fontSizeInput.value));
       event.preventDefault();
     }
+  });
+  autocompleteToggle.addEventListener('change', () => {
+    autocompleteEnabled = autocompleteToggle.checked;
+    window.localStorage.setItem(AUTOCOMPLETE_STORAGE_KEY, autocompleteEnabled ? 'on' : 'off');
+    if (monacoReady && monacoEditor) monacoEditor.updateOptions({ suggestOnTriggerCharacters: autocompleteEnabled });
+    if (!autocompleteEnabled) hideCompletions();
   });
   consoleFontSizeDecrease.addEventListener('click', () => applyConsoleFontSize(consoleFontSize - 1));
   consoleFontSizeIncrease.addEventListener('click', () => applyConsoleFontSize(consoleFontSize + 1));
@@ -287,7 +298,7 @@ import { monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyE
           scrollBeyondLastLine: false,
           'semanticHighlighting.enabled': true,
           smoothScrolling: true,
-          suggestOnTriggerCharacters: true,
+          suggestOnTriggerCharacters: autocompleteEnabled,
           suggest: { showWords: false },
           tabSize: 4,
           wordBasedSuggestions: 'off',
@@ -2775,7 +2786,7 @@ import { monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyE
     }
 
     const token = completionToken();
-    if (!manual && !token.afterDot && token.prefix.length < 2) {
+    if (!manual && (!autocompleteEnabled || (!token.afterDot && token.prefix.length < 2))) {
       hideCompletions();
       return;
     }

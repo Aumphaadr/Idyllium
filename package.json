@@ -1,6 +1,6 @@
 {
   "name": "idyllium",
-  "version": "1.5.7",
+  "version": "1.6.0",
   "private": true,
   "description": "Next-generation core for the Idyllium educational programming language",
   "main": "dist/src/index.js",
@@ -11,7 +11,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "fonts:generate-default-metrics": "node tools/generate-default-font-metrics.js",
-    "build:web": "npm run build && node tools/build-web-ide.js",
+    "build:web": "npm run build && node tools/build-web-ide.js && node tools/build-embed.js",
     "build:vscode": "npm run build && node tools/build-vscode-extension.js",
     "package:vscode": "npm run build:vscode && node tools/package-vscode-extension.js",
     "test": "npm run build && node dist/tools/extract-lesson-specs.js && node tools/run-tests.js",

@@ -520,7 +520,7 @@ button:disabled:active {
   z-index: 10;
   top: calc(100% + 8px);
   right: 0;
-  width: 150px;
+  width: 176px;
   padding: 8px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -818,6 +818,24 @@ button:disabled:active {
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+.menu-check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.menu-check-row input {
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 
 .font-size-control {

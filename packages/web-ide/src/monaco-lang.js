@@ -2,14 +2,14 @@
 // (completions/подписи/семантические токены) и мапперы диагностик.
 // Жизненный цикл редактора остаётся в ядре.
 
-import { KEYWORDS, BUILTIN_TYPES, CLASS_NAMES, QUALIFIED_TYPES } from './idyllium-highlight.js';
+import { MONACO_LANGUAGE_ID, registerIdylliumGrammar, defineIdylliumThemes } from './monaco-grammar.js';
 import { MAIN_FILE, normalizeWorkspacePath } from './workspace-paths.js';
 import { files } from './project-store.js';
 import { viewerHost } from './viewer-host.js';
 import { setStatus } from './console-output.js';
 import { textSourceMap } from './run-preview.js';
 
-export const MONACO_LANGUAGE_ID = 'idyllium';
+export { MONACO_LANGUAGE_ID };
 
 export const SEMANTIC_TOKEN_TYPES = [...window.Idyllium.IDYLLIUM_SEMANTIC_TOKEN_TYPES];
 
@@ -19,112 +19,7 @@ export function registerMonacoIdyllium() {
   const monaco = window.monaco;
   if (!monaco || monaco.languages.getLanguages().some((language) => language.id === MONACO_LANGUAGE_ID)) return;
 
-  monaco.languages.register({
-    id: MONACO_LANGUAGE_ID,
-    extensions: ['.idyl'],
-    aliases: ['Idyllium', 'idyllium'],
-  });
-  monaco.languages.setLanguageConfiguration(MONACO_LANGUAGE_ID, {
-    comments: { lineComment: '//' },
-    brackets: [['{', '}'], ['[', ']'], ['(', ')']],
-    autoClosingPairs: [
-      { open: '{', close: '}' },
-      { open: '[', close: ']' },
-      { open: '(', close: ')' },
-      { open: '"', close: '"', notIn: ['string'] },
-      { open: "'", close: "'", notIn: ['string', 'comment'] },
-    ],
-    surroundingPairs: [
-      { open: '{', close: '}' },
-      { open: '[', close: ']' },
-      { open: '(', close: ')' },
-      { open: '"', close: '"' },
-      { open: "'", close: "'" },
-    ],
-    indentationRules: {
-      increaseIndentPattern: /^.*\{\s*(?:\/\/.*)?$/u,
-      decreaseIndentPattern: /^\s*\}/u,
-    },
-    onEnterRules: [
-      {
-        beforeText: /^.*\{\s*$/u,
-        afterText: /^\s*\}/u,
-        action: { indentAction: monaco.languages.IndentAction.IndentOutdent },
-      },
-      {
-        beforeText: /^.*\{\s*$/u,
-        action: { indentAction: monaco.languages.IndentAction.Indent },
-      },
-    ],
-    wordPattern: /[A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*/u,
-  });
-  monaco.languages.setMonarchTokensProvider(MONACO_LANGUAGE_ID, {
-    keywords: [...KEYWORDS],
-    builtinTypes: [...BUILTIN_TYPES],
-    classNames: [...CLASS_NAMES],
-    qualifiedTypes: [...QUALIFIED_TYPES],
-    tokenizer: {
-      root: [
-        [/\/\/.*$/u, 'comment'],
-        [/\/\*/u, { token: 'comment', next: '@blockComment' }],
-        [/"(?:\\.|[^"\\])*"/u, 'string'],
-        [/'(?:\\.|[^'\\])*'/u, 'string'],
-        [/\b\d+(?:\.\d+)?\b/u, 'number'],
-        [/(class|extends)(\s+)([A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*)/u, [
-          'keyword.idyllium',
-          '',
-          'className.idyllium',
-        ]],
-        [/[A-ZА-ЯЁ][A-Za-z0-9_А-Яа-яЁё]*(?=\s+[A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*\s*(?:[=;,)\[]|$))/u, 'className.idyllium'],
-        [/[A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*(?=\s*\()/u, {
-          cases: {
-            '@keywords': 'keyword.idyllium',
-            '@builtinTypes': 'typeName.idyllium',
-            '@classNames': 'className.idyllium',
-            '@default': 'function.idyllium',
-          },
-        }],
-        [/[A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*/u, {
-          cases: {
-            '@keywords': 'keyword.idyllium',
-            '@builtinTypes': 'typeName.idyllium',
-            '@classNames': 'className.idyllium',
-            '@default': 'object.idyllium',
-          },
-        }],
-        [/\./u, { token: 'brackets.idyllium', next: '@afterDot' }],
-        [/==|!=|<=|>=|\+=|-=|\*=|\/=/u, 'brackets.idyllium'],
-        [/[+\-*/<>=!{}()[\];,.:~]/u, 'brackets.idyllium'],
-      ],
-      afterDot: [
-        [/\s+/u, ''],
-        [/[A-ZА-ЯЁ][A-Za-z0-9_А-Яа-яЁё]*(?=\s+[A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*\s*(?:[=;,)\[]|$))/u, {
-          token: 'className.idyllium',
-          next: '@pop',
-        }],
-        [/[A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*(?=\s*\()/u, {
-          cases: {
-            '@qualifiedTypes': { token: 'className.idyllium', next: '@pop' },
-            '@classNames': { token: 'className.idyllium', next: '@pop' },
-            '@default': { token: 'function.idyllium', next: '@pop' },
-          },
-        }],
-        [/[A-Za-z_А-Яа-яЁё][A-Za-z0-9_А-Яа-яЁё]*/u, {
-          cases: {
-            '@qualifiedTypes': { token: 'className.idyllium', next: '@pop' },
-            '@classNames': { token: 'className.idyllium', next: '@pop' },
-            '@default': { token: 'object.idyllium', next: '@pop' },
-          },
-        }],
-        [/./u, { token: 'brackets.idyllium', next: '@pop' }],
-      ],
-      blockComment: [
-        [/[^*/]+/u, 'comment'],
-        [/\*\//u, { token: 'comment', next: '@pop' }],
-        [/./u, 'comment'],
-      ],
-    },
-  });
+  registerIdylliumGrammar(monaco);
   monaco.languages.registerCompletionItemProvider(MONACO_LANGUAGE_ID, {
     triggerCharacters: ['.', ' ', '(', ','],
     provideCompletionItems(model, position, context) {
@@ -249,133 +144,7 @@ export function registerMonacoIdyllium() {
 }
 
 export function defineMonacoThemes() {
-  const monaco = window.monaco;
-  monaco.editor.defineTheme('idyllium-dark', {
-    base: 'vs-dark',
-    inherit: true,
-    rules: [
-      { token: 'keyword.idyllium', foreground: 'b892ff' },
-      { token: 'typeName.idyllium', foreground: '63b3ff' },
-      { token: 'className.idyllium', foreground: '59d4b8' },
-      { token: 'function.idyllium', foreground: 'e4d87e' },
-      { token: 'object.idyllium', foreground: '8bdfff' },
-      { token: 'namespace', foreground: '8bdfff' },
-      { token: 'class', foreground: '59d4b8' },
-      { token: 'function', foreground: 'e4d87e' },
-      { token: 'method', foreground: 'e4d87e' },
-      { token: 'property', foreground: '8bdfff' },
-      { token: 'variable', foreground: 'f0ecf8' },
-      { token: 'parameter', foreground: '8bdfff' },
-      { token: 'variable.readonly', foreground: '8bdfff' },
-      { token: 'brackets.idyllium', foreground: 'd0d6e6' },
-      { token: 'string.key.json', foreground: '8bdfff' },
-      { token: 'string.value.json', foreground: 'd99a6c' },
-      { token: 'number.json', foreground: 'c5d979' },
-      { token: 'keyword.json', foreground: 'b892ff' },
-      { token: 'delimiter.bracket.json', foreground: 'd0d6e6' },
-      { token: 'delimiter.array.json', foreground: 'd0d6e6' },
-      { token: 'delimiter.colon.json', foreground: 'd0d6e6' },
-      { token: 'delimiter.comma.json', foreground: 'd0d6e6' },
-      { token: 'comment.line.json', foreground: '6ba36f', fontStyle: 'italic' },
-      { token: 'comment.block.json', foreground: '6ba36f', fontStyle: 'italic' },
-      { token: 'string', foreground: 'd99a6c' },
-      { token: 'number', foreground: 'c5d979' },
-      { token: 'comment', foreground: '6ba36f', fontStyle: 'italic' },
-    ],
-    colors: {
-      'focusBorder': '#00000000',
-      'editor.background': '#120a1d',
-      'editor.foreground': '#f0ecf8',
-      'editorLineNumber.foreground': '#777088',
-      'editorLineNumber.activeForeground': '#d0d6e6',
-      'editorCursor.foreground': '#ffffff',
-      'editor.selectionBackground': '#6aa4ff45',
-      'editor.inactiveSelectionBackground': '#6aa4ff24',
-      'editor.lineHighlightBackground': '#ffffff07',
-      'editor.lineHighlightBorder': '#00000000',
-      'editorBracketHighlight.foreground1': '#d0d6e6',
-      'editorBracketHighlight.foreground2': '#d0d6e6',
-      'editorBracketHighlight.foreground3': '#d0d6e6',
-      'editorBracketHighlight.foreground4': '#d0d6e6',
-      'editorBracketHighlight.foreground5': '#d0d6e6',
-      'editorBracketHighlight.foreground6': '#d0d6e6',
-      'editorBracketMatch.background': '#21182c',
-      'editorBracketMatch.border': '#6aa4ff66',
-      'editorIndentGuide.background1': '#2a2038',
-      'editorIndentGuide.activeBackground1': '#4a405c',
-      'editorGutter.background': '#120a1d',
-      'editorSuggestWidget.background': '#1d1528',
-      'editorSuggestWidget.border': '#342a43',
-      'editorSuggestWidget.foreground': '#f0ecf8',
-      'editorSuggestWidget.highlightForeground': '#8ec2ff',
-      'editorSuggestWidget.selectedBackground': '#273956',
-      'editorWidget.background': '#1d1528',
-      'editorWidget.border': '#342a43',
-    },
-  });
-  monaco.editor.defineTheme('idyllium-light', {
-    base: 'vs',
-    inherit: true,
-    rules: [
-      { token: 'keyword.idyllium', foreground: '8d3f75' },
-      { token: 'typeName.idyllium', foreground: '1d659a' },
-      { token: 'className.idyllium', foreground: '1b745c' },
-      { token: 'function.idyllium', foreground: '76620f' },
-      { token: 'object.idyllium', foreground: '0d667f' },
-      { token: 'namespace', foreground: '0d667f' },
-      { token: 'class', foreground: '1b745c' },
-      { token: 'function', foreground: '76620f' },
-      { token: 'method', foreground: '76620f' },
-      { token: 'property', foreground: '0d667f' },
-      { token: 'variable', foreground: '1d2230' },
-      { token: 'parameter', foreground: '0d667f' },
-      { token: 'variable.readonly', foreground: '0d667f' },
-      { token: 'brackets.idyllium', foreground: '445253' },
-      { token: 'string.key.json', foreground: '0d667f' },
-      { token: 'string.value.json', foreground: '87481f' },
-      { token: 'number.json', foreground: '5b7027' },
-      { token: 'keyword.json', foreground: '8d3f75' },
-      { token: 'delimiter.bracket.json', foreground: '445253' },
-      { token: 'delimiter.array.json', foreground: '445253' },
-      { token: 'delimiter.colon.json', foreground: '445253' },
-      { token: 'delimiter.comma.json', foreground: '445253' },
-      { token: 'comment.line.json', foreground: '477237', fontStyle: 'italic' },
-      { token: 'comment.block.json', foreground: '477237', fontStyle: 'italic' },
-      { token: 'string', foreground: '87481f' },
-      { token: 'number', foreground: '5b7027' },
-      { token: 'comment', foreground: '477237', fontStyle: 'italic' },
-    ],
-    colors: {
-      'focusBorder': '#00000000',
-      'editor.background': '#d9d6df',
-      'editor.foreground': '#252730',
-      'editorLineNumber.foreground': '#77717f',
-      'editorLineNumber.activeForeground': '#47424f',
-      'editorCursor.foreground': '#23252c',
-      'editor.selectionBackground': '#315f8c38',
-      'editor.inactiveSelectionBackground': '#315f8c1c',
-      'editor.lineHighlightBackground': '#275f9e0b',
-      'editor.lineHighlightBorder': '#00000000',
-      'editorBracketHighlight.foreground1': '#445253',
-      'editorBracketHighlight.foreground2': '#445253',
-      'editorBracketHighlight.foreground3': '#445253',
-      'editorBracketHighlight.foreground4': '#445253',
-      'editorBracketHighlight.foreground5': '#445253',
-      'editorBracketHighlight.foreground6': '#445253',
-      'editorBracketMatch.background': '#c6c2cd',
-      'editorBracketMatch.border': '#827a8d',
-      'editorIndentGuide.background1': '#c4c0ca',
-      'editorIndentGuide.activeBackground1': '#9c95a4',
-      'editorGutter.background': '#d9d6df',
-      'editorSuggestWidget.background': '#e7e4ea',
-      'editorSuggestWidget.border': '#aaa3b2',
-      'editorSuggestWidget.foreground': '#252730',
-      'editorSuggestWidget.highlightForeground': '#315f8c',
-      'editorSuggestWidget.selectedBackground': '#c8d3df',
-      'editorWidget.background': '#e7e4ea',
-      'editorWidget.border': '#aaa3b2',
-    },
-  });
+  defineIdylliumThemes(window.monaco);
 }
 
 export function completionRangeForMonaco(model, position) {

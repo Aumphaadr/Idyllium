@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Idyllium</title>
+  <link rel="stylesheet" href="frame.css">
+</head>
+<body>
+  <main id="unit" class="unit" hidden>
+    <section id="statement" class="statement" hidden></section>
+    <section class="editor-shell">
+      <div id="editor" class="editor"></div>
+    </section>
+    <div class="toolbar">
+      <!-- Значки — те же, что у кнопок Web IDE (треугольник запуска, квадрат остановки). -->
+      <button id="run" class="button button-run" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg><span class="label"></span></button>
+      <button id="stop" class="button button-stop" type="button" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10H7z"></path></svg><span class="label"></span></button>
+      <button id="check" class="button button-check" type="button" hidden><svg class="stroke" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg><span class="label"></span></button>
+      <span class="toolbar-gap"></span>
+      <button id="format" class="button button-quiet" type="button"><svg class="stroke" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M10 12h10M10 18h10"></path><path d="M4 10.5l3 3-3 3"></path></svg><span class="label"></span></button>
+      <button id="reset" class="button button-quiet" type="button"><svg class="stroke" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9"></path><path d="M4 4v4.5h4.5"></path></svg><span class="label"></span></button>
+    </div>
+    <section id="console" class="console" aria-live="polite">
+      <pre id="output" class="output"></pre>
+      <!-- Не <form>: песочница без allow-forms молча глушит отправку форм. -->
+      <div id="input-row" class="input-row" hidden>
+        <input id="input" class="input" type="text" autocomplete="off" spellcheck="false">
+        <button id="input-send" class="button" type="button"><span class="label"></span></button>
+      </div>
+    </section>
+    <section id="verdict" class="verdict" hidden></section>
+    <a id="branding" class="branding" href="https://aumphaadr.github.io/Idyllium/" target="_blank" rel="noopener noreferrer" hidden></a>
+  </main>
+  <main id="broken" class="broken" hidden></main>
+  <script src="frame.js"></script>
+</body>
+</html>

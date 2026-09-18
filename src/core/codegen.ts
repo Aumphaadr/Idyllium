@@ -27,7 +27,7 @@ import {
   WhileStatement,
 } from './ast';
 import { SourceRange } from './diagnostics';
-import { TypeRef, arrayType, qualified, typeToString } from './types';
+import { TypeRef, arrayType, qualified, typeToString, isComplex } from './types';
 import { ParameterSpec, createDefaultStandardLibrary } from './stdlib/registry';
 
 export interface CodegenResult {
@@ -46,6 +46,8 @@ export interface JavaScriptGeneratorOptions {
   readonly equalsContractClasses?: ReadonlySet<string>;
   readonly lessContractClasses?: ReadonlySet<string>;
   readonly greaterContractClasses?: ReadonlySet<string>;
+  /** Арифметические контракты и opposite: имя контракта → короткие имена классов. */
+  readonly arithmeticContractClasses?: ReadonlyMap<string, ReadonlySet<string>>;
   /** «Пустые поля» по классам (короткое имя → поля с `= null`) — для охраняемых чтений. */
   readonly nullableClassFields?: ReadonlyMap<string, ReadonlySet<string>>;
 }
@@ -58,6 +60,10 @@ export interface ModuleProgram {
 export interface GenerateOptions {
   readonly modules?: readonly ModuleProgram[];
 }
+
+/** Арифметические контракты живут в слотах своего класса (`plus$Vec`), как контракты сравнения. */
+const ARITHMETIC_CONTRACT_BY_SIGN: Readonly<Record<string, string>> = { '+': 'plus', '-': 'minus', '*': 'multiply', '/': 'divide' };
+const SLOT_ARITHMETIC_CONTRACTS: readonly string[] = ['plus', 'minus', 'multiply', 'divide', 'opposite'];
 
 export class JavaScriptGenerator {
   private importedModules = new Set<string>();
@@ -80,6 +86,7 @@ export class JavaScriptGenerator {
   private readonly equalsContractClasses: ReadonlySet<string>;
   private readonly lessContractClasses: ReadonlySet<string>;
   private readonly greaterContractClasses: ReadonlySet<string>;
+  private readonly arithmeticContractClasses: ReadonlyMap<string, ReadonlySet<string>>;
   private readonly nullableClassFields: ReadonlyMap<string, ReadonlySet<string>>;
   private readonly stdlib = createDefaultStandardLibrary();
 
@@ -89,6 +96,7 @@ export class JavaScriptGenerator {
     this.equalsContractClasses = options.equalsContractClasses ?? new Set();
     this.lessContractClasses = options.lessContractClasses ?? new Set();
     this.greaterContractClasses = options.greaterContractClasses ?? new Set();
+    this.arithmeticContractClasses = options.arithmeticContractClasses ?? new Map();
     this.nullableClassFields = options.nullableClassFields ?? new Map();
   }
 
@@ -126,6 +134,20 @@ export class JavaScriptGenerator {
     if (contract === 'less') return this.lessContractClasses;
     if (contract === 'greater') return this.greaterContractClasses;
     return this.equalsContractClasses;
+  }
+
+  /** Короткое имя класса, объявившего арифметический контракт (или opposite); null — контракта нет. */
+  private arithmeticContractClass(type: TypeRef | null, contract: string): string | null {
+    const bare = this.bareClassName(type);
+    return bare !== null && this.arithmeticContractClasses.get(contract)?.has(bare) ? bare : null;
+  }
+
+  /** Знак над объектом: awaited-вызов слота `plus$Vec` класса ЛЕВОГО операнда (статическая диспетчеризация). */
+  private arithmeticContractCall(operator: string, leftType: TypeRef | null, left: string, right: string, range: SourceRange): string | null {
+    const contract = ARITHMETIC_CONTRACT_BY_SIGN[operator];
+    const owner = contract ? this.arithmeticContractClass(leftType, contract) : null;
+    if (!contract || !owner) return null;
+    return `(await $rt.core.arithmeticObjects(${left}, ${right}, ${JSON.stringify(`${contract}$${owner}`)}, ${JSON.stringify(contract)}, ${JSON.stringify(operator)}, ${JSON.stringify(range.start.file)}, ${range.start.line}))`;
   }
 
   private contractClassBareName(type: TypeRef | null, contract: 'equals' | 'less' | 'greater' = 'equals'): string | null {
@@ -550,8 +572,10 @@ export class JavaScriptGenerator {
    *  контракты не наследуются, у семьи классов сосуществуют свои версии,
    *  а '==' диспетчеризуется статически — по типу, через который смотрят. */
   private isContractComparisonDeclaration(className: string, declaration: ClassMethodDeclaration): boolean {
+    // Форму помеченного контракта уже проверила семантика (пометка обязательна).
+    if (!declaration.isContract) return false;
+    if (SLOT_ARITHMETIC_CONTRACTS.includes(declaration.name)) return true;
     return ['equals', 'less', 'greater'].includes(declaration.name)
-      && !declaration.isStatic
       && declaration.parameters.length === 1
       && this.typeNameToString(declaration.parameters[0].paramType) === className;
   }
@@ -711,14 +735,17 @@ export class JavaScriptGenerator {
       const index = this.expression(statement.target.index);
       const container = this.typeOf(statement.target.object)?.kind === 'map' ? '$rt.map' : '$rt.array';
       const current = `${container}.get(${object}, ${index}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
-      const rawValue = this.compoundAssignmentValue(statement.operator, current, this.expression(statement.value), statement.range, this.isFloatType(targetType));
+      const rawValue = this.arithmeticContractCall(statement.operator.slice(0, 1), targetType, current, this.expression(statement.value), statement.range)
+        ?? this.compoundAssignmentValue(statement.operator, current, this.expression(statement.value), statement.range, this.isFloatType(targetType), targetType !== null && isComplex(targetType));
       const value = this.valueForOptionalTypeRef(rawValue, targetType, statement.range);
       return `${container}.set(${object}, ${index}, ${value}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
     }
 
     const target = this.expression(statement.target);
     const value = this.expression(statement.value);
-    const rawAssignedValue = this.compoundAssignmentValue(statement.operator, target, value, statement.range, this.isFloatType(targetType));
+    // `a += b` для объектов — `a = a + b` через контракт: имя перевязывается на новый объект.
+    const rawAssignedValue = this.arithmeticContractCall(statement.operator.slice(0, 1), targetType, target, value, statement.range)
+      ?? this.compoundAssignmentValue(statement.operator, target, value, statement.range, this.isFloatType(targetType), targetType !== null && isComplex(targetType));
     if (statement.target.kind === 'MemberExpression') {
       const assignedValue = this.valueForOptionalTypeRef(rawAssignedValue, targetType, statement.range);
       return `$rt.setProperty(${this.expression(statement.target.object)}, ${JSON.stringify(statement.target.name)}, ${assignedValue}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
@@ -732,8 +759,12 @@ export class JavaScriptGenerator {
     value: string,
     range: AssignmentStatement['range'],
     floatResult: boolean,
+    complexTarget = false,
   ): string {
     const binaryOperator = operator.slice(0, 1);
+    if (complexTarget) {
+      return `$rt.modules.math.complexBinary(${JSON.stringify(binaryOperator)}, ${target}, ${value}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
+    }
     if (binaryOperator === '/') {
       return `$rt.core.divide(${target}, ${value}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
     }
@@ -759,9 +790,19 @@ export class JavaScriptGenerator {
         if (this.userClassNames.has(expression.name)) return this.classObjectName(expression.name);
         return expression.name;
       case 'UnaryExpression':
-        return expression.operator === 'not'
-          ? `(!${this.expression(expression.operand)})`
-          : `$rt.core.negate(${this.expression(expression.operand)})`;
+        if (expression.operator === 'not') return `(!${this.expression(expression.operand)})`;
+        {
+          // Унарный минус над объектом — контракт opposite его класса.
+          const owner = this.arithmeticContractClass(this.typeOf(expression.operand), 'opposite');
+          if (owner) {
+            return `(await $rt.core.oppositeObject(${this.expression(expression.operand)}, ${JSON.stringify(`opposite$${owner}`)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line}))`;
+          }
+        }
+        {
+          const operandType = this.typeOf(expression.operand);
+          if (operandType && isComplex(operandType)) return `$rt.modules.math.complexOpposite(${this.expression(expression.operand)})`;
+        }
+        return `$rt.core.negate(${this.expression(expression.operand)})`;
       case 'BinaryExpression':
         return this.binaryExpression(expression);
       case 'ArrayLiteralExpression':
@@ -808,6 +849,13 @@ export class JavaScriptGenerator {
   private binaryExpression(expression: BinaryExpression): string {
     const left = this.expression(expression.left);
     const right = this.expression(expression.right);
+    const viaContract = this.arithmeticContractCall(expression.operator, this.typeOf(expression.left), left, right, expression.range);
+    if (viaContract) return viaContract;
+    // Комплексная арифметика: тип результата знает семантика (2 * z, z + 1, z / w).
+    const resultType = this.typeOf(expression);
+    if (resultType && isComplex(resultType) && ['+', '-', '*', '/'].includes(expression.operator)) {
+      return `$rt.modules.math.complexBinary(${JSON.stringify(expression.operator)}, ${left}, ${right}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+    }
     if (expression.operator === '/') {
       return `$rt.core.divide(${left}, ${right}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
     }
@@ -888,6 +936,14 @@ export class JavaScriptGenerator {
       const globalSpec = this.stdlib.getGlobalFunction(callee.name);
       if (globalSpec?.codegen) {
         const args = this.callArgumentValues(expression.args, globalSpec.parameters.map((parameter) => parameter.name)).join(', ');
+        // sum() объектов с контрактом plus — через слот класса элементов (второй приз контракта, как sort() у less).
+        if (callee.name === 'sum' && expression.args.length === 1) {
+          const elementType = this.typeOf(expression.args[0].value);
+          const owner = elementType?.kind === 'array' ? this.arithmeticContractClass(elementType.elementType, 'plus') : null;
+          if (owner) {
+            return `(await $rt.array.sumObjects(${args}, ${JSON.stringify(`plus$${owner}`)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line}))`;
+          }
+        }
         const call = this.declaredRuntimeCall(globalSpec.codegen, args, expression.range.start.file, expression.range.start.line);
         // Агрегат с float-результатом (sum от float-массива) внутри считает
         // без статических типов и на целых по величине double уходит в
@@ -990,6 +1046,13 @@ export class JavaScriptGenerator {
       }
 
       // Контракты сравнения: статическая диспетчеризация по типу получателя.
+      if (SLOT_ARITHMETIC_CONTRACTS.includes(callee.name)) {
+        const owner = this.arithmeticContractClass(receiverType, callee.name);
+        if (owner) {
+          const args = this.methodCallArgs(callee.name, expression.args, receiverType).join(', ');
+          return `$rt.callMethod(${this.expression(callee.object)}, ${JSON.stringify(`${callee.name}$${owner}`)}, [${args}], ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+        }
+      }
       if (['equals', 'less', 'greater'].includes(callee.name) && expression.args.length === 1) {
         const contractClass = this.contractClassBareName(receiverType, callee.name as 'equals' | 'less' | 'greater');
         if (contractClass) {
@@ -1382,6 +1445,11 @@ export class JavaScriptGenerator {
         `, ${range.start.line})`,
       ].join('');
     }
+    // Ступень лестницы int → float → math.Complex: число на границе комплексного
+    // типа (переменная, параметр, результат, ячейка массива) становится комплексным.
+    if (type?.kind === 'QualifiedTypeName' && type.moduleName === 'math' && type.name === 'Complex') {
+      return `$rt.modules.math.toComplex(${value}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
+    }
     if (type?.kind === 'QualifiedTypeName') {
       const typeRef = qualified(type.moduleName, type.name);
       if (this.stdlib.typeAcceptsNull(typeRef)) {
@@ -1425,6 +1493,9 @@ export class JavaScriptGenerator {
 
     if (type.kind === 'qualified' && type.moduleName === 'types' && TYPE_RUNTIME_NAMES.has(type.name)) {
       return `$rt.types.cast(${value}, ${JSON.stringify(type.name)}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
+    }
+    if (isComplex(type)) {
+      return `$rt.modules.math.toComplex(${value}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
     }
     if (type.kind === 'qualified' && this.stdlib.typeAcceptsNull(type)) {
       return this.nullableValue(value, type.moduleName, type.name, range);

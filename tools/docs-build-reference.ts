@@ -34,6 +34,8 @@ interface ReferenceLanguageSection {
   readonly code?: string;
   readonly language?: ReferenceCodeLanguage;
   readonly notes?: readonly string[];
+  /** Ссылка на другую страницу раздела «Язык» (например, с «Классов» на «Контракты»). */
+  readonly link?: { readonly page: string; readonly label: string };
 }
 
 type ReferenceCodeLanguage = 'idyllium' | 'json';

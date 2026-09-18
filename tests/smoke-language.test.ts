@@ -552,7 +552,7 @@ test('printing class objects requires a public to_string method', async () => {
     '',
     'class Cat {',
     'private:',
-    '    string function to_string() {',
+    '    contract string function to_string() {',
     '        return "x";',
     '    }',
     '}',
@@ -561,7 +561,7 @@ test('printing class objects requires a public to_string method', async () => {
     '    Cat cat;',
     '    console.writeln(cat);',
     '}',
-  ].join('\n'), "cannot print object of class 'Cat' directly");
+  ].join('\n'), "contract 'to_string' cannot be private — printing happens outside the class; move it to the public part");
 
   const result = await runIdyllium([
     'use console;',
@@ -569,7 +569,7 @@ test('printing class objects requires a public to_string method', async () => {
     'class Cat {',
     '    string name;',
     '',
-    '    string function to_string() {',
+    '    contract string function to_string() {',
     '        return "Cat(" + this.name + ")";',
     '    }',
     '}',
@@ -1282,8 +1282,8 @@ main() {
 class Hero {
     string name;
     int level;
-    bool function equals(Hero other) { return this.name == other.name; }
-    string function to_string() { return this.name + "(" + to_string(this.level) + ")"; }
+    contract bool function equals(Hero other) { return this.name == other.name; }
+    contract string function to_string() { return this.name + "(" + to_string(this.level) + ")"; }
 }
 main() {
     Hero a; a.name = "Мира"; a.level = 1;
@@ -1300,8 +1300,8 @@ main() {
     `map contracts: ${contracts.output}`,
   );
 
-  assertFails('use console;\nclass Pet { int v; }\nmain() {\n    map<string, Pet> pets;\n    console.writeln(pets);\n}', "cannot print a map of 'Pet' values directly — declare 'string function to_string()' in class 'Pet' and printing will use it");
-  assertFails('class Pet { int v; }\nmain() {\n    map<string, Pet> a;\n    map<string, Pet> b;\n    bool q = a == b;\n}', "cannot compare maps of 'Pet' values with '==' — declare 'bool function equals(Pet other)' in class 'Pet' and the comparison will use it");
+  assertFails('use console;\nclass Pet { int v; }\nmain() {\n    map<string, Pet> pets;\n    console.writeln(pets);\n}', "cannot print a map of 'Pet' values directly — declare 'contract string function to_string()' in class 'Pet' and printing will use it");
+  assertFails('class Pet { int v; }\nmain() {\n    map<string, Pet> a;\n    map<string, Pet> b;\n    bool q = a == b;\n}', "cannot compare maps of 'Pet' values with '==' — declare 'contract bool function equals(Pet other)' in class 'Pet' and the comparison will use it");
   assertFails('main() {\n    dyn_array<map<string, int>> rows;\n    rows.sort();\n}', "sort() cannot order 'map<string, int>' values — they have no order");
   assertFails('main() {\n    map<string, int> m;\n    bool q = m < m;\n}', "comparison '<' requires numeric operands");
 });
@@ -2158,7 +2158,7 @@ test('user classes fields methods this and constructors run', async () => {
         console.writeln(this.name, " мяукнул!");
       }
 
-      string function to_string() {
+      contract string function to_string() {
         return "Cat(" + this.name + ")";
       }
     }
@@ -3011,7 +3011,7 @@ test('library names are reserved, function names cannot be taken by variables', 
     class Robot {
       int charge;
 
-      string function to_string() {
+      contract string function to_string() {
         return "заряд " + to_string(this.charge);
       }
     }
@@ -3427,7 +3427,7 @@ class Hero {
         this.level = ex_level;
     }
 
-    bool function equals(Hero other) {
+    contract bool function equals(Hero other) {
         return this.name == other.name and this.level == other.level;
     }
 }
@@ -3461,7 +3461,7 @@ class Animal {
         this.name = ex_name;
     }
 
-    bool function equals(Animal other) {
+    contract bool function equals(Animal other) {
         return this.name == other.name;
     }
 }
@@ -3474,7 +3474,7 @@ class Cat extends Animal {
         this.whiskers = ex_whiskers;
     }
 
-    bool function equals(Cat other) {
+    contract bool function equals(Cat other) {
         return this.name == other.name and this.whiskers == other.whiskers;
     }
 }
@@ -3492,10 +3492,10 @@ main() {
 
   // 3. Без контракта — обучающие ошибки компиляции (объект, массив, поиск, sort).
   const forbidden: Array<[string, string]> = [
-    ['console.write(a == b);', "cannot compare objects of class 'Pet' with '==' — declare 'bool function equals(Pet other)' in class 'Pet'"],
+    ['console.write(a == b);', "cannot compare objects of class 'Pet' with '==' — declare 'contract bool function equals(Pet other)' in class 'Pet'"],
     ['array<Pet, 1> x = [a];\n    array<Pet, 1> y = [b];\n    console.write(x == y);', "cannot compare arrays of 'Pet' objects with '=='"],
     ['dyn_array<Pet> zoo;\n    console.write(zoo.contains(a));', "contains() cannot search for 'Pet' objects"],
-    ['dyn_array<Pet> zoo;\n    zoo.sort();', "sort() cannot order 'Pet' objects — declare 'bool function less(Pet other)' in class 'Pet' and sort() will use it"],
+    ['dyn_array<Pet> zoo;\n    zoo.sort();', "sort() cannot order 'Pet' objects — declare 'contract bool function less(Pet other)' in class 'Pet' and sort() will use it"],
   ];
   for (const [body, expected] of forbidden) {
     const result = compileIdyllium(`class Pet { string name; }\nmain() {\n    Pet a;\n    Pet b;\n    ${body}\n}\n`, { file: '/main.idyl' });
@@ -3505,10 +3505,10 @@ main() {
   // 4. Несовпадение окна: контракт выбирает левый операнд.
   const window = compileIdyllium(`class Animal {
     string name;
-    bool function equals(Animal other) { return this.name == other.name; }
+    contract bool function equals(Animal other) { return this.name == other.name; }
 }
 class Cat extends Animal {
-    bool function equals(Cat other) { return this.name == other.name; }
+    contract bool function equals(Cat other) { return this.name == other.name; }
 }
 main() {
     Cat c;
@@ -3525,7 +3525,7 @@ main() {
   const inheritedPrint = compileIdyllium(`use console;
 
 class Animal {
-    string function to_string() { return "зверь"; }
+    contract string function to_string() { return "зверь"; }
 }
 class Cat extends Animal { }
 main() {
@@ -3683,7 +3683,7 @@ main() {
 class Guest {
     string name;
 
-    string function to_string() { return this.name; }
+    contract string function to_string() { return this.name; }
 }
 
 class Room {
@@ -3759,7 +3759,7 @@ main() {
 class Guest {
     string name;
 
-    bool function equals(Guest other) {
+    contract bool function equals(Guest other) {
         return this.name == other.name;
     }
 }
@@ -3800,7 +3800,7 @@ main() {
     'hotel.idyl': `class Guest {
     string name;
 
-    bool function equals(Guest other) {
+    contract bool function equals(Guest other) {
         return this.name == other.name;
     }
 }
@@ -3863,20 +3863,20 @@ test('inherited equals contract is refused at compile time', async () => {
     use console;
     class A {
       int n;
-      bool function equals(A other) { return this.n == other.n; }
+      contract bool function equals(A other) { return this.n == other.n; }
     }
     class B extends A { }
     main() {
       B x; B y;
       console.writeln(x.equals(y));
     }
-  `, "'equals' is a contract and is not inherited — declare 'bool function equals(B other)' in class 'B' and the call will use it");
+  `, "'equals' is a contract and is not inherited — declare 'contract bool function equals(B other)' in class 'B' and the call will use it");
 
   // Через переменную родительского типа контракт работает — как обещал урок.
   const viaParent = await runIdyllium(`use console;
 class A {
     int n;
-    bool function equals(A other) { return this.n == other.n; }
+    contract bool function equals(A other) { return this.n == other.n; }
 }
 class B extends A { }
 main() {
@@ -3903,15 +3903,15 @@ class Hero {
         this.level = ex_level;
     }
 
-    bool function less(Hero other) {
+    contract bool function less(Hero other) {
         return this.level < other.level;
     }
 
-    bool function greater(Hero other) {
+    contract bool function greater(Hero other) {
         return this.level > other.level;
     }
 
-    string function to_string() {
+    contract string function to_string() {
         return this.name;
     }
 }
@@ -3939,7 +3939,7 @@ main() {
 class Card {
     int rank;
     constructor Card(int ex_rank) { this.rank = ex_rank; }
-    bool function less(Card other) { return this.rank < other.rank; }
+    contract bool function less(Card other) { return this.rank < other.rank; }
 }
 
 main() {
@@ -3954,15 +3954,15 @@ main() {
   // 3. Обучающие отказы: нет контракта, кривая форма, смешение типов, наследник.
   const refused: Array<[string, string]> = [
     ['class P { int v; }\nmain() {\n    P a; P b;\n    bool q = a < b;\n}',
-      "cannot order objects of class 'P' with '<' — declare 'bool function less(P other)' in class 'P' and '<' will use it"],
-    ['class P {\n    bool function less(P other) { return true; }\n}\nmain() {\n    P a; P b;\n    bool q = a > b;\n}',
-      "cannot order objects of class 'P' with '>' — declare 'bool function greater(P other)' in class 'P' and '>' will use it"],
-    ['class P {\n    bool function less(P other, int extra) { return true; }\n}\nmain() {\n    P a; P b;\n    bool q = a < b;\n}',
-      "(class 'P' has 'less', but it must take exactly one parameter of type 'P')"],
-    ['class P {\n    bool function less(P other) { return true; }\n}\nmain() {\n    P a;\n    bool q = a < 5;\n}',
+      "cannot order objects of class 'P' with '<' — declare 'contract bool function less(P other)' in class 'P' and '<' will use it"],
+    ['class P {\n    contract bool function less(P other) { return true; }\n}\nmain() {\n    P a; P b;\n    bool q = a > b;\n}',
+      "cannot order objects of class 'P' with '>' — declare 'contract bool function greater(P other)' in class 'P' and '>' will use it"],
+    ['class P {\n    contract bool function less(P other, int extra) { return true; }\n}\nmain() {\n    P a; P b;\n    bool q = a < b;\n}',
+      "contract 'less' has a wrong shape: it must take exactly one parameter of type 'P' — write 'contract bool function less(P other)'"],
+    ['class P {\n    contract bool function less(P other) { return true; }\n}\nmain() {\n    P a;\n    bool q = a < 5;\n}',
       "cannot compare 'P' and 'int'"],
-    ['class P {\n    bool function less(P other) { return true; }\n}\nclass Q extends P { }\nmain() {\n    Q a; Q b;\n    bool q = a < b;\n}',
-      "cannot order objects of class 'Q' with '<' — declare 'bool function less(Q other)' in class 'Q' and '<' will use it"],
+    ['class P {\n    contract bool function less(P other) { return true; }\n}\nclass Q extends P { }\nmain() {\n    Q a; Q b;\n    bool q = a < b;\n}',
+      "cannot order objects of class 'Q' with '<' — declare 'contract bool function less(Q other)' in class 'Q' and '<' will use it"],
   ];
   for (const [source, expected] of refused) {
     const result = compileIdyllium(source, { file: '/main.idyl' });
@@ -3975,11 +3975,11 @@ main() {
   const family = await runIdyllium(`use console;
 class Animal {
     int age;
-    bool function less(Animal other) { return this.age < other.age; }
+    contract bool function less(Animal other) { return this.age < other.age; }
 }
 class Cat extends Animal {
     int whiskers;
-    bool function less(Cat other) { return this.whiskers < other.whiskers; }
+    contract bool function less(Cat other) { return this.whiskers < other.whiskers; }
 }
 main() {
     Cat a; Cat b;
@@ -4088,9 +4088,9 @@ test('generated code leans only on $rt and undefined, not other bare globals', (
 class Hero {
     int level;
     constructor Hero(int ex_level) { this.level = ex_level; }
-    bool function less(Hero other) { return this.level < other.level; }
-    bool function equals(Hero other) { return this.level == other.level; }
-    string function to_string() { return to_string(this.level); }
+    contract bool function less(Hero other) { return this.level < other.level; }
+    contract bool function equals(Hero other) { return this.level == other.level; }
+    contract string function to_string() { return to_string(this.level); }
     int function boosted(int extra = 2) { return this.level + extra; }
 }
 int function pick(int a = 1) { return a; }
@@ -4423,7 +4423,7 @@ main() {
   const nested = await runIdyllium(`use console;
 class Item {
     string name = "меч";
-    string function to_string() { return "предмет " + this.name; }
+    contract string function to_string() { return "предмет " + this.name; }
 }
 main() {
     array<array<Item, 2>, 1> grid;
@@ -4990,11 +4990,11 @@ main() {
 `, {
     file: 'main.idyl',
     sources: {
-      'zoo.idyl': 'class Lion {\n    int age = 3;\n    bool function equals(Lion other) { return this.age == other.age; }\n}\n\nclass Cub extends Lion {\n    bool sleepy = true;\n}\n',
+      'zoo.idyl': 'class Lion {\n    int age = 3;\n    contract bool function equals(Lion other) { return this.age == other.age; }\n}\n\nclass Cub extends Lion {\n    bool sleepy = true;\n}\n',
     },
   });
   assert(
-    contract.diagnosticsText.includes("'equals' is a contract and is not inherited — declare 'bool function equals(zoo.Cub other)'"),
+    contract.diagnosticsText.includes("'equals' is a contract and is not inherited — declare 'contract bool function equals(zoo.Cub other)'"),
     `contract must not travel across the module border: ${contract.diagnosticsText}`,
   );
 
@@ -5360,7 +5360,7 @@ test('printing an array of objects goes through the to_string contract', async (
 
 class Hero {
     string name;
-    string function to_string() { return "Герой " + this.name; }
+    contract string function to_string() { return "Герой " + this.name; }
 }
 
 main() {
@@ -5388,7 +5388,7 @@ main() { dyn_array<Kot> koty; console.writeln(koty); }
 `, { file: '/main.idyl' });
   assert(!refuse.success, 'array of contractless objects unexpectedly printed');
   assert(
-    refuse.diagnosticsText.includes("cannot print an array of 'Kot' objects directly — declare 'string function to_string()' in class 'Kot' and printing will use it"),
+    refuse.diagnosticsText.includes("cannot print an array of 'Kot' objects directly — declare 'contract string function to_string()' in class 'Kot' and printing will use it"),
     `array refusal hint is off:\n${refuse.diagnosticsText}`,
   );
 
@@ -5396,14 +5396,17 @@ main() { dyn_array<Kot> koty; console.writeln(koty); }
 class H {
     int lvl;
 private:
-    bool function equals(H other) { return this.lvl == other.lvl; }
+    contract bool function equals(H other) { return this.lvl == other.lvl; }
 }
 main() { H a; H b; console.writeln(a == b); }
 `, { file: '/main.idyl' });
   assert(!crooked.success, 'private equals unexpectedly acted as a contract');
+  // С обязательной пометкой ошибка формы звучит у объявления, и ровно один раз:
+  // место использования (`a == b`) о той же беде уже не говорит.
   assert(
-    crooked.diagnosticsText.includes("(class 'H' has 'equals', but it is private)"),
-    `shape diagnostics tail is off:\n${crooked.diagnosticsText}`,
+    crooked.diagnosticsText.includes("contract 'equals' cannot be private — '==' and '!=' are written outside the class; move it to the public part")
+      && crooked.diagnostics.filter((diagnostic) => diagnostic.severity === 'error').length === 1,
+    `a private contract must be refused once, at its declaration:\n${crooked.diagnosticsText}`,
   );
 });
 
@@ -5423,6 +5426,14 @@ void function helper() {
 
 int function score() {
     return 7;
+}
+
+class Wallet {
+    int coins;
+    contract Wallet function plus(Wallet other) {
+        this.coins = this.coins + other.coins;
+        return this;
+    }
 }
 
 main() {
@@ -5451,7 +5462,7 @@ main() {
 `;
   const result = compileIdyllium(source, { file: 'main.idyl' });
   const warnings = result.diagnostics.filter((diagnostic) => diagnostic.severity === 'warning');
-  assert(warnings.length >= 8, `expected the full warning bouquet, got ${warnings.length}:\n${result.diagnosticsText}`);
+  assert(warnings.length >= 9, `expected the full warning bouquet, got ${warnings.length}:\n${result.diagnosticsText}`);
   const seen = new Set<string>();
   for (const warning of warnings) {
     assert(typeof warning.code === 'string' && warning.code.length > 0,
@@ -5603,4 +5614,400 @@ test('ritual declarations get honest words instead of parser jargon', () => {
     nestedFunction.diagnostics.filter((diagnostic) => diagnostic.severity === 'error').length === 1,
     `nested-function must not cascade: ${nestedFunction.diagnosticsText}`,
   );
+});
+
+test('inheriting from a built-in type and overloading a method are refused in one honest line', () => {
+  // Улов исследования «хвосты 1.6.0»: `extends int` сыпал каскадом синтаксических
+  // ошибок, а второй метод с тем же именем ругался на «inherited method
+  // signature» там, где наследования нет.
+  for (const [base, shown] of [
+    ['int', 'int'], ['string', 'string'], ['dyn_array<int>', 'dyn_array'],
+    ['set<string>', 'set'], ['map<string, array<int, 3>>', 'map'],
+  ]) {
+    const result = compileIdyllium(`use console;\nclass Money extends ${base} {\n    int cents;\n}\nmain() {\n    console.writeln(1);\n}`);
+    const errors = result.diagnostics.filter((diagnostic) => diagnostic.severity === 'error');
+    assert(errors.length === 1, `'extends ${base}' must give exactly one error, got: ${errors.map((item) => item.message).join(' | ')}`);
+    assert(
+      errors[0].message === `cannot inherit from built-in type '${shown}' — keep a value of this type inside the class as a field instead`,
+      `'extends ${base}' must be refused in words, got: ${errors[0].message}`,
+    );
+  }
+
+  const overloaded = compileIdyllium([
+    'use console;',
+    'class Vec {',
+    '    float x;',
+    '    Vec function scale(Vec other) { return this; }',
+    '    Vec function scale(float k) { return this; }',
+    '}',
+    'main() { }',
+  ].join('\n'));
+  const overloadErrors = overloaded.diagnostics.filter((diagnostic) => diagnostic.severity === 'error');
+  assert(overloadErrors.length === 1, `an overload attempt must give one error, got: ${overloadErrors.map((item) => item.message).join(' | ')}`);
+  assert(
+    overloadErrors[0].message === "method 'scale' is already declared in class 'Vec' — Idyllium has no overloading: one name, one method",
+    `an overload attempt must be named as such, got: ${overloadErrors[0].message}`,
+  );
+  // Настоящее переопределение с другой сигнатурой говорит прежними словами.
+  assertFails(
+    'class Base {\n    int function f(int a) { return a; }\n}\nclass Heir extends Base {\n    int function f(string a) { return 1; }\n}\nmain() { }',
+    "method 'Heir.f' must match inherited method signature",
+  );
+});
+
+test("the 'contract' keyword is mandatory, checked at the declaration, and never reported twice", async () => {
+  // Вердикты владельца 2026-09-18 (some_tail_160/02): пометка по образцу `event`,
+  // обязательная; имена контрактов в классах зарезервированы.
+  const only = (source: string): string => {
+    const result = compileIdyllium(source, { file: '/main.idyl' });
+    const errors = result.diagnostics.filter((diagnostic) => diagnostic.severity === 'error');
+    assert(errors.length === 1, `expected exactly one error, got:\n${result.diagnosticsText}`);
+    return errors[0].message;
+  };
+  const usage = 'main() {\n    T a; T b;\n    bool same = a == b;\n    bool lower = a < b;\n    bool upper = a > b;\n    string text = to_string(a);\n}';
+  const cases: Array<[string, string]> = [
+    // имя контракта без пометки — имена зарезервированы
+    ['bool function equals(T other) { return true; }',
+      "'equals' is a contract name — write 'contract bool function equals(T other)' and '==' and '!=' will use it, or pick another name"],
+    ['string function to_string() { return "t"; }',
+      "'to_string' is a contract name — write 'contract string function to_string()' and printing will use it, or pick another name"],
+    ['string function to_string(int digits) { return "t"; }',
+      "'to_string' is a contract name — write 'contract string function to_string()' and printing will use it, or pick another name"],
+    ['bool function less(T other) { return true; }',
+      "'less' is a contract name — write 'contract bool function less(T other)' and '<', '>=' and sort() will use it, or pick another name"],
+    // пометка на чужом имени
+    ['contract void function show() { }',
+      "'show' is not a contract — contracts are: to_string, equals, less, greater, plus, minus, multiply, divide, opposite"],
+    // форма
+    ['contract int function to_string() { return 1; }',
+      "contract 'to_string' has a wrong shape: it returns 'int' instead of 'string' — write 'contract string function to_string()'"],
+    ['contract string function to_string(int digits) { return "t"; }',
+      "contract 'to_string' has a wrong shape: it must take no parameters — write 'contract string function to_string()'"],
+    ['contract int function greater(string other) { return 1; }',
+      "contract 'greater' has a wrong shape: its parameter is 'string' instead of 'T', it returns 'int' instead of 'bool' — write 'contract bool function greater(T other)'"],
+    // доступ и порядок слов
+    ['private:\n    contract bool function greater(T other) { return true; }',
+      "contract 'greater' cannot be private — '>' and '<=' are written outside the class; move it to the public part"],
+    ['static contract bool function equals(T other) { return true; }',
+      "a contract cannot be static — it works on an object ('a == b', 'a + b')"],
+    ['contract static bool function equals(T other) { return true; }',
+      "a contract cannot be static — it works on an object ('a == b', 'a + b')"],
+    // пометка не на методе
+    ['contract int level;', "'contract' marks a method — a field cannot be a contract"],
+    ['contract event on_boom;', "'contract' marks a method — an event cannot be a contract"],
+  ];
+  for (const [member, expected] of cases) {
+    // Все четыре знака и печать в main: место использования обязано молчать,
+    // когда беда уже названа у объявления.
+    const others = ['equals', 'less', 'greater', 'to_string']
+      .filter((name) => !member.includes(` ${name}(`))
+      .map((name) => (name === 'to_string'
+        ? '    contract string function to_string() { return "t"; }'
+        : `    contract bool function ${name}(T other) { return true; }`));
+    const source = `class T {\n${others.join('\n')}\n    ${member}\n}\n${usage}`;
+    const message = only(source);
+    assert(message === expected, `member «${member}»:\n  expected: ${expected}\n  got:      ${message}`);
+  }
+
+  assert(
+    only('contract bool function equals(int a) { return true; }\nmain() { }')
+      === "'contract' marks a method of a class — a function outside a class cannot be a contract",
+    'a file-level contract must be refused in words',
+  );
+  // Ключевое слово на месте имени — одна строка, без каскада (раньше три; у имени
+  // функции — два десятка): так же ведут себя и старые слова вроде `event`.
+  for (const source of ['main() {\n    int contract = 5;\n}', 'main() {\n    int event = 5;\n}', 'int function contract(int a) { return a; }\nmain() { }']) {
+    const word = source.includes('event') ? 'event' : 'contract';
+    assert(only(source) === `'${word}' is a keyword and cannot be used as a name`, `keyword '${word}' as a name must be refused once`);
+  }
+
+  // Исправная пометка: знаки, поиск, сортировка, печать — всё через контракты;
+  // наследник объявляет свои контракты рядом с базовыми.
+  const ok = await runIdyllium(`use console;
+
+class Hero {
+    string name;
+    int level;
+    constructor Hero(string ex_name, int ex_level) { this.name = ex_name; this.level = ex_level; }
+    contract string function to_string() { return this.name + "(" + to_string(this.level) + ")"; }
+    contract bool function equals(Hero other) { return this.name == other.name and this.level == other.level; }
+    contract bool function less(Hero other) { return this.level < other.level; }
+    contract bool function greater(Hero other) { return this.level > other.level; }
+}
+
+class Knight extends Hero {
+    constructor Knight(string ex_name, int ex_level) { parent(ex_name, ex_level); }
+    contract string function to_string() { return "сэр " + this.name; }
+    contract bool function equals(Knight other) { return this.name == other.name; }
+}
+
+main() {
+    dyn_array<Hero> guild = [Hero("Ника", 9), Hero("Мира", 3), Hero("Лиам", 9)];
+    guild.sort();
+    Hero nika = Hero("Ника", 9);
+    Knight first = Knight("Гавейн", 5);
+    Knight second = Knight("Гавейн", 7);
+    console.write(guild, "|", nika == guild[1], nika < guild[0], nika > guild[0], nika <= guild[2], guild.contains(nika), nika.less(guild[0]), "|", first, first == second);
+}
+`, {}, { file: '/main.idyl' });
+  assert(ok.success, ok.runtimeError ?? ok.compilation.diagnosticsText);
+  assert(
+    ok.output === '["Мира(3)", "Ника(9)", "Лиам(9)"]|truefalsetruetruetruefalse|сэр Гавейнtrue',
+    `marked contracts are off: ${JSON.stringify(ok.output)}`,
+  );
+});
+
+test('arithmetic contracts: plus, minus, multiply, divide and opposite', async () => {
+  // Вердикты владельца 2026-09-18 (some_tail_160/01 и 02): имя = как знак читают
+  // вслух; типы параметра и результата свободны, сигнатура у знака одна;
+  // диспетчеризация по ЛЕВОМУ операнду; не наследуются; `+=` перевязывает имя.
+  const VEC = `class Vec {
+    float x;
+    float y;
+    constructor Vec(float ex_x, float ex_y) { this.x = ex_x; this.y = ex_y; }
+    contract Vec function plus(Vec other) { return Vec(this.x + other.x, this.y + other.y); }
+    contract Vec function minus(Vec other) { return Vec(this.x - other.x, this.y - other.y); }
+    contract Vec function multiply(float k) { return Vec(this.x * k, this.y * k); }
+    contract float function divide(Vec other) { return this.x / other.x; }
+    contract Vec function opposite() { return Vec(-this.x, -this.y); }
+    contract string function to_string() { return "(" + to_string(this.x) + "; " + to_string(this.y) + ")"; }
+}
+`;
+  const ok = await runIdyllium(`use console;
+${VEC}
+main() {
+    Vec a = Vec(1, 2);
+    Vec b = Vec(3, 4);
+    console.writeln(a + b, a - b, a * 2.5, a * 2, -a);
+    console.writeln(a + b * 2 - -a);
+    console.writeln(b / a);
+    Vec alias = a;
+    a += b;
+    console.writeln(a, alias);
+    a *= 10;
+    a -= b;
+    console.writeln(a, a.plus(b), b.opposite());
+    dyn_array<Vec> path = [Vec(1, 1), Vec(2, 2)];
+    path[0] += path[1];
+    console.writeln(path);
+}
+`, {}, { file: '/main.idyl' });
+  assert(ok.success, ok.runtimeError ?? ok.compilation.diagnosticsText);
+  assert(
+    ok.output === [
+      '(4; 6)(-2; -2)(2.5; 5)(2; 4)(-1; -2)',
+      '(8; 12)',        // приоритеты — от парсера: a + (b * 2) - (-a)
+      '3',              // результат контракта может быть любого типа
+      '(4; 6)(1; 2)',   // a += b перевязал имя, псевдоним остался на старом объекте
+      '(37; 56)(40; 60)(-3; -4)',
+      '["(3; 3)", "(2; 2)"]',
+      '',
+    ].join('\n'),
+    `arithmetic contracts are off: ${JSON.stringify(ok.output)}`,
+  );
+
+  const only = (source: string): string => {
+    const result = compileIdyllium(source, { file: '/main.idyl' });
+    const errors = result.diagnostics.filter((diagnostic) => diagnostic.severity === 'error');
+    assert(errors.length === 1, `expected exactly one error, got:\n${result.diagnosticsText}`);
+    return errors[0].message;
+  };
+  const refusals: Array<[string, string]> = [
+    // контракт принадлежит левому операнду — перестановку молча не делаем
+    ['Vec c = 2 * a;', "operator '*' cannot be applied to 'int' and 'Vec' — a contract works for the LEFT operand, and 'int' has none ('Vec' declares 'multiply', but it stands on the right)"],
+    // тип правого операнда сверяется с параметром контракта
+    ['Vec c = a * b;', "operator '*' cannot be applied to 'Vec' and 'Vec' — 'Vec.multiply' accepts a 'float', got 'Vec'"],
+    // результат контракта — обычный тип выражения
+    ['Vec c = a / b;', "cannot assign 'float' value to 'Vec' variable"],
+    ['a /= b;', "cannot assign 'float' value to 'Vec' variable"],
+    // строка с объектом по-прежнему не склеивается
+    ['string s = "v = " + a;', "operator '+' cannot be applied to 'string' and 'Vec'"],
+  ];
+  for (const [line, expected] of refusals) {
+    const message = only(`${VEC}main() {\n    Vec a = Vec(1, 2);\n    Vec b = Vec(3, 4);\n    ${line}\n}`);
+    assert(message === expected, `line «${line}»:\n  expected: ${expected}\n  got:      ${message}`);
+  }
+
+  // Приглашения: нет контракта; привычное имя из другого языка; контракт базы не наследуется.
+  assert(
+    only('class M { int c; }\nmain() {\n    M a; M b;\n    M s = a + b;\n}')
+      === "operator '+' cannot be applied to 'M' and 'M' — declare 'contract M function plus(M other)' in class 'M' and '+' will use it",
+    'a missing contract must be invited with a recipe',
+  );
+  assert(
+    only('class M { int c; }\nmain() {\n    M a;\n    M s = -a;\n}')
+      === "unary '-' cannot be applied to 'M' — declare 'contract M function opposite()' in class 'M' and unary '-' will use it",
+    'a missing opposite must be invited with a recipe',
+  );
+  assert(
+    only('class M {\n    int c;\n    M function times(M other) { return other; }\n}\nmain() {\n    M a; M b;\n    M s = a * b;\n}')
+      === "operator '*' cannot be applied to 'M' and 'M' — class 'M' has 'times', but the contract for '*' is called 'multiply': write 'contract M function multiply(M other)'",
+    'a habitual name must be answered with the right word',
+  );
+  for (const use of ['Heir h = g * 2;', 'Heir h = g.multiply(2);']) {
+    const message = only(`class Base {\n    float x;\n    contract Base function multiply(float k) { return this; }\n}\nclass Heir extends Base { }\nmain() {\n    Heir g;\n    ${use}\n}`);
+    assert(
+      message.includes("declare 'contract Heir function multiply(float k)' in class 'Heir'") && message.includes('not inherited'),
+      `contracts are not inherited, the recipe follows the base declaration: ${message}`,
+    );
+  }
+
+  // Форма и имена — у объявления.
+  const shapes: Array<[string, string]> = [
+    ['contract W function plus(W a, W b) { return a; }', "contract 'plus' has a wrong shape: it must take exactly one parameter (the right operand of '+') — write 'contract W function plus(W other)'"],
+    ['contract void function minus(W other) { }', "contract 'minus' has a wrong shape: it returns nothing, but '-' must produce a value — write 'contract W function minus(W other)'"],
+    ['contract W function opposite(W other) { return other; }', "contract 'opposite' has a wrong shape: it must take no parameters ('-a' has a single operand) — write 'contract W function opposite()'"],
+    ['contract W function times(W other) { return other; }', "'times' is not a contract — the contract for '*' is called 'multiply'"],
+    ['contract W function add(W other) { return other; }', "'add' is not a contract — the contract for '+' is called 'plus'"],
+    ['contract W function negate() { return this; }', "'negate' is not a contract — the contract for unary '-' is called 'opposite'"],
+    ['W function multiply(W other) { return other; }', "'multiply' is a contract name — write 'contract W function multiply(W other)' and '*' will use it, or pick another name"],
+    ['private:\n    contract W function divide(W other) { return other; }', "contract 'divide' cannot be private — '/' is written outside the class; move it to the public part"],
+  ];
+  for (const [member, expected] of shapes) {
+    const message = only(`class W {\n    ${member}\n}\nmain() {\n    W a; W b;\n    W s = a + b;\n    W d = a - b;\n    W m = a * b;\n    W q = a / b;\n    W n = -a;\n}`.replace(/    W [sdmqn] = [^\n]*\n/gu, (line) => {
+      // В main остаются только знаки того контракта, о котором уже сказано у объявления:
+      // место использования обязано промолчать.
+      const sign = member.includes('plus') || member.includes('add') ? 'a + b'
+        : member.includes('minus') ? 'a - b'
+          : member.includes('multiply') || member.includes('times') ? 'a * b'
+            : member.includes('divide') ? 'a / b' : '-a';
+      return line.includes(sign) && !/times|add|negate/u.test(member) ? line : '';
+    }));
+    assert(message === expected, `member «${member}»:\n  expected: ${expected}\n  got:      ${message}`);
+  }
+
+  // Предупреждение: контракт, меняющий операнд (объекты — ссылки, `c = a - b` портил бы a).
+  const mutating = compileIdyllium(`class V {
+    float x;
+    contract V function minus(V other) {
+        this.x = this.x - other.x;
+        return this;
+    }
+    contract V function divide(V other) {
+        other.x = 1;
+        return other;
+    }
+    contract V function plus(V other) {
+        V result;
+        result.x = this.x + other.x;
+        return result;
+    }
+}
+main() { }
+`, { file: '/main.idyl' });
+  assert(mutating.success, mutating.diagnosticsText);
+  const texts = mutating.diagnostics.filter((diagnostic) => diagnostic.code === 'contract-changes-operand').map((diagnostic) => diagnostic.message);
+  assert(
+    JSON.stringify(texts) === JSON.stringify([
+      "contract 'minus' changes the object it was called on — after 'c = a - b' the value of 'a' must stay the same; build a new object and return it",
+      "contract 'divide' changes its operand 'other' — after 'c = a / b' the value of 'b' must stay the same; build a new object and return it",
+    ]),
+    `mutation warnings are off (a contract building a NEW object must stay silent): ${JSON.stringify(texts)}`,
+  );
+});
+
+test('arithmetic contracts work for classes imported from a user module', async () => {
+  const geometry = `class Vec {
+    float x;
+    float y;
+    constructor Vec(float ex_x, float ex_y) { this.x = ex_x; this.y = ex_y; }
+    contract Vec function plus(Vec other) { return Vec(this.x + other.x, this.y + other.y); }
+    contract Vec function multiply(float k) { return Vec(this.x * k, this.y * k); }
+    contract Vec function opposite() { return Vec(-this.x, -this.y); }
+    contract string function to_string() { return "(" + to_string(this.x) + "; " + to_string(this.y) + ")"; }
+}
+`;
+  const options = { file: 'main.idyl', sources: { 'geometry.idyl': geometry } };
+  const ok = await runIdyllium(`use console;
+use geometry;
+
+main() {
+    geometry.Vec a = geometry.Vec(1, 2);
+    geometry.Vec b = geometry.Vec(3, 4);
+    console.write(a + b, a * 3, -a);
+    a += b;
+    console.write(a);
+}
+`, {}, options);
+  assert(ok.success, ok.runtimeError ?? ok.compilation.diagnosticsText);
+  assert(ok.output === '(4; 6)(3; 6)(-1; -2)(4; 6)', `module contracts are off: ${JSON.stringify(ok.output)}`);
+
+  const refused = compileIdyllium(
+    'use geometry;\nmain() {\n    geometry.Vec a = geometry.Vec(1, 2);\n    geometry.Vec c = a - a;\n    geometry.Vec d = 2 * a;\n}',
+    options,
+  );
+  assert(
+    refused.diagnosticsText.includes("operator '-' cannot be applied to 'geometry.Vec' and 'geometry.Vec' — declare 'contract Vec function minus(Vec other)' in class 'Vec' and '-' will use it"),
+    `a missing contract of a module class is invited in the module's own words:\n${refused.diagnosticsText}`,
+  );
+  assert(
+    refused.diagnosticsText.includes("a contract works for the LEFT operand, and 'int' has none ('geometry.Vec' declares 'multiply', but it stands on the right)"),
+    `the left-operand rule holds across modules:\n${refused.diagnosticsText}`,
+  );
+});
+
+test('sum() adds objects through their plus contract', async () => {
+  // Второй приз контракта plus, как sort() у less (вердикт владельца 1.7 → взято 2026-09-18).
+  const VEC = `class Vec {
+    float x;
+    float y;
+    constructor Vec(float ex_x, float ex_y) { this.x = ex_x; this.y = ex_y; }
+    contract Vec function plus(Vec other) { return Vec(this.x + other.x, this.y + other.y); }
+    contract string function to_string() { return "(" + to_string(this.x) + "; " + to_string(this.y) + ")"; }
+}
+`;
+  const ok = await runIdyllium(`use console;
+${VEC}
+main() {
+    dyn_array<Vec> path = [Vec(1, 1), Vec(2, 3), Vec(-1, 0.5)];
+    array<Vec, 1> one = [Vec(7, 7)];
+    console.write(sum(path), sum(one));
+}
+`, {}, { file: '/main.idyl' });
+  assert(ok.success, ok.runtimeError ?? ok.compilation.diagnosticsText);
+  assert(ok.output === '(2; 4.5)(7; 7)', `sum over plus is off: ${JSON.stringify(ok.output)}`);
+
+  const empty = await runIdyllium(`use console;\n${VEC}\nmain() {\n    dyn_array<Vec> none;\n    console.writeln(sum(none));\n}\n`, {}, { file: '/main.idyl' });
+  assert(!empty.success && (empty.runtimeError ?? '').includes("'sum' cannot be used with an empty array"), `empty object array: ${empty.runtimeError}`);
+
+  const refusals: Array<[string, string]> = [
+    ['class V { float x; contract V function multiply(float k) { return V(); } }\nmain() {\n    dyn_array<V> vs;\n    V t = sum(vs);\n}',
+      "sum() cannot add 'V' objects — declare 'contract V function plus(V other)' in class 'V' and sum() will use it"],
+    ['class O { float x; contract float function plus(O other) { return 1; } }\nmain() {\n    dyn_array<O> os;\n    O t = sum(os);\n}',
+      "sum() adds 'O' objects with their 'plus', so it must take a 'O' and return a 'O' — this one is 'plus(O) -> float'"],
+    ['class M { int c; M function add(M other) { return M(); } }\nmain() {\n    dyn_array<M> ms;\n    M t = sum(ms);\n}',
+      "sum() cannot add 'M' objects — class 'M' has 'add', but the contract for sum() is called 'plus': write 'contract M function plus(M other)'"],
+    ['class V { float x; }\nmain() {\n    dyn_array<V> vs;\n    V t = max(vs);\n}', "max() cannot order 'V' objects — they have no built-in order; write the loop"],
+    ['class V { float x; }\nmain() {\n    dyn_array<V> vs;\n    float t = avg(vs);\n}', "avg() cannot average 'V' objects — divide the sum yourself"],
+  ];
+  for (const [source, expected] of refusals) {
+    const result = compileIdyllium(source, { file: '/main.idyl' });
+    assert(!result.success && result.diagnosticsText.includes(expected), `expected «${expected}», got:\n${result.diagnosticsText}`);
+  }
+});
+
+test('contracts across the module border: short-name recipes, no echo for a broken module', () => {
+  // Улов ручного теста по модулям (2026-09-18): рецепт сравнения звал класс полным
+  // именем («in class 'geometry.Vec'»), а сломанный контракт в модуле давал второй
+  // отказ в главном файле.
+  const geometry = 'class Vec {\n    float x;\n    contract Vec function multiply(float k) { return Vec(); }\n}\n';
+  const refused = compileIdyllium(
+    'use geometry;\nmain() {\n    geometry.Vec a;\n    bool q = a < a;\n    dyn_array<geometry.Vec> vs = [a];\n    vs.sort();\n}',
+    { file: 'main.idyl', sources: { 'geometry.idyl': geometry } },
+  );
+  for (const expected of [
+    "cannot order objects of class 'geometry.Vec' with '<' — declare 'contract bool function less(Vec other)' in class 'Vec' and '<' will use it",
+    "sort() cannot order 'geometry.Vec' objects — declare 'contract bool function less(Vec other)' in class 'Vec' and sort() will use it",
+  ]) {
+    assert(refused.diagnosticsText.includes(expected), `expected «${expected}», got:\n${refused.diagnosticsText}`);
+  }
+
+  const broken = 'class Box {\n    int size;\n    bool function equals(Box other) { return true; }\n    contract int function plus(Box other, int extra) { return 1; }\n}\n';
+  const echo = compileIdyllium(
+    'use console;\nuse broken;\nmain() {\n    broken.Box a;\n    broken.Box b;\n    console.writeln(a == b, a + b);\n}',
+    { file: 'main.idyl', sources: { 'broken.idyl': broken } },
+  );
+  const errors = echo.diagnostics.filter((diagnostic) => diagnostic.severity === 'error');
+  assert(errors.length === 2 && errors.every((diagnostic) => diagnostic.range.start.file.endsWith('broken.idyl')),
+    `a broken module must be refused at its declarations only, got:\n${echo.diagnosticsText}`);
 });

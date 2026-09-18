@@ -51,6 +51,7 @@ export const fontSizeInput = document.getElementById('font-size-input');
 export const consoleFontSizeDecrease = document.getElementById('console-font-size-decrease');
 export const consoleFontSizeIncrease = document.getElementById('console-font-size-increase');
 export const consoleFontSizeInput = document.getElementById('console-font-size-input');
+export const autocompleteToggle = document.getElementById('autocomplete-toggle');
 export const colorPickerButton = document.getElementById('color-picker-button');
 export const colorPickerMenu = document.getElementById('color-picker-menu');
 export const fileAppMenuWrapper = document.getElementById('file-app-menu-wrapper');

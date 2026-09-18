@@ -105,6 +105,14 @@ export class Parser {
         continue;
       }
 
+      // `contract` перед функцией файла: контракт — метод класса. Говорим один
+      // раз, слово пропускаем — функция разбирается как обычная.
+      if (this.check(TokenKind.KwContract)) {
+        this.error(this.peek().range, "'contract' marks a method of a class — a function outside a class cannot be a contract");
+        this.advance();
+        continue;
+      }
+
       // 'function greet(...) { ... }' без типа результата: раньше отсюда
       // сыпался каскад из девяти сообщений, ни одно из которых не называло
       // причину. Говорим один раз и разбираем функцию как void — остальной
@@ -238,6 +246,9 @@ export class Parser {
 
   private consumeFunctionName(): Token {
     if (this.check(TokenKind.Identifier, TokenKind.KwMain)) return this.advance();
+    // Ключевое слово на месте имени функции (`int function static(...)`): та же
+    // одна строка, что у переменных, вместо каскада по всему файлу.
+    if (keywordDisplay(this.peek().kind) !== undefined && this.checkNext(TokenKind.LeftParen)) return this.consumeName('expected function name');
     this.error(this.peek().range, 'expected function name');
     return {
       kind: TokenKind.Identifier,
@@ -521,14 +532,18 @@ export class Parser {
     let baseNameRange: SourceRange | null = null;
 
     if (this.match(TokenKind.KwExtends)) {
-      const base = this.consume(TokenKind.Identifier, 'expected base class name after extends');
-      baseName = base.lexeme;
-      baseNameRange = base.range;
-      // База с точкой: класс модуля (zoo.Lion) или виджет (gui.Button).
-      if (this.match(TokenKind.Dot)) {
-        const member = this.consume(TokenKind.Identifier, "expected class name after '.'");
-        baseName = `${baseName}.${member.lexeme}`;
-        baseNameRange = { start: base.range.start, end: member.range.end };
+      // `extends int`: встроенный тип — не класс. Один отказ словами вместо каскада
+      // синтаксических ошибок; сам тип (вместе с <…>) пропускаем и разбираем тело дальше.
+      if (!this.refuseBuiltinBase()) {
+        const base = this.consume(TokenKind.Identifier, 'expected base class name after extends');
+        baseName = base.lexeme;
+        baseNameRange = base.range;
+        // База с точкой: класс модуля (zoo.Lion) или виджет (gui.Button).
+        if (this.match(TokenKind.Dot)) {
+          const member = this.consume(TokenKind.Identifier, "expected class name after '.'");
+          baseName = `${baseName}.${member.lexeme}`;
+          baseNameRange = { start: base.range.start, end: member.range.end };
+        }
       }
     }
 
@@ -552,7 +567,24 @@ export class Parser {
         continue;
       }
 
-      const isStatic = this.match(TokenKind.KwStatic);
+      let isStatic = this.match(TokenKind.KwStatic);
+      // Контракт: слово `contract` перед объявлением метода (по образцу `event`) —
+      // метод, который вызывает знак или печать. Статическим он быть не может:
+      // `a == b` работает с объектом. Порядок слов не важен — отказ один.
+      const contractToken = this.check(TokenKind.KwContract) ? this.advance() : null;
+      if (contractToken) {
+        const staticAfter = this.match(TokenKind.KwStatic);
+        if (isStatic || staticAfter) {
+          this.error(contractToken.range, "a contract cannot be static — it works on an object ('a == b', 'a + b')");
+          isStatic = false;
+        }
+        const wrongMember = this.check(TokenKind.KwEvent) ? 'an event'
+          : this.check(TokenKind.KwConstructor) ? 'a constructor'
+            : this.check(TokenKind.KwConst) ? 'a constant' : null;
+        if (wrongMember) {
+          this.error(contractToken.range, `'contract' marks a method — ${wrongMember} cannot be a contract`);
+        }
+      }
       if (isStatic && this.check(TokenKind.KwConst)) {
         this.error(this.peek().range, "class constants are written without 'static' — 'const' alone already means one per class");
         this.advance();
@@ -602,8 +634,11 @@ export class Parser {
       if (this.checkTypeStart()) {
         const declaredType = this.parseTypeName();
         if (this.match(TokenKind.KwFunction)) {
-          members.push(this.finishClassMethodDeclaration(declaredType, isStatic, currentAccess));
+          members.push(this.finishClassMethodDeclaration(declaredType, isStatic, currentAccess, contractToken));
         } else {
+          if (contractToken) {
+            this.error(contractToken.range, "'contract' marks a method — a field cannot be a contract");
+          }
           members.push(this.finishClassFieldDeclaration(declaredType, currentAccess, isStatic));
         }
         continue;
@@ -626,6 +661,7 @@ export class Parser {
           { kind: 'PrimitiveTypeName', name: 'void', range: functionToken.range },
           isStatic,
           currentAccess,
+          contractToken,
         ));
         continue;
       }
@@ -684,7 +720,12 @@ export class Parser {
     };
   }
 
-  private finishClassMethodDeclaration(returnType: TypeName, isStatic: boolean, access: AccessModifier): ClassMethodDeclaration {
+  private finishClassMethodDeclaration(
+    returnType: TypeName,
+    isStatic: boolean,
+    access: AccessModifier,
+    contractToken: Token | null = null,
+  ): ClassMethodDeclaration {
     const name = this.consume(TokenKind.Identifier, 'expected method name');
     this.consume(TokenKind.LeftParen, "expected '(' after method name");
     const parameters = this.parseParameterList();
@@ -697,8 +738,10 @@ export class Parser {
       parameters,
       body,
       isStatic,
+      isContract: contractToken !== null,
+      contractRange: contractToken?.range ?? null,
       access,
-      range: { start: returnType.range.start, end: body.range.end },
+      range: { start: (contractToken ?? returnType).range.start, end: body.range.end },
     };
   }
 
@@ -1541,6 +1584,33 @@ export class Parser {
     );
   }
 
+  /**
+   * `class Money extends int` — встроенный тип базой быть не может. Говорим это
+   * одной строкой и пропускаем сам тип (с его <…>), чтобы тело класса разобралось
+   * как обычно: раньше здесь сыпался каскад «expected base class name / '{' / field name…».
+   */
+  private refuseBuiltinBase(): boolean {
+    const builtin = this.check(
+      TokenKind.KwInt, TokenKind.KwFloat, TokenKind.KwString, TokenKind.KwChar, TokenKind.KwBool, TokenKind.KwVoid,
+      TokenKind.KwArray, TokenKind.KwDynArray, TokenKind.KwMap,
+    ) || this.checkSetTypeStart();
+    if (!builtin) return false;
+    const token = this.advance();
+    this.error(
+      token.range,
+      `cannot inherit from built-in type '${token.lexeme}' — keep a value of this type inside the class as a field instead`,
+    );
+    if (this.check(TokenKind.Less)) {
+      let depth = 0;
+      while (!this.isAtEnd() && !this.check(TokenKind.LeftBrace)) {
+        const kind = this.advance().kind;
+        if (kind === TokenKind.Less) depth += 1;
+        if (kind === TokenKind.Greater && (depth -= 1) === 0) break;
+      }
+    }
+    return true;
+  }
+
   /** `set` — контекстное слово: тип только в форме `set<T>` (json.Object.set
    *  и прочие методы с этим именем живут как ни в чём не бывало). */
   private checkSetTypeStart(): boolean {
@@ -1620,12 +1690,19 @@ export class Parser {
   private consumeName(message: string): Token {
     const keyword = keywordDisplay(this.peek().kind);
     if (keyword !== undefined) {
-      this.error(this.peek().range, `'${keyword}' is a keyword and cannot be used as a name`);
+      const token = this.peek();
+      this.error(token.range, `'${keyword}' is a keyword and cannot be used as a name`);
+      // Слово явно стоит на месте имени (`int event = 5;`) — съедаем его, и
+      // объявление разбирается дальше без каскада «expected ';' / expected expression».
+      const continues = this.checkAhead(
+        1, TokenKind.Equal, TokenKind.Semicolon, TokenKind.Comma, TokenKind.LeftParen, TokenKind.RightParen, TokenKind.LeftBracket,
+      );
+      if (continues) this.advance();
       return {
         kind: TokenKind.Identifier,
-        lexeme: '',
+        lexeme: continues ? token.lexeme : '',
         literal: null,
-        range: this.peek().range,
+        range: token.range,
       };
     }
     return this.consume(TokenKind.Identifier, message);
@@ -1711,9 +1788,9 @@ export class Parser {
     return this.checkAhead(1, kind);
   }
 
-  private checkAhead(offset: number, kind: TokenKind): boolean {
+  private checkAhead(offset: number, ...kinds: TokenKind[]): boolean {
     if (this.current + offset >= this.tokens.length) return false;
-    return this.tokens[this.current + offset].kind === kind;
+    return kinds.includes(this.tokens[this.current + offset].kind);
   }
 
   private advance(): Token {

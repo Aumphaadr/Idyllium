@@ -35,6 +35,8 @@ import {
 
 export { IdylliumRuntimeError };
 export { IdylliumColor, IdylliumTimeStamp, IdylliumArray, IdylliumMap, IdylliumSet } from './runtime-values';
+export { IdylliumComplex } from './runtime-complex';
+import { IdylliumComplex } from './runtime-complex';
 import {
   IdylliumColor,
   IdylliumTimeStamp,
@@ -174,7 +176,7 @@ import {
 import { parseIdylliumStyle } from './style';
 import { hashAdler32, hashCrc32, hashFnv1a, hashSha256Bytes, hashSha256Hex } from './hash';
 
-export const IDYLLIUM_VERSION = '1.5.7';
+export const IDYLLIUM_VERSION = '1.6.0';
 
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform(): string {
@@ -258,6 +260,8 @@ export interface IdylliumRuntime {
     expectPresent(value: unknown, fieldName: string, className: string, file: string, line: number): unknown;
     equalsObjects(left: unknown, right: unknown, slot: string, file: string, line: number): Promise<boolean>;
     orderObjects(left: unknown, right: unknown, slot: string, contract: string, file: string, line: number): Promise<boolean>;
+    arithmeticObjects(left: unknown, right: unknown, slot: string, contract: string, sign: string, file: string, line: number): Promise<unknown>;
+    oppositeObject(operand: unknown, slot: string, file: string, line: number): Promise<unknown>;
     equalsObjectArrays(left: unknown, right: unknown, slot: string, file: string, line: number): Promise<boolean>;
     equalsObjectMaps(left: unknown, right: unknown, slot: string, file: string, line: number): Promise<boolean>;
     negate(value: unknown): number | bigint;
@@ -289,10 +293,11 @@ export interface IdylliumRuntime {
     set(array: unknown, index: unknown, value: unknown, file: string, line: number): void;
     max(array: unknown, file: string, line: number): number | bigint;
     min(array: unknown, file: string, line: number): number | bigint;
-    sum(array: unknown, file: string, line: number): number | bigint;
-    avg(array: unknown, file: string, line: number): number;
+    sum(array: unknown, file: string, line: number): number | bigint | IdylliumComplex;
+    avg(array: unknown, file: string, line: number): number | IdylliumComplex;
     searchWith(array: unknown, value: unknown, slot: string, mode: string, file: string, line: number): Promise<boolean | number>;
     sortObjects(array: unknown, slot: string, file: string, line: number): Promise<void>;
+    sumObjects(array: unknown, slot: string, file: string, line: number): Promise<unknown>;
   };
   readonly set: {
     create(): IdylliumSet;
@@ -488,6 +493,8 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     if (isJsonRuntimeValue(value)) {
       return formatForConsole(value, precision);
     }
+    // Комплексное число печатается как число: части округляются по console.set_precision.
+    if (value instanceof IdylliumComplex) return value.format(precision);
     // Массив объектов с контрактом to_string: представления элементов
     // собираются асинхронно (инспектор массива синхронный и сам метод
     // ученика позвать не может) — жанр equalsObjectArrays. Вложенность
@@ -525,6 +532,8 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
 
   async function formatItemWithContracts(item: unknown): Promise<string> {
     if (item instanceof IdylliumArray || item instanceof IdylliumMap) return formatCollectionWithContracts(item);
+    // Числа в массиве — без кавычек: [1 + 2i, -i], как [1.5, 2].
+    if (item instanceof IdylliumComplex) return item.format(precision);
     const method = item !== null && typeof item === 'object'
       ? (item as Record<string, unknown>).to_string
       : undefined;
@@ -822,6 +831,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       if (value === null) return 'null';
       if (value instanceof IdylliumColor) return 'colors.Color';
       if (value instanceof IdylliumTimeStamp) return 'time.stamp';
+      if (value instanceof IdylliumComplex) return 'math.Complex';
       if (value instanceof IdylliumArray) return 'array';
       if (value instanceof IdylliumMap) return 'map';
       if (value instanceof IdylliumSet) return 'set';
@@ -870,6 +880,28 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
         throw new IdylliumRuntimeError(file, line, `comparison found an object without the '${contract}' contract`);
       }
       return (await (method as (other: unknown) => Promise<unknown>)(right)) === true;
+    },
+    // Арифметические контракты (plus/minus/multiply/divide): слот класса ЛЕВОГО
+    // операнда; результат — что вернул контракт (тип проверен компилятором).
+    async arithmeticObjects(left: unknown, right: unknown, slot: string, contract: string, sign: string, file: string, line: number): Promise<unknown> {
+      if (left === null || left === undefined) {
+        throw new IdylliumRuntimeError(file, line, `'${sign}' found null instead of an object`);
+      }
+      const method = (left as Record<string, unknown>)[slot];
+      if (typeof method !== 'function') {
+        throw new IdylliumRuntimeError(file, line, `'${sign}' found an object without the '${contract}' contract`);
+      }
+      return (method as (other: unknown) => Promise<unknown>)(right);
+    },
+    async oppositeObject(operand: unknown, slot: string, file: string, line: number): Promise<unknown> {
+      if (operand === null || operand === undefined) {
+        throw new IdylliumRuntimeError(file, line, "unary '-' found null instead of an object");
+      }
+      const method = (operand as Record<string, unknown>)[slot];
+      if (typeof method !== 'function') {
+        throw new IdylliumRuntimeError(file, line, "unary '-' found an object without the 'opposite' contract");
+      }
+      return (method as () => Promise<unknown>)();
     },
     async equalsObjectArrays(left: unknown, right: unknown, slot: string, file: string, line: number): Promise<boolean> {
       return equalsArrayCellsWith(
@@ -1056,14 +1088,38 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       const values = numericValues(value, 'min', file, line);
       return values.reduce((best, item) => runtimeCompare(item, best) < 0 ? item : best);
     },
-    sum(value: unknown, file: string, line: number): number | bigint {
+    sum(value: unknown, file: string, line: number): number | bigint | IdylliumComplex {
+      const complex = complexSum(value, 'sum', file, line);
+      if (complex) return complex;
       return numericValues(value, 'sum', file, line)
         .reduce<number | bigint>((total, item) => runtimeAdd(total, item), 0);
     },
-    avg(value: unknown, file: string, line: number): number {
+    avg(value: unknown, file: string, line: number): number | IdylliumComplex {
+      const complex = complexSum(value, 'avg', file, line);
+      if (complex) return complex.divide(expectArray(value, file, line).values().length, file, line);
       const values = numericValues(value, 'avg', file, line);
       const total = values.reduce<number | bigint>((sum, item) => runtimeAdd(sum, item), 0);
       return Number(total) / values.length;
+    },
+    // sum() объектов: складываем контрактом plus, начиная с первого элемента —
+    // «нуля» у класса нет, поэтому пустой массив — честная ошибка, как у чисел.
+    async sumObjects(value: unknown, slot: string, file: string, line: number): Promise<unknown> {
+      const items = expectArray(value, file, line).values();
+      if (items.length === 0) {
+        throw new IdylliumRuntimeError(file, line, "'sum' cannot be used with an empty array");
+      }
+      let total = items[0];
+      for (const item of items.slice(1)) {
+        if (total === null || total === undefined) {
+          throw new IdylliumRuntimeError(file, line, 'sum() found null instead of an object');
+        }
+        const method = (total as Record<string, unknown>)[slot];
+        if (typeof method !== 'function') {
+          throw new IdylliumRuntimeError(file, line, "sum() found an object without the 'plus' contract");
+        }
+        total = await (method as (other: unknown) => Promise<unknown>).call(total, item);
+      }
+      return total;
     },
   };
 
@@ -1213,11 +1269,13 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       math: {
         pi: Math.PI,
         e: Math.E,
-        abs: contextFunction((value: number | bigint, file: string, line: number) => {
+        abs: contextFunction((value: number | bigint | IdylliumComplex, file: string, line: number) => {
+          if (value instanceof IdylliumComplex) return value.abs();
           if (typeof value === 'bigint') return value < 0n ? -value : value;
           return Math.abs(finiteNumber(value, 'math.abs() value', file, line));
         }),
-        sqrt: contextFunction((value: number, file: string, line: number) => {
+        sqrt: contextFunction((value: number | IdylliumComplex, file: string, line: number) => {
+          if (value instanceof IdylliumComplex) return value.sqrt();
           const number = finiteNumber(value, 'math.sqrt() value', file, line);
           if (number < 0) throw new IdylliumRuntimeError(file, line, `math.sqrt() expects a non-negative number, got ${number}`);
           return Math.sqrt(number);
@@ -1234,7 +1292,10 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
           const context = optionalNumberContext(digitsOrFile, fileOrLine, maybeLine);
           return ceilWithPrecision(value, context.value, context.file, context.line);
         }),
-        pow: contextFunction((value: number, power: number, file: string, line: number) => {
+        pow: contextFunction((value: number | IdylliumComplex, power: number | IdylliumComplex, file: string, line: number) => {
+          if (value instanceof IdylliumComplex || power instanceof IdylliumComplex) {
+            return IdylliumComplex.from(value, 'math.pow() value', file, line).pow(power, file, line);
+          }
           const result = Math.pow(
             finiteNumber(value, 'math.pow() value', file, line),
             finiteNumber(power, 'math.pow() power', file, line),
@@ -1250,9 +1311,9 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
           }
           return Math.min(upper, Math.max(lower, current));
         }),
-        sin: contextFunction((radians: number, file: string, line: number) => Math.sin(finiteNumber(radians, 'math.sin() radians', file, line))),
-        cos: contextFunction((radians: number, file: string, line: number) => Math.cos(finiteNumber(radians, 'math.cos() radians', file, line))),
-        tan: contextFunction((radians: number, file: string, line: number) => finiteMathResult(Math.tan(finiteNumber(radians, 'math.tan() radians', file, line)), 'math.tan()', file, line)),
+        sin: contextFunction((radians: number | IdylliumComplex, file: string, line: number) => (radians instanceof IdylliumComplex ? radians.sin(file, line) : Math.sin(finiteNumber(radians, 'math.sin() radians', file, line)))),
+        cos: contextFunction((radians: number | IdylliumComplex, file: string, line: number) => (radians instanceof IdylliumComplex ? radians.cos(file, line) : Math.cos(finiteNumber(radians, 'math.cos() radians', file, line)))),
+        tan: contextFunction((radians: number | IdylliumComplex, file: string, line: number) => (radians instanceof IdylliumComplex ? radians.tan(file, line) : finiteMathResult(Math.tan(finiteNumber(radians, 'math.tan() radians', file, line)), 'math.tan()', file, line))),
         asin: contextFunction((value: number, file: string, line: number) => {
           const number = rangeNumber(value, 'math.asin() value', -1, 1, file, line);
           return Math.asin(number);
@@ -1266,7 +1327,8 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
           finiteNumber(y, 'math.atan2() y', file, line),
           finiteNumber(x, 'math.atan2() x', file, line),
         )),
-        log: contextFunction((value: number, file: string, line: number) => {
+        log: contextFunction((value: number | IdylliumComplex, file: string, line: number) => {
+          if (value instanceof IdylliumComplex) return value.ln(file, line);
           const number = finiteNumber(value, 'math.log() value', file, line);
           if (number <= 0) throw new IdylliumRuntimeError(file, line, `math.log() expects a positive number, got ${number}`);
           return Math.log(number);
@@ -1328,6 +1390,33 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
           finiteNumber(a, 'math.hypot() a', file, line),
           finiteNumber(b, 'math.hypot() b', file, line),
         ), 'math.hypot()', file, line)),
+        // ── комплексные числа ──
+        I: new IdylliumComplex(0, 1),
+        // Оба аргумента необязательны — контекст file/line приходит хвостом, разбираем его штатно.
+        Complex: contextFunction((...rawArgs: unknown[]) => {
+          const { values, file, line } = splitContextArgs(rawArgs);
+          return new IdylliumComplex(
+            values[0] === undefined ? 0 : finiteNumber(values[0], 'math.Complex() re', file, line),
+            values[1] === undefined ? 0 : finiteNumber(values[1], 'math.Complex() im', file, line),
+          );
+        }),
+        polar: contextFunction((modulus: unknown, argument: unknown, file: string, line: number) => {
+          const r = finiteNumber(modulus, 'math.polar() modulus', file, line);
+          if (r < 0) {
+            throw new IdylliumRuntimeError(file, line, `math.polar() modulus cannot be negative, got ${r} — a negative sign belongs to the argument (add math.pi)`);
+          }
+          return IdylliumComplex.polar(r, finiteNumber(argument, 'math.polar() argument', file, line));
+        }),
+        // Граница типа: число становится комплексным (лестница int → float → math.Complex).
+        toComplex: (value: unknown, file: string, line: number) => IdylliumComplex.from(value, 'math.Complex value', file, line),
+        complexBinary: (operator: string, left: unknown, right: unknown, file: string, line: number) => {
+          const z = IdylliumComplex.from(left, `operator '${operator}' left operand`, file, line);
+          if (operator === '+') return z.plus(right, file, line);
+          if (operator === '-') return z.minus(right, file, line);
+          if (operator === '*') return z.multiply(right, file, line);
+          return z.divide(right, file, line);
+        },
+        complexOpposite: (value: unknown) => (value as IdylliumComplex).opposite(),
       },
       random: {
         create_int: contextFunction((min: number, max: number, file: string, line: number) => {
@@ -2191,6 +2280,18 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
 }
 
 
+/** Массив с комплексными числами: сумма как math.Complex (вещественные соседи входят как z с нулевой мнимой частью); null — чисел-комплексов нет. */
+function complexSum(value: unknown, functionName: string, file: string, line: number): IdylliumComplex | null {
+  const values = expectArray(value, file, line).values();
+  if (!values.some((item) => item instanceof IdylliumComplex)) return null;
+  if (values.length === 0) {
+    throw new IdylliumRuntimeError(file, line, `'${functionName}' cannot be used with an empty array`);
+  }
+  let total = new IdylliumComplex(0, 0);
+  for (const item of values) total = total.plus(item, file, line);
+  return total;
+}
+
 function numericValues(value: unknown, functionName: string, file: string, line: number): Array<number | bigint> {
   const array = expectArray(value, file, line);
   const values = array.values();
@@ -2348,6 +2449,10 @@ function runtimeEquals(left: unknown, right: unknown, file = 'program', line = 0
   const leftIsNull = left === null || isRuntimeNullValue(left);
   const rightIsNull = right === null || isRuntimeNullValue(right);
   if (leftIsNull || rightIsNull) return leftIsNull && rightIsNull;
+
+  // Комплексные — значения: равенство по частям; вещественное входит как z с нулевой мнимой частью.
+  if (left instanceof IdylliumComplex) return left.equals(right);
+  if (right instanceof IdylliumComplex) return right.equals(left);
 
   if (left instanceof IdylliumColor || right instanceof IdylliumColor) {
     if (!(left instanceof IdylliumColor) || !(right instanceof IdylliumColor)) return false;
@@ -2965,6 +3070,10 @@ function createPlainRuntimeObject(moduleName: string, typeName: string, state: R
   // печатавшийся JS-нутром '[object Object]'.
   if (moduleName === 'time' && typeName === 'stamp') {
     return new IdylliumTimeStamp(0) as unknown as RuntimeObject;
+  }
+  // 'math.Complex z;' без вызова — честный ноль.
+  if (moduleName === 'math' && typeName === 'Complex') {
+    return new IdylliumComplex(0, 0) as unknown as RuntimeObject;
   }
 
   if (moduleName === 'json') {

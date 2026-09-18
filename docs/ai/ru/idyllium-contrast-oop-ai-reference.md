@@ -217,7 +217,7 @@ compile error: 'age' was not declared in this scope
 | **Idyllium** | **ГРОМКО, с лечением в сообщении** | см. ниже |
 
 ```text
-compile error: cannot print object of class 'Pet' directly — declare 'string function
+compile error: cannot print object of class 'Pet' directly — declare 'contract string function
 to_string()' in class 'Pet' and printing will use it
 ```
 
@@ -240,7 +240,7 @@ to_string()' in class 'Pet' and printing will use it
 
 ```text
 compile error: cannot compare objects of class 'Battery' with '==' — declare
-'bool function equals(Battery other)' in class 'Battery' and the comparison will use it
+'contract bool function equals(Battery other)' in class 'Battery' and the comparison will use it
 ```
 
 Одно объявление обслуживает сразу `==`, `!=`, `contains()` и поиск по массиву
@@ -250,7 +250,7 @@ compile error: cannot compare objects of class 'Battery' with '==' — declare
 
 ```text
 compile error: cannot compare objects of class 'Kitten' with '==' — declare
-'bool function equals(Kitten other)' in class 'Kitten' and the comparison will use it
+'contract bool function equals(Kitten other)' in class 'Kitten' and the comparison will use it
 ```
 
 ---

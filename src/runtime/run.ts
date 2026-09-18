@@ -66,12 +66,21 @@ export function compileIdyllium(source: string, options: CompileOptions = {}): C
   const equalsContractClasses = new Set<string>();
   const lessContractClasses = new Set<string>();
   const greaterContractClasses = new Set<string>();
+  const arithmeticContractClasses = new Map<string, Set<string>>();
   const nullableClassFields = new Map<string, Set<string>>();
   const mergeSemantics = (semantics: ReturnType<SemanticAnalyzer['analyze']>): void => {
     for (const [node, type] of semantics.nodeTypes) nodeTypes.set(node, type);
     for (const name of semantics.equalsContractClasses) equalsContractClasses.add(name);
     for (const name of semantics.lessContractClasses) lessContractClasses.add(name);
     for (const name of semantics.greaterContractClasses) greaterContractClasses.add(name);
+    for (const [contract, owners] of semantics.arithmeticContractClasses) {
+      let merged = arithmeticContractClasses.get(contract);
+      if (!merged) {
+        merged = new Set<string>();
+        arithmeticContractClasses.set(contract, merged);
+      }
+      for (const owner of owners) merged.add(owner);
+    }
     for (const [className, fieldNames] of semantics.nullableClassFields) {
       let set = nullableClassFields.get(className);
       if (!set) {
@@ -100,6 +109,7 @@ export function compileIdyllium(source: string, options: CompileOptions = {}): C
       equalsContractClasses,
       lessContractClasses,
       greaterContractClasses,
+      arithmeticContractClasses,
       nullableClassFields,
     }).generate(ast, { modules: modules.map((module) => ({ name: module.name, program: module.ast })) }).jsCode;
   }

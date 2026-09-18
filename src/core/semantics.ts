@@ -65,6 +65,8 @@ import {
   MapType,
   setType,
   SetType,
+  MATH_COMPLEX,
+  isComplex,
 } from './types';
 
 // Кириллические буквы, неотличимые на глаз от латинских. Идентификаторы на
@@ -92,6 +94,71 @@ function normalizeHomoglyphs(name: string): string {
 const COMPARISON_CONTRACT_NAMES = ['equals', 'less', 'greater'] as const;
 type ComparisonContractName = (typeof COMPARISON_CONTRACT_NAMES)[number];
 
+/**
+ * Контракты — методы, которые вызывает знак или печать, а не только имя. С 1.6.0
+ * они помечаются словом `contract` (по образцу `event`), и пометка обязательна:
+ * имена контрактов в классах зарезервированы. Так ошибка формы звучит у самого
+ * объявления, а не молчит до первого `a == b` в другом конце программы.
+ * `uses` — что именно начнёт пользоваться контрактом (для текстов отказов).
+ */
+const CONTRACT_USES: Readonly<Record<string, string>> = {
+  to_string: 'printing',
+  equals: "'==' and '!='",
+  less: "'<', '>=' and sort()",
+  greater: "'>' and '<='",
+  plus: "'+'",
+  minus: "'-'",
+  multiply: "'*'",
+  divide: "'/'",
+  opposite: "unary '-'",
+};
+const CONTRACT_NAMES: readonly string[] = Object.keys(CONTRACT_USES);
+
+/**
+ * Арифметические контракты: имя — слово, которым знак читают вслух, без
+ * служебного предлога (то же правило уже задали less и greater). У знака ОДНА
+ * сигнатура на класс (перегрузки в языке нет); тип параметра и тип результата
+ * свободны: `Vec function multiply(float k)` даёт `v * 2.5`, скалярное
+ * произведение вправе вернуть float. Диспетчеризация — по объявленному типу
+ * ЛЕВОГО операнда, как у сравнений. `opposite` — унарный минус.
+ */
+const ARITHMETIC_CONTRACT_BY_SIGN: Readonly<Record<string, ArithmeticContractName>> = {
+  '+': 'plus', '-': 'minus', '*': 'multiply', '/': 'divide',
+};
+const ARITHMETIC_CONTRACT_NAMES = ['plus', 'minus', 'multiply', 'divide'] as const;
+type ArithmeticContractName = (typeof ARITHMETIC_CONTRACT_NAMES)[number];
+const OPPOSITE_CONTRACT = 'opposite';
+
+/** Имена, которыми контракт чаще всего называют по привычке из других языков:
+ *  отказ называет правильное слово, а не заставляет искать его в документации. */
+const CONTRACT_SYNONYMS: Readonly<Record<string, readonly string[]>> = {
+  to_string: ['str', 'to_str', 'tostring', 'toString', 'as_string', 'repr', 'string'],
+  equals: ['equal', 'eq', 'is_equal', 'equal_to', 'same', 'same_as'],
+  less: ['lt', 'less_than', 'is_less', 'smaller', 'before'],
+  greater: ['gt', 'greater_than', 'is_greater', 'bigger', 'more', 'after'],
+  plus: ['add', 'sum', 'addition', 'added'],
+  minus: ['sub', 'subtract', 'difference', 'diff'],
+  multiply: ['mul', 'mult', 'times', 'product', 'multiplied', 'multiplied_by', 'multiply_by'],
+  divide: ['divided', 'divided_by', 'divide_by', 'quotient', 'over'],
+  opposite: ['negate', 'negated', 'negative', 'neg', 'unary_minus', 'inverted'],
+};
+
+function contractForSynonym(name: string): string | null {
+  for (const [contract, synonyms] of Object.entries(CONTRACT_SYNONYMS)) {
+    if (synonyms.includes(name)) return contract;
+  }
+  return null;
+}
+
+/** Знак (или слово), которым пользуются контрактом, — для текстов «the contract for '+' is called 'plus'». */
+function contractTrigger(contract: string): string {
+  return contract === 'to_string' ? 'printing' : CONTRACT_USES[contract].split(/,| and /u)[0].trim();
+}
+
+function isContractName(name: string): boolean {
+  return Object.prototype.hasOwnProperty.call(CONTRACT_USES, name);
+}
+
 /** Слова, зарезервированные миром под капотом: как имя переменной, параметра,
  *  функции или класса они роняли бы сгенерированную программу голой ошибкой
  *  без file:line (`int await = 1;` умирал «Unexpected reserved word»).
@@ -118,6 +185,8 @@ export interface SemanticResult {
   readonly equalsContractClasses: ReadonlySet<string>;
   readonly lessContractClasses: ReadonlySet<string>;
   readonly greaterContractClasses: ReadonlySet<string>;
+  /** Арифметические контракты и opposite: имя контракта → короткие имена классов, объявивших его. */
+  readonly arithmeticContractClasses: ReadonlyMap<string, ReadonlySet<string>>;
   /** «Пустые поля» по классам (короткое имя → имена полей) — кодогену для охраняемых чтений. */
   readonly nullableClassFields: ReadonlyMap<string, ReadonlySet<string>>;
 }
@@ -259,6 +328,9 @@ export class SemanticAnalyzer {
   private readonly equalsContractClasses = new Set<string>();
   private readonly lessContractClasses = new Set<string>();
   private readonly greaterContractClasses = new Set<string>();
+  private readonly arithmeticContractClasses = new Map<string, Set<string>>();
+  /** «Класс.контракт», уже отвергнутые у объявления: места использования молчат, чтобы не дублировать отказ. */
+  private readonly refusedContracts = new Set<string>();
   /** «Пустые поля» по классам (короткое имя → поля с явным `= null`). */
   private readonly nullableClassFields = new Map<string, Set<string>>();
   // Значения файловых int-констант: собираются до анализа сигнатур, чтобы
@@ -346,6 +418,7 @@ export class SemanticAnalyzer {
       equalsContractClasses: this.equalsContractClasses,
       lessContractClasses: this.lessContractClasses,
       greaterContractClasses: this.greaterContractClasses,
+      arithmeticContractClasses: this.arithmeticContractClasses,
       nullableClassFields: this.nullableClassFields,
     };
   }
@@ -850,6 +923,7 @@ export class SemanticAnalyzer {
     );
     if (this.refuseInternalName(declaration.name, 'method', declaration.range)) return;
     if (this.refuseThenableMember(declaration.name, 'method', declaration.range)) return;
+    this.checkContractMarking(info, declaration);
     const inheritedField = info.fields.get(declaration.name);
     if (inheritedField && inheritedField.owner !== info.declaration.name) {
       this.diagnostics.error(declaration.range, `method '${declaration.name}' conflicts with inherited field '${inheritedField.owner}.${declaration.name}'`);
@@ -867,6 +941,16 @@ export class SemanticAnalyzer {
 
     const inheritedMethod = info.methods.get(declaration.name);
     const inheritedAccess = info.methodAccess.get(declaration.name);
+    // Второй метод с тем же именем В ЭТОМ ЖЕ классе — попытка перегрузки. Спрашиваем
+    // раньше сверки сигнатур: иначе ученик слышал про «inherited method signature»
+    // там, где наследования нет вовсе.
+    if (inheritedMethod && info.ownMethods.has(declaration.name)) {
+      this.diagnostics.error(
+        declaration.range,
+        `method '${declaration.name}' is already declared in class '${info.declaration.name}' — Idyllium has no overloading: one name, one method`,
+      );
+      return;
+    }
     if (inheritedMethod && inheritedAccess && inheritedAccess.owner !== info.declaration.name) {
       // Приватный метод — внутреннее дело своего класса: подменять его снаружи
       // нельзя (иначе механика базы молча меняется под ней самой).
@@ -893,8 +977,7 @@ export class SemanticAnalyzer {
       // класса — своя версия со СВОИМ типом параметра (equals(Cat) при
       // базовом equals(Animal) — законно; less и greater — так же).
       // Диспетчеризация — статическая.
-      if (!(COMPARISON_CONTRACT_NAMES.includes(declaration.name as ComparisonContractName)
-        && this.isEqualsContractShape(info, declaration))) {
+      if (!(isContractName(declaration.name) && (declaration.isContract || this.refusedContracts.has(`${info.declaration.name}.${declaration.name}`)))) {
         this.diagnostics.error(declaration.range, `method '${info.declaration.name}.${declaration.name}' must match inherited method signature`);
         return;
       }
@@ -947,14 +1030,131 @@ export class SemanticAnalyzer {
     });
     info.ownMethods.add(declaration.name);
 
-    if (COMPARISON_CONTRACT_NAMES.includes(declaration.name as ComparisonContractName)
-      && this.isEqualsContractShape(info, declaration)) {
-      if (declaration.parameters[0].defaultValue) {
-        this.diagnostics.error(declaration.parameters[0].range, `'${declaration.name}' contract parameter cannot have a default value`);
+    if (declaration.isContract
+      && !this.refusedContracts.has(`${info.declaration.name}.${declaration.name}`)
+      && COMPARISON_CONTRACT_NAMES.includes(declaration.name as ComparisonContractName)) {
+      this.comparisonContractSet(declaration.name as ComparisonContractName).add(info.declaration.name);
+    }
+    if (declaration.isContract
+      && !this.refusedContracts.has(`${info.declaration.name}.${declaration.name}`)
+      && (declaration.name === OPPOSITE_CONTRACT || ARITHMETIC_CONTRACT_NAMES.includes(declaration.name as ArithmeticContractName))) {
+      let owners = this.arithmeticContractClasses.get(declaration.name);
+      if (!owners) {
+        owners = new Set<string>();
+        this.arithmeticContractClasses.set(declaration.name, owners);
       }
-      if (declaration.access === 'public') {
-        this.comparisonContractSet(declaration.name as ComparisonContractName).add(info.declaration.name);
+      owners.add(info.declaration.name);
+    }
+  }
+
+  /**
+   * Контракт, живущий в слоте своего класса (`equals$Cat`, `plus$Vec`), объявлен ли
+   * он в самом классе: такие контракты не наследуются, и прямой вызов у наследника
+   * без своего контракта обязан получить отказ, а не рантайм-«нет метода».
+   */
+  private classOwnsSlotContract(className: string, contract: string): boolean {
+    if (COMPARISON_CONTRACT_NAMES.includes(contract as ComparisonContractName)) {
+      return this.classDeclaresEqualsContract(className, contract as ComparisonContractName);
+    }
+    if (contract === OPPOSITE_CONTRACT || ARITHMETIC_CONTRACT_NAMES.includes(contract as ArithmeticContractName)) {
+      return this.arithmeticContractOf(classType(className), contract) !== null;
+    }
+    return false;
+  }
+
+  /**
+   * Рецепт контракта для наследника — по образцу базового объявления, со своим
+   * классом вместо базового: у `Vec.multiply(float k)` наследник `Vec3` получает
+   * `contract Vec3 function multiply(float k)`, а не условное `multiply(Vec3 other)`.
+   */
+  private heirContractRecipe(className: string, contract: string): string {
+    const info = this.classes.get(className);
+    const inherited = info && !info.ownMethods.has(contract) ? info.methodAccess.get(contract) : undefined;
+    const spec = inherited ? info?.methods.get(contract) : undefined;
+    if (!inherited || !spec) return this.contractRecipe(className, contract);
+    const own = (type: TypeRef): string => (type.kind === 'class' && type.name === inherited.owner ? className : typeToString(type));
+    const parameters = spec.parameters.map((parameter) => `${own(parameter.type)} ${parameter.name}`).join(', ');
+    return `contract ${own(spec.returnType)} function ${contract}(${parameters})`;
+  }
+
+  /** Как пишется правильное объявление контракта — для рецептов в отказах. */
+  private contractRecipe(className: string, contract: string): string {
+    if (contract === 'to_string') return 'contract string function to_string()';
+    if (contract === OPPOSITE_CONTRACT) return `contract ${className} function opposite()`;
+    if (ARITHMETIC_CONTRACT_NAMES.includes(contract as ArithmeticContractName)) {
+      return `contract ${className} function ${contract}(${className} other)`;
+    }
+    return `contract bool function ${contract}(${className} other)`;
+  }
+
+  /**
+   * Пометка `contract` обязательна и проверяется у самого объявления:
+   *  — имя контракта без пометки — отказ (имена контрактов в классах зарезервированы);
+   *  — пометка на чужом имени — отказ со списком контрактов;
+   *  — помеченный контракт с не той формой, приватный или с умолчанием — отказ с рецептом.
+   * Отвергнутый контракт запоминается: места использования (`a == b`, печать) молчат,
+   * иначе об одной ошибке говорилось бы дважды.
+   */
+  private checkContractMarking(info: UserClassInfo, declaration: ClassMethodDeclaration): void {
+    const className = info.declaration.name;
+    const name = declaration.name;
+    const range = declaration.nameRange ?? declaration.range;
+    if (!isContractName(name)) {
+      if (declaration.isContract) {
+        const meant = contractForSynonym(name);
+        this.diagnostics.error(
+          declaration.contractRange ?? range,
+          meant
+            ? `'${name}' is not a contract — the contract for ${contractTrigger(meant)} is called '${meant}'`
+            : `'${name}' is not a contract — contracts are: ${CONTRACT_NAMES.join(', ')}`,
+        );
       }
+      return;
+    }
+    const refuse = (message: string): void => {
+      this.refusedContracts.add(`${className}.${name}`);
+      this.diagnostics.error(range, message);
+    };
+    if (!declaration.isContract) {
+      refuse(`'${name}' is a contract name — write '${this.contractRecipe(className, name)}' and ${CONTRACT_USES[name]} will use it, or pick another name`);
+      return;
+    }
+    const issues: string[] = [];
+    const returnType = this.resolveTypeName(declaration.returnType);
+    if (name === 'to_string') {
+      if (declaration.parameters.length > 0) issues.push('it must take no parameters');
+      if (!sameType(returnType, STRING)) issues.push(`it returns '${typeToString(returnType)}' instead of 'string'`);
+    } else if (name === OPPOSITE_CONTRACT || ARITHMETIC_CONTRACT_NAMES.includes(name as ArithmeticContractName)) {
+      // Типы параметра и результата свободны; обязательны только число параметров
+      // и сам результат: знак обязан что-то вернуть.
+      if (name === OPPOSITE_CONTRACT) {
+        if (declaration.parameters.length > 0) issues.push("it must take no parameters ('-a' has a single operand)");
+      } else if (declaration.parameters.length !== 1) {
+        issues.push(`it must take exactly one parameter (the right operand of ${CONTRACT_USES[name]})`);
+      }
+      if (sameType(returnType, VOID)) issues.push(`it returns nothing, but ${CONTRACT_USES[name]} must produce a value`);
+    } else {
+      if (declaration.parameters.length !== 1) {
+        issues.push(`it must take exactly one parameter of type '${className}'`);
+      } else {
+        const parameterType = this.resolveTypeName(declaration.parameters[0].paramType);
+        if (!(parameterType.kind === 'class' && parameterType.name === className)) {
+          issues.push(`its parameter is '${typeToString(parameterType)}' instead of '${className}'`);
+        }
+      }
+      if (!sameType(returnType, BOOL)) issues.push(`it returns '${typeToString(returnType)}' instead of 'bool'`);
+    }
+    if (issues.length > 0) {
+      refuse(`contract '${name}' has a wrong shape: ${issues.join(', ')} — write '${this.contractRecipe(className, name)}'`);
+      return;
+    }
+    if (declaration.access !== 'public') {
+      const verb = name === 'to_string' ? 'happens' : CONTRACT_USES[name].includes(' and ') ? 'are written' : 'is written';
+      refuse(`contract '${name}' cannot be private — ${CONTRACT_USES[name]} ${verb} outside the class; move it to the public part`);
+      return;
+    }
+    if (declaration.parameters[0]?.defaultValue) {
+      refuse(`'${name}' contract parameter cannot have a default value`);
     }
   }
 
@@ -975,23 +1175,12 @@ export class SemanticAnalyzer {
       const moduleName = className.slice(0, dot);
       const bareName = className.slice(dot + 1);
       const classSpec = this.userModuleRegistry.getModule(moduleName)?.classes.get(bareName);
-      const method = classSpec?.methods.find((item) => item.name === contract);
-      return method !== undefined
-        && !method.isStatic
-        && method.access === 'public'
-        && method.spec.parameters.length === 1
-        && sameType(method.spec.returnType, BOOL);
+      // Имена контрактов зарезервированы: метод с таким именем в модуле — либо
+      // исправный контракт, либо уже отвергнутый при компиляции модуля. И там и
+      // там место использования молчит — иначе об одной беде говорилось бы дважды.
+      return classSpec?.methods.some((item) => item.name === contract) === true;
     }
-    return this.comparisonContractSet(contract).has(className);
-  }
-
-  /** Форма контракта equals: нестатический, ровно один параметр СВОЕГО класса, возвращает bool. */
-  private isEqualsContractShape(info: UserClassInfo, declaration: ClassMethodDeclaration): boolean {
-    if (declaration.isStatic) return false;
-    if (declaration.parameters.length !== 1) return false;
-    const parameterType = this.resolveTypeName(declaration.parameters[0].paramType);
-    if (parameterType.kind !== 'class' || parameterType.name !== info.declaration.name) return false;
-    return sameType(this.resolveTypeName(declaration.returnType), BOOL);
+    return this.comparisonContractSet(contract).has(className) || this.refusedContracts.has(`${className}.${contract}`);
   }
 
   /** Есть ли у типа (класс или модульный класс) публичный контракт сравнения, объявленный в нём самом. */
@@ -1013,9 +1202,10 @@ export class SemanticAnalyzer {
           && method.spec.parameters.length === 1
           && sameType(method.spec.returnType, BOOL);
         if (ok) this.comparisonContractSet(contract).add(className);
-        return ok;
+        // Не той формы — модуль уже отказал у объявления; здесь молчим.
+        return method !== undefined;
       }
-      return this.comparisonContractSet(contract).has(bare);
+      return this.comparisonContractSet(contract).has(bare) || this.refusedContracts.has(`${bare}.${contract}`);
     }
     // Модульный класс: по спецификации модуля (короткое имя параметра —
     // модульная семантика уже проверила форму при компиляции модуля).
@@ -1028,9 +1218,15 @@ export class SemanticAnalyzer {
         && method.spec.parameters.length === 1
         && sameType(method.spec.returnType, BOOL);
       if (ok) this.comparisonContractSet(contract).add(type.name);
-      return ok;
+      return method !== undefined;
     }
     return false;
+  }
+
+  /** Класс из модуля («geometry.Vec») у себя дома зовётся коротко — рецепты пишем его словами. */
+  private shortClassName(type: TypeRef): string {
+    const full = typeToString(type);
+    return full.slice(full.lastIndexOf('.') + 1);
   }
 
   /** Выражение-доступ к «пустому полю» (nullable): room.guest, где guest объявлен с `= null`. */
@@ -1246,6 +1442,65 @@ export class SemanticAnalyzer {
     this.popScope();
     this.popClassContext();
     this.returnTypes.pop();
+    this.warnIfContractChangesOperand(declaration);
+  }
+
+  /**
+   * Объекты — ссылки: `plus`, который пишет в свои поля и возвращает this, превращает
+   * `c = a + b` в тихую порчу `a`. Арифметический контракт обязан собрать НОВЫЙ
+   * объект — предупреждаем о первой же записи в поле this или операнда-параметра.
+   * (Псевдоним `Vec r = this;` так не поймать — это предупреждение, не доказательство.)
+   */
+  private warnIfContractChangesOperand(declaration: ClassMethodDeclaration): void {
+    const name = declaration.name;
+    if (!declaration.isContract) return;
+    if (name !== OPPOSITE_CONTRACT && !ARITHMETIC_CONTRACT_NAMES.includes(name as ArithmeticContractName)) return;
+    const parameter = declaration.parameters[0]?.name ?? null;
+    const rootOf = (expression: Expression): string | null => {
+      let current = expression;
+      let depth = 0;
+      while (current.kind === 'MemberExpression' || current.kind === 'IndexExpression') {
+        current = current.object;
+        depth += 1;
+      }
+      return depth > 0 && current.kind === 'IdentifierExpression' ? current.name : null;
+    };
+    const find = (statement: Statement | null): AssignmentStatement | null => {
+      if (!statement) return null;
+      switch (statement.kind) {
+        case 'AssignmentStatement': {
+          const root = rootOf(statement.target);
+          return root !== null && (root === 'this' || root === parameter) ? statement : null;
+        }
+        case 'BlockStatement':
+          for (const inner of statement.statements) {
+            const found = find(inner);
+            if (found) return found;
+          }
+          return null;
+        case 'IfStatement':
+          return find(statement.thenBranch) ?? find(statement.elseBranch);
+        case 'WhileStatement':
+        case 'DoWhileStatement':
+          return find(statement.body);
+        case 'ForStatement':
+          return find(statement.initializer) ?? find(statement.increment) ?? find(statement.body);
+        case 'TryStatement':
+          return find(statement.tryBlock) ?? find(statement.catchClause?.body ?? null) ?? find(statement.finallyBlock);
+        default:
+          return null;
+      }
+    };
+    const offender = find(declaration.body);
+    if (!offender) return;
+    const changesThis = rootOf(offender.target) === 'this';
+    const example = name === OPPOSITE_CONTRACT ? "'b = -a'" : `'c = a ${Object.keys(ARITHMETIC_CONTRACT_BY_SIGN).find((sign) => ARITHMETIC_CONTRACT_BY_SIGN[sign] === name)} b'`;
+    const victim = name === OPPOSITE_CONTRACT || changesThis ? "'a'" : "'b'";
+    this.diagnostics.warning(
+      offender.target.range,
+      `contract '${name}' changes ${changesThis ? 'the object it was called on' : `its operand '${parameter}'`} — after ${example} the value of ${victim} must stay the same; build a new object and return it`,
+      'contract-changes-operand',
+    );
   }
 
   private analyzeClassConstructor(info: UserClassInfo, declaration: ConstructorDeclaration): void {
@@ -2056,6 +2311,13 @@ export class SemanticAnalyzer {
     range: SourceRange,
   ): TypeRef {
     const binaryOperator = operator.slice(0, 1);
+    // `a += b` для объектов — это `a = a + b`: тот же контракт, имя перевязывается
+    // на новый объект (псевдонимы остаются на старом — как у чисел).
+    const viaContract = this.contractArithmeticType(binaryOperator, targetType, valueType);
+    if (viaContract) {
+      if (viaContract.refusal) this.diagnostics.error(range, viaContract.refusal.replace(`operator '${binaryOperator}'`, `operator '${operator}'`));
+      return viaContract.type;
+    }
     const result = this.binaryOperatorType(binaryOperator, targetType, valueType);
     if (result.kind === 'error') {
       this.diagnostics.error(
@@ -2600,11 +2862,130 @@ export class SemanticAnalyzer {
       return BOOL;
     }
 
+    // Объект: унарный минус — контракт opposite своего класса.
+    if (this.userClassBareName(operandType)) {
+      const owned = this.arithmeticContractOf(operandType, OPPOSITE_CONTRACT);
+      if (owned === 'refused') return ERROR_TYPE;
+      if (owned) return owned.spec.returnType;
+      this.diagnostics.error(
+        expression.range,
+        `unary '-' cannot be applied to '${typeToString(operandType)}'${this.contractInvitation(operandType, OPPOSITE_CONTRACT, "unary '-'")}`,
+      );
+      return ERROR_TYPE;
+    }
+
+    if (isComplex(operandType)) return MATH_COMPLEX;
     if (!isNumeric(operandType)) {
       this.diagnostics.error(expression.operand.range, `unary '-' requires numeric operand, got '${typeToString(operandType)}'`);
       return ERROR_TYPE;
     }
     return operandType;
+  }
+
+  /**
+   * Арифметический контракт (или opposite), объявленный В САМОМ классе типа:
+   * контракты не наследуются. 'refused' — объявление уже отвергнуто, о беде сказано.
+   */
+  private arithmeticContractOf(type: TypeRef, contract: string): { readonly spec: FunctionSpec } | 'refused' | null {
+    const expectedParameters = contract === OPPOSITE_CONTRACT ? 0 : 1;
+    const fromModule = (moduleName: string, className: string): { readonly spec: FunctionSpec } | 'refused' | null => {
+      const classSpec = this.userModuleRegistry.getModule(moduleName)?.classes.get(className);
+      const method = classSpec?.methods.find((item) => item.name === contract);
+      // methods модульного класса — только его СОБСТВЕННЫЕ объявления: унаследованных
+      // контрактов здесь нет по построению (контракты не наследуются).
+      const ok = method !== undefined
+        && !method.isStatic
+        && method.access === 'public'
+        && method.spec.parameters.length === expectedParameters
+        && !sameType(method.spec.returnType, VOID);
+      if (ok) return { spec: method.spec };
+      // Метод с именем контракта, но не той формы: модуль уже отказал у объявления.
+      return method !== undefined ? 'refused' : null;
+    };
+    if (type.kind === 'class') {
+      const dot = type.name.indexOf('.');
+      if (dot > 0) return fromModule(type.name.slice(0, dot), type.name.slice(dot + 1));
+      if (this.refusedContracts.has(`${type.name}.${contract}`)) return 'refused';
+      if (!this.arithmeticContractClasses.get(contract)?.has(type.name)) return null;
+      const spec = this.classes.get(type.name)?.methods.get(contract);
+      return spec ? { spec } : null;
+    }
+    if (type.kind === 'qualified' && this.userModuleRegistry.hasModule(type.moduleName)) {
+      const found = fromModule(type.moduleName, type.name);
+      if (found) {
+        let owners = this.arithmeticContractClasses.get(contract);
+        if (!owners) {
+          owners = new Set<string>();
+          this.arithmeticContractClasses.set(contract, owners);
+        }
+        owners.add(type.name);
+      }
+      return found;
+    }
+    return null;
+  }
+
+  /** Хвост отказа «объявите контракт»: с готовым рецептом, а если в классе есть
+   *  метод с привычным из других языков именем (add, times…) — называет правильное слово. */
+  private contractInvitation(type: TypeRef, contract: string, sign: string): string {
+    // Класс из модуля («geometry.Vec») у себя дома зовётся коротко — рецепт пишем его словами.
+    const fullName = this.userClassBareName(type) ?? typeToString(type);
+    const className = fullName.slice(fullName.lastIndexOf('.') + 1);
+    const recipe = this.contractRecipe(className, contract);
+    const info = type.kind === 'class' ? this.classes.get(type.name) : undefined;
+    // Контракт есть у базы, но контракты не наследуются: называем это прямо и
+    // даём рецепт по образцу базового объявления (со своим классом вместо базового).
+    const inherited = info && !info.ownMethods.has(contract) ? info.methodAccess.get(contract) : undefined;
+    if (inherited && this.classOwnsSlotContract(inherited.owner, contract)) {
+      return ` — '${inherited.owner}.${contract}' is a contract, and contracts are not inherited: declare '${this.heirContractRecipe(className, contract)}' in class '${className}'`;
+    }
+    const habit = info ? (CONTRACT_SYNONYMS[contract] ?? []).find((name) => info.ownMethods.has(name)) : undefined;
+    if (habit) {
+      return ` — class '${className}' has '${habit}', but the contract for ${sign} is called '${contract}': write '${recipe}'`;
+    }
+    return ` — declare '${recipe}' in class '${className}' and ${sign} will use it`;
+  }
+
+  /**
+   * Знаки + - * / над объектами: null — объектов среди операндов нет (обычная
+   * арифметика). Иначе тип результата и, если знак отвергнут, готовый текст отказа
+   * (пустой — о беде уже сказано у объявления контракта).
+   */
+  private contractArithmeticType(operator: string, left: TypeRef, right: TypeRef): { readonly type: TypeRef; readonly refusal: string | null } | null {
+    const contract = ARITHMETIC_CONTRACT_BY_SIGN[operator];
+    if (!contract) return null;
+    const leftIsObject = this.userClassBareName(left) !== null;
+    const rightIsObject = this.userClassBareName(right) !== null;
+    if (!leftIsObject && !rightIsObject) return null;
+    const head = `operator '${operator}' cannot be applied to '${typeToString(left)}' and '${typeToString(right)}'`;
+    if (!leftIsObject) {
+      // `2 * v`: контракт принадлежит ЛЕВОМУ операнду. Перестановку не предлагаем
+      // молча — для '-' и '/' она меняет смысл; говорим, как устроено правило.
+      const owned = this.arithmeticContractOf(right, contract);
+      if (owned === 'refused') return { type: ERROR_TYPE, refusal: '' };
+      // Строка слева — это про склейку, а не про арифметику: правило «строка не
+      // склеивается с не-строкой» говорит прежними словами, как для `"монет: " + 30`.
+      const gluing = operator === '+' && left.kind === 'primitive' && (left.name === 'string' || left.name === 'char');
+      return {
+        type: ERROR_TYPE,
+        refusal: owned && !gluing
+          ? `${head} — a contract works for the LEFT operand, and '${typeToString(left)}' has none ('${typeToString(right)}' declares '${contract}', but it stands on the right)`
+          : head,
+      };
+    }
+    const owned = this.arithmeticContractOf(left, contract);
+    if (owned === 'refused') return { type: ERROR_TYPE, refusal: '' };
+    if (!owned) {
+      return { type: ERROR_TYPE, refusal: `${head}${this.contractInvitation(left, contract, `'${operator}'`)}` };
+    }
+    const parameter = owned.spec.parameters[0].type;
+    if (!this.canAssign(parameter, right)) {
+      return {
+        type: ERROR_TYPE,
+        refusal: `${head} — '${typeToString(left)}.${contract}' accepts ${/^[aeiou]/iu.test(typeToString(parameter)) ? 'an' : 'a'} '${typeToString(parameter)}', got '${typeToString(right)}'`,
+      };
+    }
+    return { type: owned.spec.returnType, refusal: null };
   }
 
   private binaryType(expression: BinaryExpression): TypeRef {
@@ -2628,6 +3009,14 @@ export class SemanticAnalyzer {
         this.diagnostics.warning(
           expression.range,
           `two float numbers are compared with '${expression.operator}' — they are almost never exactly equal`,
+          'float-equality',
+        );
+      }
+      // Комплексные части — те же float: вычисленные значения сравнивают через is_close().
+      if ((isComplex(left) && (isComplex(right) || isNumeric(right))) || (isNumeric(left) && isComplex(right))) {
+        this.diagnostics.warning(
+          expression.range,
+          `complex numbers are compared with '${expression.operator}' — computed values are almost never exactly equal; use is_close()`,
           'float-equality',
         );
       }
@@ -2679,7 +3068,7 @@ export class SemanticAnalyzer {
         } else if (!this.typeOwnsEqualsContract(left)) {
           this.diagnostics.error(
             expression.range,
-            `cannot compare objects of class '${typeToString(left)}' with '${expression.operator}' — declare 'bool function equals(${typeToString(left)} other)' in class '${typeToString(left)}' and the comparison will use it${left.kind === 'class' ? this.contractShapeIssue(left.name, 'equals') : ''}`,
+            `cannot compare objects of class '${typeToString(left)}' with '${expression.operator}' — declare 'contract bool function equals(${this.shortClassName(left)} other)' in class '${this.shortClassName(left)}' and the comparison will use it`,
           );
         } else if (!sameType(left, right) && !this.canAssign(left, right)) {
           this.diagnostics.error(
@@ -2703,7 +3092,7 @@ export class SemanticAnalyzer {
           if (leaf !== null && !this.typeOwnsEqualsContract(leaf)) {
             this.diagnostics.error(
               expression.range,
-              `cannot compare maps of '${typeToString(leaf)}' values with '${expression.operator}' — declare 'bool function equals(${typeToString(leaf)} other)' in class '${typeToString(leaf)}' and the comparison will use it`,
+              `cannot compare maps of '${typeToString(leaf)}' values with '${expression.operator}' — declare 'contract bool function equals(${this.shortClassName(leaf)} other)' in class '${this.shortClassName(leaf)}' and the comparison will use it`,
             );
           }
         }
@@ -2721,7 +3110,7 @@ export class SemanticAnalyzer {
         } else if (!this.typeOwnsEqualsContract(leftLeaf)) {
           this.diagnostics.error(
             expression.range,
-            `cannot compare arrays of '${typeToString(leftLeaf)}' objects with '${expression.operator}' — declare 'bool function equals(${typeToString(leftLeaf)} other)' in class '${typeToString(leftLeaf)}' and the comparison will use it`,
+            `cannot compare arrays of '${typeToString(leftLeaf)}' objects with '${expression.operator}' — declare 'contract bool function equals(${this.shortClassName(leftLeaf)} other)' in class '${this.shortClassName(leftLeaf)}' and the comparison will use it`,
           );
         }
         return BOOL;
@@ -2755,7 +3144,7 @@ export class SemanticAnalyzer {
         } else if (!this.typeOwnsEqualsContract(left, contract)) {
           this.diagnostics.error(
             expression.range,
-            `cannot order objects of class '${typeToString(left)}' with '${expression.operator}' — declare 'bool function ${contract}(${typeToString(left)} other)' in class '${typeToString(left)}' and '${expression.operator}' will use it${left.kind === 'class' ? this.contractShapeIssue(left.name, contract) : ''}`,
+            `cannot order objects of class '${typeToString(left)}' with '${expression.operator}' — declare 'contract bool function ${contract}(${this.shortClassName(left)} other)' in class '${this.shortClassName(left)}' and '${expression.operator}' will use it`,
           );
         } else if (!sameType(left, right) && !this.canAssign(left, right)) {
           this.diagnostics.error(
@@ -2763,6 +3152,14 @@ export class SemanticAnalyzer {
             `cannot compare '${typeToString(left)}' and '${typeToString(right)}' with '${expression.operator}' — '${typeToString(left)}.${contract}' accepts a '${typeToString(left)}', got '${typeToString(right)}'`,
           );
         }
+        return BOOL;
+      }
+      if (isComplex(left) || isComplex(right)) {
+        // На ℂ порядка нет — это свойство самих чисел, а не недоделка библиотеки.
+        this.diagnostics.error(
+          expression.range,
+          `complex numbers have no order, so '${expression.operator}' cannot compare them — compare abs(), re or im instead`,
+        );
         return BOOL;
       }
       if (!isNumeric(left) || !isNumeric(right)) {
@@ -2785,6 +3182,11 @@ export class SemanticAnalyzer {
       return BOOL;
     }
 
+    const viaContract = this.contractArithmeticType(expression.operator, left, right);
+    if (viaContract) {
+      if (viaContract.refusal) this.diagnostics.error(expression.range, viaContract.refusal);
+      return viaContract.type;
+    }
     const result = this.binaryOperatorType(expression.operator, left, right);
     if (result.kind === 'error') {
       this.diagnostics.error(
@@ -2847,6 +3249,10 @@ export class SemanticAnalyzer {
         }
         return argTypes.every((type) => isIntegerLike(type)) ? INT : FLOAT;
       }
+      case 'complex-when-complex-argument': {
+        const complexArgument = expression.args.some((arg) => isComplex(this.expressionType(arg.value)));
+        return complexArgument ? MATH_COMPLEX : fn.returnType;
+      }
       case 'numeric-array-aggregate': {
         const argument = this.orderedArguments(expression.args, fn)[0];
         if (!argument) return ERROR_TYPE;
@@ -2856,7 +3262,36 @@ export class SemanticAnalyzer {
           // («argument 1 expects numeric array, got …») — молчим, не дублируем.
           return ERROR_TYPE;
         }
-        if (!isNumeric(argType.elementType)) {
+        const element = argType.elementType;
+        // Комплексные: сумма и среднее есть, порядка нет.
+        if (isComplex(element)) {
+          if (fn.name === 'sum' || fn.name === 'avg') return MATH_COMPLEX;
+          this.diagnostics.error(argument.range, `complex numbers have no order, so ${fn.name}() cannot pick one — compare abs(), re or im in a loop instead`);
+          return ERROR_TYPE;
+        }
+        // Объекты с контрактом plus складываются sum(): второй приз контракта, как sort() у less.
+        if (this.userClassBareName(element) !== null) {
+          if (fn.name !== 'sum') {
+            this.diagnostics.error(argument.range, `${fn.name}() cannot ${fn.name === 'avg' ? 'average' : 'order'} '${typeToString(element)}' objects — ${fn.name === 'avg' ? 'divide the sum yourself' : 'they have no built-in order; write the loop'}`);
+            return ERROR_TYPE;
+          }
+          const owned = this.arithmeticContractOf(element, 'plus');
+          if (owned === 'refused') return ERROR_TYPE;
+          if (!owned) {
+            this.diagnostics.error(argument.range, `sum() cannot add '${typeToString(element)}' objects${this.contractInvitation(element, 'plus', 'sum()')}`);
+            return ERROR_TYPE;
+          }
+          const parameter = owned.spec.parameters[0].type;
+          if (!this.canAssign(parameter, element) || !this.canAssign(element, owned.spec.returnType)) {
+            this.diagnostics.error(
+              argument.range,
+              `sum() adds '${typeToString(element)}' objects with their 'plus', so it must take a '${typeToString(element)}' and return a '${typeToString(element)}' — this one is 'plus(${typeToString(parameter)}) -> ${typeToString(owned.spec.returnType)}'`,
+            );
+            return ERROR_TYPE;
+          }
+          return element;
+        }
+        if (!isNumeric(element)) {
           this.diagnostics.error(
             argument.range,
             `'${fn.name}' expects a numeric array, got '${typeToString(argType)}'`,
@@ -3105,7 +3540,7 @@ export class SemanticAnalyzer {
             && !this.typeOwnsEqualsContract(leaf)) {
             this.diagnostics.error(
               callee.range,
-              `${callee.name}() cannot search for '${typeToString(leaf)}' objects — declare 'bool function equals(${typeToString(leaf)} other)' in class '${typeToString(leaf)}' and the search will use it`,
+              `${callee.name}() cannot search for '${typeToString(leaf)}' objects — declare 'contract bool function equals(${this.shortClassName(leaf)} other)' in class '${this.shortClassName(leaf)}' and the search will use it`,
             );
             return null;
           }
@@ -3140,7 +3575,7 @@ export class SemanticAnalyzer {
           if (leaf !== null && callee.name === 'sort' && !this.typeOwnsEqualsContract(leaf, 'less')) {
             this.diagnostics.error(
               callee.range,
-              `sort() cannot order '${typeToString(leaf)}' objects — declare 'bool function less(${typeToString(leaf)} other)' in class '${typeToString(leaf)}' and sort() will use it${leaf.kind === 'class' ? this.contractShapeIssue(leaf.name, 'less') : ''}`,
+              `sort() cannot order '${typeToString(leaf)}' objects — declare 'contract bool function less(${this.shortClassName(leaf)} other)' in class '${this.shortClassName(leaf)}' and sort() will use it`,
             );
             return null;
           }
@@ -3180,11 +3615,10 @@ export class SemanticAnalyzer {
           // Контракт equals живёт в слоте своего класса и НЕ наследуется:
           // компилятор обязан отказать сам, а не отправлять в рантайм за
           // «object has no method 'equals'» (E17, находка методистов).
-          if (COMPARISON_CONTRACT_NAMES.includes(callee.name as ComparisonContractName)
-            && method.access.owner !== objectType.name
-            && this.classDeclaresEqualsContract(method.access.owner, callee.name as ComparisonContractName)
-            && !this.classDeclaresEqualsContract(objectType.name, callee.name as ComparisonContractName)) {
-            this.diagnostics.error(callee.range, `'${callee.name}' is a contract and is not inherited — declare 'bool function ${callee.name}(${objectType.name} other)' in class '${objectType.name}' and the call will use it`);
+          if (method.access.owner !== objectType.name
+            && this.classOwnsSlotContract(method.access.owner, callee.name)
+            && !this.classOwnsSlotContract(objectType.name, callee.name)) {
+            this.diagnostics.error(callee.range, `'${callee.name}' is a contract and is not inherited — declare '${this.heirContractRecipe(objectType.name, callee.name)}' in class '${objectType.name}' and the call will use it`);
             return null;
           }
           this.checkClassMemberAccess(method.access, callee.range);
@@ -3382,7 +3816,7 @@ export class SemanticAnalyzer {
     }
     if (type.kind === 'class') {
       if (this.classHasPublicToString(type.name)) return null;
-      return `cannot print object of class '${type.name}' directly — declare 'string function to_string()' in class '${type.name}' and printing will use it${this.contractShapeIssue(type.name, 'to_string')}`;
+      return `cannot print object of class '${type.name}' directly — declare 'contract string function to_string()' in class '${type.name}' and printing will use it`;
     }
     // Библиотечный объект без текстового вида: раньше в консоль уезжало
     // JS-нутро «[object Object]». Значения библиотеки (colors.Color,
@@ -3404,17 +3838,17 @@ export class SemanticAnalyzer {
         && method.access === 'public'
         && method.spec.parameters.length === 0
         && sameType(method.spec.returnType, STRING);
-      return printable ? null : `cannot print object of class '${type.moduleName}.${type.name}' directly — declare 'string function to_string()' in class '${type.name}' and printing will use it`;
+      return printable ? null : `cannot print object of class '${type.moduleName}.${type.name}' directly — declare 'contract string function to_string()' in class '${type.name}' and printing will use it`;
     }
     if (type.kind === 'map') {
       const value = type.valueType;
       if (value.kind === 'class') {
         if (this.classHasPublicToString(value.name)) return null;
-        return `cannot print a map of '${value.name}' values directly — declare 'string function to_string()' in class '${value.name}' and printing will use it${this.contractShapeIssue(value.name, 'to_string')}`;
+        return `cannot print a map of '${value.name}' values directly — declare 'contract string function to_string()' in class '${value.name}' and printing will use it`;
       }
       if (value.kind === 'qualified' && this.userModuleRegistry.hasModule(value.moduleName)) {
         if (this.printableTypeError(value) === null) return null;
-        return `cannot print a map of '${value.moduleName}.${value.name}' values directly — declare 'string function to_string()' in class '${value.name}' and printing will use it`;
+        return `cannot print a map of '${value.moduleName}.${value.name}' values directly — declare 'contract string function to_string()' in class '${value.name}' and printing will use it`;
       }
       return this.printableTypeError(value);
     }
@@ -3425,53 +3859,22 @@ export class SemanticAnalyzer {
       // 2026-08-22 — симметрия со сравнением массивов через equals).
       if (element.kind === 'class') {
         if (this.classHasPublicToString(element.name)) return null;
-        return `cannot print an array of '${element.name}' objects directly — declare 'string function to_string()' in class '${element.name}' and printing will use it${this.contractShapeIssue(element.name, 'to_string')}`;
+        return `cannot print an array of '${element.name}' objects directly — declare 'contract string function to_string()' in class '${element.name}' and printing will use it`;
       }
       if (element.kind === 'qualified' && this.userModuleRegistry.hasModule(element.moduleName)) {
         if (this.printableTypeError(element) === null) return null;
-        return `cannot print an array of '${element.moduleName}.${element.name}' objects directly — declare 'string function to_string()' in class '${element.name}' and printing will use it`;
+        return `cannot print an array of '${element.moduleName}.${element.name}' objects directly — declare 'contract string function to_string()' in class '${element.name}' and printing will use it`;
       }
       return this.printableTypeError(element);
     }
     return null;
   }
 
-  /**
-   * Почему одноимённый метод НЕ считается контрактом — хвост для диагностик.
-   * Четыре разные порчи формы (private, чужой тип, не тот возврат, static)
-   * давали неотличимые ошибки — методисты мерили цену в «полчаса сверки
-   * по буквам» (2026-08-21).
-   */
-  private contractShapeIssue(className: string, methodName: 'equals' | 'less' | 'greater' | 'to_string'): string {
-    const info = this.classes.get(className);
-    if (!info || !info.ownMethods.has(methodName)) return '';
-    const spec = info.methods.get(methodName);
-    const access = info.methodAccess.get(methodName);
-    const issues: string[] = [];
-    if (access !== undefined && access.access !== 'public') issues.push('it is private');
-    if (access !== undefined && access.isStatic) issues.push('it is static');
-    if (methodName !== 'to_string') {
-      if (!spec || spec.parameters.length !== 1) {
-        issues.push(`it must take exactly one parameter of type '${className}'`);
-      } else if (!(spec.parameters[0].type.kind === 'class' && spec.parameters[0].type.name === className)) {
-        issues.push(`its parameter is '${typeToString(spec.parameters[0].type)}' instead of '${className}'`);
-      }
-      if (spec && !sameType(spec.returnType, BOOL)) {
-        issues.push(`it returns '${typeToString(spec.returnType)}' instead of 'bool'`);
-      }
-    } else {
-      if (spec && spec.parameters.length > 0) issues.push('it must take no parameters');
-      if (spec && !sameType(spec.returnType, STRING)) {
-        issues.push(`it returns '${typeToString(spec.returnType)}' instead of 'string'`);
-      }
-    }
-    if (issues.length === 0) return '';
-    return ` (class '${className}' has '${methodName}', but ${issues.join(', ')})`;
-  }
-
   private classHasPublicToString(className: string): boolean {
     const info = this.classes.get(className);
     if (!info) return false;
+    // Отвергнутый у объявления контракт уже назван ошибкой — печать молчит.
+    if (this.refusedContracts.has(`${className}.to_string`)) return true;
     // Контракты не наследуются: to_string должен быть объявлен в самом классе.
     if (!info.ownMethods.has('to_string')) return false;
     const spec = info.methods.get('to_string');
@@ -3577,7 +3980,11 @@ export class SemanticAnalyzer {
     actual: TypeRef,
   ): string {
     const label = item.arg.name ? `argument '${item.arg.name}'` : `argument ${item.argumentIndex + 1}`;
-    return `'${fn.name}' ${label} expects ${expected}, got '${typeToString(actual)}'`;
+    // math.sqrt(z), math.abs(z)…: у комплексного числа те же действия живут методами.
+    const viaMethod = isComplex(actual) && this.stdlib.getTypeMethod(MATH_COMPLEX, fn.name)
+      ? ` — a complex number has its own method: write z.${fn.name}()`
+      : '';
+    return `'${fn.name}' ${label} expects ${expected}, got '${typeToString(actual)}'${viaMethod}`;
   }
 
   private memberType(expression: MemberExpression): TypeRef {
@@ -3822,11 +4229,10 @@ export class SemanticAnalyzer {
       const method = this.getClassMethodInfo(objectType.name, expression.name);
       if (method) {
         this.markSemanticToken('method', expression.nameRange);
-        if (expression.name === 'equals'
-          && method.access.owner !== objectType.name
-          && this.classDeclaresEqualsContract(method.access.owner)
-          && !this.classDeclaresEqualsContract(objectType.name)) {
-          this.diagnostics.error(expression.range, `'equals' is a contract and is not inherited — declare 'bool function equals(${objectType.name} other)' in class '${objectType.name}' and the call will use it`);
+        if (method.access.owner !== objectType.name
+          && this.classOwnsSlotContract(method.access.owner, expression.name)
+          && !this.classOwnsSlotContract(objectType.name, expression.name)) {
+          this.diagnostics.error(expression.range, `'${expression.name}' is a contract and is not inherited — declare '${this.heirContractRecipe(objectType.name, expression.name)}' in class '${objectType.name}' and the call will use it`);
           return ERROR_TYPE;
         }
         this.checkClassMemberAccess(method.access, expression.range);

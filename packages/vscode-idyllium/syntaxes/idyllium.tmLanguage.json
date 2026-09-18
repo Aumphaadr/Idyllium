@@ -139,7 +139,7 @@
           }
         },
         {
-          "match": "(\\.)\\s*(Animation|Array|BarChart|Bitmap|Button|Canvas|CheckBox|Circle|Color|ComboBox|Database|Drawable|FloatSpinBox|Font|Frame|Image|ImageBox|KeyboardEvent|Label|Line|LineChart|LineEdit|Modal|MouseEvent|MouseScrollEvent|Music|Node|Object|PieChart|Post|ProgressBar|RadioButton|Rectangle|Request|Response|Result|Server|Slider|Sound|SpinBox|Sprite|Statement|Static|TabWidget|Table|Text|TextEdit|Timer|Turtle|Value|Vector|Widget|Window|float32|float64|int16|int32|int64|int8|istream|ostream|stamp|stream|uint16|uint32|uint64|uint8)\\b(?=\\s*\\()",
+          "match": "(\\.)\\s*(Animation|Array|BarChart|Bitmap|Button|Canvas|CheckBox|Circle|Color|ComboBox|Complex|Database|Drawable|FloatSpinBox|Font|Frame|Image|ImageBox|KeyboardEvent|Label|Line|LineChart|LineEdit|Melody|Modal|MouseEvent|MouseScrollEvent|Music|Node|Object|PieChart|Post|ProgressBar|RadioButton|Rectangle|Request|Response|Result|Server|Slider|Sound|SpinBox|Sprite|Statement|Static|TabWidget|Table|Text|TextEdit|Timer|Turtle|Value|Vector|Widget|Window|float32|float64|int16|int32|int64|int8|istream|ostream|stamp|stream|uint16|uint32|uint64|uint8)\\b(?=\\s*\\()",
           "captures": {
             "1": {
               "name": "punctuation.accessor.idyllium"
@@ -161,7 +161,7 @@
           }
         },
         {
-          "match": "(\\.)\\s*(Animation|Array|BarChart|Bitmap|Button|Canvas|CheckBox|Circle|Color|ComboBox|Database|Drawable|FloatSpinBox|Font|Frame|Image|ImageBox|KeyboardEvent|Label|Line|LineChart|LineEdit|Modal|MouseEvent|MouseScrollEvent|Music|Node|Object|PieChart|Post|ProgressBar|RadioButton|Rectangle|Request|Response|Result|Server|Slider|Sound|SpinBox|Sprite|Statement|Static|TabWidget|Table|Text|TextEdit|Timer|Turtle|Value|Vector|Widget|Window|float32|float64|int16|int32|int64|int8|istream|ostream|stamp|stream|uint16|uint32|uint64|uint8)\\b",
+          "match": "(\\.)\\s*(Animation|Array|BarChart|Bitmap|Button|Canvas|CheckBox|Circle|Color|ComboBox|Complex|Database|Drawable|FloatSpinBox|Font|Frame|Image|ImageBox|KeyboardEvent|Label|Line|LineChart|LineEdit|Melody|Modal|MouseEvent|MouseScrollEvent|Music|Node|Object|PieChart|Post|ProgressBar|RadioButton|Rectangle|Request|Response|Result|Server|Slider|Sound|SpinBox|Sprite|Statement|Static|TabWidget|Table|Text|TextEdit|Timer|Turtle|Value|Vector|Widget|Window|float32|float64|int16|int32|int64|int8|istream|ostream|stamp|stream|uint16|uint32|uint64|uint8)\\b",
           "captures": {
             "1": {
               "name": "punctuation.accessor.idyllium"
@@ -204,7 +204,7 @@
         },
         {
           "name": "keyword.declaration.idyllium",
-          "match": "\\b(?:class|const|constructor|event|extends|function|private|public|static)\\b"
+          "match": "\\b(?:class|const|constructor|contract|event|extends|function|private|public|static)\\b"
         }
       ]
     },
@@ -216,7 +216,7 @@
         },
         {
           "name": "entity.name.type.class.idyllium",
-          "match": "\\b(?:Animation|Array|BarChart|Bitmap|Button|Canvas|CheckBox|Circle|Color|ComboBox|Database|Drawable|FloatSpinBox|Font|Frame|Image|ImageBox|KeyboardEvent|Label|Line|LineChart|LineEdit|Modal|MouseEvent|MouseScrollEvent|Music|Node|Object|PieChart|Post|ProgressBar|RadioButton|Rectangle|Request|Response|Result|Server|Slider|Sound|SpinBox|Sprite|Statement|Static|TabWidget|Table|Text|TextEdit|Timer|Turtle|Value|Vector|Widget|Window)\\b"
+          "match": "\\b(?:Animation|Array|BarChart|Bitmap|Button|Canvas|CheckBox|Circle|Color|ComboBox|Complex|Database|Drawable|FloatSpinBox|Font|Frame|Image|ImageBox|KeyboardEvent|Label|Line|LineChart|LineEdit|Melody|Modal|MouseEvent|MouseScrollEvent|Music|Node|Object|PieChart|Post|ProgressBar|RadioButton|Rectangle|Request|Response|Result|Server|Slider|Sound|SpinBox|Sprite|Statement|Static|TabWidget|Table|Text|TextEdit|Timer|Turtle|Value|Vector|Widget|Window)\\b"
         },
         {
           "name": "entity.name.type.class.idyllium",

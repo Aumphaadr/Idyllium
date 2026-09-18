@@ -1,0 +1,343 @@
+/* Кадр embed-юнита. Визуальный язык — Web IDE: те же шрифты (Geologica,
+   Source Code Pro), та же палитра и те же цвета подсветки, что у тем Monaco
+   idyllium-dark / idyllium-light. Лёгкий редактор обязан выглядеть ровно как
+   Monaco, который подменит его при первом клике: подмена не должна мигать.
+   Кадр изолирован iframe-песочницей — стили хозяина сюда не достают. */
+@font-face {
+  font-family: "Geologica";
+  src: url("../fonts/Geologica-Variable.ttf") format("truetype-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Source Code Pro";
+  src: url("../fonts/SourceCodePro-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Source Code Pro";
+  src: url("../fonts/SourceCodePro-Semibold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Source Code Pro";
+  src: url("../fonts/SourceCodePro-It.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  --ui-font: "Geologica", Inter, "Segoe UI", Arial, sans-serif;
+  --mono-font: "Source Code Pro", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-size: 16px;
+  --line-height: 25px;
+}
+
+/* Палитра Web IDE, тёмная тема (по умолчанию, как у самой IDE). */
+body {
+  color-scheme: dark;
+  --bg: #100819;
+  --panel: #171020;
+  --panel-soft: #21182c;
+  --panel-raised: #1d1528;
+  --border: #342a43;
+  --text: #eeeaf7;
+  --muted: #a39bb7;
+  --accent: #6aa4ff;
+  --accent-strong: #8ec2ff;
+  --run-bg: #179f5b;
+  --run-bg-hover: #1fba6d;
+  --danger: #f07178;
+  --editor-bg: #120a1d;
+  --editor-text: #f0ecf8;
+  --editor-muted: #777088;
+  --editor-caret: #ffffff;
+  --selection: rgba(106, 164, 255, 0.28);
+  --output-bg: #0c0515;
+  --output-text: #eeeaf7;
+  /* токены — ровно цвета темы idyllium-dark в monaco-grammar.js */
+  --keyword: #b892ff;
+  --type-name: #63b3ff;
+  --class-name: #59d4b8;
+  --string: #d99a6c;
+  --number: #c5d979;
+  --comment: #6ba36f;
+  --function: #e4d87e;
+  --object: #8bdfff;
+  --brackets: #d0d6e6;
+  --ok-bg: rgba(74, 222, 128, 0.12);
+  --ok-text: #86efac;
+  --fail-bg: rgba(245, 217, 139, 0.12);
+  --fail-text: #f5d98b;
+  --soft-bg: rgba(106, 164, 255, 0.12);
+  --soft-text: #b9d4ff;
+}
+
+body.theme-light {
+  color-scheme: light;
+  --bg: #d2cfd7;
+  --panel: #dfdce4;
+  --panel-soft: #cbc7d1;
+  --panel-raised: #e7e4ea;
+  --border: #aaa3b2;
+  --text: #27242e;
+  --muted: #625d69;
+  --accent: #315f8c;
+  --accent-strong: #234b73;
+  --run-bg: #177b49;
+  --run-bg-hover: #12683d;
+  --danger: #a43b4b;
+  --editor-bg: #d9d6df;
+  --editor-text: #252730;
+  --editor-muted: #77717f;
+  --editor-caret: #23252c;
+  --selection: rgba(49, 95, 140, 0.22);
+  --output-bg: #cfccd5;
+  --output-text: #25222b;
+  /* токены — ровно цвета темы idyllium-light */
+  --keyword: #8d3f75;
+  --type-name: #1d659a;
+  --class-name: #1b745c;
+  --string: #87481f;
+  --number: #5b7027;
+  --comment: #477237;
+  --function: #76620f;
+  --object: #0d667f;
+  --brackets: #445253;
+  --ok-bg: rgba(23, 119, 72, 0.14);
+  --ok-text: #145c38;
+  --fail-bg: rgba(138, 97, 0, 0.14);
+  --fail-text: #6b4a00;
+  --soft-bg: rgba(49, 95, 140, 0.13);
+  --soft-text: #234b73;
+}
+
+* {
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted) 42%, transparent) transparent;
+}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 34%, transparent);
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--muted) 56%, transparent);
+  background-clip: content-box;
+}
+[hidden] { display: none !important; }
+
+html, body { margin: 0; background: transparent; }
+body {
+  color: var(--text);
+  font-family: var(--ui-font);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.unit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.statement {
+  padding: 9px 12px;
+  background: var(--panel-soft);
+  border-radius: 8px;
+  white-space: pre-wrap;
+}
+.statement-title { font-weight: 700; margin-bottom: 3px; }
+
+.editor-shell {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--editor-bg);
+}
+.editor { position: relative; height: 100%; }
+
+/* ── лёгкий редактор: прозрачная textarea поверх подсвеченного pre.
+      Геометрия повторяет Monaco: ровно 3 знакоместа под номера строк, зазор
+      12 px, отступ сверху 6 px, высота строки как в IDE. ── */
+.light {
+  position: relative;
+  display: flex;
+  height: 100%;
+  background: var(--editor-bg);
+  color: var(--editor-text);
+  font-family: var(--mono-font);
+  font-size: var(--font-size);
+  line-height: var(--line-height);
+}
+.light-gutter {
+  flex: 0 0 auto;
+  width: 3ch;
+  margin: 0;
+  padding: 6px 0;
+  overflow: hidden;
+  text-align: right;
+  color: var(--editor-muted);
+  user-select: none;
+  white-space: pre;
+  font: inherit;
+}
+.light-body { position: relative; flex: 1 1 auto; min-width: 0; }
+.light-code, .light-input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 6px 10px 6px 12px;
+  border: 0;
+  font: inherit;
+  letter-spacing: 0;
+  white-space: pre;
+  overflow: auto;
+  tab-size: 4;
+}
+.light-code { pointer-events: none; color: var(--editor-text); scrollbar-width: none; }
+.light-code::-webkit-scrollbar { display: none; }
+.light-input {
+  width: 100%;
+  height: 100%;
+  resize: none;
+  outline: none;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--editor-caret);
+}
+.light-input::selection { background: var(--selection); }
+.tok-keyword { color: var(--keyword); }
+.tok-type { color: var(--type-name); }
+.tok-class { color: var(--class-name); }
+.tok-function { color: var(--function); }
+.tok-object { color: var(--object); }
+.tok-brackets { color: var(--brackets); }
+.tok-string { color: var(--string); }
+.tok-number { color: var(--number); }
+.tok-comment { color: var(--comment); font-style: italic; }
+
+.toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.toolbar-gap { flex: 1 1 auto; }
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 0 13px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel-soft);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+.button svg { width: 15px; height: 15px; fill: currentColor; flex: 0 0 auto; }
+.button svg.stroke { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.button:hover:not(:disabled) { border-color: var(--accent); }
+.button:disabled { opacity: 0.5; cursor: default; }
+.button-run { background: var(--run-bg); border-color: var(--run-bg); color: #ffffff; }
+.button-run:hover:not(:disabled) { background: var(--run-bg-hover); border-color: var(--run-bg-hover); }
+.button-stop {
+  background: color-mix(in srgb, var(--danger) 82%, #000000);
+  border-color: color-mix(in srgb, var(--danger) 70%, #000000);
+  color: #ffffff;
+}
+.button-stop:hover:not(:disabled) { background: var(--danger); border-color: var(--danger); }
+.button-check { border-color: var(--accent); color: var(--accent-strong); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.button-check:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.button-quiet { background: transparent; color: var(--muted); }
+.button-quiet:hover:not(:disabled) { color: var(--text); }
+
+.console {
+  display: flex;
+  flex-direction: column;
+  background: var(--output-bg);
+  color: var(--output-text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.output {
+  flex: 1 1 auto;
+  margin: 0;
+  padding: 8px 12px;
+  overflow: auto;
+  font-family: var(--mono-font);
+  font-size: calc(var(--font-size) - 2px);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.output:empty::before { content: attr(data-idle); color: var(--muted); }
+.output .echo { color: var(--accent-strong); }
+.output .trouble { color: var(--danger); }
+.output .note { color: var(--muted); }
+.input-row { display: flex; gap: 6px; padding: 6px; border-top: 1px solid var(--border); background: var(--panel); }
+.input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--editor-bg);
+  color: var(--editor-text);
+  font-family: var(--mono-font);
+  font-size: calc(var(--font-size) - 2px);
+}
+.input:focus { outline: none; border-color: var(--accent); }
+
+.verdict {
+  padding: 9px 12px;
+  border-radius: 8px;
+  white-space: pre-wrap;
+}
+.verdict-ok { background: var(--ok-bg); color: var(--ok-text); }
+.verdict-fail { background: var(--fail-bg); color: var(--fail-text); }
+.verdict-soft { background: var(--soft-bg); color: var(--soft-text); }
+
+.branding {
+  align-self: flex-end;
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: none;
+}
+.branding:hover { color: var(--accent-strong); text-decoration: underline; }
+
+.broken {
+  padding: 12px;
+  border: 1px solid var(--danger);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--danger) 12%, var(--panel));
+  color: var(--text);
+  font-family: var(--ui-font);
+  white-space: pre-wrap;
+}
+
+.ansi-bold { font-weight: 700; }
+.ansi-fg-black { color: #6e7681; } .ansi-fg-red { color: #ff7b72; } .ansi-fg-green { color: #7ee787; }
+.ansi-fg-yellow { color: #e3b341; } .ansi-fg-blue { color: #79c0ff; } .ansi-fg-magenta { color: #d2a8ff; }
+.ansi-fg-cyan { color: #76e3ea; } .ansi-fg-white { color: #e6edf3; }
+.ansi-fg-bright-black { color: #8b949e; } .ansi-fg-bright-red { color: #ffa198; } .ansi-fg-bright-green { color: #a5f0b0; }
+.ansi-fg-bright-yellow { color: #f2cc60; } .ansi-fg-bright-blue { color: #a5d6ff; } .ansi-fg-bright-magenta { color: #e2c5ff; }
+.ansi-fg-bright-cyan { color: #b3f0ff; } .ansi-fg-bright-white { color: #ffffff; }

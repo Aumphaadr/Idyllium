@@ -46,6 +46,7 @@ export enum TokenKind {
   KwStatic = 'KwStatic',
   KwExtends = 'KwExtends',
   KwEvent = 'KwEvent',
+  KwContract = 'KwContract',
   KwPrivate = 'KwPrivate',
   KwPublic = 'KwPublic',
 
@@ -128,6 +129,7 @@ export const KEYWORDS: Readonly<Record<string, TokenKind>> = {
   static: TokenKind.KwStatic,
   extends: TokenKind.KwExtends,
   event: TokenKind.KwEvent,
+  contract: TokenKind.KwContract,
   private: TokenKind.KwPrivate,
   public: TokenKind.KwPublic,
 };

@@ -46,7 +46,7 @@ var Idyllium = (() => {
     "dist/src/core/types.js"(exports2) {
       "use strict";
       Object.defineProperty(exports2, "__esModule", { value: true });
-      exports2.MAP_KEY_TYPE_NAMES = exports2.ANY_VALUE_TYPES = exports2.COLOR = exports2.RUNTIME_ERROR_VALUE = exports2.NULL_TYPE = exports2.ANY_TYPE = exports2.ERROR_TYPE = exports2.VOID = exports2.BOOL = exports2.CHAR = exports2.STRING = exports2.FLOAT = exports2.INT = void 0;
+      exports2.MAP_KEY_TYPE_NAMES = exports2.ANY_VALUE_TYPES = exports2.MATH_COMPLEX = exports2.COLOR = exports2.RUNTIME_ERROR_VALUE = exports2.NULL_TYPE = exports2.ANY_TYPE = exports2.ERROR_TYPE = exports2.VOID = exports2.BOOL = exports2.CHAR = exports2.STRING = exports2.FLOAT = exports2.INT = void 0;
       exports2.primitive = primitive;
       exports2.typeToString = typeToString;
       exports2.sameType = sameType;
@@ -56,6 +56,7 @@ var Idyllium = (() => {
       exports2.isTypesNumeric = isTypesNumeric;
       exports2.isAssignable = isAssignable;
       exports2.isEmptyBracesType = isEmptyBracesType;
+      exports2.isComplex = isComplex;
       exports2.numericBinaryResult = numericBinaryResult;
       exports2.qualified = qualified;
       exports2.classType = classType;
@@ -75,6 +76,7 @@ var Idyllium = (() => {
       exports2.NULL_TYPE = { kind: "null" };
       exports2.RUNTIME_ERROR_VALUE = { kind: "runtime-error" };
       exports2.COLOR = { kind: "qualified", moduleName: "colors", name: "Color" };
+      exports2.MATH_COMPLEX = { kind: "qualified", moduleName: "math", name: "Complex" };
       exports2.ANY_VALUE_TYPES = [exports2.INT, exports2.FLOAT, exports2.STRING, exports2.CHAR, exports2.BOOL, exports2.COLOR];
       function primitive(name) {
         switch (name) {
@@ -179,6 +181,8 @@ var Idyllium = (() => {
           return isIntegerLike(value);
         if (isFloatLike(target))
           return isNumeric(value);
+        if (isComplex(target))
+          return isNumeric(value);
         if (target.kind === "array" && value.kind === "array") {
           const sizeMatches = target.dynamic || value.dynamic || target.size === value.size;
           return sizeMatches && isAssignable(target.elementType, value.elementType);
@@ -196,7 +200,14 @@ var Idyllium = (() => {
       function isEmptyBracesType(type) {
         return type.kind === "map" && type.keyType.kind === "any" && type.valueType.kind === "any";
       }
+      function isComplex(type) {
+        return type.kind === "qualified" && type.moduleName === "math" && type.name === "Complex";
+      }
       function numericBinaryResult(operator, left, right) {
+        if ((isComplex(left) || isComplex(right)) && ["+", "-", "*", "/"].includes(operator)) {
+          const bothFit = (isComplex(left) || isNumeric(left)) && (isComplex(right) || isNumeric(right));
+          return bothFit ? exports2.MATH_COMPLEX : exports2.ERROR_TYPE;
+        }
         if (!isNumeric(left) || !isNumeric(right))
           return exports2.ERROR_TYPE;
         if (operator === "/")
@@ -238,7 +249,7 @@ var Idyllium = (() => {
       exports2.StandardLibraryRegistry = void 0;
       exports2.createDefaultStandardLibrary = createDefaultStandardLibrary;
       var types_1 = require_types();
-      var StandardLibraryRegistry = class {
+      var StandardLibraryRegistry = class _StandardLibraryRegistry {
         modules = /* @__PURE__ */ new Map();
         globals = /* @__PURE__ */ new Map();
         registerModule(module3) {
@@ -249,6 +260,19 @@ var Idyllium = (() => {
         }
         hasModule(name) {
           return this.modules.has(name);
+        }
+        /** Копия реестра с урезанным набором библиотек (embed-юниты: только
+         *  консольные). Глобальные функции остаются все. */
+        restrictedTo(moduleNames) {
+          const allowed = new Set(moduleNames);
+          const copy = new _StandardLibraryRegistry();
+          for (const [name, module3] of this.modules) {
+            if (allowed.has(name))
+              copy.registerModule(module3);
+          }
+          for (const spec of this.globals.values())
+            copy.registerGlobalFunction(spec);
+          return copy;
         }
         getModule(name) {
           return this.modules.get(name);
@@ -549,11 +573,14 @@ var Idyllium = (() => {
           functionSpec("set_precision", [{ name: "digits", type: types_1.INT }], types_1.VOID, { codegen: { target: "console.set_precision", shape: "context-first" } })
         ]));
         registry.registerModule(moduleSpec("math", [
-          functionSpec("abs", [{ name: "value", type: types_1.FLOAT }], types_1.FLOAT, {
+          functionSpec("abs", [{ name: "value", type: types_1.FLOAT, acceptedTypes: [types_1.FLOAT, types_1.MATH_COMPLEX], acceptedDescription: "number or math.Complex" }], types_1.FLOAT, {
             returnTypeRule: "match-integer-argument",
-            documentation: "Модуль числа. Тип результата повторяет аргумент: abs(int) даёт int, abs(float) — float."
+            documentation: "Модуль числа. Тип результата повторяет аргумент: abs(int) даёт int, abs(float) — float; abs(math.Complex) — float, модуль |z|."
           }),
-          functionSpec("sqrt", [{ name: "value", type: types_1.FLOAT }], types_1.FLOAT),
+          functionSpec("sqrt", [{ name: "value", type: types_1.FLOAT, acceptedTypes: [types_1.FLOAT, types_1.MATH_COMPLEX], acceptedDescription: "number or math.Complex" }], types_1.FLOAT, {
+            returnTypeRule: "complex-when-complex-argument",
+            documentation: "Квадратный корень. Отрицательное вещественное — ошибка выполнения; комплексный аргумент даёт главное значение корня (то же, что z.sqrt())."
+          }),
           functionSpec("round", [
             { name: "value", type: types_1.FLOAT },
             { name: "digits", type: types_1.INT }
@@ -578,7 +605,13 @@ var Idyllium = (() => {
             returnTypeRule: "int-without-digits",
             documentation: "Округляет вверх. Без digits возвращает int; с digits — float с указанным числом знаков."
           }),
-          functionSpec("pow", [{ name: "value", type: types_1.FLOAT }, { name: "power", type: types_1.FLOAT }], types_1.FLOAT),
+          functionSpec("pow", [
+            { name: "value", type: types_1.FLOAT, acceptedTypes: [types_1.FLOAT, types_1.MATH_COMPLEX], acceptedDescription: "number or math.Complex" },
+            { name: "power", type: types_1.FLOAT, acceptedTypes: [types_1.FLOAT, types_1.MATH_COMPLEX], acceptedDescription: "number or math.Complex" }
+          ], types_1.FLOAT, {
+            returnTypeRule: "complex-when-complex-argument",
+            documentation: "Степень. Если основание или показатель — math.Complex, результат комплексный (как z.pow(w))."
+          }),
           functionSpec("clamp", [
             { name: "min", type: types_1.FLOAT },
             { name: "value", type: types_1.FLOAT },
@@ -586,9 +619,18 @@ var Idyllium = (() => {
           ], types_1.FLOAT, {
             returnTypeRule: "int-when-all-integer-numeric"
           }),
-          functionSpec("sin", [{ name: "radians", type: types_1.FLOAT }], types_1.FLOAT),
-          functionSpec("cos", [{ name: "radians", type: types_1.FLOAT }], types_1.FLOAT),
-          functionSpec("tan", [{ name: "radians", type: types_1.FLOAT }], types_1.FLOAT),
+          functionSpec("sin", [{ name: "radians", type: types_1.FLOAT, acceptedTypes: [types_1.FLOAT, types_1.MATH_COMPLEX], acceptedDescription: "number or math.Complex" }], types_1.FLOAT, {
+            returnTypeRule: "complex-when-complex-argument",
+            documentation: "Синус угла в радианах; комплексный аргумент даёт комплексный синус (как z.sin())."
+          }),
+          functionSpec("cos", [{ name: "radians", type: types_1.FLOAT, acceptedTypes: [types_1.FLOAT, types_1.MATH_COMPLEX], acceptedDescription: "number or math.Complex" }], types_1.FLOAT, {
+            returnTypeRule: "complex-when-complex-argument",
+            documentation: "Косинус угла в радианах; комплексный аргумент даёт комплексный косинус (как z.cos())."
+          }),
+          functionSpec("tan", [{ name: "radians", type: types_1.FLOAT, acceptedTypes: [types_1.FLOAT, types_1.MATH_COMPLEX], acceptedDescription: "number or math.Complex" }], types_1.FLOAT, {
+            returnTypeRule: "complex-when-complex-argument",
+            documentation: "Тангенс угла в радианах; комплексный аргумент даёт комплексный тангенс (как z.tan())."
+          }),
           functionSpec("asin", [{ name: "value", type: types_1.FLOAT }], types_1.FLOAT),
           functionSpec("acos", [{ name: "value", type: types_1.FLOAT }], types_1.FLOAT),
           functionSpec("atan", [{ name: "value", type: types_1.FLOAT }], types_1.FLOAT),
@@ -598,7 +640,10 @@ var Idyllium = (() => {
           ], types_1.FLOAT, {
             documentation: "Угол (в радианах) от начала координат до точки (x, y) — сначала y! Работает во всех четырёх квадрантах и не боится x = 0. Рецепт для Canvas: повернуться к цели — rotation = math.to_degrees(math.atan2(target_y - y, target_x - x)); ось Y экрана смотрит вниз, поэтому угол идёт по часовой — как rotation у drawable, поправки не нужны."
           }),
-          functionSpec("log", [{ name: "value", type: types_1.FLOAT }], types_1.FLOAT),
+          functionSpec("log", [{ name: "value", type: types_1.FLOAT, acceptedTypes: [types_1.FLOAT, types_1.MATH_COMPLEX], acceptedDescription: "number or math.Complex" }], types_1.FLOAT, {
+            returnTypeRule: "complex-when-complex-argument",
+            documentation: "Натуральный логарифм. Неположительное вещественное — ошибка выполнения; комплексный аргумент даёт главное значение логарифма (то же, что z.ln())."
+          }),
           functionSpec("log10", [{ name: "value", type: types_1.FLOAT }], types_1.FLOAT),
           functionSpec("to_radians", [{ name: "degrees", type: types_1.FLOAT }], types_1.FLOAT),
           functionSpec("to_degrees", [{ name: "radians", type: types_1.FLOAT }], types_1.FLOAT),
@@ -623,10 +668,61 @@ var Idyllium = (() => {
           }),
           functionSpec("hypot", [{ name: "a", type: types_1.FLOAT }, { name: "b", type: types_1.FLOAT }], types_1.FLOAT, {
             documentation: "Длина гипотенузы по двум катетам — sqrt(a² + b²): расстояние между точками на холсте без ручного возведения в квадрат."
+          }),
+          functionSpec("Complex", [
+            { name: "re", type: types_1.FLOAT, defaultValue: "0" },
+            { name: "im", type: types_1.FLOAT, defaultValue: "0" }
+          ], types_1.MATH_COMPLEX, {
+            minArguments: 0,
+            documentation: "Комплексное число re + im·i. Без аргументов — ноль; math.Complex(3) — вещественное 3. Вещественные числа входят в арифметику с комплексными сами: 2 * z и z + 1 работают без приведения."
+          }),
+          functionSpec("polar", [
+            { name: "modulus", type: types_1.FLOAT },
+            { name: "argument", type: types_1.FLOAT }
+          ], types_1.MATH_COMPLEX, {
+            documentation: "Комплексное число по модулю и аргументу (в радианах): modulus · (cos argument + i · sin argument). Отрицательный модуль — ошибка выполнения."
           })
         ], [
           { name: "pi", type: types_1.FLOAT, documentation: "Число π." },
-          { name: "e", type: types_1.FLOAT, documentation: "Число Эйлера." }
+          { name: "e", type: types_1.FLOAT, documentation: "Число Эйлера." },
+          { name: "I", type: types_1.MATH_COMPLEX, documentation: "Мнимая единица i: math.I * math.I == -1." }
+        ], [
+          typeSpec("Complex", [
+            propertySpec("re", types_1.FLOAT, true, "Вещественная часть."),
+            propertySpec("im", types_1.FLOAT, true, "Мнимая часть.")
+          ], [
+            functionSpec("abs", [], types_1.FLOAT, { documentation: "Модуль |z| — расстояние до нуля на комплексной плоскости." }),
+            functionSpec("arg", [], types_1.FLOAT, { documentation: "Главное значение аргумента в радианах, из промежутка (−π; π]; у нуля — 0." }),
+            functionSpec("conjugate", [], types_1.MATH_COMPLEX, { documentation: "Сопряжённое число re − im·i." }),
+            functionSpec("plus", [{ name: "other", type: types_1.MATH_COMPLEX }], types_1.MATH_COMPLEX, { documentation: "Контракт знака +: z + w." }),
+            functionSpec("minus", [{ name: "other", type: types_1.MATH_COMPLEX }], types_1.MATH_COMPLEX, { documentation: "Контракт знака −: z − w." }),
+            functionSpec("multiply", [{ name: "other", type: types_1.MATH_COMPLEX }], types_1.MATH_COMPLEX, { documentation: "Контракт знака *: z · w." }),
+            functionSpec("divide", [{ name: "other", type: types_1.MATH_COMPLEX }], types_1.MATH_COMPLEX, { documentation: "Контракт знака /: z / w. Деление на ноль — ошибка выполнения." }),
+            functionSpec("opposite", [], types_1.MATH_COMPLEX, { documentation: "Контракт унарного минуса: −z." }),
+            functionSpec("pow", [{ name: "exponent", type: types_1.MATH_COMPLEX }], types_1.MATH_COMPLEX, {
+              documentation: "Степень. Целый показатель считается точным умножением (формула Муавра без погрешности cos/sin): math.I.pow(2) — ровно −1. Дробный и комплексный показатель — главное значение exp(w · ln z)."
+            }),
+            functionSpec("sqrt", [], types_1.MATH_COMPLEX, { documentation: "Главное значение квадратного корня (вещественная часть неотрицательна): math.Complex(-4).sqrt() — 2i. Оба корня даёт roots(2)." }),
+            functionSpec("roots", [{ name: "degree", type: types_1.INT }], (0, types_1.arrayType)(types_1.MATH_COMPLEX, null, true), {
+              documentation: "Все корни степени degree — degree чисел на окружности, от главного против часовой стрелки: math.Complex(1).roots(3) — три кубических корня из единицы."
+            }),
+            functionSpec("exp", [], types_1.MATH_COMPLEX, { documentation: "Экспонента e^z." }),
+            functionSpec("ln", [], types_1.MATH_COMPLEX, { documentation: "Главное значение натурального логарифма: ln|z| + i·arg z. У нуля логарифма нет — ошибка выполнения." }),
+            functionSpec("sin", [], types_1.MATH_COMPLEX),
+            functionSpec("cos", [], types_1.MATH_COMPLEX),
+            functionSpec("tan", [], types_1.MATH_COMPLEX, { documentation: "Тангенс; там, где косинус равен нулю, — ошибка выполнения." }),
+            functionSpec("sinh", [], types_1.MATH_COMPLEX),
+            functionSpec("cosh", [], types_1.MATH_COMPLEX),
+            functionSpec("is_close", [
+              { name: "other", type: types_1.MATH_COMPLEX },
+              { name: "epsilon", type: types_1.FLOAT, defaultValue: "0.000000001" }
+            ], types_1.BOOL, {
+              minArguments: 1,
+              documentation: "Близки ли числа: |z − other| <= epsilon. Вычисленные значения сравнивайте так, а не знаком ==: у комплексных, как у float, точное равенство почти никогда не выполняется."
+            }),
+            functionSpec("to_string", [], types_1.STRING, { documentation: "Алгебраическая форма: «3 + 4i», «-2.5i», «i», «0». При печати части округляются как обычные числа (console.set_precision)." }),
+            functionSpec("to_polar_string", [], types_1.STRING, { documentation: "Тригонометрическая форма: «5(cos 0.92729522 + i sin 0.92729522)»." })
+          ])
         ]));
         registry.registerModule(moduleSpec("random", [
           functionSpec("create_int", [{ name: "min", type: types_1.INT }, { name: "max", type: types_1.INT }], types_1.INT, {
@@ -2145,7 +2241,7 @@ var Idyllium = (() => {
         ], types_1.STRING, {
           printsValues: true,
           codegen: { target: "core.to_string", shape: "args" },
-          documentation: "Преобразует значение в строку. Объект класса — только с публичным string function to_string(). Библиотечные объекты (gui-виджеты, шрифты, фигуры, файловые потоки) текстового вида не имеют — компилятор откажет и посоветует напечатать какое-нибудь их свойство; значения библиотеки (ячейки types, colors.Color, time.stamp, json.Value, а также холст, таблица, диаграммы, черепаха, сервер и ответ http) печатаются как есть."
+          documentation: "Преобразует значение в строку. Объект класса — только с публичным contract string function to_string(). Библиотечные объекты (gui-виджеты, шрифты, фигуры, файловые потоки) текстового вида не имеют — компилятор откажет и посоветует напечатать какое-нибудь их свойство; значения библиотеки (ячейки types, colors.Color, time.stamp, json.Value, а также холст, таблица, диаграммы, черепаха, сервер и ответ http) печатаются как есть."
         }));
         const numericArrayParameter = {
           name: "values",
@@ -2166,12 +2262,12 @@ var Idyllium = (() => {
         registry.registerGlobalFunction(functionSpec("sum", [numericArrayParameter], types_1.ANY_TYPE, {
           returnTypeRule: "numeric-array-aggregate",
           codegen: { target: "array.sum", shape: "args-context" },
-          documentation: "Сумма элементов числового массива. Тип результата повторяет тип элементов."
+          documentation: "Сумма элементов массива. Для чисел тип результата повторяет тип элементов; для math.Complex — комплексная сумма; для объектов класса с контрактом plus — их сумма через plus, начиная с первого элемента. Пустой массив — ошибка выполнения."
         }));
         registry.registerGlobalFunction(functionSpec("avg", [numericArrayParameter], types_1.FLOAT, {
           returnTypeRule: "numeric-array-aggregate",
           codegen: { target: "array.avg", shape: "args-context" },
-          documentation: "Среднее арифметическое элементов числового массива; всегда float."
+          documentation: "Среднее арифметическое элементов массива: для чисел — float, для math.Complex — комплексное."
         }));
         return registry;
       }
@@ -2237,6 +2333,8 @@ var Idyllium = (() => {
       exports2.JavaScriptGenerator = void 0;
       var types_1 = require_types();
       var registry_1 = require_registry();
+      var ARITHMETIC_CONTRACT_BY_SIGN = { "+": "plus", "-": "minus", "*": "multiply", "/": "divide" };
+      var SLOT_ARITHMETIC_CONTRACTS = ["plus", "minus", "multiply", "divide", "opposite"];
       var JavaScriptGenerator = class {
         importedModules = /* @__PURE__ */ new Set();
         userClassNames = /* @__PURE__ */ new Set();
@@ -2258,6 +2356,7 @@ var Idyllium = (() => {
         equalsContractClasses;
         lessContractClasses;
         greaterContractClasses;
+        arithmeticContractClasses;
         nullableClassFields;
         stdlib = (0, registry_1.createDefaultStandardLibrary)();
         constructor(options = {}) {
@@ -2266,6 +2365,7 @@ var Idyllium = (() => {
           this.equalsContractClasses = options.equalsContractClasses ?? /* @__PURE__ */ new Set();
           this.lessContractClasses = options.lessContractClasses ?? /* @__PURE__ */ new Set();
           this.greaterContractClasses = options.greaterContractClasses ?? /* @__PURE__ */ new Set();
+          this.arithmeticContractClasses = options.arithmeticContractClasses ?? /* @__PURE__ */ new Map();
           this.nullableClassFields = options.nullableClassFields ?? /* @__PURE__ */ new Map();
         }
         /** Чтение «пустого поля» (room.guest, где guest объявлен с `= null`): описание или null. */
@@ -2304,6 +2404,19 @@ var Idyllium = (() => {
           if (contract === "greater")
             return this.greaterContractClasses;
           return this.equalsContractClasses;
+        }
+        /** Короткое имя класса, объявившего арифметический контракт (или opposite); null — контракта нет. */
+        arithmeticContractClass(type, contract) {
+          const bare = this.bareClassName(type);
+          return bare !== null && this.arithmeticContractClasses.get(contract)?.has(bare) ? bare : null;
+        }
+        /** Знак над объектом: awaited-вызов слота `plus$Vec` класса ЛЕВОГО операнда (статическая диспетчеризация). */
+        arithmeticContractCall(operator, leftType, left, right, range) {
+          const contract = ARITHMETIC_CONTRACT_BY_SIGN[operator];
+          const owner = contract ? this.arithmeticContractClass(leftType, contract) : null;
+          if (!contract || !owner)
+            return null;
+          return `(await $rt.core.arithmeticObjects(${left}, ${right}, ${JSON.stringify(`${contract}$${owner}`)}, ${JSON.stringify(contract)}, ${JSON.stringify(operator)}, ${JSON.stringify(range.start.file)}, ${range.start.line}))`;
         }
         contractClassBareName(type, contract = "equals") {
           const bare = this.bareClassName(type);
@@ -2663,7 +2776,11 @@ var Idyllium = (() => {
          *  контракты не наследуются, у семьи классов сосуществуют свои версии,
          *  а '==' диспетчеризуется статически — по типу, через который смотрят. */
         isContractComparisonDeclaration(className, declaration) {
-          return ["equals", "less", "greater"].includes(declaration.name) && !declaration.isStatic && declaration.parameters.length === 1 && this.typeNameToString(declaration.parameters[0].paramType) === className;
+          if (!declaration.isContract)
+            return false;
+          if (SLOT_ARITHMETIC_CONTRACTS.includes(declaration.name))
+            return true;
+          return ["equals", "less", "greater"].includes(declaration.name) && declaration.parameters.length === 1 && this.typeNameToString(declaration.parameters[0].paramType) === className;
         }
         emitInstanceMethod(className, declaration, lines, indent) {
           const pad = "  ".repeat(indent);
@@ -2798,21 +2915,24 @@ var Idyllium = (() => {
             const index = this.expression(statement.target.index);
             const container = this.typeOf(statement.target.object)?.kind === "map" ? "$rt.map" : "$rt.array";
             const current = `${container}.get(${object}, ${index}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
-            const rawValue = this.compoundAssignmentValue(statement.operator, current, this.expression(statement.value), statement.range, this.isFloatType(targetType));
+            const rawValue = this.arithmeticContractCall(statement.operator.slice(0, 1), targetType, current, this.expression(statement.value), statement.range) ?? this.compoundAssignmentValue(statement.operator, current, this.expression(statement.value), statement.range, this.isFloatType(targetType), targetType !== null && (0, types_1.isComplex)(targetType));
             const value2 = this.valueForOptionalTypeRef(rawValue, targetType, statement.range);
             return `${container}.set(${object}, ${index}, ${value2}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
           }
           const target = this.expression(statement.target);
           const value = this.expression(statement.value);
-          const rawAssignedValue = this.compoundAssignmentValue(statement.operator, target, value, statement.range, this.isFloatType(targetType));
+          const rawAssignedValue = this.arithmeticContractCall(statement.operator.slice(0, 1), targetType, target, value, statement.range) ?? this.compoundAssignmentValue(statement.operator, target, value, statement.range, this.isFloatType(targetType), targetType !== null && (0, types_1.isComplex)(targetType));
           if (statement.target.kind === "MemberExpression") {
             const assignedValue = this.valueForOptionalTypeRef(rawAssignedValue, targetType, statement.range);
             return `$rt.setProperty(${this.expression(statement.target.object)}, ${JSON.stringify(statement.target.name)}, ${assignedValue}, ${JSON.stringify(statement.target.range.start.file)}, ${statement.target.range.start.line})`;
           }
           return `${target} = ${this.valueForOptionalTypeRef(rawAssignedValue, targetType, statement.range)}`;
         }
-        compoundAssignmentValue(operator, target, value, range, floatResult) {
+        compoundAssignmentValue(operator, target, value, range, floatResult, complexTarget = false) {
           const binaryOperator = operator.slice(0, 1);
+          if (complexTarget) {
+            return `$rt.modules.math.complexBinary(${JSON.stringify(binaryOperator)}, ${target}, ${value}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
+          }
           if (binaryOperator === "/") {
             return `$rt.core.divide(${target}, ${value}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
           }
@@ -2832,7 +2952,20 @@ var Idyllium = (() => {
                 return this.classObjectName(expression.name);
               return expression.name;
             case "UnaryExpression":
-              return expression.operator === "not" ? `(!${this.expression(expression.operand)})` : `$rt.core.negate(${this.expression(expression.operand)})`;
+              if (expression.operator === "not")
+                return `(!${this.expression(expression.operand)})`;
+              {
+                const owner = this.arithmeticContractClass(this.typeOf(expression.operand), "opposite");
+                if (owner) {
+                  return `(await $rt.core.oppositeObject(${this.expression(expression.operand)}, ${JSON.stringify(`opposite$${owner}`)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line}))`;
+                }
+              }
+              {
+                const operandType = this.typeOf(expression.operand);
+                if (operandType && (0, types_1.isComplex)(operandType))
+                  return `$rt.modules.math.complexOpposite(${this.expression(expression.operand)})`;
+              }
+              return `$rt.core.negate(${this.expression(expression.operand)})`;
             case "BinaryExpression":
               return this.binaryExpression(expression);
             case "ArrayLiteralExpression":
@@ -2874,6 +3007,13 @@ var Idyllium = (() => {
         binaryExpression(expression) {
           const left = this.expression(expression.left);
           const right = this.expression(expression.right);
+          const viaContract = this.arithmeticContractCall(expression.operator, this.typeOf(expression.left), left, right, expression.range);
+          if (viaContract)
+            return viaContract;
+          const resultType = this.typeOf(expression);
+          if (resultType && (0, types_1.isComplex)(resultType) && ["+", "-", "*", "/"].includes(expression.operator)) {
+            return `$rt.modules.math.complexBinary(${JSON.stringify(expression.operator)}, ${left}, ${right}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+          }
           if (expression.operator === "/") {
             return `$rt.core.divide(${left}, ${right}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
           }
@@ -2937,6 +3077,13 @@ var Idyllium = (() => {
             const globalSpec = this.stdlib.getGlobalFunction(callee.name);
             if (globalSpec?.codegen) {
               const args = this.callArgumentValues(expression.args, globalSpec.parameters.map((parameter) => parameter.name)).join(", ");
+              if (callee.name === "sum" && expression.args.length === 1) {
+                const elementType = this.typeOf(expression.args[0].value);
+                const owner = elementType?.kind === "array" ? this.arithmeticContractClass(elementType.elementType, "plus") : null;
+                if (owner) {
+                  return `(await $rt.array.sumObjects(${args}, ${JSON.stringify(`plus$${owner}`)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line}))`;
+                }
+              }
               const call = this.declaredRuntimeCall(globalSpec.codegen, args, expression.range.start.file, expression.range.start.line);
               if (globalSpec.returnTypeRule === "numeric-array-aggregate" && this.isFloatType(this.typeOf(expression))) {
                 return `$rt.core.toFloat(${call}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
@@ -3010,6 +3157,13 @@ var Idyllium = (() => {
               const sortLeaf = this.contractLeafOfArray(receiverType, "less");
               if (sortLeaf) {
                 return `$rt.array.sortObjects(${this.expression(callee.object)}, ${JSON.stringify(`less$${sortLeaf}`)}, ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
+              }
+            }
+            if (SLOT_ARITHMETIC_CONTRACTS.includes(callee.name)) {
+              const owner = this.arithmeticContractClass(receiverType, callee.name);
+              if (owner) {
+                const args2 = this.methodCallArgs(callee.name, expression.args, receiverType).join(", ");
+                return `$rt.callMethod(${this.expression(callee.object)}, ${JSON.stringify(`${callee.name}$${owner}`)}, [${args2}], ${JSON.stringify(expression.range.start.file)}, ${expression.range.start.line})`;
               }
             }
             if (["equals", "less", "greater"].includes(callee.name) && expression.args.length === 1) {
@@ -3334,6 +3488,9 @@ var Idyllium = (() => {
               `, ${range.start.line})`
             ].join("");
           }
+          if (type?.kind === "QualifiedTypeName" && type.moduleName === "math" && type.name === "Complex") {
+            return `$rt.modules.math.toComplex(${value}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
+          }
           if (type?.kind === "QualifiedTypeName") {
             const typeRef = (0, types_1.qualified)(type.moduleName, type.name);
             if (this.stdlib.typeAcceptsNull(typeRef)) {
@@ -3373,6 +3530,9 @@ var Idyllium = (() => {
           }
           if (type.kind === "qualified" && type.moduleName === "types" && TYPE_RUNTIME_NAMES.has(type.name)) {
             return `$rt.types.cast(${value}, ${JSON.stringify(type.name)}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
+          }
+          if ((0, types_1.isComplex)(type)) {
+            return `$rt.modules.math.toComplex(${value}, ${JSON.stringify(range.start.file)}, ${range.start.line})`;
           }
           if (type.kind === "qualified" && this.stdlib.typeAcceptsNull(type)) {
             return this.nullableValue(value, type.moduleName, type.name, range);
@@ -3481,7 +3641,8 @@ var Idyllium = (() => {
         "unused-variable",
         "float-equality",
         "compared-with-true",
-        "condition-always-same"
+        "condition-always-same",
+        "contract-changes-operand"
       ];
       var DiagnosticBag = class {
         diagnostics = [];
@@ -3578,6 +3739,7 @@ var Idyllium = (() => {
         TokenKind2["KwStatic"] = "KwStatic";
         TokenKind2["KwExtends"] = "KwExtends";
         TokenKind2["KwEvent"] = "KwEvent";
+        TokenKind2["KwContract"] = "KwContract";
         TokenKind2["KwPrivate"] = "KwPrivate";
         TokenKind2["KwPublic"] = "KwPublic";
         TokenKind2["LeftParen"] = "LeftParen";
@@ -3649,6 +3811,7 @@ var Idyllium = (() => {
         static: TokenKind.KwStatic,
         extends: TokenKind.KwExtends,
         event: TokenKind.KwEvent,
+        contract: TokenKind.KwContract,
         private: TokenKind.KwPrivate,
         public: TokenKind.KwPublic
       };
@@ -4236,6 +4399,11 @@ var Idyllium = (() => {
               topLevelDeclarations.push(this.parseVariableDeclaration());
               continue;
             }
+            if (this.check(tokens_1.TokenKind.KwContract)) {
+              this.error(this.peek().range, "'contract' marks a method of a class — a function outside a class cannot be a contract");
+              this.advance();
+              continue;
+            }
             if (this.check(tokens_1.TokenKind.KwFunction)) {
               const functionToken = this.peek();
               const name = this.tokens[this.current + 1];
@@ -4344,6 +4512,8 @@ var Idyllium = (() => {
         consumeFunctionName() {
           if (this.check(tokens_1.TokenKind.Identifier, tokens_1.TokenKind.KwMain))
             return this.advance();
+          if ((0, tokens_1.keywordDisplay)(this.peek().kind) !== void 0 && this.checkNext(tokens_1.TokenKind.LeftParen))
+            return this.consumeName("expected function name");
           this.error(this.peek().range, "expected function name");
           return {
             kind: tokens_1.TokenKind.Identifier,
@@ -4555,13 +4725,15 @@ var Idyllium = (() => {
           let baseName = null;
           let baseNameRange = null;
           if (this.match(tokens_1.TokenKind.KwExtends)) {
-            const base = this.consume(tokens_1.TokenKind.Identifier, "expected base class name after extends");
-            baseName = base.lexeme;
-            baseNameRange = base.range;
-            if (this.match(tokens_1.TokenKind.Dot)) {
-              const member = this.consume(tokens_1.TokenKind.Identifier, "expected class name after '.'");
-              baseName = `${baseName}.${member.lexeme}`;
-              baseNameRange = { start: base.range.start, end: member.range.end };
+            if (!this.refuseBuiltinBase()) {
+              const base = this.consume(tokens_1.TokenKind.Identifier, "expected base class name after extends");
+              baseName = base.lexeme;
+              baseNameRange = base.range;
+              if (this.match(tokens_1.TokenKind.Dot)) {
+                const member = this.consume(tokens_1.TokenKind.Identifier, "expected class name after '.'");
+                baseName = `${baseName}.${member.lexeme}`;
+                baseNameRange = { start: base.range.start, end: member.range.end };
+              }
             }
           }
           const leftBrace = this.consume(tokens_1.TokenKind.LeftBrace, "expected '{' to start class body");
@@ -4579,7 +4751,19 @@ var Idyllium = (() => {
               members.push(this.finishClassFieldDeclaration(this.parseTypeName(), currentAccess, true, true));
               continue;
             }
-            const isStatic = this.match(tokens_1.TokenKind.KwStatic);
+            let isStatic = this.match(tokens_1.TokenKind.KwStatic);
+            const contractToken = this.check(tokens_1.TokenKind.KwContract) ? this.advance() : null;
+            if (contractToken) {
+              const staticAfter = this.match(tokens_1.TokenKind.KwStatic);
+              if (isStatic || staticAfter) {
+                this.error(contractToken.range, "a contract cannot be static — it works on an object ('a == b', 'a + b')");
+                isStatic = false;
+              }
+              const wrongMember = this.check(tokens_1.TokenKind.KwEvent) ? "an event" : this.check(tokens_1.TokenKind.KwConstructor) ? "a constructor" : this.check(tokens_1.TokenKind.KwConst) ? "a constant" : null;
+              if (wrongMember) {
+                this.error(contractToken.range, `'contract' marks a method — ${wrongMember} cannot be a contract`);
+              }
+            }
             if (isStatic && this.check(tokens_1.TokenKind.KwConst)) {
               this.error(this.peek().range, "class constants are written without 'static' — 'const' alone already means one per class");
               this.advance();
@@ -4627,8 +4811,11 @@ var Idyllium = (() => {
             if (this.checkTypeStart()) {
               const declaredType = this.parseTypeName();
               if (this.match(tokens_1.TokenKind.KwFunction)) {
-                members.push(this.finishClassMethodDeclaration(declaredType, isStatic, currentAccess));
+                members.push(this.finishClassMethodDeclaration(declaredType, isStatic, currentAccess, contractToken));
               } else {
+                if (contractToken) {
+                  this.error(contractToken.range, "'contract' marks a method — a field cannot be a contract");
+                }
                 members.push(this.finishClassFieldDeclaration(declaredType, currentAccess, isStatic));
               }
               continue;
@@ -4638,7 +4825,7 @@ var Idyllium = (() => {
               const name2 = this.tokens[this.current + 1];
               this.error(functionToken.range, name2 && name2.kind === tokens_1.TokenKind.Identifier ? `method '${name2.lexeme}' needs a result type before 'function' — write 'void function ${name2.lexeme}()' if it returns nothing` : "a method needs a result type before 'function' — write 'void function' if it returns nothing");
               this.advance();
-              members.push(this.finishClassMethodDeclaration({ kind: "PrimitiveTypeName", name: "void", range: functionToken.range }, isStatic, currentAccess));
+              members.push(this.finishClassMethodDeclaration({ kind: "PrimitiveTypeName", name: "void", range: functionToken.range }, isStatic, currentAccess, contractToken));
               continue;
             }
             this.error(this.peek().range, `unexpected token ${(0, tokens_1.tokenDisplay)(this.peek().kind)} in class body`);
@@ -4682,7 +4869,7 @@ var Idyllium = (() => {
             range: { start: declaredType.range.start, end: semicolon.range.end }
           };
         }
-        finishClassMethodDeclaration(returnType, isStatic, access) {
+        finishClassMethodDeclaration(returnType, isStatic, access, contractToken = null) {
           const name = this.consume(tokens_1.TokenKind.Identifier, "expected method name");
           this.consume(tokens_1.TokenKind.LeftParen, "expected '(' after method name");
           const parameters = this.parseParameterList();
@@ -4695,8 +4882,10 @@ var Idyllium = (() => {
             parameters,
             body,
             isStatic,
+            isContract: contractToken !== null,
+            contractRange: contractToken?.range ?? null,
             access,
-            range: { start: returnType.range.start, end: body.range.end }
+            range: { start: (contractToken ?? returnType).range.start, end: body.range.end }
           };
         }
         parseConstructorDeclaration(access) {
@@ -5433,6 +5622,29 @@ var Idyllium = (() => {
         checkTypeKeyword() {
           return this.check(tokens_1.TokenKind.KwInt, tokens_1.TokenKind.KwFloat, tokens_1.TokenKind.KwString, tokens_1.TokenKind.KwChar, tokens_1.TokenKind.KwBool, tokens_1.TokenKind.KwVoid);
         }
+        /**
+         * `class Money extends int` — встроенный тип базой быть не может. Говорим это
+         * одной строкой и пропускаем сам тип (с его <…>), чтобы тело класса разобралось
+         * как обычно: раньше здесь сыпался каскад «expected base class name / '{' / field name…».
+         */
+        refuseBuiltinBase() {
+          const builtin = this.check(tokens_1.TokenKind.KwInt, tokens_1.TokenKind.KwFloat, tokens_1.TokenKind.KwString, tokens_1.TokenKind.KwChar, tokens_1.TokenKind.KwBool, tokens_1.TokenKind.KwVoid, tokens_1.TokenKind.KwArray, tokens_1.TokenKind.KwDynArray, tokens_1.TokenKind.KwMap) || this.checkSetTypeStart();
+          if (!builtin)
+            return false;
+          const token = this.advance();
+          this.error(token.range, `cannot inherit from built-in type '${token.lexeme}' — keep a value of this type inside the class as a field instead`);
+          if (this.check(tokens_1.TokenKind.Less)) {
+            let depth = 0;
+            while (!this.isAtEnd() && !this.check(tokens_1.TokenKind.LeftBrace)) {
+              const kind = this.advance().kind;
+              if (kind === tokens_1.TokenKind.Less)
+                depth += 1;
+              if (kind === tokens_1.TokenKind.Greater && (depth -= 1) === 0)
+                break;
+            }
+          }
+          return true;
+        }
         /** `set` — контекстное слово: тип только в форме `set<T>` (json.Object.set
          *  и прочие методы с этим именем живут как ни в чём не бывало). */
         checkSetTypeStart() {
@@ -5495,12 +5707,16 @@ var Idyllium = (() => {
         consumeName(message) {
           const keyword = (0, tokens_1.keywordDisplay)(this.peek().kind);
           if (keyword !== void 0) {
-            this.error(this.peek().range, `'${keyword}' is a keyword and cannot be used as a name`);
+            const token = this.peek();
+            this.error(token.range, `'${keyword}' is a keyword and cannot be used as a name`);
+            const continues = this.checkAhead(1, tokens_1.TokenKind.Equal, tokens_1.TokenKind.Semicolon, tokens_1.TokenKind.Comma, tokens_1.TokenKind.LeftParen, tokens_1.TokenKind.RightParen, tokens_1.TokenKind.LeftBracket);
+            if (continues)
+              this.advance();
             return {
               kind: tokens_1.TokenKind.Identifier,
-              lexeme: "",
+              lexeme: continues ? token.lexeme : "",
               literal: null,
-              range: this.peek().range
+              range: token.range
             };
           }
           return this.consume(tokens_1.TokenKind.Identifier, message);
@@ -5564,10 +5780,10 @@ var Idyllium = (() => {
         checkNext(kind) {
           return this.checkAhead(1, kind);
         }
-        checkAhead(offset, kind) {
+        checkAhead(offset, ...kinds) {
           if (this.current + offset >= this.tokens.length)
             return false;
-          return this.tokens[this.current + offset].kind === kind;
+          return kinds.includes(this.tokens[this.current + offset].kind);
         }
         advance() {
           if (!this.isAtEnd())
@@ -5710,6 +5926,12 @@ var Idyllium = (() => {
           if (cycleStart >= 0) {
             const cycle = [...loading.slice(cycleStart), moduleName].join(" -> ");
             diagnostics.error(range, `module import cycle detected: ${cycle}`);
+            unavailable?.add(moduleName);
+            return;
+          }
+          const refusal = options.refuseModule?.(moduleName) ?? null;
+          if (refusal !== null) {
+            diagnostics.error(range, refusal);
             unavailable?.add(moduleName);
             return;
           }
@@ -6026,6 +6248,50 @@ var Idyllium = (() => {
         return result;
       }
       var COMPARISON_CONTRACT_NAMES = ["equals", "less", "greater"];
+      var CONTRACT_USES = {
+        to_string: "printing",
+        equals: "'==' and '!='",
+        less: "'<', '>=' and sort()",
+        greater: "'>' and '<='",
+        plus: "'+'",
+        minus: "'-'",
+        multiply: "'*'",
+        divide: "'/'",
+        opposite: "unary '-'"
+      };
+      var CONTRACT_NAMES = Object.keys(CONTRACT_USES);
+      var ARITHMETIC_CONTRACT_BY_SIGN = {
+        "+": "plus",
+        "-": "minus",
+        "*": "multiply",
+        "/": "divide"
+      };
+      var ARITHMETIC_CONTRACT_NAMES = ["plus", "minus", "multiply", "divide"];
+      var OPPOSITE_CONTRACT = "opposite";
+      var CONTRACT_SYNONYMS = {
+        to_string: ["str", "to_str", "tostring", "toString", "as_string", "repr", "string"],
+        equals: ["equal", "eq", "is_equal", "equal_to", "same", "same_as"],
+        less: ["lt", "less_than", "is_less", "smaller", "before"],
+        greater: ["gt", "greater_than", "is_greater", "bigger", "more", "after"],
+        plus: ["add", "sum", "addition", "added"],
+        minus: ["sub", "subtract", "difference", "diff"],
+        multiply: ["mul", "mult", "times", "product", "multiplied", "multiplied_by", "multiply_by"],
+        divide: ["divided", "divided_by", "divide_by", "quotient", "over"],
+        opposite: ["negate", "negated", "negative", "neg", "unary_minus", "inverted"]
+      };
+      function contractForSynonym(name) {
+        for (const [contract, synonyms] of Object.entries(CONTRACT_SYNONYMS)) {
+          if (synonyms.includes(name))
+            return contract;
+        }
+        return null;
+      }
+      function contractTrigger(contract) {
+        return contract === "to_string" ? "printing" : CONTRACT_USES[contract].split(/,| and /u)[0].trim();
+      }
+      function isContractName(name) {
+        return Object.prototype.hasOwnProperty.call(CONTRACT_USES, name);
+      }
       var HOST_RESERVED_NAMES = /* @__PURE__ */ new Set([
         "await",
         "case",
@@ -6119,6 +6385,9 @@ var Idyllium = (() => {
         equalsContractClasses = /* @__PURE__ */ new Set();
         lessContractClasses = /* @__PURE__ */ new Set();
         greaterContractClasses = /* @__PURE__ */ new Set();
+        arithmeticContractClasses = /* @__PURE__ */ new Map();
+        /** «Класс.контракт», уже отвергнутые у объявления: места использования молчат, чтобы не дублировать отказ. */
+        refusedContracts = /* @__PURE__ */ new Set();
         /** «Пустые поля» по классам (короткое имя → поля с явным `= null`). */
         nullableClassFields = /* @__PURE__ */ new Map();
         // Значения файловых int-констант: собираются до анализа сигнатур, чтобы
@@ -6187,6 +6456,7 @@ var Idyllium = (() => {
             equalsContractClasses: this.equalsContractClasses,
             lessContractClasses: this.lessContractClasses,
             greaterContractClasses: this.greaterContractClasses,
+            arithmeticContractClasses: this.arithmeticContractClasses,
             nullableClassFields: this.nullableClassFields
           };
         }
@@ -6635,6 +6905,7 @@ var Idyllium = (() => {
             return;
           if (this.refuseThenableMember(declaration.name, "method", declaration.range))
             return;
+          this.checkContractMarking(info, declaration);
           const inheritedField = info.fields.get(declaration.name);
           if (inheritedField && inheritedField.owner !== info.declaration.name) {
             this.diagnostics.error(declaration.range, `method '${declaration.name}' conflicts with inherited field '${inheritedField.owner}.${declaration.name}'`);
@@ -6648,6 +6919,10 @@ var Idyllium = (() => {
           }
           const inheritedMethod = info.methods.get(declaration.name);
           const inheritedAccess = info.methodAccess.get(declaration.name);
+          if (inheritedMethod && info.ownMethods.has(declaration.name)) {
+            this.diagnostics.error(declaration.range, `method '${declaration.name}' is already declared in class '${info.declaration.name}' — Idyllium has no overloading: one name, one method`);
+            return;
+          }
           if (inheritedMethod && inheritedAccess && inheritedAccess.owner !== info.declaration.name) {
             if (inheritedAccess.access === "private") {
               this.diagnostics.error(declaration.range, `method '${declaration.name}' is private in class '${inheritedAccess.owner}' and cannot be overridden — pick another name`);
@@ -6659,7 +6934,7 @@ var Idyllium = (() => {
             }
           }
           if (inheritedMethod && !this.methodSignatureCanOverride(inheritedMethod, declaration)) {
-            if (!(COMPARISON_CONTRACT_NAMES.includes(declaration.name) && this.isEqualsContractShape(info, declaration))) {
+            if (!(isContractName(declaration.name) && (declaration.isContract || this.refusedContracts.has(`${info.declaration.name}.${declaration.name}`)))) {
               this.diagnostics.error(declaration.range, `method '${info.declaration.name}.${declaration.name}' must match inherited method signature`);
               return;
             }
@@ -6699,13 +6974,124 @@ var Idyllium = (() => {
             range: declaration.range
           });
           info.ownMethods.add(declaration.name);
-          if (COMPARISON_CONTRACT_NAMES.includes(declaration.name) && this.isEqualsContractShape(info, declaration)) {
-            if (declaration.parameters[0].defaultValue) {
-              this.diagnostics.error(declaration.parameters[0].range, `'${declaration.name}' contract parameter cannot have a default value`);
+          if (declaration.isContract && !this.refusedContracts.has(`${info.declaration.name}.${declaration.name}`) && COMPARISON_CONTRACT_NAMES.includes(declaration.name)) {
+            this.comparisonContractSet(declaration.name).add(info.declaration.name);
+          }
+          if (declaration.isContract && !this.refusedContracts.has(`${info.declaration.name}.${declaration.name}`) && (declaration.name === OPPOSITE_CONTRACT || ARITHMETIC_CONTRACT_NAMES.includes(declaration.name))) {
+            let owners = this.arithmeticContractClasses.get(declaration.name);
+            if (!owners) {
+              owners = /* @__PURE__ */ new Set();
+              this.arithmeticContractClasses.set(declaration.name, owners);
             }
-            if (declaration.access === "public") {
-              this.comparisonContractSet(declaration.name).add(info.declaration.name);
+            owners.add(info.declaration.name);
+          }
+        }
+        /**
+         * Контракт, живущий в слоте своего класса (`equals$Cat`, `plus$Vec`), объявлен ли
+         * он в самом классе: такие контракты не наследуются, и прямой вызов у наследника
+         * без своего контракта обязан получить отказ, а не рантайм-«нет метода».
+         */
+        classOwnsSlotContract(className, contract) {
+          if (COMPARISON_CONTRACT_NAMES.includes(contract)) {
+            return this.classDeclaresEqualsContract(className, contract);
+          }
+          if (contract === OPPOSITE_CONTRACT || ARITHMETIC_CONTRACT_NAMES.includes(contract)) {
+            return this.arithmeticContractOf((0, types_1.classType)(className), contract) !== null;
+          }
+          return false;
+        }
+        /**
+         * Рецепт контракта для наследника — по образцу базового объявления, со своим
+         * классом вместо базового: у `Vec.multiply(float k)` наследник `Vec3` получает
+         * `contract Vec3 function multiply(float k)`, а не условное `multiply(Vec3 other)`.
+         */
+        heirContractRecipe(className, contract) {
+          const info = this.classes.get(className);
+          const inherited = info && !info.ownMethods.has(contract) ? info.methodAccess.get(contract) : void 0;
+          const spec = inherited ? info?.methods.get(contract) : void 0;
+          if (!inherited || !spec)
+            return this.contractRecipe(className, contract);
+          const own = (type) => type.kind === "class" && type.name === inherited.owner ? className : (0, types_1.typeToString)(type);
+          const parameters = spec.parameters.map((parameter) => `${own(parameter.type)} ${parameter.name}`).join(", ");
+          return `contract ${own(spec.returnType)} function ${contract}(${parameters})`;
+        }
+        /** Как пишется правильное объявление контракта — для рецептов в отказах. */
+        contractRecipe(className, contract) {
+          if (contract === "to_string")
+            return "contract string function to_string()";
+          if (contract === OPPOSITE_CONTRACT)
+            return `contract ${className} function opposite()`;
+          if (ARITHMETIC_CONTRACT_NAMES.includes(contract)) {
+            return `contract ${className} function ${contract}(${className} other)`;
+          }
+          return `contract bool function ${contract}(${className} other)`;
+        }
+        /**
+         * Пометка `contract` обязательна и проверяется у самого объявления:
+         *  — имя контракта без пометки — отказ (имена контрактов в классах зарезервированы);
+         *  — пометка на чужом имени — отказ со списком контрактов;
+         *  — помеченный контракт с не той формой, приватный или с умолчанием — отказ с рецептом.
+         * Отвергнутый контракт запоминается: места использования (`a == b`, печать) молчат,
+         * иначе об одной ошибке говорилось бы дважды.
+         */
+        checkContractMarking(info, declaration) {
+          const className = info.declaration.name;
+          const name = declaration.name;
+          const range = declaration.nameRange ?? declaration.range;
+          if (!isContractName(name)) {
+            if (declaration.isContract) {
+              const meant = contractForSynonym(name);
+              this.diagnostics.error(declaration.contractRange ?? range, meant ? `'${name}' is not a contract — the contract for ${contractTrigger(meant)} is called '${meant}'` : `'${name}' is not a contract — contracts are: ${CONTRACT_NAMES.join(", ")}`);
             }
+            return;
+          }
+          const refuse = (message) => {
+            this.refusedContracts.add(`${className}.${name}`);
+            this.diagnostics.error(range, message);
+          };
+          if (!declaration.isContract) {
+            refuse(`'${name}' is a contract name — write '${this.contractRecipe(className, name)}' and ${CONTRACT_USES[name]} will use it, or pick another name`);
+            return;
+          }
+          const issues = [];
+          const returnType = this.resolveTypeName(declaration.returnType);
+          if (name === "to_string") {
+            if (declaration.parameters.length > 0)
+              issues.push("it must take no parameters");
+            if (!(0, types_1.sameType)(returnType, types_1.STRING))
+              issues.push(`it returns '${(0, types_1.typeToString)(returnType)}' instead of 'string'`);
+          } else if (name === OPPOSITE_CONTRACT || ARITHMETIC_CONTRACT_NAMES.includes(name)) {
+            if (name === OPPOSITE_CONTRACT) {
+              if (declaration.parameters.length > 0)
+                issues.push("it must take no parameters ('-a' has a single operand)");
+            } else if (declaration.parameters.length !== 1) {
+              issues.push(`it must take exactly one parameter (the right operand of ${CONTRACT_USES[name]})`);
+            }
+            if ((0, types_1.sameType)(returnType, types_1.VOID))
+              issues.push(`it returns nothing, but ${CONTRACT_USES[name]} must produce a value`);
+          } else {
+            if (declaration.parameters.length !== 1) {
+              issues.push(`it must take exactly one parameter of type '${className}'`);
+            } else {
+              const parameterType = this.resolveTypeName(declaration.parameters[0].paramType);
+              if (!(parameterType.kind === "class" && parameterType.name === className)) {
+                issues.push(`its parameter is '${(0, types_1.typeToString)(parameterType)}' instead of '${className}'`);
+              }
+            }
+            if (!(0, types_1.sameType)(returnType, types_1.BOOL))
+              issues.push(`it returns '${(0, types_1.typeToString)(returnType)}' instead of 'bool'`);
+          }
+          if (issues.length > 0) {
+            refuse(`contract '${name}' has a wrong shape: ${issues.join(", ")} — write '${this.contractRecipe(className, name)}'`);
+            return;
+          }
+          if (declaration.access !== "public") {
+            const verb = name === "to_string" ? "happens" : CONTRACT_USES[name].includes(" and ") ? "are written" : "is written";
+            refuse(`contract '${name}' cannot be private — ${CONTRACT_USES[name]} ${verb} outside the class; move it to the public part`);
+            return;
+          }
+          if (declaration.parameters[0]?.defaultValue) {
+            refuse(`'${name}' contract parameter cannot have a default value`);
           }
         }
         comparisonContractSet(contract) {
@@ -6726,21 +7112,9 @@ var Idyllium = (() => {
             const moduleName = className.slice(0, dot);
             const bareName = className.slice(dot + 1);
             const classSpec = this.userModuleRegistry.getModule(moduleName)?.classes.get(bareName);
-            const method = classSpec?.methods.find((item) => item.name === contract);
-            return method !== void 0 && !method.isStatic && method.access === "public" && method.spec.parameters.length === 1 && (0, types_1.sameType)(method.spec.returnType, types_1.BOOL);
+            return classSpec?.methods.some((item) => item.name === contract) === true;
           }
-          return this.comparisonContractSet(contract).has(className);
-        }
-        /** Форма контракта equals: нестатический, ровно один параметр СВОЕГО класса, возвращает bool. */
-        isEqualsContractShape(info, declaration) {
-          if (declaration.isStatic)
-            return false;
-          if (declaration.parameters.length !== 1)
-            return false;
-          const parameterType = this.resolveTypeName(declaration.parameters[0].paramType);
-          if (parameterType.kind !== "class" || parameterType.name !== info.declaration.name)
-            return false;
-          return (0, types_1.sameType)(this.resolveTypeName(declaration.returnType), types_1.BOOL);
+          return this.comparisonContractSet(contract).has(className) || this.refusedContracts.has(`${className}.${contract}`);
         }
         /** Есть ли у типа (класс или модульный класс) публичный контракт сравнения, объявленный в нём самом. */
         typeOwnsEqualsContract(type, contract = "equals") {
@@ -6757,9 +7131,9 @@ var Idyllium = (() => {
               const ok = method !== void 0 && !method.isStatic && method.access === "public" && method.spec.parameters.length === 1 && (0, types_1.sameType)(method.spec.returnType, types_1.BOOL);
               if (ok)
                 this.comparisonContractSet(contract).add(className);
-              return ok;
+              return method !== void 0;
             }
-            return this.comparisonContractSet(contract).has(bare);
+            return this.comparisonContractSet(contract).has(bare) || this.refusedContracts.has(`${bare}.${contract}`);
           }
           if (type.kind === "qualified" && this.userModuleRegistry.hasModule(type.moduleName)) {
             const classSpec = this.userModuleRegistry.getModule(type.moduleName)?.classes.get(type.name);
@@ -6767,9 +7141,14 @@ var Idyllium = (() => {
             const ok = method !== void 0 && !method.isStatic && method.access === "public" && method.spec.parameters.length === 1 && (0, types_1.sameType)(method.spec.returnType, types_1.BOOL);
             if (ok)
               this.comparisonContractSet(contract).add(type.name);
-            return ok;
+            return method !== void 0;
           }
           return false;
+        }
+        /** Класс из модуля («geometry.Vec») у себя дома зовётся коротко — рецепты пишем его словами. */
+        shortClassName(type) {
+          const full = (0, types_1.typeToString)(type);
+          return full.slice(full.lastIndexOf(".") + 1);
         }
         /** Выражение-доступ к «пустому полю» (nullable): room.guest, где guest объявлен с `= null`. */
         nullableFieldAccess(expression) {
@@ -6956,6 +7335,65 @@ var Idyllium = (() => {
           this.popScope();
           this.popClassContext();
           this.returnTypes.pop();
+          this.warnIfContractChangesOperand(declaration);
+        }
+        /**
+         * Объекты — ссылки: `plus`, который пишет в свои поля и возвращает this, превращает
+         * `c = a + b` в тихую порчу `a`. Арифметический контракт обязан собрать НОВЫЙ
+         * объект — предупреждаем о первой же записи в поле this или операнда-параметра.
+         * (Псевдоним `Vec r = this;` так не поймать — это предупреждение, не доказательство.)
+         */
+        warnIfContractChangesOperand(declaration) {
+          const name = declaration.name;
+          if (!declaration.isContract)
+            return;
+          if (name !== OPPOSITE_CONTRACT && !ARITHMETIC_CONTRACT_NAMES.includes(name))
+            return;
+          const parameter = declaration.parameters[0]?.name ?? null;
+          const rootOf = (expression) => {
+            let current = expression;
+            let depth = 0;
+            while (current.kind === "MemberExpression" || current.kind === "IndexExpression") {
+              current = current.object;
+              depth += 1;
+            }
+            return depth > 0 && current.kind === "IdentifierExpression" ? current.name : null;
+          };
+          const find = (statement) => {
+            if (!statement)
+              return null;
+            switch (statement.kind) {
+              case "AssignmentStatement": {
+                const root = rootOf(statement.target);
+                return root !== null && (root === "this" || root === parameter) ? statement : null;
+              }
+              case "BlockStatement":
+                for (const inner of statement.statements) {
+                  const found = find(inner);
+                  if (found)
+                    return found;
+                }
+                return null;
+              case "IfStatement":
+                return find(statement.thenBranch) ?? find(statement.elseBranch);
+              case "WhileStatement":
+              case "DoWhileStatement":
+                return find(statement.body);
+              case "ForStatement":
+                return find(statement.initializer) ?? find(statement.increment) ?? find(statement.body);
+              case "TryStatement":
+                return find(statement.tryBlock) ?? find(statement.catchClause?.body ?? null) ?? find(statement.finallyBlock);
+              default:
+                return null;
+            }
+          };
+          const offender = find(declaration.body);
+          if (!offender)
+            return;
+          const changesThis = rootOf(offender.target) === "this";
+          const example = name === OPPOSITE_CONTRACT ? "'b = -a'" : `'c = a ${Object.keys(ARITHMETIC_CONTRACT_BY_SIGN).find((sign) => ARITHMETIC_CONTRACT_BY_SIGN[sign] === name)} b'`;
+          const victim = name === OPPOSITE_CONTRACT || changesThis ? "'a'" : "'b'";
+          this.diagnostics.warning(offender.target.range, `contract '${name}' changes ${changesThis ? "the object it was called on" : `its operand '${parameter}'`} — after ${example} the value of ${victim} must stay the same; build a new object and return it`, "contract-changes-operand");
         }
         analyzeClassConstructor(info, declaration) {
           this.returnTypes.push(types_1.VOID);
@@ -7582,6 +8020,12 @@ var Idyllium = (() => {
         }
         compoundAssignmentType(operator, targetType, valueType, range) {
           const binaryOperator = operator.slice(0, 1);
+          const viaContract = this.contractArithmeticType(binaryOperator, targetType, valueType);
+          if (viaContract) {
+            if (viaContract.refusal)
+              this.diagnostics.error(range, viaContract.refusal.replace(`operator '${binaryOperator}'`, `operator '${operator}'`));
+            return viaContract.type;
+          }
           const result = this.binaryOperatorType(binaryOperator, targetType, valueType);
           if (result.kind === "error") {
             this.diagnostics.error(range, `operator '${operator}' cannot be applied to '${(0, types_1.typeToString)(targetType)}' and '${(0, types_1.typeToString)(valueType)}'`);
@@ -8034,11 +8478,117 @@ var Idyllium = (() => {
             }
             return types_1.BOOL;
           }
+          if (this.userClassBareName(operandType)) {
+            const owned = this.arithmeticContractOf(operandType, OPPOSITE_CONTRACT);
+            if (owned === "refused")
+              return types_1.ERROR_TYPE;
+            if (owned)
+              return owned.spec.returnType;
+            this.diagnostics.error(expression.range, `unary '-' cannot be applied to '${(0, types_1.typeToString)(operandType)}'${this.contractInvitation(operandType, OPPOSITE_CONTRACT, "unary '-'")}`);
+            return types_1.ERROR_TYPE;
+          }
+          if ((0, types_1.isComplex)(operandType))
+            return types_1.MATH_COMPLEX;
           if (!(0, types_1.isNumeric)(operandType)) {
             this.diagnostics.error(expression.operand.range, `unary '-' requires numeric operand, got '${(0, types_1.typeToString)(operandType)}'`);
             return types_1.ERROR_TYPE;
           }
           return operandType;
+        }
+        /**
+         * Арифметический контракт (или opposite), объявленный В САМОМ классе типа:
+         * контракты не наследуются. 'refused' — объявление уже отвергнуто, о беде сказано.
+         */
+        arithmeticContractOf(type, contract) {
+          const expectedParameters = contract === OPPOSITE_CONTRACT ? 0 : 1;
+          const fromModule = (moduleName, className) => {
+            const classSpec = this.userModuleRegistry.getModule(moduleName)?.classes.get(className);
+            const method = classSpec?.methods.find((item) => item.name === contract);
+            const ok = method !== void 0 && !method.isStatic && method.access === "public" && method.spec.parameters.length === expectedParameters && !(0, types_1.sameType)(method.spec.returnType, types_1.VOID);
+            if (ok)
+              return { spec: method.spec };
+            return method !== void 0 ? "refused" : null;
+          };
+          if (type.kind === "class") {
+            const dot = type.name.indexOf(".");
+            if (dot > 0)
+              return fromModule(type.name.slice(0, dot), type.name.slice(dot + 1));
+            if (this.refusedContracts.has(`${type.name}.${contract}`))
+              return "refused";
+            if (!this.arithmeticContractClasses.get(contract)?.has(type.name))
+              return null;
+            const spec = this.classes.get(type.name)?.methods.get(contract);
+            return spec ? { spec } : null;
+          }
+          if (type.kind === "qualified" && this.userModuleRegistry.hasModule(type.moduleName)) {
+            const found = fromModule(type.moduleName, type.name);
+            if (found) {
+              let owners = this.arithmeticContractClasses.get(contract);
+              if (!owners) {
+                owners = /* @__PURE__ */ new Set();
+                this.arithmeticContractClasses.set(contract, owners);
+              }
+              owners.add(type.name);
+            }
+            return found;
+          }
+          return null;
+        }
+        /** Хвост отказа «объявите контракт»: с готовым рецептом, а если в классе есть
+         *  метод с привычным из других языков именем (add, times…) — называет правильное слово. */
+        contractInvitation(type, contract, sign) {
+          const fullName = this.userClassBareName(type) ?? (0, types_1.typeToString)(type);
+          const className = fullName.slice(fullName.lastIndexOf(".") + 1);
+          const recipe = this.contractRecipe(className, contract);
+          const info = type.kind === "class" ? this.classes.get(type.name) : void 0;
+          const inherited = info && !info.ownMethods.has(contract) ? info.methodAccess.get(contract) : void 0;
+          if (inherited && this.classOwnsSlotContract(inherited.owner, contract)) {
+            return ` — '${inherited.owner}.${contract}' is a contract, and contracts are not inherited: declare '${this.heirContractRecipe(className, contract)}' in class '${className}'`;
+          }
+          const habit = info ? (CONTRACT_SYNONYMS[contract] ?? []).find((name) => info.ownMethods.has(name)) : void 0;
+          if (habit) {
+            return ` — class '${className}' has '${habit}', but the contract for ${sign} is called '${contract}': write '${recipe}'`;
+          }
+          return ` — declare '${recipe}' in class '${className}' and ${sign} will use it`;
+        }
+        /**
+         * Знаки + - * / над объектами: null — объектов среди операндов нет (обычная
+         * арифметика). Иначе тип результата и, если знак отвергнут, готовый текст отказа
+         * (пустой — о беде уже сказано у объявления контракта).
+         */
+        contractArithmeticType(operator, left, right) {
+          const contract = ARITHMETIC_CONTRACT_BY_SIGN[operator];
+          if (!contract)
+            return null;
+          const leftIsObject = this.userClassBareName(left) !== null;
+          const rightIsObject = this.userClassBareName(right) !== null;
+          if (!leftIsObject && !rightIsObject)
+            return null;
+          const head = `operator '${operator}' cannot be applied to '${(0, types_1.typeToString)(left)}' and '${(0, types_1.typeToString)(right)}'`;
+          if (!leftIsObject) {
+            const owned2 = this.arithmeticContractOf(right, contract);
+            if (owned2 === "refused")
+              return { type: types_1.ERROR_TYPE, refusal: "" };
+            const gluing = operator === "+" && left.kind === "primitive" && (left.name === "string" || left.name === "char");
+            return {
+              type: types_1.ERROR_TYPE,
+              refusal: owned2 && !gluing ? `${head} — a contract works for the LEFT operand, and '${(0, types_1.typeToString)(left)}' has none ('${(0, types_1.typeToString)(right)}' declares '${contract}', but it stands on the right)` : head
+            };
+          }
+          const owned = this.arithmeticContractOf(left, contract);
+          if (owned === "refused")
+            return { type: types_1.ERROR_TYPE, refusal: "" };
+          if (!owned) {
+            return { type: types_1.ERROR_TYPE, refusal: `${head}${this.contractInvitation(left, contract, `'${operator}'`)}` };
+          }
+          const parameter = owned.spec.parameters[0].type;
+          if (!this.canAssign(parameter, right)) {
+            return {
+              type: types_1.ERROR_TYPE,
+              refusal: `${head} — '${(0, types_1.typeToString)(left)}.${contract}' accepts ${/^[aeiou]/iu.test((0, types_1.typeToString)(parameter)) ? "an" : "a"} '${(0, types_1.typeToString)(parameter)}', got '${(0, types_1.typeToString)(right)}'`
+            };
+          }
+          return { type: owned.spec.returnType, refusal: null };
         }
         binaryType(expression) {
           const left = this.expressionType(expression.left);
@@ -8052,6 +8602,9 @@ var Idyllium = (() => {
           if (["==", "!="].includes(expression.operator)) {
             if ((0, types_1.isFloatLike)(left) && (0, types_1.isNumeric)(right) || (0, types_1.isNumeric)(left) && (0, types_1.isFloatLike)(right)) {
               this.diagnostics.warning(expression.range, `two float numbers are compared with '${expression.operator}' — they are almost never exactly equal`, "float-equality");
+            }
+            if ((0, types_1.isComplex)(left) && ((0, types_1.isComplex)(right) || (0, types_1.isNumeric)(right)) || (0, types_1.isNumeric)(left) && (0, types_1.isComplex)(right)) {
+              this.diagnostics.warning(expression.range, `complex numbers are compared with '${expression.operator}' — computed values are almost never exactly equal; use is_close()`, "float-equality");
             }
             const trueLiteral = (node) => node.kind === "LiteralExpression" && node.valueType === "bool" && node.value === true;
             if (expression.operator === "==" && (0, types_1.sameType)(left, types_1.BOOL) && (0, types_1.sameType)(right, types_1.BOOL) && (trueLiteral(expression.left) || trueLiteral(expression.right))) {
@@ -8080,7 +8633,7 @@ var Idyllium = (() => {
               if (leftClass === null || rightClass === null) {
                 this.diagnostics.error(expression.range, `cannot compare '${(0, types_1.typeToString)(left)}' and '${(0, types_1.typeToString)(right)}'`);
               } else if (!this.typeOwnsEqualsContract(left)) {
-                this.diagnostics.error(expression.range, `cannot compare objects of class '${(0, types_1.typeToString)(left)}' with '${expression.operator}' — declare 'bool function equals(${(0, types_1.typeToString)(left)} other)' in class '${(0, types_1.typeToString)(left)}' and the comparison will use it${left.kind === "class" ? this.contractShapeIssue(left.name, "equals") : ""}`);
+                this.diagnostics.error(expression.range, `cannot compare objects of class '${(0, types_1.typeToString)(left)}' with '${expression.operator}' — declare 'contract bool function equals(${this.shortClassName(left)} other)' in class '${this.shortClassName(left)}' and the comparison will use it`);
               } else if (!(0, types_1.sameType)(left, right) && !this.canAssign(left, right)) {
                 this.diagnostics.error(expression.range, `cannot compare '${(0, types_1.typeToString)(left)}' and '${(0, types_1.typeToString)(right)}' with '${expression.operator}' — '${(0, types_1.typeToString)(left)}.equals' accepts a '${(0, types_1.typeToString)(left)}', got '${(0, types_1.typeToString)(right)}'`);
               }
@@ -8092,7 +8645,7 @@ var Idyllium = (() => {
               } else {
                 const leaf = this.collectionLeafClass(left);
                 if (leaf !== null && !this.typeOwnsEqualsContract(leaf)) {
-                  this.diagnostics.error(expression.range, `cannot compare maps of '${(0, types_1.typeToString)(leaf)}' values with '${expression.operator}' — declare 'bool function equals(${(0, types_1.typeToString)(leaf)} other)' in class '${(0, types_1.typeToString)(leaf)}' and the comparison will use it`);
+                  this.diagnostics.error(expression.range, `cannot compare maps of '${(0, types_1.typeToString)(leaf)}' values with '${expression.operator}' — declare 'contract bool function equals(${this.shortClassName(leaf)} other)' in class '${this.shortClassName(leaf)}' and the comparison will use it`);
                 }
               }
               return types_1.BOOL;
@@ -8103,7 +8656,7 @@ var Idyllium = (() => {
               if (leftLeaf === null || rightLeaf === null || !(0, types_1.sameType)(left, right) && !this.canAssign(left, right) && !this.canAssign(right, left)) {
                 this.diagnostics.error(expression.range, `cannot compare '${(0, types_1.typeToString)(left)}' and '${(0, types_1.typeToString)(right)}'`);
               } else if (!this.typeOwnsEqualsContract(leftLeaf)) {
-                this.diagnostics.error(expression.range, `cannot compare arrays of '${(0, types_1.typeToString)(leftLeaf)}' objects with '${expression.operator}' — declare 'bool function equals(${(0, types_1.typeToString)(leftLeaf)} other)' in class '${(0, types_1.typeToString)(leftLeaf)}' and the comparison will use it`);
+                this.diagnostics.error(expression.range, `cannot compare arrays of '${(0, types_1.typeToString)(leftLeaf)}' objects with '${expression.operator}' — declare 'contract bool function equals(${this.shortClassName(leftLeaf)} other)' in class '${this.shortClassName(leftLeaf)}' and the comparison will use it`);
               }
               return types_1.BOOL;
             }
@@ -8123,10 +8676,14 @@ var Idyllium = (() => {
               if (leftOrderClass === null || rightOrderClass === null) {
                 this.diagnostics.error(expression.range, `cannot compare '${(0, types_1.typeToString)(left)}' and '${(0, types_1.typeToString)(right)}'`);
               } else if (!this.typeOwnsEqualsContract(left, contract)) {
-                this.diagnostics.error(expression.range, `cannot order objects of class '${(0, types_1.typeToString)(left)}' with '${expression.operator}' — declare 'bool function ${contract}(${(0, types_1.typeToString)(left)} other)' in class '${(0, types_1.typeToString)(left)}' and '${expression.operator}' will use it${left.kind === "class" ? this.contractShapeIssue(left.name, contract) : ""}`);
+                this.diagnostics.error(expression.range, `cannot order objects of class '${(0, types_1.typeToString)(left)}' with '${expression.operator}' — declare 'contract bool function ${contract}(${this.shortClassName(left)} other)' in class '${this.shortClassName(left)}' and '${expression.operator}' will use it`);
               } else if (!(0, types_1.sameType)(left, right) && !this.canAssign(left, right)) {
                 this.diagnostics.error(expression.range, `cannot compare '${(0, types_1.typeToString)(left)}' and '${(0, types_1.typeToString)(right)}' with '${expression.operator}' — '${(0, types_1.typeToString)(left)}.${contract}' accepts a '${(0, types_1.typeToString)(left)}', got '${(0, types_1.typeToString)(right)}'`);
               }
+              return types_1.BOOL;
+            }
+            if ((0, types_1.isComplex)(left) || (0, types_1.isComplex)(right)) {
+              this.diagnostics.error(expression.range, `complex numbers have no order, so '${expression.operator}' cannot compare them — compare abs(), re or im instead`);
               return types_1.BOOL;
             }
             if (!(0, types_1.isNumeric)(left) || !(0, types_1.isNumeric)(right)) {
@@ -8139,6 +8696,12 @@ var Idyllium = (() => {
               }
             }
             return types_1.BOOL;
+          }
+          const viaContract = this.contractArithmeticType(expression.operator, left, right);
+          if (viaContract) {
+            if (viaContract.refusal)
+              this.diagnostics.error(expression.range, viaContract.refusal);
+            return viaContract.type;
           }
           const result = this.binaryOperatorType(expression.operator, left, right);
           if (result.kind === "error") {
@@ -8193,6 +8756,10 @@ var Idyllium = (() => {
               }
               return argTypes.every((type) => (0, types_1.isIntegerLike)(type)) ? types_1.INT : types_1.FLOAT;
             }
+            case "complex-when-complex-argument": {
+              const complexArgument = expression.args.some((arg) => (0, types_1.isComplex)(this.expressionType(arg.value)));
+              return complexArgument ? types_1.MATH_COMPLEX : fn.returnType;
+            }
             case "numeric-array-aggregate": {
               const argument = this.orderedArguments(expression.args, fn)[0];
               if (!argument)
@@ -8201,7 +8768,33 @@ var Idyllium = (() => {
               if (argType.kind !== "array") {
                 return types_1.ERROR_TYPE;
               }
-              if (!(0, types_1.isNumeric)(argType.elementType)) {
+              const element = argType.elementType;
+              if ((0, types_1.isComplex)(element)) {
+                if (fn.name === "sum" || fn.name === "avg")
+                  return types_1.MATH_COMPLEX;
+                this.diagnostics.error(argument.range, `complex numbers have no order, so ${fn.name}() cannot pick one — compare abs(), re or im in a loop instead`);
+                return types_1.ERROR_TYPE;
+              }
+              if (this.userClassBareName(element) !== null) {
+                if (fn.name !== "sum") {
+                  this.diagnostics.error(argument.range, `${fn.name}() cannot ${fn.name === "avg" ? "average" : "order"} '${(0, types_1.typeToString)(element)}' objects — ${fn.name === "avg" ? "divide the sum yourself" : "they have no built-in order; write the loop"}`);
+                  return types_1.ERROR_TYPE;
+                }
+                const owned = this.arithmeticContractOf(element, "plus");
+                if (owned === "refused")
+                  return types_1.ERROR_TYPE;
+                if (!owned) {
+                  this.diagnostics.error(argument.range, `sum() cannot add '${(0, types_1.typeToString)(element)}' objects${this.contractInvitation(element, "plus", "sum()")}`);
+                  return types_1.ERROR_TYPE;
+                }
+                const parameter = owned.spec.parameters[0].type;
+                if (!this.canAssign(parameter, element) || !this.canAssign(element, owned.spec.returnType)) {
+                  this.diagnostics.error(argument.range, `sum() adds '${(0, types_1.typeToString)(element)}' objects with their 'plus', so it must take a '${(0, types_1.typeToString)(element)}' and return a '${(0, types_1.typeToString)(element)}' — this one is 'plus(${(0, types_1.typeToString)(parameter)}) -> ${(0, types_1.typeToString)(owned.spec.returnType)}'`);
+                  return types_1.ERROR_TYPE;
+                }
+                return element;
+              }
+              if (!(0, types_1.isNumeric)(element)) {
                 this.diagnostics.error(argument.range, `'${fn.name}' expects a numeric array, got '${(0, types_1.typeToString)(argType)}'`);
                 return types_1.ERROR_TYPE;
               }
@@ -8426,7 +9019,7 @@ var Idyllium = (() => {
               if (method2) {
                 const leaf = this.arrayLeafClass(objectType);
                 if (leaf !== null && ["contains", "find", "count"].includes(callee.name) && !this.typeOwnsEqualsContract(leaf)) {
-                  this.diagnostics.error(callee.range, `${callee.name}() cannot search for '${(0, types_1.typeToString)(leaf)}' objects — declare 'bool function equals(${(0, types_1.typeToString)(leaf)} other)' in class '${(0, types_1.typeToString)(leaf)}' and the search will use it`);
+                  this.diagnostics.error(callee.range, `${callee.name}() cannot search for '${(0, types_1.typeToString)(leaf)}' objects — declare 'contract bool function equals(${this.shortClassName(leaf)} other)' in class '${this.shortClassName(leaf)}' and the search will use it`);
                   return null;
                 }
                 if (callee.name === "sort" && objectType.elementType.kind === "array") {
@@ -8442,7 +9035,7 @@ var Idyllium = (() => {
                   return null;
                 }
                 if (leaf !== null && callee.name === "sort" && !this.typeOwnsEqualsContract(leaf, "less")) {
-                  this.diagnostics.error(callee.range, `sort() cannot order '${(0, types_1.typeToString)(leaf)}' objects — declare 'bool function less(${(0, types_1.typeToString)(leaf)} other)' in class '${(0, types_1.typeToString)(leaf)}' and sort() will use it${leaf.kind === "class" ? this.contractShapeIssue(leaf.name, "less") : ""}`);
+                  this.diagnostics.error(callee.range, `sort() cannot order '${(0, types_1.typeToString)(leaf)}' objects — declare 'contract bool function less(${this.shortClassName(leaf)} other)' in class '${this.shortClassName(leaf)}' and sort() will use it`);
                   return null;
                 }
                 return method2;
@@ -8474,8 +9067,8 @@ var Idyllium = (() => {
               this.markSemanticToken("method", callee.nameRange);
               const method2 = this.getClassMethodInfo(objectType.name, callee.name);
               if (method2) {
-                if (COMPARISON_CONTRACT_NAMES.includes(callee.name) && method2.access.owner !== objectType.name && this.classDeclaresEqualsContract(method2.access.owner, callee.name) && !this.classDeclaresEqualsContract(objectType.name, callee.name)) {
-                  this.diagnostics.error(callee.range, `'${callee.name}' is a contract and is not inherited — declare 'bool function ${callee.name}(${objectType.name} other)' in class '${objectType.name}' and the call will use it`);
+                if (method2.access.owner !== objectType.name && this.classOwnsSlotContract(method2.access.owner, callee.name) && !this.classOwnsSlotContract(objectType.name, callee.name)) {
+                  this.diagnostics.error(callee.range, `'${callee.name}' is a contract and is not inherited — declare '${this.heirContractRecipe(objectType.name, callee.name)}' in class '${objectType.name}' and the call will use it`);
                   return null;
                 }
                 this.checkClassMemberAccess(method2.access, callee.range);
@@ -8609,7 +9202,7 @@ var Idyllium = (() => {
           if (type.kind === "class") {
             if (this.classHasPublicToString(type.name))
               return null;
-            return `cannot print object of class '${type.name}' directly — declare 'string function to_string()' in class '${type.name}' and printing will use it${this.contractShapeIssue(type.name, "to_string")}`;
+            return `cannot print object of class '${type.name}' directly — declare 'contract string function to_string()' in class '${type.name}' and printing will use it`;
           }
           if (type.kind === "qualified" && this.stdlib.hasModule(type.moduleName)) {
             if ((0, types_1.isTypesNumeric)(type))
@@ -8626,19 +9219,19 @@ var Idyllium = (() => {
               return null;
             const method = classSpec.methods.find((item) => item.name === "to_string");
             const printable = method !== void 0 && !method.isStatic && method.access === "public" && method.spec.parameters.length === 0 && (0, types_1.sameType)(method.spec.returnType, types_1.STRING);
-            return printable ? null : `cannot print object of class '${type.moduleName}.${type.name}' directly — declare 'string function to_string()' in class '${type.name}' and printing will use it`;
+            return printable ? null : `cannot print object of class '${type.moduleName}.${type.name}' directly — declare 'contract string function to_string()' in class '${type.name}' and printing will use it`;
           }
           if (type.kind === "map") {
             const value = type.valueType;
             if (value.kind === "class") {
               if (this.classHasPublicToString(value.name))
                 return null;
-              return `cannot print a map of '${value.name}' values directly — declare 'string function to_string()' in class '${value.name}' and printing will use it${this.contractShapeIssue(value.name, "to_string")}`;
+              return `cannot print a map of '${value.name}' values directly — declare 'contract string function to_string()' in class '${value.name}' and printing will use it`;
             }
             if (value.kind === "qualified" && this.userModuleRegistry.hasModule(value.moduleName)) {
               if (this.printableTypeError(value) === null)
                 return null;
-              return `cannot print a map of '${value.moduleName}.${value.name}' values directly — declare 'string function to_string()' in class '${value.name}' and printing will use it`;
+              return `cannot print a map of '${value.moduleName}.${value.name}' values directly — declare 'contract string function to_string()' in class '${value.name}' and printing will use it`;
             }
             return this.printableTypeError(value);
           }
@@ -8647,58 +9240,23 @@ var Idyllium = (() => {
             if (element.kind === "class") {
               if (this.classHasPublicToString(element.name))
                 return null;
-              return `cannot print an array of '${element.name}' objects directly — declare 'string function to_string()' in class '${element.name}' and printing will use it${this.contractShapeIssue(element.name, "to_string")}`;
+              return `cannot print an array of '${element.name}' objects directly — declare 'contract string function to_string()' in class '${element.name}' and printing will use it`;
             }
             if (element.kind === "qualified" && this.userModuleRegistry.hasModule(element.moduleName)) {
               if (this.printableTypeError(element) === null)
                 return null;
-              return `cannot print an array of '${element.moduleName}.${element.name}' objects directly — declare 'string function to_string()' in class '${element.name}' and printing will use it`;
+              return `cannot print an array of '${element.moduleName}.${element.name}' objects directly — declare 'contract string function to_string()' in class '${element.name}' and printing will use it`;
             }
             return this.printableTypeError(element);
           }
           return null;
         }
-        /**
-         * Почему одноимённый метод НЕ считается контрактом — хвост для диагностик.
-         * Четыре разные порчи формы (private, чужой тип, не тот возврат, static)
-         * давали неотличимые ошибки — методисты мерили цену в «полчаса сверки
-         * по буквам» (2026-08-21).
-         */
-        contractShapeIssue(className, methodName) {
-          const info = this.classes.get(className);
-          if (!info || !info.ownMethods.has(methodName))
-            return "";
-          const spec = info.methods.get(methodName);
-          const access = info.methodAccess.get(methodName);
-          const issues = [];
-          if (access !== void 0 && access.access !== "public")
-            issues.push("it is private");
-          if (access !== void 0 && access.isStatic)
-            issues.push("it is static");
-          if (methodName !== "to_string") {
-            if (!spec || spec.parameters.length !== 1) {
-              issues.push(`it must take exactly one parameter of type '${className}'`);
-            } else if (!(spec.parameters[0].type.kind === "class" && spec.parameters[0].type.name === className)) {
-              issues.push(`its parameter is '${(0, types_1.typeToString)(spec.parameters[0].type)}' instead of '${className}'`);
-            }
-            if (spec && !(0, types_1.sameType)(spec.returnType, types_1.BOOL)) {
-              issues.push(`it returns '${(0, types_1.typeToString)(spec.returnType)}' instead of 'bool'`);
-            }
-          } else {
-            if (spec && spec.parameters.length > 0)
-              issues.push("it must take no parameters");
-            if (spec && !(0, types_1.sameType)(spec.returnType, types_1.STRING)) {
-              issues.push(`it returns '${(0, types_1.typeToString)(spec.returnType)}' instead of 'string'`);
-            }
-          }
-          if (issues.length === 0)
-            return "";
-          return ` (class '${className}' has '${methodName}', but ${issues.join(", ")})`;
-        }
         classHasPublicToString(className) {
           const info = this.classes.get(className);
           if (!info)
             return false;
+          if (this.refusedContracts.has(`${className}.to_string`))
+            return true;
           if (!info.ownMethods.has("to_string"))
             return false;
           const spec = info.methods.get("to_string");
@@ -8777,7 +9335,8 @@ var Idyllium = (() => {
         }
         argumentTypeError(fn, item, expected, actual) {
           const label = item.arg.name ? `argument '${item.arg.name}'` : `argument ${item.argumentIndex + 1}`;
-          return `'${fn.name}' ${label} expects ${expected}, got '${(0, types_1.typeToString)(actual)}'`;
+          const viaMethod = (0, types_1.isComplex)(actual) && this.stdlib.getTypeMethod(types_1.MATH_COMPLEX, fn.name) ? ` — a complex number has its own method: write z.${fn.name}()` : "";
+          return `'${fn.name}' ${label} expects ${expected}, got '${(0, types_1.typeToString)(actual)}'${viaMethod}`;
         }
         memberType(expression) {
           if (expression.object.kind === "IdentifierExpression") {
@@ -9002,8 +9561,8 @@ var Idyllium = (() => {
             const method2 = this.getClassMethodInfo(objectType.name, expression.name);
             if (method2) {
               this.markSemanticToken("method", expression.nameRange);
-              if (expression.name === "equals" && method2.access.owner !== objectType.name && this.classDeclaresEqualsContract(method2.access.owner) && !this.classDeclaresEqualsContract(objectType.name)) {
-                this.diagnostics.error(expression.range, `'equals' is a contract and is not inherited — declare 'bool function equals(${objectType.name} other)' in class '${objectType.name}' and the call will use it`);
+              if (method2.access.owner !== objectType.name && this.classOwnsSlotContract(method2.access.owner, expression.name) && !this.classOwnsSlotContract(objectType.name, expression.name)) {
+                this.diagnostics.error(expression.range, `'${expression.name}' is a contract and is not inherited — declare '${this.heirContractRecipe(objectType.name, expression.name)}' in class '${objectType.name}' and the call will use it`);
                 return types_1.ERROR_TYPE;
               }
               this.checkClassMemberAccess(method2.access, expression.range);
@@ -10661,6 +11220,237 @@ var Idyllium = (() => {
       }
       function colorTransparent() {
         return IdylliumColor.RGBA(0, 0, 0, 0);
+      }
+    }
+  });
+
+  // dist/src/runtime/runtime-complex.js
+  var require_runtime_complex = __commonJS({
+    "dist/src/runtime/runtime-complex.js"(exports2) {
+      "use strict";
+      Object.defineProperty(exports2, "__esModule", { value: true });
+      exports2.IdylliumComplex = void 0;
+      var runtime_errors_12 = require_runtime_errors();
+      var runtime_shared_12 = require_runtime_shared();
+      var runtime_values_12 = require_runtime_values();
+      var POLAR_NOISE = 1e-15;
+      function finite(value, what, file, line) {
+        if (!Number.isFinite(value)) {
+          throw new runtime_errors_12.IdylliumRuntimeError(file, line, `${what} is outside the float range`);
+        }
+        return value;
+      }
+      var IdylliumComplex = class _IdylliumComplex {
+        re;
+        im;
+        __idylliumType = "math.Complex";
+        constructor(re, im) {
+          this.re = re;
+          this.im = im;
+        }
+        /** Число любого рода → комплексное; чужое значение — ошибка словами. */
+        static from(value, what, file, line) {
+          if (value instanceof _IdylliumComplex)
+            return value;
+          if (typeof value === "number")
+            return new _IdylliumComplex(finite(value, what, file, line), 0);
+          if (typeof value === "bigint")
+            return new _IdylliumComplex(finite(Number(value), what, file, line), 0);
+          throw new runtime_errors_12.IdylliumRuntimeError(file, line, `${what} expects a number or math.Complex, got '${String(value)}'`);
+        }
+        /** Тригонометрическая форма: шум округления (|часть| < модуль · 1e-15) — это ноль. */
+        static polar(modulus, argument) {
+          const re = modulus * Math.cos(argument);
+          const im = modulus * Math.sin(argument);
+          const noise = Math.abs(modulus) * POLAR_NOISE;
+          return new _IdylliumComplex(Math.abs(re) < noise ? 0 : re, Math.abs(im) < noise ? 0 : im);
+        }
+        abs() {
+          return Math.hypot(this.re, this.im);
+        }
+        /** Главное значение аргумента, (−π; π]; у нуля — 0. */
+        arg() {
+          return this.re === 0 && this.im === 0 ? 0 : Math.atan2(this.im, this.re);
+        }
+        conjugate() {
+          return new _IdylliumComplex(this.re, this.im === 0 ? 0 : -this.im);
+        }
+        // ── контракты арифметики ──
+        plus(other, file, line) {
+          const w = _IdylliumComplex.from(other, "operator '+'", file, line);
+          return new _IdylliumComplex(finite(this.re + w.re, "operator '+' result", file, line), finite(this.im + w.im, "operator '+' result", file, line));
+        }
+        minus(other, file, line) {
+          const w = _IdylliumComplex.from(other, "operator '-'", file, line);
+          return new _IdylliumComplex(finite(this.re - w.re, "operator '-' result", file, line), finite(this.im - w.im, "operator '-' result", file, line));
+        }
+        multiply(other, file, line) {
+          const w = _IdylliumComplex.from(other, "operator '*'", file, line);
+          return new _IdylliumComplex(finite(this.re * w.re - this.im * w.im, "operator '*' result", file, line), finite(this.re * w.im + this.im * w.re, "operator '*' result", file, line));
+        }
+        divide(other, file, line) {
+          const w = _IdylliumComplex.from(other, "operator '/'", file, line);
+          if (w.re === 0 && w.im === 0) {
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, "division by zero");
+          }
+          if (Math.abs(w.re) >= Math.abs(w.im)) {
+            const ratio2 = w.im / w.re;
+            const denominator2 = w.re + w.im * ratio2;
+            return new _IdylliumComplex(finite((this.re + this.im * ratio2) / denominator2, "operator '/' result", file, line), finite((this.im - this.re * ratio2) / denominator2, "operator '/' result", file, line));
+          }
+          const ratio = w.re / w.im;
+          const denominator = w.re * ratio + w.im;
+          return new _IdylliumComplex(finite((this.re * ratio + this.im) / denominator, "operator '/' result", file, line), finite((this.im * ratio - this.re) / denominator, "operator '/' result", file, line));
+        }
+        opposite() {
+          return new _IdylliumComplex(this.re === 0 ? 0 : -this.re, this.im === 0 ? 0 : -this.im);
+        }
+        // ── степени и корни ──
+        /**
+         * Целый показатель — точным повторным умножением (2i в квадрате даёт ровно −4,
+         * без хвостов cos/sin); прочие — главное значение exp(w · ln z).
+         */
+        pow(exponent, file, line) {
+          const w = _IdylliumComplex.from(exponent, "math.Complex.pow() exponent", file, line);
+          const isZero = this.re === 0 && this.im === 0;
+          if (w.im === 0 && Number.isInteger(w.re) && Math.abs(w.re) <= 4096) {
+            if (isZero && w.re < 0)
+              throw new runtime_errors_12.IdylliumRuntimeError(file, line, "zero cannot be raised to a negative power");
+            let result = new _IdylliumComplex(1, 0);
+            let base = this;
+            for (let power = Math.abs(w.re); power > 0; power = Math.floor(power / 2)) {
+              if (power % 2 === 1)
+                result = result.multiply(base, file, line);
+              base = base.multiply(base, file, line);
+            }
+            return w.re < 0 ? new _IdylliumComplex(1, 0).divide(result, file, line) : result;
+          }
+          if (isZero) {
+            if (w.re > 0)
+              return new _IdylliumComplex(0, 0);
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, "zero can be raised only to a power with a positive real part");
+          }
+          return w.multiply(this.ln(file, line), file, line).exp(file, line);
+        }
+        /** Главное значение корня: аргумент результата в (−π/2; π/2]. */
+        sqrt() {
+          const modulus = this.abs();
+          if (modulus === 0)
+            return new _IdylliumComplex(0, 0);
+          const re = Math.sqrt((modulus + Math.abs(this.re)) / 2);
+          const im = Math.abs(this.im) / (2 * re);
+          if (this.re >= 0)
+            return new _IdylliumComplex(re, this.im < 0 ? -im : im);
+          return new _IdylliumComplex(im, this.im < 0 ? -re : re);
+        }
+        /** Все n корней степени n (формула Муавра), от главного против часовой стрелки. */
+        roots(count, file, line) {
+          const n = typeof count === "bigint" ? Number(count) : count;
+          if (typeof n !== "number" || !Number.isInteger(n) || n < 1) {
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, `math.Complex.roots() expects a positive integer degree, got ${String(count)}`);
+          }
+          if (n > 1e4) {
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, `math.Complex.roots() degree ${n} is too large (at most 10000)`);
+          }
+          const modulus = Math.pow(this.abs(), 1 / n);
+          const argument = this.arg();
+          const values = [];
+          for (let k = 0; k < n; k += 1) {
+            values.push(_IdylliumComplex.polar(modulus, (argument + 2 * Math.PI * k) / n));
+          }
+          return runtime_values_12.IdylliumArray.from(values, true, null, () => new _IdylliumComplex(0, 0));
+        }
+        // ── элементарные функции ──
+        exp(file, line) {
+          const modulus = finite(Math.exp(this.re), "math.Complex.exp() result", file, line);
+          return _IdylliumComplex.polar(modulus, this.im);
+        }
+        /** Главное значение логарифма: ln|z| + i·arg z. */
+        ln(file, line) {
+          if (this.re === 0 && this.im === 0) {
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, "math.Complex.ln() of zero does not exist");
+          }
+          return new _IdylliumComplex(Math.log(this.abs()), this.arg());
+        }
+        sin(file, line) {
+          return new _IdylliumComplex(finite(Math.sin(this.re) * Math.cosh(this.im), "math.Complex.sin() result", file, line), finite(Math.cos(this.re) * Math.sinh(this.im), "math.Complex.sin() result", file, line));
+        }
+        cos(file, line) {
+          const im = -Math.sin(this.re) * Math.sinh(this.im);
+          return new _IdylliumComplex(finite(Math.cos(this.re) * Math.cosh(this.im), "math.Complex.cos() result", file, line), finite(im === 0 ? 0 : im, "math.Complex.cos() result", file, line));
+        }
+        tan(file, line) {
+          const cosine = this.cos(file, line);
+          if (cosine.re === 0 && cosine.im === 0) {
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, "math.Complex.tan() does not exist where the cosine is zero");
+          }
+          return this.sin(file, line).divide(cosine, file, line);
+        }
+        sinh(file, line) {
+          return new _IdylliumComplex(finite(Math.sinh(this.re) * Math.cos(this.im), "math.Complex.sinh() result", file, line), finite(Math.cosh(this.re) * Math.sin(this.im), "math.Complex.sinh() result", file, line));
+        }
+        cosh(file, line) {
+          return new _IdylliumComplex(finite(Math.cosh(this.re) * Math.cos(this.im), "math.Complex.cosh() result", file, line), finite(Math.sinh(this.re) * Math.sin(this.im), "math.Complex.cosh() result", file, line));
+        }
+        // ── сравнение ──
+        /** Точное равенство по частям — как у float; для вычисленных значений есть is_close. */
+        equals(other) {
+          if (other instanceof _IdylliumComplex)
+            return this.re === other.re && this.im === other.im;
+          if (typeof other === "number")
+            return this.im === 0 && this.re === other;
+          if (typeof other === "bigint")
+            return this.im === 0 && this.re === Number(other);
+          return false;
+        }
+        /** epsilon необязателен, поэтому контекст file/line приходит хвостом аргументов. */
+        is_close(...rawArgs) {
+          const { values, file, line } = (0, runtime_shared_12.splitContextArgs)(rawArgs);
+          const [other, epsilon] = values;
+          const w = _IdylliumComplex.from(other, "math.Complex.is_close()", file, line);
+          const tolerance = epsilon === void 0 ? 1e-9 : Number(epsilon);
+          if (!Number.isFinite(tolerance) || tolerance < 0) {
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, `math.Complex.is_close() epsilon must be a non-negative number, got ${String(epsilon)}`);
+          }
+          return Math.hypot(this.re - w.re, this.im - w.im) <= tolerance;
+        }
+        // ── текст ──
+        /** `3 + 4i`, `-2.5i`, `i`, `0`; части округляются как обычные числа при печати. */
+        format(precision) {
+          const re = formatPart(this.re, precision);
+          const im = formatPart(this.im, precision);
+          const unit = (text) => text === "1" ? "i" : text === "-1" ? "-i" : `${text}i`;
+          if (im === "0")
+            return re;
+          if (re === "0")
+            return unit(im);
+          return im.startsWith("-") ? `${re} - ${unit(im.slice(1))}` : `${re} + ${unit(im)}`;
+        }
+        formatPolar(precision) {
+          const argument = formatPart(this.arg(), precision);
+          return `${formatPart(this.abs(), precision)}(cos ${argument} + i sin ${argument})`;
+        }
+        to_string() {
+          return this.format(8);
+        }
+        to_polar_string() {
+          return this.formatPolar(8);
+        }
+        toString() {
+          return this.to_string();
+        }
+      };
+      exports2.IdylliumComplex = IdylliumComplex;
+      function formatPart(value, precision) {
+        if (precision === null)
+          return Object.is(value, -0) ? "0" : String(value);
+        const rounded = Number(value.toFixed(precision));
+        if (rounded === 0 && value !== 0)
+          return String(value);
+        return Object.is(rounded, -0) ? "0" : rounded.toString();
+      }
+      for (const name of ["plus", "minus", "multiply", "divide", "pow", "roots", "exp", "ln", "sin", "cos", "tan", "sinh", "cosh", "is_close"]) {
+        IdylliumComplex.prototype[name].__idylliumPassContext = true;
       }
     }
   });
@@ -43685,7 +44475,7 @@ ${outerPadding}${close}`;
     "dist/src/runtime/runtime.js"(exports, module) {
       "use strict";
       Object.defineProperty(exports, "__esModule", { value: true });
-      exports.MAX_RECURSION_DEPTH = exports.MIN_RECURSION_DEPTH = exports.DEFAULT_RECURSION_DEPTH = exports.IDYLLIUM_VERSION = exports.createMemoryRuntimeFileSystem = exports.IdylliumSet = exports.IdylliumMap = exports.IdylliumArray = exports.IdylliumTimeStamp = exports.IdylliumColor = exports.IdylliumRuntimeError = void 0;
+      exports.MAX_RECURSION_DEPTH = exports.MIN_RECURSION_DEPTH = exports.DEFAULT_RECURSION_DEPTH = exports.IDYLLIUM_VERSION = exports.createMemoryRuntimeFileSystem = exports.IdylliumComplex = exports.IdylliumSet = exports.IdylliumMap = exports.IdylliumArray = exports.IdylliumTimeStamp = exports.IdylliumColor = exports.IdylliumRuntimeError = void 0;
       exports.clampRecursionDepth = clampRecursionDepth;
       exports.createRuntime = createRuntime;
       var nodeFs = require_fs();
@@ -43712,6 +44502,11 @@ ${outerPadding}${close}`;
       Object.defineProperty(exports, "IdylliumSet", { enumerable: true, get: function() {
         return runtime_values_1.IdylliumSet;
       } });
+      var runtime_complex_1 = require_runtime_complex();
+      Object.defineProperty(exports, "IdylliumComplex", { enumerable: true, get: function() {
+        return runtime_complex_1.IdylliumComplex;
+      } });
+      var runtime_complex_2 = require_runtime_complex();
       var runtime_values_2 = require_runtime_values();
       var runtime_xml_1 = require_runtime_xml();
       var runtime_csv_1 = require_runtime_csv();
@@ -43737,7 +44532,7 @@ ${outerPadding}${close}`;
       var network_service_1 = require_network_service();
       var font_metrics_service_1 = require_font_metrics_service();
       var hash_1 = require_hash();
-      exports.IDYLLIUM_VERSION = "1.5.7";
+      exports.IDYLLIUM_VERSION = "1.6.0";
       function defaultRuntimePlatform() {
         const nodeProcess2 = typeof process === "object" ? process : null;
         return nodeProcess2?.versions?.node ? "cli" : "web";
@@ -43855,6 +44650,8 @@ ${outerPadding}${close}`;
           if ((0, runtime_json_1.isJsonRuntimeValue)(value)) {
             return formatForConsole(value, precision);
           }
+          if (value instanceof runtime_complex_2.IdylliumComplex)
+            return value.format(precision);
           if ((value instanceof runtime_values_2.IdylliumArray || value instanceof runtime_values_2.IdylliumMap) && await collectionHoldsContractObjects(value)) {
             return await formatCollectionWithContracts(value);
           }
@@ -43883,6 +44680,8 @@ ${outerPadding}${close}`;
         async function formatItemWithContracts(item) {
           if (item instanceof runtime_values_2.IdylliumArray || item instanceof runtime_values_2.IdylliumMap)
             return formatCollectionWithContracts(item);
+          if (item instanceof runtime_complex_2.IdylliumComplex)
+            return item.format(precision);
           const method = item !== null && typeof item === "object" ? item.to_string : void 0;
           return typeof method === "function" ? formatForInspect(await method.apply(item)) : formatForInspect(item);
         }
@@ -44142,6 +44941,8 @@ ${outerPadding}${close}`;
               return "colors.Color";
             if (value instanceof runtime_values_2.IdylliumTimeStamp)
               return "time.stamp";
+            if (value instanceof runtime_complex_2.IdylliumComplex)
+              return "math.Complex";
             if (value instanceof runtime_values_2.IdylliumArray)
               return "array";
             if (value instanceof runtime_values_2.IdylliumMap)
@@ -44193,6 +44994,28 @@ ${outerPadding}${close}`;
               throw new runtime_errors_1.IdylliumRuntimeError(file, line, `comparison found an object without the '${contract}' contract`);
             }
             return await method(right) === true;
+          },
+          // Арифметические контракты (plus/minus/multiply/divide): слот класса ЛЕВОГО
+          // операнда; результат — что вернул контракт (тип проверен компилятором).
+          async arithmeticObjects(left, right, slot, contract, sign, file, line) {
+            if (left === null || left === void 0) {
+              throw new runtime_errors_1.IdylliumRuntimeError(file, line, `'${sign}' found null instead of an object`);
+            }
+            const method = left[slot];
+            if (typeof method !== "function") {
+              throw new runtime_errors_1.IdylliumRuntimeError(file, line, `'${sign}' found an object without the '${contract}' contract`);
+            }
+            return method(right);
+          },
+          async oppositeObject(operand, slot, file, line) {
+            if (operand === null || operand === void 0) {
+              throw new runtime_errors_1.IdylliumRuntimeError(file, line, "unary '-' found null instead of an object");
+            }
+            const method = operand[slot];
+            if (typeof method !== "function") {
+              throw new runtime_errors_1.IdylliumRuntimeError(file, line, "unary '-' found an object without the 'opposite' contract");
+            }
+            return method();
           },
           async equalsObjectArrays(left, right, slot, file, line) {
             return equalsArrayCellsWith((0, runtime_values_2.expectArray)(left, file, line), (0, runtime_values_2.expectArray)(right, file, line), slot, file, line);
@@ -44339,12 +45162,38 @@ ${outerPadding}${close}`;
             return values.reduce((best, item) => runtimeCompare(item, best) < 0 ? item : best);
           },
           sum(value, file, line) {
+            const complex = complexSum(value, "sum", file, line);
+            if (complex)
+              return complex;
             return numericValues(value, "sum", file, line).reduce((total, item) => runtimeAdd(total, item), 0);
           },
           avg(value, file, line) {
+            const complex = complexSum(value, "avg", file, line);
+            if (complex)
+              return complex.divide((0, runtime_values_2.expectArray)(value, file, line).values().length, file, line);
             const values = numericValues(value, "avg", file, line);
             const total = values.reduce((sum, item) => runtimeAdd(sum, item), 0);
             return Number(total) / values.length;
+          },
+          // sum() объектов: складываем контрактом plus, начиная с первого элемента —
+          // «нуля» у класса нет, поэтому пустой массив — честная ошибка, как у чисел.
+          async sumObjects(value, slot, file, line) {
+            const items = (0, runtime_values_2.expectArray)(value, file, line).values();
+            if (items.length === 0) {
+              throw new runtime_errors_1.IdylliumRuntimeError(file, line, "'sum' cannot be used with an empty array");
+            }
+            let total = items[0];
+            for (const item of items.slice(1)) {
+              if (total === null || total === void 0) {
+                throw new runtime_errors_1.IdylliumRuntimeError(file, line, "sum() found null instead of an object");
+              }
+              const method = total[slot];
+              if (typeof method !== "function") {
+                throw new runtime_errors_1.IdylliumRuntimeError(file, line, "sum() found an object without the 'plus' contract");
+              }
+              total = await method.call(total, item);
+            }
+            return total;
           }
         };
         const set = {
@@ -44485,11 +45334,15 @@ ${outerPadding}${close}`;
               pi: Math.PI,
               e: Math.E,
               abs: (0, runtime_shared_1.contextFunction)((value, file, line) => {
+                if (value instanceof runtime_complex_2.IdylliumComplex)
+                  return value.abs();
                 if (typeof value === "bigint")
                   return value < 0n ? -value : value;
                 return Math.abs((0, runtime_shared_1.finiteNumber)(value, "math.abs() value", file, line));
               }),
               sqrt: (0, runtime_shared_1.contextFunction)((value, file, line) => {
+                if (value instanceof runtime_complex_2.IdylliumComplex)
+                  return value.sqrt();
                 const number = (0, runtime_shared_1.finiteNumber)(value, "math.sqrt() value", file, line);
                 if (number < 0)
                   throw new runtime_errors_1.IdylliumRuntimeError(file, line, `math.sqrt() expects a non-negative number, got ${number}`);
@@ -44508,6 +45361,9 @@ ${outerPadding}${close}`;
                 return ceilWithPrecision(value, context.value, context.file, context.line);
               }),
               pow: (0, runtime_shared_1.contextFunction)((value, power, file, line) => {
+                if (value instanceof runtime_complex_2.IdylliumComplex || power instanceof runtime_complex_2.IdylliumComplex) {
+                  return runtime_complex_2.IdylliumComplex.from(value, "math.pow() value", file, line).pow(power, file, line);
+                }
                 const result = Math.pow((0, runtime_shared_1.finiteNumber)(value, "math.pow() value", file, line), (0, runtime_shared_1.finiteNumber)(power, "math.pow() power", file, line));
                 return finiteMathResult(result, "math.pow()", file, line);
               }),
@@ -44520,9 +45376,9 @@ ${outerPadding}${close}`;
                 }
                 return Math.min(upper, Math.max(lower, current));
               }),
-              sin: (0, runtime_shared_1.contextFunction)((radians, file, line) => Math.sin((0, runtime_shared_1.finiteNumber)(radians, "math.sin() radians", file, line))),
-              cos: (0, runtime_shared_1.contextFunction)((radians, file, line) => Math.cos((0, runtime_shared_1.finiteNumber)(radians, "math.cos() radians", file, line))),
-              tan: (0, runtime_shared_1.contextFunction)((radians, file, line) => finiteMathResult(Math.tan((0, runtime_shared_1.finiteNumber)(radians, "math.tan() radians", file, line)), "math.tan()", file, line)),
+              sin: (0, runtime_shared_1.contextFunction)((radians, file, line) => radians instanceof runtime_complex_2.IdylliumComplex ? radians.sin(file, line) : Math.sin((0, runtime_shared_1.finiteNumber)(radians, "math.sin() radians", file, line))),
+              cos: (0, runtime_shared_1.contextFunction)((radians, file, line) => radians instanceof runtime_complex_2.IdylliumComplex ? radians.cos(file, line) : Math.cos((0, runtime_shared_1.finiteNumber)(radians, "math.cos() radians", file, line))),
+              tan: (0, runtime_shared_1.contextFunction)((radians, file, line) => radians instanceof runtime_complex_2.IdylliumComplex ? radians.tan(file, line) : finiteMathResult(Math.tan((0, runtime_shared_1.finiteNumber)(radians, "math.tan() radians", file, line)), "math.tan()", file, line)),
               asin: (0, runtime_shared_1.contextFunction)((value, file, line) => {
                 const number = (0, runtime_shared_1.rangeNumber)(value, "math.asin() value", -1, 1, file, line);
                 return Math.asin(number);
@@ -44534,6 +45390,8 @@ ${outerPadding}${close}`;
               atan: (0, runtime_shared_1.contextFunction)((value, file, line) => Math.atan((0, runtime_shared_1.finiteNumber)(value, "math.atan() value", file, line))),
               atan2: (0, runtime_shared_1.contextFunction)((y, x, file, line) => Math.atan2((0, runtime_shared_1.finiteNumber)(y, "math.atan2() y", file, line), (0, runtime_shared_1.finiteNumber)(x, "math.atan2() x", file, line))),
               log: (0, runtime_shared_1.contextFunction)((value, file, line) => {
+                if (value instanceof runtime_complex_2.IdylliumComplex)
+                  return value.ln(file, line);
                 const number = (0, runtime_shared_1.finiteNumber)(value, "math.log() value", file, line);
                 if (number <= 0)
                   throw new runtime_errors_1.IdylliumRuntimeError(file, line, `math.log() expects a positive number, got ${number}`);
@@ -44594,7 +45452,34 @@ ${outerPadding}${close}`;
                 const number = (0, runtime_shared_1.finiteNumber)(value, "math.sign() value", file, line);
                 return number < 0 ? -1 : number > 0 ? 1 : 0;
               }),
-              hypot: (0, runtime_shared_1.contextFunction)((a, b, file, line) => finiteMathResult(Math.hypot((0, runtime_shared_1.finiteNumber)(a, "math.hypot() a", file, line), (0, runtime_shared_1.finiteNumber)(b, "math.hypot() b", file, line)), "math.hypot()", file, line))
+              hypot: (0, runtime_shared_1.contextFunction)((a, b, file, line) => finiteMathResult(Math.hypot((0, runtime_shared_1.finiteNumber)(a, "math.hypot() a", file, line), (0, runtime_shared_1.finiteNumber)(b, "math.hypot() b", file, line)), "math.hypot()", file, line)),
+              // ── комплексные числа ──
+              I: new runtime_complex_2.IdylliumComplex(0, 1),
+              // Оба аргумента необязательны — контекст file/line приходит хвостом, разбираем его штатно.
+              Complex: (0, runtime_shared_1.contextFunction)((...rawArgs) => {
+                const { values, file, line } = (0, runtime_shared_1.splitContextArgs)(rawArgs);
+                return new runtime_complex_2.IdylliumComplex(values[0] === void 0 ? 0 : (0, runtime_shared_1.finiteNumber)(values[0], "math.Complex() re", file, line), values[1] === void 0 ? 0 : (0, runtime_shared_1.finiteNumber)(values[1], "math.Complex() im", file, line));
+              }),
+              polar: (0, runtime_shared_1.contextFunction)((modulus, argument, file, line) => {
+                const r = (0, runtime_shared_1.finiteNumber)(modulus, "math.polar() modulus", file, line);
+                if (r < 0) {
+                  throw new runtime_errors_1.IdylliumRuntimeError(file, line, `math.polar() modulus cannot be negative, got ${r} — a negative sign belongs to the argument (add math.pi)`);
+                }
+                return runtime_complex_2.IdylliumComplex.polar(r, (0, runtime_shared_1.finiteNumber)(argument, "math.polar() argument", file, line));
+              }),
+              // Граница типа: число становится комплексным (лестница int → float → math.Complex).
+              toComplex: (value, file, line) => runtime_complex_2.IdylliumComplex.from(value, "math.Complex value", file, line),
+              complexBinary: (operator, left, right, file, line) => {
+                const z = runtime_complex_2.IdylliumComplex.from(left, `operator '${operator}' left operand`, file, line);
+                if (operator === "+")
+                  return z.plus(right, file, line);
+                if (operator === "-")
+                  return z.minus(right, file, line);
+                if (operator === "*")
+                  return z.multiply(right, file, line);
+                return z.divide(right, file, line);
+              },
+              complexOpposite: (value) => value.opposite()
             },
             random: {
               create_int: (0, runtime_shared_1.contextFunction)((min, max, file, line) => {
@@ -45347,6 +46232,18 @@ ${outerPadding}${close}`;
           return new runtime_errors_1.IdylliumRuntimeError(file || "main.idyl", line || 1, "program was stopped", "cancelled");
         }
       }
+      function complexSum(value, functionName, file, line) {
+        const values = (0, runtime_values_2.expectArray)(value, file, line).values();
+        if (!values.some((item) => item instanceof runtime_complex_2.IdylliumComplex))
+          return null;
+        if (values.length === 0) {
+          throw new runtime_errors_1.IdylliumRuntimeError(file, line, `'${functionName}' cannot be used with an empty array`);
+        }
+        let total = new runtime_complex_2.IdylliumComplex(0, 0);
+        for (const item of values)
+          total = total.plus(item, file, line);
+        return total;
+      }
       function numericValues(value, functionName, file, line) {
         const array = (0, runtime_values_2.expectArray)(value, file, line);
         const values = array.values();
@@ -45487,6 +46384,10 @@ ${outerPadding}${close}`;
         const rightIsNull = right === null || isRuntimeNullValue(right);
         if (leftIsNull || rightIsNull)
           return leftIsNull && rightIsNull;
+        if (left instanceof runtime_complex_2.IdylliumComplex)
+          return left.equals(right);
+        if (right instanceof runtime_complex_2.IdylliumComplex)
+          return right.equals(left);
         if (left instanceof runtime_values_2.IdylliumColor || right instanceof runtime_values_2.IdylliumColor) {
           if (!(left instanceof runtime_values_2.IdylliumColor) || !(right instanceof runtime_values_2.IdylliumColor))
             return false;
@@ -45948,6 +46849,9 @@ ${outerPadding}${close}`;
         if (moduleName === "time" && typeName === "stamp") {
           return new runtime_values_2.IdylliumTimeStamp(0);
         }
+        if (moduleName === "math" && typeName === "Complex") {
+          return new runtime_complex_2.IdylliumComplex(0, 0);
+        }
         if (moduleName === "json") {
           if (typeName === "Value")
             return (0, runtime_json_1.createJsonValue)();
@@ -46104,6 +47008,7 @@ ${outerPadding}${close}`;
         const equalsContractClasses = /* @__PURE__ */ new Set();
         const lessContractClasses = /* @__PURE__ */ new Set();
         const greaterContractClasses = /* @__PURE__ */ new Set();
+        const arithmeticContractClasses = /* @__PURE__ */ new Map();
         const nullableClassFields = /* @__PURE__ */ new Map();
         const mergeSemantics = (semantics) => {
           for (const [node, type] of semantics.nodeTypes)
@@ -46114,6 +47019,15 @@ ${outerPadding}${close}`;
             lessContractClasses.add(name);
           for (const name of semantics.greaterContractClasses)
             greaterContractClasses.add(name);
+          for (const [contract, owners] of semantics.arithmeticContractClasses) {
+            let merged = arithmeticContractClasses.get(contract);
+            if (!merged) {
+              merged = /* @__PURE__ */ new Set();
+              arithmeticContractClasses.set(contract, merged);
+            }
+            for (const owner of owners)
+              merged.add(owner);
+          }
           for (const [className, fieldNames] of semantics.nullableClassFields) {
             let set = nullableClassFields.get(className);
             if (!set) {
@@ -46141,6 +47055,7 @@ ${outerPadding}${close}`;
             equalsContractClasses,
             lessContractClasses,
             greaterContractClasses,
+            arithmeticContractClasses,
             nullableClassFields
           }).generate(ast, { modules: modules.map((module3) => ({ name: module3.name, program: module3.ast })) }).jsCode;
         }
@@ -46234,6 +47149,1515 @@ ${outerPadding}${close}`;
         }
         return best;
       }
+    }
+  });
+
+  // dist/src/embed/unit-model.js
+  var require_unit_model = __commonJS({
+    "dist/src/embed/unit-model.js"(exports2) {
+      "use strict";
+      Object.defineProperty(exports2, "__esModule", { value: true });
+      exports2.STARTER_MINIMAL = exports2.UNIT_MAX_TESTS = exports2.UNIT_OUTPUT_LIMIT = exports2.UNIT_TEST_TIMEOUT_MS = exports2.UNIT_LIBRARIES = exports2.UNIT_FORMAT = void 0;
+      exports2.slugifyUnitId = slugifyUnitId;
+      exports2.normalizeUnitConfig = normalizeUnitConfig;
+      exports2.publicUnitConfig = publicUnitConfig;
+      exports2.encodeUnitForHash = encodeUnitForHash;
+      exports2.decodeUnitFromHash = decodeUnitFromHash;
+      exports2.UNIT_FORMAT = 1;
+      exports2.UNIT_LIBRARIES = [
+        "console",
+        "math",
+        "random",
+        "time",
+        "types",
+        "encoding",
+        "hash",
+        "system"
+      ];
+      exports2.UNIT_TEST_TIMEOUT_MS = 1e4;
+      exports2.UNIT_OUTPUT_LIMIT = 65536;
+      exports2.UNIT_MAX_TESTS = 200;
+      exports2.STARTER_MINIMAL = "use console;\n\nmain() {\n    \n}\n";
+      function text(value, fallback = "") {
+        return typeof value === "string" ? value : fallback;
+      }
+      function bool(value, fallback) {
+        return typeof value === "boolean" ? value : fallback;
+      }
+      function clampInt(value, min, max, fallback) {
+        const number = typeof value === "number" && Number.isFinite(value) ? Math.round(value) : fallback;
+        return Math.min(max, Math.max(min, number));
+      }
+      function record(value) {
+        return value !== null && typeof value === "object" && !Array.isArray(value) ? value : {};
+      }
+      function wordList(value) {
+        if (typeof value === "string")
+          return value.split(/[\s,]+/u).filter(Boolean);
+        if (Array.isArray(value))
+          return value.filter((item) => typeof item === "string" && item.trim() !== "").map((item) => item.trim());
+        return [];
+      }
+      function slugifyUnitId(source) {
+        const map = {
+          а: "a",
+          б: "b",
+          в: "v",
+          г: "g",
+          д: "d",
+          е: "e",
+          ё: "e",
+          ж: "zh",
+          з: "z",
+          и: "i",
+          й: "y",
+          к: "k",
+          л: "l",
+          м: "m",
+          н: "n",
+          о: "o",
+          п: "p",
+          р: "r",
+          с: "s",
+          т: "t",
+          у: "u",
+          ф: "f",
+          х: "h",
+          ц: "c",
+          ч: "ch",
+          ш: "sh",
+          щ: "sch",
+          ъ: "",
+          ы: "y",
+          ь: "",
+          э: "e",
+          ю: "yu",
+          я: "ya"
+        };
+        const latin = Array.from(source.toLowerCase()).map((char) => map[char] ?? char).join("");
+        return latin.replace(/[^a-z0-9]+/gu, "-").replace(/^-+|-+$/gu, "").slice(0, 48);
+      }
+      function normalizeUnitConfig(raw, idylliumVersion = "") {
+        const problems = [];
+        const source = record(raw);
+        const problem = (severity, code, params = {}) => {
+          problems.push({ severity, code, params });
+        };
+        const format = typeof source.format === "number" ? source.format : exports2.UNIT_FORMAT;
+        if (format > exports2.UNIT_FORMAT)
+          problem("error", "config.format-newer", { format, supported: exports2.UNIT_FORMAT });
+        const editorSource = record(source.editor);
+        const themeRaw = text(editorSource.theme, "auto");
+        const theme = themeRaw === "light" || themeRaw === "dark" ? themeRaw : "auto";
+        const modeRaw = text(editorSource.mode, "monaco");
+        const libsRaw = source.libs === void 0 ? [...exports2.UNIT_LIBRARIES] : wordList(source.libs);
+        const libs = [];
+        for (const name of libsRaw) {
+          if (!exports2.UNIT_LIBRARIES.includes(name)) {
+            problem("warning", "config.lib-unavailable", { name });
+            continue;
+          }
+          if (!libs.includes(name))
+            libs.push(name);
+        }
+        if (!libs.includes("console"))
+          libs.unshift("console");
+        const tests = [];
+        const rawTests = Array.isArray(source.tests) ? source.tests : [];
+        rawTests.forEach((item, index) => {
+          const test = record(item);
+          if (typeof test.random === "number") {
+            const range = Array.isArray(test.range) && test.range.length === 2 ? test.range : [1, 100];
+            const low = Number(range[0]);
+            const high = Number(range[1]);
+            const float = test.kind === "float";
+            const sane = float ? Number.isFinite(low) && Number.isFinite(high) : Number.isInteger(low) && Number.isInteger(high);
+            if (!sane || low > high) {
+              problem("error", "config.test-range", { index: index + 1 });
+              return;
+            }
+            tests.push({
+              random: clampInt(test.random, 1, 20, 1),
+              range: [low, high],
+              times: clampInt(test.times, 1, 50, 3),
+              ...float ? { kind: "float", digits: clampInt(test.digits, 1, 6, 1) } : {}
+            });
+            return;
+          }
+          if (typeof test.in === "string") {
+            tests.push({ in: test.in });
+            return;
+          }
+          if (Array.isArray(test.in)) {
+            tests.push({ in: test.in.map((line) => String(line)) });
+            return;
+          }
+          problem("error", "config.test-shape", { index: index + 1 });
+        });
+        const checkSource = record(source.check);
+        const kind = text(checkSource.kind, "none");
+        let check = { kind: "none" };
+        const tolerance = typeof checkSource.tolerance === "number" && checkSource.tolerance >= 0 ? checkSource.tolerance : 1e-6;
+        if (kind === "formula") {
+          const rules = (Array.isArray(checkSource.rules) ? checkSource.rules : []).map((item) => {
+            const rule = record(item);
+            return { when: text(rule.when).trim(), expr: text(rule.expr).trim() };
+          }).filter((rule) => rule.expr !== "");
+          if (rules.length === 0)
+            problem("error", "config.formula-empty");
+          check = { kind: "formula", rules, tolerance };
+        } else if (kind === "expect") {
+          check = { kind: "expect", output: text(checkSource.output) };
+        } else if (kind === "reference") {
+          check = { kind: "reference", tolerance };
+        } else if (kind !== "none") {
+          problem("error", "config.check-kind", { kind });
+        }
+        const inputs = text(source.inputs, "some") === "none" ? "none" : "some";
+        const solution = text(source.solution);
+        if (check.kind === "reference" && solution.trim() === "")
+          problem("error", "config.reference-missing");
+        if (check.kind !== "none" && check.kind !== "expect" && inputs === "some" && tests.length === 0) {
+          problem("error", "config.tests-missing");
+        }
+        if (inputs === "none" && tests.some((test) => "random" in test || (typeof test.in === "string" ? test.in.trim() !== "" : test.in.length > 0))) {
+          problem("warning", "config.tests-ignored");
+        }
+        const codeSource = record(source.code);
+        const maxCalls = {};
+        for (const [name, limit] of Object.entries(record(codeSource.maxCalls))) {
+          if (typeof limit === "number" && Number.isInteger(limit) && limit >= 0)
+            maxCalls[name] = limit;
+        }
+        const feedbackSource = record(source.feedback);
+        const hooksSource = record(source.hooks);
+        const hookName = (value, which) => {
+          const name = text(value).trim();
+          if (name !== "" && !/^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*$/u.test(name)) {
+            problem("error", "config.hook-name", { which, name });
+            return "";
+          }
+          return name;
+        };
+        const title = text(source.title).trim();
+        const id = slugifyUnitId(text(source.id)) || slugifyUnitId(title) || "unit";
+        const starterRaw = text(source.starter, exports2.STARTER_MINIMAL);
+        const config = {
+          format: exports2.UNIT_FORMAT,
+          idyllium: text(source.idyllium, idylliumVersion),
+          id,
+          title,
+          statement: text(source.statement),
+          starter: starterRaw === "minimal" ? exports2.STARTER_MINIMAL : starterRaw === "empty" ? "" : starterRaw,
+          editor: {
+            rows: clampInt(editorSource.rows, 4, 40, 16),
+            consoleRows: clampInt(editorSource.consoleRows, 3, 20, 6),
+            fontSize: clampInt(editorSource.fontSize, 10, 28, 16),
+            theme,
+            mode: modeRaw === "light" ? "light" : "monaco",
+            autocomplete: editorSource.autocomplete !== false,
+            format: editorSource.format !== false
+          },
+          lang: text(source.lang, "ru") === "en" ? "en" : "ru",
+          libs,
+          inputs,
+          tests: tests.slice(0, exports2.UNIT_MAX_TESTS),
+          check,
+          code: { require: wordList(codeSource.require), forbid: wordList(codeSource.forbid), maxCalls },
+          solution,
+          feedback: {
+            reveal: bool(feedbackSource.reveal, false),
+            softRunHint: bool(feedbackSource.softRunHint, true),
+            shareCode: bool(feedbackSource.shareCode, false),
+            branding: bool(feedbackSource.branding, true)
+          },
+          hooks: {
+            solved: hookName(hooksSource.solved, "solved"),
+            failed: hookName(hooksSource.failed, "failed"),
+            check: hookName(hooksSource.check, "check")
+          }
+        };
+        return { config, problems };
+      }
+      function publicUnitConfig(config) {
+        return config.check.kind === "reference" ? config : { ...config, solution: "" };
+      }
+      var BASE64URL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+      function encodeUnitForHash(config) {
+        const bytes = new TextEncoder().encode(JSON.stringify(publicUnitConfig(config)));
+        let out = "";
+        for (let index = 0; index < bytes.length; index += 3) {
+          const a = bytes[index];
+          const b = bytes[index + 1];
+          const c = bytes[index + 2];
+          const triple = a << 16 | (b ?? 0) << 8 | (c ?? 0);
+          out += BASE64URL[triple >> 18 & 63] + BASE64URL[triple >> 12 & 63];
+          if (b !== void 0)
+            out += BASE64URL[triple >> 6 & 63];
+          if (c !== void 0)
+            out += BASE64URL[triple & 63];
+        }
+        return out;
+      }
+      function decodeUnitFromHash(encoded) {
+        const bytes = [];
+        let buffer = 0;
+        let bits = 0;
+        for (const char of encoded) {
+          const value = BASE64URL.indexOf(char);
+          if (value < 0)
+            throw new Error(`unexpected character '${char}' in the unit address`);
+          buffer = buffer << 6 | value;
+          bits += 6;
+          if (bits >= 8) {
+            bits -= 8;
+            bytes.push(buffer >> bits & 255);
+          }
+        }
+        return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(Uint8Array.from(bytes)));
+      }
+    }
+  });
+
+  // dist/src/embed/formula.js
+  var require_formula = __commonJS({
+    "dist/src/embed/formula.js"(exports2) {
+      "use strict";
+      Object.defineProperty(exports2, "__esModule", { value: true });
+      exports2.FormulaError = void 0;
+      exports2.compileFormula = compileFormula;
+      exports2.coerceToken = coerceToken;
+      var FormulaError = class extends Error {
+        code;
+        params;
+        constructor(code, params = {}) {
+          super(code);
+          this.code = code;
+          this.params = params;
+          this.name = "FormulaError";
+        }
+      };
+      exports2.FormulaError = FormulaError;
+      var OPERATORS = ["==", "!=", "<=", ">=", "<", ">", "+", "-", "*", "/", "(", ")", ","];
+      function tokenize(source) {
+        const tokens = [];
+        let index = 0;
+        while (index < source.length) {
+          const char = source[index];
+          if (/\s/u.test(char)) {
+            index += 1;
+            continue;
+          }
+          if (/[0-9]/u.test(char)) {
+            const match = /^[0-9]+(?:\.[0-9]+)?/u.exec(source.slice(index));
+            tokens.push({ kind: "number", text: match[0], at: index });
+            index += match[0].length;
+            continue;
+          }
+          if (char === '"' || char === "'") {
+            let end = index + 1;
+            let value = "";
+            while (end < source.length && source[end] !== char) {
+              if (source[end] === "\\" && end + 1 < source.length) {
+                const next = source[end + 1];
+                value += next === "n" ? "\n" : next === "t" ? "	" : next;
+                end += 2;
+                continue;
+              }
+              value += source[end];
+              end += 1;
+            }
+            if (end >= source.length)
+              throw new FormulaError("formula.string-open", { at: index + 1 });
+            tokens.push({ kind: "string", text: value, at: index });
+            index = end + 1;
+            continue;
+          }
+          if (char === "{") {
+            const end = source.indexOf("}", index);
+            if (end < 0)
+              throw new FormulaError("formula.slot-open", { at: index + 1 });
+            tokens.push({ kind: "slot", text: source.slice(index + 1, end).trim(), at: index });
+            index = end + 1;
+            continue;
+          }
+          if (/[A-Za-z_]/u.test(char)) {
+            const match = /^[A-Za-z_][A-Za-z0-9_]*/u.exec(source.slice(index));
+            tokens.push({ kind: "word", text: match[0], at: index });
+            index += match[0].length;
+            continue;
+          }
+          const operator = OPERATORS.find((candidate) => source.startsWith(candidate, index));
+          if (operator) {
+            tokens.push({ kind: "op", text: operator, at: index });
+            index += operator.length;
+            continue;
+          }
+          if (source.startsWith("&&", index))
+            throw new FormulaError("formula.use-word", { at: index + 1, got: "&&", use: "and" });
+          if (source.startsWith("||", index))
+            throw new FormulaError("formula.use-word", { at: index + 1, got: "||", use: "or" });
+          if (char === "!")
+            throw new FormulaError("formula.use-word", { at: index + 1, got: "!", use: "not" });
+          if (char === "=")
+            throw new FormulaError("formula.use-word", { at: index + 1, got: "=", use: "==" });
+          if (char === "%")
+            throw new FormulaError("formula.use-word", { at: index + 1, got: "%", use: "mod(a, b)" });
+          throw new FormulaError("formula.unexpected-char", { at: index + 1, got: char });
+        }
+        tokens.push({ kind: "end", text: "", at: source.length });
+        return tokens;
+      }
+      var FUNCTIONS = {
+        abs: [1, 1],
+        round: [1, 2],
+        floor: [1, 1],
+        ceil: [1, 1],
+        sqrt: [1, 1],
+        pow: [2, 2],
+        min: [2, 2],
+        max: [2, 2],
+        mod: [2, 2],
+        div: [2, 2],
+        to_int: [1, 1],
+        to_float: [1, 1],
+        to_string: [1, 1],
+        length: [1, 1],
+        contains: [2, 2],
+        lower: [1, 1],
+        upper: [1, 1]
+      };
+      var Parser = class {
+        tokens;
+        position = 0;
+        constructor(tokens) {
+          this.tokens = tokens;
+        }
+        parse() {
+          const node = this.parseOr();
+          const rest = this.peek();
+          if (rest.kind !== "end")
+            throw new FormulaError("formula.unexpected", { at: rest.at + 1, got: rest.text });
+          return node;
+        }
+        peek() {
+          return this.tokens[this.position];
+        }
+        take() {
+          return this.tokens[this.position++];
+        }
+        isWord(text) {
+          const tok = this.peek();
+          return tok.kind === "word" && tok.text === text;
+        }
+        isOp(text) {
+          const tok = this.peek();
+          return tok.kind === "op" && tok.text === text;
+        }
+        parseOr() {
+          let left = this.parseXor();
+          while (this.isWord("or")) {
+            const at = this.take().at;
+            left = { type: "binary", op: "or", left, right: this.parseXor(), at };
+          }
+          return left;
+        }
+        parseXor() {
+          let left = this.parseAnd();
+          while (this.isWord("xor")) {
+            const at = this.take().at;
+            left = { type: "binary", op: "xor", left, right: this.parseAnd(), at };
+          }
+          return left;
+        }
+        parseAnd() {
+          let left = this.parseNot();
+          while (this.isWord("and")) {
+            const at = this.take().at;
+            left = { type: "binary", op: "and", left, right: this.parseNot(), at };
+          }
+          return left;
+        }
+        parseNot() {
+          if (this.isWord("not")) {
+            this.take();
+            return { type: "unary", op: "not", operand: this.parseNot() };
+          }
+          return this.parseComparison();
+        }
+        parseComparison() {
+          const left = this.parseSum();
+          const tok = this.peek();
+          if (tok.kind === "op" && ["==", "!=", "<", "<=", ">", ">="].includes(tok.text)) {
+            this.take();
+            return { type: "binary", op: tok.text, left, right: this.parseSum(), at: tok.at };
+          }
+          return left;
+        }
+        parseSum() {
+          let left = this.parseProduct();
+          while (this.isOp("+") || this.isOp("-")) {
+            const tok = this.take();
+            left = { type: "binary", op: tok.text, left, right: this.parseProduct(), at: tok.at };
+          }
+          return left;
+        }
+        parseProduct() {
+          let left = this.parseUnary();
+          while (this.isOp("*") || this.isOp("/")) {
+            const tok = this.take();
+            left = { type: "binary", op: tok.text, left, right: this.parseUnary(), at: tok.at };
+          }
+          return left;
+        }
+        parseUnary() {
+          if (this.isOp("-")) {
+            this.take();
+            return { type: "unary", op: "-", operand: this.parseUnary() };
+          }
+          return this.parsePrimary();
+        }
+        parsePrimary() {
+          const tok = this.take();
+          if (tok.kind === "number")
+            return { type: "literal", value: Number(tok.text) };
+          if (tok.kind === "string")
+            return { type: "literal", value: tok.text };
+          if (tok.kind === "slot")
+            return this.slot(tok);
+          if (tok.kind === "op" && tok.text === "(") {
+            const inner = this.parseOr();
+            if (!this.isOp(")"))
+              throw new FormulaError("formula.paren-open", { at: tok.at + 1 });
+            this.take();
+            return inner;
+          }
+          if (tok.kind === "word") {
+            if (tok.text === "true")
+              return { type: "literal", value: true };
+            if (tok.text === "false")
+              return { type: "literal", value: false };
+            const arity = FUNCTIONS[tok.text];
+            if (!arity)
+              throw new FormulaError("formula.unknown-word", { at: tok.at + 1, got: tok.text });
+            if (!this.isOp("("))
+              throw new FormulaError("formula.call-paren", { at: tok.at + 1, name: tok.text });
+            this.take();
+            const args = [];
+            if (!this.isOp(")")) {
+              args.push(this.parseOr());
+              while (this.isOp(",")) {
+                this.take();
+                args.push(this.parseOr());
+              }
+            }
+            if (!this.isOp(")"))
+              throw new FormulaError("formula.paren-open", { at: tok.at + 1 });
+            this.take();
+            if (args.length < arity[0] || args.length > arity[1]) {
+              throw new FormulaError("formula.arity", { at: tok.at + 1, name: tok.text, got: args.length });
+            }
+            return { type: "call", name: tok.text, args, at: tok.at };
+          }
+          if (tok.kind === "end")
+            throw new FormulaError("formula.ended", { at: tok.at + 1 });
+          throw new FormulaError("formula.unexpected", { at: tok.at + 1, got: tok.text });
+        }
+        slot(tok) {
+          if (tok.text === "output")
+            return { type: "output" };
+          if (tok.text === "ins" || tok.text === "outs" || tok.text === "lines")
+            return { type: "count", family: tok.text };
+          const match = /^(in|out|line)([1-9][0-9]*)$/u.exec(tok.text);
+          if (!match)
+            throw new FormulaError("formula.slot-name", { at: tok.at + 1, got: `{${tok.text}}` });
+          return { type: "slot", family: match[1], index: Number(match[2]), at: tok.at };
+        }
+      };
+      function compileFormula(source) {
+        const root = new Parser(tokenize(source)).parse();
+        const uses = { ins: 0, outs: 0, lines: 0 };
+        const walk = (node) => {
+          if (node.type === "slot") {
+            const key = node.family === "in" ? "ins" : node.family === "out" ? "outs" : "lines";
+            uses[key] = Math.max(uses[key], node.index);
+          } else if (node.type === "unary")
+            walk(node.operand);
+          else if (node.type === "binary") {
+            walk(node.left);
+            walk(node.right);
+          } else if (node.type === "call")
+            node.args.forEach(walk);
+        };
+        walk(root);
+        return { source, uses, evaluate: (scope) => evaluate(root, scope) };
+      }
+      function coerceToken(token) {
+        return /^[+-]?[0-9]+(?:\.[0-9]+)?$/u.test(token) ? Number(token) : token;
+      }
+      function asNumber(value, at) {
+        if (typeof value === "number")
+          return value;
+        throw new FormulaError("formula.not-number", { at: at + 1, got: String(value) });
+      }
+      function asBool(value) {
+        if (typeof value === "boolean")
+          return value;
+        throw new FormulaError("formula.not-bool", { got: String(value) });
+      }
+      function sameValue(left, right, tolerance) {
+        if (typeof left === "number" && typeof right === "number")
+          return Math.abs(left - right) <= tolerance;
+        if (typeof left === "boolean" || typeof right === "boolean")
+          return left === right;
+        return String(left) === String(right);
+      }
+      function evaluate(node, scope) {
+        switch (node.type) {
+          case "literal":
+            return node.value;
+          case "output":
+            return scope.output;
+          case "count":
+            return scope[node.family].length;
+          case "slot": {
+            const list = node.family === "in" ? scope.ins : node.family === "out" ? scope.outs : scope.lines;
+            const value = list[node.index - 1];
+            if (value === void 0) {
+              throw new FormulaError(`formula.slot-missing-${node.family}`, { index: node.index, have: list.length });
+            }
+            return node.family === "line" ? value : coerceToken(value);
+          }
+          case "unary":
+            return node.op === "not" ? !asBool(evaluate(node.operand, scope)) : -asNumber(evaluate(node.operand, scope), 0);
+          case "binary": {
+            if (node.op === "and")
+              return asBool(evaluate(node.left, scope)) && asBool(evaluate(node.right, scope));
+            if (node.op === "or")
+              return asBool(evaluate(node.left, scope)) || asBool(evaluate(node.right, scope));
+            const left = evaluate(node.left, scope);
+            const right = evaluate(node.right, scope);
+            switch (node.op) {
+              case "xor":
+                return asBool(left) !== asBool(right);
+              case "==":
+                return sameValue(left, right, scope.tolerance);
+              case "!=":
+                return !sameValue(left, right, scope.tolerance);
+              case "<":
+                return asNumber(left, node.at) < asNumber(right, node.at);
+              case "<=":
+                return asNumber(left, node.at) <= asNumber(right, node.at) + scope.tolerance;
+              case ">":
+                return asNumber(left, node.at) > asNumber(right, node.at);
+              case ">=":
+                return asNumber(left, node.at) + scope.tolerance >= asNumber(right, node.at);
+              case "+":
+                return typeof left === "string" || typeof right === "string" ? String(left) + String(right) : asNumber(left, node.at) + asNumber(right, node.at);
+              case "-":
+                return asNumber(left, node.at) - asNumber(right, node.at);
+              case "*":
+                return asNumber(left, node.at) * asNumber(right, node.at);
+              default: {
+                const divisor = asNumber(right, node.at);
+                if (divisor === 0)
+                  throw new FormulaError("formula.division-by-zero", { at: node.at + 1 });
+                return asNumber(left, node.at) / divisor;
+              }
+            }
+          }
+          default: {
+            const args = node.args.map((arg) => evaluate(arg, scope));
+            const num = (index) => asNumber(args[index], node.at);
+            switch (node.name) {
+              case "abs":
+                return Math.abs(num(0));
+              case "round": {
+                if (args.length === 1)
+                  return Math.round(num(0));
+                const factor = Math.pow(10, num(1));
+                return Math.round(num(0) * factor) / factor;
+              }
+              case "floor":
+                return Math.floor(num(0));
+              case "ceil":
+                return Math.ceil(num(0));
+              case "sqrt":
+                return Math.sqrt(num(0));
+              case "pow":
+                return Math.pow(num(0), num(1));
+              case "min":
+                return Math.min(num(0), num(1));
+              case "max":
+                return Math.max(num(0), num(1));
+              case "mod": {
+                if (num(1) === 0)
+                  throw new FormulaError("formula.division-by-zero", { at: node.at + 1 });
+                return num(0) - Math.floor(num(0) / num(1)) * num(1);
+              }
+              case "div": {
+                if (num(1) === 0)
+                  throw new FormulaError("formula.division-by-zero", { at: node.at + 1 });
+                return Math.floor(num(0) / num(1));
+              }
+              case "to_int":
+                return Math.trunc(Number(args[0]));
+              case "to_float":
+                return Number(args[0]);
+              case "to_string":
+                return String(args[0]);
+              case "length":
+                return Array.from(String(args[0])).length;
+              case "contains":
+                return String(args[0]).includes(String(args[1]));
+              case "lower":
+                return String(args[0]).toLowerCase();
+              default:
+                return String(args[0]).toUpperCase();
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // dist/src/embed/checker.js
+  var require_checker = __commonJS({
+    "dist/src/embed/checker.js"(exports2) {
+      "use strict";
+      Object.defineProperty(exports2, "__esModule", { value: true });
+      exports2.answerFromTranscript = answerFromTranscript;
+      exports2.answerTokens = answerTokens;
+      exports2.answerLines = answerLines;
+      exports2.runUnitProgram = runUnitProgram;
+      exports2.inputLines = inputLines;
+      exports2.expandTests = expandTests;
+      exports2.checkCodeRules = checkCodeRules;
+      exports2.compileRules = compileRules;
+      exports2.checkUnit = checkUnit;
+      exports2.judgeManualRun = judgeManualRun;
+      var lexer_1 = require_lexer();
+      var tokens_1 = require_tokens();
+      var formula_1 = require_formula();
+      var unit_model_1 = require_unit_model();
+      function answerFromTranscript(transcript) {
+        let answer = "";
+        let pendingLine = "";
+        for (const item of transcript) {
+          if (item.kind === "in") {
+            pendingLine = "";
+            continue;
+          }
+          pendingLine += item.text;
+          const lastBreak = pendingLine.lastIndexOf("\n");
+          if (lastBreak >= 0) {
+            answer += pendingLine.slice(0, lastBreak + 1);
+            pendingLine = pendingLine.slice(lastBreak + 1);
+          }
+        }
+        return answer + pendingLine;
+      }
+      function answerTokens(answer) {
+        return answer.split(/\s+/u).filter(Boolean);
+      }
+      function answerLines(answer) {
+        const lines = answer.replace(/\r\n?/gu, "\n").split("\n").map((line) => line.replace(/\s+$/u, ""));
+        while (lines.length > 0 && lines[lines.length - 1] === "")
+          lines.pop();
+        return lines;
+      }
+      var InputExhausted = class extends Error {
+      };
+      var InputForbidden = class extends Error {
+      };
+      async function runUnitProgram(runner, source, inputs, config, limits = {}) {
+        const interactive = limits.interactive ?? null;
+        const timeoutMs = limits.timeoutMs ?? (interactive ? 0 : unit_model_1.UNIT_TEST_TIMEOUT_MS);
+        const outputLimit = limits.outputLimit ?? unit_model_1.UNIT_OUTPUT_LIMIT;
+        const transcript = [];
+        const queue = [...inputs];
+        const insRead = [];
+        let rawOutput = "";
+        let aborted = false;
+        let stopReason = null;
+        const listeners = /* @__PURE__ */ new Set();
+        const abort = (reason) => {
+          if (aborted)
+            return;
+          aborted = true;
+          stopReason = reason;
+          for (const listener of [...listeners])
+            listener();
+        };
+        const timer = timeoutMs > 0 ? setTimeout(() => abort("timeout"), timeoutMs) : null;
+        interactive?.onStopReady(() => abort("stopped"));
+        let inputProblem = null;
+        const started = Date.now();
+        let outcome;
+        try {
+          outcome = await runner({
+            source,
+            libs: config.libs,
+            abortSignal: {
+              get aborted() {
+                return aborted;
+              },
+              addEventListener(_type, listener) {
+                listeners.add(listener);
+              },
+              removeEventListener(_type, listener) {
+                listeners.delete(listener);
+              }
+            },
+            console: {
+              write(text) {
+                rawOutput += text;
+                transcript.push({ kind: "out", text });
+                interactive?.write(text);
+                if (rawOutput.length > outputLimit)
+                  abort("output");
+              },
+              readLine() {
+                if (interactive) {
+                  return interactive.readLine().then((value2) => {
+                    insRead.push(value2);
+                    transcript.push({ kind: "in", text: value2 });
+                    return value2;
+                  });
+                }
+                if (config.inputs === "none") {
+                  inputProblem = "forbidden";
+                  return Promise.reject(new InputForbidden("the task has no input"));
+                }
+                if (queue.length === 0) {
+                  inputProblem = "exhausted";
+                  return Promise.reject(new InputExhausted("the test has no more input"));
+                }
+                const value = String(queue.shift());
+                insRead.push(value);
+                transcript.push({ kind: "in", text: value });
+                return Promise.resolve(value);
+              },
+              clear() {
+                interactive?.clear();
+              }
+            }
+          });
+        } finally {
+          if (timer !== null)
+            clearTimeout(timer);
+        }
+        let failure = null;
+        if (outcome.compileErrors !== null) {
+          failure = { code: "run.compile", params: { text: outcome.compileErrors } };
+        } else if (stopReason === "timeout") {
+          failure = { code: "run.timeout", params: { seconds: Math.round(timeoutMs / 1e3) } };
+        } else if (stopReason === "stopped") {
+          failure = { code: "run.stopped", params: {} };
+        } else if (stopReason === "output") {
+          failure = { code: "run.output-limit", params: { limit: outputLimit } };
+        } else if (inputProblem === "forbidden") {
+          failure = { code: "run.input-forbidden", params: {} };
+        } else if (inputProblem === "exhausted") {
+          failure = { code: "run.input-exhausted", params: { given: inputs.length } };
+        } else if (!outcome.success) {
+          const refused = /cannot convert input to '(int|float)' \(expected \w+, got ("(?:[^"\\]|\\.)*")\)/u.exec(outcome.runtimeError ?? "");
+          let got = "";
+          try {
+            got = refused ? String(JSON.parse(refused[2])) : "";
+          } catch (_error) {
+            got = refused ? refused[2] : "";
+          }
+          failure = refused ? { code: `run.input-type-${refused[1]}`, params: { got } } : { code: "run.runtime", params: { text: outcome.runtimeError ?? "" } };
+        }
+        const answer = answerFromTranscript(transcript);
+        return {
+          inputs,
+          insRead,
+          transcript,
+          answer,
+          outs: answerTokens(answer),
+          lines: answerLines(answer),
+          rawOutput,
+          failure,
+          ms: Date.now() - started
+        };
+      }
+      function inputLines(spec) {
+        return typeof spec === "string" ? spec.split(/\s+/u).filter(Boolean) : spec.map((line) => String(line));
+      }
+      function expandTests(tests, inputs, random = Math.random) {
+        if (inputs === "none")
+          return [[]];
+        const result = [];
+        for (const test of tests) {
+          if ("random" in test) {
+            const [low, high] = test.range;
+            for (let round = 0; round < test.times; round += 1) {
+              const values = [];
+              for (let index = 0; index < test.random; index += 1) {
+                values.push(test.kind === "float" ? (low + random() * (high - low)).toFixed(test.digits ?? 1) : String(low + Math.floor(random() * (high - low + 1))));
+              }
+              result.push(values);
+            }
+          } else {
+            result.push(inputLines(test.in));
+          }
+        }
+        return result.length === 0 ? [[]] : result;
+      }
+      function checkCodeRules(source, rules) {
+        if (rules.require.length === 0 && rules.forbid.length === 0 && Object.keys(rules.maxCalls).length === 0)
+          return null;
+        const tokens = new lexer_1.Lexer(source, "main.idyl").tokenize().tokens;
+        const words = new Set(tokens.map((token) => token.lexeme));
+        for (const word of rules.require) {
+          if (!words.has(word))
+            return { code: "code.require", params: { word } };
+        }
+        for (const word of rules.forbid) {
+          if (words.has(word))
+            return { code: "code.forbid", params: { word } };
+        }
+        for (const [name, limit] of Object.entries(rules.maxCalls)) {
+          let calls = 0;
+          tokens.forEach((token, index) => {
+            if (token.kind === tokens_1.TokenKind.Identifier && token.lexeme === name && tokens[index + 1]?.kind === tokens_1.TokenKind.LeftParen)
+              calls += 1;
+          });
+          if (calls > limit)
+            return { code: "code.max-calls", params: { name, limit, got: calls } };
+        }
+        return null;
+      }
+      function compileRules(config) {
+        if (config.check.kind !== "formula")
+          return [];
+        return config.check.rules.map((rule) => ({
+          when: rule.when === "" ? null : (0, formula_1.compileFormula)(rule.when),
+          expr: (0, formula_1.compileFormula)(rule.expr)
+        }));
+      }
+      function formulaReason(error) {
+        if (error instanceof formula_1.FormulaError)
+          return { code: error.code, params: error.params };
+        return { code: "formula.crashed", params: { text: String(error?.message ?? error) } };
+      }
+      function compareToReference(run, reference, tolerance) {
+        if (run.outs.length !== reference.outs.length) {
+          return { code: "check.count", params: { got: run.outs.length, expected: reference.outs.length } };
+        }
+        for (let index = 0; index < reference.outs.length; index += 1) {
+          const got = (0, formula_1.coerceToken)(run.outs[index]);
+          const expected = (0, formula_1.coerceToken)(reference.outs[index]);
+          const same = typeof got === "number" && typeof expected === "number" ? Math.abs(got - expected) <= tolerance : String(got) === String(expected);
+          if (!same)
+            return { code: "check.value", params: { index: index + 1, got: run.outs[index] } };
+        }
+        return null;
+      }
+      function compareToExpected(run, expectedOutput) {
+        const expected = answerLines(expectedOutput);
+        const got = run.lines;
+        for (let index = 0; index < Math.max(expected.length, got.length); index += 1) {
+          if (got[index] !== expected[index]) {
+            if (got[index] === void 0)
+              return { code: "check.line-missing", params: { line: index + 1 } };
+            if (expected[index] === void 0)
+              return { code: "check.line-extra", params: { line: index + 1, got: got[index] } };
+            return { code: "check.line", params: { line: index + 1, got: got[index] } };
+          }
+        }
+        return null;
+      }
+      function judgeRun(run, config, rules, reference) {
+        if (run.failure)
+          return run.failure;
+        if (config.check.kind === "expect")
+          return compareToExpected(run, config.check.output);
+        if (config.check.kind === "reference") {
+          if (!reference || reference.failure)
+            return { code: "check.reference-broken", params: {} };
+          return compareToReference(run, reference, config.check.tolerance);
+        }
+        if (config.check.kind !== "formula")
+          return "unchecked";
+        const scope = { ins: run.insRead, outs: run.outs, lines: run.lines, output: run.answer, tolerance: config.check.tolerance };
+        let applied = 0;
+        for (const rule of rules) {
+          try {
+            if (rule.when !== null && rule.when.evaluate(scope) !== true)
+              continue;
+            applied += 1;
+            if (rule.expr.evaluate(scope) !== true)
+              return { code: "check.rule", params: { rule: rule.expr.source } };
+          } catch (error) {
+            return formulaReason(error);
+          }
+        }
+        return applied === 0 ? "unchecked" : null;
+      }
+      async function checkUnit(config, code, runner, options = {}) {
+        const blocked = (blocker) => ({ verdict: "failed", passed: 0, total: 0, results: [], firstFailure: null, blocker });
+        if (config.check.kind === "none")
+          return blocked({ code: "check.none", params: {} });
+        let rules;
+        try {
+          rules = compileRules(config);
+        } catch (error) {
+          return blocked(formulaReason(error));
+        }
+        const codeProblem = checkCodeRules(code, config.code);
+        if (codeProblem)
+          return blocked(codeProblem);
+        const tests = expandTests(config.tests, config.inputs, options.random);
+        const results = [];
+        for (let index = 0; index < tests.length; index += 1) {
+          const inputs = tests[index];
+          options.onProgress?.(index + 1, tests.length);
+          const run = await runUnitProgram(runner, code, inputs, config, options);
+          if (run.failure?.code === "run.compile")
+            return blocked(run.failure);
+          const reference = config.check.kind === "reference" ? await runUnitProgram(runner, config.solution, inputs, config, options) : null;
+          const verdict = judgeRun(run, config, rules, reference);
+          const expected = config.check.kind === "expect" ? answerLines(config.check.output).join("\n") : reference && !reference.failure ? reference.answer.replace(/\s+$/u, "") : null;
+          if (verdict === "unchecked")
+            continue;
+          results.push({
+            index: index + 1,
+            input: inputs.join(" "),
+            answer: run.answer.replace(/\s+$/u, ""),
+            passed: verdict === null,
+            reason: verdict,
+            expected
+          });
+          if (verdict !== null && verdict.code === "run.timeout")
+            break;
+        }
+        if (results.length === 0)
+          return blocked({ code: "check.nothing-applied", params: {} });
+        const passed = results.filter((item) => item.passed).length;
+        const firstFailure = results.find((item) => !item.passed) ?? null;
+        return { verdict: firstFailure ? "failed" : "solved", passed, total: results.length, results, firstFailure, blocker: null };
+      }
+      async function judgeManualRun(config, run, runner, options = {}) {
+        if (config.check.kind === "none" || run.failure)
+          return "unknown";
+        try {
+          const reference = config.check.kind === "reference" ? await runUnitProgram(runner, config.solution, run.insRead, config, options) : null;
+          const verdict = judgeRun(run, config, compileRules(config), reference);
+          if (verdict === "unchecked")
+            return "unknown";
+          return verdict === null ? "matches" : "differs";
+        } catch {
+          return "unknown";
+        }
+      }
+    }
+  });
+
+  // dist/src/embed/probes.js
+  var require_probes = __commonJS({
+    "dist/src/embed/probes.js"(exports2) {
+      "use strict";
+      Object.defineProperty(exports2, "__esModule", { value: true });
+      exports2.probeInputKinds = probeInputKinds;
+      exports2.testsLackFraction = testsLackFraction;
+      exports2.findSurvivingMutants = findSurvivingMutants;
+      var lexer_1 = require_lexer();
+      var tokens_1 = require_tokens();
+      var checker_1 = require_checker();
+      var MAX_PROBED_INPUTS = 8;
+      var MAX_MUTANTS = 40;
+      var MAX_REPORTED = 3;
+      var MUTANT_TIMEOUT_MS = 1e3;
+      var BUDGET_MS = 5e3;
+      function seededRandom() {
+        let state = 120593;
+        return () => {
+          state = state + 1831565813 | 0;
+          let mixed = Math.imul(state ^ state >>> 15, 1 | state);
+          mixed = mixed + Math.imul(mixed ^ mixed >>> 7, 61 | mixed) ^ mixed;
+          return ((mixed ^ mixed >>> 14) >>> 0) / 4294967296;
+        };
+      }
+      function baseInputs(config) {
+        return (0, checker_1.expandTests)(config.tests, config.inputs, seededRandom())[0] ?? [];
+      }
+      async function probeInputKinds(config, runner, options = {}) {
+        if (config.inputs === "none" || config.solution.trim() === "")
+          return [];
+        const base = baseInputs(config);
+        const limits = { ...options, timeoutMs: MUTANT_TIMEOUT_MS, interactive: void 0 };
+        const plain = await (0, checker_1.runUnitProgram)(runner, config.solution, base, config, limits);
+        const count = Math.min(plain.insRead.length, base.length, MAX_PROBED_INPUTS);
+        const kinds = [];
+        for (let index = 0; index < count; index += 1) {
+          const failureWith = async (value) => {
+            const inputs = base.slice();
+            inputs[index] = value;
+            return (await (0, checker_1.runUnitProgram)(runner, config.solution, inputs, config, limits)).failure?.code ?? "";
+          };
+          if (await failureWith("0.5") === "run.input-type-int")
+            kinds.push("int");
+          else if (await failureWith("абв") === "run.input-type-float")
+            kinds.push("float");
+          else
+            kinds.push("string");
+        }
+        return kinds;
+      }
+      function testsLackFraction(config, index) {
+        let seen = false;
+        for (const test of config.tests) {
+          if ("random" in test) {
+            if (index >= test.random)
+              continue;
+            seen = true;
+            if (test.kind === "float")
+              return false;
+          } else {
+            const value = (0, checker_1.inputLines)(test.in)[index];
+            if (value === void 0)
+              continue;
+            seen = true;
+            if (/\.\d*[1-9]/u.test(value))
+              return false;
+          }
+        }
+        return seen;
+      }
+      var SWAP = { ">=": ">", ">": ">=", "<=": "<", "<": "<=", "==": "!=", "!=": "==" };
+      var TWIN_RIGHT = { ">=": [">", -1], ">": [">=", 1], "<=": ["<", 1], "<": ["<=", -1] };
+      var TWIN_LEFT = { "<=": ["<", -1], "<": ["<=", 1], ">=": [">", 1], ">": [">=", -1] };
+      var COMPARISONS = /* @__PURE__ */ new Set([
+        tokens_1.TokenKind.Greater,
+        tokens_1.TokenKind.GreaterEqual,
+        tokens_1.TokenKind.Less,
+        tokens_1.TokenKind.LessEqual,
+        tokens_1.TokenKind.EqualEqual,
+        tokens_1.TokenKind.BangEqual
+      ]);
+      function buildMutants(source, withTwins) {
+        const tokens = new lexer_1.Lexer(source, "main.idyl").tokenize().tokens;
+        const lineStarts = [0];
+        for (let index = 0; index < source.length; index += 1)
+          if (source[index] === "\n")
+            lineStarts.push(index + 1);
+        const startOf = (token) => lineStarts[token.range.start.line - 1] + token.range.start.column - 1;
+        const endOf = (token) => startOf(token) + token.lexeme.length;
+        const lineText = (text, line) => (text.split("\n")[line - 1] ?? "").trim();
+        const result = [];
+        const push = (line, from, to, pretty, safe, around) => {
+          if (result.length >= MAX_MUTANTS)
+            return;
+          const shown = source.slice(0, from) + pretty + source.slice(to);
+          result.push({ line, was: lineText(source, line), now: lineText(shown, line), source: source.slice(0, from) + safe + source.slice(to), around });
+        };
+        const safeNumber = (value) => value < 0 ? `(${value})` : String(value);
+        tokens.forEach((token, index) => {
+          if (!COMPARISONS.has(token.kind))
+            return;
+          const op = token.lexeme;
+          const line = token.range.start.line;
+          const minus = tokens[index + 1]?.kind === tokens_1.TokenKind.Minus && tokens[index + 2]?.kind === tokens_1.TokenKind.IntLiteral;
+          const rightToken = minus ? tokens[index + 2] : tokens[index + 1];
+          const right = rightToken?.kind === tokens_1.TokenKind.IntLiteral ? (minus ? -1 : 1) * Number(rightToken.lexeme) : null;
+          const leftToken = tokens[index - 1];
+          const left = right === null && leftToken?.kind === tokens_1.TokenKind.IntLiteral ? Number(leftToken.lexeme) : null;
+          const anchor = right ?? left;
+          const near = anchor === null ? [] : [anchor, anchor - 1, anchor + 1, anchor - 0.5, anchor + 0.5];
+          push(line, startOf(token), endOf(token), SWAP[op], SWAP[op], near);
+          if (right !== null && Number.isSafeInteger(right)) {
+            const from = startOf(tokens[index + 1]);
+            const to = endOf(rightToken);
+            for (const delta of [-1, 1])
+              push(line, from, to, String(right + delta), safeNumber(right + delta), near);
+            if (withTwins && TWIN_RIGHT[op]) {
+              const [twinOp, delta] = TWIN_RIGHT[op];
+              push(line, startOf(token), to, `${twinOp} ${right + delta}`, `${twinOp} ${safeNumber(right + delta)}`, near);
+            }
+          } else if (left !== null && Number.isSafeInteger(left)) {
+            for (const delta of [-1, 1])
+              if (left + delta >= 0)
+                push(line, startOf(leftToken), endOf(leftToken), String(left + delta), String(left + delta), near);
+            if (withTwins && TWIN_LEFT[op] && left + TWIN_LEFT[op][1] >= 0) {
+              const [twinOp, delta] = TWIN_LEFT[op];
+              push(line, startOf(leftToken), endOf(token), `${left + delta} ${twinOp}`, `${left + delta} ${twinOp}`, near);
+            }
+          }
+        });
+        return result;
+      }
+      function candidateInputs(base, kinds, around) {
+        const result = [];
+        const seen = /* @__PURE__ */ new Set();
+        const offer = (inputs) => {
+          const key = inputs.join("\0");
+          if (!seen.has(key) && key !== base.join("\0")) {
+            seen.add(key);
+            result.push(inputs);
+          }
+        };
+        const fits = (value, kind) => kind === "float" || kind === "int" && Number.isInteger(value);
+        for (const value of around) {
+          base.forEach((_item, index) => {
+            if (!fits(value, kinds[index]))
+              return;
+            const inputs = base.slice();
+            inputs[index] = String(value);
+            offer(inputs);
+          });
+        }
+        const numeric = base.map((_item, index) => kinds[index] === "int" || kinds[index] === "float");
+        if (numeric.filter(Boolean).length >= 2) {
+          const values = [...around, ...base.filter((_item, index) => numeric[index]).map(Number)].filter((value) => Number.isFinite(value));
+          for (const value of values) {
+            if (base.some((_item, index) => numeric[index] && !fits(value, kinds[index])))
+              continue;
+            offer(base.map((item, index) => numeric[index] ? String(value) : item));
+          }
+        }
+        return result.slice(0, 24);
+      }
+      async function findSurvivingMutants(config, kinds, runner, options = {}) {
+        if (config.inputs === "none" || config.check.kind === "none" || config.solution.trim() === "")
+          return [];
+        const deadline = Date.now() + BUDGET_MS;
+        const limits = { ...options, timeoutMs: MUTANT_TIMEOUT_MS, interactive: void 0, onProgress: void 0 };
+        const verdict = async (unit, code) => (await (0, checker_1.checkUnit)(unit, code, runner, { ...limits, random: seededRandom() })).verdict;
+        const base = baseInputs(config);
+        const found = [];
+        const accepted = [];
+        for (const mutant of buildMutants(config.solution, kinds.includes("float"))) {
+          if (found.length >= MAX_REPORTED || Date.now() > deadline)
+            break;
+          if (await verdict(config, mutant.source) === "failed")
+            continue;
+          if (accepted.length > 0 && await verdict({ ...config, tests: accepted }, mutant.source) === "failed")
+            continue;
+          for (const inputs of candidateInputs(base, kinds, mutant.around)) {
+            if (Date.now() > deadline)
+              break;
+            const single = { ...config, tests: [{ in: inputs }] };
+            if (await verdict(single, mutant.source) === "solved")
+              continue;
+            if (await verdict(single, config.solution) === "failed")
+              continue;
+            accepted.push({ in: inputs });
+            found.push({ line: mutant.line, was: mutant.was, now: mutant.now, input: inputs });
+            break;
+          }
+        }
+        return found;
+      }
+    }
+  });
+
+  // dist/src/embed/self-check.js
+  var require_self_check = __commonJS({
+    "dist/src/embed/self-check.js"(exports2) {
+      "use strict";
+      Object.defineProperty(exports2, "__esModule", { value: true });
+      exports2.selfCheckUnit = selfCheckUnit;
+      var lexer_1 = require_lexer();
+      var checker_1 = require_checker();
+      var formula_1 = require_formula();
+      var probes_1 = require_probes();
+      function usesWord(source, ...words) {
+        const lexemes = new lexer_1.Lexer(source, "main.idyl").tokenize().tokens.map((token) => token.lexeme);
+        return words.every((word) => lexemes.includes(word));
+      }
+      function usesCall(source, moduleName, functionName) {
+        const tokens = new lexer_1.Lexer(source, "main.idyl").tokenize().tokens;
+        return tokens.some((token, index) => token.lexeme === moduleName && tokens[index + 1]?.lexeme === "." && tokens[index + 2]?.lexeme === functionName);
+      }
+      async function selfCheckUnit(config, configProblems, runner, options = {}) {
+        const issues = configProblems.map((problem) => ({
+          severity: problem.severity,
+          code: problem.code,
+          params: problem.params
+        }));
+        const solutionAnswers = [];
+        let inputKinds = [];
+        const add = (severity, code, params = {}, reason = null) => {
+          issues.push({ severity, code, params, reason });
+        };
+        let formulasOk = true;
+        try {
+          (0, checker_1.compileRules)(config);
+        } catch (error) {
+          formulasOk = false;
+          if (error instanceof formula_1.FormulaError)
+            add("error", "self.formula", {}, { code: error.code, params: error.params });
+          else
+            add("error", "self.formula", {}, { code: "formula.crashed", params: { text: String(error) } });
+        }
+        const hasCheck = config.check.kind !== "none";
+        if (!hasCheck)
+          add("warning", "self.no-check");
+        const sources = [["starter", config.starter], ["solution", config.solution]];
+        for (const [which, source] of sources) {
+          if (source.trim() === "")
+            continue;
+          if (usesWord(source, "random") && usesCall(source, "random", "set_seed") === false && /\buse\s+random\s*;/u.test(source)) {
+            add("warning", "self.random-no-seed", { which });
+          }
+          if (usesCall(source, "time", "now"))
+            add("warning", "self.time-now", { which });
+          if (usesCall(source, "time", "sleep"))
+            add("warning", "self.time-sleep", { which });
+        }
+        if (hasCheck && formulasOk) {
+          if (config.solution.trim() === "") {
+            add("warning", "self.no-solution");
+          } else {
+            const report = await (0, checker_1.checkUnit)(config, config.solution, runner, options);
+            if (report.blocker)
+              add("error", "self.solution-blocked", {}, report.blocker);
+            else if (report.firstFailure) {
+              add("error", "self.solution-fails", { input: report.firstFailure.input, answer: report.firstFailure.answer }, report.firstFailure.reason);
+            } else {
+              add("ok", "self.solution-passes", { total: report.total });
+              inputKinds = await (0, probes_1.probeInputKinds)(config, runner, options);
+              inputKinds.forEach((kind, index) => {
+                if (kind === "float" && (0, probes_1.testsLackFraction)(config, index))
+                  add("warning", "self.tests-no-fraction", { index: index + 1 });
+              });
+              for (const mutant of await (0, probes_1.findSurvivingMutants)(config, inputKinds, runner, options)) {
+                issues.push({
+                  severity: "warning",
+                  code: "self.mutant-survives",
+                  reason: null,
+                  suggestTest: mutant.input,
+                  params: { line: mutant.line, was: mutant.was, now: mutant.now, input: mutant.input.join(" ") }
+                });
+              }
+            }
+            const fixedInputs = (0, checker_1.expandTests)(config.tests.filter((test) => "in" in test), config.inputs);
+            for (const inputs of fixedInputs.slice(0, 20)) {
+              const run = await (0, checker_1.runUnitProgram)(runner, config.solution, inputs, config, options);
+              solutionAnswers.push({ input: inputs.join(" "), answer: run.failure ? "—" : run.answer.replace(/\s+$/u, "") });
+            }
+          }
+          if (config.starter.trim() !== "") {
+            const report = await (0, checker_1.checkUnit)(config, config.starter, runner, options);
+            if (report.verdict === "solved")
+              add("warning", "self.starter-passes");
+          }
+        }
+        if (config.starter.trim() !== "") {
+          const run = await (0, checker_1.runUnitProgram)(runner, config.starter, [], { libs: config.libs, inputs: "some" }, { ...options, timeoutMs: Math.min(options.timeoutMs ?? 3e3, 3e3) });
+          if (run.failure?.code === "run.compile")
+            add("warning", "self.starter-broken");
+        }
+        return {
+          issues,
+          hasErrors: issues.some((issue) => issue.severity === "error"),
+          hasWarnings: issues.some((issue) => issue.severity === "warning"),
+          solutionAnswers,
+          inputKinds
+        };
+      }
+    }
+  });
+
+  // dist/src/embed/messages.js
+  var require_messages2 = __commonJS({
+    "dist/src/embed/messages.js"(exports2) {
+      "use strict";
+      Object.defineProperty(exports2, "__esModule", { value: true });
+      exports2.unitText = unitText;
+      exports2.reasonText = reasonText;
+      exports2.unitDictionary = unitDictionary;
+      var TEMPLATES = {
+        // вердикты
+        "verdict.solved": ["Решено верно — проверок пройдено: {passed} из {total}.", "Solved — checks passed: {passed} of {total}."],
+        "verdict.failed": ["Пока не сходится: пройдено {passed} из {total}.", "Not there yet: {passed} of {total} checks passed."],
+        "verdict.failed-input": ["При вводе «{input}» программа ответила: {answer}", 'With input "{input}" the program answered: {answer}'],
+        "verdict.failed-noinput": ["Программа ответила: {answer}", "The program answered: {answer}"],
+        "verdict.empty-answer": ["(ничего)", "(nothing)"],
+        "verdict.expected": ["Ожидалось: {expected}", "Expected: {expected}"],
+        "verdict.soft-matches": ["Этот запуск сходится с условием. Нажмите «Проверить», чтобы проверить решение целиком.", 'This run matches the task. Press "Check" to test the whole solution.'],
+        "verdict.soft-differs": ["В этом запуске ответ не сходится с условием — посмотрите на вывод ещё раз.", "In this run the answer does not match the task — look at the output again."],
+        // причины прогона
+        "run.compile": ["Программа не запустилась — в ней ошибка:\n{text}", "The program did not start — it has an error:\n{text}"],
+        "run.runtime": ["Программа остановилась с ошибкой:\n{text}", "The program stopped with an error:\n{text}"],
+        "run.input-type-int": ["Программа ждала целое число, а во вводе было «{got}». Если это значение бывает дробным, его читают через console.get_float().", 'The program expected an integer but the input was "{got}". If this value can be fractional, read it with console.get_float().'],
+        "run.input-type-float": ["Программа ждала число, а во вводе было «{got}».", 'The program expected a number but the input was "{got}".'],
+        "run.timeout": ["Программа работала дольше {seconds} секунд и была остановлена — нет ли в ней вечного цикла?", "The program ran longer than {seconds} seconds and was stopped — is there an endless loop?"],
+        "run.stopped": ["Программа остановлена.", "The program was stopped."],
+        "run.output-limit": ["Программа вывела слишком много текста и была остановлена.", "The program printed too much text and was stopped."],
+        "run.input-forbidden": ["Программа ждёт ввод, а по условию задачи ввода нет.", "The program waits for input, but this task has none."],
+        "run.input-exhausted": ["Программа просит больше данных, чем даёт условие (в тесте было значений: {given}).", "The program asks for more input than the task gives (values in the test: {given})."],
+        // причины проверки
+        "check.rule": ["Не выполнено условие: {rule}", "The condition does not hold: {rule}"],
+        "check.count": ["В ответе значений: {got}, а должно быть {expected}.", "The answer has {got} values, expected {expected}."],
+        "check.value": ["Значение №{index} в ответе не сходится (получено: {got}).", "Value #{index} of the answer does not match (got: {got})."],
+        "check.line": ["Строка {line} вывода не сходится (получено: {got}).", "Output line {line} does not match (got: {got})."],
+        "check.line-missing": ["В выводе не хватает строки {line}.", "Output line {line} is missing."],
+        "check.line-extra": ["В выводе лишняя строка {line}: {got}", "Extra output line {line}: {got}"],
+        "check.none": ["У этого юнита нет проверки.", "This unit has no check."],
+        "check.nothing-applied": ["Ни одно правило проверки не подошло ни к одному тесту.", "No check rule applied to any test."],
+        "check.reference-broken": ["Эталонное решение автора не отработало — сообщите автору задачи.", "The author's reference solution failed — please tell the task author."],
+        // требования к коду
+        "code.require": ["В решении нужно использовать «{word}».", 'The solution must use "{word}".'],
+        "code.forbid": ["В этой задаче нельзя использовать «{word}».", 'This task does not allow "{word}".'],
+        "code.max-calls": ["Вызовов {name}() в решении: {got}, а разрешено не больше {limit}.", "The solution calls {name}() {got} times; at most {limit} allowed."],
+        // формулы
+        "formula.string-open": ["В формуле не закрыта кавычка (позиция {at}).", "A quote is never closed in the formula (position {at})."],
+        "formula.slot-open": ["В формуле не закрыта фигурная скобка (позиция {at}).", "A curly brace is never closed in the formula (position {at})."],
+        "formula.slot-name": ["Неизвестное значение {got} (позиция {at}) — бывают {in1}, {out1}, {line1}, {ins}, {outs}, {lines}, {output}.", "Unknown value {got} (position {at}) — use {in1}, {out1}, {line1}, {ins}, {outs}, {lines}, {output}."],
+        "formula.use-word": ["В формуле «{got}» (позиция {at}) — в Idyllium это пишется «{use}».", 'The formula has "{got}" (position {at}) — in Idyllium it is written "{use}".'],
+        "formula.unexpected-char": ["Непонятный символ «{got}» в формуле (позиция {at}).", 'Unexpected character "{got}" in the formula (position {at}).'],
+        "formula.unexpected": ["Лишнее «{got}» в формуле (позиция {at}).", 'Unexpected "{got}" in the formula (position {at}).'],
+        "formula.ended": ["Формула оборвана (позиция {at}).", "The formula ends too early (position {at})."],
+        "formula.paren-open": ["В формуле не закрыта скобка (позиция {at}).", "A parenthesis is never closed in the formula (position {at})."],
+        "formula.unknown-word": ["Неизвестное слово «{got}» в формуле (позиция {at}).", 'Unknown word "{got}" in the formula (position {at}).'],
+        "formula.call-paren": ["После {name} нужны скобки с аргументами (позиция {at}).", "{name} needs parentheses with arguments (position {at})."],
+        "formula.arity": ["У {name}() не то число аргументов: {got} (позиция {at}).", "{name}() got a wrong number of arguments: {got} (position {at})."],
+        "formula.not-number": ["Формула ждала число, а получила «{got}».", 'The formula expected a number but got "{got}".'],
+        "formula.not-bool": ["Формула ждала «да/нет», а получила «{got}».", 'The formula expected true/false but got "{got}".'],
+        "formula.division-by-zero": ["В формуле деление на ноль.", "Division by zero in the formula."],
+        "formula.slot-missing-out": ["В ответе нет значения {out{index}}: программа вывела значений — {have}.", "The answer has no {out{index}}: the program printed {have} value(s)."],
+        "formula.slot-missing-line": ["В ответе нет строки {line{index}}: программа вывела строк — {have}.", "The answer has no {line{index}}: the program printed {have} line(s)."],
+        "formula.slot-missing-in": ["Программа не прочитала значение {in{index}}: прочитано значений — {have}.", "The program did not read {in{index}}: it read {have} value(s)."],
+        "formula.crashed": ["Формула не вычислилась: {text}", "The formula could not be evaluated: {text}"],
+        // конфигурация
+        "config.format-newer": ["Файл юнита новее этой версии Idyllium (формат {format}, поддерживается {supported}).", "The unit file is newer than this Idyllium (format {format}, supported {supported})."],
+        "config.lib-unavailable": ["Библиотека «{name}» в юнитах недоступна и пропущена.", 'Library "{name}" is not available in units and was skipped.'],
+        "config.test-range": ["Тест №{index}: диапазон случайных чисел задан неверно.", "Test #{index}: the random range is wrong."],
+        "config.test-shape": ["Тест №{index}: нет ни ввода, ни описания случайных чисел.", "Test #{index}: neither input nor a random description."],
+        "config.formula-empty": ["Выбрана проверка формулами, но ни одной формулы нет.", "Formula check is selected but there are no formulas."],
+        "config.check-kind": ["Неизвестный способ проверки «{kind}».", 'Unknown check kind "{kind}".'],
+        "config.reference-missing": ["Выбрана проверка по эталону, но эталонного решения нет.", "Reference check is selected but there is no reference solution."],
+        "config.tests-missing": ["У задачи с вводом нет ни одного теста.", "The task reads input but has no tests."],
+        "config.tests-ignored": ["Отмечено «ввода нет» — тесты с вводом не будут использованы.", '"No input" is selected — tests with input will not be used.'],
+        "config.hook-name": ["Имя функции «{name}» ({which}) записано неверно: нужны имя или путь через точку, например lms.report.", 'Function name "{name}" ({which}) is malformed: use a name or a dotted path like lms.report.'],
+        "config.unreadable": ["Настройки юнита не читаются: {text}", "The unit settings cannot be read: {text}"],
+        // самопроверка конструктора
+        "self.formula": ["Формула не разбирается.", "A formula cannot be parsed."],
+        "self.no-check": ["Проверка не выбрана — юнит будет песочницей без вердикта.", "No check selected — the unit will be a sandbox without a verdict."],
+        "self.no-solution": ["Решение автора не задано — самопроверка невозможна: опечатку в проверке первым найдёт ученик.", "No author solution — self-check is impossible: a typo in the check will be found by a student first."],
+        "self.solution-passes": ["Решение автора проходит все проверки ({total}).", "The author solution passes all checks ({total})."],
+        "self.solution-fails": ["Решение автора НЕ проходит проверку: при вводе «{input}» ответ «{answer}».", 'The author solution does NOT pass: input "{input}", answer "{answer}".'],
+        "self.solution-blocked": ["Решение автора не дошло до тестов.", "The author solution did not reach the tests."],
+        "self.starter-passes": ["Заготовка уже проходит проверку — задача решена выданным кодом.", "The starter code already passes — the task is solved by the given code."],
+        "self.starter-broken": ["Заготовка не компилируется. Если так задумано («допишите условие») — всё в порядке.", 'The starter code does not compile. Fine if intended ("fill in the condition").'],
+        "self.tests-no-fraction": ["Решение читает дробное число (ввод №{index}), а в тестах на этом месте только целые. Ученик, прочитавший его через get_int или сравнивший с «не той» границей, пройдёт проверку. Добавьте дробные вводы или дробные случайные числа.", "The solution reads a fractional number (input #{index}) but the tests only have integers there. A student reading it with get_int, or comparing with a slightly wrong bound, will pass. Add fractional inputs or fractional random numbers."],
+        "self.mutant-survives": ["Тесты не отличают ваше решение от варианта, где в строке {line} вместо «{was}» стоит «{now}». Их различает ввод «{input}» — добавьте такой тест.", 'The tests cannot tell your solution from a variant where line {line} has "{now}" instead of "{was}". Input "{input}" tells them apart — add such a test.'],
+        "self.random-no-seed": ["В коде ({which}) есть random без random.set_seed(): ответы будут разными при каждом запуске. Задайте сид (и назовите его в условии) либо проверяйте попадание в границы.", "The code ({which}) uses random without random.set_seed(): answers differ on every run. Set a seed (and name it in the task) or check that results fall within bounds."],
+        "self.time-now": ["В коде ({which}) есть time.now(): ответ зависит от часов, точным сравнением его не проверить.", "The code ({which}) uses time.now(): the answer depends on the clock and cannot be checked exactly."],
+        "self.time-sleep": ["В коде ({which}) есть time.sleep(): в юните он спит по-настоящему. Держите сумму пауз в пределах 10 секунд — дольше тест не ждёт.", "The code ({which}) uses time.sleep(): it really sleeps in a unit. Keep the total under 10 seconds — a test waits no longer."]
+      };
+      function unitText(lang, code, params = {}) {
+        const pair = TEMPLATES[code];
+        if (!pair)
+          return code;
+        let text = pair[lang === "en" ? 1 : 0];
+        for (const [name, value] of Object.entries(params))
+          text = text.split(`{${name}}`).join(String(value));
+        return text;
+      }
+      function reasonText(lang, reason) {
+        return reason ? unitText(lang, reason.code, reason.params) : "";
+      }
+      function unitDictionary(lang) {
+        const result = {};
+        for (const [code, pair] of Object.entries(TEMPLATES))
+          result[code] = pair[lang === "en" ? 1 : 0];
+        return result;
+      }
+    }
+  });
+
+  // dist/src/embed/markup.js
+  var require_markup = __commonJS({
+    "dist/src/embed/markup.js"(exports2) {
+      "use strict";
+      Object.defineProperty(exports2, "__esModule", { value: true });
+      exports2.EMBED_SITE = void 0;
+      exports2.estimateUnitHeight = estimateUnitHeight;
+      exports2.renderUnitMarkup = renderUnitMarkup;
+      exports2.renderUnitIframe = renderUnitIframe;
+      var unit_model_1 = require_unit_model();
+      exports2.EMBED_SITE = "https://aumphaadr.github.io/Idyllium/";
+      function attribute(value) {
+        return value.replace(/&/gu, "&amp;").replace(/"/gu, "&quot;").replace(/</gu, "&lt;");
+      }
+      function scriptBody(text) {
+        return text.replace(/<\/(script)/giu, "<\\/$1");
+      }
+      function estimateUnitHeight(config) {
+        const line = Math.round(config.editor.fontSize * 1.4);
+        const statement = config.statement.trim() === "" ? 0 : 28 + Math.ceil(config.statement.length / 70) * 22;
+        return statement + config.editor.rows * line + config.editor.consoleRows * line + 150;
+      }
+      function renderUnitMarkup(config, site = exports2.EMBED_SITE) {
+        const shared = (0, unit_model_1.publicUnitConfig)(config);
+        const { starter, solution, hooks, ...rest } = shared;
+        const lines = [
+          `<script src="${site}embed/idyllium-unit.js" async><\/script>`,
+          ""
+        ];
+        const hookAttributes = [
+          hooks.solved ? ` on-solved="${attribute(hooks.solved)}"` : "",
+          hooks.failed ? ` on-failed="${attribute(hooks.failed)}"` : "",
+          hooks.check ? ` on-check="${attribute(hooks.check)}"` : ""
+        ].join("");
+        lines.push(`<idyllium-unit id="${attribute(config.id)}"${hookAttributes}>`);
+        lines.push('<script type="text/idyllium">');
+        lines.push(scriptBody(starter.replace(/\n$/u, "")));
+        lines.push("<\/script>");
+        if (solution.trim() !== "") {
+          lines.push('<script type="text/idyllium" data-role="solution">');
+          lines.push(scriptBody(solution.replace(/\n$/u, "")));
+          lines.push("<\/script>");
+        }
+        lines.push('<script type="application/json">');
+        lines.push(scriptBody(JSON.stringify(rest, null, 2)));
+        lines.push("<\/script>");
+        lines.push("</idyllium-unit>");
+        return `${lines.join("\n")}
+`;
+      }
+      function renderUnitIframe(config, site = exports2.EMBED_SITE) {
+        const height = estimateUnitHeight(config);
+        const title = attribute(config.title || "Idyllium");
+        return `<iframe src="${site}embed/frame.html#unit=${(0, unit_model_1.encodeUnitForHash)(config)}" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" title="${title}" loading="lazy" style="width: 100%; max-width: 900px; height: ${height}px; border: 0; color-scheme: normal;"></iframe>
+`;
+      }
+    }
+  });
+
+  // dist/src/embed/index.js
+  var require_embed = __commonJS({
+    "dist/src/embed/index.js"(exports2) {
+      "use strict";
+      var __createBinding2 = exports2 && exports2.__createBinding || (Object.create ? (function(o, m, k, k2) {
+        if (k2 === void 0) k2 = k;
+        var desc = Object.getOwnPropertyDescriptor(m, k);
+        if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+          desc = { enumerable: true, get: function() {
+            return m[k];
+          } };
+        }
+        Object.defineProperty(o, k2, desc);
+      }) : (function(o, m, k, k2) {
+        if (k2 === void 0) k2 = k;
+        o[k2] = m[k];
+      }));
+      var __exportStar2 = exports2 && exports2.__exportStar || function(m, exports3) {
+        for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports3, p)) __createBinding2(exports3, m, p);
+      };
+      Object.defineProperty(exports2, "__esModule", { value: true });
+      __exportStar2(require_unit_model(), exports2);
+      __exportStar2(require_formula(), exports2);
+      __exportStar2(require_checker(), exports2);
+      __exportStar2(require_self_check(), exports2);
+      __exportStar2(require_probes(), exports2);
+      __exportStar2(require_messages2(), exports2);
+      __exportStar2(require_markup(), exports2);
     }
   });
 
@@ -50601,10 +53025,48 @@ ${outerPadding}${close}`;
   // dist/src/browser.js
   var require_browser2 = __commonJS({
     "dist/src/browser.js"(exports2) {
+      var __createBinding2 = exports2 && exports2.__createBinding || (Object.create ? (function(o, m, k, k2) {
+        if (k2 === void 0) k2 = k;
+        var desc = Object.getOwnPropertyDescriptor(m, k);
+        if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+          desc = { enumerable: true, get: function() {
+            return m[k];
+          } };
+        }
+        Object.defineProperty(o, k2, desc);
+      }) : (function(o, m, k, k2) {
+        if (k2 === void 0) k2 = k;
+        o[k2] = m[k];
+      }));
+      var __setModuleDefault2 = exports2 && exports2.__setModuleDefault || (Object.create ? (function(o, v) {
+        Object.defineProperty(o, "default", { enumerable: true, value: v });
+      }) : function(o, v) {
+        o["default"] = v;
+      });
+      var __importStar2 = exports2 && exports2.__importStar || /* @__PURE__ */ (function() {
+        var ownKeys2 = function(o) {
+          ownKeys2 = Object.getOwnPropertyNames || function(o2) {
+            var ar = [];
+            for (var k in o2) if (Object.prototype.hasOwnProperty.call(o2, k)) ar[ar.length] = k;
+            return ar;
+          };
+          return ownKeys2(o);
+        };
+        return function(mod) {
+          if (mod && mod.__esModule) return mod;
+          var result = {};
+          if (mod != null) {
+            for (var k = ownKeys2(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding2(result, mod, k[i]);
+          }
+          __setModuleDefault2(result, mod);
+          return result;
+        };
+      })();
       Object.defineProperty(exports2, "__esModule", { value: true });
-      exports2.runActionWithSnapshotPump = exports2.guiPreviewIntervalMs = exports2.IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS = exports2.IDYLLIUM_SEMANTIC_TOKEN_TYPES = exports2.IdylliumProject = exports2.formatIdyllium = exports2.compileIdyllium = void 0;
+      exports2.runActionWithSnapshotPump = exports2.guiPreviewIntervalMs = exports2.IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS = exports2.IDYLLIUM_SEMANTIC_TOKEN_TYPES = exports2.IdylliumProject = exports2.formatIdyllium = exports2.createDefaultStandardLibrary = exports2.compileIdyllium = exports2.embed = void 0;
       exports2.runIdylliumInBrowser = runIdylliumInBrowser;
       exports2.prepareIdylliumBrowserProgram = prepareIdylliumBrowserProgram;
+      exports2.createUnitRunner = createUnitRunner;
       exports2.inspectSqliteDatabaseInBrowser = inspectSqliteDatabaseInBrowser;
       exports2.previewSqliteObjectInBrowser = previewSqliteObjectInBrowser;
       var run_1 = require_run();
@@ -50612,6 +53074,11 @@ ${outerPadding}${close}`;
         return run_1.compileIdyllium;
       } });
       var diagnostics_1 = require_diagnostics();
+      var registry_1 = require_registry();
+      Object.defineProperty(exports2, "createDefaultStandardLibrary", { enumerable: true, get: function() {
+        return registry_1.createDefaultStandardLibrary;
+      } });
+      var embedApi = __importStar2(require_embed());
       var formatter_1 = require_formatter();
       Object.defineProperty(exports2, "formatIdyllium", { enumerable: true, get: function() {
         return formatter_1.formatIdyllium;
@@ -50694,8 +53161,12 @@ ${outerPadding}${close}`;
         const fileSystem = (0, runtime_1.createMemoryRuntimeFileSystem)(files);
         const fileSystemSnapshot = () => fileSystem.snapshot?.() ?? files;
         const writtenFilesSnapshot = () => fileSystem.writtenFilesSnapshot?.() ?? {};
+        const fullStdlib = (0, registry_1.createDefaultStandardLibrary)();
+        const allowedModules = options.allowedModules;
         const compilation = (0, run_1.compileIdyllium)(source, {
           file: entryFile,
+          stdlib: allowedModules ? fullStdlib.restrictedTo(allowedModules) : fullStdlib,
+          refuseModule: allowedModules ? (moduleName) => fullStdlib.hasModule(moduleName) && !allowedModules.includes(moduleName) ? `library '${moduleName}' is not available in this unit — units run console programs only (available: ${[...allowedModules].sort().join(", ")})` : null : void 0,
           sources: browserSources(files),
           resolveModule(moduleName, fromFile) {
             const candidate = resolveBrowserModule(moduleName, fromFile, files);
@@ -50727,6 +53198,23 @@ ${outerPadding}${close}`;
           }
         };
       }
+      function createUnitRunner() {
+        return async (request) => {
+          const result = await runIdylliumInBrowser({
+            entryFile: "main.idyl",
+            files: { "main.idyl": request.source },
+            console: request.console,
+            abortSignal: request.abortSignal,
+            allowedModules: request.libs
+          });
+          return {
+            success: result.success,
+            compileErrors: result.compilation.success ? null : result.compilation.diagnosticsText,
+            runtimeError: result.runtimeError
+          };
+        };
+      }
+      exports2.embed = embedApi;
       function inspectSqliteDatabaseInBrowser(bytes) {
         return (0, sqlite_inspector_1.inspectSqliteDatabase)(browserSqliteService, bytes);
       }

@@ -2,6 +2,8 @@ const fs: any = require('fs');
 const path: any = require('path');
 
 import { buildReferenceSite } from './docs-build-reference';
+import { KEYWORDS } from '../src/core/tokens';
+import { createDefaultStandardLibrary } from '../src/core/stdlib/registry';
 
 interface OldLessonsJson {
   readonly sections: readonly OldSection[];
@@ -72,6 +74,8 @@ const MANAGED_PATHS = [
   'vendor',
   'gui-renderer',
   'gui-preview.html',
+  'embed',
+  'authors',
   'book',
   'tasks',
   'projects',
@@ -941,14 +945,14 @@ function main(): void {
   // «Задачник» строится по той же карте, что и учебник: одинаковые разделы,
   // одинаковые перечни тем. Заодно проставляет hasTasks в манифест учебника —
   // по нему урок решает, вести ли кнопке «Открыть задачи» на живую страницу.
-  buildTasksSite(path.join(siteRoot, 'tasks'), manifest);
-  buildProjectsSite(path.join(siteRoot, 'projects'));
+  const practicumCount = buildTasksSite(path.join(siteRoot, 'tasks'), manifest);
+  const projectCount = buildProjectsSite(path.join(siteRoot, 'projects'));
 
   fs.writeFileSync(path.join(bookRoot, 'lessons.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
 
-  buildHandoutsPage(path.join(siteRoot, 'handouts'));
+  const handoutCount = buildHandoutsPage(path.join(siteRoot, 'handouts'));
 
-  buildAboutPage(path.join(siteRoot, 'about'));
+  buildAboutPage(path.join(siteRoot, 'about'), { manifest, practicumCount, projectCount, handoutCount });
 
   const bookShell = fs.readFileSync(path.resolve(process.cwd(), 'packages', 'docs-book', 'index.html'), 'utf8');
   const bookPages = bakeCleanUrlPages(bookShell, bookRoot, manifest, 'Учебник Idyllium');
@@ -975,7 +979,7 @@ const TASKS_SOURCE_ROOT = 'packages/docs/manual-content/tasks';
  * Содержимое берётся из packages/docs/manual-content/tasks/<раздел>/<урок>.html —
  * обычных HTML-фрагментов, которые правятся руками так же, как уроки.
  */
-function buildTasksSite(tasksRoot: string, manifest: SiteManifest): void {
+function buildTasksSite(tasksRoot: string, manifest: SiteManifest): number {
   fs.mkdirSync(tasksRoot, { recursive: true });
 
   const sections: SiteSection[] = [];
@@ -1028,6 +1032,7 @@ function buildTasksSite(tasksRoot: string, manifest: SiteManifest): void {
 
   const total = sections.reduce((sum, section) => sum + section.lessons.length, 0);
   console.log(`tasks generated: ${ready} practicums out of ${total} topics`);
+  return ready;
 }
 
 /**
@@ -1090,7 +1095,7 @@ function bakeCleanUrlPages(
  * Поиск и переключение вкладок — на инлайновом скрипте: страница обязана
  * работать сама по себе, без сборщиков и внешних зависимостей.
  */
-function buildHandoutsPage(outputRoot: string): void {
+function buildHandoutsPage(outputRoot: string): number {
   const sourceRoot = path.resolve(process.cwd(), 'packages', 'docs', 'handouts');
   const manifest = JSON.parse(fs.readFileSync(path.join(sourceRoot, 'handouts.json'), 'utf8')) as {
     readonly categories: readonly {
@@ -1430,6 +1435,7 @@ ${panels.join('\n')}
 `;
   fs.writeFileSync(path.join(outputRoot, 'index.html'), page, 'utf8');
   console.log(`handouts generated: ${total} files in ${manifest.categories.length} tabs`);
+  return total;
 }
 
 // ─── Подсветка Idyllium-кода для запекаемых страниц ────────────────────────
@@ -1439,7 +1445,7 @@ ${panels.join('\n')}
 // подсветки обновлять ОБА места.
 const HL_KEYWORDS = new Set([
   'use', 'if', 'else', 'while', 'do', 'for', 'break', 'continue', 'return', 'try', 'catch', 'finally', 'const',
-  'function', 'class', 'extends', 'this', 'constructor', 'event',
+  'function', 'class', 'extends', 'this', 'constructor', 'event', 'contract',
   'public', 'private', 'static', 'parent', 'and', 'or', 'xor',
   'not', 'true', 'false', 'null',
 ]);
@@ -1665,8 +1671,112 @@ const ABOUT_PAGES: ReadonlyArray<{ file: string; out: string; title: string }> =
   { file: 'wiki-idyllium.html', out: 'index.html', title: 'Idyllium — О проекте' },
 ];
 
-function buildAboutPage(outputRoot: string): void {
+interface AboutBuildFacts {
+  readonly manifest: SiteManifest;
+  readonly practicumCount: number;
+  readonly projectCount: number;
+  readonly handoutCount: number;
+}
+
+/** «1 модуль, 2 модуля, 5 модулей» — формы: [один, два-четыре, много]. */
+function russianPlural(count: number, forms: readonly [string, string, string]): string {
+  const lastTwo = count % 100;
+  const last = count % 10;
+  if (lastTwo >= 11 && lastTwo <= 14) return forms[2];
+  if (last === 1) return forms[0];
+  if (last >= 2 && last <= 4) return forms[1];
+  return forms[2];
+}
+
+// Ключевые слова — рядами по смыслу, как в статье; слово, которого нет ни в
+// одном ряду (новое в языке), не теряется — уезжает в последний ряд.
+const ABOUT_KEYWORD_ROWS: ReadonlyArray<readonly string[]> = [
+  ['use', 'main', 'function', 'int', 'float', 'string', 'char', 'bool', 'void'],
+  ['if', 'else', 'try', 'catch', 'finally', 'while', 'do', 'for', 'break', 'continue', 'return'],
+  ['const', 'and', 'xor', 'or', 'not', 'true', 'false', 'null', 'div', 'mod'],
+  ['array', 'dyn_array', 'map', 'class', 'constructor', 'this', 'static', 'extends', 'event', 'contract'],
+  ['private', 'public'],
+];
+
+/**
+ * Факты статьи «О проекте», которые устаревают сами собой (версия, счётчики),
+ * подставляются сборкой по меткам {{about:имя}} — вердикт владельца 2026-09-18.
+ * Текст статьи остаётся рукописным; неизвестная метка роняет сборку, а не
+ * уезжает на сайт фигурными скобками.
+ */
+function aboutFacts(facts: AboutBuildFacts): ReadonlyMap<string, string> {
+  const root = process.cwd();
+  const version = String((JSON.parse(fs.readFileSync(path.resolve(root, 'package.json'), 'utf8')) as { version?: string }).version ?? '');
+  // Дата версии — из заголовка CHANGELOG («## 1.6.0 — 17 сентября 2026»): его заполняют при релизе.
+  const changelog: string = fs.readFileSync(path.resolve(root, 'CHANGELOG.md'), 'utf8');
+  const heading = new RegExp(`^## ${version.replace(/\./gu, '\\.')} — (.+)$`, 'mu').exec(changelog);
+  if (!heading) throw new Error(`about: CHANGELOG.md has no heading for version ${version}`);
+
+  const keywords = Object.keys(KEYWORDS);
+  const placed = new Set(ABOUT_KEYWORD_ROWS.flat());
+  const rows = ABOUT_KEYWORD_ROWS.map((row) => row.filter((word) => keywords.includes(word)));
+  const leftovers = keywords.filter((word) => !placed.has(word));
+  if (leftovers.length > 0) rows[rows.length - 1] = [...rows[rows.length - 1], ...leftovers];
+
+  const stdlib = createDefaultStandardLibrary();
+  const modules = stdlib.listModuleSpecs().map((moduleSpec) => moduleSpec.name).sort();
+  const globals = stdlib.listGlobalFunctions().map((fn) => fn.name).sort();
+  let typeCount = 0;
+  let positionCount = globals.length;
+  for (const moduleSpec of stdlib.listModuleSpecs()) {
+    positionCount += moduleSpec.functions.size + moduleSpec.constants.size;
+    for (const type of moduleSpec.types.values()) {
+      typeCount += 1;
+      positionCount += 1 + type.properties.size + type.methods.size;
+    }
+  }
+
+  // Тексты сообщений: места, где компилятор и среда выполнения говорят с человеком.
+  const countIn = (directory: string, pattern: RegExp): number => {
+    let total = 0;
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      const full = path.join(directory, entry.name);
+      if (entry.isDirectory()) total += countIn(full, pattern);
+      else if (entry.name.endsWith('.ts')) total += (String(fs.readFileSync(full, 'utf8')).match(pattern) ?? []).length;
+    }
+    return total;
+  };
+  const messageCount = countIn(path.resolve(root, 'src', 'core'), /diagnostics\.(?:error|warning)\(|this\.error\(/gu)
+    + countIn(path.resolve(root, 'src', 'language'), /diagnostics\.(?:error|warning)\(|this\.error\(/gu)
+    + countIn(path.resolve(root, 'src', 'runtime'), /new IdylliumRuntimeError\(/gu);
+
+  const sections = facts.manifest.sections;
+  const lessonCount = sections.reduce((sum, section) => sum + section.lessons.length, 0);
+  const lessonRows = sections.map((section) => (
+    `    <tr><td>${escapeHtml(section.title)}</td><td>${section.lessons.length}</td><td>${section.lessons.filter((lesson) => lesson.hasTasks).length}</td></tr>`
+  )).join('\n');
+  const codeList = (names: readonly string[], separator: string): string => names.map((name) => `<code>${escapeHtml(name)}</code>`).join(separator);
+
+  return new Map<string, string>([
+    ['version', version],
+    ['version-date', heading[1].trim()],
+    ['keyword-count', `${keywords.length} ${russianPlural(keywords.length, ['ключевое слово', 'ключевых слова', 'ключевых слов'])}`],
+    ['keyword-rows', rows.map((row) => row.join('  ')).join('\n')],
+    ['module-count', `${modules.length} ${russianPlural(modules.length, ['модуль', 'модуля', 'модулей'])}`],
+    ['module-list', codeList(modules, ' · ')],
+    ['global-count', `${globals.length} ${russianPlural(globals.length, ['глобальная функция', 'глобальные функции', 'глобальных функций'])}`],
+    ['global-list', codeList(globals, ', ')],
+    ['type-count', `${typeCount} ${russianPlural(typeCount, ['тип', 'типа', 'типов'])}`],
+    ['position-count', `${positionCount} ${russianPlural(positionCount, ['описанная позиция', 'описанные позиции', 'описанных позиций'])}`],
+    ['message-count', String(Math.round(messageCount / 50) * 50)],
+    ['lesson-count', `${lessonCount} ${russianPlural(lessonCount, ['урок', 'урока', 'уроков'])}`],
+    ['section-count', `${sections.length} ${russianPlural(sections.length, ['разделе', 'разделах', 'разделах'])}`],
+    ['practicum-count', String(facts.practicumCount)],
+    ['lesson-rows', lessonRows],
+    ['lesson-total', String(lessonCount)],
+    ['project-count', String(facts.projectCount)],
+    ['handout-count', String(facts.handoutCount)],
+  ]);
+}
+
+function buildAboutPage(outputRoot: string, buildFacts: AboutBuildFacts): void {
   const sourceRoot = path.resolve(process.cwd(), ABOUT_SOURCE_ROOT);
+  const factValues = aboutFacts(buildFacts);
   fs.mkdirSync(outputRoot, { recursive: true });
 
   // Версия подставляется сборкой, как в справочнике: version.js сюда не
@@ -1677,7 +1787,14 @@ function buildAboutPage(outputRoot: string): void {
   );
 
   for (const page of ABOUT_PAGES) {
-    const rawFragment = fs.readFileSync(path.join(sourceRoot, page.file), 'utf8');
+    const rawFragment = String(fs.readFileSync(path.join(sourceRoot, page.file), 'utf8')).replace(
+      /\{\{about:([a-z-]+)\}\}/gu,
+      (_match: string, name: string) => {
+        const value = factValues.get(name);
+        if (value === undefined) throw new Error(`about: unknown fact {{about:${name}}} in ${page.file}`);
+        return value;
+      },
+    );
     // Подсветка запекается на сборке тем же лексером, что подсвечивает уроки
     // на клиенте: app.js статье не подключён, а серые примеры на витрине
     // проекта выглядели бы бедно.
@@ -1886,7 +2003,7 @@ function projectsShell(): string {
     .replace('placeholder="Найти тему"', 'placeholder="Найти проект"');
 }
 
-function buildProjectsSite(projectsRoot: string): void {
+function buildProjectsSite(projectsRoot: string): number {
   fs.mkdirSync(projectsRoot, { recursive: true });
 
   const sections: SiteSection[] = [];
@@ -1942,6 +2059,7 @@ function buildProjectsSite(projectsRoot: string): void {
   fs.writeFileSync(path.join(projectsRoot, 'index.html'), projectsShell(), 'utf8');
   const pages = bakeCleanUrlPages(projectsShell(), projectsRoot, projectsManifest, 'Проекты Idyllium');
   console.log(`projects generated: ${ready} pages (+${pages} clean URLs)`);
+  return ready;
 }
 
 function tasksShell(): string {
@@ -1978,6 +2096,7 @@ function tasksShell(): string {
       <a class="topbar-link" href="../book/">Учебник</a>
       <a class="topbar-link" href="../projects/">Проекты</a>
       <a class="topbar-link" href="../reference/">Документация</a>
+      <a class="topbar-link" href="../authors/" title="Встраиваемые юниты для вашего сайта">Авторам</a>
       <a class="topbar-link" href="../handouts/">Файлы для заданий</a>
       <button class="topbar-link" id="theme-toggle" type="button" title="Светлая тема" aria-label="Светлая тема"><svg class="icon-sun" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor" stroke="none"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5 5l1.9 1.9M17.1 17.1L19 19M19 5l-1.9 1.9M6.9 17.1L5 19"/></svg><svg class="icon-moon" viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M20.6 14.8A8.7 8.7 0 0 1 9.2 3.4a8.7 8.7 0 1 0 11.4 11.4z"/></svg></button>
     </nav>

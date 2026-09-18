@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: Idyllium 1.5.7.
+Current language target: Idyllium 1.6.0.
 
 This reference describes implemented behavior. Ideas from planning documents
 and exploratory specs are not language features until they are implemented and
@@ -269,7 +269,8 @@ One member name is the exception: `then` is refused for methods and events
 (`the name 'then' is reserved by the language — pick another name for method
 'then'` — a `then` method would make the object a thenable and break calls
 under the hood). A plain value field named `then` or `undefined` remains
-legal. `map` is a keyword (like `array` and `dyn_array`), and `set` is
+legal. `contract` is a keyword since 1.6.0 (it marks contract methods, §15).
+`map` is a keyword (like `array` and `dyn_array`), and `set` is
 reserved for bindings (`'set' is reserved for the set type — pick another
 name`) while staying a legal member name — `json.Object.set(...)` and your own
 `set` methods keep working.
@@ -310,7 +311,7 @@ only:
 
 ```idyllium
 class Robot {
-    string function to_string() { ... }   // legal: called as r.to_string()
+    contract string function to_string() { ... }   // legal: called as r.to_string()
 }
 ```
 
@@ -440,10 +441,12 @@ value; INTEGER and REAL compare numerically; unlike SQL itself, two SQL NULLs
 are equal — `x == null` is the taught idiom).
 
 **Objects of user classes have no built-in equality.** `a == b` on objects is
-a compile error unless the class declares the equals contract:
+a compile error unless the class declares the equals contract (a method marked
+with the `contract` keyword — all contracts and their shared rules are in §15,
+«Contracts»):
 
 ```idyllium
-bool function equals(Hero other) {
+contract bool function equals(Hero other) {
     return this.name == other.name and this.level == other.level;
 }
 ```
@@ -451,7 +454,7 @@ bool function equals(Hero other) {
 With the contract, `a == b` and `a != b` dispatch to it; so do `contains`,
 `find`, `count` on arrays of that class, and `==` on such arrays (structural,
 per cell). Without it: `cannot compare objects of class 'Hero' with '==' —
-declare 'bool function equals(Hero other)' in class 'Hero' and the comparison
+declare 'contract bool function equals(Hero other)' in class 'Hero' and the comparison
 will use it` (searches say `contains() cannot search for 'Hero' objects — …`).
 
 Contract rules:
@@ -475,7 +478,7 @@ unless the class declares the matching ordering contract — same shape as
 NOT inherited, keep it pure):
 
 ```idyllium
-bool function less(Hero other) {
+contract bool function less(Hero other) {
     return this.level < other.level;
 }
 ```
@@ -484,7 +487,7 @@ With `less` declared, `a < b` dispatches to it and `a >= b` is its negation
 (`not a.less(b)`); `sort()` on arrays of that class also unlocks and sorts by
 `less` (stable: elements the contract cannot tell apart keep their original
 order). Without it: `cannot order objects of class 'Hero' with '<' — declare
-'bool function less(Hero other)' in class 'Hero' and '<' will use it`
+'contract bool function less(Hero other)' in class 'Hero' and '<' will use it`
 (`sort()` says `sort() cannot order 'Hero' objects — …`). The `greater`
 contract works the same way and serves the other sign pair: `a > b` dispatches
 to `greater`, `a <= b` is its negation. The contracts are independent — `less`
@@ -709,7 +712,7 @@ Everything else is refused at compile time instead of being sorted by its
 printed text: `sort() cannot order arrays of arrays — sort each inner array on
 its own`, `sort() cannot order 'colors.Color' values — they have no order`
 (same for `map`/`set` elements), `sort() cannot order 'Hero' objects — declare
-'bool function less(Hero other)' …`. `contains`/`find`/`count` on arrays of
+'contract bool function less(Hero other)' …`. `contains`/`find`/`count` on arrays of
 objects need the `equals` contract (§7); on arrays of arrays, maps or sets they
 compare the nested collections by content.
 
@@ -1178,15 +1181,150 @@ construction would recurse forever. `dyn_array<Person>` fields are legal
 (their default is an empty list) — use them for trees and lists. A trailing semicolon after the
 class body (`};`) is accepted and ignored, so C++ habits do not break code.
 
+### Contracts: Methods Called By A Sign (`contract`)
+
+A **contract** is a class method that the language calls itself: a sign or
+printing uses it, not only its name. Since 1.6.0 every contract is marked with
+the keyword `contract` — the same idea as `event`: a member you declare, while
+the language decides when it runs. The marking is MANDATORY.
+
+| contract | shape | used by |
+|---|---|---|
+| `to_string` | `contract string function to_string()` | printing, `to_string(obj)`, arrays and maps of such objects |
+| `equals` | `contract bool function equals(Hero other)` | `==`, `!=`, `contains`/`find`/`count`, `==` on arrays and maps of such objects |
+| `less` | `contract bool function less(Hero other)` | `<`, `>=`, `sort()` |
+| `greater` | `contract bool function greater(Hero other)` | `>`, `<=` |
+| `plus` | `contract R function plus(T other)` | `+`, `+=` |
+| `minus` | `contract R function minus(T other)` | binary `-`, `-=` |
+| `multiply` | `contract R function multiply(T other)` | `*`, `*=` |
+| `divide` | `contract R function divide(T other)` | `/`, `/=` |
+| `opposite` | `contract R function opposite()` | unary `-` |
+
+The name of a sign contract is the word the sign is read aloud with, without the
+auxiliary preposition: `less` (not `less_than`), `multiply` (not
+`multiplied_by`), `opposite` for «the opposite of a».
+
+Rules shared by all contracts:
+
+- Public, non-static, declared IN the class itself. Contracts are NOT
+  inherited: an heir declares its own next to the base's — the only case where
+  an "override" may change the signature. Dispatch is STATIC: the declared type
+  of the left operand (the printed value, the receiver) picks the contract.
+- Contract names are reserved in classes. A method named `equals`, `plus`, … 
+  without the keyword is a compile error: `'equals' is a contract name — write
+  'contract bool function equals(Hero other)' and '==' and '!=' will use it, or
+  pick another name`. File-level functions are not affected.
+- The shape is checked AT THE DECLARATION, once — the places where the sign is
+  used stay silent about the same problem:
+  `contract 'less' has a wrong shape: its parameter is 'A' instead of 'B', it
+  returns 'int' instead of 'bool' — write 'contract bool function less(B
+  other)'`; `contract 'greater' cannot be private — '>' and '<=' are written
+  outside the class; move it to the public part`; `a contract cannot be static —
+  it works on an object ('a == b', 'a + b')`; `'contract' marks a method — a
+  field cannot be a contract`; `'contract' marks a method of a class — a
+  function outside a class cannot be a contract`.
+- The keyword on a foreign name: a habit from another language is answered
+  with the right word — `'add' is not a contract — the contract for '+' is
+  called 'plus'` (likewise `sub` → `minus`, `times`/`mul`/`product` →
+  `multiply`, `divided_by` → `divide`, `negate` → `opposite`, `str` →
+  `to_string`, `eq` → `equals`, `lt` → `less`, `gt` → `greater`); any other name
+  gets the full list: `'show' is not a contract — contracts are: to_string,
+  equals, less, greater, plus, minus, multiply, divide, opposite`.
+- A contract may still be called by name: `a.less(b)`, `a.plus(b)`.
+- Contracts answer, they do not mutate (see the warning below).
+
+**Arithmetic contracts** (`plus`, `minus`, `multiply`, `divide`, `opposite`):
+
+- One signature per sign per class (Idyllium has no overloading). The
+  parameter type and the result type are FREE: `contract Vec function
+  multiply(float k)` gives `v * 2.5` (and `v * 2` — the usual int→float
+  promotion of an argument); a dot product may return `float`. The type of
+  `a * b` is the result type of `multiply`. The shape only demands exactly one
+  parameter (none for `opposite`) and a non-void result.
+- The contract belongs to the LEFT operand, and no silent swap is made — for
+  `-` and `/` a swap changes the meaning. `2 * v` → `operator '*' cannot be
+  applied to 'int' and 'Vec' — a contract works for the LEFT operand, and 'int'
+  has none ('Vec' declares 'multiply', but it stands on the right)`. Write
+  `v * 2`.
+- A wrong right operand: `operator '*' cannot be applied to 'Vec' and 'Vec' —
+  'Vec.multiply' accepts a 'float', got 'Vec'`. No contract at all: `operator
+  '+' cannot be applied to 'Money' and 'Money' — declare 'contract Money
+  function plus(Money other)' in class 'Money' and '+' will use it`; unary:
+  `unary '-' cannot be applied to 'Money' — declare 'contract Money function
+  opposite()' in class 'Money' and unary '-' will use it`. With a habitual name
+  in the class: `… — class 'Vec' has 'add', but the contract for '+' is called
+  'plus': write 'contract Vec function plus(Vec other)'`. For an heir: `… —
+  'Vec.multiply' is a contract, and contracts are not inherited: declare
+  'contract Vec3 function multiply(float k)' in class 'Vec3'`.
+- Compound assignment comes for free: `a += b` IS `a = a + b` through the same
+  contract (the result must be assignable to `a`). It REBINDS the name to the
+  new object; an alias taken before (`Vec c = a;`) keeps the old one — exactly
+  as with numbers.
+- Precedence and associativity never change: `a + b * 2 - -a` is
+  `a.plus(b.multiply(2)).minus(a.opposite())`.
+- `"text" + obj` stays a compile error (a string is glued only with strings) —
+  use `to_string(obj)`.
+- Objects are references, so a contract that writes to `this` (or to its
+  parameter) would silently change `a` in `c = a - b`. The compiler warns:
+  `contract 'minus' changes the object it was called on — after 'c = a - b' the
+  value of 'a' must stay the same; build a new object and return it`
+  (`… changes its operand 'other' …` for the parameter). Always build a NEW
+  object in an arithmetic contract.
+- `sum(xs)` of an array of objects whose class declares `plus` adds them with
+  that contract, starting from the first element (`plus` must take and return
+  the class itself; an empty array is a runtime error, as for numbers):
+  `sum() cannot add 'Vec' objects — declare 'contract Vec function plus(Vec
+  other)' in class 'Vec' and sum() will use it`. `avg`, `max` and `min` stay
+  numeric-only for objects.
+- There are no contracts for `div`, `mod`, a unary `+` (the language has none)
+  or powers.
+
+```idyllium
+use console;
+
+class Vec {
+    float x;
+    float y;
+
+    constructor Vec(float ex_x, float ex_y) {
+        this.x = ex_x;
+        this.y = ex_y;
+    }
+
+    contract Vec function plus(Vec other) {
+        return Vec(this.x + other.x, this.y + other.y);
+    }
+
+    contract Vec function multiply(float k) {
+        return Vec(this.x * k, this.y * k);
+    }
+
+    contract Vec function opposite() {
+        return Vec(-this.x, -this.y);
+    }
+
+    contract string function to_string() {
+        return "(" + to_string(this.x) + "; " + to_string(this.y) + ")";
+    }
+}
+
+main() {
+    Vec a = Vec(1, 2);
+    Vec b = Vec(3, 4);
+    console.writeln(a + b * 2);   // (7; 10)
+    console.writeln(-a);          // (-1; -2)
+    a += b;
+    console.writeln(a);           // (4; 6)
+}
+```
+
 ### Printing Objects: The `to_string()` Contract
 
 Passing a class object to `console.write`/`console.writeln` is a compile error
-(`cannot print object of class 'Cat' directly — declare 'string function
+(`cannot print object of class 'Cat' directly — declare 'contract string function
 to_string()' in class 'Cat' and printing will use it`) unless the class
-declares a public zero-argument method `string function to_string()`. When a
-method named `equals`/`to_string` exists but has the wrong shape (private,
-static, wrong parameter or return type), the error appends the exact reason,
-e.g. `(class 'Cat' has 'to_string', but it returns 'int' instead of 'string')`.
+declares the contract `contract string function to_string()` (public, no
+parameters; a wrong shape is refused at the declaration — see Contracts above).
 Contracts are not inherited: the method must be declared in the
 class itself — a derived class without its own `to_string` is not printable
 even when the base has one. With the method, the object prints through it.
@@ -1204,7 +1342,7 @@ class Point {
     int x;
     int y;
 
-    string function to_string() {
+    contract string function to_string() {
         return "(" + to_string(this.x) + ", " + to_string(this.y) + ")";
     }
 }
@@ -1218,7 +1356,7 @@ main() {
 An array of objects nests freely: the contract is applied at any depth, so
 `dyn_array<dyn_array<Point>>` prints as `[["(0, 0)"]]`. Without the contract
 the refusal names the element class (`cannot print an array of 'A' objects
-directly — declare 'string function to_string()' in class 'A' and printing
+directly — declare 'contract string function to_string()' in class 'A' and printing
 will use it`).
 
 Functions are not printable either: `console.writeln(abs_value)`
@@ -1343,6 +1481,17 @@ constructor. Rules:
   first is a style recommendation, because a later `parent()` call overwrites
   fields assigned before it.
 
+Two things classes cannot do, each refused in one line (since 1.6.0):
+
+- **No inheriting from a built-in type.** `class Money extends int` →
+  `cannot inherit from built-in type 'int' — keep a value of this type inside
+  the class as a field instead` (the same for `float`, `string`, `bool`,
+  `char`, `array`, `dyn_array`, `map`, `set`). Composition plus contracts is
+  the way to make a class behave like a number.
+- **No method overloading.** A second method with the same name in one class →
+  `method 'scale' is already declared in class 'Vec' — Idyllium has no
+  overloading: one name, one method`.
+
 The base class does not have to live in the same file. Both of these work:
 
 ```idyllium
@@ -1400,10 +1549,9 @@ included (`event on_click` in an heir is a compile error).
 
 An override must keep every promise the base class made:
 
-- the same parameter types and the same result type (the comparison
-  contracts `equals`, `less` and `greater` are the single exception — an heir
-  may declare its own `equals(Heir other)` next to the base's
-  `equals(Base other)`, see §7);
+- the same parameter types and the same result type (contracts are the single
+  exception — an heir declares its own `equals(Heir other)` or
+  `plus(Heir other)` next to the base's, see «Contracts» above);
 - the base's parameter defaults — `greet(string who = "мир")` in the base
   and `greet(string who)` in the heir is a compile error, because
   `base.greet()` would then reach a body that has nothing to put in `who`.
@@ -1422,8 +1570,8 @@ An override must keep every promise the base class made:
 A class imported from a user module behaves exactly like the same class
 written in one file: the override rules above hold across the module border
 (`method 'Cub.roar' cannot be private — it overrides a public method of
-class 'zoo.Lion'`), and contracts (`equals`, `less`, `greater`, `to_string`)
-still do not travel to heirs — the refusal is a compile error on both sides of
+class 'zoo.Lion'`), and contracts (`to_string`, `equals`, `less`, `greater`,
+`plus`, `minus`, `multiply`, `divide`, `opposite`) still do not travel to heirs — the refusal is a compile error on both sides of
 the module border.
 
 `parent()` says what is wrong instead of "function not declared":
@@ -1630,7 +1778,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, never returns
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.5.7"
+system.version()                    // "1.6.0"
 system.set_warnings(enabled)        // void; switches runtime warnings off/on
 ```
 
@@ -1717,6 +1865,76 @@ provided. `math.clamp` returns `int` when all three arguments are integers,
 otherwise `float`. `math.sign` mirrors `math.abs`; `gcd`, `lcm`, `factorial`
 return `int`, `is_prime` returns `bool`, `divisors` returns `dyn_array<int>`.
 The remaining math functions return `float`.
+
+### Complex Numbers: `math.Complex` (since 1.6.0)
+
+```idyllium
+use console;
+use math;
+
+main() {
+    math.Complex z = math.Complex(3, 4);      // 3 + 4i;  math.Complex() is 0, math.Complex(3) is 3
+    math.Complex w = math.polar(2, math.pi / 2);   // modulus and argument (radians): 2i
+    math.Complex unit = math.I;               // the imaginary unit; math.I * math.I == -1
+
+    console.writeln(z + w, "  ", z * w, "  ", z / w, "  ", -z);   // 3 + 6i  -8 + 6i  2 - 1.5i  -3 - 4i
+    console.writeln(2 * z, "  ", z + 1, "  ", 1 / unit);            // 6 + 8i  4 + 4i  -i
+    console.writeln(z.re, " ", z.im, " ", z.abs(), " ", z.arg());  // 3 4 5 0.92729522
+    console.writeln(z.conjugate(), "  ", z.pow(2), "  ", z.sqrt()); // 3 - 4i  -7 + 24i  2 + i
+    console.writeln(math.Complex(1).roots(4));                      // [1, i, -1, -i]
+}
+```
+
+`math.Complex` is a VALUE, like a number: `re` and `im` are read-only, every
+operation returns a new number, `math.Complex z;` without a call is zero.
+
+- **Arithmetic by signs.** `+ - * /`, unary `-`, and `+= -= *= /=` work through
+  the same contracts as user classes (`plus`, `minus`, `multiply`, `divide`,
+  `opposite` — callable by name too). Division by zero is a runtime error
+  (`division by zero`).
+- **The numeric ladder `int → float → math.Complex`.** A real number takes part
+  as a complex one with a zero imaginary part — exactly as `int` is promoted to
+  `float`: `2 * z`, `z + 1`, `1 / math.I` and `math.Complex five = 5;` all work,
+  in arguments and array cells too (`dyn_array<math.Complex> zs = [1, math.I];`).
+  There is no way back: `float x = z;` → `cannot assign 'math.Complex' value to
+  'float' variable` — take `z.re` or `z.abs()`. This promotion is a privilege
+  of the library type; user classes keep the «left operand» rule of §15.
+- **Parts and forms:** `re`, `im`, `abs()` (modulus), `arg()` (principal value,
+  radians, in (−π; π]; `0` for zero), `conjugate()`, `to_string()` (`3 + 4i`,
+  `-2.5i`, `i`, `0`), `to_polar_string()` (`5(cos 0.92729522 + i sin
+  0.92729522)`). Printing rounds the parts like ordinary numbers and obeys
+  `console.set_precision`; an array prints as `[1, i, -1, -i]`.
+- **Powers and roots:** `pow(exponent)` — an integer exponent is computed by
+  exact repeated multiplication (De Moivre without the cos/sin error:
+  `math.I.pow(2)` is exactly `-1`), any other exponent gives the principal value
+  `exp(w · ln z)` (`math.I.pow(math.I)` is `0.20787958`); `sqrt()` — the principal
+  root (`math.Complex(-4).sqrt()` is `2i`); `roots(n)` — ALL n roots as a
+  `dyn_array<math.Complex>`, starting from the principal one counter-clockwise.
+- **Elementary functions** are methods: `exp()`, `ln()` (principal value; of
+  zero — a runtime error), `sin()`, `cos()`, `tan()`, `sinh()`, `cosh()`. The
+  functional form works too: `math.sqrt(z)`, `math.abs(z)` (a `float` — the
+  modulus), `math.sin(z)`, `math.cos(z)`, `math.tan(z)`, `math.log(z)` (the
+  principal `ln`) and `math.pow(z, w)` accept a complex argument and return
+  `math.Complex` (`math.abs` returns `float`); with real arguments they stay
+  real. `math.floor(z)` and the rest remain real-only.
+- **Aggregates.** `sum(zs)` and `avg(zs)` of an array of complex numbers are
+  complex (real cells are promoted); `max`/`min` are refused — no order.
+  An empty array is a runtime error, as for numbers.
+- **Comparison.** `==`/`!=` compare both parts exactly (a real number compares
+  as `re` with `im == 0`) and warn the same way floats do: `complex numbers are
+  compared with '==' — computed values are almost never exactly equal; use
+  is_close()`. `z.is_close(w, epsilon = 0.000000001)` is the working tool:
+  `math.Complex(0, math.pi).exp().is_close(-1)` is `true`. There is NO order on
+  complex numbers, and the language says so: `complex numbers have no order, so
+  '<' cannot compare them — compare abs(), re or im instead`; `sort()` refuses
+  too.
+- Readable runtime errors: `math.polar() modulus cannot be negative, got -1 — a
+  negative sign belongs to the argument (add math.pi)`, `math.Complex.ln() of
+  zero does not exist`, `math.Complex.roots() expects a positive integer degree,
+  got 0`, `zero cannot be raised to a negative power`.
+- Values built from a modulus and an argument (`polar`, `roots`, `exp`) drop the
+  rounding noise of cos/sin below 10⁻¹⁵ of the modulus, so the fourth roots of
+  one are exactly `1, i, -1, -i` and `e^(iπ)` prints as `-1`.
 
 ## 18. Library `random`
 
@@ -4261,7 +4479,9 @@ let x = 10;               // wrong: not JavaScript
 
 Do not invent async/await, lambdas with arrow syntax, interfaces, generics for
 user classes, `throw`/user exceptions, namespaces, package imports, or operator
-overloading. Maps and sets DO exist (`map<K, V>`, `set<T>`, §10) — but do not
+overloading beyond the contracts of §15 (there is no `operator+`, no
+`__add__`, no free operator functions — a sign reaches a class only through a
+`contract` method). Maps and sets DO exist (`map<K, V>`, `set<T>`, §10) — but do not
 invent methods for them beyond the listed ones (no `items()`, no `for (k in m)`,
 no `m[k] += 1` on a missing key, no `set` indexing).
 

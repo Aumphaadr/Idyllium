@@ -236,6 +236,10 @@ export interface ClassMethodDeclaration {
   readonly parameters: ParameterDeclaration[];
   readonly body: BlockStatement;
   readonly isStatic: boolean;
+  /** Метод помечен словом `contract`: его вызывает знак или печать, а не только имя. */
+  readonly isContract: boolean;
+  /** Где стоит само слово `contract` (для диагностик); null у обычного метода. */
+  readonly contractRange: SourceRange | null;
   readonly access: AccessModifier;
   readonly range: SourceRange;
 }

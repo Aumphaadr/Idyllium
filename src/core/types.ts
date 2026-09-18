@@ -74,6 +74,8 @@ export const ANY_TYPE: AnyType = { kind: 'any' };
 export const NULL_TYPE: NullType = { kind: 'null' };
 export const RUNTIME_ERROR_VALUE: RuntimeErrorValueType = { kind: 'runtime-error' };
 export const COLOR: QualifiedType = { kind: 'qualified', moduleName: 'colors', name: 'Color' };
+/** Комплексное число — верхняя ступень числовой лестницы int → float → math.Complex. */
+export const MATH_COMPLEX: QualifiedType = { kind: 'qualified', moduleName: 'math', name: 'Complex' };
 
 export const ANY_VALUE_TYPES: readonly TypeRef[] = [INT, FLOAT, STRING, CHAR, BOOL, COLOR];
 
@@ -174,6 +176,9 @@ export function isAssignable(target: TypeRef, value: TypeRef): boolean {
   if (sameType(target, value)) return true;
   if (isIntegerLike(target)) return isIntegerLike(value);
   if (isFloatLike(target)) return isNumeric(value);
+  // Вложение ℝ ⊂ ℂ: вещественное число — это комплексное с нулевой мнимой частью,
+  // так же как целое — частный случай дробного. Обратного хода нет.
+  if (isComplex(target)) return isNumeric(value);
   if (target.kind === 'array' && value.kind === 'array') {
     const sizeMatches = target.dynamic || value.dynamic || target.size === value.size;
     return sizeMatches && isAssignable(target.elementType, value.elementType);
@@ -193,7 +198,17 @@ export function isEmptyBracesType(type: TypeRef): boolean {
   return type.kind === 'map' && type.keyType.kind === 'any' && type.valueType.kind === 'any';
 }
 
+/** math.Complex — НЕ isNumeric: там, где ждут float (math.sqrt, индексы, сравнения порядка), ему не место. */
+export function isComplex(type: TypeRef): boolean {
+  return type.kind === 'qualified' && type.moduleName === 'math' && type.name === 'Complex';
+}
+
 export function numericBinaryResult(operator: string, left: TypeRef, right: TypeRef): TypeRef {
+  // Комплексный операнд поднимает до себя числового соседа: 2 * z, z + 1, z / w.
+  if ((isComplex(left) || isComplex(right)) && ['+', '-', '*', '/'].includes(operator)) {
+    const bothFit = (isComplex(left) || isNumeric(left)) && (isComplex(right) || isNumeric(right));
+    return bothFit ? MATH_COMPLEX : ERROR_TYPE;
+  }
   if (!isNumeric(left) || !isNumeric(right)) return ERROR_TYPE;
   if (operator === '/') return FLOAT;
   return isFloatLike(left) || isFloatLike(right) ? FLOAT : INT;
