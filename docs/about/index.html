@@ -51,7 +51,7 @@
       <a class="brand" href="https://github.com/Aumphaadr/Idyllium" target="_blank" rel="noopener" title="Idyllium на GitHub">
         <span class="brand-mark">I</span>
         <span class="brand-text">Idyllium</span>
-        <span class="idyllium-version">v1.5.7</span>
+        <span class="idyllium-version">v1.6.0</span>
       </a>
       <span class="topbar-badge">О проекте</span>
     </div>
@@ -68,6 +68,8 @@
 <!-- Статья «Idyllium» в вики-стиле. Источник текста: from_docs_team/2026-08-25/wiki-idyllium.md
      (структура выверена методистами по разбору шестнадцати статей русской Википедии о языках
      программирования, факты проверены на сборке 1.5.3, актуализированы под 1.5.4). Конверсия md → HTML: 2026-08-28.
+     Актуализация под 1.6.0: 2026-09-18. Версия, даты и счётчики подставляются сборкой по меткам вида
+     1.6.0 (перечень — функция aboutFacts в tools/docs-build-site.ts): руками их не вписывать.
      Оборачивается в страницу docs/about/index.html сборщиком tools/docs-build-site.ts. -->
 <article class="wiki-article">
   <h1>Idyllium</h1>
@@ -81,7 +83,7 @@
       <tr><th>Появился в</th><td>26 ноября 2025 (первый прототип), 18 июня 2026 (версия 1.0.0)</td></tr>
       <tr><th>Автор</th><td>Nathaniel Larsson</td></tr>
       <tr><th>Расширение файлов</th><td><code>.idyl</code></td></tr>
-      <tr><th>Последняя версия</th><td>1.5.4 (28 августа 2026)</td></tr>
+      <tr><th>Последняя версия</th><td>1.6.0 (17 сентября 2026)</td></tr>
       <tr><th>Система типов</th><td>статическая, строгая, явная</td></tr>
       <tr><th>Реализации</th><td>эталонный компилятор на TypeScript (CLI, браузерная среда WebIDE, расширение для VS&nbsp;Code)</td></tr>
       <tr><th>Испытал влияние</th><td>Си, C++, C#, Java, JavaScript, Pascal, Python</td></tr>
@@ -129,7 +131,8 @@
   <p><strong>Декабрь 2025 — май 2026.</strong> Версии 0.x. Формируется система типов, появляются массивы фиксированного и динамического размера, классы, обработка исключений, первые библиотеки стандартной поставки. Параллельно пишется учебник, и обратная связь от занятий возвращается в язык: конструкции, на которых ученики регулярно спотыкались, переделываются или запрещаются.</p>
   <p><strong>Июнь 2026.</strong> Версия 1.0.0 — первая стабильная. Зафиксирован синтаксис, стандартная библиотека, формат диагностических сообщений.</p>
   <p><strong>Июнь — август 2026.</strong> Версии 1.1–1.5. Добавлены графика на канве, работа с окнами и виджетами, звук, работа с файлами и базой SQLite, сетевые библиотеки и встроенный веб-сервер. Отдельная линия развития — среда WebIDE: инспектор ассетов, генератор цветов, настройки темы и размера шрифта, корректная остановка программ.</p>
-  <p><strong>Текущая версия</strong> — 1.5.4 (28 августа 2026).</p>
+  <p><strong>Сентябрь 2026.</strong> Версии 1.5.5–1.6.0. Язык получает типы-коллекции <code>map</code> и <code>set</code>, контракты сравнения, а затем и арифметики вместе с ключевым словом <code>contract</code>; библиотека пополняется таблицами <code>csv</code>, сочинённым звуком, сорока одной кодировкой и комплексными числами. Сайт выходит за собственные пределы: появляются встраиваемые юниты — окно с редактором и автопроверкой решения, которое ставится на страницу любого стороннего сайта, — и раздел «Авторам» с их конструктором.</p>
+  <p><strong>Текущая версия</strong> — 1.6.0 (17 сентября 2026).</p>
 
   <h2 id="philosophy">Концепция и философия</h2>
   <blockquote><p><em>Ошибается человек — проблема человека. Ошибается машина — проблема языка, на котором говорит машина.</em></p></blockquote>
@@ -142,6 +145,7 @@
 
   <h3>Один символ — один смысл</h3>
   <p>Оператор <code>/</code> всегда выполняет вещественное деление и всегда возвращает <code>float</code>, независимо от типов операндов. Целочисленное деление и остаток вынесены в отдельные функции <code>div()</code> и <code>mod()</code>. Это отличает Idyllium от Си, C++, C#, Java и Go, где <code>7 / 2</code> даёт <code>3</code>, а <code>7.0 / 2</code> — <code>3.5</code>, и где один и тот же знак означает две разные операции в зависимости от типов.</p>
+  <p>Принцип относится к встроенным типам: их знаки всегда значат одно и то же. У объектов пользовательских классов знаков нет вовсе — <code>a + b</code> или <code>a == b</code> для двух объектов не компилируется, пока класс не объявит это явно, методом-контрактом (см. «Классы»). Молча смысл знака не меняется нигде.</p>
 
   <h3>Условие — это условие</h3>
   <p>Тип <code>bool</code> не приводится к числу и число не приводится к <code>bool</code>. Запись <code>if (number)</code> не компилируется:</p>
@@ -164,21 +168,24 @@
 <span class="hl-brackets">}</span></code></pre></div>
 
   <h3>Ключевые слова</h3>
-  <p>В языке 41 ключевое слово:</p>
+  <p>В языке 42 ключевых слова:</p>
   <div class="idyl-code-wrapper"><pre class="idyl-pre"><code class="plain-code">use  main  function  int  float  string  char  bool  void
 if  else  try  catch  finally  while  do  for  break  continue  return
 const  and  xor  or  not  true  false  null  div  mod
-array  dyn_array  class  constructor  this  static  extends  event
+array  dyn_array  map  class  constructor  this  static  extends  event  contract
 private  public</code></pre></div>
   <p>Логические операции записываются словами (<code>and</code>, <code>or</code>, <code>not</code>, <code>xor</code>), а не знаками <code>&amp;&amp;</code>, <code>||</code>, <code>!</code>.</p>
 
   <h3>Типы данных</h3>
   <p>Встроенные типы: <code>int</code>, <code>float</code>, <code>string</code>, <code>char</code>, <code>bool</code>, <code>void</code>. Типизация статическая и явная — тип переменной указывается при объявлении и не определяется автоматически.</p>
-  <p>Массивы бывают двух видов: фиксированного размера <code>array&lt;T, N&gt;</code> и динамического <code>dyn_array&lt;T&gt;</code>. У обоих есть свойство <code>length</code>; у динамического — методы добавления и удаления элементов.</p>
+  <p>Массивы бывают двух видов: фиксированного размера <code>array&lt;T, N&gt;</code> и динамического <code>dyn_array&lt;T&gt;</code>. У обоих есть свойство <code>length</code>; у динамического — методы добавления и удаления элементов. Кроме массивов есть словарь <code>map&lt;K, V&gt;</code> (ключи — <code>int</code>, <code>string</code>, <code>char</code> или <code>bool</code>, порядок вставки сохраняется) и множество <code>set&lt;T&gt;</code>; все коллекции присваиваются копированием и сравниваются по содержимому.</p>
   <div class="idyl-code-wrapper"><pre class="idyl-pre"><code class="idyl-code"><span class="hl-typeName">array</span><span class="hl-brackets">&lt;</span><span class="hl-typeName">int</span><span class="hl-brackets">,</span> <span class="hl-number">3</span><span class="hl-brackets">&gt;</span> <span class="hl-object">box</span> <span class="hl-brackets">=</span> <span class="hl-brackets">[</span><span class="hl-number">21</span><span class="hl-brackets">,</span> <span class="hl-number">38</span><span class="hl-brackets">,</span> <span class="hl-number">64</span><span class="hl-brackets">]</span><span class="hl-brackets">;</span>
 
 <span class="hl-typeName">dyn_array</span><span class="hl-brackets">&lt;</span><span class="hl-typeName">int</span><span class="hl-brackets">&gt;</span> <span class="hl-object">marks</span><span class="hl-brackets">;</span>
-<span class="hl-object">marks</span><span class="hl-brackets">.</span><span class="hl-function">add</span><span class="hl-brackets">(</span><span class="hl-number">5</span><span class="hl-brackets">)</span><span class="hl-brackets">;</span></code></pre></div>
+<span class="hl-object">marks</span><span class="hl-brackets">.</span><span class="hl-function">add</span><span class="hl-brackets">(</span><span class="hl-number">5</span><span class="hl-brackets">)</span><span class="hl-brackets">;</span>
+
+<span class="hl-object">map</span><span class="hl-brackets">&lt;</span><span class="hl-typeName">string</span><span class="hl-brackets">,</span> <span class="hl-typeName">int</span><span class="hl-brackets">&gt;</span> <span class="hl-object">prices</span> <span class="hl-brackets">=</span> <span class="hl-brackets">{</span><span class="hl-string">&quot;зелье&quot;</span><span class="hl-brackets">:</span> <span class="hl-number">30</span><span class="hl-brackets">,</span> <span class="hl-string">&quot;эликсир&quot;</span><span class="hl-brackets">:</span> <span class="hl-number">120</span><span class="hl-brackets">}</span><span class="hl-brackets">;</span>
+<span class="hl-typeName">set</span><span class="hl-brackets">&lt;</span><span class="hl-typeName">int</span><span class="hl-brackets">&gt;</span> <span class="hl-object">seen</span> <span class="hl-brackets">=</span> <span class="hl-brackets">{</span><span class="hl-number">3</span><span class="hl-brackets">,</span> <span class="hl-number">5</span><span class="hl-brackets">,</span> <span class="hl-number">8</span><span class="hl-brackets">}</span><span class="hl-brackets">;</span></code></pre></div>
 
   <h3>Управляющие конструкции</h3>
   <p>Ветвление, циклы и обработка исключений записываются в Си-подобной форме: <code>if</code>/<code>else</code>, <code>while</code>, <code>do…while</code>, <code>for</code>, <code>try</code>/<code>catch</code>/<code>finally</code>, <code>break</code>, <code>continue</code>.</p>
@@ -196,20 +203,20 @@ private  public</code></pre></div>
         <span class="hl-keyword">this</span><span class="hl-brackets">.</span><span class="hl-object">price</span> <span class="hl-brackets">=</span> <span class="hl-object">ex_price</span><span class="hl-brackets">;</span>
     <span class="hl-brackets">}</span>
 
-    <span class="hl-typeName">string</span> <span class="hl-keyword">function</span> <span class="hl-function">to_string</span><span class="hl-brackets">(</span><span class="hl-brackets">)</span> <span class="hl-brackets">{</span>
+    <span class="hl-keyword">contract</span> <span class="hl-typeName">string</span> <span class="hl-keyword">function</span> <span class="hl-function">to_string</span><span class="hl-brackets">(</span><span class="hl-brackets">)</span> <span class="hl-brackets">{</span>
         <span class="hl-keyword">return</span> <span class="hl-keyword">this</span><span class="hl-brackets">.</span><span class="hl-object">name</span> <span class="hl-brackets">+</span> <span class="hl-string">&quot; — &quot;</span> <span class="hl-brackets">+</span> <span class="hl-function">to_string</span><span class="hl-brackets">(</span><span class="hl-keyword">this</span><span class="hl-brackets">.</span><span class="hl-object">price</span><span class="hl-brackets">)</span> <span class="hl-brackets">+</span> <span class="hl-string">&quot; монет&quot;</span><span class="hl-brackets">;</span>
     <span class="hl-brackets">}</span>
 <span class="hl-brackets">}</span></code></pre></div>
   <p>Поддерживаются значения параметров по умолчанию, именованные аргументы при вызове (<code>Potion(ex_price=1000, ex_name=&quot;Эликсир&quot;)</code>), наследование через <code>extends</code>, статические члены и пользовательские события (<code>event</code>).</p>
-  <p>Метод <code>to_string()</code> работает как контракт: если он определён, объект выводится в консоль в этом виде.</p>
+  <p>Метод <code>to_string()</code> здесь — <em>контракт</em>: метод, который вызывает не только имя, но и сам язык. Контракты помечаются ключевым словом <code>contract</code> — по тому же принципу, что события словом <code>event</code>, — и пометка обязательна: форма контракта проверяется у самого объявления, а не тогда, когда знак уже кого-то подвёл. Контрактов девять: <code>to_string</code> открывает печать объекта, <code>equals</code> — знаки <code>==</code> и <code>!=</code> и поиск в массивах, <code>less</code> и <code>greater</code> — знаки порядка и сортировку, <code>plus</code>, <code>minus</code>, <code>multiply</code>, <code>divide</code> и <code>opposite</code> — арифметику. Имя контракта — слово, которым знак читают вслух. Контракты не наследуются: каждый класс подписывает договор сам.</p>
 
   <h3>Стандартная библиотека</h3>
   <p>Стандартная поставка — 24 модуля, подключаемых директивой <code>use</code>:</p>
   <p class="wiki-modules"><code>audio</code> · <code>channel</code> · <code>colors</code> · <code>console</code> · <code>csv</code> · <code>drawable</code> · <code>encoding</code> · <code>file</code> · <code>fonts</code> · <code>gui</code> · <code>hash</code> · <code>http</code> · <code>image</code> · <code>json</code> · <code>math</code> · <code>random</code> · <code>sqlite</code> · <code>system</code> · <code>time</code> · <code>turtle</code> · <code>types</code> · <code>url</code> · <code>web</code> · <code>xml</code></p>
-  <p>Дополнительно доступны 10 глобальных функций без подключения библиотек: <code>avg</code>, <code>div</code>, <code>max</code>, <code>min</code>, <code>mod</code>, <code>sum</code>, <code>to_float</code>, <code>to_int</code>, <code>to_string</code>, <code>type_name</code>.</p>
+  <p>Без подключения библиотек доступны 10 глобальных функций: <code>avg</code>, <code>div</code>, <code>max</code>, <code>min</code>, <code>mod</code>, <code>sum</code>, <code>to_float</code>, <code>to_int</code>, <code>to_string</code>, <code>type_name</code>.</p>
 
   <h2 id="examples">Примеры кода</h2>
-  <p>Все примеры проверены компилятором версии 1.5.4.</p>
+  <p>Все примеры проверены компилятором версии 1.6.0.</p>
 
   <h3>Приветствие</h3>
   <div class="idyl-code-wrapper"><pre class="idyl-pre"><code class="idyl-code"><span class="hl-keyword">use</span> <span class="hl-object">console</span><span class="hl-brackets">;</span>
@@ -258,7 +265,7 @@ private  public</code></pre></div>
         <span class="hl-keyword">this</span><span class="hl-brackets">.</span><span class="hl-object">price</span> <span class="hl-brackets">=</span> <span class="hl-object">ex_price</span><span class="hl-brackets">;</span>
     <span class="hl-brackets">}</span>
 
-    <span class="hl-typeName">string</span> <span class="hl-keyword">function</span> <span class="hl-function">to_string</span><span class="hl-brackets">(</span><span class="hl-brackets">)</span> <span class="hl-brackets">{</span>
+    <span class="hl-keyword">contract</span> <span class="hl-typeName">string</span> <span class="hl-keyword">function</span> <span class="hl-function">to_string</span><span class="hl-brackets">(</span><span class="hl-brackets">)</span> <span class="hl-brackets">{</span>
         <span class="hl-keyword">return</span> <span class="hl-keyword">this</span><span class="hl-brackets">.</span><span class="hl-object">name</span> <span class="hl-brackets">+</span> <span class="hl-string">&quot; — &quot;</span> <span class="hl-brackets">+</span> <span class="hl-function">to_string</span><span class="hl-brackets">(</span><span class="hl-keyword">this</span><span class="hl-brackets">.</span><span class="hl-object">price</span><span class="hl-brackets">)</span> <span class="hl-brackets">+</span> <span class="hl-string">&quot; монет&quot;</span><span class="hl-brackets">;</span>
     <span class="hl-brackets">}</span>
 
@@ -288,7 +295,7 @@ private  public</code></pre></div>
 Первое зелье дешевле второго.</div>
 
   <h2 id="diagnostics">Диагностика</h2>
-  <p>Сообщения компилятора и среды выполнения — намеренно проектируемая часть языка, а не побочный продукт реализации. К версии 1.5.4 в компиляторе около пятисот различных текстов сообщений; их формулировки правятся от версии к версии, и изменения фиксируются в журнале изменений наравне с изменениями синтаксиса.</p>
+  <p>Сообщения компилятора и среды выполнения — намеренно проектируемая часть языка, а не побочный продукт реализации. К версии 1.6.0 в компиляторе и среде выполнения около 700 мест, где язык говорит с человеком словами; их формулировки правятся от версии к версии, и изменения фиксируются в журнале изменений наравне с изменениями синтаксиса.</p>
   <p>Правила, которым подчиняются сообщения:</p>
   <ul>
     <li>указывается файл, строка и столбец;</li>
@@ -308,11 +315,11 @@ private  public</code></pre></div>
   <p>Особенность среды — не редактор, а <strong>связность экосистемы</strong>. В шапке сайта расположены ссылки, каждая из которых ведёт в отдельный полноценный раздел того же сайта:</p>
   <table class="wiki-table">
     <tr><th>Ссылка</th><th>Что открывается</th></tr>
-    <tr><td><strong>Учебник</strong></td><td>128 уроков в восьми разделах</td></tr>
-    <tr><td><strong>Задачник</strong></td><td>128 страниц заданий</td></tr>
-    <tr><td><strong>Документация</strong></td><td>справочник: 24 модуля, 69 типов, больше тысячи описанных позиций</td></tr>
+    <tr><td><strong>Учебник</strong></td><td>128 уроков в 8 разделах</td></tr>
+    <tr><td><strong>Задачник</strong></td><td>практикумы к 127 темам из 128</td></tr>
+    <tr><td><strong>Документация</strong></td><td>справочник: 24 модуля, 71 тип, 1044 описанные позиции</td></tr>
   </table>
-  <p>Отдельно живёт раздел проектов — 52 сквозные работы. Между кодом, теорией, задачами и справочником ученик перемещается <strong>в один клик и не покидая браузера</strong>: ни установки, ни переключения приложений, ни поиска нужной страницы в интернете.</p>
+  <p>Отдельно живёт раздел проектов — сквозных работ в нём 52. Между кодом, теорией, задачами и справочником ученик перемещается <strong>в один клик и не покидая браузера</strong>: ни установки, ни переключения приложений, ни поиска нужной страницы в интернете.</p>
 
   <h4>Редактор</h4>
   <p>Редактор построен на Monaco (том же, что в Visual Studio Code) и получает данные от настоящего компилятора Idyllium: автодополнение, подсказка сигнатуры функции с подсветкой текущего аргумента, форматирование документа и подчёркивание ошибок прямо в тексте — всё это работает от той же диагностики, что и запуск. Есть поиск и замена, комментирование блока, отмена и повтор, привычные сочетания клавиш (<code>Ctrl+Enter</code> — запуск, <code>Ctrl+S</code> — сохранить проект, <code>Ctrl+N</code>, <code>Ctrl+O</code>, <code>Ctrl+F</code>, <code>Ctrl+H</code>).</p>
@@ -336,9 +343,14 @@ private  public</code></pre></div>
   <ul>
     <li><strong>Генератор цвета</strong> — ползунки и поля для красного, зелёного, синего и альфа-канала, предпросмотр, готовый код <code>colors.RGB(...)</code> и <code>colors.HEX(...)</code> с кнопками копирования и <strong>пипетка</strong>, снимающая цвет с любой точки страницы (она умеет разбирать записи CSS и градиенты, то есть попадает в цвет и там, где он не задан одним значением).</li>
     <li><strong>Ввод данных</strong> идёт через отдельную строку под выводом, а не через всплывающее окно браузера.</li>
-    <li><strong>Внешний вид</strong> — светлая и тёмная темы, отдельно настраиваемый размер шрифта редактора и консоли (10–32 пикселя). Интерфейс использует собственный шрифт из поставки и не зависит от того, что установлено на машине.</li>
+    <li><strong>Внешний вид</strong> — светлая и тёмная темы, отдельно настраиваемый размер шрифта редактора и консоли (10–32 пикселя), отключаемое автодополнение (для тех, кто хочет помнить названия сам). Интерфейс использует собственный шрифт из поставки и не зависит от того, что установлено на машине.</li>
     <li><strong>Работа с файлами</strong> — создание файлов и папок, перетаскивание внутри дерева, загрузка с компьютера (с вопросом при совпадении имён), несколько проектов, дублирование, выгрузка ZIP-архивом.</li>
   </ul>
+
+  <h3>Встраиваемые юниты</h3>
+  <p>Юнит — маленькое окно с редактором, консолью и кнопками «Запустить» и «Проверить», которое встраивается в страницу любого стороннего сайта: урок на школьной платформе, страница курса, личный блог преподавателя. Ученик пишет программу прямо в уроке, а юнит проверяет решение не одним запуском, а набором тестов автора — заданных и случайных — и условиями, записанными как выражения самого Idyllium: <code>{out1} == ({in1} + {in2}) * 2</code>. Приглашения вроде «Введите радиус:» в ответ не попадают; требования к коду («обязателен <code>for</code>») проверяются по словам программы.</p>
+  <p>Юнит живёт в изолированном кадре: код ученика не видит ни страницы сайта-хозяина, ни проектов WebIDE, ему доступны только консольные библиотеки, а вечный цикл останавливается сам. Сайт-хозяин, в свою очередь, слышит юнит — получает события о запуске и проверке и может отреагировать по-своему.</p>
+  <p>Юниты собираются в разделе <a href="../authors/">«Авторам»</a>: форма с пояснениями, живой предпросмотр и самопроверка, которая не выпускает брак. Она убеждается, что решение автора проходит его же тесты, а заготовка — нет, и проверяет сами тесты: слегка портит решение автора (<code>&gt;=</code> на <code>&gt;</code>, <code>0</code> на <code>-1</code>) и, если тесты этого не заметили, называет ввод, который их различает. Принцип тот же, что у языка: ошибка должна быть громкой — в том числе ошибка составителя задачи.</p>
 
   <h3>Командная строка</h3>
   <p>Компилятор доступен как CLI-утилита на Node.js: <code>check</code> проверяет программу без запуска, <code>run</code> компилирует и выполняет.</p>
@@ -364,7 +376,7 @@ private  public</code></pre></div>
     <li><strong>Раздаточные материалы</strong> — файлы данных (<code>json</code>, <code>txt</code> и другие), которые лежат рядом с проектом и читаются программой ученика, а не порождаются в коде.</li>
     <li><strong>Проекты</strong> — сквозные учебные работы, собирающие пройденные темы в одну программу.</li>
   </ul>
-  <p>По состоянию на версию 1.5.3 (сборка учебника от 24 августа 2026 года):</p>
+  <p>По состоянию на версию 1.6.0:</p>
   <table class="wiki-table">
     <tr><th>Раздел учебника</th><th>Уроков</th><th>С задачником</th></tr>
     <tr><td>Консоль</td><td>33</td><td>33</td></tr>
@@ -377,7 +389,7 @@ private  public</code></pre></div>
     <tr><td>Сеть</td><td>4</td><td>3</td></tr>
     <tr><td><strong>Всего</strong></td><td><strong>128</strong></td><td><strong>127</strong></td></tr>
   </table>
-  <p>Учебные проекты — 52 (39 консольных и 13 оконных). Раздаточных файлов — 262: наборы данных <code>json</code>, <code>txt</code> и <code>sql</code>, изображения, звуки, шрифты и готовые базы SQLite.</p>
+  <p>Учебных проектов — 52. Раздаточных файлов — 258: наборы данных <code>json</code>, <code>txt</code> и <code>sql</code>, изображения, звуки, шрифты и готовые базы SQLite.</p>
 
   <h2 id="scope">Область применения</h2>
   <p>Idyllium применяется в обучении программированию — как первый язык для школьников. Он не предназначен для промышленной разработки: язык сознательно лишён средств, избыточных или опасных при обучении.</p>
@@ -388,7 +400,7 @@ private  public</code></pre></div>
   <ul>
     <li><strong>нет автоматического определения типов</strong> — тип переменной пишется явно;</li>
     <li><strong>нет неявных преобразований типов</strong> ни между числами и строками, ни между числом и <code>bool</code>;</li>
-    <li><strong>нет перегрузки операторов</strong> — знак операции всегда означает одно и то же;</li>
+    <li><strong>знаки встроенных типов не переопределяются</strong> — для чисел, строк и коллекций знак всегда значит одно и то же; классу знак достаётся только по явному договору — методу с ключевым словом <code>contract</code>; перегрузки функций и методов нет вовсе: одно имя — один метод;</li>
     <li><strong>нет указателей и ручного управления памятью</strong>;</li>
     <li><strong>нет препроцессора и макросов</strong>.</li>
   </ul>
@@ -618,7 +630,8 @@ the site does not allow browser requests (CORS)
     <tr><td>1.2.x</td><td>июль — август 2026</td><td>работа с JSON, оформление виджетов из кода, аудит документации</td></tr>
     <tr><td>1.3.x</td><td>август 2026</td><td>вертикальные виджеты, раздаточные материалы для заданий</td></tr>
     <tr><td>1.4.x</td><td>август 2026</td><td>библиотека <code>http</code> — сетевой клиент</td></tr>
-    <tr><td>1.5.x</td><td>август 2026</td><td>библиотека <code>web</code> — веб-сервер; методы-контракты <code>equals</code> и <code>to_string</code>; библиотека <code>xml</code> — чтение разметки; предупреждения компилятора и среды выполнения</td></tr>
+    <tr><td>1.5.x</td><td>август — сентябрь 2026</td><td>библиотека <code>web</code> — веб-сервер; методы-контракты <code>equals</code> и <code>to_string</code>; библиотека <code>xml</code> — чтение разметки; предупреждения компилятора и среды выполнения; типы <code>map</code> и <code>set</code>, контракты порядка <code>less</code> и <code>greater</code> с сортировкой объектов; библиотека <code>csv</code>; сочинённый звук <code>audio.Melody</code>; 41 кодировка в <code>encoding</code></td></tr>
+    <tr><td>1.6.x</td><td>сентябрь 2026</td><td>встраиваемые юниты и раздел «Авторам»; ключевое слово <code>contract</code> и арифметические контракты; комплексные числа <code>math.Complex</code></td></tr>
   </table>
 
   <h2 id="see-also">См. также</h2>
@@ -630,13 +643,13 @@ the site does not allow browser requests (CORS)
   </ul>
 
   <h2 id="notes">Примечания</h2>
-  <p>Технические сведения статьи — состав ключевых слов, стандартной библиотеки и глобальных функций, поведение целочисленной арифметики, тексты диагностических сообщений, состав учебного корпуса — проверены на версии 1.5.4 от 28 августа 2026 года. Все примеры кода прогнаны через компилятор этой версии, вывод в статье приведён дословно.</p>
+  <p>Технические сведения статьи — состав ключевых слов, стандартной библиотеки и глобальных функций, поведение целочисленной арифметики, тексты диагностических сообщений, состав учебного корпуса — проверены на версии 1.6.0 (17 сентября 2026); версию и счётчики подставляет сборка сайта из самого компилятора, поэтому они не расходятся с реализацией. Все примеры кода прогнаны через компилятор этой версии, вывод в статье приведён дословно.</p>
 
   <h2 id="literature">Литература</h2>
   <ul>
-    <li><em>Idyllium: учебник.</em> 128 уроков в восьми разделах, из них 127 с задачниками.</li>
+    <li><em>Idyllium: учебник.</em> 128 уроков в 8 разделах, из них с задачниками — 127.</li>
     <li><em>Idyllium: справочник стандартной библиотеки.</em> 24 модуля; порождается из машинного описания API, поставляемого вместе с компилятором.</li>
-    <li><em>Idyllium: учебные проекты.</em> 52 сквозные работы.</li>
+    <li><em>Idyllium: учебные проекты.</em> Сквозных работ — 52.</li>
   </ul>
 
   <h2 id="links">Ссылки</h2>

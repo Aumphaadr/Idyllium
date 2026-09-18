@@ -213,7 +213,7 @@ whether anything worked.
 | **Idyllium** | **LOUD, with the fix in the message** | see below |
 
 ```text
-compile error: cannot print object of class 'Pet' directly — declare 'string function
+compile error: cannot print object of class 'Pet' directly — declare 'contract string function
 to_string()' in class 'Pet' and printing will use it
 ```
 
@@ -236,7 +236,7 @@ inside arrays (probed: `["кот Барсик", "кот Барсик"]`).
 
 ```text
 compile error: cannot compare objects of class 'Battery' with '==' — declare
-'bool function equals(Battery other)' in class 'Battery' and the comparison will use it
+'contract bool function equals(Battery other)' in class 'Battery' and the comparison will use it
 ```
 
 One declaration serves `==`, `!=`, `contains()` and array search at once
@@ -246,7 +246,7 @@ and silently ignore everything the descendant added:
 
 ```text
 compile error: cannot compare objects of class 'Kitten' with '==' — declare
-'bool function equals(Kitten other)' in class 'Kitten' and the comparison will use it
+'contract bool function equals(Kitten other)' in class 'Kitten' and the comparison will use it
 ```
 
 ---

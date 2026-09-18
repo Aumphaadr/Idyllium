@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Idyllium - Авторам</title>
+  <link rel="icon" href="../assets/favicon-32x32.png" sizes="32x32">
+  <link rel="icon" href="../assets/idyllium.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="authors.css">
+  <script src="../version.js" defer></script>
+</head>
+<body>
+  <header class="docs-topbar">
+    <div class="topbar-left">
+      <a class="brand" href="https://github.com/Aumphaadr/Idyllium" target="_blank" rel="noopener" title="Idyllium на GitHub">
+        <span class="brand-mark">I</span>
+        <span class="brand-text">Idyllium</span>
+        <span class="idyllium-version">v</span>
+      </a>
+      <span class="topbar-badge">Авторам</span>
+    </div>
+    <nav class="topbar-actions" aria-label="Разделы сайта">
+      <a class="topbar-link" href="../">Открыть IDE</a>
+      <a class="topbar-link" href="../book/">Учебник</a>
+      <a class="topbar-link" href="../tasks/">Задачник</a>
+      <a class="topbar-link" href="../projects/">Проекты</a>
+      <a class="topbar-link" href="../reference/">Документация</a>
+      <a class="topbar-link" href="../about/">О проекте</a>
+      <button class="topbar-link" id="theme-toggle" type="button" title="Светлая тема" aria-label="Светлая тема"><svg class="icon-sun" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor" stroke="none"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5 5l1.9 1.9M17.1 17.1L19 19M19 5l-1.9 1.9M6.9 17.1L5 19"/></svg><svg class="icon-moon" viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M20.6 14.8A8.7 8.7 0 0 1 9.2 3.4a8.7 8.7 0 1 0 11.4 11.4z"/></svg></button>
+    </nav>
+  </header>
+
+  <main class="page">
+    <section class="intro">
+      <h1>Юниты Idyllium для вашего сайта</h1>
+      <p><strong>Юнит</strong> — маленькое окно с редактором кода, консолью и кнопками «Запустить» и «Проверить», которое встраивается в страницу любого сайта. Ученик пишет программу прямо в уроке, а юнит сам проверяет решение на ваших тестах и говорит, сошлось ли. Ничего не нужно устанавливать ни вам, ни ученику.</p>
+      <p>Соберите юнит в конструкторе ниже — справа он сразу живой, в нём можно запускать программы и пробовать проверку. Когда всё готово, скопируйте HTML и вставьте на свой сайт. Незаконченную работу можно сохранить в файл и открыть завтра — или передать администратору сайта, чтобы он дописал свою часть.</p>
+      <details class="recipes">
+        <summary>Как вставить юнит на сайт — три рецепта</summary>
+        <ol>
+          <li><strong>Свой HTML</strong> (сайт на своих страницах, GitHub Pages, Tilda с блоком «HTML-код» и т. п.): вкладка «Полная вставка». Это строка со скриптом и блок <code>&lt;idyllium-unit&gt;</code>. Скрипт достаточно подключить один раз на странице, блоков может быть сколько угодно.</li>
+          <li><strong>Платформа пускает только iframe</strong> (многие LMS и конструкторы вырезают скрипты): вкладка «Только iframe». Весь юнит упакован в адрес — больше ничего не нужно. В этой форме сайт не получает событий проверки, а код ученика не сохраняется между визитами.</li>
+          <li><strong>Реакция сайта на проверку</strong> (для администратора): в блоке «Реакция сайта» впишите имена функций вашей страницы. Юнит вызовет их с одним аргументом — объектом <code>{ unit, verdict, passed, total, attempt, firstFailure }</code>. Программистам удобнее события на элементе: <code>idyllium-check</code>, <code>idyllium-solved</code>, <code>idyllium-failed</code>, <code>idyllium-run</code>.</li>
+        </ol>
+      </details>
+    </section>
+
+    <section class="builder">
+      <form class="form" id="form" autocomplete="off" onsubmit="return false">
+        <div class="file-row">
+          <button type="button" class="btn" id="open-file"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5V18a1.5 1.5 0 0 0 1.5 1.5h15A1.5 1.5 0 0 0 21 18V9.5A1.5 1.5 0 0 0 19.5 8H12l-2-2.5H4.5A1.5 1.5 0 0 0 3 7z"/></svg>Открыть файл…</button>
+          <button type="button" class="btn" id="save-file"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M4.5 19.5h15"/></svg>Сохранить в файл</button>
+          <button type="button" class="btn btn-quiet" id="new-unit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Новый юнит</button>
+          <input type="file" id="file-input" accept=".idyunit,.json,application/json" hidden>
+          <span class="file-note" id="file-note"></span>
+        </div>
+
+        <fieldset>
+          <legend>1. Задача</legend>
+          <label class="field">Название <span class="tip" data-tip="Короткое имя задачи. Видно над редактором (если не пусто) и в названии файла.">?</span>
+            <input type="text" id="title" placeholder="Прямоугольник">
+          </label>
+          <label class="field">Идентификатор <span class="tip" data-tip="Латиница, цифры и дефис. По нему сайт отличает юниты друг от друга и хранит черновик ученика. Подставляется из названия сам, можно поправить.">?</span>
+            <input type="text" id="unit-id" placeholder="pryamougolnik">
+          </label>
+          <label class="field">Условие задачи <span class="tip" data-tip="Необязательно. Если заполнить — условие будет показано внутри юнита над редактором. Если оставить пустым — юнит «немой», условие вы пишете на своей странице сами.">?</span>
+            <textarea id="statement" rows="3" placeholder="Считайте с консоли ширину и высоту прямоугольника, выведите сначала периметр, затем площадь."></textarea>
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>2. Заготовка кода</legend>
+          <div class="radio-row">
+            <label><input type="radio" name="starter-kind" value="empty"> пусто</label>
+            <label><input type="radio" name="starter-kind" value="minimal"> минимум <span class="tip" data-tip="use console; и пустой main() — чистый лист с правильной рамкой.">?</span></label>
+            <label><input type="radio" name="starter-kind" value="custom" checked> свой код</label>
+          </div>
+          <textarea id="starter" class="code" rows="9" spellcheck="false"></textarea>
+          <p class="hint">Заготовка может намеренно не компилироваться («допишите условие в скобках») — это нормально.</p>
+        </fieldset>
+
+        <fieldset>
+          <legend>3. Вид</legend>
+          <div class="grid">
+            <label class="field">Строк в редакторе <input type="number" id="rows" min="4" max="40"></label>
+            <label class="field">Строк в консоли <input type="number" id="console-rows" min="3" max="20"></label>
+            <label class="field">Размер шрифта <input type="number" id="font-size" min="10" max="28"></label>
+            <label class="field">Тема
+              <select id="theme"><option value="auto">как у ученика</option><option value="light">светлая</option><option value="dark">тёмная</option></select>
+            </label>
+            <label class="field">Редактор <span class="tip" data-tip="Monaco — редактор как в Web IDE, с автодополнением и подчёркиванием ошибок; подгружается, когда ученик начал писать. Лёгкий — простое поле с подсветкой: ставьте его, если на странице много юнитов.">?</span>
+              <select id="editor-mode"><option value="monaco">Monaco</option><option value="light">лёгкий</option></select>
+            </label>
+            <label class="field">Язык кнопок
+              <select id="lang"><option value="ru">русский</option><option value="en">English</option></select>
+            </label>
+          </div>
+          <label class="check"><input type="checkbox" id="autocomplete"> автодополнение в редакторе <span class="tip" data-tip="Подсказки после точки: «console.» — и список функций. Снимите галочку, если ученик должен помнить названия сам: тогда подсказок не будет ни после точки, ни по Ctrl+Пробел. Работает в редакторе Monaco; в лёгком подсказок нет никогда.">?</span></label>
+          <label class="check"><input type="checkbox" id="format-button"> кнопка «Форматировать» <span class="tip" data-tip="Выравнивает отступы в коде ученика — то же, что «Форматировать» в Web IDE; Ctrl+Z возвращает как было. Снимите галочку, если расставить отступы — часть задания.">?</span></label>
+          <label class="check"><input type="checkbox" id="branding"> подпись «Работает на Idyllium» в углу юнита</label>
+        </fieldset>
+
+        <fieldset>
+          <legend>4. Библиотеки <span class="tip" data-tip="Что отмечено — то программа ученика сможет подключить через use. Юниты — консольные: окон, файлов, звука и сети в них нет.">?</span></legend>
+          <div class="chips" id="libs"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>5. Ввод и тесты</legend>
+          <div class="radio-row">
+            <label><input type="radio" name="inputs" value="some" checked> программа читает ввод</label>
+            <label><input type="radio" name="inputs" value="none"> ввода нет <span class="tip" data-tip="Если программа по условию ничего не читает — попытка чтения будет считаться ошибкой решения.">?</span></label>
+          </div>
+          <div id="tests-block">
+            <p class="hint">Кнопка «Проверить» запускает программу ученика на каждом тесте. Один тест ничего не доказывает: программа «w * 4» вместо периметра проходит ввод «1 1». Дайте хотя бы два-три разных, а для ветвлений — по тесту на каждую ветку.</p>
+            <div id="tests"></div>
+            <div class="row-buttons">
+              <button type="button" class="btn" id="add-test">+ тест</button>
+              <button type="button" class="btn" id="add-random">+ случайные числа <span class="tip" data-tip="Юнит сам подставит случайные числа из диапазона — каждый раз новые. Целые или дробные — выбирается в строке теста; если решение автора читает ввод через get_float, сразу предложатся дробные. Если тест провален, ученик увидит, при каком вводе.">?</span></button>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>6. Проверка</legend>
+          <div class="tabs" role="tablist">
+            <button type="button" class="tab" data-check="formula">Формулы</button>
+            <button type="button" class="tab" data-check="expect">Точный вывод</button>
+            <button type="button" class="tab" data-check="reference">Эталонное решение</button>
+            <button type="button" class="tab" data-check="none">Без проверки</button>
+          </div>
+          <div class="tab-body" data-body="formula">
+            <p class="hint">Условия пишутся как в Idyllium: <code>and</code>, <code>or</code>, <code>not</code>, <code>==</code>, <code>abs()</code>, <code>mod()</code>. Значения теста — в фигурных скобках. Приглашения вроде «Введите радиус: » в ответ не попадают.</p>
+            <div class="tokens" id="tokens">
+              <button type="button" class="token" data-token="{in1}">{in1}</button>
+              <button type="button" class="token" data-token="{in2}">{in2}</button>
+              <button type="button" class="token" data-token="{out1}">{out1}</button>
+              <button type="button" class="token" data-token="{out2}">{out2}</button>
+              <button type="button" class="token" data-token="{line1}">{line1}</button>
+              <button type="button" class="token" data-token="{outs}">{outs}</button>
+              <button type="button" class="token" data-token="{output}">{output}</button>
+              <span class="tip" data-tip="{in1} — первое значение ввода; {out1} — первое значение ответа (по пробелам и строкам); {line1} — первая строка ответа целиком; {outs} — сколько значений в ответе (ловит лишний вывод); {output} — весь ответ. Нажмите жетон — он вставится в поле, где стоит курсор.">?</span>
+            </div>
+            <div id="rules"></div>
+            <button type="button" class="btn" id="add-rule">+ условие</button>
+            <label class="field narrow">Допуск для дробных <span class="tip" data-tip="Два числа считаются равными, если отличаются не больше чем на эту величину.">?</span>
+              <input type="text" id="tolerance">
+            </label>
+          </div>
+          <div class="tab-body" data-body="expect" hidden>
+            <p class="hint">Вывод программы сравнивается с этим текстом по строкам; пробелы в конце строк и пустые строки в конце прощаются.</p>
+            <textarea id="expect" class="code" rows="6" spellcheck="false"></textarea>
+            <button type="button" class="btn" id="expect-from-solution">Взять из запуска решения автора</button>
+          </div>
+          <div class="tab-body" data-body="reference" hidden>
+            <p class="hint">Программа ученика и ваше решение (блок 8) запускаются на одних и тех же тестах, ответы сравниваются по значениям. <strong>Важно:</strong> в этом режиме решение уезжает в HTML страницы — любопытный ученик сможет его найти.</p>
+          </div>
+          <div class="tab-body" data-body="none" hidden>
+            <p class="hint">Юнит будет просто песочницей: кнопки «Проверить» в нём не будет.</p>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>7. Требования к коду <span class="tip" data-tip="Проверяется по словам программы, а не по тексту: слово в комментарии или строке не считается.">?</span></legend>
+          <label class="field">Обязательно использовать <input type="text" id="require" placeholder="for"></label>
+          <label class="field">Запрещено использовать <input type="text" id="forbid" placeholder="while"></label>
+          <label class="field">Не больше вызовов <span class="tip" data-tip="Формат: имя:число через пробел. Например writeln:1 — не больше одного вызова writeln, чтобы цикл нельзя было заменить шестью строками.">?</span>
+            <input type="text" id="max-calls" placeholder="writeln:1">
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>8. Решение автора <span class="tip" data-tip="Необязательно, но очень полезно: конструктор сам проверит, что ваше решение проходит ваши же тесты. Опечатку в формуле найдёте вы, а не ученик. В HTML решение не попадает (кроме режима «Эталонное решение»).">?</span></legend>
+          <textarea id="solution" class="code" rows="9" spellcheck="false"></textarea>
+          <div class="row-buttons">
+            <button type="button" class="btn" id="solution-from-preview">Взять код из предпросмотра</button>
+            <button type="button" class="btn" id="preview-from-solution">Показать решение в предпросмотре</button>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>9. Обратная связь</legend>
+          <label class="check"><input type="checkbox" id="soft-hint"> после обычного запуска подсказывать, сходится ли он с условием</label>
+          <label class="check"><input type="checkbox" id="reveal"> показывать ученику ожидаемый ответ проваленного теста <span class="tip" data-tip="Работает для режимов «Точный вывод» и «Эталонное решение».">?</span></label>
+        </fieldset>
+
+        <details class="admin">
+          <summary>10. Реакция сайта — для администратора</summary>
+          <p class="hint">Имена функций вашей страницы (можно с точкой: <code>lms.report</code>). Юнит вызовет их после «Проверить». Работает в форме «Полная вставка».</p>
+          <label class="field">При верном решении <input type="text" id="hook-solved" placeholder="showBunny"></label>
+          <label class="field">При неверном <input type="text" id="hook-failed" placeholder="gentleHint"></label>
+          <label class="field">При любой проверке <input type="text" id="hook-check" placeholder="lms.report"></label>
+          <label class="check"><input type="checkbox" id="share-code"> передавать сайту текст программы ученика <span class="tip" data-tip="По умолчанию выключено: текст программы — данные ученика, которые уходят вашему сайту. Включайте, если сайт сохраняет решения.">?</span></label>
+        </details>
+      </form>
+
+      <aside class="side">
+        <div class="side-sticky">
+          <h2>Предпросмотр</h2>
+          <p class="hint">Это настоящий юнит: пишите, запускайте, проверяйте. Нужны числа при сиде 429? Напишите программу здесь и посмотрите.</p>
+          <div id="preview"></div>
+
+          <h2>Самопроверка</h2>
+          <div class="selfcheck" id="selfcheck"><p class="hint">Заполните проверку — и конструктор сам убедится, что юнит исправен.</p></div>
+
+          <h2>Код для вставки</h2>
+          <div class="tabs">
+            <button type="button" class="tab active" data-out="full">Полная вставка</button>
+            <button type="button" class="tab" data-out="iframe">Только iframe</button>
+          </div>
+          <textarea id="markup" class="code markup" rows="10" readonly spellcheck="false"></textarea>
+          <div class="row-buttons">
+            <button type="button" class="btn btn-primary" id="copy"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5v-2a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/></svg><span id="copy-label">Скопировать</span></button>
+            <span class="file-note" id="copy-note"></span>
+          </div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script src="../assets/idyllium-web-core.js"></script>
+  <script src="../embed/idyllium-unit.js"></script>
+  <script src="authors.js"></script>
+</body>
+</html>

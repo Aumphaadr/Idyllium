@@ -48,7 +48,7 @@ function buildGrammar({ keywords, builtinTypes, classNames, qualifiedTypes }) {
     'keyword.operator.logical.idyllium': ['and', 'or', 'xor', 'not'],
     'constant.language.idyllium': ['true', 'false', 'null'],
     'variable.language.idyllium': ['this', 'parent'],
-    'keyword.declaration.idyllium': ['class', 'const', 'constructor', 'event', 'extends', 'function', 'private', 'public', 'static'],
+    'keyword.declaration.idyllium': ['class', 'const', 'constructor', 'contract', 'event', 'extends', 'function', 'private', 'public', 'static'],
   };
   const grouped = Object.values(keywordGroups).flat().sort();
   const expected = [...keywords].sort();

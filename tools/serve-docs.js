@@ -206,6 +206,9 @@ function sendFile(filePath, method, response, fallback) {
 
     const type = mimeTypes.get(path.extname(filePath).toLowerCase()) || 'application/octet-stream';
     response.writeHead(200, {
+      // Как GitHub Pages: кадр embed-юнита живёт в песочнице с пустым origin,
+      // и шрифты (наши и значки Monaco) приходят к нему только с CORS.
+      'Access-Control-Allow-Origin': '*',
       'Cache-Control': 'no-cache',
       'Content-Length': data.length,
       'Content-Type': type,

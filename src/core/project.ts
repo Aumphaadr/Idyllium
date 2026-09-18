@@ -45,6 +45,12 @@ export interface ModuleSource {
 export interface ModuleLoadOptions {
   readonly sources?: Record<string, string>;
   readonly resolveModule?: (moduleName: string, fromFile: string) => ModuleSource | null;
+  /**
+   * Отказ для имени модуля словами хоста — раньше поиска файла. Embed-юнит
+   * компилирует с урезанным реестром библиотек: `use gui;` там не «модуль не
+   * найден», а «эта библиотека в юните недоступна».
+   */
+  readonly refuseModule?: (moduleName: string) => string | null;
 }
 
 export interface ParsedSource {
@@ -126,6 +132,13 @@ export function loadUserModules(
     if (cycleStart >= 0) {
       const cycle = [...loading.slice(cycleStart), moduleName].join(' -> ');
       diagnostics.error(range, `module import cycle detected: ${cycle}`);
+      unavailable?.add(moduleName);
+      return;
+    }
+
+    const refusal = options.refuseModule?.(moduleName) ?? null;
+    if (refusal !== null) {
+      diagnostics.error(range, refusal);
       unavailable?.add(moduleName);
       return;
     }

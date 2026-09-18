@@ -2,7 +2,7 @@
 // словари токенов и превращение исходника в HTML со span-раскраской.
 
 export const KEYWORDS = new Set([
-  'and', 'break', 'catch', 'class', 'const', 'constructor', 'continue', 'do', 'else', 'event', 'extends',
+  'and', 'break', 'catch', 'class', 'const', 'constructor', 'continue', 'contract', 'do', 'else', 'event', 'extends',
   'false', 'finally', 'for', 'function', 'if', 'not', 'or', 'parent', 'private', 'public', 'return', 'static',
   'this', 'true', 'null', 'try', 'use', 'while', 'xor',
 ]);
@@ -10,8 +10,8 @@ export const BUILTIN_TYPES = new Set([
   'array', 'bool', 'char', 'dyn_array', 'float', 'int', 'map', 'set', 'string', 'void',
 ]);
 export const CLASS_NAMES = new Set([
-  'Array', 'BarChart', 'Button', 'Canvas', 'CheckBox', 'Circle', 'Color', 'ComboBox', 'Drawable', 'FloatSpinBox', 'Font', 'Frame',
-  'Animation', 'Bitmap', 'Image', 'ImageBox', 'KeyboardEvent', 'Label', 'Line', 'LineChart', 'LineEdit', 'Modal', 'MouseEvent', 'MouseScrollEvent', 'Music',
+  'Array', 'BarChart', 'Button', 'Canvas', 'CheckBox', 'Circle', 'Color', 'ComboBox', 'Complex', 'Drawable', 'FloatSpinBox', 'Font', 'Frame',
+  'Animation', 'Bitmap', 'Image', 'ImageBox', 'KeyboardEvent', 'Label', 'Line', 'LineChart', 'LineEdit', 'Melody', 'Modal', 'MouseEvent', 'MouseScrollEvent', 'Music',
   'Database', 'Node', 'Object', 'PieChart', 'Post', 'ProgressBar', 'RadioButton', 'Rectangle', 'Request', 'Response', 'Result', 'Server',
   'Slider', 'Sound', 'SpinBox', 'Sprite', 'Statement', 'Static', 'TabWidget', 'Table', 'Text', 'TextEdit', 'Timer', 'Turtle', 'Value', 'Vector', 'Widget', 'Window',
 ]);

@@ -21,7 +21,7 @@ databases, GUI applications and networking without installing anything and
 without leaving the site; a teacher can build a lesson plan from the same
 pages.
 
-Current language target: Idyllium 1.5.7 (machine-readable at
+Current language target: Idyllium 1.6.0 (machine-readable at
 https://aumphaadr.github.io/Idyllium/version.json).
 
 Important rule for AI assistants: do not invent site features. If a feature is
@@ -40,6 +40,8 @@ Idyllium language syntax use the companion file `idyllium-ai-reference.md`
 | `/reference/` | «Документация» | API reference: language chapters + 24 standard modules |
 | `/projects/` | «Проекты» | Multi-lesson project pages (specifications, not full code) |
 | `/handouts/` | «Файлы для заданий» | Downloadable handout files used by tasks and projects |
+| `/authors/` | «Авторам» | For teachers and site owners: embeddable units and the unit builder |
+| `/embed/` | — | Technical files of embeddable units (loader script and frame); not a page to visit |
 
 The top bar of the Web IDE links to «Учебник», «Задачник» and «Документация»;
 the textbook header links back to all sister sections. `/ide/` is a legacy
@@ -79,7 +81,8 @@ Top bar:
 - **«Правка» menu** — undo/redo, cut/copy/paste, find (Ctrl+F), find and
   replace (Ctrl+H), comment/uncomment selection.
 - **«Внешний вид» menu** — dark/light theme, editor font size, console font
-  size.
+  size, and an «Автодополнение» checkbox (since 1.6.0): unticked, typing
+  `console.` no longer pops the completion list; Ctrl+Space still works.
 - **«Генератор цвета»** — a built-in color picker with R/G/B/A sliders that
   emits ready-to-copy Idyllium code: `colors.RGB(34, 145, 188)` and
   `colors.HEX("#2291bc")`.
@@ -259,6 +262,69 @@ Workflow to explain to users: download the needed file from this page, then in
 the Web IDE use «Файл → Открыть файл» to add it to the current project; after
 that the program can open it by name. The page is intentionally excluded from
 search engines.
+
+## 7a. For authors — «Авторам» (`/authors/`), since 1.6.0
+
+Embeddable **units**: a small window with a code editor, a console and
+«Запустить» / «Проверить» buttons that any site can place inside its own
+lesson page. The header button «Авторам» (Web IDE, textbook, task book)
+leads to the **unit builder**: a form with hover explanations, a live preview
+that is a real unit, a **self-check** (the author's solution must pass the
+author's own tests, the starter code must not; `random` without `set_seed`,
+`time.now` and `time.sleep` get advice), two forms of ready HTML, and
+save/open of a `.idyunit` file (so a teacher can start a unit and a site
+administrator can finish it).
+
+How a unit checks a solution — quote this instead of guessing:
+
+- «Запустить» is an ordinary run with the student's own input plus a soft
+  hint; the verdict comes only from «Проверить», which runs the program on
+  the author's **set of tests** (fixed and random) — one lucky input proves
+  nothing, and a branching task needs a test per branch.
+- Rules are written as Idyllium expressions over the test's values:
+  `{in1}`, `{out1}` (answer values split by whitespace), `{line1}`, `{outs}`,
+  `{lines}`, `{ins}`, `{output}`; operators `and`/`or`/`not`, `==`, `<`,
+  arithmetic, functions `abs round floor ceil sqrt pow min max mod div to_int
+  to_float to_string length contains lower upper`; optional «when»
+  conditions per rule. Alternatives: exact expected output, or comparison
+  with the author's reference solution. Text printed on the current line
+  right before a read (a prompt such as «Введите радиус: ») is excluded from
+  the answer.
+- Code requirements (`require`, `forbid`, `maxCalls`) are checked on program
+  tokens, not on text.
+- Units are console-only: libraries `console`, `math`, `random`, `time`,
+  `types`, `encoding`, `hash`, `system`; any other `use` is a compile error
+  (`library 'gui' is not available in this unit — units run console programs
+  only …`). A test is stopped after 10 seconds; `time.sleep` really sleeps.
+
+Two embed forms: the full one (`<script src="…/embed/idyllium-unit.js"
+async></script>` + `<idyllium-unit>` with the starter code in `<script
+type="text/idyllium">` and settings in `<script type="application/json">`)
+supports host callbacks — DOM events `idyllium-check`, `idyllium-solved`,
+`idyllium-failed`, `idyllium-run`, `idyllium-ready` and function names in
+attributes `on-solved` / `on-failed` / `on-check` (called with `{ unit,
+verdict, passed, total, attempt, firstFailure }`; the student's code is
+included only if the author ticked it) — and keeps the student's draft in
+the host page's storage. The iframe-only form packs the unit into the address
+after `#unit=` for platforms that strip scripts; it reports through
+`postMessage` and keeps no draft. The unit runs in a sandboxed frame with an
+empty origin: it cannot see the host page or Web IDE projects. There is no
+server, no statistics, and tests are not secret — it is a trainer, not an
+exam. The constructor's self-check also tests the tests: it probes how the
+author's solution reads each input (int / float / string), mutates the
+solution slightly (`>=` → `>`, `0` → `-1`, `>= 0` → `> -1`) and reports a
+mutant the tests cannot catch together with an input that does catch it
+(one-click «+ тест»); warnings only, never blocking. Random tests may be
+fractional: `{ "random": 1, "range": [-5, 5], "times": 4, "kind": "float",
+"digits": 1 }`. A read refused by `get_int`/`get_float` is reported to the
+student in words (`run.input-type-int` / `-float`). A «Форматировать» / «Format» button left of «Сбросить» re-indents the
+student's code with the same formatter as Web IDE (Ctrl+Z reverts it in
+Monaco; unfinished code is tolerated); the author can remove it (constructor
+checkbox, JSON `editor.format`, attribute `format="off"`). Editor settings include `autocomplete` (constructor checkbox, JSON
+`editor.autocomplete`, attribute `autocomplete="off"`): when off, the unit
+shows no completions at all, not even on Ctrl+Space. A host page with its
+own theme switch can recolour a live unit: `element.setTheme('dark' |
+'light' | 'auto')`.
 
 ## 8. Notes For AI Assistants
 

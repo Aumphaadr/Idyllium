@@ -1,7 +1,7 @@
 (() => {
   const KEYWORDS = new Set([
     'use', 'if', 'else', 'while', 'do', 'for', 'break', 'continue', 'return', 'try', 'catch', 'finally', 'const',
-    'function', 'class', 'extends', 'this', 'constructor', 'event',
+    'function', 'class', 'extends', 'this', 'constructor', 'event', 'contract',
     'public', 'private', 'static', 'parent', 'and', 'or', 'xor',
     'not', 'true', 'false', 'null',
   ]);
@@ -374,6 +374,7 @@
           ${section.description ? `<p class="api-section-intro">${inlineCodeHtml(section.description)}</p>` : ''}
           ${section.notes?.length ? `<ul class="notes-list">${section.notes.map((note) => `<li>${inlineCodeHtml(note)}</li>`).join('')}</ul>` : ''}
           ${section.code ? codeSample(section.code, section.language) : ''}
+          ${section.link ? `<p class="section-link"><a href="${routeUrl('language', section.link.page)}">${escapeHtml(section.link.label)}</a></p>` : ''}
         </section>
       `).join('')}
     `;

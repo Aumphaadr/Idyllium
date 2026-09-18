@@ -1,4 +1,4 @@
-import { ANY_TYPE, BOOL, CHAR, COLOR, FLOAT, INT, QualifiedType, STRING, TypeRef, VOID, arrayType, qualified, typeToString } from '../types';
+import { ANY_TYPE, BOOL, CHAR, COLOR, FLOAT, INT, MATH_COMPLEX, QualifiedType, STRING, TypeRef, VOID, arrayType, qualified, typeToString } from '../types';
 
 export interface ParameterSpec {
   readonly name: string;
@@ -22,7 +22,7 @@ export interface FunctionSpec {
   readonly runtimeName?: string;
   /**
    * Функция печатает/преобразует значения в текст: объекты пользовательских
-   * классов допускаются только с публичным `string function to_string()`.
+   * классов допускаются только с публичным `contract string function to_string()`.
    */
   readonly printsValues?: boolean;
   /**
@@ -46,7 +46,9 @@ export interface FunctionSpec {
     | 'int-when-all-integer-numeric'
     | 'numeric-array-aggregate'
     | 'element-of-collection'
-    | 'same-as-argument';
+    | 'same-as-argument'
+    /** math.sqrt(z) и родня: комплексный аргумент — комплексный результат, иначе объявленный. */
+    | 'complex-when-complex-argument';
   /**
    * Выброшенный результат этой функции — предупреждение: вызов строкой-соло
    * заведомо бессмыслен (random.shuffle возвращает копию — привет питоньей
@@ -122,6 +124,18 @@ export class StandardLibraryRegistry {
 
   hasModule(name: string): boolean {
     return this.modules.has(name);
+  }
+
+  /** Копия реестра с урезанным набором библиотек (embed-юниты: только
+   *  консольные). Глобальные функции остаются все. */
+  restrictedTo(moduleNames: Iterable<string>): StandardLibraryRegistry {
+    const allowed = new Set(moduleNames);
+    const copy = new StandardLibraryRegistry();
+    for (const [name, module] of this.modules) {
+      if (allowed.has(name)) copy.registerModule(module);
+    }
+    for (const spec of this.globals.values()) copy.registerGlobalFunction(spec);
+    return copy;
   }
 
   getModule(name: string): ModuleSpec | undefined {
@@ -446,11 +460,14 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   ]));
 
   registry.registerModule(moduleSpec('math', [
-    functionSpec('abs', [{ name: 'value', type: FLOAT }], FLOAT, {
+    functionSpec('abs', [{ name: 'value', type: FLOAT, acceptedTypes: [FLOAT, MATH_COMPLEX], acceptedDescription: 'number or math.Complex' }], FLOAT, {
       returnTypeRule: 'match-integer-argument',
-      documentation: 'Модуль числа. Тип результата повторяет аргумент: abs(int) даёт int, abs(float) — float.',
+      documentation: 'Модуль числа. Тип результата повторяет аргумент: abs(int) даёт int, abs(float) — float; abs(math.Complex) — float, модуль |z|.',
     }),
-    functionSpec('sqrt', [{ name: 'value', type: FLOAT }], FLOAT),
+    functionSpec('sqrt', [{ name: 'value', type: FLOAT, acceptedTypes: [FLOAT, MATH_COMPLEX], acceptedDescription: 'number or math.Complex' }], FLOAT, {
+      returnTypeRule: 'complex-when-complex-argument',
+      documentation: 'Квадратный корень. Отрицательное вещественное — ошибка выполнения; комплексный аргумент даёт главное значение корня (то же, что z.sqrt()).',
+    }),
     functionSpec('round', [
       { name: 'value', type: FLOAT },
       { name: 'digits', type: INT },
@@ -475,7 +492,13 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       returnTypeRule: 'int-without-digits',
       documentation: 'Округляет вверх. Без digits возвращает int; с digits — float с указанным числом знаков.',
     }),
-    functionSpec('pow', [{ name: 'value', type: FLOAT }, { name: 'power', type: FLOAT }], FLOAT),
+    functionSpec('pow', [
+      { name: 'value', type: FLOAT, acceptedTypes: [FLOAT, MATH_COMPLEX], acceptedDescription: 'number or math.Complex' },
+      { name: 'power', type: FLOAT, acceptedTypes: [FLOAT, MATH_COMPLEX], acceptedDescription: 'number or math.Complex' },
+    ], FLOAT, {
+      returnTypeRule: 'complex-when-complex-argument',
+      documentation: 'Степень. Если основание или показатель — math.Complex, результат комплексный (как z.pow(w)).',
+    }),
     functionSpec('clamp', [
       { name: 'min', type: FLOAT },
       { name: 'value', type: FLOAT },
@@ -483,9 +506,18 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], FLOAT, {
       returnTypeRule: 'int-when-all-integer-numeric',
     }),
-    functionSpec('sin', [{ name: 'radians', type: FLOAT }], FLOAT),
-    functionSpec('cos', [{ name: 'radians', type: FLOAT }], FLOAT),
-    functionSpec('tan', [{ name: 'radians', type: FLOAT }], FLOAT),
+    functionSpec('sin', [{ name: 'radians', type: FLOAT, acceptedTypes: [FLOAT, MATH_COMPLEX], acceptedDescription: 'number or math.Complex' }], FLOAT, {
+      returnTypeRule: 'complex-when-complex-argument',
+      documentation: 'Синус угла в радианах; комплексный аргумент даёт комплексный синус (как z.sin()).',
+    }),
+    functionSpec('cos', [{ name: 'radians', type: FLOAT, acceptedTypes: [FLOAT, MATH_COMPLEX], acceptedDescription: 'number or math.Complex' }], FLOAT, {
+      returnTypeRule: 'complex-when-complex-argument',
+      documentation: 'Косинус угла в радианах; комплексный аргумент даёт комплексный косинус (как z.cos()).',
+    }),
+    functionSpec('tan', [{ name: 'radians', type: FLOAT, acceptedTypes: [FLOAT, MATH_COMPLEX], acceptedDescription: 'number or math.Complex' }], FLOAT, {
+      returnTypeRule: 'complex-when-complex-argument',
+      documentation: 'Тангенс угла в радианах; комплексный аргумент даёт комплексный тангенс (как z.tan()).',
+    }),
     functionSpec('asin', [{ name: 'value', type: FLOAT }], FLOAT),
     functionSpec('acos', [{ name: 'value', type: FLOAT }], FLOAT),
     functionSpec('atan', [{ name: 'value', type: FLOAT }], FLOAT),
@@ -495,7 +527,10 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], FLOAT, {
       documentation: 'Угол (в радианах) от начала координат до точки (x, y) — сначала y! Работает во всех четырёх квадрантах и не боится x = 0. Рецепт для Canvas: повернуться к цели — rotation = math.to_degrees(math.atan2(target_y - y, target_x - x)); ось Y экрана смотрит вниз, поэтому угол идёт по часовой — как rotation у drawable, поправки не нужны.',
     }),
-    functionSpec('log', [{ name: 'value', type: FLOAT }], FLOAT),
+    functionSpec('log', [{ name: 'value', type: FLOAT, acceptedTypes: [FLOAT, MATH_COMPLEX], acceptedDescription: 'number or math.Complex' }], FLOAT, {
+      returnTypeRule: 'complex-when-complex-argument',
+      documentation: 'Натуральный логарифм. Неположительное вещественное — ошибка выполнения; комплексный аргумент даёт главное значение логарифма (то же, что z.ln()).',
+    }),
     functionSpec('log10', [{ name: 'value', type: FLOAT }], FLOAT),
     functionSpec('to_radians', [{ name: 'degrees', type: FLOAT }], FLOAT),
     functionSpec('to_degrees', [{ name: 'radians', type: FLOAT }], FLOAT),
@@ -521,9 +556,60 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     functionSpec('hypot', [{ name: 'a', type: FLOAT }, { name: 'b', type: FLOAT }], FLOAT, {
       documentation: 'Длина гипотенузы по двум катетам — sqrt(a² + b²): расстояние между точками на холсте без ручного возведения в квадрат.',
     }),
+    functionSpec('Complex', [
+      { name: 're', type: FLOAT, defaultValue: '0' },
+      { name: 'im', type: FLOAT, defaultValue: '0' },
+    ], MATH_COMPLEX, {
+      minArguments: 0,
+      documentation: 'Комплексное число re + im·i. Без аргументов — ноль; math.Complex(3) — вещественное 3. Вещественные числа входят в арифметику с комплексными сами: 2 * z и z + 1 работают без приведения.',
+    }),
+    functionSpec('polar', [
+      { name: 'modulus', type: FLOAT },
+      { name: 'argument', type: FLOAT },
+    ], MATH_COMPLEX, {
+      documentation: 'Комплексное число по модулю и аргументу (в радианах): modulus · (cos argument + i · sin argument). Отрицательный модуль — ошибка выполнения.',
+    }),
   ], [
     { name: 'pi', type: FLOAT, documentation: 'Число π.' },
     { name: 'e', type: FLOAT, documentation: 'Число Эйлера.' },
+    { name: 'I', type: MATH_COMPLEX, documentation: 'Мнимая единица i: math.I * math.I == -1.' },
+  ], [
+    typeSpec('Complex', [
+      propertySpec('re', FLOAT, true, 'Вещественная часть.'),
+      propertySpec('im', FLOAT, true, 'Мнимая часть.'),
+    ], [
+      functionSpec('abs', [], FLOAT, { documentation: 'Модуль |z| — расстояние до нуля на комплексной плоскости.' }),
+      functionSpec('arg', [], FLOAT, { documentation: 'Главное значение аргумента в радианах, из промежутка (−π; π]; у нуля — 0.' }),
+      functionSpec('conjugate', [], MATH_COMPLEX, { documentation: 'Сопряжённое число re − im·i.' }),
+      functionSpec('plus', [{ name: 'other', type: MATH_COMPLEX }], MATH_COMPLEX, { documentation: 'Контракт знака +: z + w.' }),
+      functionSpec('minus', [{ name: 'other', type: MATH_COMPLEX }], MATH_COMPLEX, { documentation: 'Контракт знака −: z − w.' }),
+      functionSpec('multiply', [{ name: 'other', type: MATH_COMPLEX }], MATH_COMPLEX, { documentation: 'Контракт знака *: z · w.' }),
+      functionSpec('divide', [{ name: 'other', type: MATH_COMPLEX }], MATH_COMPLEX, { documentation: 'Контракт знака /: z / w. Деление на ноль — ошибка выполнения.' }),
+      functionSpec('opposite', [], MATH_COMPLEX, { documentation: 'Контракт унарного минуса: −z.' }),
+      functionSpec('pow', [{ name: 'exponent', type: MATH_COMPLEX }], MATH_COMPLEX, {
+        documentation: 'Степень. Целый показатель считается точным умножением (формула Муавра без погрешности cos/sin): math.I.pow(2) — ровно −1. Дробный и комплексный показатель — главное значение exp(w · ln z).',
+      }),
+      functionSpec('sqrt', [], MATH_COMPLEX, { documentation: 'Главное значение квадратного корня (вещественная часть неотрицательна): math.Complex(-4).sqrt() — 2i. Оба корня даёт roots(2).' }),
+      functionSpec('roots', [{ name: 'degree', type: INT }], arrayType(MATH_COMPLEX, null, true), {
+        documentation: 'Все корни степени degree — degree чисел на окружности, от главного против часовой стрелки: math.Complex(1).roots(3) — три кубических корня из единицы.',
+      }),
+      functionSpec('exp', [], MATH_COMPLEX, { documentation: 'Экспонента e^z.' }),
+      functionSpec('ln', [], MATH_COMPLEX, { documentation: 'Главное значение натурального логарифма: ln|z| + i·arg z. У нуля логарифма нет — ошибка выполнения.' }),
+      functionSpec('sin', [], MATH_COMPLEX),
+      functionSpec('cos', [], MATH_COMPLEX),
+      functionSpec('tan', [], MATH_COMPLEX, { documentation: 'Тангенс; там, где косинус равен нулю, — ошибка выполнения.' }),
+      functionSpec('sinh', [], MATH_COMPLEX),
+      functionSpec('cosh', [], MATH_COMPLEX),
+      functionSpec('is_close', [
+        { name: 'other', type: MATH_COMPLEX },
+        { name: 'epsilon', type: FLOAT, defaultValue: '0.000000001' },
+      ], BOOL, {
+        minArguments: 1,
+        documentation: 'Близки ли числа: |z − other| <= epsilon. Вычисленные значения сравнивайте так, а не знаком ==: у комплексных, как у float, точное равенство почти никогда не выполняется.',
+      }),
+      functionSpec('to_string', [], STRING, { documentation: 'Алгебраическая форма: «3 + 4i», «-2.5i», «i», «0». При печати части округляются как обычные числа (console.set_precision).' }),
+      functionSpec('to_polar_string', [], STRING, { documentation: 'Тригонометрическая форма: «5(cos 0.92729522 + i sin 0.92729522)».' }),
+    ]),
   ]));
 
   registry.registerModule(moduleSpec('random', [
@@ -2069,7 +2155,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   ], STRING, {
     printsValues: true,
     codegen: { target: 'core.to_string', shape: 'args' },
-    documentation: 'Преобразует значение в строку. Объект класса — только с публичным string function to_string(). Библиотечные объекты (gui-виджеты, шрифты, фигуры, файловые потоки) текстового вида не имеют — компилятор откажет и посоветует напечатать какое-нибудь их свойство; значения библиотеки (ячейки types, colors.Color, time.stamp, json.Value, а также холст, таблица, диаграммы, черепаха, сервер и ответ http) печатаются как есть.',
+    documentation: 'Преобразует значение в строку. Объект класса — только с публичным contract string function to_string(). Библиотечные объекты (gui-виджеты, шрифты, фигуры, файловые потоки) текстового вида не имеют — компилятор откажет и посоветует напечатать какое-нибудь их свойство; значения библиотеки (ячейки types, colors.Color, time.stamp, json.Value, а также холст, таблица, диаграммы, черепаха, сервер и ответ http) печатаются как есть.',
   }));
 
   // Агрегатные функции массивов. Точные типы результата выводит семантика
@@ -2094,12 +2180,12 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   registry.registerGlobalFunction(functionSpec('sum', [numericArrayParameter], ANY_TYPE, {
     returnTypeRule: 'numeric-array-aggregate',
     codegen: { target: 'array.sum', shape: 'args-context' },
-    documentation: 'Сумма элементов числового массива. Тип результата повторяет тип элементов.',
+    documentation: 'Сумма элементов массива. Для чисел тип результата повторяет тип элементов; для math.Complex — комплексная сумма; для объектов класса с контрактом plus — их сумма через plus, начиная с первого элемента. Пустой массив — ошибка выполнения.',
   }));
   registry.registerGlobalFunction(functionSpec('avg', [numericArrayParameter], FLOAT, {
     returnTypeRule: 'numeric-array-aggregate',
     codegen: { target: 'array.avg', shape: 'args-context' },
-    documentation: 'Среднее арифметическое элементов числового массива; всегда float.',
+    documentation: 'Среднее арифметическое элементов массива: для чисел — float, для math.Complex — комплексное.',
   }));
 
   return registry;

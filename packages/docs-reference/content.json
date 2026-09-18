@@ -45,8 +45,8 @@
         },
         {
           "title": "Типы и значения",
-          "description": "Встроенные типы, массивы, именованные константы и логические литералы.",
-          "code": "int   float   string   char   bool\narray   dyn_array   const\ntrue   false   null"
+          "description": "Встроенные типы, массивы и словари, именованные константы и логические литералы.",
+          "code": "int   float   string   char   bool\narray   dyn_array   map   const\ntrue   false   null"
         },
         {
           "title": "Условия и циклы",
@@ -60,8 +60,8 @@
         },
         {
           "title": "Классы",
-          "description": "Объявление классов, конструкторы, наследование, доступ и обращение к текущему объекту.",
-          "code": "class   constructor   event\nextends   parent   this\npublic   private   static"
+          "description": "Объявление классов, конструкторы, события и контракты, наследование, доступ и обращение к текущему объекту.",
+          "code": "class   constructor   event   contract\nextends   parent   this\npublic   private   static"
         },
         {
           "title": "Литерал null",
@@ -71,7 +71,7 @@
         {
           "title": "Занятые имена",
           "description": "Помимо ключевых слов, язык держит за собой имена стандартных библиотек: назвать ими переменную, параметр, функцию или класс нельзя. Причина в записи console.write() — она разбирается как обращение к модулю, поэтому одно и то же слово не может означать ещё и вашу переменную. Имена встроенных функций (to_int, to_float, to_string, max, min, sum, avg) закрыты только для своих функций и классов: переменной так назваться можно, но вызвать по занятому имени встроенную функцию уже нельзя — компилятор сообщит об этом, а не подставит её молча. Отдельно закрыты имена, начинающиеся с двух подчёркиваний (__): они принадлежат самому языку — под ними живут внутренние метки объектов и переменные сгенерированного кода. Такое имя не примут ни переменная, ни функция, ни поле, ни метод, ни событие, ни класс.",
-          "code": "audio      channel   colors   console   drawable\nencoding   file      fonts    gui       hash\nhttp       image     json     math      random\nsqlite     system    time     turtle    types\nurl        web"
+          "code": "audio      channel   colors   console   csv\ndrawable   encoding  file     fonts     gui\nhash       http      image    json      math\nrandom     sqlite    system   time      turtle\ntypes      url       web      xml"
         }
       ]
     },
@@ -146,6 +146,15 @@
           "title": "Составное присваивание",
           "description": "Операторы +=, -=, *= и /= изменяют существующую переменную. Операторов ++ и -- в Idyllium нет.",
           "code": "score += 10;\nspeed *= 1.5;\nlives -= 1;"
+        },
+        {
+          "title": "Знаки для объектов",
+          "description": "Для встроенных типов каждый знак всегда означает одно и то же. Объектам пользовательских классов знак достаётся только по явному договору — методу с ключевым словом `contract`: без него `a == b`, `a < b`, `a + b` и `-a` для объектов — ошибки компиляции с готовой подсказкой.",
+          "link": {
+            "page": "contracts",
+            "label": "Контракты: какой метод подключает какой знак"
+          },
+          "code": "Vec c = a + b * 2;    // a.plus(b.multiply(2)) — приоритеты прежние\nbool same = a == b;   // a.equals(b)\nVec back = -a;        // a.opposite()"
         }
       ]
     },
@@ -293,14 +302,12 @@
           "code": "Counter first(5);\nCounter second = first;\nsecond.increment();\n\nconsole.writeln(first.value); // 6"
         },
         {
-          "title": "Сравнение объектов: контракт equals",
-          "description": "У объектов пользовательских классов нет встроенного равенства: a == b без договора — ошибка компиляции с подсказкой. Договор — публичный метод bool function equals(СвойКласс other), объявленный в самом классе; с ним == и != работают через него, а contains, find, count и сравнение массивов объектов ищут «по смыслу». Контракты (equals, less, greater и to_string) не наследуются: каждый класс подписывает договор сам, и сравнение выполняет контракт того класса, через который на объекты смотрят. equals должен отвечать, не изменяя объекты.",
-          "code": "use console;\n\nclass Hero {\n    string name;\n    int level;\n\n    bool function equals(Hero other) {\n        return this.name == other.name and this.level == other.level;\n    }\n}\n\nmain() {\n    Hero a;\n    a.name = \"Мира\";\n    a.level = 12;\n    Hero b;\n    b.name = \"Мира\";\n    b.level = 12;\n\n    console.writeln(a == b);    // true — через ваш equals\n    console.writeln(a != b);    // false — выводится сам\n}"
-        },
-        {
-          "title": "Порядок объектов: контракты less и greater",
-          "description": "Встроенного порядка у объектов тоже нет: a < b без договора — ошибка компиляции с подсказкой. Контракт порядка — той же формы, что equals: публичный bool function less(СвойКласс other) («я меньше, чем other?») подключает знак < и — отрицанием — знак >=, а заодно открывает sort() для массивов этого класса (сортировка по less, стабильная: элементы, которых контракт не различает, сохраняют исходный порядок). Знаки > и <= обслуживает отдельный контракт bool function greater(СвойКласс other). Контракты независимы: один из другого язык не выводит и согласованность объявленной пары не проверяет. Смешивать объект с числом по-прежнему нельзя: hero < 5 — ошибка типов.",
-          "code": "use console;\n\nclass Hero {\n    string name;\n    int level;\n\n    bool function less(Hero other) {\n        return this.level < other.level;\n    }\n}\n\nmain() {\n    Hero a;\n    a.name = \"Мира\";\n    a.level = 12;\n    Hero b;\n    b.name = \"Кай\";\n    b.level = 9;\n\n    console.writeln(b < a);     // true — через ваш less\n    console.writeln(b >= a);    // false — отрицание less\n\n    dyn_array<Hero> guild;\n    guild.add(a);\n    guild.add(b);\n    guild.sort();               // сортировка по less\n    console.writeln(guild[0].name);\n}"
+          "title": "Контракты: знаки и печать для объектов",
+          "description": "У объектов пользовательских классов нет встроенных равенства, порядка, арифметики и текстового вида: `a == b`, `a < b`, `a + b` и печать объекта без договора — ошибки компиляции с подсказкой. Договор — метод, помеченный ключевым словом `contract`: `to_string` открывает печать, `equals` — знаки `==` и `!=` и поиск в массивах, `less` и `greater` — знаки порядка и `sort()`, `plus`, `minus`, `multiply`, `divide` и `opposite` — арифметику. Контракты не наследуются и проверяются у объявления.",
+          "link": {
+            "page": "contracts",
+            "label": "Все контракты, правила и примеры — на странице «Контракты»"
+          }
         },
         {
           "title": "Значение или ссылка: сводная таблица",
@@ -340,6 +347,84 @@
           "title": "Жизненный цикл ресурсов",
           "description": "Освобождение внешних ресурсов выполняется явно. Закрывайте файлы и базы методом `close()`, а звук — `stop()`; не полагайтесь на момент удаления объекта сборщиком мусора.",
           "code": "file.istream input = file.open(\"data.txt\", \"read\");\nstring text = input.read();\ninput.close();"
+        }
+      ]
+    },
+    {
+      "id": "contracts",
+      "title": "Контракты",
+      "description": "Методы, которые вызывает знак или печать: слово `contract`, девять контрактов и общие для них правила.",
+      "sections": [
+        {
+          "title": "Что такое контракт",
+          "description": "Контракт — метод класса, который язык вызывает сам: им пользуется знак (`==`, `<`, `+`) или печать, а не только имя. Контракт помечается ключевым словом `contract` — по тому же принципу, что событие помечается словом `event`: член объявляете вы, а когда ему работать, решает язык. Пометка обязательна, а имена контрактов в классах зарезервированы.",
+          "notes": [
+            "Контракты-знаки: `equals`, `less`, `greater`, `plus`, `minus`, `multiply`, `divide`, `opposite`. Контракт-преобразование: `to_string`.",
+            "Имя контракта-знака — слово, которым знак читают вслух, без служебного предлога: «меньше» — `less` (не `less_than`), «умножить» — `multiply` (не `multiplied_by`), «противоположное» — `opposite`.",
+            "Контракт остаётся обычным методом: его можно вызвать и по имени — `a.less(b)`, `a.plus(b)`."
+          ],
+          "code": "contract string function to_string()          // печать, to_string(объект)\ncontract bool function equals(Hero other)      // ==  !=  contains  find  count\ncontract bool function less(Hero other)        // <   >=  sort()\ncontract bool function greater(Hero other)     // >   <=\ncontract Vec function plus(Vec other)          // +   +=\ncontract Vec function minus(Vec other)         // -   -=\ncontract Vec function multiply(float k)        // *   *=\ncontract Vec function divide(float k)          // /   /=\ncontract Vec function opposite()               // -a"
+        },
+        {
+          "title": "Общие правила",
+          "description": "Правила одинаковы для всех девяти контрактов. Форма проверяется у самого объявления и один раз: места, где стоит знак, о той же беде уже не говорят.",
+          "notes": [
+            "Контракт публичный и нестатический, объявлен в самом классе.",
+            "Контракты не наследуются: потомок объявляет свой контракт рядом с базовым — единственный случай, когда «переопределение» вправе сменить сигнатуру.",
+            "Диспетчеризация статическая: контракт выбирает объявленный тип левого операнда (печатаемого значения, получателя вызова), а не фактический класс объекта.",
+            "Имя контракта без пометки — ошибка компиляции с готовым рецептом; функций файла с такими именами это не касается.",
+            "Пометка на постороннем имени — тоже ошибка: привычке из другого языка отвечают правильным словом (`add` → `plus`, `times` → `multiply`, `negate` → `opposite`, `str` → `to_string`).",
+            "Контракт отвечает, но не изменяет объекты."
+          ],
+          "code": "// имя контракта без пометки:\n// 'equals' is a contract name — write 'contract bool function equals(Hero other)' and '==' and '!=' will use it, or pick another name\n\n// не та форма:\n// contract 'less' has a wrong shape: it returns 'int' instead of 'bool' — write 'contract bool function less(Hero other)'\n\n// приватный контракт:\n// contract 'greater' cannot be private — '>' and '<=' are written outside the class; move it to the public part\n\n// пометка на чужом имени:\n// 'add' is not a contract — the contract for '+' is called 'plus'\n// 'show' is not a contract — contracts are: to_string, equals, less, greater, plus, minus, multiply, divide, opposite\n\n// пометка не на методе объекта:\n// a contract cannot be static — it works on an object ('a == b', 'a + b')\n// 'contract' marks a method — a field cannot be a contract"
+        },
+        {
+          "title": "Печать: to_string",
+          "description": "Объект пользовательского класса печатается, только если класс объявил контракт `contract string function to_string()` — без параметров, с результатом `string`. Им пользуются `console.write` и `console.writeln`, запись в файл, глобальная `to_string(объект)`; массив и словарь таких объектов печатаются целиком — представления элементов собираются через контракт на любой глубине вложенности. Склейка `\"строка\" + объект` запрещена, как и склейка строки с числом: собирайте текст через `to_string(объект)`.",
+          "code": "use console;\n\nclass Hero {\n    string name;\n    int level;\n\n    contract string function to_string() {\n        return this.name + \" (уровень \" + to_string(this.level) + \")\";\n    }\n}\n\nmain() {\n    Hero mira;\n    mira.name = \"Мира\";\n    mira.level = 12;\n\n    console.writeln(mira);                          // Мира (уровень 12)\n    console.writeln(\"Встречайте: \" + to_string(mira));\n\n    dyn_array<Hero> guild = [mira];\n    console.writeln(guild);                         // [\"Мира (уровень 12)\"]\n}\n\n// без контракта:\n// cannot print object of class 'Hero' directly — declare 'contract string function to_string()' in class 'Hero' and printing will use it"
+        },
+        {
+          "title": "Равенство: equals",
+          "description": "У объектов пользовательских классов нет встроенного равенства: `a == b` без договора — ошибка компиляции с подсказкой. Контракт `contract bool function equals(СвойКласс other)` подключает `==` и — отрицанием — `!=`; через него же работают `contains`, `find`, `count` и сравнение массивов и словарей таких объектов. Что значит «равны» — по всем полям или только по имени — решает автор класса. Внутри `equals` проверка `type_name(this) != type_name(other)` отличает тёзок разных классов.",
+          "code": "use console;\n\nclass Hero {\n    string name;\n    int level;\n\n    contract bool function equals(Hero other) {\n        return this.name == other.name and this.level == other.level;\n    }\n}\n\nmain() {\n    Hero a;\n    a.name = \"Мира\";\n    a.level = 12;\n    Hero b;\n    b.name = \"Мира\";\n    b.level = 12;\n\n    console.writeln(a == b);    // true — через ваш equals\n    console.writeln(a != b);    // false — выводится сам\n\n    dyn_array<Hero> guild = [a];\n    console.writeln(guild.contains(b));   // true — поиск «по смыслу»\n}\n\n// без контракта:\n// cannot compare objects of class 'Hero' with '==' — declare 'contract bool function equals(Hero other)' in class 'Hero' and the comparison will use it"
+        },
+        {
+          "title": "Порядок: less и greater",
+          "description": "Встроенного порядка у объектов тоже нет. Контракт `contract bool function less(СвойКласс other)` («я меньше, чем other?») подключает знак `<` и — отрицанием — знак `>=`, а заодно открывает `sort()` для массивов этого класса: сортировка идёт по `less` и стабильна — элементы, которых контракт не различает, сохраняют исходный порядок. Знаки `>` и `<=` обслуживает отдельный контракт `greater`. Контракты независимы: один из другого язык не выводит и согласованность объявленной пары не проверяет. Смешивать объект с числом по-прежнему нельзя: `hero < 5` — ошибка типов.",
+          "code": "use console;\n\nclass Hero {\n    string name;\n    int level;\n\n    contract bool function less(Hero other) {\n        return this.level < other.level;\n    }\n}\n\nmain() {\n    Hero a;\n    a.name = \"Мира\";\n    a.level = 12;\n    Hero b;\n    b.name = \"Кай\";\n    b.level = 9;\n\n    console.writeln(b < a);     // true — через ваш less\n    console.writeln(b >= a);    // false — отрицание less\n\n    dyn_array<Hero> guild = [a, b];\n    guild.sort();               // сортировка по less\n    console.writeln(guild[0].name);   // Кай\n}\n\n// без контракта:\n// cannot order objects of class 'Hero' with '<' — declare 'contract bool function less(Hero other)' in class 'Hero' and '<' will use it\n// sort() cannot order 'Hero' objects — declare 'contract bool function less(Hero other)' in class 'Hero' and sort() will use it"
+        },
+        {
+          "title": "Арифметика: plus, minus, multiply, divide и opposite",
+          "description": "Знаки `+`, `-`, `*`, `/` и унарный минус достаются классу через контракты `plus`, `minus`, `multiply`, `divide` и `opposite`. У знака одна сигнатура на класс (перегрузки методов в Idyllium нет), зато тип параметра и тип результата свободны: `multiply(float k)` даёт `v * 2.5` (и `v * 2` — аргумент повышается до `float` как обычно), а скалярное произведение вправе вернуть `float`. Тип выражения `a * b` — это тип результата `multiply`. Форма требует лишь ровно одного параметра (у `opposite` — ни одного) и результата, отличного от `void`. Приоритеты и ассоциативность знаков не меняются.",
+          "code": "use console;\n\nclass Vec {\n    float x;\n    float y;\n\n    constructor Vec(float ex_x, float ex_y) {\n        this.x = ex_x;\n        this.y = ex_y;\n    }\n\n    contract Vec function plus(Vec other) {\n        return Vec(this.x + other.x, this.y + other.y);\n    }\n\n    contract Vec function minus(Vec other) {\n        return Vec(this.x - other.x, this.y - other.y);\n    }\n\n    contract Vec function multiply(float k) {\n        return Vec(this.x * k, this.y * k);\n    }\n\n    contract Vec function opposite() {\n        return Vec(-this.x, -this.y);\n    }\n\n    contract string function to_string() {\n        return \"(\" + to_string(this.x) + \"; \" + to_string(this.y) + \")\";\n    }\n}\n\nmain() {\n    Vec a = Vec(1, 2);\n    Vec b = Vec(3, 4);\n\n    console.writeln(a + b);            // (4; 6)\n    console.writeln(a - b);            // (-2; -2)\n    console.writeln(a * 2.5);          // (2.5; 5)\n    console.writeln(-a);               // (-1; -2)\n    console.writeln(a + b * 2 - -a);   // (8; 12) — приоритеты прежние\n}\n\n// контракта нет:\n// operator '+' cannot be applied to 'Money' and 'Money' — declare 'contract Money function plus(Money other)' in class 'Money' and '+' will use it\n// unary '-' cannot be applied to 'Money' — declare 'contract Money function opposite()' in class 'Money' and unary '-' will use it",
+          "notes": [
+            "`sum()` массива объектов, чей класс объявил `plus`, складывает их этим контрактом, начиная с первого элемента: `plus` обязан принимать и возвращать сам класс, пустой массив — ошибка выполнения, как у чисел. Без контракта — отказ с рецептом: `sum() cannot add 'Vec' objects — declare 'contract Vec function plus(Vec other)' in class 'Vec' and sum() will use it`."
+          ]
+        },
+        {
+          "title": "Контракт принадлежит левому операнду",
+          "description": "Знак ищет контракт у объявленного типа левого операнда. Поэтому `v * 2` работает, а `2 * v` — ошибка компиляции: у `int` контракта нет, а молчаливой перестановки операндов язык не делает — для `-` и `/` она меняла бы смысл. Правый операнд сверяется с типом параметра контракта.",
+          "code": "Vec c = 2 * a;\n// operator '*' cannot be applied to 'int' and 'Vec' — a contract works for the LEFT operand, and 'int' has none ('Vec' declares 'multiply', but it stands on the right)\n\nVec d = a * b;\n// operator '*' cannot be applied to 'Vec' and 'Vec' — 'Vec.multiply' accepts a 'float', got 'Vec'\n\nstring text = \"v = \" + a;\n// operator '+' cannot be applied to 'string' and 'Vec'   — склеивайте через to_string(a)"
+        },
+        {
+          "title": "Составное присваивание и псевдонимы",
+          "description": "Отдельных контрактов у `+=`, `-=`, `*=` и `/=` нет: `a += b` — это `a = a + b` через тот же `plus`, поэтому результат контракта обязан подходить к типу `a`. Важно, что при этом происходит: объекты — ссылки, и `a += b` перевязывает имя `a` на новый объект. Второе имя, взятое раньше (`Vec alias = a;`), остаётся на старом — ровно как у чисел.",
+          "code": "use console;\n\nclass Vec {\n    float x;\n    float y;\n\n    constructor Vec(float ex_x, float ex_y) {\n        this.x = ex_x;\n        this.y = ex_y;\n    }\n\n    contract Vec function plus(Vec other) {\n        return Vec(this.x + other.x, this.y + other.y);\n    }\n\n    contract Vec function minus(Vec other) {\n        return Vec(this.x - other.x, this.y - other.y);\n    }\n\n    contract Vec function multiply(float k) {\n        return Vec(this.x * k, this.y * k);\n    }\n\n    contract Vec function opposite() {\n        return Vec(-this.x, -this.y);\n    }\n\n    contract string function to_string() {\n        return \"(\" + to_string(this.x) + \"; \" + to_string(this.y) + \")\";\n    }\n}\n\nmain() {\n    Vec a = Vec(1, 2);\n    Vec b = Vec(3, 4);\n    Vec alias = a;\n\n    a += b;\n    console.writeln(a);        // (4; 6)\n    console.writeln(alias);    // (1; 2) — alias остался на прежнем объекте\n\n    a *= 10;\n    console.writeln(a);        // (40; 60)\n}"
+        },
+        {
+          "title": "Контракт не меняет операнды",
+          "description": "Арифметический контракт обязан построить и вернуть новый объект. Объекты — ссылки, и `minus`, который пишет в свои поля и возвращает `this`, превращает `c = a - b` в тихую порчу `a`. Компилятор предупреждает о записи в поле `this` или параметра внутри арифметического контракта.",
+          "code": "contract Vec function minus(Vec other) {\n    this.x = this.x - other.x;      // так нельзя: после c = a - b изменится a\n    return this;\n}\n// compile warning: contract 'minus' changes the object it was called on — after 'c = a - b' the value of 'a' must stay the same; build a new object and return it\n\ncontract Vec function minus(Vec other) {\n    return Vec(this.x - other.x, this.y - other.y);   // правильно: новый объект\n}"
+        },
+        {
+          "title": "Контракты и наследование",
+          "description": "Контракты не наследуются: потомок без собственного контракта не печатается, не сравнивается и не складывается, даже если контракт есть у базы, — компилятор предложит объявить свой по образцу базового. Потомок объявляет `equals(Потомок other)` или `plus(Потомок other)` рядом с базовым, и оба сосуществуют: сравнение выполняет контракт того класса, через который на объекты смотрят. Два потомка в переменных базового типа сравниваются базовым контрактом.",
+          "code": "class Vec3 extends Vec { … }\n\nVec3 g = Vec3(1, 2, 3);\nVec3 h = g * 2;\n// operator '*' cannot be applied to 'Vec3' and 'int' — 'Vec.multiply' is a contract, and contracts are not inherited: declare 'contract Vec3 function multiply(float k)' in class 'Vec3'"
+        },
+        {
+          "title": "Чего у контрактов нет",
+          "description": "Контрактов для `div`, `mod`, унарного `+` (его нет в языке) и возведения в степень не существует. Перегрузки методов нет, поэтому у знака одна сигнатура на класс. Наследоваться от встроенного типа, чтобы «получить его знаки», нельзя: класс, который должен вести себя как число, строится композицией — поле нужного типа плюс контракты.",
+          "code": "class Money extends float { }\n// cannot inherit from built-in type 'float' — keep a value of this type inside the class as a field instead\n\nclass Money {\n    private:\n    int cents;\n\n    public:\n    constructor Money(int ex_cents) {\n        this.cents = ex_cents;\n    }\n\n    contract Money function plus(Money other) {\n        return Money(this.cents + other.cents);\n    }\n\n    contract bool function less(Money other) {\n        return this.cents < other.cents;\n    }\n}"
         }
       ]
     },
@@ -429,14 +514,15 @@
     },
     "math": {
       "title": "Математика",
-      "description": "Округление, степени, корни, тригонометрия, логарифмы, целочисленная арифметика (НОД, НОК, факториал, простые числа, делители) и математические константы.",
+      "description": "Округление, степени, корни, тригонометрия, логарифмы, целочисленная арифметика (НОД, НОК, факториал, простые числа, делители), комплексные числа и математические константы.",
       "notes": [
         "Тригонометрические функции принимают углы в радианах.",
         "Для перевода градусов используйте to_radians(), для обратного перевода — to_degrees().",
         "Целочисленные функции gcd(), lcm(), factorial() считают точно при любом размере чисел — 100! печатает все 158 цифр; is_prime() отвечает точно (без «вероятно простое») для чисел до 3317044064679887385961980, для больших — честная ошибка.",
-        "sign() повторяет тип аргумента, как abs(): sign(-5) — int -1, sign(-2.5) — float -1."
+        "sign() повторяет тип аргумента, как abs(): sign(-5) — int -1, sign(-2.5) — float -1.",
+        "Комплексные числа — тип math.Complex: создаются вызовом math.Complex(re, im) или math.polar(модуль, аргумент), мнимая единица — константа math.I. Арифметика пишется знаками, вещественное число входит в неё само (2 * z, z + 1). Корень, модуль, синус, косинус, тангенс, логарифм и степень принимают и комплексный аргумент (math.sqrt(z), math.sin(z), math.pow(z, w)) — или зовите методы z.sqrt(), z.sin(); экспонента и гиперболические — только методами: z.exp(), z.sinh(), z.cosh()."
       ],
-      "example": "float root = math.sqrt(81);       // 9\nint rounded = math.round(3.6);     // 4\nfloat angle = math.to_radians(90);\nint common = math.gcd(12, 18);      // 6\nbool prime = math.is_prime(97);     // true\ndyn_array<int> parts = math.divisors(12); // [1, 2, 3, 4, 6, 12]"
+      "example": "float root = math.sqrt(81);       // 9\nint rounded = math.round(3.6);     // 4\nfloat angle = math.to_radians(90);\nint common = math.gcd(12, 18);      // 6\nbool prime = math.is_prime(97);     // true\ndyn_array<int> parts = math.divisors(12); // [1, 2, 3, 4, 6, 12]\nmath.Complex z = math.Complex(3, 4);   // 3 + 4i\nmath.Complex turned = z * math.I;      // -4 + 3i — умножение на i поворачивает на 90°"
     },
     "random": {
       "title": "Случайные числа",
@@ -1005,6 +1091,18 @@
         "Для «Пианино» — семь мелодий по одной ноте, созданных при старте: клавиши звучат без единого файла в проекте."
       ],
       "example": "audio.Melody tune;\ntune.instrument = \"square\";\ntune.tempo = 140;\ntune.add_notes(\"ми ми фа соль | соль фа ми ре | до до ре ми | ми:1.5 ре:0.5 ре:2\");\ntune.play();\ntune.export_to_file(\"ode.wav\");"
+    },
+    "math.Complex": {
+      "description": "Комплексное число — значение, как обычное число: части re и im только для чтения, каждая операция возвращает новое число, объявление без вызова даёт ноль. Арифметика пишется знаками + - * / и унарным минусом (это контракты plus, minus, multiply, divide и opposite — те же, что у пользовательских классов), составные присваивания работают тоже.",
+      "notes": [
+        "Числовая лестница int → float → math.Complex: вещественное число входит в операцию как комплексное с нулевой мнимой частью — так же, как int повышается до float. Работают 2 * z, z + 1, 1 / math.I, math.Complex five = 5; и dyn_array<math.Complex> zs = [1, math.I]. Обратного хода нет: float x = z; — ошибка компиляции, берите z.re или z.abs().",
+        "pow() с целым показателем считается точным повторным умножением (формула Муавра без погрешности cos/sin: math.I.pow(2) — ровно -1); дробный и комплексный показатель дают главное значение exp(w · ln z). sqrt() — главный корень; roots(n) — все n корней, от главного против часовой стрелки.",
+        "Функциональная запись тоже работает: math.sqrt(z), math.abs(z) (модуль, float), math.sin(z), math.cos(z), math.tan(z), math.log(z) (главное значение ln), math.pow(z, w) — с комплексным аргументом возвращают math.Complex. sum() и avg() массива комплексных — комплексные; max() и min() отказывают: порядка нет.",
+        "Сравнение: == и != сравнивают обе части точно и предупреждают, как у float, — вычисленные значения почти никогда не равны в точности; рабочий инструмент — is_close(other, epsilon). Порядка на комплексных числах нет: <, >, <=, >= и sort() — ошибки компиляции, сравнивайте abs(), re или im.",
+        "Печать: «3 + 4i», «-2.5i», «i», «0»; части округляются как обычные числа и слушаются console.set_precision. Значения, построенные по модулю и аргументу (polar, roots, exp), отбрасывают шум округления cos/sin меньше 10⁻¹⁵ от модуля: корни четвёртой степени из единицы — ровно 1, i, -1, -i.",
+        "Ошибки выполнения словами: деление на ноль (division by zero), логарифм нуля, отрицательный модуль в math.polar(), неположительная степень корня в roots(), ноль в отрицательной степени."
+      ],
+      "example": "use console;\nuse math;\n\nmain() {\n    math.Complex z = math.Complex(3, 4);\n    math.Complex w = math.polar(2, math.pi / 2);   // 2i\n\n    console.writeln(z + w, \"  \", z * w, \"  \", z / w);   // 3 + 6i  -8 + 6i  2 - 1.5i\n    console.writeln(2 * z, \"  \", -z, \"  \", z.conjugate()); // 6 + 8i  -3 - 4i  3 - 4i\n    console.writeln(z.abs(), \" \", z.arg());              // 5 0.92729522\n    console.writeln(z.sqrt(), \"  \", z.pow(2));           // 2 + i  -7 + 24i\n\n    // Все корни: x³ = -8\n    console.writeln(math.Complex(-8).roots(3));          // [1 + 1.73205081i, -2, 1 - 1.73205081i]\n\n    // Тождество Эйлера\n    math.Complex euler = math.Complex(0, math.pi).exp();\n    console.writeln(euler, \" \", euler.is_close(-1));    // -1 true\n}"
     }
   },
   "members": {
@@ -1090,7 +1188,8 @@
     "colors.PURPLE": "Фиолетовый цвет #800080.",
     "colors.TRANSPARENT": "Полностью прозрачный цвет.",
     "types.from_bin": "Преобразует строку двоичных цифр в указанный types-тип.",
-    "types.from_hex": "Преобразует строку шестнадцатеричных цифр в указанный types-тип."
+    "types.from_hex": "Преобразует строку шестнадцатеричных цифр в указанный types-тип.",
+    "math.I": "Мнимая единица i: math.I * math.I == -1. Умножение на неё поворачивает число на 90° против часовой стрелки."
   },
   "general": [
     {

@@ -4,6 +4,9 @@ import {
   describeRuntimeError,
 } from './runtime/run';
 import { Diagnostic, formatDiagnostics } from './core/diagnostics';
+import { createDefaultStandardLibrary } from './core/stdlib/registry';
+import * as embedApi from './embed';
+import type { UnitRunner } from './embed';
 import { formatIdyllium } from './language/formatter';
 import { IdylliumProject } from './language/project';
 import {
@@ -39,6 +42,11 @@ export interface BrowserRunOptions {
   readonly input?: readonly string[];
   readonly console?: Partial<ConsoleIO>;
   readonly abortSignal?: import('./runtime/runtime').RuntimeAbortSignal;
+  /**
+   * Разрешённые стандартные библиотеки (embed-юниты). Без поля доступны все;
+   * с ним `use` любой другой библиотеки — ошибка компиляции словами языка.
+   */
+  readonly allowedModules?: readonly string[];
   /**
    * Транспорт web.Server для браузера. Задаёт его страница-хозяин (Web IDE —
    * мост в SW-песочницу «сервер-репетиция»); без него web.Server честно
@@ -146,8 +154,18 @@ export async function prepareIdylliumBrowserProgram(options: BrowserRunOptions):
   const fileSystem = createMemoryRuntimeFileSystem(files);
   const fileSystemSnapshot = () => fileSystem.snapshot?.() ?? files;
   const writtenFilesSnapshot = () => fileSystem.writtenFilesSnapshot?.() ?? {};
+  const fullStdlib = createDefaultStandardLibrary();
+  const allowedModules = options.allowedModules;
   const compilation = compileIdyllium(source, {
     file: entryFile,
+    stdlib: allowedModules ? fullStdlib.restrictedTo(allowedModules) : fullStdlib,
+    refuseModule: allowedModules
+      ? (moduleName) => (
+        fullStdlib.hasModule(moduleName) && !allowedModules.includes(moduleName)
+          ? `library '${moduleName}' is not available in this unit — units run console programs only (available: ${[...allowedModules].sort().join(', ')})`
+          : null
+      )
+      : undefined,
     sources: browserSources(files),
     resolveModule(moduleName, fromFile) {
       const candidate = resolveBrowserModule(moduleName, fromFile, files);
@@ -183,6 +201,30 @@ export async function prepareIdylliumBrowserProgram(options: BrowserRunOptions):
   };
 }
 
+/**
+ * Исполнитель программ для embed-юнитов: безголовый прогон консольной
+ * программы с урезанным набором библиотек. Его получают проверяющий,
+ * кадр юнита и конструктор (`Idyllium.embed` + `Idyllium.createUnitRunner`).
+ */
+export function createUnitRunner(): UnitRunner {
+  return async (request) => {
+    const result = await runIdylliumInBrowser({
+      entryFile: 'main.idyl',
+      files: { 'main.idyl': request.source },
+      console: request.console,
+      abortSignal: request.abortSignal,
+      allowedModules: request.libs,
+    });
+    return {
+      success: result.success,
+      compileErrors: result.compilation.success ? null : result.compilation.diagnosticsText,
+      runtimeError: result.runtimeError,
+    };
+  };
+}
+
+export const embed = embedApi;
+
 export function inspectSqliteDatabaseInBrowser(bytes: Uint8Array): Promise<SqliteDatabaseDescription> {
   return inspectSqliteDatabase(browserSqliteService, bytes);
 }
@@ -197,6 +239,7 @@ export function previewSqliteObjectInBrowser(
 
 export {
   compileIdyllium,
+  createDefaultStandardLibrary,
   formatIdyllium,
   IdylliumProject,
 };

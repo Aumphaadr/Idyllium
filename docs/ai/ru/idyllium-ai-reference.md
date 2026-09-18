@@ -8,7 +8,7 @@
 в каталоге уровнем выше. **Сообщения компилятора и среды выполнения оставлены
 по-английски** — именно в таком виде их видит на экране ученик.*
 
-Текущая версия языка: Idyllium 1.5.7.
+Текущая версия языка: Idyllium 1.6.0.
 
 Этот справочник описывает реализованное поведение. Всё, что здесь не описано
 (библиотека, метод, форма синтаксиса), считается отсутствующим, пока
@@ -277,7 +277,8 @@ be used as a name`: `await`, `case`, `debugger`, `default`, `delete`,
 событий (`the name 'then' is reserved by the language — pick another name
 for method 'then'` — метод `then` делал бы объект «обещанием» для мира под
 капотом и ломал вызовы). Обычное поле-значение по имени `then` или
-`undefined` остаётся законным. `map` — ключевое слово (как `array`
+`undefined` остаётся законным. `contract` — ключевое слово с 1.6.0 (им
+помечают методы-контракты, §15). `map` — ключевое слово (как `array`
 и `dyn_array`), а `set` зарезервировано для связываний (`'set' is reserved
 for the set type — pick another name`), но остаётся законным именем члена:
 `json.Object.set(...)` и свои методы `set` работают как прежде.
@@ -318,7 +319,7 @@ main() {
 
 ```idyllium
 class Robot {
-    string function to_string() { ... }   // законно: зовётся как r.to_string()
+    contract string function to_string() { ... }   // законно: зовётся как r.to_string()
 }
 ```
 
@@ -451,10 +452,12 @@ JSON value`), `sqlite.Value` (по классу хранения SQL и знач
 `x == null` и есть преподаваемая идиома).
 
 **У объектов пользовательских классов встроенного равенства нет.** `a == b`
-для объектов — ошибка компиляции, пока класс не объявит контракт равенства:
+для объектов — ошибка компиляции, пока класс не объявит контракт равенства
+(метод с ключевым словом `contract`; все контракты и их общие правила — в §15,
+«Контракты»):
 
 ```idyllium
-bool function equals(Hero other) {
+contract bool function equals(Hero other) {
     return this.name == other.name and this.level == other.level;
 }
 ```
@@ -462,7 +465,7 @@ bool function equals(Hero other) {
 С контрактом `a == b` и `a != b` диспетчеризуются в него; туда же уходят
 `contains`, `find`, `count` для массивов такого класса и `==` для таких
 массивов (структурно, по ячейкам). Без него: `cannot compare objects of class
-'Hero' with '==' — declare 'bool function equals(Hero other)' in class 'Hero'
+'Hero' with '==' — declare 'contract bool function equals(Hero other)' in class 'Hero'
 and the comparison will use it` (поиски говорят `contains() cannot search for
 'Hero' objects — …`).
 
@@ -488,7 +491,7 @@ and the comparison will use it` (поиски говорят `contains() cannot 
 объявленному типу левого операнда, НЕ наследуется, пишите чистым):
 
 ```idyllium
-bool function less(Hero other) {
+contract bool function less(Hero other) {
     return this.level < other.level;
 }
 ```
@@ -497,7 +500,7 @@ bool function less(Hero other) {
 его отрицание (`not a.less(b)`); заодно для массивов такого класса открывается
 `sort()` и сортирует по `less` (стабильно: элементы, которые контракт не
 различает, сохраняют исходный порядок). Без него: `cannot order objects of
-class 'Hero' with '<' — declare 'bool function less(Hero other)' in class
+class 'Hero' with '<' — declare 'contract bool function less(Hero other)' in class
 'Hero' and '<' will use it` (`sort()` говорит `sort() cannot order 'Hero'
 objects — …`). Контракт `greater` работает так же и обслуживает вторую пару
 знаков: `a > b` диспетчеризуется в `greater`, `a <= b` — его отрицание.
@@ -728,7 +731,7 @@ values.sort()
 сортируется по напечатанному тексту: `sort() cannot order arrays of arrays —
 sort each inner array on its own`, `sort() cannot order 'colors.Color' values
 — they have no order` (то же для элементов-`map`/`set`), `sort() cannot order
-'Hero' objects — declare 'bool function less(Hero other)' …`.
+'Hero' objects — declare 'contract bool function less(Hero other)' …`.
 `contains`/`find`/`count` у массивов объектов требуют контракт `equals` (§7);
 у массивов массивов, словарей и множеств они сравнивают вложенные коллекции
 по содержимому.
@@ -1208,16 +1211,148 @@ objects — …`): построение по умолчанию уходило �
 для деревьев и списков. Точка с запятой после тела класса (`};`) принимается
 и игнорируется, так что привычки из C++ код не ломают.
 
+### Контракты: методы, которые вызывает знак (`contract`)
+
+**Контракт** — метод класса, который язык вызывает сам: им пользуется знак или
+печать, а не только имя. С 1.6.0 каждый контракт помечается ключевым словом
+`contract` — та же идея, что у `event`: член объявляете вы, а когда ему
+работать, решает язык. Пометка ОБЯЗАТЕЛЬНА.
+
+| контракт | форма | кто им пользуется |
+|---|---|---|
+| `to_string` | `contract string function to_string()` | печать, `to_string(obj)`, массивы и словари таких объектов |
+| `equals` | `contract bool function equals(Hero other)` | `==`, `!=`, `contains`/`find`/`count`, `==` для массивов и словарей таких объектов |
+| `less` | `contract bool function less(Hero other)` | `<`, `>=`, `sort()` |
+| `greater` | `contract bool function greater(Hero other)` | `>`, `<=` |
+| `plus` | `contract R function plus(T other)` | `+`, `+=` |
+| `minus` | `contract R function minus(T other)` | бинарный `-`, `-=` |
+| `multiply` | `contract R function multiply(T other)` | `*`, `*=` |
+| `divide` | `contract R function divide(T other)` | `/`, `/=` |
+| `opposite` | `contract R function opposite()` | унарный `-` |
+
+Имя контракта-знака — слово, которым знак читают вслух, без служебного
+предлога: `less` (не `less_than`), `multiply` (не `multiplied_by`), `opposite` —
+«противоположное число».
+
+Правила, общие для всех контрактов:
+
+- Публичный, нестатический, объявлен В САМОМ классе. Контракты НЕ наследуются:
+  потомок объявляет свой рядом с базовым — единственный случай, когда
+  «переопределение» вправе сменить сигнатуру. Диспетчеризация СТАТИЧЕСКАЯ:
+  контракт выбирает объявленный тип левого операнда (печатаемого значения,
+  получателя).
+- Имена контрактов в классах зарезервированы. Метод с именем `equals`, `plus`, …
+  без ключевого слова — ошибка компиляции: `'equals' is a contract name — write
+  'contract bool function equals(Hero other)' and '==' and '!=' will use it, or
+  pick another name`. Функций файла это не касается.
+- Форма проверяется У ОБЪЯВЛЕНИЯ и один раз — места, где стоит знак, о той же
+  беде молчат:
+  `contract 'less' has a wrong shape: its parameter is 'A' instead of 'B', it
+  returns 'int' instead of 'bool' — write 'contract bool function less(B
+  other)'`; `contract 'greater' cannot be private — '>' and '<=' are written
+  outside the class; move it to the public part`; `a contract cannot be static —
+  it works on an object ('a == b', 'a + b')`; `'contract' marks a method — a
+  field cannot be a contract`; `'contract' marks a method of a class — a
+  function outside a class cannot be a contract`.
+- Ключевое слово на чужом имени: привычке из другого языка отвечают правильным
+  словом — `'add' is not a contract — the contract for '+' is called 'plus'`
+  (так же `sub` → `minus`, `times`/`mul`/`product` → `multiply`, `divided_by` →
+  `divide`, `negate` → `opposite`, `str` → `to_string`, `eq` → `equals`, `lt` →
+  `less`, `gt` → `greater`); любое другое имя получает полный список: `'show' is
+  not a contract — contracts are: to_string, equals, less, greater, plus, minus,
+  multiply, divide, opposite`.
+- Контракт по-прежнему можно вызвать по имени: `a.less(b)`, `a.plus(b)`.
+- Контракты отвечают, а не изменяют (см. предупреждение ниже).
+
+**Арифметические контракты** (`plus`, `minus`, `multiply`, `divide`, `opposite`):
+
+- У знака одна сигнатура на класс (перегрузки в Idyllium нет). Тип параметра и
+  тип результата СВОБОДНЫ: `contract Vec function multiply(float k)` даёт
+  `v * 2.5` (и `v * 2` — обычное повышение int→float у аргумента); скалярное
+  произведение вправе вернуть `float`. Тип выражения `a * b` — тип результата
+  `multiply`. Форма требует лишь ровно одного параметра (у `opposite` — ни
+  одного) и результата не `void`.
+- Контракт принадлежит ЛЕВОМУ операнду, и молчаливой перестановки нет — для `-`
+  и `/` она меняет смысл. `2 * v` → `operator '*' cannot be applied to 'int' and
+  'Vec' — a contract works for the LEFT operand, and 'int' has none ('Vec'
+  declares 'multiply', but it stands on the right)`. Пишите `v * 2`.
+- Не тот правый операнд: `operator '*' cannot be applied to 'Vec' and 'Vec' —
+  'Vec.multiply' accepts a 'float', got 'Vec'`. Контракта нет вовсе: `operator
+  '+' cannot be applied to 'Money' and 'Money' — declare 'contract Money
+  function plus(Money other)' in class 'Money' and '+' will use it`; унарный:
+  `unary '-' cannot be applied to 'Money' — declare 'contract Money function
+  opposite()' in class 'Money' and unary '-' will use it`. Если в классе есть
+  метод с привычным именем: `… — class 'Vec' has 'add', but the contract for '+'
+  is called 'plus': write 'contract Vec function plus(Vec other)'`. Для
+  потомка: `… — 'Vec.multiply' is a contract, and contracts are not inherited:
+  declare 'contract Vec3 function multiply(float k)' in class 'Vec3'`.
+- Составное присваивание достаётся бесплатно: `a += b` — ЭТО `a = a + b` через
+  тот же контракт (результат обязан подходить к типу `a`). Оно ПЕРЕВЯЗЫВАЕТ имя
+  на новый объект; псевдоним, взятый раньше (`Vec c = a;`), остаётся на старом —
+  ровно как у чисел.
+- Приоритеты и ассоциативность не меняются: `a + b * 2 - -a` — это
+  `a.plus(b.multiply(2)).minus(a.opposite())`.
+- `"текст" + obj` остаётся ошибкой компиляции (строка склеивается только со
+  строкой) — пользуйтесь `to_string(obj)`.
+- Объекты — ссылки, поэтому контракт, пишущий в `this` (или в свой параметр),
+  тихо менял бы `a` в `c = a - b`. Компилятор предупреждает: `contract 'minus'
+  changes the object it was called on — after 'c = a - b' the value of 'a' must
+  stay the same; build a new object and return it` (для параметра — `… changes
+  its operand 'other' …`). В арифметическом контракте всегда стройте НОВЫЙ объект.
+- `sum(xs)` массива объектов, чей класс объявил `plus`, складывает их этим
+  контрактом, начиная с первого элемента (`plus` обязан принимать и возвращать
+  сам класс; пустой массив — ошибка выполнения, как у чисел): `sum() cannot add
+  'Vec' objects — declare 'contract Vec function plus(Vec other)' in class 'Vec'
+  and sum() will use it`. `avg`, `max` и `min` для объектов не работают.
+- Контрактов для `div`, `mod`, унарного `+` (его в языке нет) и степеней нет.
+
+```idyllium
+use console;
+
+class Vec {
+    float x;
+    float y;
+
+    constructor Vec(float ex_x, float ex_y) {
+        this.x = ex_x;
+        this.y = ex_y;
+    }
+
+    contract Vec function plus(Vec other) {
+        return Vec(this.x + other.x, this.y + other.y);
+    }
+
+    contract Vec function multiply(float k) {
+        return Vec(this.x * k, this.y * k);
+    }
+
+    contract Vec function opposite() {
+        return Vec(-this.x, -this.y);
+    }
+
+    contract string function to_string() {
+        return "(" + to_string(this.x) + "; " + to_string(this.y) + ")";
+    }
+}
+
+main() {
+    Vec a = Vec(1, 2);
+    Vec b = Vec(3, 4);
+    console.writeln(a + b * 2);   // (7; 10)
+    console.writeln(-a);          // (-1; -2)
+    a += b;
+    console.writeln(a);           // (4; 6)
+}
+```
+
 ### Печать объектов: контракт `to_string()`
 
 Передача объекта класса в `console.write`/`console.writeln` — ошибка
-компиляции (`cannot print object of class 'Cat' directly — declare 'string
+компиляции (`cannot print object of class 'Cat' directly — declare 'contract string
 function to_string()' in class 'Cat' and printing will use it`), пока класс
-не объявит открытый метод без аргументов `string function to_string()`. Когда
-метод с именем `equals`/`to_string` есть, но не той формы (приватный,
-статический, не тот параметр или не тот тип результата), сообщение дописывает
-точную причину, например `(class 'Cat' has 'to_string', but it returns 'int'
-instead of 'string')`. Контракты не наследуются: метод должен быть объявлен
+не объявит контракт `contract string function to_string()` (публичный, без
+параметров; не ту форму отвергают у объявления — см. «Контракты» выше).
+Контракты не наследуются: метод должен быть объявлен
 в самом классе — потомок без собственного `to_string` не печатается, даже
 если он есть у базы. С методом объект печатается через него.
 **Массив объектов**, чей класс элементов владеет контрактом, тоже печатается:
@@ -1234,7 +1369,7 @@ class Point {
     int x;
     int y;
 
-    string function to_string() {
+    contract string function to_string() {
         return "(" + to_string(this.x) + ", " + to_string(this.y) + ")";
     }
 }
@@ -1248,7 +1383,7 @@ main() {
 Массив объектов вкладывается свободно: контракт применяется на любой глубине,
 поэтому `dyn_array<dyn_array<Point>>` печатается как `[["(0, 0)"]]`. Без
 контракта отказ называет класс элемента (`cannot print an array of 'A'
-objects directly — declare 'string function to_string()' in class 'A' and
+objects directly — declare 'contract string function to_string()' in class 'A' and
 printing will use it`).
 
 Функции тоже не печатаются: `console.writeln(abs_value)` — промах с забытыми
@@ -1374,6 +1509,17 @@ class Dog extends Animal {
   первым — стилистическая рекомендация, потому что более поздний вызов
   `parent()` перезаписывает поля, присвоенные до него.
 
+Две вещи классам недоступны, и каждая отвергается одной строкой (с 1.6.0):
+
+- **Наследоваться от встроенного типа нельзя.** `class Money extends int` →
+  `cannot inherit from built-in type 'int' — keep a value of this type inside
+  the class as a field instead` (то же для `float`, `string`, `bool`, `char`,
+  `array`, `dyn_array`, `map`, `set`). Чтобы класс вёл себя как число, нужны
+  композиция и контракты.
+- **Перегрузки методов нет.** Второй метод с тем же именем в одном классе →
+  `method 'scale' is already declared in class 'Vec' — Idyllium has no
+  overloading: one name, one method`.
+
 Базовый класс не обязан жить в том же файле. Работает и то и другое:
 
 ```idyllium
@@ -1432,8 +1578,8 @@ class CounterButton extends gui.Button {   // база — виджет gui
 Переопределение обязано сдержать каждое обещание базового класса:
 
 - те же типы параметров и тот же тип результата (единственное исключение —
-  контракты сравнения `equals`, `less` и `greater`, см. §7: потомок вправе
-  объявить `equals(Derived)` рядом с базовым `equals(Base)`);
+  контракты: потомок объявляет свой `equals(Derived other)` или
+  `plus(Derived other)` рядом с базовым, см. «Контракты» выше);
 - умолчания параметров базы: `greet(string who = "мир")` в базе
   и `greet(string who)` в потомке — ошибка компиляции, потому что тогда
   `base.greet()` попал бы в тело, которому нечего положить в `who`. Потомок
@@ -1454,8 +1600,9 @@ class CounterButton extends gui.Button {   // база — виджет gui
 Класс, импортированный из пользовательского модуля, ведёт себя в точности как
 тот же класс, написанный в одном файле: перечисленные правила переопределения
 действуют через границу модуля (`method 'Cub.roar' cannot be private — it
-overrides a public method of class 'zoo.Lion'`), а контракты (`equals`,
-`less`, `greater`, `to_string`) по-прежнему не переходят к потомкам — отказ является ошибкой
+overrides a public method of class 'zoo.Lion'`), а контракты (`to_string`,
+`equals`, `less`, `greater`, `plus`, `minus`, `multiply`, `divide`, `opposite`)
+по-прежнему не переходят к потомкам — отказ является ошибкой
 компиляции по обе стороны границы модуля.
 
 `parent()` говорит, что именно не так, вместо «функция не объявлена»:
@@ -1668,7 +1815,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, управление не возвращает
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.5.7"
+system.version()                    // "1.6.0"
 system.set_warnings(enabled)        // void; выключает/включает runtime-предупреждения
 ```
 
@@ -1758,6 +1905,79 @@ must be a positive number, got 0`.
 все три аргумента целые, иначе `float`. `math.sign` повторяет `math.abs`;
 `gcd`, `lcm`, `factorial` возвращают `int`, `is_prime` — `bool`, `divisors` —
 `dyn_array<int>`. Остальные математические функции возвращают `float`.
+
+### Комплексные числа: `math.Complex` (с 1.6.0)
+
+```idyllium
+use console;
+use math;
+
+main() {
+    math.Complex z = math.Complex(3, 4);      // 3 + 4i;  math.Complex() — ноль, math.Complex(3) — 3
+    math.Complex w = math.polar(2, math.pi / 2);   // модуль и аргумент (радианы): 2i
+    math.Complex unit = math.I;               // мнимая единица; math.I * math.I == -1
+
+    console.writeln(z + w, "  ", z * w, "  ", z / w, "  ", -z);   // 3 + 6i  -8 + 6i  2 - 1.5i  -3 - 4i
+    console.writeln(2 * z, "  ", z + 1, "  ", 1 / unit);            // 6 + 8i  4 + 4i  -i
+    console.writeln(z.re, " ", z.im, " ", z.abs(), " ", z.arg());  // 3 4 5 0.92729522
+    console.writeln(z.conjugate(), "  ", z.pow(2), "  ", z.sqrt()); // 3 - 4i  -7 + 24i  2 + i
+    console.writeln(math.Complex(1).roots(4));                      // [1, i, -1, -i]
+}
+```
+
+`math.Complex` — ЗНАЧЕНИЕ, как число: `re` и `im` только для чтения, каждая
+операция возвращает новое число, `math.Complex z;` без вызова — ноль.
+
+- **Арифметика знаками.** `+ - * /`, унарный `-` и `+= -= *= /=` работают через
+  те же контракты, что у пользовательских классов (`plus`, `minus`, `multiply`,
+  `divide`, `opposite` — их можно звать и по имени). Деление на ноль — ошибка
+  выполнения (`division by zero`).
+- **Числовая лестница `int → float → math.Complex`.** Вещественное число входит
+  в операцию как комплексное с нулевой мнимой частью — ровно так же, как `int`
+  повышается до `float`: работают `2 * z`, `z + 1`, `1 / math.I` и
+  `math.Complex five = 5;`, в аргументах и ячейках массива тоже
+  (`dyn_array<math.Complex> zs = [1, math.I];`). Обратного хода нет:
+  `float x = z;` → `cannot assign 'math.Complex' value to 'float' variable` —
+  берите `z.re` или `z.abs()`. Это повышение — привилегия библиотечного типа;
+  у пользовательских классов действует правило «левого операнда» из §15.
+- **Части и формы:** `re`, `im`, `abs()` (модуль), `arg()` (главное значение,
+  радианы, в (−π; π]; у нуля — `0`), `conjugate()`, `to_string()` (`3 + 4i`,
+  `-2.5i`, `i`, `0`), `to_polar_string()` (`5(cos 0.92729522 + i sin
+  0.92729522)`). При печати части округляются как обычные числа и слушаются
+  `console.set_precision`; массив печатается как `[1, i, -1, -i]`.
+- **Степени и корни:** `pow(exponent)` — целый показатель считается точным
+  повторным умножением (формула Муавра без погрешности cos/sin:
+  `math.I.pow(2)` — ровно `-1`), любой другой даёт главное значение
+  `exp(w · ln z)` (`math.I.pow(math.I)` — `0.20787958`); `sqrt()` — главный корень
+  (`math.Complex(-4).sqrt()` — `2i`); `roots(n)` — ВСЕ n корней как
+  `dyn_array<math.Complex>`, от главного против часовой стрелки.
+- **Элементарные функции** — методы: `exp()`, `ln()` (главное значение; у нуля —
+  ошибка выполнения), `sin()`, `cos()`, `tan()`, `sinh()`, `cosh()`. Работает и
+  функциональная запись: `math.sqrt(z)`, `math.abs(z)` (`float` — модуль),
+  `math.sin(z)`, `math.cos(z)`, `math.tan(z)`, `math.log(z)` (главное значение
+  `ln`) и `math.pow(z, w)` принимают комплексный аргумент и возвращают
+  `math.Complex` (`math.abs` — `float`); с вещественными аргументами остаются
+  вещественными. `math.floor(z)` и прочие — только для вещественных.
+- **Агрегаты.** `sum(zs)` и `avg(zs)` массива комплексных — комплексные
+  (вещественные ячейки повышаются); `max`/`min` отказывают — порядка нет.
+  Пустой массив — ошибка выполнения, как у чисел.
+- **Сравнение.** `==`/`!=` сравнивают обе части точно (вещественное число
+  сравнивается как `re` при `im == 0`) и предупреждают так же, как float:
+  `complex numbers are compared with '==' — computed values are almost never
+  exactly equal; use is_close()`. Рабочий инструмент —
+  `z.is_close(w, epsilon = 0.000000001)`:
+  `math.Complex(0, math.pi).exp().is_close(-1)` даёт `true`. Порядка на
+  комплексных числах НЕТ, и язык так и говорит: `complex numbers have no order,
+  so '<' cannot compare them — compare abs(), re or im instead`; `sort()`
+  отказывает тоже.
+- Ошибки выполнения словами: `math.polar() modulus cannot be negative, got -1 —
+  a negative sign belongs to the argument (add math.pi)`, `math.Complex.ln() of
+  zero does not exist`, `math.Complex.roots() expects a positive integer degree,
+  got 0`, `zero cannot be raised to a negative power`.
+- Значения, построенные по модулю и аргументу (`polar`, `roots`, `exp`),
+  отбрасывают шум округления cos/sin меньше 10⁻¹⁵ от модуля, поэтому корни
+  четвёртой степени из единицы — ровно `1, i, -1, -i`, а `e^(iπ)` печатается
+  как `-1`.
 
 ## 18. Библиотека `random`
 
@@ -4362,7 +4582,9 @@ let x = 10;               // неверно: это не JavaScript
 
 Не выдумывайте async/await, лямбд со стрелочным синтаксисом, интерфейсов,
 обобщений для пользовательских классов, `throw` и пользовательских исключений,
-пространств имён, импорта пакетов и перегрузки операторов. Словари и множества
+пространств имён, импорта пакетов и перегрузки операторов сверх контрактов §15
+(нет ни `operator+`, ни `__add__`, ни свободных функций-операторов — знак
+достаётся классу только через метод `contract`). Словари и множества
 СУЩЕСТВУЮТ (`map<K, V>`, `set<T>`, §10) — но не выдумывайте им методов сверх
 перечисленных (ни `items()`, ни `for (k in m)`, ни `m[k] += 1` по
 отсутствующему ключу, ни индексации у `set`).

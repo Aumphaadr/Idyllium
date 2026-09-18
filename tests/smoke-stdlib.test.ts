@@ -3558,3 +3558,127 @@ main() {
   ].join('\n'), `file encoding scene drifted: ${JSON.stringify(output)}`);
   await assertRuntimeFails('use file;\nmain() {\n    file.open("x.txt", "read", "klingon");\n}', "unknown encoding 'klingon' — see encoding.list_encodings()");
 });
+
+test('math.Complex: arithmetic by signs, the numeric ladder, roots, elementary functions, honest refusals', async () => {
+  // Вердикты владельца 2026-09-18 (some_tail_160/01, п. 3): класс внутри math,
+  // арифметика контрактами, повышение int → float → math.Complex, порядка нет.
+  const ok = await runIdyllium(`use console;
+use math;
+
+main() {
+    math.Complex z = math.Complex(3, 4);
+    math.Complex w = math.Complex(1, -2);
+    console.writeln(z + w, "|", z - w, "|", z * w, "|", z / w, "|", -z);
+    console.writeln(2 * z, "|", z + 1, "|", 1 - z, "|", 1 / math.I, "|", math.I * math.I);
+    console.writeln(z.re, " ", z.im, " ", z.abs(), " ", z.arg(), " ", z.conjugate());
+    console.writeln(math.I.pow(2), "|", math.I.pow(3), "|", z.pow(2), "|", z.pow(-1), "|", math.I.pow(math.I));
+    console.writeln(math.Complex(-4).sqrt(), "|", z.sqrt(), "|", math.I.sqrt());
+    console.writeln(math.Complex(1).roots(3), math.Complex(1).roots(4), math.Complex(-8).roots(3));
+    console.writeln(math.polar(2, math.pi / 2), "|", math.polar(1, math.pi), "|", z.to_polar_string());
+    math.Complex euler = math.Complex(0, math.pi).exp();
+    console.writeln(euler, "|", euler + 1, "|", euler.is_close(-1), "|", euler.is_close(1), "|", z.is_close(math.Complex(3, 4.01), 0.1));
+    console.writeln(math.I.ln(), "|", math.I.sin(), "|", math.I.cos(), "|", math.Complex(1, 1).tan(), "|", math.Complex(1, 1).sinh(), "|", math.Complex(1, 1).cosh());
+    math.Complex zero;
+    math.Complex five = 5;
+    console.writeln(zero, " ", five, " ", type_name(five), " ", to_string(z) + "!", " ", math.Complex(), " ", math.Complex(7));
+    z += w;
+    z *= 2;
+    console.writeln(z, " ", z.plus(1), " ", z.opposite());
+    dyn_array<math.Complex> points = [1, math.I, z];
+    console.writeln(points, " ", points.contains(math.I), " ", points.find(z));
+    console.set_precision(3);
+    console.writeln(math.Complex(1, 1).sqrt(), " ", math.Complex(1).roots(3));
+}
+`, {}, { file: '/main.idyl' });
+  assert(ok.success, ok.runtimeError ?? ok.compilation.diagnosticsText);
+  const expected = [
+    '4 + 2i|2 + 6i|11 - 2i|-1 + 2i|-3 - 4i',
+    '6 + 8i|4 + 4i|-2 - 4i|-i|-1',
+    '3 4 5 0.92729522 3 - 4i',
+    '-1|-i|-7 + 24i|0.12 - 0.16i|0.20787958',                  // целая степень — точно; i^i = e^(−π/2)
+    '2i|2 + i|0.70710678 + 0.70710678i',
+    '[1, -0.5 + 0.8660254i, -0.5 - 0.8660254i][1, i, -1, -i][1 + 1.73205081i, -2, 1 - 1.73205081i]',
+    '2i|-1|5(cos 0.92729522 + i sin 0.92729522)',
+    '-1|0|true|false|true',                                    // тождество Эйлера без хвоста 1.2e-16i
+    '1.57079633i|1.17520119i|1.54308063|0.27175259 + 1.08392333i|0.63496391 + 1.29845758i|0.83373003 + 0.98889771i',
+    '0 5 math.Complex 3 + 4i! 0 7',
+    '8 + 4i 9 + 4i -8 - 4i',
+    '[1, i, 8 + 4i] true 2',
+    '1.099 + 0.455i [1, -0.5 + 0.866i, -0.5 - 0.866i]',          // печать слушается set_precision
+    '',
+  ].join('\n');
+  assert(ok.output === expected, `math.Complex output is off:\n${ok.output}\n--- expected ---\n${expected}`);
+
+  const refusals: Array<[string, string]> = [
+    ['bool a = z < w;', "complex numbers have no order, so '<' cannot compare them — compare abs(), re or im instead"],
+    ['float x = z;', "cannot assign 'math.Complex' value to 'float' variable"],
+    ['float y = math.sqrt(z);', "cannot assign 'math.Complex' value to 'float' variable"],
+    ['int q = div(z, 2);', "'div' argument 1 expects 'int', got 'math.Complex'"],
+    ['string s = "z = " + z;', "operator '+' cannot be applied to 'string' and 'math.Complex'"],
+    ['z.re = 5;', "property 're' is read-only"],
+    ['dyn_array<math.Complex> zs = [z, w];\n    zs.sort();', "sort() cannot order 'math.Complex' values — they have no order"],
+  ];
+  for (const [line, message] of refusals) {
+    const result = compileIdyllium(`use math;\nmain() {\n    math.Complex z = math.Complex(3, 4);\n    math.Complex w = math.I;\n    ${line}\n}`, { file: '/main.idyl' });
+    assert(!result.success && result.diagnosticsText.includes(message), `«${line}» must be refused with «${message}», got:\n${result.diagnosticsText}`);
+  }
+
+  // Точное равенство — предупреждение того же рода, что у float.
+  const warned = compileIdyllium('use math;\nmain() {\n    bool same = math.Complex(1, 1) == math.I;\n}', { file: '/main.idyl' });
+  assert(
+    warned.diagnostics.some((diagnostic) => diagnostic.code === 'float-equality' && diagnostic.message.includes('use is_close()')),
+    `exact equality of complex numbers must warn:\n${warned.diagnosticsText}`,
+  );
+
+  const runtime: Array<[string, string]> = [
+    ['math.Complex(1, 1) / math.Complex()', 'division by zero'],
+    ['math.Complex(1, 1) / 0', 'division by zero'],
+    ['math.polar(-1, 0)', 'math.polar() modulus cannot be negative, got -1 — a negative sign belongs to the argument (add math.pi)'],
+    ['math.Complex().ln()', 'math.Complex.ln() of zero does not exist'],
+    ['math.Complex(1).roots(0)', 'math.Complex.roots() expects a positive integer degree, got 0'],
+    ['math.Complex().pow(-1)', 'zero cannot be raised to a negative power'],
+    ['math.Complex(1, 1).is_close(math.I, -1)', 'math.Complex.is_close() epsilon must be a non-negative number, got -1'],
+  ];
+  for (const [expression, message] of runtime) {
+    const result = await runIdyllium(`use console;\nuse math;\nmain() {\n    console.writeln(${expression});\n}`, {}, { file: '/main.idyl' });
+    assert(!result.success && (result.runtimeError ?? '').includes(message), `«${expression}» must fail with «${message}», got: ${result.runtimeError ?? result.output}`);
+  }
+});
+
+test('math.Complex in module functions and aggregates: math.sqrt(z), sum(), avg()', async () => {
+  const ok = await runIdyllium(`use console;
+use math;
+
+main() {
+    dyn_array<math.Complex> zs = [math.Complex(1, 2), math.I, 3];
+    console.writeln(sum(zs), "|", avg(zs));
+    console.writeln(math.sqrt(math.Complex(-4)), "|", math.sqrt(16), "|", math.abs(math.Complex(3, 4)), "|", math.abs(-2));
+    console.writeln(math.sin(math.I), "|", math.cos(math.I), "|", math.tan(math.Complex(1, 1)), "|", math.log(math.I));
+    console.writeln(math.pow(math.I, 2), "|", math.pow(2, math.I), "|", math.pow(2, 10));
+    math.Complex w = math.sqrt(math.Complex(3, 4));
+    float r = math.abs(w);
+    console.writeln(w, "|", r);
+}
+`, {}, { file: '/main.idyl' });
+  assert(ok.success, ok.runtimeError ?? ok.compilation.diagnosticsText);
+  assert(ok.output === [
+    '4 + 3i|1.33333333 + i',
+    '2i|4|5|2',
+    '1.17520119i|1.54308063|0.27175259 + 1.08392333i|1.57079633i',
+    '-1|0.7692389 + 0.63896128i|1024',
+    '2 + i|2.23606798',
+    '',
+  ].join('\n'), `complex-aware math functions are off:\n${ok.output}`);
+
+  const refusals: Array<[string, string]> = [
+    ['dyn_array<math.Complex> zs;\n    math.Complex m = max(zs);', "complex numbers have no order, so max() cannot pick one — compare abs(), re or im in a loop instead"],
+    ['float s = math.sqrt(math.I);', "cannot assign 'math.Complex' value to 'float' variable"],
+    ['float f = math.floor(math.I);', "'floor' argument 1 expects 'float', got 'math.Complex'"],
+  ];
+  for (const [line, message] of refusals) {
+    const result = compileIdyllium(`use math;\nmain() {\n    ${line}\n}`, { file: '/main.idyl' });
+    assert(!result.success && result.diagnosticsText.includes(message), `«${line}» must be refused with «${message}», got:\n${result.diagnosticsText}`);
+  }
+  const empty = await runIdyllium('use console;\nuse math;\nmain() {\n    dyn_array<math.Complex> zs;\n    console.writeln(sum(zs));\n}\n', {}, { file: '/main.idyl' });
+  assert(!empty.success && (empty.runtimeError ?? '').includes("'sum' cannot be used with an empty array"), `empty complex array: ${empty.runtimeError}`);
+});
