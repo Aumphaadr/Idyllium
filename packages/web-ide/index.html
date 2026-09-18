@@ -35,6 +35,8 @@
             <button type="button" role="menuitem" data-file-command="duplicate-project"><span>Дублировать проект</span></button>
             <button type="button" role="menuitem" data-file-command="delete-project"><span>Удалить проект</span></button>
             <div class="app-menu-separator" aria-hidden="true"></div>
+            <button type="button" role="menuitem" data-file-command="share-project"><span>Поделиться…</span></button>
+            <button type="button" role="menuitem" data-file-command="open-qr"><span>Открыть проект из QR-картинки…</span></button>
             <button type="button" role="menuitem" data-file-command="download-project"><span>Скачать текущий проект</span></button>
             <button type="button" role="menuitem" data-file-command="download-other-project"><span>Скачать другой проект</span></button>
           </div>
@@ -172,6 +174,8 @@
       </button>
     </div>
   </header>
+
+  <div id="guest-banner" class="guest-banner" role="status" hidden></div>
 
   <main class="workspace">
     <aside class="files">

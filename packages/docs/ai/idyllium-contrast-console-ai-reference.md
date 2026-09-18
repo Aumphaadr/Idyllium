@@ -198,8 +198,11 @@ console.writeln(mod(37, 10));   // 7
 console.writeln(9 / 2);         // 4.5
 ```
 
-`div`/`mod` are consistent for negatives: `div(-7, 3)` is `-2`, `mod(-7, 3)`
-is `-1`, and `-2 * 3 + (-1) = -7` checks out.
+`div`/`mod` are consistent for negatives and follow the Python rule (since
+1.6.1): `div` rounds down, the remainder takes the sign of the divisor —
+`div(-7, 3)` is `-3`, `mod(-7, 3)` is `2`, and `-3 * 3 + 2 = -7` checks out.
+C++, Java and JavaScript truncate toward zero instead (`-7 % 3` is `-1`), which
+silently breaks `n % 2 == 1` for negative odd numbers and wrap-around indexes.
 
 ### 4.2. The remainder operator and the percent sign
 

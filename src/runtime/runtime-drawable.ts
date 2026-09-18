@@ -11,14 +11,23 @@ import { errorMessage } from './runtime-shared';
 import { runtimeIsFile } from './runtime-fs';
 import { readRuntimeBytes, runtimeImageResource } from './runtime-image';
 
+/** Размер фигуры не бывает отрицательным: раньше `radius = -5` принимался молча, и фигура просто исчезала. */
+function defineSizeProperty(obj: RuntimeObject, owner: string, name: string, defaultValue: number): void {
+  defineValidatedRuntimeProperty(obj, name, defaultValue, (value, file, line) => {
+    const size = finiteNumber(value, `${owner}.${name}`, file, line);
+    if (size < 0) throw new IdylliumRuntimeError(file, line, `${owner}.${name} must be non-negative, got ${size}`);
+    return size;
+  });
+}
+
 export function initializeDrawableObject(obj: RuntimeObject, typeName: string, state: RuntimeObjectState): void {
   if (typeName === 'Rectangle') {
     obj.x = 0;
     obj.y = 0;
-    obj.width = 0;
-    obj.height = 0;
+    defineSizeProperty(obj, 'Rectangle', 'width', 0);
+    defineSizeProperty(obj, 'Rectangle', 'height', 0);
     obj.fill_color = colorTransparent();
-    obj.border_width = 0;
+    defineSizeProperty(obj, 'Rectangle', 'border_width', 0);
     defineTrackedRuntimeProperty(obj, 'border_color', colorTransparent());
     attachPositionMove(obj, 'Rectangle');
     attachDrawableTransform(obj, 'Rectangle');
@@ -27,9 +36,9 @@ export function initializeDrawableObject(obj: RuntimeObject, typeName: string, s
   if (typeName === 'Circle') {
     obj.x = 0;
     obj.y = 0;
-    obj.radius = 0;
+    defineSizeProperty(obj, 'Circle', 'radius', 0);
     obj.fill_color = colorTransparent();
-    obj.border_width = 0;
+    defineSizeProperty(obj, 'Circle', 'border_width', 0);
     defineTrackedRuntimeProperty(obj, 'border_color', colorTransparent());
     attachPositionMove(obj, 'Circle');
     attachDrawableTransform(obj, 'Circle');
@@ -41,7 +50,7 @@ export function initializeDrawableObject(obj: RuntimeObject, typeName: string, s
     obj.x2 = 0;
     obj.y2 = 0;
     obj.color = colorWhite();
-    obj.thickness = 1;
+    defineSizeProperty(obj, 'Line', 'thickness', 1);
     attachLineMove(obj);
   }
 

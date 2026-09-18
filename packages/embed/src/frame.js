@@ -16,6 +16,7 @@ const SITE = new URL('../', location.href).href; // …/Idyllium/
 const UI = {
   ru: {
     run: 'Запустить', stop: 'Остановить', check: 'Проверить', reset: 'Сбросить', format: 'Форматировать',
+    openInIde: 'В Web IDE', openInIdeTitle: 'Продолжить в большой среде Idyllium: код откроется там отдельным проектом',
     resetConfirm: 'Точно вернуть заготовку?',
     inputPlaceholder: 'Ввод программы…', inputSend: 'Ввести',
     idle: 'Здесь появится вывод программы.', loadingCore: 'Загружается Idyllium…',
@@ -25,6 +26,7 @@ const UI = {
   },
   en: {
     run: 'Run', stop: 'Stop', check: 'Check', reset: 'Reset', format: 'Format',
+    openInIde: 'Open in Web IDE', openInIdeTitle: 'Continue in the full Idyllium IDE: the code opens there as a separate project',
     resetConfirm: 'Really restore the starter?',
     inputPlaceholder: 'Program input…', inputSend: 'Enter',
     idle: 'Program output appears here.', loadingCore: 'Loading Idyllium…',
@@ -37,7 +39,7 @@ const UI = {
 const el = (id) => document.getElementById(id);
 const dom = {
   unit: el('unit'), broken: el('broken'), statement: el('statement'), editorHost: el('editor'),
-  run: el('run'), stop: el('stop'), check: el('check'), reset: el('reset'), format: el('format'),
+  run: el('run'), stop: el('stop'), check: el('check'), reset: el('reset'), format: el('format'), openInIde: el('open-in-ide'),
   console: el('console'), output: el('output'), inputRow: el('input-row'), input: el('input'), inputSend: el('input-send'),
   verdict: el('verdict'), branding: el('branding'),
 };
@@ -109,6 +111,7 @@ function peek(raw) {
       mode: editorSource.mode === 'light' ? 'light' : 'monaco',
       autocomplete: editorSource.autocomplete !== false,
       format: editorSource.format !== false,
+      openInIde: editorSource.openInIde !== false,
     },
     hasCheck: Boolean(source.check && typeof source.check === 'object' && source.check.kind && source.check.kind !== 'none'),
     branding: !(source.feedback && source.feedback.branding === false),
@@ -634,6 +637,24 @@ function formatCode() {
   }).catch(() => { /* ядро не приехало — о том скажет «Запустить» */ });
 }
 
+// «В Web IDE»: задача переросла окошко — код уезжает в большую среду ссылкой
+// `#p1=` (тот же кодек, что у «Поделиться» в Web IDE). Новая вкладка выходит из
+// песочницы (allow-popups-to-escape-sandbox), а у среды проект откроется гостем:
+// чужие проекты ученика на том сайте не тронуты.
+function openInIde() {
+  if (!editor) return;
+  // Вкладку открываем сразу, в самом клике: после await браузер счёл бы её всплывающей рекламой.
+  const tab = window.open('about:blank', '_blank');
+  core().then((api) => {
+    const fragment = api.share.encodeProjectLink({
+      name: rawConfig ? peek(rawConfig).title : '', from: '', idyllium: api.IDYLLIUM_VERSION || '', current: 'main.idyl',
+      files: [{ path: 'main.idyl', text: editor.getValue() }], assets: [],
+    });
+    const address = `${SITE}#${fragment}`;
+    if (tab) tab.location.replace(address); else window.open(address, '_blank');
+  }).catch(() => { if (tab) tab.close(); });
+}
+
 // Место курсора: номер строки и расстояние от первого непробельного знака —
 // после выравнивания отступов курсор остаётся у того же слова.
 function caretPlace(text, offset) {
@@ -721,6 +742,9 @@ function mount(raw, draft) {
   setLabel(dom.reset, t('reset'));
   setLabel(dom.format, t('format'));
   dom.format.hidden = !view.editor.format;
+  setLabel(dom.openInIde, t('openInIde'));
+  dom.openInIde.title = t('openInIdeTitle');
+  dom.openInIde.hidden = !view.editor.openInIde;
   dom.input.placeholder = t('inputPlaceholder');
   setLabel(dom.inputSend, t('inputSend'));
   dom.check.hidden = !view.hasCheck;
@@ -757,6 +781,7 @@ dom.stop.addEventListener('click', stopRunning);
 dom.check.addEventListener('click', checkSolution);
 dom.reset.addEventListener('click', () => resetCode(false));
 dom.format.addEventListener('click', formatCode);
+dom.openInIde.addEventListener('click', openInIde);
 new ResizeObserver(reportHeight).observe(document.body);
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (rawConfig) applyTheme(activeTheme); });
 

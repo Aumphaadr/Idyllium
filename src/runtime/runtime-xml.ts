@@ -164,6 +164,30 @@ export function parseXmlDocument(source: string, html: boolean, file: string, li
   const fail = (message: string): never => {
     throw new IdylliumRuntimeError(file, line, `${entry} invalid ${language} at ${atLine}:${atColumn}: ${message}`);
   };
+  // Строгий XML: голый '&' и неизвестная сущность — ошибки (в HTML они прощаются).
+  // Раньше parse_xml молча принимал «Мечи & щиты», хотя обещал строгость.
+  const refuseLooseAmpersands = (chunk: string): void => {
+    if (html) return;
+    const pattern = /&(#[0-9]+;|#[xX][0-9a-fA-F]+;|([a-zA-Z][a-zA-Z0-9]*);)?/g;
+    for (let match = pattern.exec(chunk); match !== null; match = pattern.exec(chunk)) {
+      const named = match[2];
+      if (match[1] !== undefined && named === undefined) {
+        // Числовая сущность по форме верна — но код обязан быть настоящим символом.
+        const code = /^#[xX]/.test(match[1]) ? parseInt(match[1].slice(2, -1), 16) : parseInt(match[1].slice(1, -1), 10);
+        if (code > 0 && code <= 0x10FFFF && !(code >= 0xD800 && code <= 0xDFFF)) continue;
+        advance(match.index);
+        fail(`'&${match[1]}' is not a character — no symbol has this code`);
+      }
+      if (named !== undefined && XML_NAMED_ENTITIES[named] !== undefined) continue;
+      advance(match.index);
+      if (chunk.startsWith('&#', match.index)) {
+        fail("a numeric entity looks like '&#169;' or '&#xA9;' — digits only, then ';'; a plain '&' is written '&amp;'");
+      }
+      fail(named !== undefined
+        ? `unknown entity '&${named};' — XML knows &amp; &lt; &gt; &quot; &apos; and numeric ones like &#169;`
+        : "a bare '&' is not allowed in XML — write '&amp;'");
+    }
+  };
   const advance = (count: number): void => {
     for (let i = 0; i < count; i += 1) {
       if (source[index] === '\n') { atLine += 1; atColumn = 1; } else atColumn += 1;
@@ -222,6 +246,7 @@ export function parseXmlDocument(source: string, html: boolean, file: string, li
             value = decodeXmlEntities(source.slice(index));
             advance(source.length - index);
           } else {
+            refuseLooseAmpersands(source.slice(index, end));
             value = decodeXmlEntities(source.slice(index, end));
             advance(end + 1 - index);
           }
@@ -292,7 +317,12 @@ export function parseXmlDocument(source: string, html: boolean, file: string, li
       }
       if (openIndex <= 0) {
         if (html) continue; // лишний закрывающий — прощаем
-        fail(`closing tag '</${normalized}>' has no opening tag`);
+        // Причина часто в регистре: в XML <B> и </b> — разные теги. Называем открытый.
+        const twin = [...stack].reverse().find((item, position) => position < stack.length - 1
+          && typeof item.__xmlTag === 'string' && item.__xmlTag.toLowerCase() === normalized.toLowerCase());
+        fail(twin
+          ? `closing tag '</${normalized}>' has no opening tag — '<${twin.__xmlTag}>' is open, and XML tag names are case-sensitive`
+          : `closing tag '</${normalized}>' has no opening tag`);
       }
       if (!html && openIndex !== stack.length - 1) {
         fail(`closing tag '</${normalized}>' does not match open tag '<${top().__xmlTag}>'`);
@@ -337,6 +367,7 @@ export function parseXmlDocument(source: string, html: boolean, file: string, li
     }
     const nextTag = source.indexOf('<', index);
     const end = nextTag < 0 ? source.length : nextTag;
+    refuseLooseAmpersands(source.slice(index, end));
     pushText(decodeXmlEntities(source.slice(index, end)));
     advance(end - index);
   }

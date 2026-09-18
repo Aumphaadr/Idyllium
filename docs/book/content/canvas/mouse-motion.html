@@ -44,8 +44,10 @@ void function on_mouse_move(gui.Canvas canvas, gui.MouseEvent evt) {
 }
 
 void function on_mouse_scroll(gui.Canvas canvas, gui.MouseScrollEvent evt) {
-    box.width = box.width + evt.delta * 10;
-    box.height = box.height + evt.delta * 6;
+    if (box.width + evt.delta * 10 >= 10) {
+        box.width = box.width + evt.delta * 10;
+        box.height = box.height + evt.delta * 6;
+    }
     redraw(canvas);
 }
 
@@ -76,7 +78,9 @@ main() {
   <p>
     Свойство <code>evt.delta</code> — целое число: его знак показывает
     направление прокрутки, а каким будет шаг за один щелчок колеса — зависит
-    от мыши. Если долго крутить колесо «на уменьшение», <code>box.width</code>
-    уйдёт ниже нуля — не удивляйтесь, если бокс исчезнет.
+    от мыши. Условие в обработчике — сторож: если долго крутить колесо «на уменьшение»,
+    ширина дошла бы до нуля и ушла в минус, а отрицательных размеров у фигур не
+    бывает — язык остановил бы программу с ошибкой <code>Rectangle.width must be
+    non-negative, got -10</code>. Сторож не даёт боксу стать у́же 10 пикселей.
   </p>
 </div>

@@ -6,6 +6,7 @@ import {
 import { Diagnostic, formatDiagnostics } from './core/diagnostics';
 import { createDefaultStandardLibrary } from './core/stdlib/registry';
 import * as embedApi from './embed';
+import * as shareApi from './share/project-link';
 import type { UnitRunner } from './embed';
 import { formatIdyllium } from './language/formatter';
 import { IdylliumProject } from './language/project';
@@ -224,6 +225,8 @@ export function createUnitRunner(): UnitRunner {
 }
 
 export const embed = embedApi;
+/** Кодек «проект в ссылке» (`#p1=`): им пользуются Web IDE и кадр юнита. */
+export const share = shareApi;
 
 export function inspectSqliteDatabaseInBrowser(bytes: Uint8Array): Promise<SqliteDatabaseDescription> {
   return inspectSqliteDatabase(browserSqliteService, bytes);
@@ -245,6 +248,7 @@ export {
 };
 export { IDYLLIUM_SEMANTIC_TOKEN_TYPES, IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS } from './core/semantics';
 export { guiPreviewIntervalMs } from './runtime/gui-interval';
+export { IDYLLIUM_VERSION } from './runtime/runtime';
 export { runActionWithSnapshotPump } from './runtime/gui-pump';
 
 function buildBrowserNetworkService(

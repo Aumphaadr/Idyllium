@@ -1,4 +1,4 @@
-/* Idyllium 1.6.0 — собрано tools/build-embed.js из packages/embed/; править источники. */
+/* Idyllium 1.6.1 — собрано tools/build-embed.js из packages/embed/; править источники. */
 "use strict";
 (() => {
   // packages/embed/src/authors.js
@@ -49,6 +49,7 @@ main() {
     $("editor-mode").value = state.editor.mode;
     $("autocomplete").checked = state.editor.autocomplete;
     $("format-button").checked = state.editor.format;
+    $("open-in-ide").checked = state.editor.openInIde;
     $("lang").value = state.lang;
     $("branding").checked = state.feedback.branding;
     $("soft-hint").checked = state.feedback.softRunHint;
@@ -360,10 +361,11 @@ main() {
       theme: $("theme").value,
       mode: $("editor-mode").value,
       autocomplete: $("autocomplete").checked,
-      format: $("format-button").checked
+      format: $("format-button").checked,
+      openInIde: $("open-in-ide").checked
     }
   });
-  for (const id of ["rows", "console-rows", "font-size", "theme", "editor-mode", "autocomplete", "format-button"]) $(id).addEventListener("input", () => update(editorPatch()));
+  for (const id of ["rows", "console-rows", "font-size", "theme", "editor-mode", "autocomplete", "format-button", "open-in-ide"]) $(id).addEventListener("input", () => update(editorPatch()));
   $("lang").addEventListener("input", () => update({ lang: $("lang").value }));
   var feedbackPatch = () => ({
     feedback: { branding: $("branding").checked, softRunHint: $("soft-hint").checked, reveal: $("reveal").checked, shareCode: $("share-code").checked }

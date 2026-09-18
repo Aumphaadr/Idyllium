@@ -41,7 +41,10 @@ export function createJsonObject(entries: Map<string, JsonRuntimeValue> = new Ma
     if (!entries.has(name)) {
       throw new IdylliumRuntimeError(file, line, `json object has no key '${name}'`);
     }
-    return entries.get(name);
+    const found = entries.get(name)!;
+    // Подсказка для отказов типа («json value "hp" is string, expected int»); в данные не попадает.
+    Object.defineProperty(found, '__jsonKeyHint', { value: name, enumerable: false, configurable: true, writable: true });
+    return found;
   });
   obj.add = contextFunction((key: unknown, value: unknown, file: string, line: number) => {
     const name = stringArgument(key, 'json.Object.add() key', file, line);
@@ -150,7 +153,7 @@ function createJsonBase(typeName: JsonRuntimeValue['__idylliumType'], kind: Json
       if (Number.isFinite(number)) return number;
       throw new IdylliumRuntimeError(file, line, `json number ${String(obj.__jsonValue)} is outside the float range`);
     }
-    throwJsonExpected(obj, 'number', file, line);
+    throwJsonExpected(obj, 'float', file, line);
   });
   obj.to_bool = contextFunction((file: string, line: number) => {
     if (obj.__jsonKind === 'bool') return obj.__jsonValue as boolean;
@@ -247,6 +250,8 @@ export class ExactJsonParser {
       const key = this.parseString();
       this.skipWhitespace();
       if (!this.consume(':')) this.fail("expected ':' after object key");
+      // Дубль ключа — громко, как у Object.add: раньше последний молча затирал первый.
+      if (entries.has(key)) this.fail(`key ${JSON.stringify(key)} is repeated in one object`);
       entries.set(key, this.parseValue());
       this.skipWhitespace();
       if (this.consume('}')) return createJsonObject(entries);
@@ -456,11 +461,12 @@ function jsonIndent(value: unknown, file: string, line: number): number {
 }
 
 function throwJsonExpected(value: JsonRuntimeValue, expected: string, file: string, line: number): never {
-  throw new IdylliumRuntimeError(file, line, `json value is ${jsonKindText(value)}, expected ${expected}`);
+  // Словами языка (int/float, не «number») и с именем ключа, если значение достали через get().
+  const hint = typeof value.__jsonKeyHint === 'string' ? ` ${JSON.stringify(value.__jsonKeyHint)}` : '';
+  throw new IdylliumRuntimeError(file, line, `json value${hint} is ${jsonKindText(value)}, expected ${expected}`);
 }
 
 function jsonKindText(value: JsonRuntimeValue): string {
-  if (value.__jsonKind === 'int' || value.__jsonKind === 'float') return 'number';
   return value.__jsonKind;
 }
 

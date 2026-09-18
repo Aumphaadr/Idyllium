@@ -1,4 +1,4 @@
-/* Idyllium 1.6.0 — собрано tools/build-embed.js из packages/embed/; править источники. */
+/* Idyllium 1.6.1 — собрано tools/build-embed.js из packages/embed/; править источники. */
 "use strict";
 (() => {
   // packages/web-ide/src/idyllium-highlight.js
@@ -462,6 +462,8 @@
       check: "\u041F\u0440\u043E\u0432\u0435\u0440\u0438\u0442\u044C",
       reset: "\u0421\u0431\u0440\u043E\u0441\u0438\u0442\u044C",
       format: "\u0424\u043E\u0440\u043C\u0430\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C",
+      openInIde: "\u0412 Web IDE",
+      openInIdeTitle: "\u041F\u0440\u043E\u0434\u043E\u043B\u0436\u0438\u0442\u044C \u0432 \u0431\u043E\u043B\u044C\u0448\u043E\u0439 \u0441\u0440\u0435\u0434\u0435 Idyllium: \u043A\u043E\u0434 \u043E\u0442\u043A\u0440\u043E\u0435\u0442\u0441\u044F \u0442\u0430\u043C \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u044B\u043C \u043F\u0440\u043E\u0435\u043A\u0442\u043E\u043C",
       resetConfirm: "\u0422\u043E\u0447\u043D\u043E \u0432\u0435\u0440\u043D\u0443\u0442\u044C \u0437\u0430\u0433\u043E\u0442\u043E\u0432\u043A\u0443?",
       inputPlaceholder: "\u0412\u0432\u043E\u0434 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B\u2026",
       inputSend: "\u0412\u0432\u0435\u0441\u0442\u0438",
@@ -479,6 +481,8 @@
       check: "Check",
       reset: "Reset",
       format: "Format",
+      openInIde: "Open in Web IDE",
+      openInIdeTitle: "Continue in the full Idyllium IDE: the code opens there as a separate project",
       resetConfirm: "Really restore the starter?",
       inputPlaceholder: "Program input\u2026",
       inputSend: "Enter",
@@ -502,6 +506,7 @@
     check: el("check"),
     reset: el("reset"),
     format: el("format"),
+    openInIde: el("open-in-ide"),
     console: el("console"),
     output: el("output"),
     inputRow: el("input-row"),
@@ -570,7 +575,8 @@
         theme: editorSource.theme === "light" || editorSource.theme === "dark" ? editorSource.theme : "auto",
         mode: editorSource.mode === "light" ? "light" : "monaco",
         autocomplete: editorSource.autocomplete !== false,
-        format: editorSource.format !== false
+        format: editorSource.format !== false,
+        openInIde: editorSource.openInIde !== false
       },
       hasCheck: Boolean(source.check && typeof source.check === "object" && source.check.kind && source.check.kind !== "none"),
       branding: !(source.feedback && source.feedback.branding === false),
@@ -1095,6 +1101,25 @@ ${text}`;
     }).catch(() => {
     });
   }
+  function openInIde() {
+    if (!editor) return;
+    const tab = window.open("about:blank", "_blank");
+    core().then((api) => {
+      const fragment = api.share.encodeProjectLink({
+        name: rawConfig ? peek(rawConfig).title : "",
+        from: "",
+        idyllium: api.IDYLLIUM_VERSION || "",
+        current: "main.idyl",
+        files: [{ path: "main.idyl", text: editor.getValue() }],
+        assets: []
+      });
+      const address = `${SITE}#${fragment}`;
+      if (tab) tab.location.replace(address);
+      else window.open(address, "_blank");
+    }).catch(() => {
+      if (tab) tab.close();
+    });
+  }
   function caretPlace(text, offset) {
     const before = text.slice(0, offset);
     const line = before.split("\n").length - 1;
@@ -1171,6 +1196,9 @@ ${text}`;
     setLabel(dom.reset, t("reset"));
     setLabel(dom.format, t("format"));
     dom.format.hidden = !view.editor.format;
+    setLabel(dom.openInIde, t("openInIde"));
+    dom.openInIde.title = t("openInIdeTitle");
+    dom.openInIde.hidden = !view.editor.openInIde;
     dom.input.placeholder = t("inputPlaceholder");
     setLabel(dom.inputSend, t("inputSend"));
     dom.check.hidden = !view.hasCheck;
@@ -1204,6 +1232,7 @@ ${text}`;
   dom.check.addEventListener("click", checkSolution);
   dom.reset.addEventListener("click", () => resetCode(false));
   dom.format.addEventListener("click", formatCode);
+  dom.openInIde.addEventListener("click", openInIde);
   new ResizeObserver(reportHeight).observe(document.body);
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
     if (rawConfig) applyTheme(activeTheme);

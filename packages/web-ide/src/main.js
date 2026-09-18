@@ -14,10 +14,11 @@ import { registerViewerHost } from './viewer-host.js';
 import { renderCsvTable, renderJsonTree, renderMarkdownPreview, csvHeaderModes, structuredViewModes, isCsvFile, isJsonFile, isMarkdownFile, isSvgFile, structuredViewMode } from './viewer-structured.js';
 import { showAssetViewer, releaseAssetViewerResources, invalidateAssetPreview } from './viewer-assets.js';
 import { setupColorEyedropper } from './color-eyedropper.js';
+import { setupShare } from './share.js';
 import { setOutputText, appendOutput, setStatus } from './console-output.js';
 import { MONACO_LANGUAGE_ID, registerMonacoIdyllium, defineMonacoThemes, monacoCompletionRequest, projectCompletions, projectSignatureHelp, projectSemanticTokens, encodeMonacoSemanticTokens, deduplicateCompletions, SEMANTIC_TOKEN_TYPES, SEMANTIC_TOKEN_MODIFIERS } from './monaco-lang.js';
 import { runProgram, stopProgram, stopGuiLoop, markGuiFrameReady, enqueueGuiEvent, reportGuiEventFailure, postEmptySnapshot, previewTargetOrigin, updateRunButton, setRunControls, submitConsoleInput, syncRuntimeFilesFromSnapshot, revokeAllBrowserAssetUrls, currentRuntime, formatCurrentFile, textSourceMap, registerRunHost, browserAssetUrls } from './run-preview.js';
-import { monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyEditor, editor, highlight, lineNumbers, completionPopup, editorTitle, fileList, output, consoleInputPanel, consoleInput, consoleInputSubmit, status, guiFrame, workspace, runtimePane, runtimeRowResizer, runButton, stopButton, formatButton, structuredViewToggle, structuredTextViewButton, structuredDataViewButton, newFileButton, newFolderButton, fileContextMenu, filePropsModal, uploadButton, uploadMenu, dropArea, uploadInput, uploadConflict, uploadConflictName, uploadConflictSkip, uploadConflictReplace, themeButton, themeMenu, themeDarkButton, themeLightButton, fontSizeDecrease, fontSizeIncrease, fontSizeInput, consoleFontSizeDecrease, consoleFontSizeIncrease, consoleFontSizeInput, autocompleteToggle, colorPickerButton, colorPickerMenu, fileAppMenuWrapper, fileAppMenuButton, fileAppMenu, fileAppMenuMain, fileAppMenuPanel, currentProjectNameElement, editAppMenuWrapper, editAppMenuButton, editAppMenu, colorPreview, colorRgbCode, colorHexCode, colorSliders, colorInputs, createIcon } from './dom.js';
+import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyEditor, editor, highlight, lineNumbers, completionPopup, editorTitle, fileList, output, consoleInputPanel, consoleInput, consoleInputSubmit, status, guiFrame, workspace, runtimePane, runtimeRowResizer, runButton, stopButton, formatButton, structuredViewToggle, structuredTextViewButton, structuredDataViewButton, newFileButton, newFolderButton, fileContextMenu, filePropsModal, uploadButton, uploadMenu, dropArea, uploadInput, uploadConflict, uploadConflictName, uploadConflictSkip, uploadConflictReplace, themeButton, themeMenu, themeDarkButton, themeLightButton, fontSizeDecrease, fontSizeIncrease, fontSizeInput, consoleFontSizeDecrease, consoleFontSizeIncrease, consoleFontSizeInput, autocompleteToggle, colorPickerButton, colorPickerMenu, fileAppMenuWrapper, fileAppMenuButton, fileAppMenu, fileAppMenuMain, fileAppMenuPanel, currentProjectNameElement, editAppMenuWrapper, editAppMenuButton, editAppMenu, colorPreview, colorRgbCode, colorHexCode, colorSliders, colorInputs, createIcon } from './dom.js';
 
   const DEFAULT_EDITOR_FONT_SIZE = 16;
   const DEFAULT_CONSOLE_FONT_SIZE = 13;
@@ -62,6 +63,9 @@ import { monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyE
   let colorPickerState = { red: 34, green: 145, blue: 188, alpha: 1 };
   let currentProjectId = '';
   let currentProjectName = DEFAULT_PROJECT_NAME;
+  // Гость — «Работа по ссылке» (share.js): проект открыт, но в хранилище его
+  // нет. currentProjectId при этом пуст — автосохранение и запись молчат сами.
+  let guestReturnProjectId = '';
   let projectCatalog = [];
   let projectWriteQueue = Promise.resolve();
   let pendingUploadConflictResolve = null;
@@ -526,7 +530,56 @@ import { monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyE
     openFile(currentFile);
     updateCurrentProjectUi();
     postEmptySnapshot();
+    // В адресе может лежать проект (`#p1=…`): открываем его гостем, свой не трогаем.
+    shareUi.openFromAddress().catch((error) => {
+      setStatus('Проект по ссылке не открылся', true);
+      appendOutput(formatThrownError(error), 'output-error');
+    });
   }
+
+  const shareUi = setupShare({
+    modal: filePropsModal,
+    banner: guestBanner,
+    saveCurrentEditor: () => saveCurrentEditor(),
+    currentFile: () => currentFile,
+    projectName: () => currentProjectName,
+    idylliumVersion: () => (window.Idyllium && window.Idyllium.IDYLLIUM_VERSION) || '',
+    createProjectZip: () => createProjectZip(),
+    downloadBlob,
+    safeDownloadName,
+    copyText: copyProjectItemText,
+    uniqueProjectName,
+    hideMenus: () => { hideFileAppMenu(); hideEditAppMenu(); },
+    readOtherProjects: async () => {
+      const states = [];
+      for (const entry of projectCatalog) {
+        const state = await readProjectDbValue(projectRecordKey(entry.id));
+        if (state && Array.isArray(state.files)) states.push(state);
+      }
+      return states;
+    },
+    activateGuestState: async (state, name) => {
+      stopProgram(true);
+      await flushCurrentProjectState();
+      if (currentProjectId) guestReturnProjectId = currentProjectId;
+      activateProject({ id: '', name }, state);
+    },
+    saveGuest: async (name) => {
+      stopProgram(true);
+      saveCurrentEditor();
+      await storeAndActivateNewProject(name, serializeProjectState());
+      setStatus('Проект сохранён у вас');
+    },
+    leaveGuest: async () => {
+      const entry = projectCatalog.find((item) => item.id === guestReturnProjectId)
+        || [...projectCatalog].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))[0];
+      if (!entry) throw new Error('Некуда вернуться: своих проектов нет');
+      const state = await readProjectDbValue(projectRecordKey(entry.id));
+      if (!state || !Array.isArray(state.files)) throw new Error(`Не удалось прочитать проект «${entry.name}»`);
+      activateProject(entry, state);
+      setStatus('Работа по ссылке закрыта');
+    },
+  });
 
   function renderFiles() {
     syncFoldersFromFiles();
@@ -2555,7 +2608,10 @@ import { monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyE
     disposeProjectMonacoModels();
     currentProjectId = entry.id;
     currentProjectName = entry.name;
-    window.localStorage.setItem(LAST_PROJECT_STORAGE_KEY, currentProjectId);
+    if (currentProjectId) {
+      window.localStorage.setItem(LAST_PROJECT_STORAGE_KEY, currentProjectId);
+      shareUi.guestEnded();
+    }
     restoreProjectState(copySerializedProjectState(state));
     if (!files.has(currentFile)) currentFile = fallbackFilePath();
     renderFiles();
@@ -2992,6 +3048,22 @@ import { monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyE
     }
     if (command === 'delete-project') {
       showDeleteProjectPanel();
+      return;
+    }
+    if (command === 'share-project') {
+      await shareUi.openShareDialog();
+      return;
+    }
+    if (command === 'open-qr') {
+      shareUi.openQrReader();
+      return;
+    }
+    if (shareUi.isGuest() && (command === 'save-project' || command === 'duplicate-project' || command === 'delete-project')) {
+      // У гостя нет записи в хранилище: сохранять, дублировать и удалять нечего.
+      hideFileAppMenu();
+      setStatus(command === 'delete-project'
+        ? 'Это работа по ссылке — её достаточно закрыть (кнопка в полосе сверху)'
+        : 'Это работа по ссылке — нажмите «Сохранить к себе» в полосе сверху');
       return;
     }
     if (command === 'download-project') {

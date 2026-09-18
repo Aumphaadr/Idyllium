@@ -420,9 +420,16 @@ common crash in the course — while a browser is waiting for the answer.
 | C++ (cpp-httplib) | LOUD but empty, and silent on the server side | Probed: the client gets `HTTP/1.1 500 Internal Server Error` with `Content-Length: 0`; the server process prints **nothing at all**. The exception text exists nowhere unless an exception handler was installed in advance. Server survives. |
 | Python (`http.server`) | **QUIET to the client** | Probed: the client received `HTTP/1.0 200 OK` **with an empty body** — because the handler had already sent the status line before the crash. The traceback goes to the server's stderr, which a student running from an IDE may never look at. Server survives. |
 | JavaScript (`node:http`) | **FATAL** | Probed: the uncaught exception kills the process. The waiting client gets an empty reply, and every subsequent request is refused because the server is gone. The traceback is printed as the process dies. |
-| **Idyllium** | **LOUD in both directions** | Client gets status 500 with the error text as the body; the server keeps running and logs the crash to the program console. |
+| **Idyllium** | **LOUD for the author, neutral for the visitor** | Client gets status 500 with a neutral page that says where the details are; the full error text goes to the program console; `app.debug = true` (since 1.6.1) puts it into the response as well. The server keeps running. |
 
 Probed, client side:
+
+```text
+status 500
+body: 500 Internal Server Error — the handler failed; details are in the server console (app.debug = true shows them here)
+```
+
+With `app.debug = true;` the body is the error itself:
 
 ```text
 status 500
@@ -436,9 +443,12 @@ failed"):
 [web] запрос GET /boom упал: srv.idyl:23: runtime error: array index 7 out of bounds (size 3, valid indices 0-2)
 ```
 
-Three things are deliberate here. The message reaches **the browser**, because
-that is the window the student is looking at when they hit the bug. It also
-reaches the server console, because that is where they will look second. And the
+Three things are deliberate here. The full message always reaches **the server
+console** — file, line and cause. The browser gets a neutral page by default
+(since 1.6.1; the industry standard — file names, SQL and table names of the
+program are not shown to whoever opened the address), and that page tells the
+student where to look and how to bring the text into the browser: `app.debug =
+true`, a switch for the author while developing. And the
 server **survives**, because a classroom server that dies on the first bad
 request turns every debugging cycle into a restart.
 
@@ -459,7 +469,7 @@ answer above the old one and forgetting to delete it.
 | C++ (cpp-httplib) | **QUIET** | Probed: the second `set_content` overwrites the first; the client gets `second`. No diagnostic. |
 | Python (`http.server`) | **QUIET and corrupting** | Probed: the client received `first` followed by the raw text `HTTP/1.0 200 OK`, `Server: BaseHTTP/0.6 Python/3.12.3`, `Date: …` and `second` — the second response's status line and headers were written **into the body of the first**. Nothing is reported. |
 | JavaScript (`node:http`) | **FATAL** | Probed: `Error [ERR_STREAM_WRITE_AFTER_END]: write after end` — thrown as an unhandled `'error'` event, killing the process. The client got `first`, then the server was gone. |
-| **Idyllium** | **LOUD** | `runtime error: web.Response.send() the response was already sent` — delivered as a 500 with that text, logged on the server, server keeps running. |
+| **Idyllium** | **LOUD** | `runtime error: web.Response.send() the response was already sent` — logged on the server, delivered as a 500 (a neutral page; with that text when `app.debug = true`), server keeps running. |
 
 The Python row is the most instructive failure in this whole part. The client
 sees a page that begins correctly and then contains what looks like garbage; the

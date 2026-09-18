@@ -65,6 +65,8 @@ export interface UnitConfig {
     readonly autocomplete: boolean;
     /** Кнопка «Форматировать» (выравнивание отступов); false — кнопки нет. */
     readonly format: boolean;
+    /** Кнопка «В Web IDE»: код ученика открывается в большой среде ссылкой `#p1=`; false — кнопки нет. */
+    readonly openInIde: boolean;
   };
   readonly lang: 'ru' | 'en';
   readonly libs: readonly string[];
@@ -263,6 +265,7 @@ export function normalizeUnitConfig(raw: unknown, idylliumVersion = ''): Normali
       mode: modeRaw === 'light' ? 'light' : 'monaco',
       autocomplete: editorSource.autocomplete !== false,
       format: editorSource.format !== false,
+      openInIde: editorSource.openInIde !== false,
     },
     lang: text(source.lang, 'ru') === 'en' ? 'en' : 'ru',
     libs,

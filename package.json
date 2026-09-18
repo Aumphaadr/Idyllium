@@ -1,6 +1,6 @@
 {
   "name": "idyllium",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "private": true,
   "description": "Next-generation core for the Idyllium educational programming language",
   "main": "dist/src/index.js",
@@ -45,10 +45,12 @@
     "gifenc": "^1.0.3",
     "gifuct-js": "^2.1.2",
     "jpeg-js": "^0.4.4",
+    "jsqr": "^1.4.0",
     "marked": "^18.0.6",
     "monaco-editor": "^0.52.2",
     "pako": "^1.0.11",
     "papaparse": "^5.5.4",
+    "qrcode-generator": "^2.0.4",
     "sql.js": "^1.14.1",
     "upng-js": "^2.1.0",
     "webp-wasm": "^1.0.6"

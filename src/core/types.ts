@@ -102,7 +102,9 @@ export function typeToString(type: TypeRef): string {
   if (type.kind === 'null') return 'null';
   if (type.kind === 'runtime-error') return 'RuntimeError';
   if (type.kind === 'function') {
-    return `function(${type.parameters.map(typeToString).join(', ')}): ${typeToString(type.returnType)}`;
+    // Словами языка — как пишется заголовок функции: «void function(gui.Button)»,
+    // а не нотацией движка «function(gui.Button): void» (вердикт владельца, 1.6.1).
+    return `${typeToString(type.returnType)} function(${type.parameters.map(typeToString).join(', ')})`;
   }
   if (type.kind === 'array') {
     if (type.dynamic) return `dyn_array<${typeToString(type.elementType)}>`;

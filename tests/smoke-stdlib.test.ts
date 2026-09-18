@@ -994,7 +994,7 @@ test('json module runtime errors are readable', async () => {
     '    json.Value value = json.Value(42);',
     '    string text = value.to_string();',
     '}',
-  ].join('\n'), 'main.idyl:5: runtime error: json value is number, expected string');
+  ].join('\n'), 'main.idyl:5: runtime error: json value is int, expected string');
 
   await assertRuntimeFails([
     'use json;',
@@ -2065,17 +2065,22 @@ main() {
   assert(deep.output === '20000 яблочко\n', `deep tree survives: ${JSON.stringify(deep.output)} ${deep.runtimeError ?? ''}`);
 
   // Оборванная страница (недокачанный http-ответ) не роняет прощающий режим,
-  // а невалидные числовые сущности остаются литералами, не битыми символами.
+  // а невалидные числовые сущности остаются в нём литералами, не битыми символами.
+  // Строгий XML на те же сущности отказывает словами (сигнал 2.7).
   const torn = await runIdyllium(`
 use console;
 use xml;
 
 main() {
     console.writeln(xml.parse_html("<p>ok<a href=\\"x").first("p").text);
-    console.writeln(xml.parse_xml("<a>&#65a; &#xD800;</a>").text);
+    console.writeln(xml.parse_html("<a>&#65a; &#xD800;</a>").text);
+    try { xml.parse_xml("<a>&#65a;</a>"); } catch (err) { console.writeln(err.message); }
+    try { xml.parse_xml("<a>&#xD800;</a>"); } catch (err) { console.writeln(err.message); }
 }
 `, {}, { file: 'main.idyl' });
-  assert(torn.output === 'ok\n&#65a; &#xD800;\n', `torn html and bad entities: ${JSON.stringify(torn.output)} ${torn.runtimeError ?? ''}`);
+  assert(torn.output.startsWith('ok\n&#65a; &#xD800;\n'), `torn html and bad entities: ${JSON.stringify(torn.output)} ${torn.runtimeError ?? ''}`);
+  assert(torn.output.includes("a numeric entity looks like '&#169;'") && torn.output.includes("'&#xD800;' is not a character"),
+    `strict xml refuses broken numeric entities in words: ${JSON.stringify(torn.output)}`);
 
   // Мост курса: черепаха пишет SVG — библиотека читает собственный рисунок.
   const memoryFs = createMemoryRuntimeFileSystem({});
@@ -2432,7 +2437,9 @@ main() {
 
   // Авария обработчика — пятисотка без падения сервера.
   const crashed = await get('/broken');
-  assert(crashed.status === 500 && crashed.text.includes('division by zero'), `crash: ${crashed.status} ${crashed.text}`);
+  // Посетителю — нейтральная страница: текст ошибки (файлы, строки, таблицы программы) наружу не уходит.
+  assert(crashed.status === 500 && crashed.text.includes('500 Internal Server Error') && !crashed.text.includes('division by zero'),
+    `crash must answer with a neutral page: ${crashed.status} ${crashed.text}`);
   const alive = await get('/hello?name=X');
   assert(alive.text === 'Привет, X!', 'server must survive a handler crash');
   assert(output.includes('[web] запрос GET /broken упал'), 'crash must be logged to the console');
@@ -2539,6 +2546,7 @@ void function badtoken(web.Request req, web.Response res) {
 
 main() {
     web.Server app;
+    app.debug = true;   // режим отладки: текст ошибки приходит и в ответ
     app.on_get("/", page);
     app.on_get("/ghost", ghost);
     app.on_get("/post/<id>", card);
@@ -3681,4 +3689,11 @@ main() {
   }
   const empty = await runIdyllium('use console;\nuse math;\nmain() {\n    dyn_array<math.Complex> zs;\n    console.writeln(sum(zs));\n}\n', {}, { file: '/main.idyl' });
   assert(!empty.success && (empty.runtimeError ?? '').includes("'sum' cannot be used with an empty array"), `empty complex array: ${empty.runtimeError}`);
+});
+
+test('strict xml names the open tag when the closing one differs only by case', async () => {
+  const result = await runIdyllium('use console;\nuse xml;\nmain() {\n    try {\n        xml.Node a = xml.parse_xml("<B>жирно</b>");\n    } catch (error) {\n        console.writeln(error.message);\n    }\n    try {\n        xml.Node b = xml.parse_xml("<a>x</c>");\n    } catch (error) {\n        console.writeln(error.message);\n    }\n}\n', {}, { file: '/main.idyl' });
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === "xml.parse_xml() invalid XML at 1:13: closing tag '</b>' has no opening tag — '<B>' is open, and XML tag names are case-sensitive\nxml.parse_xml() invalid XML at 1:9: closing tag '</c>' has no opening tag\n",
+    `xml case hint is off: ${JSON.stringify(result.output)}`);
 });

@@ -1396,6 +1396,7 @@
     canvas.width = width;
     canvas.height = height;
     const commands = widget.canvas.commands || [];
+    canvas.__idylliumBaseColor = canvasBaseColor(widget.properties);
     drawCanvasCommands(canvas, commands);
     scheduleAnimatedCanvas(canvas, commands);
     installCanvasEventHandlers(canvas, widget.canvas.id);
@@ -1412,6 +1413,7 @@
     canvas.style.width = width + 'px';
     canvas.style.height = height + 'px';
     const commands = canvasSnapshot.commands || [];
+    canvas.__idylliumBaseColor = canvasBaseColor(canvasSnapshot.properties);
     drawCanvasCommands(canvas, commands);
     scheduleAnimatedCanvas(canvas, commands);
     installCanvasEventHandlers(canvas, canvasSnapshot.id);
@@ -1817,15 +1819,27 @@
     return key.length === 1 ? key.toUpperCase() : key;
   }
 
+  // Основа кадра — background_color холста, если программа его задала; иначе чёрный.
+  // Раньше свойство попадало в снимок, но на экране его перекрывала чёрная заливка.
+  function canvasBaseColor(properties) {
+    const value = properties && properties.background_color;
+    return typeof value === 'string' && value.length > 0 && !isTransparentColor(value) ? value : '#000000';
+  }
+
   function drawCanvasCommands(canvas, commands) {
     const ctx = canvas.getContext('2d');
+    const base = canvas.__idylliumBaseColor || '#000000';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = base;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     for (const command of commands) {
       if (command.kind === 'clear') {
-        ctx.fillStyle = color(command.color, '#000000');
+        // clear() — «вернуть холст к основе»: к background_color, а без него — к чёрному.
+        // Именно вернуть, а не закрасить поверх: у полупрозрачной основы иначе
+        // просвечивало бы прошлое, а рантайм после clear() его уже не помнит.
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = base;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
       if (command.kind === 'fill') {

@@ -503,7 +503,12 @@ the runtime's job, and anything that cannot be done is said out loud.
    growing frame after frame. Every framework in this comparison behaves the
    same way, and the smear announces itself visually rather than silently — the
    course even uses it deliberately for trails — but an AI writing an example
-   must put `canvas.clear()` at the top of every `on_update`.
+   must put `canvas.clear()` or an opaque `canvas.fill(color)` at the top of every
+   `on_update`. (Since 1.6.1 this is the single frame model everywhere: nothing
+   is erased implicitly, an opaque `fill` or `clear()` starts the picture over,
+   and there is no cap on accumulated shapes — thousands of them without an
+   opaque fill make the program lag. Before 1.6.1 a canvas WITH `on_update` was
+   silently wiped black before every frame, so the smear could not be seen.)
 4. **Sprite collision geometry is the whole image rectangle**, transparent
    pixels included — the same approximation as PyGame's `Rect` and SFML's
    bounds. Pixel-perfect collision is not provided.

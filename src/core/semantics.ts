@@ -2522,16 +2522,16 @@ export class SemanticAnalyzer {
     });
 
     if (!matches) {
-      const expected = property.callbacks.map((signature) => this.callbackSignatureText(signature.parameters, signature.returnType)).join(' or ');
+      const expected = property.callbacks.map((signature) => `'${this.callbackSignatureText(signature.parameters, signature.returnType)}'`).join(' or ');
       this.diagnostics.error(
         range,
-        `callback property '${property.name}' expects ${expected}, got ${typeToString(valueType)}`,
+        `callback property '${property.name}' expects ${expected}, got '${typeToString(valueType)}'`,
       );
     }
   }
 
   private callbackSignatureText(parameters: readonly TypeRef[], returnType: TypeRef): string {
-    return `function(${parameters.map(typeToString).join(', ')}): ${typeToString(returnType)}`;
+    return `${typeToString(returnType)} function(${parameters.map(typeToString).join(', ')})`;
   }
 
   private expressionType(expression: Expression): TypeRef {
@@ -3411,7 +3411,12 @@ export class SemanticAnalyzer {
         return fn;
       }
 
-      const userModule = this.userModuleRegistry.getModule(moduleName);
+      // Внутри модуля frog переменная `frog` — это переменная: собственное имя
+      // модуль не импортирует, и объявленный символ выигрывает (запись так и
+      // работала, а чтение и вызов метода отказывали «'frog' is not imported»).
+      const userModule = this.imports.has(moduleName) || !this.lookup(moduleName)
+        ? this.userModuleRegistry.getModule(moduleName)
+        : undefined;
       if (userModule) {
         this.markSemanticToken('namespace', callee.object.range);
         if (!this.imports.has(moduleName)) {
@@ -4016,7 +4021,9 @@ export class SemanticAnalyzer {
         return ERROR_TYPE;
       }
 
-      const userModule = this.userModuleRegistry.getModule(moduleName);
+      const userModule = this.imports.has(moduleName) || !this.lookup(moduleName)
+        ? this.userModuleRegistry.getModule(moduleName)
+        : undefined;
       if (userModule) {
         this.markSemanticToken('namespace', expression.object.range);
         if (!this.imports.has(moduleName)) {

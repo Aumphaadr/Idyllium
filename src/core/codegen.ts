@@ -960,7 +960,10 @@ export class JavaScriptGenerator {
         // класс, даже если смотрят через базовое окно).
         const argNode = expression.args[0].value;
         const argType = this.typeOf(argNode);
-        if (argType && argType.kind !== 'class' && argType.kind !== 'qualified' && argType.kind !== 'runtime-error') {
+        // Числовые ячейки types.* — значения: тип известен статически («types.int64»),
+        // а рантайм по голому числу ответил бы «int».
+        const typesCell = argType?.kind === 'qualified' && argType.moduleName === 'types';
+        if (argType && ((argType.kind !== 'class' && argType.kind !== 'qualified' && argType.kind !== 'runtime-error') || typesCell)) {
           return JSON.stringify(typeToString(argType));
         }
         // «Пустое поле» читается сыро: type_name(пустота) — «null», не ошибка.
