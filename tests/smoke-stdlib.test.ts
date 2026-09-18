@@ -2438,6 +2438,9 @@ main() {
   // Авария обработчика — пятисотка без падения сервера.
   const crashed = await get('/broken');
   // Посетителю — нейтральная страница: текст ошибки (файлы, строки, таблицы программы) наружу не уходит.
+  // Страница чужому человеку — голая строка статуса: ни текста ошибки, ни имён из движка
+  // (сигнал методистов 1.6.1: прежняя страница сама называла посетителю app.debug).
+  assert(crashed.text === '500 Internal Server Error', `the 500 page must name nothing of the engine: ${JSON.stringify(crashed.text)}`);
   assert(crashed.status === 500 && crashed.text.includes('500 Internal Server Error') && !crashed.text.includes('division by zero'),
     `crash must answer with a neutral page: ${crashed.status} ${crashed.text}`);
   const alive = await get('/hello?name=X');
@@ -3689,6 +3692,50 @@ main() {
   }
   const empty = await runIdyllium('use console;\nuse math;\nmain() {\n    dyn_array<math.Complex> zs;\n    console.writeln(sum(zs));\n}\n', {}, { file: '/main.idyl' });
   assert(!empty.success && (empty.runtimeError ?? '').includes("'sum' cannot be used with an empty array"), `empty complex array: ${empty.runtimeError}`);
+});
+
+test('json refusals give the address of the value; to_string() refusals point to the text form', async () => {
+  // Сигналы методистов 1.6.1: у элемента массива отказ был без адреса, у вложенного ключа
+  // назывался только последний ключ; to_string() у целого sqlite.Value строг, хотя печать работает.
+  const result = await runWithMemoryFiles([
+    'use console;',
+    'use json;',
+    'use sqlite;',
+    '',
+    'main() {',
+    '    json.Object root = json.parse("{\\"hero\\": {\\"stats\\": {\\"level\\": \\"семь\\"}, \\"items\\": [10, \\"меч\\"]}, \\"scores\\": [1, \\"два\\"]}").to_object();',
+    '    try { int n = root.get("hero").to_object().get("stats").to_object().get("level").to_int(); } catch (err) { console.writeln(err.message); }',
+    '    try { int n = root.get("hero").to_object().get("items").to_array().at(1).to_int(); } catch (err) { console.writeln(err.message); }',
+    '    try { int n = root.get("scores").to_array().at(1).to_int(); } catch (err) { console.writeln(err.message); }',
+    '    try { int n = json.parse("[1, \\"x\\"]").to_array().at(1).to_int(); } catch (err) { console.writeln(err.message); }',
+    '    try { string s = json.parse("7").to_string(); } catch (err) { console.writeln(err.message); }',
+    '    try { string s = json.parse("null").to_string(); } catch (err) { console.writeln(err.message); }',
+    '    sqlite.Database db = sqlite.open("probe.db");',
+    '    db.execute("CREATE TABLE t (a INTEGER, d TEXT)");',
+    '    db.execute("INSERT INTO t VALUES (7, NULL)");',
+    '    sqlite.Result rows = db.execute("SELECT * FROM t");',
+    '    while (rows.next()) {',
+    '        try { string s = rows.get("a").to_string(); } catch (err) { console.writeln(err.message); }',
+    '        try { string s = rows.get_string("a"); } catch (err) { console.writeln(err.message); }',
+    '        try { string s = rows.get("d").to_string(); } catch (err) { console.writeln(err.message); }',
+    '        console.writeln(to_string(rows.get("a")));',
+    '    }',
+    '}',
+  ].join('\n'), {});
+  const lines = result.runtime.getOutput().split('\n');
+  const expected = [
+    'json value "hero.stats.level" is string, expected int',
+    'json value "hero.items[1]" is string, expected int',
+    'json value "scores[1]" is string, expected int',
+    'json value "[1]" is string, expected int',
+    'json value is int, expected string — to_string() only unpacks a string; the text of any value is to_string(value)',
+    'json value is null, expected string',
+    'sqlite value is integer, expected string — to_string() only unpacks TEXT; the text of any value is to_string(value)',
+    'sqlite column \'a\' is integer, expected string — get_string() only reads TEXT; the text of any value is to_string(rows.get("a"))',
+    'sqlite value is null, expected string',
+    '7',
+  ];
+  expected.forEach((line, index) => assert(lines[index] === line, `line ${index + 1}: expected ${JSON.stringify(line)}, got ${JSON.stringify(lines[index])}`));
 });
 
 test('strict xml names the open tag when the closing one differs only by case', async () => {

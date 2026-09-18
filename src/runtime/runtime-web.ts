@@ -599,10 +599,14 @@ export function initializeWebObject(obj: RuntimeObject, typeName: string, state:
           const text = state.fileSystem.humanizePaths?.(rawText) ?? rawText;
           state.consoleWrite?.(`[web] запрос ${request.method} ${request.path} упал: ${text}\n`);
           // Посетителю — нейтральный ответ: текст ошибки называет файлы, строки и таблицы
-          // программы. Подробности — в консоли сервера; app.debug = true возвращает их в ответ.
-          return webTextResponse(500, obj.debug === true
-            ? text
-            : '500 Internal Server Error — the handler failed; details are in the server console (app.debug = true shows them here)');
+          // программы. Страница чужому человеку не говорит НИЧЕГО о внутренностях — ни слов
+          // «handler» и «console», ни имени свойства app.debug (сигнал методистов 1.6.1):
+          // только международная строка статуса. Подсказка про debug — автору, в его консоль, один раз.
+          if (obj.debug !== true && obj.__debugHintShown !== true) {
+            obj.__debugHintShown = true;
+            state.consoleWrite?.('[web] посетитель получил нейтральную страницу 500; на время разработки app.debug = true вернёт текст ошибки и в ответ\n');
+          }
+          return webTextResponse(500, obj.debug === true ? text : '500 Internal Server Error');
         }
         const finished = response.finish();
         const headers: Record<string, string> = { 'content-type': finished.contentType };

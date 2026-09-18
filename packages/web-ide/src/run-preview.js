@@ -77,11 +77,30 @@ export const previewTargetOrigin = window.location.origin && window.location.ori
   ? window.location.origin
   : '*';
 
+// Хвосты холстов (1.6.2): рендерер хранит картинку между кадрами, поэтому рантайм
+// отдаёт ему только новые команды. Учёт «что уже показано» — в общем ядре.
+let canvasTails = null;
+function canvasTailTracker() {
+  if (!canvasTails) canvasTails = window.Idyllium.createCanvasTailTracker();
+  return canvasTails;
+}
+
+/** Рендерер потерял картинку холста (или она ему ещё не знакома): следующий снимок — с полным списком. */
+export function resyncCanvases(canvasIds) {
+  if (canvasTails) canvasTails.forget(Array.isArray(canvasIds) ? canvasIds.map(Number) : undefined);
+  lastSnapshotJson = '';
+  if (currentRuntime) sendRuntimeSnapshot();
+}
+
 export function markGuiFrameReady() {
   guiFrameReady = true;
   lastSnapshotJson = '';
   runHost.applyPreviewTheme();
-  if (pendingSnapshot) postSnapshot(pendingSnapshot);
+  // Кадр предпросмотра только что родился и не знает ни одного холста: отложенный снимок
+  // мог быть хвостом — шлём свежий, с полными списками.
+  if (canvasTails) canvasTails.forget();
+  if (currentRuntime) sendRuntimeSnapshot();
+  else if (pendingSnapshot) postSnapshot(pendingSnapshot);
 }
 
 export const rehearsalServers = new Map(); // порт → handler рантайма
@@ -184,6 +203,7 @@ export async function runProgram() {
   stopProgram(true);
   const runId = ++runSequence;
   previewGeneration++;
+  if (canvasTails) canvasTails.forget();
   runHost.saveCurrentEditor();
   runHost.hideCompletions();
   output.textContent = '';
@@ -290,6 +310,7 @@ export function stopProgram(silent = false) {
     runSequence++;
     previewGeneration++;
     lastSnapshotJson = '';
+    if (canvasTails) canvasTails.forget();
   }
   if (runAbortController && !runAbortController.signal.aborted) runAbortController.abort();
   syncRuntimeFilesFromSnapshot();
@@ -698,14 +719,19 @@ export function sendRuntimeSnapshot() {
     postEmptySnapshot();
     return;
   }
-  const windows = currentRuntime.getWindows();
-  postSnapshot({
+  const tails = canvasTailTracker();
+  const windows = currentRuntime.getWindows(tails.options());
+  const canvases = windows.length > 0 ? [] : currentRuntime.getCanvases(tails.options());
+  const delivered = postSnapshot({
     audio: currentRuntime.getAudio ? currentRuntime.getAudio() : [],
     windows,
-    canvases: windows.length > 0 ? [] : currentRuntime.getCanvases(),
+    canvases,
     modals: currentRuntime.getModals(),
     output: '',
   });
+  // Считаем показанным только то, что действительно ушло рендереру: недоставленный хвост
+  // обязан войти в следующий снимок.
+  if (delivered) tails.sent(windows, canvases);
 }
 
 export function guiLoopIntervalMs(runtime) {
@@ -722,9 +748,10 @@ export function postSnapshot(snapshot) {
     generation: previewGeneration,
   };
   pendingSnapshot = fullSnapshot;
-  if (!guiFrameReady || !guiFrame.contentWindow) return;
+  if (!guiFrameReady || !guiFrame.contentWindow) return false;
   const snapshotJson = JSON.stringify(fullSnapshot);
-  if (snapshotJson === lastSnapshotJson) return;
+  // Тот же снимок, что уже у рендерера: «доставлен» — нового в нём нет.
+  if (snapshotJson === lastSnapshotJson) return true;
   lastSnapshotJson = snapshotJson;
   guiFrame.contentWindow.postMessage({
     type: 'snapshot',
@@ -735,6 +762,7 @@ export function postSnapshot(snapshot) {
     modals: fullSnapshot.modals,
     output: fullSnapshot.output,
   }, previewTargetOrigin);
+  return true;
 }
 
 export const browserAssetUrls = new Map();

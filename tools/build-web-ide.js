@@ -139,6 +139,10 @@ function browserBundle(entryFile) {
     platform: 'browser',
     target: 'es2022',
     charset: 'utf8',
+    // На странице Web IDE живёт AMD-загрузчик Monaco с глобальным `define`. UMD-библиотека,
+    // которая первым делом спрашивает `define.amd` (qrcode-generator), зарегистрировалась бы
+    // у него и НИЧЕГО не отдала бы ядру. Внутри бандла AMD нет — говорим это прямо.
+    define: { 'define.amd': 'undefined' },
     alias: {
       buffer: path.join(__dirname, 'browser-stubs', 'buffer.js'),
       fs: path.join(__dirname, 'browser-stubs', 'fs.js'),

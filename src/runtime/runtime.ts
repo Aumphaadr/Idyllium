@@ -71,6 +71,7 @@ import {
   IdylliumAudioSnapshot,
   IdylliumCanvasCommand,
   IdylliumCanvasSnapshot,
+  CanvasSnapshotOptions,
   IdylliumDrawableSnapshot,
   IdylliumGuiWidgetSnapshot,
   IdylliumModalSnapshot,
@@ -116,10 +117,11 @@ import { initializeWebObject, renderWebTemplate, webTextResponse } from './runti
 import { closeChannelPost, initializeChannelPost } from './runtime-channel';
 import { audioCommands, audioDuration, initializeAudioObject, looksLikeAudio } from './runtime-audio';
 import { initializeMelodyObject } from './runtime-melody';
+import { createQrModule } from './runtime-qr';
 import { StoredBitmap, initializeImageObject, imageResourceUri, imageService, readRuntimeBytes, runtimeImageResource, storedAnimation, storedBitmap, storedStaticImage, svgPassport, imageRuntimeError, resolveImageInputPath , setImageMetadata, ensureImageSize, writeRuntimeImageBytes, StoredStaticImage, createGeneratedStaticImage } from './runtime-image';
 import { RuntimeFontFormat, attachDrawableGeometry, createDefaultDrawableFont, detectFontFormat, drawableCollisionShape, drawableTextMetrics, drawableTransform, fontMimeType, initializeDrawableObject, initializeFontObject, isDrawableObject, runtimeFontBytes } from './runtime-drawable';
 import { applyGuiEventPayload, canvasKeepsProgramAlive, closeModal, defaultGuiWidgetSize, eventFloat, eventNumber, guiCallbackName, guiEventObject, guiObjectUsesFontSize, initializeGuiChild, initializeGuiObject, isGuiWidget, refuseWidgetCycle, selectRadioButton, showModal, widgetEventsBlocked } from './runtime-gui';
-import { audioSnapshot, canvasCaptureRegion, canvasSnapshot, canvasToSvg, drawableSnapshot, modalSnapshot, objectPropertiesSnapshot, runtimeObjectId, snapshotValue, widgetSnapshot, windowSnapshot } from './runtime-snapshots';
+import { audioSnapshot, canvasCaptureRegion, canvasSnapshot, canvasToSvg, withKnownCanvases, drawableSnapshot, modalSnapshot, objectPropertiesSnapshot, runtimeObjectId, snapshotValue, widgetSnapshot, windowSnapshot } from './runtime-snapshots';
 import { createTurtleModule, ensureTurtleField, initializeTurtleObject, rebuildTurtleFieldCommands, turtleAnimationSteps, turtleSvg , TURTLE_FRAME_MS, normalizeTurtleHeading, turtleCss, turtleFrame, turtleTravel, turtleTurn } from './runtime-turtle';
 
 
@@ -176,7 +178,7 @@ import {
 import { parseIdylliumStyle } from './style';
 import { hashAdler32, hashCrc32, hashFnv1a, hashSha256Bytes, hashSha256Hex } from './hash';
 
-export const IDYLLIUM_VERSION = '1.6.1';
+export const IDYLLIUM_VERSION = '1.6.2';
 
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform(): string {
@@ -334,6 +336,7 @@ export interface IdylliumRuntime {
     readonly types: Record<string, unknown>;
     readonly encoding: Record<string, unknown>;
     readonly hash: Record<string, unknown>;
+    readonly qr: Record<string, unknown>;
     readonly url: Record<string, unknown>;
     readonly channel: Record<string, unknown>;
     readonly web: Record<string, unknown>;
@@ -362,8 +365,9 @@ export interface IdylliumRuntime {
    *  выключены программой (system.set_warnings(false)). */
   collectProgramEndWarnings(): readonly string[];
   getAudio(): readonly IdylliumAudioSnapshot[];
-  getCanvases(): readonly IdylliumCanvasSnapshot[];
-  getWindows(): readonly IdylliumWindowSnapshot[];
+  /** Без параметров — полные списки команд; с `knownCanvases` — хвосты для хоста-рендерера. */
+  getCanvases(options?: CanvasSnapshotOptions): readonly IdylliumCanvasSnapshot[];
+  getWindows(options?: CanvasSnapshotOptions): readonly IdylliumWindowSnapshot[];
   getModals(): readonly IdylliumModalSnapshot[];
   hasGui(): boolean;
   /** Есть ли открытые почтовые отделения channel.Post. */
@@ -1753,6 +1757,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
           IdylliumArray.from(hashSha256Bytes(hashInputBytes(data, 'hash.sha256_bytes()', file, line)), true, null, () => 0)
         )),
       },
+      qr: createQrModule(runtimeObjects),
       encoding: {
         list_encodings: contextFunction(() => IdylliumArray.from(listEncodingNames(), true, null, () => '')),
         char_to_codepoint: contextFunction((character: string, file: string, line: number) => (
@@ -2074,11 +2079,11 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     getAudio(): readonly IdylliumAudioSnapshot[] {
       return runtimeObjects.audio.map(audioSnapshot);
     },
-    getCanvases(): readonly IdylliumCanvasSnapshot[] {
-      return runtimeObjects.canvases.map(canvasSnapshot);
+    getCanvases(options?: CanvasSnapshotOptions): readonly IdylliumCanvasSnapshot[] {
+      return withKnownCanvases(options, () => runtimeObjects.canvases.map(canvasSnapshot));
     },
-    getWindows(): readonly IdylliumWindowSnapshot[] {
-      return runtimeObjects.windows.map(windowSnapshot);
+    getWindows(options?: CanvasSnapshotOptions): readonly IdylliumWindowSnapshot[] {
+      return withKnownCanvases(options, () => runtimeObjects.windows.map(windowSnapshot));
     },
     getModals(): readonly IdylliumModalSnapshot[] {
       return runtimeObjects.modals.map(modalSnapshot);

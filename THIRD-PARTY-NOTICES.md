@@ -35,11 +35,23 @@ Idyllium распространяется по лицензии [MIT](LICENSE). 
 | `packages/docs/handouts/Surf Shimmy.mp3` | «Surf Shimmy» | Kevin MacLeod ([incompetech.com](https://incompetech.com/music/royalty-free/music.html)) | [Creative Commons: By Attribution 4.0](http://creativecommons.org/licenses/by/4.0/) |
 | `packages/docs/handouts/Rising.mp3` | «Rising» | Kevin MacLeod ([incompetech.com](https://incompetech.com/music/royalty-free/music.html)) | [Creative Commons: By Attribution 4.0](http://creativecommons.org/licenses/by/4.0/) |
 
-Обязательная атрибуция в формате автора:
+Обязательная атрибуция в формате автора — по каждому произведению:
 
 > "Mesmerizing Galaxy" Kevin MacLeod (incompetech.com)
 > Licensed under Creative Commons: By Attribution 4.0 License
 > http://creativecommons.org/licenses/by/4.0/
+
+> "Surf Shimmy" Kevin MacLeod (incompetech.com)
+> Licensed under Creative Commons: By Attribution 4.0 License
+> http://creativecommons.org/licenses/by/4.0/
+
+> "Rising" Kevin MacLeod (incompetech.com)
+> Licensed under Creative Commons: By Attribution 4.0 License
+> http://creativecommons.org/licenses/by/4.0/
+
+Та же атрибуция лежит рядом с треками в раздатке (`packages/docs/handouts/KevinMacLeod-CC-BY.txt`)
+и открывается по ссылке «лицензия» у каждого из них на странице `/handouts/` — там, где файлы
+скачивают ученики.
 
 ## Изображения и звуки учебника
 
@@ -51,9 +63,10 @@ Audacity) и распространяются на условиях лиценз
 Анимация `walk.gif` собрана из кадров программой, написанной на самом
 Idyllium (`image.Animation.create_from_frames` + `export_to_file`).
 
-## QR-коды в Web IDE
+## QR-коды: библиотека `qr` и «Поделиться»
 
-Для «Поделиться» Web IDE поставляет (в `vendor/`, грузятся только по требованию):
+Обе библиотеки входят в ядро языка (библиотека `qr`, с 1.6.2) и отдельными файлами лежат
+в `vendor/` Web IDE для диалога «Поделиться» (грузятся только по требованию):
 
 | Библиотека | Автор | Лицензия |
 |---|---|---|
@@ -64,6 +77,20 @@ Idyllium (`image.Animation.create_from_frames` + `export_to_file`).
 
 ## Прочее
 
-Проект не бандлит сторонние JavaScript-библиотеки в рантайм языка; средства
-разработки (TypeScript и др.) перечислены в `package.json` и не
-распространяются с продуктом.
+Вместе с продуктом (ядро языка, Web IDE, сайт) распространяются свободные JavaScript-библиотеки
+из раздела `dependencies` файла `package.json`; все лицензии разрешают использование в
+образовательных и коммерческих продуктах:
+
+| Библиотека | Зачем | Лицензия |
+|---|---|---|
+| Monaco Editor | редактор кода Web IDE и юнитов | MIT |
+| sql.js | библиотека `sqlite` | MIT |
+| fontkit | метрики шрифтов | MIT |
+| pako | сжатие (ZIP, PNG, «проект в ссылке») | MIT и Zlib |
+| upng-js, jpeg-js, gifenc, gifuct-js, webp-wasm | чтение и запись картинок библиотекой `image` | MIT; jpeg-js — BSD-3-Clause |
+| Papa Parse | просмотр CSV в Web IDE | MIT |
+| marked, DOMPurify | просмотр Markdown в Web IDE | MIT; DOMPurify — MPL-2.0 или Apache-2.0 |
+| qrcode-generator, jsQR | см. раздел про QR-коды выше | MIT; jsQR — Apache-2.0 |
+
+Средства разработки (TypeScript, esbuild и др.) перечислены в `devDependencies` и с продуктом
+не распространяются.

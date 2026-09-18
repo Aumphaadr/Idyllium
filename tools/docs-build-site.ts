@@ -1096,7 +1096,63 @@ function bakeCleanUrlPages(
  * Поиск и переключение вкладок — на инлайновом скрипте: страница обязана
  * работать сама по себе, без сборщиков и внешних зависимостей.
  */
+/**
+ * Шапка генерируемых страниц — та же, что у учебника: логотип, слово, версия, бейдж раздела,
+ * ссылки на площадки и переключатель темы. Стили — в ../book/app.css (блок «ЕДИНАЯ ШАПКА САЙТА»).
+ */
+function siteTopbarHtml(badge: string, version: string): string {
+  return `  <header class="docs-topbar">
+    <div class="topbar-left">
+      <a class="brand" href="https://github.com/Aumphaadr/Idyllium" target="_blank" rel="noopener" title="Idyllium на GitHub">
+        <img class="brand-mark" src="../assets/idyllium.svg" alt="" width="28" height="28">
+        <span class="brand-text">Idyllium</span>
+        <span class="idyllium-version">v${escapeHtml(version)}</span>
+      </a>
+      <span class="topbar-badge">${escapeHtml(badge)}</span>
+    </div>
+    <nav class="topbar-actions" aria-label="Основные действия">
+      <a class="topbar-link" href="../">Открыть IDE</a>
+      <a class="topbar-link" href="../book/">Учебник</a>
+      <a class="topbar-link" href="../tasks/">Задачник</a>
+      <a class="topbar-link" href="../projects/">Проекты</a>
+      <a class="topbar-link" href="../reference/">Документация</a>
+      <button class="topbar-link" id="theme-toggle" type="button" title="Светлая тема" aria-label="Светлая тема"><svg class="icon-sun" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor" stroke="none"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5 5l1.9 1.9M17.1 17.1L19 19M19 5l-1.9 1.9M6.9 17.1L5 19"/></svg><svg class="icon-moon" viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M20.6 14.8A8.7 8.7 0 0 1 9.2 3.4a8.7 8.7 0 1 0 11.4 11.4z"/></svg></button>
+    </nav>
+  </header>`;
+}
+
+/**
+ * Переключатель темы для страниц без app.js учебника: ключ хранилища и класс те же, что
+ * в packages/docs-book/app.js, поэтому выбор ученика переезжает между разделами сайта.
+ */
+const SITE_THEME_SCRIPT = `  <script>
+    (function () {
+      var KEY = 'idyllium-docs-theme';
+      function apply(light) {
+        document.body.classList.toggle('light-theme', light);
+        var toggle = document.getElementById('theme-toggle');
+        if (toggle) {
+          var hint = light ? 'Тёмная тема' : 'Светлая тема';
+          toggle.title = hint;
+          toggle.setAttribute('aria-label', hint);
+        }
+      }
+      var saved = null;
+      try { saved = localStorage.getItem(KEY); } catch (error) {}
+      apply(saved === 'light');
+      var toggle = document.getElementById('theme-toggle');
+      if (toggle) {
+        toggle.addEventListener('click', function onToggle() {
+          var next = document.body.classList.contains('light-theme') ? 'dark' : 'light';
+          try { localStorage.setItem(KEY, next); } catch (error) {}
+          apply(next === 'light');
+        });
+      }
+    })();
+  </script>`;
+
 function buildHandoutsPage(outputRoot: string): number {
+  const handoutsVersion = String(JSON.parse(fs.readFileSync(path.resolve(process.cwd(), 'package.json'), 'utf8')).version);
   const sourceRoot = path.resolve(process.cwd(), 'packages', 'docs', 'handouts');
   const manifest = JSON.parse(fs.readFileSync(path.join(sourceRoot, 'handouts.json'), 'utf8')) as {
     readonly categories: readonly {
@@ -1200,73 +1256,77 @@ ${groupsHtml}
   <title>Файлы для заданий — Idyllium</title>
   <link rel="icon" type="image/png" href="../book/favicon.png">
   <link rel="stylesheet" href="../book/fonts/fonts.css">
+  <link rel="stylesheet" href="../book/app.css">
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; padding: 34px 20px 60px; background: #0c0515; color: #f2eaf7;
+    /* Цвета, шапка, тема и полосы прокрутки — общие с учебником (../book/app.css): страница раньше
+       жила со своей зашитой тёмной палитрой, без шапки и без светлой темы (находка владельца, 1.6.2). */
+    body { margin: 0; background: var(--bg-root); color: var(--text-main);
       font: 17px/1.6 "Geologica", system-ui, sans-serif; }
-    main { max-width: 900px; margin: 0 auto; }
+    main { max-width: 900px; margin: 0 auto; padding: 30px 20px 60px; }
     h1 { margin: 0 0 6px; font-size: 34px; }
-    .lead { margin: 0 0 22px; color: #c9bdd6; }
-    .controls { position: sticky; top: 0; z-index: 5; padding: 12px 0 10px;
-      background: linear-gradient(#0c0515 78%, rgba(12, 5, 21, 0)); }
-    .search { width: 100%; padding: 11px 16px; border: 1px solid #342846; border-radius: 999px;
-      background: #151020; color: #f2eaf7; font: 16px "Geologica", system-ui, sans-serif; }
-    .search::placeholder { color: #8e819d; }
-    .search:focus { outline: none; border-color: #87bfff; }
+    .lead { margin: 0 0 22px; color: var(--text-soft); }
+    .controls { position: sticky; top: var(--topbar-height); z-index: 5; padding: 12px 0 10px;
+      background: linear-gradient(var(--bg-root) 78%, transparent); }
+    .search { width: 100%; padding: 11px 16px; border: 1px solid var(--border); border-radius: 999px;
+      background: var(--bg-panel); color: var(--text-main); font: 16px "Geologica", system-ui, sans-serif; }
+    .search::placeholder { color: var(--text-muted); }
+    .search:focus { outline: none; border-color: var(--accent); }
     .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
     .tab { display: inline-flex; align-items: center; gap: 8px; padding: 8px 15px;
-      border: 1px solid #342846; border-radius: 999px; background: #151020; color: #c9bdd6;
+      border: 1px solid var(--border); border-radius: 999px; background: var(--bg-panel); color: var(--text-soft);
       font: 700 15px "Geologica", system-ui, sans-serif; cursor: pointer; }
-    .tab:hover { border-color: #87bfff; color: #f2eaf7; }
-    .tab[aria-selected="true"] { border-color: #87bfff; background: rgba(135, 191, 255, 0.16); color: #f2eaf7; }
+    .tab:hover { border-color: var(--accent); color: var(--text-main); }
+    .tab[aria-selected="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--text-main); }
     .tab-icon { font-size: 15px; }
-    .tab-count { padding: 1px 8px; border-radius: 999px; background: rgba(135, 191, 255, 0.16);
-      color: #87bfff; font-size: 13px; }
-    h2 { margin: 26px 0 12px; padding: 8px 16px; border-left: 4px solid #87bfff;
-      border-radius: 10px; background: linear-gradient(90deg, rgba(135, 191, 255, 0.12), transparent 82%);
+    .tab-count { padding: 1px 8px; border-radius: 999px; background: var(--accent-soft);
+      color: var(--accent); font-size: 13px; }
+    h2 { margin: 26px 0 12px; padding: 8px 16px; border-left: 4px solid var(--accent);
+      border-radius: 10px; background: linear-gradient(90deg, var(--accent-soft), transparent 82%);
       font-size: 21px; }
-    h3 { margin: 24px 0 10px; color: #87bfff; font-size: 16px; text-transform: uppercase;
+    h3 { margin: 24px 0 10px; color: var(--accent); font-size: 16px; text-transform: uppercase;
       letter-spacing: 0.06em; }
     ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
     li { display: flex; align-items: center; gap: 14px; padding: 10px 14px;
-      border: 1px solid #342846; border-radius: 12px; background: #151020; }
+      border: 1px solid var(--border); border-radius: 12px; background: var(--bg-panel); }
     .thumb { width: 56px; height: 56px; flex: none; object-fit: contain;
-      border-radius: 8px; background: #100b1a; }
-    .thumb-icon { display: grid; place-items: center; color: #87bfff; font-size: 20px; font-weight: 700; }
+      border-radius: 8px; background: var(--bg-code); }
+    .thumb-icon { display: grid; place-items: center; color: var(--accent); font-size: 20px; font-weight: 700; }
     .meta { min-width: 0; flex: 1; }
     .name { font-weight: 700; overflow-wrap: anywhere; }
-    .size { margin-left: 6px; color: #8e819d; font-size: 13px; font-weight: 400; }
-    .license { margin-left: 8px; color: #8e819d; font-size: 13px; }
-    .note { color: #c9bdd6; font-size: 15px; }
-    .download { flex: none; padding: 8px 16px; border: 1px solid #87bfff; border-radius: 999px;
-      color: #87bfff; font-weight: 800; font-size: 14px; text-decoration: none; }
-    .download:hover { background: #87bfff; color: #0c0515; }
-    .thumb-audio { border: 1px solid #342846; cursor: pointer; color: #87bfff; padding: 0; }
-    .thumb-audio:hover { border-color: #87bfff; background: rgba(135, 191, 255, 0.12); }
+    .size { margin-left: 6px; color: var(--text-muted); font-size: 13px; font-weight: 400; }
+    .license { margin-left: 8px; color: var(--text-muted); font-size: 13px; }
+    .note { color: var(--text-soft); font-size: 15px; }
+    .download { flex: none; padding: 8px 16px; border: 1px solid var(--accent); border-radius: 999px;
+      color: var(--accent); font-weight: 800; font-size: 14px; text-decoration: none; }
+    .download:hover { background: var(--accent); color: var(--bg-root); }
+    .thumb-audio { border: 1px solid var(--border); cursor: pointer; color: var(--accent); padding: 0; }
+    .thumb-audio:hover { border-color: var(--accent); background: var(--accent-soft); }
     .thumb-audio svg { width: 26px; height: 26px; fill: currentColor; }
     .thumb-audio .icon-pause { display: none; }
     .thumb-audio.playing .icon-play { display: none; }
     .thumb-audio.playing .icon-pause { display: block; }
     .audio-dock { position: fixed; right: 18px; bottom: 18px; z-index: 20; display: none;
       align-items: center; gap: 10px; max-width: min(94vw, 540px); padding: 10px 14px;
-      border: 1px solid #342846; border-radius: 14px; background: #151020;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); }
+      border: 1px solid var(--border); border-radius: 14px; background: var(--bg-panel);
+      box-shadow: var(--shadow); }
     .audio-dock.open { display: flex; }
     .dock-name { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      color: #f2eaf7; font-size: 13px; font-weight: 700; }
-    .dock-time { flex: none; color: #8e819d; font-size: 12px; font-variant-numeric: tabular-nums; }
-    .audio-dock input[type="range"] { accent-color: #87bfff; }
+      color: var(--text-main); font-size: 13px; font-weight: 700; }
+    .dock-time { flex: none; color: var(--text-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+    .audio-dock input[type="range"] { accent-color: var(--accent); }
     .dock-seek { width: 130px; }
     .dock-volume { width: 64px; }
-    .dock-close { flex: none; border: none; background: none; color: #8e819d; font-size: 16px; cursor: pointer; }
-    .dock-close:hover { color: #f2eaf7; }
-    .empty { display: none; margin: 30px 0; color: #8e819d; }
+    .dock-close { flex: none; border: none; background: none; color: var(--text-muted); font-size: 16px; cursor: pointer; }
+    .dock-close:hover { color: var(--text-main); }
+    .empty { display: none; margin: 30px 0; color: var(--text-muted); }
     body.searching .tab-count { opacity: 0.4; }
-    .footnote { margin-top: 36px; color: #8e819d; font-size: 14px; }
-    .footnote a { color: #87bfff; }
+    .footnote { margin-top: 36px; color: var(--text-muted); font-size: 14px; }
+    .footnote a { color: var(--accent); }
   </style>
 </head>
 <body>
+${siteTopbarHtml('Раздатка', handoutsVersion)}
   <main>
     <h1>Файлы для заданий</h1>
     <p class="lead">Раздатка задачника: картинки, звуки, шрифты и данные, которые просят скачать задания. Кладите скачанный файл рядом с программой (в Web IDE — загрузите в проект).</p>
@@ -1440,6 +1500,7 @@ ${panels.join('\n')}
       });
     })();
   </script>
+${SITE_THEME_SCRIPT}
 </body>
 </html>
 `;
@@ -1860,56 +1921,11 @@ function buildAboutPage(outputRoot: string, buildFacts: AboutBuildFacts): void {
   </style>
 </head>
 <body>
-  <header class="docs-topbar">
-    <div class="topbar-left">
-      <a class="brand" href="https://github.com/Aumphaadr/Idyllium" target="_blank" rel="noopener" title="Idyllium на GitHub">
-        <span class="brand-mark">I</span>
-        <span class="brand-text">Idyllium</span>
-        <span class="idyllium-version">v${packageVersion}</span>
-      </a>
-      <span class="topbar-badge">О проекте</span>
-    </div>
-    <nav class="topbar-actions" aria-label="Основные действия">
-      <a class="topbar-link" href="../">Открыть IDE</a>
-      <a class="topbar-link" href="../book/">Учебник</a>
-      <a class="topbar-link" href="../tasks/">Задачник</a>
-      <a class="topbar-link" href="../projects/">Проекты</a>
-      <a class="topbar-link" href="../reference/">Документация</a>
-      <button class="topbar-link" id="theme-toggle" type="button" title="Светлая тема" aria-label="Светлая тема"><svg class="icon-sun" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor" stroke="none"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5 5l1.9 1.9M17.1 17.1L19 19M19 5l-1.9 1.9M6.9 17.1L5 19"/></svg><svg class="icon-moon" viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M20.6 14.8A8.7 8.7 0 0 1 9.2 3.4a8.7 8.7 0 1 0 11.4 11.4z"/></svg></button>
-    </nav>
-  </header>
+${siteTopbarHtml('О проекте', packageVersion)}
   <main class="about-main">
 ${fragment}
   </main>
-  <script>
-    // Та же тема, что у остальных площадок: ключ и класс совпадают с
-    // packages/docs-book/app.js, поэтому выбор ученика переезжает между
-    // страницами. app.js сюда не подключён — статье не нужны сайдбар и
-    // манифест уроков, а переключателю хватает этих строк.
-    (function () {
-      var KEY = 'idyllium-docs-theme';
-      function apply(light) {
-        document.body.classList.toggle('light-theme', light);
-        var toggle = document.getElementById('theme-toggle');
-        if (toggle) {
-          var hint = light ? 'Тёмная тема' : 'Светлая тема';
-          toggle.title = hint;
-          toggle.setAttribute('aria-label', hint);
-        }
-      }
-      var saved = null;
-      try { saved = localStorage.getItem(KEY); } catch (error) {}
-      apply(saved === 'light');
-      var toggle = document.getElementById('theme-toggle');
-      if (toggle) {
-        toggle.addEventListener('click', function onToggle() {
-          var next = document.body.classList.contains('light-theme') ? 'dark' : 'light';
-          try { localStorage.setItem(KEY, next); } catch (error) {}
-          apply(next === 'light');
-        });
-      }
-    })();
-  </script>
+${SITE_THEME_SCRIPT}
 </body>
 </html>
 `;
@@ -2095,7 +2111,7 @@ function tasksShell(): string {
         <span></span>
       </button>
       <a class="brand" href="https://github.com/Aumphaadr/Idyllium" target="_blank" rel="noopener" title="Idyllium на GitHub">
-        <span class="brand-mark">I</span>
+        <img class="brand-mark" src="../assets/idyllium.svg" alt="" width="28" height="28">
         <span class="brand-text">Idyllium</span>
         <span class="idyllium-version">v</span>
       </a>

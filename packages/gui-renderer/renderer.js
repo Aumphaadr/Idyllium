@@ -52,6 +52,7 @@
     if (nextStateJson === stateJson) return;
     const generationChanged = nextState.generation !== state.generation;
     if (generationChanged) clearAudioEntries();
+    if (generationChanged) canvasSurfaces.clear();
     if (generationChanged) editingSpinBox = null;
     if (generationChanged) {
       pendingWindowMoves.clear();
@@ -1395,10 +1396,8 @@
     const height = positiveNumber(widget.properties.height, 150);
     canvas.width = width;
     canvas.height = height;
-    const commands = widget.canvas.commands || [];
     canvas.__idylliumBaseColor = canvasBaseColor(widget.properties);
-    drawCanvasCommands(canvas, commands);
-    scheduleAnimatedCanvas(canvas, commands);
+    paintCanvas(canvas, widget.canvas);
     installCanvasEventHandlers(canvas, widget.canvas.id);
     return canvas;
   }
@@ -1412,10 +1411,8 @@
     canvas.height = height;
     canvas.style.width = width + 'px';
     canvas.style.height = height + 'px';
-    const commands = canvasSnapshot.commands || [];
     canvas.__idylliumBaseColor = canvasBaseColor(canvasSnapshot.properties);
-    drawCanvasCommands(canvas, commands);
-    scheduleAnimatedCanvas(canvas, commands);
+    paintCanvas(canvas, canvasSnapshot);
     installCanvasEventHandlers(canvas, canvasSnapshot.id);
     return canvas;
   }
@@ -1826,30 +1823,154 @@
     return typeof value === 'string' && value.length > 0 && !isTransparentColor(value) ? value : '#000000';
   }
 
-  function drawCanvasCommands(canvas, commands) {
-    const ctx = canvas.getContext('2d');
-    const base = canvas.__idylliumBaseColor || '#000000';
+  // ─── Холст между кадрами (1.6.2) ───────────────────────────────────────────
+  // Рисунок на холсте копится, а DOM предпросмотра пересобирается на каждый снимок.
+  // Чтобы накопленное не перерисовывалось заново, у каждого холста есть ПОВЕРХНОСТЬ —
+  // невидимый canvas, переживающий пересборку: хост присылает только хвост списка
+  // команд (commandsFrom/total/epoch), хвост дорисовывается на поверхность, видимый
+  // холст — её копия. Кадр стоит столько, сколько нарисовано за кадр.
+  //
+  // Если хвост не стыкуется (пропущенный снимок, новая эпоха без начала списка,
+  // сменился размер или основа) — поверхность не портим, а просим у хоста полный
+  // список: `canvasResync`. До ответа на экране остаётся прежняя картинка.
+  //
+  // Очередь: команду нельзя запечь в поверхность, пока не загрузилась её картинка, —
+  // иначе вместо спрайта навсегда осталась бы рамка-заглушка. Непропечённый хвост
+  // рисуется только на видимый холст (как раньше — с заглушкой), а в поверхность
+  // попадает, когда ресурс готов (загрузка картинки сама зовёт renderAll).
+  const canvasSurfaces = new Map();
+
+  function paintCanvas(visible, snapshot) {
+    const commands = snapshot.commands || [];
+    const tailAware = Number.isFinite(snapshot.epoch) && Number.isFinite(snapshot.total);
+    if (!tailAware || commandsAreAnimated(commands)) {
+      // Старый хост без хвостов, либо анимированный спрайт: его кадры рендерер
+      // перерисовывает сам, по таймеру, — такому холсту нужен весь список.
+      canvasSurfaces.delete(snapshot.id);
+      drawCanvasCommands(visible, commands);
+      scheduleAnimatedCanvas(visible, commands);
+      return;
+    }
+
+    const base = visible.__idylliumBaseColor || '#000000';
+    const from = Number.isFinite(snapshot.commandsFrom) ? snapshot.commandsFrom : 0;
+    let surface = canvasSurfaces.get(snapshot.id);
+    const continues = surface
+      && surface.epoch === snapshot.epoch
+      && surface.canvas.width === visible.width
+      && surface.canvas.height === visible.height
+      && surface.base === base
+      && from <= surface.received;
+
+    if (!continues) {
+      if (from !== 0) {
+        requestCanvasResync(snapshot.id);
+        showSurface(visible, surface, base);
+        return;
+      }
+      surface = {
+        canvas: document.createElement('canvas'), epoch: snapshot.epoch, base, received: 0, queue: [],
+      };
+      surface.canvas.width = visible.width;
+      surface.canvas.height = visible.height;
+      resetCanvasContext(surface.canvas.getContext('2d'), surface.canvas, base);
+      canvasSurfaces.set(snapshot.id, surface);
+      resyncWaiting.delete(snapshot.id);
+    }
+
+    // Тот же снимок может прийти дважды (перерисовка по загрузке картинки, смена темы):
+    // берём только команды, которых ещё не видели.
+    for (let index = surface.received - from; index < commands.length; index += 1) surface.queue.push(commands[index]);
+    surface.received = Math.max(surface.received, from + commands.length);
+
+    const baked = surface.canvas.getContext('2d');
+    while (surface.queue.length > 0 && commandResourcesReady(surface.queue[0])) {
+      drawCanvasCommand(baked, surface.canvas, surface.queue.shift(), base);
+    }
+    showSurface(visible, surface, base);
+  }
+
+  function showSurface(visible, surface, base) {
+    const ctx = visible.getContext('2d');
+    if (!surface || surface.canvas.width !== visible.width || surface.canvas.height !== visible.height) {
+      resetCanvasContext(ctx, visible, base);
+      return;
+    }
+    ctx.clearRect(0, 0, visible.width, visible.height);
+    ctx.drawImage(surface.canvas, 0, 0);
+    for (const command of surface.queue) drawCanvasCommand(ctx, visible, command, base);
+  }
+
+  const resyncWaiting = new Map();
+
+  function requestCanvasResync(canvasId) {
+    // Один запрос на холст за раз: пока хост не прислал начало списка, снимки с хвостами
+    // будут приходить ещё — отвечать на каждый незачем. Ответ мог потеряться, поэтому
+    // после тридцати нестыкующихся снимков подряд просим снова.
+    const waited = resyncWaiting.get(canvasId);
+    if (waited !== undefined && waited < 30) {
+      resyncWaiting.set(canvasId, waited + 1);
+      return;
+    }
+    resyncWaiting.set(canvasId, 0);
+    host.postMessage({ type: 'canvasResync', canvasIds: [canvasId] });
+  }
+
+  function commandsAreAnimated(commands) {
+    return commands.some((command) => {
+      const object = command && command.object;
+      const resource = object && object.properties && object.properties.image;
+      return resource && resource.type === 'image.Animation';
+    });
+  }
+
+  function commandResourcesReady(command) {
+    const object = command && command.kind === 'draw' ? command.object : null;
+    if (!object) return true;
+    if (object.type === 'drawable.Text') {
+      // Надпись, запечённая до загрузки шрифта, навсегда осталась бы запасным шрифтом.
+      const font = object.properties && object.properties.font && object.properties.font.properties
+        ? object.properties.font.properties
+        : null;
+      canvasFontFamily(font); // запускает загрузку, если она ещё не начата
+      const key = font && font.is_builtin === true ? '__idyllium_canvas_default__' : font && (font.webview_uri || font.resource_uri);
+      const cached = key ? fontCache.get(key) : null;
+      return !cached || cached.status !== 'loading';
+    }
+    if (object.type !== 'drawable.Sprite') return true;
+    const resource = object.properties && object.properties.image && object.properties.image.properties;
+    const image = loadImage(resource && (resource.webview_uri || resource.resource_uri));
+    // complete без размеров — картинка не загрузилась вовсе: ждать нечего, рисуем заглушку.
+    return !image || image.complete;
+  }
+
+  function resetCanvasContext(ctx, canvas, base) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = base;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
 
-    for (const command of commands) {
-      if (command.kind === 'clear') {
-        // clear() — «вернуть холст к основе»: к background_color, а без него — к чёрному.
-        // Именно вернуть, а не закрасить поверх: у полупрозрачной основы иначе
-        // просвечивало бы прошлое, а рантайм после clear() его уже не помнит.
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = base;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }
-      if (command.kind === 'fill') {
-        ctx.fillStyle = color(command.color, '#000000');
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }
-      if (command.kind === 'draw' && command.object) {
-        drawObject(ctx, command.object);
-      }
+  function drawCanvasCommand(ctx, canvas, command, base) {
+    if (command.kind === 'clear') {
+      // clear() — «вернуть холст к основе»: к background_color, а без него — к чёрному.
+      // Именно вернуть, а не закрасить поверх: у полупрозрачной основы иначе
+      // просвечивало бы прошлое, а рантайм после clear() его уже не помнит.
+      resetCanvasContext(ctx, canvas, base);
     }
+    if (command.kind === 'fill') {
+      ctx.fillStyle = color(command.color, '#000000');
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    if (command.kind === 'draw' && command.object) {
+      drawObject(ctx, command.object);
+    }
+  }
+
+  function drawCanvasCommands(canvas, commands) {
+    const ctx = canvas.getContext('2d');
+    const base = canvas.__idylliumBaseColor || '#000000';
+    resetCanvasContext(ctx, canvas, base);
+    for (const command of commands) drawCanvasCommand(ctx, canvas, command, base);
   }
 
   function drawObject(ctx, object) {

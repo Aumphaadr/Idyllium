@@ -273,8 +273,10 @@ export function setupShare(host) {
     const systemShareButton = element('button', '', 'Отправить…');
     systemShareButton.type = 'button';
     systemShareButton.title = 'Системное «Поделиться»: архив уходит прямо в мессенджер или почту';
-    systemShareButton.hidden = true;
-    zipButtons.appendChild(systemShareButton);
+    // Кнопка появляется, только если браузер умеет отдавать файлы в системное «Поделиться»
+    // (телефоны, Safari, Chrome под Windows и ChromeOS). Именно ДОБАВЛЯЕТСЯ, а не прячется
+    // атрибутом hidden: общий стиль IDE `button { display: inline-flex }` этот атрибут перебивает —
+    // так кнопка и оказалась на виду мёртвой (находка владельца).
     zipWay.appendChild(zipButtons);
 
     // ── 2. Ссылкой ──
@@ -339,9 +341,9 @@ export function setupShare(host) {
     const copyImage = element('button', 'share-primary', 'Скопировать картинку');
     copyImage.type = 'button';
     const canCopyImage = Boolean(navigator.clipboard && navigator.clipboard.write && window.ClipboardItem);
-    copyImage.hidden = !canCopyImage;
-    if (!canCopyImage) saveImage.classList.add('share-primary');
-    qrButtons.append(copyImage, saveImage);
+    if (canCopyImage) qrButtons.appendChild(copyImage);
+    else saveImage.classList.add('share-primary');
+    qrButtons.appendChild(saveImage);
     qrWay.appendChild(qrButtons);
 
     ways.append(zipWay, linkWay, qrWay);
@@ -438,7 +440,7 @@ export function setupShare(host) {
         const file = new File([blob], name, { type: 'application/zip' });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           zipFileForShare = file;
-          systemShareButton.hidden = false;
+          zipButtons.appendChild(systemShareButton);
         }
       } catch (_error) {
         // нет File/canShare — остаётся скачивание

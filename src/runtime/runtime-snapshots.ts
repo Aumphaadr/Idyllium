@@ -1,7 +1,7 @@
 // ─── Снимки: окна, виджеты, холсты (включая SVG), звук (этап Б) ────────────
 import { RuntimeObject, isRuntimeObject } from './runtime-shared';
 import { IdylliumArray, IdylliumColor, IdylliumTimeStamp, colorToCss, valueOps } from './runtime-values';
-import { IdylliumAudioSnapshot, IdylliumCanvasSnapshot, IdylliumDrawableSnapshot, IdylliumGuiWidgetSnapshot, IdylliumModalSnapshot, IdylliumWindowSnapshot, RuntimeObjectState, canvasCommands } from './runtime-state';
+import { IdylliumAudioSnapshot, IdylliumCanvasSnapshot, IdylliumDrawableSnapshot, IdylliumGuiWidgetSnapshot, IdylliumModalSnapshot, IdylliumWindowSnapshot, RuntimeObjectState, CanvasSnapshotOptions, IdylliumCanvasCommand, canvasCommands } from './runtime-state';
 import { isDrawableObject, drawableTransform, runtimeFontBytes } from './runtime-drawable';
 import { isGuiWidget } from './runtime-gui';
 import { storedStaticImage, storedAnimation, storedBitmap } from './runtime-image';
@@ -10,13 +10,58 @@ import { detectImageFormat, imageMimeType } from './image-service';
 import { parseIdylliumStyle } from './style';
 import { IdylliumRuntimeError } from './runtime-errors';
 
+// Что хост уже показал — на время одного снимка (снимок окна спускается к холсту через
+// несколько функций; протаскивать параметр через все было бы шумнее, чем эта переменная).
+let knownCanvases: CanvasSnapshotOptions['knownCanvases'] | undefined;
+
+export function withKnownCanvases<T>(options: CanvasSnapshotOptions | undefined, take: () => T): T {
+  const before = knownCanvases;
+  knownCanvases = options?.knownCanvases;
+  try {
+    return take();
+  } finally {
+    knownCanvases = before;
+  }
+}
+
 export function canvasSnapshot(canvas: RuntimeObject): IdylliumCanvasSnapshot {
+  const id = runtimeObjectId(canvas);
+  const all = canvasCommands(canvas);
+  const epoch = typeof canvas.__commandsEpoch === 'number' ? canvas.__commandsEpoch : 0;
+  const known = knownCanvases?.[id];
+  // Хвост — только если хост показал начало ЭТОГО ЖЕ списка. Анимированный спрайт рендерер
+  // перерисовывает сам, по кадрам анимации, — такому холсту нужен весь список.
+  const from = known && known.epoch === epoch && known.count >= 0 && known.count <= all.length && !canvasHasAnimation(canvas, all, epoch)
+    ? known.count
+    : 0;
   return {
-    id: runtimeObjectId(canvas),
+    id,
     type: 'gui.Canvas',
     properties: objectPropertiesSnapshot(canvas),
-    commands: canvasCommands(canvas).map((command) => ({ ...command })),
+    commands: (from === 0 ? all : all.slice(from)).map((command) => ({ ...command })),
+    commandsFrom: from,
+    total: all.length,
+    epoch,
   };
+}
+
+/** Есть ли в списке анимированный спрайт. Список только растёт в пределах эпохи — просматриваем лишь новое. */
+function canvasHasAnimation(canvas: RuntimeObject, all: readonly IdylliumCanvasCommand[], epoch: number): boolean {
+  let scan = canvas.__animationScan as { epoch: number; scanned: number; found: boolean } | undefined;
+  if (!scan || scan.epoch !== epoch || scan.scanned > all.length) {
+    scan = { epoch, scanned: 0, found: false };
+    canvas.__animationScan = scan;
+  }
+  for (; scan.scanned < all.length && !scan.found; scan.scanned += 1) {
+    if (commandIsAnimated(all[scan.scanned])) scan.found = true;
+  }
+  if (scan.found) scan.scanned = all.length;
+  return scan.found;
+}
+
+function commandIsAnimated(command: IdylliumCanvasCommand): boolean {
+  const image = command.object?.properties.image as { type?: unknown } | undefined;
+  return image !== undefined && image !== null && image.type === 'image.Animation';
 }
 
 // ─── Снимки холста (1.3.6) ─────────────────────────────────────────────────

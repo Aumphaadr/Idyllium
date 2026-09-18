@@ -84,7 +84,7 @@ export function buildReferenceSite(outputRoot: string): void {
       // Значок версии в статичной оболочке: без штампа читатель без JS
       // видел бы заглушку шаблона вместо версии релиза.
       const shell = fs.readFileSync(path.join(packageRoot, file), 'utf8')
-        .replace('<span class="version" id="version">v1.1.3</span>', `<span class="version" id="version">v${String(packageJson.version ?? '1.1.3')}</span>`);
+        .replace('<span class="idyllium-version" id="version">v</span>', `<span class="idyllium-version" id="version">v${String(packageJson.version ?? '')}</span>`);
       fs.writeFileSync(path.join(outputRoot, file), shell, 'utf8');
       continue;
     }
@@ -93,7 +93,7 @@ export function buildReferenceSite(outputRoot: string): void {
 
   const api = {
     version: 1,
-    languageVersion: String(packageJson.version ?? '1.1.3'),
+    languageVersion: String(packageJson.version ?? ''),
     generatedAt: new Date().toISOString(),
     overview: content.overview,
     general: (content as any).general ?? [],

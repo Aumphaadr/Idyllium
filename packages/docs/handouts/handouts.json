@@ -291,6 +291,27 @@
               "note": "Рамка «РАЗЫСКИВАЕТСЯ» с прозрачным центром — подложите портрет"
             }
           ]
+        },
+        {
+          "title": "QR-коды",
+          "items": [
+            {
+              "file": "qr_hello.png",
+              "note": "QR-код с русским текстом и эмодзи — для первого qr.decode()"
+            },
+            {
+              "file": "qr_link.png",
+              "note": "QR-код со ссылкой на Web IDE — его читает и камера телефона"
+            },
+            {
+              "file": "qr_ticket.png",
+              "note": "«Билет»: ряд, место и фильм через точку с запятой — для задания «сканер билетов» (split)"
+            },
+            {
+              "file": "qr_damaged.png",
+              "note": "Код с кляксой посередине: уровень коррекции H — и он всё равно читается"
+            }
+          ]
         }
       ]
     },
@@ -313,15 +334,18 @@
           "items": [
             {
               "file": "Mesmerizing Galaxy.mp3",
-              "note": "Спокойный космический фон, 92,97 сек (Kevin MacLeod)"
+              "note": "Спокойный космический фон, 92,97 сек (Kevin MacLeod)",
+              "license": "KevinMacLeod-CC-BY.txt"
             },
             {
               "file": "Surf Shimmy.mp3",
-              "note": "Бодрый сёрф-рок, 122,88 сек (Kevin MacLeod)"
+              "note": "Бодрый сёрф-рок, 122,88 сек (Kevin MacLeod)",
+              "license": "KevinMacLeod-CC-BY.txt"
             },
             {
               "file": "Rising.mp3",
-              "note": "Нарастающий эмбиент, 151,48 сек (Kevin MacLeod)"
+              "note": "Нарастающий эмбиент, 151,48 сек (Kevin MacLeod)",
+              "license": "KevinMacLeod-CC-BY.txt"
             },
             {
               "file": "menu_theme.mp3",

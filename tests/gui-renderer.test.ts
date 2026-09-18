@@ -1090,6 +1090,40 @@ test('gui renderer applies drawable origin and clockwise rotation', () => {
   assert(context.lineCap === 'round', `expected round Line caps, got ${String(context.lineCap)}`);
 });
 
+test('the canvas picture lives between snapshots: tails are painted once, gaps ask for a resync', () => {
+  // Гибрид 1.6.2: хост шлёт хвост списка команд, рендерер хранит картинку (поверхность) между
+  // снимками — хотя DOM предпросмотра пересобирается каждый раз.
+  const harness = createRendererHarness();
+  const circle = (x: number) => ({ kind: 'draw', object: { type: 'drawable.Circle', properties: { x, y: 10, radius: 5, fill_color: '#ffffff', border_width: 0 } } });
+  const send = (commands: unknown[], commandsFrom: number, total: number, epoch = 1) => harness.sendSnapshot({
+    generation: 1, audio: [], windows: [], modals: [],
+    canvases: [{ id: 9, properties: { width: 200, height: 100 }, commands, commandsFrom, total, epoch }],
+  });
+  const arcs = () => harness.canvasContexts.reduce((sum: number, context: any) => sum + context.arcCalls.length, 0);
+  const resyncs = (): any[] => harness.postedMessages.filter((message: any) => message && message.type === 'canvasResync');
+
+  send([circle(10), circle(20)], 0, 2);
+  assert(arcs() === 2, `the first snapshot paints the whole list: ${arcs()} arcs`);
+  send([circle(30)], 2, 3);
+  assert(arcs() === 3, `a tail paints only the new command, the past is not redrawn: ${arcs()} arcs`);
+  assert(harness.canvasContexts.some((context: any) => context.drawImageCalls > 0), 'the visible canvas is a copy of the kept surface');
+  assert(resyncs().length === 0, 'a tail that fits asks for nothing');
+
+  // Пропущенный снимок: хвост начинается дальше, чем рендерер знает, — картинку не портим, просим список.
+  send([circle(60)], 5, 6);
+  assert(arcs() === 3 && resyncs().length === 1 && JSON.stringify(resyncs()[0].canvasIds) === '[9]',
+    `a gap must ask the host for the full list: ${JSON.stringify(resyncs())}`);
+  send([circle(10), circle(20), circle(30), circle(40), circle(50), circle(60)], 0, 6);
+  assert(arcs() === 6, `the full list heals the surface without repainting what is already there: ${arcs()} arcs`);
+
+  // Новая эпоха (clear/непрозрачный fill) с начала списка — поверхность начинается заново.
+  send([{ kind: 'fill', color: '#102030' }, circle(5)], 0, 2, 2);
+  assert(arcs() === 7, `a new epoch starts the surface over: ${arcs()} arcs`);
+  // Новая эпоха хвостом (хост ещё не знает, что рендерер её не видел) — снова просим список.
+  send([circle(7)], 1, 2, 3);
+  assert(arcs() === 7, 'a tail of an unknown epoch is not painted');
+});
+
 test('gui renderer redraws a static Canvas sprite after its image loads', () => {
   const harness = createRendererHarness();
 
@@ -1148,6 +1182,31 @@ test('gui renderer redraws a static Canvas sprite after its image loads', () => 
       && context.drawImageArguments[0][4] === 100,
     `unexpected Sprite drawImage arguments: ${JSON.stringify(context.drawImageArguments)}`,
   );
+});
+
+test('a sprite whose picture is still loading is not baked into the kept canvas as a placeholder', () => {
+  // Гибрид 1.6.2: команда ждёт в очереди, пока её картинка не загрузится, — иначе рамка-заглушка
+  // осталась бы на холсте навсегда (список ей на смену уже не придёт, придут только хвосты).
+  const harness = createRendererHarness();
+  const before = FakeImage.instances.length;
+  const sprite = { kind: 'draw', object: { id: 6, type: 'drawable.Sprite', properties: { x: 20, y: 30, image: { id: 7, type: 'image.Static', properties: { is_loaded: true, src: 'late.png', webview_uri: 'webview-late.png' } } } } };
+  const circle = { kind: 'draw', object: { type: 'drawable.Circle', properties: { x: 1, y: 1, radius: 3, fill_color: '#ffffff', border_width: 0 } } };
+  harness.sendSnapshot({ generation: 1, audio: [], windows: [], modals: [], canvases: [{ id: 5, properties: { width: 300, height: 180 }, commands: [sprite, circle], commandsFrom: 0, total: 2, epoch: 1 }] });
+  const image = FakeImage.instances[before];
+  assert(image !== undefined, 'the sprite picture starts loading');
+  const spriteDraws = () => harness.canvasContexts.reduce((sum: number, context: any) => sum + context.drawImageArguments.filter((args: unknown[]) => args[0] === image).length, 0);
+  const strokes = () => harness.canvasContexts.length;
+  assert(spriteDraws() === 0, 'nothing of the sprite is drawn while it loads');
+  const contextsBefore = strokes();
+
+  // Хвост приходит, пока картинка грузится: очередь растёт, порядок сохраняется.
+  harness.sendSnapshot({ generation: 1, audio: [], windows: [], modals: [], canvases: [{ id: 5, properties: { width: 300, height: 180 }, commands: [circle], commandsFrom: 2, total: 3, epoch: 1 }] });
+  assert(spriteDraws() === 0 && strokes() > contextsBefore, 'a tail behind a loading sprite waits in the queue');
+
+  image.finish(64, 64);
+  assert(spriteDraws() === 1, `once loaded, the sprite is baked exactly once: ${spriteDraws()}`);
+  harness.sendSnapshot({ generation: 1, audio: [], windows: [], modals: [], canvases: [{ id: 5, properties: { width: 300, height: 180 }, commands: [circle], commandsFrom: 3, total: 4, epoch: 1 }] });
+  assert(spriteDraws() === 1, 'later frames do not redraw the baked sprite');
 });
 
 test('gui renderer applies music volume and replays commands on a new preview generation', () => {

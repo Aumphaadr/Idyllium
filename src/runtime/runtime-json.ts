@@ -42,8 +42,9 @@ export function createJsonObject(entries: Map<string, JsonRuntimeValue> = new Ma
       throw new IdylliumRuntimeError(file, line, `json object has no key '${name}'`);
     }
     const found = entries.get(name)!;
-    // Подсказка для отказов типа («json value "hp" is string, expected int»); в данные не попадает.
-    Object.defineProperty(found, '__jsonKeyHint', { value: name, enumerable: false, configurable: true, writable: true });
+    // Адрес для отказов типа («json value "hero.stats.level" is string, expected int»): путь от
+    // корня копится по мере спуска — get() дописывает ключ, at() — номер. В данные не попадает.
+    rememberJsonPath(found, jsonPathOf(obj) === '' ? name : `${jsonPathOf(obj)}.${name}`);
     return found;
   });
   obj.add = contextFunction((key: unknown, value: unknown, file: string, line: number) => {
@@ -78,7 +79,12 @@ export function createJsonArray(items: JsonRuntimeValue[] = []): JsonRuntimeValu
     configurable: true,
   });
   defineRuntimeGetter(obj, 'length', () => items.length);
-  obj.at = contextFunction((index: unknown, file: string, line: number) => items[jsonArrayIndex(items, index, 'json.Array.at()', file, line)]);
+  obj.at = contextFunction((index: unknown, file: string, line: number) => {
+    const position = jsonArrayIndex(items, index, 'json.Array.at()', file, line);
+    const found = items[position];
+    rememberJsonPath(found, `${jsonPathOf(obj)}[${position}]`);
+    return found;
+  });
   obj.set = contextFunction((index: unknown, value: unknown, file: string, line: number) => {
     items[jsonArrayIndex(items, index, 'json.Array.set()', file, line)] = expectJsonValue(value, 'json.Array.set() value', file, line);
   });
@@ -160,11 +166,11 @@ function createJsonBase(typeName: JsonRuntimeValue['__idylliumType'], kind: Json
     throwJsonExpected(obj, 'bool', file, line);
   });
   obj.to_object = contextFunction((file: string, line: number) => {
-    if (obj.__jsonKind === 'object') return jsonObjectValue(obj);
+    if (obj.__jsonKind === 'object') return inheritJsonPath(jsonObjectValue(obj), obj);
     throwJsonExpected(obj, 'object', file, line);
   });
   obj.to_array = contextFunction((file: string, line: number) => {
-    if (obj.__jsonKind === 'array') return jsonArrayValue(obj);
+    if (obj.__jsonKind === 'array') return inheritJsonPath(jsonArrayValue(obj), obj);
     throwJsonExpected(obj, 'array', file, line);
   });
   obj.set_null = () => setJsonPrimitiveValue(obj, 'null', null);
@@ -460,10 +466,30 @@ function jsonIndent(value: unknown, file: string, line: number): number {
   return indent;
 }
 
+function jsonPathOf(value: JsonRuntimeValue): string {
+  return typeof value.__jsonKeyHint === 'string' ? value.__jsonKeyHint : '';
+}
+
+function rememberJsonPath(value: JsonRuntimeValue, path: string): void {
+  Object.defineProperty(value, '__jsonKeyHint', { value: path, enumerable: false, configurable: true, writable: true });
+}
+
+/** Value и его вид-контейнер (to_object/to_array) бывают разными узлами: адрес переезжает следом. */
+function inheritJsonPath(container: JsonRuntimeValue, source: JsonRuntimeValue): JsonRuntimeValue {
+  if (container !== source && jsonPathOf(source) !== '') rememberJsonPath(container, jsonPathOf(source));
+  return container;
+}
+
 function throwJsonExpected(value: JsonRuntimeValue, expected: string, file: string, line: number): never {
-  // Словами языка (int/float, не «number») и с именем ключа, если значение достали через get().
-  const hint = typeof value.__jsonKeyHint === 'string' ? ` ${JSON.stringify(value.__jsonKeyHint)}` : '';
-  throw new IdylliumRuntimeError(file, line, `json value${hint} is ${jsonKindText(value)}, expected ${expected}`);
+  // Словами языка (int/float, не «number») и с адресом значения, если до него дошли через get()/at():
+  // «json value "hero.items[1]" is string, expected int».
+  const path = jsonPathOf(value);
+  const hint = path === '' ? '' : ` ${JSON.stringify(path)}`;
+  // to_string() — распаковщик строки, а не «текстовый вид»: подсказываем, где текстовый вид взять.
+  const advice = expected === 'string' && value.__jsonKind !== 'null' && value.__jsonKind !== 'object' && value.__jsonKind !== 'array'
+    ? ' — to_string() only unpacks a string; the text of any value is to_string(value)'
+    : '';
+  throw new IdylliumRuntimeError(file, line, `json value${hint} is ${jsonKindText(value)}, expected ${expected}${advice}`);
 }
 
 function jsonKindText(value: JsonRuntimeValue): string {

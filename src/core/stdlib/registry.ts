@@ -799,6 +799,38 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     }),
   ]));
 
+  const qrLevelParameter = { name: 'level', type: STRING, defaultValue: '"M"' };
+  const qrPictureParameter = {
+    name: 'picture',
+    type: ANY_TYPE,
+    acceptedTypes: [imageStatic, qualified('image', 'Bitmap')],
+    acceptedDescription: 'image.Static or image.Bitmap',
+  };
+  registry.registerModule(moduleSpec('qr', [
+    functionSpec('encode', [{ name: 'text', type: STRING }, qrLevelParameter], arrayType(arrayType(BOOL, null, true), null, true), {
+      minArguments: 1,
+      documentation: 'QR-код текста как квадратная таблица клеток: grid[строка][столбец] == true — клетка тёмная. Сторона таблицы — grid.length (от 21 и больше: чем длиннее текст, тем крупнее код). Полей вокруг кода в таблице нет — светлую рамку шириной хотя бы в 4 клетки рисует тот, кто выводит код, иначе сканер его не найдёт. level — запас прочности: "L" (low), "M" (medium, по умолчанию), "Q" (quartile), "H" (high) — чем выше, тем больше клеток можно испортить без потери текста и тем крупнее код. Текст кодируется в UTF-8, русские буквы и эмодзи читаются телефоном верно.',
+    }),
+    functionSpec('to_static', [{ name: 'text', type: STRING }, { name: 'scale', type: INT, defaultValue: '8' }, qrLevelParameter], imageStatic, {
+      minArguments: 1,
+      documentation: 'Готовая картинка QR-кода: чёрные клетки на белом, с положенными полями в 4 клетки. scale — сторона клетки в пикселях (от 1 до 64, по умолчанию 8). Результат — обычный image.Static: его можно показать в gui.ImageBox, нарисовать спрайтом, сохранить через export_to_file("code.png"), перекрасить через tint().',
+    }),
+    functionSpec('fits', [{ name: 'text', type: STRING }, qrLevelParameter], BOOL, {
+      minArguments: 1,
+      documentation: 'Поместится ли текст в QR-код на этом уровне — проверка до отказа encode() и to_static().',
+    }),
+    functionSpec('capacity', [qrLevelParameter], INT, {
+      minArguments: 0,
+      documentation: 'Сколько БАЙТ текста вмещает самый большой QR-код на уровне: "L" — 2953, "M" — 2331, "Q" — 1663, "H" — 1273. Латинская буква и цифра — один байт, русская буква — два, эмодзи — четыре.',
+    }),
+    functionSpec('decode', [qrPictureParameter], STRING, {
+      documentation: 'Читает QR-код с картинки (image.Static или image.Bitmap) и возвращает его текст. Годятся файлы картинок и снимки экрана, в том числе светлый код на тёмном фоне; фотография с рук под углом читается не всегда. Кода на картинке нет — ошибка выполнения; проверить заранее можно через has_code().',
+    }),
+    functionSpec('has_code', [qrPictureParameter], BOOL, {
+      documentation: 'Есть ли на картинке QR-код, который удаётся прочитать.',
+    }),
+  ]));
+
   const httpResponse = qualified('http', 'Response');
   registry.registerModule(moduleSpec('http', [
     functionSpec('get', [{ name: 'address', type: STRING }], httpResponse, {
@@ -1553,7 +1585,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
         documentation: 'Стирает весь рисунок: холст возвращается к своему background_color (если он не задан — к чёрному).',
       }),
       functionSpec('fill', [{ name: 'color', type: COLOR }], VOID, {
-        documentation: 'Заливает весь холст цветом поверх нарисованного. Непрозрачный цвет стирает прошлое целиком — так начинают кадр. Полупрозрачный (colors.RGBA) только притеняет его: приём «затухающий след». Рисунок на холсте копится, и чем больше на нём накоплено фигур, тем дольше он перерисовывается.',
+        documentation: 'Заливает весь холст цветом поверх нарисованного. Непрозрачный цвет стирает прошлое целиком — так начинают кадр. Полупрозрачный (colors.RGBA) только притеняет его: приём «затухающий след» — заливайте так каждый кадр, и за фигурами потянется гаснущий хвост. Рисунок на холсте копится; на экране это дёшево (предпросмотр хранит картинку между кадрами), но полный список нарисованного живёт в программе, пока его не начнёт заново непрозрачная заливка или clear().',
       }),
       functionSpec('draw', [{
         name: 'object',
@@ -1613,7 +1645,11 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       ...fontSized,
       ...buttonClickable,
       propertySpec('text', STRING),
-    ], [], guiWidget),
+    ], [
+      functionSpec('click', [], VOID, {
+        documentation: 'Нажимает кнопку из кода: срабатывает её on_click — так же, как от щелчка мышью, и sender тот же. Удобно, когда одно действие вызывается и кнопкой, и чем-то ещё: клавишей, таймером, крестиком окна. Выключенная или скрытая кнопка не нажимается — как и для человека. Если on_click не задан, ничего не происходит.',
+      }),
+    ], guiWidget),
     typeSpec('Frame', [
       ...positioned,
       ...widgetState,

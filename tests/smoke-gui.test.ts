@@ -1229,10 +1229,26 @@ test('the canvas accumulates: only clear() and an opaque fill() start over', asy
   await runtime.stepGui(0.02);
   assert(kinds() === 'fill draw draw draw draw fill draw fill draw', `a translucent fill covers nothing and keeps the past: ${kinds()}`);
 
+  // Хосту-рендереру уходит не весь список, а хвост (1.6.2): он хранит картинку между кадрами.
+  // Полупрозрачная заливка историю НЕ обрезает (вуаль заливкой и вуаль прямоугольником обязаны
+  // вести себя одинаково) — список растёт, а снимок-хвост остаётся размером в один кадр.
+  const full = snapshot();
+  assert(full.commandsFrom === 0 && full.total === full.commands.length, 'without options the snapshot is the whole list');
+  const known = { [full.id]: { epoch: full.epoch, count: full.total } };
+  for (let frame = 0; frame < 200; frame += 1) await runtime.stepGui(0.02);
+  const tail = runtime.getWindows({ knownCanvases: known })[0].children[0].canvas!;
+  assert(tail.total === full.total + 400 && tail.commandsFrom === full.total && tail.commands.length === 400,
+    `the host gets only what it has not seen: from ${tail.commandsFrom}, ${tail.commands.length} of ${tail.total}`);
+  assert(tail.epoch === full.epoch, 'a translucent fill continues the same list');
+  assert(snapshot().commands.length === tail.total, 'the full list is still there for save_svg and tests');
+
   await runtime.dispatchGuiEvent(canvasId, 'key_pressed', { key: 'A' });   // mode 2: непрозрачная заливка
   await runtime.stepGui(0.02);
   await runtime.stepGui(0.02);
   assert(kinds() === 'fill draw', `an opaque fill starts the picture over: ${kinds()}`);
+  const restarted = runtime.getWindows({ knownCanvases: { [full.id]: { epoch: tail.epoch, count: tail.total } } })[0].children[0].canvas!;
+  assert(restarted.epoch > tail.epoch && restarted.commandsFrom === 0 && restarted.commands.length === restarted.total,
+    `an opaque fill opens a new epoch, and a host with an old tail gets the whole new list: ${JSON.stringify({ epoch: restarted.epoch, from: restarted.commandsFrom })}`);
 
   await runtime.dispatchGuiEvent(canvasId, 'key_pressed', { key: 'A' });   // mode 3: clear()
   await runtime.stepGui(0.02);
@@ -2033,6 +2049,45 @@ test('windows are draggable citizens: x/y explicitness, window_move and the clos
   await runtime.dispatchGuiEvent(placed.id, 'window_close', {});
   assert(runtime.getWindows().length === 0 && !runtime.hasGui(),
     'closing the last window by its cross finishes the program');
+});
+
+test('Button.click() presses the button from code, as a person would', async () => {
+  const { runtime } = await runWithInspectableRuntime([
+    'use console;',
+    'use gui;',
+    '',
+    'gui.Window win;',
+    'gui.Button quit;',
+    'gui.Button silent;',
+    '',
+    'void function on_quit(gui.Button sender) {',
+    '    console.writeln("нажата: ", sender.text);',
+    '    win.close();',
+    '}',
+    '',
+    'void function from_cross() {',
+    '    quit.click();',
+    '}',
+    '',
+    'main() {',
+    '    quit.text = "Выход";',
+    '    quit.on_click = on_quit;',
+    '    win.add_child(quit);',
+    '    win.add_child(silent);',
+    '    win.on_close = from_cross;',
+    '    win.show();',
+    '    silent.click();',
+    '    quit.enabled = false;',
+    '    quit.click();',
+    '    console.writeln("выключенная молчит");',
+    '    quit.enabled = true;',
+    '}',
+  ].join('\n'));
+  assert(runtime.getOutput() === 'выключенная молчит\n', `a button without a handler and a disabled button stay silent: ${JSON.stringify(runtime.getOutput())}`);
+  // Крестик окна и кнопка «Выход» делят один обработчик — ради этого метод и просили.
+  await runtime.dispatchGuiEvent(runtime.getWindows()[0].id, 'window_close', {});
+  assert(runtime.getOutput() === 'выключенная молчит\nнажата: Выход\n', `click() must run on_click with the button as sender: ${JSON.stringify(runtime.getOutput())}`);
+  assert(!runtime.hasGui(), 'the shared handler closed the window');
 });
 
 test('on_close asks the program before the cross closes a window', async () => {

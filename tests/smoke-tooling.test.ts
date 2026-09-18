@@ -1004,6 +1004,43 @@ test('clean URLs are baked for every book, tasks and reference route', () => {
   assert(fs.existsSync(path.join(docsRoot, 'reference', 'globals.html')), 'missing globals.html');
 });
 
+test('the site header and scrollbars are one design across all sections', () => {
+  // Находка владельца (1.6.2): бренд, версия и бейдж раздела «прыгали» между Web IDE, учебником,
+  // справочником и «Авторам» — правила наследовали размер шрифта страницы. Теперь блок задан явно
+  // и повторён слово в слово; страж не даёт копиям разойтись снова.
+  const read = (file: string): string => fs.readFileSync(path.resolve(process.cwd(), file), 'utf8');
+  const between = (text: string, from: string, to: string, file: string): string => {
+    const start = text.indexOf(from);
+    const end = text.indexOf(to, start);
+    assert(start >= 0 && end > start, `${file}: block '${from.slice(0, 30)}…' is missing`);
+    return text.slice(start, end);
+  };
+  const headerFiles = ['packages/docs-book/app.css', 'packages/docs-reference/app.css', 'packages/embed/authors/authors.css', 'packages/web-ide/app.css'];
+  const lightSelector = /body\.(?:light-theme|theme-light)/gu;
+  const headers = headerFiles.map((file) => between(read(file), '/* ═══ ЕДИНАЯ ШАПКА САЙТА', '/* ═══ конец единой шапки ═══ */', file).replace(lightSelector, 'LIGHT'));
+  headers.forEach((block, index) => assert(block === headers[0], `the shared header block differs in ${headerFiles[index]}`));
+
+  const scrollFiles = ['packages/docs-book/app.css', 'packages/docs-reference/app.css', 'packages/embed/authors/authors.css'];
+  const core = scrollFiles.map((file) => {
+    const text = read(file);
+    const start = text.indexOf('/* Полосы прокрутки — одни на весь сайт');
+    const supports = text.indexOf('@supports', start);
+    const end = text.indexOf('\n}\n', supports);
+    assert(start >= 0 && supports > start && end > supports, `${file}: the shared scrollbar block is missing`);
+    return text.slice(start, end + 3);
+  });
+  core.forEach((block, index) => assert(block === core[0], `the shared scrollbar block differs in ${scrollFiles[index]}`));
+
+  // Разметка бренда одна: логотип, слово, версия — и бейдж раздела одним классом.
+  for (const file of ['packages/docs-book/index.html', 'packages/docs-reference/index.html', 'packages/embed/authors/index.html', 'packages/web-ide/index.html']) {
+    const html = read(file);
+    for (const piece of ['class="brand-mark"', 'class="brand-text"', 'class="idyllium-version"', 'class="topbar-badge"']) {
+      assert(html.includes(piece), `${file} must use ${piece} in its header`);
+    }
+    assert(!html.includes('section-badge'), `${file}: the section badge has one class — topbar-badge`);
+  }
+});
+
 test('handouts page is baked with every manifest file present', () => {
   const docsRoot = path.resolve(process.cwd(), 'docs');
   const manifest = JSON.parse(fs.readFileSync(
@@ -1012,6 +1049,14 @@ test('handouts page is baked with every manifest file present', () => {
   assert(page.includes('noindex'), 'handouts page must be closed from search engines');
 
   const seen = new Set<string>();
+  // Раздатка — такая же страница сайта, как остальные: общая шапка, общий стиль (а с ним палитра
+  // обеих тем и полосы прокрутки), переключатель темы. Раньше жила с зашитой тёмной палитрой.
+  for (const piece of ['../book/app.css', 'class="docs-topbar"', 'class="topbar-badge">Раздатка<', 'id="theme-toggle"', 'idyllium-docs-theme']) {
+    assert(page.includes(piece), `handouts page must share the site design: ${piece} is missing`);
+  }
+  const pageStyle = page.slice(page.indexOf('<style>'), page.indexOf('</style>'));
+  assert(!/#[0-9a-fA-F]{6}\b/u.test(pageStyle), 'handouts page must take its colours from the shared variables, not hard-code them');
+  const licenses = new Set<string>();
   for (const category of manifest.categories) {
     assert(category.id && category.title, 'every handouts tab needs an id and a title');
     assert(page.includes(`data-tab="${category.id}"`), `tab is missing from the page: ${category.id}`);
@@ -1025,15 +1070,23 @@ test('handouts page is baked with every manifest file present', () => {
         );
         assert(page.includes(encodeURIComponent(item.file)), `handout not listed on the page: ${item.file}`);
         assert(item.note.trim().length > 0, `handout has no description: ${item.file}`);
+        if (item.license) {
+          licenses.add(item.license);
+          assert(
+            fs.existsSync(path.join(docsRoot, 'handouts', 'files', item.license)),
+            `license file of '${item.file}' is missing from the site: ${item.license}`,
+          );
+        }
       }
     }
   }
 
   // Ни один выложенный файл не должен потеряться мимо вкладок: единственное
-  // исключение — тексты лицензий, они висят ссылкой на своём шрифте.
+  // исключение — тексты лицензий, они висят ссылкой «лицензия» на своём файле
+  // (шрифты — OFL, музыка Кевина Маклауда — CC BY).
   const sourceRoot = path.resolve(process.cwd(), 'packages', 'docs', 'handouts');
   for (const entry of fs.readdirSync(sourceRoot)) {
-    if (entry === 'handouts.json' || entry.endsWith('-OFL.txt')) continue;
+    if (entry === 'handouts.json' || licenses.has(entry)) continue;
     assert(seen.has(entry), `handout file is not listed in any tab: ${entry}`);
   }
 });

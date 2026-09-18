@@ -35,8 +35,7 @@ export function setupColorEyedropper(applyPickedColor) {
       cursorStyle.textContent = '* { cursor: crosshair !important; pointer-events: auto !important; }\n'
         + '#eyedropper-lens, #eyedropper-lens * { pointer-events: none !important; }';
       (doc.head || doc.documentElement).appendChild(cursorStyle);
-      doc.addEventListener('mousedown', onEyedropperPress, true);
-      doc.addEventListener('click', onEyedropperPick, true);
+      doc.addEventListener('mousedown', onEyedropperPick, true);
       doc.addEventListener('contextmenu', onEyedropperCancel, true);
       doc.addEventListener('keydown', onEyedropperKey, true);
       doc.addEventListener('mousemove', onEyedropperMove, true);
@@ -59,8 +58,7 @@ export function setupColorEyedropper(applyPickedColor) {
     for (const { doc, cursorStyle } of hookedDocuments) {
       try {
         cursorStyle.remove();
-        doc.removeEventListener('mousedown', onEyedropperPress, true);
-        doc.removeEventListener('click', onEyedropperPick, true);
+        doc.removeEventListener('mousedown', onEyedropperPick, true);
         doc.removeEventListener('contextmenu', onEyedropperCancel, true);
         doc.removeEventListener('keydown', onEyedropperKey, true);
         doc.removeEventListener('mousemove', onEyedropperMove, true);
@@ -119,15 +117,14 @@ export function setupColorEyedropper(applyPickedColor) {
     return Boolean(target && typeof target.closest === 'function' && target.closest('#color-eyedropper-button'));
   }
 
-  function onEyedropperPress(event) {
-    if (eyedropperTargetsButton(event)) return;
-    event.preventDefault();
-    event.stopPropagation();
-  }
-
+  // Цвет берётся по НАЖАТИЮ кнопки мыши, а не по click. У работающей программы предпросмотр
+  // пересобирает свои элементы десятки раз в секунду: между нажатием и отпусканием холст под
+  // курсором успевает смениться, и браузер click вообще не присылает — пипетка «не брала» цвет
+  // с активного холста и оставалась включённой (находка владельца, 1.6.2).
   function onEyedropperPick(event) {
     // повторный клик по самой кнопке — выключение, им займётся её обработчик
     if (eyedropperTargetsButton(event)) return;
+    if (event.button !== undefined && event.button !== 0) return; // правая кнопка — отмена, у неё свой обработчик
     event.preventDefault();
     event.stopPropagation();
     const doc = (event.target && event.target.ownerDocument) || document;
@@ -135,7 +132,25 @@ export function setupColorEyedropper(applyPickedColor) {
     if (picked) {
       applyPickedColor(picked);
     }
+    swallowNextClick(hookedDocuments.map((entry) => entry.doc));
     deactivateEyedropper();
+  }
+
+  // Нажатие мы уже съели, но отпускание породит click — он не должен нажать кнопку или ссылку,
+  // оказавшуюся под пипеткой. Глотаем один ближайший click (и страхуемся таймером).
+  function swallowNextClick(documents) {
+    const swallow = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      release();
+    };
+    const release = () => {
+      for (const doc of documents) {
+        try { doc.removeEventListener('click', swallow, true); } catch (_error) { /* документ выгружен */ }
+      }
+    };
+    for (const doc of documents) doc.addEventListener('click', swallow, true);
+    window.setTimeout(release, 600);
   }
 
   function onEyedropperCancel(event) {
@@ -204,10 +219,19 @@ export function collectEyedropperLayers(doc, x, y, layers) {
       // CSS-фон самого элемента, проверяем и его
     }
     const style = view.getComputedStyle(el);
-    // фоновые слои элемента: градиенты поверх background-color
-    for (const gradient of parseCssGradients(style.backgroundImage)) {
-      const rect = el.getBoundingClientRect();
-      const layer = sampleLinearGradient(gradient, rect, x, y);
+    // рамка рисуется поверх фона: попали в неё — берём её цвет
+    const border = eyedropperBorderAt(el, style, x, y);
+    if (border && border.alpha > 0) {
+      layers.push(border);
+      if (border.alpha >= 1) return;
+    }
+    // фоновые слои элемента в порядке отрисовки (верхний первым): градиенты и картинки url(...)
+    // поверх background-color. Образец цвета в «Генераторе» — как раз цвет поверх картинки.
+    const rect = el.getBoundingClientRect();
+    for (const background of parseCssBackgroundLayers(style)) {
+      const layer = background.kind === 'gradient'
+        ? sampleLinearGradient(background.gradient, rect, x, y)
+        : sampleBackgroundPicture(background, el, style, x, y);
       if (layer && layer.alpha > 0) {
         layers.push(layer);
         if (layer.alpha >= 1) return;
@@ -305,6 +329,153 @@ export function eyedropperPixelFrom(el, x, y) {
     // честно отступаем к фоновому цвету под элементом
     return null;
   }
+}
+
+// Деление по запятым верхнего уровня: rgb(...), url(...) и градиенты внутри не рвём.
+export function splitCssTopLevel(text) {
+  const parts = [];
+  let depth = 0;
+  let start = 0;
+  let quote = '';
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+    if (quote) {
+      if (char === quote && text[i - 1] !== '\\') quote = '';
+      continue;
+    }
+    if (char === '"' || char === "'") quote = char;
+    else if (char === '(') depth += 1;
+    else if (char === ')') depth -= 1;
+    else if (char === ',' && depth === 0) {
+      parts.push(text.slice(start, i).trim());
+      start = i + 1;
+    }
+  }
+  parts.push(text.slice(start).trim());
+  return parts.filter((part) => part !== '');
+}
+
+// Слои background-image вместе со своими размером, положением и повтором. У CSS списки
+// background-size/position/repeat короче списка картинок повторяются по кругу.
+export function parseCssBackgroundLayers(style) {
+  const images = typeof style.backgroundImage === 'string' && style.backgroundImage !== 'none'
+    ? splitCssTopLevel(style.backgroundImage)
+    : [];
+  if (images.length === 0) return [];
+  const sizes = splitCssTopLevel(style.backgroundSize || 'auto');
+  const positions = splitCssTopLevel(style.backgroundPosition || '0% 0%');
+  const repeats = splitCssTopLevel(style.backgroundRepeat || 'repeat');
+  const layers = [];
+  images.forEach((image, index) => {
+    if (image.startsWith('linear-gradient(')) {
+      const gradient = parseLinearGradientBody(image.slice('linear-gradient('.length, -1));
+      if (gradient) layers.push({ kind: 'gradient', gradient });
+      return;
+    }
+    const url = /^url\((['"]?)(.*?)\1\)$/u.exec(image);
+    if (!url) return; // radial-gradient и прочее — насквозь, как раньше
+    layers.push({
+      kind: 'picture',
+      url: url[2],
+      size: sizes[index % sizes.length] || 'auto',
+      position: positions[index % positions.length] || '0% 0%',
+      repeat: repeats[index % repeats.length] || 'repeat',
+    });
+  });
+  return layers;
+}
+
+const backgroundPictures = new Map();
+
+function backgroundPicture(url) {
+  let image = backgroundPictures.get(url);
+  if (!image) {
+    image = new Image();
+    image.src = url;
+    backgroundPictures.set(url, image);
+  }
+  return image.complete && image.naturalWidth > 0 ? image : null;
+}
+
+function cssLength(token, container, own) {
+  if (token.endsWith('%')) return ((container - own) * Number.parseFloat(token)) / 100;
+  return Number.parseFloat(token) || 0;
+}
+
+// Пиксель фоновой картинки под точкой. Картинка грузится из кэша браузера; пока не догрузилась —
+// слой пропускается, следующее движение мыши его уже увидит.
+export function sampleBackgroundPicture(layer, el, style, x, y) {
+  const image = backgroundPicture(layer.url);
+  if (!image) return null;
+  const rect = el.getBoundingClientRect();
+  // область фона по умолчанию — padding-box
+  const left = rect.left + (Number.parseFloat(style.borderLeftWidth) || 0);
+  const top = rect.top + (Number.parseFloat(style.borderTopWidth) || 0);
+  const width = rect.width - (Number.parseFloat(style.borderLeftWidth) || 0) - (Number.parseFloat(style.borderRightWidth) || 0);
+  const height = rect.height - (Number.parseFloat(style.borderTopWidth) || 0) - (Number.parseFloat(style.borderBottomWidth) || 0);
+  if (width <= 0 || height <= 0) return null;
+
+  let drawnWidth = image.naturalWidth;
+  let drawnHeight = image.naturalHeight;
+  const size = layer.size.trim();
+  if (size === 'cover' || size === 'contain') {
+    const scale = size === 'cover'
+      ? Math.max(width / image.naturalWidth, height / image.naturalHeight)
+      : Math.min(width / image.naturalWidth, height / image.naturalHeight);
+    drawnWidth = image.naturalWidth * scale;
+    drawnHeight = image.naturalHeight * scale;
+  } else if (size !== 'auto' && size !== 'auto auto') {
+    const [first, second = 'auto'] = size.split(/\s+/u);
+    const ratio = image.naturalHeight / image.naturalWidth;
+    const explicitWidth = first === 'auto' ? null : (first.endsWith('%') ? (width * Number.parseFloat(first)) / 100 : Number.parseFloat(first));
+    const explicitHeight = second === 'auto' ? null : (second.endsWith('%') ? (height * Number.parseFloat(second)) / 100 : Number.parseFloat(second));
+    if (explicitWidth !== null && explicitHeight !== null) { drawnWidth = explicitWidth; drawnHeight = explicitHeight; }
+    else if (explicitWidth !== null) { drawnWidth = explicitWidth; drawnHeight = explicitWidth * ratio; }
+    else if (explicitHeight !== null) { drawnHeight = explicitHeight; drawnWidth = explicitHeight / ratio; }
+  }
+  if (!(drawnWidth > 0) || !(drawnHeight > 0)) return null;
+
+  const [positionX = '0%', positionY = '0%'] = layer.position.trim().split(/\s+/u);
+  let localX = x - left - cssLength(positionX, width, drawnWidth);
+  let localY = y - top - cssLength(positionY, height, drawnHeight);
+  const repeat = layer.repeat.trim();
+  const repeatX = repeat === 'repeat' || repeat === 'repeat-x' || repeat.startsWith('repeat ');
+  const repeatY = repeat === 'repeat' || repeat === 'repeat-y' || repeat.endsWith(' repeat');
+  if (repeatX) localX = ((localX % drawnWidth) + drawnWidth) % drawnWidth;
+  if (repeatY) localY = ((localY % drawnHeight) + drawnHeight) % drawnHeight;
+  if (localX < 0 || localY < 0 || localX >= drawnWidth || localY >= drawnHeight) return null;
+
+  try {
+    const probe = document.createElement('canvas');
+    probe.width = 1;
+    probe.height = 1;
+    const context = probe.getContext('2d', { willReadFrequently: true });
+    const sourceX = clamp(Math.floor((localX / drawnWidth) * image.naturalWidth), 0, image.naturalWidth - 1);
+    const sourceY = clamp(Math.floor((localY / drawnHeight) * image.naturalHeight), 0, image.naturalHeight - 1);
+    context.drawImage(image, sourceX, sourceY, 1, 1, 0, 0, 1, 1);
+    const data = context.getImageData(0, 0, 1, 1).data;
+    if (data[3] === 0) return null;
+    return { red: data[0], green: data[1], blue: data[2], alpha: data[3] / 255 };
+  } catch (_error) {
+    return null; // картинка с чужого адреса «портит» холст — отступаем к тому, что ниже
+  }
+}
+
+// Рамка элемента: точка внутри прямоугольника, но снаружи padding-box — цвет этой стороны рамки.
+export function eyedropperBorderAt(el, style, x, y) {
+  const rect = el.getBoundingClientRect();
+  if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) return null;
+  const sides = [
+    ['Top', y - rect.top], ['Bottom', rect.bottom - y], ['Left', x - rect.left], ['Right', rect.right - x],
+  ];
+  for (const [side, distance] of sides) {
+    const width = Number.parseFloat(style[`border${side}Width`]) || 0;
+    if (width <= 0 || distance > width) continue;
+    const borderStyle = style[`border${side}Style`];
+    if (borderStyle === 'none' || borderStyle === 'hidden') continue;
+    return parseCssColor(style[`border${side}Color`]);
+  }
+  return null;
 }
 
 // Разбор computed background-image: только слои linear-gradient (в порядке

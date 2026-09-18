@@ -6377,8 +6377,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
         const cursorStyle = doc.createElement("style");
         cursorStyle.textContent = "* { cursor: crosshair !important; pointer-events: auto !important; }\n#eyedropper-lens, #eyedropper-lens * { pointer-events: none !important; }";
         (doc.head || doc.documentElement).appendChild(cursorStyle);
-        doc.addEventListener("mousedown", onEyedropperPress, true);
-        doc.addEventListener("click", onEyedropperPick, true);
+        doc.addEventListener("mousedown", onEyedropperPick, true);
         doc.addEventListener("contextmenu", onEyedropperCancel, true);
         doc.addEventListener("keydown", onEyedropperKey, true);
         doc.addEventListener("mousemove", onEyedropperMove, true);
@@ -6400,8 +6399,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       for (const { doc, cursorStyle } of hookedDocuments) {
         try {
           cursorStyle.remove();
-          doc.removeEventListener("mousedown", onEyedropperPress, true);
-          doc.removeEventListener("click", onEyedropperPick, true);
+          doc.removeEventListener("mousedown", onEyedropperPick, true);
           doc.removeEventListener("contextmenu", onEyedropperCancel, true);
           doc.removeEventListener("keydown", onEyedropperKey, true);
           doc.removeEventListener("mousemove", onEyedropperMove, true);
@@ -6451,13 +6449,9 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       const target = event.target;
       return Boolean(target && typeof target.closest === "function" && target.closest("#color-eyedropper-button"));
     }
-    function onEyedropperPress(event) {
-      if (eyedropperTargetsButton(event)) return;
-      event.preventDefault();
-      event.stopPropagation();
-    }
     function onEyedropperPick(event) {
       if (eyedropperTargetsButton(event)) return;
+      if (event.button !== void 0 && event.button !== 0) return;
       event.preventDefault();
       event.stopPropagation();
       const doc = event.target && event.target.ownerDocument || document;
@@ -6465,7 +6459,25 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       if (picked) {
         applyPickedColor(picked);
       }
+      swallowNextClick(hookedDocuments.map((entry) => entry.doc));
       deactivateEyedropper();
+    }
+    function swallowNextClick(documents) {
+      const swallow = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        release();
+      };
+      const release = () => {
+        for (const doc of documents) {
+          try {
+            doc.removeEventListener("click", swallow, true);
+          } catch (_error) {
+          }
+        }
+      };
+      for (const doc of documents) doc.addEventListener("click", swallow, true);
+      window.setTimeout(release, 600);
     }
     function onEyedropperCancel(event) {
       event.preventDefault();
@@ -6509,8 +6521,8 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       if (tag === "IFRAME") {
         try {
           if (el.contentDocument) {
-            const rect = el.getBoundingClientRect();
-            collectEyedropperLayers(el.contentDocument, x - rect.left - el.clientLeft, y - rect.top - el.clientTop, layers);
+            const rect2 = el.getBoundingClientRect();
+            collectEyedropperLayers(el.contentDocument, x - rect2.left - el.clientLeft, y - rect2.top - el.clientTop, layers);
           }
         } catch (_error) {
         }
@@ -6524,9 +6536,14 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
         }
       }
       const style = view.getComputedStyle(el);
-      for (const gradient of parseCssGradients(style.backgroundImage)) {
-        const rect = el.getBoundingClientRect();
-        const layer = sampleLinearGradient(gradient, rect, x, y);
+      const border = eyedropperBorderAt(el, style, x, y);
+      if (border && border.alpha > 0) {
+        layers.push(border);
+        if (border.alpha >= 1) return;
+      }
+      const rect = el.getBoundingClientRect();
+      for (const background2 of parseCssBackgroundLayers(style)) {
+        const layer = background2.kind === "gradient" ? sampleLinearGradient(background2.gradient, rect, x, y) : sampleBackgroundPicture(background2, el, style, x, y);
         if (layer && layer.alpha > 0) {
           layers.push(layer);
           if (layer.alpha >= 1) return;
@@ -6616,29 +6633,141 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       return null;
     }
   }
-  function parseCssGradients(backgroundImage) {
-    if (typeof backgroundImage !== "string" || !backgroundImage.includes("linear-gradient(")) return [];
-    const gradients = [];
-    let index = 0;
-    while ((index = backgroundImage.indexOf("linear-gradient(", index)) !== -1) {
-      let depth = 0;
-      let end = index + "linear-gradient(".length - 1;
-      for (let i = end; i < backgroundImage.length; i += 1) {
-        if (backgroundImage[i] === "(") depth += 1;
-        if (backgroundImage[i] === ")") {
-          depth -= 1;
-          if (depth === 0) {
-            end = i;
-            break;
-          }
-        }
+  function splitCssTopLevel(text) {
+    const parts = [];
+    let depth = 0;
+    let start = 0;
+    let quote = "";
+    for (let i = 0; i < text.length; i += 1) {
+      const char = text[i];
+      if (quote) {
+        if (char === quote && text[i - 1] !== "\\") quote = "";
+        continue;
       }
-      const body = backgroundImage.slice(index + "linear-gradient(".length, end);
-      const gradient = parseLinearGradientBody(body);
-      if (gradient) gradients.push(gradient);
-      index = end + 1;
+      if (char === '"' || char === "'") quote = char;
+      else if (char === "(") depth += 1;
+      else if (char === ")") depth -= 1;
+      else if (char === "," && depth === 0) {
+        parts.push(text.slice(start, i).trim());
+        start = i + 1;
+      }
     }
-    return gradients;
+    parts.push(text.slice(start).trim());
+    return parts.filter((part) => part !== "");
+  }
+  function parseCssBackgroundLayers(style) {
+    const images = typeof style.backgroundImage === "string" && style.backgroundImage !== "none" ? splitCssTopLevel(style.backgroundImage) : [];
+    if (images.length === 0) return [];
+    const sizes = splitCssTopLevel(style.backgroundSize || "auto");
+    const positions = splitCssTopLevel(style.backgroundPosition || "0% 0%");
+    const repeats = splitCssTopLevel(style.backgroundRepeat || "repeat");
+    const layers = [];
+    images.forEach((image, index) => {
+      if (image.startsWith("linear-gradient(")) {
+        const gradient = parseLinearGradientBody(image.slice("linear-gradient(".length, -1));
+        if (gradient) layers.push({ kind: "gradient", gradient });
+        return;
+      }
+      const url = /^url\((['"]?)(.*?)\1\)$/u.exec(image);
+      if (!url) return;
+      layers.push({
+        kind: "picture",
+        url: url[2],
+        size: sizes[index % sizes.length] || "auto",
+        position: positions[index % positions.length] || "0% 0%",
+        repeat: repeats[index % repeats.length] || "repeat"
+      });
+    });
+    return layers;
+  }
+  var backgroundPictures = /* @__PURE__ */ new Map();
+  function backgroundPicture(url) {
+    let image = backgroundPictures.get(url);
+    if (!image) {
+      image = new Image();
+      image.src = url;
+      backgroundPictures.set(url, image);
+    }
+    return image.complete && image.naturalWidth > 0 ? image : null;
+  }
+  function cssLength(token, container, own) {
+    if (token.endsWith("%")) return (container - own) * Number.parseFloat(token) / 100;
+    return Number.parseFloat(token) || 0;
+  }
+  function sampleBackgroundPicture(layer, el, style, x, y) {
+    const image = backgroundPicture(layer.url);
+    if (!image) return null;
+    const rect = el.getBoundingClientRect();
+    const left = rect.left + (Number.parseFloat(style.borderLeftWidth) || 0);
+    const top = rect.top + (Number.parseFloat(style.borderTopWidth) || 0);
+    const width = rect.width - (Number.parseFloat(style.borderLeftWidth) || 0) - (Number.parseFloat(style.borderRightWidth) || 0);
+    const height = rect.height - (Number.parseFloat(style.borderTopWidth) || 0) - (Number.parseFloat(style.borderBottomWidth) || 0);
+    if (width <= 0 || height <= 0) return null;
+    let drawnWidth = image.naturalWidth;
+    let drawnHeight = image.naturalHeight;
+    const size = layer.size.trim();
+    if (size === "cover" || size === "contain") {
+      const scale = size === "cover" ? Math.max(width / image.naturalWidth, height / image.naturalHeight) : Math.min(width / image.naturalWidth, height / image.naturalHeight);
+      drawnWidth = image.naturalWidth * scale;
+      drawnHeight = image.naturalHeight * scale;
+    } else if (size !== "auto" && size !== "auto auto") {
+      const [first, second = "auto"] = size.split(/\s+/u);
+      const ratio = image.naturalHeight / image.naturalWidth;
+      const explicitWidth = first === "auto" ? null : first.endsWith("%") ? width * Number.parseFloat(first) / 100 : Number.parseFloat(first);
+      const explicitHeight = second === "auto" ? null : second.endsWith("%") ? height * Number.parseFloat(second) / 100 : Number.parseFloat(second);
+      if (explicitWidth !== null && explicitHeight !== null) {
+        drawnWidth = explicitWidth;
+        drawnHeight = explicitHeight;
+      } else if (explicitWidth !== null) {
+        drawnWidth = explicitWidth;
+        drawnHeight = explicitWidth * ratio;
+      } else if (explicitHeight !== null) {
+        drawnHeight = explicitHeight;
+        drawnWidth = explicitHeight / ratio;
+      }
+    }
+    if (!(drawnWidth > 0) || !(drawnHeight > 0)) return null;
+    const [positionX = "0%", positionY = "0%"] = layer.position.trim().split(/\s+/u);
+    let localX = x - left - cssLength(positionX, width, drawnWidth);
+    let localY = y - top - cssLength(positionY, height, drawnHeight);
+    const repeat = layer.repeat.trim();
+    const repeatX = repeat === "repeat" || repeat === "repeat-x" || repeat.startsWith("repeat ");
+    const repeatY = repeat === "repeat" || repeat === "repeat-y" || repeat.endsWith(" repeat");
+    if (repeatX) localX = (localX % drawnWidth + drawnWidth) % drawnWidth;
+    if (repeatY) localY = (localY % drawnHeight + drawnHeight) % drawnHeight;
+    if (localX < 0 || localY < 0 || localX >= drawnWidth || localY >= drawnHeight) return null;
+    try {
+      const probe = document.createElement("canvas");
+      probe.width = 1;
+      probe.height = 1;
+      const context = probe.getContext("2d", { willReadFrequently: true });
+      const sourceX = clamp(Math.floor(localX / drawnWidth * image.naturalWidth), 0, image.naturalWidth - 1);
+      const sourceY = clamp(Math.floor(localY / drawnHeight * image.naturalHeight), 0, image.naturalHeight - 1);
+      context.drawImage(image, sourceX, sourceY, 1, 1, 0, 0, 1, 1);
+      const data = context.getImageData(0, 0, 1, 1).data;
+      if (data[3] === 0) return null;
+      return { red: data[0], green: data[1], blue: data[2], alpha: data[3] / 255 };
+    } catch (_error) {
+      return null;
+    }
+  }
+  function eyedropperBorderAt(el, style, x, y) {
+    const rect = el.getBoundingClientRect();
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) return null;
+    const sides = [
+      ["Top", y - rect.top],
+      ["Bottom", rect.bottom - y],
+      ["Left", x - rect.left],
+      ["Right", rect.right - x]
+    ];
+    for (const [side, distance] of sides) {
+      const width = Number.parseFloat(style[`border${side}Width`]) || 0;
+      if (width <= 0 || distance > width) continue;
+      const borderStyle = style[`border${side}Style`];
+      if (borderStyle === "none" || borderStyle === "hidden") continue;
+      return parseCssColor(style[`border${side}Color`]);
+    }
+    return null;
   }
   function parseLinearGradientBody(body) {
     const parts = [];
@@ -7004,8 +7133,6 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       const systemShareButton = element("button", "", "Отправить…");
       systemShareButton.type = "button";
       systemShareButton.title = "Системное «Поделиться»: архив уходит прямо в мессенджер или почту";
-      systemShareButton.hidden = true;
-      zipButtons.appendChild(systemShareButton);
       zipWay.appendChild(zipButtons);
       const linkWay = element("section", "share-way share-way-link");
       linkWay.appendChild(element("h4", "share-way-title", "Ссылкой"));
@@ -7069,9 +7196,9 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       const copyImage = element("button", "share-primary", "Скопировать картинку");
       copyImage.type = "button";
       const canCopyImage = Boolean(navigator.clipboard && navigator.clipboard.write && window.ClipboardItem);
-      copyImage.hidden = !canCopyImage;
-      if (!canCopyImage) saveImage.classList.add("share-primary");
-      qrButtons.append(copyImage, saveImage);
+      if (canCopyImage) qrButtons.appendChild(copyImage);
+      else saveImage.classList.add("share-primary");
+      qrButtons.appendChild(saveImage);
       qrWay.appendChild(qrButtons);
       ways.append(zipWay, linkWay, qrWay);
       let refreshToken = 0;
@@ -7156,7 +7283,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
           const file = new File([blob], name, { type: "application/zip" });
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
             zipFileForShare = file;
-            systemShareButton.hidden = false;
+            zipButtons.appendChild(systemShareButton);
           }
         } catch (_error) {
         }
@@ -7763,11 +7890,23 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
   var lastSnapshotJson = "";
   var lastRenderedRuntimeOutput = null;
   var previewTargetOrigin = window.location.origin && window.location.origin !== "null" ? window.location.origin : "*";
+  var canvasTails = null;
+  function canvasTailTracker() {
+    if (!canvasTails) canvasTails = window.Idyllium.createCanvasTailTracker();
+    return canvasTails;
+  }
+  function resyncCanvases(canvasIds) {
+    if (canvasTails) canvasTails.forget(Array.isArray(canvasIds) ? canvasIds.map(Number) : void 0);
+    lastSnapshotJson = "";
+    if (currentRuntime) sendRuntimeSnapshot();
+  }
   function markGuiFrameReady() {
     guiFrameReady = true;
     lastSnapshotJson = "";
     runHost.applyPreviewTheme();
-    if (pendingSnapshot) postSnapshot(pendingSnapshot);
+    if (canvasTails) canvasTails.forget();
+    if (currentRuntime) sendRuntimeSnapshot();
+    else if (pendingSnapshot) postSnapshot(pendingSnapshot);
   }
   var rehearsalServers = /* @__PURE__ */ new Map();
   var rehearsalWorkerPromise = null;
@@ -7857,6 +7996,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     stopProgram(true);
     const runId = ++runSequence;
     previewGeneration++;
+    if (canvasTails) canvasTails.forget();
     runHost.saveCurrentEditor();
     runHost.hideCompletions();
     output.textContent = "";
@@ -7955,6 +8095,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       runSequence++;
       previewGeneration++;
       lastSnapshotJson = "";
+      if (canvasTails) canvasTails.forget();
     }
     if (runAbortController && !runAbortController.signal.aborted) runAbortController.abort();
     syncRuntimeFilesFromSnapshot();
@@ -8294,14 +8435,17 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       postEmptySnapshot();
       return;
     }
-    const windows = currentRuntime.getWindows();
-    postSnapshot({
+    const tails = canvasTailTracker();
+    const windows = currentRuntime.getWindows(tails.options());
+    const canvases = windows.length > 0 ? [] : currentRuntime.getCanvases(tails.options());
+    const delivered = postSnapshot({
       audio: currentRuntime.getAudio ? currentRuntime.getAudio() : [],
       windows,
-      canvases: windows.length > 0 ? [] : currentRuntime.getCanvases(),
+      canvases,
       modals: currentRuntime.getModals(),
       output: ""
     });
+    if (delivered) tails.sent(windows, canvases);
   }
   function guiLoopIntervalMs(runtime) {
     return window.Idyllium.guiPreviewIntervalMs(runtime.getWindows(), runtime.getCanvases());
@@ -8315,9 +8459,9 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       generation: previewGeneration
     };
     pendingSnapshot = fullSnapshot;
-    if (!guiFrameReady || !guiFrame.contentWindow) return;
+    if (!guiFrameReady || !guiFrame.contentWindow) return false;
     const snapshotJson = JSON.stringify(fullSnapshot);
-    if (snapshotJson === lastSnapshotJson) return;
+    if (snapshotJson === lastSnapshotJson) return true;
     lastSnapshotJson = snapshotJson;
     guiFrame.contentWindow.postMessage({
       type: "snapshot",
@@ -8328,6 +8472,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       modals: fullSnapshot.modals,
       output: fullSnapshot.output
     }, previewTargetOrigin);
+    return true;
   }
   var browserAssetUrls = /* @__PURE__ */ new Map();
 
@@ -8860,6 +9005,10 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     }
     if (data.message.type === "closeApp") {
       stopProgram(false);
+      return;
+    }
+    if (data.message.type === "canvasResync") {
+      resyncCanvases(data.message.canvasIds);
       return;
     }
     if (data.message.type !== "guiEvent") return;

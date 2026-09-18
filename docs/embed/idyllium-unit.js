@@ -1,11 +1,11 @@
-/* Idyllium 1.6.1 — собрано tools/build-embed.js из packages/embed/; править источники. */
+/* Idyllium 1.6.2 — собрано tools/build-embed.js из packages/embed/; править источники. */
 "use strict";
 (() => {
   // packages/embed/src/loader.js
   var SOURCE = "idyllium-unit";
   var SELF = document.currentScript || Array.from(document.scripts).reverse().find((script) => /idyllium-unit\.js(?:[?#]|$)/u.test(script.src));
   var BASE = new URL("./", SELF && SELF.src ? SELF.src : location.href).href;
-  var VERSION = "1.6.1";
+  var VERSION = "1.6.2";
   function readConfig(element) {
     const config = {};
     const problems = [];
