@@ -21,11 +21,11 @@ databases, GUI applications and networking without installing anything and
 without leaving the site; a teacher can build a lesson plan from the same
 pages.
 
-Current language target: Idyllium 1.6.0 (machine-readable at
+Current language target: Idyllium 1.6.1 (machine-readable at
 https://aumphaadr.github.io/Idyllium/version.json).
 
 Important rule for AI assistants: do not invent site features. If a feature is
-not listed here (user accounts, cloud saving, sharing links, leaderboards,
+not listed here (user accounts, cloud saving, short links stored on a server, leaderboards,
 mobile apps, plugins), say that the site does not have it. For questions about
 Idyllium language syntax use the companion file `idyllium-ai-reference.md`
 (same folder) — do not answer syntax questions from memory of other languages.
@@ -76,8 +76,51 @@ Top bar:
   a name conflict asks «Заменить?»/«Оставить прежний»), new / open / save
   (Ctrl+S) / duplicate / delete project, download current or any stored
   project. A project downloads as a `.zip`; a downloaded `.zip` can be opened
-  back — this is the only way to move work between computers or hand it to a
-  teacher.
+  back. The other way to hand work to a teacher is **«Поделиться…»** (since
+  1.6.1), below.
+- **«Файл» → «Поделиться…» — the project inside a link (since 1.6.1).** The
+  dialog is three cards, one per way of sharing: **«ZIP-архивом»** (left),
+  **«Ссылкой»** (middle), **«QR-кодом»** (right). Buttons answer on themselves
+  («Скопировано ✓», «Скачано ✓», or why it failed). For the link, the
+  TEXT of the project (or of the open file only) is compressed and packed into
+  the address after `#p1=`; nothing is uploaded anywhere — a browser never sends
+  the part after `#` to a server, so only the people who receive the link see
+  the code. The link card has the «весь проект / только этот файл» switch, an
+  optional «От кого» field («Петя И., 7Б») and the link length with a traffic
+  light — up to 2000 characters «goes anywhere», up to 4096 «one Telegram/VK
+  message», longer «a messenger will cut it». The ZIP card holds «Скачать
+  проект» — the archive takes EVERY file (programs, pictures, music, fonts,
+  databases), shows its size, and is the only way that does not care how big the
+  project is; where the browser has a system share sheet there is also
+  «Отправить…». Pictures, sound and other non-text files are NOT put into the
+  link: only their list with sizes and fingerprints travels. On the receiving
+  side such files are restored by fingerprint from the site's own handout
+  library (`/handouts/`, even if the student renamed the file) and from the
+  receiver's own projects; files found nowhere are named in words («Не хватает
+  файлов: … попросите автора прислать проект файлом»). Typical programs fit:
+  lesson examples are ~300 characters of link, an ordinary student program
+  ~1700. The **QR card** always shows the same link as a QR code and redraws it
+  on the fly when the scope or «От кого» changes (a link of up to 2953
+  characters fits; longer — the card says why there is no code): a sparse code
+  can be shown on a screen and scanned with a phone camera, a dense one is sent
+  as a picture («Скачать картинку» / «Скопировать картинку») and survives
+  messenger recompression. A QR code does NOT lift the Telegram/VK message
+  limit — its capacity (2953) is smaller than 4096; what does not fit goes as a
+  file.
+- **«Файл» → «Открыть проект из QR-картинки…»** (since 1.6.1) reads such a
+  picture: choose a file, paste it from the clipboard (Ctrl+V) or drop it into
+  the dialog; a screenshot with the code on it works too. The project then opens
+  as a guest exactly like a link. A picture without a code, or a QR code of
+  something else, is answered in words. There is no camera scanning inside the
+  IDE — a phone's own camera app opens the link by itself.
+- **Opening such a link — «Работа по ссылке».** The project opens as a GUEST:
+  a bar under the header says whose work it is; the receiver's own open project
+  is untouched, nothing is written to storage and nothing runs by itself. The
+  bar has «Сохранить к себе» (creates a project «Name — From») and «Закрыть»
+  (returns to the receiver's project). A link cut by a messenger is reported in
+  words instead of opening garbage. Do not promise what it cannot do: there are
+  no short links, no server copy, no list of received works, and a link made by
+  a newer site version asks to refresh the page.
 - **«Правка» menu** — undo/redo, cut/copy/paste, find (Ctrl+F), find and
   replace (Ctrl+H), comment/uncomment selection.
 - **«Внешний вид» menu** — dark/light theme, editor font size, console font
@@ -325,6 +368,12 @@ checkbox, JSON `editor.format`, attribute `format="off"`). Editor settings inclu
 shows no completions at all, not even on Ctrl+Space. A host page with its
 own theme switch can recolour a live unit: `element.setTheme('dark' |
 'light' | 'auto')`.
+
+To AUTHOR units with an AI assistant instead of the builder form, use the
+companion file `idyllium-embed-units-ai-reference.md` (same folder, since
+1.6.1): the full configuration format, the formula language, rules for choosing
+tests, and three verified examples. The assistant produces a `.idyunit` file,
+the builder opens it and self-checks it.
 
 ## 8. Notes For AI Assistants
 

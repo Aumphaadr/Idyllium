@@ -83,7 +83,7 @@ export function initializeAudioObject(obj: RuntimeObject, typeName: string, stat
           throw new IdylliumRuntimeError(file, line, `Music.position must be non-negative, got ${position}`);
         }
         if (duration > 0 && position > duration) {
-          throw new IdylliumRuntimeError(file, line, `Music.position must be between 0 and ${duration}, got ${position}`);
+          throw new IdylliumRuntimeError(file, line, `Music.position must be between 0 and ${Math.floor(duration * 100) / 100}, got ${position}`);
         }
         return position;
       },

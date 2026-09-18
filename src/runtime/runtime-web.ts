@@ -445,6 +445,7 @@ export function initializeWebObject(obj: RuntimeObject, typeName: string, state:
   // Безопасность по умолчанию: слушаем только свой компьютер. Открыть класс —
   // явное решение программиста: app.host = "0.0.0.0" (вся локальная сеть).
   obj.host = '127.0.0.1';
+  obj.debug = false;
   obj.is_running = false;
   const routes = new Map<string, unknown>();
   const routePaths = new Set<string>();
@@ -597,7 +598,11 @@ export function initializeWebObject(obj: RuntimeObject, typeName: string, state:
             : String((error as Error | undefined)?.message ?? error);
           const text = state.fileSystem.humanizePaths?.(rawText) ?? rawText;
           state.consoleWrite?.(`[web] запрос ${request.method} ${request.path} упал: ${text}\n`);
-          return webTextResponse(500, text);
+          // Посетителю — нейтральный ответ: текст ошибки называет файлы, строки и таблицы
+          // программы. Подробности — в консоли сервера; app.debug = true возвращает их в ответ.
+          return webTextResponse(500, obj.debug === true
+            ? text
+            : '500 Internal Server Error — the handler failed; details are in the server console (app.debug = true shows them here)');
         }
         const finished = response.finish();
         const headers: Record<string, string> = { 'content-type': finished.contentType };

@@ -371,7 +371,7 @@
     "json.errors.005": {
       "kind": "runtime_error",
       "diagnosticIncludes": [
-        "runtime error: json value is string, expected int"
+        "runtime error: json value \"name\" is string, expected int"
       ],
       "reason": "Auto-migrated 2026-07-24: teaching example fails at runtime with this message."
     },
@@ -666,7 +666,7 @@
     "widgets.errors.003": {
       "kind": "compile_error",
       "diagnosticIncludes": [
-        "callback property 'on_click' expects function(): void or function(gui.Button): void, got function(gui.Label): void"
+        "callback property 'on_click' expects 'void function()' or 'void function(gui.Button)', got 'void function(gui.Label)'"
       ],
       "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
     },
@@ -757,7 +757,7 @@
     "widgets.sender.004": {
       "kind": "compile_error",
       "diagnosticIncludes": [
-        "callback property 'on_click' expects function(): void or function(gui.Button): void, got function(gui.Label): void"
+        "callback property 'on_click' expects 'void function()' or 'void function(gui.Button)', got 'void function(gui.Label)'"
       ],
       "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
     },

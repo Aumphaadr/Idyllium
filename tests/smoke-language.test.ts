@@ -910,7 +910,7 @@ test('user event misuse produces readable diagnostics', () => {
   );
   assertFails(
     'class H { event on_x(int a, int b); }\nvoid function bad(int only_one) {}\nmain() {\n    H h;\n    h.on_x = bad;\n}',
-    "callback property 'on_x' expects function(): void or function(int, int): void",
+    "callback property 'on_x' expects 'void function()' or 'void function(int, int)'",
   );
   assertFails(
     'class H { event on_x; }\nmain() {\n    H h;\n    h.on_x = 42;\n}',
@@ -6010,4 +6010,42 @@ test('contracts across the module border: short-name recipes, no echo for a brok
   const errors = echo.diagnostics.filter((diagnostic) => diagnostic.severity === 'error');
   assert(errors.length === 2 && errors.every((diagnostic) => diagnostic.range.start.file.endsWith('broken.idyl')),
     `a broken module must be refused at its declarations only, got:\n${echo.diagnosticsText}`);
+});
+
+test('div rounds down and mod takes the sign of the divisor', async () => {
+  // Вердикт 2.12 (1.6.1): правило Python, а не C. Страж на все четыре сочетания
+  // знаков, на равенство a == div * b + mod и на числа за пределами 2^53.
+  const result = await runIdyllium([
+    'use console;',
+    '',
+    'main() {',
+    '    array<int, 4> a = [7, -7, 7, -7];',
+    '    array<int, 4> b = [2, 2, -2, -2];',
+    '    for (int i = 0; i < 4; i = i + 1) {',
+    '        console.writeln(div(a[i], b[i]), " ", mod(a[i], b[i]), " ", div(a[i], b[i]) * b[i] + mod(a[i], b[i]));',
+    '    }',
+    '    console.writeln(mod(-3, 360), " ", mod(-6, 3), " ", div(-6, 3), " ", mod(-3, 2) == 1);',
+    '    console.writeln(div(-123456789012345678901, 10), " ", mod(-123456789012345678901, 10));',
+    '}',
+  ].join('\n'), {}, { file: 'main.idyl' });
+  assert(result.success, result.runtimeError ?? result.compilation.diagnosticsText);
+  assert(result.output === '3 1 7\n-4 1 -7\n-4 -1 7\n3 -1 -7\n357 0 -2 true\n-12345678901234567891 9\n',
+    `floored div/mod: ${JSON.stringify(result.output)}`);
+});
+
+test('signals of the method team 2026-09-18: module-named variable, keyword after a qualified type', async () => {
+  // Внутри модуля frog переменная `frog` — переменная и при чтении, и при вызове метода
+  // (раньше запись проходила, а чтение отказывало «'frog' is not imported»).
+  const frog = 'use console;\nuse drawable;\ndrawable.Rectangle frog;\nvoid function reset() {\n    frog.x = 285;\n    if (frog.x > 0) {\n        frog.x = frog.x - 5;\n    }\n    console.write(frog.x, frog.contains(1, 1));\n}\n';
+  const ok = await runIdyllium('use frog;\nmain() {\n    frog.reset();\n}\n', {}, { file: 'main.idyl', sources: { 'frog.idyl': frog } });
+  assert(ok.success, ok.runtimeError ?? ok.compilation.diagnosticsText);
+  assert(ok.output === '280false', `module-named variable is off: ${JSON.stringify(ok.output)}`);
+
+  // `http.Response map = …` давал каскад из семи ошибок без слова «keyword».
+  for (const source of ['use http;\nmain() {\n    http.Response map = http.get("http://x");\n}', 'class Hero { int hp; }\nmain() {\n    Hero event;\n}']) {
+    const result = compileIdyllium(source, { file: '/main.idyl' });
+    const errors = result.diagnostics.filter((diagnostic) => diagnostic.severity === 'error');
+    assert(errors.length === 1 && /is a keyword and cannot be used as a name/u.test(errors[0].message),
+      `a keyword in the variable-name slot must be refused once:\n${result.diagnosticsText}`);
+  }
 });

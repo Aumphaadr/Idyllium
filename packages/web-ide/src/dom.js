@@ -33,6 +33,7 @@ export const newFileButton = document.getElementById('new-file-button');
 export const newFolderButton = document.getElementById('new-folder-button');
 export const fileContextMenu = document.getElementById('file-context-menu');
 export const filePropsModal = document.getElementById('file-props-modal');
+export const guestBanner = document.getElementById('guest-banner');
 export const uploadButton = document.getElementById('upload-button');
 export const uploadMenu = document.getElementById('upload-menu');
 export const dropArea = document.getElementById('drop-area');

@@ -1,5 +1,6 @@
 const fs: any = require('fs');
 const path: any = require('path');
+const nodeCrypto: any = require('crypto');
 
 import { buildReferenceSite } from './docs-build-reference';
 import { KEYWORDS } from '../src/core/tokens';
@@ -1110,10 +1111,19 @@ function buildHandoutsPage(outputRoot: string): number {
   };
 
   fs.mkdirSync(path.join(outputRoot, 'files'), { recursive: true });
-  for (const entry of fs.readdirSync(sourceRoot)) {
+  // Отпечатки раздатки — для «проекта в ссылке» (1.6.1): в ссылке едет только
+  // опись нетекстовых файлов (имя, размер, начало SHA-256), а Web IDE получателя
+  // по отпечатку находит файл здесь и скачивает его с нашего же сайта. Ученик
+  // мог файл переименовать — отпечатку всё равно.
+  const fingerprints: Record<string, { file: string; size: number }> = {};
+  for (const entry of fs.readdirSync(sourceRoot).sort()) {
     if (entry === 'handouts.json') continue;
     fs.copyFileSync(path.join(sourceRoot, entry), path.join(outputRoot, 'files', entry));
+    const bytes = fs.readFileSync(path.join(sourceRoot, entry));
+    const sha = nodeCrypto.createHash('sha256').update(bytes).digest('hex').slice(0, 16);
+    if (!fingerprints[sha]) fingerprints[sha] = { file: entry, size: bytes.length };
   }
+  fs.writeFileSync(path.join(outputRoot, 'fingerprints.json'), `${JSON.stringify(fingerprints)}\n`, 'utf8');
 
   const sizeLabel = (bytes: number): string => {
     if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1).replace('.', ',')} МБ`;
@@ -2415,7 +2425,7 @@ function removeElementByClass(html: string, className: string): string {
 function copyAssets(sourceRoot: string, outputRoot: string): void {
   copyFileIfExists(path.join(sourceRoot, 'favicon.png'), path.join(outputRoot, 'favicon.png'));
   copyFileIfExists(path.join(sourceRoot, 'version.js'), path.join(outputRoot, 'version.js'));
-  copyFileIfExists(path.join(sourceRoot, 'version.json'), path.join(outputRoot, 'version.json'));
+  // version.json на входе нет: версия живёт только в package.json, файл пишется отсюда.
   writeCurrentVersion(path.join(outputRoot, 'version.json'));
   copyDirectory(path.join(sourceRoot, 'fonts'), path.join(outputRoot, 'fonts'));
 

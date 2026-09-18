@@ -190,7 +190,7 @@ data came from a form or a spreadsheet export.
 | C++ (nlohmann) | LOUD / **QUIET** | `get<int>()` on a string throws `json::type_error` naming both the required and the actual type. But `get<int>()` on the number `3.5` **truncates to 3 silently** — numeric conversions inside `get` are permitted. |
 | Python | **QUIET** | Values come back as native Python types, so `d["age"]` is the string `"12"`. `int("12")` succeeds silently — string and number become interchangeable, which is precisely the confusion the console year spent months dismantling. `int(3.5)` truncates to `3` silently. The failure only surfaces if the string is not numeric, and then as a `ValueError` far away. |
 | JavaScript | **QUIET** | `obj.age + 1` on `"12"` produces `"121"`. The most-quoted JS wart, reached here through completely ordinary data. The bitwise idiom `3.5 \| 0` truncates to `3` silently. |
-| **Idyllium** | **LOUD** | `runtime error: json value is string, expected int` — and for a fractional number, `runtime error: json value is number, expected int` |
+| **Idyllium** | **LOUD** | `runtime error: json value is string, expected int` — and for a fractional number, `runtime error: json value is float, expected int` |
 
 Both messages name **what is there** and **what was asked for**. Neither
 converts. Note in particular the second: asking `to_int()` of `3.5` is refused
@@ -306,17 +306,18 @@ edited it by hand and copy-pasted a line.
 | C++ (nlohmann) | QUIET — last wins |
 | Python | QUIET — last wins (probed: `{'a': 2}`) |
 | JavaScript | QUIET — last wins (probed: `{"a":2}`) |
-| **Idyllium** | **QUIET — last wins** (probed: `{"a":2}`, `length` is 1) |
+| **Idyllium** | **LOUD** (since 1.6.1): `json.parse() invalid JSON: key "a" is repeated in one object at line 1, column 14`; `json.is_valid` answers `false` |
 
-Reported honestly: on *input*, Idyllium behaves exactly like the others, and a
-duplicated key in a hand-edited file disappears without a word. See §14 for why
-this one was not closed and what the course does about it.
+Until 1.6.1 Idyllium behaved exactly like the others here, and this document
+listed the case in its honest residue. It was closed deliberately at a price:
+the JSON standard only says keys SHOULD be unique, so a file with a repeated
+key that other tools read without a word is refused by Idyllium. For a child's
+hand-edited save file that refusal is the useful answer — the copy-pasted line
+is named with its position instead of one of the two values vanishing.
 
-The asymmetry is deliberate, though, and worth naming for a student: **the
-language will not let your program create a duplicate key (§6), but it cannot
-undo one that arrived in the text.** Reading is lenient because the standard
-says the text is valid; writing is strict because that is where you still have
-a choice.
+Reading and writing are now symmetric: **the language will not let your program
+create a duplicate key (§6), and it will not quietly accept one that arrived in
+the text.**
 
 ---
 
@@ -530,12 +531,12 @@ behaves as expected; a note in parentheses — it complains, with a caveat.
 | 2 | Missing key returns a plausible value | **yes** (`operator[]`, and it *inserts*) | (`.get` returns `None`) | **yes** (`undefined`) | — `json object has no key 'x'` |
 | 3 | Missing-key error surfaces far from the cause | **yes** | (via `None`) | **yes** | — |
 | 4 | String read as a number | — | **yes** (`int("12")`) | **yes** (`"12" + 1`) | — `json value is string, expected int` |
-| 5 | Fractional number silently truncated to int | **yes** (`get<int>()`) | **yes** (`int(3.5)`) | **yes** (bitwise or-zero) | — `json value is number, expected int` |
+| 5 | Fractional number silently truncated to int | **yes** (`get<int>()`) | **yes** (`int(3.5)`) | **yes** (bitwise or-zero) | — `json value is float, expected int` |
 | 6 | Large integer loses digits | **yes** (beyond 64-bit) | — | **yes** (beyond 2^53) | — exact at any size |
 | 7 | `NaN`/`Infinity` written into the file | (as `null`) | **yes** (invalid JSON emitted) | (as `null`) | — cannot arise |
 | 8 | Typo in a key creates a second key | **yes** | **yes** | **yes** | — `add`/`set` split |
 | 9 | Adding an existing key silently overwrites | **yes** | **yes** | **yes** | — `json object already has key 'x'` |
-| 10 | Duplicate key in incoming text | **yes** | **yes** | **yes** | **yes** — see §15 |
+| 10 | Duplicate key in incoming text | **yes** | **yes** | **yes** | — `key "a" is repeated in one object` (since 1.6.1) |
 | 11 | Array index past the end | **yes** (`operator[]` resizes) | — | **yes** (`undefined`) | — names size and valid range |
 | 12 | Class object serialized wholesale, private state included | — (compile error) | (via `__dict__`) | **yes** | — compile error naming the fix |
 | 13 | Class lost on the way back; methods gone | n/a | n/a | **yes** (plain object) | — mapping is written by hand |
@@ -557,12 +558,9 @@ conversion happens unless it is named; and what is written is what was built.
 
 ## 15. Honest residue: what Idyllium's JSON still does not catch
 
-1. **Duplicate keys in incoming text are silently collapsed** (§7). Probed:
-   `{"a": 1, "a": 2}` parses to a one-key object with `a = 2`, exactly like the
-   other three. The JSON standard permits it, and rejecting it would make
-   Idyllium unable to read files other tools produce. The course covers it
-   explicitly in the errors lesson rather than pretending it cannot happen, and
-   pairs it with the loud `add` refusal so the student sees both sides.
+1. **(Closed in 1.6.1.)** Duplicate keys in incoming text used to be silently
+   collapsed; `json.parse` now refuses them (§7). The number is kept so that
+   references to this list stay valid.
 2. **A schema is not checked.** Nothing verifies that a save file has the keys
    your program expects until the moment each key is read. A file missing three
    fields reports the first one and stops. The `has()` + default pattern (§3)
@@ -612,7 +610,7 @@ conversion happens unless it is named; and what is written is what was built.
    missing key gave you `undefined` and the error appeared three functions
    later; here the line that asked for the key is the line that stops" teaches
    more than "Idyllium is stricter".
-7. **Do not promise catches from §15.** Duplicate keys in an incoming file, a
+7. **Do not promise catches from §15.** A
    missing schema and semantic nonsense are the student's problem, and material
    should say so plainly.
 8. **This topic sits after the OOP year.** Examples should look like the

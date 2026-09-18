@@ -70,6 +70,20 @@ fs.mkdirSync(vendorOutputDir, { recursive: true });
 fs.copyFileSync(papaParseSource, path.join(vendorOutputDir, 'papaparse.min.js'));
 fs.copyFileSync(markedSource, path.join(vendorOutputDir, 'marked.umd.js'));
 fs.copyFileSync(domPurifySource, path.join(vendorOutputDir, 'purify.min.js'));
+// QR для «Поделиться» (1.6.1): кодер и декодер лежат рядом и грузятся лениво —
+// только когда человек нажал «Показать QR» или «Открыть проект из QR-картинки».
+for (const [name, source] of [
+  ['qrcode.js', path.join(rootDir, 'node_modules', 'qrcode-generator', 'dist', 'qrcode.js')],
+  ['jsQR.js', path.join(rootDir, 'node_modules', 'jsqr', 'dist', 'jsQR.js')],
+]) {
+  if (!fs.existsSync(source)) {
+    console.error(`QR dependency was not found: ${name}. Run npm install first.`);
+    process.exit(1);
+  }
+  fs.copyFileSync(source, path.join(vendorOutputDir, name));
+}
+// jsQR — Apache-2.0: копия лицензии едет рядом с файлом (у qrcode-generator MIT-шапка внутри самого файла).
+fs.copyFileSync(path.join(rootDir, 'node_modules', 'jsqr', 'LICENSE'), path.join(vendorOutputDir, 'jsQR-LICENSE.txt'));
 if (!fs.existsSync(sqlJsWasmSource)) {
   console.error('sql.js WASM was not found. Run npm install first.');
   process.exit(1);

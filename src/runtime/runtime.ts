@@ -176,7 +176,7 @@ import {
 import { parseIdylliumStyle } from './style';
 import { hashAdler32, hashCrc32, hashFnv1a, hashSha256Bytes, hashSha256Hex } from './hash';
 
-export const IDYLLIUM_VERSION = '1.6.0';
+export const IDYLLIUM_VERSION = '1.6.1';
 
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform(): string {
@@ -489,12 +489,22 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
   };
   runtimeObjects.consoleWrite = (text) => io.write(text);
 
+  function formatSqliteValueForPrint(value: { __sqliteKind: string; __sqliteValue?: unknown }, quoted: boolean): string {
+    if (value.__sqliteKind === 'null') return 'null';
+    const stored = value.__sqliteValue;
+    return quoted ? formatForInspect(stored) : formatForConsole(stored, precision);
+  }
+
   async function formatConsoleValue(value: unknown): Promise<string> {
     if (isJsonRuntimeValue(value)) {
       return formatForConsole(value, precision);
     }
     // Комплексное число печатается как число: части округляются по console.set_precision.
     if (value instanceof IdylliumComplex) return value.format(precision);
+    // Значение из базы печатается своим естественным видом (7, 2.5, текст, null) — как
+    // json.Value. Строгим остаётся to_string(): раньше печать шла через него и падала на
+    // любом нестроковом значении с адресом «sqlite:0:».
+    if (isSqliteRuntimeValue(value)) return formatSqliteValueForPrint(value, false);
     // Массив объектов с контрактом to_string: представления элементов
     // собираются асинхронно (инспектор массива синхронный и сам метод
     // ученика позвать не может) — жанр equalsObjectArrays. Вложенность
@@ -534,6 +544,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
     if (item instanceof IdylliumArray || item instanceof IdylliumMap) return formatCollectionWithContracts(item);
     // Числа в массиве — без кавычек: [1 + 2i, -i], как [1.5, 2].
     if (item instanceof IdylliumComplex) return item.format(precision);
+    if (isSqliteRuntimeValue(item)) return formatSqliteValueForPrint(item, true);
     const method = item !== null && typeof item === 'object'
       ? (item as Record<string, unknown>).to_string
       : undefined;
@@ -2109,7 +2120,7 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
       for (const canvas of runtimeObjects.canvases) {
         const onUpdate = canvas.on_update;
         if (typeof onUpdate === 'function') {
-          canvas.__commands = [];
+          // Кадр ничего не стирает сам: рисунок копится, очищают clear()/fill() (1.6.1).
           await onUpdate(canvas, deltaTime);
           changed = true;
         }
@@ -2134,6 +2145,18 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
         : [];
 
       applyGuiEventPayload(target, eventName, payload, runtimeObjects);
+      if (target.__idylliumType === 'gui.Window' && eventName === 'window_close') {
+        // Крестик закрывает СВОЁ окно, как в настоящих ОС, — но сначала
+        // спрашивает on_close: обработчик, вернувший false, оставляет окно
+        // открытым («сохранить перед выходом?»). close() из кода обработчик
+        // не зовёт: программа уже всё решила сама — и может закрыть окно из
+        // ответа на свой же вопрос. Программа живёт, пока показано хоть одно
+        // окно: завершение с последним обеспечивает hasGui().
+        const onClose = target.on_close;
+        const verdict = typeof onClose === 'function' ? await onClose(target) : true;
+        if (verdict !== false && typeof target.close === 'function') target.close();
+        return;
+      }
       const callbackName = guiCallbackName(target, eventName);
       if (callbackName) {
         const callback = target[callbackName];
@@ -2428,7 +2451,14 @@ function runtimeIntegerDivision(left: unknown, right: unknown, file: string, lin
   const divisor = runtimeNumber(right, 'div() right operand', file, line);
   if (divisor === 0 || divisor === 0n) throw new IdylliumRuntimeError(file, line, 'division by zero');
   const integers = exactIntegerPair(dividend, divisor);
-  return integers ? integers[0] / integers[1] : Math.trunc(Number(dividend) / Number(divisor));
+  // Деление с округлением ВНИЗ (1.6.1), а не к нулю: div(-7, 2) = -4. Пара к
+  // mod() ниже — вместе они держат a == div(a, b) * b + mod(a, b).
+  if (integers) {
+    const quotient = integers[0] / integers[1];
+    const remainder = integers[0] % integers[1];
+    return remainder !== 0n && (remainder < 0n) !== (integers[1] < 0n) ? quotient - 1n : quotient;
+  }
+  return Math.floor(Number(dividend) / Number(divisor));
 }
 
 function runtimeModulo(left: unknown, right: unknown, file: string, line: number): number | bigint {
@@ -2436,7 +2466,16 @@ function runtimeModulo(left: unknown, right: unknown, file: string, line: number
   const divisor = runtimeNumber(right, 'mod() right operand', file, line);
   if (divisor === 0 || divisor === 0n) throw new IdylliumRuntimeError(file, line, 'division by zero');
   const integers = exactIntegerPair(dividend, divisor);
-  return integers ? integers[0] % integers[1] : Number(dividend) % Number(divisor);
+  // Остаток со знаком ДЕЛИТЕЛЯ (1.6.1): при положительном делителе он никогда
+  // не отрицателен — mod(-3, 360) = 357, mod(-3, 2) = 1. Так считают Python и
+  // школьная математика; «как в C» (знак делимого) ломало и углы, и индексы по
+  // кругу, и проверку чётности отрицательных.
+  if (integers) {
+    const remainder = integers[0] % integers[1];
+    return remainder !== 0n && (remainder < 0n) !== (integers[1] < 0n) ? remainder + integers[1] : remainder;
+  }
+  const remainder = Number(dividend) % Number(divisor);
+  return remainder !== 0 && (remainder < 0) !== (Number(divisor) < 0) ? remainder + Number(divisor) : remainder;
 }
 
 function runtimeCompare(left: number | bigint, right: number | bigint): number {

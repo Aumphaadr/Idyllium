@@ -2,7 +2,7 @@
 import { IdylliumRuntimeError } from './runtime-errors';
 import { RuntimeObject, contextFunction, finiteNumber, intArgument, isRuntimeObject, stringArgument } from './runtime-shared';
 import { IdylliumArray, IdylliumColor, valueOps } from './runtime-values';
-import { RuntimeObjectState, canvasCommands, defineEnumRuntimeProperty, defineTrackedRuntimeProperty, defineValidatedRuntimeProperty, setTrackedRuntimePropertyDefault } from './runtime-state';
+import { IdylliumCanvasCommand, RuntimeObjectState, canvasCommands, defineEnumRuntimeProperty, defineTrackedRuntimeProperty, defineValidatedRuntimeProperty, setTrackedRuntimePropertyDefault } from './runtime-state';
 import { colorBlack, colorBlue, colorGray, colorLightGray, colorToCss, colorTransparent, colorVeryLightGray, colorWhite } from './runtime-values';
 import { errorMessage, splitContextArgs } from './runtime-shared';
 import { isDrawableObject } from './runtime-drawable';
@@ -95,11 +95,26 @@ export function initializeGuiObject(obj: RuntimeObject, typeName: string, state:
   if (typeName === 'Canvas') {
     obj.framerate_limit = 60;
     obj.__commands = [];
+    // Модель кадра (1.6.1, вердикт владельца — «как в индустрии»): рисунок на
+    // холсте КОПИТСЯ, кадр сам ничего не стирает; стирают только явные clear()
+    // и fill(). Список команд — полное описание экрана (на нём живут снимки,
+    // save_svg и перерисовка), поэтому копится именно он, а непрозрачная
+    // заливка его обрезает: всё, что под ней, уже не видно. Так программа
+    // «fill в начале кадра» держит список коротким, а забытый fill даёт
+    // честный шлейф — и честные тормоза, когда команд станут тысячи.
+    const restartWith = (command: IdylliumCanvasCommand): void => {
+      const commands = canvasCommands(obj);
+      commands.length = 0;
+      commands.push(command);
+    };
     obj.clear = contextFunction((_file: string, _line: number) => {
-      canvasCommands(obj).push({ kind: 'clear', color: '#000000' });
+      restartWith({ kind: 'clear', color: '#000000' });
     });
     obj.fill = contextFunction((color: unknown, file: string, line: number) => {
-      canvasCommands(obj).push({ kind: 'fill', color: colorToCss(color, 'Canvas.fill() color', file, line) });
+      const command: IdylliumCanvasCommand = { kind: 'fill', color: colorToCss(color, 'Canvas.fill() color', file, line) };
+      // Полупрозрачная заливка прошлое не закрывает (приём «затухающий след») — список растёт.
+      if (color instanceof IdylliumColor && color.alpha >= 1) restartWith(command);
+      else canvasCommands(obj).push(command);
     });
     obj.draw = contextFunction((target: unknown, file: string, line: number) => {
       if (!isDrawableObject(target)) {
@@ -296,9 +311,7 @@ export function initializeGuiObject(obj: RuntimeObject, typeName: string, state:
   }
 
   if (typeName === 'SpinBox' || typeName === 'Slider') {
-    obj.value = 0;
-    obj.min = 0;
-    obj.max = 100;
+    defineBoundedValue(obj, typeName);
     obj.step = 1;
   }
 
@@ -307,9 +320,7 @@ export function initializeGuiObject(obj: RuntimeObject, typeName: string, state:
   }
 
   if (typeName === 'FloatSpinBox') {
-    obj.value = 0;
-    obj.min = 0;
-    obj.max = 100;
+    defineBoundedValue(obj, typeName);
     obj.step = 1;
   }
 
@@ -783,10 +794,8 @@ export function applyGuiEventPayload(
   }
 
   if (target.__idylliumType === 'gui.Window' && eventName === 'window_close') {
-    // Крестик закрывает СВОЁ окно, как в настоящих ОС. Программа живёт, пока
-    // показано хоть одно окно: завершение с последним обеспечивает hasGui() —
-    // ровно та же цепочка, что у close() из кода.
-    if (typeof target.close === 'function') target.close();
+    // Крестик — это ПРОСЬБА закрыть окно: решает её dispatchGuiEvent, сначала
+    // спросив on_close (1.6.1). Здесь состояние не меняется.
     return;
   }
 
@@ -833,6 +842,47 @@ export function applyGuiEventPayload(
 // standalone-канвас (без окна) — сам себе экран, канвас в окне живёт и
 // умирает вместе с окном. Иначе крестик окна с канвасом оставлял бы превью
 // работать вечно с нулём окон (улов ломателя 2026-08-28).
+
+/**
+ * value/min/max у SpinBox, FloatSpinBox и Slider: значение вне границ — ошибка словами
+ * (раньше `s.value = 99` при max = 10 хранилось молча, и виджет показывал не то, что
+ * лежит в программе). Значение «по умолчанию», которого программа не задавала, тихо
+ * переезжает вслед за границей: `s.min = 1;` у нового виджета — не преступление.
+ */
+function defineBoundedValue(obj: RuntimeObject, owner: string): void {
+  let valueIsDefault = true;
+  const number = (value: unknown, name: string, file: string, line: number): number => finiteNumber(value, `${owner}.${name}`, file, line);
+  defineValidatedRuntimeProperty(obj, 'value', 0, (raw, file, line) => {
+    const value = number(raw, 'value', file, line);
+    const min = Number(obj.min);
+    const max = Number(obj.max);
+    if (value < min || value > max) {
+      throw new IdylliumRuntimeError(file, line, `${owner}.value must be between ${min} and ${max}, got ${value} — set min and max first`);
+    }
+    valueIsDefault = false;
+    return value;
+  });
+  const bound = (name: 'min' | 'max', defaultValue: number): void => {
+    defineValidatedRuntimeProperty(obj, name, defaultValue, (raw, file, line) => {
+      const limit = number(raw, name, file, line);
+      const current = Number(obj.value);
+      const outside = name === 'min' ? current < limit : current > limit;
+      if (outside && !valueIsDefault) {
+        throw new IdylliumRuntimeError(file, line, `${owner}.${name} = ${limit} leaves the current value ${current} outside the range — change value first`);
+      }
+      return limit;
+    }, (limit) => {
+      const current = Number(obj.value);
+      const outside = name === 'min' ? current < Number(limit) : current > Number(limit);
+      if (outside && valueIsDefault) {
+        obj.value = limit;
+        valueIsDefault = true;
+      }
+    });
+  };
+  bound('min', 0);
+  bound('max', 100);
+}
 
 export function canvasKeepsProgramAlive(canvas: RuntimeObject): boolean {
   let current: RuntimeObject | undefined = canvas;

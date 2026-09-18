@@ -146,7 +146,7 @@ main() {
 ```text
 compile error: callback property 'on_click' expects a function, got 'void'
 compile error: type 'gui.Button' has no property 'on_clik'
-compile error: callback property 'on_click' expects function(): void or function(gui.Button): void, got function(int): void
+compile error: callback property 'on_click' expects 'void function()' or 'void function(gui.Button)', got 'void function(int)'
 ```
 
 Три отдельные классные катастрофы закрыты на этапе компиляции: отсутствующая
@@ -458,7 +458,7 @@ void function any_click(gui.Button sender) {
 ```
 
 ```text
-compile error: callback property 'on_click' expects function(): void or function(gui.Button): void, got function(gui.Label): void
+compile error: callback property 'on_click' expects 'void function()' or 'void function(gui.Button)', got 'void function(gui.Label)'
 ```
 
 Отсюда три следствия. **Приведения нет**: `sender` уже `gui.Button`, поэтому

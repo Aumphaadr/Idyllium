@@ -104,7 +104,7 @@ var Idyllium = (() => {
         if (type.kind === "runtime-error")
           return "RuntimeError";
         if (type.kind === "function") {
-          return `function(${type.parameters.map(typeToString).join(", ")}): ${typeToString(type.returnType)}`;
+          return `${typeToString(type.returnType)} function(${type.parameters.map(typeToString).join(", ")})`;
         }
         if (type.kind === "array") {
           if (type.dynamic)
@@ -427,6 +427,7 @@ var Idyllium = (() => {
         const guiCanvas = (0, types_1.qualified)("gui", "Canvas");
         const guiLabel = (0, types_1.qualified)("gui", "Label");
         const guiButton = (0, types_1.qualified)("gui", "Button");
+        const guiWindow = (0, types_1.qualified)("gui", "Window");
         const guiFrame = (0, types_1.qualified)("gui", "Frame");
         const guiLineEdit = (0, types_1.qualified)("gui", "LineEdit");
         const guiTextEdit = (0, types_1.qualified)("gui", "TextEdit");
@@ -936,7 +937,8 @@ var Idyllium = (() => {
           typeSpec("Server", [
             propertySpec("port", types_1.INT, false, "Порт сервера, 0–65535 (по умолчанию 8080; 0 — попросить у системы свободный). Значение проверяется В МОМЕНТ ПРИСВАИВАНИЯ: за границами диапазона — читаемая ошибка там, где написано, а не при run(). После run() хранит фактический порт."),
             propertySpec("host", types_1.STRING, false, 'Какие адреса слушать. По умолчанию "127.0.0.1" — только этот компьютер. "0.0.0.0" открывает программу ВСЕЙ локальной сети — включайте осознанно.'),
-            propertySpec("is_running", types_1.BOOL, true, "true, пока сервер запущен. Свойство доступно только для чтения.")
+            propertySpec("is_running", types_1.BOOL, true, "true, пока сервер запущен. Свойство доступно только для чтения."),
+            propertySpec("debug", types_1.BOOL, false, "Режим отладки. По умолчанию false: когда обработчик падает, посетитель получает нейтральную страницу 500, а текст ошибки уходит только в консоль сервера — внутренности наружу не показывают. true возвращает текст ошибки и в ответ: удобно, пока автор сам себе посетитель; перед показом другим выключите.")
           ], [
             functionSpec("on_get", [
               { name: "path", type: types_1.STRING },
@@ -1603,12 +1605,20 @@ var Idyllium = (() => {
             ...fontSized,
             propertySpec("title", types_1.STRING),
             propertySpec("theme", types_1.STRING, false, 'Тема оформления окна и всех его виджетов: "default", "idyllium", "dracula", "breeze", "oxygen"; другое значение — ошибка выполнения. Самый низкий приоритет — прямые свойства виджета и IdySS перекрывают тему.'),
-            ...styleable
+            ...styleable,
+            // Вопрос «закрывать ли?»: bool-обработчик отвечает, void-обработчик
+            // просто успевает сделать своё (сохранить файл) — окно закроется.
+            callbackPropertySpec("on_close", [
+              callbackSpec([], types_1.BOOL),
+              callbackSpec([guiWindow], types_1.BOOL),
+              callbackSpec([]),
+              callbackSpec([guiWindow])
+            ], "Срабатывает, когда пользователь нажал крестик окна, — до закрытия. Обработчик вида bool function() отвечает, закрывать ли: true — окно закрывается, false — остаётся открытым (например, пока не сохранён файл). Обработчик без результата (void function()) только делает своё дело, окно закроется. Метод close() из кода обработчик не вызывает; кнопка «Остановить» в среде — тоже.")
           ], [
             functionSpec("add_child", [guiChildParameter], types_1.VOID, { documentation: "Кладёт виджет внутрь. Виджет нельзя положить внутрь самого себя или внутрь своего же ребёнка — у такого дерева не было бы конца, и рантайм честно об этом скажет." }),
             functionSpec("show", [], types_1.VOID),
             functionSpec("close", [], types_1.VOID, {
-              documentation: "Закрывает окно. Когда закрыто последнее окно, программа завершается."
+              documentation: "Закрывает окно сразу, не спрашивая on_close: программа решила сама. Когда закрыто последнее окно, программа завершается."
             })
           ]),
           typeSpec("Widget", [
@@ -1629,10 +1639,14 @@ var Idyllium = (() => {
             callbackPropertySpec("on_mouse_released", [callbackSpec([guiCanvas, guiMouseEvent])]),
             callbackPropertySpec("on_mouse_move", [callbackSpec([guiCanvas, guiMouseEvent])]),
             callbackPropertySpec("on_mouse_scroll", [callbackSpec([guiCanvas, guiMouseScrollEvent])]),
-            callbackPropertySpec("on_update", [callbackSpec([guiCanvas, types_1.FLOAT])])
+            callbackPropertySpec("on_update", [callbackSpec([guiCanvas, types_1.FLOAT])], "Вызывается каждый кадр; второй параметр — время кадра в секундах. Кадр сам ничего не стирает: нарисованное раньше остаётся на холсте, пока его не закрасит fill() или не уберёт clear(). Поэтому обычный кадр начинается с canvas.fill(цвет); без него за движущейся фигурой потянется шлейф.")
           ], [
-            functionSpec("clear", [], types_1.VOID),
-            functionSpec("fill", [{ name: "color", type: types_1.COLOR }], types_1.VOID),
+            functionSpec("clear", [], types_1.VOID, {
+              documentation: "Стирает весь рисунок: холст возвращается к своему background_color (если он не задан — к чёрному)."
+            }),
+            functionSpec("fill", [{ name: "color", type: types_1.COLOR }], types_1.VOID, {
+              documentation: "Заливает весь холст цветом поверх нарисованного. Непрозрачный цвет стирает прошлое целиком — так начинают кадр. Полупрозрачный (colors.RGBA) только притеняет его: приём «затухающий след». Рисунок на холсте копится, и чем больше на нём накоплено фигур, тем дольше он перерисовывается."
+            }),
             functionSpec("draw", [{
               name: "object",
               type: drawableDrawable,
@@ -1965,7 +1979,7 @@ var Idyllium = (() => {
             })
           ]),
           typeSpec("KeyboardEvent", [
-            propertySpec("key", types_1.STRING, true)
+            propertySpec("key", types_1.STRING, true, 'Имя клавиши строкой. Одиночные символы приходят ЗАГЛАВНЫМИ — "W", "Д"; цифры — тоже строками: "7"; пробел — " ". Служебные клавиши названы словами, как в браузере: "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Enter", "Escape". Сравнивайте с заглавной буквой: pressed_keys.contains("W"), не "w".')
           ]),
           typeSpec("MouseEvent", [
             propertySpec("x", types_1.INT, true),
@@ -2210,11 +2224,17 @@ var Idyllium = (() => {
         registry.registerGlobalFunction(functionSpec("div", [
           { name: "left", type: types_1.INT },
           { name: "right", type: types_1.INT }
-        ], types_1.INT, { codegen: { target: "core.div", shape: "args-context" } }));
+        ], types_1.INT, {
+          codegen: { target: "core.div", shape: "args-context" },
+          documentation: "Целочисленное деление с округлением ВНИЗ: div(7, 2) = 3, div(-7, 2) = -4 (как // в Python, а не как / в C++). Вместе с mod() всегда держит равенство a == div(a, b) * b + mod(a, b). Деление на ноль — ошибка выполнения."
+        }));
         registry.registerGlobalFunction(functionSpec("mod", [
           { name: "left", type: types_1.INT },
           { name: "right", type: types_1.INT }
-        ], types_1.INT, { codegen: { target: "core.mod", shape: "args-context" } }));
+        ], types_1.INT, {
+          codegen: { target: "core.mod", shape: "args-context" },
+          documentation: "Остаток от деления; знак остатка — как у ДЕЛИТЕЛЯ: mod(7, 2) = 1, mod(-7, 2) = 1, mod(-3, 360) = 357, mod(7, -2) = -1 (как % в Python, а не как % в C++). При положительном делителе остаток никогда не отрицателен: mod(n, 2) == 1 верно и для отрицательных нечётных, mod(i - 1, count) заворачивает индекс по кругу. Цифры отрицательного числа берите у math.abs(n): mod(-123, 10) = 7. Деление на ноль — ошибка выполнения."
+        }));
         registry.registerGlobalFunction(functionSpec("type_name", [
           { name: "value", type: types_1.ANY_TYPE }
         ], types_1.STRING, {
@@ -3093,7 +3113,8 @@ var Idyllium = (() => {
             if (callee.name === "type_name" && expression.args.length === 1) {
               const argNode = expression.args[0].value;
               const argType = this.typeOf(argNode);
-              if (argType && argType.kind !== "class" && argType.kind !== "qualified" && argType.kind !== "runtime-error") {
+              const typesCell = argType?.kind === "qualified" && argType.moduleName === "types";
+              if (argType && (argType.kind !== "class" && argType.kind !== "qualified" && argType.kind !== "runtime-error" || typesCell)) {
                 return JSON.stringify((0, types_1.typeToString)(argType));
               }
               return `$rt.core.typeName(${this.rawOperand(argNode)})`;
@@ -5651,7 +5672,15 @@ var Idyllium = (() => {
           return this.check(tokens_1.TokenKind.Identifier) && this.peek().lexeme === "set" && this.checkNext(tokens_1.TokenKind.Less);
         }
         checkTypeStart() {
-          return this.checkTypeKeyword() || this.check(tokens_1.TokenKind.KwArray, tokens_1.TokenKind.KwDynArray, tokens_1.TokenKind.KwMap) || this.checkSetTypeStart() || this.check(tokens_1.TokenKind.Identifier) && this.checkNext(tokens_1.TokenKind.Dot) && this.checkAhead(2, tokens_1.TokenKind.Identifier) && (this.checkAhead(3, tokens_1.TokenKind.Identifier) || this.checkAhead(3, tokens_1.TokenKind.KwFunction)) || this.check(tokens_1.TokenKind.Identifier) && (this.checkNext(tokens_1.TokenKind.Identifier) || this.checkNext(tokens_1.TokenKind.KwFunction));
+          return this.checkTypeKeyword() || this.check(tokens_1.TokenKind.KwArray, tokens_1.TokenKind.KwDynArray, tokens_1.TokenKind.KwMap) || this.checkSetTypeStart() || this.check(tokens_1.TokenKind.Identifier) && this.checkNext(tokens_1.TokenKind.Dot) && this.checkAhead(2, tokens_1.TokenKind.Identifier) && (this.checkAhead(3, tokens_1.TokenKind.Identifier) || this.checkAhead(3, tokens_1.TokenKind.KwFunction) || this.keywordAsNameAhead(3)) || this.check(tokens_1.TokenKind.Identifier) && (this.checkNext(tokens_1.TokenKind.Identifier) || this.checkNext(tokens_1.TokenKind.KwFunction) || this.keywordAsNameAhead(1));
+        }
+        /** `http.Response map = …`, `Hero event;` — ключевое слово на месте ИМЕНИ переменной: это всё ещё
+         *  объявление, и consumeName скажет об этом одной строкой (раньше — каскад из семи ошибок). */
+        keywordAsNameAhead(offset) {
+          const token = this.tokens[this.current + offset];
+          if (!token || (0, tokens_1.keywordDisplay)(token.kind) === void 0 || token.kind === tokens_1.TokenKind.KwFunction)
+            return false;
+          return this.checkAhead(offset + 1, tokens_1.TokenKind.Equal, tokens_1.TokenKind.Semicolon);
         }
         parseArgumentListAfterLeftParen() {
           const args = [];
@@ -8203,12 +8232,12 @@ var Idyllium = (() => {
             return signature.parameters.every((runtimeArgType, index) => this.canAssign(valueType.parameters[index], runtimeArgType));
           });
           if (!matches) {
-            const expected = property.callbacks.map((signature) => this.callbackSignatureText(signature.parameters, signature.returnType)).join(" or ");
-            this.diagnostics.error(range, `callback property '${property.name}' expects ${expected}, got ${(0, types_1.typeToString)(valueType)}`);
+            const expected = property.callbacks.map((signature) => `'${this.callbackSignatureText(signature.parameters, signature.returnType)}'`).join(" or ");
+            this.diagnostics.error(range, `callback property '${property.name}' expects ${expected}, got '${(0, types_1.typeToString)(valueType)}'`);
           }
         }
         callbackSignatureText(parameters, returnType) {
-          return `function(${parameters.map(types_1.typeToString).join(", ")}): ${(0, types_1.typeToString)(returnType)}`;
+          return `${(0, types_1.typeToString)(returnType)} function(${parameters.map(types_1.typeToString).join(", ")})`;
         }
         expressionType(expression) {
           const type = this.computeExpressionType(expression);
@@ -8897,7 +8926,7 @@ var Idyllium = (() => {
               }
               return fn;
             }
-            const userModule = this.userModuleRegistry.getModule(moduleName);
+            const userModule = this.imports.has(moduleName) || !this.lookup(moduleName) ? this.userModuleRegistry.getModule(moduleName) : void 0;
             if (userModule) {
               this.markSemanticToken("namespace", callee.object.range);
               if (!this.imports.has(moduleName)) {
@@ -9366,7 +9395,7 @@ var Idyllium = (() => {
               this.diagnostics.error(expression.range, `'${moduleName}' has no member '${expression.name}'`);
               return types_1.ERROR_TYPE;
             }
-            const userModule = this.userModuleRegistry.getModule(moduleName);
+            const userModule = this.imports.has(moduleName) || !this.lookup(moduleName) ? this.userModuleRegistry.getModule(moduleName) : void 0;
             if (userModule) {
               this.markSemanticToken("namespace", expression.object.range);
               if (!this.imports.has(moduleName)) {
@@ -11590,6 +11619,28 @@ var Idyllium = (() => {
         const fail = (message) => {
           throw new runtime_errors_12.IdylliumRuntimeError(file, line, `${entry} invalid ${language} at ${atLine}:${atColumn}: ${message}`);
         };
+        const refuseLooseAmpersands = (chunk) => {
+          if (html)
+            return;
+          const pattern = /&(#[0-9]+;|#[xX][0-9a-fA-F]+;|([a-zA-Z][a-zA-Z0-9]*);)?/g;
+          for (let match = pattern.exec(chunk); match !== null; match = pattern.exec(chunk)) {
+            const named = match[2];
+            if (match[1] !== void 0 && named === void 0) {
+              const code = /^#[xX]/.test(match[1]) ? parseInt(match[1].slice(2, -1), 16) : parseInt(match[1].slice(1, -1), 10);
+              if (code > 0 && code <= 1114111 && !(code >= 55296 && code <= 57343))
+                continue;
+              advance(match.index);
+              fail(`'&${match[1]}' is not a character — no symbol has this code`);
+            }
+            if (named !== void 0 && XML_NAMED_ENTITIES[named] !== void 0)
+              continue;
+            advance(match.index);
+            if (chunk.startsWith("&#", match.index)) {
+              fail("a numeric entity looks like '&#169;' or '&#xA9;' — digits only, then ';'; a plain '&' is written '&amp;'");
+            }
+            fail(named !== void 0 ? `unknown entity '&${named};' — XML knows &amp; &lt; &gt; &quot; &apos; and numeric ones like &#169;` : "a bare '&' is not allowed in XML — write '&amp;'");
+          }
+        };
         const advance = (count) => {
           for (let i = 0; i < count; i += 1) {
             if (source[index] === "\n") {
@@ -11662,6 +11713,7 @@ var Idyllium = (() => {
                   value = decodeXmlEntities(source.slice(index));
                   advance(source.length - index);
                 } else {
+                  refuseLooseAmpersands(source.slice(index, end));
                   value = decodeXmlEntities(source.slice(index, end));
                   advance(end + 1 - index);
                 }
@@ -11747,7 +11799,8 @@ var Idyllium = (() => {
             if (openIndex <= 0) {
               if (html)
                 continue;
-              fail(`closing tag '</${normalized}>' has no opening tag`);
+              const twin = [...stack].reverse().find((item, position) => position < stack.length - 1 && typeof item.__xmlTag === "string" && item.__xmlTag.toLowerCase() === normalized.toLowerCase());
+              fail(twin ? `closing tag '</${normalized}>' has no opening tag — '<${twin.__xmlTag}>' is open, and XML tag names are case-sensitive` : `closing tag '</${normalized}>' has no opening tag`);
             }
             if (!html && openIndex !== stack.length - 1) {
               fail(`closing tag '</${normalized}>' does not match open tag '<${top().__xmlTag}>'`);
@@ -11797,6 +11850,7 @@ var Idyllium = (() => {
           }
           const nextTag = source.indexOf("<", index);
           const end = nextTag < 0 ? source.length : nextTag;
+          refuseLooseAmpersands(source.slice(index, end));
           pushText(decodeXmlEntities(source.slice(index, end)));
           advance(end - index);
         }
@@ -12313,7 +12367,9 @@ var Idyllium = (() => {
           if (!entries.has(name)) {
             throw new runtime_errors_12.IdylliumRuntimeError(file, line, `json object has no key '${name}'`);
           }
-          return entries.get(name);
+          const found = entries.get(name);
+          Object.defineProperty(found, "__jsonKeyHint", { value: name, enumerable: false, configurable: true, writable: true });
+          return found;
         });
         obj.add = (0, runtime_shared_12.contextFunction)((key, value, file, line) => {
           const name = (0, runtime_shared_12.stringArgument)(key, "json.Object.add() key", file, line);
@@ -12421,7 +12477,7 @@ var Idyllium = (() => {
               return number;
             throw new runtime_errors_12.IdylliumRuntimeError(file, line, `json number ${String(obj.__jsonValue)} is outside the float range`);
           }
-          throwJsonExpected(obj, "number", file, line);
+          throwJsonExpected(obj, "float", file, line);
         });
         obj.to_bool = (0, runtime_shared_12.contextFunction)((file, line) => {
           if (obj.__jsonKind === "bool")
@@ -12529,6 +12585,8 @@ var Idyllium = (() => {
             this.skipWhitespace();
             if (!this.consume(":"))
               this.fail("expected ':' after object key");
+            if (entries.has(key))
+              this.fail(`key ${JSON.stringify(key)} is repeated in one object`);
             entries.set(key, this.parseValue());
             this.skipWhitespace();
             if (this.consume("}"))
@@ -12725,11 +12783,10 @@ ${outerPadding}${close}`;
         return indent;
       }
       function throwJsonExpected(value, expected, file, line) {
-        throw new runtime_errors_12.IdylliumRuntimeError(file, line, `json value is ${jsonKindText(value)}, expected ${expected}`);
+        const hint = typeof value.__jsonKeyHint === "string" ? ` ${JSON.stringify(value.__jsonKeyHint)}` : "";
+        throw new runtime_errors_12.IdylliumRuntimeError(file, line, `json value${hint} is ${jsonKindText(value)}, expected ${expected}`);
       }
       function jsonKindText(value) {
-        if (value.__jsonKind === "int" || value.__jsonKind === "float")
-          return "number";
         return value.__jsonKind;
       }
       function jsonIntegerValue(value, expected, file, line) {
@@ -12862,6 +12919,9 @@ ${outerPadding}${close}`;
         const requestedPath = (0, runtime_shared_12.stringArgument)(pathValue, "sqlite.open() path", file, line);
         if (requestedPath.trim() === "") {
           throw new runtime_errors_12.IdylliumRuntimeError(file, line, "sqlite.open() path must not be empty");
+        }
+        if (requestedPath.trim().startsWith(":")) {
+          throw new runtime_errors_12.IdylliumRuntimeError(file, line, `sqlite.open() has no in-memory databases — '${requestedPath}' is not a file name; give a file such as "game.db"`);
         }
         if (!runtime.sqliteService) {
           throw new runtime_errors_12.IdylliumRuntimeError(file, line, "sqlite runtime is unavailable");
@@ -15237,6 +15297,7 @@ ${outerPadding}${close}`;
           return value;
         });
         obj.host = "127.0.0.1";
+        obj.debug = false;
         obj.is_running = false;
         const routes = /* @__PURE__ */ new Map();
         const routePaths = /* @__PURE__ */ new Set();
@@ -15368,7 +15429,7 @@ ${outerPadding}${close}`;
                 const text = state.fileSystem.humanizePaths?.(rawText) ?? rawText;
                 state.consoleWrite?.(`[web] запрос ${request.method} ${request.path} упал: ${text}
 `);
-                return webTextResponse(500, text);
+                return webTextResponse(500, obj.debug === true ? text : "500 Internal Server Error — the handler failed; details are in the server console (app.debug = true shows them here)");
               }
               const finished = response.finish();
               const headers = { "content-type": finished.contentType };
@@ -15568,7 +15629,7 @@ ${outerPadding}${close}`;
               throw new runtime_errors_12.IdylliumRuntimeError(file, line, `Music.position must be non-negative, got ${position}`);
             }
             if (duration > 0 && position > duration) {
-              throw new runtime_errors_12.IdylliumRuntimeError(file, line, `Music.position must be between 0 and ${duration}, got ${position}`);
+              throw new runtime_errors_12.IdylliumRuntimeError(file, line, `Music.position must be between 0 and ${Math.floor(duration * 100) / 100}, got ${position}`);
             }
             return position;
           }, () => pushAudioCommand(obj, state, "seek"));
@@ -23817,14 +23878,22 @@ ${outerPadding}${close}`;
       var runtime_shared_2 = require_runtime_shared();
       var runtime_fs_12 = require_runtime_fs();
       var runtime_image_12 = require_runtime_image();
+      function defineSizeProperty(obj, owner, name, defaultValue) {
+        (0, runtime_state_12.defineValidatedRuntimeProperty)(obj, name, defaultValue, (value, file, line) => {
+          const size = (0, runtime_shared_12.finiteNumber)(value, `${owner}.${name}`, file, line);
+          if (size < 0)
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, `${owner}.${name} must be non-negative, got ${size}`);
+          return size;
+        });
+      }
       function initializeDrawableObject(obj, typeName, state) {
         if (typeName === "Rectangle") {
           obj.x = 0;
           obj.y = 0;
-          obj.width = 0;
-          obj.height = 0;
+          defineSizeProperty(obj, "Rectangle", "width", 0);
+          defineSizeProperty(obj, "Rectangle", "height", 0);
           obj.fill_color = (0, runtime_values_22.colorTransparent)();
-          obj.border_width = 0;
+          defineSizeProperty(obj, "Rectangle", "border_width", 0);
           (0, runtime_state_12.defineTrackedRuntimeProperty)(obj, "border_color", (0, runtime_values_22.colorTransparent)());
           attachPositionMove(obj, "Rectangle");
           attachDrawableTransform(obj, "Rectangle");
@@ -23832,9 +23901,9 @@ ${outerPadding}${close}`;
         if (typeName === "Circle") {
           obj.x = 0;
           obj.y = 0;
-          obj.radius = 0;
+          defineSizeProperty(obj, "Circle", "radius", 0);
           obj.fill_color = (0, runtime_values_22.colorTransparent)();
-          obj.border_width = 0;
+          defineSizeProperty(obj, "Circle", "border_width", 0);
           (0, runtime_state_12.defineTrackedRuntimeProperty)(obj, "border_color", (0, runtime_values_22.colorTransparent)());
           attachPositionMove(obj, "Circle");
           attachDrawableTransform(obj, "Circle");
@@ -23845,7 +23914,7 @@ ${outerPadding}${close}`;
           obj.x2 = 0;
           obj.y2 = 0;
           obj.color = (0, runtime_values_22.colorWhite)();
-          obj.thickness = 1;
+          defineSizeProperty(obj, "Line", "thickness", 1);
           attachLineMove(obj);
         }
         if (typeName === "Font") {
@@ -24808,11 +24877,20 @@ ${outerPadding}${close}`;
         if (typeName === "Canvas") {
           obj.framerate_limit = 60;
           obj.__commands = [];
+          const restartWith = (command) => {
+            const commands = (0, runtime_state_12.canvasCommands)(obj);
+            commands.length = 0;
+            commands.push(command);
+          };
           obj.clear = (0, runtime_shared_12.contextFunction)((_file, _line) => {
-            (0, runtime_state_12.canvasCommands)(obj).push({ kind: "clear", color: "#000000" });
+            restartWith({ kind: "clear", color: "#000000" });
           });
           obj.fill = (0, runtime_shared_12.contextFunction)((color, file, line) => {
-            (0, runtime_state_12.canvasCommands)(obj).push({ kind: "fill", color: (0, runtime_values_22.colorToCss)(color, "Canvas.fill() color", file, line) });
+            const command = { kind: "fill", color: (0, runtime_values_22.colorToCss)(color, "Canvas.fill() color", file, line) };
+            if (color instanceof runtime_values_12.IdylliumColor && color.alpha >= 1)
+              restartWith(command);
+            else
+              (0, runtime_state_12.canvasCommands)(obj).push(command);
           });
           obj.draw = (0, runtime_shared_12.contextFunction)((target, file, line) => {
             if (!(0, runtime_drawable_12.isDrawableObject)(target)) {
@@ -24987,18 +25065,14 @@ ${outerPadding}${close}`;
           (0, runtime_state_12.defineTrackedRuntimeProperty)(obj, "border_color", (0, runtime_values_22.colorGray)());
         }
         if (typeName === "SpinBox" || typeName === "Slider") {
-          obj.value = 0;
-          obj.min = 0;
-          obj.max = 100;
+          defineBoundedValue(obj, typeName);
           obj.step = 1;
         }
         if (typeName === "Slider") {
           (0, runtime_state_12.defineEnumRuntimeProperty)(obj, "orientation", "Slider", "horizontal", ["horizontal", "vertical"]);
         }
         if (typeName === "FloatSpinBox") {
-          obj.value = 0;
-          obj.min = 0;
-          obj.max = 100;
+          defineBoundedValue(obj, typeName);
           obj.step = 1;
         }
         if (typeName === "CheckBox") {
@@ -25398,8 +25472,6 @@ ${outerPadding}${close}`;
           return;
         }
         if (target.__idylliumType === "gui.Window" && eventName === "window_close") {
-          if (typeof target.close === "function")
-            target.close();
           return;
         }
         if (eventName !== "change")
@@ -25433,6 +25505,40 @@ ${outerPadding}${close}`;
           default:
             return;
         }
+      }
+      function defineBoundedValue(obj, owner) {
+        let valueIsDefault = true;
+        const number = (value, name, file, line) => (0, runtime_shared_12.finiteNumber)(value, `${owner}.${name}`, file, line);
+        (0, runtime_state_12.defineValidatedRuntimeProperty)(obj, "value", 0, (raw, file, line) => {
+          const value = number(raw, "value", file, line);
+          const min = Number(obj.min);
+          const max = Number(obj.max);
+          if (value < min || value > max) {
+            throw new runtime_errors_12.IdylliumRuntimeError(file, line, `${owner}.value must be between ${min} and ${max}, got ${value} — set min and max first`);
+          }
+          valueIsDefault = false;
+          return value;
+        });
+        const bound = (name, defaultValue) => {
+          (0, runtime_state_12.defineValidatedRuntimeProperty)(obj, name, defaultValue, (raw, file, line) => {
+            const limit = number(raw, name, file, line);
+            const current = Number(obj.value);
+            const outside = name === "min" ? current < limit : current > limit;
+            if (outside && !valueIsDefault) {
+              throw new runtime_errors_12.IdylliumRuntimeError(file, line, `${owner}.${name} = ${limit} leaves the current value ${current} outside the range — change value first`);
+            }
+            return limit;
+          }, (limit) => {
+            const current = Number(obj.value);
+            const outside = name === "min" ? current < Number(limit) : current > Number(limit);
+            if (outside && valueIsDefault) {
+              obj.value = limit;
+              valueIsDefault = true;
+            }
+          });
+        };
+        bound("min", 0);
+        bound("max", 100);
       }
       function canvasKeepsProgramAlive(canvas) {
         let current = canvas;
@@ -44532,7 +44638,7 @@ ${outerPadding}${close}`;
       var network_service_1 = require_network_service();
       var font_metrics_service_1 = require_font_metrics_service();
       var hash_1 = require_hash();
-      exports.IDYLLIUM_VERSION = "1.6.0";
+      exports.IDYLLIUM_VERSION = "1.6.1";
       function defaultRuntimePlatform() {
         const nodeProcess2 = typeof process === "object" ? process : null;
         return nodeProcess2?.versions?.node ? "cli" : "web";
@@ -44646,12 +44752,20 @@ ${outerPadding}${close}`;
           }
         };
         runtimeObjects.consoleWrite = (text) => io.write(text);
+        function formatSqliteValueForPrint(value, quoted) {
+          if (value.__sqliteKind === "null")
+            return "null";
+          const stored = value.__sqliteValue;
+          return quoted ? formatForInspect(stored) : formatForConsole(stored, precision);
+        }
         async function formatConsoleValue(value) {
           if ((0, runtime_json_1.isJsonRuntimeValue)(value)) {
             return formatForConsole(value, precision);
           }
           if (value instanceof runtime_complex_2.IdylliumComplex)
             return value.format(precision);
+          if ((0, runtime_sqlite_1.isSqliteRuntimeValue)(value))
+            return formatSqliteValueForPrint(value, false);
           if ((value instanceof runtime_values_2.IdylliumArray || value instanceof runtime_values_2.IdylliumMap) && await collectionHoldsContractObjects(value)) {
             return await formatCollectionWithContracts(value);
           }
@@ -44682,6 +44796,8 @@ ${outerPadding}${close}`;
             return formatCollectionWithContracts(item);
           if (item instanceof runtime_complex_2.IdylliumComplex)
             return item.format(precision);
+          if ((0, runtime_sqlite_1.isSqliteRuntimeValue)(item))
+            return formatSqliteValueForPrint(item, true);
           const method = item !== null && typeof item === "object" ? item.to_string : void 0;
           return typeof method === "function" ? formatForInspect(await method.apply(item)) : formatForInspect(item);
         }
@@ -46095,7 +46211,6 @@ ${outerPadding}${close}`;
             for (const canvas of runtimeObjects.canvases) {
               const onUpdate = canvas.on_update;
               if (typeof onUpdate === "function") {
-                canvas.__commands = [];
                 await onUpdate(canvas, deltaTime);
                 changed = true;
               }
@@ -46111,6 +46226,13 @@ ${outerPadding}${close}`;
               return;
             const deselectedRadios = target.__idylliumType === "gui.RadioButton" && eventName === "change" ? runtimeObjects.objects.filter((item) => item !== target && item.__idylliumType === "gui.RadioButton" && item.is_selected === true) : [];
             (0, runtime_gui_1.applyGuiEventPayload)(target, eventName, payload, runtimeObjects);
+            if (target.__idylliumType === "gui.Window" && eventName === "window_close") {
+              const onClose = target.on_close;
+              const verdict = typeof onClose === "function" ? await onClose(target) : true;
+              if (verdict !== false && typeof target.close === "function")
+                target.close();
+              return;
+            }
             const callbackName = (0, runtime_gui_1.guiCallbackName)(target, eventName);
             if (callbackName) {
               const callback = target[callbackName];
@@ -46362,7 +46484,12 @@ ${outerPadding}${close}`;
         if (divisor === 0 || divisor === 0n)
           throw new runtime_errors_1.IdylliumRuntimeError(file, line, "division by zero");
         const integers = exactIntegerPair(dividend, divisor);
-        return integers ? integers[0] / integers[1] : Math.trunc(Number(dividend) / Number(divisor));
+        if (integers) {
+          const quotient = integers[0] / integers[1];
+          const remainder = integers[0] % integers[1];
+          return remainder !== 0n && remainder < 0n !== integers[1] < 0n ? quotient - 1n : quotient;
+        }
+        return Math.floor(Number(dividend) / Number(divisor));
       }
       function runtimeModulo(left, right, file, line) {
         const dividend = runtimeNumber(left, "mod() left operand", file, line);
@@ -46370,7 +46497,12 @@ ${outerPadding}${close}`;
         if (divisor === 0 || divisor === 0n)
           throw new runtime_errors_1.IdylliumRuntimeError(file, line, "division by zero");
         const integers = exactIntegerPair(dividend, divisor);
-        return integers ? integers[0] % integers[1] : Number(dividend) % Number(divisor);
+        if (integers) {
+          const remainder2 = integers[0] % integers[1];
+          return remainder2 !== 0n && remainder2 < 0n !== integers[1] < 0n ? remainder2 + integers[1] : remainder2;
+        }
+        const remainder = Number(dividend) % Number(divisor);
+        return remainder !== 0 && remainder < 0 !== Number(divisor) < 0 ? remainder + Number(divisor) : remainder;
       }
       function runtimeCompare(left, right) {
         if (left < right)
@@ -47356,7 +47488,8 @@ ${outerPadding}${close}`;
             theme,
             mode: modeRaw === "light" ? "light" : "monaco",
             autocomplete: editorSource.autocomplete !== false,
-            format: editorSource.format !== false
+            format: editorSource.format !== false,
+            openInIde: editorSource.openInIde !== false
           },
           lang: text(source.lang, "ru") === "en" ? "en" : "ru",
           libs,
@@ -48658,6 +48791,229 @@ ${outerPadding}${close}`;
       __exportStar2(require_probes(), exports2);
       __exportStar2(require_messages2(), exports2);
       __exportStar2(require_markup(), exports2);
+    }
+  });
+
+  // dist/src/share/project-link.js
+  var require_project_link = __commonJS({
+    "dist/src/share/project-link.js"(exports2) {
+      "use strict";
+      Object.defineProperty(exports2, "__esModule", { value: true });
+      exports2.ShareLinkError = exports2.SHARE_LENGTH_ONE_MESSAGE = exports2.SHARE_LENGTH_EVERYWHERE = exports2.SHARE_MAX_LINK_CHARS = exports2.SHARE_MAX_TEXT_BYTES = exports2.SHARE_MAX_ASSETS = exports2.SHARE_MAX_FILES = exports2.SHARE_LINK_KEY = void 0;
+      exports2.bytesToBase64Url = bytesToBase64Url;
+      exports2.base64UrlToBytes = base64UrlToBytes;
+      exports2.encodeProjectLink = encodeProjectLink;
+      exports2.looksLikeProjectLink = looksLikeProjectLink;
+      exports2.decodeProjectLink = decodeProjectLink;
+      exports2.shareLengthVerdict = shareLengthVerdict;
+      var pako = require_pako();
+      exports2.SHARE_LINK_KEY = "p1";
+      exports2.SHARE_MAX_FILES = 200;
+      exports2.SHARE_MAX_ASSETS = 500;
+      exports2.SHARE_MAX_TEXT_BYTES = 2 * 1024 * 1024;
+      exports2.SHARE_MAX_LINK_CHARS = 1024 * 1024;
+      exports2.SHARE_LENGTH_EVERYWHERE = 2e3;
+      exports2.SHARE_LENGTH_ONE_MESSAGE = 4096;
+      var ShareLinkError = class extends Error {
+        problem;
+        constructor(problem) {
+          super(`share link: ${problem}`);
+          this.problem = problem;
+          this.name = "ShareLinkError";
+        }
+      };
+      exports2.ShareLinkError = ShareLinkError;
+      var BASE64URL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+      function bytesToBase64Url(bytes) {
+        let out = "";
+        for (let index = 0; index < bytes.length; index += 3) {
+          const a = bytes[index];
+          const b = bytes[index + 1];
+          const c = bytes[index + 2];
+          const triple = a << 16 | (b ?? 0) << 8 | (c ?? 0);
+          out += BASE64URL[triple >> 18 & 63] + BASE64URL[triple >> 12 & 63];
+          if (b !== void 0)
+            out += BASE64URL[triple >> 6 & 63];
+          if (c !== void 0)
+            out += BASE64URL[triple & 63];
+        }
+        return out;
+      }
+      function base64UrlToBytes(text) {
+        const bytes = [];
+        let buffer = 0;
+        let bits = 0;
+        for (const char of text) {
+          const value = BASE64URL.indexOf(char);
+          if (value < 0)
+            throw new ShareLinkError("broken");
+          buffer = (buffer << 6 | value) & 16777215;
+          bits += 6;
+          if (bits >= 8) {
+            bits -= 8;
+            bytes.push(buffer >> bits & 255);
+          }
+        }
+        return Uint8Array.from(bytes);
+      }
+      var crcTable = null;
+      function crc32(bytes) {
+        if (!crcTable) {
+          crcTable = new Uint32Array(256);
+          for (let n = 0; n < 256; n += 1) {
+            let c = n;
+            for (let k = 0; k < 8; k += 1)
+              c = c & 1 ? 3988292384 ^ c >>> 1 : c >>> 1;
+            crcTable[n] = c >>> 0;
+          }
+        }
+        let crc = 4294967295;
+        for (const byte of bytes)
+          crc = crcTable[(crc ^ byte) & 255] ^ crc >>> 8;
+        return (crc ^ 4294967295) >>> 0;
+      }
+      function cleanPath(value) {
+        if (typeof value !== "string")
+          return "";
+        const parts = value.replace(/\\/gu, "/").split("/").map((part) => part.trim()).filter((part) => part !== "" && part !== ".");
+        if (parts.length === 0 || parts.some((part) => part === ".."))
+          return "";
+        return parts.join("/").slice(0, 300);
+      }
+      function cleanLabel(value, limit) {
+        if (typeof value !== "string")
+          return "";
+        return value.replace(/[ -]/gu, " ").trim().slice(0, limit);
+      }
+      function normalizeSharedProject(raw) {
+        if (raw === null || typeof raw !== "object" || Array.isArray(raw))
+          throw new ShareLinkError("bad-content");
+        const source = raw;
+        const rawFiles = Array.isArray(source.files) ? source.files : [];
+        const rawAssets = Array.isArray(source.assets) ? source.assets : [];
+        if (rawFiles.length > exports2.SHARE_MAX_FILES || rawAssets.length > exports2.SHARE_MAX_ASSETS)
+          throw new ShareLinkError("too-big");
+        const files = [];
+        const seen = /* @__PURE__ */ new Set();
+        for (const item of rawFiles) {
+          const entry = item ?? {};
+          const path = cleanPath(entry.path);
+          if (path === "" || typeof entry.text !== "string" || seen.has(path))
+            throw new ShareLinkError("bad-content");
+          seen.add(path);
+          files.push({ path, text: entry.text });
+        }
+        if (files.length === 0)
+          throw new ShareLinkError("bad-content");
+        const assets = [];
+        for (const item of rawAssets) {
+          const entry = item ?? {};
+          const path = cleanPath(entry.path);
+          const size = typeof entry.size === "number" && Number.isFinite(entry.size) && entry.size >= 0 ? Math.floor(entry.size) : -1;
+          const sha = typeof entry.sha === "string" && /^[0-9a-f]{16}$/u.test(entry.sha) ? entry.sha : "";
+          if (path === "" || size < 0 || sha === "" || seen.has(path))
+            throw new ShareLinkError("bad-content");
+          seen.add(path);
+          assets.push({ path, size, sha });
+        }
+        const current = cleanPath(source.current);
+        return {
+          name: cleanLabel(source.name, 80),
+          from: cleanLabel(source.from, 60),
+          idyllium: cleanLabel(source.idyllium, 20),
+          current: files.some((file) => file.path === current) ? current : files[0].path,
+          files,
+          assets
+        };
+      }
+      function encodeProjectLink(project) {
+        const normalized = normalizeSharedProject(project);
+        const compact = { files: normalized.files };
+        if (normalized.name !== "")
+          compact.name = normalized.name;
+        if (normalized.from !== "")
+          compact.from = normalized.from;
+        if (normalized.idyllium !== "")
+          compact.idyllium = normalized.idyllium;
+        if (normalized.current !== normalized.files[0].path)
+          compact.current = normalized.current;
+        if (normalized.assets.length > 0)
+          compact.assets = normalized.assets;
+        const json = new TextEncoder().encode(JSON.stringify(compact));
+        if (json.length > exports2.SHARE_MAX_TEXT_BYTES)
+          throw new ShareLinkError("too-big");
+        const packed = pako.deflateRaw(json, { level: 9 });
+        const crc = crc32(json);
+        const payload = new Uint8Array(4 + packed.length);
+        payload[0] = crc >>> 24 & 255;
+        payload[1] = crc >>> 16 & 255;
+        payload[2] = crc >>> 8 & 255;
+        payload[3] = crc & 255;
+        payload.set(packed, 4);
+        return `${exports2.SHARE_LINK_KEY}=${bytesToBase64Url(payload)}`;
+      }
+      function looksLikeProjectLink(fragment) {
+        return /^#?p[1-9][0-9]*=/u.test(fragment);
+      }
+      function inflateWithCeiling(packed) {
+        const inflater = new pako.Inflate({ raw: true });
+        const chunks = [];
+        let total = 0;
+        inflater.onData = (chunk) => {
+          total += chunk.length;
+          if (total > exports2.SHARE_MAX_TEXT_BYTES)
+            throw new ShareLinkError("too-big");
+          chunks.push(chunk);
+        };
+        let finished = false;
+        try {
+          finished = inflater.push(packed, true);
+        } catch (error) {
+          if (error instanceof ShareLinkError)
+            throw error;
+          throw new ShareLinkError("broken");
+        }
+        if (!finished || inflater.err !== 0)
+          throw new ShareLinkError("broken");
+        const bytes = new Uint8Array(total);
+        let offset = 0;
+        for (const chunk of chunks) {
+          bytes.set(chunk, offset);
+          offset += chunk.length;
+        }
+        return bytes;
+      }
+      function decodeProjectLink(fragment) {
+        const text = fragment.replace(/^#/u, "").trim();
+        const match = /^p([1-9][0-9]*)=(.*)$/su.exec(text);
+        if (!match)
+          throw new ShareLinkError("not-a-share-link");
+        if (match[1] !== "1")
+          throw new ShareLinkError("newer-format");
+        if (match[2].length > exports2.SHARE_MAX_LINK_CHARS)
+          throw new ShareLinkError("too-long");
+        const payload = base64UrlToBytes(match[2].replace(/\s+/gu, ""));
+        if (payload.length < 6)
+          throw new ShareLinkError("broken");
+        const expectedCrc = (payload[0] << 24 | payload[1] << 16 | payload[2] << 8 | payload[3]) >>> 0;
+        const json = inflateWithCeiling(payload.subarray(4));
+        if (crc32(json) !== expectedCrc)
+          throw new ShareLinkError("broken");
+        let raw;
+        try {
+          raw = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(json));
+        } catch {
+          throw new ShareLinkError("broken");
+        }
+        return normalizeSharedProject(raw);
+      }
+      function shareLengthVerdict(linkLength) {
+        if (linkLength <= exports2.SHARE_LENGTH_EVERYWHERE)
+          return "everywhere";
+        if (linkLength <= exports2.SHARE_LENGTH_ONE_MESSAGE)
+          return "one-message";
+        return "file-only";
+      }
     }
   });
 
@@ -53063,7 +53419,7 @@ ${outerPadding}${close}`;
         };
       })();
       Object.defineProperty(exports2, "__esModule", { value: true });
-      exports2.runActionWithSnapshotPump = exports2.guiPreviewIntervalMs = exports2.IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS = exports2.IDYLLIUM_SEMANTIC_TOKEN_TYPES = exports2.IdylliumProject = exports2.formatIdyllium = exports2.createDefaultStandardLibrary = exports2.compileIdyllium = exports2.embed = void 0;
+      exports2.runActionWithSnapshotPump = exports2.IDYLLIUM_VERSION = exports2.guiPreviewIntervalMs = exports2.IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS = exports2.IDYLLIUM_SEMANTIC_TOKEN_TYPES = exports2.IdylliumProject = exports2.formatIdyllium = exports2.createDefaultStandardLibrary = exports2.compileIdyllium = exports2.share = exports2.embed = void 0;
       exports2.runIdylliumInBrowser = runIdylliumInBrowser;
       exports2.prepareIdylliumBrowserProgram = prepareIdylliumBrowserProgram;
       exports2.createUnitRunner = createUnitRunner;
@@ -53079,6 +53435,7 @@ ${outerPadding}${close}`;
         return registry_1.createDefaultStandardLibrary;
       } });
       var embedApi = __importStar2(require_embed());
+      var shareApi = __importStar2(require_project_link());
       var formatter_1 = require_formatter();
       Object.defineProperty(exports2, "formatIdyllium", { enumerable: true, get: function() {
         return formatter_1.formatIdyllium;
@@ -53215,6 +53572,7 @@ ${outerPadding}${close}`;
         };
       }
       exports2.embed = embedApi;
+      exports2.share = shareApi;
       function inspectSqliteDatabaseInBrowser(bytes) {
         return (0, sqlite_inspector_1.inspectSqliteDatabase)(browserSqliteService, bytes);
       }
@@ -53231,6 +53589,10 @@ ${outerPadding}${close}`;
       var gui_interval_1 = require_gui_interval();
       Object.defineProperty(exports2, "guiPreviewIntervalMs", { enumerable: true, get: function() {
         return gui_interval_1.guiPreviewIntervalMs;
+      } });
+      var runtime_2 = require_runtime();
+      Object.defineProperty(exports2, "IDYLLIUM_VERSION", { enumerable: true, get: function() {
+        return runtime_2.IDYLLIUM_VERSION;
       } });
       var gui_pump_1 = require_gui_pump();
       Object.defineProperty(exports2, "runActionWithSnapshotPump", { enumerable: true, get: function() {

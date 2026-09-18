@@ -177,6 +177,11 @@ export async function openSqliteDatabase(
   if (requestedPath.trim() === '') {
     throw new IdylliumRuntimeError(file, line, 'sqlite.open() path must not be empty');
   }
+  // Привычка из Python/SQLite: «:memory:». Баз в памяти здесь нет — без отказа
+  // рядом с программой молча появлялся ФАЙЛ с именем ':memory:'.
+  if (requestedPath.trim().startsWith(':')) {
+    throw new IdylliumRuntimeError(file, line, `sqlite.open() has no in-memory databases — '${requestedPath}' is not a file name; give a file such as "game.db"`);
+  }
   if (!runtime.sqliteService) {
     throw new IdylliumRuntimeError(file, line, 'sqlite runtime is unavailable');
   }

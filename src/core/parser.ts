@@ -1625,12 +1625,20 @@ export class Parser {
         this.check(TokenKind.Identifier)
         && this.checkNext(TokenKind.Dot)
         && this.checkAhead(2, TokenKind.Identifier)
-        && (this.checkAhead(3, TokenKind.Identifier) || this.checkAhead(3, TokenKind.KwFunction))
+        && (this.checkAhead(3, TokenKind.Identifier) || this.checkAhead(3, TokenKind.KwFunction) || this.keywordAsNameAhead(3))
       )
       || (
         this.check(TokenKind.Identifier)
-        && (this.checkNext(TokenKind.Identifier) || this.checkNext(TokenKind.KwFunction))
+        && (this.checkNext(TokenKind.Identifier) || this.checkNext(TokenKind.KwFunction) || this.keywordAsNameAhead(1))
       );
+  }
+
+  /** `http.Response map = …`, `Hero event;` — ключевое слово на месте ИМЕНИ переменной: это всё ещё
+   *  объявление, и consumeName скажет об этом одной строкой (раньше — каскад из семи ошибок). */
+  private keywordAsNameAhead(offset: number): boolean {
+    const token = this.tokens[this.current + offset];
+    if (!token || keywordDisplay(token.kind) === undefined || token.kind === TokenKind.KwFunction) return false;
+    return this.checkAhead(offset + 1, TokenKind.Equal, TokenKind.Semicolon);
   }
 
   private parseArgumentListAfterLeftParen(): CallArgument[] {

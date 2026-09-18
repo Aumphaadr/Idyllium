@@ -298,6 +298,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   const guiCanvas = qualified('gui', 'Canvas');
   const guiLabel = qualified('gui', 'Label');
   const guiButton = qualified('gui', 'Button');
+  const guiWindow = qualified('gui', 'Window');
   const guiFrame = qualified('gui', 'Frame');
   const guiLineEdit = qualified('gui', 'LineEdit');
   const guiTextEdit = qualified('gui', 'TextEdit');
@@ -831,6 +832,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       propertySpec('port', INT, false, 'Порт сервера, 0–65535 (по умолчанию 8080; 0 — попросить у системы свободный). Значение проверяется В МОМЕНТ ПРИСВАИВАНИЯ: за границами диапазона — читаемая ошибка там, где написано, а не при run(). После run() хранит фактический порт.'),
       propertySpec('host', STRING, false, 'Какие адреса слушать. По умолчанию "127.0.0.1" — только этот компьютер. "0.0.0.0" открывает программу ВСЕЙ локальной сети — включайте осознанно.'),
       propertySpec('is_running', BOOL, true, 'true, пока сервер запущен. Свойство доступно только для чтения.'),
+      propertySpec('debug', BOOL, false, 'Режим отладки. По умолчанию false: когда обработчик падает, посетитель получает нейтральную страницу 500, а текст ошибки уходит только в консоль сервера — внутренности наружу не показывают. true возвращает текст ошибки и в ответ: удобно, пока автор сам себе посетитель; перед показом другим выключите.'),
     ], [
       functionSpec('on_get', [
         { name: 'path', type: STRING },
@@ -1511,11 +1513,19 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       propertySpec('theme', STRING, false,
         'Тема оформления окна и всех его виджетов: "default", "idyllium", "dracula", "breeze", "oxygen"; другое значение — ошибка выполнения. Самый низкий приоритет — прямые свойства виджета и IdySS перекрывают тему.'),
       ...styleable,
+      // Вопрос «закрывать ли?»: bool-обработчик отвечает, void-обработчик
+      // просто успевает сделать своё (сохранить файл) — окно закроется.
+      callbackPropertySpec('on_close', [
+        callbackSpec([], BOOL),
+        callbackSpec([guiWindow], BOOL),
+        callbackSpec([]),
+        callbackSpec([guiWindow]),
+      ], 'Срабатывает, когда пользователь нажал крестик окна, — до закрытия. Обработчик вида bool function() отвечает, закрывать ли: true — окно закрывается, false — остаётся открытым (например, пока не сохранён файл). Обработчик без результата (void function()) только делает своё дело, окно закроется. Метод close() из кода обработчик не вызывает; кнопка «Остановить» в среде — тоже.'),
     ], [
       functionSpec('add_child', [guiChildParameter], VOID, { documentation: 'Кладёт виджет внутрь. Виджет нельзя положить внутрь самого себя или внутрь своего же ребёнка — у такого дерева не было бы конца, и рантайм честно об этом скажет.' }),
       functionSpec('show', [], VOID),
       functionSpec('close', [], VOID, {
-        documentation: 'Закрывает окно. Когда закрыто последнее окно, программа завершается.',
+        documentation: 'Закрывает окно сразу, не спрашивая on_close: программа решила сама. Когда закрыто последнее окно, программа завершается.',
       }),
     ]),
     typeSpec('Widget', [
@@ -1536,10 +1546,15 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       callbackPropertySpec('on_mouse_released', [callbackSpec([guiCanvas, guiMouseEvent])]),
       callbackPropertySpec('on_mouse_move', [callbackSpec([guiCanvas, guiMouseEvent])]),
       callbackPropertySpec('on_mouse_scroll', [callbackSpec([guiCanvas, guiMouseScrollEvent])]),
-      callbackPropertySpec('on_update', [callbackSpec([guiCanvas, FLOAT])]),
+      callbackPropertySpec('on_update', [callbackSpec([guiCanvas, FLOAT])],
+        'Вызывается каждый кадр; второй параметр — время кадра в секундах. Кадр сам ничего не стирает: нарисованное раньше остаётся на холсте, пока его не закрасит fill() или не уберёт clear(). Поэтому обычный кадр начинается с canvas.fill(цвет); без него за движущейся фигурой потянется шлейф.'),
     ], [
-      functionSpec('clear', [], VOID),
-      functionSpec('fill', [{ name: 'color', type: COLOR }], VOID),
+      functionSpec('clear', [], VOID, {
+        documentation: 'Стирает весь рисунок: холст возвращается к своему background_color (если он не задан — к чёрному).',
+      }),
+      functionSpec('fill', [{ name: 'color', type: COLOR }], VOID, {
+        documentation: 'Заливает весь холст цветом поверх нарисованного. Непрозрачный цвет стирает прошлое целиком — так начинают кадр. Полупрозрачный (colors.RGBA) только притеняет его: приём «затухающий след». Рисунок на холсте копится, и чем больше на нём накоплено фигур, тем дольше он перерисовывается.',
+      }),
       functionSpec('draw', [{
         name: 'object',
         type: drawableDrawable,
@@ -1877,7 +1892,7 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
       }),
     ]),
     typeSpec('KeyboardEvent', [
-      propertySpec('key', STRING, true),
+      propertySpec('key', STRING, true, 'Имя клавиши строкой. Одиночные символы приходят ЗАГЛАВНЫМИ — "W", "Д"; цифры — тоже строками: "7"; пробел — " ". Служебные клавиши названы словами, как в браузере: "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Enter", "Escape". Сравнивайте с заглавной буквой: pressed_keys.contains("W"), не "w".'),
     ]),
     typeSpec('MouseEvent', [
       propertySpec('x', INT, true),
@@ -2124,11 +2139,17 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
   registry.registerGlobalFunction(functionSpec('div', [
     { name: 'left', type: INT },
     { name: 'right', type: INT },
-  ], INT, { codegen: { target: 'core.div', shape: 'args-context' } }));
+  ], INT, {
+    codegen: { target: 'core.div', shape: 'args-context' },
+    documentation: 'Целочисленное деление с округлением ВНИЗ: div(7, 2) = 3, div(-7, 2) = -4 (как // в Python, а не как / в C++). Вместе с mod() всегда держит равенство a == div(a, b) * b + mod(a, b). Деление на ноль — ошибка выполнения.',
+  }));
   registry.registerGlobalFunction(functionSpec('mod', [
     { name: 'left', type: INT },
     { name: 'right', type: INT },
-  ], INT, { codegen: { target: 'core.mod', shape: 'args-context' } }));
+  ], INT, {
+    codegen: { target: 'core.mod', shape: 'args-context' },
+    documentation: 'Остаток от деления; знак остатка — как у ДЕЛИТЕЛЯ: mod(7, 2) = 1, mod(-7, 2) = 1, mod(-3, 360) = 357, mod(7, -2) = -1 (как % в Python, а не как % в C++). При положительном делителе остаток никогда не отрицателен: mod(n, 2) == 1 верно и для отрицательных нечётных, mod(i - 1, count) заворачивает индекс по кругу. Цифры отрицательного числа берите у math.abs(n): mod(-123, 10) = 7. Деление на ноль — ошибка выполнения.',
+  }));
   registry.registerGlobalFunction(functionSpec('type_name', [
     { name: 'value', type: ANY_TYPE },
   ], STRING, {

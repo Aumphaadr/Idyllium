@@ -51,6 +51,17 @@ Audacity) и распространяются на условиях лиценз
 Анимация `walk.gif` собрана из кадров программой, написанной на самом
 Idyllium (`image.Animation.create_from_frames` + `export_to_file`).
 
+## QR-коды в Web IDE
+
+Для «Поделиться» Web IDE поставляет (в `vendor/`, грузятся только по требованию):
+
+| Библиотека | Автор | Лицензия |
+|---|---|---|
+| qrcode-generator 2.0.4 — сборка QR-кода | Kazuhiko Arase | MIT (текст — в шапке `vendor/qrcode.js`) |
+| jsQR 1.4.0 — чтение QR-кода с картинки | Cosmo Wolfe | Apache-2.0 (копия — `vendor/jsQR-LICENSE.txt`) |
+
+«QR Code» — зарегистрированный товарный знак DENSO WAVE INCORPORATED.
+
 ## Прочее
 
 Проект не бандлит сторонние JavaScript-библиотеки в рантайм языка; средства

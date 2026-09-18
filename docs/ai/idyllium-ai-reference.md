@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: Idyllium 1.6.0.
+Current language target: Idyllium 1.6.1.
 
 This reference describes implemented behavior. Ideas from planning documents
 and exploratory specs are not language features until they are implemented and
@@ -385,6 +385,14 @@ and no `?:` ternary operator in Idyllium):
 int q = div(23, 10);  // 2
 int r = mod(23, 10);  // 3
 ```
+
+Since 1.6.1 `div` rounds DOWN and the remainder takes the sign of the DIVISOR
+(the Python rule, not the C/JavaScript one): `div(-7, 2)` is `-4`, `mod(-7, 2)`
+is `1`, `mod(-3, 360)` is `357`, `mod(7, -2)` is `-1`. With a positive divisor
+the remainder is never negative, so `mod(n, 2) == 1` finds negative odd numbers
+and `mod(i - 1, count)` wraps an index around. `a == div(a, b) * b + mod(a, b)`
+always holds. The price: `mod(-123, 10)` is `7`, not `3` — take digits of
+`math.abs(n)`. Before 1.6.1 both functions truncated toward zero.
 
 String concatenation uses `+`: `string + string`, `string + char`, and
 `char + string` all produce a new string. `char + char` is a compile error
@@ -1074,10 +1082,10 @@ main() {
 ```
 
 Every callback property checks the shape of the function it receives. A widget
-callback accepts either `function(): void` or `function(<the widget's own
-type>): void` — the `sender` parameter must be the widget's class, not another
-widget: `callback property 'on_click' expects function(): void or
-function(gui.Button): void, got function(gui.Label): void`. The same check
+callback accepts either `void function()` or `void function(<the widget's own
+type>)` — the `sender` parameter must be the widget's class, not another
+widget: `callback property 'on_click' expects 'void function()' or
+'void function(gui.Button)', got 'void function(gui.Label)'`. The same check
 guards `on_change` of every editable widget (`gui.LineEdit`, `gui.SpinBox`,
 `gui.Slider`, `gui.CheckBox`, `gui.ComboBox`, …), the Canvas and Timer
 callbacks and `on_message` of `channel.Post`; assigning a non-function is
@@ -1778,7 +1786,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, never returns
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.6.0"
+system.version()                    // "1.6.1"
 system.set_warnings(enabled)        // void; switches runtime warnings off/on
 ```
 
@@ -2423,8 +2431,10 @@ main() {
   the form. The Web IDE rehearsal rewrites `Location` into the
   `/preview/<port>/` sandbox automatically.
 - Built-in behavior: unknown path → 404; known path (exact or parameter),
-  wrong method → 405; handler crash → 500 with the error text (the server
-  keeps running and logs the crash to the program console). Requests are
+  wrong method → 405; handler crash → a NEUTRAL 500 page for the visitor, the error
+  text goes only to the program console (the server keeps running); `app.debug =
+  true;` (since 1.6.1) puts the error text into the response too — for the author
+  while developing. Requests are
   handled one at a time in arrival order. Static serving never leaves the
   served directory (path traversal is blocked). Busy port: `web.Server.run()
   port 8080 is already in use — choose another port or stop the other
@@ -2803,6 +2813,14 @@ For JSON numbers, `is_int()` is true only for an integral value, while
 `is_float()` is true for either an integer or a non-integral number because both
 can be converted safely with `to_float()`.
 
+A wrong-kind read is a runtime error in the words of the LANGUAGE, and it names
+the key when the value came from `object.get(key)` (since 1.6.1): `json value
+"name" is string, expected int`, `json value "level" is float, expected int`
+(a fractional number is never truncated), `json value is int, expected string`.
+A key repeated inside one object is refused by `json.parse` — `json.parse()
+invalid JSON: key "a" is repeated in one object at line 1, column 14` — instead
+of the usual silent «last one wins»; `json.is_valid` returns `false` for it.
+
 JSON integer tokens are parsed exactly, including values above JavaScript's
 safe-integer limit (`2^53 - 1`). Use `to_int()` for ordinary safe integers,
 `to_int64()` for the signed 64-bit range, and `to_uint64()` for the unsigned
@@ -2871,7 +2889,12 @@ main() {
   position inside the parsed text: `xml.parse_xml() invalid XML at 1:11: closing
   tag '</a>' does not match open tag '<b>'`; unquoted attribute values,
   never-closed tags, duplicate attributes, text outside the root and anything
-  but exactly one root element are errors too.
+  but exactly one root element are errors too. Tag names are case-sensitive, and
+  the refusal says so (`'<B>' is open, and XML tag names are case-sensitive`).
+  Since 1.6.1 a bare `&` is refused as well (`a bare '&' is not allowed in XML —
+  write '&amp;'`), and so are unknown named entities (`&copy;` — XML knows only
+  `&amp; &lt; &gt; &quot; &apos;` and numeric ones; `&nbsp;` alone is tolerated,
+  real feeds are full of it) and broken numeric ones (`&#65a;`, `&#xD800;`). `parse_html` keeps all of these as literal text.
 - `xml.parse_html(text)` — forgiving HTML for real-web pages: unclosed `<li>`
   and `<p>`, void `<img>` without a pair, unquoted attributes, any tag case
   (names are lowercased, and search arguments are lowercased to match),
@@ -3117,6 +3140,7 @@ HEX (`#RGB`, `#RRGGBB`, `#RRGGBBAA`), and `rgb(r, g, b)` /
 
 ```idyllium
 x, y, width, height, title, theme, text_color, background_color, font, font_size
+on_close
 add_child(child)
 show()
 close()
@@ -3127,6 +3151,30 @@ program has no GUI left and the host finishes it — that is how an «Выход
 button is written. The close cross in the preview does the same for its own
 window only: with several windows shown the program keeps running until the
 last one is closed.
+
+`on_close` (since 1.6.1) turns the cross into a QUESTION. A handler shaped
+`bool function()` or `bool function(gui.Window sender)` answers it: `true` —
+the window closes, `false` — it stays open («save the file first»). A handler
+without a result (`void function()` / `void function(gui.Window sender)`) only does its
+job (writes the file) and the window closes. `close()` called from code does
+NOT ask `on_close` — the program has already decided; that is how «ask in a
+`gui.Modal`, close from `on_confirm`» is written: return `false` from
+`on_close`, show the modal, call `win.close()` in its `on_confirm`. The host's
+Stop button does not call `on_close` either.
+
+```idyllium
+bool saved = false;
+
+bool function ask_before_close() {
+    return saved;          // false keeps the window open
+}
+
+main() {
+    gui.Window win;
+    win.on_close = ask_before_close;
+    win.show();
+}
+```
 
 `x` and `y` are the window's position on the preview "desktop". Until the
 program assigns them, windows are laid out automatically — in a row, wrapping
@@ -3250,11 +3298,14 @@ error (`Slider.orientation must be 'horizontal' or 'vertical', got '...'`).
 fills bottom-to-top.
 
 SpinBox, FloatSpinBox and Slider share the defaults `value = 0`, `min = 0`,
-`max = 100`, `step = 1`. Assigning `value` outside `min..max` from code is NOT
-an error and is not clamped: the property keeps the assigned number, while the
-on-screen control shows the nearest bound (Slider) or the raw number (SpinBox) —
-deliberate, because the property setup order is free (`value = 150` followed by
-`max = 300` is legal). USER input, in contrast, always respects the bounds:
+`max = 100`, `step = 1`. Since 1.6.1 assigning `value` outside `min..max` from
+code IS a runtime error — `SpinBox.value must be between 1 and 10, got 99 — set
+min and max first` — so set the bounds FIRST, then the value (`max = 300;` then
+`value = 150;`). A bound that would leave an explicitly assigned value outside
+is an error too (`SpinBox.max = 5 leaves the current value 7 outside the range
+— change value first`); the untouched default value quietly follows the bounds
+(`min = 10` alone moves the default `0` to `10`). Nothing is clamped silently.
+USER input always respects the bounds:
 arrows and the mouse wheel stop at the edges, and a number typed into a
 SpinBox is clamped into `min..max` when committed (blur or Enter); empty or
 non-numeric text reverts to the last committed value instead of becoming 0.
@@ -3503,6 +3554,19 @@ draw(object)
 
 `draw(object)` accepts `drawable.Drawable` subclasses.
 
+**Frame model (since 1.6.1): the picture ACCUMULATES**, as in Processing, SFML
+or an HTML canvas. A frame erases nothing by itself: whatever was drawn — in
+`on_init`, in event handlers, in earlier `on_update` calls — stays until the
+program covers it. `fill(color)` with an opaque color wipes everything (start
+every ordinary frame with it), `clear()` returns the canvas to its
+`background_color` (black when not set — the canvas also starts that way). A
+forgotten `fill` leaves a trail behind moving shapes; a translucent
+`fill(colors.RGBA(0, 0, 0, 0.1))` each frame gives a fading trail. There is no
+cap on the number of accumulated shapes, but everything accumulated is redrawn
+every frame — thousands of shapes without an opaque `fill` make the program lag,
+which is the program's own business. Before 1.6.1 every `on_update` started from
+an empty black canvas.
+
 Events:
 
 ```idyllium
@@ -3568,7 +3632,9 @@ rotation instead of replacing it.
 Drawable positions are floating-point values. Rectangle, Circle, Sprite, and
 Text use `x: float` and `y: float`; Line uses `x1/y1/x2/y2: float`. Dimensions,
 radius, border width, line thickness, and font size remain `int`. GUI widget
-coordinates are still `int` and are not affected by this rule.
+coordinates are still `int` and are not affected by this rule. Since 1.6.1 a
+negative `width`, `height`, `radius`, `border_width` or `thickness` is a runtime
+error (`Circle.radius must be non-negative, got -5`); zero is legal.
 
 For a local point at offset `(radius, 0)` from the origin, Canvas coordinates
 follow the same clockwise/Y-down convention as the renderer:
@@ -4144,7 +4210,9 @@ Import:
 use sqlite;
 ```
 
-`sqlite.open(path)` opens an existing SQLite file or creates a new one. Relative
+`sqlite.open(path)` opens an existing SQLite file or creates a new one. There
+are no in-memory databases: `sqlite.open(":memory:")` is refused in words (since
+1.6.1; before that it silently created a FILE named `:memory:`). Relative
 paths are resolved from the running `.idyl` file. The same API works in CLI,
 VSIX, and Web IDE; Web IDE stores the binary `.db` file in the virtual project.
 
@@ -4299,6 +4367,10 @@ to_float()
 to_string()
 to_bool()
 ```
+
+Printing a `sqlite.Value` shows the value itself (since 1.6.1):
+`console.writeln(rows.get("level"))` prints `7`, a REAL prints `2.5`, TEXT
+prints its text, NULL prints `null` — also inside arrays and maps.
 
 SQLite INTEGER values are read exactly. Use `get_int64()` / `to_int64()` for
 values outside the safe ordinary `int` range. BLOB values do not yet have a

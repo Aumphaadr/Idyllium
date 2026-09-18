@@ -46,6 +46,7 @@ function readConfig(element) {
   if (element.hasAttribute('editor')) editor.mode = element.getAttribute('editor');
   if (element.hasAttribute('autocomplete')) editor.autocomplete = element.getAttribute('autocomplete') !== 'off';
   if (element.hasAttribute('format')) editor.format = element.getAttribute('format') !== 'off';
+  if (element.hasAttribute('open-in-ide')) editor.openInIde = element.getAttribute('open-in-ide') !== 'off';
   config.editor = editor;
   if (element.hasAttribute('lang')) config.lang = element.getAttribute('lang');
   if (element.hasAttribute('starter')) config.starter = element.getAttribute('starter');

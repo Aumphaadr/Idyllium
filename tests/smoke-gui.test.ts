@@ -877,7 +877,7 @@ test('callback signatures are checked', () => {
         sender.text = "wrong";
       };
     }
-  `, "callback property 'on_click' expects function(): void or function(gui.Button): void");
+  `, "callback property 'on_click' expects 'void function()' or 'void function(gui.Button)'");
 });
 
 test('on_change checks its callback shape like on_click does', async () => {
@@ -892,7 +892,7 @@ test('on_change checks its callback shape like on_click does', async () => {
       gui.SpinBox spin;
       spin.on_change = void function(gui.Button sender) { };
     }
-  `, "callback property 'on_change' expects function(): void or function(gui.SpinBox): void, got function(gui.Button): void");
+  `, "callback property 'on_change' expects 'void function()' or 'void function(gui.SpinBox)', got 'void function(gui.Button)'");
   assertFails(`
     use gui;
 
@@ -1073,7 +1073,7 @@ test('headless canvas records drawable commands', async () => {
       text.move(2, 3);
 
       canvas.clear();
-      canvas.fill(colors.RGB(1, 2, 3));
+      canvas.fill(colors.RGBA(1, 2, 3, 0.5));   // полупрозрачная: прошлое не закрывает, список не обрезает
       canvas.draw(rect);
       canvas.draw(circle);
       canvas.draw(line);
@@ -1091,7 +1091,7 @@ test('headless canvas records drawable commands', async () => {
   assert(canvas.properties.width === 320 && canvas.properties.height === 200, `unexpected canvas properties: ${JSON.stringify(canvas.properties)}`);
   assert(canvas.commands.length === 7, `expected 7 canvas commands, got ${canvas.commands.length}`);
   assert(canvas.commands[0].kind === 'clear' && canvas.commands[0].color === '#000000', 'expected black clear command');
-  assert(canvas.commands[1].kind === 'fill' && canvas.commands[1].color === '#010203', 'expected fill command color');
+  assert(canvas.commands[1].kind === 'fill' && canvas.commands[1].color === 'rgba(1, 2, 3, 0.5)', 'expected fill command color');
   assert(canvas.commands[2].object?.type === 'drawable.Rectangle', `unexpected first draw object: ${JSON.stringify(canvas.commands[2])}`);
   assert(canvas.commands[2].object?.properties.fill_color === '#2291bc', 'expected rectangle fill color snapshot');
   assert(canvas.commands[2].object?.properties.x === 15 && canvas.commands[2].object?.properties.y === 15, 'expected moved rectangle position');
@@ -1165,6 +1165,78 @@ test('gui window show initializes canvas callbacks and snapshots widget tree', a
   assert(canvas.commands.length === 2, `expected init fill and first update draw, got ${canvas.commands.length}`);
   assert(canvas.commands[0].kind === 'fill' && canvas.commands[0].color === '#0a141e', 'expected init fill command');
   assert(canvas.commands[1].object?.type === 'drawable.Rectangle', `expected update rectangle draw, got ${JSON.stringify(canvas.commands[1])}`);
+});
+
+test('the canvas accumulates: only clear() and an opaque fill() start over', async () => {
+  // Модель кадра 1.6.1 (вердикт владельца — «как в индустрии»): кадр сам ничего
+  // не стирает. Список команд — полное описание экрана, поэтому копится он,
+  // а непрозрачная заливка и clear() обрезают его до себя.
+  const result = await runWithInspectableRuntime(`
+    use colors;
+    use drawable;
+    use gui;
+
+    drawable.Circle ball;
+    int mode = 0;
+
+    void function init(gui.Canvas canvas) {
+      canvas.fill(colors.BLUE);
+    }
+
+    void function update(gui.Canvas canvas, float delta_time) {
+      if (mode == 1) {
+        canvas.fill(colors.RGBA(0, 0, 0, 0.1));
+      }
+      if (mode == 2) {
+        canvas.fill(colors.BLACK);
+      }
+      if (mode == 3) {
+        canvas.clear();
+      }
+      ball.x = ball.x + 1;
+      canvas.draw(ball);
+    }
+
+    void function on_key(gui.Canvas canvas, gui.KeyboardEvent evt) {
+      mode = mode + 1;
+    }
+
+    main() {
+      gui.Window win;
+      gui.Canvas canvas;
+      canvas.on_init = init;
+      canvas.on_update = update;
+      canvas.on_key_pressed = on_key;
+      win.add_child(canvas);
+      win.show();
+    }
+  `);
+  const runtime = result.runtime;
+  const snapshot = () => runtime.getWindows()[0].children[0].canvas!;
+  const kinds = () => snapshot().commands.map((command) => command.kind).join(' ');
+  const canvasId = snapshot().id;
+  await runtime.stepGui(0.02);
+  await runtime.stepGui(0.02);
+  await runtime.stepGui(0.02);
+  // Нарисованное в on_init живёт, пока его не закрасят; забытый fill — честный шлейф.
+  // (show() сам делает первый кадр — on_init и on_update(0), — отсюда четвёртый круг.)
+  assert(kinds() === 'fill draw draw draw draw', `no fill in update must leave a trail over the init fill: ${kinds()}`);
+  const xs = snapshot().commands.slice(1).map((command) => command.object?.properties.x);
+  assert(JSON.stringify(xs) === '[1,2,3,4]', `the trail keeps every past position: ${JSON.stringify(xs)}`);
+
+  await runtime.dispatchGuiEvent(canvasId, 'key_pressed', { key: 'A' });   // mode 1: затухающий след
+  await runtime.stepGui(0.02);
+  await runtime.stepGui(0.02);
+  assert(kinds() === 'fill draw draw draw draw fill draw fill draw', `a translucent fill covers nothing and keeps the past: ${kinds()}`);
+
+  await runtime.dispatchGuiEvent(canvasId, 'key_pressed', { key: 'A' });   // mode 2: непрозрачная заливка
+  await runtime.stepGui(0.02);
+  await runtime.stepGui(0.02);
+  assert(kinds() === 'fill draw', `an opaque fill starts the picture over: ${kinds()}`);
+
+  await runtime.dispatchGuiEvent(canvasId, 'key_pressed', { key: 'A' });   // mode 3: clear()
+  await runtime.stepGui(0.02);
+  assert(kinds() === 'clear draw', `clear() starts the picture over: ${kinds()}`);
 });
 
 test('gui step keeps static canvas commands when no update callback exists', async () => {
@@ -1961,6 +2033,91 @@ test('windows are draggable citizens: x/y explicitness, window_move and the clos
   await runtime.dispatchGuiEvent(placed.id, 'window_close', {});
   assert(runtime.getWindows().length === 0 && !runtime.hasGui(),
     'closing the last window by its cross finishes the program');
+});
+
+test('on_close asks the program before the cross closes a window', async () => {
+  // Вердикт 2.5б (1.6.1): крестик — просьба. bool-обработчик отвечает,
+  // void-обработчик только делает своё; close() из кода никого не спрашивает.
+  const { runtime } = await runWithInspectableRuntime([
+    'use console;',
+    'use gui;',
+    '',
+    'bool saved = false;',
+    'gui.Window editor;',
+    'gui.Window log_window;',
+    '',
+    'bool function ask() {',
+    '    console.writeln("ask: saved=", saved);',
+    '    return saved;',
+    '}',
+    '',
+    'void function farewell(gui.Window sender) {',
+    '    console.writeln("bye: ", sender.title);',
+    '}',
+    '',
+    'void function save() {',
+    '    saved = true;',
+    '}',
+    '',
+    'main() {',
+    '    editor.title = "Редактор";',
+    '    editor.on_close = ask;',
+    '    log_window.title = "Журнал";',
+    '    log_window.on_close = farewell;',
+    '    gui.Button button;',
+    '    button.on_click = save;',
+    '    editor.add_child(button);',
+    '    editor.show();',
+    '    log_window.show();',
+    '}',
+  ].join('\n'));
+  const idOf = (title: string) => runtime.getWindows().find((w) => w.properties.title === title)!.id;
+  const buttonId = runtime.getWindows()[0].children[0].id;
+  await runtime.dispatchGuiEvent(idOf('Редактор'), 'window_close', {});
+  assert(runtime.getWindows().length === 2, 'a handler that returns false keeps the window open');
+  await runtime.dispatchGuiEvent(buttonId, 'click', {});
+  await runtime.dispatchGuiEvent(idOf('Журнал'), 'window_close', {});
+  assert(runtime.getWindows().length === 1, 'a handler without a result lets the window close');
+  await runtime.dispatchGuiEvent(idOf('Редактор'), 'window_close', {});
+  assert(runtime.getWindows().length === 0 && !runtime.hasGui(), 'a handler that returns true closes the window');
+  assert(runtime.getOutput() === 'ask: saved=false\nbye: Журнал\nask: saved=true\n', `on_close order: ${JSON.stringify(runtime.getOutput())}`);
+
+  // close() из кода — решение самой программы: обработчик молчит, даже если он против.
+  const stubborn = await runWithInspectableRuntime([
+    'use console;',
+    'use gui;',
+    '',
+    'gui.Window win;',
+    '',
+    'bool function never() {',
+    '    console.writeln("asked");',
+    '    return false;',
+    '}',
+    '',
+    'main() {',
+    '    win.on_close = never;',
+    '    win.show();',
+    '    win.close();',
+    '}',
+  ].join('\n'));
+  assert(!stubborn.runtime.hasGui() && stubborn.runtime.getOutput() === '', `close() does not ask on_close: ${JSON.stringify(stubborn.runtime.getOutput())}`);
+
+  // Форма обработчика проверяется словами, как у on_click.
+  const wrong = compileIdyllium([
+    'use gui;',
+    '',
+    'int function odd() {',
+    '    return 1;',
+    '}',
+    '',
+    'main() {',
+    '    gui.Window win;',
+    '    win.on_close = odd;',
+    '    win.show();',
+    '}',
+  ].join('\n'));
+  assert(wrong.diagnostics.some((d) => d.message.includes("'on_close'") && d.message.includes('bool function()')),
+    `wrong on_close shape: ${JSON.stringify(wrong.diagnostics.map((d) => d.message))}`);
 });
 
 test('a canvas lives and dies with its window', async () => {
