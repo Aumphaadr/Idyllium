@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: Idyllium 1.6.1.
+Current language target: Idyllium 1.6.2.
 
 This reference describes implemented behavior. Ideas from planning documents
 and exploratory specs are not language features until they are implemented and
@@ -238,7 +238,8 @@ variables, parameters, functions and classes:
 <!-- @generated:stdlib-module-names -->
 ```text
 audio channel colors console csv drawable encoding file fonts gui hash
-http image json math random sqlite system time turtle types url web xml
+http image json math qr random sqlite system time turtle types url web
+xml
 ```
 <!-- /@generated:stdlib-module-names -->
 
@@ -1786,7 +1787,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, never returns
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.6.1"
+system.version()                    // "1.6.2"
 system.set_warnings(enabled)        // void; switches runtime warnings off/on
 ```
 
@@ -2466,6 +2467,89 @@ is FNV-1a 32-bit, and `sha256` is FIPS 180-4 SHA-256. There is intentionally no
 material should say plainly that a fast hash alone is not enough for storing
 passwords (salt + slow KDFs like bcrypt/Argon2 are the real answer).
 
+## 21f. Library `qr` (since 1.6.2)
+
+A QR code as an array, as a picture and as text. Works the same in CLI, Web IDE
+and the VS Code extension; not available in embed units.
+
+```idyllium
+use image;
+use qr;
+
+dyn_array<dyn_array<bool>> grid = qr.encode("Привет!");        // grid[row][column] == true — a dark cell
+dyn_array<dyn_array<bool>> tough = qr.encode("Привет!", "H");  // error-correction level
+image.Static picture = qr.to_static("Привет!");                // black on white, 8 px per cell, margins included
+image.Static big = qr.to_static("Привет!", 12, "quartile");    // scale and level
+bool ok = qr.fits("a long text…");                              // will it fit (checked before the refusal)
+int limit = qr.capacity("M");                                   // BYTES the level can hold
+
+bool found = qr.has_code(picture);                              // is there a readable code
+string text = qr.decode(picture);                               // the text of the code
+```
+
+- `qr.encode(text, level = "M")` returns a SQUARE table without margins; its
+  side is `grid.length` — 21 cells for a short text and up to 177 as the text
+  grows (5 chars → 21, 50 → 33, 300 → 69 at level M). The table is
+  deterministic: the same text and level always give the same cells, so a lesson
+  may quote it. Whoever draws the code must add the light margin himself — at
+  least 4 cells wide — or scanners will not find it; this is a deliberate
+  teaching point, not an omission.
+- The level is a string: `"L"`, `"M"`, `"Q"`, `"H"` or the words `"low"`,
+  `"medium"`, `"quartile"`, `"high"` (exactly these spellings). A higher level
+  survives more damage and makes a bigger code: a blot in the middle that kills
+  a level-L code leaves a level-H code readable.
+- `qr.to_static(text, scale = 8, level = "M")` returns an ordinary
+  `image.Static` with the standard 4-cell margin: show it in `gui.ImageBox`,
+  draw it as a `drawable.Sprite`, save it with `export_to_file("code.png")`.
+  `scale` is 1–64 pixels per cell; the picture may not exceed 4096 px.
+- Text is ALWAYS encoded as UTF-8, so Russian letters and emoji read correctly
+  on a phone. That is why capacity is counted in BYTES: a Latin letter or digit
+  is one byte, a Russian letter two, an emoji four. `qr.capacity(level)`:
+  `"L"` 2953, `"M"` 2331, `"Q"` 1663, `"H"` 1273.
+- `qr.decode(picture)` and `qr.has_code(picture)` accept `image.Static` and
+  `image.Bitmap`. They read picture files and screenshots, including a light
+  code on a dark background; a hand-held photo taken at an angle is NOT
+  promised. There is no camera.
+- Runtime refusals: `qr.encode() text is too long for level "M": 2400 bytes, the
+  limit is 2331 — shorten the text or use a lower level`, `qr.encode() level must
+  be "L", "M", "Q", "H" or "low", "medium", "quartile", "high", got "X"`,
+  `qr.to_static() scale must be between 1 and 64, got 0`, `qr.decode() found no
+  QR code in the picture — check qr.has_code() first`.
+
+The console-year program — two nested loops (two characters per cell, because
+a console character is twice as tall as it is wide). A small code printed this
+way (21×21) IS scanned by a phone camera from the Web IDE console (verified by
+the project owner). Do not promise more than that: a bigger code may not fit
+the output pane, console cells are not exactly square and block glyphs have
+gaps — our own `qr.decode` does not read a screenshot of such output. A code
+that must scan reliably is drawn on a `gui.Canvas` — one `drawable.Rectangle`
+per dark cell on a white `fill`, with a 4-cell margin — or taken from
+`qr.to_static()`:
+
+```idyllium
+use console;
+use qr;
+
+main() {
+    dyn_array<dyn_array<bool>> grid = qr.encode("Idyllium");
+    for (int row = 0; row < grid.length; row = row + 1) {
+        for (int column = 0; column < grid[row].length; column = column + 1) {
+            if (grid[row][column]) {
+                console.write("██");
+            } else {
+                console.write("  ");
+            }
+        }
+        console.writeln();
+    }
+}
+```
+
+Not in the library on purpose: classes with the standard's internals (version,
+mask), coloured codes and logos (draw them from the table yourself), numeric and
+alphanumeric modes, Micro QR, SVG output (draw the cells on a `gui.Canvas` and
+call `save_svg`).
+
 ## 22. Library `colors`
 
 Import:
@@ -2813,10 +2897,16 @@ For JSON numbers, `is_int()` is true only for an integral value, while
 `is_float()` is true for either an integer or a non-integral number because both
 can be converted safely with `to_float()`.
 
-A wrong-kind read is a runtime error in the words of the LANGUAGE, and it names
-the key when the value came from `object.get(key)` (since 1.6.1): `json value
-"name" is string, expected int`, `json value "level" is float, expected int`
-(a fractional number is never truncated), `json value is int, expected string`.
+A wrong-kind read is a runtime error in the words of the LANGUAGE (since 1.6.1),
+and it gives the ADDRESS of the value — the path walked from the root through
+`get(key)` and `at(index)` (since 1.6.2; 1.6.1 named only the last key): `json value "name" is string, expected int`, `json
+value "hero.stats.level" is float, expected int` (a fractional number is never
+truncated), `json value "hero.items[1]" is string, expected int`, `json value
+"[1]" is …` for an element of a top-level array; a value that came straight
+from `json.parse` has no address. `to_string()` is an UNPACKER of a JSON string,
+not «the text form»: on a number it refuses and says where the text form is —
+`json value is int, expected string — to_string() only unpacks a string; the
+text of any value is to_string(value)`.
 A key repeated inside one object is refused by `json.parse` — `json.parse()
 invalid JSON: key "a" is repeated in one object at line 1, column 14` — instead
 of the usual silent «last one wins»; `json.is_valid` returns `false` for it.
@@ -3212,7 +3302,15 @@ x, y, width, height, visible, enabled
 text, font_size
 text_color, background_color, border_color
 on_click
+click()
 ```
+
+`click()` (since 1.6.2) presses the button from code: its `on_click` runs exactly
+as from a mouse click, with the same `sender`. Use it when one action is reached
+both by the button and by something else — a key, a timer, the window cross
+(`win.on_close`). A disabled or hidden button (or one inside such a container)
+is not pressed, just as for a person; with no `on_click` nothing happens. If the
+handler takes no parameters, calling the handler function directly is the same.
 
 `gui.Frame`:
 
@@ -3561,10 +3659,15 @@ program covers it. `fill(color)` with an opaque color wipes everything (start
 every ordinary frame with it), `clear()` returns the canvas to its
 `background_color` (black when not set — the canvas also starts that way). A
 forgotten `fill` leaves a trail behind moving shapes; a translucent
-`fill(colors.RGBA(0, 0, 0, 0.1))` each frame gives a fading trail. There is no
-cap on the number of accumulated shapes, but everything accumulated is redrawn
-every frame — thousands of shapes without an opaque `fill` make the program lag,
-which is the program's own business. Before 1.6.1 every `on_update` started from
+`fill(colors.RGBA(0, 0, 0, 0.1))` each frame gives a fading trail (a full-canvas
+translucent rectangle drawn each frame behaves the same). As on any 8-bit
+canvas, such a trail never fades to exactly nothing — a faint ghost stays.
+Accumulation is cheap on screen (since 1.6.2): the preview keeps the picture
+between frames and receives only the new commands, so a frame costs what was
+drawn in that frame, not everything since the start. The full command list
+still lives in the program (it is what `save_svg` and `to_static` read), so a
+program that never uses an opaque `fill` or `clear()` slowly grows in memory —
+an opaque `fill` at the start of a frame is still the normal way to draw. Before 1.6.1 every `on_update` started from
 an empty black canvas.
 
 Events:
@@ -4370,7 +4473,14 @@ to_bool()
 
 Printing a `sqlite.Value` shows the value itself (since 1.6.1):
 `console.writeln(rows.get("level"))` prints `7`, a REAL prints `2.5`, TEXT
-prints its text, NULL prints `null` — also inside arrays and maps.
+prints its text, NULL prints `null` — also inside arrays and maps. The METHOD
+`value.to_string()` stays strict (the hint below — since 1.6.2), exactly like `json.Value.to_string()`: it
+unpacks TEXT and nothing else. On an INTEGER it refuses and points to the text
+form: `sqlite value is integer, expected string — to_string() only unpacks
+TEXT; the text of any value is to_string(value)` (the global function);
+`rows.get_string("level")` says the same with the column name. NULL gets no
+such hint — its text `null` is almost never what the author wanted; use
+`is_null()`.
 
 SQLite INTEGER values are read exactly. Use `get_int64()` / `to_int64()` for
 values outside the safe ordinary `int` range. BLOB values do not yet have a

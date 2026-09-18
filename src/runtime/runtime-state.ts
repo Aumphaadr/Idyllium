@@ -71,7 +71,24 @@ export interface IdylliumCanvasSnapshot {
   readonly id: number;
   readonly type: 'gui.Canvas';
   readonly properties: Readonly<Record<string, unknown>>;
+  /**
+   * Команды рисования. Обычно — весь список (`commandsFrom` = 0): он полностью описывает
+   * экран, на нём живут save_svg, снимки и тесты. Хосту, который сказал, что уже показал
+   * (`CanvasSnapshotOptions.knownCanvases`), отдаётся только ХВОСТ — команды с номера
+   * `commandsFrom`: рисунок на холсте копится, и пересылать его целиком каждый кадр нельзя.
+   */
   readonly commands: readonly IdylliumCanvasCommand[];
+  /** Номер первой команды из `commands` в полном списке. */
+  readonly commandsFrom: number;
+  /** Сколько команд в полном списке сейчас. */
+  readonly total: number;
+  /** Эпоха списка: растёт, когда список начат заново (clear, непрозрачный fill) — старые хвосты недействительны. */
+  readonly epoch: number;
+}
+
+/** Что хост уже показал: по id холста — эпоха и число нарисованных команд. */
+export interface CanvasSnapshotOptions {
+  readonly knownCanvases?: Readonly<Record<number, { readonly epoch: number; readonly count: number }>>;
 }
 
 export interface IdylliumAudioCommand {
@@ -298,6 +315,15 @@ export function defineEnumRuntimeProperty(
     }
     return value;
   }, afterSet);
+}
+
+/** Список команд холста начат заново: хвосты, выданные хостам раньше, больше не продолжение. */
+export function restartCanvasCommands(canvas: RuntimeObject, first?: IdylliumCanvasCommand): IdylliumCanvasCommand[] {
+  const commands = canvasCommands(canvas);
+  commands.length = 0;
+  if (first) commands.push(first);
+  canvas.__commandsEpoch = (typeof canvas.__commandsEpoch === 'number' ? canvas.__commandsEpoch : 0) + 1;
+  return commands;
 }
 
 export function canvasCommands(canvas: RuntimeObject): IdylliumCanvasCommand[] {

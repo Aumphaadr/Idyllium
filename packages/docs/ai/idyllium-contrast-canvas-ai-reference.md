@@ -506,8 +506,10 @@ the runtime's job, and anything that cannot be done is said out loud.
    must put `canvas.clear()` or an opaque `canvas.fill(color)` at the top of every
    `on_update`. (Since 1.6.1 this is the single frame model everywhere: nothing
    is erased implicitly, an opaque `fill` or `clear()` starts the picture over,
-   and there is no cap on accumulated shapes — thousands of them without an
-   opaque fill make the program lag. Before 1.6.1 a canvas WITH `on_update` was
+   and there is no cap on accumulated shapes. Since 1.6.2 accumulation is cheap
+   on screen — the preview keeps the picture between frames and receives only
+   the new commands — but the full list lives in the program's memory until an
+   opaque fill or `clear()` starts it over. Before 1.6.1 a canvas WITH `on_update` was
    silently wiped black before every frame, so the smear could not be seen.)
 4. **Sprite collision geometry is the whole image rectangle**, transparent
    pixels included — the same approximation as PyGame's `Rect` and SFML's

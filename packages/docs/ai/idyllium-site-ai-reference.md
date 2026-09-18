@@ -21,7 +21,7 @@ databases, GUI applications and networking without installing anything and
 without leaving the site; a teacher can build a lesson plan from the same
 pages.
 
-Current language target: Idyllium 1.6.1 (machine-readable at
+Current language target: Idyllium 1.6.2 (machine-readable at
 https://aumphaadr.github.io/Idyllium/version.json).
 
 Important rule for AI assistants: do not invent site features. If a feature is

@@ -2,7 +2,7 @@
 import { IdylliumRuntimeError } from './runtime-errors';
 import { RuntimeObject, contextFunction, finiteNumber, intArgument, stringArgument } from './runtime-shared';
 import { IdylliumColor, valueOps } from './runtime-values';
-import { IdylliumDrawableSnapshot, RuntimeObjectState, TurtleEntry, TurtleFieldState, canvasCommands, defineValidatedRuntimeProperty, objectFactory } from './runtime-state';
+import { IdylliumDrawableSnapshot, RuntimeObjectState, TurtleEntry, TurtleFieldState, canvasCommands, restartCanvasCommands, defineValidatedRuntimeProperty, objectFactory } from './runtime-state';
 import { colorBlack, colorToCss } from './runtime-values';
 import { errorMessage } from './runtime-shared';
 
@@ -62,9 +62,8 @@ export function turtleCss(value: unknown): string {
 export function rebuildTurtleFieldCommands(state: RuntimeObjectState): void {
   const field = state.turtleField;
   if (!field || !field.canvas) return;
-  const commands = canvasCommands(field.canvas);
-  commands.length = 0;
-  commands.push({ kind: 'clear', color: field.bgColor });
+  // Поле черепах перестраивает список целиком (черепашка-спрайт переезжает) — это новая эпоха.
+  const commands = restartCanvasCommands(field.canvas, { kind: 'clear', color: field.bgColor });
   for (const entry of field.entries) {
     commands.push({ kind: 'draw', object: turtleEntrySnapshot(entry, field) });
   }

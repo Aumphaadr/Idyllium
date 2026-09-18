@@ -2,7 +2,7 @@
 import { IdylliumRuntimeError } from './runtime-errors';
 import { RuntimeObject, contextFunction, finiteNumber, intArgument, isRuntimeObject, stringArgument } from './runtime-shared';
 import { IdylliumArray, IdylliumColor, valueOps } from './runtime-values';
-import { IdylliumCanvasCommand, RuntimeObjectState, canvasCommands, defineEnumRuntimeProperty, defineTrackedRuntimeProperty, defineValidatedRuntimeProperty, setTrackedRuntimePropertyDefault } from './runtime-state';
+import { IdylliumCanvasCommand, RuntimeObjectState, canvasCommands, restartCanvasCommands, defineEnumRuntimeProperty, defineTrackedRuntimeProperty, defineValidatedRuntimeProperty, setTrackedRuntimePropertyDefault } from './runtime-state';
 import { colorBlack, colorBlue, colorGray, colorLightGray, colorToCss, colorTransparent, colorVeryLightGray, colorWhite } from './runtime-values';
 import { errorMessage, splitContextArgs } from './runtime-shared';
 import { isDrawableObject } from './runtime-drawable';
@@ -98,23 +98,19 @@ export function initializeGuiObject(obj: RuntimeObject, typeName: string, state:
     // Модель кадра (1.6.1, вердикт владельца — «как в индустрии»): рисунок на
     // холсте КОПИТСЯ, кадр сам ничего не стирает; стирают только явные clear()
     // и fill(). Список команд — полное описание экрана (на нём живут снимки,
-    // save_svg и перерисовка), поэтому копится именно он, а непрозрачная
-    // заливка его обрезает: всё, что под ней, уже не видно. Так программа
-    // «fill в начале кадра» держит список коротким, а забытый fill даёт
-    // честный шлейф — и честные тормоза, когда команд станут тысячи.
-    const restartWith = (command: IdylliumCanvasCommand): void => {
-      const commands = canvasCommands(obj);
-      commands.length = 0;
-      commands.push(command);
-    };
+    // save_svg и тесты), поэтому копится именно он; непрозрачная заливка его
+    // обрезает: всё, что под ней, уже не видно. Хосту при этом каждый кадр уходит
+    // не весь список, а хвост (см. canvasSnapshot) — рендерер хранит картинку
+    // между кадрами, так что цена кадра — сколько нарисовано ЗА кадр, а не за всё
+    // время. Полупрозрачная заливка (затухающий след) ничего не обрезает — и не
+    // должна: вуаль заливкой и вуаль прямоугольником обязаны вести себя одинаково.
     obj.clear = contextFunction((_file: string, _line: number) => {
-      restartWith({ kind: 'clear', color: '#000000' });
+      restartCanvasCommands(obj, { kind: 'clear', color: '#000000' });
     });
     obj.fill = contextFunction((color: unknown, file: string, line: number) => {
       const command: IdylliumCanvasCommand = { kind: 'fill', color: colorToCss(color, 'Canvas.fill() color', file, line) };
-      // Полупрозрачная заливка прошлое не закрывает (приём «затухающий след») — список растёт.
-      if (color instanceof IdylliumColor && color.alpha >= 1) restartWith(command);
-      else canvasCommands(obj).push(command);
+      if (color instanceof IdylliumColor && color.alpha < 1) canvasCommands(obj).push(command);
+      else restartCanvasCommands(obj, command);
     });
     obj.draw = contextFunction((target: unknown, file: string, line: number) => {
       if (!isDrawableObject(target)) {
@@ -217,6 +213,14 @@ export function initializeGuiObject(obj: RuntimeObject, typeName: string, state:
     setTrackedRuntimePropertyDefault(obj, 'text_color', colorBlack());
     setTrackedRuntimePropertyDefault(obj, 'background_color', colorLightGray());
     defineTrackedRuntimeProperty(obj, 'border_color', colorGray());
+    // click() — нажатие из кода (1.6.1): зовёт on_click ровно так, как это сделал бы человек.
+    // Выключенную или спрятанную кнопку (и кнопку в таком контейнере) человек нажать не может —
+    // не нажимает её и программа.
+    obj.click = async () => {
+      if (widgetEventsBlocked(obj)) return;
+      const handler = obj.on_click;
+      if (typeof handler === 'function') await handler(obj);
+    };
   }
 
   if (typeName === 'TabWidget') {

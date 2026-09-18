@@ -17,7 +17,7 @@ import { setupColorEyedropper } from './color-eyedropper.js';
 import { setupShare } from './share.js';
 import { setOutputText, appendOutput, setStatus } from './console-output.js';
 import { MONACO_LANGUAGE_ID, registerMonacoIdyllium, defineMonacoThemes, monacoCompletionRequest, projectCompletions, projectSignatureHelp, projectSemanticTokens, encodeMonacoSemanticTokens, deduplicateCompletions, SEMANTIC_TOKEN_TYPES, SEMANTIC_TOKEN_MODIFIERS } from './monaco-lang.js';
-import { runProgram, stopProgram, stopGuiLoop, markGuiFrameReady, enqueueGuiEvent, reportGuiEventFailure, postEmptySnapshot, previewTargetOrigin, updateRunButton, setRunControls, submitConsoleInput, syncRuntimeFilesFromSnapshot, revokeAllBrowserAssetUrls, currentRuntime, formatCurrentFile, textSourceMap, registerRunHost, browserAssetUrls } from './run-preview.js';
+import { resyncCanvases, runProgram, stopProgram, stopGuiLoop, markGuiFrameReady, enqueueGuiEvent, reportGuiEventFailure, postEmptySnapshot, previewTargetOrigin, updateRunButton, setRunControls, submitConsoleInput, syncRuntimeFilesFromSnapshot, revokeAllBrowserAssetUrls, currentRuntime, formatCurrentFile, textSourceMap, registerRunHost, browserAssetUrls } from './run-preview.js';
 import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyEditor, editor, highlight, lineNumbers, completionPopup, editorTitle, fileList, output, consoleInputPanel, consoleInput, consoleInputSubmit, status, guiFrame, workspace, runtimePane, runtimeRowResizer, runButton, stopButton, formatButton, structuredViewToggle, structuredTextViewButton, structuredDataViewButton, newFileButton, newFolderButton, fileContextMenu, filePropsModal, uploadButton, uploadMenu, dropArea, uploadInput, uploadConflict, uploadConflictName, uploadConflictSkip, uploadConflictReplace, themeButton, themeMenu, themeDarkButton, themeLightButton, fontSizeDecrease, fontSizeIncrease, fontSizeInput, consoleFontSizeDecrease, consoleFontSizeIncrease, consoleFontSizeInput, autocompleteToggle, colorPickerButton, colorPickerMenu, fileAppMenuWrapper, fileAppMenuButton, fileAppMenu, fileAppMenuMain, fileAppMenuPanel, currentProjectNameElement, editAppMenuWrapper, editAppMenuButton, editAppMenu, colorPreview, colorRgbCode, colorHexCode, colorSliders, colorInputs, createIcon } from './dom.js';
 
   const DEFAULT_EDITOR_FONT_SIZE = 16;
@@ -240,6 +240,10 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
     }
     if (data.message.type === 'closeApp') {
       stopProgram(false);
+      return;
+    }
+    if (data.message.type === 'canvasResync') {
+      resyncCanvases(data.message.canvasIds);
       return;
     }
     if (data.message.type !== 'guiEvent') return;

@@ -527,6 +527,9 @@ function attachGuiSession(panel, result, channel, session) {
   const pendingGuiEvents = [];
   let lastTick = Date.now();
   let lastSnapshotJson = '';
+  // Хвосты холстов (1.6.2): рендерер хранит картинку между кадрами, рантайм отдаёт только
+  // новые команды. Ядро старше 1.6.2 помощника не знает — тогда работаем по-старому, целиком.
+  const canvasTails = typeof loadedCore.createCanvasTailTracker === 'function' ? loadedCore.createCanvasTailTracker() : null;
   let lastChannelOutput = runtime.getOutput ? runtime.getOutput() : (result.output || '');
 
   const syncChannelOutput = () => {
@@ -549,14 +552,18 @@ function attachGuiSession(panel, result, channel, session) {
   const sendSnapshot = () => {
     if (disposed) return;
     syncChannelOutput();
+    const tailOptions = canvasTails ? canvasTails.options() : undefined;
+    const windows = runtime.getWindows ? runtime.getWindows(tailOptions) : [];
+    const canvases = runtime.getCanvases ? runtime.getCanvases(tailOptions) : [];
     const state = guiWebviewState(
       panel.webview,
-      runtime.getWindows ? runtime.getWindows() : [],
-      runtime.getCanvases ? runtime.getCanvases() : [],
+      windows,
+      canvases,
       runtime.getModals ? runtime.getModals() : [],
       '',
       runtime.getAudio ? runtime.getAudio() : []
     );
+    if (canvasTails) canvasTails.sent(windows, canvases);
     const snapshotJson = JSON.stringify(state);
     if (snapshotJson === lastSnapshotJson) return;
     lastSnapshotJson = snapshotJson;
@@ -616,6 +623,13 @@ function attachGuiSession(panel, result, channel, session) {
     if (!message || typeof message !== 'object') return;
     if (message.type === 'closeApp') {
       panel.dispose();
+      return;
+    }
+    if (message.type === 'canvasResync') {
+      // Рендерер потерял картинку холста (или хвост не состыковался): шлём полный список.
+      if (canvasTails) canvasTails.forget(Array.isArray(message.canvasIds) ? message.canvasIds.map(Number) : undefined);
+      lastSnapshotJson = '';
+      sendSnapshot();
       return;
     }
     if (message.type === 'guiEvent') {

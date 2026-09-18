@@ -248,6 +248,7 @@ export {
 };
 export { IDYLLIUM_SEMANTIC_TOKEN_TYPES, IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS } from './core/semantics';
 export { guiPreviewIntervalMs } from './runtime/gui-interval';
+export { createCanvasTailTracker } from './runtime/canvas-tails';
 export { IDYLLIUM_VERSION } from './runtime/runtime';
 export { runActionWithSnapshotPump } from './runtime/gui-pump';
 

@@ -164,8 +164,14 @@ function throwSqliteValueExpected(
   file: string,
   line: number,
 ): never {
-  throw new IdylliumRuntimeError(file, line, `sqlite value is ${value.__sqliteKind}, expected ${expected}`);
+  // to_string() — распаковщик TEXT, а не «текстовый вид» (как у json.Value): печать того же значения
+  // работает, и это удивляет — подсказываем, где текстовый вид взять. NULL не подсказываем: его текст
+  // «null» почти никогда не то, чего хотел автор, — там нужен is_null().
+  const advice = expected === 'string' && value.__sqliteKind !== 'null' ? SQLITE_TEXT_FORM_ADVICE : '';
+  throw new IdylliumRuntimeError(file, line, `sqlite value is ${value.__sqliteKind}, expected ${expected}${advice}`);
 }
+
+const SQLITE_TEXT_FORM_ADVICE = ' — to_string() only unpacks TEXT; the text of any value is to_string(value)';
 
 export async function openSqliteDatabase(
   pathValue: unknown,
@@ -700,7 +706,9 @@ function sqliteColumnConversion<T>(
   } catch (error) {
     if (error instanceof IdylliumRuntimeError) {
       const detail = error.detail;
-      throw new IdylliumRuntimeError(file, line, detail.replace(/^sqlite value/u, `sqlite column '${column}'`));
+      throw new IdylliumRuntimeError(file, line, detail
+        .replace(/^sqlite value/u, `sqlite column '${column}'`)
+        .replace(SQLITE_TEXT_FORM_ADVICE, ` — get_string() only reads TEXT; the text of any value is to_string(rows.get(${JSON.stringify(column)}))`));
     }
     throw error;
   }

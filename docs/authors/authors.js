@@ -1,4 +1,4 @@
-/* Idyllium 1.6.1 — собрано tools/build-embed.js из packages/embed/; править источники. */
+/* Idyllium 1.6.2 — собрано tools/build-embed.js из packages/embed/; править источники. */
 "use strict";
 (() => {
   // packages/embed/src/authors.js

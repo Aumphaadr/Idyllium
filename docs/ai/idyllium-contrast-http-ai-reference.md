@@ -420,13 +420,13 @@ common crash in the course — while a browser is waiting for the answer.
 | C++ (cpp-httplib) | LOUD but empty, and silent on the server side | Probed: the client gets `HTTP/1.1 500 Internal Server Error` with `Content-Length: 0`; the server process prints **nothing at all**. The exception text exists nowhere unless an exception handler was installed in advance. Server survives. |
 | Python (`http.server`) | **QUIET to the client** | Probed: the client received `HTTP/1.0 200 OK` **with an empty body** — because the handler had already sent the status line before the crash. The traceback goes to the server's stderr, which a student running from an IDE may never look at. Server survives. |
 | JavaScript (`node:http`) | **FATAL** | Probed: the uncaught exception kills the process. The waiting client gets an empty reply, and every subsequent request is refused because the server is gone. The traceback is printed as the process dies. |
-| **Idyllium** | **LOUD for the author, neutral for the visitor** | Client gets status 500 with a neutral page that says where the details are; the full error text goes to the program console; `app.debug = true` (since 1.6.1) puts it into the response as well. The server keeps running. |
+| **Idyllium** | **LOUD for the author, neutral for the visitor** | Client gets status 500 with a bare `500 Internal Server Error`; the full error text goes to the program console; `app.debug = true` (since 1.6.1) puts it into the response as well. The server keeps running. |
 
 Probed, client side:
 
 ```text
 status 500
-body: 500 Internal Server Error — the handler failed; details are in the server console (app.debug = true shows them here)
+body: 500 Internal Server Error
 ```
 
 With `app.debug = true;` the body is the error itself:
@@ -446,9 +446,10 @@ failed"):
 Three things are deliberate here. The full message always reaches **the server
 console** — file, line and cause. The browser gets a neutral page by default
 (since 1.6.1; the industry standard — file names, SQL and table names of the
-program are not shown to whoever opened the address), and that page tells the
-student where to look and how to bring the text into the browser: `app.debug =
-true`, a switch for the author while developing. And the
+program are not shown to whoever opened the address — the page is the bare
+status line and names nothing of the engine, not even `app.debug`). The author
+is told where to look in their own console, once per run: `app.debug = true`
+brings the text into the browser while developing. And the
 server **survives**, because a classroom server that dies on the first bad
 request turns every debugging cycle into a restart.
 

@@ -129,3 +129,4 @@ export {
   BrowserRunOptions,
   BrowserRunResult,
 } from './browser';
+export { createCanvasTailTracker } from './runtime/canvas-tails';

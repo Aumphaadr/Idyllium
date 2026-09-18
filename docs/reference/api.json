@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "languageVersion": "1.6.1",
-  "generatedAt": "2026-09-18T13:50:44.902Z",
+  "languageVersion": "1.6.2",
+  "generatedAt": "2026-09-18T21:10:45.789Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "general": [
     {
@@ -6049,7 +6049,16 @@
               "inheritedFrom": "gui.Widget"
             }
           ],
-          "methods": []
+          "methods": [
+            {
+              "name": "click",
+              "signature": "click(): void",
+              "returnType": "void",
+              "parameters": [],
+              "variadic": false,
+              "documentation": "Нажимает кнопку из кода: срабатывает её on_click — так же, как от щелчка мышью, и sender тот же. Удобно, когда одно действие вызывается и кнопкой, и чем-то ещё: клавишей, таймером, крестиком окна. Выключенная или скрытая кнопка не нажимается — как и для человека. Если on_click не задан, ничего не происходит."
+            }
+          ]
         },
         {
           "name": "Canvas",
@@ -6343,7 +6352,7 @@
                 }
               ],
               "variadic": false,
-              "documentation": "Заливает весь холст цветом поверх нарисованного. Непрозрачный цвет стирает прошлое целиком — так начинают кадр. Полупрозрачный (colors.RGBA) только притеняет его: приём «затухающий след». Рисунок на холсте копится, и чем больше на нём накоплено фигур, тем дольше он перерисовывается."
+              "documentation": "Заливает весь холст цветом поверх нарисованного. Непрозрачный цвет стирает прошлое целиком — так начинают кадр. Полупрозрачный (colors.RGBA) только притеняет его: приём «затухающий след» — заливайте так каждый кадр, и за фигурами потянется гаснущий хвост. Рисунок на холсте копится; на экране это дёшево (предпросмотр хранит картинку между кадрами), но полный список нарисованного живёт в программе, пока его не начнёт заново непрозрачная заливка или clear()."
             },
             {
               "name": "save_svg",
@@ -13216,6 +13225,158 @@
           ]
         }
       ]
+    },
+    {
+      "name": "qr",
+      "title": "qr",
+      "description": "Стандартная библиотека qr.",
+      "notes": [],
+      "example": "",
+      "fullExamples": [],
+      "functions": [
+        {
+          "name": "capacity",
+          "signature": "capacity(level: string = \"M\"): int",
+          "returnType": "int",
+          "parameters": [
+            {
+              "name": "level",
+              "type": "string",
+              "optional": true,
+              "defaultValue": "\"M\"",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Сколько БАЙТ текста вмещает самый большой QR-код на уровне: \"L\" — 2953, \"M\" — 2331, \"Q\" — 1663, \"H\" — 1273. Латинская буква и цифра — один байт, русская буква — два, эмодзи — четыре."
+        },
+        {
+          "name": "decode",
+          "signature": "decode(picture: any): string",
+          "returnType": "string",
+          "parameters": [
+            {
+              "name": "picture",
+              "type": "any",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [
+                "image.Static",
+                "image.Bitmap"
+              ],
+              "acceptedDescription": "image.Static or image.Bitmap"
+            }
+          ],
+          "variadic": false,
+          "documentation": "Читает QR-код с картинки (image.Static или image.Bitmap) и возвращает его текст. Годятся файлы картинок и снимки экрана, в том числе светлый код на тёмном фоне; фотография с рук под углом читается не всегда. Кода на картинке нет — ошибка выполнения; проверить заранее можно через has_code()."
+        },
+        {
+          "name": "encode",
+          "signature": "encode(text: string, level: string = \"M\"): dyn_array<dyn_array<bool>>",
+          "returnType": "dyn_array<dyn_array<bool>>",
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            },
+            {
+              "name": "level",
+              "type": "string",
+              "optional": true,
+              "defaultValue": "\"M\"",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "QR-код текста как квадратная таблица клеток: grid[строка][столбец] == true — клетка тёмная. Сторона таблицы — grid.length (от 21 и больше: чем длиннее текст, тем крупнее код). Полей вокруг кода в таблице нет — светлую рамку шириной хотя бы в 4 клетки рисует тот, кто выводит код, иначе сканер его не найдёт. level — запас прочности: \"L\" (low), \"M\" (medium, по умолчанию), \"Q\" (quartile), \"H\" (high) — чем выше, тем больше клеток можно испортить без потери текста и тем крупнее код. Текст кодируется в UTF-8, русские буквы и эмодзи читаются телефоном верно."
+        },
+        {
+          "name": "fits",
+          "signature": "fits(text: string, level: string = \"M\"): bool",
+          "returnType": "bool",
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            },
+            {
+              "name": "level",
+              "type": "string",
+              "optional": true,
+              "defaultValue": "\"M\"",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Поместится ли текст в QR-код на этом уровне — проверка до отказа encode() и to_static()."
+        },
+        {
+          "name": "has_code",
+          "signature": "has_code(picture: any): bool",
+          "returnType": "bool",
+          "parameters": [
+            {
+              "name": "picture",
+              "type": "any",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [
+                "image.Static",
+                "image.Bitmap"
+              ],
+              "acceptedDescription": "image.Static or image.Bitmap"
+            }
+          ],
+          "variadic": false,
+          "documentation": "Есть ли на картинке QR-код, который удаётся прочитать."
+        },
+        {
+          "name": "to_static",
+          "signature": "to_static(text: string, scale: int = 8, level: string = \"M\"): image.Static",
+          "returnType": "image.Static",
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string",
+              "optional": false,
+              "defaultValue": "",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            },
+            {
+              "name": "scale",
+              "type": "int",
+              "optional": true,
+              "defaultValue": "8",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            },
+            {
+              "name": "level",
+              "type": "string",
+              "optional": true,
+              "defaultValue": "\"M\"",
+              "acceptedTypes": [],
+              "acceptedDescription": ""
+            }
+          ],
+          "variadic": false,
+          "documentation": "Готовая картинка QR-кода: чёрные клетки на белом, с положенными полями в 4 клетки. scale — сторона клетки в пикселях (от 1 до 64, по умолчанию 8). Результат — обычный image.Static: его можно показать в gui.ImageBox, нарисовать спрайтом, сохранить через export_to_file(\"code.png\"), перекрасить через tint()."
+        }
+      ],
+      "constants": [],
+      "types": []
     },
     {
       "name": "sqlite",
