@@ -4684,6 +4684,30 @@ main() {
 
 // Рантайм-предупреждения конца программы — и их выключатель в system.
 
+// Черепашье поле — окно, показанное без show(): у программы из одной черепахи
+// после закрытия поля крестиком не должно быть «finished without showing a
+// window» (находка владельца 2026-09-26; в CLI поле не создаётся и это молчало).
+test('turtle field counts as a shown window in the web host', async () => {
+  const source = `use turtle;
+main() {
+    turtle.Turtle t;
+    for (int i = 0; i < 4; i = i + 1) {
+        t.forward(50);
+        t.left(90);
+    }
+}
+`;
+  const web = await runIdyllium(source, { platform: 'web' }, { file: 'main.idyl' });
+  assert(web.success && web.runtimeError === null, `turtle probe must run: ${web.runtimeError}`);
+  const warnings = web.runtimeWarnings ?? [];
+  assert(
+    !warnings.some((w) => w.includes('finished without showing a window')),
+    `the turtle field is a shown window, got: ${JSON.stringify(warnings)}`,
+  );
+  const cli = await runIdyllium(source, { platform: 'cli' }, { file: 'main.idyl' });
+  assert(cli.success && (cli.runtimeWarnings ?? []).length === 0, `cli turtle stays silent: ${JSON.stringify(cli.runtimeWarnings)}`);
+});
+
 test('runtime warnings report silent failures and can be disabled', async () => {
   const silent = await runIdyllium(`use gui;
 use console;

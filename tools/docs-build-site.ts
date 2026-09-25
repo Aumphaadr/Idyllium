@@ -4,6 +4,7 @@ const nodeCrypto: any = require('crypto');
 
 import { buildReferenceSite } from './docs-build-reference';
 import { SITE_SECTIONS, injectSiteTopbar, siteNavAssetsHtml, siteTopbarHtml } from './site-nav';
+import { iconSvg, isIconName } from '../src/icons';
 
 /** Версия сайта — из package.json (единственный источник версии). Уходит в шапку каждой страницы. */
 const SITE_VERSION = String(JSON.parse(fs.readFileSync(path.resolve(process.cwd(), 'package.json'), 'utf8')).version);
@@ -102,9 +103,9 @@ const MANAGED_PATHS = [
 ];
 
 const SECTION_RENAMES: Record<string, { readonly id: string; readonly title: string; readonly icon: string }> = {
-  console: { id: 'console', title: 'Консоль', icon: 'terminal' },
-  widgets: { id: 'widgets', title: 'Виджеты', icon: 'widgets' },
-  oop: { id: 'oop', title: 'ООП', icon: 'classes' },
+  console: { id: 'console', title: 'Консоль', icon: 'section-console' },
+  widgets: { id: 'widgets', title: 'Виджеты', icon: 'section-widgets' },
+  oop: { id: 'oop', title: 'ООП', icon: 'section-oop' },
 };
 
 const SLUG_OVERRIDES: Record<string, string> = {
@@ -1182,20 +1183,24 @@ function buildHandoutsPage(outputRoot: string): number {
     return `${bytes} Б`;
   };
 
+  // Значок вкладки: имя из набора (handouts.json) или, для чужих манифестов, текст как есть.
+  const categoryIcon = (icon: string): string => (isIconName(icon) ? iconSvg(icon, { size: 18 }) : escapeHtml(icon));
+
   const thumbFor = (file: string, href: string): string => {
     if (/\.(png|gif|jpe?g|svg)$/iu.test(file)) return `<img class="thumb" src="${href}" alt="" loading="lazy">`;
     if (/\.(mp3|wav|ogg)$/iu.test(file)) {
       return `<button type="button" class="thumb thumb-icon thumb-audio" data-audio="${href}" data-name="${escapeHtml(file)}" title="Прослушать" aria-label="Прослушать ${escapeHtml(file)}">`
-        + '<svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg>'
-        + '<svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.6z"/></svg>'
+        + iconSvg('play', { size: 22, className: 'icon-play' })
+        + iconSvg('pause', { size: 22, className: 'icon-pause' })
         + '</button>';
     }
-    const glyph = /\.ttf$/iu.test(file) ? 'Aa'
-      : /\.json$/iu.test(file) ? '{ }'
-        : /\.(db|sqlite3?|sql)$/iu.test(file) ? '🗄'
-          : /\.zip$/iu.test(file) ? '📦'
-            : '📄';
-    return `<span class="thumb thumb-icon">${glyph}</span>`;
+    // Значок по типу файла — из единого набора сайта.
+    const icon = /\.ttf$/iu.test(file) ? 'file-font'
+      : /\.json$/iu.test(file) ? 'file-json'
+        : /\.(db|sqlite3?|sql)$/iu.test(file) ? 'file-database'
+          : /\.zip$/iu.test(file) ? 'file-archive'
+            : 'file-text';
+    return `<span class="thumb thumb-icon">${iconSvg(icon, { size: 28 })}</span>`;
   };
 
   let total = 0;
@@ -1210,7 +1215,7 @@ function buildHandoutsPage(outputRoot: string): number {
     total += count;
 
     tabs.push(`      <button type="button" class="tab" data-tab="${escapeHtml(category.id)}" role="tab" aria-selected="false">`
-      + `<span class="tab-icon">${escapeHtml(category.icon)}</span>${escapeHtml(category.title)}`
+      + `<span class="tab-icon">${categoryIcon(category.icon)}</span>${escapeHtml(category.title)}`
       + `<span class="tab-count">${count}</span></button>`);
 
     const groupsHtml = groups.map((group) => {
@@ -1237,7 +1242,7 @@ function buildHandoutsPage(outputRoot: string): number {
     }).join('\n');
 
     panels.push(`    <section class="panel" id="tab-${escapeHtml(category.id)}" role="tabpanel" hidden>
-      <h2>${escapeHtml(category.icon)} ${escapeHtml(category.title)}</h2>
+      <h2><span class="tab-icon">${categoryIcon(category.icon)}</span> ${escapeHtml(category.title)}</h2>
 ${groupsHtml}
     </section>`);
   }
@@ -1259,25 +1264,35 @@ ${groupsHtml}
        жила со своей зашитой тёмной палитрой, без шапки и без светлой темы (находка владельца, 1.6.2). */
     body { margin: 0; background: var(--bg-root); color: var(--text-main);
       font: 17px/1.6 "Geologica", system-ui, sans-serif; }
-    main { max-width: 900px; margin: 0 auto; padding: 30px 20px 60px; }
-    h1 { margin: 0 0 6px; font-size: 34px; }
-    .lead { margin: 0 0 22px; color: var(--text-soft); }
-    .controls { position: sticky; top: var(--topbar-height); z-index: 5; padding: 12px 0 10px;
-      background: linear-gradient(var(--bg-root) 78%, transparent); }
-    .search { width: 100%; padding: 11px 16px; border: 1px solid var(--border); border-radius: 999px;
-      background: var(--bg-panel); color: var(--text-main); font: 16px "Geologica", system-ui, sans-serif; }
+    /* Раскладка (вердикт владельца 2026-09-25): разделы — в боковой колонке слева, вся середина — спискам. */
+    main { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 34px; align-items: start;
+      max-width: 1440px; margin: 0 auto; padding: 26px 24px 60px; }
+    .handouts-side { position: sticky; top: calc(var(--topbar-height) + 16px); display: grid; gap: 12px; }
+    .handouts-main { min-width: 0; }
+    h1 { margin: 0 0 6px; font-size: 30px; }
+    .lead { margin: 0 0 10px; color: var(--text-soft); font-size: 15px; }
+    .search { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px;
+      background: var(--bg-panel); color: var(--text-main); font: 15px "Geologica", system-ui, sans-serif; }
     .search::placeholder { color: var(--text-muted); }
     .search:focus { outline: none; border-color: var(--accent); }
-    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-    .tab { display: inline-flex; align-items: center; gap: 8px; padding: 8px 15px;
-      border: 1px solid var(--border); border-radius: 999px; background: var(--bg-panel); color: var(--text-soft);
-      font: 700 15px "Geologica", system-ui, sans-serif; cursor: pointer; }
-    .tab:hover { border-color: var(--accent); color: var(--text-main); }
+    .tabs { display: grid; gap: 4px; }
+    .tab { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px;
+      border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--text-soft);
+      font: 700 15px "Geologica", system-ui, sans-serif; text-align: left; cursor: pointer; }
+    .tab:hover { border-color: var(--border); background: var(--bg-panel); color: var(--text-main); }
     .tab[aria-selected="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--text-main); }
-    .tab-icon { font-size: 15px; }
-    .tab-count { padding: 1px 8px; border-radius: 999px; background: var(--accent-soft);
+    .tab-icon { display: inline-flex; flex: 0 0 auto; color: var(--text-muted); }
+    .tab[aria-selected="true"] .tab-icon { color: var(--accent); }
+    .tab-icon svg { display: block; }
+    .tab-count { margin-left: auto; padding: 1px 8px; border-radius: 999px; background: var(--accent-soft);
       color: var(--accent); font-size: 13px; }
-    h2 { margin: 26px 0 12px; padding: 8px 16px; border-left: 4px solid var(--accent);
+    @media (max-width: 960px) {
+      main { grid-template-columns: 1fr; gap: 16px; }
+      .handouts-side { position: static; }
+      .tabs { display: flex; flex-wrap: wrap; }
+      .tab { width: auto; }
+    }
+    h2 { margin: 0 0 12px; padding: 8px 16px; border-left: 4px solid var(--accent);
       border-radius: 10px; background: linear-gradient(90deg, var(--accent-soft), transparent 82%);
       font-size: 21px; }
     h3 { margin: 24px 0 10px; color: var(--accent); font-size: 16px; text-transform: uppercase;
@@ -1324,17 +1339,21 @@ ${groupsHtml}
 <body>
 ${siteTopbarHtml('handouts', { prefix: '../', version: handoutsVersion })}
   <main>
-    <h1>Файлы для заданий</h1>
-    <p class="lead">Раздатка задачника: картинки, звуки, шрифты и данные, которые просят скачать задания. Кладите скачанный файл рядом с программой (в Web IDE — загрузите в проект).</p>
-    <div class="controls">
-      <input type="search" class="search" id="search" placeholder="Поиск по имени файла или описанию — например, «гильдия» или «.json»" aria-label="Поиск файлов">
+    <aside class="handouts-side" aria-label="Разделы раздатки">
+      <div>
+        <h1>Файлы для заданий</h1>
+        <p class="lead">Раздатка задачника: картинки, звуки, шрифты и данные, которые просят скачать задания. Кладите скачанный файл рядом с программой (в Web IDE — загрузите в проект).</p>
+      </div>
+      <input type="search" class="search" id="search" placeholder="Поиск: «гильдия», «.json»…" aria-label="Поиск файлов">
       <div class="tabs" role="tablist">
 ${tabs.join('\n')}
       </div>
-    </div>
+    </aside>
+    <div class="handouts-main">
     <p class="empty" id="empty">Ничего не нашлось. Попробуйте другое слово или выберите вкладку.</p>
 ${panels.join('\n')}
     <p class="footnote">Музыка — Kevin MacLeod (<a href="https://incompetech.com" rel="noopener">incompetech.com</a>), лицензия CC BY 4.0. Шрифты — SIL Open Font License (текст лицензии рядом с каждым шрифтом). Остальные материалы созданы командой Idyllium.</p>
+  </div>
   </main>
   <div class="audio-dock" id="audio-dock" aria-label="Аудиоплеер">
     <span class="dock-name" id="dock-name"></span>
@@ -1342,7 +1361,7 @@ ${panels.join('\n')}
     <input type="range" class="dock-seek" id="dock-seek" min="0" max="100" step="0.1" value="0" aria-label="Перемотка">
     <span class="dock-time" id="dock-duration">0:00</span>
     <input type="range" class="dock-volume" id="dock-volume" min="0" max="1" step="0.01" value="1" aria-label="Громкость">
-    <button type="button" class="dock-close" id="dock-close" title="Остановить и закрыть" aria-label="Остановить и закрыть">✕</button>
+    <button type="button" class="dock-close" id="dock-close" title="Остановить и закрыть" aria-label="Остановить и закрыть">${iconSvg('close', { size: 16 })}</button>
   </div>
   <script>
     (function () {
@@ -2049,7 +2068,7 @@ const PROJECTS_SECTIONS: ReadonlyArray<{ id: string; title: string; icon: string
   {
     id: 'console',
     title: 'Консоль',
-    icon: 'terminal',
+    icon: 'section-console',
     lessons: [
       { id: "reverse-excursion", title: "Экскурсия наоборот", subtitle: "Консольный проект · ★★" },
       { id: "cockroach-crumb-quest", title: "Ночной дожор", subtitle: "Консольный проект · ★★" },
@@ -2095,7 +2114,7 @@ const PROJECTS_SECTIONS: ReadonlyArray<{ id: string; title: string; icon: string
   {
     id: 'windows',
     title: 'Окна',
-    icon: 'widgets',
+    icon: 'section-widgets',
     lessons: [
       { id: "elevator-sage", title: "Лифт-философ", subtitle: "Оконный проект · ★★" },
       { id: "overlord-reception", title: "Приёмная Тёмного Властелина", subtitle: "Оконный проект · ★★" },
@@ -2193,6 +2212,7 @@ function tasksShell(sectionId: 'tasks' | 'projects' = 'tasks'): string {
   <link rel="stylesheet" href="../book/fonts/fonts.css">
   ${siteNavAssetsHtml('../')}
   <link rel="stylesheet" href="../book/app.css">
+  <script src="../gui-renderer/icons.js"></script>
   <script src="../book/version.js" defer></script>
   <script src="../book/app.js" defer></script>
 </head>

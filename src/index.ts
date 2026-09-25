@@ -130,3 +130,4 @@ export {
   BrowserRunResult,
 } from './browser';
 export { createCanvasTailTracker } from './runtime/canvas-tails';
+export { COLOR_CONSTANTS } from './runtime/color-constants';

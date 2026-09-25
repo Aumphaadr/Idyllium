@@ -1760,6 +1760,12 @@ var Idyllium = (() => {
           ], [
             functionSpec("set_image", [{ name: "image", type: imageImage }], types_1.VOID)
           ], guiWidget),
+          typeSpec("Icon", [
+            ...positioned,
+            ...widgetState,
+            ...styleable,
+            propertySpec("icon", types_1.STRING, false, `Имя значка из единого набора Idyllium (того же, что у сайта): например 'play', 'stop', 'sun', 'moon', 'folder', 'file', 'star', 'plus', 'brush'. Значок вписывается в квадрат по меньшей стороне виджета и красится цветом text_color. Другое имя — ошибка выполнения (с подсказкой похожих имён). Все имена со значками — в таблице на этой странице справочника.`)
+          ], [], guiWidget),
           typeSpec("LineEdit", [
             ...positioned,
             ...widgetState,
@@ -35516,6 +35522,34 @@ ${outerPadding}${close}`;
     }
   });
 
+  // dist/src/runtime/color-constants.js
+  var require_color_constants = __commonJS({
+    "dist/src/runtime/color-constants.js"(exports2) {
+      "use strict";
+      Object.defineProperty(exports2, "__esModule", { value: true });
+      exports2.COLOR_CONSTANTS = void 0;
+      exports2.COLOR_CONSTANTS = [
+        ["BLACK", 0, 0, 0],
+        ["WHITE", 255, 255, 255],
+        ["RED", 255, 0, 0],
+        ["GREEN", 0, 255, 0],
+        ["BLUE", 0, 0, 255],
+        ["YELLOW", 255, 255, 0],
+        ["CYAN", 0, 255, 255],
+        ["MAGENTA", 255, 0, 255],
+        ["GRAY", 128, 128, 128],
+        ["LIGHT_GRAY", 192, 192, 192],
+        ["DARK_RED", 128, 0, 0],
+        ["DARK_GREEN", 0, 128, 0],
+        ["DARK_BLUE", 0, 0, 128],
+        ["OLIVE", 128, 128, 0],
+        ["TEAL", 0, 128, 128],
+        ["PURPLE", 128, 0, 128],
+        ["TRANSPARENT", 0, 0, 0, 0]
+      ];
+    }
+  });
+
   // dist/src/runtime/drawable-geometry.js
   var require_drawable_geometry = __commonJS({
     "dist/src/runtime/drawable-geometry.js"(exports2) {
@@ -36051,6 +36085,21 @@ ${outerPadding}${close}`;
       }
       function isDrawableObject(value) {
         return (0, runtime_shared_12.isRuntimeObject)(value) && value.__idylliumDrawable === true;
+      }
+    }
+  });
+
+  // dist/src/icon-names.js
+  var require_icon_names = __commonJS({
+    "dist/src/icon-names.js"(exports2) {
+      "use strict";
+      Object.defineProperty(exports2, "__esModule", { value: true });
+      exports2.ICON_NAMES = exports2.ICON_VIEWBOX = void 0;
+      exports2.isIconName = isIconName;
+      exports2.ICON_VIEWBOX = "0 0 20 20";
+      exports2.ICON_NAMES = ["anchor", "archive", "arrow-down", "arrow-left", "arrow-right", "arrow-up", "autocomplete", "bell", "brush", "bulb", "check", "check-circle", "chevron-down", "chevron-left", "chevron-right", "chevron-up", "clock", "close", "comment", "copy", "cross", "cut", "download", "duplicate", "external", "eye", "eye-off", "eyedropper", "file", "file-archive", "file-audio", "file-code", "file-database", "file-font", "file-image", "file-json", "file-new", "file-text", "find", "fit", "folder", "folder-new", "folder-open", "font-size", "format", "grip", "image-paste", "info", "link", "lock", "loop", "menu", "minus", "moon", "more", "note", "open-file", "palette", "paste", "pause", "play", "play-window", "plus", "properties", "qr", "question", "redo", "refresh", "rename", "replace", "reset", "save", "search", "section-authors", "section-canvas", "section-console", "section-designer", "section-handouts", "section-json", "section-network", "section-oop", "section-projects", "section-recipes", "section-reference", "section-sqlite", "section-tasks", "section-turtle", "section-why", "section-widgets", "settings", "share", "star", "star-outline", "stop", "sun", "trash", "uncomment", "undo", "upload", "warning", "widget-BarChart", "widget-Button", "widget-Canvas", "widget-CheckBox", "widget-ComboBox", "widget-FloatSpinBox", "widget-Frame", "widget-ImageBox", "widget-Label", "widget-LineChart", "widget-LineEdit", "widget-PieChart", "widget-ProgressBar", "widget-RadioButton", "widget-Slider", "widget-SpinBox", "widget-TabWidget", "widget-Table", "widget-TextEdit", "zoom-in", "zoom-out"];
+      function isIconName(value) {
+        return typeof value === "string" && exports2.ICON_NAMES.includes(value);
       }
     }
   });
@@ -36758,6 +36807,7 @@ ${outerPadding}${close}`;
       exports2.canvasKeepsProgramAlive = canvasKeepsProgramAlive;
       exports2.initializeGuiChild = initializeGuiChild;
       var runtime_errors_12 = require_runtime_errors();
+      var icon_names_1 = require_icon_names();
       var runtime_shared_12 = require_runtime_shared();
       var runtime_values_12 = require_runtime_values();
       var runtime_state_12 = require_runtime_state();
@@ -36991,6 +37041,17 @@ ${outerPadding}${close}`;
           (0, runtime_state_12.setTrackedRuntimePropertyDefault)(obj, "background_color", (0, runtime_values_22.colorVeryLightGray)());
           (0, runtime_state_12.defineTrackedRuntimeProperty)(obj, "border_color", (0, runtime_values_22.colorGray)());
           obj.border_width = 1;
+        }
+        if (typeName === "Icon") {
+          (0, runtime_state_12.defineValidatedRuntimeProperty)(obj, "icon", "star", (value, file, line) => {
+            if (!(0, icon_names_1.isIconName)(value)) {
+              const shown = typeof value === "string" ? value : String(value);
+              const hints = typeof value === "string" ? icon_names_1.ICON_NAMES.filter((name) => name.includes(value.toLowerCase())).slice(0, 5) : [];
+              const hint = hints.length > 0 ? ` — maybe ${hints.map((name) => `'${name}'`).join(", ")}` : "";
+              throw new runtime_errors_12.IdylliumRuntimeError(file, line, `Icon.icon must be a name from the Idyllium icon set (like 'play', 'star', 'folder'), got '${shown}'${hint}; the full list is in the reference for gui.Icon`);
+            }
+            return value;
+          });
         }
         if (typeName === "ImageBox") {
           obj.image = null;
@@ -37243,6 +37304,8 @@ ${outerPadding}${close}`;
             return { width: 320, height: 220 };
           case "ImageBox":
             return { width: 160, height: 120 };
+          case "Icon":
+            return { width: 24, height: 24 };
           case "LineEdit":
             return { width: 180, height: 28 };
           case "TextEdit":
@@ -37293,7 +37356,7 @@ ${outerPadding}${close}`;
         });
       }
       function isGuiWidget(typeName) {
-        return typeName === "Window" || typeName === "Widget" || typeName === "Canvas" || typeName === "Label" || typeName === "Button" || typeName === "Frame" || typeName === "TabWidget" || typeName === "ImageBox" || typeName === "LineEdit" || typeName === "TextEdit" || typeName === "ProgressBar" || typeName === "SpinBox" || typeName === "FloatSpinBox" || typeName === "Slider" || typeName === "CheckBox" || typeName === "RadioButton" || typeName === "ComboBox" || typeName === "Table" || typeName === "BarChart" || typeName === "LineChart" || typeName === "PieChart";
+        return typeName === "Window" || typeName === "Widget" || typeName === "Canvas" || typeName === "Label" || typeName === "Button" || typeName === "Frame" || typeName === "TabWidget" || typeName === "ImageBox" || typeName === "Icon" || typeName === "LineEdit" || typeName === "TextEdit" || typeName === "ProgressBar" || typeName === "SpinBox" || typeName === "FloatSpinBox" || typeName === "Slider" || typeName === "CheckBox" || typeName === "RadioButton" || typeName === "ComboBox" || typeName === "Table" || typeName === "BarChart" || typeName === "LineChart" || typeName === "PieChart";
       }
       function guiObjectUsesFontSize(typeName) {
         return typeName === "Window" || typeName === "Label" || typeName === "Button" || typeName === "Frame" || typeName === "TabWidget" || typeName === "LineEdit" || typeName === "TextEdit" || typeName === "ProgressBar" || typeName === "SpinBox" || typeName === "FloatSpinBox" || typeName === "CheckBox" || typeName === "RadioButton" || typeName === "ComboBox" || typeName === "Table";
@@ -37574,6 +37637,7 @@ ${outerPadding}${close}`;
           window2.width = field.width;
           window2.height = field.height;
           window2.__shown = true;
+          state.anyWindowEverShown = true;
           const canvas = runtime_state_12.objectFactory.create("gui", "Canvas", state);
           canvas.x = 0;
           canvas.y = 0;
@@ -56592,6 +56656,7 @@ ${outerPadding}${close}`;
       var runtime_melody_1 = require_runtime_melody();
       var runtime_qr_1 = require_runtime_qr();
       var runtime_image_1 = require_runtime_image();
+      var color_constants_1 = require_color_constants();
       var runtime_drawable_1 = require_runtime_drawable();
       var runtime_gui_1 = require_runtime_gui();
       var runtime_snapshots_1 = require_runtime_snapshots();
@@ -57986,23 +58051,8 @@ ${outerPadding}${close}`;
               RGBA: (0, runtime_shared_1.contextFunction)((red, green, blue, alpha, file, line) => runtime_values_2.IdylliumColor.RGBA(red, green, blue, alpha, file, line)),
               HEX: (0, runtime_shared_1.contextFunction)((value, file, line) => runtime_values_2.IdylliumColor.HEX(value, file, line)),
               HSL: (0, runtime_shared_1.contextFunction)((hue, saturation, lightness, file, line) => runtime_values_2.IdylliumColor.HSL(hue, saturation, lightness, file, line)),
-              BLACK: runtime_values_2.IdylliumColor.RGB(0, 0, 0),
-              WHITE: runtime_values_2.IdylliumColor.RGB(255, 255, 255),
-              RED: runtime_values_2.IdylliumColor.RGB(255, 0, 0),
-              GREEN: runtime_values_2.IdylliumColor.RGB(0, 255, 0),
-              BLUE: runtime_values_2.IdylliumColor.RGB(0, 0, 255),
-              YELLOW: runtime_values_2.IdylliumColor.RGB(255, 255, 0),
-              CYAN: runtime_values_2.IdylliumColor.RGB(0, 255, 255),
-              MAGENTA: runtime_values_2.IdylliumColor.RGB(255, 0, 255),
-              GRAY: runtime_values_2.IdylliumColor.RGB(128, 128, 128),
-              LIGHT_GRAY: runtime_values_2.IdylliumColor.RGB(192, 192, 192),
-              DARK_RED: runtime_values_2.IdylliumColor.RGB(128, 0, 0),
-              DARK_GREEN: runtime_values_2.IdylliumColor.RGB(0, 128, 0),
-              DARK_BLUE: runtime_values_2.IdylliumColor.RGB(0, 0, 128),
-              OLIVE: runtime_values_2.IdylliumColor.RGB(128, 128, 0),
-              TEAL: runtime_values_2.IdylliumColor.RGB(0, 128, 128),
-              PURPLE: runtime_values_2.IdylliumColor.RGB(128, 0, 128),
-              TRANSPARENT: runtime_values_2.IdylliumColor.RGBA(0, 0, 0, 0)
+              // Именованные цвета — из одной таблицы с справочником и конструктором (color-constants.ts).
+              ...Object.fromEntries(color_constants_1.COLOR_CONSTANTS.map(([name, red, green, blue, alpha]) => [name, alpha === void 0 ? runtime_values_2.IdylliumColor.RGB(red, green, blue) : runtime_values_2.IdylliumColor.RGBA(red, green, blue, alpha)]))
             }
           },
           createObject(moduleName, typeName) {
@@ -65421,7 +65471,7 @@ ${outerPadding}${close}`;
         };
       })();
       Object.defineProperty(exports2, "__esModule", { value: true });
-      exports2.runActionWithSnapshotPump = exports2.IDYLLIUM_VERSION = exports2.createCanvasTailTracker = exports2.guiPreviewIntervalMs = exports2.IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS = exports2.IDYLLIUM_SEMANTIC_TOKEN_TYPES = exports2.IdylliumProject = exports2.formatIdyllium = exports2.createDefaultStandardLibrary = exports2.compileIdyllium = exports2.share = exports2.embed = void 0;
+      exports2.runActionWithSnapshotPump = exports2.COLOR_CONSTANTS = exports2.IDYLLIUM_VERSION = exports2.createCanvasTailTracker = exports2.guiPreviewIntervalMs = exports2.IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS = exports2.IDYLLIUM_SEMANTIC_TOKEN_TYPES = exports2.IdylliumProject = exports2.formatIdyllium = exports2.createDefaultStandardLibrary = exports2.compileIdyllium = exports2.share = exports2.embed = void 0;
       exports2.runIdylliumInBrowser = runIdylliumInBrowser;
       exports2.prepareIdylliumBrowserProgram = prepareIdylliumBrowserProgram;
       exports2.createUnitRunner = createUnitRunner;
@@ -65599,6 +65649,10 @@ ${outerPadding}${close}`;
       var runtime_2 = require_runtime();
       Object.defineProperty(exports2, "IDYLLIUM_VERSION", { enumerable: true, get: function() {
         return runtime_2.IDYLLIUM_VERSION;
+      } });
+      var color_constants_12 = require_color_constants();
+      Object.defineProperty(exports2, "COLOR_CONSTANTS", { enumerable: true, get: function() {
+        return color_constants_12.COLOR_CONSTANTS;
       } });
       var gui_pump_1 = require_gui_pump();
       Object.defineProperty(exports2, "runActionWithSnapshotPump", { enumerable: true, get: function() {

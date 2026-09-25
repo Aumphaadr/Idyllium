@@ -385,7 +385,7 @@ btn.style_hover = "background-color: #c0392b;";
   over it.
 
 The one inherited weakness is Qt's: **typos inside a sticker string are silent**
-(`backround-color`, `color: bananas` are dropped without a word), exactly like
+(`bckground-color`, `color: bananas` are dropped without a word), exactly like
 real CSS. See §16.
 
 ---
@@ -573,7 +573,7 @@ members of that object, and the wiring is one line the student writes.
    silently means "horizontal". This is deliberate CSS-like tolerance for
    `theme` and `orientation` (documented), but it is inconsistent with
    `file.open`, which validates its mode loudly.
-3. **Typos inside `style` strings are silent** (`backround-color`,
+3. **Typos inside `style` strings are silent** (`bckground-color`,
    `color: bananas`) — inherited from the CSS model along with its power. The
    assignment itself is typed (`label.style = 42;` is a compile error), but the
    contents are not checked. Prefer typed properties (`text_color`,

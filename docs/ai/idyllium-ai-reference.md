@@ -1533,7 +1533,10 @@ Widget inheritance has its own contract:
 - Only ordinary widgets can be extended: `gui.Button`, `gui.Label`,
   `gui.Frame`, `gui.CheckBox`, `gui.RadioButton`, `gui.LineEdit`,
   `gui.TextEdit`, `gui.ProgressBar`, `gui.Slider`, `gui.SpinBox`,
-  `gui.ComboBox`, `gui.ImageBox`. `gui.Window`, `gui.Canvas`, `gui.Timer`,
+  `gui.ComboBox`, `gui.ImageBox`, `gui.Icon` (since 1.6.3: an icon from the
+  site's own set — `icon = "play"`, `"star"`, `"folder"`…, fitted to the smaller
+  side, coloured by `text_color`; the full list of names is in the reference).
+  `gui.Window`, `gui.Canvas`, `gui.Timer`,
   dialogs and non-gui library types (`json.Value`, `time.stamp`, …) are a
   compile error.
 - The heir IS the widget: it has all widget properties/callbacks plus its
@@ -3160,7 +3163,7 @@ title.style = "color: white; background-color: dark-blue; border-radius: 12px;";
 
 Rules of the sticker:
 
-- **Typos are silent.** An unknown property (`backround-color`) or an invalid
+- **Typos are silent.** An unknown property (`bckground-color`) or an invalid
   value (`opacity: 1.5`, `color: bananas`) is dropped without any error — like
   real CSS. Idyllium's own type checks still apply to the assignment itself
   (`label.style = 42;` is a compile error).

@@ -606,6 +606,7 @@
     if (widget.type === 'gui.ProgressBar') return renderProgressBar(widget, inheritedColors);
     if (widget.type === 'gui.Frame') return renderFrame(widget, inheritedColors);
     if (widget.type === 'gui.ImageBox') return renderImageBox(widget, inheritedColors);
+    if (widget.type === 'gui.Icon') return renderIcon(widget, inheritedColors);
     if (widget.type === 'gui.TabWidget') return renderTabWidget(widget, inheritedColors);
     if (widget.type === 'gui.Table') return renderTable(widget, inheritedColors);
     if (widget.type === 'gui.BarChart') return renderChart(widget, inheritedColors, paintBarChart);
@@ -614,6 +615,25 @@
     if (widget.type === 'gui.Label') return renderLabel(widget, inheritedColors);
 
     return renderPlaceholder(widget, inheritedColors);
+  }
+
+  // gui.Icon: значок из единого набора сайта (gui-renderer/icons.js → window.IdylliumIcons),
+  // вписан в квадрат по меньшей стороне, цвет — text_color (currentColor).
+  function renderIcon(widget, inheritedColors) {
+    const props = widget.properties || {};
+    const el = baseWidget('div', widget, 'icon-widget', inheritedColors);
+    const name = stringValue(props.icon, 'star');
+    const icons = typeof window !== 'undefined' ? window.IdylliumIcons : null;
+    const side = Math.max(1, Math.min(positiveNumber(props.width, 24), positiveNumber(props.height, 24)));
+    if (icons && icons.has(name)) {
+      el.innerHTML = icons.svg(name, { size: side });
+    } else {
+      const missing = document.createElement('span');
+      missing.className = 'icon-missing';
+      missing.textContent = name;
+      el.appendChild(missing);
+    }
+    return el;
   }
 
   function renderImageBox(widget, inheritedColors) {
@@ -1308,6 +1328,11 @@
     el.style.setProperty('transform', text);
   }
 
+  // text-align → justify-content: у Label/Button содержимое двигает flex, а не text-align.
+  function textAlignJustify(value) {
+    return { left: 'flex-start', center: 'center', right: 'flex-end', start: 'flex-start', end: 'flex-end' }[value] || null;
+  }
+
   function applyStyleDeclarations(el, props) {
     const declarations = props && props.style_declarations;
     if (Array.isArray(declarations)) {
@@ -1322,7 +1347,7 @@
         if (item.property === 'text-align') {
           // Label и Button — flex-контейнеры: text-align сам по себе их
           // содержимое не двигает, зеркалим в justify-content.
-          const justify = { left: 'flex-start', center: 'center', right: 'flex-end' }[item.value];
+          const justify = textAlignJustify(item.value);
           if (justify) el.style.justifyContent = justify;
         }
       }
@@ -1339,6 +1364,10 @@
         if (item.property === 'rotate' || item.property === 'scale') continue;
         el.style.setProperty(item.property, item.value);
         if (item.property === 'user-select') el.style.setProperty('-webkit-user-select', item.value);
+        if (item.property === 'text-align') {
+          const justify = textAlignJustify(item.value);
+          if (justify) el.style.justifyContent = justify;
+        }
       }
     }
     applyStateStyleDeclarations(el, props);
@@ -1357,10 +1386,20 @@
     el.classList.add(marker);
     for (const [pseudo, declarations] of [[':hover', hover], [':active', active]]) {
       if (!Array.isArray(declarations) || declarations.length === 0) continue;
-      const parts = declarations
-        .filter((item) => item && typeof item.property === 'string' && typeof item.value === 'string')
-        .filter((item) => item.property !== 'rotate' && item.property !== 'scale')
-        .map((item) => item.property + ': ' + item.value + ' !important;');
+      const parts = [];
+      for (const item of declarations) {
+        if (!item || typeof item.property !== 'string' || typeof item.value !== 'string') continue;
+        if (item.property === 'rotate' || item.property === 'scale') continue;
+        parts.push(item.property + ': ' + item.value + ' !important;');
+        if (item.property === 'user-select') parts.push('-webkit-user-select: ' + item.value + ' !important;');
+        // База зеркалит text-align в justify-content инлайном; правило состояния
+        // обязано перебить и зеркало, иначе текст при наведении остаётся на месте
+        // (находка владельца 2026-09-26: style «left», style_hover «center»).
+        if (item.property === 'text-align') {
+          const justify = textAlignJustify(item.value);
+          if (justify) parts.push('justify-content: ' + justify + ' !important;');
+        }
+      }
       const transform = mergedTransformText(props && props.style_declarations, declarations);
       if (transform !== null) parts.push('transform: ' + transform + ' !important;');
       const body = parts.join(' ');

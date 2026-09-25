@@ -222,6 +222,7 @@ function guiPreviewHtml() {
   const guiRenderer = require(path.join(rendererSourceDir, 'index.js'));
   return guiRenderer.renderGuiWebviewHtml({
     cssUri: 'gui-renderer/renderer.css',
+    iconsUri: 'gui-renderer/icons.js',
     hostBootstrap: "window.IdylliumGuiHost = { postMessage: function(message) { var target = window.location.origin && window.location.origin !== 'null' ? window.location.origin : '*'; parent.postMessage({ type: 'idylliumGuiEvent', message: message }, target); } };",
     nonce: 'idyllium-web',
     scriptUri: 'gui-renderer/renderer.js',

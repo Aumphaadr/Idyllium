@@ -1,7 +1,7 @@
 {
   "version": 1,
   "languageVersion": "1.6.3",
-  "generatedAt": "2026-09-25T09:26:42.948Z",
+  "generatedAt": "2026-09-25T21:02:51.787Z",
   "overview": "Справочник содержит синтаксис языка, точные сигнатуры встроенных функций и стандартных библиотек Idyllium. Он предназначен для быстрого поиска уже знакомой возможности, поэтому не задаёт порядок изучения языка.",
   "general": [
     {
@@ -64,7 +64,7 @@
         {
           "title": "IdySS: язык, который молчит об ошибках",
           "description": "Свойство style принимает строку на стилевом языке-сателлите (Idyllium Style Sheets). Внутри кавычек строгость Idyllium заканчивается: опечатка в имени свойства или негодное значение просто не применяются — ни ошибки компиляции, ни runtime error, ровно как в настоящем CSS. Отступление педагогическое: ученик получает мощь веб-стилизации и вместе с ней понимание её цены. Граница проходит по кавычкам: style = 42 — обычная ошибка типов.",
-          "code": "btn.style = \"border-tadius: 10px;\";  // опечатка: молча не применится\n// btn.style = 42;                    // а это уже ошибка компиляции"
+          "code": "btn.style = \"bordr-radius: 10px;\";  // опечатка: молча не применится\n// btn.style = 42;                    // а это уже ошибка компиляции"
         },
         {
           "title": "Библиотека random: предсказуемая случайность",
@@ -530,7 +530,7 @@
         {
           "title": "Приоритет и молчание об ошибках",
           "description": "Слои оформления снизу вверх: тема окна (gui.Window.theme) → прямые свойства виджета (text_color, background_color, …) → IdySS-наклейка. Свойство с наклейки побеждает одноимённое прямое свойство. Об опечатках IdySS сознательно молчит, как настоящий CSS: неизвестное свойство или негодное значение просто не применяется, программа не падает. Строгость Idyllium остаётся снаружи кавычек: style = 42; — ошибка компиляции.",
-          "code": "// 'tadius' вместо 'radius' — свойство молча пропущено,\n// остальная наклейка работает\nbtn.style = \"border-tadius: 12px; color: white;\";"
+          "code": "// 'bordr' вместо 'border' — свойство молча пропущено,\n// остальная наклейка работает\nbtn.style = \"bordr-radius: 12px; color: white;\";"
         }
       ]
     },
@@ -7084,6 +7084,128 @@
               "documentation": "Кладёт виджет внутрь. Виджет нельзя положить внутрь самого себя или внутрь своего же ребёнка — у такого дерева не было бы конца, и рантайм честно об этом скажет."
             }
           ]
+        },
+        {
+          "name": "Icon",
+          "qualifiedName": "gui.Icon",
+          "baseType": "gui.Widget",
+          "description": "",
+          "notes": [],
+          "example": "",
+          "properties": [
+            {
+              "name": "enabled",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Доступность виджета. enabled = false — виджет остаётся на экране, но выключен: рисуется приглушённо-серым, не реагирует на мышь и клавиатуру, его события не срабатывают. У контейнера (Frame, TabWidget) выключает и всё содержимое.",
+              "callbacks": []
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "hint",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Всплывающая подсказка: строка, которая появляется рядом с курсором, если задержать его над виджетом. Пустая строка (по умолчанию) — подсказки нет. Не путать с placeholder: тот живёт внутри пустого поля ввода, hint всплывает над любым виджетом.",
+              "callbacks": []
+            },
+            {
+              "name": "icon",
+              "type": "string",
+              "readonly": false,
+              "documentation": "Имя значка из единого набора Idyllium (того же, что у сайта): например 'play', 'stop', 'sun', 'moon', 'folder', 'file', 'star', 'plus', 'brush'. Значок вписывается в квадрат по меньшей стороне виджета и красится цветом text_color. Другое имя — ошибка выполнения (с подсказкой похожих имён). Все имена со значками — в таблице на этой странице справочника.",
+              "callbacks": []
+            },
+            {
+              "name": "style",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-строка стилей вида \"color: red; border-radius: 8px;\". Наклейка поверх обычных свойств; опечатки и неизвестные свойства молча игнорируются, пустая строка снимает наклейку.",
+              "callbacks": []
+            },
+            {
+              "name": "style_active",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет зажат мышью. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "style_disabled",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока виджет выключен (enabled = false). Тот же словарь и то же молчание об опечатках, что у style; когда виджет снова включают, наклейка снимается сама.",
+              "callbacks": []
+            },
+            {
+              "name": "style_hover",
+              "type": "string",
+              "readonly": false,
+              "documentation": "IdySS-стили, действующие пока курсор наведён на виджет. Тот же словарь и то же молчание об опечатках, что у style.",
+              "callbacks": []
+            },
+            {
+              "name": "visible",
+              "type": "bool",
+              "readonly": false,
+              "documentation": "Видимость виджета. visible = false — виджет не рисуется и не принимает событий, но остаётся в памяти со всеми свойствами.",
+              "callbacks": []
+            },
+            {
+              "name": "width",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "x",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "y",
+              "type": "int",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": []
+            },
+            {
+              "name": "background_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "font",
+              "type": "fonts.Font",
+              "readonly": false,
+              "documentation": "Шрифт виджета. Если не задан явно, наследуется от Window или Frame.",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            },
+            {
+              "name": "text_color",
+              "type": "colors.Color",
+              "readonly": false,
+              "documentation": "",
+              "callbacks": [],
+              "inherited": true,
+              "inheritedFrom": "gui.Widget"
+            }
+          ],
+          "methods": []
         },
         {
           "name": "ImageBox",

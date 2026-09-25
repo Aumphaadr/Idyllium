@@ -1,5 +1,6 @@
 // ─── gui: окна, виджеты, события — модуль рантайма (этап Б, 2026-08-29) ────
 import { IdylliumRuntimeError } from './runtime-errors';
+import { ICON_NAMES, isIconName } from '../icon-names';
 import { RuntimeObject, contextFunction, finiteNumber, intArgument, isRuntimeObject, stringArgument } from './runtime-shared';
 import { IdylliumArray, IdylliumColor, valueOps } from './runtime-values';
 import { IdylliumCanvasCommand, RuntimeObjectState, canvasCommands, restartCanvasCommands, defineEnumRuntimeProperty, defineTrackedRuntimeProperty, defineValidatedRuntimeProperty, setTrackedRuntimePropertyDefault } from './runtime-state';
@@ -275,6 +276,19 @@ export function initializeGuiObject(obj: RuntimeObject, typeName: string, state:
     obj.border_width = 1;
   }
 
+  if (typeName === 'Icon') {
+    // Значок из единого набора сайта; список имён — сгенерированный src/icon-names.ts.
+    defineValidatedRuntimeProperty(obj, 'icon', 'star', (value, file, line) => {
+      if (!isIconName(value)) {
+        const shown = typeof value === 'string' ? value : String(value);
+        const hints = typeof value === 'string' ? ICON_NAMES.filter((name) => name.includes(value.toLowerCase())).slice(0, 5) : [];
+        const hint = hints.length > 0 ? ` — maybe ${hints.map((name) => `'${name}'`).join(', ')}` : '';
+        throw new IdylliumRuntimeError(file, line, `Icon.icon must be a name from the Idyllium icon set (like 'play', 'star', 'folder'), got '${shown}'${hint}; the full list is in the reference for gui.Icon`);
+      }
+      return value;
+    });
+  }
+
   if (typeName === 'ImageBox') {
     obj.image = null;
     defineEnumRuntimeProperty(obj, 'resize_mode', 'ImageBox', 'fit', ['fit', 'fill', 'stretch', 'original']);
@@ -544,6 +558,8 @@ export function defaultGuiWidgetSize(typeName: string): { width: number; height:
       return { width: 320, height: 220 };
     case 'ImageBox':
       return { width: 160, height: 120 };
+    case 'Icon':
+      return { width: 24, height: 24 };
     case 'LineEdit':
       return { width: 180, height: 28 };
     case 'TextEdit':
@@ -607,6 +623,7 @@ export function isGuiWidget(typeName: string): boolean {
     || typeName === 'Frame'
     || typeName === 'TabWidget'
     || typeName === 'ImageBox'
+    || typeName === 'Icon'
     || typeName === 'LineEdit'
     || typeName === 'TextEdit'
     || typeName === 'ProgressBar'

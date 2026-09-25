@@ -12,6 +12,7 @@
   <link rel="icon" href="../assets/idyllium.svg" type="image/svg+xml">
   <!-- @site-nav-assets -->
   <link rel="stylesheet" href="app.css">
+  <script src="../gui-renderer/icons.js"></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -21,7 +22,10 @@
     <aside class="reference-sidebar" id="reference-sidebar">
       <div class="sidebar-search">
         <label for="reference-search">Поиск по API</label>
-        <input id="reference-search" type="search" autocomplete="off" placeholder="Например: set_image">
+        <div class="search-field">
+          <input id="reference-search" type="search" autocomplete="off" placeholder="Например: set_image">
+          <button id="reference-search-clear" class="search-clear" type="button" hidden title="Очистить" aria-label="Очистить поиск"></button>
+        </div>
       </div>
       <nav id="reference-nav" class="reference-nav" aria-label="Документация Idyllium"></nav>
     </aside>

@@ -324,17 +324,29 @@ body.theme-light .topbar {
   width: 100%;
   height: 32px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 14px;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
   justify-content: stretch;
   border-color: transparent;
   background: transparent;
   text-align: left;
 }
 
-.app-menu button > span:first-child {
+.app-menu button > span:first-of-type {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Значки пунктов — единый набор сайта (gui-renderer/icons.js). */
+.menu-icon {
+  display: block;
+  color: var(--muted);
+}
+
+.app-menu button:hover:not(:disabled) .menu-icon,
+.file-context-menu button:hover:not(:disabled) .menu-icon {
+  color: inherit;
 }
 
 .app-menu button:hover:not(:disabled) {
@@ -516,274 +528,21 @@ body.theme-light .topbar {
 }
 
 .color-picker-menu {
-  position: absolute;
-  /* Выше внутренних слоёв Monaco (скроллбар/виджеты доходят до z-index 40):
-     иначе ховер по скроллбару редактора всплывал ПОВЕРХ генератора цвета. */
-  z-index: 60;
-  top: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(620px, calc(100vw - 28px));
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--panel-raised);
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.34);
+  /* Положение и вид задаёт общий компонент (assets/color-picker.css, .is-floating). */
+  display: block;
 }
 
-.color-picker-grid {
-  display: grid;
-  grid-template-columns: minmax(300px, 1fr) 150px;
-  gap: 14px;
-  align-items: stretch;
-}
-
-.color-picker-controls {
-  display: grid;
-  gap: 10px;
-}
-
-.color-channel-row {
-  display: grid;
-  grid-template-columns: 18px minmax(170px, 1fr) auto;
-  gap: 10px;
-  align-items: center;
-  color: var(--muted);
-  font: 700 13px var(--mono-font);
-}
-
-.color-slider {
-  width: 100%;
-  height: 22px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  appearance: none;
-  cursor: pointer;
-  outline: 0;
-}
-
-.color-slider:focus-visible {
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 28%, transparent);
-}
-
-.color-slider-red {
-  background: linear-gradient(to right, #000000, #ff0000);
-}
-
-.color-slider-green {
-  background: linear-gradient(to right, #000000, #00ff00);
-}
-
-.color-slider-blue {
-  background: linear-gradient(to right, #000000, #0000ff);
-}
-
-.color-slider-alpha {
-  background:
-    linear-gradient(to right, transparent, #ffffff),
-    url("assets/transparent.png");
-}
-
-.color-slider::-webkit-slider-thumb {
-  width: 18px;
-  height: 28px;
-  border: 2px solid #ffffff;
-  border-radius: 7px;
-  background: var(--accent);
-  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.42);
-  appearance: none;
-}
-
-.color-slider::-moz-range-thumb {
-  width: 18px;
-  height: 28px;
-  border: 2px solid #ffffff;
-  border-radius: 7px;
-  background: var(--accent);
-  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.42);
-}
-
-.color-number-control {
-  height: 30px;
-  display: grid;
-  grid-template-columns: 28px 44px 28px;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--panel-soft);
-  color: var(--text);
-}
-
-.color-number-control button {
-  width: 28px;
-  height: 28px;
-  justify-content: center;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: inherit;
-  padding: 0;
-  font-size: 16px;
-}
-
-.color-number-control button:hover {
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
-  border-color: transparent;
-}
-
-.color-number-control button:last-child {
-  border-left: 1px solid var(--border);
-}
-
-.color-number-control input {
-  width: 44px;
-  height: 28px;
-  border: 0;
-  border-left: 1px solid var(--border);
-  background: transparent;
-  color: var(--text);
-  font: 600 13px var(--mono-font);
-  text-align: center;
-  outline: 0;
-  padding: 0 4px;
-  -moz-appearance: textfield;
-}
-
-.color-number-control input::-webkit-outer-spin-button,
-.color-number-control input::-webkit-inner-spin-button {
-  margin: 0;
-  -webkit-appearance: none;
-}
-
-.color-preview-wrap {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-}
-
-.color-eyedropper-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 9px;
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.color-eyedropper-button svg {
-  width: 15px;
-  height: 15px;
-  flex: none;
-}
-
-.color-eyedropper-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.color-eyedropper-button.eyedropper-active {
-  border-color: color-mix(in srgb, var(--accent) 64%, var(--border));
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
-  color: var(--accent);
-}
-
-#eyedropper-lens {
-  position: fixed;
-  z-index: 100000;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 5px 9px 5px 5px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--panel-raised, var(--panel-soft));
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-  pointer-events: none;
-}
-
-.eyedropper-lens-swatch {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: transparent;
-  flex: none;
-}
-
-.eyedropper-lens-label {
-  color: var(--text);
-  font: 12px var(--mono-font);
-  white-space: nowrap;
-}
-
-.color-preview {
-  width: 100%;
-  aspect-ratio: 1;
-  min-height: 138px;
-  border: 3px solid var(--preview-rgb, rgb(34, 145, 188));
-  border-radius: 8px;
-  background:
-    linear-gradient(var(--preview-rgba, rgba(34, 145, 188, 1)), var(--preview-rgba, rgba(34, 145, 188, 1))),
-    url("assets/transparent_idyllium.png");
-  background-size: auto, cover;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-}
-
-.color-code-list {
-  display: grid;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.color-code-row {
-  display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: center;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.color-code-row code {
-  min-width: 0;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--panel-soft);
-  color: var(--text);
-  font: 13px var(--mono-font);
-  padding: 6px 8px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.color-code-row button {
-  height: 30px;
-  padding: 0 9px;
-}
-
-.color-code-row button.copy-success {
-  border-color: color-mix(in srgb, var(--success) 64%, var(--border));
-  background: color-mix(in srgb, var(--success) 18%, transparent);
-  color: var(--success);
-}
-
-.color-code-row button.copy-error {
-  border-color: color-mix(in srgb, var(--danger) 58%, var(--border));
-  background: color-mix(in srgb, var(--danger) 14%, transparent);
-  color: var(--danger);
-}
 
 .theme-menu button {
   width: 100%;
   justify-content: flex-start;
   border-color: transparent;
   background: transparent;
+}
+
+.theme-menu button > .menu-icon {
+  flex: 0 0 auto;
+  margin-right: 8px;
 }
 
 .theme-menu button.active {
@@ -1104,11 +863,17 @@ body.theme-light .topbar {
 .icon-button svg {
   width: 17px;
   height: 17px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.9;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  fill: currentColor;
+}
+
+/* Значки кнопок панели — тем же приглушённым цветом, что значки в меню шапки: один и тот же
+   SVG ярко-белым читался как «более жирный» (находка владельца 2026-09-26); ярче — при наведении. */
+.icon-button {
+  color: var(--muted);
+}
+
+.icon-button:hover:not(:disabled) {
+  color: var(--text);
 }
 
 .file-list {
@@ -1195,11 +960,7 @@ body.theme-light .topbar {
   width: 16px;
   height: 16px;
   flex: 0 0 auto;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  fill: currentColor;
   color: var(--muted);
 }
 
@@ -1269,6 +1030,7 @@ body.theme-light .topbar {
 
 .file-context-menu button {
   justify-content: flex-start;
+  gap: 8px;
   border-color: transparent;
   background: transparent;
   color: var(--text);

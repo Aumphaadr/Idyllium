@@ -30,6 +30,10 @@ export function ensureTurtleField(state: RuntimeObjectState): TurtleFieldState {
     window.width = field.width;
     window.height = field.height;
     window.__shown = true;
+    // Поле показано без show(): флаг «окно было показано» ставим сами, иначе
+    // конец программы (закрыли поле крестиком) даёт «finished without showing
+    // a window» (находка владельца 2026-09-26; «Остановить» обрывал до проверки).
+    state.anyWindowEverShown = true;
 
     const canvas = objectFactory.create('gui', 'Canvas', state);
     canvas.x = 0;

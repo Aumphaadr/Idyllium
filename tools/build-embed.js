@@ -11,6 +11,14 @@
 const fs = require('fs');
 const path = require('path');
 const esbuild = require('esbuild');
+const icons = require(path.join(__dirname, '..', 'dist', 'src', 'icons.js'));
+
+/** <i data-icon="play" data-size="16"> → готовый svg из единого набора (юниты живут на чужих сайтах — без внешнего скрипта). */
+function inlineIcons(html) {
+  return html.replace(/<i class="icon" data-icon="([A-Za-z0-9-]+)" data-size="(\d+)"><\/i>/g, (whole, name, size) => (
+    icons.isIconName(name) ? icons.iconSvg(name, { size: Number(size) }) : whole
+  ));
+}
 
 const rootDir = path.resolve(__dirname, '..');
 const sourceDir = path.join(rootDir, 'packages', 'embed');
@@ -53,7 +61,8 @@ const sizes = {
   'embed/idyllium-unit.js': bundle(path.join(sourceDir, 'src', 'loader.js'), path.join(embedOut, 'idyllium-unit.js'), 'iife'),
 };
 for (const file of ['frame.html', 'frame.css']) {
-  fs.copyFileSync(path.join(sourceDir, file), path.join(embedOut, file));
+  const text = fs.readFileSync(path.join(sourceDir, file), 'utf8');
+  fs.writeFileSync(path.join(embedOut, file), file.endsWith('.html') ? inlineIcons(text) : text, 'utf8');
 }
 
 const authorsSource = path.join(sourceDir, 'authors');
@@ -67,8 +76,9 @@ if (fs.existsSync(path.join(authorsSource, 'index.html'))) {
   fs.writeFileSync(path.join(authorsOut, 'version.json'), `${JSON.stringify({ version }, null, 2)}\n`);
   // Шапка «Авторам» — из единого источника шапки сайта.
   const siteNav = require(path.join(rootDir, 'dist', 'tools', 'site-nav.js'));
+
   const authorsShell = fs.readFileSync(path.join(authorsOut, 'index.html'), 'utf8');
-  fs.writeFileSync(path.join(authorsOut, 'index.html'), siteNav.injectSiteTopbar(authorsShell, 'authors', { prefix: '../', version }), 'utf8');
+  fs.writeFileSync(path.join(authorsOut, 'index.html'), siteNav.injectSiteTopbar(inlineIcons(authorsShell), 'authors', { prefix: '../', version }), 'utf8');
   if (fs.existsSync(path.join(sourceDir, 'src', 'authors.js'))) {
     sizes['authors/authors.js'] = bundle(path.join(sourceDir, 'src', 'authors.js'), path.join(authorsOut, 'authors.js'), 'iife');
   }

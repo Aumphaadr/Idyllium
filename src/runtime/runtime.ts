@@ -119,6 +119,7 @@ import { audioCommands, audioDuration, initializeAudioObject, looksLikeAudio } f
 import { initializeMelodyObject } from './runtime-melody';
 import { createQrModule } from './runtime-qr';
 import { StoredBitmap, initializeImageObject, imageResourceUri, imageService, readRuntimeBytes, runtimeImageResource, storedAnimation, storedBitmap, storedStaticImage, svgPassport, imageRuntimeError, resolveImageInputPath , setImageMetadata, ensureImageSize, writeRuntimeImageBytes, StoredStaticImage, createGeneratedStaticImage } from './runtime-image';
+import { COLOR_CONSTANTS } from './color-constants';
 import { RuntimeFontFormat, attachDrawableGeometry, createDefaultDrawableFont, detectFontFormat, drawableCollisionShape, drawableTextMetrics, drawableTransform, fontMimeType, initializeDrawableObject, initializeFontObject, isDrawableObject, runtimeFontBytes } from './runtime-drawable';
 import { applyGuiEventPayload, canvasKeepsProgramAlive, closeModal, defaultGuiWidgetSize, eventFloat, eventNumber, guiCallbackName, guiEventObject, guiObjectUsesFontSize, initializeGuiChild, initializeGuiObject, isGuiWidget, refuseWidgetCycle, selectRadioButton, showModal, widgetEventsBlocked } from './runtime-gui';
 import { audioSnapshot, canvasCaptureRegion, canvasSnapshot, canvasToSvg, withKnownCanvases, drawableSnapshot, modalSnapshot, objectPropertiesSnapshot, runtimeObjectId, snapshotValue, widgetSnapshot, windowSnapshot } from './runtime-snapshots';
@@ -1909,23 +1910,8 @@ export function createRuntime(options: RuntimeOptions = {}): IdylliumRuntime {
         RGBA: contextFunction((red: number, green: number, blue: number, alpha: number, file: string, line: number) => IdylliumColor.RGBA(red, green, blue, alpha, file, line)),
         HEX: contextFunction((value: string, file: string, line: number) => IdylliumColor.HEX(value, file, line)),
         HSL: contextFunction((hue: number, saturation: number, lightness: number, file: string, line: number) => IdylliumColor.HSL(hue, saturation, lightness, file, line)),
-        BLACK: IdylliumColor.RGB(0, 0, 0),
-        WHITE: IdylliumColor.RGB(255, 255, 255),
-        RED: IdylliumColor.RGB(255, 0, 0),
-        GREEN: IdylliumColor.RGB(0, 255, 0),
-        BLUE: IdylliumColor.RGB(0, 0, 255),
-        YELLOW: IdylliumColor.RGB(255, 255, 0),
-        CYAN: IdylliumColor.RGB(0, 255, 255),
-        MAGENTA: IdylliumColor.RGB(255, 0, 255),
-        GRAY: IdylliumColor.RGB(128, 128, 128),
-        LIGHT_GRAY: IdylliumColor.RGB(192, 192, 192),
-        DARK_RED: IdylliumColor.RGB(128, 0, 0),
-        DARK_GREEN: IdylliumColor.RGB(0, 128, 0),
-        DARK_BLUE: IdylliumColor.RGB(0, 0, 128),
-        OLIVE: IdylliumColor.RGB(128, 128, 0),
-        TEAL: IdylliumColor.RGB(0, 128, 128),
-        PURPLE: IdylliumColor.RGB(128, 0, 128),
-        TRANSPARENT: IdylliumColor.RGBA(0, 0, 0, 0),
+        // Именованные цвета — из одной таблицы с справочником и конструктором (color-constants.ts).
+        ...Object.fromEntries(COLOR_CONSTANTS.map(([name, red, green, blue, alpha]) => [name, alpha === undefined ? IdylliumColor.RGB(red, green, blue) : IdylliumColor.RGBA(red, green, blue, alpha)])),
       },
     },
     createObject(moduleName: string, typeName: string): Record<string, unknown> {

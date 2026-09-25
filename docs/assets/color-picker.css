@@ -1,0 +1,465 @@
+/* Генератор цвета — общий компонент Web IDE и Конструктора GUI (packages/web-ide/src/color-picker.js).
+   Правила переехали сюда из app.css Web IDE (1.6.3), чтобы панель была одна в обоих местах.
+   Нужны переменные хозяина: --border, --accent, --panel-raised, --panel-soft, --text, --muted,
+   --ui-font, --mono-font, --success, --danger; у Конструктора GUI они объявлены псевдонимами
+   его палитры. Кнопки, поля и коды панели описаны здесь ЦЕЛИКОМ и с запасом специфичности
+   (.color-picker-panel …): глобальные правила хозяина для button/input/code до них не
+   дотягиваются, и панель выглядит одинаково в Web IDE и в конструкторе. */
+/* ── база элементов панели: всё своё, хозяин не вмешивается ── */
+.color-picker-panel button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+  height: 30px;
+  margin: 0;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-raised);
+  color: var(--text);
+  font: 600 13px var(--ui-font, inherit);
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  cursor: pointer;
+  filter: none;
+  transform: none;
+  box-shadow: none;
+}
+
+.color-picker-panel button:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--panel-soft);
+  color: var(--text);
+  filter: none;
+}
+
+.color-picker-panel button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.color-picker-panel button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.color-picker-panel button svg {
+  fill: currentColor;
+  stroke: none;
+}
+
+.color-picker-panel input {
+  box-sizing: border-box;
+  margin: 0;
+  font: 600 13px var(--mono-font, ui-monospace, monospace);
+  color: var(--text);
+}
+
+.color-picker-panel code {
+  font: 13px var(--mono-font, ui-monospace, monospace);
+}
+
+.color-picker-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px;
+  gap: 14px;
+  align-items: stretch;
+}
+
+.color-picker-controls {
+  display: grid;
+  gap: 10px;
+}
+
+.color-channel-row {
+  display: grid;
+  grid-template-columns: 18px minmax(120px, 1fr) 102px;
+  gap: 10px;
+  align-items: center;
+  color: var(--muted);
+  font: 700 13px var(--mono-font, ui-monospace, monospace);
+}
+
+.color-slider {
+  width: 100%;
+  height: 22px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  appearance: none;
+  cursor: pointer;
+  outline: 0;
+}
+
+.color-slider:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.color-slider-red {
+  background: linear-gradient(to right, #000000, #ff0000);
+}
+
+.color-slider-green {
+  background: linear-gradient(to right, #000000, #00ff00);
+}
+
+.color-slider-blue {
+  background: linear-gradient(to right, #000000, #0000ff);
+}
+
+.color-slider-alpha {
+  background:
+    linear-gradient(to right, transparent, #ffffff),
+    url("transparent.png");
+}
+
+.color-slider::-webkit-slider-thumb {
+  width: 18px;
+  height: 28px;
+  border: 2px solid #ffffff;
+  border-radius: 7px;
+  background: var(--accent);
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.42);
+  appearance: none;
+}
+
+.color-slider::-moz-range-thumb {
+  width: 18px;
+  height: 28px;
+  border: 2px solid #ffffff;
+  border-radius: 7px;
+  background: var(--accent);
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.42);
+}
+
+.color-number-control {
+  height: 30px;
+  display: grid;
+  grid-template-columns: 28px 44px 28px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel-soft);
+  color: var(--text);
+}
+
+.color-picker-panel .color-number-control button {
+  width: 28px;
+  height: 28px;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font-size: 16px;
+}
+
+.color-picker-panel .color-number-control button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: transparent;
+  color: var(--text);
+}
+
+.color-picker-panel .color-number-control button:active:not(:disabled) {
+  transform: none;
+}
+
+.color-picker-panel .color-number-control button:last-child {
+  border-left: 1px solid var(--border);
+}
+
+.color-picker-panel .color-number-control input {
+  width: 44px;
+  height: 28px;
+  min-width: 0;
+  border: 0;
+  border-left: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font: 600 13px var(--mono-font, ui-monospace, monospace);
+  text-align: center;
+  outline: 0;
+  padding: 0 4px;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.color-picker-panel .color-number-control input:focus {
+  outline: 0;
+  border-color: var(--border);
+  box-shadow: none;
+}
+
+.color-picker-panel .color-number-control input::-webkit-outer-spin-button,
+.color-picker-panel .color-number-control input::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.color-preview-wrap {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.color-picker-panel .color-eyedropper-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 9px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.color-picker-panel .color-eyedropper-button svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+
+.color-picker-panel .color-eyedropper-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.color-picker-panel .color-eyedropper-button.eyedropper-active {
+  border-color: color-mix(in srgb, var(--accent) 64%, var(--border));
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+}
+
+#eyedropper-lens {
+  position: fixed;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 9px 5px 5px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel-raised, var(--panel-soft));
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.eyedropper-lens-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
+  flex: none;
+}
+
+.eyedropper-lens-label {
+  color: var(--text);
+  font: 12px var(--mono-font, ui-monospace, monospace);
+  white-space: nowrap;
+}
+
+.color-preview {
+  width: 100%;
+  aspect-ratio: 1;
+  min-height: 138px;
+  border: 3px solid var(--preview-rgb, rgb(34, 145, 188));
+  border-radius: 8px;
+  background:
+    linear-gradient(var(--preview-rgba, rgba(34, 145, 188, 1)), var(--preview-rgba, rgba(34, 145, 188, 1))),
+    url("transparent_idyllium.png");
+  background-size: auto, cover;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.color-code-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.color-code-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.color-picker-panel .color-code-row code {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-soft);
+  color: var(--text);
+  font: 13px var(--mono-font, ui-monospace, monospace);
+  padding: 6px 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.color-picker-panel .color-code-row button {
+  height: 30px;
+  padding: 0 9px;
+}
+
+.color-picker-panel .color-code-row button.copy-success {
+  border-color: color-mix(in srgb, var(--success) 64%, var(--border));
+  background: color-mix(in srgb, var(--success) 18%, transparent);
+  color: var(--success);
+}
+
+.color-picker-panel .color-code-row button.copy-error {
+  border-color: color-mix(in srgb, var(--danger) 58%, var(--border));
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
+}
+
+/* HSL — тот же цвет тоном, насыщенностью и светлотой (colors.HSL); фон ползунков задаёт компонент. */
+.color-slider-hue,
+.color-slider-saturation,
+.color-slider-lightness {
+  background: linear-gradient(to right, #000000, #ffffff);
+}
+
+.color-channel-row[hidden],
+.color-code-row[hidden] {
+  display: none;
+}
+
+/* ── заголовок панели: название, режим RGB/HSL, «поверх», крестик ── */
+.color-picker-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  cursor: grab;
+  user-select: none;
+}
+
+.color-picker-panel.is-dragging .color-picker-head {
+  cursor: grabbing;
+}
+
+.color-picker-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.color-mode-switch {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.color-picker-panel .color-mode-button {
+  height: 26px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.color-picker-panel .color-mode-button + .color-mode-button {
+  border-left: 1px solid var(--border);
+}
+
+.color-picker-panel .color-mode-button:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--panel-soft);
+  border-color: transparent;
+}
+
+.color-picker-panel .color-mode-button:active:not(:disabled),
+.color-picker-panel .color-picker-pin:active:not(:disabled),
+.color-picker-panel .color-picker-close:active:not(:disabled) {
+  transform: none;
+}
+
+.color-picker-panel .color-mode-button.is-active,
+.color-picker-panel .color-mode-button.is-active:hover:not(:disabled) {
+  background: var(--accent);
+  color: #0c0515;
+}
+
+.color-picker-panel .color-picker-pin {
+  height: 26px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.color-picker-panel .color-picker-pin[aria-pressed="true"],
+.color-picker-panel .color-picker-pin[aria-pressed="true"]:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--text);
+}
+
+.color-picker-panel .color-picker-close {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.color-picker-panel .color-picker-close:hover:not(:disabled) {
+  border-color: var(--border);
+  background: transparent;
+  color: var(--text);
+}
+
+.color-picker-panel .color-picker-close svg {
+  display: block;
+  margin: 0 auto;
+}
+
+/* Живая модалка: над всем, тянется за заголовок или пустое полотно; положение помнит localStorage. */
+.color-picker-panel.is-floating {
+  position: fixed;
+  z-index: 250;
+  width: min(620px, calc(100vw - 28px));
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel-raised);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.34);
+  cursor: default;
+}
+
+.color-picker-panel.is-floating[hidden] {
+  display: none;
+}

@@ -31,9 +31,9 @@
     <section class="builder">
       <form class="form" id="form" autocomplete="off" onsubmit="return false">
         <div class="file-row">
-          <button type="button" class="btn" id="open-file"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5V18a1.5 1.5 0 0 0 1.5 1.5h15A1.5 1.5 0 0 0 21 18V9.5A1.5 1.5 0 0 0 19.5 8H12l-2-2.5H4.5A1.5 1.5 0 0 0 3 7z"/></svg>Открыть файл…</button>
-          <button type="button" class="btn" id="save-file"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M4.5 19.5h15"/></svg>Сохранить в файл</button>
-          <button type="button" class="btn btn-quiet" id="new-unit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Новый юнит</button>
+          <button type="button" class="btn" id="open-file"><i class="icon" data-icon="open-file" data-size="16"></i>Открыть файл…</button>
+          <button type="button" class="btn" id="save-file"><i class="icon" data-icon="save" data-size="16"></i>Сохранить в файл</button>
+          <button type="button" class="btn btn-quiet" id="new-unit"><i class="icon" data-icon="file-new" data-size="16"></i>Новый юнит</button>
           <input type="file" id="file-input" accept=".idyunit,.json,application/json" hidden>
           <span class="file-note" id="file-note"></span>
         </div>
@@ -194,7 +194,7 @@
           </div>
           <textarea id="markup" class="code markup" rows="10" readonly spellcheck="false"></textarea>
           <div class="row-buttons">
-            <button type="button" class="btn btn-primary" id="copy"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5v-2a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/></svg><span id="copy-label">Скопировать</span></button>
+            <button type="button" class="btn btn-primary" id="copy"><i class="icon" data-icon="copy" data-size="16"></i><span id="copy-label">Скопировать</span></button>
             <span class="file-note" id="copy-note"></span>
           </div>
         </div>

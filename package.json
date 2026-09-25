@@ -9,7 +9,7 @@
     "idyllium": "dist/src/cli.js"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "node tools/build-icons.js && tsc -p tsconfig.json",
     "fonts:generate-default-metrics": "node tools/generate-default-font-metrics.js",
     "build:web": "npm run build && node tools/build-web-ide.js && node tools/build-embed.js && node tools/build-gui-designer.js",
     "build:vscode": "npm run build && node tools/build-vscode-extension.js",

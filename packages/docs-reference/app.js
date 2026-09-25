@@ -143,10 +143,23 @@
       document.body.classList.toggle('sidebar-open');
     });
 
+    // Крестик очистки — свой значок «close» из набора; виден, пока в поле что-то есть.
+    els.searchClear = document.getElementById('reference-search-clear');
+    if (els.searchClear && window.IdylliumIcons) els.searchClear.innerHTML = window.IdylliumIcons.svg('close', { size: 14 });
+    const syncSearchClear = () => { if (els.searchClear) els.searchClear.hidden = els.search.value === ''; };
     els.search.addEventListener('input', () => {
       state.query = els.search.value.trim().toLocaleLowerCase('ru');
+      syncSearchClear();
       renderNavigation();
     });
+    if (els.searchClear) {
+      els.searchClear.addEventListener('click', () => {
+        els.search.value = '';
+        els.search.dispatchEvent(new Event('input', { bubbles: true }));
+        els.search.focus();
+      });
+    }
+    syncSearchClear();
 
     els.nav.addEventListener('click', (event) => {
       if (event.target.closest('a')) document.body.classList.remove('sidebar-open');
@@ -517,6 +530,28 @@
 
       ${renderProperties(type, properties, requestedMember)}
       ${renderMethods(type, methods, requestedMember)}
+      ${renderIconGallery(type)}
+    `;
+  }
+
+  // gui.Icon: имена значков — таблицей со значками (набор тот же, что у сайта:
+  // gui-renderer/icons.js собирается из packages/icons/svg вместе с реестром).
+  function renderIconGallery(type) {
+    if (type.qualifiedName !== 'gui.Icon') return '';
+    const icons = window.IdylliumIcons;
+    if (!icons || !Array.isArray(icons.names) || icons.names.length === 0) return '';
+    const items = icons.names.map((name) => `
+      <div class="icon-gallery-item" title="${escapeHtml(name)}">
+        ${icons.svg(name, { size: 24 })}
+        <code>${escapeHtml(name)}</code>
+      </div>
+    `).join('');
+    return `
+      <section class="api-section">
+        <h2>Имена значков</h2>
+        <p class="api-section-intro">Все ${icons.names.length} имён для свойства <code>icon</code> — тот же набор, что у сайта и Конструктора GUI. Имя пишется строкой: <code>pic.icon = "star";</code></p>
+        <div class="icon-gallery">${items}</div>
+      </section>
     `;
   }
 

@@ -1670,6 +1670,12 @@ export function createDefaultStandardLibrary(): StandardLibraryRegistry {
     ], [
       functionSpec('set_image', [{ name: 'image', type: imageImage }], VOID),
     ], guiWidget),
+    typeSpec('Icon', [
+      ...positioned,
+      ...widgetState,
+      ...styleable,
+      propertySpec('icon', STRING, false, `Имя значка из единого набора Idyllium (того же, что у сайта): например 'play', 'stop', 'sun', 'moon', 'folder', 'file', 'star', 'plus', 'brush'. Значок вписывается в квадрат по меньшей стороне виджета и красится цветом text_color. Другое имя — ошибка выполнения (с подсказкой похожих имён). Все имена со значками — в таблице на этой странице справочника.`),
+    ], [], guiWidget),
     typeSpec('LineEdit', [
       ...positioned,
       ...widgetState,

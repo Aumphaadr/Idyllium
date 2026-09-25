@@ -150,9 +150,13 @@ Top bar:
   size, and an «Автодополнение» checkbox (since 1.6.0): unticked, typing
   `console.` no longer pops the completion list; Ctrl+Space still works.
 - **«Генератор цвета»** (since 1.6.3 an item of the «Инструменты» menu, not a
-  separate button) — a built-in color picker with R/G/B/A sliders that emits
-  ready-to-copy Idyllium code: `colors.RGB(34, 145, 188)` and
-  `colors.HEX("#2291bc")`. From a document page the same menu item opens the
+  separate button) — a floating colour window with two modes, RGB (R/G/B/A
+  sliders, code lines `colors.RGB(34, 145, 188)` and `colors.HEX("#2291bc")`)
+  and HSL (H/S/L/A sliders, `colors.HSL(197, 69, 44)`), each line with a copy
+  button, plus an eyedropper. It can be dragged, closed with ×, and pinned
+  («поверх») so that clicks elsewhere and menus do not close it; position and
+  mode are remembered. The same component serves the GUI designer, where it
+  opens both from the header item and from any colour property. From a document page the same menu item opens the
   IDE with the picker already open (address `/#tool=color`).
 - **«Запустить» (Ctrl+Enter) / «Остановить»** buttons.
 
@@ -333,9 +337,10 @@ search engines.
 
 ## 7b. GUI designer — «Конструктор GUI» (`/gui-designer/`), since 1.6.3
 
-Three columns under the site header: a **palette** of 15 widgets (Label,
+Three columns under the site header: a **palette** of 20 widgets (Label,
 Button, LineEdit, TextEdit, SpinBox, FloatSpinBox, Slider, CheckBox,
-RadioButton, ComboBox, ProgressBar, ImageBox, Canvas, Frame, TabWidget), the
+RadioButton, ComboBox, ProgressBar, ImageBox, Icon, Canvas, Frame, TabWidget,
+Table, BarChart, LineChart, PieChart), the
 **scene** with the window being built, and a **tree + inspector** on the
 right; the generated **code** sits at the bottom. Widgets are placed by a
 click (free spot) or by dragging onto the window, moved and resized with
@@ -348,13 +353,25 @@ frame as the Web IDE, so what is shown is exactly what the program draws.
 The **code** follows the textbook idiom (`gui.Window win; … win.add_child(…);
 win.show();`) and lists only the properties the user set; names default to
 `button1`, `label1`, `line_edit1`… and are validated as identifiers (keywords
-refused). Event handlers are not generated; the «Заготовки обработчиков»
-checkbox adds empty `on_click`/`on_change` functions. Ways out: **«Открыть в
+refused). Property labels show the code name (`width`, `text`), with the
+Russian meaning as a hover hint; numbers have their own −/+ steppers; enum
+properties list only real values (choosing the default removes the line from
+the code); colours open the site's own colour generator with an eyedropper;
+IdySS style strings (`style`, `style_hover`, `style_active`,
+`style_disabled`) have their own group; ComboBox items, Table columns and
+rows, and chart values are edited in the inspector too and become
+`add_item`, `set_columns`/`add_row`, `add_value`/`add_slice` calls; the
+`gui.Icon` name is picked from a searchable grid of icons. Event handlers are not generated;
+each widget's inspector lists a checkbox per event of its type («Заготовки
+обработчиков»: `on_click`, `on_change`, the eight Canvas events, the window's
+`on_close`) and a ticked event becomes an empty stub. Panels resize with
+splitters; the code pane collapses. Ways out: **«Открыть в
 Web IDE»** (a `#p1=` project link, opens as a guest — then save as own
 project), **«Скопировать код»**, **«Скачать main.idyl»**; the «Макет…» menu
 saves the design as `.json`, can embed it as a trailing `// gui-designer:`
-comment in `main.idyl`, and reopens either (a hand-edited file is reported as
-diverged from its embedded model). Not offered: ComboBox items, Table
+comment in `main.idyl`, and reopens either; a hand-edited file is reported
+line by line: which ranges of the file the model does not know (they would be
+lost on regeneration) and how many model lines were deleted. Not offered: ComboBox items, Table
 columns, chart data, fonts, IdySS styles — those are written in code. Needs a
 screen at least 1000 px wide. The textbook lesson «Конструктор GUI» (section
 «Виджеты», after SpinBox) is optional — teachers may keep a group on

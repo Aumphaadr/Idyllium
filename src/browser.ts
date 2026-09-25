@@ -250,6 +250,7 @@ export { IDYLLIUM_SEMANTIC_TOKEN_TYPES, IDYLLIUM_SEMANTIC_TOKEN_MODIFIERS } from
 export { guiPreviewIntervalMs } from './runtime/gui-interval';
 export { createCanvasTailTracker } from './runtime/canvas-tails';
 export { IDYLLIUM_VERSION } from './runtime/runtime';
+export { COLOR_CONSTANTS } from './runtime/color-constants';
 export { runActionWithSnapshotPump } from './runtime/gui-pump';
 
 function buildBrowserNetworkService(
