@@ -1101,9 +1101,14 @@ test('the site header is one source and every section reaches every other', () =
       assert(logo !== null && resolves(logo[1]), `${relativePath}: the logo must link to the Web IDE`);
       const action = /<a class="site-action" href="([^"]*)"/u.exec(html);
       assert(action !== null && resolves(action[1]), `${relativePath}: «Открыть IDE» must link to the Web IDE`);
-      const colorTool = hrefs.find((href) => href.endsWith('#tool=color'));
-      assert(colorTool !== undefined && resolves(colorTool), `${relativePath}: the colour generator item must open the IDE with the panel (#tool=color)`);
-      assert(!html.includes('id="color-picker-button"'), `${relativePath}: only the IDE owns #color-picker-button`);
+      if (section.id === 'gui-designer') {
+        // Конструктор открывает генератор цвета у себя (замечание владельца 2026-09-25).
+        assert((html.match(/id="color-picker-button"/gu) || []).length === 1, `${relativePath}: the designer opens the colour generator in place`);
+      } else {
+        const colorTool = hrefs.find((href) => href.endsWith('#tool=color'));
+        assert(colorTool !== undefined && resolves(colorTool), `${relativePath}: the colour generator item must open the IDE with the panel (#tool=color)`);
+        assert(!html.includes('id="color-picker-button"'), `${relativePath}: only the IDE and the designer own #color-picker-button`);
+      }
     }
   };
   for (const section of SITE_SECTIONS) checkPage(pageOf(section), section);
@@ -1270,6 +1275,21 @@ test('unfinished identifiers are not painted as class names by semantic tokens',
     valid.some((token) => token.range.start.line === 4 && token.kind === 'class'),
     'valid gui.Window must keep its class token',
   );
+});
+
+// Три файла (icons, gui-designer, qr-library — последний со своим раннером) регистрировали тесты
+// через test() из smoke-harness и никогда их не выполняли: раннер запускается только явным
+// runTests(), а без него файл молча завершается с кодом 0 — «26/26 passed» было враньём
+// (находка 2026-09-26). Страж: взял test() из smoke-harness — зови runTests().
+test('every test file that registers through smoke-harness also runs its tests', () => {
+  const testsDir = path.resolve(process.cwd(), 'tests');
+  const offenders: string[] = [];
+  for (const name of fs.readdirSync(testsDir).filter((file: string) => file.endsWith('.test.ts'))) {
+    const text = fs.readFileSync(path.join(testsDir, name), 'utf8');
+    const usesHarnessTest = /import \{[^}]*\btest\b[^}]*\} from '\.\/smoke-harness'/u.test(text);
+    if (usesHarnessTest && !/^void runTests\(\);/mu.test(text)) offenders.push(name);
+  }
+  assert(offenders.length === 0, `test files that never run their tests (add \`void runTests();\`): ${offenders.join(', ')}`);
 });
 
 void runTests();

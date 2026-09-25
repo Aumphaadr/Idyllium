@@ -13,12 +13,12 @@ import { clamp } from './num-util.js';
 import { registerViewerHost } from './viewer-host.js';
 import { renderCsvTable, renderJsonTree, renderMarkdownPreview, csvHeaderModes, structuredViewModes, isCsvFile, isJsonFile, isMarkdownFile, isSvgFile, structuredViewMode } from './viewer-structured.js';
 import { showAssetViewer, releaseAssetViewerResources, invalidateAssetPreview } from './viewer-assets.js';
-import { setupColorEyedropper } from './color-eyedropper.js';
+import { createColorPicker } from './color-picker.js';
 import { setupShare } from './share.js';
 import { setOutputText, appendOutput, setStatus } from './console-output.js';
 import { MONACO_LANGUAGE_ID, registerMonacoIdyllium, defineMonacoThemes, monacoCompletionRequest, projectCompletions, projectSignatureHelp, projectSemanticTokens, encodeMonacoSemanticTokens, deduplicateCompletions, SEMANTIC_TOKEN_TYPES, SEMANTIC_TOKEN_MODIFIERS } from './monaco-lang.js';
 import { resyncCanvases, runProgram, stopProgram, stopGuiLoop, markGuiFrameReady, enqueueGuiEvent, reportGuiEventFailure, postEmptySnapshot, previewTargetOrigin, updateRunButton, setRunControls, submitConsoleInput, syncRuntimeFilesFromSnapshot, revokeAllBrowserAssetUrls, currentRuntime, formatCurrentFile, textSourceMap, registerRunHost, browserAssetUrls } from './run-preview.js';
-import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyEditor, editor, highlight, lineNumbers, completionPopup, editorTitle, fileList, output, consoleInputPanel, consoleInput, consoleInputSubmit, status, guiFrame, workspace, runtimePane, runtimeRowResizer, runButton, stopButton, formatButton, structuredViewToggle, structuredTextViewButton, structuredDataViewButton, newFileButton, newFolderButton, fileContextMenu, filePropsModal, uploadButton, uploadMenu, dropArea, uploadInput, uploadConflict, uploadConflictName, uploadConflictSkip, uploadConflictReplace, themeButton, themeMenu, themeDarkButton, themeLightButton, fontSizeDecrease, fontSizeIncrease, fontSizeInput, consoleFontSizeDecrease, consoleFontSizeIncrease, consoleFontSizeInput, autocompleteToggle, colorPickerButton, colorPickerMenu, fileAppMenuWrapper, fileAppMenuButton, fileAppMenu, fileAppMenuMain, fileAppMenuPanel, currentProjectNameElement, editAppMenuWrapper, editAppMenuButton, editAppMenu, colorPreview, colorRgbCode, colorHexCode, colorSliders, colorInputs, createIcon } from './dom.js';
+import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownViewer, legacyEditor, editor, highlight, lineNumbers, completionPopup, editorTitle, fileList, output, consoleInputPanel, consoleInput, consoleInputSubmit, status, guiFrame, workspace, runtimePane, runtimeRowResizer, runButton, stopButton, formatButton, structuredViewToggle, structuredTextViewButton, structuredDataViewButton, newFileButton, newFolderButton, fileContextMenu, filePropsModal, uploadButton, uploadMenu, dropArea, uploadInput, uploadConflict, uploadConflictName, uploadConflictSkip, uploadConflictReplace, themeButton, themeMenu, themeDarkButton, themeLightButton, fontSizeDecrease, fontSizeIncrease, fontSizeInput, consoleFontSizeDecrease, consoleFontSizeIncrease, consoleFontSizeInput, autocompleteToggle, colorPickerButton, colorPickerMenu, fileAppMenuWrapper, fileAppMenuButton, fileAppMenu, fileAppMenuMain, fileAppMenuPanel, currentProjectNameElement, editAppMenuWrapper, editAppMenuButton, editAppMenu, createIcon } from './dom.js';
 
   const DEFAULT_EDITOR_FONT_SIZE = 16;
   const DEFAULT_CONSOLE_FONT_SIZE = 13;
@@ -37,7 +37,6 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
   const CONSOLE_FONT_SIZE_STORAGE_KEY = 'idyllium-web-console-font-size';
   const AUTOCOMPLETE_STORAGE_KEY = 'idyllium-web-autocomplete';
   const WEB_IDE_BASE_URL = detectWebIdeBaseUrl();
-  const COLOR_PICKER_CHANNELS = ['red', 'green', 'blue', 'alpha'];
   const folders = new Set([WORKSPACE_ROOT]);
   const expandedFolders = new Set([WORKSPACE_ROOT]);
 
@@ -60,7 +59,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
   // Внутренний drag-n-drop дерева файлов: что тащим (пути мира workspace).
   let internalDragPath = null;
   let internalDragType = 'file';
-  let colorPickerState = { red: 34, green: 145, blue: 188, alpha: 1 };
+  let colorPicker = null;
   let currentProjectId = '';
   let currentProjectName = DEFAULT_PROJECT_NAME;
   // Гость — «Работа по ссылке» (share.js): проект открыт, но в хранилище его
@@ -70,6 +69,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
   let projectWriteQueue = Promise.resolve();
   let pendingUploadConflictResolve = null;
   const colorCopyTimers = new WeakMap();
+  if (window.IdylliumIcons) window.IdylliumIcons.mountAll(document);
   registerViewerHost({ openFile, currentFile: () => currentFile });
   registerRunHost({
     saveCurrentEditor,
@@ -99,7 +99,6 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
   applyConsoleFontSize(consoleFontSize, false);
   autocompleteToggle.checked = autocompleteEnabled;
   applySavedLayout();
-  updateColorPickerUi();
 
   runButton.addEventListener('click', runProgram);
   stopButton.addEventListener('click', () => stopProgram(false));
@@ -196,7 +195,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
   document.addEventListener('idyllium-site-nav-open', () => {
     hideUploadMenu();
     hideThemeMenu();
-    hideColorPickerMenu();
+    if (!(colorPicker && colorPicker.isPinned())) hideColorPickerMenu();
     hideFileAppMenu();
     hideEditAppMenu();
     hideFileContextMenu();
@@ -204,7 +203,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
   document.addEventListener('click', (event) => {
     if (!uploadMenu.hidden && event.target instanceof Element && !event.target.closest('.upload-wrapper')) hideUploadMenu();
     if (!themeMenu.hidden && event.target instanceof Element && !event.target.closest('.theme-wrapper')) hideThemeMenu();
-    if (!colorPickerMenu.hidden && event.target instanceof Element && !event.target.closest('#color-picker-menu, #color-picker-button, [data-role="color-picker-button"]')) hideColorPickerMenu();
+    if (!colorPickerMenu.hidden && !(colorPicker && colorPicker.isPinned()) && event.target instanceof Element && !event.target.closest('#color-picker-menu, #color-picker-button, [data-role="color-picker-button"]')) hideColorPickerMenu();
     if (!fileAppMenu.hidden && event.target instanceof Element && !event.target.closest('#file-app-menu-wrapper')) hideFileAppMenu();
     if (!editAppMenu.hidden && event.target instanceof Element && !event.target.closest('#edit-app-menu-wrapper')) hideEditAppMenu();
     if (!fileContextMenu.hidden && event.target instanceof Element && !event.target.closest('.file-context-menu') && !event.target.closest('.file-menu-button')) hideFileContextMenu();
@@ -1445,10 +1444,17 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
           ['Удалить', () => openDeleteConfirm(node.path, 'file', left, top)],
         ];
 
+    // Значки пунктов — из единого набора сайта (1.6.3).
+    const CONTEXT_ICONS = {
+      'Новый файл': 'file-new', 'Новая папка': 'folder-new', 'Вставить картинку': 'image-paste', 'Переименовать': 'rename',
+      'Дублировать': 'duplicate', 'Скачать': 'download', 'Копировать имя': 'copy', 'Копировать путь': 'link',
+      'Свойства': 'properties', 'Удалить': 'trash',
+    };
     for (const [label, action] of actions) {
       const button = document.createElement('button');
       button.type = 'button';
-      button.textContent = label;
+      if (window.IdylliumIcons && CONTEXT_ICONS[label]) button.appendChild(window.IdylliumIcons.element(CONTEXT_ICONS[label], { size: 16, className: 'menu-icon' }));
+      button.appendChild(document.createTextNode(label));
       button.addEventListener('click', (event) => {
         event.stopPropagation();
         hideFileContextMenu();
@@ -2829,7 +2835,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
     hideFileAppMenu();
     hideEditAppMenu();
     hideThemeMenu();
-    hideColorPickerMenu();
+    hideColorPickerMenuUnlessPinned();
     uploadMenu.hidden = false;
     uploadButton.setAttribute('aria-expanded', 'true');
   }
@@ -3112,7 +3118,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
     hideEditAppMenu();
     hideUploadMenu();
     hideThemeMenu();
-    hideColorPickerMenu();
+    hideColorPickerMenuUnlessPinned();
     hideFileContextMenu();
     resetFileAppMenu();
     updateCurrentProjectUi();
@@ -3406,7 +3412,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
     hideFileAppMenu();
     hideUploadMenu();
     hideThemeMenu();
-    hideColorPickerMenu();
+    hideColorPickerMenuUnlessPinned();
     hideFileContextMenu();
     updateEditMenuAvailability();
     editAppMenu.hidden = false;
@@ -3502,7 +3508,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
     hideFileAppMenu();
     hideEditAppMenu();
     hideUploadMenu();
-    hideColorPickerMenu();
+    hideColorPickerMenuUnlessPinned();
     themeMenu.hidden = false;
     themeButton.setAttribute('aria-expanded', 'true');
   }
@@ -3513,39 +3519,13 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
   }
 
   function installColorPicker() {
-    for (const channel of COLOR_PICKER_CHANNELS) {
-      colorSliders[channel].addEventListener('input', () => {
-        setColorPickerComponent(channel, Number(colorSliders[channel].value));
-      });
-      colorInputs[channel].addEventListener('change', () => {
-        setColorPickerComponent(channel, Number(colorInputs[channel].value));
-      });
-      colorInputs[channel].addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-          setColorPickerComponent(channel, Number(colorInputs[channel].value));
-          colorInputs[channel].blur();
-          event.preventDefault();
-        }
-      });
-    }
-
-    for (const button of document.querySelectorAll('.color-step-button')) {
-      button.addEventListener('click', () => {
-        const channel = button.dataset.colorChannel;
-        const step = Number(button.dataset.colorStep);
-        if (!COLOR_PICKER_CHANNELS.includes(channel) || !Number.isFinite(step)) return;
-        setColorPickerComponent(channel, colorPickerState[channel] + step);
-      });
-    }
-
-    const copyRgbButton = document.getElementById('copy-rgb-button');
-    const copyHexButton = document.getElementById('copy-hex-button');
-    copyRgbButton.addEventListener('click', () => copyColorText(colorRgbCode.textContent, copyRgbButton));
-    copyHexButton.addEventListener('click', () => copyColorText(colorHexCode.textContent, copyHexButton));
-
-    setupColorEyedropper((picked) => {
-      colorPickerState = { ...colorPickerState, red: picked.red, green: picked.green, blue: picked.blue };
-      updateColorPickerUi();
+    // Общий компонент (color-picker.js): RGB/A, HSL, HEX, пипетка, кнопки «Копировать».
+    colorPicker = createColorPicker({
+      host: colorPickerMenu,
+      alpha: true,
+      codes: true,
+      onCopy: copyColorText,
+      floating: { title: 'Генератор цвета', storageKey: 'idyllium-color-picker-ide', onClose: hideColorPickerMenu },
     });
   }
 
@@ -3565,86 +3545,25 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
     hideEditAppMenu();
     hideUploadMenu();
     hideThemeMenu();
-    colorPickerMenu.hidden = false;
     colorPickerButton.setAttribute('aria-expanded', 'true');
-    // Панель живёт прямо в полосе кнопок, а открывает её пункт дропдауна «Инструменты» (1.6.3):
-    // ставим её под этой кнопкой, не выпуская за край окна.
-    // Якорь — та кнопка, что сейчас видна: «Инструменты» на широком экране, «Разделы» на узком.
+    // Живая модалка (общий компонент): в первый раз встаёт под пунктом «Инструменты» (или «Разделы»
+    // на узком экране), дальше — там, куда её перетащили; положение помнит localStorage.
     const anchor = Array.from(document.querySelectorAll('.site-nav-group[data-group="tools"] > .site-nav-button, .site-nav-collapsed > .site-nav-button'))
       .find((button) => button.offsetParent !== null);
-    const host = colorPickerMenu.offsetParent;
-    if (anchor && host) {
-      const anchorRect = anchor.getBoundingClientRect();
-      const hostRect = host.getBoundingClientRect();
-      const width = colorPickerMenu.offsetWidth;
-      const centred = anchorRect.left + anchorRect.width / 2 - width / 2;
-      const left = Math.max(8, Math.min(centred, window.innerWidth - width - 8));
-      colorPickerMenu.style.left = `${left - hostRect.left}px`;
-      colorPickerMenu.style.transform = 'none';
-    }
+    const anchorRect = anchor ? anchor.getBoundingClientRect() : null;
+    if (!colorPicker) return;
+    colorPicker.open(anchorRect ? { left: anchorRect.left + anchorRect.width / 2 - 230, top: anchorRect.bottom + 8 } : undefined);
+  }
+
+  /** Приколотая («поверх») панель цвета переживает открытие меню и щелчки мимо. */
+  function hideColorPickerMenuUnlessPinned() {
+    if (!(colorPicker && colorPicker.isPinned())) hideColorPickerMenu();
   }
 
   function hideColorPickerMenu() {
+    if (colorPicker && colorPicker.isOpen()) colorPicker.close();
     colorPickerMenu.hidden = true;
     colorPickerButton.setAttribute('aria-expanded', 'false');
-  }
-
-  function setColorPickerComponent(channel, rawValue) {
-    if (!Number.isFinite(rawValue)) {
-      updateColorPickerUi();
-      return;
-    }
-    colorPickerState = {
-      ...colorPickerState,
-      [channel]: normalizeColorPickerValue(channel, rawValue),
-    };
-    updateColorPickerUi();
-  }
-
-  function normalizeColorPickerValue(channel, value) {
-    if (channel === 'alpha') return Math.round(clamp(value, 0, 1) * 100) / 100;
-    return Math.round(clamp(value, 0, 255));
-  }
-
-  function updateColorPickerUi() {
-    const red = normalizeColorPickerValue('red', colorPickerState.red);
-    const green = normalizeColorPickerValue('green', colorPickerState.green);
-    const blue = normalizeColorPickerValue('blue', colorPickerState.blue);
-    const alpha = normalizeColorPickerValue('alpha', colorPickerState.alpha);
-    colorPickerState = { red, green, blue, alpha };
-
-    colorSliders.red.value = String(red);
-    colorSliders.green.value = String(green);
-    colorSliders.blue.value = String(blue);
-    colorSliders.alpha.value = formatAlpha(alpha);
-    colorInputs.red.value = String(red);
-    colorInputs.green.value = String(green);
-    colorInputs.blue.value = String(blue);
-    colorInputs.alpha.value = formatAlpha(alpha);
-
-    const rgb = `rgb(${red}, ${green}, ${blue})`;
-    const rgba = `rgba(${red}, ${green}, ${blue}, ${formatAlpha(alpha)})`;
-    colorPreview.style.setProperty('--preview-rgb', rgb);
-    colorPreview.style.setProperty('--preview-rgba', rgba);
-
-    colorRgbCode.textContent = alpha >= 1
-      ? `colors.RGB(${red}, ${green}, ${blue})`
-      : `colors.RGBA(${red}, ${green}, ${blue}, ${formatAlpha(alpha)})`;
-    colorHexCode.textContent = `colors.HEX("${colorPickerHex(red, green, blue, alpha)}")`;
-  }
-
-  function colorPickerHex(red, green, blue, alpha) {
-    const base = `#${componentToHex(red)}${componentToHex(green)}${componentToHex(blue)}`;
-    return alpha >= 1 ? base : base + componentToHex(Math.round(alpha * 255));
-  }
-
-  function componentToHex(value) {
-    return normalizeColorPickerValue('red', value).toString(16).padStart(2, '0');
-  }
-
-  function formatAlpha(value) {
-    const rounded = normalizeColorPickerValue('alpha', value);
-    return Number.isInteger(rounded) ? String(rounded) : String(rounded).replace(/0+$/u, '').replace(/\.$/u, '');
   }
 
   async function copyColorText(text, button) {

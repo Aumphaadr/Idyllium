@@ -227,6 +227,13 @@ button.widget:hover {
 button.widget:active {
   transform: translateY(1px);
 }
+/* Стрелки счётчика видны всегда: без этого SpinBox неотличим от LineEdit, пока на него не
+   наведёшь (замечание владельца 2026-09-25 по сцене конструктора GUI). */
+input[type="number"].widget::-webkit-inner-spin-button,
+input[type="number"].widget::-webkit-outer-spin-button {
+  opacity: 1;
+}
+
 input[type="number"].widget {
   color: var(--w-control-text);
   background: var(--w-control-bg);
@@ -384,6 +391,24 @@ button.widget.button,
   text-shadow: 0 1px 0 var(--w-label-shadow);
   pointer-events: none;
 }
+.icon-widget {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.icon-widget svg {
+  display: block;
+  fill: currentColor;
+}
+.icon-widget .icon-missing {
+  font-size: 10px;
+  opacity: 0.6;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .image-widget {
   display: flex;
   align-items: flex-start;

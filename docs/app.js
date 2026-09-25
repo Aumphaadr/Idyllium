@@ -4487,6 +4487,8 @@
 
   // packages/web-ide/src/zip.js
   var import_pako = __toESM(require_pako());
+
+  // packages/web-ide/src/zip-write.js
   var CRC32_TABLE = buildCrc32Table();
   function zipBytes(entries) {
     const chunks = [];
@@ -4543,6 +4545,46 @@
     end.setUint16(20, 0, true);
     return concatBytes([...chunks, ...central, new Uint8Array(end.buffer)]);
   }
+  function zipHeader(size) {
+    return new DataView(new ArrayBuffer(size));
+  }
+  function dosTime() {
+    const now = /* @__PURE__ */ new Date();
+    return {
+      time: now.getHours() << 11 | now.getMinutes() << 5 | Math.floor(now.getSeconds() / 2),
+      date: now.getFullYear() - 1980 << 9 | now.getMonth() + 1 << 5 | now.getDate()
+    };
+  }
+  function concatBytes(chunks) {
+    const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+    const result = new Uint8Array(total);
+    let offset = 0;
+    for (const chunk of chunks) {
+      result.set(chunk, offset);
+      offset += chunk.length;
+    }
+    return result;
+  }
+  function crc32(bytes) {
+    let crc = 4294967295;
+    for (const byte2 of bytes) {
+      crc = CRC32_TABLE[(crc ^ byte2) & 255] ^ crc >>> 8;
+    }
+    return (crc ^ 4294967295) >>> 0;
+  }
+  function buildCrc32Table() {
+    const table = new Uint32Array(256);
+    for (let index = 0; index < table.length; index++) {
+      let value = index;
+      for (let bit = 0; bit < 8; bit++) {
+        value = value & 1 ? 3988292384 ^ value >>> 1 : value >>> 1;
+      }
+      table[index] = value >>> 0;
+    }
+    return table;
+  }
+
+  // packages/web-ide/src/zip.js
   function unzipEntries(bytes) {
     const entries = [];
     const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -4585,44 +4627,6 @@
       offset = dataEnd;
     }
     return entries;
-  }
-  function zipHeader(size) {
-    return new DataView(new ArrayBuffer(size));
-  }
-  function dosTime() {
-    const now = /* @__PURE__ */ new Date();
-    return {
-      time: now.getHours() << 11 | now.getMinutes() << 5 | Math.floor(now.getSeconds() / 2),
-      date: now.getFullYear() - 1980 << 9 | now.getMonth() + 1 << 5 | now.getDate()
-    };
-  }
-  function concatBytes(chunks) {
-    const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-    const result = new Uint8Array(total);
-    let offset = 0;
-    for (const chunk of chunks) {
-      result.set(chunk, offset);
-      offset += chunk.length;
-    }
-    return result;
-  }
-  function crc32(bytes) {
-    let crc = 4294967295;
-    for (const byte of bytes) {
-      crc = CRC32_TABLE[(crc ^ byte) & 255] ^ crc >>> 8;
-    }
-    return (crc ^ 4294967295) >>> 0;
-  }
-  function buildCrc32Table() {
-    const table = new Uint32Array(256);
-    for (let index = 0; index < table.length; index++) {
-      let value = index;
-      for (let bit = 0; bit < 8; bit++) {
-        value = value & 1 ? 3988292384 ^ value >>> 1 : value >>> 1;
-      }
-      table[index] = value >>> 0;
-    }
-    return table;
   }
 
   // packages/web-ide/src/ansi.js
@@ -4838,7 +4842,7 @@
   }
   function hasBytes(bytes, expected, offset) {
     if (bytes.length < offset + expected.length) return false;
-    return expected.every((byte, index) => bytes[offset + index] === byte);
+    return expected.every((byte2, index) => bytes[offset + index] === byte2);
   }
   function asciiBytes(bytes, offset, length) {
     if (bytes.length < offset + length) return "";
@@ -4978,51 +4982,24 @@
   var editAppMenuWrapper = document.getElementById("edit-app-menu-wrapper");
   var editAppMenuButton = document.getElementById("edit-app-menu-button");
   var editAppMenu = document.getElementById("edit-app-menu");
-  var colorPreview = document.getElementById("color-preview");
-  var colorRgbCode = document.getElementById("color-rgb-code");
-  var colorHexCode = document.getElementById("color-hex-code");
-  var colorSliders = {
-    red: document.getElementById("color-red-slider"),
-    green: document.getElementById("color-green-slider"),
-    blue: document.getElementById("color-blue-slider"),
-    alpha: document.getElementById("color-alpha-slider")
-  };
-  var colorInputs = {
-    red: document.getElementById("color-red-input"),
-    green: document.getElementById("color-green-input"),
-    blue: document.getElementById("color-blue-input"),
-    alpha: document.getElementById("color-alpha-input")
-  };
   function createIcon(name) {
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("viewBox", "0 0 24 24");
-    svg.setAttribute("aria-hidden", "true");
-    if (name === "menu") {
-      for (const y of [6, 12, 18]) {
-        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        circle.setAttribute("cx", "12");
-        circle.setAttribute("cy", String(y));
-        circle.setAttribute("r", "1.5");
-        circle.setAttribute("fill", "currentColor");
-        svg.appendChild(circle);
-      }
-      return svg;
-    }
-    const paths = {
-      file: ["M6 3h8l4 4v14H6z", "M14 3v5h5"],
-      asset: ["M5 4h14v16H5z", "M8 15l3-3 2 2 2-3 3 4", "M9 8h.01"],
-      database: ["M4 5c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3Z", "M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5", "M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"],
-      folder: ["M3 6h7l2 2h9v11H3z"],
-      "folder-open": ["M3 7h7l2 2h9l-2 10H3z", "M3 7v12"],
-      "zoom-in": ["M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z", "m21 21-4.35-4.35", "M11 8v6", "M8 11h6"],
-      "zoom-out": ["M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z", "m21 21-4.35-4.35", "M8 11h6"],
-      fit: ["M3 7V5a2 2 0 0 1 2-2h2", "M17 3h2a2 2 0 0 1 2 2v2", "M21 17v2a2 2 0 0 1-2 2h-2", "M7 21H5a2 2 0 0 1-2-2v-2"]
+    const ICON_NAMES = {
+      file: "file",
+      asset: "file-image",
+      database: "file-database",
+      folder: "folder",
+      "folder-open": "folder-open",
+      "zoom-in": "zoom-in",
+      "zoom-out": "zoom-out",
+      fit: "fit",
+      menu: "more"
     };
-    for (const d of paths[name] || paths.file) {
-      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      path.setAttribute("d", d);
-      svg.appendChild(path);
-    }
+    const icons = window.IdylliumIcons;
+    const iconName = ICON_NAMES[name] || name;
+    if (icons && icons.has(iconName)) return icons.element(iconName, { size: 16 });
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 20 20");
+    svg.setAttribute("aria-hidden", "true");
     return svg;
   }
 
@@ -6291,17 +6268,17 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     if (!call) return null;
     const kind = call[1];
     const rawArgs = call[2].split(",").map((item) => item.trim());
-    const byte = (item) => {
+    const byte2 = (item) => {
       if (!/^\d{1,3}$/.test(item)) return null;
       const n = Number(item);
       return n <= 255 ? n : null;
     };
     if (kind === "RGB" && rawArgs.length === 3) {
-      const [r, g, b] = rawArgs.map(byte);
+      const [r, g, b] = rawArgs.map(byte2);
       return r !== null && g !== null && b !== null ? `rgb(${r}, ${g}, ${b})` : null;
     }
     if (kind === "RGBA" && rawArgs.length === 4) {
-      const [r, g, b] = rawArgs.slice(0, 3).map(byte);
+      const [r, g, b] = rawArgs.slice(0, 3).map(byte2);
       const alpha = /^(0|1|0?\.\d+|1\.0+)$/.test(rawArgs[3]) ? Number(rawArgs[3]) : null;
       return r !== null && g !== null && b !== null && alpha !== null && alpha <= 1 ? `rgba(${r}, ${g}, ${b}, ${alpha})` : null;
     }
@@ -6856,6 +6833,459 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     };
   }
 
+  // packages/web-ide/src/color-picker.js
+  var RGB_CHANNELS = [
+    ["red", "R", "Красный, 0–255"],
+    ["green", "G", "Зелёный, 0–255"],
+    ["blue", "B", "Синий, 0–255"]
+  ];
+  var HSL_CHANNELS = [
+    ["hue", "H", "Тон, 0–360°", 360],
+    ["saturation", "S", "Насыщенность, 0–100 %", 100],
+    ["lightness", "L", "Светлота, 0–100 %", 100]
+  ];
+  function rgbToHsl(red, green, blue) {
+    const r = clamp(red, 0, 255) / 255;
+    const g = clamp(green, 0, 255) / 255;
+    const b = clamp(blue, 0, 255) / 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const delta = max - min;
+    const lightness = (max + min) / 2;
+    let hue = 0;
+    let saturation = 0;
+    if (delta > 0) {
+      saturation = delta / (1 - Math.abs(2 * lightness - 1));
+      if (max === r) hue = (g - b) / delta % 6;
+      else if (max === g) hue = (b - r) / delta + 2;
+      else hue = (r - g) / delta + 4;
+      hue *= 60;
+      if (hue < 0) hue += 360;
+    }
+    return { hue: Math.round(hue) % 360, saturation: Math.round(saturation * 100), lightness: Math.round(lightness * 100) };
+  }
+  function hslToRgb(hue, saturation, lightness) {
+    const h = (clamp(hue, 0, 360) % 360 + 360) % 360;
+    const s = clamp(saturation, 0, 100) / 100;
+    const l = clamp(lightness, 0, 100) / 100;
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs(h / 60 % 2 - 1));
+    const m = l - c / 2;
+    let [r, g, b] = [0, 0, 0];
+    if (h < 60) [r, g, b] = [c, x, 0];
+    else if (h < 120) [r, g, b] = [x, c, 0];
+    else if (h < 180) [r, g, b] = [0, c, x];
+    else if (h < 240) [r, g, b] = [0, x, c];
+    else if (h < 300) [r, g, b] = [x, 0, c];
+    else [r, g, b] = [c, 0, x];
+    return { red: Math.round((r + m) * 255), green: Math.round((g + m) * 255), blue: Math.round((b + m) * 255) };
+  }
+  function byte(value) {
+    return Math.round(clamp(Number(value) || 0, 0, 255));
+  }
+  function componentToHex(value) {
+    return byte(value).toString(16).padStart(2, "0");
+  }
+  function formatAlpha(value) {
+    const rounded = Math.round(clamp(Number(value), 0, 1) * 100) / 100;
+    return Number.isInteger(rounded) ? String(rounded) : String(rounded).replace(/0+$/u, "").replace(/\.$/u, "");
+  }
+  function colorHex({ red, green, blue, alpha = 1 }) {
+    const base = `#${componentToHex(red)}${componentToHex(green)}${componentToHex(blue)}`;
+    return alpha >= 1 ? base : base + componentToHex(Math.round(alpha * 255));
+  }
+  function parseHex(text) {
+    const match = /^#?([0-9a-fA-F]{6})([0-9a-fA-F]{2})?$/u.exec(String(text || "").trim());
+    if (!match) return null;
+    const value = parseInt(match[1], 16);
+    return {
+      red: value >> 16 & 255,
+      green: value >> 8 & 255,
+      blue: value & 255,
+      alpha: match[2] ? Math.round(parseInt(match[2], 16) / 255 * 100) / 100 : 1
+    };
+  }
+  function readStorage(key) {
+    try {
+      const raw = key ? localStorage.getItem(key) : null;
+      return raw ? JSON.parse(raw) : {};
+    } catch (error) {
+      return {};
+    }
+  }
+  function writeStorage(key, patch) {
+    if (!key) return;
+    try {
+      localStorage.setItem(key, JSON.stringify({ ...readStorage(key), ...patch }));
+    } catch (error) {
+    }
+  }
+  function channelRow({ channel, letter, title, max, step, sliderClass }) {
+    const row = document.createElement("label");
+    row.className = "color-channel-row";
+    row.dataset.channel = channel;
+    row.title = title;
+    const label = document.createElement("span");
+    label.textContent = letter;
+    const slider = document.createElement("input");
+    slider.id = `color-${channel}-slider`;
+    slider.className = `color-slider ${sliderClass}`;
+    slider.type = "range";
+    slider.min = "0";
+    slider.max = String(max);
+    slider.step = String(step);
+    const control = document.createElement("span");
+    control.className = `color-number-control${channel === "alpha" ? " color-alpha-control" : ""}`;
+    const minus = document.createElement("button");
+    minus.className = "color-step-button";
+    minus.type = "button";
+    minus.dataset.colorChannel = channel;
+    minus.dataset.colorStep = String(-step);
+    minus.setAttribute("aria-label", `Уменьшить ${letter}`);
+    minus.textContent = "−";
+    const input = document.createElement("input");
+    input.id = `color-${channel}-input`;
+    input.type = "number";
+    input.min = "0";
+    input.max = String(max);
+    input.step = String(step);
+    input.setAttribute("aria-label", `Значение ${letter}`);
+    const plus = document.createElement("button");
+    plus.className = "color-step-button";
+    plus.type = "button";
+    plus.dataset.colorChannel = channel;
+    plus.dataset.colorStep = String(step);
+    plus.setAttribute("aria-label", `Увеличить ${letter}`);
+    plus.textContent = "+";
+    control.append(minus, input, plus);
+    row.append(label, slider, control);
+    return { row, slider, input, minus, plus };
+  }
+  function createColorPicker(options) {
+    const host = options.host;
+    const withAlpha = options.alpha !== false;
+    const withCodes = options.codes !== false;
+    const floating = options.floating || null;
+    const storageKey = floating && floating.storageKey ? floating.storageKey : "";
+    const saved = readStorage(storageKey);
+    let mode = saved.mode === "hsl" ? "hsl" : "rgb";
+    let pinned = Boolean(saved.pinned);
+    let state = { red: 34, green: 145, blue: 188, alpha: 1, ...options.initial || {} };
+    let hsl = rgbToHsl(state.red, state.green, state.blue);
+    host.replaceChildren();
+    host.classList.add("color-picker-panel");
+    if (floating) host.classList.add("is-floating");
+    const head = document.createElement("div");
+    head.className = "color-picker-head";
+    const title = document.createElement("span");
+    title.className = "color-picker-title";
+    title.textContent = floating ? floating.title : "Генератор цвета";
+    const modes = document.createElement("div");
+    modes.className = "color-mode-switch";
+    modes.setAttribute("role", "group");
+    modes.setAttribute("aria-label", "Режим");
+    const modeButtons = {};
+    for (const [key, label, hint] of [["rgb", "RGB", "Красный, зелёный, синий"], ["hsl", "HSL", "Тон, насыщенность, светлота"]]) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "color-mode-button";
+      button.dataset.mode = key;
+      button.textContent = label;
+      button.title = hint;
+      button.addEventListener("click", () => setMode(key));
+      modes.appendChild(button);
+      modeButtons[key] = button;
+    }
+    head.append(title, modes);
+    let pinButton = null;
+    if (floating) {
+      pinButton = document.createElement("button");
+      pinButton.type = "button";
+      pinButton.className = "color-picker-pin";
+      pinButton.title = "Поверх: не закрывать окно щелчками мимо";
+      pinButton.setAttribute("aria-pressed", String(pinned));
+      pinButton.textContent = "поверх";
+      pinButton.addEventListener("click", () => {
+        pinned = !pinned;
+        pinButton.setAttribute("aria-pressed", String(pinned));
+        host.classList.toggle("is-pinned", pinned);
+        writeStorage(storageKey, { pinned });
+      });
+      const closeButton = document.createElement("button");
+      closeButton.type = "button";
+      closeButton.className = "color-picker-close";
+      closeButton.title = "Закрыть";
+      closeButton.setAttribute("aria-label", "Закрыть генератор цвета");
+      const icons = typeof window !== "undefined" ? window.IdylliumIcons : null;
+      if (icons && icons.has("close")) closeButton.appendChild(icons.element("close", { size: 14 }));
+      else closeButton.textContent = "×";
+      closeButton.addEventListener("click", () => close());
+      head.append(pinButton, closeButton);
+      host.classList.toggle("is-pinned", pinned);
+    }
+    host.appendChild(head);
+    const grid = document.createElement("div");
+    grid.className = "color-picker-grid";
+    const controls = document.createElement("div");
+    controls.className = "color-picker-controls";
+    const rows = {};
+    const groups = { rgb: [], hsl: [] };
+    for (const [channel, letter, hint] of RGB_CHANNELS) {
+      const part = channelRow({ channel, letter, title: hint, max: 255, step: 1, sliderClass: `color-slider-${channel}` });
+      rows[channel] = part;
+      groups.rgb.push(part.row);
+      controls.appendChild(part.row);
+    }
+    for (const [channel, letter, hint, max] of HSL_CHANNELS) {
+      const part = channelRow({ channel, letter, title: hint, max, step: 1, sliderClass: `color-slider-${channel}` });
+      rows[channel] = part;
+      groups.hsl.push(part.row);
+      controls.appendChild(part.row);
+    }
+    if (withAlpha) {
+      const part = channelRow({ channel: "alpha", letter: "A", title: "Прозрачность, 0–1 (1 — непрозрачный)", max: 1, step: 0.01, sliderClass: "color-slider-alpha" });
+      rows.alpha = part;
+      controls.appendChild(part.row);
+    }
+    grid.appendChild(controls);
+    const previewWrap = document.createElement("div");
+    previewWrap.className = "color-preview-wrap";
+    const preview = document.createElement("div");
+    preview.id = "color-preview";
+    preview.className = "color-preview";
+    preview.setAttribute("aria-label", "Выбранный цвет");
+    const eyedropper = document.createElement("button");
+    eyedropper.id = "color-eyedropper-button";
+    eyedropper.className = "color-eyedropper-button";
+    eyedropper.type = "button";
+    eyedropper.title = "Пипетка: кликните по нужному пикселю страницы (Esc — отмена)";
+    const iconsApi = typeof window !== "undefined" ? window.IdylliumIcons : null;
+    if (iconsApi && iconsApi.has("eyedropper")) eyedropper.appendChild(iconsApi.element("eyedropper", { size: 16 }));
+    const eyedropperLabel = document.createElement("span");
+    eyedropperLabel.textContent = "Пипетка";
+    eyedropper.appendChild(eyedropperLabel);
+    previewWrap.append(preview, eyedropper);
+    grid.appendChild(previewWrap);
+    host.appendChild(grid);
+    const codes = {};
+    const codeRows = {};
+    if (withCodes) {
+      const list = document.createElement("div");
+      list.className = "color-code-list";
+      for (const [key, label] of [["rgb", "RGB"], ["hex", "HEX"], ["hsl", "HSL"]]) {
+        const row = document.createElement("div");
+        row.className = "color-code-row";
+        row.dataset.code = key;
+        const name = document.createElement("span");
+        name.textContent = label;
+        const code = document.createElement("code");
+        code.id = `color-${key}-code`;
+        const copy = document.createElement("button");
+        copy.id = `copy-${key}-button`;
+        copy.type = "button";
+        copy.textContent = "Копировать";
+        copy.addEventListener("click", () => {
+          if (options.onCopy) options.onCopy(code.textContent, copy);
+        });
+        row.append(name, code, copy);
+        list.appendChild(row);
+        codes[key] = code;
+        codeRows[key] = row;
+      }
+      host.appendChild(list);
+    }
+    function normalized(next) {
+      return {
+        red: byte(next.red),
+        green: byte(next.green),
+        blue: byte(next.blue),
+        alpha: withAlpha ? Math.round(clamp(Number(next.alpha), 0, 1) * 100) / 100 : 1
+      };
+    }
+    function applyMode() {
+      for (const row of groups.rgb) row.hidden = mode !== "rgb";
+      for (const row of groups.hsl) row.hidden = mode !== "hsl";
+      for (const [key, button] of Object.entries(modeButtons)) {
+        button.classList.toggle("is-active", key === mode);
+        button.setAttribute("aria-pressed", String(key === mode));
+      }
+      if (withCodes) {
+        codeRows.rgb.hidden = mode !== "rgb";
+        codeRows.hex.hidden = mode !== "rgb";
+        codeRows.hsl.hidden = mode !== "hsl";
+      }
+    }
+    function setMode(next) {
+      mode = next === "hsl" ? "hsl" : "rgb";
+      writeStorage(storageKey, { mode });
+      applyMode();
+    }
+    function render() {
+      for (const [channel] of RGB_CHANNELS) {
+        rows[channel].slider.value = String(state[channel]);
+        if (document.activeElement !== rows[channel].input) rows[channel].input.value = String(state[channel]);
+      }
+      for (const [channel] of HSL_CHANNELS) {
+        rows[channel].slider.value = String(hsl[channel]);
+        if (document.activeElement !== rows[channel].input) rows[channel].input.value = String(hsl[channel]);
+      }
+      if (withAlpha) {
+        rows.alpha.slider.value = formatAlpha(state.alpha);
+        if (document.activeElement !== rows.alpha.input) rows.alpha.input.value = formatAlpha(state.alpha);
+      }
+      const at = (h, s, l) => `hsl(${h}, ${s}%, ${l}%)`;
+      const midLight = hsl.lightness === 0 || hsl.lightness === 100 ? 50 : hsl.lightness;
+      rows.hue.slider.style.background = `linear-gradient(to right, ${[0, 60, 120, 180, 240, 300, 360].map((h) => at(h, Math.max(hsl.saturation, 30), midLight)).join(", ")})`;
+      rows.saturation.slider.style.background = `linear-gradient(to right, ${at(hsl.hue, 0, midLight)}, ${at(hsl.hue, 100, midLight)})`;
+      rows.lightness.slider.style.background = `linear-gradient(to right, ${at(hsl.hue, hsl.saturation, 0)}, ${at(hsl.hue, hsl.saturation, 50)}, ${at(hsl.hue, hsl.saturation, 100)})`;
+      preview.style.setProperty("--preview-rgb", `rgb(${state.red}, ${state.green}, ${state.blue})`);
+      preview.style.setProperty("--preview-rgba", `rgba(${state.red}, ${state.green}, ${state.blue}, ${formatAlpha(state.alpha)})`);
+      if (withCodes) {
+        codes.rgb.textContent = state.alpha >= 1 ? `colors.RGB(${state.red}, ${state.green}, ${state.blue})` : `colors.RGBA(${state.red}, ${state.green}, ${state.blue}, ${formatAlpha(state.alpha)})`;
+        codes.hex.textContent = `colors.HEX("${colorHex(state)}")`;
+        codes.hsl.textContent = `colors.HSL(${hsl.hue}, ${hsl.saturation}, ${hsl.lightness})`;
+      }
+    }
+    let silent = false;
+    function commit(next, { fromHsl = false } = {}) {
+      state = normalized({ ...state, ...next });
+      if (!fromHsl) hsl = rgbToHsl(state.red, state.green, state.blue);
+      render();
+      if (!silent && options.onChange) options.onChange({ ...state, hsl: { ...hsl }, hex: colorHex(state) });
+    }
+    function setRgbChannel(channel, raw) {
+      const value = Number(raw);
+      if (!Number.isFinite(value)) {
+        render();
+        return;
+      }
+      commit({ [channel]: value });
+    }
+    function setHslChannel(channel, raw) {
+      const value = Number(raw);
+      if (!Number.isFinite(value)) {
+        render();
+        return;
+      }
+      const max = channel === "hue" ? 360 : 100;
+      hsl = { ...hsl, [channel]: Math.round(clamp(value, 0, max)) };
+      commit(hslToRgb(hsl.hue, hsl.saturation, hsl.lightness), { fromHsl: true });
+    }
+    for (const [channel] of RGB_CHANNELS) {
+      rows[channel].slider.addEventListener("input", () => setRgbChannel(channel, rows[channel].slider.value));
+      rows[channel].input.addEventListener("change", () => setRgbChannel(channel, rows[channel].input.value));
+      rows[channel].minus.addEventListener("click", () => setRgbChannel(channel, state[channel] - 1));
+      rows[channel].plus.addEventListener("click", () => setRgbChannel(channel, state[channel] + 1));
+    }
+    for (const [channel] of HSL_CHANNELS) {
+      rows[channel].slider.addEventListener("input", () => setHslChannel(channel, rows[channel].slider.value));
+      rows[channel].input.addEventListener("change", () => setHslChannel(channel, rows[channel].input.value));
+      rows[channel].minus.addEventListener("click", () => setHslChannel(channel, hsl[channel] - 1));
+      rows[channel].plus.addEventListener("click", () => setHslChannel(channel, hsl[channel] + 1));
+    }
+    if (withAlpha) {
+      rows.alpha.slider.addEventListener("input", () => setRgbChannel("alpha", rows.alpha.slider.value));
+      rows.alpha.input.addEventListener("change", () => setRgbChannel("alpha", rows.alpha.input.value));
+      rows.alpha.minus.addEventListener("click", () => setRgbChannel("alpha", state.alpha - 0.01));
+      rows.alpha.plus.addEventListener("click", () => setRgbChannel("alpha", state.alpha + 0.01));
+    }
+    for (const part of Object.values(rows)) {
+      part.input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          part.input.dispatchEvent(new Event("change"));
+          part.input.blur();
+          event.preventDefault();
+        }
+      });
+    }
+    setupColorEyedropper((picked) => {
+      if (!picked) return;
+      commit({ red: picked.red, green: picked.green, blue: picked.blue });
+    });
+    function place(position) {
+      if (!floating) return;
+      const width = host.offsetWidth || 460;
+      const height = host.offsetHeight || 320;
+      const left = clamp(position.left, 4, Math.max(4, window.innerWidth - width - 4));
+      const top = clamp(position.top, 4, Math.max(4, window.innerHeight - height - 4));
+      host.style.left = `${Math.round(left)}px`;
+      host.style.top = `${Math.round(top)}px`;
+    }
+    if (floating) {
+      host.addEventListener("pointerdown", (event) => {
+        if (event.button !== 0) return;
+        const target = event.target instanceof Element ? event.target : null;
+        if (target && target.closest("input, button, select, textarea, code, .color-preview")) return;
+        const rect = host.getBoundingClientRect();
+        const offset = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+        host.classList.add("is-dragging");
+        const move = (moveEvent) => place({ left: moveEvent.clientX - offset.x, top: moveEvent.clientY - offset.y });
+        const up = () => {
+          document.removeEventListener("pointermove", move);
+          document.removeEventListener("pointerup", up);
+          host.classList.remove("is-dragging");
+          writeStorage(storageKey, { left: parseFloat(host.style.left), top: parseFloat(host.style.top) });
+        };
+        document.addEventListener("pointermove", move);
+        document.addEventListener("pointerup", up);
+        event.preventDefault();
+      });
+      window.addEventListener("resize", () => {
+        if (!host.hidden) place({ left: parseFloat(host.style.left) || 0, top: parseFloat(host.style.top) || 0 });
+      });
+    }
+    function open(anchorPosition) {
+      host.hidden = false;
+      if (floating) {
+        const stored = readStorage(storageKey);
+        if (Number.isFinite(stored.left) && Number.isFinite(stored.top)) place({ left: stored.left, top: stored.top });
+        else if (anchorPosition) place(anchorPosition);
+        else place({ left: window.innerWidth - (host.offsetWidth || 460) - 24, top: 80 });
+      }
+    }
+    function close() {
+      if (host.hidden) return;
+      host.hidden = true;
+      if (floating && floating.onClose) floating.onClose();
+    }
+    applyMode();
+    render();
+    return {
+      element: host,
+      getState: () => ({ ...state, hsl: { ...hsl }, hex: colorHex(state) }),
+      setState: (next, { quiet = false } = {}) => {
+        silent = quiet;
+        try {
+          commit(next);
+        } finally {
+          silent = false;
+        }
+      },
+      getHex: () => colorHex(state),
+      setHex: (text, { quiet = false } = {}) => {
+        const parsed = parseHex(text);
+        if (!parsed) return false;
+        silent = quiet;
+        try {
+          commit(withAlpha ? parsed : { red: parsed.red, green: parsed.green, blue: parsed.blue });
+        } finally {
+          silent = false;
+        }
+        return true;
+      },
+      setTitle: (text) => {
+        title.textContent = text;
+      },
+      getMode: () => mode,
+      setMode,
+      open,
+      close,
+      isOpen: () => !host.hidden,
+      isPinned: () => pinned,
+      isEyedropperActive: () => eyedropper.classList.contains("eyedropper-active")
+    };
+  }
+
   // packages/web-ide/src/console-output.js
   function setOutputText(text, className = "", options = {}) {
     output.replaceChildren();
@@ -6935,7 +7365,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
   async function fingerprint(bytes) {
     if (!window.crypto || !window.crypto.subtle) return "";
     const digest = new Uint8Array(await window.crypto.subtle.digest("SHA-256", bytes));
-    return Array.from(digest.subarray(0, 8), (byte) => byte.toString(16).padStart(2, "0")).join("");
+    return Array.from(digest.subarray(0, 8), (byte2) => byte2.toString(16).padStart(2, "0")).join("");
   }
   function versionIsNewer(theirs, ours) {
     const parts = (text) => String(text).split(".").map((part) => Number.parseInt(part, 10) || 0);
@@ -8810,7 +9240,6 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
   var CONSOLE_FONT_SIZE_STORAGE_KEY = "idyllium-web-console-font-size";
   var AUTOCOMPLETE_STORAGE_KEY = "idyllium-web-autocomplete";
   var WEB_IDE_BASE_URL = detectWebIdeBaseUrl();
-  var COLOR_PICKER_CHANNELS = ["red", "green", "blue", "alpha"];
   var folders = /* @__PURE__ */ new Set([WORKSPACE_ROOT]);
   var expandedFolders = /* @__PURE__ */ new Set([WORKSPACE_ROOT]);
   var currentFile = MAIN_FILE;
@@ -8829,7 +9258,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
   var fileEditState = null;
   var internalDragPath = null;
   var internalDragType = "file";
-  var colorPickerState = { red: 34, green: 145, blue: 188, alpha: 1 };
+  var colorPicker = null;
   var currentProjectId = "";
   var currentProjectName = DEFAULT_PROJECT_NAME;
   var guestReturnProjectId = "";
@@ -8837,6 +9266,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
   var projectWriteQueue = Promise.resolve();
   var pendingUploadConflictResolve = null;
   var colorCopyTimers = /* @__PURE__ */ new WeakMap();
+  if (window.IdylliumIcons) window.IdylliumIcons.mountAll(document);
   registerViewerHost({ openFile, currentFile: () => currentFile });
   registerRunHost({
     saveCurrentEditor,
@@ -8866,7 +9296,6 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
   applyConsoleFontSize(consoleFontSize, false);
   autocompleteToggle.checked = autocompleteEnabled;
   applySavedLayout();
-  updateColorPickerUi();
   runButton.addEventListener("click", runProgram);
   stopButton.addEventListener("click", () => stopProgram(false));
   formatButton.addEventListener("click", formatCurrentFile);
@@ -8955,7 +9384,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
   document.addEventListener("idyllium-site-nav-open", () => {
     hideUploadMenu();
     hideThemeMenu();
-    hideColorPickerMenu();
+    if (!(colorPicker && colorPicker.isPinned())) hideColorPickerMenu();
     hideFileAppMenu();
     hideEditAppMenu();
     hideFileContextMenu();
@@ -8963,7 +9392,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
   document.addEventListener("click", (event) => {
     if (!uploadMenu.hidden && event.target instanceof Element && !event.target.closest(".upload-wrapper")) hideUploadMenu();
     if (!themeMenu.hidden && event.target instanceof Element && !event.target.closest(".theme-wrapper")) hideThemeMenu();
-    if (!colorPickerMenu.hidden && event.target instanceof Element && !event.target.closest('#color-picker-menu, #color-picker-button, [data-role="color-picker-button"]')) hideColorPickerMenu();
+    if (!colorPickerMenu.hidden && !(colorPicker && colorPicker.isPinned()) && event.target instanceof Element && !event.target.closest('#color-picker-menu, #color-picker-button, [data-role="color-picker-button"]')) hideColorPickerMenu();
     if (!fileAppMenu.hidden && event.target instanceof Element && !event.target.closest("#file-app-menu-wrapper")) hideFileAppMenu();
     if (!editAppMenu.hidden && event.target instanceof Element && !event.target.closest("#edit-app-menu-wrapper")) hideEditAppMenu();
     if (!fileContextMenu.hidden && event.target instanceof Element && !event.target.closest(".file-context-menu") && !event.target.closest(".file-menu-button")) hideFileContextMenu();
@@ -10001,10 +10430,23 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       ["Свойства", () => showFileProperties(node.path, "file")],
       ["Удалить", () => openDeleteConfirm(node.path, "file", left, top)]
     ];
+    const CONTEXT_ICONS = {
+      "Новый файл": "file-new",
+      "Новая папка": "folder-new",
+      "Вставить картинку": "image-paste",
+      "Переименовать": "rename",
+      "Дублировать": "duplicate",
+      "Скачать": "download",
+      "Копировать имя": "copy",
+      "Копировать путь": "link",
+      "Свойства": "properties",
+      "Удалить": "trash"
+    };
     for (const [label, action] of actions) {
       const button = document.createElement("button");
       button.type = "button";
-      button.textContent = label;
+      if (window.IdylliumIcons && CONTEXT_ICONS[label]) button.appendChild(window.IdylliumIcons.element(CONTEXT_ICONS[label], { size: 16, className: "menu-icon" }));
+      button.appendChild(document.createTextNode(label));
       button.addEventListener("click", (event) => {
         event.stopPropagation();
         hideFileContextMenu();
@@ -10097,10 +10539,10 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     if (decodeUtf8Strict(bytes) !== null) return false;
     const sample = bytes.subarray(0, Math.min(bytes.length, 4096));
     let high = 0;
-    for (const byte of sample) {
-      if (byte === 0) return false;
-      if (byte < 32 && byte !== 9 && byte !== 10 && byte !== 13) return false;
-      if (byte >= 128) high += 1;
+    for (const byte2 of sample) {
+      if (byte2 === 0) return false;
+      if (byte2 < 32 && byte2 !== 9 && byte2 !== 10 && byte2 !== 13) return false;
+      if (byte2 >= 128) high += 1;
     }
     return high > 0;
   }
@@ -11193,7 +11635,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     hideFileAppMenu();
     hideEditAppMenu();
     hideThemeMenu();
-    hideColorPickerMenu();
+    hideColorPickerMenuUnlessPinned();
     uploadMenu.hidden = false;
     uploadButton.setAttribute("aria-expanded", "true");
   }
@@ -11441,7 +11883,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     hideEditAppMenu();
     hideUploadMenu();
     hideThemeMenu();
-    hideColorPickerMenu();
+    hideColorPickerMenuUnlessPinned();
     hideFileContextMenu();
     resetFileAppMenu();
     updateCurrentProjectUi();
@@ -11709,7 +12151,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     hideFileAppMenu();
     hideUploadMenu();
     hideThemeMenu();
-    hideColorPickerMenu();
+    hideColorPickerMenuUnlessPinned();
     hideFileContextMenu();
     updateEditMenuAvailability();
     editAppMenu.hidden = false;
@@ -11796,7 +12238,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     hideFileAppMenu();
     hideEditAppMenu();
     hideUploadMenu();
-    hideColorPickerMenu();
+    hideColorPickerMenuUnlessPinned();
     themeMenu.hidden = false;
     themeButton.setAttribute("aria-expanded", "true");
   }
@@ -11805,36 +12247,12 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     themeButton.setAttribute("aria-expanded", "false");
   }
   function installColorPicker() {
-    for (const channel of COLOR_PICKER_CHANNELS) {
-      colorSliders[channel].addEventListener("input", () => {
-        setColorPickerComponent(channel, Number(colorSliders[channel].value));
-      });
-      colorInputs[channel].addEventListener("change", () => {
-        setColorPickerComponent(channel, Number(colorInputs[channel].value));
-      });
-      colorInputs[channel].addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
-          setColorPickerComponent(channel, Number(colorInputs[channel].value));
-          colorInputs[channel].blur();
-          event.preventDefault();
-        }
-      });
-    }
-    for (const button of document.querySelectorAll(".color-step-button")) {
-      button.addEventListener("click", () => {
-        const channel = button.dataset.colorChannel;
-        const step = Number(button.dataset.colorStep);
-        if (!COLOR_PICKER_CHANNELS.includes(channel) || !Number.isFinite(step)) return;
-        setColorPickerComponent(channel, colorPickerState[channel] + step);
-      });
-    }
-    const copyRgbButton = document.getElementById("copy-rgb-button");
-    const copyHexButton = document.getElementById("copy-hex-button");
-    copyRgbButton.addEventListener("click", () => copyColorText(colorRgbCode.textContent, copyRgbButton));
-    copyHexButton.addEventListener("click", () => copyColorText(colorHexCode.textContent, copyHexButton));
-    setupColorEyedropper((picked) => {
-      colorPickerState = { ...colorPickerState, red: picked.red, green: picked.green, blue: picked.blue };
-      updateColorPickerUi();
+    colorPicker = createColorPicker({
+      host: colorPickerMenu,
+      alpha: true,
+      codes: true,
+      onCopy: copyColorText,
+      floating: { title: "Генератор цвета", storageKey: "idyllium-color-picker-ide", onClose: hideColorPickerMenu }
     });
   }
   function toggleColorPickerMenu() {
@@ -11846,70 +12264,19 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     hideEditAppMenu();
     hideUploadMenu();
     hideThemeMenu();
-    colorPickerMenu.hidden = false;
     colorPickerButton.setAttribute("aria-expanded", "true");
     const anchor = Array.from(document.querySelectorAll('.site-nav-group[data-group="tools"] > .site-nav-button, .site-nav-collapsed > .site-nav-button')).find((button) => button.offsetParent !== null);
-    const host = colorPickerMenu.offsetParent;
-    if (anchor && host) {
-      const anchorRect = anchor.getBoundingClientRect();
-      const hostRect = host.getBoundingClientRect();
-      const width = colorPickerMenu.offsetWidth;
-      const centred = anchorRect.left + anchorRect.width / 2 - width / 2;
-      const left = Math.max(8, Math.min(centred, window.innerWidth - width - 8));
-      colorPickerMenu.style.left = `${left - hostRect.left}px`;
-      colorPickerMenu.style.transform = "none";
-    }
+    const anchorRect = anchor ? anchor.getBoundingClientRect() : null;
+    if (!colorPicker) return;
+    colorPicker.open(anchorRect ? { left: anchorRect.left + anchorRect.width / 2 - 230, top: anchorRect.bottom + 8 } : void 0);
+  }
+  function hideColorPickerMenuUnlessPinned() {
+    if (!(colorPicker && colorPicker.isPinned())) hideColorPickerMenu();
   }
   function hideColorPickerMenu() {
+    if (colorPicker && colorPicker.isOpen()) colorPicker.close();
     colorPickerMenu.hidden = true;
     colorPickerButton.setAttribute("aria-expanded", "false");
-  }
-  function setColorPickerComponent(channel, rawValue) {
-    if (!Number.isFinite(rawValue)) {
-      updateColorPickerUi();
-      return;
-    }
-    colorPickerState = {
-      ...colorPickerState,
-      [channel]: normalizeColorPickerValue(channel, rawValue)
-    };
-    updateColorPickerUi();
-  }
-  function normalizeColorPickerValue(channel, value) {
-    if (channel === "alpha") return Math.round(clamp(value, 0, 1) * 100) / 100;
-    return Math.round(clamp(value, 0, 255));
-  }
-  function updateColorPickerUi() {
-    const red = normalizeColorPickerValue("red", colorPickerState.red);
-    const green = normalizeColorPickerValue("green", colorPickerState.green);
-    const blue = normalizeColorPickerValue("blue", colorPickerState.blue);
-    const alpha = normalizeColorPickerValue("alpha", colorPickerState.alpha);
-    colorPickerState = { red, green, blue, alpha };
-    colorSliders.red.value = String(red);
-    colorSliders.green.value = String(green);
-    colorSliders.blue.value = String(blue);
-    colorSliders.alpha.value = formatAlpha(alpha);
-    colorInputs.red.value = String(red);
-    colorInputs.green.value = String(green);
-    colorInputs.blue.value = String(blue);
-    colorInputs.alpha.value = formatAlpha(alpha);
-    const rgb = `rgb(${red}, ${green}, ${blue})`;
-    const rgba = `rgba(${red}, ${green}, ${blue}, ${formatAlpha(alpha)})`;
-    colorPreview.style.setProperty("--preview-rgb", rgb);
-    colorPreview.style.setProperty("--preview-rgba", rgba);
-    colorRgbCode.textContent = alpha >= 1 ? `colors.RGB(${red}, ${green}, ${blue})` : `colors.RGBA(${red}, ${green}, ${blue}, ${formatAlpha(alpha)})`;
-    colorHexCode.textContent = `colors.HEX("${colorPickerHex(red, green, blue, alpha)}")`;
-  }
-  function colorPickerHex(red, green, blue, alpha) {
-    const base = `#${componentToHex(red)}${componentToHex(green)}${componentToHex(blue)}`;
-    return alpha >= 1 ? base : base + componentToHex(Math.round(alpha * 255));
-  }
-  function componentToHex(value) {
-    return normalizeColorPickerValue("red", value).toString(16).padStart(2, "0");
-  }
-  function formatAlpha(value) {
-    const rounded = normalizeColorPickerValue("alpha", value);
-    return Number.isInteger(rounded) ? String(rounded) : String(rounded).replace(/0+$/u, "").replace(/\.$/u, "");
   }
   async function copyColorText(text, button) {
     const value = String(text || "");

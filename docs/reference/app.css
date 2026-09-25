@@ -185,15 +185,59 @@ pre {
   text-transform: uppercase;
 }
 
+.search-field {
+  position: relative;
+}
+
 .sidebar-search input {
   width: 100%;
   height: 36px;
   border: 1px solid var(--border);
   border-radius: 8px;
   outline: 0;
-  padding: 0 10px;
+  padding: 0 34px 0 10px;
   background: var(--code-bg);
   color: var(--text);
+}
+
+/* Крестик очистки — свой, из единого набора значков; браузерный спрятан. */
+.sidebar-search input::-webkit-search-cancel-button,
+.sidebar-search input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
+.search-clear {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.search-clear:hover {
+  color: var(--text);
+  background: var(--panel-soft);
+}
+
+.search-clear[hidden] {
+  display: none;
+}
+
+.search-clear svg {
+  display: block;
+  fill: currentColor;
 }
 
 .sidebar-search input:focus {
@@ -398,7 +442,7 @@ pre {
   background: var(--code-bg);
   color: var(--text);
   font: 0.92em var(--font-mono);
-  white-space: break-spaces;
+  white-space: nowrap; /* код в тексте не рвётся на строки (вердикт владельца 2026-09-26) */
 }
 
 .summary-list {
@@ -433,6 +477,40 @@ pre {
 .member-list {
   display: grid;
   gap: 8px;
+}
+
+/* Таблица значков на странице gui.Icon */
+.icon-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 8px;
+}
+
+.icon-gallery-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px 6px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--panel-raised);
+  color: var(--text);
+}
+
+.icon-gallery-item svg {
+  flex: none;
+  fill: currentColor;
+}
+
+.icon-gallery-item code {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--text-soft);
 }
 
 .language-row {

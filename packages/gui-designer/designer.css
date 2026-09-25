@@ -27,6 +27,20 @@
   --hl-comment: rgba(106, 153, 78, 0.9);
   --selection: #87bfff;
   --scene-bg: #1a1326;
+  /* Псевдонимы для общих компонентов Web IDE (генератор цвета): их CSS ждёт эти имена. */
+  --panel-raised: var(--bg-panel-2);
+  --panel-soft: var(--bg-panel-3);
+  --text: var(--text-main);
+  --muted: var(--text-muted);
+  --ui-font: var(--font-sans);
+  --mono-font: var(--font-mono);
+  --success: var(--green);
+  --danger: var(--red);
+  /* Раскладка — тянется сплиттерами, значения помнит localStorage. */
+  --palette-w: 236px;
+  --side-w: 340px;
+  --code-h: 232px;
+  --tree-h: 34%;
 }
 
 body.light-theme {
@@ -69,6 +83,10 @@ body {
 button, input, select, textarea { font: inherit; color: inherit; }
 
 button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   height: 30px;
   padding: 0 11px;
   border: 1px solid var(--border);
@@ -86,18 +104,59 @@ button.primary { border-color: var(--accent); background: var(--accent); color: 
 body.light-theme button.primary { color: #ffffff; }
 button.primary:hover:not(:disabled) { filter: brightness(1.08); }
 
+input[type="text"], input[type="number"], select {
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-panel-2);
+  color: var(--text-main);
+}
+input[type="text"]:focus, input[type="number"]:focus, select:focus { outline: 0; border-color: var(--accent); }
+input.is-invalid { border-color: var(--red) !important; }
+input::placeholder { color: var(--text-muted); font-style: italic; }
+
+/* Числа: свои кнопки −/+ (как в генераторе цвета IDE), браузерные стрелки спрятаны. */
+input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
+input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { appearance: none; margin: 0; }
+.number-control { display: inline-flex; align-items: stretch; width: 100%; min-width: 0; }
+.number-control button {
+  width: 26px;
+  height: 28px;
+  flex: 0 0 auto;
+  padding: 0;
+  border-radius: 6px 0 0 6px;
+  font-size: 15px;
+  line-height: 1;
+}
+.number-control button:last-child { border-radius: 0 6px 6px 0; }
+.number-control input[type="number"] { flex: 1 1 auto; min-width: 0; width: auto; border-radius: 0; border-left: 0; border-right: 0; text-align: center; padding: 0 4px; }
+
 /* ── раскладка ── */
 .designer {
   display: grid;
-  grid-template-columns: 236px minmax(0, 1fr) 340px;
-  grid-template-rows: 44px minmax(0, 1fr) auto;
+  grid-template-columns: var(--palette-w) 6px minmax(0, 1fr) 6px var(--side-w);
+  grid-template-rows: 44px minmax(0, 1fr) 6px var(--code-h);
   grid-template-areas:
-    "toolbar toolbar toolbar"
-    "palette stage side"
-    "code code code";
+    "toolbar toolbar toolbar toolbar toolbar"
+    "palette sp1 stage sp2 side"
+    "sp3 sp3 sp3 sp3 sp3"
+    "code code code code code";
   height: calc(100vh - 56px);
   min-height: 560px;
 }
+.designer.is-code-collapsed { grid-template-rows: 44px minmax(0, 1fr) 0 auto; }
+.designer.is-code-collapsed #split-code { display: none; }
+
+.splitter { background: var(--border); z-index: 3; touch-action: none; }
+.splitter svg { display: none; }
+.splitter-vertical { grid-area: sp1; cursor: col-resize; }
+#split-side { grid-area: sp2; }
+.splitter-horizontal { grid-area: sp3; cursor: row-resize; }
+.splitter:hover, .splitter.is-dragging { background: var(--accent); }
+body.is-resizing { cursor: col-resize; user-select: none; }
+body.is-resizing-rows { cursor: row-resize; user-select: none; }
+body.is-resizing .preview, body.is-resizing-rows .preview { pointer-events: none; }
 
 .designer-toolbar {
   grid-area: toolbar;
@@ -112,15 +171,6 @@ button.primary:hover:not(:disabled) { filter: brightness(1.08); }
 .toolbar-group { display: flex; align-items: center; gap: 8px; }
 .toolbar-group-right { margin-left: auto; min-width: 0; }
 .toolbar-check { display: inline-flex; align-items: center; gap: 6px; color: var(--text-soft); cursor: pointer; white-space: nowrap; }
-.toolbar-field { display: inline-flex; align-items: center; gap: 6px; color: var(--text-soft); }
-.toolbar-field select, .inspector select, .inspector input[type="text"], .inspector input[type="number"] {
-  height: 28px;
-  padding: 0 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg-panel-2);
-  color: var(--text-main);
-}
 .toolbar-status { color: var(--text-muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .toolbar-status.is-error { color: var(--red); }
 
@@ -138,11 +188,14 @@ button.primary:hover:not(:disabled) { filter: brightness(1.08); }
 .palette {
   grid-area: palette;
   overflow: auto;
+  min-width: 0;
   border-right: 1px solid var(--border);
   background: var(--bg-panel);
 }
 
-.palette-hint { margin: 0 14px 10px; color: var(--text-muted); font-size: 12px; }
+.pane-help { display: inline-flex; vertical-align: -3px; margin-left: 6px; color: var(--text-muted); cursor: help; }
+.pane-help:hover { color: var(--text-main); }
+.pane-help svg { display: block; }
 .palette-group-title { margin: 8px 14px 2px; color: var(--text-soft); font-size: 12px; font-weight: 700; }
 
 .palette-item {
@@ -157,21 +210,20 @@ button.primary:hover:not(:disabled) { filter: brightness(1.08); }
   border-radius: 8px;
   background: transparent;
   color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 13px;
   font-weight: 600;
   text-align: left;
   cursor: grab;
   user-select: none;
 }
+.palette-item { justify-content: flex-start; } /* глобальное button центрирует — палитра по левому краю */
 .palette-item:hover { border-color: var(--border); background: var(--bg-panel-2); }
-.palette-item .palette-icon {
-  width: 22px;
-  height: 16px;
-  flex: 0 0 auto;
-  border: 1px solid var(--text-muted);
-  border-radius: 3px;
-  background: var(--bg-panel-3);
-}
-.palette-item small { margin-left: auto; color: var(--text-muted); font-weight: 500; font-family: var(--font-mono); font-size: 11px; }
+/* Место под значок: появится вместе с набором SVG (ТЗ — спека some_gui_designer/02). */
+.palette-item .palette-icon { display: none; width: 18px; height: 18px; flex: 0 0 auto; color: var(--text-soft); }
+.palette-item .palette-icon svg { display: block; }
+.palette-item.has-icon .palette-icon { display: block; }
+.palette-item:hover .palette-icon { color: var(--accent); }
 
 .palette-ghost {
   position: fixed;
@@ -191,6 +243,7 @@ button.primary:hover:not(:disabled) { filter: brightness(1.08); }
   grid-area: stage;
   position: relative;
   overflow: auto;
+  min-width: 0;
   padding: 22px;
   background: var(--scene-bg);
 }
@@ -241,6 +294,9 @@ body.light-theme .overlay-grid {
 .overlay-widget.is-selected { border-color: var(--selection); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25); }
 .overlay-widget.is-drop-target { background: var(--accent-soft); border-color: var(--accent); border-style: dashed; }
 .overlay-widget.is-hidden { border-style: dotted; border-color: var(--text-muted); }
+.overlay-widget.is-selected:not(.is-primary) { border-color: var(--selection); border-style: dashed; }
+/* Рамка выделения (протяжка по пустому месту сцены) */
+.overlay-marquee { position: absolute; z-index: 4; border: 1px dashed var(--accent); background: var(--accent-soft); pointer-events: none; }
 
 .overlay-handle {
   position: absolute;
@@ -267,7 +323,6 @@ body.light-theme .overlay-grid {
   white-space: nowrap;
   pointer-events: none;
 }
-body.light-theme .overlay-label { color: #ffffff; }
 
 .inline-editor {
   position: absolute;
@@ -284,11 +339,13 @@ body.light-theme .overlay-label { color: #ffffff; }
 .side {
   grid-area: side;
   display: grid;
-  grid-template-rows: minmax(120px, 34%) minmax(0, 1fr);
+  grid-template-rows: var(--tree-h) 6px minmax(0, 1fr);
   min-height: 0;
+  min-width: 0;
   border-left: 1px solid var(--border);
   background: var(--bg-panel);
 }
+#split-tree { grid-area: auto; }
 
 .tree-pane, .inspector-pane { display: flex; flex-direction: column; min-height: 0; }
 .tree-pane { border-bottom: 1px solid var(--border); }
@@ -309,26 +366,55 @@ body.light-theme .overlay-label { color: #ffffff; }
 .tree-row:hover { background: var(--bg-panel-2); }
 .tree-row.is-selected { background: var(--accent-soft); color: var(--text-main); }
 .tree-row .tree-type { color: var(--text-muted); font-size: 12px; }
+.tree-row .tree-icon { flex: 0 0 auto; color: var(--text-muted); }
+.tree-row.is-selected .tree-icon { color: var(--accent); }
 .tree-row .tree-name { font-family: var(--font-mono); font-size: 13px; }
 .tree-row.is-hidden .tree-name { text-decoration: line-through; color: var(--text-muted); }
+.tree-row.is-primary { box-shadow: inset 0 0 0 1px var(--accent); }
+/* Перенос строк дерева: метки «перед / после / внутрь», отказ */
+.tree-row { position: relative; }
+.tree-row.is-drop-before::before, .tree-row.is-drop-after::after { content: ''; position: absolute; left: 6px; right: 6px; height: 2px; background: var(--accent); border-radius: 1px; }
+.tree-row.is-drop-before::before { top: -1px; }
+.tree-row.is-drop-after::after { bottom: -1px; }
+.tree-row.is-drop-into { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.tree-row.is-drop-invalid { background: rgba(243, 139, 168, 0.14); box-shadow: inset 0 0 0 1px var(--red); }
+body.is-tree-dragging { cursor: grabbing; user-select: none; }
+body.is-tree-dragging .tree-row { cursor: grabbing; }
 
 .inspector-group { margin: 6px 0 2px; }
 .inspector-group-title { padding: 8px 6px 4px; color: var(--text-muted); font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
 
 .field {
   display: grid;
-  grid-template-columns: 112px minmax(0, 1fr) 22px;
+  grid-template-columns: 108px minmax(0, 1fr) 22px;
   align-items: center;
   gap: 6px;
   padding: 2px 6px;
 }
-.field label { color: var(--text-soft); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.field label code { font-family: var(--font-mono); font-size: 12px; }
+.field > label {
+  color: var(--text-soft);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: help;
+}
 .field input[type="text"], .field input[type="number"], .field select { width: 100%; min-width: 0; }
-.field input.is-invalid { border-color: var(--red); }
-.field input::placeholder { color: var(--text-muted); font-style: italic; }
 .field-color { display: flex; align-items: center; gap: 6px; }
-.field-color input[type="color"] { width: 34px; height: 28px; padding: 2px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-panel-2); cursor: pointer; }
+.field-color .color-swatch {
+  width: 34px;
+  height: 28px;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-panel-2);
+  background-image: linear-gradient(45deg, var(--bg-panel-3) 25%, transparent 25%, transparent 75%, var(--bg-panel-3) 75%), linear-gradient(45deg, var(--bg-panel-3) 25%, transparent 25%, transparent 75%, var(--bg-panel-3) 75%);
+  background-size: 10px 10px;
+  background-position: 0 0, 5px 5px;
+}
+.field-color .color-swatch.is-set { background-image: none; }
 .field-color input[type="text"] { flex: 1 1 auto; font-family: var(--font-mono); }
 .field-reset {
   width: 22px;
@@ -344,9 +430,54 @@ body.light-theme .overlay-label { color: #ffffff; }
 }
 .field.is-explicit .field-reset { visibility: visible; }
 .field-reset:hover { background: var(--bg-panel-3); color: var(--text-main); }
-.field-check { display: flex; align-items: center; gap: 8px; }
+.field-check { display: flex; align-items: center; gap: 8px; height: 28px; }
 .field-note { grid-column: 1 / -1; padding: 0 6px 4px; color: var(--red); font-size: 12px; }
-.inspector-empty { padding: 12px 8px; color: var(--text-muted); font-size: 13px; }
+.inspector-empty { padding: 8px 8px; color: var(--text-muted); font-size: 12px; }
+
+/* Группа: выравнивание и распределение */
+.align-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 2px 6px 6px; }
+.align-grid button { height: 28px; padding: 0 8px; font-size: 12px; font-weight: 600; justify-content: flex-start; white-space: normal; text-align: left; line-height: 1.1; }
+.inspector-action { margin: 4px 6px 6px; width: calc(100% - 12px); height: 28px; font-size: 12px; }
+/* Шрифты из файлов */
+.font-row { display: grid; grid-template-columns: auto minmax(0, 1fr) 24px; align-items: center; gap: 8px; padding: 3px 6px; }
+.font-row code { font-family: var(--font-mono); font-size: 12px; color: var(--text-main); }
+.font-row .font-file { color: var(--text-muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.font-row.is-missing .font-file { color: var(--red); }
+.event-row { display: flex; align-items: center; gap: 8px; padding: 3px 6px; cursor: pointer; }
+.event-row code { font-family: var(--font-mono); font-size: 12px; color: var(--text-main); }
+.event-row small { color: var(--text-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.data-editor { display: grid; gap: 4px; padding: 2px 6px; }
+.data-row { display: grid; grid-template-columns: minmax(0, 1fr) 26px; align-items: center; gap: 6px; }
+.data-row-entry { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 26px; }
+.data-row input { width: 100%; min-width: 0; }
+.data-remove { width: 26px; height: 26px; padding: 0; }
+.data-add { margin: 2px 0 0; height: 28px; }
+.data-subtitle { padding: 6px 6px 2px; color: var(--text-soft); font-size: 12px; }
+.data-textarea, .data-numbers { width: calc(100% - 12px); margin: 0 6px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-panel-2); color: var(--text-main); font-family: var(--font-mono); font-size: 12px; resize: vertical; }
+.data-numbers { height: 28px; padding: 0 8px; }
+
+.icon-choice { justify-content: flex-start; width: 100%; height: 28px; padding: 0 8px; font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
+.icon-picker {
+  position: fixed;
+  z-index: 260;
+  width: 460px;
+  max-height: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-panel);
+  box-shadow: var(--shadow);
+}
+.icon-picker[hidden] { display: none; }
+.icon-picker-search { width: 100%; }
+.icon-picker-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; overflow: auto; min-height: 0; }
+.icon-picker-item { flex-direction: column; gap: 4px; height: 58px; padding: 6px 2px; font-family: var(--font-mono); font-size: 10px; font-weight: 500; color: var(--text-soft); }
+.icon-picker-item span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.icon-picker-item.is-current { border-color: var(--accent); background: var(--accent-soft); color: var(--text-main); }
 
 .tabs-editor { display: grid; gap: 4px; padding: 2px 6px; }
 .tabs-row { display: grid; grid-template-columns: 22px minmax(0, 1fr) 26px; align-items: center; gap: 6px; }
@@ -358,18 +489,19 @@ body.light-theme .overlay-label { color: #ffffff; }
 .code-pane {
   grid-area: code;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  height: 232px;
+  grid-template-rows: 44px minmax(0, 1fr);
+  min-height: 0;
   border-top: 1px solid var(--border);
   background: var(--bg-panel);
 }
-.code-pane.is-collapsed { height: auto; }
-.code-pane.is-collapsed .code { display: none; }
-.code-collapse { height: 26px; padding: 0 8px; font-weight: 600; color: var(--text-muted); }
+/* Свёрнутая панель: сверху и снизу по одной линии рамки — отступы от кнопок до краёв равны без подгонок. */
+.designer.is-code-collapsed .code-pane { grid-template-rows: 44px; border-bottom: 1px solid var(--border); }
+.designer.is-code-collapsed .code { display: none; }
 
-.code-head { display: flex; align-items: center; gap: 14px; padding: 0 8px 0 0; }
+.code-head { display: flex; align-items: center; gap: 14px; height: 44px; padding: 0 14px; }
+.code-head .pane-title { padding: 0; }
 .code-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-.code-head .toolbar-check { font-size: 13px; }
+.code-collapse { height: 26px; padding: 0 9px; font-weight: 600; color: var(--text-muted); }
 .more-menu { position: relative; }
 .more-menu summary { list-style: none; height: 30px; display: inline-flex; align-items: center; padding: 0 11px; border: 1px solid var(--border); border-radius: 7px; background: var(--bg-panel-2); color: var(--text-soft); font-weight: 700; cursor: pointer; }
 .more-menu summary::-webkit-details-marker { display: none; }
@@ -381,14 +513,16 @@ body.light-theme .overlay-label { color: #ffffff; }
   z-index: 30;
   display: grid;
   gap: 8px;
-  width: 300px;
+  width: max-content;                       /* по содержимому: кнопки не вылезают за меню (владелец, 2026-09-26) */
+  min-width: 300px;
+  max-width: min(460px, calc(100vw - 32px));
   padding: 10px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--bg-panel);
   box-shadow: var(--shadow);
 }
-.more-menu-body button { height: 30px; text-align: left; }
+.more-menu-body button { width: 100%; height: 30px; justify-content: flex-start; text-align: left; }
 
 .code {
   margin: 0;
@@ -422,6 +556,38 @@ body.light-theme .overlay-label { color: #ffffff; }
 .context-menu button { display: block; width: 100%; height: 30px; border: 0; background: transparent; text-align: left; font-weight: 600; }
 .context-menu button:hover:not(:disabled) { background: var(--bg-panel-2); }
 .context-menu .context-separator { height: 1px; margin: 5px 4px; background: var(--border); }
+
+/* ── диалог (своя предупреждалка вместо браузерного confirm) ── */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 3, 14, 0.55);
+}
+.dialog-backdrop[hidden] { display: none; }
+.dialog {
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  padding: 18px 20px 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-panel);
+  box-shadow: var(--shadow);
+}
+.dialog-title { margin: 0 0 10px; font-size: 17px; }
+.dialog-body { color: var(--text-soft); }
+.dialog-body p { margin: 0 0 8px; }
+.dialog-body ul { margin: 6px 0 8px; padding-left: 20px; }
+.dialog-body li { margin: 3px 0; }
+.dialog-body code { font-family: var(--font-mono); font-size: 12px; color: var(--text-main); }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+
+/* ── генератор цвета — общий компонент Web IDE (assets/color-picker.css), живая модалка ── */
+#color-panel.is-floating { background: var(--bg-panel); }
 
 /* ── узкий экран ── */
 .designer-narrow { max-width: 560px; margin: 0 auto; padding: 60px 22px; text-align: center; color: var(--text-soft); }

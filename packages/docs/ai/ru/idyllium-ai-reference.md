@@ -1560,7 +1560,9 @@ class CounterButton extends gui.Button {   // база — виджет gui
 - Расширять можно только обычные виджеты: `gui.Button`, `gui.Label`,
   `gui.Frame`, `gui.CheckBox`, `gui.RadioButton`, `gui.LineEdit`,
   `gui.TextEdit`, `gui.ProgressBar`, `gui.Slider`, `gui.SpinBox`,
-  `gui.ComboBox`, `gui.ImageBox`. `gui.Window`, `gui.Canvas`, `gui.Timer`,
+  `gui.ComboBox`, `gui.ImageBox`, `gui.Icon` (с 1.6.3: значок из единого набора
+  сайта — `icon = "play"`, `"star"`, `"folder"`…, вписан по меньшей стороне,
+  цвет `text_color`; полный список имён — в справочнике). `gui.Window`, `gui.Canvas`, `gui.Timer`,
   диалоги и небиблиотечные типы вне gui (`json.Value`, `time.stamp`, …) —
   ошибка компиляции.
 - Потомок И ЕСТЬ виджет: у него есть все свойства и обработчики виджета плюс
@@ -3224,7 +3226,7 @@ title.style = "color: white; background-color: dark-blue; border-radius: 12px;";
 
 Правила наклейки:
 
-- **Опечатки молчаливы.** Неизвестное свойство (`backround-color`) или
+- **Опечатки молчаливы.** Неизвестное свойство (`bckground-color`) или
   недопустимое значение (`opacity: 1.5`, `color: bananas`) отбрасывается без
   всякой ошибки, как в настоящем CSS. Собственные проверки типов Idyllium
   к самому присваиванию по-прежнему применяются (`label.style = 42;` — ошибка

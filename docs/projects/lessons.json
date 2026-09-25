@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "generatedAt": "2026-09-25T09:26:42.718Z",
+  "generatedAt": "2026-09-25T21:02:51.491Z",
   "sourceRoot": "packages/docs/manual-content/projects",
   "sections": [
     {
       "id": "console",
       "title": "Консоль",
-      "icon": "terminal",
+      "icon": "section-console",
       "status": "ready",
       "lessons": [
         {
@@ -404,7 +404,7 @@
     {
       "id": "windows",
       "title": "Окна",
-      "icon": "widgets",
+      "icon": "section-widgets",
       "status": "ready",
       "lessons": [
         {

@@ -274,6 +274,8 @@ function createRendererHarness() {
     window: windowObject,
   };
 
+  const iconsPath = path.resolve(process.cwd(), 'packages/gui-renderer/icons.js');
+  vm.runInNewContext(fs.readFileSync(iconsPath, 'utf8'), context, { filename: iconsPath });
   const rendererPath = path.resolve(process.cwd(), 'packages/gui-renderer/renderer.js');
   vm.runInNewContext(fs.readFileSync(rendererPath, 'utf8'), context, { filename: rendererPath });
 
@@ -1556,6 +1558,42 @@ test('state stickers build the same transform as the base sticker', () => {
   assert(rules.includes('background-color'), `other declarations must stay: ${rules}`);
 });
 
+// text-align у кнопок и надписей работает через justify-content (flex): база
+// зеркалит его инлайном, и правило :hover обязано перебить именно зеркало —
+// иначе «style: left, style_hover: center» при наведении ничего не двигает
+// (находка владельца 2026-09-26).
+test('state stickers mirror text-align into justify-content', () => {
+  const harness = createRendererHarness();
+  harness.sendSnapshot({
+    generation: 1,
+    windows: [{
+      id: 1,
+      type: 'gui.Window',
+      properties: { x: 0, y: 0, width: 400, height: 300, title: 'T' },
+      children: [{
+        id: 2,
+        type: 'gui.Button',
+        properties: {
+          x: 0, y: 0, width: 200, height: 40, text: 'жми',
+          style_declarations: [{ property: 'text-align', value: 'left' }],
+          style_hover_declarations: [{ property: 'text-align', value: 'center' }],
+          style_active_declarations: [{ property: 'text-align', value: 'right' }],
+        },
+      }],
+    }],
+    canvases: [],
+    modals: [],
+    audio: [],
+  });
+
+  const rules = harness.stateRulesText();
+  const hover = rules.split('\n').find((line) => line.includes(':hover')) || '';
+  const active = rules.split('\n').find((line) => line.includes(':active')) || '';
+  assert(hover.includes('text-align: center !important;'), `hover keeps text-align: ${rules}`);
+  assert(hover.includes('justify-content: center !important;'), `hover must mirror text-align into justify-content: ${rules}`);
+  assert(active.includes('justify-content: flex-end !important;'), `active must mirror right into flex-end: ${rules}`);
+});
+
 async function main(): Promise<void> {
   for (const item of tests) {
     try {
@@ -1578,4 +1616,33 @@ async function main(): Promise<void> {
 main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
+});
+
+test('gui.Icon draws a set icon fitted to its smaller side, unknown names show the name', () => {
+  const harness = createRendererHarness();
+  harness.sendSnapshot({
+    audio: [],
+    canvases: [],
+    modals: [],
+    windows: [{
+      id: 1,
+      type: 'gui.Window',
+      properties: { title: 'Значки', width: 300, height: 200 },
+      children: [
+        { id: 2, type: 'gui.Icon', properties: { x: 10, y: 10, width: 40, height: 24, icon: 'play' }, children: [] },
+        { id: 3, type: 'gui.Icon', properties: { x: 60, y: 10, width: 24, height: 24, icon: 'no-such-icon' }, children: [] },
+      ],
+    }],
+  });
+  const stage = harness.stage;
+  const found: any[] = [];
+  const visit = (element: any) => {
+    if (element && element.className && String(element.className).includes('icon-widget')) found.push(element);
+    for (const child of element && element.children ? element.children : []) visit(child);
+  };
+  visit(stage);
+  assert(found.length === 2, `expected two icon widgets, found ${found.length}`);
+  assert(String(found[0].innerHTML || '').includes('icon-play') && String(found[0].innerHTML || '').includes('width="24"'), 'the icon is the set\'s svg, fitted to 24 px (the smaller side)');
+  const missing = (found[1].children || []).find((child: any) => String(child.className || '').includes('icon-missing'));
+  assert(missing && missing.textContent === 'no-such-icon', 'an unknown name is shown as text instead of a blank');
 });

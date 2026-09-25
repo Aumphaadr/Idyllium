@@ -3,7 +3,7 @@
     {
       "id": "images",
       "title": "Картинки",
-      "icon": "🖼️",
+      "icon": "file-image",
       "groups": [
         {
           "title": "JPEG",
@@ -318,7 +318,7 @@
     {
       "id": "audio",
       "title": "Звук и музыка",
-      "icon": "🎵",
+      "icon": "file-audio",
       "groups": [
         {
           "title": "WAV — короткие эффекты",
@@ -655,7 +655,7 @@
     {
       "id": "fonts",
       "title": "Шрифты",
-      "icon": "🔤",
+      "icon": "file-font",
       "groups": [
         {
           "title": "",
@@ -692,7 +692,7 @@
     {
       "id": "text",
       "title": "Текстовые файлы",
-      "icon": "📄",
+      "icon": "file-text",
       "groups": [
         {
           "title": "Данные для чтения",
@@ -831,7 +831,7 @@
     {
       "id": "json",
       "title": "JSON",
-      "icon": "{ }",
+      "icon": "file-json",
       "groups": [
         {
           "title": "Простые объекты",
@@ -1143,7 +1143,7 @@
     {
       "id": "db",
       "title": "Базы данных",
-      "icon": "🗄️",
+      "icon": "file-database",
       "groups": [
         {
           "title": "Готовые базы",
@@ -1180,7 +1180,7 @@
     {
       "id": "archives",
       "title": "ZIP-архивы",
-      "icon": "📦",
+      "icon": "file-archive",
       "groups": [
         {
           "title": "Кадры для сборки анимаций",

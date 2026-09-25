@@ -8,6 +8,7 @@
   <link rel="icon" href="../assets/idyllium.svg" type="image/svg+xml">
   <!-- @site-nav-assets -->
   <link rel="stylesheet" href="../book/fonts/fonts.css">
+  <link rel="stylesheet" href="../assets/color-picker.css">
   <link rel="stylesheet" href="designer.css">
 </head>
 <body>
@@ -17,14 +18,11 @@
     <div class="designer-toolbar">
       <div class="toolbar-group">
         <button type="button" id="new-design" title="Начать пустой макет">Новый макет</button>
-        <button type="button" id="undo" title="Отменить (Ctrl+Z)" disabled>↶ Отменить</button>
-        <button type="button" id="redo" title="Повторить (Ctrl+Y)" disabled>↷ Повторить</button>
+        <button type="button" id="undo" title="Отменить (Ctrl+Z)" disabled><i class="icon" data-icon="undo" data-size="16"></i> Отменить</button>
+        <button type="button" id="redo" title="Повторить (Ctrl+Y)" disabled><i class="icon" data-icon="redo" data-size="16"></i> Повторить</button>
       </div>
       <div class="toolbar-group">
         <label class="toolbar-check"><input type="checkbox" id="grid-toggle" checked> Сетка <span id="grid-size">5</span> px</label>
-        <label class="toolbar-field">Тема окна
-          <select id="window-theme"></select>
-        </label>
       </div>
       <div class="toolbar-group toolbar-group-right">
         <span class="toolbar-status" id="status" role="status"></span>
@@ -32,10 +30,11 @@
     </div>
 
     <aside class="palette" id="palette" aria-label="Набор виджетов">
-      <h2 class="pane-title">Виджеты</h2>
-      <p class="palette-hint">Перетащите на окно или щёлкните — виджет встанет в свободное место.</p>
+      <h2 class="pane-title">Виджеты<span class="pane-help" title="Перетащите виджет на окно или щёлкните по нему — он встанет в свободное место. Русское название виджета — при наведении на его имя." role="img" aria-label="Подсказка"><i class="icon" data-icon="question" data-size="14"></i></span></h2>
       <div id="palette-groups"></div>
     </aside>
+
+    <div class="splitter splitter-vertical" id="split-palette" title="Ширина палитры" role="separator" aria-orientation="vertical"><i class="icon" data-icon="grip" data-size="12"></i></div>
 
     <section class="stage-pane" id="stage-pane">
       <div class="scene" id="scene">
@@ -45,33 +44,38 @@
       </div>
     </section>
 
+    <div class="splitter splitter-vertical" id="split-side" title="Ширина панели свойств" role="separator" aria-orientation="vertical"><i class="icon" data-icon="grip" data-size="12"></i></div>
+
     <aside class="side" id="side">
-      <section class="tree-pane">
+      <section class="tree-pane" id="tree-pane">
         <h2 class="pane-title">Дерево</h2>
         <div id="tree" class="tree" role="tree"></div>
       </section>
+      <div class="splitter splitter-horizontal" id="split-tree" title="Высота дерева" role="separator" aria-orientation="horizontal"></div>
       <section class="inspector-pane">
         <h2 class="pane-title" id="inspector-title">Свойства</h2>
         <div id="inspector" class="inspector"></div>
       </section>
     </aside>
 
+    <div class="splitter splitter-horizontal" id="split-code" title="Высота панели кода" role="separator" aria-orientation="horizontal"></div>
+
     <section class="code-pane" id="code-pane">
       <div class="code-head">
         <h2 class="pane-title">Код</h2>
         <button type="button" id="code-collapse" class="code-collapse" title="Спрятать или показать код">Свернуть</button>
-        <label class="toolbar-check" title="Пустые функции on_click / on_change для каждого виджета с событием"><input type="checkbox" id="handlers-toggle"> Заготовки обработчиков</label>
         <div class="code-actions">
           <button type="button" id="open-ide" class="primary" title="Откроется Web IDE с этим файлом (по ссылке, как «Поделиться»)">Открыть в Web IDE</button>
           <button type="button" id="copy-code">Скопировать код</button>
           <button type="button" id="download-code">Скачать main.idyl</button>
-          <details class="more-menu">
+          <details class="more-menu" id="more-menu">
             <summary title="Сохранить и открыть макет конструктора">Макет…</summary>
             <div class="more-menu-body">
               <label class="toolbar-check" title="В конец main.idyl добавится комментарий с макетом — такой файл можно открыть в конструкторе снова"><input type="checkbox" id="embed-model-toggle"> Класть макет в main.idyl комментарием</label>
               <button type="button" id="save-model">Сохранить макет (.json)</button>
-              <button type="button" id="open-model">Открыть макет или main.idyl…</button>
+              <button type="button" id="open-model" title="Макет .json, main.idyl со строкой макета — или любой main.idyl в идиоме конструктора: его разберёт компилятор">Открыть макет или main.idyl…</button>
               <input type="file" id="open-model-input" accept=".json,.idyl,text/plain" hidden>
+              <input type="file" id="font-file-input" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2" hidden>
             </div>
           </details>
         </div>
@@ -87,6 +91,18 @@
 
   <div id="context-menu" class="context-menu" role="menu" hidden></div>
 
+  <div id="dialog" class="dialog-backdrop" hidden>
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+      <h2 id="dialog-title" class="dialog-title"></h2>
+      <div id="dialog-body" class="dialog-body"></div>
+      <div class="dialog-actions">
+        <button type="button" id="dialog-cancel">Отмена</button>
+        <button type="button" id="dialog-ok" class="primary">Да</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../gui-renderer/icons.js"></script>
   <script src="../assets/idyllium-web-core.js"></script>
   <script src="designer.js" defer></script>
 </body>

@@ -7,6 +7,8 @@
   <link rel="icon" href="assets/favicon-32x32.png" sizes="32x32">
   <link rel="icon" href="assets/idyllium.svg" type="image/svg+xml">
   <!-- @site-nav-assets -->
+  <script src="gui-renderer/icons.js"></script>
+  <link rel="stylesheet" href="assets/color-picker.css">
   <link rel="stylesheet" href="app.css">
 </head>
 <body class="theme-dark">
@@ -22,24 +24,24 @@
               <strong id="current-project-name">Мой проект</strong>
             </div>
             <button type="button" role="menuitem" data-file-command="new-file">
-              <span>Создать новый файл</span><kbd>Ctrl+N</kbd>
+              <i class="icon menu-icon" data-icon="file-new" data-size="16"></i><span>Создать новый файл</span><kbd>Ctrl+N</kbd>
             </button>
             <button type="button" role="menuitem" data-file-command="open-file">
-              <span>Открыть файл</span><kbd>Ctrl+O</kbd>
+              <i class="icon menu-icon" data-icon="open-file" data-size="16"></i><span>Открыть файл</span><kbd>Ctrl+O</kbd>
             </button>
             <div class="app-menu-separator" aria-hidden="true"></div>
-            <button type="button" role="menuitem" data-file-command="new-project"><span>Создать новый проект</span></button>
-            <button type="button" role="menuitem" data-file-command="open-project"><span>Открыть проект</span></button>
+            <button type="button" role="menuitem" data-file-command="new-project"><i class="icon menu-icon" data-icon="folder-new" data-size="16"></i><span>Создать новый проект</span></button>
+            <button type="button" role="menuitem" data-file-command="open-project"><i class="icon menu-icon" data-icon="folder-open" data-size="16"></i><span>Открыть проект</span></button>
             <button type="button" role="menuitem" data-file-command="save-project">
-              <span>Сохранить проект</span><kbd>Ctrl+S</kbd>
+              <i class="icon menu-icon" data-icon="save" data-size="16"></i><span>Сохранить проект</span><kbd>Ctrl+S</kbd>
             </button>
-            <button type="button" role="menuitem" data-file-command="duplicate-project"><span>Дублировать проект</span></button>
-            <button type="button" role="menuitem" data-file-command="delete-project"><span>Удалить проект</span></button>
+            <button type="button" role="menuitem" data-file-command="duplicate-project"><i class="icon menu-icon" data-icon="duplicate" data-size="16"></i><span>Дублировать проект</span></button>
+            <button type="button" role="menuitem" data-file-command="delete-project"><i class="icon menu-icon" data-icon="trash" data-size="16"></i><span>Удалить проект</span></button>
             <div class="app-menu-separator" aria-hidden="true"></div>
-            <button type="button" role="menuitem" data-file-command="share-project"><span>Поделиться…</span></button>
-            <button type="button" role="menuitem" data-file-command="open-qr"><span>Открыть проект из QR-картинки…</span></button>
-            <button type="button" role="menuitem" data-file-command="download-project"><span>Скачать текущий проект</span></button>
-            <button type="button" role="menuitem" data-file-command="download-other-project"><span>Скачать другой проект</span></button>
+            <button type="button" role="menuitem" data-file-command="share-project"><i class="icon menu-icon" data-icon="share" data-size="16"></i><span>Поделиться…</span></button>
+            <button type="button" role="menuitem" data-file-command="open-qr"><i class="icon menu-icon" data-icon="qr" data-size="16"></i><span>Открыть проект из QR-картинки…</span></button>
+            <button type="button" role="menuitem" data-file-command="download-project"><i class="icon menu-icon" data-icon="download" data-size="16"></i><span>Скачать текущий проект</span></button>
+            <button type="button" role="menuitem" data-file-command="download-other-project"><i class="icon menu-icon" data-icon="archive" data-size="16"></i><span>Скачать другой проект</span></button>
           </div>
           <div id="file-app-menu-panel" class="app-menu-panel" hidden></div>
         </div>
@@ -47,18 +49,18 @@
       <div id="edit-app-menu-wrapper" class="app-menu-wrapper">
         <button id="edit-app-menu-button" type="button" aria-expanded="false">Правка</button>
         <div id="edit-app-menu" class="app-menu app-menu-edit" role="menu" hidden>
-          <button type="button" role="menuitem" data-edit-command="undo"><span>Отменить</span><kbd>Ctrl+Z</kbd></button>
-          <button type="button" role="menuitem" data-edit-command="redo"><span>Повторить</span><kbd>Ctrl+Y</kbd></button>
+          <button type="button" role="menuitem" data-edit-command="undo"><i class="icon menu-icon" data-icon="undo" data-size="16"></i><span>Отменить</span><kbd>Ctrl+Z</kbd></button>
+          <button type="button" role="menuitem" data-edit-command="redo"><i class="icon menu-icon" data-icon="redo" data-size="16"></i><span>Повторить</span><kbd>Ctrl+Y</kbd></button>
           <div class="app-menu-separator" aria-hidden="true"></div>
-          <button type="button" role="menuitem" data-edit-command="cut"><span>Вырезать</span><kbd>Ctrl+X</kbd></button>
-          <button type="button" role="menuitem" data-edit-command="copy"><span>Копировать</span><kbd>Ctrl+C</kbd></button>
-          <button type="button" role="menuitem" data-edit-command="paste"><span>Вставить</span><kbd>Ctrl+V</kbd></button>
+          <button type="button" role="menuitem" data-edit-command="cut"><i class="icon menu-icon" data-icon="cut" data-size="16"></i><span>Вырезать</span><kbd>Ctrl+X</kbd></button>
+          <button type="button" role="menuitem" data-edit-command="copy"><i class="icon menu-icon" data-icon="copy" data-size="16"></i><span>Копировать</span><kbd>Ctrl+C</kbd></button>
+          <button type="button" role="menuitem" data-edit-command="paste"><i class="icon menu-icon" data-icon="paste" data-size="16"></i><span>Вставить</span><kbd>Ctrl+V</kbd></button>
           <div class="app-menu-separator" aria-hidden="true"></div>
-          <button type="button" role="menuitem" data-edit-command="find"><span>Найти</span><kbd>Ctrl+F</kbd></button>
-          <button type="button" role="menuitem" data-edit-command="replace"><span>Найти и заменить</span><kbd>Ctrl+H</kbd></button>
+          <button type="button" role="menuitem" data-edit-command="find"><i class="icon menu-icon" data-icon="find" data-size="16"></i><span>Найти</span><kbd>Ctrl+F</kbd></button>
+          <button type="button" role="menuitem" data-edit-command="replace"><i class="icon menu-icon" data-icon="replace" data-size="16"></i><span>Найти и заменить</span><kbd>Ctrl+H</kbd></button>
           <div class="app-menu-separator" aria-hidden="true"></div>
-          <button type="button" role="menuitem" data-edit-command="comment"><span>Закомментировать</span></button>
-          <button type="button" role="menuitem" data-edit-command="uncomment"><span>Раскомментировать</span></button>
+          <button type="button" role="menuitem" data-edit-command="comment"><i class="icon menu-icon" data-icon="comment" data-size="16"></i><span>Закомментировать</span></button>
+          <button type="button" role="menuitem" data-edit-command="uncomment"><i class="icon menu-icon" data-icon="uncomment" data-size="16"></i><span>Раскомментировать</span></button>
         </div>
       </div>
       <div class="theme-wrapper">
@@ -67,8 +69,8 @@
           <span class="appearance-label-short">Вид</span>
         </button>
         <div id="theme-menu" class="theme-menu" hidden>
-          <button id="theme-dark-button" type="button">Тема: тёмная</button>
-          <button id="theme-light-button" type="button">Тема: светлая</button>
+          <button id="theme-dark-button" type="button"><i class="icon menu-icon" data-icon="moon" data-size="16"></i><span>Тема: тёмная</span></button>
+          <button id="theme-light-button" type="button"><i class="icon menu-icon" data-icon="sun" data-size="16"></i><span>Тема: светлая</span></button>
           <div class="theme-menu-separator" aria-hidden="true"></div>
           <div class="font-size-row">
             <span>Шрифт редактора</span>
@@ -96,75 +98,15 @@
         </div>
       </div>
       <!-- @site-nav -->
-        <div id="color-picker-menu" class="color-picker-menu" hidden>
-          <div class="color-picker-grid">
-            <div class="color-picker-controls">
-              <label class="color-channel-row">
-                <span>R</span>
-                <input id="color-red-slider" class="color-slider color-slider-red" type="range" min="0" max="255" step="1" value="34">
-                <span class="color-number-control">
-                  <button class="color-step-button" type="button" data-color-channel="red" data-color-step="-1" aria-label="Уменьшить R">−</button>
-                  <input id="color-red-input" type="number" min="0" max="255" step="1" value="34" aria-label="Значение R">
-                  <button class="color-step-button" type="button" data-color-channel="red" data-color-step="1" aria-label="Увеличить R">+</button>
-                </span>
-              </label>
-              <label class="color-channel-row">
-                <span>G</span>
-                <input id="color-green-slider" class="color-slider color-slider-green" type="range" min="0" max="255" step="1" value="145">
-                <span class="color-number-control">
-                  <button class="color-step-button" type="button" data-color-channel="green" data-color-step="-1" aria-label="Уменьшить G">−</button>
-                  <input id="color-green-input" type="number" min="0" max="255" step="1" value="145" aria-label="Значение G">
-                  <button class="color-step-button" type="button" data-color-channel="green" data-color-step="1" aria-label="Увеличить G">+</button>
-                </span>
-              </label>
-              <label class="color-channel-row">
-                <span>B</span>
-                <input id="color-blue-slider" class="color-slider color-slider-blue" type="range" min="0" max="255" step="1" value="188">
-                <span class="color-number-control">
-                  <button class="color-step-button" type="button" data-color-channel="blue" data-color-step="-1" aria-label="Уменьшить B">−</button>
-                  <input id="color-blue-input" type="number" min="0" max="255" step="1" value="188" aria-label="Значение B">
-                  <button class="color-step-button" type="button" data-color-channel="blue" data-color-step="1" aria-label="Увеличить B">+</button>
-                </span>
-              </label>
-              <label class="color-channel-row">
-                <span>A</span>
-                <input id="color-alpha-slider" class="color-slider color-slider-alpha" type="range" min="0" max="1" step="0.01" value="1">
-                <span class="color-number-control color-alpha-control">
-                  <button class="color-step-button" type="button" data-color-channel="alpha" data-color-step="-0.01" aria-label="Уменьшить A">−</button>
-                  <input id="color-alpha-input" type="number" min="0" max="1" step="0.01" value="1" aria-label="Значение A">
-                  <button class="color-step-button" type="button" data-color-channel="alpha" data-color-step="0.01" aria-label="Увеличить A">+</button>
-                </span>
-              </label>
-            </div>
-            <div class="color-preview-wrap">
-              <div id="color-preview" class="color-preview" aria-label="Выбранный цвет"></div>
-              <button id="color-eyedropper-button" class="color-eyedropper-button" type="button" title="Пипетка: кликните по нужному пикселю страницы (Esc — отмена)">
-                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 2.5a1.8 1.8 0 0 1 2.5 2.5l-1.2 1.2 1 1-1 1-1-1-4.4 4.4-2.4.7.7-2.4 4.4-4.4-1-1 1-1 1 1z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
-                <span>Пипетка</span>
-              </button>
-            </div>
-          </div>
-          <div class="color-code-list">
-            <div class="color-code-row">
-              <span>RGB</span>
-              <code id="color-rgb-code">colors.RGB(34, 145, 188)</code>
-              <button id="copy-rgb-button" type="button">Копировать</button>
-            </div>
-            <div class="color-code-row">
-              <span>HEX</span>
-              <code id="color-hex-code">colors.HEX("#2291bc")</code>
-              <button id="copy-hex-button" type="button">Копировать</button>
-            </div>
-          </div>
-        </div>
+        <div id="color-picker-menu" class="color-picker-menu" hidden></div>
     </div>
     <div class="run-actions">
       <button id="run-button" class="run-button" type="button" title="Запустить: Ctrl+Enter" aria-label="Запустить: Ctrl+Enter">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg>
+        <i class="icon" data-icon="play" data-size="18"></i>
         <span>Запустить</span>
       </button>
       <button id="stop-button" class="stop-button" type="button" disabled>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10H7z"></path></svg>
+        <i class="icon" data-icon="stop" data-size="18"></i>
         <span>Остановить</span>
       </button>
     </div>
@@ -178,27 +120,14 @@
         <span>Файлы</span>
         <div class="file-actions">
           <button id="new-file-button" class="icon-button" type="button" title="Новый файл" aria-label="Новый файл">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M6 3h8l4 4v14H6z"></path>
-              <path d="M14 3v5h5"></path>
-              <path d="M12 11v6"></path>
-              <path d="M9 14h6"></path>
-            </svg>
+            <i class="icon" data-icon="file-new" data-size="18"></i>
           </button>
           <button id="new-folder-button" class="icon-button" type="button" title="Новая папка" aria-label="Новая папка">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M3 6h7l2 2h9v11H3z"></path>
-              <path d="M12 11v5"></path>
-              <path d="M9.5 13.5h5"></path>
-            </svg>
+            <i class="icon" data-icon="folder-new" data-size="18"></i>
           </button>
           <div class="upload-wrapper">
             <button id="upload-button" class="icon-button" type="button" title="Загрузить файл с компьютера" aria-label="Загрузить файл с компьютера" aria-expanded="false">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 16V4"></path>
-                <path d="M7 9l5-5 5 5"></path>
-                <path d="M4 16v4h16v-4"></path>
-              </svg>
+              <i class="icon" data-icon="upload" data-size="18"></i>
             </button>
             <div id="upload-menu" class="upload-menu" hidden>
               <button id="drop-area" class="drop-area" type="button">
@@ -216,11 +145,7 @@
             </div>
           </div>
           <button id="download-project-button" class="icon-button" type="button" title="Скачать проект" aria-label="Скачать проект">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 4v12"></path>
-              <path d="M7 11l5 5 5-5"></path>
-              <path d="M4 20h16"></path>
-            </svg>
+            <i class="icon" data-icon="download" data-size="18"></i>
           </button>
         </div>
       </div>

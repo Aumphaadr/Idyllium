@@ -16,6 +16,7 @@
     window.IdylliumGuiInitialState = {"windows":[],"canvases":[],"modals":[],"output":""};
     window.IdylliumGuiHost = { postMessage: function(message) { var target = window.location.origin && window.location.origin !== 'null' ? window.location.origin : '*'; parent.postMessage({ type: 'idylliumGuiEvent', message: message }, target); } };
   </script>
+  <script nonce="idyllium-web" src="gui-renderer/icons.js"></script>
   <script nonce="idyllium-web" src="gui-renderer/renderer.js"></script>
 </body>
 </html>

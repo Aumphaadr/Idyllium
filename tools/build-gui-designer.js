@@ -45,7 +45,7 @@ fs.copyFileSync(path.join(sourceDir, 'designer.css'), path.join(outDir, 'designe
 const shell = fs.readFileSync(path.join(sourceDir, 'index.html'), 'utf8');
 fs.writeFileSync(
   path.join(outDir, 'index.html'),
-  siteNav.injectSiteTopbar(shell, 'gui-designer', { prefix: '../', version }),
+  siteNav.injectSiteTopbar(shell, 'gui-designer', { prefix: '../', version, colorTool: 'button' }),
   'utf8',
 );
 console.log(`Idyllium GUI designer built: gui-designer/designer.js ${(result.outputFiles[0].text.length / 1024).toFixed(1)} KB`);

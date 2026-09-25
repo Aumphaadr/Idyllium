@@ -8,6 +8,7 @@ function rendererAssetPaths() {
   return {
     css: path.join(rendererRootDir, 'renderer.css'),
     script: path.join(rendererRootDir, 'renderer.js'),
+    icons: path.join(rendererRootDir, 'icons.js'),
   };
 }
 
@@ -15,6 +16,7 @@ function renderGuiWebviewHtml({
   cspSource,
   cssUri,
   hostBootstrap = 'window.IdylliumGuiHost = acquireVsCodeApi();',
+  iconsUri,
   nonce,
   scriptUri,
   state,
@@ -41,7 +43,7 @@ ${csp}  <title>Idyllium GUI</title>
     window.IdylliumGuiInitialState = ${serialized};
     ${hostBootstrap}
   </script>
-  <script nonce="${htmlAttribute(nonce)}" src="${htmlAttribute(scriptUri)}"></script>
+${iconsUri ? `  <script nonce="${htmlAttribute(nonce)}" src="${htmlAttribute(iconsUri)}"></script>\n` : ''}  <script nonce="${htmlAttribute(nonce)}" src="${htmlAttribute(scriptUri)}"></script>
 </body>
 </html>`;
 }

@@ -896,6 +896,7 @@ function guiWebviewHtml(webview, windows, canvases, modals, output, audio = []) 
   return guiRenderer.renderGuiWebviewHtml({
     cspSource: webview.cspSource,
     cssUri: webview.asWebviewUri(vscode.Uri.file(guiRenderer.rendererAssetPaths().css)).toString(),
+    iconsUri: webview.asWebviewUri(vscode.Uri.file(guiRenderer.rendererAssetPaths().icons)).toString(),
     nonce,
     scriptUri: webview.asWebviewUri(vscode.Uri.file(guiRenderer.rendererAssetPaths().script)).toString(),
     state: guiWebviewState(webview, windows, canvases, modals, output, audio),
