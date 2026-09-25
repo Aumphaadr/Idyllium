@@ -3,6 +3,10 @@ const path: any = require('path');
 const nodeCrypto: any = require('crypto');
 
 import { buildReferenceSite } from './docs-build-reference';
+import { SITE_SECTIONS, injectSiteTopbar, siteNavAssetsHtml, siteTopbarHtml } from './site-nav';
+
+/** Версия сайта — из package.json (единственный источник версии). Уходит в шапку каждой страницы. */
+const SITE_VERSION = String(JSON.parse(fs.readFileSync(path.resolve(process.cwd(), 'package.json'), 'utf8')).version);
 import { KEYWORDS } from '../src/core/tokens';
 import { createDefaultStandardLibrary } from '../src/core/stdlib/registry';
 
@@ -82,6 +86,9 @@ const MANAGED_PATHS = [
   'projects',
   'handouts',
   'about',
+  'recipes',
+  'why',
+  'gui-designer',
   'reference',
   'ide',
   'docs',
@@ -165,6 +172,18 @@ const MANUAL_LESSONS: readonly ManualLesson[] = [
     title: 'Файлы и папки проекта',
     subtitle: 'Создание, просмотр, копирование, переименование и безопасное удаление',
     sourceFile: 'packages/docs/manual-content/console/directories.html',
+    status: 'ready',
+    reviewFlags: [],
+  },
+  {
+    // Вердикт владельца 2026-09-25: после семи уроков ручной сборки виджетов, перед Slider;
+    // урок необязательный — учитель вправе оставить группу на ручном создании виджетов.
+    sectionId: 'widgets',
+    afterLessonId: 'spinbox',
+    id: 'gui-designer',
+    title: 'Конструктор GUI',
+    subtitle: 'Окно собирается мышью, код пишется сам — а обработчики по-прежнему ваши',
+    sourceFile: 'packages/docs/manual-content/widgets/gui-designer.html',
     status: 'ready',
     reviewFlags: [],
   },
@@ -954,8 +973,9 @@ function main(): void {
   const handoutCount = buildHandoutsPage(path.join(siteRoot, 'handouts'));
 
   buildAboutPage(path.join(siteRoot, 'about'), { manifest, practicumCount, projectCount, handoutCount });
+  buildStubPages(siteRoot, SITE_VERSION);
 
-  const bookShell = fs.readFileSync(path.resolve(process.cwd(), 'packages', 'docs-book', 'index.html'), 'utf8');
+  const bookShell = injectSiteTopbar(fs.readFileSync(path.resolve(process.cwd(), 'packages', 'docs-book', 'index.html'), 'utf8'), 'book', { prefix: '../', version: SITE_VERSION });
   const bookPages = bakeCleanUrlPages(bookShell, bookRoot, manifest, 'Учебник Idyllium');
   console.log(`book clean URLs: ${bookPages} pages`);
 
@@ -1097,31 +1117,6 @@ function bakeCleanUrlPages(
  * работать сама по себе, без сборщиков и внешних зависимостей.
  */
 /**
- * Шапка генерируемых страниц — та же, что у учебника: логотип, слово, версия, бейдж раздела,
- * ссылки на площадки и переключатель темы. Стили — в ../book/app.css (блок «ЕДИНАЯ ШАПКА САЙТА»).
- */
-function siteTopbarHtml(badge: string, version: string): string {
-  return `  <header class="docs-topbar">
-    <div class="topbar-left">
-      <a class="brand" href="https://github.com/Aumphaadr/Idyllium" target="_blank" rel="noopener" title="Idyllium на GitHub">
-        <img class="brand-mark" src="../assets/idyllium.svg" alt="" width="28" height="28">
-        <span class="brand-text">Idyllium</span>
-        <span class="idyllium-version">v${escapeHtml(version)}</span>
-      </a>
-      <span class="topbar-badge">${escapeHtml(badge)}</span>
-    </div>
-    <nav class="topbar-actions" aria-label="Основные действия">
-      <a class="topbar-link" href="../">Открыть IDE</a>
-      <a class="topbar-link" href="../book/">Учебник</a>
-      <a class="topbar-link" href="../tasks/">Задачник</a>
-      <a class="topbar-link" href="../projects/">Проекты</a>
-      <a class="topbar-link" href="../reference/">Документация</a>
-      <button class="topbar-link" id="theme-toggle" type="button" title="Светлая тема" aria-label="Светлая тема"><svg class="icon-sun" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor" stroke="none"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5 5l1.9 1.9M17.1 17.1L19 19M19 5l-1.9 1.9M6.9 17.1L5 19"/></svg><svg class="icon-moon" viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M20.6 14.8A8.7 8.7 0 0 1 9.2 3.4a8.7 8.7 0 1 0 11.4 11.4z"/></svg></button>
-    </nav>
-  </header>`;
-}
-
-/**
  * Переключатель темы для страниц без app.js учебника: ключ хранилища и класс те же, что
  * в packages/docs-book/app.js, поэтому выбор ученика переезжает между разделами сайта.
  */
@@ -1256,6 +1251,7 @@ ${groupsHtml}
   <title>Файлы для заданий — Idyllium</title>
   <link rel="icon" type="image/png" href="../book/favicon.png">
   <link rel="stylesheet" href="../book/fonts/fonts.css">
+  ${siteNavAssetsHtml('../')}
   <link rel="stylesheet" href="../book/app.css">
   <style>
     * { box-sizing: border-box; }
@@ -1326,7 +1322,7 @@ ${groupsHtml}
   </style>
 </head>
 <body>
-${siteTopbarHtml('Раздатка', handoutsVersion)}
+${siteTopbarHtml('handouts', { prefix: '../', version: handoutsVersion })}
   <main>
     <h1>Файлы для заданий</h1>
     <p class="lead">Раздатка задачника: картинки, звуки, шрифты и данные, которые просят скачать задания. Кладите скачанный файл рядом с программой (в Web IDE — загрузите в проект).</p>
@@ -1845,6 +1841,104 @@ function aboutFacts(facts: AboutBuildFacts): ReadonlyMap<string, string> {
   ]);
 }
 
+/**
+ * Заглушки новых страниц (1.6.3): «Рецепты», «Почему Idyllium» («Конструктор GUI»
+ * с 2026-09-25 настоящий — его собирает tools/build-gui-designer.js в dist/web).
+ * Вердикт владельца — создать страницы и ссылки в шапке уже сейчас, содержание
+ * добавлять потом. Каждая честно говорит, что она в работе, и описывает, что здесь
+ * будет; никакого «скоро» без деталей и никаких выдуманных возможностей.
+ */
+const STUB_PAGES: ReadonlyArray<{ readonly id: string; readonly title: string; readonly body: string }> = [
+  {
+    id: 'recipes',
+    title: 'Рецепты',
+    body: `
+      <p class="stub-note">Страница в работе: рецептов на ней пока нет. Ниже — что здесь будет.</p>
+      <p>Готовые программы для бытовых и рабочих задач — для тех, кто не собирается учиться программировать,
+      а хочет получить результат: взять рецепт, поменять в нём несколько чисел и имён файлов, нажать «Запустить».
+      Так уже бывало: художнице нужно было собрать GIF-анимацию из серии PNG-кадров — и Idyllium помог.</p>
+      <p>Каждый рецепт будет карточкой: что он делает, какие строки менять под себя — и кнопка,
+      открывающая программу прямо в Web IDE.</p>
+      <h2>Что запланировано</h2>
+      <ul>
+        <li>серия PNG-кадров → GIF-анимация, и обратно — GIF на кадры;</li>
+        <li>QR-код из текста или ссылки — картинкой; и чтение QR-кода с картинки;</li>
+        <li>уменьшить или обрезать серию картинок разом;</li>
+        <li>починить кодировку текстового файла (windows-1251 → UTF-8 и другие);</li>
+        <li>грамоты и таблички по списку имён — из одного шаблона;</li>
+        <li>отчёт по таблице CSV: суммы, средние, наибольшее;</li>
+        <li>контрольная сумма файла — проверить, что скачалось целиком.</li>
+      </ul>
+      <p>А пока всё, из чего эти рецепты собираются, уже есть в языке: библиотеки <code>image</code>, <code>qr</code>,
+      <code>encoding</code>, <code>csv</code> и <code>hash</code> описаны в <a href="../reference/">документации</a>.</p>`,
+  },
+  {
+    id: 'why',
+    title: 'Почему Idyllium',
+    body: `
+      <p class="stub-note">Страница в работе.</p>
+      <p>Здесь будет разбор: какие привычки промышленных языков мешают учиться — тихие преобразования типов,
+      <code>undefined</code> вместо ошибки, <code>%</code>, который читают как проценты, «магия» массивов и строк, —
+      и как то же самое устроено в Idyllium. И честная обратная сторона: где Idyllium проигрывает — в скорости
+      (он компилируется в JavaScript и заведомо медленнее C++), в библиотеках (NumPy, pandas и машинного обучения
+      здесь нет и не будет), в размере сообщества.</p>
+      <p>Пока: коротко о философии — на странице <a href="../about/">«О проекте»</a>. Подробные разборы по темам,
+      с пробами на C++, Python и JavaScript, уже написаны — в справках, адресованных ИИ-помощникам, но читаемых
+      и людьми: <a href="../ai/ru/idyllium-contrast-console-ai-reference.md">консоль</a>,
+      <a href="../ai/ru/idyllium-contrast-gui-ai-reference.md">виджеты</a>,
+      <a href="../ai/ru/idyllium-contrast-canvas-ai-reference.md">холст</a>,
+      <a href="../ai/ru/idyllium-contrast-oop-ai-reference.md">классы</a>,
+      <a href="../ai/ru/idyllium-contrast-json-ai-reference.md">JSON</a>,
+      <a href="../ai/ru/idyllium-contrast-sqlite-ai-reference.md">SQLite</a>,
+      <a href="../ai/ru/idyllium-contrast-http-ai-reference.md">сеть</a>,
+      <a href="../ai/ru/idyllium-contrast-libraries-ai-reference.md">библиотеки</a>. В каждой есть раздел
+      «честный остаток» — чего Idyllium не ловит.</p>`,
+  },
+];
+
+function buildStubPages(siteRoot: string, version: string): void {
+  for (const page of STUB_PAGES) {
+    const section = SITE_SECTIONS.find((item) => item.id === page.id);
+    if (!section || !section.stub) throw new Error(`stub page '${page.id}' must be a stub section in tools/site-nav.ts`);
+    const outputRoot = path.join(siteRoot, page.id);
+    fs.mkdirSync(outputRoot, { recursive: true });
+    const html = `<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>${escapeHtml(page.title)} — Idyllium</title>
+  <link rel="icon" type="image/png" href="../book/favicon.png">
+  <link rel="stylesheet" href="../book/fonts/fonts.css">
+  ${siteNavAssetsHtml('../')}
+  <link rel="stylesheet" href="../book/app.css">
+  <style>
+    .stub-main { max-width: 860px; margin: 0 auto; padding: 30px 22px 90px; color: var(--text-main); line-height: 1.62; }
+    .stub-main h1 { margin: 0 0 14px; font-size: 2.05rem; }
+    .stub-main h2 { margin: 1.8em 0 0.5em; font-size: 1.3rem; }
+    .stub-main p { margin: 0.6em 0; }
+    .stub-main a { color: var(--accent); }
+    .stub-main code { font-family: var(--font-mono); font-size: 0.92em; }
+    .stub-main ul { padding-left: 24px; }
+    .stub-main li { margin: 0.3em 0; }
+    .stub-note { padding: 10px 14px; border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; background: var(--accent-soft); color: var(--text-soft); font-weight: 600; }
+  </style>
+</head>
+<body>
+${siteTopbarHtml(page.id, { prefix: '../', version })}
+  <main class="stub-main">
+    <h1>${escapeHtml(page.title)}</h1>${page.body}
+  </main>
+${SITE_THEME_SCRIPT}
+</body>
+</html>
+`;
+    fs.writeFileSync(path.join(outputRoot, 'index.html'), html, 'utf8');
+  }
+  console.log(`stub pages generated: ${STUB_PAGES.length}`);
+}
+
 function buildAboutPage(outputRoot: string, buildFacts: AboutBuildFacts): void {
   const sourceRoot = path.resolve(process.cwd(), ABOUT_SOURCE_ROOT);
   const factValues = aboutFacts(buildFacts);
@@ -1882,6 +1976,7 @@ function buildAboutPage(outputRoot: string, buildFacts: AboutBuildFacts): void {
   <meta name="description" content="Idyllium — учебный язык программирования: философия, синтаксис, среда разработки, учебные материалы.">
   <link rel="icon" type="image/png" href="../book/favicon.png">
   <link rel="stylesheet" href="../book/fonts/fonts.css">
+  ${siteNavAssetsHtml('../')}
   <link rel="stylesheet" href="../book/app.css">
   <style>
     .about-main { max-width: 1100px; margin: 0 auto; padding: 30px 22px 90px; }
@@ -1921,7 +2016,7 @@ function buildAboutPage(outputRoot: string, buildFacts: AboutBuildFacts): void {
   </style>
 </head>
 <body>
-${siteTopbarHtml('О проекте', packageVersion)}
+${siteTopbarHtml('about', { prefix: '../', version: packageVersion })}
   <main class="about-main">
 ${fragment}
   </main>
@@ -2020,11 +2115,9 @@ const PROJECTS_SECTIONS: ReadonlyArray<{ id: string; title: string; icon: string
 ];
 
 function projectsShell(): string {
-  return tasksShell()
+  return tasksShell('projects')
     .replace('<title>Idyllium - Задачник</title>', '<title>Idyllium - Проекты</title>')
     .replace('<body data-docs-mode="tasks">', '<body data-docs-mode="projects">')
-    .replace('<span class="topbar-badge">Задачник</span>', '<span class="topbar-badge">Проекты</span>')
-    .replace('<a class="topbar-link" href="../projects/">Проекты</a>', '<a class="topbar-link" href="../tasks/">Задачник</a>')
     .replace('Загрузка задачника...', 'Загрузка проектов...')
     .replace('placeholder="Найти тему"', 'placeholder="Найти проект"');
 }
@@ -2088,7 +2181,7 @@ function buildProjectsSite(projectsRoot: string): number {
   return ready;
 }
 
-function tasksShell(): string {
+function tasksShell(sectionId: 'tasks' | 'projects' = 'tasks'): string {
   return `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -2098,35 +2191,13 @@ function tasksShell(): string {
   <title>Idyllium - Задачник</title>
   <link rel="icon" type="image/png" href="../book/favicon.png">
   <link rel="stylesheet" href="../book/fonts/fonts.css">
+  ${siteNavAssetsHtml('../')}
   <link rel="stylesheet" href="../book/app.css">
   <script src="../book/version.js" defer></script>
   <script src="../book/app.js" defer></script>
 </head>
 <body data-docs-mode="tasks">
-  <header class="docs-topbar">
-    <div class="topbar-left">
-      <button class="icon-button menu-toggle" id="menu-toggle" type="button" title="Показать навигацию">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-      <a class="brand" href="https://github.com/Aumphaadr/Idyllium" target="_blank" rel="noopener" title="Idyllium на GitHub">
-        <img class="brand-mark" src="../assets/idyllium.svg" alt="" width="28" height="28">
-        <span class="brand-text">Idyllium</span>
-        <span class="idyllium-version">v</span>
-      </a>
-      <span class="topbar-badge">Задачник</span>
-    </div>
-    <nav class="topbar-actions" aria-label="Основные действия">
-      <a class="topbar-link" href="../">Открыть IDE</a>
-      <a class="topbar-link" href="../book/">Учебник</a>
-      <a class="topbar-link" href="../projects/">Проекты</a>
-      <a class="topbar-link" href="../reference/">Документация</a>
-      <a class="topbar-link" href="../authors/" title="Встраиваемые юниты для вашего сайта">Авторам</a>
-      <a class="topbar-link" href="../handouts/">Файлы для заданий</a>
-      <button class="topbar-link" id="theme-toggle" type="button" title="Светлая тема" aria-label="Светлая тема"><svg class="icon-sun" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor" stroke="none"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5 5l1.9 1.9M17.1 17.1L19 19M19 5l-1.9 1.9M6.9 17.1L5 19"/></svg><svg class="icon-moon" viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M20.6 14.8A8.7 8.7 0 0 1 9.2 3.4a8.7 8.7 0 1 0 11.4 11.4z"/></svg></button>
-    </nav>
-  </header>
+${siteTopbarHtml(sectionId, { prefix: '../', version: SITE_VERSION })}
 
   <div class="docs-shell">
     <aside class="docs-sidebar" id="docs-sidebar">
@@ -2455,9 +2526,15 @@ function copyAssets(sourceRoot: string, outputRoot: string): void {
 function copyBookShell(outputRoot: string): void {
   const sourceRoot = path.resolve(process.cwd(), 'packages', 'docs-book');
   fs.mkdirSync(outputRoot, { recursive: true });
-  for (const file of ['index.html', 'app.css', 'app.js']) {
+  for (const file of ['app.css', 'app.js']) {
     copyFileIfExists(path.join(sourceRoot, file), path.join(outputRoot, file));
   }
+  // Шапка учебника — из единого источника (маркеры в оболочке подставляет сборка).
+  fs.writeFileSync(
+    path.join(outputRoot, 'index.html'),
+    injectSiteTopbar(fs.readFileSync(path.join(sourceRoot, 'index.html'), 'utf8'), 'book', { prefix: '../', version: SITE_VERSION }),
+    'utf8',
+  );
 }
 
 function writeCurrentVersion(outputPath: string): void {

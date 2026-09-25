@@ -36601,11 +36601,15 @@ ${outerPadding}${close}`;
       function canvasToSvg(canvas, region, state) {
         const parts = [];
         parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${region.width}" height="${region.height}" viewBox="${region.x} ${region.y} ${region.width} ${region.height}">`);
-        parts.push(`<rect x="0" y="0" width="${region.canvasWidth}" height="${region.canvasHeight}" fill="#000000"/>`);
+        const background = canvas.background_color;
+        const base = background instanceof runtime_values_12.IdylliumColor && background.alpha > 0 ? background.toCss() : "#000000";
+        const wholeCanvas = (fill) => `<rect x="0" y="0" width="${region.canvasWidth}" height="${region.canvasHeight}" fill="${fill}"/>`;
+        parts.push(wholeCanvas(canvasSvgColor(base, "#000000")));
         for (const command of (0, runtime_state_12.canvasCommands)(canvas)) {
-          if (command.kind === "clear" || command.kind === "fill") {
-            parts.push(`<rect x="0" y="0" width="${region.canvasWidth}" height="${region.canvasHeight}" fill="${canvasSvgColor(command.color, "#000000")}"/>`);
-          }
+          if (command.kind === "clear")
+            parts.push(wholeCanvas(canvasSvgColor(base, "#000000")));
+          if (command.kind === "fill")
+            parts.push(wholeCanvas(canvasSvgColor(command.color, "#000000")));
           if (command.kind === "draw" && command.object) {
             const svg = canvasDrawableToSvg(command.object, state);
             if (svg !== "")
@@ -37596,7 +37600,7 @@ ${outerPadding}${close}`;
         const field = state.turtleField;
         if (!field || !field.canvas)
           return;
-        const commands = (0, runtime_state_12.restartCanvasCommands)(field.canvas, { kind: "clear", color: field.bgColor });
+        const commands = (0, runtime_state_12.restartCanvasCommands)(field.canvas, { kind: "fill", color: field.bgColor });
         for (const entry of field.entries) {
           commands.push({ kind: "draw", object: turtleEntrySnapshot(entry, field) });
         }
@@ -56595,7 +56599,7 @@ ${outerPadding}${close}`;
       var network_service_1 = require_network_service();
       var font_metrics_service_1 = require_font_metrics_service();
       var hash_1 = require_hash();
-      exports.IDYLLIUM_VERSION = "1.6.2";
+      exports.IDYLLIUM_VERSION = "1.6.3";
       function defaultRuntimePlatform() {
         const nodeProcess2 = typeof process === "object" ? process : null;
         return nodeProcess2?.versions?.node ? "cli" : "web";

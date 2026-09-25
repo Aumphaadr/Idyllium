@@ -65,6 +65,10 @@ if (fs.existsSync(path.join(authorsSource, 'index.html'))) {
   }
   // version.js ищет version.json рядом с последним скриптом страницы — кладём копию.
   fs.writeFileSync(path.join(authorsOut, 'version.json'), `${JSON.stringify({ version }, null, 2)}\n`);
+  // Шапка «Авторам» — из единого источника шапки сайта.
+  const siteNav = require(path.join(rootDir, 'dist', 'tools', 'site-nav.js'));
+  const authorsShell = fs.readFileSync(path.join(authorsOut, 'index.html'), 'utf8');
+  fs.writeFileSync(path.join(authorsOut, 'index.html'), siteNav.injectSiteTopbar(authorsShell, 'authors', { prefix: '../', version }), 'utf8');
   if (fs.existsSync(path.join(sourceDir, 'src', 'authors.js'))) {
     sizes['authors/authors.js'] = bundle(path.join(sourceDir, 'src', 'authors.js'), path.join(authorsOut, 'authors.js'), 'iife');
   }

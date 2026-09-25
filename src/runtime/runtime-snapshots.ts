@@ -249,12 +249,15 @@ function canvasDrawableToSvg(object: IdylliumDrawableSnapshot, state: RuntimeObj
 export function canvasToSvg(canvas: RuntimeObject, region: CanvasCaptureRegion, state: RuntimeObjectState): string {
   const parts: string[] = [];
   parts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${region.width}" height="${region.height}" viewBox="${region.x} ${region.y} ${region.width} ${region.height}">`);
-  // Фон как в живом рендерере: чёрный до всех команд.
-  parts.push(`<rect x="0" y="0" width="${region.canvasWidth}" height="${region.canvasHeight}" fill="#000000"/>`);
+  // Основа как в живом рендерере: background_color холста, а без него (или с прозрачным) — чёрный.
+  // clear() возвращает к той же основе, цвет из команды не читается — иначе файл расходился бы с экраном.
+  const background = canvas.background_color;
+  const base = background instanceof IdylliumColor && background.alpha > 0 ? background.toCss() : '#000000';
+  const wholeCanvas = (fill: string): string => `<rect x="0" y="0" width="${region.canvasWidth}" height="${region.canvasHeight}" fill="${fill}"/>`;
+  parts.push(wholeCanvas(canvasSvgColor(base, '#000000')));
   for (const command of canvasCommands(canvas)) {
-    if (command.kind === 'clear' || command.kind === 'fill') {
-      parts.push(`<rect x="0" y="0" width="${region.canvasWidth}" height="${region.canvasHeight}" fill="${canvasSvgColor(command.color, '#000000')}"/>`);
-    }
+    if (command.kind === 'clear') parts.push(wholeCanvas(canvasSvgColor(base, '#000000')));
+    if (command.kind === 'fill') parts.push(wholeCanvas(canvasSvgColor(command.color, '#000000')));
     if (command.kind === 'draw' && command.object) {
       const svg = canvasDrawableToSvg(command.object, state);
       if (svg !== '') parts.push(svg);

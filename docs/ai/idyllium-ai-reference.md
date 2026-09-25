@@ -4,7 +4,7 @@ This file is a compact AI-friendly reference for the Idyllium programming
 language. It is intended to be pasted into general-purpose AI chatbots so they
 can generate, explain, review, and test Idyllium code.
 
-Current language target: Idyllium 1.6.2.
+Current language target: Idyllium 1.6.3.
 
 This reference describes implemented behavior. Ideas from planning documents
 and exploratory specs are not language features until they are implemented and
@@ -1787,7 +1787,7 @@ system.set_recursion_depth(depth)   // void
 system.recursion_depth()            // int
 system.exit(code = 0)               // void, never returns
 system.platform()                   // "cli" | "web" | "vscode"
-system.version()                    // "1.6.2"
+system.version()                    // "1.6.3"
 system.set_warnings(enabled)        // void; switches runtime warnings off/on
 ```
 

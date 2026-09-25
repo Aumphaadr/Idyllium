@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-09-18T21:10:45.571Z",
+  "generatedAt": "2026-09-25T09:26:42.654Z",
   "sourceRoot": "packages/docs",
   "sections": [
     {
@@ -413,6 +413,16 @@
           "subtitle": "Числовые поля с кнопками увеличения и уменьшения",
           "file": "content/widgets/spinbox.html",
           "sourceFile": "widgets/004_spinbox.html",
+          "status": "ready",
+          "reviewFlags": [],
+          "hasTasks": true
+        },
+        {
+          "id": "gui-designer",
+          "title": "Конструктор GUI",
+          "subtitle": "Окно собирается мышью, код пишется сам — а обработчики по-прежнему ваши",
+          "file": "content/widgets/gui-designer.html",
+          "sourceFile": "packages/docs/manual-content/widgets/gui-designer.html",
           "status": "ready",
           "reviewFlags": [],
           "hasTasks": true

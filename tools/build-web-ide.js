@@ -32,9 +32,18 @@ if (!fs.existsSync(browserEntry)) {
 fs.rmSync(outputWebDir, { recursive: true, force: true });
 fs.mkdirSync(outputAssetsDir, { recursive: true });
 
-for (const item of ['index.html', 'app.css', 'sw-preview.js']) {
+for (const item of ['app.css', 'sw-preview.js']) {
   fs.copyFileSync(path.join(sourceWebDir, item), path.join(outputWebDir, item));
 }
+// Шапка IDE — из единого источника (tools/site-nav.ts → dist/tools после tsc):
+// лого, версия, бейдж и три общих дропдауна подставляются на место маркеров.
+const siteNav = require(path.join(rootDir, 'dist', 'tools', 'site-nav.js'));
+const rootPackageVersion = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8')).version;
+fs.writeFileSync(
+  path.join(outputWebDir, 'index.html'),
+  siteNav.injectSiteTopbar(fs.readFileSync(path.join(sourceWebDir, 'index.html'), 'utf8'), 'ide', { prefix: '', version: rootPackageVersion, host: 'ide' }),
+  'utf8',
+);
 // app.js не копируется, а собирается esbuild'ом из ES-модулей
 // packages/web-ide/src/ (наивный линкер ушёл на пенсию 2026-08-29,
 // когда ядро переехало на esbuild). Артефакт — прежний одиночный
@@ -43,7 +52,6 @@ fs.writeFileSync(path.join(outputWebDir, 'app.js'), bundleWebIdeApp(path.join(so
 // Версия берётся из корневого package.json (единственный источник) и
 // подставляется в шапку IDE скриптом version.js через version.json.
 fs.copyFileSync(path.join(rootDir, 'packages', 'docs', 'version.js'), path.join(outputWebDir, 'version.js'));
-const rootPackageVersion = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8')).version;
 fs.writeFileSync(path.join(outputWebDir, 'version.json'), `${JSON.stringify({ version: rootPackageVersion }, null, 2)}\n`);
 if (fs.existsSync(sourceFontsDir)) {
   fs.cpSync(sourceFontsDir, outputFontsDir, { recursive: true });

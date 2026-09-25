@@ -7,6 +7,8 @@
   <meta name="description" content="Idyllium — учебный язык программирования: философия, синтаксис, среда разработки, учебные материалы.">
   <link rel="icon" type="image/png" href="../book/favicon.png">
   <link rel="stylesheet" href="../book/fonts/fonts.css">
+  <link rel="stylesheet" href="../assets/site-nav.css">
+  <script src="../assets/site-nav.js" defer></script>
   <link rel="stylesheet" href="../book/app.css">
   <style>
     .about-main { max-width: 1100px; margin: 0 auto; padding: 30px 22px 90px; }
@@ -46,30 +48,13 @@
   </style>
 </head>
 <body>
-  <header class="docs-topbar">
-    <div class="topbar-left">
-      <a class="brand" href="https://github.com/Aumphaadr/Idyllium" target="_blank" rel="noopener" title="Idyllium на GitHub">
-        <img class="brand-mark" src="../assets/idyllium.svg" alt="" width="28" height="28">
-        <span class="brand-text">Idyllium</span>
-        <span class="idyllium-version">v1.6.2</span>
-      </a>
-      <span class="topbar-badge">О проекте</span>
-    </div>
-    <nav class="topbar-actions" aria-label="Основные действия">
-      <a class="topbar-link" href="../">Открыть IDE</a>
-      <a class="topbar-link" href="../book/">Учебник</a>
-      <a class="topbar-link" href="../tasks/">Задачник</a>
-      <a class="topbar-link" href="../projects/">Проекты</a>
-      <a class="topbar-link" href="../reference/">Документация</a>
-      <button class="topbar-link" id="theme-toggle" type="button" title="Светлая тема" aria-label="Светлая тема"><svg class="icon-sun" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor" stroke="none"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5 5l1.9 1.9M17.1 17.1L19 19M19 5l-1.9 1.9M6.9 17.1L5 19"/></svg><svg class="icon-moon" viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M20.6 14.8A8.7 8.7 0 0 1 9.2 3.4a8.7 8.7 0 1 0 11.4 11.4z"/></svg></button>
-    </nav>
-  </header>
+<header class="site-topbar" data-section="about"><div class="topbar-left"><a class="brand" href="../" title="Открыть Web IDE"><img class="brand-mark" src="../assets/idyllium.svg" alt="" width="28" height="28"><span class="brand-text">Idyllium</span><span class="idyllium-version" id="version">v1.6.3</span></a><span class="topbar-badge">О проекте</span></div><nav class="site-nav" data-host="docs" aria-label="Разделы сайта"><div class="site-nav-group" data-group="materials"><button type="button" class="site-nav-button" aria-haspopup="menu" aria-expanded="false">Материалы</button><div class="site-nav-menu" role="menu" aria-label="Материалы"><a class="site-nav-item" role="menuitem" href="../reference/"><span class="site-nav-label">Документация</span></a><div class="site-nav-separator" role="separator"></div><a class="site-nav-item" role="menuitem" href="../book/"><span class="site-nav-label">Учебник</span></a><a class="site-nav-item" role="menuitem" href="../tasks/"><span class="site-nav-label">Задачник</span></a><a class="site-nav-item" role="menuitem" href="../projects/"><span class="site-nav-label">Проекты</span></a><a class="site-nav-item" role="menuitem" href="../handouts/"><span class="site-nav-label">Файлы для заданий</span></a></div></div><div class="site-nav-group" data-group="tools"><button type="button" class="site-nav-button" aria-haspopup="menu" aria-expanded="false">Инструменты</button><div class="site-nav-menu" role="menu" aria-label="Инструменты"><a class="site-nav-item" role="menuitem" href="../#tool=color"><span class="site-nav-label">Генератор цвета</span><small>RGB, HEX, HSL и пипетка</small></a><a class="site-nav-item" role="menuitem" href="../gui-designer/"><span class="site-nav-label">Конструктор GUI</span><small>Собрать окно мышью — получить .idyl</small></a><a class="site-nav-item" role="menuitem" href="../recipes/"><span class="site-nav-label">Рецепты <span class="site-nav-soon" title="Страница в работе">скоро</span></span></a><a class="site-nav-item" role="menuitem" href="../authors/"><span class="site-nav-label">Генератор юнитов</span><small>Встраиваемые задачи для вашего сайта</small></a><div class="site-nav-separator" role="separator"></div><div class="site-nav-caption">Соседние сайты</div><a class="site-nav-item is-external" role="menuitem" href="https://aumphaadr.github.io/Charsets/" target="_blank" rel="noopener"><span class="site-nav-label">Кодировки <span class="site-nav-ext" aria-hidden="true">↗</span></span><small>Charsets: починить битый текст, разобраться в таблицах символов</small></a><a class="site-nav-item is-external" role="menuitem" href="https://aumphaadr.github.io/Pantograph/" target="_blank" rel="noopener"><span class="site-nav-label">Пантограф <span class="site-nav-ext" aria-hidden="true">↗</span></span><small>растровую картинку — в SVG или шрифт</small></a><a class="site-nav-item is-external" role="menuitem" href="https://aumphaadr.github.io/WebGuide/" target="_blank" rel="noopener"><span class="site-nav-label">WebGuide <span class="site-nav-ext" aria-hidden="true">↗</span></span><small>интерактивный гайд по CSS</small></a><a class="site-nav-item is-external" role="menuitem" href="https://aumphaadr.github.io/OOM/" target="_blank" rel="noopener"><span class="site-nav-label">ООМ <span class="site-nav-ext" aria-hidden="true">↗</span></span><small>объектно-ориентированная математика, 3–11 классы</small></a></div></div><div class="site-nav-group is-here" data-group="about"><button type="button" class="site-nav-button" aria-haspopup="menu" aria-expanded="false">О проекте</button><div class="site-nav-menu" role="menu" aria-label="О проекте"><span class="site-nav-item is-current" role="menuitem" aria-current="page"><span class="site-nav-label">О проекте</span></span><a class="site-nav-item" role="menuitem" href="../why/"><span class="site-nav-label">Почему Idyllium <span class="site-nav-soon" title="Страница в работе">скоро</span></span></a><div class="site-nav-separator" role="separator"></div><a class="site-nav-item is-external" role="menuitem" href="https://github.com/Aumphaadr/Idyllium" target="_blank" rel="noopener"><span class="site-nav-label">Исходники на GitHub <span class="site-nav-ext" aria-hidden="true">↗</span></span></a></div></div><div class="site-nav-group site-nav-collapsed" data-group="all"><button type="button" class="site-nav-button" aria-haspopup="menu" aria-expanded="false">Разделы</button><div class="site-nav-menu" role="menu" aria-label="Разделы сайта"><div class="site-nav-caption">Материалы</div><a class="site-nav-item" role="menuitem" href="../reference/"><span class="site-nav-label">Документация</span></a><div class="site-nav-separator" role="separator"></div><a class="site-nav-item" role="menuitem" href="../book/"><span class="site-nav-label">Учебник</span></a><a class="site-nav-item" role="menuitem" href="../tasks/"><span class="site-nav-label">Задачник</span></a><a class="site-nav-item" role="menuitem" href="../projects/"><span class="site-nav-label">Проекты</span></a><a class="site-nav-item" role="menuitem" href="../handouts/"><span class="site-nav-label">Файлы для заданий</span></a><div class="site-nav-separator" role="separator"></div><div class="site-nav-caption">Инструменты</div><a class="site-nav-item" role="menuitem" href="../#tool=color"><span class="site-nav-label">Генератор цвета</span><small>RGB, HEX, HSL и пипетка</small></a><a class="site-nav-item" role="menuitem" href="../gui-designer/"><span class="site-nav-label">Конструктор GUI</span><small>Собрать окно мышью — получить .idyl</small></a><a class="site-nav-item" role="menuitem" href="../recipes/"><span class="site-nav-label">Рецепты <span class="site-nav-soon" title="Страница в работе">скоро</span></span></a><a class="site-nav-item" role="menuitem" href="../authors/"><span class="site-nav-label">Генератор юнитов</span><small>Встраиваемые задачи для вашего сайта</small></a><div class="site-nav-separator" role="separator"></div><div class="site-nav-caption">Соседние сайты</div><a class="site-nav-item is-external" role="menuitem" href="https://aumphaadr.github.io/Charsets/" target="_blank" rel="noopener"><span class="site-nav-label">Кодировки <span class="site-nav-ext" aria-hidden="true">↗</span></span><small>Charsets: починить битый текст, разобраться в таблицах символов</small></a><a class="site-nav-item is-external" role="menuitem" href="https://aumphaadr.github.io/Pantograph/" target="_blank" rel="noopener"><span class="site-nav-label">Пантограф <span class="site-nav-ext" aria-hidden="true">↗</span></span><small>растровую картинку — в SVG или шрифт</small></a><a class="site-nav-item is-external" role="menuitem" href="https://aumphaadr.github.io/WebGuide/" target="_blank" rel="noopener"><span class="site-nav-label">WebGuide <span class="site-nav-ext" aria-hidden="true">↗</span></span><small>интерактивный гайд по CSS</small></a><a class="site-nav-item is-external" role="menuitem" href="https://aumphaadr.github.io/OOM/" target="_blank" rel="noopener"><span class="site-nav-label">ООМ <span class="site-nav-ext" aria-hidden="true">↗</span></span><small>объектно-ориентированная математика, 3–11 классы</small></a><div class="site-nav-separator" role="separator"></div><div class="site-nav-caption">О проекте</div><span class="site-nav-item is-current" role="menuitem" aria-current="page"><span class="site-nav-label">О проекте</span></span><a class="site-nav-item" role="menuitem" href="../why/"><span class="site-nav-label">Почему Idyllium <span class="site-nav-soon" title="Страница в работе">скоро</span></span></a><div class="site-nav-separator" role="separator"></div><a class="site-nav-item is-external" role="menuitem" href="https://github.com/Aumphaadr/Idyllium" target="_blank" rel="noopener"><span class="site-nav-label">Исходники на GitHub <span class="site-nav-ext" aria-hidden="true">↗</span></span></a></div></div></nav><div class="topbar-right"><a class="site-action" href="../" title="Открыть Web IDE"><span class="site-action-full">Открыть IDE</span><span class="site-action-short">IDE</span></a><button class="site-theme-toggle" id="theme-toggle" type="button" title="Светлая тема" aria-label="Светлая тема"><svg class="icon-sun" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor" stroke="none"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5 5l1.9 1.9M17.1 17.1L19 19M19 5l-1.9 1.9M6.9 17.1L5 19"/></svg><svg class="icon-moon" viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M20.6 14.8A8.7 8.7 0 0 1 9.2 3.4a8.7 8.7 0 1 0 11.4 11.4z"/></svg></button></div></header>
   <main class="about-main">
 <!-- Статья «Idyllium» в вики-стиле. Источник текста: from_docs_team/2026-08-25/wiki-idyllium.md
      (структура выверена методистами по разбору шестнадцати статей русской Википедии о языках
      программирования, факты проверены на сборке 1.5.3, актуализированы под 1.5.4). Конверсия md → HTML: 2026-08-28.
-     Актуализация под 1.6.2: 2026-09-19. Версия, даты и счётчики подставляются сборкой по меткам вида
-     1.6.2 (перечень — функция aboutFacts в tools/docs-build-site.ts): руками их не вписывать.
+     Актуализация под 1.6.3: 2026-09-20. Версия, даты и счётчики подставляются сборкой по меткам вида
+     1.6.3 (перечень — функция aboutFacts в tools/docs-build-site.ts): руками их не вписывать.
      Оборачивается в страницу docs/about/index.html сборщиком tools/docs-build-site.ts. -->
 <article class="wiki-article">
   <h1>Idyllium</h1>
@@ -83,7 +68,7 @@
       <tr><th>Появился в</th><td>26 ноября 2025 (первый прототип), 18 июня 2026 (версия 1.0.0)</td></tr>
       <tr><th>Автор</th><td>Nathaniel Larsson</td></tr>
       <tr><th>Расширение файлов</th><td><code>.idyl</code></td></tr>
-      <tr><th>Последняя версия</th><td>1.6.2 (19 сентября 2026)</td></tr>
+      <tr><th>Последняя версия</th><td>1.6.3 (20 сентября 2026)</td></tr>
       <tr><th>Система типов</th><td>статическая, строгая, явная</td></tr>
       <tr><th>Реализации</th><td>эталонный компилятор на TypeScript (CLI, браузерная среда WebIDE, расширение для VS&nbsp;Code)</td></tr>
       <tr><th>Испытал влияние</th><td>Си, C++, C#, Java, JavaScript, Pascal, Python</td></tr>
@@ -131,8 +116,8 @@
   <p><strong>Декабрь 2025 — май 2026.</strong> Версии 0.x. Формируется система типов, появляются массивы фиксированного и динамического размера, классы, обработка исключений, первые библиотеки стандартной поставки. Параллельно пишется учебник, и обратная связь от занятий возвращается в язык: конструкции, на которых ученики регулярно спотыкались, переделываются или запрещаются.</p>
   <p><strong>Июнь 2026.</strong> Версия 1.0.0 — первая стабильная. Зафиксирован синтаксис, стандартная библиотека, формат диагностических сообщений.</p>
   <p><strong>Июнь — август 2026.</strong> Версии 1.1–1.5. Добавлены графика на канве, работа с окнами и виджетами, звук, работа с файлами и базой SQLite, сетевые библиотеки и встроенный веб-сервер. Отдельная линия развития — среда WebIDE: инспектор ассетов, генератор цветов, настройки темы и размера шрифта, корректная остановка программ.</p>
-  <p><strong>Сентябрь 2026.</strong> Версии 1.5.5–1.6.1. Язык получает типы-коллекции <code>map</code> и <code>set</code>, контракты сравнения, а затем и арифметики вместе с ключевым словом <code>contract</code>; библиотека пополняется таблицами <code>csv</code>, сочинённым звуком, сорока одной кодировкой и комплексными числами. Сайт выходит за собственные пределы: появляются встраиваемые юниты — окно с редактором и автопроверкой решения, которое ставится на страницу любого стороннего сайта, — и раздел «Авторам» с их конструктором. Версия 1.6.1 — выпуск по сигналам методической команды: тихие странности становятся словами (значение ползунка вне границ, отрицательный размер фигуры, повторённый ключ JSON, голый <code>&amp;</code> в XML), <code>div</code> и <code>mod</code> на отрицательных числах считают как в Python, рисунок на холсте копится, пока его явно не сотрут, а окно получает событие <code>on_close</code>. Web IDE учится передавать проекты без сервера: «Поделиться» упаковывает текст проекта прямо в ссылку, а получатель открывает его гостем — не трогая собственных проектов.</p>
-  <p><strong>Текущая версия</strong> — 1.6.2 (19 сентября 2026).</p>
+  <p><strong>Сентябрь 2026.</strong> Версии 1.5.5–1.6.3. Язык получает типы-коллекции <code>map</code> и <code>set</code>, контракты сравнения, а затем и арифметики вместе с ключевым словом <code>contract</code>; библиотека пополняется таблицами <code>csv</code>, сочинённым звуком, сорока одной кодировкой и комплексными числами. Сайт выходит за собственные пределы: появляются встраиваемые юниты — окно с редактором и автопроверкой решения, которое ставится на страницу любого стороннего сайта, — и раздел «Авторам» с их конструктором. Версия 1.6.1 — выпуск по сигналам методической команды: тихие странности становятся словами (значение ползунка вне границ, отрицательный размер фигуры, повторённый ключ JSON, голый <code>&amp;</code> в XML), <code>div</code> и <code>mod</code> на отрицательных числах считают как в Python, рисунок на холсте копится, пока его явно не сотрут, а окно получает событие <code>on_close</code>. Web IDE учится передавать проекты без сервера: «Поделиться» упаковывает текст проекта прямо в ссылку, а получатель открывает его гостем — не трогая собственных проектов.</p>
+  <p><strong>Текущая версия</strong> — 1.6.3 (20 сентября 2026).</p>
 
   <h2 id="philosophy">Концепция и философия</h2>
   <blockquote><p><em>Ошибается человек — проблема человека. Ошибается машина — проблема языка, на котором говорит машина.</em></p></blockquote>
@@ -216,7 +201,7 @@ private  public</code></pre></div>
   <p>Без подключения библиотек доступны 10 глобальных функций: <code>avg</code>, <code>div</code>, <code>max</code>, <code>min</code>, <code>mod</code>, <code>sum</code>, <code>to_float</code>, <code>to_int</code>, <code>to_string</code>, <code>type_name</code>.</p>
 
   <h2 id="examples">Примеры кода</h2>
-  <p>Все примеры проверены компилятором версии 1.6.2.</p>
+  <p>Все примеры проверены компилятором версии 1.6.3.</p>
 
   <h3>Приветствие</h3>
   <div class="idyl-code-wrapper"><pre class="idyl-pre"><code class="idyl-code"><span class="hl-keyword">use</span> <span class="hl-object">console</span><span class="hl-brackets">;</span>
@@ -295,7 +280,7 @@ private  public</code></pre></div>
 Первое зелье дешевле второго.</div>
 
   <h2 id="diagnostics">Диагностика</h2>
-  <p>Сообщения компилятора и среды выполнения — намеренно проектируемая часть языка, а не побочный продукт реализации. К версии 1.6.2 в компиляторе и среде выполнения около 700 мест, где язык говорит с человеком словами; их формулировки правятся от версии к версии, и изменения фиксируются в журнале изменений наравне с изменениями синтаксиса.</p>
+  <p>Сообщения компилятора и среды выполнения — намеренно проектируемая часть языка, а не побочный продукт реализации. К версии 1.6.3 в компиляторе и среде выполнения около 700 мест, где язык говорит с человеком словами; их формулировки правятся от версии к версии, и изменения фиксируются в журнале изменений наравне с изменениями синтаксиса.</p>
   <p>Правила, которым подчиняются сообщения:</p>
   <ul>
     <li>указывается файл, строка и столбец;</li>
@@ -315,8 +300,8 @@ private  public</code></pre></div>
   <p>Особенность среды — не редактор, а <strong>связность экосистемы</strong>. В шапке сайта расположены ссылки, каждая из которых ведёт в отдельный полноценный раздел того же сайта:</p>
   <table class="wiki-table">
     <tr><th>Ссылка</th><th>Что открывается</th></tr>
-    <tr><td><strong>Учебник</strong></td><td>128 уроков в 8 разделах</td></tr>
-    <tr><td><strong>Задачник</strong></td><td>практикумы к 127 темам из 128</td></tr>
+    <tr><td><strong>Учебник</strong></td><td>129 уроков в 8 разделах</td></tr>
+    <tr><td><strong>Задачник</strong></td><td>практикумы к 128 темам из 129</td></tr>
     <tr><td><strong>Документация</strong></td><td>справочник: 25 модулей, 71 тип, 1053 описанные позиции</td></tr>
   </table>
   <p>Отдельно живёт раздел проектов — сквозных работ в нём 52. Между кодом, теорией, задачами и справочником ученик перемещается <strong>в один клик и не покидая браузера</strong>: ни установки, ни переключения приложений, ни поиска нужной страницы в интернете.</p>
@@ -376,18 +361,18 @@ private  public</code></pre></div>
     <li><strong>Раздаточные материалы</strong> — файлы данных (<code>json</code>, <code>txt</code> и другие), которые лежат рядом с проектом и читаются программой ученика, а не порождаются в коде.</li>
     <li><strong>Проекты</strong> — сквозные учебные работы, собирающие пройденные темы в одну программу.</li>
   </ul>
-  <p>По состоянию на версию 1.6.2:</p>
+  <p>По состоянию на версию 1.6.3:</p>
   <table class="wiki-table">
     <tr><th>Раздел учебника</th><th>Уроков</th><th>С задачником</th></tr>
     <tr><td>Консоль</td><td>33</td><td>33</td></tr>
-    <tr><td>Виджеты</td><td>25</td><td>25</td></tr>
+    <tr><td>Виджеты</td><td>26</td><td>26</td></tr>
     <tr><td>Черепаха</td><td>7</td><td>7</td></tr>
     <tr><td>ООП</td><td>15</td><td>15</td></tr>
     <tr><td>Canvas</td><td>19</td><td>19</td></tr>
     <tr><td>JSON</td><td>10</td><td>10</td></tr>
     <tr><td>SQLite</td><td>15</td><td>15</td></tr>
     <tr><td>Сеть</td><td>4</td><td>3</td></tr>
-    <tr><td><strong>Всего</strong></td><td><strong>128</strong></td><td><strong>127</strong></td></tr>
+    <tr><td><strong>Всего</strong></td><td><strong>129</strong></td><td><strong>128</strong></td></tr>
   </table>
   <p>Учебных проектов — 52. Раздаточных файлов — 262: наборы данных <code>json</code>, <code>txt</code> и <code>sql</code>, изображения, звуки, шрифты и готовые базы SQLite.</p>
 
@@ -643,11 +628,11 @@ the site does not allow browser requests (CORS)
   </ul>
 
   <h2 id="notes">Примечания</h2>
-  <p>Технические сведения статьи — состав ключевых слов, стандартной библиотеки и глобальных функций, поведение целочисленной арифметики, тексты диагностических сообщений, состав учебного корпуса — проверены на версии 1.6.2 (19 сентября 2026); версию и счётчики подставляет сборка сайта из самого компилятора, поэтому они не расходятся с реализацией. Все примеры кода прогнаны через компилятор этой версии, вывод в статье приведён дословно.</p>
+  <p>Технические сведения статьи — состав ключевых слов, стандартной библиотеки и глобальных функций, поведение целочисленной арифметики, тексты диагностических сообщений, состав учебного корпуса — проверены на версии 1.6.3 (20 сентября 2026); версию и счётчики подставляет сборка сайта из самого компилятора, поэтому они не расходятся с реализацией. Все примеры кода прогнаны через компилятор этой версии, вывод в статье приведён дословно.</p>
 
   <h2 id="literature">Литература</h2>
   <ul>
-    <li><em>Idyllium: учебник.</em> 128 уроков в 8 разделах, из них с задачниками — 127.</li>
+    <li><em>Idyllium: учебник.</em> 129 уроков в 8 разделах, из них с задачниками — 128.</li>
     <li><em>Idyllium: справочник стандартной библиотеки.</em> 25 модулей; порождается из машинного описания API, поставляемого вместе с компилятором.</li>
     <li><em>Idyllium: учебные проекты.</em> Сквозных работ — 52.</li>
   </ul>

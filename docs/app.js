@@ -8890,6 +8890,9 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
   fileAppMenu.addEventListener("click", handleFileAppMenuClick);
   editAppMenu.addEventListener("click", handleEditAppMenuClick);
   colorPickerButton.addEventListener("click", toggleColorPickerMenu);
+  document.querySelectorAll('.site-nav-collapsed [data-role="color-picker-button"]').forEach((button) => {
+    button.addEventListener("click", toggleColorPickerMenu);
+  });
   themeDarkButton.addEventListener("click", () => {
     setTheme("dark");
     hideThemeMenu();
@@ -8939,10 +8942,28 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     uploadInput.value = "";
   });
   installDropArea();
+  document.addEventListener("paste", (event) => {
+    const images = clipboardImageFiles(event.clipboardData);
+    if (images.length === 0) return;
+    if (!filePropsModal.hidden) return;
+    const focus = textEntryKind(document.activeElement);
+    if (focus === "field") return;
+    if (focus === "editor" && event.clipboardData.getData("text/plain")) return;
+    event.preventDefault();
+    void pasteImagesIntoProject(images, currentFile ? parentPath(currentFile) : WORKSPACE_ROOT);
+  }, true);
+  document.addEventListener("idyllium-site-nav-open", () => {
+    hideUploadMenu();
+    hideThemeMenu();
+    hideColorPickerMenu();
+    hideFileAppMenu();
+    hideEditAppMenu();
+    hideFileContextMenu();
+  });
   document.addEventListener("click", (event) => {
     if (!uploadMenu.hidden && event.target instanceof Element && !event.target.closest(".upload-wrapper")) hideUploadMenu();
     if (!themeMenu.hidden && event.target instanceof Element && !event.target.closest(".theme-wrapper")) hideThemeMenu();
-    if (!colorPickerMenu.hidden && event.target instanceof Element && !event.target.closest(".color-picker-wrapper")) hideColorPickerMenu();
+    if (!colorPickerMenu.hidden && event.target instanceof Element && !event.target.closest('#color-picker-menu, #color-picker-button, [data-role="color-picker-button"]')) hideColorPickerMenu();
     if (!fileAppMenu.hidden && event.target instanceof Element && !event.target.closest("#file-app-menu-wrapper")) hideFileAppMenu();
     if (!editAppMenu.hidden && event.target instanceof Element && !event.target.closest("#edit-app-menu-wrapper")) hideEditAppMenu();
     if (!fileContextMenu.hidden && event.target instanceof Element && !event.target.closest(".file-context-menu") && !event.target.closest(".file-menu-button")) hideFileContextMenu();
@@ -9266,6 +9287,10 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       setStatus("Проект по ссылке не открылся", true);
       appendOutput(formatThrownError(error), "output-error");
     });
+    if (window.location.hash === "#tool=color") {
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      showColorPickerMenu();
+    }
   }
   var shareUi = setupShare({
     modal: filePropsModal,
@@ -9955,10 +9980,12 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     const actions = node.path === WORKSPACE_ROOT ? [
       ["Новый файл", () => startCreateItemInline("file", WORKSPACE_ROOT)],
       ["Новая папка", () => startCreateItemInline("folder", WORKSPACE_ROOT)],
+      ["Вставить картинку", () => pasteImageFromClipboardMenu(WORKSPACE_ROOT)],
       ["Свойства", () => showFileProperties(WORKSPACE_ROOT, "folder")]
     ] : node.type === "folder" ? [
       ["Новый файл", () => startCreateItemInline("file", node.path)],
       ["Новая папка", () => startCreateItemInline("folder", node.path)],
+      ["Вставить картинку", () => pasteImageFromClipboardMenu(node.path)],
       ["Переименовать", () => startRenameItemInline(node.path, "folder")],
       ["Дублировать", () => startDuplicateItemInline(node.path, "folder")],
       ["Копировать имя", () => copyProjectItemText(itemName(node.path), "Имя скопировано")],
@@ -10420,6 +10447,83 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     scheduleAutosave();
     const skippedText = skippedCount > 0 ? `, пропущено: ${skippedCount}` : "";
     setStatus(`Загружено файлов: ${loadedCount} (папок: ${folderPaths.length})${skippedText}`);
+  }
+  var PASTED_IMAGE_EXTENSIONS = {
+    "image/png": ".png",
+    "image/jpeg": ".jpg",
+    "image/gif": ".gif",
+    "image/webp": ".webp",
+    "image/bmp": ".bmp",
+    "image/svg+xml": ".svg"
+  };
+  function pastedImageExtension(type) {
+    return PASTED_IMAGE_EXTENSIONS[type] || "." + (String(type).split("/")[1] || "png").replace(/[^a-z0-9]/gi, "");
+  }
+  function clipboardImageFiles(clipboardData) {
+    if (!clipboardData) return [];
+    const images = [];
+    for (const item of Array.from(clipboardData.items || [])) {
+      if (item.kind !== "file" || !item.type.startsWith("image/")) continue;
+      const file = item.getAsFile();
+      if (file) images.push(file);
+    }
+    return images;
+  }
+  function textEntryKind(element2) {
+    if (!(element2 instanceof Element)) return null;
+    if (element2.closest(".monaco-editor") || element2 === editor || element2 === consoleInput) return "editor";
+    if (element2.matches('input, textarea, select, [contenteditable=""], [contenteditable="true"]')) return "field";
+    return null;
+  }
+  async function pasteImagesIntoProject(images, parent) {
+    saveCurrentEditor();
+    let lastPath = null;
+    let count = 0;
+    for (const image of images) {
+      const path = uniqueChildPath(parent, "image" + pastedImageExtension(image.type));
+      const loaded = await loadExternalFile(image, path);
+      if (loaded) {
+        lastPath = loaded;
+        count++;
+      }
+    }
+    if (!lastPath) {
+      setStatus("Картинка из буфера не вставлена", true);
+      return;
+    }
+    expandedFolders.add(parentPath(lastPath));
+    openFile(lastPath);
+    scheduleAutosave();
+    setStatus(count === 1 ? `Вставлено из буфера: ${studentPath(lastPath)} — можно сразу дать имя` : `Вставлено картинок из буфера: ${count}`);
+    startRenameItemInline(lastPath, "file");
+  }
+  async function pasteImageFromClipboardMenu(parent) {
+    const advice = "нажмите Ctrl+V в панели «Файлы»";
+    if (!navigator.clipboard || typeof navigator.clipboard.read !== "function") {
+      appendOutput(`Этот браузер не даёт читать буфер обмена по кнопке — ${advice}.`, "output-error");
+      setStatus(`Буфер по кнопке недоступен — ${advice}`, true);
+      return;
+    }
+    let items;
+    try {
+      items = await navigator.clipboard.read();
+    } catch (error) {
+      appendOutput(`Браузер не разрешил прочитать буфер обмена — ${advice}.`, "output-error");
+      setStatus(`Нет доступа к буферу — ${advice}`, true);
+      return;
+    }
+    const images = [];
+    for (const item of items) {
+      const type = item.types.find((entry) => entry.startsWith("image/"));
+      if (!type) continue;
+      const blob = await item.getType(type);
+      images.push(new File([blob], "image" + pastedImageExtension(type), { type }));
+    }
+    if (images.length === 0) {
+      setStatus("В буфере обмена нет картинки", true);
+      return;
+    }
+    await pasteImagesIntoProject(images, parent);
   }
   async function loadDroppedFiles(fileList2) {
     const selected = Array.from(fileList2 || []);
@@ -11081,7 +11185,11 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
   function toggleUploadMenu() {
     uploadMenu.hidden ? showUploadMenu() : hideUploadMenu();
   }
+  function closeSiteNav() {
+    if (window.idylliumSiteNav) window.idylliumSiteNav.closeAll();
+  }
   function showUploadMenu() {
+    closeSiteNav();
     hideFileAppMenu();
     hideEditAppMenu();
     hideThemeMenu();
@@ -11329,6 +11437,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     fileAppMenu.hidden ? showFileAppMenu() : hideFileAppMenu();
   }
   function showFileAppMenu() {
+    closeSiteNav();
     hideEditAppMenu();
     hideUploadMenu();
     hideThemeMenu();
@@ -11596,6 +11705,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     editAppMenu.hidden ? showEditAppMenu() : hideEditAppMenu();
   }
   function showEditAppMenu() {
+    closeSiteNav();
     hideFileAppMenu();
     hideUploadMenu();
     hideThemeMenu();
@@ -11682,6 +11792,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     themeMenu.hidden ? showThemeMenu() : hideThemeMenu();
   }
   function showThemeMenu() {
+    closeSiteNav();
     hideFileAppMenu();
     hideEditAppMenu();
     hideUploadMenu();
@@ -11730,12 +11841,24 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     colorPickerMenu.hidden ? showColorPickerMenu() : hideColorPickerMenu();
   }
   function showColorPickerMenu() {
+    closeSiteNav();
     hideFileAppMenu();
     hideEditAppMenu();
     hideUploadMenu();
     hideThemeMenu();
     colorPickerMenu.hidden = false;
     colorPickerButton.setAttribute("aria-expanded", "true");
+    const anchor = Array.from(document.querySelectorAll('.site-nav-group[data-group="tools"] > .site-nav-button, .site-nav-collapsed > .site-nav-button')).find((button) => button.offsetParent !== null);
+    const host = colorPickerMenu.offsetParent;
+    if (anchor && host) {
+      const anchorRect = anchor.getBoundingClientRect();
+      const hostRect = host.getBoundingClientRect();
+      const width = colorPickerMenu.offsetWidth;
+      const centred = anchorRect.left + anchorRect.width / 2 - width / 2;
+      const left = Math.max(8, Math.min(centred, window.innerWidth - width - 8));
+      colorPickerMenu.style.left = `${left - hostRect.left}px`;
+      colorPickerMenu.style.transform = "none";
+    }
   }
   function hideColorPickerMenu() {
     colorPickerMenu.hidden = true;

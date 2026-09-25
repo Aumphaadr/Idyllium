@@ -63,7 +63,10 @@ export function rebuildTurtleFieldCommands(state: RuntimeObjectState): void {
   const field = state.turtleField;
   if (!field || !field.canvas) return;
   // Поле черепах перестраивает список целиком (черепашка-спрайт переезжает) — это новая эпоха.
-  const commands = restartCanvasCommands(field.canvas, { kind: 'clear', color: field.bgColor });
+  // Фон поля — ЗАЛИВКА своим цветом, а не clear: с 1.6.1 clear() возвращает холст к его
+  // background_color (без него — к чёрному) и цвет из команды не читает. Поле черепах красило фон
+  // именно командой clear — и в 1.6.1–1.6.2 стало чёрным вместо белого (находка владельца, 1.6.3).
+  const commands = restartCanvasCommands(field.canvas, { kind: 'fill', color: field.bgColor });
   for (const entry of field.entries) {
     commands.push({ kind: 'draw', object: turtleEntrySnapshot(entry, field) });
   }

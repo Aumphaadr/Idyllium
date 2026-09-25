@@ -1,6 +1,7 @@
 const fs: any = require('fs');
 const path: any = require('path');
 
+import { injectSiteTopbar } from './site-nav';
 import {
   CallbackSpec,
   ConstantSpec,
@@ -81,10 +82,9 @@ export function buildReferenceSite(outputRoot: string): void {
   fs.mkdirSync(outputRoot, { recursive: true });
   for (const file of ['index.html', 'app.css', 'app.js']) {
     if (file === 'index.html') {
-      // Значок версии в статичной оболочке: без штампа читатель без JS
-      // видел бы заглушку шаблона вместо версии релиза.
-      const shell = fs.readFileSync(path.join(packageRoot, file), 'utf8')
-        .replace('<span class="idyllium-version" id="version">v</span>', `<span class="idyllium-version" id="version">v${String(packageJson.version ?? '')}</span>`);
+      // Шапка (с версией) — из единого источника шапки сайта; дочерние страницы
+      // модулей пекутся из этой же оболочки и переставляют только <base>.
+      const shell = injectSiteTopbar(fs.readFileSync(path.join(packageRoot, file), 'utf8'), 'reference', { prefix: '../', version: String(packageJson.version ?? '') });
       fs.writeFileSync(path.join(outputRoot, file), shell, 'utf8');
       continue;
     }

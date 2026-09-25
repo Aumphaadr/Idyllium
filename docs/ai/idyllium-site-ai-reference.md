@@ -21,7 +21,7 @@ databases, GUI applications and networking without installing anything and
 without leaving the site; a teacher can build a lesson plan from the same
 pages.
 
-Current language target: Idyllium 1.6.2 (machine-readable at
+Current language target: Idyllium 1.6.3 (machine-readable at
 https://aumphaadr.github.io/Idyllium/version.json).
 
 Important rule for AI assistants: do not invent site features. If a feature is
@@ -41,11 +41,26 @@ Idyllium language syntax use the companion file `idyllium-ai-reference.md`
 | `/projects/` | «Проекты» | Multi-lesson project pages (specifications, not full code) |
 | `/handouts/` | «Файлы для заданий» | Downloadable handout files used by tasks and projects |
 | `/authors/` | «Авторам» | For teachers and site owners: embeddable units and the unit builder |
+| `/about/` | «О проекте» | What Idyllium is, who it is for, philosophy, links |
+| `/recipes/` | «Рецепты» | Placeholder (since 1.6.3, marked «скоро» in the menu): ready-made programs for non-programmers; no recipes published yet |
+| `/why/` | «Почему Idyllium» | Placeholder (since 1.6.3): the case for the language vs. industrial languages; for now links to the contrast references in `/ai/ru/` |
+| `/gui-designer/` | «Конструктор GUI» | Visual window designer (since 1.6.3): drag widgets onto a window, tune properties, get `main.idyl` in textbook style — see 7b |
 | `/embed/` | — | Technical files of embeddable units (loader script and frame); not a page to visit |
 
-The top bar of the Web IDE links to «Учебник», «Задачник» and «Документация»;
-the textbook header links back to all sister sections. `/ide/` is a legacy
-address that redirects to `/`.
+**Header (since 1.6.3, one design on every page).** Left: the logo (a link to
+the Web IDE on every page except the IDE itself), the version and a section
+badge. Centre: three identical dropdown menus — «Материалы» (Документация,
+then Учебник, Задачник, Проекты, Файлы для заданий), «Инструменты» (Генератор
+цвета, Конструктор GUI, Рецепты, Генератор юнитов = `/authors/`, then the
+sister sites «Кодировки», «Пантограф», «WebGuide», «ООМ» opening in a new tab)
+and «О проекте» (О проекте, Почему Idyllium, «Исходники на GitHub»). Right,
+on document pages: the «Открыть IDE» button and the theme toggle. In the Web
+IDE the same three menus sit after its own «Файл», «Правка» and «Внешний
+вид» buttons, and «Запустить» / «Остановить» stay on the right. On narrow
+screens (≤ 900 px on document pages, ≤ 1200 px in the IDE) the three menus
+collapse into one «Разделы» menu with the same tree. Every section is
+reachable from every other one — a build-time check enforces it. `/ide/` is a
+legacy address that redirects to `/`.
 
 ## 2. Web IDE (`/`)
 
@@ -60,7 +75,15 @@ Layout, left to right (all panel widths draggable):
 
 1. **Files panel** — the file tree of the current project. A project is a set
    of files; programs can have several `.idyl` modules plus data files
-   (text, JSON, images, sounds, fonts, SQLite databases).
+   (text, JSON, images, sounds, fonts, SQLite databases). Files get in via
+   «Файл» → «Открыть файл», drag-and-drop, or — for pictures — the clipboard
+   (since 1.6.3): Ctrl+V with a screenshot or a copied picture in the clipboard
+   creates `image.png` (then `image2.png`, …) in the folder of the open file,
+   opens it in the asset inspector and offers to rename it at once. In the
+   code editor Ctrl+V pastes text when the clipboard has any; only an
+   image-only clipboard becomes a file. The context menu of the panel and of
+   folders has «Вставить картинку» (the browser asks permission to read the
+   clipboard; if refused, press Ctrl+V).
 2. **Editor** — Monaco (the VS Code editor) with Idyllium syntax highlighting,
    diagnostics as red markers, completion, and a «Форматировать» button.
    Non-code files open in the built-in **asset inspector** instead of the code
@@ -126,9 +149,11 @@ Top bar:
 - **«Внешний вид» menu** — dark/light theme, editor font size, console font
   size, and an «Автодополнение» checkbox (since 1.6.0): unticked, typing
   `console.` no longer pops the completion list; Ctrl+Space still works.
-- **«Генератор цвета»** — a built-in color picker with R/G/B/A sliders that
-  emits ready-to-copy Idyllium code: `colors.RGB(34, 145, 188)` and
-  `colors.HEX("#2291bc")`.
+- **«Генератор цвета»** (since 1.6.3 an item of the «Инструменты» menu, not a
+  separate button) — a built-in color picker with R/G/B/A sliders that emits
+  ready-to-copy Idyllium code: `colors.RGB(34, 145, 188)` and
+  `colors.HEX("#2291bc")`. From a document page the same menu item opens the
+  IDE with the picker already open (address `/#tool=color`).
 - **«Запустить» (Ctrl+Enter) / «Остановить»** buttons.
 
 ### 2.1. Asset inspector (a signature feature — describe it proudly)
@@ -306,12 +331,41 @@ the Web IDE use «Файл → Открыть файл» to add it to the curren
 that the program can open it by name. The page is intentionally excluded from
 search engines.
 
+## 7b. GUI designer — «Конструктор GUI» (`/gui-designer/`), since 1.6.3
+
+Three columns under the site header: a **palette** of 15 widgets (Label,
+Button, LineEdit, TextEdit, SpinBox, FloatSpinBox, Slider, CheckBox,
+RadioButton, ComboBox, ProgressBar, ImageBox, Canvas, Frame, TabWidget), the
+**scene** with the window being built, and a **tree + inspector** on the
+right; the generated **code** sits at the bottom. Widgets are placed by a
+click (free spot) or by dragging onto the window, moved and resized with
+handles, nudged with arrow keys, copied (Ctrl+C / Ctrl+V / Ctrl+D), deleted
+(Delete), dropped into a Frame or a tab page; a 5 px grid snaps positions
+(toggle in the toolbar); undo/redo; double-click edits `text`/`title` in
+place. **The scene is not a mock-up**: the designer compiles and runs the
+generated program with the browser core and shows it in the same preview
+frame as the Web IDE, so what is shown is exactly what the program draws.
+The **code** follows the textbook idiom (`gui.Window win; … win.add_child(…);
+win.show();`) and lists only the properties the user set; names default to
+`button1`, `label1`, `line_edit1`… and are validated as identifiers (keywords
+refused). Event handlers are not generated; the «Заготовки обработчиков»
+checkbox adds empty `on_click`/`on_change` functions. Ways out: **«Открыть в
+Web IDE»** (a `#p1=` project link, opens as a guest — then save as own
+project), **«Скопировать код»**, **«Скачать main.idyl»**; the «Макет…» menu
+saves the design as `.json`, can embed it as a trailing `// gui-designer:`
+comment in `main.idyl`, and reopens either (a hand-edited file is reported as
+diverged from its embedded model). Not offered: ComboBox items, Table
+columns, chart data, fonts, IdySS styles — those are written in code. Needs a
+screen at least 1000 px wide. The textbook lesson «Конструктор GUI» (section
+«Виджеты», after SpinBox) is optional — teachers may keep a group on
+hand-written widgets.
+
 ## 7a. For authors — «Авторам» (`/authors/`), since 1.6.0
 
 Embeddable **units**: a small window with a code editor, a console and
 «Запустить» / «Проверить» buttons that any site can place inside its own
-lesson page. The header button «Авторам» (Web IDE, textbook, task book)
-leads to the **unit builder**: a form with hover explanations, a live preview
+lesson page. The «Генератор юнитов» item of the «Инструменты» header menu
+(on every page) leads to the **unit builder**: a form with hover explanations, a live preview
 that is a real unit, a **self-check** (the author's solution must pass the
 author's own tests, the starter code must not; `random` without `set_seed`,
 `time.now` and `time.sleep` get advice), two forms of ready HTML, and
