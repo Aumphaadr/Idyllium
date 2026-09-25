@@ -96,6 +96,8 @@ function createFakeCanvasContext(): any {
     drawImageCalls: 0,
     drawImageArguments: [] as unknown[][],
     fillRectCalls: [] as number[][],
+    fillRectStyles: [] as string[],
+    fillStyle: '',
     fillTextCalls: 0,
     fillTextArguments: [] as unknown[][],
     font: '',
@@ -113,7 +115,7 @@ function createFakeCanvasContext(): any {
       this.drawImageArguments.push(args);
     },
     fill() {},
-    fillRect(...args: number[]) { this.fillRectCalls.push(args); },
+    fillRect(...args: number[]) { this.fillRectCalls.push(args); this.fillRectStyles.push(String(this.fillStyle)); },
     fillText(...args: unknown[]) {
       this.fillTextCalls++;
       this.fillTextArguments.push(args);
@@ -1453,6 +1455,26 @@ test('gui renderer shows data widgets: table rows and chart canvases', () => {
     harness.canvasContexts.some((context) => context.arcCalls.length > 0),
     'pie chart must draw slices via arc',
   );
+});
+
+test('canvas colours: fill paints its own colour, clear returns to the canvas background', () => {
+  // Страж к поломке 1.6.1–1.6.2 (поле черепах стало чёрным): проверяем ЦВЕТ, а не только фигуры.
+  const harness = createRendererHarness();
+  const whole = (context: any, width: number, height: number): string[] => context.fillRectCalls
+    .map((args: number[], index: number) => (args[0] === 0 && args[1] === 0 && args[2] === width && args[3] === height ? context.fillRectStyles[index] : null))
+    .filter((style: string | null): style is string => style !== null);
+  harness.sendSnapshot({
+    generation: 1, audio: [], windows: [], modals: [],
+    canvases: [
+      { id: 1, properties: { width: 120, height: 80 }, commands: [{ kind: 'fill', color: '#ffffff' }] },
+      { id: 2, properties: { width: 130, height: 90, background_color: '#102030' }, commands: [{ kind: 'fill', color: '#ff0000' }, { kind: 'clear', color: '#000000' }] },
+    ],
+  });
+  const field = harness.canvasContexts.map((context: any) => whole(context, 120, 80)).find((styles: string[]) => styles.length > 0);
+  assert(field !== undefined && field[field.length - 1] === '#ffffff', `a white fill (the turtle field) must end white: ${JSON.stringify(field)}`);
+  const cleared = harness.canvasContexts.map((context: any) => whole(context, 130, 90)).find((styles: string[]) => styles.length > 0);
+  assert(cleared !== undefined && cleared[0] === '#102030' && cleared.includes('#ff0000') && cleared[cleared.length - 1] === '#102030',
+    `clear() must return the canvas to its background_color: ${JSON.stringify(cleared)}`);
 });
 
 test('gui renderer draws turtle.Path polygons on canvas', () => {

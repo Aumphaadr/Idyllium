@@ -124,6 +124,10 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
   fileAppMenu.addEventListener('click', handleFileAppMenuClick);
   editAppMenu.addEventListener('click', handleEditAppMenuClick);
   colorPickerButton.addEventListener('click', toggleColorPickerMenu);
+  // Тот же пункт в схлопнутом меню «Разделы» (узкий экран): id там нет, есть data-role.
+  document.querySelectorAll('.site-nav-collapsed [data-role="color-picker-button"]').forEach((button) => {
+    button.addEventListener('click', toggleColorPickerMenu);
+  });
   themeDarkButton.addEventListener('click', () => {
     setTheme('dark');
     hideThemeMenu();
@@ -173,10 +177,34 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
     uploadInput.value = '';
   });
   installDropArea();
+  // Картинка из буфера обмена — в проект (1.6.3, заказ владельца): Ctrl+V вне текстовых
+  // полей, а в редакторе — только когда в буфере нет текста (текст побеждает).
+  // Слушаем на захвате: Monaco гасит всплытие paste на своём textarea, и до документа
+  // событие иначе не доходит (e2e 2026-09-25); текст при этом Monaco вставляет сам.
+  document.addEventListener('paste', (event) => {
+    const images = clipboardImageFiles(event.clipboardData);
+    if (images.length === 0) return;
+    // Открыт диалог (свойства файла, «Поделиться», читалка QR — та ловит вставку сама) — не наше.
+    if (!filePropsModal.hidden) return;
+    const focus = textEntryKind(document.activeElement);
+    if (focus === 'field') return;
+    if (focus === 'editor' && event.clipboardData.getData('text/plain')) return;
+    event.preventDefault();
+    void pasteImagesIntoProject(images, currentFile ? parentPath(currentFile) : WORKSPACE_ROOT);
+  }, true);
+  // Меню шапки (Материалы / Инструменты / О проекте) раскрылось — свои меню и панель цвета прячем.
+  document.addEventListener('idyllium-site-nav-open', () => {
+    hideUploadMenu();
+    hideThemeMenu();
+    hideColorPickerMenu();
+    hideFileAppMenu();
+    hideEditAppMenu();
+    hideFileContextMenu();
+  });
   document.addEventListener('click', (event) => {
     if (!uploadMenu.hidden && event.target instanceof Element && !event.target.closest('.upload-wrapper')) hideUploadMenu();
     if (!themeMenu.hidden && event.target instanceof Element && !event.target.closest('.theme-wrapper')) hideThemeMenu();
-    if (!colorPickerMenu.hidden && event.target instanceof Element && !event.target.closest('.color-picker-wrapper')) hideColorPickerMenu();
+    if (!colorPickerMenu.hidden && event.target instanceof Element && !event.target.closest('#color-picker-menu, #color-picker-button, [data-role="color-picker-button"]')) hideColorPickerMenu();
     if (!fileAppMenu.hidden && event.target instanceof Element && !event.target.closest('#file-app-menu-wrapper')) hideFileAppMenu();
     if (!editAppMenu.hidden && event.target instanceof Element && !event.target.closest('#edit-app-menu-wrapper')) hideEditAppMenu();
     if (!fileContextMenu.hidden && event.target instanceof Element && !event.target.closest('.file-context-menu') && !event.target.closest('.file-menu-button')) hideFileContextMenu();
@@ -539,6 +567,11 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
       setStatus('Проект по ссылке не открылся', true);
       appendOutput(formatThrownError(error), 'output-error');
     });
+    // «Инструменты → Генератор цвета» из учебника ведёт сюда с открытой панелью.
+    if (window.location.hash === '#tool=color') {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      showColorPickerMenu();
+    }
   }
 
   const shareUi = setupShare({
@@ -1387,12 +1420,14 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
       ? [
           ['Новый файл', () => startCreateItemInline('file', WORKSPACE_ROOT)],
           ['Новая папка', () => startCreateItemInline('folder', WORKSPACE_ROOT)],
+          ['Вставить картинку', () => pasteImageFromClipboardMenu(WORKSPACE_ROOT)],
           ['Свойства', () => showFileProperties(WORKSPACE_ROOT, 'folder')],
         ]
       : node.type === 'folder'
       ? [
           ['Новый файл', () => startCreateItemInline('file', node.path)],
           ['Новая папка', () => startCreateItemInline('folder', node.path)],
+          ['Вставить картинку', () => pasteImageFromClipboardMenu(node.path)],
           ['Переименовать', () => startRenameItemInline(node.path, 'folder')],
           ['Дублировать', () => startDuplicateItemInline(node.path, 'folder')],
           ['Копировать имя', () => copyProjectItemText(itemName(node.path), 'Имя скопировано')],
@@ -1928,6 +1963,94 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
     scheduleAutosave();
     const skippedText = skippedCount > 0 ? `, пропущено: ${skippedCount}` : '';
     setStatus(`Загружено файлов: ${loadedCount} (папок: ${folderPaths.length})${skippedText}`);
+  }
+
+  // ─── Картинка из буфера обмена → файл проекта (1.6.3) ───────────────────
+  // Два входа: Ctrl+V (документный слушатель выше) и пункт «Вставить картинку»
+  // в контекстном меню панели «Файлы» и папок. Импорт — тот же loadExternalFile(),
+  // что у перетаскивания: хранение байтами, инспектор, автосохранение.
+  const PASTED_IMAGE_EXTENSIONS = {
+    'image/png': '.png', 'image/jpeg': '.jpg', 'image/gif': '.gif', 'image/webp': '.webp',
+    'image/bmp': '.bmp', 'image/svg+xml': '.svg',
+  };
+
+  function pastedImageExtension(type) {
+    return PASTED_IMAGE_EXTENSIONS[type] || '.' + (String(type).split('/')[1] || 'png').replace(/[^a-z0-9]/gi, '');
+  }
+
+  function clipboardImageFiles(clipboardData) {
+    if (!clipboardData) return [];
+    const images = [];
+    for (const item of Array.from(clipboardData.items || [])) {
+      if (item.kind !== 'file' || !item.type.startsWith('image/')) continue;
+      const file = item.getAsFile();
+      if (file) images.push(file);
+    }
+    return images;
+  }
+
+  /** 'editor' — редактор кода или строка ввода консоли; 'field' — любое другое поле (имя файла, диалоги); null — не текст. */
+  function textEntryKind(element) {
+    if (!(element instanceof Element)) return null;
+    if (element.closest('.monaco-editor') || element === editor || element === consoleInput) return 'editor';
+    if (element.matches('input, textarea, select, [contenteditable=""], [contenteditable="true"]')) return 'field';
+    return null;
+  }
+
+  async function pasteImagesIntoProject(images, parent) {
+    saveCurrentEditor();
+    let lastPath = null;
+    let count = 0;
+    for (const image of images) {
+      // Браузер всегда зовёт картинку из буфера image.png — имя даём сами, без столкновений.
+      const path = uniqueChildPath(parent, 'image' + pastedImageExtension(image.type));
+      const loaded = await loadExternalFile(image, path);
+      if (loaded) {
+        lastPath = loaded;
+        count++;
+      }
+    }
+    if (!lastPath) {
+      setStatus('Картинка из буфера не вставлена', true);
+      return;
+    }
+    expandedFolders.add(parentPath(lastPath));
+    openFile(lastPath);
+    scheduleAutosave();
+    setStatus(count === 1
+      ? `Вставлено из буфера: ${studentPath(lastPath)} — можно сразу дать имя`
+      : `Вставлено картинок из буфера: ${count}`);
+    // Имя image.png ничего не говорит — предлагаем заменить сразу (Esc оставит как есть).
+    startRenameItemInline(lastPath, 'file');
+  }
+
+  async function pasteImageFromClipboardMenu(parent) {
+    const advice = 'нажмите Ctrl+V в панели «Файлы»';
+    if (!navigator.clipboard || typeof navigator.clipboard.read !== 'function') {
+      appendOutput(`Этот браузер не даёт читать буфер обмена по кнопке — ${advice}.`, 'output-error');
+      setStatus(`Буфер по кнопке недоступен — ${advice}`, true);
+      return;
+    }
+    let items;
+    try {
+      items = await navigator.clipboard.read();
+    } catch (error) {
+      appendOutput(`Браузер не разрешил прочитать буфер обмена — ${advice}.`, 'output-error');
+      setStatus(`Нет доступа к буферу — ${advice}`, true);
+      return;
+    }
+    const images = [];
+    for (const item of items) {
+      const type = item.types.find((entry) => entry.startsWith('image/'));
+      if (!type) continue;
+      const blob = await item.getType(type);
+      images.push(new File([blob], 'image' + pastedImageExtension(type), { type }));
+    }
+    if (images.length === 0) {
+      setStatus('В буфере обмена нет картинки', true);
+      return;
+    }
+    await pasteImagesIntoProject(images, parent);
   }
 
   async function loadDroppedFiles(fileList) {
@@ -2696,7 +2819,13 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
     uploadMenu.hidden ? showUploadMenu() : hideUploadMenu();
   }
 
+  /** Свернуть меню шапки (Материалы / Инструменты / О проекте) — когда открывается своё. */
+  function closeSiteNav() {
+    if (window.idylliumSiteNav) window.idylliumSiteNav.closeAll();
+  }
+
   function showUploadMenu() {
+    closeSiteNav();
     hideFileAppMenu();
     hideEditAppMenu();
     hideThemeMenu();
@@ -2979,6 +3108,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
   }
 
   function showFileAppMenu() {
+    closeSiteNav();
     hideEditAppMenu();
     hideUploadMenu();
     hideThemeMenu();
@@ -3272,6 +3402,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
   }
 
   function showEditAppMenu() {
+    closeSiteNav();
     hideFileAppMenu();
     hideUploadMenu();
     hideThemeMenu();
@@ -3367,6 +3498,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
   }
 
   function showThemeMenu() {
+    closeSiteNav();
     hideFileAppMenu();
     hideEditAppMenu();
     hideUploadMenu();
@@ -3428,12 +3560,28 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
   }
 
   function showColorPickerMenu() {
+    closeSiteNav();
     hideFileAppMenu();
     hideEditAppMenu();
     hideUploadMenu();
     hideThemeMenu();
     colorPickerMenu.hidden = false;
     colorPickerButton.setAttribute('aria-expanded', 'true');
+    // Панель живёт прямо в полосе кнопок, а открывает её пункт дропдауна «Инструменты» (1.6.3):
+    // ставим её под этой кнопкой, не выпуская за край окна.
+    // Якорь — та кнопка, что сейчас видна: «Инструменты» на широком экране, «Разделы» на узком.
+    const anchor = Array.from(document.querySelectorAll('.site-nav-group[data-group="tools"] > .site-nav-button, .site-nav-collapsed > .site-nav-button'))
+      .find((button) => button.offsetParent !== null);
+    const host = colorPickerMenu.offsetParent;
+    if (anchor && host) {
+      const anchorRect = anchor.getBoundingClientRect();
+      const hostRect = host.getBoundingClientRect();
+      const width = colorPickerMenu.offsetWidth;
+      const centred = anchorRect.left + anchorRect.width / 2 - width / 2;
+      const left = Math.max(8, Math.min(centred, window.innerWidth - width - 8));
+      colorPickerMenu.style.left = `${left - hostRect.left}px`;
+      colorPickerMenu.style.transform = 'none';
+    }
   }
 
   function hideColorPickerMenu() {

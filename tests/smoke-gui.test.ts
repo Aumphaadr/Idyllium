@@ -2342,6 +2342,25 @@ main() {
   const last = lines[3].object!.properties as Record<string, number>;
   assert(Math.abs(last.x2 - 300) < 0.001 && Math.abs(last.y2 - 300) < 0.001, 'square must close at start');
   assert(draws.some((command) => command.object?.type === 'turtle.Path'), 'turtle sprite must be drawn');
+  // Фон поля — белая ЗАЛИВКА. В 1.6.1–1.6.2 поле стало чёрным: фон красился командой clear
+  // с цветом, а clear с 1.6.1 цвет команды не читает (возвращает холст к его background_color).
+  const fieldCommands = square.getWindows()[0].children[0].canvas!.commands;
+  assert(fieldCommands[0].kind === 'fill' && fieldCommands[0].color === '#ffffff',
+    `the turtle field must be painted white by a fill: ${JSON.stringify(fieldCommands[0])}`);
+  assert(!fieldCommands.some((command) => command.kind === 'clear'), 'the turtle field must not rely on clear() for its colour');
+  const painted = await runTurtle(`
+use colors;
+use turtle;
+
+main() {
+    turtle.bg_color(colors.RGB(10, 20, 30));
+    turtle.Turtle t;
+    t.speed = 0;
+    t.forward(10);
+}
+`);
+  const paintedFirst = painted.getWindows()[0].children[0].canvas!.commands[0];
+  assert(paintedFirst.kind === 'fill' && paintedFirst.color === '#0a141e', `turtle.bg_color() must reach the field: ${JSON.stringify(paintedFirst)}`);
 
   // Поднятое перо не оставляет линий; dot и write попадают в список.
   const penUp = await runTurtle(`
@@ -2685,6 +2704,14 @@ main() {
 
     canvas.save_svg("shot.svg");
     canvas.save_svg("region.svg", 150, 0, 150, 100);
+
+    gui.Canvas paper;
+    paper.width = 120;
+    paper.height = 80;
+    paper.background_color = colors.RGB(16, 32, 48);
+    paper.fill(colors.RED);
+    paper.clear();
+    paper.save_svg("paper.svg");
     console.writeln("сохранено");
 }
 `, { platform: 'cli', fileSystem: fsMemory }, { file: '/workspace/main.idyl' });
@@ -2693,6 +2720,10 @@ main() {
   const shot = String(files['/workspace/shot.svg']?.content ?? '');
   assert(shot.includes('viewBox="0 0 300 200"'), 'full canvas viewBox');
   assert(shot.includes('fill="#141e3c"'), 'fill command color');
+  // Файл обязан совпадать с экраном: основа — background_color холста, clear() возвращает к ней же.
+  const paper = String(files['/workspace/paper.svg']?.content ?? '');
+  assert(paper.includes('fill="#102030"') && !paper.includes('fill="#000000"') && !paper.includes('fill="#ff0000"'),
+    `save_svg must use the canvas background_color as the base and for clear(): ${paper.slice(0, 400)}`);
   assert(shot.includes('width="100" height="60" fill="#ffa500"'), 'rectangle');
   assert(shot.includes('>Снимок</text>'), 'text content');
   const region = String(files['/workspace/region.svg']?.content ?? '');

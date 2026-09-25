@@ -178,7 +178,7 @@ import {
 import { parseIdylliumStyle } from './style';
 import { hashAdler32, hashCrc32, hashFnv1a, hashSha256Bytes, hashSha256Hex } from './hash';
 
-export const IDYLLIUM_VERSION = '1.6.2';
+export const IDYLLIUM_VERSION = '1.6.3';
 
 /** Где выполняется программа, если хост не сказал явно. */
 function defaultRuntimePlatform(): string {

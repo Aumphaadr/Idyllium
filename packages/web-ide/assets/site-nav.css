@@ -1,0 +1,525 @@
+/* Общая шапка сайта Idyllium (1.6.3): лого, версия, бейдж раздела, три дропдауна
+   «Материалы / Инструменты / О проекте», главное действие справа, переключатель темы.
+   Разметку собирает tools/site-nav.ts — один источник на Web IDE, учебник, задачник,
+   проекты, справочник, «Авторам», «О проекте», раздатку и заглушки новых страниц.
+   Цвета заданы числами (эталон — учебник), светлая тема — body.light-theme (разделы)
+   и body.theme-light (IDE). Подключать ДО стилей раздела: их мобильные правила
+   (например, показать гамбургер) должны перекрывать базовые отсюда. */
+
+:root {
+  --site-topbar-height: 56px;
+}
+
+/* ── шапка страницы-документа (у IDE своя сетка .topbar, ей достаются только части ниже) ── */
+.site-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: var(--site-topbar-height);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px;
+  border-bottom: 1px solid #342846;
+  background: rgba(12, 5, 21, 0.92);
+  backdrop-filter: blur(18px);
+  color: #f2eaf7;
+}
+
+body.light-theme .site-topbar,
+body.theme-light .site-topbar {
+  border-color: #c8bed5;
+  background: rgba(246, 242, 251, 0.92);
+  color: #211a2e;
+}
+
+/* ── слева: гамбургер (у страниц с боковой колонкой), лого, версия, бейдж ── */
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 0 0 auto;
+}
+
+.menu-toggle {
+  display: none;
+  width: 36px;
+  height: 34px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0;
+  border: 1px solid #342846;
+  border-radius: 8px;
+  background: #1c1629;
+  color: #c9bdd6;
+  cursor: pointer;
+}
+
+.menu-toggle span {
+  width: 16px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #f2eaf7;
+  text-decoration: none;
+  white-space: nowrap;
+  font-size: 17px;
+  line-height: 28px;
+  font-weight: 800;
+  letter-spacing: 0.36px;
+}
+
+a.brand:hover .brand-text {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.brand-mark {
+  width: 28px;
+  height: 28px;
+  display: block;
+  flex: 0 0 auto;
+}
+
+.brand-text {
+  font-size: 17px;
+  line-height: 28px;
+}
+
+.idyllium-version {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #8e819d;
+  font-size: 12px;
+  line-height: 20px;
+  font-weight: 600;
+  letter-spacing: 0.36px;
+}
+
+.topbar-badge {
+  padding: 3px 9px;
+  border: 1px solid #342846;
+  border-radius: 999px;
+  background: transparent;
+  color: #8e819d;
+  font-size: 12px;
+  line-height: 20px;
+  font-weight: 700;
+  letter-spacing: normal;
+  white-space: nowrap;
+}
+
+body.light-theme .brand,
+body.theme-light .brand {
+  color: #211a2e;
+}
+
+body.light-theme .idyllium-version,
+body.theme-light .idyllium-version,
+body.light-theme .topbar-badge,
+body.theme-light .topbar-badge {
+  color: #6d637b;
+}
+
+body.light-theme .topbar-badge,
+body.theme-light .topbar-badge,
+body.light-theme .menu-toggle,
+body.theme-light .menu-toggle {
+  border-color: #c8bed5;
+}
+
+body.light-theme .menu-toggle,
+body.theme-light .menu-toggle {
+  background: #e9e2f0;
+  color: #463b56;
+}
+
+/* ── три дропдауна ── */
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 0 0 auto;
+}
+
+.site-nav-group {
+  position: relative;
+}
+
+.site-nav-button {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid #342846;
+  border-radius: 8px;
+  background: #1c1629;
+  color: #c9bdd6;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+
+.site-nav-button:hover,
+.site-nav-group.is-open > .site-nav-button {
+  background: #241d34;
+  border-color: #87bfff;
+  color: #f2eaf7;
+}
+
+/* Группа, в которой лежит текущий раздел, — чуть светлее фоном: «вы где-то здесь»
+   (без подчёркивания и без шеврона — замечания владельца 2026-09-25; шевронов нет
+   и у Файл/Правка/Внешний вид). */
+.site-nav-group.is-here > .site-nav-button {
+  background: #2d2346;
+  color: #f2eaf7;
+}
+
+.site-nav-group.is-here > .site-nav-button:hover,
+.site-nav-group.is-here.is-open > .site-nav-button {
+  background: #372b55;
+}
+
+.site-nav-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 60; /* выше внутренних слоёв Monaco в IDE (они доходят до 40) */
+  display: none;
+  min-width: 250px;
+  max-width: min(360px, calc(100vw - 24px));
+  padding: 6px;
+  border: 1px solid #342846;
+  border-radius: 10px;
+  background: #151020;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.35);
+}
+
+.site-nav-group.is-open > .site-nav-menu {
+  display: block;
+}
+
+.site-nav-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  height: auto;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #f2eaf7;
+  align-items: flex-start; /* пункт-кнопка «Генератор цвета» в IDE: глобальное button {align-items: center} тянуло текст в середину */
+  justify-content: flex-start;
+  text-align: left;
+  text-decoration: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  cursor: pointer;
+  transform: none;
+}
+
+.site-nav-item small {
+  color: #8e819d;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.site-nav-item:hover,
+.site-nav-item:focus-visible {
+  background: #241d34;
+  color: #f2eaf7;
+  outline: none;
+}
+
+.site-nav-item.is-current {
+  color: #8e819d;
+  cursor: default;
+}
+
+.site-nav-item.is-current .site-nav-label::after {
+  content: "✓";
+  margin-left: 8px;
+  color: #87bfff;
+  font-weight: 800;
+}
+
+.site-nav-soon {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(135, 191, 255, 0.16);
+  color: #87bfff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: 1px;
+}
+
+.site-nav-ext {
+  opacity: 0.7;
+  font-size: 12px;
+}
+
+.site-nav-separator {
+  height: 1px;
+  margin: 6px 4px;
+  background: #342846;
+}
+
+.site-nav-caption {
+  padding: 8px 10px 4px;
+  color: #8e819d;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+body.light-theme .site-nav-button,
+body.theme-light .site-nav-button {
+  border-color: #c8bed5;
+  background: #e9e2f0;
+  color: #463b56;
+}
+
+body.light-theme .site-nav-button:hover,
+body.theme-light .site-nav-button:hover,
+body.light-theme .site-nav-group.is-open > .site-nav-button,
+body.theme-light .site-nav-group.is-open > .site-nav-button {
+  background: #ded6e8;
+  border-color: #275f9e;
+  color: #211a2e;
+}
+
+body.light-theme .site-nav-group.is-here > .site-nav-button,
+body.theme-light .site-nav-group.is-here > .site-nav-button {
+  background: #d6cce3;
+  color: #211a2e;
+}
+
+body.light-theme .site-nav-group.is-here > .site-nav-button:hover,
+body.theme-light .site-nav-group.is-here > .site-nav-button:hover,
+body.light-theme .site-nav-group.is-here.is-open > .site-nav-button,
+body.theme-light .site-nav-group.is-here.is-open > .site-nav-button {
+  background: #cbbfdb;
+}
+
+body.light-theme .site-nav-menu,
+body.theme-light .site-nav-menu {
+  border-color: #c8bed5;
+  background: #f7f4fb;
+  box-shadow: 0 18px 44px rgba(39, 30, 54, 0.18);
+}
+
+body.light-theme .site-nav-item,
+body.theme-light .site-nav-item {
+  color: #211a2e;
+}
+
+body.light-theme .site-nav-item:hover,
+body.theme-light .site-nav-item:hover,
+body.light-theme .site-nav-item:focus-visible,
+body.theme-light .site-nav-item:focus-visible {
+  background: #e9e2f0;
+  color: #211a2e;
+}
+
+body.light-theme .site-nav-item small,
+body.theme-light .site-nav-item small,
+body.light-theme .site-nav-item.is-current,
+body.theme-light .site-nav-item.is-current,
+body.light-theme .site-nav-caption,
+body.theme-light .site-nav-caption {
+  color: #6d637b;
+}
+
+body.light-theme .site-nav-item.is-current .site-nav-label::after,
+body.theme-light .site-nav-item.is-current .site-nav-label::after,
+body.light-theme .site-nav-soon,
+body.theme-light .site-nav-soon {
+  color: #275f9e;
+}
+
+body.light-theme .site-nav-soon,
+body.theme-light .site-nav-soon {
+  background: rgba(39, 95, 158, 0.13);
+}
+
+body.light-theme .site-nav-separator,
+body.theme-light .site-nav-separator {
+  background: #c8bed5;
+}
+
+/* ── справа: главное действие раздела и тема ── */
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.site-action {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid #87bfff;
+  border-radius: 8px;
+  background: #87bfff;
+  color: #0c0515;
+  font-size: 14px;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+
+.site-action:hover {
+  background: #a3ceff;
+  border-color: #a3ceff;
+  color: #0c0515;
+}
+
+body.light-theme .site-action,
+body.theme-light .site-action {
+  border-color: #275f9e;
+  background: #275f9e;
+  color: #ffffff;
+}
+
+body.light-theme .site-action:hover,
+body.theme-light .site-action:hover {
+  background: #1d4d82;
+  border-color: #1d4d82;
+  color: #ffffff;
+}
+
+.site-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid #342846;
+  border-radius: 8px;
+  background: #1c1629;
+  color: #c9bdd6;
+  cursor: pointer;
+}
+
+.site-theme-toggle:hover {
+  border-color: #87bfff;
+  color: #f2eaf7;
+}
+
+.site-theme-toggle svg {
+  display: block;
+}
+
+.site-theme-toggle .icon-moon {
+  display: none;
+}
+
+body.light-theme .site-theme-toggle {
+  border-color: #c8bed5;
+  background: #e9e2f0;
+  color: #463b56;
+}
+
+body.light-theme .site-theme-toggle .icon-sun {
+  display: none;
+}
+
+body.light-theme .site-theme-toggle .icon-moon {
+  display: block;
+}
+
+/* ── узкий экран: три дропдауна становятся одним «Разделы» с тем же деревом внутри ── */
+.site-nav-collapsed {
+  display: none;
+}
+
+.site-nav-collapsed .site-nav-menu {
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+}
+
+@media (max-width: 900px) {
+  .site-nav[data-host="docs"] > .site-nav-group:not(.site-nav-collapsed) {
+    display: none;
+  }
+
+  .site-nav[data-host="docs"] > .site-nav-collapsed {
+    display: block;
+  }
+}
+
+/* У IDE слева свои кнопки (Файл, Правка, Внешний вид), а справа — Запустить/Остановить:
+   три дропдауна помещаются от 1200 px, ниже — «Разделы». Замер в спеке навигации. */
+@media (max-width: 1200px) {
+  .site-nav[data-host="ide"] > .site-nav-group:not(.site-nav-collapsed) {
+    display: none;
+  }
+
+  .site-nav[data-host="ide"] > .site-nav-collapsed {
+    display: block;
+  }
+}
+
+@media (max-width: 640px) {
+  .site-topbar {
+    padding: 0 12px;
+    gap: 10px;
+  }
+
+  .idyllium-version {
+    display: none;
+  }
+
+  .site-action {
+    padding: 0 10px;
+  }
+}
+
+/* Телефон: остаются знак, «Разделы», «IDE» и тема — 36 + 28 + 100 + 50 + 36 и зазоры укладываются в 360 px. */
+.site-action-short {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .topbar-badge,
+  .site-topbar .brand-text,
+  .site-action-full {
+    display: none;
+  }
+
+  .site-action-short {
+    display: inline;
+  }
+}

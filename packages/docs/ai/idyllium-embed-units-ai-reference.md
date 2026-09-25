@@ -6,7 +6,7 @@ Paste this file into a chat, describe the exercise you want, and the assistant
 can produce a ready `.idyunit` file or ready HTML — without visiting the unit
 builder at https://aumphaadr.github.io/Idyllium/authors/.
 
-Current target: Idyllium 1.6.2, unit file `format` 1.
+Current target: Idyllium 1.6.3, unit file `format` 1.
 
 Companion files (same folder): `idyllium-ai-reference.md` — the LANGUAGE (you
 need it to write the starter code and the author's solution correctly);

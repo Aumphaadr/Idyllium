@@ -6,18 +6,12 @@
   <title>Idyllium Web IDE</title>
   <link rel="icon" href="assets/favicon-32x32.png" sizes="32x32">
   <link rel="icon" href="assets/idyllium.svg" type="image/svg+xml">
+  <!-- @site-nav-assets -->
   <link rel="stylesheet" href="app.css">
 </head>
 <body class="theme-dark">
   <header class="topbar">
-    <div class="topbar-left">
-      <a class="brand" href="https://github.com/Aumphaadr/Idyllium" target="_blank" rel="noopener" title="Idyllium на GitHub">
-        <img class="brand-mark" src="assets/idyllium.svg" alt="" width="28" height="28">
-        <span class="brand-text">Idyllium</span>
-        <span class="idyllium-version">v</span>
-      </a>
-      <span class="topbar-badge">Web IDE</span>
-    </div>
+    <!-- @site-brand -->
     <div class="actions">
       <div id="file-app-menu-wrapper" class="app-menu-wrapper">
         <button id="file-app-menu-button" type="button" aria-expanded="false">Файл</button>
@@ -101,12 +95,7 @@
           </label>
         </div>
       </div>
-      <a class="doc-link" href="book/" target="_blank" rel="noopener noreferrer">Учебник</a>
-      <a class="doc-link" href="tasks/" target="_blank" rel="noopener noreferrer">Задачник</a>
-      <a class="doc-link" href="reference/" target="_blank" rel="noopener noreferrer">Документация</a>
-      <a class="doc-link" href="authors/" target="_blank" rel="noopener noreferrer" title="Встраиваемые юниты для вашего сайта">Авторам</a>
-      <div class="color-picker-wrapper">
-        <button id="color-picker-button" type="button" aria-expanded="false">Генератор цвета</button>
+      <!-- @site-nav -->
         <div id="color-picker-menu" class="color-picker-menu" hidden>
           <div class="color-picker-grid">
             <div class="color-picker-controls">
@@ -168,7 +157,6 @@
             </div>
           </div>
         </div>
-      </div>
     </div>
     <div class="run-actions">
       <button id="run-button" class="run-button" type="button" title="Запустить: Ctrl+Enter" aria-label="Запустить: Ctrl+Enter">
@@ -215,7 +203,7 @@
             <div id="upload-menu" class="upload-menu" hidden>
               <button id="drop-area" class="drop-area" type="button">
                 <span>Перетащите файлы сюда</span>
-                <small>или нажмите, чтобы выбрать .idyl, .txt, ассеты или ZIP-проект</small>
+                <small>или нажмите, чтобы выбрать .idyl, .txt, ассеты или ZIP-проект; картинку из буфера обмена вставляет Ctrl+V</small>
               </button>
               <div id="upload-conflict" class="upload-conflict" role="alert" hidden>
                 <strong id="upload-conflict-name"></strong>

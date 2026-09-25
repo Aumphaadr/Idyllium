@@ -136,119 +136,6 @@ pre code {
   }
 }
 
-.docs-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  height: var(--topbar-height);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 0 20px;
-  background: rgba(12, 5, 21, 0.92);
-  border-bottom: 1px solid var(--border);
-  backdrop-filter: blur(18px);
-}
-
-body.light-theme .docs-topbar {
-  background: rgba(246, 242, 251, 0.92);
-}
-
-.topbar-left,
-.topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--text-main);
-  text-decoration: none;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-}
-
-.brand-mark {
-  /* Логотип проекта — тот же знак, что во вкладке браузера (раньше здесь был градиентный квадрат с буквой «I»). */
-  width: 28px;
-  height: 28px;
-  display: block;
-  flex: 0 0 auto;
-}
-
-.brand-text {
-  font-size: 17px;
-}
-
-.idyllium-version {
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.topbar-badge {
-  padding: 3px 9px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.topbar-link,
-.icon-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 34px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg-panel-2);
-  color: var(--text-soft);
-  text-decoration: none;
-  cursor: pointer;
-  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
-}
-
-.topbar-link {
-  padding: 0 12px;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-/* Кнопка темы — иконка вместо текста (решение владельца, 2026-08-15):
-   в тёмной теме предлагается солнце, в светлой — луна; подпись — в title. */
-#theme-toggle {
-  padding: 0 9px;
-}
-
-#theme-toggle svg {
-  display: block;
-}
-
-#theme-toggle .icon-moon {
-  display: none;
-}
-
-body.light-theme #theme-toggle .icon-sun {
-  display: none;
-}
-
-body.light-theme #theme-toggle .icon-moon {
-  display: block;
-}
-
-.topbar-link:hover,
-.icon-button:hover {
-  background: var(--bg-panel-3);
-  border-color: var(--accent);
-  color: var(--text-main);
-}
-
 .big-button {
   display: inline-flex;
   align-items: center;
@@ -275,20 +162,6 @@ body.light-theme #theme-toggle .icon-moon {
 .setup-ide-action {
   margin: 24px 0;
   text-align: center;
-}
-
-.menu-toggle {
-  display: none;
-  width: 36px;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.menu-toggle span {
-  width: 16px;
-  height: 2px;
-  border-radius: 999px;
-  background: currentColor;
 }
 
 .docs-shell {
@@ -1501,45 +1374,9 @@ body.light-theme .docs-toc {
 }
 
 @media (max-width: 820px) {
-  .docs-topbar {
-    gap: 8px;
-    padding: 0 10px;
-    overflow: hidden;
-  }
-
-  .topbar-left {
-    flex: 0 0 auto;
-    min-width: 0;
-    gap: 8px;
-  }
-
-  .topbar-actions {
-    min-width: 0;
-    flex: 1 1 auto;
-    justify-content: flex-start;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .topbar-actions::-webkit-scrollbar {
-    display: none;
-  }
-
-  .topbar-actions .topbar-link {
-    flex: 0 0 auto;
-    white-space: nowrap;
-  }
-
-  .idyllium-version {
-    display: none;
-  }
-
+  /* Шапка — общая (assets/site-nav.css); здесь только показать гамбургер боковой колонки. */
   .menu-toggle {
     display: inline-flex;
-  }
-
-  .topbar-badge {
-    display: none;
   }
 
   .docs-shell {
@@ -1589,79 +1426,3 @@ body.light-theme .docs-toc {
   background: rgba(38, 78, 160, 0.9);
   color: #f4f7ff;
 }
-
-/* ═══ ЕДИНАЯ ШАПКА САЙТА (1.6.2) ════════════════════════════════════════════
-   Логотип, слово, версия и бейдж раздела обязаны выглядеть ОДИНАКОВО в Web IDE,
-   учебнике, задачнике, проектах, справочнике, «Авторам» и «О проекте». Раньше
-   эти правила наследовали размер шрифта и высоту строки от страницы (18 px
-   в учебнике, 16 px в IDE) — отсюда плавали интервал между буквами, высота
-   бейджа и оттенки. Здесь всё задано ЯВНО, эталон — учебник. Этот блок
-   повторяется слово в слово в четырёх файлах: docs-book/app.css,
-   docs-reference/app.css, embed/authors/authors.css, web-ide/app.css —
-   правишь в одном, правь во всех (страж: tests/smoke-tooling). */
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: #f2eaf7;
-  text-decoration: none;
-  white-space: nowrap;
-  font-size: 17px;
-  line-height: 28px;
-  font-weight: 800;
-  letter-spacing: 0.36px;
-}
-
-.brand:hover {
-  text-decoration: none;
-}
-
-.brand-mark {
-  width: 28px;
-  height: 28px;
-  display: block;
-  flex: 0 0 auto;
-}
-
-.brand-text {
-  font-size: 17px;
-  line-height: 28px;
-}
-
-.idyllium-version {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #8e819d;
-  font-size: 12px;
-  line-height: 20px;
-  font-weight: 600;
-  letter-spacing: 0.36px;
-}
-
-.topbar-badge {
-  padding: 3px 9px;
-  border: 1px solid #342846;
-  border-radius: 999px;
-  background: transparent;
-  color: #8e819d;
-  font-size: 12px;
-  line-height: 20px;
-  font-weight: 700;
-  letter-spacing: normal;
-  white-space: nowrap;
-}
-
-body.light-theme .brand {
-  color: #211a2e;
-}
-
-body.light-theme .idyllium-version,
-body.light-theme .topbar-badge {
-  color: #6d637b;
-}
-
-body.light-theme .topbar-badge {
-  border-color: #c8bed5;
-}
-/* ═══ конец единой шапки ═══ */
