@@ -1,56 +1,11 @@
 :root {
-  /* Шрифты, палитра и высота шапки — из единого источника токенов (assets/site-tokens.css,
-     packages/design/tokens.js; стилевая база 1.6.4). Имена ниже — исторические имена IDE,
-     оставлены псевдонимами на время переезда: новые правила пишутся сразу на var(--color-…),
-     var(--syntax-…), var(--editor-…). */
-  --ui-font: var(--font-sans);
-  --ui-font-narrow: var(--font-sans);
-  --mono-font: var(--font-mono);
+  /* Цвета, шрифты, подсветка — только токены (assets/site-tokens.css). Здесь — размеры редактора и консоли. */
   --editor-font-size: 16px;
   --editor-line-height: 25px;
   --console-font-size: 13px;
   --console-line-height: 19px;
   --console-control-height: 32px;
-  font-family: var(--ui-font);
-}
-
-:root {
-  --bg: var(--color-bg);
-  --panel: var(--color-panel);
-  --panel-soft: var(--color-panel-soft);
-  --panel-raised: var(--color-panel-raised);
-  --border: var(--color-border);
-  --text: var(--color-text);
-  --muted: var(--color-text-muted);
-  --accent: var(--color-accent);
-  --accent-strong: var(--color-accent-strong);
-  --accent-soft: var(--color-accent-soft);
-  --run-bg: var(--color-run);
-  --run-bg-hover: var(--color-run-hover);
-  --success: var(--color-success);
-  --danger: var(--color-danger);
-  --warning: var(--color-warning);
-  --selection: var(--color-selection);
-  --output-bg: var(--color-bg);
-  --output-text: var(--color-text);
-  --preview-bg: var(--color-bg);
-  --keyword: var(--syntax-keyword);
-  --type: var(--syntax-type);
-  --class-name: var(--syntax-class);
-  --string: var(--syntax-string);
-  --number: var(--syntax-number);
-  --comment: var(--syntax-comment);
-  --function: var(--syntax-function);
-  --property: var(--syntax-object);
-  --brackets: var(--syntax-brackets);
-}
-
-button:active {
-  transform: translateY(1px);
-}
-
-button:disabled:active {
-  transform: none;
+  font-family: var(--font-sans);
 }
 
 .upload-wrapper {
@@ -93,12 +48,12 @@ button:disabled:active {
   min-width: 0;
   margin: 0 4px 7px;
   padding: 4px 8px 9px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .app-menu-current-project span,
 .app-menu-panel-label {
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
@@ -106,7 +61,7 @@ button:disabled:active {
 
 .app-menu-current-project strong {
   overflow: hidden;
-  color: var(--text);
+  color: var(--color-text);
   font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -141,23 +96,23 @@ button:disabled:active {
 .app-menu-form input {
   width: 100%;
   height: 34px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   outline: 0;
-  background: var(--panel-soft);
-  color: var(--text);
-  font: 13px var(--ui-font);
+  background: var(--color-panel-soft);
+  color: var(--color-text);
+  font: 13px var(--font-sans);
   padding: 0 9px;
 }
 
 .app-menu-form input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 18%, transparent);
 }
 
 .app-menu-form input.invalid {
-  border-color: var(--danger);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 16%, transparent);
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-danger) 16%, transparent);
 }
 
 .app-menu-form-actions {
@@ -169,7 +124,7 @@ button:disabled:active {
 .app-menu-error {
   min-height: 16px;
   margin: 0;
-  color: var(--danger);
+  color: var(--color-danger);
   font-size: 12px;
 }
 
@@ -198,14 +153,14 @@ button:disabled:active {
 }
 
 .project-menu-list button small {
-  color: var(--muted);
-  font: 11px var(--ui-font);
+  color: var(--color-text-muted);
+  font: 11px var(--font-sans);
 }
 
 .project-menu-empty,
 .project-delete-copy {
   margin: 2px 4px 6px;
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 13px;
   line-height: 1.4;
 }
@@ -230,7 +185,7 @@ button:disabled:active {
   display: grid;
   gap: 8px;
   padding: 6px 4px 4px;
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
@@ -241,7 +196,7 @@ button:disabled:active {
   align-items: center;
   gap: 8px;
   padding: 6px 4px 4px;
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
@@ -250,13 +205,13 @@ button:disabled:active {
 
 .menu-check-row input {
   margin: 0;
-  accent-color: var(--accent);
+  accent-color: var(--color-accent);
   cursor: pointer;
 }
 
 /* Внутри капсулы кнопка не «подпрыгивает»: сдвиг рвал заливку от рамки. */
 .font-size-control button:last-child {
-  border-left: 1px solid var(--border);
+  border-left: 1px solid var(--color-border);
 }
 
 .font-size-control input::-webkit-outer-spin-button,
@@ -274,9 +229,9 @@ button:disabled:active {
   gap: 6px;
   align-items: center;
   justify-content: center;
-  border: 2px dashed color-mix(in srgb, var(--accent) 54%, var(--border));
+  border: 2px dashed color-mix(in srgb, var(--color-accent) 54%, var(--color-border));
   border-radius: 8px;
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
   padding: 14px;
   text-align: center;
   white-space: normal;
@@ -287,15 +242,15 @@ button:disabled:active {
 }
 
 .drop-area small {
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 12px;
   line-height: 1.35;
   white-space: normal;
 }
 
 .drop-area.drag-over {
-  border-color: var(--accent-strong);
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: var(--color-accent-strong);
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
 }
 
 .upload-conflict {
@@ -310,11 +265,11 @@ button:disabled:active {
 
 .upload-conflict strong {
   overflow-wrap: anywhere;
-  color: var(--text);
+  color: var(--color-text);
 }
 
 .upload-conflict span {
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 13px;
   line-height: 1.4;
 }
@@ -331,7 +286,7 @@ button:disabled:active {
   display: grid;
   grid-template-columns: var(--files-width, 220px) 6px minmax(280px, 1fr) 6px var(--runtime-width, 42vw);
   gap: 0;
-  background: var(--border);
+  background: var(--color-border);
 }
 
 .files,
@@ -341,7 +296,7 @@ button:disabled:active {
 .preview-pane {
   min-width: 0;
   min-height: 0;
-  background: var(--panel);
+  background: var(--color-panel);
 }
 
 .files {
@@ -370,9 +325,9 @@ button:disabled:active {
   display: inline-flex;
   align-items: center;
   padding: 2px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
-  background: color-mix(in srgb, var(--panel-raised) 78%, transparent);
+  background: color-mix(in srgb, var(--color-panel-raised) 78%, transparent);
 }
 
 .editor-view-toggle[hidden] {
@@ -385,20 +340,20 @@ button:disabled:active {
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: var(--muted);
-  font: 700 11px var(--ui-font);
+  color: var(--color-text-muted);
+  font: 700 11px var(--font-sans);
   text-transform: none;
 }
 
 .editor-view-toggle button:hover {
-  color: var(--text);
-  background: color-mix(in srgb, var(--panel-raised) 88%, transparent);
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-panel-raised) 88%, transparent);
 }
 
 .editor-view-toggle button.active {
-  color: var(--text);
-  background: var(--panel-raised);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 38%, transparent);
+  color: var(--color-text);
+  background: var(--color-panel-raised);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 38%, transparent);
 }
 
 #editor-title {
@@ -431,8 +386,8 @@ button:disabled:active {
 }
 
 .file-list.drag-over {
-  outline-color: color-mix(in srgb, var(--accent) 72%, var(--border));
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  outline-color: color-mix(in srgb, var(--color-accent) 72%, var(--color-border));
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
 }
 
 .file-row {
@@ -445,23 +400,23 @@ button:disabled:active {
   border: 1px solid transparent;
   border-radius: 6px;
   background: transparent;
-  color: var(--text);
-  font: 13px var(--mono-font);
+  color: var(--color-text);
+  font: 13px var(--font-mono);
 }
 
 .file-row:hover {
-  background: var(--panel-soft);
+  background: var(--color-panel-soft);
 }
 
 .file-row.active {
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
-  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  border-color: color-mix(in srgb, var(--color-accent) 42%, var(--color-border));
 }
 
 /* Папка-цель при внутреннем переносе строки дерева. */
 .file-row.drag-target {
-  background: color-mix(in srgb, var(--accent) 22%, transparent);
-  border-color: color-mix(in srgb, var(--accent) 62%, var(--border));
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+  border-color: color-mix(in srgb, var(--color-accent) 62%, var(--color-border));
 }
 
 .file-main-button,
@@ -505,11 +460,11 @@ button:disabled:active {
   height: 16px;
   flex: 0 0 auto;
   fill: currentColor;
-  color: var(--muted);
+  color: var(--color-text-muted);
 }
 
 .file-row-folder > .file-main-button svg {
-  color: #e2b752;
+  color: var(--color-warning);
 }
 
 .file-name {
@@ -522,25 +477,25 @@ button:disabled:active {
   min-width: 0;
   width: 100%;
   height: 24px;
-  border: 1px solid color-mix(in srgb, var(--accent) 54%, var(--border));
+  border: 1px solid color-mix(in srgb, var(--color-accent) 54%, var(--color-border));
   border-radius: 5px;
   background: var(--editor-bg);
-  color: var(--text);
-  font: 13px var(--mono-font);
+  color: var(--color-text);
+  font: 13px var(--font-mono);
   outline: 0;
   padding: 0 6px;
 }
 
 .file-name-input.invalid {
-  border-color: var(--danger);
-  background: color-mix(in srgb, var(--danger) 14%, var(--editor-bg));
+  border-color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 14%, var(--editor-bg));
 }
 
 .file-menu-button {
   width: 26px;
   padding: 0;
   opacity: 0;
-  color: var(--muted);
+  color: var(--color-text-muted);
 }
 
 .file-row:hover .file-menu-button,
@@ -585,19 +540,19 @@ button:disabled:active {
 
 .file-props-table td:first-child {
   padding-right: 14px;
-  color: var(--muted);
+  color: var(--color-text-muted);
   white-space: nowrap;
 }
 
 .file-props-table td:last-child {
-  color: var(--text);
+  color: var(--color-text);
   word-break: break-all;
 }
 
 .file-props-note {
   margin: 10px 0 0;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--color-text-muted);
 }
 
 .file-props-actions {
@@ -608,7 +563,7 @@ button:disabled:active {
 
 .file-delete-prompt {
   padding: 7px 9px 4px;
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
@@ -644,13 +599,6 @@ button:disabled:active {
   min-height: 0;
 }
 
-.monaco-editor-host .view-line,
-.monaco-editor-host .inputarea {
-  letter-spacing: 0 !important;
-  font-variant-ligatures: none !important;
-  font-feature-settings: "liga" 0, "calt" 0 !important;
-}
-
 .csv-viewer,
 .json-viewer,
 .markdown-viewer {
@@ -678,15 +626,15 @@ button:disabled:active {
   justify-content: space-between;
   gap: 14px;
   padding: 7px 12px;
-  border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--panel-raised) 72%, var(--editor-bg));
+  border-bottom: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-panel-raised) 72%, var(--editor-bg));
 }
 
 .csv-summary {
   min-width: 0;
   overflow: hidden;
-  color: var(--muted);
-  font: 12px var(--mono-font);
+  color: var(--color-text-muted);
+  font: 12px var(--font-mono);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -697,7 +645,7 @@ button:disabled:active {
   gap: 7px;
   flex: 0 0 auto;
   color: var(--editor-text);
-  font: 12px var(--ui-font);
+  font: 12px var(--font-sans);
   white-space: nowrap;
 }
 
@@ -705,24 +653,24 @@ button:disabled:active {
   width: 15px;
   height: 15px;
   margin: 0;
-  accent-color: var(--accent);
+  accent-color: var(--color-accent);
 }
 
 .csv-messages {
   display: grid;
   gap: 4px;
   padding: 8px 12px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .csv-message {
   margin: 0;
-  color: var(--warning, #f9c74f);
-  font: 12px/1.45 var(--ui-font);
+  color: var(--color-warning);
+  font: 12px/1.45 var(--font-sans);
 }
 
 .csv-message-error {
-  color: var(--danger, #f38ba8);
+  color: var(--color-danger);
 }
 
 .csv-table-scroll {
@@ -737,7 +685,7 @@ button:disabled:active {
   border-spacing: 0;
   border-collapse: separate;
   color: var(--editor-text);
-  font: 13px/1.4 var(--mono-font);
+  font: 13px/1.4 var(--font-mono);
 }
 
 .csv-table th,
@@ -745,8 +693,8 @@ button:disabled:active {
   min-width: 90px;
   max-width: 340px;
   padding: 7px 10px;
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
   background: var(--editor-bg);
   text-align: left;
   vertical-align: top;
@@ -758,8 +706,8 @@ button:disabled:active {
   position: sticky;
   top: 0;
   z-index: 2;
-  color: var(--text);
-  background: var(--panel-raised);
+  color: var(--color-text);
+  background: var(--color-panel-raised);
   font-weight: 700;
 }
 
@@ -770,8 +718,8 @@ button:disabled:active {
   min-width: 48px;
   width: 48px;
   max-width: 48px;
-  color: var(--muted);
-  background: color-mix(in srgb, var(--panel-raised) 76%, var(--editor-bg));
+  color: var(--color-text-muted);
+  background: color-mix(in srgb, var(--color-panel-raised) 76%, var(--editor-bg));
   font-weight: 400;
   text-align: right;
   user-select: none;
@@ -779,17 +727,17 @@ button:disabled:active {
 
 .csv-table thead .csv-row-number {
   z-index: 3;
-  background: var(--panel-raised);
+  background: var(--color-panel-raised);
   font-weight: 700;
 }
 
 .csv-table tbody tr:hover td,
 .csv-table tbody tr:hover th {
-  background: color-mix(in srgb, var(--accent-soft) 18%, var(--editor-bg));
+  background: color-mix(in srgb, var(--color-accent-soft) 18%, var(--editor-bg));
 }
 
 .csv-table tbody tr:hover .csv-row-number {
-  background: color-mix(in srgb, var(--accent-soft) 24%, var(--panel-raised));
+  background: color-mix(in srgb, var(--color-accent-soft) 24%, var(--color-panel-raised));
 }
 
 .csv-empty {
@@ -798,8 +746,8 @@ button:disabled:active {
   place-items: center;
   min-height: 0;
   padding: 24px;
-  color: var(--muted);
-  font: 600 14px var(--ui-font);
+  color: var(--color-text-muted);
+  font: 600 14px var(--font-sans);
   text-align: center;
 }
 
@@ -810,15 +758,15 @@ button:disabled:active {
   justify-content: space-between;
   gap: 14px;
   padding: 7px 12px;
-  border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--panel-raised) 72%, var(--editor-bg));
+  border-bottom: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-panel-raised) 72%, var(--editor-bg));
 }
 
 .json-summary {
   min-width: 0;
   overflow: hidden;
-  color: var(--muted);
-  font: 12px var(--mono-font);
+  color: var(--color-text-muted);
+  font: 12px var(--font-mono);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -833,16 +781,16 @@ button:disabled:active {
 .json-toolbar-button {
   height: 25px;
   padding: 0 8px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 5px;
-  background: var(--panel-raised);
-  color: var(--text);
-  font: 600 11px var(--ui-font);
+  background: var(--color-panel-raised);
+  color: var(--color-text);
+  font: 600 11px var(--font-sans);
 }
 
 .json-toolbar-button:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
-  background: color-mix(in srgb, var(--accent) 12%, var(--panel-raised));
+  border-color: color-mix(in srgb, var(--color-accent) 60%, var(--color-border));
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-panel-raised));
 }
 
 .json-toolbar-button:disabled {
@@ -852,9 +800,9 @@ button:disabled:active {
 .json-render-warning {
   margin: 0;
   padding: 7px 12px;
-  border-bottom: 1px solid var(--border);
-  color: var(--function);
-  font: 12px/1.45 var(--ui-font);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--syntax-function);
+  font: 12px/1.45 var(--font-sans);
 }
 
 .json-tree-scroll {
@@ -868,7 +816,7 @@ button:disabled:active {
 .json-tree {
   min-width: 100%;
   color: var(--editor-text);
-  font: 13px/1.45 var(--mono-font);
+  font: 13px/1.45 var(--font-mono);
 }
 
 .json-node {
@@ -895,22 +843,22 @@ summary.json-node-line::marker {
 
 .json-leaf:hover,
 summary.json-node-line:hover {
-  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 9%, transparent);
 }
 
 .json-children {
   margin-left: 8px;
   padding-left: 15px;
-  border-left: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  border-left: 1px solid color-mix(in srgb, var(--color-border) 76%, transparent);
 }
 
 .json-root-label {
-  color: var(--class-name);
+  color: var(--syntax-class);
   font-weight: 700;
 }
 
 .json-key {
-  color: var(--property);
+  color: var(--syntax-object);
 }
 
 .json-index {
@@ -918,24 +866,24 @@ summary.json-node-line:hover {
 }
 
 .json-punctuation {
-  color: var(--brackets);
+  color: var(--syntax-brackets);
 }
 
 .json-meta {
   color: var(--editor-muted);
-  font: 11px var(--ui-font);
+  font: 11px var(--font-sans);
 }
 
 .json-value-string {
-  color: var(--string);
+  color: var(--syntax-string);
 }
 
 .json-value-number {
-  color: var(--number);
+  color: var(--syntax-number);
 }
 
 .json-value-boolean {
-  color: var(--keyword);
+  color: var(--syntax-keyword);
 }
 
 .json-value-null {
@@ -944,8 +892,8 @@ summary.json-node-line:hover {
 }
 
 .json-limit-marker {
-  color: var(--function);
-  font-family: var(--ui-font);
+  color: var(--syntax-function);
+  font-family: var(--font-sans);
 }
 
 .json-empty {
@@ -954,8 +902,8 @@ summary.json-node-line:hover {
   place-items: center;
   min-height: 0;
   padding: 24px;
-  color: var(--muted);
-  font: 600 14px var(--ui-font);
+  color: var(--color-text-muted);
+  font: 600 14px var(--font-sans);
   text-align: center;
 }
 
@@ -964,17 +912,17 @@ summary.json-node-line:hover {
   width: min(680px, calc(100% - 32px));
   margin: 16px;
   padding: 14px 16px;
-  border: 1px solid color-mix(in srgb, var(--danger) 58%, var(--border));
+  border: 1px solid color-mix(in srgb, var(--color-danger) 58%, var(--color-border));
   border-radius: 7px;
-  background: color-mix(in srgb, var(--danger) 8%, var(--editor-bg));
+  background: color-mix(in srgb, var(--color-danger) 8%, var(--editor-bg));
   color: var(--editor-text);
-  font: 13px/1.5 var(--ui-font);
+  font: 13px/1.5 var(--font-sans);
 }
 
 .json-error strong {
   display: block;
   margin-bottom: 6px;
-  color: var(--danger);
+  color: var(--color-danger);
   font-size: 14px;
 }
 
@@ -987,16 +935,16 @@ summary.json-node-line:hover {
   margin: 10px 0;
   overflow: auto;
   padding: 9px 10px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 5px;
-  background: var(--output-bg);
+  background: var(--color-bg);
   color: var(--editor-text);
-  font: 12px/1.45 var(--mono-font);
+  font: 12px/1.45 var(--font-mono);
   white-space: pre;
 }
 
 .json-error-hint {
-  color: var(--muted);
+  color: var(--color-text-muted);
 }
 
 .markdown-viewer {
@@ -1009,7 +957,7 @@ summary.json-node-line:hover {
   margin: 0 auto;
   padding: 28px 36px 64px;
   color: var(--editor-text);
-  font: 16px/1.65 var(--ui-font);
+  font: 16px/1.65 var(--font-sans);
   overflow-wrap: anywhere;
 }
 
@@ -1028,8 +976,8 @@ summary.json-node-line:hover {
 .markdown-document h5,
 .markdown-document h6 {
   margin: 1.55em 0 0.62em;
-  color: var(--text);
-  font-family: var(--ui-font);
+  color: var(--color-text);
+  font-family: var(--font-sans);
   font-weight: 700;
   line-height: 1.25;
   letter-spacing: 0;
@@ -1037,13 +985,13 @@ summary.json-node-line:hover {
 
 .markdown-document h1 {
   padding-bottom: 10px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--color-border);
   font-size: 28px;
 }
 
 .markdown-document h2 {
   padding-bottom: 7px;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
   font-size: 23px;
 }
 
@@ -1076,20 +1024,20 @@ summary.json-node-line:hover {
 }
 
 .markdown-document a {
-  color: var(--accent);
+  color: var(--color-accent);
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
 
 .markdown-document a:hover {
-  color: color-mix(in srgb, var(--accent) 76%, var(--text));
+  color: color-mix(in srgb, var(--color-accent) 76%, var(--color-text));
 }
 
 .markdown-document blockquote {
   padding: 8px 14px;
-  border-left: 3px solid var(--accent);
-  color: var(--muted);
-  background: color-mix(in srgb, var(--panel-raised) 62%, transparent);
+  border-left: 3px solid var(--color-accent);
+  color: var(--color-text-muted);
+  background: color-mix(in srgb, var(--color-panel-raised) 62%, transparent);
 }
 
 .markdown-document blockquote > :last-child {
@@ -1098,11 +1046,11 @@ summary.json-node-line:hover {
 
 .markdown-document code,
 .markdown-document kbd {
-  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 78%, transparent);
   border-radius: 4px;
-  background: color-mix(in srgb, var(--output-bg) 78%, var(--editor-bg));
-  color: var(--string);
-  font: 0.9em/1.4 var(--mono-font);
+  background: color-mix(in srgb, var(--color-bg) 78%, var(--editor-bg));
+  color: var(--syntax-string);
+  font: 0.9em/1.4 var(--font-mono);
 }
 
 .markdown-document code {
@@ -1112,16 +1060,16 @@ summary.json-node-line:hover {
 .markdown-document kbd {
   padding: 2px 6px;
   color: var(--editor-text);
-  box-shadow: 0 1px 0 var(--border);
+  box-shadow: 0 1px 0 var(--color-border);
 }
 
 .markdown-document pre {
   max-width: 100%;
   overflow: auto;
   padding: 13px 15px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
-  background: var(--output-bg);
+  background: var(--color-bg);
 }
 
 .markdown-document pre code {
@@ -1144,21 +1092,21 @@ summary.json-node-line:hover {
 .markdown-document th,
 .markdown-document td {
   padding: 7px 10px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   text-align: left;
   vertical-align: top;
 }
 
 .markdown-document th {
-  background: var(--panel-raised);
-  color: var(--text);
+  background: var(--color-panel-raised);
+  color: var(--color-text);
 }
 
 .markdown-document hr {
   height: 1px;
   margin: 28px 0;
   border: 0;
-  background: var(--border);
+  background: var(--color-border);
 }
 
 .markdown-document img {
@@ -1169,7 +1117,7 @@ summary.json-node-line:hover {
 }
 
 .markdown-document input[type="checkbox"] {
-  accent-color: var(--accent);
+  accent-color: var(--color-accent);
 }
 
 .markdown-empty {
@@ -1178,13 +1126,13 @@ summary.json-node-line:hover {
   place-items: center;
   min-height: 0;
   padding: 24px;
-  color: var(--muted);
-  font: 600 14px var(--ui-font);
+  color: var(--color-text-muted);
+  font: 600 14px var(--font-sans);
   text-align: center;
 }
 
 .markdown-error {
-  color: var(--danger);
+  color: var(--color-danger);
 }
 
 @media (max-width: 720px) {
@@ -1215,14 +1163,14 @@ summary.json-node-line:hover {
   min-height: 220px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   background:
     linear-gradient(45deg, color-mix(in srgb, var(--editor-muted) 18%, transparent) 25%, transparent 25%),
     linear-gradient(-45deg, color-mix(in srgb, var(--editor-muted) 18%, transparent) 25%, transparent 25%),
     linear-gradient(45deg, transparent 75%, color-mix(in srgb, var(--editor-muted) 18%, transparent) 75%),
     linear-gradient(-45deg, transparent 75%, color-mix(in srgb, var(--editor-muted) 18%, transparent) 75%);
-  background-color: color-mix(in srgb, var(--editor-bg) 82%, var(--panel-raised));
+  background-color: color-mix(in srgb, var(--editor-bg) 82%, var(--color-panel-raised));
   background-position: 0 0, 0 10px, 10px -10px, -10px 0;
   background-size: 20px 20px;
   overflow: hidden;
@@ -1241,7 +1189,7 @@ summary.json-node-line:hover {
   grid-template-rows: 40px minmax(0, 1fr);
   place-items: stretch;
   min-height: 260px;
-  background: color-mix(in srgb, var(--editor-bg) 88%, var(--panel-raised));
+  background: color-mix(in srgb, var(--editor-bg) 88%, var(--color-panel-raised));
 }
 
 .asset-image-toolbar {
@@ -1251,8 +1199,8 @@ summary.json-node-line:hover {
   justify-content: center;
   gap: 4px;
   padding: 6px 10px;
-  border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--panel-raised) 88%, var(--editor-bg));
+  border-bottom: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-panel-raised) 88%, var(--editor-bg));
 }
 
 .asset-image-button {
@@ -1269,13 +1217,13 @@ summary.json-node-line:hover {
   height: 26px;
   padding: 0;
   border-radius: 6px;
-  font: 700 11px var(--mono-font);
+  font: 700 11px var(--font-mono);
 }
 
 .asset-image-scale {
   width: 54px;
   color: var(--editor-text);
-  font: 12px var(--mono-font);
+  font: 12px var(--font-mono);
   text-align: center;
 }
 
@@ -1291,13 +1239,13 @@ summary.json-node-line:hover {
     linear-gradient(-45deg, color-mix(in srgb, var(--editor-muted) 18%, transparent) 25%, transparent 25%),
     linear-gradient(45deg, transparent 75%, color-mix(in srgb, var(--editor-muted) 18%, transparent) 75%),
     linear-gradient(-45deg, transparent 75%, color-mix(in srgb, var(--editor-muted) 18%, transparent) 75%);
-  background-color: color-mix(in srgb, var(--editor-bg) 82%, var(--panel-raised));
+  background-color: color-mix(in srgb, var(--editor-bg) 82%, var(--color-panel-raised));
   background-position: 0 0, 0 10px, 10px -10px, -10px 0;
   background-size: 20px 20px;
 }
 
 .asset-image-viewport:focus-visible {
-  box-shadow: inset 0 0 0 1px var(--accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
 }
 
 .asset-image-viewport.can-pan {
@@ -1320,7 +1268,7 @@ summary.json-node-line:hover {
 
 .asset-preview-audio {
   min-height: 160px;
-  background: color-mix(in srgb, var(--editor-bg) 82%, var(--panel-raised));
+  background: color-mix(in srgb, var(--editor-bg) 82%, var(--color-panel-raised));
 }
 
 .asset-preview-font {
@@ -1328,7 +1276,7 @@ summary.json-node-line:hover {
   min-height: 320px;
   overflow: auto;
   scrollbar-gutter: stable;
-  background: color-mix(in srgb, var(--editor-bg) 88%, var(--panel-raised));
+  background: color-mix(in srgb, var(--editor-bg) 88%, var(--color-panel-raised));
 }
 
 .asset-preview-sqlite {
@@ -1353,8 +1301,8 @@ summary.json-node-line:hover {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--border);
-  background: color-mix(in srgb, var(--panel-raised) 68%, var(--editor-bg));
+  border-right: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-panel-raised) 68%, var(--editor-bg));
 }
 
 .sqlite-sidebar-header {
@@ -1364,9 +1312,9 @@ summary.json-node-line:hover {
   justify-content: space-between;
   gap: 8px;
   padding: 0 10px;
-  border-bottom: 1px solid var(--border);
-  color: var(--muted);
-  font: 600 11px var(--ui-font);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font: 600 11px var(--font-sans);
   text-transform: uppercase;
 }
 
@@ -1374,9 +1322,9 @@ summary.json-node-line:hover {
   min-width: 24px;
   padding: 2px 5px;
   border-radius: 5px;
-  background: color-mix(in srgb, var(--accent) 13%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 13%, transparent);
   color: var(--editor-text);
-  font: 12px var(--mono-font);
+  font: 12px var(--font-mono);
   text-align: center;
 }
 
@@ -1400,17 +1348,17 @@ summary.json-node-line:hover {
   border-radius: 5px;
   background: transparent;
   color: var(--editor-text);
-  font: 12px var(--mono-font);
+  font: 12px var(--font-mono);
   text-align: left;
 }
 
 .sqlite-object-button:hover {
-  background: var(--panel-soft);
+  background: var(--color-panel-soft);
 }
 
 .sqlite-object-button.active {
-  border-color: color-mix(in srgb, var(--accent) 34%, var(--border));
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--color-accent) 34%, var(--color-border));
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
 }
 
 .sqlite-object-kind {
@@ -1419,17 +1367,17 @@ summary.json-node-line:hover {
   flex: 0 0 20px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 4px;
-  font: 700 10px var(--ui-font);
+  font: 700 10px var(--font-sans);
 }
 
 .sqlite-object-kind-table {
-  color: var(--type);
+  color: var(--syntax-type);
 }
 
 .sqlite-object-kind-view {
-  color: var(--function);
+  color: var(--syntax-function);
 }
 
 .sqlite-object-name {
@@ -1442,8 +1390,8 @@ summary.json-node-line:hover {
 .sqlite-sidebar-empty,
 .sqlite-sidebar-note {
   margin: 0;
-  color: var(--muted);
-  font: 11px/1.45 var(--ui-font);
+  color: var(--color-text-muted);
+  font: 11px/1.45 var(--font-sans);
 }
 
 .sqlite-sidebar-empty {
@@ -1452,7 +1400,7 @@ summary.json-node-line:hover {
 
 .sqlite-sidebar-note {
   padding: 7px 9px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--color-border);
 }
 
 .sqlite-object-view {
@@ -1470,8 +1418,8 @@ summary.json-node-line:hover {
   justify-content: space-between;
   gap: 12px;
   padding: 0 10px 0 12px;
-  border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--panel-raised) 72%, var(--editor-bg));
+  border-bottom: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-panel-raised) 72%, var(--editor-bg));
 }
 
 .sqlite-object-identity {
@@ -1485,44 +1433,27 @@ summary.json-node-line:hover {
   min-width: 0;
   overflow: hidden;
   color: var(--editor-text);
-  font: 700 13px var(--mono-font);
+  font: 700 13px var(--font-mono);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .sqlite-object-identity span {
   flex: 0 0 auto;
-  color: var(--muted);
-  font: 11px var(--ui-font);
+  color: var(--color-text-muted);
+  font: 11px var(--font-sans);
 }
 
 .sqlite-object-tabs {
   flex: 0 0 auto;
   display: inline-flex;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   overflow: hidden;
 }
 
-.sqlite-object-tabs button {
-  height: 25px;
-  padding: 0 9px;
-  border: 0;
-  border-right: 1px solid var(--border);
-  border-radius: 0;
-  background: var(--editor-bg);
-  color: var(--muted);
-  font: 600 11px var(--ui-font);
-}
-
 .sqlite-object-tabs button:last-child {
   border-right: 0;
-}
-
-.sqlite-object-tabs button:hover,
-.sqlite-object-tabs button.active {
-  background: color-mix(in srgb, var(--accent) 14%, var(--panel-raised));
-  color: var(--text);
 }
 
 .sqlite-object-body {
@@ -1537,8 +1468,8 @@ summary.json-node-line:hover {
 .sqlite-data-summary,
 .sqlite-schema-summary {
   margin: 0;
-  color: var(--muted);
-  font: 12px var(--mono-font);
+  color: var(--color-text-muted);
+  font: 12px var(--font-mono);
 }
 
 .sqlite-data-summary {
@@ -1546,15 +1477,15 @@ summary.json-node-line:hover {
   display: flex;
   align-items: center;
   padding: 0 10px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .sqlite-preview-warning {
   margin: 0;
   padding: 6px 10px;
-  border-bottom: 1px solid var(--border);
-  color: var(--function);
-  font: 11px/1.45 var(--ui-font);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--syntax-function);
+  font: 11px/1.45 var(--font-sans);
 }
 
 .sqlite-table-scroll {
@@ -1569,7 +1500,7 @@ summary.json-node-line:hover {
   border-spacing: 0;
   border-collapse: separate;
   color: var(--editor-text);
-  font: 13px/1.4 var(--mono-font);
+  font: 13px/1.4 var(--font-mono);
 }
 
 .sqlite-table th,
@@ -1577,8 +1508,8 @@ summary.json-node-line:hover {
   min-width: 90px;
   max-width: 360px;
   padding: 7px 10px;
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
   background: var(--editor-bg);
   text-align: left;
   vertical-align: top;
@@ -1590,8 +1521,8 @@ summary.json-node-line:hover {
   position: sticky;
   top: 0;
   z-index: 2;
-  background: var(--panel-raised);
-  color: var(--text);
+  background: var(--color-panel-raised);
+  color: var(--color-text);
   font-weight: 700;
 }
 
@@ -1602,8 +1533,8 @@ summary.json-node-line:hover {
   min-width: 48px;
   width: 48px;
   max-width: 48px;
-  background: color-mix(in srgb, var(--panel-raised) 76%, var(--editor-bg));
-  color: var(--muted);
+  background: color-mix(in srgb, var(--color-panel-raised) 76%, var(--editor-bg));
+  color: var(--color-text-muted);
   font-weight: 400;
   text-align: right;
   user-select: none;
@@ -1611,36 +1542,36 @@ summary.json-node-line:hover {
 
 .sqlite-table thead .sqlite-row-number {
   z-index: 3;
-  background: var(--panel-raised);
+  background: var(--color-panel-raised);
   font-weight: 700;
 }
 
 .sqlite-table tbody tr:hover td,
 .sqlite-table tbody tr:hover th {
-  background: color-mix(in srgb, var(--accent-soft) 18%, var(--editor-bg));
+  background: color-mix(in srgb, var(--color-accent-soft) 18%, var(--editor-bg));
 }
 
 .sqlite-value-null {
-  color: var(--keyword);
+  color: var(--syntax-keyword);
   font-style: italic;
 }
 
 .sqlite-value-number {
-  color: var(--number);
+  color: var(--syntax-number);
 }
 
 .sqlite-value-blob {
-  color: var(--function);
+  color: var(--syntax-function);
 }
 
 .sqlite-muted-value {
-  color: var(--muted);
+  color: var(--color-text-muted);
 }
 
 .sqlite-empty-table {
   margin: 16px;
-  color: var(--muted);
-  font: 12px var(--ui-font);
+  color: var(--color-text-muted);
+  font: 12px var(--font-sans);
 }
 
 .sqlite-schema-scroll {
@@ -1657,19 +1588,19 @@ summary.json-node-line:hover {
 
 .sqlite-schema-label {
   margin-bottom: 5px;
-  color: var(--muted);
-  font: 600 11px var(--ui-font);
+  color: var(--color-text-muted);
+  font: 600 11px var(--font-sans);
   text-transform: uppercase;
 }
 
 .sqlite-schema-sql {
   margin: 0 0 14px;
   padding: 9px 10px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
-  background: color-mix(in srgb, var(--panel-raised) 64%, var(--editor-bg));
+  background: color-mix(in srgb, var(--color-panel-raised) 64%, var(--editor-bg));
   color: var(--editor-text);
-  font: 12px/1.5 var(--mono-font);
+  font: 12px/1.5 var(--font-mono);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -1691,8 +1622,8 @@ summary.json-node-line:hover {
   display: grid;
   place-items: center;
   padding: 24px;
-  color: var(--muted);
-  font: 600 13px var(--ui-font);
+  color: var(--color-text-muted);
+  font: 600 13px var(--font-sans);
   text-align: center;
 }
 
@@ -1700,15 +1631,15 @@ summary.json-node-line:hover {
   max-width: 520px;
   margin: auto;
   padding: 14px 16px;
-  border: 1px solid color-mix(in srgb, var(--danger) 58%, var(--border));
+  border: 1px solid color-mix(in srgb, var(--color-danger) 58%, var(--color-border));
   border-radius: 7px;
-  background: color-mix(in srgb, var(--danger) 9%, var(--editor-bg));
+  background: color-mix(in srgb, var(--color-danger) 9%, var(--editor-bg));
   color: var(--editor-text);
-  font: 13px/1.5 var(--ui-font);
+  font: 13px/1.5 var(--font-sans);
 }
 
 .sqlite-viewer-error strong {
-  color: var(--danger);
+  color: var(--color-danger);
 }
 
 .sqlite-viewer-error p {
@@ -1731,22 +1662,22 @@ summary.json-node-line:hover {
   min-height: 32px;
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .asset-font-caps-label {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: var(--muted);
-  font: 600 12px var(--ui-font);
+  color: var(--color-text-muted);
+  font: 600 12px var(--font-sans);
   cursor: pointer;
   user-select: none;
 }
 
 .asset-font-caps-input {
   margin: 0;
-  accent-color: var(--accent);
+  accent-color: var(--color-accent);
   cursor: pointer;
 }
 
@@ -1756,39 +1687,39 @@ summary.json-node-line:hover {
   align-items: center;
   gap: 10px;
   width: min(220px, 100%);
-  color: var(--muted);
-  font: 600 12px var(--ui-font);
+  color: var(--color-text-muted);
+  font: 600 12px var(--font-sans);
 }
 
 /* Поле colors-фабрики: цвет образцов инспектора шрифтов. */
 .asset-font-color-input {
   width: min(230px, 100%);
   height: 28px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
-  background: var(--panel-soft);
+  background: var(--color-panel-soft);
   color: var(--editor-text);
-  font: 12px var(--mono-font);
+  font: 12px var(--font-mono);
   padding: 0 9px;
   outline: 0;
 }
 
 .asset-font-color-input:focus {
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-border));
 }
 
 .asset-font-color-input.invalid {
-  border-color: color-mix(in srgb, var(--danger) 65%, var(--border));
+  border-color: color-mix(in srgb, var(--color-danger) 65%, var(--color-border));
 }
 
 .asset-font-size-range {
   width: 100%;
-  accent-color: var(--accent);
+  accent-color: var(--color-accent);
 }
 
 .asset-font-size-value {
   color: var(--editor-text);
-  font: 13px var(--mono-font);
+  font: 13px var(--font-mono);
   font-variant-numeric: tabular-nums;
   text-align: right;
   white-space: nowrap;
@@ -1805,8 +1736,8 @@ summary.json-node-line:hover {
 
 .asset-font-sample-label {
   margin-bottom: 6px;
-  color: var(--muted);
-  font: 600 11px var(--ui-font);
+  color: var(--color-text-muted);
+  font: 600 11px var(--font-sans);
   text-transform: uppercase;
 }
 
@@ -1828,11 +1759,11 @@ summary.json-node-line:hover {
   width: 28px;
   height: 28px;
   padding: 0;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   background: transparent;
-  color: var(--muted);
-  font: 700 14px var(--ui-font);
+  color: var(--color-text-muted);
+  font: 700 14px var(--font-sans);
   line-height: 1;
   cursor: pointer;
   user-select: none;
@@ -1844,13 +1775,13 @@ summary.json-node-line:hover {
 }
 
 .asset-font-style-button:hover {
-  border-color: var(--accent);
+  border-color: var(--color-accent);
   color: var(--editor-text);
 }
 
 .asset-font-style-button.active {
-  background: color-mix(in srgb, var(--accent) 22%, transparent);
-  border-color: var(--accent);
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+  border-color: var(--color-accent);
   color: var(--editor-text);
 }
 
@@ -1864,19 +1795,19 @@ summary.json-node-line:hover {
 
 .asset-font-note {
   margin: 20px 0 0;
-  color: var(--muted);
-  font: 12px/1.5 var(--ui-font);
+  color: var(--color-text-muted);
+  font: 12px/1.5 var(--font-sans);
 }
 
 .asset-audio-player {
   width: min(520px, calc(100% - 28px));
-  accent-color: var(--accent);
+  accent-color: var(--color-accent);
 }
 
 .asset-preview-empty {
   max-width: 360px;
-  color: var(--muted);
-  font: 600 14px var(--ui-font);
+  color: var(--color-text-muted);
+  font: 600 14px var(--font-sans);
   text-align: center;
 }
 
@@ -1886,9 +1817,9 @@ summary.json-node-line:hover {
   gap: 8px 14px;
   margin: 0;
   padding: 12px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--panel-raised) 74%, transparent);
+  background: color-mix(in srgb, var(--color-panel-raised) 74%, transparent);
 }
 
 .asset-detail {
@@ -1897,8 +1828,8 @@ summary.json-node-line:hover {
 
 .asset-detail dt {
   margin: 0 0 3px;
-  color: var(--muted);
-  font: 600 11px var(--ui-font);
+  color: var(--color-text-muted);
+  font: 600 11px var(--font-sans);
   text-transform: uppercase;
 }
 
@@ -1907,13 +1838,13 @@ summary.json-node-line:hover {
   min-width: 0;
   overflow: hidden;
   color: var(--editor-text);
-  font: 13px var(--mono-font);
+  font: 13px var(--font-mono);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .asset-detail-warning dd {
-  color: #f2d35e;
+  color: var(--color-warning);
 }
 
 .legacy-editor {
@@ -1932,10 +1863,10 @@ summary.json-node-line:hover {
 .legacy-editor .line-numbers {
   overflow: hidden;
   padding: 14px 10px 14px 6px;
-  border-right: 1px solid var(--border);
+  border-right: 1px solid var(--color-border);
   color: var(--editor-muted);
-  background: color-mix(in srgb, var(--editor-bg) 88%, #000000);
-  font: var(--editor-font-size)/var(--editor-line-height) var(--mono-font);
+  background: color-mix(in srgb, var(--editor-bg) 88%, var(--color-bg));
+  font: var(--editor-font-size)/var(--editor-line-height) var(--font-mono);
   text-align: right;
   user-select: none;
   white-space: pre;
@@ -1955,7 +1886,7 @@ summary.json-node-line:hover {
   margin: 0;
   border: 0;
   padding: 14px;
-  font: var(--editor-font-size)/var(--editor-line-height) var(--mono-font);
+  font: var(--editor-font-size)/var(--editor-line-height) var(--font-mono);
   tab-size: 4;
   white-space: pre-wrap;
   overflow-wrap: normal;
@@ -1985,13 +1916,13 @@ summary.json-node-line:hover {
 }
 
 #editor::selection {
-  background: var(--selection);
+  background: var(--color-selection);
 }
 
 #editor:disabled {
-  color: var(--muted);
-  -webkit-text-fill-color: var(--muted);
-  background: color-mix(in srgb, var(--editor-bg) 90%, var(--panel));
+  color: var(--color-text-muted);
+  -webkit-text-fill-color: var(--color-text-muted);
+  background: color-mix(in srgb, var(--editor-bg) 90%, var(--color-panel));
 }
 
 .completion-popup {
@@ -2006,18 +1937,18 @@ summary.json-node-line:hover {
   gap: 10px;
   align-items: center;
   padding: 5px 9px;
-  color: var(--text);
-  font: 13px var(--mono-font);
+  color: var(--color-text);
+  font: 13px var(--font-mono);
 }
 
 .completion-item.active {
-  background: color-mix(in srgb, var(--accent) 24%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 24%, transparent);
 }
 
 .completion-detail {
   overflow: hidden;
-  color: var(--muted);
-  font-family: var(--ui-font);
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2027,7 +1958,7 @@ summary.json-node-line:hover {
   display: grid;
   grid-template-rows: minmax(120px, var(--output-height, 32%)) 6px 1fr;
   gap: 0;
-  background: var(--border);
+  background: var(--color-border);
 }
 
 .output-pane,
@@ -2041,25 +1972,25 @@ summary.json-node-line:hover {
   margin: 0;
   overflow: auto;
   padding: 12px;
-  background: var(--output-bg);
-  color: var(--output-text, #edf3ff);
-  font: var(--console-font-size)/var(--console-line-height) var(--mono-font);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: var(--console-font-size)/var(--console-line-height) var(--font-mono);
   white-space: pre-wrap;
 }
 
 .output-error,
 .output-soft-error {
-  color: #f38ba8;
+  color: var(--color-danger);
 }
 
 /* Служебные строки среды (код завершения) — приглушённо, как «светлый чёрный». */
 .output-muted {
-  color: var(--muted);
+  color: var(--color-text-muted);
 }
 
 /* Предупреждения времени выполнения — жёлтым, как подчёркивания в редакторе. */
 .output-warning {
-  color: #e5c07b;
+  color: var(--color-warning);
 }
 
 .ansi-bold {
@@ -2143,8 +2074,8 @@ summary.json-node-line:hover {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   padding: 8px;
-  border-top: 1px solid var(--border);
-  background: var(--panel);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-panel);
 }
 
 .console-input-panel[hidden] {
@@ -2154,18 +2085,18 @@ summary.json-node-line:hover {
 .console-input-panel input {
   min-width: 0;
   height: var(--console-control-height);
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
-  background: var(--output-bg);
-  color: var(--output-text, #edf3ff);
-  font: var(--console-font-size)/var(--console-line-height) var(--mono-font);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: var(--console-font-size)/var(--console-line-height) var(--font-mono);
   outline: 0;
   padding: 0 10px;
 }
 
 .console-input-panel input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 20%, transparent);
 }
 
 .console-input-panel button {
@@ -2177,7 +2108,7 @@ summary.json-node-line:hover {
   width: 100%;
   min-height: 0;
   border: 0;
-  background: var(--preview-bg);
+  background: var(--color-bg);
 }
 
 @media (max-width: 980px) {
@@ -2260,30 +2191,30 @@ summary.json-node-line:hover {
   flex-direction: column;
   min-width: 0;
   padding: 12px 14px 14px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: var(--panel);
+  background: var(--color-panel);
 }
 
 .share-way-title {
   margin: 0 0 8px;
   font-size: 14px;
   font-weight: 700;
-  color: var(--text);
+  color: var(--color-text);
 }
 
 .share-way-lead {
   margin: 0 0 10px;
   font-size: 12.5px;
   line-height: 1.45;
-  color: var(--muted);
+  color: var(--color-text-muted);
 }
 
 .share-way-fact {
   margin: 0 0 10px;
   font-size: 12px;
   line-height: 1.45;
-  color: var(--muted);
+  color: var(--color-text-muted);
 }
 
 .share-way-actions {
@@ -2299,13 +2230,13 @@ summary.json-node-line:hover {
 }
 
 .share-way-actions button.is-done {
-  border-color: #3fb36b;
-  color: #3fb36b;
+  border-color: var(--color-success);
+  color: var(--color-success);
 }
 
 .share-way-actions button.is-failed {
-  border-color: #e05a5a;
-  color: #e05a5a;
+  border-color: var(--color-danger);
+  color: var(--color-danger);
 }
 
 .share-scope {
@@ -2323,8 +2254,8 @@ summary.json-node-line:hover {
 }
 
 .share-scope-button.is-active {
-  border-color: var(--accent);
-  color: var(--accent-strong);
+  border-color: var(--color-accent);
+  color: var(--color-accent-strong);
 }
 
 .share-field {
@@ -2332,16 +2263,16 @@ summary.json-node-line:hover {
   gap: 4px;
   margin-bottom: 10px;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--color-text-muted);
 }
 
 .share-field input {
   height: 32px;
   padding: 0 9px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
-  background: var(--panel-raised);
-  color: var(--text);
+  background: var(--color-panel-raised);
+  color: var(--color-text);
   font: inherit;
   font-size: 13px;
 }
@@ -2351,10 +2282,10 @@ summary.json-node-line:hover {
   box-sizing: border-box;
   resize: vertical;
   padding: 8px 9px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
-  background: var(--panel-raised);
-  color: var(--text);
+  background: var(--color-panel-raised);
+  color: var(--color-text);
   font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   word-break: break-all;
 }
@@ -2365,7 +2296,7 @@ summary.json-node-line:hover {
   position: relative;
   font-size: 12.5px;
   line-height: 1.4;
-  color: var(--text);
+  color: var(--color-text);
 }
 
 .share-verdict::before {
@@ -2376,36 +2307,30 @@ summary.json-node-line:hover {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--muted);
+  background: var(--color-text-muted);
 }
 
-.share-verdict.is-ok::before { background: #3fb36b; }
-.share-verdict.is-warn::before { background: #e0a93a; }
-.share-verdict.is-bad::before { background: #e05a5a; }
+.share-verdict.is-ok::before { background: var(--color-success); }
+.share-verdict.is-warn::before { background: var(--color-warning); }
+.share-verdict.is-bad::before { background: var(--color-danger); }
 
 .share-assets-note {
   margin: 0 0 8px;
   font-size: 12px;
   line-height: 1.45;
-  color: var(--muted);
+  color: var(--color-text-muted);
 }
 
 .share-assets-note.is-warn {
-  color: var(--text);
+  color: var(--color-text);
 }
 
 .share-assets-list {
   margin: 0 0 8px;
   padding-left: 18px;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--color-text-muted);
   word-break: break-all;
-}
-
-.share-primary {
-  border-color: var(--accent);
-  color: var(--accent-strong);
-  font-weight: 700;
 }
 
 .share-qr-stage {
@@ -2416,7 +2341,7 @@ summary.json-node-line:hover {
   width: 100%;
   margin-bottom: 10px;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--color-on-solid); /* QR-код сканеры читают только на белом — в обеих темах */
   overflow: hidden;
 }
 
@@ -2437,7 +2362,7 @@ summary.json-node-line:hover {
   font-size: 12.5px;
   line-height: 1.45;
   text-align: center;
-  color: #4a4458;
+  color: var(--color-text-muted);
 }
 
 .share-qr-drop {
@@ -2446,17 +2371,17 @@ summary.json-node-line:hover {
   justify-content: center;
   min-height: 110px;
   padding: 12px;
-  border: 1px dashed var(--border);
+  border: 1px dashed var(--color-border);
   border-radius: 8px;
-  color: var(--muted);
+  color: var(--color-text-muted);
   font-size: 13px;
   text-align: center;
 }
 
 .share-qr-drop.is-over,
 .share-qr-drop:focus {
-  border-color: var(--accent);
-  color: var(--text);
+  border-color: var(--color-accent);
+  color: var(--color-text);
   outline: none;
 }
 
@@ -2475,9 +2400,9 @@ summary.json-node-line:hover {
   align-items: center;
   gap: 14px;
   padding: 8px 14px;
-  border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--accent) 14%, var(--panel));
-  color: var(--text);
+  border-bottom: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-accent) 14%, var(--color-panel));
+  color: var(--color-text);
   font-size: 13px;
   line-height: 1.4;
 }
@@ -2494,11 +2419,11 @@ summary.json-node-line:hover {
 .guest-banner-details {
   margin: 3px 0 0;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--color-text-muted);
 }
 
 .guest-banner-details.is-warn {
-  color: var(--text);
+  color: var(--color-text);
 }
 
 .guest-banner-actions {
@@ -2508,44 +2433,3 @@ summary.json-node-line:hover {
 }
 
 /* Общий `button { display: inline-flex }` перебивает атрибут hidden — в диалогах «Поделиться» возвращаем ему силу. */
-.share-card [hidden],
-.share-reader-card [hidden],
-.guest-banner [hidden] {
-  display: none !important;
-}
-
-/* Переходный слой (стилевая база 1.6.4, этап 3): умолчания для кнопок, ещё не переведённых
-   на ui-button (просмотрщики, редакторы данных). Лежит в слое base, поэтому ui-button его
-   перекрывает; исчезнет на этапе 4, когда последняя кнопка IDE получит класс компонента. */
-@layer base {
-  button {
-    height: 32px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--panel-raised);
-    color: var(--text);
-    font: 600 13px var(--ui-font);
-    padding: 0 12px;
-    cursor: pointer;
-    text-decoration: none;
-    white-space: nowrap;
-  }
-
-  button:hover {
-    border-color: var(--accent);
-    background: var(--panel-soft);
-  }
-
-  button:disabled {
-    cursor: default;
-    opacity: 0.5;
-  }
-
-  button:disabled:hover {
-    border-color: var(--border);
-    background: var(--panel-raised);
-  }
-}

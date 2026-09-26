@@ -1,0 +1,19 @@
+/* Страница 404 (стилевая база 1.6.4, этап 4): обычная страница сайта — общая шапка, тема, токены;
+   раньше жила со своей серой палитрой и системным шрифтом. На сайте — /assets/not-found.css. */
+.not-found-main {
+  display: grid;
+  place-items: center;
+  min-height: calc(100vh - var(--topbar-height));
+  padding: 24px;
+}
+
+.not-found-card {
+  width: min(100%, 560px);
+}
+
+.not-found-card nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  margin-top: 20px;
+}

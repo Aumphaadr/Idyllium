@@ -472,7 +472,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
   // и перекрашивает Monaco, предпросмотр и галочки меню «Внешний вид».
   function siteTheme() {
     if (window.idylliumTheme) return window.idylliumTheme.get();
-    return document.body.classList.contains('theme-light') ? 'light' : 'dark';
+    return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
   }
 
   function currentMonacoTheme() {
@@ -1035,7 +1035,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
     wrapper.appendChild(createIcon(nodeIconName(node)));
 
     const input = document.createElement('input');
-    input.className = 'file-name-input';
+    input.className = 'ui-field ui-field--sm ui-field--mono file-name-input';
     input.type = 'text';
     input.value = fileEditState.value || node.name;
     input.dataset.editPath = node.path;
@@ -3249,6 +3249,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
 
     const input = document.createElement('input');
     input.type = 'text';
+    input.className = 'ui-field';
     input.maxLength = 80;
     input.value = options.initialValue;
     input.autocomplete = 'off';
@@ -3637,7 +3638,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
   }
 
   function applyPreviewTheme() {
-    guiFrame.style.backgroundColor = getComputedStyle(document.body).getPropertyValue('--preview-bg').trim();
+    guiFrame.style.backgroundColor = getComputedStyle(document.body).getPropertyValue('--color-bg').trim();
     if (!guiFrame.contentWindow) return;
     guiFrame.contentWindow.postMessage({
       type: 'theme',

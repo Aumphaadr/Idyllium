@@ -200,7 +200,7 @@ export function createSqliteInspector(file, bytes, description, preview, generat
   for (const object of description.objects) {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'sqlite-object-button';
+    button.className = 'ui-button ui-button--quiet sqlite-object-button';
     button.title = object.name;
 
     const badge = document.createElement('span');
@@ -262,6 +262,7 @@ export function createSqliteInspector(file, bytes, description, preview, generat
     function createSqliteTabButton(label, tab) {
       const button = document.createElement('button');
       button.type = 'button';
+      button.className = 'ui-tab';
       button.role = 'tab';
       button.textContent = label;
       button.addEventListener('click', () => {
@@ -488,7 +489,7 @@ export function renderImageAssetPreview(file, item, bytes, detectedMime, preview
   const zoomIn = createAssetImageButton('zoom-in', 'Увеличить');
   const actualSize = document.createElement('button');
   actualSize.type = 'button';
-  actualSize.className = 'asset-image-button asset-image-actual-size';
+  actualSize.className = 'ui-button ui-button--sm asset-image-button asset-image-actual-size';
   actualSize.textContent = '1:1';
   actualSize.title = 'Исходный размер';
   actualSize.setAttribute('aria-label', 'Показать в исходном размере');
@@ -672,7 +673,7 @@ export function renderImageAssetPreview(file, item, bytes, detectedMime, preview
 export function createAssetImageButton(icon, label) {
   const button = document.createElement('button');
   button.type = 'button';
-  button.className = 'icon-button asset-image-button';
+  button.className = 'ui-button ui-button--sm ui-button--icon icon-button asset-image-button';
   button.title = label;
   button.setAttribute('aria-label', label);
   button.appendChild(createIcon(icon));
@@ -731,7 +732,7 @@ export function createFontPreviewContent(family) {
   range.max = '96';
   range.step = '1';
   range.value = '36';
-  range.className = 'asset-font-size-range';
+  range.className = 'ui-range asset-font-size-range';
   range.setAttribute('aria-label', 'Размер текста предпросмотра');
 
   const value = document.createElement('output');
@@ -754,7 +755,7 @@ export function createFontPreviewContent(family) {
   // красная рамка, цвет не трогаем (просьба пользователей, 2026-08-22).
   const colorField = document.createElement('input');
   colorField.type = 'text';
-  colorField.className = 'asset-font-color-input';
+  colorField.className = 'ui-field ui-field--sm ui-field--mono asset-font-color-input';
   colorField.placeholder = 'colors.RGB(120, 200, 255)';
   colorField.spellcheck = false;
   colorField.setAttribute('aria-label', 'Цвет текста предпросмотра — фабрика colors');
@@ -801,7 +802,7 @@ export function createFontPreviewContent(family) {
   const makeStyleButton = (text, className, ariaLabel, toggleClass) => {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = `asset-font-style-button ${className}`;
+    button.className = `ui-button ui-button--sm ui-button--icon asset-font-style-button ${className}`;
     button.textContent = text;
     button.title = ariaLabel;
     button.setAttribute('aria-label', ariaLabel);

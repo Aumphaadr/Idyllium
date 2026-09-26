@@ -5323,7 +5323,7 @@
   function createJsonToolbarButton(label, onClick) {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "json-toolbar-button";
+    button.className = "ui-button ui-button--sm json-toolbar-button";
     button.textContent = label;
     button.addEventListener("click", onClick);
     return button;
@@ -5684,7 +5684,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     for (const object of description.objects) {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = "sqlite-object-button";
+      button.className = "ui-button ui-button--quiet sqlite-object-button";
       button.title = object.name;
       const badge = document.createElement("span");
       badge.className = `sqlite-object-kind sqlite-object-kind-${object.kind}`;
@@ -5738,6 +5738,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       function createSqliteTabButton(label, tab) {
         const button = document.createElement("button");
         button.type = "button";
+        button.className = "ui-tab";
         button.role = "tab";
         button.textContent = label;
         button.addEventListener("click", () => {
@@ -5931,7 +5932,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     const zoomIn = createAssetImageButton("zoom-in", "Увеличить");
     const actualSize = document.createElement("button");
     actualSize.type = "button";
-    actualSize.className = "asset-image-button asset-image-actual-size";
+    actualSize.className = "ui-button ui-button--sm asset-image-button asset-image-actual-size";
     actualSize.textContent = "1:1";
     actualSize.title = "Исходный размер";
     actualSize.setAttribute("aria-label", "Показать в исходном размере");
@@ -6094,7 +6095,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
   function createAssetImageButton(icon, label) {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "icon-button asset-image-button";
+    button.className = "ui-button ui-button--sm ui-button--icon icon-button asset-image-button";
     button.title = label;
     button.setAttribute("aria-label", label);
     button.appendChild(createIcon(icon));
@@ -6141,7 +6142,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     range.max = "96";
     range.step = "1";
     range.value = "36";
-    range.className = "asset-font-size-range";
+    range.className = "ui-range asset-font-size-range";
     range.setAttribute("aria-label", "Размер текста предпросмотра");
     const value = document.createElement("output");
     value.className = "asset-font-size-value";
@@ -6157,7 +6158,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     label.appendChild(value);
     const colorField = document.createElement("input");
     colorField.type = "text";
-    colorField.className = "asset-font-color-input";
+    colorField.className = "ui-field ui-field--sm ui-field--mono asset-font-color-input";
     colorField.placeholder = "colors.RGB(120, 200, 255)";
     colorField.spellcheck = false;
     colorField.setAttribute("aria-label", "Цвет текста предпросмотра — фабрика colors");
@@ -6192,7 +6193,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     const makeStyleButton = (text, className, ariaLabel, toggleClass) => {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = `asset-font-style-button ${className}`;
+      button.className = `ui-button ui-button--sm ui-button--icon asset-font-style-button ${className}`;
       button.textContent = text;
       button.title = ariaLabel;
       button.setAttribute("aria-label", ariaLabel);
@@ -8041,6 +8042,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       "color-panel-active-hover": "#372b55",
       "color-code-bg": "#100b1a",
       "color-topbar-bg": "rgba(12, 5, 21, 0.92)",
+      "color-scene": "#1a1326",
       "color-backdrop": "rgba(6, 2, 12, 0.55)",
       "color-text": "#f2eaf7",
       "color-text-soft": "#c9bdd6",
@@ -8109,6 +8111,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       "ansi-bright-magenta": "#ffadd2",
       "ansi-bright-cyan": "#8ef5ff",
       "ansi-bright-white": "#ffffff",
+      "shadow-raised": "0 2px 7px rgba(0, 0, 0, 0.42)",
       "shadow-popup": "0 18px 44px rgba(0, 0, 0, 0.32)",
       "shadow-floating": "0 18px 44px rgba(0, 0, 0, 0.34)",
       "shadow-dialog": "0 24px 60px rgba(0, 0, 0, 0.45)"
@@ -8122,6 +8125,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       "color-panel-active-hover": "#cbbfdb",
       "color-code-bg": "#f2edf7",
       "color-topbar-bg": "rgba(246, 242, 251, 0.92)",
+      "color-scene": "#dfd8e8",
       "color-backdrop": "rgba(33, 26, 46, 0.35)",
       "color-text": "#211a2e",
       "color-text-soft": "#463b56",
@@ -8190,6 +8194,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       "ansi-bright-magenta": "#7440c7",
       "ansi-bright-cyan": "#176b72",
       "ansi-bright-white": "#5c6570",
+      "shadow-raised": "0 2px 7px rgba(39, 30, 54, 0.22)",
       "shadow-popup": "0 18px 44px rgba(39, 30, 54, 0.16)",
       "shadow-floating": "0 18px 44px rgba(39, 30, 54, 0.18)",
       "shadow-dialog": "0 24px 60px rgba(39, 30, 54, 0.22)"
@@ -8226,6 +8231,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       "radius-12": "12px",
       "radius-pill": "999px",
       "z-sticky": "20",
+      "z-drawer": "40",
       "z-topbar": "50",
       "z-menu": "60",
       "z-popover": "200",
@@ -8236,7 +8242,8 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       "duration-base": "160ms",
       "duration-slow": "250ms",
       "topbar-height": "56px",
-      "sidebar-width": "330px"
+      "sidebar-width": "330px",
+      "toc-width": "236px"
     },
     "breakpoints": {
       "phone": 480,
@@ -9789,7 +9796,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
   }
   function siteTheme() {
     if (window.idylliumTheme) return window.idylliumTheme.get();
-    return document.body.classList.contains("theme-light") ? "light" : "dark";
+    return document.documentElement.dataset.theme === "light" ? "light" : "dark";
   }
   function currentMonacoTheme() {
     return siteTheme() === "light" ? "idyllium-light" : "idyllium-dark";
@@ -10281,7 +10288,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     wrapper.className = "file-main-button file-inline-editor";
     wrapper.appendChild(createIcon(nodeIconName(node)));
     const input = document.createElement("input");
-    input.className = "file-name-input";
+    input.className = "ui-field ui-field--sm ui-field--mono file-name-input";
     input.type = "text";
     input.value = fileEditState.value || node.name;
     input.dataset.editPath = node.path;
@@ -12155,6 +12162,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     form.appendChild(label);
     const input = document.createElement("input");
     input.type = "text";
+    input.className = "ui-field";
     input.maxLength = 80;
     input.value = options.initialValue;
     input.autocomplete = "off";
@@ -12496,7 +12504,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     applyPreviewTheme();
   }
   function applyPreviewTheme() {
-    guiFrame.style.backgroundColor = getComputedStyle(document.body).getPropertyValue("--preview-bg").trim();
+    guiFrame.style.backgroundColor = getComputedStyle(document.body).getPropertyValue("--color-bg").trim();
     if (!guiFrame.contentWindow) return;
     guiFrame.contentWindow.postMessage({
       type: "theme",

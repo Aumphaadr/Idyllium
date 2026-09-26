@@ -729,7 +729,7 @@ test('Web IDE default project is minimal and light surfaces are subdued', () => 
   for (const name of ['--bg', '--panel', '--panel-raised', '--editor-bg', '--output-bg']) {
     assert(!new RegExp(`${name}:\\s*#`, 'u').test(cssSource), `${name} must come from the tokens, not a literal in app.css`);
   }
-  assert(cssSource.includes('--bg: var(--color-bg);'), 'IDE page background must alias the token');
+  assert(!/^\s*--bg:/mu.test(cssSource) && cssSource.includes('var(--color-bg)'), 'IDE takes its page background straight from the tokens, without aliases');
   assert(tokens.color.bg[1] === '#ece8f2' && tokens.color['code-bg'][1] === '#f2edf7', 'expected subdued light surfaces in the tokens');
 });
 
@@ -1085,7 +1085,7 @@ test('the site header is one source and every section reaches every other', () =
     }
     const hrefs = menuHrefs(html);
     for (const other of SITE_SECTIONS) {
-      if (other.id === 'ide') continue; // в IDE ведут лого и «Открыть IDE» — проверяются ниже
+      if (other.id === 'ide' || other.hidden) continue; // в IDE ведут лого и «Открыть IDE» — проверяются ниже; служебные страницы (404) в меню не входят
       if (other.id === section.id) {
         assert(html.includes('class="ui-menu-item is-current"'), `${relativePath} must mark itself as the current section`);
         continue;
@@ -1121,13 +1121,28 @@ test('the site header is one source and every section reaches every other', () =
       }
     }
   };
-  for (const section of SITE_SECTIONS) checkPage(pageOf(section), section);
+  for (const section of SITE_SECTIONS) {
+    if (!section.hidden) checkPage(pageOf(section), section);
+  }
   // Запечённые страницы уроков и справочника — та же шапка через переставленный <base>.
   const lessonDir = path.join(docsRoot, 'book', 'widgets');
   const lesson = (fs.readdirSync(lessonDir) as string[]).find((file: string) => file.endsWith('.html'));
   assert(lesson !== undefined, 'baked lesson pages are missing');
   checkPage(path.join('book', 'widgets', lesson!), SITE_SECTIONS.find((item) => item.id === 'book')!);
   checkPage(path.join('reference', 'gui', 'Button.html'), SITE_SECTIONS.find((item) => item.id === 'reference')!);
+});
+
+test('404 page is an ordinary site page: shared header, theme and tokens', () => {
+  // Вердикт владельца (стилевая база 1.6.4): 404 — обычная страница сайта, не серая страница со своей палитрой.
+  const page = fs.readFileSync(path.resolve(process.cwd(), 'docs', '404.html'), 'utf8');
+  for (const piece of ['class="ui-topbar"', 'assets/site-theme.js', 'assets/site-tokens.css', 'assets/site-components.css', 'assets/not-found.css', 'class="ui-badge ui-topbar-badge">Страница не найдена<', "document.createElement('base')"]) {
+    assert(page.includes(piece), `404.html must carry ${piece}`);
+  }
+  assert(!page.includes('<style>'), '404.html must not carry inline styles');
+  assert(fs.existsSync(path.resolve(process.cwd(), 'docs', 'assets', 'not-found.css')), 'assets/not-found.css must be published');
+  for (const file of ['docs-shell.css', 'handouts.css', 'about.css', 'stub.css']) {
+    assert(fs.existsSync(path.resolve(process.cwd(), 'docs', 'assets', file)), `assets/${file} must be published`);
+  }
 });
 
 test('handouts page is baked with every manifest file present', () => {
@@ -1140,11 +1155,13 @@ test('handouts page is baked with every manifest file present', () => {
   const seen = new Set<string>();
   // Раздатка — такая же страница сайта, как остальные: общая шапка, общий стиль (а с ним палитра
   // обеих тем и полосы прокрутки), переключатель темы. Раньше жила с зашитой тёмной палитрой.
-  for (const piece of ['../book/app.css', 'class="ui-topbar"', 'class="ui-badge ui-topbar-badge">Раздатка<', 'id="theme-toggle"', 'assets/site-theme.js']) {
+  for (const piece of ['assets/handouts.css', 'assets/site-components.css', 'class="ui-topbar"', 'class="ui-badge ui-topbar-badge">Раздатка<', 'id="theme-toggle"', 'assets/site-theme.js']) {
     assert(page.includes(piece), `handouts page must share the site design: ${piece} is missing`);
   }
-  const pageStyle = page.slice(page.indexOf('<style>'), page.indexOf('</style>'));
-  assert(!/#[0-9a-fA-F]{6}\b/u.test(pageStyle), 'handouts page must take its colours from the shared variables, not hard-code them');
+  // Стили раздатки живут файлом (assets/handouts.css), не строкой в сборщике — и без литералов цвета.
+  assert(!page.includes('<style>'), 'handouts page must not carry inline styles');
+  const handoutsCss = fs.readFileSync(path.resolve(process.cwd(), 'packages', 'docs-site', 'handouts.css'), 'utf8');
+  assert(!/#[0-9a-fA-F]{6}\b/u.test(handoutsCss), 'handouts.css must take its colours from the tokens, not hard-code them');
   const licenses = new Set<string>();
   for (const category of manifest.categories) {
     assert(category.id && category.title, 'every handouts tab needs an id and a title');

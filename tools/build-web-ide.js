@@ -33,7 +33,7 @@ if (!fs.existsSync(browserEntry)) {
 fs.rmSync(outputWebDir, { recursive: true, force: true });
 fs.mkdirSync(outputAssetsDir, { recursive: true });
 
-for (const item of ['app.css', 'sw-preview.js']) {
+for (const item of ['app.css', 'monaco-fixes.css', 'sw-preview.js']) {
   fs.copyFileSync(path.join(sourceWebDir, item), path.join(outputWebDir, item));
 }
 // Шапка IDE — из единого источника (tools/site-nav.ts → dist/tools после tsc):

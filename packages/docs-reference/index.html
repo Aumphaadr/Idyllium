@@ -11,6 +11,7 @@
   <link rel="icon" href="../assets/favicon-32x32.png" sizes="32x32">
   <link rel="icon" href="../assets/idyllium.svg" type="image/svg+xml">
   <!-- @site-nav-assets -->
+  <link rel="stylesheet" href="../assets/docs-shell.css">
   <link rel="stylesheet" href="app.css">
   <script src="../gui-renderer/icons.js"></script>
   <script src="app.js" defer></script>
@@ -18,8 +19,8 @@
 <body>
   <!-- @site-topbar -->
 
-  <div class="reference-shell">
-    <aside class="ui-sidebar reference-sidebar" id="reference-sidebar">
+  <div class="docs-shell docs-shell--no-toc reference-shell">
+    <aside class="ui-sidebar docs-sidebar reference-sidebar" id="reference-sidebar">
       <div class="ui-sidebar-head sidebar-search">
         <label class="ui-sidebar-label" for="reference-search">Поиск по API</label>
         <div class="ui-search search-field">
@@ -30,7 +31,7 @@
       <nav id="reference-nav" class="ui-sidebar-nav reference-nav" aria-label="Документация Idyllium"></nav>
     </aside>
 
-    <main class="reference-main" id="reference-main" tabindex="-1">
+    <main class="docs-main reference-main" id="reference-main" tabindex="-1">
       <article id="reference-view" class="reference-view">
         <div class="ui-state loading-state">Загрузка документации...</div>
       </article>

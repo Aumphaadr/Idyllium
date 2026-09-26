@@ -32,6 +32,8 @@ interface SiteSection {
   readonly hint?: string;
   /** Плотность страницы: 'app' у инструментов (14 px), у документов — prose (18 px), см. site-theme.js. */
   readonly density?: SiteDensity;
+  /** Служебная страница (404): шапка и бейдж есть, в меню разделов не попадает, стражи её не обходят как раздел. */
+  readonly hidden?: boolean;
 }
 
 export type SiteDensity = 'prose' | 'app';
@@ -72,6 +74,8 @@ export const SITE_SECTIONS: readonly SiteSection[] = [
   { id: 'authors', density: 'app', icon: 'section-authors', badge: 'Авторам', path: 'authors/', title: 'Генератор юнитов', hint: 'Встраиваемые задачи для вашего сайта', group: 'tools' },
   { id: 'about', icon: 'info', badge: 'О проекте', path: 'about/', title: 'О проекте', group: 'about' },
   { id: 'why', icon: 'section-why', badge: 'Почему Idyllium', path: 'why/', title: 'Почему Idyllium', group: 'about', stub: true },
+  // Страница 404 — обычная страница сайта с общей шапкой (стилевая база 1.6.4); в меню её нет.
+  { id: 'not-found', badge: 'Страница не найдена', path: '404.html', title: 'Страница не найдена', hidden: true },
 ];
 
 /** Соседние сайты владельца — в «Инструментах», под своей подписью (вердикт: «они по сути инструменты»). Только опубликованные. */

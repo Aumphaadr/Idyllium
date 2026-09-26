@@ -136,6 +136,7 @@ function renderTests() {
     } else {
       const input = document.createElement('input');
       input.type = 'text';
+      input.className = 'ui-field ui-field--sm ui-field--mono';
       input.placeholder = 'ввод через пробел: 3 5';
       input.value = Array.isArray(test.in) ? test.in.join(' ') : test.in;
       input.addEventListener('input', () => replace({ in: input.value }));

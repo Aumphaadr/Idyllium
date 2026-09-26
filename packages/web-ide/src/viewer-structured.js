@@ -368,7 +368,7 @@ export function createJsonToolbar(value, state) {
 export function createJsonToolbarButton(label, onClick) {
   const button = document.createElement('button');
   button.type = 'button';
-  button.className = 'json-toolbar-button';
+  button.className = 'ui-button ui-button--sm json-toolbar-button';
   button.textContent = label;
   button.addEventListener('click', onClick);
   return button;

@@ -6,6 +6,7 @@
 // у этого же <script>. Кнопку темы в шапке (#theme-toggle) обслуживает тоже этот модуль.
 // API для разделов: window.idylliumTheme.get() → 'dark' | 'light', .set(theme), .toggle();
 // событие document «idyllium-theme-change» с detail.theme — для Monaco, предпросмотра, кадра.
+// Единственный признак темы в документе — html[data-theme]: классов темы на body больше нет (этап 4).
 (function () {
   'use strict';
 
@@ -36,18 +37,6 @@
     try { localStorage.setItem(KEY, theme); } catch (error) { /* не страшно */ }
   }
 
-  // Переходный период (этапы 1–4 переезда стилевой базы): разделы ещё носят правила на
-  // body.light-theme (учебник, справочник, конструктор, «Авторам») и body.theme-light /
-  // body.theme-dark (IDE). Классы снимутся, когда последнее такое правило переедет на токены.
-  function syncBody(theme) {
-    var body = document.body;
-    if (!body) return;
-    var light = theme === 'light';
-    body.classList.toggle('light-theme', light);
-    body.classList.toggle('theme-light', light);
-    body.classList.toggle('theme-dark', !light);
-  }
-
   function syncToggle(theme) {
     var toggle = document.getElementById('theme-toggle');
     if (!toggle) return;
@@ -59,7 +48,6 @@
   function apply(theme, persist) {
     current = normalize(theme) || 'dark';
     root.setAttribute('data-theme', current);
-    syncBody(current);
     syncToggle(current);
     if (persist) store(current);
     document.dispatchEvent(new CustomEvent('idyllium-theme-change', { detail: { theme: current } }));
@@ -71,19 +59,7 @@
 
   apply(read(), false);
 
-  // <body> появляется позже этого скрипта: ловим его рождение, чтобы переходные классы
-  // стояли до первой отрисовки, а не после DOMContentLoaded.
-  if (!document.body) {
-    var observer = new MutationObserver(function () {
-      if (!document.body) return;
-      syncBody(current);
-      observer.disconnect();
-    });
-    observer.observe(root, { childList: true });
-  }
-
   document.addEventListener('DOMContentLoaded', function () {
-    syncBody(current);
     syncToggle(current);
     var toggle = document.getElementById('theme-toggle');
     if (toggle) {

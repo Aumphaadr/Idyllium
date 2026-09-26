@@ -224,6 +224,7 @@
       "color-panel-active-hover": "#372b55",
       "color-code-bg": "#100b1a",
       "color-topbar-bg": "rgba(12, 5, 21, 0.92)",
+      "color-scene": "#1a1326",
       "color-backdrop": "rgba(6, 2, 12, 0.55)",
       "color-text": "#f2eaf7",
       "color-text-soft": "#c9bdd6",
@@ -292,6 +293,7 @@
       "ansi-bright-magenta": "#ffadd2",
       "ansi-bright-cyan": "#8ef5ff",
       "ansi-bright-white": "#ffffff",
+      "shadow-raised": "0 2px 7px rgba(0, 0, 0, 0.42)",
       "shadow-popup": "0 18px 44px rgba(0, 0, 0, 0.32)",
       "shadow-floating": "0 18px 44px rgba(0, 0, 0, 0.34)",
       "shadow-dialog": "0 24px 60px rgba(0, 0, 0, 0.45)"
@@ -305,6 +307,7 @@
       "color-panel-active-hover": "#cbbfdb",
       "color-code-bg": "#f2edf7",
       "color-topbar-bg": "rgba(246, 242, 251, 0.92)",
+      "color-scene": "#dfd8e8",
       "color-backdrop": "rgba(33, 26, 46, 0.35)",
       "color-text": "#211a2e",
       "color-text-soft": "#463b56",
@@ -373,6 +376,7 @@
       "ansi-bright-magenta": "#7440c7",
       "ansi-bright-cyan": "#176b72",
       "ansi-bright-white": "#5c6570",
+      "shadow-raised": "0 2px 7px rgba(39, 30, 54, 0.22)",
       "shadow-popup": "0 18px 44px rgba(39, 30, 54, 0.16)",
       "shadow-floating": "0 18px 44px rgba(39, 30, 54, 0.18)",
       "shadow-dialog": "0 24px 60px rgba(39, 30, 54, 0.22)"
@@ -409,6 +413,7 @@
       "radius-12": "12px",
       "radius-pill": "999px",
       "z-sticky": "20",
+      "z-drawer": "40",
       "z-topbar": "50",
       "z-menu": "60",
       "z-popover": "200",
@@ -419,7 +424,8 @@
       "duration-base": "160ms",
       "duration-slow": "250ms",
       "topbar-height": "56px",
-      "sidebar-width": "330px"
+      "sidebar-width": "330px",
+      "toc-width": "236px"
     },
     "breakpoints": {
       "phone": 480,
