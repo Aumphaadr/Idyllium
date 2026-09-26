@@ -1,0 +1,8 @@
+/* Страницы-заглушки будущих разделов («Рецепты», «Почему Idyllium»; стилевая база 1.6.4, этап 4).
+   Раньше — строка внутри tools/docs-build-site.ts. Врезка «страница в работе» — ui-callout. */
+.stub-main { max-width: 860px; margin: 0 auto; padding: 30px 22px 90px; color: var(--color-text); line-height: 1.62; }
+.stub-main h1 { margin: 0 0 14px; font-size: 2.05rem; }
+.stub-main h2 { margin: 1.8em 0 0.5em; font-size: 1.3rem; }
+.stub-main p { margin: 0.6em 0; }
+.stub-main ul { padding-left: 24px; }
+.stub-main li { margin: 0.3em 0; }

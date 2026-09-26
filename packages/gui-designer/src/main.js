@@ -866,7 +866,7 @@ function renderPalette() {
       const def = WIDGETS[type];
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'palette-item';
+      button.className = 'ui-button ui-button--quiet palette-item';
       button.dataset.type = type;
       // Виден тип как в коде (gui.SpinBox); русское название и подсказка — при наведении.
       button.title = def.hint ? `${def.label} — ${def.hint}` : def.label;
@@ -1347,6 +1347,7 @@ function renderInspector() {
   nameLabel.title = 'Имя переменной в коде';
   const nameInput = document.createElement('input');
   nameInput.type = 'text';
+  nameInput.className = 'ui-field ui-field--sm';
   nameInput.id = 'name-field';
   nameInput.value = item ? item.name : model.window.name;
   nameInput.spellcheck = false;
@@ -1445,6 +1446,7 @@ function renderGroupInspector(container) {
   for (const [mode, label] of Object.entries(ALIGN_MODES)) {
     const button = document.createElement('button');
     button.type = 'button';
+    button.className = 'ui-button ui-button--sm';
     button.dataset.align = mode;
     button.textContent = label;
     button.disabled = mode.startsWith('distribute') && ids.length < 3;
@@ -1775,6 +1777,7 @@ function propertyField(prop, props, onChange, item) {
   } else {
     const input = document.createElement('input');
     input.type = 'text';
+    input.className = 'ui-field ui-field--sm';
     input.placeholder = 'по умолчанию';
     input.value = explicit ? String(props[prop.name]) : '';
     input.spellcheck = false;
@@ -1904,6 +1907,7 @@ function dataEditor(item, def) {
       row.className = 'data-row';
       const input = document.createElement('input');
       input.type = 'text';
+      input.className = 'ui-field ui-field--sm';
       input.value = value;
       input.placeholder = placeholder;
       const save = () => { const next = [...list]; next[index] = input.value; onCommit(next); };
@@ -1939,7 +1943,7 @@ function dataEditor(item, def) {
     rowsTitle.textContent = 'Строки: по одной на строку, ячейки через «;»';
     box.appendChild(rowsTitle);
     const textarea = document.createElement('textarea');
-    textarea.className = 'data-textarea';
+    textarea.className = 'ui-field ui-field--mono data-textarea';
     textarea.rows = 4;
     textarea.spellcheck = false;
     textarea.value = (data.rows || []).map((row) => row.join('; ')).join('\n');
@@ -1957,10 +1961,12 @@ function dataEditor(item, def) {
       row.className = 'data-row data-row-entry';
       const label = document.createElement('input');
       label.type = 'text';
+      label.className = 'ui-field ui-field--sm';
       label.value = entry.label;
       label.placeholder = 'подпись';
       const value = document.createElement('input');
       value.type = 'number';
+      value.className = 'ui-field ui-field--sm';
       value.step = 'any';
       value.value = String(entry.value);
       value.placeholder = 'число';
@@ -1988,7 +1994,7 @@ function dataEditor(item, def) {
   } else if (shape === 'numbers') {
     const input = document.createElement('input');
     input.type = 'text';
-    input.className = 'data-numbers';
+    input.className = 'ui-field ui-field--sm ui-field--mono data-numbers';
     input.spellcheck = false;
     input.placeholder = 'числа через пробел: 3 5 4.5';
     input.value = (data.points || []).join(' ');
@@ -2034,7 +2040,7 @@ function openIconPicker(anchor, current, onPick) {
         if (query && !name.includes(query)) continue;
         const button = document.createElement('button');
         button.type = 'button';
-        button.className = 'icon-picker-item';
+        button.className = 'ui-button ui-button--quiet icon-picker-item';
         if (iconPicker.session && name === iconPicker.session.current) button.classList.add('is-current');
         button.title = name;
         if (window.IdylliumIcons) button.appendChild(window.IdylliumIcons.element(name, { size: 20 }));
@@ -2093,6 +2099,7 @@ function tabsEditor(tabs) {
     radio.addEventListener('change', () => { previewTabs[tabs.id] = index; persist(); scheduleRun(0); renderTree(); });
     const title = document.createElement('input');
     title.type = 'text';
+    title.className = 'ui-field ui-field--sm';
     title.value = page.tabTitle || '';
     title.placeholder = 'заголовок вкладки';
     const commit = () => applyChange(() => { const target = widgetById(page.id); if (target) target.tabTitle = title.value; });

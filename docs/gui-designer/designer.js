@@ -3098,7 +3098,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
         const def = import_widgets.WIDGETS[type];
         const button = document.createElement("button");
         button.type = "button";
-        button.className = "palette-item";
+        button.className = "ui-button ui-button--quiet palette-item";
         button.dataset.type = type;
         button.title = def.hint ? `${def.label} \u2014 ${def.hint}` : def.label;
         const icon = document.createElement("span");
@@ -3566,6 +3566,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     nameLabel.title = "\u0418\u043C\u044F \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u043E\u0439 \u0432 \u043A\u043E\u0434\u0435";
     const nameInput = document.createElement("input");
     nameInput.type = "text";
+    nameInput.className = "ui-field ui-field--sm";
     nameInput.id = "name-field";
     nameInput.value = item ? item.name : model.window.name;
     nameInput.spellcheck = false;
@@ -3665,6 +3666,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     for (const [mode, label] of Object.entries(import_model_ops.ALIGN_MODES)) {
       const button = document.createElement("button");
       button.type = "button";
+      button.className = "ui-button ui-button--sm";
       button.dataset.align = mode;
       button.textContent = label;
       button.disabled = mode.startsWith("distribute") && ids.length < 3;
@@ -4015,6 +4017,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     } else {
       const input = document.createElement("input");
       input.type = "text";
+      input.className = "ui-field ui-field--sm";
       input.placeholder = "\u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E";
       input.value = explicit ? String(props[prop.name]) : "";
       input.spellcheck = false;
@@ -4144,6 +4147,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
         row.className = "data-row";
         const input = document.createElement("input");
         input.type = "text";
+        input.className = "ui-field ui-field--sm";
         input.value = value;
         input.placeholder = placeholder;
         const save = () => {
@@ -4189,7 +4193,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       rowsTitle.textContent = "\u0421\u0442\u0440\u043E\u043A\u0438: \u043F\u043E \u043E\u0434\u043D\u043E\u0439 \u043D\u0430 \u0441\u0442\u0440\u043E\u043A\u0443, \u044F\u0447\u0435\u0439\u043A\u0438 \u0447\u0435\u0440\u0435\u0437 \xAB;\xBB";
       box.appendChild(rowsTitle);
       const textarea = document.createElement("textarea");
-      textarea.className = "data-textarea";
+      textarea.className = "ui-field ui-field--mono data-textarea";
       textarea.rows = 4;
       textarea.spellcheck = false;
       textarea.value = (data.rows || []).map((row) => row.join("; ")).join("\n");
@@ -4207,10 +4211,12 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
         row.className = "data-row data-row-entry";
         const label = document.createElement("input");
         label.type = "text";
+        label.className = "ui-field ui-field--sm";
         label.value = entry.label;
         label.placeholder = "\u043F\u043E\u0434\u043F\u0438\u0441\u044C";
         const value = document.createElement("input");
         value.type = "number";
+        value.className = "ui-field ui-field--sm";
         value.step = "any";
         value.value = String(entry.value);
         value.placeholder = "\u0447\u0438\u0441\u043B\u043E";
@@ -4247,7 +4253,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
     } else if (shape === "numbers") {
       const input = document.createElement("input");
       input.type = "text";
-      input.className = "data-numbers";
+      input.className = "ui-field ui-field--sm ui-field--mono data-numbers";
       input.spellcheck = false;
       input.placeholder = "\u0447\u0438\u0441\u043B\u0430 \u0447\u0435\u0440\u0435\u0437 \u043F\u0440\u043E\u0431\u0435\u043B: 3 5 4.5";
       input.value = (data.points || []).join(" ");
@@ -4296,7 +4302,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
           if (query && !name.includes(query)) continue;
           const button = document.createElement("button");
           button.type = "button";
-          button.className = "icon-picker-item";
+          button.className = "ui-button ui-button--quiet icon-picker-item";
           if (iconPicker.session && name === iconPicker.session.current) button.classList.add("is-current");
           button.title = name;
           if (window.IdylliumIcons) button.appendChild(window.IdylliumIcons.element(name, { size: 20 }));
@@ -4370,6 +4376,7 @@ ${MODEL_COMMENT_PREFIX} ${JSON.stringify(stripModel2(model2))}
       });
       const title = document.createElement("input");
       title.type = "text";
+      title.className = "ui-field ui-field--sm";
       title.value = page.tabTitle || "";
       title.placeholder = "\u0437\u0430\u0433\u043E\u043B\u043E\u0432\u043E\u043A \u0432\u043A\u043B\u0430\u0434\u043A\u0438";
       const commit = () => applyChange(() => {

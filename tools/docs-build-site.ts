@@ -950,9 +950,10 @@ function main(): void {
   prepareOutput(siteRoot);
   copyWebIde(siteRoot);
   writeLegacyIdeRedirect(siteRoot);
-  writeSite404(siteRoot);
+  writeSite404(siteRoot, SITE_VERSION);
   copyBookShell(bookRoot);
   copyAssets(sourceRoot, bookRoot);
+  copyDocsSiteStyles(siteRoot);
 
   const oldLessons = JSON.parse(fs.readFileSync(lessonsJsonPath, 'utf8')) as OldLessonsJson;
   const convertedSections = oldLessons.sections.map((section) => convertSection(section, lessonsRoot, bookRoot));
@@ -1227,78 +1228,11 @@ ${groupsHtml}
   <title>Файлы для заданий — Idyllium</title>
   <link rel="icon" type="image/png" href="../book/favicon.png">
   ${siteNavAssetsHtml('../')}
-  <link rel="stylesheet" href="../book/app.css">
-  <style>
-    * { box-sizing: border-box; }
-    /* Цвета, шапка, тема и полосы прокрутки — общие с учебником (../book/app.css): страница раньше
-       жила со своей зашитой тёмной палитрой, без шапки и без светлой темы (находка владельца, 1.6.2). */
-    body { margin: 0; background: var(--bg-root); color: var(--text-main);
-      font: 17px/1.6 "Geologica", system-ui, sans-serif; }
-    /* Раскладка (вердикт владельца 2026-09-25): разделы — в боковой колонке слева, вся середина — спискам. */
-    main { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 34px; align-items: start;
-      max-width: 1440px; margin: 0 auto; padding: 26px 24px 60px; }
-    .handouts-side { position: sticky; top: calc(var(--topbar-height) + 16px); display: grid; gap: 12px; }
-    .handouts-main { min-width: 0; }
-    h1 { margin: 0 0 6px; font-size: 30px; }
-    .lead { margin: 0 0 10px; color: var(--text-soft); font-size: 15px; }
-    .tab-icon { display: inline-flex; flex: 0 0 auto; color: var(--text-muted); }
-    .tab[aria-selected="true"] .tab-icon { color: var(--accent); }
-    .tab-icon svg { display: block; }
-    .tab-count { margin-left: auto; padding: 1px 8px; border-radius: 999px; background: var(--accent-soft);
-      color: var(--accent); font-size: 13px; }
-    @media (max-width: 960px) {
-      main { grid-template-columns: 1fr; gap: 16px; }
-      .handouts-side { position: static; }
-      .tabs { display: flex; flex-wrap: wrap; }
-      .tab { width: auto; }
-    }
-    h2 { margin: 0 0 12px; padding: 8px 16px; border-left: 4px solid var(--accent);
-      border-radius: 10px; background: linear-gradient(90deg, var(--accent-soft), transparent 82%);
-      font-size: 21px; }
-    h3 { margin: 24px 0 10px; color: var(--accent); font-size: 16px; text-transform: uppercase;
-      letter-spacing: 0.06em; }
-    ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-    li { display: flex; align-items: center; gap: 14px; padding: 10px 14px;
-      border: 1px solid var(--border); border-radius: 12px; background: var(--bg-panel); }
-    .thumb { width: 56px; height: 56px; flex: none; object-fit: contain;
-      border-radius: 8px; background: var(--bg-code); }
-    .thumb-icon { display: grid; place-items: center; color: var(--accent); font-size: 20px; font-weight: 700; }
-    .meta { min-width: 0; flex: 1; }
-    .name { font-weight: 700; overflow-wrap: anywhere; }
-    .size { margin-left: 6px; color: var(--text-muted); font-size: 13px; font-weight: 400; }
-    .license { margin-left: 8px; color: var(--text-muted); font-size: 13px; }
-    .note { color: var(--text-soft); font-size: 15px; }
-    .download { flex: none; padding: 8px 16px; border: 1px solid var(--accent); border-radius: 999px;
-      color: var(--accent); font-weight: 800; font-size: 14px; text-decoration: none; }
-    .download:hover { background: var(--accent); color: var(--bg-root); }
-    .thumb-audio { border: 1px solid var(--border); cursor: pointer; color: var(--accent); padding: 0; }
-    .thumb-audio:hover { border-color: var(--accent); background: var(--accent-soft); }
-    .thumb-audio svg { width: 26px; height: 26px; fill: currentColor; }
-    .thumb-audio .icon-pause { display: none; }
-    .thumb-audio.playing .icon-play { display: none; }
-    .thumb-audio.playing .icon-pause { display: block; }
-    .audio-dock { position: fixed; right: 18px; bottom: 18px; z-index: 20; display: none;
-      align-items: center; gap: 10px; max-width: min(94vw, 540px); padding: 10px 14px;
-      border: 1px solid var(--border); border-radius: 14px; background: var(--bg-panel);
-      box-shadow: var(--shadow); }
-    .audio-dock.open { display: flex; }
-    .dock-name { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      color: var(--text-main); font-size: 13px; font-weight: 700; }
-    .dock-time { flex: none; color: var(--text-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
-    .audio-dock input[type="range"] { accent-color: var(--accent); }
-    .dock-seek { width: 130px; }
-    .dock-volume { width: 64px; }
-    .dock-close { flex: none; border: none; background: none; color: var(--text-muted); font-size: 16px; cursor: pointer; }
-    .dock-close:hover { color: var(--text-main); }
-    .empty { display: none; margin: 30px 0; color: var(--text-muted); }
-    body.searching .tab-count { opacity: 0.4; }
-    .footnote { margin-top: 36px; color: var(--text-muted); font-size: 14px; }
-    .footnote a { color: var(--accent); }
-  </style>
+  <link rel="stylesheet" href="../assets/handouts.css">
 </head>
 <body>
 ${siteTopbarHtml('handouts', { prefix: '../', version: handoutsVersion })}
-  <main>
+  <main class="handouts-page">
     <aside class="handouts-side" aria-label="Разделы раздатки">
       <div>
         <h1>Файлы для заданий</h1>
@@ -1321,7 +1255,7 @@ ${panels.join('\n')}
     <input type="range" class="dock-seek" id="dock-seek" min="0" max="100" step="0.1" value="0" aria-label="Перемотка">
     <span class="dock-time" id="dock-duration">0:00</span>
     <input type="range" class="dock-volume" id="dock-volume" min="0" max="1" step="0.01" value="1" aria-label="Громкость">
-    <button type="button" class="dock-close" id="dock-close" title="Остановить и закрыть" aria-label="Остановить и закрыть">${iconSvg('close', { size: 16 })}</button>
+    <button type="button" class="ui-button ui-button--sm ui-button--icon ui-button--quiet dock-close" id="dock-close" title="Остановить и закрыть" aria-label="Остановить и закрыть">${iconSvg('close', { size: 16 })}</button>
   </div>
   <script>
     (function () {
@@ -1831,7 +1765,7 @@ const STUB_PAGES: ReadonlyArray<{ readonly id: string; readonly title: string; r
     id: 'recipes',
     title: 'Рецепты',
     body: `
-      <p class="stub-note">Страница в работе: рецептов на ней пока нет. Ниже — что здесь будет.</p>
+      <p class="ui-callout stub-note">Страница в работе: рецептов на ней пока нет. Ниже — что здесь будет.</p>
       <p>Готовые программы для бытовых и рабочих задач — для тех, кто не собирается учиться программировать,
       а хочет получить результат: взять рецепт, поменять в нём несколько чисел и имён файлов, нажать «Запустить».
       Так уже бывало: художнице нужно было собрать GIF-анимацию из серии PNG-кадров — и Idyllium помог.</p>
@@ -1854,7 +1788,7 @@ const STUB_PAGES: ReadonlyArray<{ readonly id: string; readonly title: string; r
     id: 'why',
     title: 'Почему Idyllium',
     body: `
-      <p class="stub-note">Страница в работе.</p>
+      <p class="ui-callout stub-note">Страница в работе.</p>
       <p>Здесь будет разбор: какие привычки промышленных языков мешают учиться — тихие преобразования типов,
       <code>undefined</code> вместо ошибки, <code>%</code>, который читают как проценты, «магия» массивов и строк, —
       и как то же самое устроено в Idyllium. И честная обратная сторона: где Idyllium проигрывает — в скорости
@@ -1889,18 +1823,7 @@ function buildStubPages(siteRoot: string, version: string): void {
   <title>${escapeHtml(page.title)} — Idyllium</title>
   <link rel="icon" type="image/png" href="../book/favicon.png">
   ${siteNavAssetsHtml('../')}
-  <link rel="stylesheet" href="../book/app.css">
-  <style>
-    .stub-main { max-width: 860px; margin: 0 auto; padding: 30px 22px 90px; color: var(--text-main); line-height: 1.62; }
-    .stub-main h1 { margin: 0 0 14px; font-size: 2.05rem; }
-    .stub-main h2 { margin: 1.8em 0 0.5em; font-size: 1.3rem; }
-    .stub-main p { margin: 0.6em 0; }
-    .stub-main a { color: var(--accent); }
-    .stub-main code { font-family: var(--font-mono); font-size: 0.92em; }
-    .stub-main ul { padding-left: 24px; }
-    .stub-main li { margin: 0.3em 0; }
-    .stub-note { padding: 10px 14px; border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; background: var(--accent-soft); color: var(--text-soft); font-weight: 600; }
-  </style>
+  <link rel="stylesheet" href="../assets/stub.css">
 </head>
 <body>
 ${siteTopbarHtml(page.id, { prefix: '../', version })}
@@ -1952,43 +1875,7 @@ function buildAboutPage(outputRoot: string, buildFacts: AboutBuildFacts): void {
   <meta name="description" content="Idyllium — учебный язык программирования: философия, синтаксис, среда разработки, учебные материалы.">
   <link rel="icon" type="image/png" href="../book/favicon.png">
   ${siteNavAssetsHtml('../')}
-  <link rel="stylesheet" href="../book/app.css">
-  <style>
-    .about-main { max-width: 1100px; margin: 0 auto; padding: 30px 22px 90px; }
-    .wiki-article { color: var(--text-main); line-height: 1.62; }
-    .wiki-article h1 { font-size: 2.05rem; margin: 0 0 14px; padding-bottom: 10px; border-bottom: 2px solid var(--border); }
-    .wiki-article h2 { font-size: 1.42rem; margin: 2.1em 0 0.6em; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
-    .wiki-article h3 { font-size: 1.12rem; margin: 1.6em 0 0.5em; }
-    .wiki-article h4 { font-size: 1rem; margin: 1.4em 0 0.4em; }
-    .wiki-article p { margin: 0.55em 0; }
-    .wiki-article a { color: var(--accent); }
-    .wiki-article code:not(.idyl-code):not(.plain-code) { font-family: var(--font-mono); font-size: 0.9em; background: var(--bg-code); border: 1px solid var(--border-soft); border-radius: 5px; padding: 1px 5px; }
-    .wiki-article .idyl-pre { font-size: 15px; }
-    .wiki-article .plain-code { font-family: inherit; font-size: inherit; }
-    .wiki-article blockquote { margin: 16px 0; padding: 6px 20px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 10px 10px 0; color: var(--text-soft); }
-    .wiki-article ul, .wiki-article ol { margin: 0.55em 0; padding-left: 26px; }
-    .wiki-article li { margin: 0.3em 0; }
-    .wiki-infobox { float: right; width: 380px; margin: 6px 0 18px 28px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; font-size: 0.86rem; }
-    .wiki-infobox-icon { display: block; width: 108px; height: 108px; margin: 4px auto 10px; }
-    .wiki-infobox-title { text-align: center; font-weight: 650; font-size: 1.02rem; margin-bottom: 8px; }
-    .wiki-infobox table { width: 100%; border-collapse: collapse; }
-    .wiki-infobox th, .wiki-infobox td { text-align: left; vertical-align: top; padding: 5px 0; border-top: 1px solid var(--border-soft); }
-    .wiki-infobox th { width: 40%; padding-right: 10px; color: var(--text-soft); font-weight: 550; }
-    .wiki-toc { display: inline-block; min-width: 300px; margin: 16px 0 6px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 12px 20px 14px; }
-    .wiki-toc-title { font-weight: 650; margin-bottom: 6px; }
-    .wiki-toc ol { margin: 0; padding-left: 22px; }
-    .wiki-toc a { color: var(--accent); text-decoration: none; }
-    .wiki-toc a:hover { text-decoration: underline; }
-    .wiki-table { border-collapse: collapse; margin: 12px 0; }
-    .wiki-table th, .wiki-table td { border: 1px solid var(--border); padding: 7px 13px; text-align: left; }
-    .wiki-table th { background: var(--bg-panel-2); }
-    .wiki-modules { line-height: 2; }
-    @media (max-width: 760px) {
-      .wiki-infobox { float: none; width: 100%; margin: 14px 0; }
-      .wiki-toc { display: block; }
-      .about-main { padding: 20px 14px 70px; }
-    }
-  </style>
+  <link rel="stylesheet" href="../assets/about.css">
 </head>
 <body>
 ${siteTopbarHtml('about', { prefix: '../', version: packageVersion })}
@@ -1998,7 +1885,7 @@ ${fragment}
 </body>
 </html>
 `;
-    fs.writeFileSync(path.join(outputRoot, page.out), html, 'utf8');
+    fs.writeFileSync(path.join(outputRoot, page.out), withCodeComponents(html), 'utf8');
   }
   console.log(`about generated: ${ABOUT_PAGES.length} page(s)`);
 }
@@ -2165,6 +2052,7 @@ function tasksShell(sectionId: 'tasks' | 'projects' = 'tasks'): string {
   <title>Idyllium - Задачник</title>
   <link rel="icon" type="image/png" href="../book/favicon.png">
   ${siteNavAssetsHtml('../')}
+  <link rel="stylesheet" href="../assets/docs-shell.css">
   <link rel="stylesheet" href="../book/app.css">
   <script src="../gui-renderer/icons.js"></script>
   <script src="../book/version.js" defer></script>
@@ -2484,6 +2372,15 @@ function removeElementByClass(html: string, className: string): string {
   }
 }
 
+/** Стили страниц сборщика и каркаса документов — файлами в /assets/, а не строками в TS (стилевая база 1.6.4, этап 4). */
+function copyDocsSiteStyles(siteRoot: string): void {
+  const docsSiteRoot = path.resolve(process.cwd(), 'packages', 'docs-site');
+  fs.mkdirSync(path.join(siteRoot, 'assets'), { recursive: true });
+  for (const file of ['docs-shell.css', 'handouts.css', 'about.css', 'stub.css', 'not-found.css']) {
+    copyFileIfExists(path.join(docsSiteRoot, file), path.join(siteRoot, 'assets', file));
+  }
+}
+
 function copyAssets(sourceRoot: string, outputRoot: string): void {
   copyFileIfExists(path.join(sourceRoot, 'favicon.png'), path.join(outputRoot, 'favicon.png'));
   copyFileIfExists(path.join(sourceRoot, 'version.js'), path.join(outputRoot, 'version.js'));
@@ -2551,47 +2448,47 @@ function writeLegacyIdeRedirect(outputRoot: string): void {
 `, 'utf8');
 }
 
-function writeSite404(outputRoot: string): void {
+function writeSite404(outputRoot: string, version: string): void {
   // Сайт печётся целиком здесь — Jekyll на GitHub Pages не нужен и ОПАСЕН:
   // Liquid в нём считает {{…}} и {% for %} своими тегами, а с 1.5.1 наши
   // доки шаблонизатора полны таких последовательностей (упавший деплой
   // 2026-08-22: «Liquid syntax error … in ai/idyllium-ai-reference.md»).
   fs.writeFileSync(path.join(outputRoot, '.nojekyll'), '', 'utf8');
+  // 404 — обычная страница сайта: общая шапка, тема, токены (стилевая база 1.6.4, вердикт владельца).
+  // GitHub Pages отдаёт её по любому адресу, поэтому первым делом ставится <base> на корень сайта —
+  // иначе относительные ссылки на стили считались бы от несуществующей папки.
   fs.writeFileSync(path.join(outputRoot, '404.html'), `<!doctype html>
 <html lang="ru">
 <head>
+  <script>
+    (function () {
+      var parts = location.pathname.split('/').filter(Boolean);
+      var base = document.createElement('base');
+      base.href = location.hostname.endsWith('github.io') && parts.length > 0 ? '/' + parts[0] + '/' : '/';
+      document.head.appendChild(base);
+    })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Idyllium - страница не найдена</title>
-  <style>
-    * { box-sizing: border-box; }
-    body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px; background: #101012; color: #f1f1f3; font: 18px/1.5 system-ui, sans-serif; }
-    main { width: min(100%, 560px); padding: 26px; border: 1px solid #34363d; border-radius: 8px; background: #18191d; }
-    h1 { margin: 0 0 10px; font-size: 30px; }
-    p { color: #c7c9cf; }
-    nav { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
-    a { padding: 8px 12px; border: 1px solid #34363d; border-radius: 6px; color: #f1f1f3; text-decoration: none; }
-    a:hover { border-color: #76bff4; }
-  </style>
+  <link rel="icon" href="assets/favicon-32x32.png" sizes="32x32">
+  ${siteNavAssetsHtml('')}
+  <link rel="stylesheet" href="assets/not-found.css">
 </head>
 <body>
-  <main>
-    <h1>Страница не найдена</h1>
-    <p>Можно вернуться в IDE, открыть учебник, задачник или справочник.</p>
-    <nav>
-      <a data-site-path="">Открыть IDE</a>
-      <a data-site-path="book/">Учебник</a>
-      <a data-site-path="tasks/">Задачник</a>
-      <a data-site-path="reference/">Документация</a>
-    </nav>
+${siteTopbarHtml('not-found', { prefix: '', version })}
+  <main class="not-found-main">
+    <div class="ui-state ui-state--error not-found-card">
+      <h1>Страница не найдена</h1>
+      <p>Можно вернуться в IDE, открыть учебник, задачник или справочник.</p>
+      <nav>
+        <a class="ui-button ui-button--lg ui-button--primary" href="">Открыть IDE</a>
+        <a class="ui-button ui-button--lg" href="book/">Учебник</a>
+        <a class="ui-button ui-button--lg" href="tasks/">Задачник</a>
+        <a class="ui-button ui-button--lg" href="reference/">Документация</a>
+      </nav>
+    </div>
   </main>
-  <script>
-    const parts = location.pathname.split('/').filter(Boolean);
-    const base = location.hostname.endsWith('github.io') && parts.length > 0 ? '/' + parts[0] + '/' : '/';
-    document.querySelectorAll('[data-site-path]').forEach((link) => {
-      link.href = base + link.dataset.sitePath;
-    });
-  </script>
 </body>
 </html>
 `, 'utf8');
@@ -2679,6 +2576,14 @@ function normalizePath(filePath: string): string {
 function isInside(candidate: string, parent: string): boolean {
   const relative = path.relative(parent, candidate);
   return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+}
+
+/** Статические код-блоки статьи («О проекте») получают классы компонента ui-code — как в уроках их даёт app.js учебника. */
+function withCodeComponents(html: string): string {
+  return html
+    .replace(/class="idyl-code-wrapper"/g, 'class="ui-code idyl-code-wrapper"')
+    .replace(/class="idyl-output"/g, 'class="ui-code ui-code--output idyl-output" data-label="Вывод"')
+    .replace(/class="idyl-error"/g, 'class="ui-code ui-code--error idyl-error" data-label="Ошибка"');
 }
 
 function escapeHtml(value: string): string {

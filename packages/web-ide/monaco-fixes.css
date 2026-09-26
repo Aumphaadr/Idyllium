@@ -1,0 +1,9 @@
+/* Поправки к сторонней библиотеке Monaco (стилевая база 1.6.4, этап 4). Стили Monaco приходят
+   вне слоёв каскада и сильнее любых наших, поэтому здесь — и только здесь — допустим !important.
+   Файл подключается после app.css; копирует build-web-ide.js. */
+.monaco-editor-host .view-line,
+.monaco-editor-host .inputarea {
+  letter-spacing: 0 !important;
+  font-variant-ligatures: none !important;
+  font-feature-settings: "liga" 0, "calt" 0 !important;
+}

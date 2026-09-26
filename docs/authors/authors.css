@@ -2,76 +2,57 @@
    сайта: палитра и шрифты из токенов (assets/site-tokens.css), шапка и тема —
    общие модули (site-nav, site-theme: html[data-theme], один ключ на весь сайт). */
 
-:root {
-  /* Имена ниже — исторические имена раздела, псевдонимы токенов на время переезда стилевой базы (1.6.4). */
-  --bg-root: var(--color-bg);
-  --bg-panel: var(--color-panel);
-  --bg-panel-2: var(--color-panel-raised);
-  --bg-panel-3: var(--color-panel-soft);
-  --bg-code: var(--color-code-bg);
-  --text-main: var(--color-text);
-  --text-soft: var(--color-text-soft);
-  --text-muted: var(--color-text-muted);
-  --border: var(--color-border);
-  --accent: var(--color-accent);
-  --accent-soft: var(--color-accent-soft);
-  --ok: var(--color-success);
-  --warn: var(--color-warning);
-  --bad: var(--color-danger);
-  --shadow: var(--shadow-popup);
-}
-
 .page { max-width: 1500px; margin: 0 auto; padding: 18px; }
 .intro { max-width: 900px; }
 .intro h1 { margin: 6px 0 10px; font-size: 30px; line-height: 1.2; font-weight: 800; }
-.intro p { color: var(--text-soft); }
-.recipes { margin: 12px 0 4px; padding: 10px 14px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; }
+.intro p { color: var(--color-text-soft); }
+.recipes { margin: 12px 0 4px; padding: 10px 14px; background: var(--color-panel); border: 1px solid var(--color-border); border-radius: 12px; }
 .recipes summary, .admin summary { cursor: pointer; font-weight: 700; }
-.recipes li { margin: 8px 0; color: var(--text-soft); }
+.recipes li { margin: 8px 0; color: var(--color-text-soft); }
 
 .builder { display: grid; grid-template-columns: minmax(360px, 1fr) minmax(420px, 1.1fr); gap: 22px; margin-top: 18px; align-items: start; }
 @media (max-width: 980px) { .builder { grid-template-columns: 1fr; } }
 
-fieldset, .admin {
-  margin: 0 0 14px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-panel);
+.builder fieldset, .admin {
+  margin: 0 0 14px; padding: 12px 14px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-panel);
 }
-legend { padding: 0 6px; font-weight: 800; }
-.field { display: block; margin: 8px 0; color: var(--text-soft); font-size: 14px; }
+.builder legend { padding: 0 6px; font-weight: 800; }
+.field { display: block; margin: 8px 0; color: var(--color-text-soft); font-size: 14px; }
 .field.narrow { max-width: 220px; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 4px 12px; }
-.hint { margin: 6px 0; color: var(--text-muted); font-size: 13px; }
-.radio-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 4px 0 8px; color: var(--text-soft); font-size: 14px; }
+.hint { margin: 6px 0; color: var(--color-text-muted); font-size: 13px; }
+.radio-row { display: flex; gap: 16px; flex-wrap: wrap; margin: 4px 0 8px; color: var(--color-text-soft); font-size: 14px; }
 .test-row .kind { width: auto; }
 .chips { display: flex; gap: 8px; flex-wrap: wrap; }
-.chips label { padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; font-size: 14px; color: var(--text-soft); cursor: pointer; }
-.chips label:has(input:checked) { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.chips label { padding: 4px 10px; border: 1px solid var(--color-border); border-radius: 999px; font-size: 14px; color: var(--color-text-soft); cursor: pointer; }
+.chips label:has(input:checked) { border-color: var(--color-accent); color: var(--color-accent); background: var(--color-accent-soft); }
 .chips input { display: none; }
 
 .row-buttons, .file-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
-.file-note { color: var(--text-muted); font-size: 13px; }
+.file-note { color: var(--color-text-muted); font-size: 13px; }
 
 .test-row, .rule-row { display: flex; gap: 6px; align-items: center; margin: 6px 0; }
 .test-row input, .rule-row input { margin-top: 0; }
-.test-row .answer { flex: 0 0 auto; max-width: 45%; color: var(--ok); font-family: var(--font-mono); font-size: 13px; white-space: pre-wrap; }
+.test-row .answer { flex: 0 0 auto; max-width: 45%; color: var(--color-success); font-family: var(--font-mono); font-size: 13px; white-space: pre-wrap; }
 .test-row .small { flex: 0 0 74px; }
 .rule-row .when { flex: 0 0 34%; }
 .remove { flex: 0 0 auto; padding: 4px 9px; }
-.label-mini { color: var(--text-muted); font-size: 12px; white-space: nowrap; }
+.label-mini { color: var(--color-text-muted); font-size: 12px; white-space: nowrap; }
 
 .tokens { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 6px 0; }
-.token { padding: 2px 8px; border: 1px dashed var(--accent); border-radius: 6px; background: none; color: var(--accent); font-family: var(--font-mono); font-size: 13px; cursor: pointer; }
-.token:hover { background: var(--accent-soft); }
+.token { padding: 2px 8px; border: 1px dashed var(--color-accent); border-radius: 6px; background: none; color: var(--color-accent); font-family: var(--font-mono); font-size: 13px; cursor: pointer; }
+.token:hover { background: var(--color-accent-soft); }
 
 .tip {
   position: relative; display: inline-grid; place-items: center; width: 17px; height: 17px; margin-left: 2px;
-  border: 1px solid var(--text-muted); border-radius: 50%; color: var(--text-muted); font-size: 11px; font-weight: 700; cursor: help; vertical-align: middle;
+  border: 1px solid var(--color-text-muted); border-radius: 50%; color: var(--color-text-muted); font-size: 11px; font-weight: 700; cursor: help; vertical-align: middle;
 }
 .tip:hover::after, .tip:focus::after, .tip.open::after {
   content: attr(data-tip);
   position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-30%); z-index: 30;
-  width: min(340px, 80vw); padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px;
-  background: var(--bg-panel-2); color: var(--text-main); font-size: 13px; font-weight: 400; line-height: 1.45; text-align: left;
-  box-shadow: var(--shadow); white-space: normal; cursor: default;
+  width: min(340px, 80vw); padding: 9px 11px; border: 1px solid var(--color-border); border-radius: 8px;
+  background: var(--color-panel-raised); color: var(--color-text); font-size: 13px; font-weight: 400; line-height: 1.45; text-align: left;
+  box-shadow: var(--shadow-popup); white-space: normal; cursor: default;
 }
 
 .side h2 { margin: 16px 0 6px; font-size: 18px; font-weight: 800; }
@@ -79,18 +60,12 @@ legend { padding: 0 6px; font-weight: 800; }
 .side-sticky { position: sticky; top: calc(var(--topbar-height) + 12px); }
 @media (max-width: 980px) { .side-sticky { position: static; } }
 #preview { min-height: 200px; }
-.markup { min-height: 190px; font-size: 12.5px !important; white-space: pre; }
+.markup { min-height: 190px; font-size: 12.5px; white-space: pre; }
 
-.selfcheck { padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-panel); font-size: 14px; }
+.selfcheck { padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-panel); font-size: 14px; }
 .issue { display: flex; gap: 8px; margin: 5px 0; }
 .issue::before { flex: 0 0 auto; font-weight: 800; }
-.issue-ok { color: var(--ok); } .issue-ok::before { content: "✓"; }
-.issue-warning { color: var(--warn); } .issue-warning::before { content: "!"; }
-.issue-error { color: var(--bad); } .issue-error::before { content: "✗"; }
-.issue small { display: block; color: var(--text-soft); white-space: pre-wrap; }
-
-/* Переходный слой (стилевая база 1.6.4, этап 3): умолчания для полей вне ui-field; уйдёт на этапе 4. */
-@layer base {
-  input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
-  textarea { resize: vertical; }
-}
+.issue-ok { color: var(--color-success); } .issue-ok::before { content: "✓"; }
+.issue-warning { color: var(--color-warning); } .issue-warning::before { content: "!"; }
+.issue-error { color: var(--color-danger); } .issue-error::before { content: "✗"; }
+.issue small { display: block; color: var(--color-text-soft); white-space: pre-wrap; }

@@ -31,6 +31,7 @@ const color = {
   'panel-active-hover': ['#372b55', '#cbbfdb'],
   'code-bg': ['#100b1a', '#f2edf7'],
   'topbar-bg': ['rgba(12, 5, 21, 0.92)', 'rgba(246, 242, 251, 0.92)'],
+  scene: ['#1a1326', '#dfd8e8'],
   backdrop: ['rgba(6, 2, 12, 0.55)', 'rgba(33, 26, 46, 0.35)'],
   // текст
   text: ['#f2eaf7', '#211a2e'],
@@ -120,6 +121,7 @@ const ansi = {
 };
 
 const shadow = {
+  raised: ['0 2px 7px rgba(0, 0, 0, 0.42)', '0 2px 7px rgba(39, 30, 54, 0.22)'],
   popup: ['0 18px 44px rgba(0, 0, 0, 0.32)', '0 18px 44px rgba(39, 30, 54, 0.16)'],
   floating: ['0 18px 44px rgba(0, 0, 0, 0.34)', '0 18px 44px rgba(39, 30, 54, 0.18)'],
   dialog: ['0 24px 60px rgba(0, 0, 0, 0.45)', '0 24px 60px rgba(39, 30, 54, 0.22)'],
@@ -130,9 +132,9 @@ const fontSize = [11, 12, 13, 14, 16, 18, 21, 24, 32, 40];
 const lineHeight = { tight: '1.3', ui: '1.45', text: '1.6', prose: '1.68' };
 const space = [2, 4, 6, 8, 12, 16, 20, 24, 32];
 const radius = { 4: '4px', 6: '6px', 8: '8px', 12: '12px', pill: '999px' };
-const z = { sticky: 20, topbar: 50, menu: 60, popover: 200, floating: 250, dialog: 300, lens: 400 };
+const z = { sticky: 20, drawer: 40, topbar: 50, menu: 60, popover: 200, floating: 250, dialog: 300, lens: 400 };
 const duration = { fast: '120ms', base: '160ms', slow: '250ms' };
-const layout = { 'topbar-height': '56px', 'sidebar-width': '330px' };
+const layout = { 'topbar-height': '56px', 'sidebar-width': '330px', 'toc-width': '236px' };
 
 /** Плотность страницы: документы читают как книгу, инструменты устроены как приложение. */
 const density = {

@@ -145,6 +145,7 @@ main() {
       } else {
         const input = document.createElement("input");
         input.type = "text";
+        input.className = "ui-field ui-field--sm ui-field--mono";
         input.placeholder = "\u0432\u0432\u043E\u0434 \u0447\u0435\u0440\u0435\u0437 \u043F\u0440\u043E\u0431\u0435\u043B: 3 5";
         input.value = Array.isArray(test.in) ? test.in.join(" ") : test.in;
         input.addEventListener("input", () => replace({ in: input.value }));

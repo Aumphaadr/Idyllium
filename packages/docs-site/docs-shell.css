@@ -1,0 +1,63 @@
+/* Каркас страницы-документа (стилевая база 1.6.4, этап 4): боковая колонка — содержимое — оглавление.
+   Один на учебник, задачник, проекты и справочник (у справочника оглавления нет — модификатор
+   docs-shell--no-toc). Раньше учебник и справочник держали по своей копии этой сетки и её
+   поведения на узком экране. Здесь только раскладка: вид колонок, навигации и оглавления —
+   у компонентов ui-sidebar / ui-toc (assets/site-components.css). Подключается после общих
+   стилей и до стилей раздела; на сайте — /assets/docs-shell.css. */
+.docs-shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr) var(--toc-width);
+  min-height: calc(100vh - var(--topbar-height));
+}
+
+.docs-shell--no-toc {
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+}
+
+.docs-main {
+  position: relative;
+  min-width: 0;
+  padding: 34px clamp(22px, 4vw, 58px) 54px;
+}
+
+/* main фокусируется программно (переход по маршруту) и кликом — tabindex="-1";
+   браузерная фокус-обводка рисовала «белые полоски» по границам колонок. */
+.docs-main:focus,
+.docs-main:focus-visible {
+  outline: none;
+}
+
+@media (max-width: 1180px) {
+  .docs-shell {
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  }
+
+  .docs-toc {
+    display: none;
+  }
+}
+
+/* Узкий экран: колонка выезжает слева по кнопке-гамбургеру шапки (body.sidebar-open ставит скрипт раздела). */
+@media (max-width: 820px) {
+  .docs-shell {
+    display: block;
+  }
+
+  .docs-sidebar {
+    position: fixed;
+    inset: var(--topbar-height) auto 0 0;
+    z-index: var(--z-drawer);
+    width: min(86vw, var(--sidebar-width));
+    transform: translateX(-102%);
+    transition: transform var(--duration-slow) ease;
+    box-shadow: var(--shadow-popup);
+  }
+
+  body.sidebar-open .docs-sidebar {
+    transform: translateX(0);
+  }
+
+  .docs-main {
+    padding: 24px 18px 42px;
+  }
+}

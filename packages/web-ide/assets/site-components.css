@@ -37,6 +37,10 @@
     color: var(--color-text);
   }
 
+  .ui-button:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
   .ui-button:disabled {
     opacity: 0.5;
     cursor: default;
@@ -142,6 +146,7 @@
   }
 
   .ui-button.is-active,
+  .ui-button.active,
   .ui-button[aria-pressed="true"] {
     background: var(--color-accent-soft);
     color: var(--color-text);
