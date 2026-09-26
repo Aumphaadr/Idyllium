@@ -13,7 +13,7 @@
 .tab-icon svg { display: block; }
 .tab-count { margin-left: auto; padding: 1px 8px; border-radius: 999px; background: var(--color-accent-soft);
   color: var(--color-accent); font-size: 13px; }
-@media (max-width: 960px) {
+@media (max-width: 980px) {
   .handouts-page { grid-template-columns: 1fr; gap: 16px; }
   .handouts-side { position: static; }
   .tabs { display: flex; flex-wrap: wrap; }
@@ -44,7 +44,7 @@
 .thumb-audio .icon-pause { display: none; }
 .thumb-audio.playing .icon-play { display: none; }
 .thumb-audio.playing .icon-pause { display: block; }
-.audio-dock { position: fixed; right: 18px; bottom: 18px; z-index: 20; display: none;
+.audio-dock { position: fixed; right: 18px; bottom: 18px; z-index: var(--z-sticky); display: none;
   align-items: center; gap: 10px; max-width: min(94vw, 540px); padding: 10px 14px;
   border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-panel);
   box-shadow: var(--shadow-popup); }

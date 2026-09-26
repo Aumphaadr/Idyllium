@@ -215,8 +215,10 @@ export const DESIGN_TOKENS = Object.freeze({
   },
   "breakpoints": {
     "phone": 480,
+    "small": 640,
+    "compact": 720,
     "narrow": 820,
-    "medium": 1000,
+    "medium": 980,
     "wide": 1200
   }
 });

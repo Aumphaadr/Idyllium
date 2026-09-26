@@ -1189,7 +1189,7 @@
       figure.appendChild(viewport);
       if (caption) {
         const figcaption = document.createElement('figcaption');
-        figcaption.className = 'ui-gui-demo-caption';
+        figcaption.className = 'ui-gui-demo-caption' + (this.getAttribute('caption-font') === 'mono' ? ' ui-gui-demo-caption--mono' : '');
         figcaption.textContent = caption;
         figure.appendChild(figcaption);
       }

@@ -8247,8 +8247,10 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     },
     "breakpoints": {
       "phone": 480,
+      "small": 640,
+      "compact": 720,
       "narrow": 820,
-      "medium": 1e3,
+      "medium": 980,
       "wide": 1200
     }
   });

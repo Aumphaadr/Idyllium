@@ -8,7 +8,6 @@
 .wiki-article h4 { font-size: 1rem; margin: 1.4em 0 0.4em; }
 .wiki-article p { margin: 0.55em 0; }
 .wiki-article code:not(.idyl-code):not(.plain-code) { font-family: var(--font-mono); font-size: 0.9em; background: var(--color-code-bg); border: 1px solid var(--color-border-soft); border-radius: 5px; padding: 1px 5px; }
-.wiki-article .ui-code > pre { font-size: 15px; }
 .wiki-article .plain-code { font-family: inherit; font-size: inherit; }
 .wiki-article blockquote { margin: 16px 0; padding: 6px 20px; border-left: 3px solid var(--color-accent); background: var(--color-accent-soft); border-radius: 0 10px 10px 0; color: var(--color-text-soft); }
 .wiki-article ul, .wiki-article ol { margin: 0.55em 0; padding-left: 26px; }
@@ -28,7 +27,7 @@
 .wiki-table th, .wiki-table td { border: 1px solid var(--color-border); padding: 7px 13px; text-align: left; }
 .wiki-table th { background: var(--color-panel-raised); }
 .wiki-modules { line-height: 2; }
-@media (max-width: 760px) {
+@media (max-width: 820px) {
   .wiki-infobox { float: none; width: 100%; margin: 14px 0; }
   .wiki-toc { display: block; }
   .about-main { padding: 20px 14px 70px; }

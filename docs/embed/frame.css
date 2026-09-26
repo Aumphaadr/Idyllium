@@ -52,6 +52,7 @@ body {
   --border: #342846;
   --text: #f2eaf7;
   --muted: #8e819d;
+  --on-solid: #ffffff;
   --accent: #87bfff;
   --accent-strong: #a3ceff;
   --run-bg: #179f5b;
@@ -109,6 +110,7 @@ body.theme-light {
   --border: #c8bed5;
   --text: #211a2e;
   --muted: #6d637b;
+  --on-solid: #ffffff;
   --accent: #275f9e;
   --accent-strong: #1d4d82;
   --run-bg: #177b49;
@@ -300,12 +302,12 @@ body {
 .button svg.stroke { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .button:hover:not(:disabled) { border-color: var(--accent); }
 .button:disabled { opacity: 0.5; cursor: default; }
-.button-run { background: var(--run-bg); border-color: var(--run-bg); color: #ffffff; }
+.button-run { background: var(--run-bg); border-color: var(--run-bg); color: var(--on-solid); }
 .button-run:hover:not(:disabled) { background: var(--run-bg-hover); border-color: var(--run-bg-hover); }
 .button-stop {
   background: color-mix(in srgb, var(--danger) 82%, #000000);
   border-color: color-mix(in srgb, var(--danger) 70%, #000000);
-  color: #ffffff;
+  color: var(--on-solid);
 }
 .button-stop:hover:not(:disabled) { background: var(--danger); border-color: var(--danger); }
 .button-check { border-color: var(--accent); color: var(--accent-strong); background: color-mix(in srgb, var(--accent) 12%, transparent); }

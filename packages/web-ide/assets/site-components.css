@@ -1215,7 +1215,7 @@
   }
 
   /* Узкий экран: три дропдауна становятся одним «Разделы» с тем же деревом внутри. */
-  @media (max-width: 900px) {
+  @media (max-width: 980px) {
     .ui-nav[data-host="docs"] > .ui-nav-group:not(.ui-nav-collapsed) {
       display: none;
     }
@@ -1237,7 +1237,7 @@
   }
 
   /* Шапка IDE на средней ширине: кнопки теснее (подпись «Внешний вид» IDE сама сокращает до «Вид»). */
-  @media (max-width: 1180px) and (min-width: 981px) {
+  @media (max-width: 1200px) and (min-width: 981px) {
     .ui-topbar--ide .ui-topbar-actions {
       gap: 5px;
     }
@@ -1337,5 +1337,10 @@
   .ui-gui-demo-caption {
     color: var(--color-text-muted);
     font-size: 14px;
+  }
+
+  /* Подпись-код (атрибут caption-font="mono" у <idyl-gui-demo>): имена тем в витрине урока «Первое окно». */
+  .ui-gui-demo-caption--mono {
+    font-family: var(--font-mono);
   }
 }
