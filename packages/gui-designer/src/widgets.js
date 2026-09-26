@@ -67,6 +67,26 @@ const BORDER_COLOR = { name: 'border_color', kind: 'color', group: 'colors', lab
 const ON_CLICK = { name: 'on_click', params: '', comment: 'что делать при щелчке' };
 const ON_CHANGE = (what) => ({ name: 'on_change', params: '', comment: `что делать, когда ${what}` });
 
+// Общая семья событий (спека some_widget_events/01, вердикты владельца 2026-09-26): мышь — у всех,
+// фокус и клавиши — у фокусируемых; в инспекторе свои события виджета идут первыми, семья — за ними.
+const POINTER_EVENTS = (type) => [
+  { name: 'on_mouse_enter', params: '', comment: 'курсор вошёл в виджет' },
+  { name: 'on_mouse_leave', params: '', comment: 'курсор вышел из виджета' },
+  { name: 'on_mouse_pressed', params: `gui.${type} sender, gui.MouseEvent evt`, comment: 'кнопку мыши нажали: evt.x, evt.y, evt.mouse_button' },
+  { name: 'on_mouse_released', params: `gui.${type} sender, gui.MouseEvent evt`, comment: 'кнопку мыши отпустили: evt.x, evt.y' },
+  { name: 'on_mouse_move', params: `gui.${type} sender, gui.MouseEvent evt`, comment: 'мышь движется над виджетом: evt.x, evt.y' },
+];
+const FOCUS_EVENTS = [
+  { name: 'on_focus_in', params: '', comment: 'виджет получил фокус' },
+  { name: 'on_focus_out', params: '', comment: 'виджет потерял фокус' },
+];
+const KEY_EVENTS = (type) => [
+  { name: 'on_key_pressed', params: `gui.${type} sender, gui.KeyboardEvent evt`, comment: 'клавишу нажали: evt.key' },
+  { name: 'on_key_released', params: `gui.${type} sender, gui.KeyboardEvent evt`, comment: 'клавишу отпустили: evt.key' },
+];
+const DOUBLE_CLICK = (type) => ({ name: 'on_double_click', params: `gui.${type} sender, gui.MouseEvent evt`, comment: 'двойной щелчок' });
+const FOCUSABLE = new Set(['Button', 'LineEdit', 'TextEdit', 'SpinBox', 'FloatSpinBox', 'Slider', 'CheckBox', 'RadioButton', 'ComboBox', 'Table']);
+
 /** Данные виджета — то, что задаётся методами, а не свойствами: описание редактора и генерации. */
 const DATA_KINDS = {
   // ComboBox: пункты — add_item("…") по одному.
@@ -88,7 +108,11 @@ function widget(type, label, defaultName, group, size, own, options = {}) {
     size,
     icon: options.icon || `widget-${type}`,
     props: [...GEOMETRY, ...own, ...COMMON_TAIL],
-    events: options.events || [],
+    events: [
+      ...(options.events || []),
+      ...(FOCUSABLE.has(type) ? [...FOCUS_EVENTS, ...KEY_EVENTS(type)] : []),
+      ...(options.pointer === false ? [] : POINTER_EVENTS(type)),
+    ],
     container: options.container || null,
     data: options.data ? { ...DATA_KINDS[options.data], ...(options.dataOptions || {}) } : null,
     hint: options.hint || '',
@@ -102,7 +126,7 @@ const WIDGET_TYPES = [
     FONT_SIZE,
     { name: 'href', kind: 'string', group: 'text', label: 'ссылка: надпись станет гиперссылкой' },
     BORDER_COLOR,
-  ], { events: [ON_CLICK] }),
+  ], { events: [ON_CLICK, DOUBLE_CLICK('Label')] }),
   widget('Button', 'Кнопка', 'button', 'Надписи и кнопки', { width: 120, height: 32 }, [
     { name: 'text', kind: 'string', group: 'text', label: 'текст', initial: 'Кнопка' },
     FONT_SIZE,
@@ -115,14 +139,21 @@ const WIDGET_TYPES = [
     FONT_SIZE,
     BORDER_COLOR,
     { name: 'placeholder_color', kind: 'color', group: 'colors', label: 'цвет подсказки' },
-  ], { events: [ON_CHANGE('текст изменился')] }),
+  ], { events: [
+    ON_CHANGE('текст изменился'),
+    { name: 'on_enter_pressed', params: '', comment: 'в поле нажали Enter — ввод закончен' },
+    { name: 'on_editing_finished', params: '', comment: 'правку закончили: Enter или ушли из поля' },
+  ] }),
   widget('TextEdit', 'Многострочное поле', 'text_edit', 'Ввод', { width: 240, height: 120 }, [
     { name: 'text', kind: 'string', group: 'text', label: 'текст' },
     { name: 'placeholder', kind: 'string', group: 'text', label: 'подсказка внутри пустого поля' },
     FONT_SIZE,
     BORDER_COLOR,
     { name: 'placeholder_color', kind: 'color', group: 'colors', label: 'цвет подсказки' },
-  ], { events: [ON_CHANGE('текст изменился')] }),
+  ], { events: [
+    ON_CHANGE('текст изменился'),
+    { name: 'on_editing_finished', params: '', comment: 'правку закончили: ушли из поля, изменив текст' },
+  ] }),
   widget('SpinBox', 'Счётчик', 'spin_box', 'Ввод', { width: 100, height: 28 }, [
     { name: 'min', kind: 'int', group: 'values', label: 'минимум', default: 0 },
     { name: 'max', kind: 'int', group: 'values', label: 'максимум', default: 100 },
@@ -143,7 +174,11 @@ const WIDGET_TYPES = [
     { name: 'value', kind: 'int', group: 'values', label: 'значение', default: 0 },
     { name: 'step', kind: 'int', group: 'values', label: 'шаг', default: 1 },
     { name: 'orientation', kind: 'enum', group: 'values', label: 'ориентация', values: ['horizontal', 'vertical'], default: 'horizontal' },
-  ], { events: [ON_CHANGE('ползунок сдвинули')] }),
+  ], { events: [
+    ON_CHANGE('ползунок сдвинули'),
+    { name: 'on_grab', params: '', comment: 'маркер схватили мышью' },
+    { name: 'on_release', params: '', comment: 'маркер отпустили — значение устоялось' },
+  ] }),
   widget('CheckBox', 'Флажок', 'check_box', 'Выбор', { width: 180, height: 24 }, [
     { name: 'text', kind: 'string', group: 'text', label: 'текст', initial: 'Флажок' },
     { name: 'is_checked', kind: 'bool', group: 'values', label: 'отмечен', default: false },
@@ -170,10 +205,10 @@ const WIDGET_TYPES = [
   ]),
   widget('ImageBox', 'Картинка', 'image_box', 'Индикаторы', { width: 160, height: 120 }, [
     { name: 'resize_mode', kind: 'enum', group: 'values', label: 'вписывание: целиком, с обрезкой, растянуть, как есть', values: ['fit', 'fill', 'stretch', 'original'], default: 'fit' },
-  ], { hint: 'Картинка задаётся в коде: image_box1.set_image(…)' }),
+  ], { hint: 'Картинка задаётся в коде: image_box1.set_image(…)', events: [ON_CLICK, DOUBLE_CLICK('ImageBox')] }),
   widget('Icon', 'Значок', 'icon', 'Индикаторы', { width: 24, height: 24 }, [
     { name: 'icon', kind: 'enum', group: 'values', label: 'имя значка из единого набора сайта', values: ICON_NAMES, default: 'star' },
-  ], { icon: 'star', hint: 'Значок вписывается в квадрат по меньшей стороне; цвет — text_color' }),
+  ], { icon: 'star', hint: 'Значок вписывается в квадрат по меньшей стороне; цвет — text_color', events: [ON_CLICK, DOUBLE_CLICK('Icon')] }),
   widget('Canvas', 'Холст', 'canvas', 'Индикаторы', { width: 300, height: 150 }, [
   ], {
     hint: 'Рисование — в коде: canvas1.draw(…), canvas1.fill(…)',
@@ -187,20 +222,24 @@ const WIDGET_TYPES = [
       { name: 'on_mouse_pressed', params: 'gui.Canvas canvas, gui.MouseEvent evt', comment: 'кнопку мыши нажали: evt.x, evt.y' },
       { name: 'on_mouse_released', params: 'gui.Canvas canvas, gui.MouseEvent evt', comment: 'кнопку мыши отпустили: evt.x, evt.y' },
       { name: 'on_mouse_scroll', params: 'gui.Canvas canvas, gui.MouseScrollEvent evt', comment: 'крутят колесо: evt.delta' },
+      { name: 'on_mouse_enter', params: 'gui.Canvas canvas', comment: 'курсор вошёл на холст' },
+      { name: 'on_mouse_leave', params: 'gui.Canvas canvas', comment: 'курсор ушёл с холста' },
+      { name: 'on_click', params: 'gui.Canvas canvas', comment: 'щелчок по холсту' },
     ],
+    pointer: false,
   }),
   widget('Frame', 'Рамка', 'frame', 'Контейнеры', { width: 220, height: 140 }, [
     { name: 'title', kind: 'string', group: 'text', label: 'заголовок' },
     FONT_SIZE,
     BORDER_COLOR,
     { name: 'border_width', kind: 'int', group: 'values', label: 'толщина рамки', min: 0 },
-  ], { container: 'children' }),
+  ], { container: 'children', events: [ON_CLICK] }),
   widget('TabWidget', 'Вкладки', 'tabs', 'Контейнеры', { width: 320, height: 200 }, [
     FONT_SIZE,
-  ], { container: 'tabs', events: [ON_CHANGE('переключили вкладку')] }),
+  ], { container: 'tabs', events: [ON_CHANGE('переключили вкладку'), ON_CLICK] }),
   widget('Table', 'Таблица', 'table', 'Витрины', { width: 320, height: 200 }, [
     FONT_SIZE,
-  ], { events: [{ name: 'on_select', params: '', comment: 'что делать, когда выбрали строку' }], data: 'table' }),
+  ], { events: [{ name: 'on_select', params: '', comment: 'что делать, когда выбрали строку' }, DOUBLE_CLICK('Table')], data: 'table' }),
   widget('BarChart', 'Столбцы', 'bar_chart', 'Витрины', { width: 320, height: 220 }, [
     { name: 'min_value', kind: 'float', group: 'values', label: 'низ шкалы' },
     { name: 'max_value', kind: 'float', group: 'values', label: 'верх шкалы' },
@@ -235,7 +274,14 @@ const WINDOW_PROPS = [
   ...STYLE_PROPS,
 ];
 
-const WINDOW_EVENTS = [{ name: 'on_close', params: '', comment: 'что делать, когда окно закрывают' }];
+const WINDOW_EVENTS = [
+  { name: 'on_close', params: '', comment: 'что делать, когда окно закрывают' },
+  ...KEY_EVENTS('Window'),
+  { name: 'on_focus_in', params: '', comment: 'окно вывели наверх' },
+  { name: 'on_focus_out', params: '', comment: 'окно ушло под другое' },
+  { name: 'on_move', params: '', comment: 'окно перетащили: x и y уже новые' },
+  ...POINTER_EVENTS('Window'),
+];
 
 const WIDGETS = Object.fromEntries(WIDGET_TYPES.map((def) => [def.type, def]));
 

@@ -289,6 +289,37 @@ main() {
       <p>Исправление: выбирайте пункт по номеру — <code>combo.selected_index = 1;</code> — а <code>selected_text</code> используйте только для чтения.</p>
     </div>
 
+    <!-- Section 10a -->
+    <div class="docs-section">
+      <h2>Горячая клавиша не работает, пока курсор в поле ввода</h2>
+      <p>У окна есть событие <code>on_key_pressed</code>: «Escape закрывает программу», «пробел — пауза». Пишем обработчик,
+      запускаем, щёлкаем в поле ввода, жмём Escape — ничего не происходит.</p>
+
+      <idyl-code-block><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.on_key_pressed = void function(gui.Window sender, gui.KeyboardEvent evt) {
+        if (evt.key == "Escape") {
+            win.close();
+        }
+    };
+
+    gui.LineEdit name;
+    name.placeholder = "Пока курсор здесь, Escape окну не достаётся";
+    name.width = 330;
+    win.add_child(name);
+    win.show();
+}
+</script></idyl-code-block>
+
+      <p>Это не поломка, а правило: пока фокус в поле ввода (<code>LineEdit</code>, <code>TextEdit</code>, счётчики, список),
+      клавиши принадлежат полю — иначе Escape закрывал бы программу посреди слова. Щёлкните по фону окна или по кнопке —
+      и горячие клавиши снова работают. С кнопки, флажка, ползунка, таблицы и холста клавиша доходит и до окна:
+      сначала виджету, потом окну.</p>
+    </div>
+
     <!-- Section 11 -->
     <div class="docs-section">
       <h2>Как читать сообщения об ошибках</h2>

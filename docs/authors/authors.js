@@ -227,7 +227,7 @@ main() {
     previewTimer = setTimeout(() => {
       const config = embed.publicUnitConfig(state);
       if (!config.editor || !config.editor.theme || config.editor.theme === "auto") {
-        config.editor = { ...config.editor, theme: document.body.classList.contains("light-theme") ? "light" : "dark" };
+        config.editor = { ...config.editor, theme: siteTheme() };
       }
       if (!previewUnit) {
         previewUnit = window.IdylliumUnit.create($("preview"), { ...config, id: `${config.id}-preview` });
@@ -471,26 +471,11 @@ main() {
     }
   });
   document.querySelectorAll(".tip").forEach((tip) => tip.setAttribute("tabindex", "0"));
-  var THEME_KEY = "idyllium-docs-theme";
-  function applyTheme(light) {
-    document.body.classList.toggle("light-theme", light);
-    const hint = light ? "\u0422\u0451\u043C\u043D\u0430\u044F \u0442\u0435\u043C\u0430" : "\u0421\u0432\u0435\u0442\u043B\u0430\u044F \u0442\u0435\u043C\u0430";
-    $("theme-toggle").title = hint;
-    $("theme-toggle").setAttribute("aria-label", hint);
+  function siteTheme() {
+    return window.idylliumTheme ? window.idylliumTheme.get() : "dark";
   }
-  try {
-    applyTheme(window.localStorage.getItem(THEME_KEY) === "light");
-  } catch (_error) {
-    applyTheme(false);
-  }
-  $("theme-toggle").addEventListener("click", () => {
-    const light = !document.body.classList.contains("light-theme");
-    applyTheme(light);
-    try {
-      window.localStorage.setItem(THEME_KEY, light ? "light" : "dark");
-    } catch (_error) {
-    }
-    if (previewUnit && state.editor.theme === "auto") previewUnit.setTheme(light ? "light" : "dark");
+  document.addEventListener("idyllium-theme-change", (event) => {
+    if (previewUnit && state.editor.theme === "auto") previewUnit.setTheme(event.detail.theme);
   });
   (function start() {
     let restored = null;

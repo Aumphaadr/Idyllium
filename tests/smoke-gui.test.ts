@@ -103,6 +103,168 @@ test('gui themes, link labels, state styles and TabWidget work', async () => {
   assert(result.runtime.getOutput() === '1:Настройки', `unexpected tab change output: ${JSON.stringify(result.runtime.getOutput())}`);
 });
 
+// События виджетов (спека some_widget_events/01, вердикты владельца 2026-09-26): общая семья
+// мыши, фокус, клавиши со всплытием к окну (кроме полей ввода), Enter и конец правки, захват и
+// отпускание ползунка, двойной щелчок таблицы, щелчок по картинке; выключенный виджет молчит;
+// снимок несёт список слушаемых событий.
+test('widget events: forms, bubbling to the window, order and the listened list', async () => {
+  const result = await runWithInspectableRuntime(`use console;
+use gui;
+
+main() {
+    gui.Window win;
+    win.on_key_pressed = void function(gui.Window sender, gui.KeyboardEvent evt) {
+        string mods = "";
+        if (evt.ctrl) {
+            mods = "+ctrl";
+        }
+        console.writeln("win key " + evt.key + mods);
+    };
+    win.on_move = void function() {
+        console.writeln("moved " + to_string(win.x) + "," + to_string(win.y));
+    };
+    win.on_focus_in = void function() {
+        console.writeln("win focus");
+    };
+
+    gui.Button btn;
+    btn.on_mouse_enter = void function() {
+        console.writeln("enter");
+    };
+    btn.on_mouse_pressed = void function(gui.Button sender, gui.MouseEvent evt) {
+        string mods = "";
+        if (evt.shift) {
+            mods = " shift";
+        }
+        console.writeln("pressed " + evt.mouse_button + " " + to_string(evt.x) + "," + to_string(evt.y) + mods);
+    };
+    btn.on_key_pressed = void function(gui.Button sender, gui.KeyboardEvent evt) {
+        console.writeln("btn key " + evt.key);
+    };
+    win.add_child(btn);
+
+    gui.LineEdit edit;
+    edit.on_enter_pressed = void function(gui.LineEdit sender) {
+        console.writeln("enter: " + sender.text);
+    };
+    edit.on_editing_finished = void function() {
+        console.writeln("finished");
+    };
+    edit.on_key_pressed = void function(gui.LineEdit sender, gui.KeyboardEvent evt) {
+        console.writeln("edit key " + evt.key);
+    };
+    win.add_child(edit);
+
+    gui.Slider slider;
+    slider.on_grab = void function() {
+        console.writeln("grab");
+    };
+    slider.on_release = void function(gui.Slider sender) {
+        console.writeln("release " + to_string(sender.value));
+    };
+    win.add_child(slider);
+
+    gui.Table table;
+    table.set_columns("a");
+    table.add_row("1");
+    table.on_double_click = void function(gui.Table sender, gui.MouseEvent evt) {
+        console.writeln("dbl row " + to_string(sender.selected_row));
+    };
+    win.add_child(table);
+
+    gui.ImageBox picture;
+    picture.on_click = void function() {
+        console.writeln("picture");
+    };
+    win.add_child(picture);
+
+    gui.Button off;
+    off.enabled = false;
+    off.on_mouse_enter = void function() {
+        console.writeln("never");
+    };
+    win.add_child(off);
+
+    gui.Canvas canvas;
+    canvas.on_mouse_enter = void function() {
+        console.writeln("canvas enter");
+    };
+    canvas.on_key_pressed = void function() {
+        console.writeln("canvas key");
+    };
+    win.add_child(canvas);
+
+    win.show();
+}
+`);
+  const win = result.runtime.getWindows()[0];
+  const [btn, edit, slider, table, picture, off, canvas] = win.children;
+  const runtime = result.runtime;
+  const output = () => runtime.getOutput().split('\n').filter((line) => line !== '');
+
+  assert(JSON.stringify(win.events) === JSON.stringify(['focus_in', 'key_pressed', 'move']), `the window snapshot lists its handlers: ${JSON.stringify(win.events)}`);
+  assert(JSON.stringify(btn.events) === JSON.stringify(['mouse_enter', 'mouse_pressed', 'key_pressed']), `the button snapshot lists its handlers: ${JSON.stringify(btn.events)}`);
+  assert(JSON.stringify(picture.events) === JSON.stringify(['click']), `the image box lists on_click: ${JSON.stringify(picture.events)}`);
+
+  await runtime.dispatchGuiEvent(btn.id, 'mouse_enter', {});
+  await runtime.dispatchGuiEvent(btn.id, 'mouse_pressed', { x: 4, y: 5, mouse_button: 'RIGHT', shift: true });
+  await runtime.dispatchGuiEvent(btn.id, 'key_pressed', { key: 'Escape', ctrl: true });
+  await runtime.dispatchGuiEvent(edit.id, 'key_pressed', { key: 'Enter' });
+  await runtime.dispatchGuiEvent(edit.id, 'change', { text: '42' });
+  await runtime.dispatchGuiEvent(edit.id, 'enter_pressed', { text: '42' });
+  await runtime.dispatchGuiEvent(edit.id, 'editing_finished', { text: '42' });
+  await runtime.dispatchGuiEvent(slider.id, 'grab', { value: 0 });
+  await runtime.dispatchGuiEvent(slider.id, 'change', { value: 30 });
+  await runtime.dispatchGuiEvent(slider.id, 'release', { value: 30 });
+  await runtime.dispatchGuiEvent(table.id, 'select', { row: 0 });
+  await runtime.dispatchGuiEvent(table.id, 'double_click', { x: 1, y: 1, mouse_button: 'LEFT' });
+  await runtime.dispatchGuiEvent(picture.id, 'click', {});
+  await runtime.dispatchGuiEvent(off.id, 'mouse_enter', {});
+  await runtime.dispatchGuiEvent(canvas.id, 'mouse_enter', {});
+  await runtime.dispatchGuiEvent(canvas.id, 'key_pressed', { key: 'A' });
+  await runtime.dispatchGuiEvent(win.id, 'window_move', { x: 10, y: 20 });
+  await runtime.dispatchGuiEvent(win.id, 'focus_in', {});
+
+  const expected = [
+    'enter',
+    'pressed RIGHT 4,5 shift',
+    'btn key Escape', 'win key Escape+ctrl',   // всплытие от кнопки к окну, модификатор доехал
+    'edit key Enter',                          // из поля ввода окно клавишу НЕ получает
+    'enter: 42', 'finished',
+    'grab', 'release 30',
+    'dbl row 0',
+    'picture',
+    'canvas enter',
+    'canvas key', 'win key A',                 // холст → окно, формы без параметров тоже работают
+    'moved 10,20',
+    'win focus',
+  ];
+  assert(JSON.stringify(output()) === JSON.stringify(expected), `event flow:\n${output().join('\n')}\n--- expected ---\n${expected.join('\n')}`);
+});
+
+test('widget events: a wrong handler signature is refused in words', () => {
+  assertFails(`use gui;
+main() {
+    gui.Window win;
+    gui.LineEdit edit;
+    edit.on_enter_pressed = void function(gui.KeyboardEvent evt) {
+    };
+    win.add_child(edit);
+    win.show();
+}
+`, "callback property 'on_enter_pressed' expects 'void function()' or 'void function(gui.LineEdit)'");
+  assertFails(`use gui;
+main() {
+    gui.Window win;
+    gui.Button btn;
+    btn.on_mouse_pressed = void function(gui.MouseEvent evt) {
+    };
+    win.add_child(btn);
+    win.show();
+}
+`, "callback property 'on_mouse_pressed' expects");
+});
+
 test('IdySS style parser validates the dictionary and silently drops mistakes', () => {
   // Опечатка в имени и цвет вне палитры — молчаливый отброс, валидное — остаётся.
   assert(

@@ -1,86 +1,51 @@
-/* Конструктор GUI Idyllium (1.6.3). Палитра учебника: те же переменные, что в docs-book/app.css,
-   светлая тема — body.light-theme (переключатель в общей шапке). */
+/* Конструктор GUI Idyllium (1.6.3). Палитра, подсветка и шрифты — из единого источника токенов
+   (assets/site-tokens.css, packages/design/tokens.js; стилевая база 1.6.4); светлая тема —
+   html[data-theme], переключатель и модуль темы — в общей шапке. */
 :root {
-  --bg-root: #0c0515;
-  --bg-panel: #151020;
-  --bg-panel-2: #1c1629;
-  --bg-panel-3: #241d34;
-  --bg-code: #100b1a;
-  --text-main: #f2eaf7;
-  --text-soft: #c9bdd6;
-  --text-muted: #8e819d;
-  --border: #342846;
-  --border-soft: rgba(255, 255, 255, 0.08);
-  --accent: #87bfff;
-  --accent-soft: rgba(135, 191, 255, 0.12);
-  --green: #8bd58f;
-  --red: #f38ba8;
-  --yellow: #f5d98b;
-  --shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
-  --font-sans: "Geologica", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: "Source Code Pro", "JetBrains Mono", Consolas, monospace;
-  --hl-keyword: #c586b1;
-  --hl-typeName: #4a9ad6;
-  --hl-function: #dcd98f;
-  --hl-string: #ce8453;
-  --hl-number: #b5cb8e;
-  --hl-comment: rgba(106, 153, 78, 0.9);
-  --selection: #87bfff;
+  /* Имена ниже — исторические имена конструктора и генератора цвета, псевдонимы токенов
+     на время переезда: новые правила пишутся сразу на var(--color-…), var(--syntax-…). */
+  --bg-root: var(--color-bg);
+  --bg-panel: var(--color-panel);
+  --bg-panel-2: var(--color-panel-raised);
+  --bg-panel-3: var(--color-panel-soft);
+  --bg-code: var(--color-code-bg);
+  --text-main: var(--color-text);
+  --text-soft: var(--color-text-soft);
+  --text-muted: var(--color-text-muted);
+  --border: var(--color-border);
+  --border-soft: var(--color-border-soft);
+  --accent: var(--color-accent);
+  --accent-soft: var(--color-accent-soft);
+  --green: var(--color-success);
+  --red: var(--color-danger);
+  --yellow: var(--color-warning);
+  --shadow: var(--shadow-popup);
+  --hl-keyword: var(--syntax-keyword);
+  --hl-typeName: var(--syntax-type);
+  --hl-function: var(--syntax-function);
+  --hl-string: var(--syntax-string);
+  --hl-number: var(--syntax-number);
+  --hl-comment: var(--syntax-comment);
+  --selection: var(--color-accent);
+  /* Стол сцены — своя поверхность конструктора: светлее корня, темнее панели. */
   --scene-bg: #1a1326;
-  /* Псевдонимы для общих компонентов Web IDE (генератор цвета): их CSS ждёт эти имена. */
-  --panel-raised: var(--bg-panel-2);
-  --panel-soft: var(--bg-panel-3);
-  --text: var(--text-main);
-  --muted: var(--text-muted);
+  --panel-raised: var(--color-panel-raised);
+  --panel-soft: var(--color-panel-soft);
+  --text: var(--color-text);
+  --muted: var(--color-text-muted);
   --ui-font: var(--font-sans);
   --mono-font: var(--font-mono);
-  --success: var(--green);
-  --danger: var(--red);
-  /* Раскладка — тянется сплиттерами, значения помнит localStorage. */
+  --success: var(--color-success);
+  --danger: var(--color-danger);
   --palette-w: 236px;
   --side-w: 340px;
   --code-h: 232px;
   --tree-h: 34%;
 }
 
-body.light-theme {
-  --bg-root: #ece8f2;
-  --bg-panel: #f7f4fb;
-  --bg-panel-2: #e9e2f0;
-  --bg-panel-3: #ded6e8;
-  --bg-code: #f2edf7;
-  --text-main: #211a2e;
-  --text-soft: #463b56;
-  --text-muted: #6d637b;
-  --border: #c8bed5;
-  --border-soft: rgba(33, 26, 46, 0.14);
-  --accent: #275f9e;
-  --accent-soft: rgba(39, 95, 158, 0.13);
-  --shadow: 0 18px 44px rgba(39, 30, 54, 0.12);
-  --hl-keyword: #8d3f75;
-  --hl-typeName: #1d659a;
-  --hl-function: #76620f;
-  --hl-string: #87481f;
-  --hl-number: #5b7027;
-  --hl-comment: rgba(70, 110, 50, 0.9);
-  --selection: #275f9e;
+html[data-theme="light"] {
   --scene-bg: #dfd8e8;
 }
-
-* { box-sizing: border-box; }
-
-html, body { min-height: 100%; }
-
-body {
-  margin: 0;
-  background: var(--bg-root);
-  color: var(--text-main);
-  font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 1.45;
-}
-
-button, input, select, textarea { font: inherit; color: inherit; }
 
 button {
   display: inline-flex;
@@ -100,8 +65,7 @@ button {
 
 button:hover:not(:disabled) { border-color: var(--accent); background: var(--bg-panel-3); color: var(--text-main); }
 button:disabled { opacity: 0.45; cursor: default; }
-button.primary { border-color: var(--accent); background: var(--accent); color: #0c0515; }
-body.light-theme button.primary { color: #ffffff; }
+button.primary { border-color: var(--accent); background: var(--accent); color: var(--color-on-accent); }
 button.primary:hover:not(:disabled) { filter: brightness(1.08); }
 
 input[type="text"], input[type="number"], select {
@@ -590,13 +554,11 @@ body.is-tree-dragging .tree-row { cursor: grabbing; }
 #color-panel.is-floating { background: var(--bg-panel); }
 
 /* ── узкий экран ── */
-.designer-narrow { max-width: 560px; margin: 0 auto; padding: 60px 22px; text-align: center; color: var(--text-soft); }
+/* Подсказка про узкий экран: скрыта и показывается правилом ниже (не атрибутом hidden — его теперь держит база). */
+.designer-narrow { display: none; max-width: 560px; margin: 0 auto; padding: 60px 22px; text-align: center; color: var(--text-soft); }
 .designer-narrow h1 { color: var(--text-main); }
 
 @media (max-width: 999px) {
   .designer { display: none; }
-  .designer-narrow[hidden] { display: block; }
+  .designer-narrow { display: block; }
 }
-
-/* полосы прокрутки — как на сайте */
-* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }

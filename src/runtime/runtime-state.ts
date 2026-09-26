@@ -108,6 +108,9 @@ export interface IdylliumGuiWidgetSnapshot {
   readonly type: string;
   readonly properties: Readonly<Record<string, unknown>>;
   readonly children: readonly IdylliumGuiWidgetSnapshot[];
+  /** Имена событий, на которые назначены обработчики ('mouse_move', 'key_pressed', …): рендерер
+   *  вешает дорогие слушатели только по этому списку (спека some_widget_events/01 §6.2). */
+  readonly events?: readonly string[];
   readonly canvas?: IdylliumCanvasSnapshot;
   readonly items?: readonly string[];
   /** gui.Table: заголовки и строки. */

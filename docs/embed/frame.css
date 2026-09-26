@@ -1,7 +1,9 @@
-/* Кадр embed-юнита. Визуальный язык — Web IDE: те же шрифты (Geologica,
-   Source Code Pro), та же палитра и те же цвета подсветки, что у тем Monaco
-   idyllium-dark / idyllium-light. Лёгкий редактор обязан выглядеть ровно как
-   Monaco, который подменит его при первом клике: подмена не должна мигать.
+/* Кадр embed-юнита. Визуальный язык — сайт Idyllium: те же шрифты (Geologica,
+   Source Code Pro), палитра и цвета подсветки из единого источника токенов
+   (packages/design/tokens.js; блок между маркерами @tokens:frame — генерат
+   tools/build-tokens.js, кадр живёт на чужих страницах одним файлом и site-tokens.css
+   не грузит). Лёгкий редактор обязан выглядеть ровно как Monaco, который подменит
+   его при первом клике: подмена не должна мигать.
    Кадр изолирован iframe-песочницей — стили хозяина сюда не достают. */
 @font-face {
   font-family: "Geologica";
@@ -39,29 +41,29 @@
   --line-height: 25px;
 }
 
-/* Палитра Web IDE, тёмная тема (по умолчанию, как у самой IDE). */
+/* @tokens:frame:start */
+/* ГЕНЕРАТ (tools/build-tokens.js из packages/design/tokens.js): палитра сайта, тёмная тема — по умолчанию. */
 body {
   color-scheme: dark;
-  --bg: #100819;
-  --panel: #171020;
-  --panel-soft: #21182c;
-  --panel-raised: #1d1528;
-  --border: #342a43;
-  --text: #eeeaf7;
-  --muted: #a39bb7;
-  --accent: #6aa4ff;
-  --accent-strong: #8ec2ff;
+  --bg: #0c0515;
+  --panel: #151020;
+  --panel-soft: #241d34;
+  --panel-raised: #1c1629;
+  --border: #342846;
+  --text: #f2eaf7;
+  --muted: #8e819d;
+  --accent: #87bfff;
+  --accent-strong: #a3ceff;
   --run-bg: #179f5b;
   --run-bg-hover: #1fba6d;
-  --danger: #f07178;
-  --editor-bg: #120a1d;
-  --editor-text: #f0ecf8;
+  --danger: #f38ba8;
+  --editor-bg: #100b1a;
+  --editor-text: #f2eaf7;
   --editor-muted: #777088;
   --editor-caret: #ffffff;
-  --selection: rgba(106, 164, 255, 0.28);
+  --selection: rgba(135, 191, 255, 0.28);
   --output-bg: #0c0515;
-  --output-text: #eeeaf7;
-  /* токены — ровно цвета темы idyllium-dark в monaco-grammar.js */
+  --output-text: #f2eaf7;
   --keyword: #b892ff;
   --type-name: #63b3ff;
   --class-name: #59d4b8;
@@ -71,36 +73,51 @@ body {
   --function: #e4d87e;
   --object: #8bdfff;
   --brackets: #d0d6e6;
-  --ok-bg: rgba(74, 222, 128, 0.12);
-  --ok-text: #86efac;
-  --fail-bg: rgba(245, 217, 139, 0.12);
+  --ok-bg: rgba(139, 213, 143, 0.14);
+  --ok-text: #8bd58f;
+  --fail-bg: rgba(245, 217, 139, 0.14);
   --fail-text: #f5d98b;
-  --soft-bg: rgba(106, 164, 255, 0.12);
+  --soft-bg: rgba(135, 191, 255, 0.12);
   --soft-text: #b9d4ff;
+  --ansi-black: #59606d;
+  --ansi-red: #ff6b6b;
+  --ansi-green: #77d787;
+  --ansi-yellow: #f2d35e;
+  --ansi-blue: #71a7ff;
+  --ansi-magenta: #f38ba8;
+  --ansi-cyan: #67d9e8;
+  --ansi-white: #edf3ff;
+  --ansi-bright-black: #8b93a3;
+  --ansi-bright-red: #ff8f8f;
+  --ansi-bright-green: #9af5aa;
+  --ansi-bright-yellow: #ffe382;
+  --ansi-bright-blue: #99c2ff;
+  --ansi-bright-magenta: #ffadd2;
+  --ansi-bright-cyan: #8ef5ff;
+  --ansi-bright-white: #ffffff;
 }
 
 body.theme-light {
   color-scheme: light;
-  --bg: #d2cfd7;
-  --panel: #dfdce4;
-  --panel-soft: #cbc7d1;
-  --panel-raised: #e7e4ea;
-  --border: #aaa3b2;
-  --text: #27242e;
-  --muted: #625d69;
-  --accent: #315f8c;
-  --accent-strong: #234b73;
+  --bg: #ece8f2;
+  --panel: #f7f4fb;
+  --panel-soft: #ded6e8;
+  --panel-raised: #e9e2f0;
+  --border: #c8bed5;
+  --text: #211a2e;
+  --muted: #6d637b;
+  --accent: #275f9e;
+  --accent-strong: #1d4d82;
   --run-bg: #177b49;
   --run-bg-hover: #12683d;
-  --danger: #a43b4b;
-  --editor-bg: #d9d6df;
-  --editor-text: #252730;
+  --danger: #b3261e;
+  --editor-bg: #f2edf7;
+  --editor-text: #211a2e;
   --editor-muted: #77717f;
-  --editor-caret: #23252c;
-  --selection: rgba(49, 95, 140, 0.22);
-  --output-bg: #cfccd5;
-  --output-text: #25222b;
-  /* токены — ровно цвета темы idyllium-light */
+  --editor-caret: #211a2e;
+  --selection: rgba(39, 95, 158, 0.22);
+  --output-bg: #ece8f2;
+  --output-text: #211a2e;
   --keyword: #8d3f75;
   --type-name: #1d659a;
   --class-name: #1b745c;
@@ -110,13 +127,30 @@ body.theme-light {
   --function: #76620f;
   --object: #0d667f;
   --brackets: #445253;
-  --ok-bg: rgba(23, 119, 72, 0.14);
-  --ok-text: #145c38;
-  --fail-bg: rgba(138, 97, 0, 0.14);
-  --fail-text: #6b4a00;
-  --soft-bg: rgba(49, 95, 140, 0.13);
+  --ok-bg: rgba(29, 122, 69, 0.12);
+  --ok-text: #1d7a45;
+  --fail-bg: rgba(138, 97, 0, 0.12);
+  --fail-text: #8a6100;
+  --soft-bg: rgba(39, 95, 158, 0.13);
   --soft-text: #234b73;
+  --ansi-black: #24292f;
+  --ansi-red: #b3261e;
+  --ansi-green: #17691f;
+  --ansi-yellow: #7a5800;
+  --ansi-blue: #1247a4;
+  --ansi-magenta: #99236d;
+  --ansi-cyan: #156970;
+  --ansi-white: #57606a;
+  --ansi-bright-black: #57606a;
+  --ansi-bright-red: #b93737;
+  --ansi-bright-green: #1c7032;
+  --ansi-bright-yellow: #855c00;
+  --ansi-bright-blue: #0550ae;
+  --ansi-bright-magenta: #7440c7;
+  --ansi-bright-cyan: #176b72;
+  --ansi-bright-white: #5c6570;
 }
+/* @tokens:frame:end */
 
 * {
   box-sizing: border-box;
@@ -335,9 +369,9 @@ body {
 }
 
 .ansi-bold { font-weight: 700; }
-.ansi-fg-black { color: #6e7681; } .ansi-fg-red { color: #ff7b72; } .ansi-fg-green { color: #7ee787; }
-.ansi-fg-yellow { color: #e3b341; } .ansi-fg-blue { color: #79c0ff; } .ansi-fg-magenta { color: #d2a8ff; }
-.ansi-fg-cyan { color: #76e3ea; } .ansi-fg-white { color: #e6edf3; }
-.ansi-fg-bright-black { color: #8b949e; } .ansi-fg-bright-red { color: #ffa198; } .ansi-fg-bright-green { color: #a5f0b0; }
-.ansi-fg-bright-yellow { color: #f2cc60; } .ansi-fg-bright-blue { color: #a5d6ff; } .ansi-fg-bright-magenta { color: #e2c5ff; }
-.ansi-fg-bright-cyan { color: #b3f0ff; } .ansi-fg-bright-white { color: #ffffff; }
+.ansi-fg-black { color: var(--ansi-black); } .ansi-fg-red { color: var(--ansi-red); } .ansi-fg-green { color: var(--ansi-green); }
+.ansi-fg-yellow { color: var(--ansi-yellow); } .ansi-fg-blue { color: var(--ansi-blue); } .ansi-fg-magenta { color: var(--ansi-magenta); }
+.ansi-fg-cyan { color: var(--ansi-cyan); } .ansi-fg-white { color: var(--ansi-white); }
+.ansi-fg-bright-black { color: var(--ansi-bright-black); } .ansi-fg-bright-red { color: var(--ansi-bright-red); } .ansi-fg-bright-green { color: var(--ansi-bright-green); }
+.ansi-fg-bright-yellow { color: var(--ansi-bright-yellow); } .ansi-fg-bright-blue { color: var(--ansi-bright-blue); } .ansi-fg-bright-magenta { color: var(--ansi-bright-magenta); }
+.ansi-fg-bright-cyan { color: var(--ansi-bright-cyan); } .ansi-fg-bright-white { color: var(--ansi-bright-white); }

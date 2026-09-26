@@ -1117,35 +1117,6 @@ function bakeCleanUrlPages(
  * Поиск и переключение вкладок — на инлайновом скрипте: страница обязана
  * работать сама по себе, без сборщиков и внешних зависимостей.
  */
-/**
- * Переключатель темы для страниц без app.js учебника: ключ хранилища и класс те же, что
- * в packages/docs-book/app.js, поэтому выбор ученика переезжает между разделами сайта.
- */
-const SITE_THEME_SCRIPT = `  <script>
-    (function () {
-      var KEY = 'idyllium-docs-theme';
-      function apply(light) {
-        document.body.classList.toggle('light-theme', light);
-        var toggle = document.getElementById('theme-toggle');
-        if (toggle) {
-          var hint = light ? 'Тёмная тема' : 'Светлая тема';
-          toggle.title = hint;
-          toggle.setAttribute('aria-label', hint);
-        }
-      }
-      var saved = null;
-      try { saved = localStorage.getItem(KEY); } catch (error) {}
-      apply(saved === 'light');
-      var toggle = document.getElementById('theme-toggle');
-      if (toggle) {
-        toggle.addEventListener('click', function onToggle() {
-          var next = document.body.classList.contains('light-theme') ? 'dark' : 'light';
-          try { localStorage.setItem(KEY, next); } catch (error) {}
-          apply(next === 'light');
-        });
-      }
-    })();
-  </script>`;
 
 function buildHandoutsPage(outputRoot: string): number {
   const handoutsVersion = String(JSON.parse(fs.readFileSync(path.resolve(process.cwd(), 'package.json'), 'utf8')).version);
@@ -1255,7 +1226,6 @@ ${groupsHtml}
   <meta name="robots" content="noindex, nofollow">
   <title>Файлы для заданий — Idyllium</title>
   <link rel="icon" type="image/png" href="../book/favicon.png">
-  <link rel="stylesheet" href="../book/fonts/fonts.css">
   ${siteNavAssetsHtml('../')}
   <link rel="stylesheet" href="../book/app.css">
   <style>
@@ -1515,7 +1485,6 @@ ${panels.join('\n')}
       });
     })();
   </script>
-${SITE_THEME_SCRIPT}
 </body>
 </html>
 `;
@@ -1929,7 +1898,6 @@ function buildStubPages(siteRoot: string, version: string): void {
   <meta name="robots" content="noindex">
   <title>${escapeHtml(page.title)} — Idyllium</title>
   <link rel="icon" type="image/png" href="../book/favicon.png">
-  <link rel="stylesheet" href="../book/fonts/fonts.css">
   ${siteNavAssetsHtml('../')}
   <link rel="stylesheet" href="../book/app.css">
   <style>
@@ -1949,7 +1917,6 @@ ${siteTopbarHtml(page.id, { prefix: '../', version })}
   <main class="stub-main">
     <h1>${escapeHtml(page.title)}</h1>${page.body}
   </main>
-${SITE_THEME_SCRIPT}
 </body>
 </html>
 `;
@@ -1994,7 +1961,6 @@ function buildAboutPage(outputRoot: string, buildFacts: AboutBuildFacts): void {
   <title>${escapeHtml(page.title)}</title>
   <meta name="description" content="Idyllium — учебный язык программирования: философия, синтаксис, среда разработки, учебные материалы.">
   <link rel="icon" type="image/png" href="../book/favicon.png">
-  <link rel="stylesheet" href="../book/fonts/fonts.css">
   ${siteNavAssetsHtml('../')}
   <link rel="stylesheet" href="../book/app.css">
   <style>
@@ -2039,7 +2005,6 @@ ${siteTopbarHtml('about', { prefix: '../', version: packageVersion })}
   <main class="about-main">
 ${fragment}
   </main>
-${SITE_THEME_SCRIPT}
 </body>
 </html>
 `;
@@ -2209,7 +2174,6 @@ function tasksShell(sectionId: 'tasks' | 'projects' = 'tasks'): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Idyllium - Задачник</title>
   <link rel="icon" type="image/png" href="../book/favicon.png">
-  <link rel="stylesheet" href="../book/fonts/fonts.css">
   ${siteNavAssetsHtml('../')}
   <link rel="stylesheet" href="../book/app.css">
   <script src="../gui-renderer/icons.js"></script>
@@ -2534,7 +2498,6 @@ function copyAssets(sourceRoot: string, outputRoot: string): void {
   copyFileIfExists(path.join(sourceRoot, 'version.js'), path.join(outputRoot, 'version.js'));
   // version.json на входе нет: версия живёт только в package.json, файл пишется отсюда.
   writeCurrentVersion(path.join(outputRoot, 'version.json'));
-  copyDirectory(path.join(sourceRoot, 'fonts'), path.join(outputRoot, 'fonts'));
 
   fs.mkdirSync(path.join(outputRoot, 'assets'), { recursive: true });
   const bookAssetsRoot = path.resolve(process.cwd(), 'packages', 'docs', 'book-assets');

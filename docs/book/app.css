@@ -1,96 +1,40 @@
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
 :root {
-  --bg-root: #0c0515;
-  --bg-panel: #151020;
-  --bg-panel-2: #1c1629;
-  --bg-panel-3: #241d34;
-  --bg-code: #100b1a;
-  --text-main: #f2eaf7;
-  --text-soft: #c9bdd6;
-  --text-muted: #8e819d;
-  --border: #342846;
-  --border-soft: rgba(255, 255, 255, 0.08);
-  --accent: #87bfff;
-  --accent-soft: rgba(135, 191, 255, 0.12);
-  --green: #8bd58f;
-  --red: #f38ba8;
-  --yellow: #f5d98b;
-  --shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
-  --font-sans: "Geologica", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: "Source Code Pro", "JetBrains Mono", Consolas, monospace;
-  --topbar-height: 56px;
-  --sidebar-width: 330px;
+  /* Палитра, шрифты, высота шапки и ширина колонки — из единого источника токенов
+     (assets/site-tokens.css, packages/design/tokens.js; стилевая база 1.6.4). Имена ниже —
+     исторические имена учебника, псевдонимы на время переезда: новые правила пишутся сразу
+     на var(--color-…), var(--syntax-…). Светлая тема приходит через html[data-theme]. */
+  --bg-root: var(--color-bg);
+  --bg-panel: var(--color-panel);
+  --bg-panel-2: var(--color-panel-raised);
+  --bg-panel-3: var(--color-panel-soft);
+  --bg-code: var(--color-code-bg);
+  --text-main: var(--color-text);
+  --text-soft: var(--color-text-soft);
+  --text-muted: var(--color-text-muted);
+  --border: var(--color-border);
+  --border-soft: var(--color-border-soft);
+  --accent: var(--color-accent);
+  --accent-soft: var(--color-accent-soft);
+  --green: var(--color-success);
+  --red: var(--color-danger);
+  --yellow: var(--color-warning);
+  --shadow: var(--shadow-popup);
   --toc-width: 236px;
-
-  --hl-keyword: #c586b1;
-  --hl-typeName: #4a9ad6;
-  --hl-className: #4ec9a2;
-  --hl-function: #dcd98f;
-  --hl-object: #9fe4ff;
-  --hl-string: #ce8453;
-  --hl-number: #b5cb8e;
-  --hl-comment: rgba(106, 153, 78, 0.72);
-  --hl-brackets: #ced4d4;
-  --hl-json-key: #9fe4ff;
-}
-
-body.light-theme {
-  --bg-root: #ece8f2;
-  --bg-panel: #f7f4fb;
-  --bg-panel-2: #e9e2f0;
-  --bg-panel-3: #ded6e8;
-  --bg-code: #f2edf7;
-  --text-main: #211a2e;
-  --text-soft: #463b56;
-  --text-muted: #6d637b;
-  --border: #c8bed5;
-  --border-soft: rgba(33, 26, 46, 0.14);
-  --accent: #275f9e;
-  --accent-soft: rgba(39, 95, 158, 0.13);
-  --shadow: 0 18px 44px rgba(39, 30, 54, 0.12);
-
-  --hl-keyword: #8d3f75;
-  --hl-typeName: #1d659a;
-  --hl-className: #1b745c;
-  --hl-function: #76620f;
-  --hl-object: #0d667f;
-  --hl-string: #87481f;
-  --hl-number: #5b7027;
-  --hl-comment: rgba(71, 114, 55, 0.86);
-  --hl-brackets: #445253;
-  --hl-json-key: #0d667f;
-}
-
-html,
-body {
-  min-height: 100%;
-}
-
-body {
-  margin: 0;
-  background: var(--bg-root);
-  color: var(--text-main);
-  font-family: var(--font-sans);
-  font-size: 18px;
-  line-height: 1.68;
-}
-
-button,
-input {
-  font: inherit;
-}
-
-a {
-  color: var(--accent);
+  --hl-keyword: var(--syntax-keyword);
+  --hl-typeName: var(--syntax-type);
+  --hl-className: var(--syntax-class);
+  --hl-function: var(--syntax-function);
+  --hl-object: var(--syntax-object);
+  --hl-string: var(--syntax-string);
+  --hl-number: var(--syntax-number);
+  --hl-comment: var(--syntax-comment);
+  --hl-brackets: var(--syntax-brackets);
+  --hl-json-key: var(--syntax-json-key);
 }
 
 code {
-  font-family: var(--font-mono);
-  font-size: 0.92em;
-  /* Инлайн-код с пробелами (win.theme = "неоновый") не разрывается между
+  /* Шрифт и размер — из базы сайта (assets/site-base.css); здесь только перенос.
+     Инлайн-код с пробелами (win.theme = "неоновый") не разрывается между
      строками — читается как один жетон (решение владельца, 2026-08-14). */
   white-space: nowrap;
 }
@@ -99,41 +43,6 @@ code {
 idyl-code-block code,
 pre code {
   white-space: inherit;
-}
-
-::selection {
-  background: rgba(135, 191, 255, 0.28);
-}
-
-/* Полосы прокрутки — одни на весь сайт учебных разделов (1.6.2), эталон — учебник: 9 px, мягкий
-   бегунок. Стандартные scrollbar-width/scrollbar-color нарочно НЕ задаются для всех браузеров:
-   Chrome, увидев их, бросает ::-webkit-scrollbar и рисует свою «тонкую» полосу — именно так
-   справочник и «Авторам» оказались у́же учебника. Firefox, который ::-webkit не знает, получает
-   стандартные свойства отдельно. */
-::-webkit-scrollbar {
-  width: 9px;
-  height: 9px;
-}
-
-::-webkit-scrollbar-track,
-::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(145, 132, 161, 0.36);
-  border-radius: 999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(145, 132, 161, 0.56);
-}
-
-@supports (-moz-appearance: none) {
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(145, 132, 161, 0.36) transparent;
-  }
 }
 
 .big-button {
@@ -683,7 +592,7 @@ body.light-theme .lesson-body .task-item.task-star {
 .docs-section caption {
   padding: 0 0 8px;
   color: var(--text-soft);
-  font-family: var(--font-ui);
+  font-family: var(--font-sans);
   font-size: 0.88rem;
   font-weight: 700;
   text-align: left;
@@ -737,7 +646,7 @@ body.light-theme .lesson-body .task-item.task-star {
   top: 12px;
   left: 20px;
   color: var(--text-muted);
-  font-family: var(--font-ui);
+  font-family: var(--font-sans);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0;
@@ -820,22 +729,14 @@ body.light-theme .lesson-body .task-item.task-star {
   color: var(--red);
 }
 
-.color-red { color: #f38ba8; }
-.color-green { color: #8bd58f; }
-.color-yellow { color: #f5d98b; }
-.color-blue { color: #87bfff; }
-.color-magenta { color: #f0a6ff; }
-.color-cyan { color: #89ddff; }
+.color-red { color: var(--ansi-red); }
+.color-green { color: var(--ansi-green); }
+.color-yellow { color: var(--ansi-yellow); }
+.color-blue { color: var(--ansi-blue); }
+.color-magenta { color: var(--ansi-magenta); }
+.color-cyan { color: var(--ansi-cyan); }
 
-/* Цвета плёнок/выводов в светлой теме: тёмная палитра на светлом фоне
-   давала 1.1:1 (методисты, 2026-08-22); эти — ≥4.5:1. */
-body.light-theme .color-red { color: #b3261e; }
-body.light-theme .color-green { color: #17691f; }
-body.light-theme .color-yellow { color: #7a5800; }
-body.light-theme .color-blue { color: #1247a4; }
-body.light-theme .color-magenta { color: #99236d; }
-body.light-theme .color-cyan { color: #156970; }
-body.light-theme .color-bright-black { color: #57606a; }
+/* Светлые значения цветов консоли (контраст ≥ 4,5 — методисты, 2026-08-22) живут в токенах --ansi-*. */
 .color-reset { color: var(--text-main); }
 /* «Светлый чёрный» \e[90m — им же среда печатает служебные строки. */
 .color-bright-black { color: var(--text-muted); }

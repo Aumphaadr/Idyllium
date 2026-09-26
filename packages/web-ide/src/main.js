@@ -467,8 +467,16 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
     return MarkerSeverity.Error;
   }
 
+  // Тема — общий модуль сайта (assets/site-theme.js): он ставит html[data-theme], хранит выбор
+  // (один ключ на весь сайт) и синхронизирует переходные классы body; IDE слушает событие
+  // и перекрашивает Monaco, предпросмотр и галочки меню «Внешний вид».
+  function siteTheme() {
+    if (window.idylliumTheme) return window.idylliumTheme.get();
+    return document.body.classList.contains('theme-light') ? 'light' : 'dark';
+  }
+
   function currentMonacoTheme() {
-    return document.body.classList.contains('theme-light') ? 'idyllium-light' : 'idyllium-dark';
+    return siteTheme() === 'light' ? 'idyllium-light' : 'idyllium-dark';
   }
 
   function readSavedEditorFontSize() {
@@ -3495,8 +3503,8 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
   }
 
   function applySavedTheme() {
-    const theme = window.localStorage.getItem('idyllium-web-theme') || 'dark';
-    setTheme(theme === 'light' ? 'light' : 'dark');
+    applyThemeState(siteTheme());
+    document.addEventListener('idyllium-theme-change', (event) => applyThemeState(event.detail.theme));
   }
 
   function toggleThemeMenu() {
@@ -3608,12 +3616,14 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
   }
 
   function setTheme(theme) {
+    if (window.idylliumTheme) window.idylliumTheme.set(theme);
+    else applyThemeState(theme);
+  }
+
+  function applyThemeState(theme) {
     const dark = theme !== 'light';
-    document.body.classList.toggle('theme-dark', dark);
-    document.body.classList.toggle('theme-light', !dark);
     themeDarkButton.classList.toggle('active', dark);
     themeLightButton.classList.toggle('active', !dark);
-    window.localStorage.setItem('idyllium-web-theme', dark ? 'dark' : 'light');
     if (monacoReady && window.monaco) window.monaco.editor.setTheme(currentMonacoTheme());
     applyPreviewTheme();
   }
@@ -3623,7 +3633,7 @@ import { guestBanner, monacoHost, assetViewer, csvViewer, jsonViewer, markdownVi
     if (!guiFrame.contentWindow) return;
     guiFrame.contentWindow.postMessage({
       type: 'theme',
-      theme: document.body.classList.contains('theme-light') ? 'light' : 'dark',
+      theme: siteTheme(),
     }, previewTargetOrigin);
   }
 

@@ -701,32 +701,69 @@ export function closeModal(target: RuntimeObject, state: RuntimeObjectState): vo
   target.__modalMode = '';
 }
 
+/**
+ * События, имя обработчика которых — просто on_<событие> (спека some_widget_events/01 §3):
+ * общая семья мыши, фокус, клавиатура, Enter и конец правки у поля, захват/отпускание ползунка.
+ * Обработчик зовётся, только если назначен, — список ничего не обещает сверх реестра.
+ */
+const GENERIC_GUI_EVENTS = new Set([
+  'click', 'double_click', 'change',
+  'mouse_enter', 'mouse_leave', 'mouse_pressed', 'mouse_released', 'mouse_move', 'mouse_scroll',
+  'focus_in', 'focus_out', 'key_pressed', 'key_released',
+  'enter_pressed', 'editing_finished', 'grab', 'release',
+]);
+
+/** События, которые несут объект-описание (evt): обработчик получает (sender, evt). */
+const GUI_EVENTS_WITH_OBJECT = new Set([
+  'double_click', 'mouse_pressed', 'mouse_released', 'mouse_move', 'mouse_scroll', 'key_pressed', 'key_released',
+]);
+
+/** Ввод текста живёт в этих виджетах: их клавиши окну не всплывают (иначе Escape в поле закрывал бы программу). */
+const KEY_SINK_TYPES = new Set(['gui.LineEdit', 'gui.TextEdit', 'gui.SpinBox', 'gui.FloatSpinBox', 'gui.ComboBox']);
+
+/** Имена событий, которые рендерер слушает только по запросу — в снимок попадают те, у которых есть обработчик. */
+const LISTENED_GUI_EVENTS = [
+  'click', 'double_click', 'mouse_enter', 'mouse_leave', 'mouse_pressed', 'mouse_released', 'mouse_move',
+  'focus_in', 'focus_out', 'key_pressed', 'key_released', 'enter_pressed', 'editing_finished', 'grab', 'release', 'move',
+];
+
 export function guiCallbackName(target: RuntimeObject, eventName: string): string | null {
-  if (eventName === 'click') return 'on_click';
-  if (eventName === 'change') return 'on_change';
   if (target.__idylliumType === 'gui.Table' && eventName === 'select') return 'on_select';
   if (target.__idylliumType === 'gui.Modal' && eventName === 'modal_confirm') return 'on_confirm';
   if (target.__idylliumType === 'gui.Modal' && eventName === 'modal_cancel') return 'on_cancel';
   if (target.__idylliumType === 'audio.Music' && eventName === 'finished') return 'on_finished';
+  if (target.__idylliumType === 'gui.Window' && eventName === 'window_move') return 'on_move';
+  if (GENERIC_GUI_EVENTS.has(eventName)) return `on_${eventName}`;
+  return null;
+}
 
-  if (target.__idylliumType !== 'gui.Canvas') return null;
+export function guiEventCarriesObject(eventName: string): boolean {
+  return GUI_EVENTS_WITH_OBJECT.has(eventName);
+}
 
-  switch (eventName) {
-    case 'key_pressed':
-      return 'on_key_pressed';
-    case 'key_released':
-      return 'on_key_released';
-    case 'mouse_pressed':
-      return 'on_mouse_pressed';
-    case 'mouse_released':
-      return 'on_mouse_released';
-    case 'mouse_move':
-      return 'on_mouse_move';
-    case 'mouse_scroll':
-      return 'on_mouse_scroll';
-    default:
-      return null;
+/** Клавиши всплывают от виджета к окну — кроме виджетов, где печатают. */
+export function guiKeyEventBubbles(target: RuntimeObject): boolean {
+  return !KEY_SINK_TYPES.has(String(target.__idylliumType));
+}
+
+/** Окно, в котором лежит виджет (по цепочке __parent); null у окна и у виджета вне окна. */
+export function guiWindowOf(target: RuntimeObject): RuntimeObject | null {
+  let current: unknown = target.__parent;
+  const seen = new Set<unknown>();
+  while (isRuntimeObject(current) && !seen.has(current)) {
+    if (current.__idylliumType === 'gui.Window') return current;
+    seen.add(current);
+    current = current.__parent;
   }
+  return null;
+}
+
+export function listenedGuiEvents(target: RuntimeObject): readonly string[] {
+  return LISTENED_GUI_EVENTS.filter((name) => typeof target[`on_${name}`] === 'function');
+}
+
+function eventModifiers(payload: Readonly<Record<string, unknown>>): { ctrl: boolean; shift: boolean; alt: boolean } {
+  return { ctrl: payload.ctrl === true, shift: payload.shift === true, alt: payload.alt === true };
 }
 
 export function guiEventObject(eventName: string, payload: Readonly<Record<string, unknown>>): RuntimeObject {
@@ -734,6 +771,7 @@ export function guiEventObject(eventName: string, payload: Readonly<Record<strin
     return {
       __idylliumType: 'gui.KeyboardEvent',
       key: typeof payload.key === 'string' ? payload.key : '',
+      ...eventModifiers(payload),
     };
   }
 
@@ -743,6 +781,7 @@ export function guiEventObject(eventName: string, payload: Readonly<Record<strin
       x: eventNumber(payload.x),
       y: eventNumber(payload.y),
       delta: eventNumber(payload.delta),
+      ...eventModifiers(payload),
     };
   }
 
@@ -751,6 +790,7 @@ export function guiEventObject(eventName: string, payload: Readonly<Record<strin
     x: eventNumber(payload.x),
     y: eventNumber(payload.y),
     mouse_button: typeof payload.mouse_button === 'string' ? payload.mouse_button : '',
+    ...eventModifiers(payload),
   };
 }
 

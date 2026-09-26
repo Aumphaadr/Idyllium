@@ -11,7 +11,8 @@ const sourceWebDir = path.join(rootDir, 'packages', 'web-ide');
 const outputWebDir = path.join(distDir, 'web');
 const outputAssetsDir = path.join(outputWebDir, 'assets');
 const sourceWebAssetsDir = path.join(sourceWebDir, 'assets');
-const sourceFontsDir = path.join(sourceWebDir, 'fonts');
+// Шрифты — один набор на весь сайт (packages/fonts → docs/fonts; стилевая база 1.6.4).
+const sourceFontsDir = path.join(rootDir, 'packages', 'fonts');
 const outputFontsDir = path.join(outputWebDir, 'fonts');
 const monacoSourceDir = path.join(rootDir, 'node_modules', 'monaco-editor', 'min', 'vs');
 const monacoOutputDir = path.join(outputWebDir, 'monaco', 'vs');

@@ -1,8 +1,11 @@
 :root {
-  --topbar-height: 56px;
-  --ui-font: "Geologica", Inter, Segoe UI, Arial, sans-serif;
-  --ui-font-narrow: "Geologica", Inter, Segoe UI, Arial, sans-serif;
-  --mono-font: "Source Code Pro", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /* Шрифты, палитра и высота шапки — из единого источника токенов (assets/site-tokens.css,
+     packages/design/tokens.js; стилевая база 1.6.4). Имена ниже — исторические имена IDE,
+     оставлены псевдонимами на время переезда: новые правила пишутся сразу на var(--color-…),
+     var(--syntax-…), var(--editor-…). */
+  --ui-font: var(--font-sans);
+  --ui-font-narrow: var(--font-sans);
+  --mono-font: var(--font-mono);
   --editor-font-size: 16px;
   --editor-line-height: 25px;
   --console-font-size: 13px;
@@ -11,145 +14,35 @@
   font-family: var(--ui-font);
 }
 
-@font-face {
-  font-family: "Geologica";
-  src: url("fonts/Geologica-Variable.ttf") format("truetype-variations");
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Source Code Pro";
-  src: url("fonts/SourceCodePro-Regular.woff2") format("woff2");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Source Code Pro";
-  src: url("fonts/SourceCodePro-Semibold.woff2") format("woff2");
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Source Code Pro";
-  src: url("fonts/SourceCodePro-Bold.woff2") format("woff2");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Source Code Pro";
-  src: url("fonts/SourceCodePro-It.woff2") format("woff2");
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-
-body.theme-dark {
-  color-scheme: dark;
-  --bg: #100819;
-  --panel: #171020;
-  --panel-soft: #21182c;
-  --panel-raised: #1d1528;
-  --border: #342a43;
-  --text: #eeeaf7;
-  --muted: #a39bb7;
-  --accent: #6aa4ff;
-  --accent-strong: #8ec2ff;
-  --run-bg: #179f5b;
-  --run-bg-hover: #1fba6d;
-  --success: #4ade80;
-  --danger: #f07178;
-  --editor-bg: #120a1d;
-  --editor-text: #f0ecf8;
-  --editor-muted: #777088;
-  --editor-caret: #ffffff;
-  --selection: rgba(106, 164, 255, 0.28);
-  --output-bg: #0c0515;
-  --preview-bg: #0f0818;
-  --keyword: #b892ff;
-  --type: #63b3ff;
-  --class-name: #59d4b8;
-  --string: #d99a6c;
-  --number: #c5d979;
-  --comment: #6ba36f;
-  --function: #e4d87e;
-  --property: #8bdfff;
-  --brackets: #d0d6e6;
-}
-
-body.theme-light {
-  color-scheme: light;
-  --bg: #d2cfd7;
-  --panel: #dfdce4;
-  --panel-soft: #cbc7d1;
-  --panel-raised: #e7e4ea;
-  --border: #aaa3b2;
-  --text: #27242e;
-  --muted: #625d69;
-  --accent: #315f8c;
-  --accent-strong: #234b73;
-  --run-bg: #177b49;
-  --run-bg-hover: #12683d;
-  --success: #177748;
-  --danger: #a43b4b;
-  --editor-bg: #d9d6df;
-  --editor-text: #252730;
-  --editor-muted: #77717f;
-  --editor-caret: #23252c;
-  --selection: rgba(49, 95, 140, 0.22);
-  --output-bg: #cfccd5;
-  --output-text: #25222b;
-  --preview-bg: #d3d0d8;
-  --keyword: #8d3f75;
-  --type: #1d659a;
-  --class-name: #1b745c;
-  --string: #87481f;
-  --number: #5b7027;
-  --comment: #477237;
-  --function: #76620f;
-  --property: #0d667f;
-  --brackets: #445253;
-}
-
-* {
-  box-sizing: border-box;
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--muted) 42%, transparent) transparent;
-}
-
-*::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-*::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-*::-webkit-scrollbar-thumb {
-  border: 2px solid transparent;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--muted) 34%, transparent);
-  background-clip: content-box;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--muted) 56%, transparent);
-  background-clip: content-box;
-}
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  background: var(--bg);
-  color: var(--text);
+:root {
+  --bg: var(--color-bg);
+  --panel: var(--color-panel);
+  --panel-soft: var(--color-panel-soft);
+  --panel-raised: var(--color-panel-raised);
+  --border: var(--color-border);
+  --text: var(--color-text);
+  --muted: var(--color-text-muted);
+  --accent: var(--color-accent);
+  --accent-strong: var(--color-accent-strong);
+  --accent-soft: var(--color-accent-soft);
+  --run-bg: var(--color-run);
+  --run-bg-hover: var(--color-run-hover);
+  --success: var(--color-success);
+  --danger: var(--color-danger);
+  --warning: var(--color-warning);
+  --selection: var(--color-selection);
+  --output-bg: var(--color-bg);
+  --output-text: var(--color-text);
+  --preview-bg: var(--color-bg);
+  --keyword: var(--syntax-keyword);
+  --type: var(--syntax-type);
+  --class-name: var(--syntax-class);
+  --string: var(--syntax-string);
+  --number: var(--syntax-number);
+  --comment: var(--syntax-comment);
+  --function: var(--syntax-function);
+  --property: var(--syntax-object);
+  --brackets: var(--syntax-brackets);
 }
 
 button {
@@ -234,12 +127,8 @@ button:disabled:active {
   gap: 20px;
   padding: 0 20px;
   border-bottom: 1px solid var(--border);
-  background: rgba(12, 5, 21, 0.92);
+  background: var(--color-topbar-bg);
   backdrop-filter: blur(18px);
-}
-
-body.theme-light .topbar {
-  background: rgba(246, 242, 251, 0.92);
 }
 
 /* Кнопки шапки — как ссылки-кнопки учебника: выше, круглее, крупнее текст. Выпадающих меню не касается. */
@@ -531,7 +420,6 @@ body.theme-light .topbar {
   /* Положение и вид задаёт общий компонент (assets/color-picker.css, .is-floating). */
   display: block;
 }
-
 
 .theme-menu button {
   width: 100%;
@@ -2621,67 +2509,67 @@ summary.json-node-line:hover {
 }
 
 .ansi-fg-black {
-  color: #59606d;
+  color: var(--ansi-black);
 }
 
 .ansi-fg-red {
-  color: #ff6b6b;
+  color: var(--ansi-red);
 }
 
 .ansi-fg-green {
-  color: #77d787;
+  color: var(--ansi-green);
 }
 
 .ansi-fg-yellow {
-  color: #f2d35e;
+  color: var(--ansi-yellow);
 }
 
 .ansi-fg-blue {
-  color: #71a7ff;
+  color: var(--ansi-blue);
 }
 
 .ansi-fg-magenta {
-  color: #f38ba8;
+  color: var(--ansi-magenta);
 }
 
 .ansi-fg-cyan {
-  color: #67d9e8;
+  color: var(--ansi-cyan);
 }
 
 .ansi-fg-white {
-  color: #edf3ff;
+  color: var(--ansi-white);
 }
 
 .ansi-fg-bright-black {
-  color: #8b93a3;
+  color: var(--ansi-bright-black);
 }
 
 .ansi-fg-bright-red {
-  color: #ff8f8f;
+  color: var(--ansi-bright-red);
 }
 
 .ansi-fg-bright-green {
-  color: #9af5aa;
+  color: var(--ansi-bright-green);
 }
 
 .ansi-fg-bright-yellow {
-  color: #ffe382;
+  color: var(--ansi-bright-yellow);
 }
 
 .ansi-fg-bright-blue {
-  color: #99c2ff;
+  color: var(--ansi-bright-blue);
 }
 
 .ansi-fg-bright-magenta {
-  color: #ffadd2;
+  color: var(--ansi-bright-magenta);
 }
 
 .ansi-fg-bright-cyan {
-  color: #8ef5ff;
+  color: var(--ansi-bright-cyan);
 }
 
 .ansi-fg-bright-white {
-  color: #ffffff;
+  color: var(--ansi-bright-white);
 }
 
 /* ANSI-палитра для светлой темы: тёмная задана под тёмный фон, и на
@@ -2691,70 +2579,6 @@ summary.json-node-line:hover {
    становились невидимыми (находка методистов 2026-08-22). Все пары
 
    ниже дают ≥4.5:1 на светлых панелях. */
-
-body.theme-light .ansi-fg-black {
-  color: #24292f;
-}
-
-body.theme-light .ansi-fg-red {
-  color: #b3261e;
-}
-
-body.theme-light .ansi-fg-green {
-  color: #17691f;
-}
-
-body.theme-light .ansi-fg-yellow {
-  color: #7a5800;
-}
-
-body.theme-light .ansi-fg-blue {
-  color: #1247a4;
-}
-
-body.theme-light .ansi-fg-magenta {
-  color: #99236d;
-}
-
-body.theme-light .ansi-fg-cyan {
-  color: #156970;
-}
-
-body.theme-light .ansi-fg-white {
-  color: #57606a;
-}
-
-body.theme-light .ansi-fg-bright-black {
-  color: #57606a;
-}
-
-body.theme-light .ansi-fg-bright-red {
-  color: #b93737;
-}
-
-body.theme-light .ansi-fg-bright-green {
-  color: #1c7032;
-}
-
-body.theme-light .ansi-fg-bright-yellow {
-  color: #855c00;
-}
-
-body.theme-light .ansi-fg-bright-blue {
-  color: #0550ae;
-}
-
-body.theme-light .ansi-fg-bright-magenta {
-  color: #7440c7;
-}
-
-body.theme-light .ansi-fg-bright-cyan {
-  color: #176b72;
-}
-
-body.theme-light .ansi-fg-bright-white {
-  color: #5c6570;
-}
 
 .console-input-panel {
   display: grid;
@@ -3145,7 +2969,6 @@ body.theme-light .ansi-fg-bright-white {
   gap: 8px;
   flex: 0 0 auto;
 }
-
 
 /* Общий `button { display: inline-flex }` перебивает атрибут hidden — в диалогах «Поделиться» возвращаем ему силу. */
 .share-card [hidden],

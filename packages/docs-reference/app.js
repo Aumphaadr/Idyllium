@@ -60,11 +60,10 @@
     els.search = document.getElementById('reference-search');
     els.view = document.getElementById('reference-view');
     els.main = document.getElementById('reference-main');
-    els.themeToggle = document.getElementById('theme-toggle');
     els.menuToggle = document.getElementById('menu-toggle');
     els.version = document.getElementById('version');
 
-    applySavedTheme();
+    // Тема — общий модуль сайта assets/site-theme.js: html[data-theme], кнопка #theme-toggle, хранение.
     bindShellEvents();
 
     try {
@@ -133,12 +132,6 @@
   }
 
   function bindShellEvents() {
-    els.themeToggle.addEventListener('click', () => {
-      const next = document.body.classList.contains('light-theme') ? 'dark' : 'light';
-      localStorage.setItem('idyllium-docs-theme', next);
-      applyTheme(next);
-    });
-
     els.menuToggle.addEventListener('click', () => {
       document.body.classList.toggle('sidebar-open');
     });
@@ -183,20 +176,6 @@
         document.body.classList.remove('sidebar-open');
       }
     });
-  }
-
-  function applySavedTheme() {
-    applyTheme(localStorage.getItem('idyllium-docs-theme') === 'light' ? 'light' : 'dark');
-  }
-
-  function applyTheme(theme) {
-    const light = theme === 'light';
-    document.body.classList.toggle('light-theme', light);
-    // Кнопка-иконка: солнце в тёмной теме, луна в светлой (иконки в разметке,
-    // видимостью правит CSS по body.light-theme); текст живёт в хинте.
-    const hint = light ? 'Тёмная тема' : 'Светлая тема';
-    els.themeToggle.title = hint;
-    els.themeToggle.setAttribute('aria-label', hint);
   }
 
   function renderNavigation() {

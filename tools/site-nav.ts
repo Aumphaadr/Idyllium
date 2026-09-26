@@ -30,7 +30,11 @@ interface SiteSection {
   readonly leading?: boolean;
   readonly stub?: boolean;
   readonly hint?: string;
+  /** Плотность страницы: 'app' у инструментов (14 px), у документов — prose (18 px), см. site-theme.js. */
+  readonly density?: SiteDensity;
 }
+
+export type SiteDensity = 'prose' | 'app';
 
 interface ExternalItem {
   readonly title: string;
@@ -51,19 +55,21 @@ export interface SiteNavOptions {
   readonly host?: 'ide' | 'docs';
   /** 'button' — «Генератор цвета» открывается на этой же странице (IDE, конструктор); иначе — ссылка в IDE. */
   readonly colorTool?: 'button' | 'link';
+  /** Плотность страницы; по умолчанию — из описания раздела, иначе prose. */
+  readonly density?: SiteDensity;
 }
 
 /** Разделы сайта. `path` — от корня сайта; `group` — дропдаун; `sidebar` — у страницы есть боковая колонка (кнопка-гамбургер). */
 export const SITE_SECTIONS: readonly SiteSection[] = [
-  { id: 'ide', badge: 'Web IDE', path: '', title: 'Web IDE' },
+  { id: 'ide', density: 'app', badge: 'Web IDE', path: '', title: 'Web IDE' },
   { id: 'reference', icon: 'properties', badge: 'Документация', path: 'reference/', title: 'Документация', group: 'materials', sidebar: true, leading: true },
   { id: 'book', icon: 'section-reference', badge: 'Учебник', path: 'book/', title: 'Учебник', group: 'materials', sidebar: true },
   { id: 'tasks', icon: 'section-tasks', badge: 'Задачник', path: 'tasks/', title: 'Задачник', group: 'materials', sidebar: true },
   { id: 'projects', icon: 'section-projects', badge: 'Проекты', path: 'projects/', title: 'Проекты', group: 'materials', sidebar: true },
   { id: 'handouts', icon: 'section-handouts', badge: 'Раздатка', path: 'handouts/', title: 'Файлы для заданий', group: 'materials' },
-  { id: 'gui-designer', icon: 'section-designer', badge: 'Конструктор GUI', path: 'gui-designer/', title: 'Конструктор GUI', group: 'tools', hint: 'Собрать окно мышью — получить .idyl' },
+  { id: 'gui-designer', density: 'app', icon: 'section-designer', badge: 'Конструктор GUI', path: 'gui-designer/', title: 'Конструктор GUI', group: 'tools', hint: 'Собрать окно мышью — получить .idyl' },
   { id: 'recipes', icon: 'section-recipes', badge: 'Рецепты', path: 'recipes/', title: 'Рецепты', group: 'tools', stub: true },
-  { id: 'authors', icon: 'section-authors', badge: 'Авторам', path: 'authors/', title: 'Генератор юнитов', hint: 'Встраиваемые задачи для вашего сайта', group: 'tools' },
+  { id: 'authors', density: 'app', icon: 'section-authors', badge: 'Авторам', path: 'authors/', title: 'Генератор юнитов', hint: 'Встраиваемые задачи для вашего сайта', group: 'tools' },
   { id: 'about', icon: 'info', badge: 'О проекте', path: 'about/', title: 'О проекте', group: 'about' },
   { id: 'why', icon: 'section-why', badge: 'Почему Idyllium', path: 'why/', title: 'Почему Idyllium', group: 'about', stub: true },
 ];
@@ -215,9 +221,22 @@ export function siteTopbarHtml(sectionId: string, options: SiteNavOptions): stri
     + '</header>';
 }
 
-/** Ссылки на общие стили и скрипт шапки — в <head> каждой страницы. */
-export function siteNavAssetsHtml(prefix: string): string {
-  return `<link rel="stylesheet" href="${prefix}assets/site-nav.css">\n  <script src="${prefix}assets/site-nav.js" defer></script>`;
+/**
+ * Общие стили и скрипты — в <head> каждой страницы, всегда в одном порядке (стилевая база 1.6.4,
+ * спека some_style_base/01 §5.8): тема (без defer — атрибут html[data-theme] должен стоять до первой
+ * отрисовки; плотность страницы едет атрибутом data-density), токены (объявляют слои каскада),
+ * шрифты, база (сброс, страница, полосы прокрутки), шапка. Стили своего раздела страница
+ * подключает уже после маркера.
+ */
+export function siteNavAssetsHtml(prefix: string, density: SiteDensity = 'prose'): string {
+  return [
+    `<script src="${prefix}assets/site-theme.js" data-density="${density}"></script>`,
+    `<link rel="stylesheet" href="${prefix}assets/site-tokens.css">`,
+    `<link rel="stylesheet" href="${prefix}fonts/fonts.css">`,
+    `<link rel="stylesheet" href="${prefix}assets/site-base.css">`,
+    `<link rel="stylesheet" href="${prefix}assets/site-nav.css">`,
+    `<script src="${prefix}assets/site-nav.js" defer></script>`,
+  ].join('\n  ');
 }
 
 /**
@@ -236,7 +255,7 @@ export function injectSiteTopbar(html: string, sectionId: string, options: SiteN
   swap('<!-- @site-topbar -->', siteTopbarHtml(sectionId, options));
   swap('<!-- @site-brand -->', siteBrandHtml(sectionId, options));
   swap('<!-- @site-nav -->', siteNavHtml(sectionId, { prefix: options.prefix, host: options.host }));
-  swap('<!-- @site-nav-assets -->', siteNavAssetsHtml(options.prefix));
+  swap('<!-- @site-nav-assets -->', siteNavAssetsHtml(options.prefix, options.density ?? sectionById(sectionId).density ?? 'prose'));
   if (replaced === 0) throw new Error(`site-nav: no header marker found for section '${sectionId}'`);
   return result;
 }

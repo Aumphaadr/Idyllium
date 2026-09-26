@@ -13,6 +13,15 @@
   let editingSpinBox = null;
   let deferredState = null;
   let draggingControlId = null;
+  // События виджетов (спека some_widget_events/01): слушатели общей семьи вешаются только на то,
+  // на что программа назначила обработчик (snapshot.events) — иначе движение мыши над каждым
+  // виджетом заваливало бы канал. Фокус и наведение помнятся, чтобы перерисовка по снимку
+  // (DOM пересобирается) не давала ложных on_focus_in / on_mouse_enter.
+  let activeWindowId = null;
+  let focusedWidgetId = null;
+  let grabbedSlider = null;         // { id, release } — ползунок, маркер которого тянут: снимок пересоздаёт элемент, состояние живёт здесь
+  const hoveredWidgets = new Set();
+  const eventsById = new Map();
   // Оконный менеджер превью: окно с явно заданными x/y стоит по координатам,
   // остальные раскладываются рядами; перетаскивание за шапку шлёт финальную
   // позицию в рантайм (window_move), и до подтверждающего снапшота позиция
@@ -76,19 +85,8 @@
     renderAll();
   });
 
-  document.addEventListener('keydown', (event) => {
-    if (isTextEditingTarget(event.target)) return;
-    if (activeCanvasId === null) return;
-    postGuiEvent(activeCanvasId, 'key_pressed', { key: normalizeKey(event.key) });
-    event.preventDefault();
-  });
-
-  document.addEventListener('keyup', (event) => {
-    if (isTextEditingTarget(event.target)) return;
-    if (activeCanvasId === null) return;
-    postGuiEvent(activeCanvasId, 'key_released', { key: normalizeKey(event.key) });
-    event.preventDefault();
-  });
+  document.addEventListener('keydown', (event) => routeKeyEvent(event, 'key_pressed'), true);
+  document.addEventListener('keyup', (event) => routeKeyEvent(event, 'key_released'), true);
 
   renderAll();
   host.postMessage({ type: 'rendererReady' });
@@ -116,6 +114,9 @@
     rememberActiveControl();
     ensureActiveCanvas();
     forgetClosedModalInputs();
+    // Карту слушаемых событий НЕ очищаем: replaceChildren() синхронно шлёт pointercancel элементу
+    // с захваченным указателем, и его обработчик спрашивал бы пустую карту (находка e2e 2026-09-26).
+    // Записи перезаписываются при отрисовке; устаревшие id никто не спрашивает.
     stage.replaceChildren();
     summary.textContent = state.windows.length > 0
       ? 'окон: ' + state.windows.length
@@ -134,6 +135,11 @@
       stage.appendChild(element);
     }
     layoutWindows();
+    // Активное окно — то, что наверху; в начале программы это последнее показанное (без события).
+    if (activeWindowId === null || !windowElements.has(activeWindowId)) {
+      const top = [...windowZOrder.entries()].sort((left, right) => right[1] - left[1]).map(([id]) => id).find((id) => windowElements.has(id));
+      activeWindowId = top !== undefined ? top : (state.windows.length > 0 ? state.windows[state.windows.length - 1].id : null);
+    }
 
     if (state.windows.length === 0) {
       for (const canvas of state.canvases) {
@@ -253,6 +259,7 @@
   }
 
   function renderWindow(win) {
+    eventsById.set(String(win.id), Array.isArray(win.events) ? win.events : []);
     const width = positiveNumber(win.properties.width, 640);
     const height = positiveNumber(win.properties.height, 420);
     const inheritedColors = childInheritedColors(win.properties, {});
@@ -301,6 +308,8 @@
     content.style.width = width + 'px';
     content.style.height = height + 'px';
     root.appendChild(content);
+    // Мышь над окном (его собственным фоном, не над виджетами) — общая семья событий.
+    installPointerEvents(content, win.id, (name) => listensTo(win.id, name), (event) => ownWidgetEvent(content, event));
 
     for (const child of win.children || []) {
       content.appendChild(renderWidget(child, win.id, inheritedColors));
@@ -376,6 +385,7 @@
   }
 
   function bringWindowToFront(windowId) {
+    activateWindow(windowId);
     if (!windowZOrder.has(windowId)) windowZOrder.set(windowId, windowZOrder.size + 1);
     // Компактная перенумерация 1..N: z-index окон не растёт бесконечно
     // и никогда не дотягивается до модалок.
@@ -563,9 +573,165 @@
   }
 
   function renderWidget(widget, parentId = 0, inheritedColors = {}) {
+    eventsById.set(String(widget.id), Array.isArray(widget.events) ? widget.events : []);
     const el = renderWidgetElement(widget, parentId, inheritedColors);
     applyEnabledState(el, widget.properties);
+    installWidgetEvents(el, widget);
     return el;
+  }
+
+  // ─── События виджетов: общая семья по списку слушаемых ────────────────────
+  function listensTo(id, eventName) {
+    const list = eventsById.get(String(id));
+    return Array.isArray(list) && list.includes(eventName);
+  }
+
+  /** Событие пришло по собственной поверхности виджета, а не от виджета внутри контейнера. */
+  function ownWidgetEvent(el, event) {
+    const target = event && event.target;
+    if (!target || typeof target.closest !== 'function') return true;
+    const widgetElement = target.closest('.widget');
+    return widgetElement === null || widgetElement === el;
+  }
+
+  function modifiers(event) {
+    return { ctrl: Boolean(event && event.ctrlKey), shift: Boolean(event && event.shiftKey), alt: Boolean(event && event.altKey) };
+  }
+
+  /** Мышь над виджетом: x, y от его левого верхнего угла (у холста — своя функция с масштабом). */
+  function elementMousePayload(el, event) {
+    const rect = el.getBoundingClientRect();
+    return {
+      x: Math.trunc(Number(event.clientX) - rect.left),
+      y: Math.trunc(Number(event.clientY) - rect.top),
+      mouse_button: mouseButtonName(event.button),
+      ...modifiers(event),
+    };
+  }
+
+  function keyPayload(event) {
+    return { key: normalizeKey(String(event.key || '')), ...modifiers(event) };
+  }
+
+  function installPointerEvents(el, id, listens, own) {
+    if (listens('mouse_enter') || listens('mouse_leave')) {
+      el.addEventListener('pointerenter', () => {
+        if (hoveredWidgets.has(id)) return; // перерисовка пересоздала элемент под тем же курсором
+        hoveredWidgets.add(id);
+        if (listens('mouse_enter')) postGuiEvent(id, 'mouse_enter', {});
+      });
+      el.addEventListener('pointerleave', () => {
+        if (el.isConnected === false) return; // элемент убрала перерисовка — курсор никуда не уходил
+        if (!hoveredWidgets.has(id)) return;
+        hoveredWidgets.delete(id);
+        if (listens('mouse_leave')) postGuiEvent(id, 'mouse_leave', {});
+      });
+    }
+    if (listens('mouse_pressed')) el.addEventListener('pointerdown', (event) => { if (own(event)) postGuiEvent(id, 'mouse_pressed', elementMousePayload(el, event)); });
+    if (listens('mouse_released')) el.addEventListener('pointerup', (event) => { if (own(event)) postGuiEvent(id, 'mouse_released', elementMousePayload(el, event)); });
+    if (listens('mouse_move')) el.addEventListener('pointermove', (event) => { if (own(event)) postGuiEvent(id, 'mouse_move', elementMousePayload(el, event)); });
+    // Правая кнопка — через on_mouse_pressed с mouse_button "RIGHT": браузерное меню тут лишнее.
+    if (listens('mouse_pressed') || listens('mouse_released')) el.addEventListener('contextmenu', (event) => { if (own(event) && typeof event.preventDefault === 'function') event.preventDefault(); });
+  }
+
+  const CLICK_BY_EVENTS = new Set(['gui.Frame', 'gui.TabWidget', 'gui.ImageBox', 'gui.Icon']);
+
+  function installWidgetEvents(el, widget) {
+    if (widget.type === 'gui.Canvas') return; // у холста своя мышь (installCanvasEventHandlers)
+    const id = widget.id;
+    const listens = (name) => listensTo(id, name);
+    const own = (event) => ownWidgetEvent(el, event);
+    installPointerEvents(el, id, listens, own);
+    if (listens('double_click')) el.addEventListener('dblclick', (event) => { if (own(event)) postGuiEvent(id, 'double_click', elementMousePayload(el, event)); });
+    if (CLICK_BY_EVENTS.has(widget.type) && listens('click')) el.addEventListener('click', (event) => { if (own(event)) postGuiEvent(id, 'click', {}); });
+  }
+
+  // Фокус: on_focus_in / on_focus_out без дублей — перерисовка по снимку пересоздаёт элемент и
+  // возвращает ему фокус, это не смена фокуса.
+  function noteFocusIn(widgetId) {
+    const key = String(widgetId);
+    if (focusedWidgetId === key) return;
+    const previous = focusedWidgetId;
+    focusedWidgetId = key;
+    if (previous !== null && listensTo(previous, 'focus_out')) postGuiEvent(Number(previous), 'focus_out', {});
+    if (listensTo(key, 'focus_in')) postGuiEvent(widgetId, 'focus_in', {});
+  }
+
+  function noteFocusOut(widgetId) {
+    const key = String(widgetId);
+    if (focusedWidgetId !== key) return;
+    const active = typeof document !== 'undefined' ? document.activeElement : null;
+    const activeId = active && active.dataset ? (active.dataset.focusWidgetId || active.dataset.widgetId || null) : null;
+    if (activeId !== null && String(activeId) === key) return;
+    focusedWidgetId = null;
+    if (listensTo(key, 'focus_out')) postGuiEvent(widgetId, 'focus_out', {});
+  }
+
+  function activateWindow(windowId) {
+    if (activeWindowId === windowId) return;
+    const previous = activeWindowId;
+    activeWindowId = windowId;
+    if (previous !== null && listensTo(previous, 'focus_out')) postGuiEvent(previous, 'focus_out', {});
+    if (listensTo(windowId, 'focus_in')) postGuiEvent(windowId, 'focus_in', {});
+  }
+
+  function focusWidgetIdOf(element) {
+    if (!element || !element.dataset) return null;
+    const raw = element.dataset.focusWidgetId || element.dataset.widgetId;
+    return raw === undefined || raw === '' ? null : Number(raw);
+  }
+
+  function windowIdOfElement(element) {
+    if (!element || typeof element.closest !== 'function') return null;
+    const root = element.closest('.window');
+    return root && root.dataset && root.dataset.windowId ? Number(root.dataset.windowId) : null;
+  }
+
+  // Клавиши: у текстовых полей — свои (окну они не всплывают: это решает рантайм по типу виджета);
+  // иначе активный холст (как раньше, с гашением прокрутки страницы), иначе виджет с фокусом
+  // (рантайм всплывает событие к его окну), иначе активное окно.
+  function routeKeyEvent(event, eventName) {
+    const payload = keyPayload(event);
+    if (isTextEditingTarget(event.target)) {
+      const id = focusWidgetIdOf(event.target);
+      if (id !== null && listensTo(id, eventName)) postGuiEvent(id, eventName, payload);
+      return;
+    }
+    if (activeCanvasId !== null) {
+      postGuiEvent(activeCanvasId, eventName, payload);
+      event.preventDefault();
+      return;
+    }
+    const focusedId = focusWidgetIdOf(event.target);
+    if (focusedId !== null) {
+      // Окно виджета — из DOM; не нашли (облегчённый DOM) — это активное окно: фокус ходит вместе со щелчками.
+      const owner = windowIdOfElement(event.target) ?? activeWindowId;
+      if (listensTo(focusedId, eventName) || (owner !== null && listensTo(owner, eventName))) postGuiEvent(focusedId, eventName, payload);
+      return;
+    }
+    if (activeWindowId !== null && listensTo(activeWindowId, eventName)) postGuiEvent(activeWindowId, eventName, payload);
+  }
+
+  // Enter — «ввод закончен» (on_enter_pressed), затем on_editing_finished; уход из поля даёт
+  // on_editing_finished только если текст меняли (как editingFinished в Qt).
+  function installEditingEvents(el, widgetId, { enter }) {
+    let modified = false;
+    el.addEventListener('input', () => { modified = true; });
+    const finish = () => {
+      modified = false;
+      if (listensTo(widgetId, 'editing_finished')) postGuiEvent(widgetId, 'editing_finished', { text: el.value });
+    };
+    if (enter) {
+      el.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+        if (listensTo(widgetId, 'enter_pressed')) postGuiEvent(widgetId, 'enter_pressed', { text: el.value });
+        finish();
+      });
+    }
+    el.addEventListener('blur', () => {
+      if (el.isConnected === false) return;
+      if (modified) finish();
+    });
   }
 
   // enabled == false: приглушённо-серый вид и pointer-events даёт CSS-класс
@@ -710,6 +876,7 @@
     const el = baseWidget('button', widget, 'button control', inheritedColors);
     el.type = 'button';
     el.textContent = stringValue(widget.properties.text, '');
+    installControlFocus(el, widget.id);
     el.addEventListener('click', () => postGuiEvent(widget.id, 'click', {}));
     return el;
   }
@@ -724,6 +891,7 @@
     if (mode === 'no_echo') el.classList.add('no-echo');
     installControlFocus(el, widget.id);
     el.addEventListener('input', () => postGuiEvent(widget.id, 'change', { text: el.value }));
+    installEditingEvents(el, widget.id, { enter: true });
     return el;
   }
 
@@ -734,6 +902,7 @@
     applyPlaceholderColor(el, widget.properties);
     installControlFocus(el, widget.id);
     el.addEventListener('input', () => postGuiEvent(widget.id, 'change', { text: el.value }));
+    installEditingEvents(el, widget.id, { enter: false });
     return el;
   }
 
@@ -845,6 +1014,15 @@
     el.step = String(numberValue(widget.properties.step, 1));
     el.value = String(numberValue(widget.properties.value, 0));
     installControlFocus(el, widget.id);
+    // on_grab / on_release — маркер схватили мышью и отпустили (клавиши их не дают). Состояние —
+    // на уровне модуля: пока тянут, снимок может пересобрать элемент, и отпускание придёт новому.
+    const finishGrab = () => {
+      if (!grabbedSlider || grabbedSlider.id !== widget.id) return;
+      const grab = grabbedSlider;
+      grabbedSlider = null;
+      // Решение «слушают ли отпускание» принято при захвате: к моменту отпускания элемент мог смениться.
+      if (grab.release) postGuiEvent(widget.id, 'release', { value: Number(el.value) });
+    };
     el.addEventListener('pointerdown', (event) => {
       draggingControlId = widget.id;
       activeControl = controlState(el);
@@ -852,6 +1030,8 @@
       if (typeof el.setPointerCapture === 'function') {
         el.setPointerCapture(event.pointerId);
       }
+      grabbedSlider = { id: widget.id, release: listensTo(widget.id, 'release') };
+      if (listensTo(widget.id, 'grab')) postGuiEvent(widget.id, 'grab', { value: Number(el.value) });
     });
     // on_change приходит на каждое движение маркера (input), а не только при
     // отпускании; повторная отправка того же значения гасится.
@@ -869,11 +1049,13 @@
     el.addEventListener('change', () => {
       emitSliderChange();
       releaseDragControl(widget.id);
+      finishGrab();
     });
     el.addEventListener('pointerup', () => {
       releaseDragControl(widget.id);
+      finishGrab();
     });
-    el.addEventListener('pointercancel', () => releaseDragControl(widget.id));
+    el.addEventListener('pointercancel', () => { releaseDragControl(widget.id); finishGrab(); });
     return el;
   }
 
@@ -958,6 +1140,10 @@
     });
     table.appendChild(tbody);
     el.appendChild(table);
+    if (['focus_in', 'focus_out', 'key_pressed', 'key_released'].some((name) => listensTo(widget.id, name))) {
+      el.tabIndex = 0;
+      installControlFocus(el, widget.id);
+    }
     return el;
   }
 
@@ -1467,7 +1653,17 @@
     });
     canvas.addEventListener('mouseenter', () => {
       activeCanvasId = canvasId;
+      if (hoveredWidgets.has(canvasId)) return;
+      hoveredWidgets.add(canvasId);
+      if (listensTo(canvasId, 'mouse_enter')) postGuiEvent(canvasId, 'mouse_enter', {});
     });
+    canvas.addEventListener('mouseleave', () => {
+      if (canvas.isConnected === false || !hoveredWidgets.has(canvasId)) return;
+      hoveredWidgets.delete(canvasId);
+      if (listensTo(canvasId, 'mouse_leave')) postGuiEvent(canvasId, 'mouse_leave', {});
+    });
+    canvas.addEventListener('click', () => { if (listensTo(canvasId, 'click')) postGuiEvent(canvasId, 'click', {}); });
+    canvas.addEventListener('contextmenu', (event) => { if (typeof event.preventDefault === 'function') event.preventDefault(); });
     canvas.addEventListener('mouseup', (event) => {
       postGuiEvent(canvasId, 'mouse_released', mousePayload(canvas, event));
       event.preventDefault();
@@ -1538,6 +1734,14 @@
     el.addEventListener('focus', () => {
       activeControl = controlState(el);
       activeCanvasId = null;
+      noteFocusIn(widgetId);
+    });
+    el.addEventListener('blur', () => {
+      if (el.isConnected === false) return; // перерисовка: фокус вернётся тому же виджету
+      // На следующем тике: blur приходит раньше focus нового виджета. В облегчённой среде тестов
+      // таймеров нет — там проверяем сразу.
+      if (typeof setTimeout === 'function') setTimeout(() => noteFocusOut(widgetId), 0);
+      else noteFocusOut(widgetId);
     });
     el.addEventListener('input', () => {
       activeControl = controlState(el);
@@ -1841,6 +2045,7 @@
       x: Math.trunc((event.clientX - rect.left) * canvas.width / Math.max(1, rect.width)),
       y: Math.trunc((event.clientY - rect.top) * canvas.height / Math.max(1, rect.height)),
       mouse_button: mouseButtonName(event.button),
+      ...modifiers(event),
     };
   }
 

@@ -99,11 +99,10 @@
     els.view = document.getElementById('lesson-view');
     els.main = document.getElementById('docs-main');
     els.toc = document.getElementById('docs-toc');
-    els.themeToggle = document.getElementById('theme-toggle');
     els.menuToggle = document.getElementById('menu-toggle');
 
     installDocsModalApi();
-    applySavedTheme();
+    // Тема — общий модуль сайта assets/site-theme.js: html[data-theme], кнопка #theme-toggle, хранение.
     bindShellEvents();
 
     // Сохранённые адреса эпохи решётки (/book/#/console/setup) живут вечно:
@@ -156,12 +155,6 @@
   }
 
   function bindShellEvents() {
-    els.themeToggle.addEventListener('click', () => {
-      const next = document.body.classList.contains('light-theme') ? 'dark' : 'light';
-      localStorage.setItem('idyllium-docs-theme', next);
-      applyTheme(next);
-    });
-
     els.menuToggle.addEventListener('click', () => {
       document.body.classList.toggle('sidebar-open');
     });
@@ -194,20 +187,6 @@
         interceptRouteNavigation(event, oldLessonRoute);
       }
     });
-  }
-
-  function applySavedTheme() {
-    applyTheme(localStorage.getItem('idyllium-docs-theme') ?? 'dark');
-  }
-
-  function applyTheme(theme) {
-    const light = theme === 'light';
-    document.body.classList.toggle('light-theme', light);
-    // Кнопка-иконка: солнце в тёмной теме, луна в светлой (иконки в разметке,
-    // видимостью правит CSS по body.light-theme); текст живёт в хинте.
-    const hint = light ? 'Тёмная тема' : 'Светлая тема';
-    els.themeToggle.title = hint;
-    els.themeToggle.setAttribute('aria-label', hint);
   }
 
   async function openCurrentRoute() {

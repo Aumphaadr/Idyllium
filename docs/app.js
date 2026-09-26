@@ -8030,6 +8030,216 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     return { openShareDialog, openQrReader, openFromAddress, guestEnded, isGuest: () => guest !== null };
   }
 
+  // packages/web-ide/src/design-tokens.js
+  var DESIGN_TOKENS = Object.freeze({
+    "dark": {
+      "color-bg": "#0c0515",
+      "color-panel": "#151020",
+      "color-panel-raised": "#1c1629",
+      "color-panel-soft": "#241d34",
+      "color-panel-active": "#2d2346",
+      "color-panel-active-hover": "#372b55",
+      "color-code-bg": "#100b1a",
+      "color-topbar-bg": "rgba(12, 5, 21, 0.92)",
+      "color-backdrop": "rgba(6, 2, 12, 0.55)",
+      "color-text": "#f2eaf7",
+      "color-text-soft": "#c9bdd6",
+      "color-text-muted": "#8e819d",
+      "color-on-accent": "#0c0515",
+      "color-border": "#342846",
+      "color-border-soft": "rgba(255, 255, 255, 0.08)",
+      "color-accent": "#87bfff",
+      "color-accent-strong": "#a3ceff",
+      "color-accent-soft": "rgba(135, 191, 255, 0.12)",
+      "color-success": "#8bd58f",
+      "color-success-bg": "rgba(139, 213, 143, 0.14)",
+      "color-warning": "#f5d98b",
+      "color-warning-bg": "rgba(245, 217, 139, 0.14)",
+      "color-danger": "#f38ba8",
+      "color-danger-bg": "rgba(243, 139, 168, 0.14)",
+      "color-info": "#b9d4ff",
+      "color-info-bg": "rgba(135, 191, 255, 0.12)",
+      "color-run": "#179f5b",
+      "color-run-hover": "#1fba6d",
+      "color-focus": "#87bfff",
+      "color-selection": "rgba(135, 191, 255, 0.28)",
+      "editor-bg": "#100b1a",
+      "editor-text": "#f2eaf7",
+      "editor-muted": "#777088",
+      "editor-caret": "#ffffff",
+      "editor-selection": "#87bfff45",
+      "editor-selection-inactive": "#87bfff24",
+      "editor-line-highlight": "#ffffff07",
+      "editor-indent-guide": "#2a2038",
+      "editor-indent-guide-active": "#4a405c",
+      "editor-bracket-match-bg": "#241d34",
+      "editor-bracket-match-border": "#87bfff66",
+      "editor-widget-bg": "#1c1629",
+      "editor-widget-border": "#342846",
+      "editor-suggest-highlight": "#a3ceff",
+      "editor-suggest-selected": "#37405e",
+      "syntax-keyword": "#b892ff",
+      "syntax-type": "#63b3ff",
+      "syntax-class": "#59d4b8",
+      "syntax-function": "#e4d87e",
+      "syntax-object": "#8bdfff",
+      "syntax-string": "#d99a6c",
+      "syntax-number": "#c5d979",
+      "syntax-comment": "#6ba36f",
+      "syntax-brackets": "#d0d6e6",
+      "syntax-json-key": "#8bdfff",
+      "syntax-constant": "#f5d98b",
+      "syntax-variable": "#f2eaf7",
+      "ansi-black": "#59606d",
+      "ansi-red": "#ff6b6b",
+      "ansi-green": "#77d787",
+      "ansi-yellow": "#f2d35e",
+      "ansi-blue": "#71a7ff",
+      "ansi-magenta": "#f38ba8",
+      "ansi-cyan": "#67d9e8",
+      "ansi-white": "#edf3ff",
+      "ansi-bright-black": "#8b93a3",
+      "ansi-bright-red": "#ff8f8f",
+      "ansi-bright-green": "#9af5aa",
+      "ansi-bright-yellow": "#ffe382",
+      "ansi-bright-blue": "#99c2ff",
+      "ansi-bright-magenta": "#ffadd2",
+      "ansi-bright-cyan": "#8ef5ff",
+      "ansi-bright-white": "#ffffff",
+      "shadow-popup": "0 18px 44px rgba(0, 0, 0, 0.32)",
+      "shadow-floating": "0 18px 44px rgba(0, 0, 0, 0.34)",
+      "shadow-dialog": "0 24px 60px rgba(0, 0, 0, 0.45)"
+    },
+    "light": {
+      "color-bg": "#ece8f2",
+      "color-panel": "#f7f4fb",
+      "color-panel-raised": "#e9e2f0",
+      "color-panel-soft": "#ded6e8",
+      "color-panel-active": "#d6cce3",
+      "color-panel-active-hover": "#cbbfdb",
+      "color-code-bg": "#f2edf7",
+      "color-topbar-bg": "rgba(246, 242, 251, 0.92)",
+      "color-backdrop": "rgba(33, 26, 46, 0.35)",
+      "color-text": "#211a2e",
+      "color-text-soft": "#463b56",
+      "color-text-muted": "#6d637b",
+      "color-on-accent": "#ffffff",
+      "color-border": "#c8bed5",
+      "color-border-soft": "rgba(33, 26, 46, 0.14)",
+      "color-accent": "#275f9e",
+      "color-accent-strong": "#1d4d82",
+      "color-accent-soft": "rgba(39, 95, 158, 0.13)",
+      "color-success": "#1d7a45",
+      "color-success-bg": "rgba(29, 122, 69, 0.12)",
+      "color-warning": "#8a6100",
+      "color-warning-bg": "rgba(138, 97, 0, 0.12)",
+      "color-danger": "#b3261e",
+      "color-danger-bg": "rgba(179, 38, 30, 0.10)",
+      "color-info": "#234b73",
+      "color-info-bg": "rgba(39, 95, 158, 0.13)",
+      "color-run": "#177b49",
+      "color-run-hover": "#12683d",
+      "color-focus": "#275f9e",
+      "color-selection": "rgba(39, 95, 158, 0.22)",
+      "editor-bg": "#f2edf7",
+      "editor-text": "#211a2e",
+      "editor-muted": "#77717f",
+      "editor-caret": "#211a2e",
+      "editor-selection": "#275f9e38",
+      "editor-selection-inactive": "#275f9e1c",
+      "editor-line-highlight": "#275f9e0b",
+      "editor-indent-guide": "#c4c0ca",
+      "editor-indent-guide-active": "#9c95a4",
+      "editor-bracket-match-bg": "#ded6e8",
+      "editor-bracket-match-border": "#275f9e88",
+      "editor-widget-bg": "#e9e2f0",
+      "editor-widget-border": "#c8bed5",
+      "editor-suggest-highlight": "#1d4d82",
+      "editor-suggest-selected": "#c2c8e0",
+      "syntax-keyword": "#8d3f75",
+      "syntax-type": "#1d659a",
+      "syntax-class": "#1b745c",
+      "syntax-function": "#76620f",
+      "syntax-object": "#0d667f",
+      "syntax-string": "#87481f",
+      "syntax-number": "#5b7027",
+      "syntax-comment": "#477237",
+      "syntax-brackets": "#445253",
+      "syntax-json-key": "#0d667f",
+      "syntax-constant": "#87481f",
+      "syntax-variable": "#211a2e",
+      "ansi-black": "#24292f",
+      "ansi-red": "#b3261e",
+      "ansi-green": "#17691f",
+      "ansi-yellow": "#7a5800",
+      "ansi-blue": "#1247a4",
+      "ansi-magenta": "#99236d",
+      "ansi-cyan": "#156970",
+      "ansi-white": "#57606a",
+      "ansi-bright-black": "#57606a",
+      "ansi-bright-red": "#b93737",
+      "ansi-bright-green": "#1c7032",
+      "ansi-bright-yellow": "#855c00",
+      "ansi-bright-blue": "#0550ae",
+      "ansi-bright-magenta": "#7440c7",
+      "ansi-bright-cyan": "#176b72",
+      "ansi-bright-white": "#5c6570",
+      "shadow-popup": "0 18px 44px rgba(39, 30, 54, 0.16)",
+      "shadow-floating": "0 18px 44px rgba(39, 30, 54, 0.18)",
+      "shadow-dialog": "0 24px 60px rgba(39, 30, 54, 0.22)"
+    },
+    "static": {
+      "font-sans": '"Geologica", system-ui, -apple-system, "Segoe UI", Inter, Arial, sans-serif',
+      "font-mono": '"Source Code Pro", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+      "fs-11": "11px",
+      "fs-12": "12px",
+      "fs-13": "13px",
+      "fs-14": "14px",
+      "fs-16": "16px",
+      "fs-18": "18px",
+      "fs-21": "21px",
+      "fs-24": "24px",
+      "fs-32": "32px",
+      "fs-40": "40px",
+      "lh-tight": "1.3",
+      "lh-ui": "1.45",
+      "lh-text": "1.6",
+      "lh-prose": "1.68",
+      "space-2": "2px",
+      "space-4": "4px",
+      "space-6": "6px",
+      "space-8": "8px",
+      "space-12": "12px",
+      "space-16": "16px",
+      "space-20": "20px",
+      "space-24": "24px",
+      "space-32": "32px",
+      "radius-4": "4px",
+      "radius-6": "6px",
+      "radius-8": "8px",
+      "radius-12": "12px",
+      "radius-pill": "999px",
+      "z-sticky": "20",
+      "z-topbar": "50",
+      "z-menu": "60",
+      "z-popover": "200",
+      "z-floating": "250",
+      "z-dialog": "300",
+      "z-lens": "400",
+      "duration-fast": "120ms",
+      "duration-base": "160ms",
+      "duration-slow": "250ms",
+      "topbar-height": "56px",
+      "sidebar-width": "330px"
+    },
+    "breakpoints": {
+      "phone": 480,
+      "narrow": 820,
+      "medium": 1e3,
+      "wide": 1200
+    }
+  });
+
   // packages/web-ide/src/monaco-grammar.js
   var MONACO_LANGUAGE_ID = "idyllium";
   function registerIdylliumGrammar(monaco) {
@@ -8140,133 +8350,73 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
       }
     });
   }
+  function monacoTheme(name) {
+    const t = DESIGN_TOKENS[name];
+    const fg = (tokenName) => t[tokenName].replace("#", "");
+    const brackets = fg("syntax-brackets");
+    const colors = {
+      "focusBorder": "#00000000",
+      "editor.background": t["editor-bg"],
+      "editor.foreground": t["editor-text"],
+      "editorLineNumber.foreground": t["editor-muted"],
+      "editorLineNumber.activeForeground": t["syntax-brackets"],
+      "editorCursor.foreground": t["editor-caret"],
+      "editor.selectionBackground": t["editor-selection"],
+      "editor.inactiveSelectionBackground": t["editor-selection-inactive"],
+      "editor.lineHighlightBackground": t["editor-line-highlight"],
+      "editor.lineHighlightBorder": "#00000000",
+      "editorBracketMatch.background": t["editor-bracket-match-bg"],
+      "editorBracketMatch.border": t["editor-bracket-match-border"],
+      "editorIndentGuide.background1": t["editor-indent-guide"],
+      "editorIndentGuide.activeBackground1": t["editor-indent-guide-active"],
+      "editorGutter.background": t["editor-bg"],
+      "editorSuggestWidget.background": t["editor-widget-bg"],
+      "editorSuggestWidget.border": t["editor-widget-border"],
+      "editorSuggestWidget.foreground": t["editor-text"],
+      "editorSuggestWidget.highlightForeground": t["editor-suggest-highlight"],
+      "editorSuggestWidget.selectedBackground": t["editor-suggest-selected"],
+      "editorWidget.background": t["editor-widget-bg"],
+      "editorWidget.border": t["editor-widget-border"]
+    };
+    for (let level = 1; level <= 6; level += 1) colors[`editorBracketHighlight.foreground${level}`] = t["syntax-brackets"];
+    return {
+      base: name === "light" ? "vs" : "vs-dark",
+      inherit: true,
+      rules: [
+        { token: "keyword.idyllium", foreground: fg("syntax-keyword") },
+        { token: "typeName.idyllium", foreground: fg("syntax-type") },
+        { token: "className.idyllium", foreground: fg("syntax-class") },
+        { token: "function.idyllium", foreground: fg("syntax-function") },
+        { token: "object.idyllium", foreground: fg("syntax-object") },
+        { token: "namespace", foreground: fg("syntax-object") },
+        { token: "class", foreground: fg("syntax-class") },
+        { token: "function", foreground: fg("syntax-function") },
+        { token: "method", foreground: fg("syntax-function") },
+        { token: "property", foreground: fg("syntax-object") },
+        { token: "variable", foreground: fg("syntax-variable") },
+        { token: "parameter", foreground: fg("syntax-object") },
+        { token: "variable.readonly", foreground: fg("syntax-object") },
+        { token: "brackets.idyllium", foreground: brackets },
+        { token: "string.key.json", foreground: fg("syntax-json-key") },
+        { token: "string.value.json", foreground: fg("syntax-string") },
+        { token: "number.json", foreground: fg("syntax-number") },
+        { token: "keyword.json", foreground: fg("syntax-keyword") },
+        { token: "delimiter.bracket.json", foreground: brackets },
+        { token: "delimiter.array.json", foreground: brackets },
+        { token: "delimiter.colon.json", foreground: brackets },
+        { token: "delimiter.comma.json", foreground: brackets },
+        { token: "comment.line.json", foreground: fg("syntax-comment"), fontStyle: "italic" },
+        { token: "comment.block.json", foreground: fg("syntax-comment"), fontStyle: "italic" },
+        { token: "string", foreground: fg("syntax-string") },
+        { token: "number", foreground: fg("syntax-number") },
+        { token: "comment", foreground: fg("syntax-comment"), fontStyle: "italic" }
+      ],
+      colors
+    };
+  }
   function defineIdylliumThemes(monaco) {
-    monaco.editor.defineTheme("idyllium-dark", {
-      base: "vs-dark",
-      inherit: true,
-      rules: [
-        { token: "keyword.idyllium", foreground: "b892ff" },
-        { token: "typeName.idyllium", foreground: "63b3ff" },
-        { token: "className.idyllium", foreground: "59d4b8" },
-        { token: "function.idyllium", foreground: "e4d87e" },
-        { token: "object.idyllium", foreground: "8bdfff" },
-        { token: "namespace", foreground: "8bdfff" },
-        { token: "class", foreground: "59d4b8" },
-        { token: "function", foreground: "e4d87e" },
-        { token: "method", foreground: "e4d87e" },
-        { token: "property", foreground: "8bdfff" },
-        { token: "variable", foreground: "f0ecf8" },
-        { token: "parameter", foreground: "8bdfff" },
-        { token: "variable.readonly", foreground: "8bdfff" },
-        { token: "brackets.idyllium", foreground: "d0d6e6" },
-        { token: "string.key.json", foreground: "8bdfff" },
-        { token: "string.value.json", foreground: "d99a6c" },
-        { token: "number.json", foreground: "c5d979" },
-        { token: "keyword.json", foreground: "b892ff" },
-        { token: "delimiter.bracket.json", foreground: "d0d6e6" },
-        { token: "delimiter.array.json", foreground: "d0d6e6" },
-        { token: "delimiter.colon.json", foreground: "d0d6e6" },
-        { token: "delimiter.comma.json", foreground: "d0d6e6" },
-        { token: "comment.line.json", foreground: "6ba36f", fontStyle: "italic" },
-        { token: "comment.block.json", foreground: "6ba36f", fontStyle: "italic" },
-        { token: "string", foreground: "d99a6c" },
-        { token: "number", foreground: "c5d979" },
-        { token: "comment", foreground: "6ba36f", fontStyle: "italic" }
-      ],
-      colors: {
-        "focusBorder": "#00000000",
-        "editor.background": "#120a1d",
-        "editor.foreground": "#f0ecf8",
-        "editorLineNumber.foreground": "#777088",
-        "editorLineNumber.activeForeground": "#d0d6e6",
-        "editorCursor.foreground": "#ffffff",
-        "editor.selectionBackground": "#6aa4ff45",
-        "editor.inactiveSelectionBackground": "#6aa4ff24",
-        "editor.lineHighlightBackground": "#ffffff07",
-        "editor.lineHighlightBorder": "#00000000",
-        "editorBracketHighlight.foreground1": "#d0d6e6",
-        "editorBracketHighlight.foreground2": "#d0d6e6",
-        "editorBracketHighlight.foreground3": "#d0d6e6",
-        "editorBracketHighlight.foreground4": "#d0d6e6",
-        "editorBracketHighlight.foreground5": "#d0d6e6",
-        "editorBracketHighlight.foreground6": "#d0d6e6",
-        "editorBracketMatch.background": "#21182c",
-        "editorBracketMatch.border": "#6aa4ff66",
-        "editorIndentGuide.background1": "#2a2038",
-        "editorIndentGuide.activeBackground1": "#4a405c",
-        "editorGutter.background": "#120a1d",
-        "editorSuggestWidget.background": "#1d1528",
-        "editorSuggestWidget.border": "#342a43",
-        "editorSuggestWidget.foreground": "#f0ecf8",
-        "editorSuggestWidget.highlightForeground": "#8ec2ff",
-        "editorSuggestWidget.selectedBackground": "#273956",
-        "editorWidget.background": "#1d1528",
-        "editorWidget.border": "#342a43"
-      }
-    });
-    monaco.editor.defineTheme("idyllium-light", {
-      base: "vs",
-      inherit: true,
-      rules: [
-        { token: "keyword.idyllium", foreground: "8d3f75" },
-        { token: "typeName.idyllium", foreground: "1d659a" },
-        { token: "className.idyllium", foreground: "1b745c" },
-        { token: "function.idyllium", foreground: "76620f" },
-        { token: "object.idyllium", foreground: "0d667f" },
-        { token: "namespace", foreground: "0d667f" },
-        { token: "class", foreground: "1b745c" },
-        { token: "function", foreground: "76620f" },
-        { token: "method", foreground: "76620f" },
-        { token: "property", foreground: "0d667f" },
-        { token: "variable", foreground: "1d2230" },
-        { token: "parameter", foreground: "0d667f" },
-        { token: "variable.readonly", foreground: "0d667f" },
-        { token: "brackets.idyllium", foreground: "445253" },
-        { token: "string.key.json", foreground: "0d667f" },
-        { token: "string.value.json", foreground: "87481f" },
-        { token: "number.json", foreground: "5b7027" },
-        { token: "keyword.json", foreground: "8d3f75" },
-        { token: "delimiter.bracket.json", foreground: "445253" },
-        { token: "delimiter.array.json", foreground: "445253" },
-        { token: "delimiter.colon.json", foreground: "445253" },
-        { token: "delimiter.comma.json", foreground: "445253" },
-        { token: "comment.line.json", foreground: "477237", fontStyle: "italic" },
-        { token: "comment.block.json", foreground: "477237", fontStyle: "italic" },
-        { token: "string", foreground: "87481f" },
-        { token: "number", foreground: "5b7027" },
-        { token: "comment", foreground: "477237", fontStyle: "italic" }
-      ],
-      colors: {
-        "focusBorder": "#00000000",
-        "editor.background": "#d9d6df",
-        "editor.foreground": "#252730",
-        "editorLineNumber.foreground": "#77717f",
-        "editorLineNumber.activeForeground": "#47424f",
-        "editorCursor.foreground": "#23252c",
-        "editor.selectionBackground": "#315f8c38",
-        "editor.inactiveSelectionBackground": "#315f8c1c",
-        "editor.lineHighlightBackground": "#275f9e0b",
-        "editor.lineHighlightBorder": "#00000000",
-        "editorBracketHighlight.foreground1": "#445253",
-        "editorBracketHighlight.foreground2": "#445253",
-        "editorBracketHighlight.foreground3": "#445253",
-        "editorBracketHighlight.foreground4": "#445253",
-        "editorBracketHighlight.foreground5": "#445253",
-        "editorBracketHighlight.foreground6": "#445253",
-        "editorBracketMatch.background": "#c6c2cd",
-        "editorBracketMatch.border": "#827a8d",
-        "editorIndentGuide.background1": "#c4c0ca",
-        "editorIndentGuide.activeBackground1": "#9c95a4",
-        "editorGutter.background": "#d9d6df",
-        "editorSuggestWidget.background": "#e7e4ea",
-        "editorSuggestWidget.border": "#aaa3b2",
-        "editorSuggestWidget.foreground": "#252730",
-        "editorSuggestWidget.highlightForeground": "#315f8c",
-        "editorSuggestWidget.selectedBackground": "#c8d3df",
-        "editorWidget.background": "#e7e4ea",
-        "editorWidget.border": "#aaa3b2"
-      }
-    });
+    monaco.editor.defineTheme("idyllium-dark", monacoTheme("dark"));
+    monaco.editor.defineTheme("idyllium-light", monacoTheme("light"));
   }
 
   // packages/web-ide/src/run-preview.js
@@ -9631,8 +9781,12 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     if (severity === "info") return MarkerSeverity.Info;
     return MarkerSeverity.Error;
   }
+  function siteTheme() {
+    if (window.idylliumTheme) return window.idylliumTheme.get();
+    return document.body.classList.contains("theme-light") ? "light" : "dark";
+  }
   function currentMonacoTheme() {
-    return document.body.classList.contains("theme-light") ? "idyllium-light" : "idyllium-dark";
+    return siteTheme() === "light" ? "idyllium-light" : "idyllium-dark";
   }
   function readSavedEditorFontSize() {
     const raw = window.localStorage.getItem(FONT_SIZE_STORAGE_KEY);
@@ -12227,8 +12381,8 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     handleEditorInput();
   }
   function applySavedTheme() {
-    const theme = window.localStorage.getItem("idyllium-web-theme") || "dark";
-    setTheme(theme === "light" ? "light" : "dark");
+    applyThemeState(siteTheme());
+    document.addEventListener("idyllium-theme-change", (event) => applyThemeState(event.detail.theme));
   }
   function toggleThemeMenu() {
     themeMenu.hidden ? showThemeMenu() : hideThemeMenu();
@@ -12317,12 +12471,13 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     colorCopyTimers.set(button, timer);
   }
   function setTheme(theme) {
+    if (window.idylliumTheme) window.idylliumTheme.set(theme);
+    else applyThemeState(theme);
+  }
+  function applyThemeState(theme) {
     const dark = theme !== "light";
-    document.body.classList.toggle("theme-dark", dark);
-    document.body.classList.toggle("theme-light", !dark);
     themeDarkButton.classList.toggle("active", dark);
     themeLightButton.classList.toggle("active", !dark);
-    window.localStorage.setItem("idyllium-web-theme", dark ? "dark" : "light");
     if (monacoReady && window.monaco) window.monaco.editor.setTheme(currentMonacoTheme());
     applyPreviewTheme();
   }
@@ -12331,7 +12486,7 @@ ${" ".repeat(Math.max(0, location2.column - 1))}^`;
     if (!guiFrame.contentWindow) return;
     guiFrame.contentWindow.postMessage({
       type: "theme",
-      theme: document.body.classList.contains("theme-light") ? "light" : "dark"
+      theme: siteTheme()
     }, previewTargetOrigin);
   }
   function readFileAsDataUrl(file) {

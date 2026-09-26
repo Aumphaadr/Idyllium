@@ -723,10 +723,14 @@ test('Web IDE default project is minimal and light surfaces are subdued', () => 
   assert(factoryStart >= 0 && factoryEnd > factoryStart, 'expected default project factory in main.js');
   assert(!storeSource.includes('input.txt'), 'initial project must not contain input.txt');
   assert(!mainSource.slice(factoryStart, factoryEnd).includes('input.txt'), 'new project must not contain input.txt');
-  assert(cssSource.includes('--bg: #d2cfd7;'), 'expected subdued light page background');
-  assert(cssSource.includes('--panel-raised: #e7e4ea;'), 'expected subdued light raised surface');
-  assert(cssSource.includes('--editor-bg: #d9d6df;'), 'expected subdued light editor surface');
-  assert(cssSource.includes('--output-bg: #cfccd5;'), 'expected subdued light console surface');
+  // Палитра IDE — из единого источника токенов (стилевая база 1.6.4, вердикт владельца: документная
+  // палитра на весь сайт); приглушённые светлые поверхности живут в packages/design/tokens.js.
+  const tokens = require(path.resolve(process.cwd(), 'packages', 'design', 'tokens.js'));
+  for (const name of ['--bg', '--panel', '--panel-raised', '--editor-bg', '--output-bg']) {
+    assert(!new RegExp(`${name}:\\s*#`, 'u').test(cssSource), `${name} must come from the tokens, not a literal in app.css`);
+  }
+  assert(cssSource.includes('--bg: var(--color-bg);'), 'IDE page background must alias the token');
+  assert(tokens.color.bg[1] === '#ece8f2' && tokens.color['code-bg'][1] === '#f2edf7', 'expected subdued light surfaces in the tokens');
 });
 
 test('Web IDE unzip accepts ordinary deflate archives, not only its own stored ones', () => {
@@ -1036,17 +1040,22 @@ test('the site header is one source and every section reaches every other', () =
     }
   }
 
-  // 2. Полосы прокрутки — по-прежнему один блок слово в слово в трёх стилях.
-  const scrollFiles = ['packages/docs-book/app.css', 'packages/docs-reference/app.css', 'packages/embed/authors/authors.css'];
-  const core = scrollFiles.map((file) => {
-    const text = read(file);
-    const start = text.indexOf('/* Полосы прокрутки — одни на весь сайт');
-    const supports = text.indexOf('@supports', start);
-    const end = text.indexOf('\n}\n', supports);
-    assert(start >= 0 && supports > start && end > supports, `${file}: the shared scrollbar block is missing`);
-    return text.slice(start, end + 3);
-  });
-  core.forEach((block, index) => assert(block === core[0], `the shared scrollbar block differs in ${scrollFiles[index]}`));
+  // 2. База сайта (assets/site-base.css, стилевая база 1.6.4): сброс, страница, атрибут hidden, выделение,
+  //    фокус и полосы прокрутки живут в одном файле; стили разделов их не дублируют (раньше блок полос
+  //    прокрутки лежал в трёх файлах слово в слово, а @font-face — в шести).
+  const base = read('packages/web-ide/assets/site-base.css');
+  for (const piece of ['@layer base', '::-webkit-scrollbar', '::selection', ':focus-visible', '[hidden]', 'var(--font-size-body)']) {
+    assert(base.includes(piece), `site-base.css must own ${piece}`);
+  }
+  const fontsCss = read('packages/fonts/fonts.css');
+  assert((fontsCss.match(/@font-face/gu) || []).length >= 17, 'fonts.css is the only place for @font-face and must carry the whole set');
+  for (const file of ['packages/docs-book/app.css', 'packages/docs-reference/app.css', 'packages/embed/authors/authors.css', 'packages/web-ide/app.css', 'packages/gui-designer/designer.css', 'packages/web-ide/assets/site-nav.css', 'packages/web-ide/assets/color-picker.css']) {
+    const css = read(file);
+    // Глобальные ::selection и полосы прокрутки — только в базе; свои ::selection у конкретных элементов разделу можно.
+    for (const piece of ['::-webkit-scrollbar', '@font-face', '\n::selection {', 'scrollbar-width', 'body.light-theme {', 'body.theme-light {', 'body.theme-dark {']) {
+      assert(!css.includes(piece), `${file} must leave '${piece}' to site-base.css / fonts.css / site-tokens.css`);
+    }
+  }
 
   // 3. Собранный сайт: у каждого раздела общая шапка, свой бейдж, все ссылки живые.
   const docsRoot = path.resolve(process.cwd(), 'docs');
@@ -1064,7 +1073,8 @@ test('the site header is one source and every section reaches every other', () =
       if (!fs.existsSync(target)) return false;
       return fs.statSync(target).isFile() || fs.existsSync(path.join(target, 'index.html'));
     };
-    for (const asset of ['assets/site-nav.css', 'assets/site-nav.js']) {
+    // Общие стили и скрипты — одним набором в одном порядке (стилевая база 1.6.4): тема, токены, шапка.
+    for (const asset of ['assets/site-theme.js', 'assets/site-tokens.css', 'fonts/fonts.css', 'assets/site-base.css', 'assets/site-nav.css', 'assets/site-nav.js']) {
       const match = new RegExp(`(?:href|src)="([^"]*${asset.replace('.', '\\.')})"`, 'u').exec(html);
       assert(match !== null, `${relativePath} must load ${asset}`);
       assert(resolves(match![1]), `${relativePath}: ${match![1]} does not resolve to a file`);
@@ -1130,7 +1140,7 @@ test('handouts page is baked with every manifest file present', () => {
   const seen = new Set<string>();
   // Раздатка — такая же страница сайта, как остальные: общая шапка, общий стиль (а с ним палитра
   // обеих тем и полосы прокрутки), переключатель темы. Раньше жила с зашитой тёмной палитрой.
-  for (const piece of ['../book/app.css', 'class="site-topbar"', 'class="topbar-badge">Раздатка<', 'id="theme-toggle"', 'idyllium-docs-theme']) {
+  for (const piece of ['../book/app.css', 'class="site-topbar"', 'class="topbar-badge">Раздатка<', 'id="theme-toggle"', 'assets/site-theme.js']) {
     assert(page.includes(piece), `handouts page must share the site design: ${piece} is missing`);
   }
   const pageStyle = page.slice(page.indexOf('<style>'), page.indexOf('</style>'));

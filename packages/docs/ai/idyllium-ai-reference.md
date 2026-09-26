@@ -3533,8 +3533,10 @@ main() {
 ```
 
 The callback does not receive the new value as a separate argument; there is
-no `(sender, value)` form for widgets. Only `gui.Canvas` callbacks receive an
-extra event or `delta_time` argument (see the Canvas section).
+no `(sender, value)` form for widgets — read the state from the sender's
+properties. A second, descriptive argument comes only with events that carry
+data — mouse and keyboard (`gui.MouseEvent`, `gui.KeyboardEvent`, see "Widget
+Events" below) — and with `gui.Canvas` callbacks (`delta_time` in `on_update`).
 
 Example button:
 
@@ -3561,6 +3563,93 @@ main() {
     button.on_click = clicked;
 
     win.add_child(button);
+    win.show();
+}
+```
+
+### Widget Events (since 1.6.4)
+
+Besides their own events (`on_click`, `on_change`, `on_select`, `on_close`),
+the window and every widget share a common family. Handler forms are the same
+everywhere: no parameters, the sender, and — for events that carry data —
+`(sender, evt)`:
+
+```idyllium
+// mouse — every widget and the window; evt.x, evt.y are measured from the widget's top-left corner
+on_mouse_enter, on_mouse_leave                       // () | (sender)
+on_mouse_pressed, on_mouse_released, on_mouse_move   // () | (sender) | (sender, gui.MouseEvent evt)
+
+// focus and keyboard — Button, LineEdit, TextEdit, SpinBox, FloatSpinBox,
+// Slider, CheckBox, RadioButton, ComboBox, Table and gui.Window
+on_focus_in, on_focus_out                            // () | (sender)
+on_key_pressed, on_key_released                      // () | (sender) | (sender, gui.KeyboardEvent evt)
+
+// own events
+gui.Label, gui.ImageBox, gui.Icon, gui.Table:  on_double_click   // () | (sender) | (sender, gui.MouseEvent evt)
+gui.ImageBox, gui.Icon, gui.Frame, gui.TabWidget, gui.Canvas:  on_click
+gui.LineEdit:  on_enter_pressed, on_editing_finished
+gui.TextEdit:  on_editing_finished
+gui.Slider:    on_grab, on_release
+gui.Window:    on_move, on_focus_in, on_focus_out, on_key_pressed, on_key_released
+gui.Canvas:    on_mouse_enter, on_mouse_leave, on_click — and all of its handlers
+               also accept the () and (canvas) forms
+```
+
+Rules:
+
+- The right button goes through `on_mouse_pressed`: `evt.mouse_button == "RIGHT"`.
+  There is no separate event; the browser's context menu does not open over a
+  widget with such a handler.
+- Keys bubble as in Qt: after a button, check box, slider, table or canvas the
+  window receives them. Text inputs (`LineEdit`, `TextEdit`, spin boxes,
+  `ComboBox`) keep their keys — otherwise Escape typed in a field would close
+  the program. The window also receives keys when nothing has focus.
+- `on_enter_pressed` — Enter in the field, the text is already in `text`; then
+  `on_editing_finished`. Leaving the field fires `on_editing_finished` only if
+  the text was changed. `on_change` still fires on every character.
+- `on_grab` / `on_release` — the slider handle was grabbed with the mouse and
+  released (the value has settled; do heavy work here rather than in
+  `on_change`). Keyboard changes do not produce them.
+- `on_double_click` arrives after two single clicks (for a table — after
+  `on_select`, the row is in `selected_row`). Mouse gesture order:
+  `on_mouse_pressed` → `on_mouse_released` → `on_click`.
+- `on_focus_in` / `on_focus_out` on a window: the window was brought to the
+  front by a click / went under another one; `on_move`: the window was dragged
+  by its title bar, `x` and `y` are already new.
+- A disabled (`enabled = false`) or hidden widget, and everything inside it,
+  receives no events. `on_mouse_move` arrives only when a handler is assigned,
+  dozens of times per second — keep it light.
+
+```idyllium
+use console;
+use gui;
+
+void function key_in_window(gui.Window sender, gui.KeyboardEvent evt) {
+    if (evt.key == "Escape") {
+        sender.close();
+    }
+}
+
+void function name_entered(gui.LineEdit sender) {
+    console.writeln("Hello, " + sender.text + "!");
+}
+
+main() {
+    gui.Window win;
+    win.on_key_pressed = key_in_window;
+
+    gui.LineEdit name;
+    name.placeholder = "Name, then Enter";
+    name.on_enter_pressed = name_entered;
+    win.add_child(name);
+
+    gui.ImageBox cat;
+    cat.y = 40;
+    cat.on_click = void function() {
+        console.writeln("meow");
+    };
+    win.add_child(cat);
+
     win.show();
 }
 ```
@@ -3677,14 +3766,23 @@ Events:
 
 ```idyllium
 gui.KeyboardEvent.key: string
+gui.KeyboardEvent.ctrl: bool     // is Ctrl held (since 1.6.4; also shift and alt)
+gui.KeyboardEvent.shift: bool
+gui.KeyboardEvent.alt: bool
 
 gui.MouseEvent.x: int
 gui.MouseEvent.y: int
 gui.MouseEvent.mouse_button: string  // "LEFT", "RIGHT", "MIDDLE"
+gui.MouseEvent.ctrl: bool
+gui.MouseEvent.shift: bool
+gui.MouseEvent.alt: bool
 
 gui.MouseScrollEvent.x: int
 gui.MouseScrollEvent.y: int
 gui.MouseScrollEvent.delta: int
+gui.MouseScrollEvent.ctrl: bool
+gui.MouseScrollEvent.shift: bool
+gui.MouseScrollEvent.alt: bool
 ```
 
 `KeyboardEvent.key` values: single characters arrive uppercased (`"W"`,

@@ -22,25 +22,33 @@ body {
   color: var(--text);
   font: 13px var(--font-family);
 }
+/* @tokens:renderer:start */
+/* ГЕНЕРАТ (tools/build-tokens.js из packages/design/tokens.js): рамка предпросмотра в палитре сайта. */
 body.theme-dark {
-  --panel: #0f0818;
-  --text: #eeeaf7;
-  --muted: #a39bb7;
-  --border: #342a43;
-  --accent: #6aa4ff;
-  --preview-window-border: #342a43;
+  --panel: #0c0515;
+  --text: #f2eaf7;
+  --muted: #8e819d;
+  --border: #342846;
+  --accent: #87bfff;
+  --preview-window-border: #342846;
+  --preview-titlebar-bg: #1c1629;
+  --preview-titlebar-border: #342846;
+  --preview-titlebar-text: #f2eaf7;
   --preview-window-shadow: rgba(0, 0, 0, 0.42);
-  --preview-titlebar-bg: #1d1528;
-  --preview-titlebar-border: #342a43;
-  --preview-titlebar-text: #eeeaf7;
 }
 body.theme-light {
-  --panel: #d3d0d8;
-  --text: #27242e;
-  --muted: #625d69;
-  --border: #aaa3b2;
-  --accent: #315f8c;
+  --panel: #ece8f2;
+  --text: #211a2e;
+  --muted: #6d637b;
+  --border: #c8bed5;
+  --accent: #275f9e;
+  --preview-window-border: #c8bed5;
+  --preview-titlebar-bg: #e9e2f0;
+  --preview-titlebar-border: #c8bed5;
+  --preview-titlebar-text: #211a2e;
+  --preview-window-shadow: rgba(39, 30, 54, 0.22);
 }
+/* @tokens:renderer:end */
 
 /* Скроллбары — в стиле остальных панелей WebIDE (см. web-ide/app.css):
    тонкие, без трека, полупрозрачный ползунок на --muted. */
