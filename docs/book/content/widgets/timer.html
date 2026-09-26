@@ -1,14 +1,3 @@
-<style data-lesson-style>
-.warning-message {
-      background: rgba(249, 226, 175, 0.12);
-      border-left: 3px solid #f9e2af;
-      padding: 0.75em 1em;
-      color: #f9e2af;
-      margin: 0.5em 0 1em 0;
-      border-radius: 0 6px 6px 0;
-    }
-</style>
-
 <!-- Hero -->
     
 
@@ -42,6 +31,7 @@ main() {
     label.y = 50;
     label.font_size = 24;
     label.text = "0";
+    label.height = 36;
 
     gui.Timer timer;
     timer.interval = 1000;  // 1 секунда
@@ -59,7 +49,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <idyl-gui-demo seed="7" step="1" caption="Окно через секунду после запуска" data-frame-width="302" data-frame-height="180"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":300,"height":150,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Случайные числа","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Label","properties":{"x":50,"y":50,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":24,"text":"2","href":"","border_color":"rgba(0, 0, 0, 0)","__explicit_properties":["font_size"]},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
+        <idyl-gui-demo seed="7" step="1" caption="Окно через секунду после запуска" data-frame-width="302" data-frame-height="180"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":300,"height":150,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Случайные числа","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Label","properties":{"x":50,"y":50,"width":120,"height":36,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":24,"text":"2","href":"","border_color":"rgba(0, 0, 0, 0)","__explicit_properties":["font_size"]},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           ⏰ Каждую секунду число на лейбле меняется. Таймер работает без кнопок.
         </div>
@@ -132,6 +122,7 @@ main() {
     gui.Label time_label;
     time_label.text = "0";
     time_label.font_size = 48;
+    time_label.height = 60;
     time_label.x = 100;
     time_label.y = 30;
     
@@ -171,9 +162,9 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <idyl-gui-demo data-frame-width="302" data-frame-height="230"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":300,"height":200,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Секундомер","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Label","properties":{"x":100,"y":30,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":48,"text":"0","href":"","border_color":"rgba(0, 0, 0, 0)","__explicit_properties":["font_size"]},"children":[],"events":[]},{"id":3,"type":"gui.Button","properties":{"x":30,"y":120,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Старт","border_color":"#b4b4b4"},"children":[],"events":["click"]},{"id":4,"type":"gui.Button","properties":{"x":160,"y":120,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Стоп","border_color":"#b4b4b4"},"children":[],"events":["click"]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
+        <idyl-gui-demo data-frame-width="302" data-frame-height="230"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":300,"height":200,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Секундомер","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Label","properties":{"x":100,"y":30,"width":120,"height":60,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":48,"text":"0","href":"","border_color":"rgba(0, 0, 0, 0)","__explicit_properties":["font_size"]},"children":[],"events":[]},{"id":3,"type":"gui.Button","properties":{"x":30,"y":120,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Старт","border_color":"#b4b4b4"},"children":[],"events":["click"]},{"id":4,"type":"gui.Button","properties":{"x":160,"y":120,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Стоп","border_color":"#b4b4b4"},"children":[],"events":["click"]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
-          ⏱️ Нажмите «Старт» — счётчик начнёт увеличиваться каждую секунду. «Стоп» — остановит.
+          ⏱️ «Старт» запускает счётчик — он растёт каждую секунду; «Стоп» останавливает его.
         </div>
       </div>
     </div>
@@ -220,7 +211,7 @@ main() {
       <div class="interactive-demo">
         <idyl-gui-demo data-frame-width="302" data-frame-height="180"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":300,"height":150,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Отложенное действие","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Button","properties":{"x":50,"y":50,"width":200,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Нажми меня","border_color":"#b4b4b4"},"children":[],"events":["click"]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
-          ⏰ Нажмите на кнопку — через 3 секунды она исчезнет. Таймер сработает только один раз.
+          ⏰ Через 3 секунды после нажатия кнопка исчезает: таймер срабатывает только один раз.
         </div>
       </div>
     </div>

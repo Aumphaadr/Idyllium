@@ -1,7 +1,8 @@
 // Страж единого источника токенов дизайна (стилевая база 1.6.4, спека
 // Idyllium-backstage/tech/spec/some_style_base/01 §5.9). Падающая часть — свежесть генерата:
-// site-tokens.css, design-tokens.js и блоки в frame.css / renderer.css обязаны совпадать со свежей
-// генерацией из packages/design/tokens.js (как у значков) — иначе цвета расходятся молча.
+// site-tokens.css, design-tokens.js, блоки в frame.css / renderer.css (включая тему окна «idyllium» и
+// словарь подсветки кадра) и темы VS Code обязаны совпадать со свежей генерацией из
+// packages/design/tokens.js (как у значков) — иначе цвета расходятся молча.
 // Отчётная часть (вердикт владельца 2026-09-26: стражи стиля пока отчётные) — контраст текстовых
 // ролей на поверхностях в обеих темах.
 import { assert, test, runTests } from './smoke-harness';
@@ -17,7 +18,7 @@ function read(file: string): string {
 test('design tokens: generated files match the source', () => {
   const outputs = builder.generate() as Record<string, string>;
   const files = Object.keys(outputs);
-  assert(files.length === 4, `expected 4 generated targets, got ${files.length}`);
+  assert(files.length === 6, `expected 6 generated targets (tokens css/js, frame, renderer, two VS Code themes), got ${files.length}`);
   for (const relative of files) {
     assert(read(relative) === outputs[relative], `${relative} is stale — run node tools/build-tokens.js`);
   }

@@ -218,6 +218,7 @@ main() {
     label.x = 40;
     label.y = 90;
     label.text = "Я должен быть выше!";
+    label.width = 220;
 
     frame.add_child(label);
     win.add_child(frame);
@@ -232,9 +233,9 @@ main() {
   <p>Лейбл добавлен в <strong>рамку</strong>, значит его координаты отсчитываются от угла рамки. Реальная позиция на окне получается сложением: <code>20&nbsp;+&nbsp;40&nbsp;=&nbsp;60</code> по горизонтали и <code>60&nbsp;+&nbsp;90&nbsp;=&nbsp;150</code> по вертикали — лейбл уехал к нижнему краю панели:</p>
 
   <div class="interactive-demo">
-    <idyl-gui-demo data-frame-width="342" data-frame-height="230"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":340,"height":200,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Где мой лейбл?","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Frame","properties":{"x":20,"y":60,"width":300,"height":120,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#f5f5f5","font":null,"font_size":13,"title":"Панель","border_color":"#b4b4b4","border_width":1},"children":[{"id":3,"type":"gui.Label","properties":{"x":40,"y":90,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Я должен быть выше!","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]}],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
+    <idyl-gui-demo data-frame-width="342" data-frame-height="230"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":340,"height":200,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Где мой лейбл?","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Frame","properties":{"x":20,"y":60,"width":300,"height":120,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#f5f5f5","font":null,"font_size":13,"title":"Панель","border_color":"#b4b4b4","border_width":1},"children":[{"id":3,"type":"gui.Label","properties":{"x":40,"y":90,"width":220,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Я должен быть выше!","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]}],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
     <div class="coord-note">
-      👀 Пунктиром — где лейбл ожидали. На самом деле он на (40, 90) <strong>от угла рамки</strong>, то есть на (60, 150) от угла окна.
+      👀 Лейбл ждали на (40, 90) от угла окна, а он на (40, 90) <strong>от угла рамки</strong> — то есть на (60, 150) от угла окна.
     </div>
   </div>
 

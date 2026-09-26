@@ -201,6 +201,10 @@ body.is-resizing .preview, body.is-resizing-rows .preview { pointer-events: none
 .side {
   grid-area: side;
   display: grid;
+  /* Единственная колонка задана явно с нулевым минимумом: иначе неявная auto-колонка растёт
+     до min-content содержимого (неразрывные подписи заготовок обработчиков) и вылезает за
+     окно горизонтальной прокруткой (находка владельца 2026-09-28). */
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: var(--tree-h) 6px minmax(0, 1fr);
   min-height: 0;
   min-width: 0;
@@ -209,7 +213,7 @@ body.is-resizing .preview, body.is-resizing-rows .preview { pointer-events: none
 }
 #split-tree { grid-area: auto; }
 
-.tree-pane, .inspector-pane { display: flex; flex-direction: column; min-height: 0; }
+.tree-pane, .inspector-pane { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
 .tree-pane { border-bottom: 1px solid var(--color-border); }
 .tree, .inspector { overflow: auto; min-height: 0; padding: 0 8px 12px; }
 
@@ -290,9 +294,10 @@ body.is-tree-dragging .tree-row { cursor: grabbing; }
 .font-row code { font-family: var(--font-mono); font-size: 12px; color: var(--color-text); }
 .font-row .font-file { color: var(--color-text-muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .font-row.is-missing .font-file { color: var(--color-danger); }
-.event-row { display: flex; align-items: center; gap: 8px; padding: 3px 6px; cursor: pointer; }
+/* min-width: 0 у строки и подписи — иначе неразрывная подпись раздвигала колонку инспектора шире окна (находка владельца 2026-09-28). */
+.event-row { display: flex; align-items: center; gap: 8px; padding: 3px 6px; cursor: pointer; min-width: 0; }
 .event-row code { font-family: var(--font-mono); font-size: 12px; color: var(--color-text); }
-.event-row small { color: var(--color-text-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.event-row small { flex: 1 1 0; min-width: 0; color: var(--color-text-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .data-editor { display: grid; gap: 4px; padding: 2px 6px; }
 .data-row { display: grid; grid-template-columns: minmax(0, 1fr) 26px; align-items: center; gap: 6px; }

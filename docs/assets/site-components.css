@@ -907,6 +907,7 @@
     color: var(--color-danger);
   }
 
+  /* @hl:start */ /* словарь подсветки — единственный; кадр юнита берёт его сборкой (tools/build-tokens.js) */
   .hl-keyword { color: var(--syntax-keyword); font-weight: 700; }
   .hl-typeName, .hl-type { color: var(--syntax-type); }
   .hl-className, .hl-class { color: var(--syntax-class); }
@@ -914,10 +915,11 @@
   .hl-object, .hl-property { color: var(--syntax-object); }
   .hl-string { color: var(--syntax-string); }
   .hl-number { color: var(--syntax-number); }
-  .hl-comment { color: var(--syntax-comment); }
+  .hl-comment { color: var(--syntax-comment); font-style: italic; } /* курсив — как у комментариев в Monaco */
   .hl-brackets { color: var(--syntax-brackets); }
   .hl-jsonKey, .hl-json-key { color: var(--syntax-json-key); }
   .hl-constant { color: var(--syntax-constant); }
+  /* @hl:end */
 
   /* ── боковая колонка, навигация, оглавление ────────────────────────────── */
   .ui-sidebar {

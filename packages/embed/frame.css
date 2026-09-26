@@ -64,15 +64,18 @@ body {
   --selection: rgba(135, 191, 255, 0.28);
   --output-bg: #0c0515;
   --output-text: #f2eaf7;
-  --keyword: #b892ff;
-  --type-name: #63b3ff;
-  --class-name: #59d4b8;
-  --string: #d99a6c;
-  --number: #c5d979;
-  --comment: #6ba36f;
-  --function: #e4d87e;
-  --object: #8bdfff;
-  --brackets: #d0d6e6;
+  --syntax-keyword: #b892ff;
+  --syntax-type: #63b3ff;
+  --syntax-class: #59d4b8;
+  --syntax-function: #e4d87e;
+  --syntax-object: #8bdfff;
+  --syntax-string: #d99a6c;
+  --syntax-number: #c5d979;
+  --syntax-comment: #6ba36f;
+  --syntax-brackets: #d0d6e6;
+  --syntax-json-key: #8bdfff;
+  --syntax-constant: #f5d98b;
+  --syntax-variable: #f2eaf7;
   --ok-bg: rgba(139, 213, 143, 0.14);
   --ok-text: #8bd58f;
   --fail-bg: rgba(245, 217, 139, 0.14);
@@ -118,15 +121,18 @@ body.theme-light {
   --selection: rgba(39, 95, 158, 0.22);
   --output-bg: #ece8f2;
   --output-text: #211a2e;
-  --keyword: #8d3f75;
-  --type-name: #1d659a;
-  --class-name: #1b745c;
-  --string: #87481f;
-  --number: #5b7027;
-  --comment: #477237;
-  --function: #76620f;
-  --object: #0d667f;
-  --brackets: #445253;
+  --syntax-keyword: #8d3f75;
+  --syntax-type: #1d659a;
+  --syntax-class: #1b745c;
+  --syntax-function: #76620f;
+  --syntax-object: #0d667f;
+  --syntax-string: #87481f;
+  --syntax-number: #5b7027;
+  --syntax-comment: #477237;
+  --syntax-brackets: #445253;
+  --syntax-json-key: #0d667f;
+  --syntax-constant: #87481f;
+  --syntax-variable: #211a2e;
   --ok-bg: rgba(29, 122, 69, 0.12);
   --ok-text: #1d7a45;
   --fail-bg: rgba(138, 97, 0, 0.12);
@@ -255,15 +261,20 @@ body {
   caret-color: var(--editor-caret);
 }
 .light-input::selection { background: var(--selection); }
-.hl-keyword { color: var(--keyword); }
-.hl-typeName { color: var(--type-name); }
-.hl-className { color: var(--class-name); }
-.hl-function { color: var(--function); }
-.hl-object { color: var(--object); }
-.hl-brackets { color: var(--brackets); }
-.hl-string { color: var(--string); }
-.hl-number { color: var(--number); }
-.hl-comment { color: var(--comment); font-style: italic; }
+/* @shared:hl:start */
+/* ГЕНЕРАТ (tools/build-tokens.js из packages/web-ide/assets/site-components.css): словарь подсветки сайта, один на всех. */
+.hl-keyword { color: var(--syntax-keyword); font-weight: 700; }
+.hl-typeName, .hl-type { color: var(--syntax-type); }
+.hl-className, .hl-class { color: var(--syntax-class); }
+.hl-function { color: var(--syntax-function); }
+.hl-object, .hl-property { color: var(--syntax-object); }
+.hl-string { color: var(--syntax-string); }
+.hl-number { color: var(--syntax-number); }
+.hl-comment { color: var(--syntax-comment); font-style: italic; } /* курсив — как у комментариев в Monaco */
+.hl-brackets { color: var(--syntax-brackets); }
+.hl-jsonKey, .hl-json-key { color: var(--syntax-json-key); }
+.hl-constant { color: var(--syntax-constant); }
+/* @shared:hl:end */
 
 .toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .toolbar-gap { flex: 1 1 auto; }

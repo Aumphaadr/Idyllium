@@ -419,14 +419,22 @@
   border-color: color-mix(in srgb, var(--color-accent) 62%, var(--color-border));
 }
 
+/* Кнопки строки файла — не ui-button: без рамки и фона, в шрифте списка. Раскладку
+   (inline-flex, без переносов) раньше давало глобальное правило button IDE — с общей
+   базой стилей его нет, поэтому она здесь (находка владельца 2026-09-28: длинные имена
+   переносились на две строки, значок и имя расходились по высоте). */
 .file-main-button,
 .file-menu-button {
+  display: inline-flex;
+  align-items: center;
   min-width: 0;
   height: 28px;
   border: 0;
   background: transparent;
   color: inherit;
   box-shadow: none;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
 .file-inline-editor {
@@ -437,6 +445,7 @@
 }
 
 .file-main-button {
+  width: 100%;
   justify-content: flex-start;
   gap: 7px;
   padding: 0 6px;
@@ -493,6 +502,7 @@
 
 .file-menu-button {
   width: 26px;
+  justify-content: center;
   padding: 0;
   opacity: 0;
   color: var(--color-text-muted);

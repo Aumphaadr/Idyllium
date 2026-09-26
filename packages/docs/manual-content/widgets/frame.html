@@ -218,6 +218,7 @@ main() {
     label.x = 40;
     label.y = 90;
     label.text = "Я должен быть выше!";
+    label.width = 220;
 
     frame.add_child(label);
     win.add_child(frame);
@@ -234,7 +235,7 @@ main() {
   <div class="interactive-demo">
     <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">
-      👀 Пунктиром — где лейбл ожидали. На самом деле он на (40, 90) <strong>от угла рамки</strong>, то есть на (60, 150) от угла окна.
+      👀 Лейбл ждали на (40, 90) от угла окна, а он на (40, 90) <strong>от угла рамки</strong> — то есть на (60, 150) от угла окна.
     </div>
   </div>
 

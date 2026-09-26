@@ -23,9 +23,14 @@ body {
   font: 13px var(--font-family);
 }
 /* Кадр демонстрации в учебнике (body.demo): окно занимает кадр целиком, полей нет,
-   шапка окна — не ручка. */
+   шапка окна — не ручка. Прокрутки у картинки не бывает: кадр подгоняется под окно
+   сборкой, а дробный пиксель масштаба или системные шрифты не должны рисовать полосы. */
 body.demo {
   padding: 0;
+  overflow: hidden;
+}
+html:has(body.demo) {
+  overflow: hidden;
 }
 body.demo .titlebar {
   cursor: default;
@@ -641,6 +646,8 @@ button.widget.button,
 }
 
 /* Тёмная тема учебника: та же гамма, что у страниц с уроками. */
+/* @tokens:renderer-theme:start */
+/* ГЕНЕРАТ (tools/build-tokens.js из packages/design/tokens.js, группа windowTheme): палитра сайта в окне ученика. */
 .window.theme-idyllium,
 .modal-backdrop.theme-idyllium {
   --w-window-bg: #151020;
@@ -665,10 +672,10 @@ button.widget.button,
   --w-label-shadow: rgba(0, 0, 0, 0.55);
   --w-color-scheme: dark;
   --w-radius: 7px;
-  /* На тёмном фиолетовом серость выглядит грязно: гасим сильнее, обесцвечиваем мягче. */
   --w-disabled-opacity: 0.45;
   --w-disabled-grayscale: 55%;
 }
+/* @tokens:renderer-theme:end */
 
 /* Dracula — тоже тёмная, но своя палитра. */
 .window.theme-dracula,

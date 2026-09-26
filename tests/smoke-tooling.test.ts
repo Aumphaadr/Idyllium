@@ -664,17 +664,27 @@ test('single-source metadata stays in sync across packages', () => {
     }
     return output;
   };
+  // Шрифт холста по умолчанию у рендерера своей копии не имеет: сборка кладёт его рядом из единой
+  // папки шрифтов сайта (стилевая база, этап 6) — в копии он обязан быть и совпадать с packages/fonts.
+  const rendererFonts = ['SourceCodePro-Regular.woff2', 'SourceCodePro-LICENSE.txt', 'SourceCodePro-COPYRIGHT.txt'];
   const sourceFiles = walk(rendererSource).map((file: string) => path.relative(rendererSource, file)).sort();
+  const expectedCopy = [...sourceFiles, ...rendererFonts.map((name) => path.join('fonts', name))].sort();
   const copyFiles = walk(rendererCopy).map((file: string) => path.relative(rendererCopy, file)).sort();
   assert(
-    JSON.stringify(sourceFiles) === JSON.stringify(copyFiles),
-    `gui-renderer copies list different files (run npm run build:vscode):\n${sourceFiles.join(', ')}\nvs\n${copyFiles.join(', ')}`,
+    JSON.stringify(expectedCopy) === JSON.stringify(copyFiles),
+    `gui-renderer copies list different files (run npm run build:vscode):\n${expectedCopy.join(', ')}\nvs\n${copyFiles.join(', ')}`,
   );
   for (const relative of sourceFiles) {
     const left = fs.readFileSync(path.join(rendererSource, relative));
     const right = fs.readFileSync(path.join(rendererCopy, relative));
     assert(left.equals(right), `gui-renderer copy differs from source: ${relative} (run npm run build:vscode)`);
   }
+  for (const name of rendererFonts) {
+    const left = fs.readFileSync(path.join(root, 'packages/fonts', name));
+    const right = fs.readFileSync(path.join(rendererCopy, 'fonts', name));
+    assert(left.equals(right), `renderer font copy differs from packages/fonts: ${name} (run npm run build:vscode)`);
+  }
+  assert(!fs.existsSync(path.join(rendererSource, 'fonts')), 'packages/gui-renderer must not keep its own font copy — the build places it from packages/fonts');
 });
 
 test('VSIX themes distinguish namespaces from classes like Web IDE', () => {
@@ -690,11 +700,14 @@ test('VSIX themes distinguish namespaces from classes like Web IDE', () => {
     'utf8',
   );
 
-  assert(dark.semanticTokenColors.namespace === '#8bdfff', 'unexpected dark namespace color');
-  assert(dark.semanticTokenColors.class === '#59d4b8', 'unexpected dark class color');
-  assert(light.semanticTokenColors.namespace === '#0d667f', 'unexpected light namespace color');
-  assert(light.semanticTokenColors.class === '#1b745c', 'unexpected light class color');
-  assert(light.colors['editor.background'] === '#d9d6df', 'VSIX light editor must match the subdued Web IDE surface');
+  // Темы VSIX — генерат из единого источника токенов (tools/build-tokens.js, стилевая база этап 6):
+  // те же цвета редактора и подсветки, что у Monaco в Web IDE.
+  const designTokens: any = require(path.resolve(process.cwd(), 'packages', 'design', 'tokens.js'));
+  assert(dark.semanticTokenColors.namespace === designTokens.syntax.object[0], 'dark namespace colour must come from the syntax tokens');
+  assert(dark.semanticTokenColors.class === designTokens.syntax.class[0], 'dark class colour must come from the syntax tokens');
+  assert(light.semanticTokenColors.namespace === designTokens.syntax.object[1], 'light namespace colour must come from the syntax tokens');
+  assert(light.semanticTokenColors.class === designTokens.syntax.class[1], 'light class colour must come from the syntax tokens');
+  assert(light.colors['editor.background'] === designTokens.editor.bg[1] && dark.colors['editor.background'] === designTokens.editor.bg[0], 'VSIX editor background must match the Web IDE editor token');
   assert(dark.semanticTokenColors.namespace !== dark.semanticTokenColors.class, 'dark namespace and class colors must differ');
   assert(light.semanticTokenColors.namespace !== light.semanticTokenColors.class, 'light namespace and class colors must differ');
   assert(!grammarText.includes('support.module.idyllium'), 'legacy module scope must not remain in VSIX grammar');
@@ -1033,7 +1046,7 @@ test('the site header is one source and every section reaches every other', () =
   }
   // Общие правила шапки живут в одном файле; стили разделов их не дублируют (раньше блок
   // «ЕДИНАЯ ШАПКА» повторялся в четырёх файлах и расходился).
-  for (const file of ['packages/docs-book/app.css', 'packages/docs-reference/app.css', 'packages/embed/authors/authors.css', 'packages/web-ide/app.css', 'packages/gui-designer/designer.css']) {
+  for (const file of ['packages/docs-book/app.css', 'packages/docs-reference/app.css', 'packages/embed/authors/authors.css', 'packages/web-ide/app.css', 'packages/gui-designer/designer.css', 'packages/web-ide/assets/site-content.css']) {
     const css = read(file);
     for (const selector of ['.brand {', '.brand-mark {', '.brand-text {', '.topbar-badge {', '.idyllium-version {', '.site-nav', '.ui-topbar', '.ui-brand', '.ui-nav', '.menu-toggle', 'ЕДИНАЯ ШАПКА', '.topbar-link', '.section-badge']) {
       assert(!css.includes(selector), `${file} must not restyle the shared header ('${selector}' found) — edit packages/web-ide/assets/site-components.css`);
@@ -1049,7 +1062,7 @@ test('the site header is one source and every section reaches every other', () =
   }
   const fontsCss = read('packages/fonts/fonts.css');
   assert((fontsCss.match(/@font-face/gu) || []).length >= 17, 'fonts.css is the only place for @font-face and must carry the whole set');
-  for (const file of ['packages/docs-book/app.css', 'packages/docs-reference/app.css', 'packages/embed/authors/authors.css', 'packages/web-ide/app.css', 'packages/gui-designer/designer.css', 'packages/web-ide/assets/site-components.css', 'packages/web-ide/assets/color-picker.css']) {
+  for (const file of ['packages/docs-book/app.css', 'packages/docs-reference/app.css', 'packages/embed/authors/authors.css', 'packages/web-ide/app.css', 'packages/gui-designer/designer.css', 'packages/web-ide/assets/site-components.css', 'packages/web-ide/assets/color-picker.css', 'packages/web-ide/assets/site-content.css']) {
     const css = read(file);
     // Глобальные ::selection и полосы прокрутки — только в базе; свои ::selection у конкретных элементов разделу можно.
     for (const piece of ['::-webkit-scrollbar', '@font-face', '\n::selection {', 'scrollbar-width', 'body.light-theme {', 'body.theme-light {', 'body.theme-dark {']) {
@@ -1074,7 +1087,7 @@ test('the site header is one source and every section reaches every other', () =
       return fs.statSync(target).isFile() || fs.existsSync(path.join(target, 'index.html'));
     };
     // Общие стили и скрипты — одним набором в одном порядке (стилевая база 1.6.4): тема, токены, шапка.
-    for (const asset of ['assets/site-theme.js', 'assets/site-tokens.css', 'fonts/fonts.css', 'assets/site-base.css', 'assets/site-components.css', 'assets/site-nav.js']) {
+    for (const asset of ['assets/site-theme.js', 'assets/site-tokens.css', 'fonts/fonts.css', 'assets/site-base.css', 'assets/site-content.css', 'assets/site-components.css', 'assets/site-nav.js']) {
       const match = new RegExp(`(?:href|src)="([^"]*${asset.replace('.', '\\.')})"`, 'u').exec(html);
       assert(match !== null, `${relativePath} must load ${asset}`);
       assert(resolves(match![1]), `${relativePath}: ${match![1]} does not resolve to a file`);

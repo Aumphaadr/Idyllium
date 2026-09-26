@@ -43,7 +43,7 @@ main() {
         </div>
       </div>
 
-      <div class="tip-box" style="margin-top: 1em;">
+      <div class="tip-box">
         <strong>💡 Запомнить:</strong> <code>visible = false</code> — виджет невидим, но жив. Он остаётся в памяти со всеми своими свойствами, просто не рисуется, а его обработчики молчат: нажать невидимую кнопку нельзя. <code>visible = true</code> — и он снова на экране, как ни в чём не бывало.
       </div>
     </div>
@@ -65,6 +65,8 @@ main() {
 
     gui.Label label;
     label.text = "Я видимый лейбл!";
+    label.width = 200;
+    label.height = 30;
     label.x = 50;
     label.y = 30;
     label.font_size = 16;
@@ -97,7 +99,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <idyl-gui-demo data-frame-width="352" data-frame-height="210"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":350,"height":180,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Скрытие и показ","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Label","properties":{"x":50,"y":30,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":16,"text":"Я видимый лейбл!","href":"","border_color":"rgba(0, 0, 0, 0)","__explicit_properties":["font_size"]},"children":[],"events":[]},{"id":3,"type":"gui.Button","properties":{"x":50,"y":80,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Скрыть лейбл","border_color":"#b4b4b4"},"children":[],"events":["click"]},{"id":4,"type":"gui.Button","properties":{"x":190,"y":80,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Показать лейбл","border_color":"#b4b4b4"},"children":[],"events":["click"]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
+        <idyl-gui-demo data-frame-width="352" data-frame-height="210"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":350,"height":180,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Скрытие и показ","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Label","properties":{"x":50,"y":30,"width":200,"height":30,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":16,"text":"Я видимый лейбл!","href":"","border_color":"rgba(0, 0, 0, 0)","__explicit_properties":["font_size"]},"children":[],"events":[]},{"id":3,"type":"gui.Button","properties":{"x":50,"y":80,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Скрыть лейбл","border_color":"#b4b4b4"},"children":[],"events":["click"]},{"id":4,"type":"gui.Button","properties":{"x":190,"y":80,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Показать лейбл","border_color":"#b4b4b4"},"children":[],"events":["click"]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           🕹️ Кнопка «Скрыть» делает лейбл невидимым, «Показать» — возвращает на экран.
         </div>
@@ -150,14 +152,14 @@ main() {
       <div class="interactive-demo">
         <idyl-gui-demo data-frame-width="352" data-frame-height="190"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":350,"height":160,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Согласие с правилами","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.CheckBox","properties":{"x":20,"y":25,"width":250,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Я прочитал правила игры","is_checked":false},"children":[],"events":[]},{"id":3,"type":"gui.Button","properties":{"x":20,"y":75,"width":150,"height":32,"visible":true,"enabled":false,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Начать игру","border_color":"#b4b4b4"},"children":[],"events":["click"]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
-          🔒 Кнопка на месте, но выключена. Поставьте галочку — кнопка оживёт; снимите — снова уснёт. Нажать спящую не выйдет при всём желании.
+          🔒 Кнопка на месте, но выключена: галочка её оживляет, снятая галочка снова усыпляет. Нажать спящую не выйдет при всём желании.
         </div>
       </div>
 
       <p>Обратите внимание на строку <code>start.enabled = agree.is_checked;</code> — состояние галочки напрямую становится состоянием кнопки, без всяких <code>if</code>. И на порядок событий: обработчик <code>on_click</code> у выключенной кнопки существует, но не вызывается — событие до неё просто не доходит.</p>
       <p>С контейнерами <code>enabled</code> ведёт себя так же, как <code>visible</code>: выключили <code>Frame</code> — выключилось и всё его содержимое, до последней кнопки.</p>
 
-      <div class="tip-box" style="margin-top: 1em;">
+      <div class="tip-box">
         <strong>💡 Запомнить пару:</strong> <code>visible = false</code> — виджета <em>не видно</em>, <code>enabled = false</code> — виджет <em>видно, но он выключен</em>. Прячьте то, чего сейчас не должно существовать для пользователя; выключайте то, что существует, но пока недоступно. И у обоих одна и та же коварная черта: «выключил — и забыл включить» компилятор не поймает.
       </div>
     </div>
@@ -189,6 +191,7 @@ main() {
     label.x = 15;
     label.y = 10;
     label.text = "Имя пользователя:";
+    label.width = 180;
 
     gui.LineEdit input;
     input.x = 15;
@@ -237,9 +240,9 @@ main() {
       </p>
 
       <div class="interactive-demo">
-        <idyl-gui-demo data-frame-width="402" data-frame-height="310"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":400,"height":280,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Скрытие контейнера","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Frame","properties":{"x":20,"y":20,"width":360,"height":170,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#f5f5f5","font":null,"font_size":13,"title":"Панель управления","border_color":"#b4b4b4","border_width":1},"children":[{"id":3,"type":"gui.Label","properties":{"x":15,"y":10,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Имя пользователя:","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":4,"type":"gui.LineEdit","properties":{"x":15,"y":35,"width":200,"height":28,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"text":"","placeholder":"","placeholder_color":"#b4b4b4","echo_mode":"normal","border_color":"#b4b4b4"},"children":[],"events":[]},{"id":5,"type":"gui.Button","properties":{"x":15,"y":75,"width":200,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Кнопка внутри рамки","border_color":"#b4b4b4"},"children":[],"events":[]}],"events":[]},{"id":6,"type":"gui.Button","properties":{"x":20,"y":210,"width":160,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Скрыть панель","border_color":"#b4b4b4"},"children":[],"events":["click"]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
+        <idyl-gui-demo data-frame-width="402" data-frame-height="310"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":400,"height":280,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Скрытие контейнера","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Frame","properties":{"x":20,"y":20,"width":360,"height":170,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#f5f5f5","font":null,"font_size":13,"title":"Панель управления","border_color":"#b4b4b4","border_width":1},"children":[{"id":3,"type":"gui.Label","properties":{"x":15,"y":10,"width":180,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Имя пользователя:","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":4,"type":"gui.LineEdit","properties":{"x":15,"y":35,"width":200,"height":28,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"text":"","placeholder":"","placeholder_color":"#b4b4b4","echo_mode":"normal","border_color":"#b4b4b4"},"children":[],"events":[]},{"id":5,"type":"gui.Button","properties":{"x":15,"y":75,"width":200,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Кнопка внутри рамки","border_color":"#b4b4b4"},"children":[],"events":[]}],"events":[]},{"id":6,"type":"gui.Button","properties":{"x":20,"y":210,"width":160,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Скрыть панель","border_color":"#b4b4b4"},"children":[],"events":["click"]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
-          📦 Нажмите на кнопку — скроется вся рамка вместе с её содержимым. Повторное нажатие вернёт всё обратно.
+          📦 Нажатие кнопки скрывает всю рамку вместе с её содержимым; повторное нажатие возвращает всё обратно.
         </div>
       </div>
 

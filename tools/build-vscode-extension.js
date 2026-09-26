@@ -77,6 +77,17 @@ for (const item of fs.readdirSync(path.join(packagedSqlJsDir, 'dist'))) {
 
 fs.rmSync(packagedRendererDir, { recursive: true, force: true });
 fs.cpSync(rendererSourceDir, packagedRendererDir, { recursive: true });
+// Шрифт холста по умолчанию — из единой папки шрифтов сайта (у рендерера своей копии нет).
+const fontsSourceDir = path.join(rootDir, 'packages', 'fonts');
+fs.mkdirSync(path.join(packagedRendererDir, 'fonts'), { recursive: true });
+for (const name of ['SourceCodePro-Regular.woff2', 'SourceCodePro-LICENSE.txt', 'SourceCodePro-COPYRIGHT.txt']) {
+  const source = path.join(fontsSourceDir, name);
+  if (!fs.existsSync(source)) {
+    console.error(`Renderer font file was not found: ${source}`);
+    process.exit(1);
+  }
+  fs.copyFileSync(source, path.join(packagedRendererDir, 'fonts', name));
+}
 
 // Версия расширения всегда равна версии корневого package.json.
 const rootVersion = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8')).version;

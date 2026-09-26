@@ -100,6 +100,37 @@ const syntax = {
   variable: color.text,
 };
 
+/** Тема окна программы «idyllium» (gui.Window.theme) — палитра сайта в окне ученика (стилевая база,
+ *  этап 6: значения берутся отсюда сборкой в renderer.css, ручной копии нет). Тема одна, светлой
+ *  пары у неё нет; оттенки без роли в палитре (рамка, поля, кнопка) заданы числами здесь. */
+const windowTheme = {
+  'window-bg': color.panel[0],
+  'window-text': color.text[0],
+  'titlebar-bg': color['panel-raised'][0],
+  'titlebar-text': color.text[0],
+  'titlebar-border': color.border[0],
+  border: '#3d3154',
+  'control-bg': '#1f1830',
+  'control-text': color.text[0],
+  'control-hover': '#2c2440',
+  'button-bg': 'linear-gradient(180deg, #2a2240, #211a33)',
+  'button-text': color.text[0],
+  'frame-bg': 'rgba(135, 191, 255, 0.06)',
+  track: 'rgba(135, 191, 255, 0.14)',
+  accent: color.accent[0],
+  'accent-soft': 'rgba(135, 191, 255, 0.32)',
+  'accent-text': color.bg[0],
+  muted: '#a396b8',
+  link: '#9fd0ff',
+  'link-hover': '#ffffff',
+  'label-shadow': 'rgba(0, 0, 0, 0.55)',
+  'color-scheme': 'dark',
+  radius: '7px',
+  // На тёмном фиолетовом серость выглядит грязно: гасим сильнее, обесцвечиваем мягче.
+  'disabled-opacity': '0.45',
+  'disabled-grayscale': '55%',
+};
+
 /** 16 цветов ANSI консоли (эталон — Web IDE). */
 const ansi = {
   black: ['#59606d', '#24292f'],
@@ -145,4 +176,4 @@ const density = {
 /** Точки перелома, px. В @media переменные не работают — значения сторожит тест. */
 const breakpoints = { phone: 480, narrow: 820, medium: 1000, wide: 1200 };
 
-module.exports = { fonts, color, editor, syntax, ansi, shadow, fontSize, lineHeight, space, radius, z, duration, layout, density, breakpoints };
+module.exports = { fonts, color, editor, syntax, windowTheme, ansi, shadow, fontSize, lineHeight, space, radius, z, duration, layout, density, breakpoints };
