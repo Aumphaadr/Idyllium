@@ -1,6 +1,13 @@
 {
   "version": 1,
   "examples": {
+    "canvas.audio.004": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "Music.position must be between 0 and 92.96, got 999"
+      ],
+      "reason": "2026-09-27 (страж lesson-gui-runtime): Урок нарочно ставит позицию за пределами трека (idyl-error-block рядом)."
+    },
     "canvas.modules.001": {
       "kind": "compile_error",
       "diagnosticIncludes": [
@@ -635,6 +642,13 @@
       ],
       "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
     },
+    "widgets.audio.003": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "Sound.volume must be between 0 and 1, got 4"
+      ],
+      "reason": "2026-09-27 (страж lesson-gui-runtime): Урок нарочно выставляет громкость 4 (idyl-error-block рядом)."
+    },
     "widgets.button.004": {
       "kind": "compile_error",
       "diagnosticIncludes": [
@@ -708,6 +722,13 @@
         "property 'selected_text' is read-only"
       ],
       "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "widgets.image.007": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "Static.scale() factors cannot be zero (got 0, 0)"
+      ],
+      "reason": "2026-09-27 (страж lesson-gui-runtime): Урок нарочно масштабирует в ноль (idyl-error-block рядом)."
     },
     "widgets.label.004": {
       "kind": "compile_error",
@@ -788,6 +809,13 @@
         "'gui' is not imported (use 'use gui;')"
       ],
       "reason": "Auto 2026-07-25 (миграция редактуры): пример падает на компиляции."
+    },
+    "widgets.window.006": {
+      "kind": "runtime_error",
+      "diagnosticIncludes": [
+        "Window.theme must be 'default', 'idyllium', 'dracula', 'breeze' or 'oxygen', got 'неоновый'"
+      ],
+      "reason": "2026-09-27 (страж lesson-gui-runtime): Урок нарочно называет несуществующую тему (idyl-error-block рядом)."
     }
   }
 }

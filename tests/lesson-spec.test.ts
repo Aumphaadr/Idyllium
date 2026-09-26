@@ -168,12 +168,24 @@ async function assertRuntimeError(
   expectation: LessonExpectation,
   codePath: string,
 ): Promise<void> {
-  const fileSystem = createMemoryRuntimeFileSystem({ [codePath]: code }, path.dirname(codePath));
+  // Ассеты книги лежат рядом с программой, как в проекте ученика: нарочная ошибка урока
+  // («позиция за пределами трека», «масштаб в ноль») наступает после честной загрузки файла.
+  const fileSystem = createMemoryRuntimeFileSystem({ [codePath]: code, ...bookAssetEntries(path.dirname(codePath)) }, path.dirname(codePath));
   const result = await runIdyllium(code, { fileSystem }, { file: codePath });
   assert(result.compilation.success, `expected ${example.id} to compile before runtime error, got:\n${result.compilation.diagnosticsText}`);
   assert(!result.success, `expected ${example.id} to fail at runtime`);
   assert(result.runtimeError !== null, `expected ${example.id} to report a runtime error`);
   assertIncludes(example.id, result.runtimeError, expectation.diagnosticIncludes ?? []);
+}
+
+function bookAssetEntries(dir: string): Record<string, { bytes: Uint8Array }> {
+  const entries: Record<string, { bytes: Uint8Array }> = {};
+  const assetsRoot = path.join(process.cwd(), 'packages/docs/book-assets');
+  for (const name of ['cat.png', 'walk.gif', 'click.wav', 'theme.mp3']) {
+    const file = path.join(assetsRoot, name);
+    if (fs.existsSync(file)) entries[path.join(dir, name)] = { bytes: new Uint8Array(fs.readFileSync(file)) };
+  }
+  return entries;
 }
 
 function assertIncludes(exampleId: string, text: string, needles: readonly string[]): void {

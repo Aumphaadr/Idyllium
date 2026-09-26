@@ -18,6 +18,7 @@ use colors;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 430;
     win.height = 170;
     win.title = "Цвета без загадок";
@@ -34,11 +35,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="gui-demo-container">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 110px; position: relative;">
-        <div style="position: absolute; left: 30px; top: 35px; color: rgb(34, 145, 188);">Синий текст</div>
-      </div>
-    </div>
+    <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">
       <code>RGB(34, 145, 188)</code> — немного красного, побольше зелёного и много
       синего. Получается спокойный сине-голубой цвет.
@@ -103,16 +100,69 @@ main() {
 </script></idyl-code-block>
 
   <div class="gui-demo-container">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 120px; position: relative;">
-        <div style="position: absolute; left: 40px; top: 25px; width: 90px; height: 48px; border-radius: 8px; background: rgb(34, 145, 188);"></div>
-        <div style="position: absolute; left: 150px; top: 25px; width: 90px; height: 48px; border-radius: 8px; background: #2291bc;"></div>
-        <div style="position: absolute; left: 260px; top: 25px; width: 90px; height: 48px; border-radius: 8px; background: hsl(197, 69%, 44%);"></div>
-        <div style="position: absolute; left: 40px; top: 82px; width: 90px; text-align: center; color: #cdd6f4;"><code>c1</code></div>
-        <div style="position: absolute; left: 150px; top: 82px; width: 90px; text-align: center; color: #cdd6f4;"><code>c2</code></div>
-        <div style="position: absolute; left: 260px; top: 82px; width: 90px; text-align: center; color: #cdd6f4;"><code>c3</code></div>
-      </div>
-    </div>
+    <idyl-gui-demo><script type="text/plain">
+use colors;
+use gui;
+
+main() {
+    colors.Color c1 = colors.RGB(34, 145, 188);
+    colors.Color c2 = colors.HEX("#2291bc");
+    colors.Color c3 = colors.HSL(197, 69, 44);
+
+    gui.Window win;
+    win.theme = "idyllium";
+    win.width = 390;
+    win.height = 120;
+    win.title = "Три цвета";
+
+    gui.Label square1;
+    square1.x = 40;
+    square1.y = 20;
+    square1.width = 90;
+    square1.height = 48;
+    square1.background_color = c1;
+
+    gui.Label square2;
+    square2.x = 150;
+    square2.y = 20;
+    square2.width = 90;
+    square2.height = 48;
+    square2.background_color = c2;
+
+    gui.Label square3;
+    square3.x = 260;
+    square3.y = 20;
+    square3.width = 90;
+    square3.height = 48;
+    square3.background_color = c3;
+
+    gui.Label name1;
+    name1.x = 40;
+    name1.y = 80;
+    name1.width = 90;
+    name1.text = "c1";
+
+    gui.Label name2;
+    name2.x = 150;
+    name2.y = 80;
+    name2.width = 90;
+    name2.text = "c2";
+
+    gui.Label name3;
+    name3.x = 260;
+    name3.y = 80;
+    name3.width = 90;
+    name3.text = "c3";
+
+    win.add_child(square1);
+    win.add_child(square2);
+    win.add_child(square3);
+    win.add_child(name1);
+    win.add_child(name2);
+    win.add_child(name3);
+    win.show();
+}
+</script></idyl-gui-demo>
     <div class="coord-note">
       Если покрасить этими тремя цветами три квадрата, разницы не увидеть:
       <code>c1</code> и <code>c2</code> — один и тот же цвет, а <code>c3</code>
@@ -150,13 +200,31 @@ button1.border_color = colors.RGB(54, 62, 88);
   </p>
 
   <div class="gui-demo-container">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 130px; position: relative;">
-        <button class="idyl-button" style="position: absolute; left: 30px; top: 35px; width: 190px; height: 42px; color: white; background: rgb(27, 31, 44); border-color: rgb(54, 62, 88);">
-          Тёмная кнопка
-        </button>
-      </div>
-    </div>
+    <idyl-gui-demo><script type="text/plain">
+use colors;
+use gui;
+
+main() {
+    gui.Window win;
+    win.theme = "idyllium";
+    win.width = 250;
+    win.height = 110;
+    win.title = "Три цвета кнопки";
+
+    gui.Button button1;
+    button1.text = "Тёмная кнопка";
+    button1.x = 30;
+    button1.y = 35;
+    button1.width = 190;
+    button1.height = 42;
+    button1.text_color = colors.RGB(255, 255, 255);
+    button1.background_color = colors.RGB(27, 31, 44);
+    button1.border_color = colors.RGB(54, 62, 88);
+
+    win.add_child(button1);
+    win.show();
+}
+</script></idyl-gui-demo>
     <div class="coord-note">
       Здесь цвет текста, фона и границы задаются отдельно. Так понятнее и ученику, и будущему читателю кода.
     </div>
@@ -182,6 +250,7 @@ use colors;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 430;
     win.height = 160;
     win.title = "Цветная полоска";
@@ -201,14 +270,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="gui-demo-container">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 110px; position: relative;">
-        <div class="idyl-progressbar" style="position: absolute; left: 35px; top: 50px; width: 340px; height: 24px; color: rgb(102, 14, 28); background: rgb(255, 232, 236);">
-          <div class="idyl-progressbar-fill" style="width: 65%; background: rgb(248, 150, 165);"></div>
-          <div class="idyl-progressbar-label">65%</div>
-        </div>
-      </div>
-    </div>
+    <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">
       <code>background_color</code> окрашивает незаполненную часть полоски, а
       <code>foreground_color</code> — заполненную. Поэтому при значении
@@ -230,6 +292,7 @@ use colors;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 520;
     win.height = 260;
     win.title = "Наследование цветов";
@@ -259,13 +322,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="gui-demo-container">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 190px; position: relative;">
-        <div style="position: absolute; left: 40px; top: 45px; color: #FF0000;">Я беру цвет у окна</div>
-        <div style="position: absolute; left: 40px; top: 90px; color: #FF0000;">Я тоже беру цвет у окна</div>
-        <div style="position: absolute; left: 40px; top: 135px; color: #0000FF;">А я сам выбираю синий</div>
-      </div>
-    </div>
+    <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">
       Первые два лейбла не задают цвет сами, поэтому они унаследовали красный цвет окна.
     </div>
@@ -292,12 +349,13 @@ use colors;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     gui.Label label;
     label.text_color = "#FF0000";  // ОШИБКА!
 }
 </script></idyl-code-block>
 
-  <idyl-error-block>main.idyl:7:24: compile error: cannot assign 'string' value to 'colors.Color' variable</idyl-error-block>
+  <idyl-error-block>main.idyl:8:24: compile error: cannot assign 'string' value to 'colors.Color' variable</idyl-error-block>
 
   <p>
     Компилятор говорит прямо: свойству нужен <code>colors.Color</code>, а не

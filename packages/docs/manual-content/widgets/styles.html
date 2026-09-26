@@ -1,22 +1,3 @@
-<style data-lesson-style>
-.idyss-hover-demo {
-      border: none;
-      border-radius: 10px;
-      background-color: #2673d9;
-      color: white;
-      font-family: var(--font-sans);
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .idyss-hover-demo:hover {
-      background-color: #3d8bff;
-    }
-    .idyss-hover-demo:active {
-      background-color: #123c73;
-    }
-</style>
-
 <div class="docs-section">
   <h2>Знакомьтесь: IdySS</h2>
   <p>
@@ -45,6 +26,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 420;
     win.height = 200;
     win.title = "IdySS";
@@ -63,11 +45,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="gui-demo-container">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 120px; position: relative;">
-        <button class="idyl-button" style="position: absolute; left: 40px; top: 36px; width: 200px; height: 48px; background: #008080; color: white; border-radius: 20px; border: 1px solid rgba(0,0,0,0.25);">Стильная кнопка</button>
-      </div>
-    </div>
+    <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">
       Одной строкой — фон, цвет текста и скруглённые углы, до которых
       обычными свойствами вообще не добраться.
@@ -87,6 +65,7 @@ use colors;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.title = "Наклейка сверху";
 
     gui.Label sign;
@@ -172,6 +151,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
 
     gui.Button btn;
     btn.text = "Где мои углы?";
@@ -219,6 +199,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 420;
     win.height = 220;
     win.title = "Градиенты";
@@ -246,12 +227,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="gui-demo-container">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 170px; position: relative;">
-        <button class="idyl-button" style="position: absolute; left: 30px; top: 20px; width: 360px; height: 60px; background: linear-gradient(to right, #FF8800, #800080); color: white; border-radius: 10px;">Закат</button>
-        <button class="idyl-button" style="position: absolute; left: 30px; top: 96px; width: 360px; height: 60px; background: radial-gradient(#FFFF00, #800000); color: #111; border-radius: 10px;">Лампа</button>
-      </div>
-    </div>
+    <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">Линейный переток слева направо и радиальный из центра.</div>
   </div>
 
@@ -277,6 +253,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
 
     gui.Label sign;
     sign.text = "Итог: зелёный жирный";
@@ -308,6 +285,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 320;
     win.height = 130;
     win.title = "Живая кнопка";
@@ -328,13 +306,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="interactive-demo">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 90px; position: relative;">
-        <button class="idyss-hover-demo" type="button" style="position: absolute; left: 20px; top: 20px; width: 180px; height: 44px;">
-          Наведи и нажми
-        </button>
-      </div>
-    </div>
+    <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">
       ✨ Это живое демо: подведите курсор — кнопка посветлеет, зажмите —
       потемнеет. Ровно так работает и настоящая программа.

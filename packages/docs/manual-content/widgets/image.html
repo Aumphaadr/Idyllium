@@ -21,6 +21,7 @@ main() {
     cat.load_from_file("cat.png");
 
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 420;
     win.height = 260;
     win.title = "Картинка в окне";
@@ -38,11 +39,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="gui-demo-container">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 170px; position: relative;">
-        <img class="idyl-image-preview" src="assets/cat.png" alt="Кот из файла cat.png" style="position: absolute; left: 30px; top: 30px; width: 160px; height: 120px; object-fit: contain;">
-      </div>
-    </div>
+    <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">
       Картинка размером 99x100 пикселей показана внутри виджета размером
       160x120 пикселей.
@@ -128,6 +125,7 @@ main() {
     cat.load_from_file("cat.png");
 
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 720;
     win.height = 260;
     win.title = "resize_mode";
@@ -173,26 +171,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="gui-demo-container">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 190px; position: relative;">
-        <div class="image-mode-demo image-mode-fit" style="left: 30px;">
-          <img src="assets/cat.png" alt="Режим fit">
-          <span>fit</span>
-        </div>
-        <div class="image-mode-demo image-mode-fill" style="left: 190px;">
-          <img src="assets/cat.png" alt="Режим fill">
-          <span>fill</span>
-        </div>
-        <div class="image-mode-demo image-mode-stretch" style="left: 350px;">
-          <img src="assets/cat.png" alt="Режим stretch">
-          <span>stretch</span>
-        </div>
-        <div class="image-mode-demo image-mode-original" style="left: 510px;">
-          <img src="assets/cat.png" alt="Режим original">
-          <span>original</span>
-        </div>
-      </div>
-    </div>
+    <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">
       <code>fit</code> вписывает картинку целиком, <code>fill</code> заполняет
       виджет с возможной обрезкой, <code>stretch</code> растягивает, а
@@ -232,6 +211,7 @@ main() {
     cat.load_from_file("cat.png");
 
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 420;
     win.height = 260;
     win.title = "Погладь кота";
@@ -288,6 +268,7 @@ main() {
     image.Static faded_cat = cat.with_opacity(0.3);
 
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 520;
     win.height = 210;
     win.title = "Три версии одной картинки";
@@ -321,22 +302,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="gui-demo-container">
-    <div class="gui-demo-window image-transform-window">
-      <div class="demo-content image-transform-demo">
-        <figure>
-          <img src="assets/cat.png" alt="Исходная картинка">
-          <figcaption>исходная</figcaption>
-        </figure>
-        <figure>
-          <img class="image-mirrored-y" src="assets/cat.png" alt="Картинка вверх ногами">
-          <figcaption>scale(1, -1)</figcaption>
-        </figure>
-        <figure>
-          <img class="image-faded" src="assets/cat.png" alt="Полупрозрачная картинка">
-          <figcaption>with_opacity(0.3)</figcaption>
-        </figure>
-      </div>
-    </div>
+    <idyl-gui-demo></idyl-gui-demo>
   </div>
 
   <p>У статичных картинок есть и другие полезные преобразования:</p>
@@ -428,6 +394,7 @@ main() {
     walk.load_from_file("walk.gif");
 
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 220;
     win.title = "Анимация";
@@ -446,11 +413,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="gui-demo-container">
-    <div class="gui-demo-window image-animation-window">
-      <div class="demo-content image-animation-demo">
-        <img src="assets/walk.gif" alt="Анимация из файла walk.gif">
-      </div>
-    </div>
+    <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">
       Один объект <code>image.Animation</code> хранит все кадры и время их показа.
     </div>

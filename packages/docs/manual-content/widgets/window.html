@@ -1,69 +1,3 @@
-<style data-lesson-style>
-.demo-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 2em;
-    }
-    .demo-group {
-      background: rgba(137, 180, 250, 0.05);
-      border-radius: 8px;
-      padding: 1em;
-    }
-    .demo-group h3 {
-      margin-top: 0;
-      margin-bottom: 1em;
-      color: var(--accent);
-      font-size: 1.1rem;
-    }
-    /* Витрина тем: пять мини-окошек с палитрой соответствующей темы. */
-    .theme-gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
-      gap: 14px;
-    }
-    .theme-card {
-      display: grid;
-      justify-items: center;
-      gap: 8px;
-      font-size: 12px;
-    }
-    .theme-card-window {
-      display: grid;
-      gap: 8px;
-      width: 100%;
-      padding: 12px;
-      border: 1px solid var(--t-border);
-      border-radius: 8px;
-      background: var(--t-bg);
-      color: var(--t-text);
-    }
-    .theme-card-text {
-      font-size: 13px;
-      font-weight: 600;
-    }
-    .theme-card-button {
-      padding: 6px 10px;
-      border: 1px solid var(--t-border);
-      border-radius: 4px;
-      background: var(--t-button);
-      color: var(--t-button-text);
-      font-size: 12px;
-      text-align: center;
-    }
-    .theme-card-bar {
-      overflow: hidden;
-      height: 10px;
-      border: 1px solid var(--t-border);
-      border-radius: 999px;
-    }
-    .theme-card-bar span {
-      display: block;
-      width: 65%;
-      height: 100%;
-      background: var(--t-accent);
-    }
-</style>
-
     <div class="docs-section">
       <h2>32 урока в чёрном окне — хватит!</h2>
       <p>Весь раздел «Консоль» мы писали программы, которые живут в чёрном окне: печатают текст, читают ввод, считают. Это была отличная школа. Но настоящие программы вокруг нас выглядят иначе: у калькулятора есть кнопки, у игры — картинки и полоска здоровья, у мессенджера — поля ввода. Всё это называется <strong>графический интерфейс</strong> (по-английски GUI).</p>
@@ -94,11 +28,7 @@ main() {
 </script></idyl-code-block>
 
         <div class="gui-demo-container" style="margin-top: 1em;">
-          <div class="gui-demo-window">
-            <div class="demo-content" style="min-height: 200px; display: flex; align-items: center; justify-content: center; color: var(--text-dim);">
-              🪟 Пустое окно (без виджетов)
-            </div>
-          </div>
+          <idyl-gui-demo></idyl-gui-demo>
           <div class="coord-note">
             💡 Программа создала окно и показала его. Пока внутри ничего нет.
           </div>
@@ -179,47 +109,182 @@ main() {
       <p>Всего тем пять. Вот как выглядит одна и та же пара «надпись + кнопка» в каждой из них:</p>
 
       <div class="gui-demo-container">
-        <div class="theme-gallery">
-          <div class="theme-card" style="--t-bg: #ffffff; --t-text: #111111; --t-border: rgba(0, 0, 0, 0.28); --t-button: #efefef; --t-button-text: #111111; --t-accent: #2673d9;">
-            <div class="theme-card-window">
-              <div class="theme-card-text">Привет!</div>
-              <div class="theme-card-button">Кнопка</div>
-              <div class="theme-card-bar"><span></span></div>
-            </div>
-            <code>"default"</code>
-          </div>
-          <div class="theme-card" style="--t-bg: #151020; --t-text: #f2eaf7; --t-border: #3d3154; --t-button: #2a2240; --t-button-text: #f2eaf7; --t-accent: #87bfff;">
-            <div class="theme-card-window">
-              <div class="theme-card-text">Привет!</div>
-              <div class="theme-card-button">Кнопка</div>
-              <div class="theme-card-bar"><span></span></div>
-            </div>
-            <code>"idyllium"</code>
-          </div>
-          <div class="theme-card" style="--t-bg: #282a36; --t-text: #f8f8f2; --t-border: #6272a4; --t-button: #44475a; --t-button-text: #f8f8f2; --t-accent: #bd93f9;">
-            <div class="theme-card-window">
-              <div class="theme-card-text">Привет!</div>
-              <div class="theme-card-button">Кнопка</div>
-              <div class="theme-card-bar"><span></span></div>
-            </div>
-            <code>"dracula"</code>
-          </div>
-          <div class="theme-card" style="--t-bg: #eff0f1; --t-text: #232629; --t-border: #bdc3c7; --t-button: #fcfcfc; --t-button-text: #232629; --t-accent: #3daee9;">
-            <div class="theme-card-window">
-              <div class="theme-card-text">Привет!</div>
-              <div class="theme-card-button">Кнопка</div>
-              <div class="theme-card-bar"><span></span></div>
-            </div>
-            <code>"breeze"</code>
-          </div>
-          <div class="theme-card" style="--t-bg: #f0efee; --t-text: #2b2b2b; --t-border: #b3b0ad; --t-button: #fdfdfd; --t-button-text: #2b2b2b; --t-accent: #2980b9;">
-            <div class="theme-card-window">
-              <div class="theme-card-text">Привет!</div>
-              <div class="theme-card-button">Кнопка</div>
-              <div class="theme-card-bar"><span></span></div>
-            </div>
-            <code>"oxygen"</code>
-          </div>
+        <div class="gui-demo-gallery">
+          <idyl-gui-demo caption='"default"'><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 170;
+    win.height = 120;
+    win.title = "default";
+    win.theme = "default";
+
+    gui.Label hello;
+    hello.x = 14;
+    hello.y = 12;
+    hello.text = "Привет!";
+
+    gui.Button btn;
+    btn.x = 14;
+    btn.y = 40;
+    btn.width = 142;
+    btn.height = 30;
+    btn.text = "Кнопка";
+
+    gui.ProgressBar bar;
+    bar.x = 14;
+    bar.y = 84;
+    bar.width = 142;
+    bar.height = 16;
+    bar.value = 65;
+
+    win.add_child(hello);
+    win.add_child(btn);
+    win.add_child(bar);
+    win.show();
+}
+</script></idyl-gui-demo>
+          <idyl-gui-demo caption='"idyllium"'><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 170;
+    win.height = 120;
+    win.title = "idyllium";
+    win.theme = "idyllium";
+
+    gui.Label hello;
+    hello.x = 14;
+    hello.y = 12;
+    hello.text = "Привет!";
+
+    gui.Button btn;
+    btn.x = 14;
+    btn.y = 40;
+    btn.width = 142;
+    btn.height = 30;
+    btn.text = "Кнопка";
+
+    gui.ProgressBar bar;
+    bar.x = 14;
+    bar.y = 84;
+    bar.width = 142;
+    bar.height = 16;
+    bar.value = 65;
+
+    win.add_child(hello);
+    win.add_child(btn);
+    win.add_child(bar);
+    win.show();
+}
+</script></idyl-gui-demo>
+          <idyl-gui-demo caption='"dracula"'><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 170;
+    win.height = 120;
+    win.title = "dracula";
+    win.theme = "dracula";
+
+    gui.Label hello;
+    hello.x = 14;
+    hello.y = 12;
+    hello.text = "Привет!";
+
+    gui.Button btn;
+    btn.x = 14;
+    btn.y = 40;
+    btn.width = 142;
+    btn.height = 30;
+    btn.text = "Кнопка";
+
+    gui.ProgressBar bar;
+    bar.x = 14;
+    bar.y = 84;
+    bar.width = 142;
+    bar.height = 16;
+    bar.value = 65;
+
+    win.add_child(hello);
+    win.add_child(btn);
+    win.add_child(bar);
+    win.show();
+}
+</script></idyl-gui-demo>
+          <idyl-gui-demo caption='"breeze"'><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 170;
+    win.height = 120;
+    win.title = "breeze";
+    win.theme = "breeze";
+
+    gui.Label hello;
+    hello.x = 14;
+    hello.y = 12;
+    hello.text = "Привет!";
+
+    gui.Button btn;
+    btn.x = 14;
+    btn.y = 40;
+    btn.width = 142;
+    btn.height = 30;
+    btn.text = "Кнопка";
+
+    gui.ProgressBar bar;
+    bar.x = 14;
+    bar.y = 84;
+    bar.width = 142;
+    bar.height = 16;
+    bar.value = 65;
+
+    win.add_child(hello);
+    win.add_child(btn);
+    win.add_child(bar);
+    win.show();
+}
+</script></idyl-gui-demo>
+          <idyl-gui-demo caption='"oxygen"'><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.width = 170;
+    win.height = 120;
+    win.title = "oxygen";
+    win.theme = "oxygen";
+
+    gui.Label hello;
+    hello.x = 14;
+    hello.y = 12;
+    hello.text = "Привет!";
+
+    gui.Button btn;
+    btn.x = 14;
+    btn.y = 40;
+    btn.width = 142;
+    btn.height = 30;
+    btn.text = "Кнопка";
+
+    gui.ProgressBar bar;
+    bar.x = 14;
+    bar.y = 84;
+    bar.width = 142;
+    bar.height = 16;
+    bar.value = 65;
+
+    win.add_child(hello);
+    win.add_child(btn);
+    win.add_child(bar);
+    win.show();
+}
+</script></idyl-gui-demo>
         </div>
         <div class="coord-note">
           🎨 Тема задаётся один раз у окна. Все виджеты внутри — кнопки, поля, галочки, полоски — подхватывают её сами.
@@ -254,6 +319,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 400;
     win.height = 300;
     win.title = "Окно с кнопкой";
@@ -269,16 +335,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="gui-demo-container" style="margin-top: 1em;">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 250px; position: relative;">
-            <button class="idyl-button" style="position: absolute; left: 0; top: 0; margin: 0; width: 120px; height: 40px;">
-              Нажми меня
-            </button>
-            <div style="position: absolute; bottom: 8px; left: 8px; font-size: 12px; color: var(--text-dim);">
-              (кнопка неактивна — это только демонстрация)
-            </div>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           💡 Кнопка прижалась к левому верхнему углу: мы не сказали ей, где стоять, а координаты по умолчанию равны <code>(0, 0)</code>. Как расставлять виджеты по местам — в следующей секции.
         </div>
@@ -309,12 +366,31 @@ win.add_child(btn2);
 </script></idyl-code-block>
 
       <div class="gui-demo-container">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 120px; position: relative;">
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 50px;">x: 20, y: 50</button>
-            <button class="idyl-button" style="position: absolute; left: 200px; top: 50px;">x: 200, y: 50</button>
-          </div>
-        </div>
+        <idyl-gui-demo><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.theme = "idyllium";
+    win.width = 400;
+    win.height = 120;
+    win.title = "Разные X, одинаковый Y";
+
+    gui.Button btn1;
+    btn1.text = "x: 20, y: 50";
+    btn1.x = 20;
+    btn1.y = 50;
+
+    gui.Button btn2;
+    btn2.text = "x: 200, y: 50";
+    btn2.x = 200;
+    btn2.y = 50;
+
+    win.add_child(btn1);
+    win.add_child(btn2);
+    win.show();
+}
+</script></idyl-gui-demo>
         <div class="coord-note">
           📍 <code>x=20</code> и <code>x=200</code> — кнопки на разном расстоянии от левого края, но на одной высоте (<code>y=50</code>).
         </div>
@@ -337,12 +413,31 @@ win.add_child(btn_down);
 </script></idyl-code-block>
 
       <div class="gui-demo-container">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 170px; position: relative;">
-            <button class="idyl-button" style="position: absolute; left: 50px; top: 30px;">x: 50, y: 30</button>
-            <button class="idyl-button" style="position: absolute; left: 50px; top: 100px;">x: 50, y: 100</button>
-          </div>
-        </div>
+        <idyl-gui-demo><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.theme = "idyllium";
+    win.width = 300;
+    win.height = 150;
+    win.title = "Одинаковый X, разные Y";
+
+    gui.Button btn_up;
+    btn_up.text = "x: 50, y: 30";
+    btn_up.x = 50;
+    btn_up.y = 30;
+
+    gui.Button btn_down;
+    btn_down.text = "x: 50, y: 100";
+    btn_down.x = 50;
+    btn_down.y = 100;
+
+    win.add_child(btn_up);
+    win.add_child(btn_down);
+    win.show();
+}
+</script></idyl-gui-demo>
         <div class="coord-note">
           📍 <code>y=30</code> и <code>y=100</code> — кнопки на разной высоте, но на одинаковом расстоянии от левого края (<code>x=50</code>).
         </div>
@@ -359,11 +454,25 @@ win.add_child(corner_btn);
 </script></idyl-code-block>
 
       <div class="gui-demo-container">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 100px; position: relative;">
-            <button class="idyl-button" style="position: absolute; left: 0; top: 0; margin: 0;">Угол</button>
-          </div>
-        </div>
+        <idyl-gui-demo><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.theme = "idyllium";
+    win.width = 300;
+    win.height = 100;
+    win.title = "Левый верхний угол";
+
+    gui.Button corner_btn;
+    corner_btn.text = "Угол";
+    corner_btn.x = 0;
+    corner_btn.y = 0;
+
+    win.add_child(corner_btn);
+    win.show();
+}
+</script></idyl-gui-demo>
         <div class="coord-note">
           📍 Координаты <code>(0, 0)</code> — виджет прижат к левому верхнему углу окна. Именно поэтому кнопка без заданных координат оказывается в углу: <code>(0, 0)</code> — значение по умолчанию.
         </div>

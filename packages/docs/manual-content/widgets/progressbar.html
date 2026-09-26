@@ -1,18 +1,3 @@
-<style data-lesson-style>
-.interactive-demo {
-      background: rgba(137, 180, 250, 0.05);
-      border-radius: 12px;
-      padding: 1em;
-      margin: 1.5em 0;
-    }
-    .interactive-demo .coord-note {
-      margin-top: 1em;
-    }
-    .progress-row {
-      margin: 1em 0;
-    }
-</style>
-
     <div class="docs-section">
       <h2>Что такое ProgressBar?</h2>
       <p>Представьте: ваша игра загружает большой уровень, а на экране — тишина. Игрок не понимает: программа думает или зависла? Спасает заполняющаяся полоска — она честно показывает, сколько уже сделано и сколько осталось. Та же полоска пригодится и для шкалы здоровья героя.</p>
@@ -23,6 +8,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 100;
     win.title = "Прогресс";
@@ -39,18 +25,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 100px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 20px; width: 260px;">
-              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
-                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); transition: width 0.3s ease; border-radius: 4px; width: 24%;"></div>
-                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); pointer-events: none;">
-                  24%
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           📊 ProgressBar наглядно показывает процент выполнения. Здесь — 24%.
         </div>
@@ -89,22 +64,37 @@ pb2.height = 120;               // ...и высокая
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 160px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 65px; width: 180px;">
-              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
-                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 65%; border-radius: 4px;"></div>
-                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">65%</div>
-              </div>
-            </div>
-            <div style="position: absolute; left: 240px; top: 20px; height: 120px; width: 30px;">
-              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 100%; position: relative;">
-                <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 65%; background: linear-gradient(0deg, #89b4fa 0%, #74c7ec 100%); border-radius: 4px;"></div>
-                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #cdd6f4;">65%</div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <idyl-gui-demo><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.theme = "idyllium";
+    win.width = 300;
+    win.height = 160;
+    win.title = "Две ориентации";
+
+    gui.ProgressBar pb1;
+    pb1.orientation = "horizontal";
+    pb1.x = 20;
+    pb1.y = 65;
+    pb1.width = 180;
+    pb1.height = 24;
+    pb1.value = 65;
+
+    gui.ProgressBar pb2;
+    pb2.orientation = "vertical";
+    pb2.x = 240;
+    pb2.y = 20;
+    pb2.width = 30;
+    pb2.height = 120;
+    pb2.value = 65;
+
+    win.add_child(pb1);
+    win.add_child(pb2);
+    win.show();
+}
+</script></idyl-gui-demo>
         <div class="coord-note">
           📊 Одно и то же значение, две ориентации: <code>"horizontal"</code> растёт слева направо, <code>"vertical"</code> — снизу вверх.
         </div>
@@ -122,6 +112,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 200;
     win.title = "Разные значения";
@@ -155,28 +146,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 180px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 20px; width: 260px;">
-              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
-                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 0%; border-radius: 4px;"></div>
-                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">0%</div>
-              </div>
-            </div>
-            <div style="position: absolute; left: 20px; top: 70px; width: 260px;">
-              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
-                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 50%; border-radius: 4px;"></div>
-                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">50%</div>
-              </div>
-            </div>
-            <div style="position: absolute; left: 20px; top: 120px; width: 260px;">
-              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
-                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 100%; border-radius: 4px;"></div>
-                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">100%</div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           📊 <code>value = 0</code> — пусто, <code>value = 50</code> — половина, <code>value = 100</code> — полностью заполнено.
         </div>
@@ -195,6 +165,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 100;
     win.title = "Здоровье героя";
@@ -213,16 +184,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 100px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 20px; width: 260px;">
-              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
-                <div style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 75%; border-radius: 4px;"></div>
-                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">75%</div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           ❤️ 150 очков из 200 — это три четверти шкалы, поэтому полоска заполнена на 75%. Надпись на полоске всегда показывает проценты.
         </div>
@@ -256,6 +218,7 @@ use random;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 150;
     win.title = "Случайный прогресс";
@@ -284,17 +247,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 150px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 20px; width: 310px;" id="randomProgressContainer">
-              <div style="background: #1e1e2e; border: 1px solid #45475a; border-radius: 6px; overflow: hidden; height: 24px; position: relative;">
-                <div id="randomProgressFill" style="height: 100%; background: linear-gradient(90deg, #89b4fa 0%, #74c7ec 100%); width: 0%; border-radius: 4px;"></div>
-                <div id="randomProgressLabel" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #cdd6f4;">0%</div>
-              </div>
-            </div>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 80px; width: 190px;" id="randomProgressBtn">Случайное значение</button>
-          </div>
-        </div>
+        <idyl-gui-demo seed="7" events='[{"type":"gui.Button","event":"click"}]' caption="Окно после нажатия на кнопку"></idyl-gui-demo>
         <div class="coord-note">
           🎲 Каждое нажатие кнопки генерирует случайное число от 0 до 100 и обновляет прогрессбар.
         </div>
@@ -312,12 +265,13 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     gui.ProgressBar pb;
     pb.value = 0.5;  // ОШИБКА!
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:6:16: compile error: cannot assign 'float' value to 'int' variable</idyl-error-block>
+      <idyl-error-block>main.idyl:7:16: compile error: cannot assign 'float' value to 'int' variable</idyl-error-block>
 
       <p>Половина полоски — это не 0.5, а 50 из 100. Присвойте целое число:</p>
 
@@ -326,20 +280,3 @@ pb.value = 50;  // вот теперь половина
 </script></idyl-code-block>
     </div>
 
-<script data-lesson-script type="text/plain">
-// Интерактив для демо-примеров
-  document.addEventListener('DOMContentLoaded', () => {
-    // Пример: случайный прогресс
-    const randomBtn = document.getElementById('randomProgressBtn');
-    const progressFill = document.getElementById('randomProgressFill');
-    const progressLabel = document.getElementById('randomProgressLabel');
-
-    if (randomBtn && progressFill && progressLabel) {
-      randomBtn.addEventListener('click', () => {
-        const r = Math.floor(Math.random() * 101);
-        progressFill.style.width = r + '%';
-        progressLabel.textContent = r + '%';
-      });
-    }
-  });
-</script>

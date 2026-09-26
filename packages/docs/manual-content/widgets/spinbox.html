@@ -1,21 +1,3 @@
-<style data-lesson-style>
-.interactive-demo {
-      background: rgba(137, 180, 250, 0.05);
-      border-radius: 12px;
-      padding: 1em;
-      margin: 1.5em 0;
-    }
-    .interactive-demo .coord-note {
-      margin-top: 1em;
-    }
-    .spinbox-row {
-      margin: 1em 0;
-      display: flex;
-      align-items: center;
-      gap: 1em;
-    }
-</style>
-
 <!-- Hero -->
 
 
@@ -32,6 +14,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 200;
     win.height = 100;
     win.title = "Лобби игры";
@@ -48,13 +31,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 100px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 20px;">
-              <input type="number" class="idyl-spinbox" style="width: 100px;" value="2">
-            </div>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           🔢 SpinBox для целых чисел. Попробуйте покрутить стрелки или ввести число вручную — «котик» не пройдёт.
         </div>
@@ -80,6 +57,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 150;
     win.title = "Сложность бота";
@@ -99,13 +77,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 100px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 20px;">
-              <input type="number" class="idyl-spinbox" style="width: 120px;" value="50" min="0" max="100" step="5">
-            </div>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           🎯 <code>min=0</code>, <code>max=100</code>, <code>step=5</code> — сложность меняется на 5 при каждом нажатии стрелки.
         </div>
@@ -122,6 +94,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 150;
     win.title = "FloatSpinBox";
@@ -141,13 +114,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 100px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 20px;">
-              <input type="number" class="idyl-spinbox" style="width: 140px;" value="0.5" min="0.0" max="1.0" step="0.1">
-            </div>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           🔢 FloatSpinBox для дробных чисел. Шаг 0.1, диапазон от 0.0 до 1.0.
         </div>
@@ -179,6 +146,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 150;
     win.title = "Лобби игры";
@@ -209,14 +177,7 @@ main() {
       <p>Обратите внимание на знакомый приём из урока про Label: <code>players.value</code> — число, поэтому перед склейкой со строкой его нужно превратить в текст с помощью <code>to_string()</code>.</p>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 100px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 20px;">
-              <input type="number" class="idyl-spinbox" style="width: 100px;" value="2" min="2" max="8" id="changeSpin">
-            </div>
-            <div style="position: absolute; left: 140px; top: 25px; color: #cdd6f4;" id="changeLabel">Игроков: 2</div>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           📢 Меняйте значение — подпись рядом обновляется автоматически через <code>on_change</code>.
         </div>
@@ -245,31 +206,3 @@ main() {
 
     <!-- Lesson navigation -->
 
-<script data-lesson-script type="text/plain">
-// Интерактив для демо-примеров
-  document.addEventListener('DOMContentLoaded', () => {
-    // Как настоящий SpinBox: не даём ввести вручную значение вне min/max
-    document.querySelectorAll('.idyl-spinbox').forEach((box) => {
-      box.addEventListener('change', () => {
-        const min = box.min === '' ? -Infinity : parseFloat(box.min);
-        const max = box.max === '' ? Infinity : parseFloat(box.max);
-        let val = parseFloat(box.value);
-        if (isNaN(val)) { val = min === -Infinity ? 0 : min; }
-        if (val < min) { val = min; }
-        if (val > max) { val = max; }
-        box.value = val;
-        box.dispatchEvent(new Event('input'));
-      });
-    });
-
-    // Пример 4: on_change с лейблом
-    const changeSpin = document.getElementById('changeSpin');
-    const changeLabel = document.getElementById('changeLabel');
-    if (changeSpin && changeLabel) {
-      changeSpin.addEventListener('input', () => {
-        const val = changeSpin.value;
-        changeLabel.textContent = 'Игроков: ' + val;
-      });
-    }
-  });
-</script>

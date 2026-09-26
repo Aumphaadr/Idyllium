@@ -1,22 +1,3 @@
-<style data-lesson-style>
-.idyss-hover-demo {
-      border: none;
-      border-radius: 10px;
-      background-color: #2673d9;
-      color: white;
-      font-family: var(--font-sans);
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .idyss-hover-demo:hover {
-      background-color: #3d8bff;
-    }
-    .idyss-hover-demo:active {
-      background-color: #123c73;
-    }
-</style>
-
 <div class="docs-section">
   <h2>Знакомьтесь: IdySS</h2>
   <p>
@@ -45,6 +26,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 420;
     win.height = 200;
     win.title = "IdySS";
@@ -63,11 +45,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="gui-demo-container">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 120px; position: relative;">
-        <button class="idyl-button" style="position: absolute; left: 40px; top: 36px; width: 200px; height: 48px; background: #008080; color: white; border-radius: 20px; border: 1px solid rgba(0,0,0,0.25);">Стильная кнопка</button>
-      </div>
-    </div>
+    <idyl-gui-demo data-frame-width="422" data-frame-height="230"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":420,"height":200,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"IdySS","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Button","properties":{"x":40,"y":40,"width":200,"height":48,"visible":true,"enabled":true,"hint":"","style":"background-color: teal; color: white; border-radius: 20px;","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Стильная кнопка","border_color":"#b4b4b4","style_declarations":[{"property":"background-color","value":"#008080"},{"property":"color","value":"#FFFFFF"},{"property":"border-radius","value":"20px"}]},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
     <div class="coord-note">
       Одной строкой — фон, цвет текста и скруглённые углы, до которых
       обычными свойствами вообще не добраться.
@@ -87,6 +65,7 @@ use colors;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.title = "Наклейка сверху";
 
     gui.Label sign;
@@ -172,6 +151,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
 
     gui.Button btn;
     btn.text = "Где мои углы?";
@@ -219,6 +199,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 420;
     win.height = 220;
     win.title = "Градиенты";
@@ -246,12 +227,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="gui-demo-container">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 170px; position: relative;">
-        <button class="idyl-button" style="position: absolute; left: 30px; top: 20px; width: 360px; height: 60px; background: linear-gradient(to right, #FF8800, #800080); color: white; border-radius: 10px;">Закат</button>
-        <button class="idyl-button" style="position: absolute; left: 30px; top: 96px; width: 360px; height: 60px; background: radial-gradient(#FFFF00, #800000); color: #111; border-radius: 10px;">Лампа</button>
-      </div>
-    </div>
+    <idyl-gui-demo data-frame-width="422" data-frame-height="250"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":420,"height":220,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Градиенты","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Button","properties":{"x":30,"y":30,"width":360,"height":60,"visible":true,"enabled":true,"hint":"","style":"background: linear-gradient(to right, #FF8800, purple); color: white; border-radius: 10px;","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Закат","border_color":"#b4b4b4","style_declarations":[{"property":"background","value":"linear-gradient(to right, #ff8800, #800080)"},{"property":"color","value":"#FFFFFF"},{"property":"border-radius","value":"10px"}]},"children":[],"events":[]},{"id":3,"type":"gui.Button","properties":{"x":30,"y":110,"width":360,"height":60,"visible":true,"enabled":true,"hint":"","style":"background: radial-gradient(yellow, dark-red); border-radius: 10px;","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Лампа","border_color":"#b4b4b4","style_declarations":[{"property":"background","value":"radial-gradient(#FFFF00, #800000)"},{"property":"border-radius","value":"10px"}]},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
     <div class="coord-note">Линейный переток слева направо и радиальный из центра.</div>
   </div>
 
@@ -277,6 +253,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
 
     gui.Label sign;
     sign.text = "Итог: зелёный жирный";
@@ -308,6 +285,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 320;
     win.height = 130;
     win.title = "Живая кнопка";
@@ -328,13 +306,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="interactive-demo">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 90px; position: relative;">
-        <button class="idyss-hover-demo" type="button" style="position: absolute; left: 20px; top: 20px; width: 180px; height: 44px;">
-          Наведи и нажми
-        </button>
-      </div>
-    </div>
+    <idyl-gui-demo data-frame-width="322" data-frame-height="160"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":320,"height":130,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Живая кнопка","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Button","properties":{"x":20,"y":20,"width":180,"height":44,"visible":true,"enabled":true,"hint":"","style":"background-color: #2673D9; color: white; border-radius: 10px;","style_hover":"background-color: #3D8BFF;","style_active":"background-color: #123C73;","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Наведи и нажми","border_color":"#b4b4b4","style_declarations":[{"property":"background-color","value":"#2673d9"},{"property":"color","value":"#FFFFFF"},{"property":"border-radius","value":"10px"}],"style_hover_declarations":[{"property":"background-color","value":"#3d8bff"}],"style_active_declarations":[{"property":"background-color","value":"#123c73"}]},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
     <div class="coord-note">
       ✨ Это живое демо: подведите курсор — кнопка посветлеет, зажмите —
       потемнеет. Ровно так работает и настоящая программа.

@@ -74,6 +74,7 @@ main() {
     lobster.load_from_file("Lobster-Regular.ttf");
 
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 440;
     win.height = 180;
     win.title = "Свой шрифт";
@@ -92,16 +93,8 @@ main() {
 </script></idyl-code-block>
 
   <div class="gui-demo-container">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 110px; position: relative;">
-        <div style="position: absolute; left: 25px; top: 40px; width: 390px; color: #cdd6f4; font-size: 26px;">Котики добрались до шрифтов</div>
-      </div>
-    </div>
-    <div class="gui-demo-window" style="margin-top: 1em;">
-      <div class="demo-content" style="min-height: 110px; position: relative;">
-        <div style="position: absolute; left: 25px; top: 40px; width: 390px; color: #cdd6f4; font-size: 26px; font-family: 'Lobster', cursive;">Котики добрались до шрифтов</div>
-      </div>
-    </div>
+    <idyl-gui-demo caption="Без строки title.font = lobster;" data-frame-width="502" data-frame-height="210"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":500,"height":180,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Стандартный шрифт","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Label","properties":{"x":25,"y":40,"width":450,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":26,"text":"Котики добрались до шрифтов","href":"","border_color":"rgba(0, 0, 0, 0)","__explicit_properties":["font_size"]},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
+    <idyl-gui-demo files="Lobster-Regular.ttf" caption="Со своим шрифтом" data-frame-width="442" data-frame-height="210"><script type="application/json">{"windows":[{"id":2,"type":"gui.Window","properties":{"x":0,"y":0,"width":440,"height":180,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Свой шрифт","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":3,"type":"gui.Label","properties":{"x":25,"y":40,"width":390,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":{"type":"fonts.Font","properties":{"src":"Lobster-Regular.ttf","path":"Lobster-Regular.ttf","resolved_path":"/lesson/Lobster-Regular.ttf","resource_uri":"fonts/Lobster-Regular.ttf","format":"ttf","is_loaded":true,"is_builtin":false}},"font_size":26,"text":"Котики добрались до шрифтов","href":"","border_color":"rgba(0, 0, 0, 0)","__explicit_properties":["font","font_size"]},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
     <div class="coord-note">
       Сверху — как выглядела бы надпись без строки <code>title.font = lobster;</code>
       (стандартный шрифт). Снизу — она же со своим шрифтом: в демо подключён
@@ -129,6 +122,7 @@ main() {
     lobster.load_from_file("Lobster-Regular.ttf");
 
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 420;
     win.height = 200;
     win.title = "Один шрифт на всех";
@@ -152,12 +146,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="gui-demo-container">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 160px; position: relative;">
-        <div style="position: absolute; left: 30px; top: 40px; color: #cdd6f4; font-family: 'Lobster', cursive;">Я наследую шрифт окна</div>
-        <button class="idyl-button" style="position: absolute; left: 30px; top: 100px; width: 150px; font-family: 'Lobster', cursive;">И я тоже</button>
-      </div>
-    </div>
+    <idyl-gui-demo files="Lobster-Regular.ttf" data-frame-width="422" data-frame-height="230"><script type="application/json">{"windows":[{"id":2,"type":"gui.Window","properties":{"x":0,"y":0,"width":420,"height":200,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":{"type":"fonts.Font","properties":{"src":"Lobster-Regular.ttf","path":"Lobster-Regular.ttf","resolved_path":"/lesson/Lobster-Regular.ttf","resource_uri":"fonts/Lobster-Regular.ttf","format":"ttf","is_loaded":true,"is_builtin":false}},"font_size":13,"title":"Один шрифт на всех","theme":"idyllium","__explicit_properties":["font","theme"]},"children":[{"id":3,"type":"gui.Label","properties":{"x":30,"y":40,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Я наследую шрифт окна","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":4,"type":"gui.Button","properties":{"x":30,"y":100,"width":150,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"И я тоже","border_color":"#b4b4b4"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
     <div class="coord-note">
       И надпись, и кнопка не выбирали шрифт сами — обе получили рукописный шрифт
       от окна. (Рукописность в демо снова показана примерно.)

@@ -1,15 +1,3 @@
-<style data-lesson-style>
-.interactive-demo {
-      background: rgba(137, 180, 250, 0.05);
-      border-radius: 12px;
-      padding: 1em;
-      margin: 1.5em 0;
-    }
-    .interactive-demo .coord-note {
-      margin-top: 1em;
-    }
-</style>
-
 <!-- Hero -->
     
 
@@ -23,6 +11,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 250;
     win.title = "Скрыть все";
@@ -47,15 +36,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 210px; position: relative;" id="hideAllDemo">
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 20px; width: 120px;">Кнопка 0</button>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 55px; width: 120px;">Кнопка 1</button>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 90px; width: 120px;">Кнопка 2</button>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 125px; width: 120px;">Кнопка 3</button>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 160px; width: 120px;">Кнопка 4</button>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="302" data-frame-height="280"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":300,"height":250,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Скрыть все","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Button","properties":{"x":20,"y":20,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Кнопка 0","border_color":"#b4b4b4"},"children":[],"events":["click"]},{"id":3,"type":"gui.Button","properties":{"x":20,"y":55,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Кнопка 1","border_color":"#b4b4b4"},"children":[],"events":["click"]},{"id":4,"type":"gui.Button","properties":{"x":20,"y":90,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Кнопка 2","border_color":"#b4b4b4"},"children":[],"events":["click"]},{"id":5,"type":"gui.Button","properties":{"x":20,"y":125,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Кнопка 3","border_color":"#b4b4b4"},"children":[],"events":["click"]},{"id":6,"type":"gui.Button","properties":{"x":20,"y":160,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Кнопка 4","border_color":"#b4b4b4"},"children":[],"events":["click"]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           🔘 Нажмите на любую кнопку — скроются все пять. У всех кнопок одна и та же функция-обработчик, и она не знает, какая именно кнопка её вызвала.
         </div>
@@ -73,6 +54,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 250;
     win.title = "Кто нажал?";
@@ -103,16 +85,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 230px; position: relative;">
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 20px; width: 150px;" id="senderBtn0">Кнопка 0</button>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 50px; width: 150px;" id="senderBtn1">Кнопка 1</button>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 80px; width: 150px;" id="senderBtn2">Кнопка 2</button>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 110px; width: 150px;" id="senderBtn3">Кнопка 3</button>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 140px; width: 150px;" id="senderBtn4">Кнопка 4</button>
-            <div style="position: absolute; left: 20px; top: 200px; color: #cdd6f4;" id="senderResult">Нажми на любую кнопку</div>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="352" data-frame-height="280"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":350,"height":250,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Кто нажал?","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Button","properties":{"x":20,"y":20,"width":150,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Кнопка 0","border_color":"#b4b4b4"},"children":[],"events":["click"]},{"id":3,"type":"gui.Button","properties":{"x":20,"y":50,"width":150,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Кнопка 1","border_color":"#b4b4b4"},"children":[],"events":["click"]},{"id":4,"type":"gui.Button","properties":{"x":20,"y":80,"width":150,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Кнопка 2","border_color":"#b4b4b4"},"children":[],"events":["click"]},{"id":5,"type":"gui.Button","properties":{"x":20,"y":110,"width":150,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Кнопка 3","border_color":"#b4b4b4"},"children":[],"events":["click"]},{"id":6,"type":"gui.Button","properties":{"x":20,"y":140,"width":150,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Кнопка 4","border_color":"#b4b4b4"},"children":[],"events":["click"]},{"id":7,"type":"gui.Label","properties":{"x":20,"y":200,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Нажми на любую кнопку","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           🎯 Теперь обработчик знает, какая кнопка его вызвала, и выводит её текст.
         </div>
@@ -133,6 +106,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 220;
     win.title = "Sender в LineEdit";
@@ -164,20 +138,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 210px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 20px;">
-              <input type="text" class="idyl-lineedit" style="width: 250px;" placeholder="Поле 0" id="senderInput0">
-            </div>
-            <div style="position: absolute; left: 20px; top: 60px;">
-              <input type="text" class="idyl-lineedit" style="width: 250px;" placeholder="Поле 1" id="senderInput1">
-            </div>
-            <div style="position: absolute; left: 20px; top: 100px;">
-              <input type="text" class="idyl-lineedit" style="width: 250px;" placeholder="Поле 2" id="senderInput2">
-            </div>
-            <div style="position: absolute; left: 20px; top: 160px; color: #cdd6f4;" id="senderLineEditResult">Измени текст в любом поле</div>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="352" data-frame-height="250"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":350,"height":220,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Sender в LineEdit","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.LineEdit","properties":{"x":20,"y":20,"width":250,"height":28,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"text":"","placeholder":"Поле 0","placeholder_color":"#b4b4b4","echo_mode":"normal","border_color":"#b4b4b4"},"children":[],"events":[]},{"id":3,"type":"gui.LineEdit","properties":{"x":20,"y":60,"width":250,"height":28,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"text":"","placeholder":"Поле 1","placeholder_color":"#b4b4b4","echo_mode":"normal","border_color":"#b4b4b4"},"children":[],"events":[]},{"id":4,"type":"gui.LineEdit","properties":{"x":20,"y":100,"width":250,"height":28,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"text":"","placeholder":"Поле 2","placeholder_color":"#b4b4b4","echo_mode":"normal","border_color":"#b4b4b4"},"children":[],"events":[]},{"id":5,"type":"gui.Label","properties":{"x":20,"y":160,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Измени текст в любом поле","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           ✏️ Начните печатать в любом поле — обработчик определит, какое именно поле вызвало событие, и покажет это.
         </div>
@@ -237,6 +198,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
 
     gui.Button btn;
     btn.text = "Нажми";
@@ -251,7 +213,7 @@ main() {
 }
 </script></idyl-code-block>
 
-      <idyl-error-block>main.idyl:10:20: compile error: callback property 'on_click' expects 'void function()' or 'void function(gui.Button)', got 'void function(gui.Label)'</idyl-error-block>
+      <idyl-error-block>main.idyl:11:20: compile error: callback property 'on_click' expects 'void function()' or 'void function(gui.Button)', got 'void function(gui.Label)'</idyl-error-block>
 
       <p>Сообщение длинное, но читается просто: <code>on_click</code> у кнопки ждёт функцию без параметров <strong>или</strong> функцию с параметром <code>gui.Button</code>, а получил функцию с параметром <code>gui.Label</code>. Исправление одно — указать в скобках тот тип, чей это обработчик.</p>
       <div class="tip-box">
@@ -260,41 +222,3 @@ main() {
     </div>
 
     <!-- Lesson navigation -->
-
-<script data-lesson-script type="text/plain">
-// Интерактив для демо-примеров
-  document.addEventListener('DOMContentLoaded', () => {
-    // Пример 1: скрытие всех кнопок
-    const hideAllDemo = document.getElementById('hideAllDemo');
-    if (hideAllDemo) {
-      const btns = hideAllDemo.querySelectorAll('.idyl-button');
-      btns.forEach(btn => {
-        btn.addEventListener('click', () => {
-          btns.forEach(b => b.style.display = 'none');
-        });
-      });
-    }
-
-    // Пример 2: sender для кнопок
-    const senderResult = document.getElementById('senderResult');
-    for (let i = 0; i <= 4; i++) {
-      const btn = document.getElementById('senderBtn' + i);
-      if (btn && senderResult) {
-        btn.addEventListener('click', () => {
-          senderResult.textContent = 'Нажата кнопка ' + btn.textContent;
-        });
-      }
-    }
-
-    // Пример 3: sender для LineEdit
-    const senderLineEditResult = document.getElementById('senderLineEditResult');
-    for (let i = 0; i <= 2; i++) {
-      const input = document.getElementById('senderInput' + i);
-      if (input && senderLineEditResult) {
-        input.addEventListener('input', () => {
-          senderLineEditResult.textContent = 'Изменено поле: ' + input.placeholder;
-        });
-      }
-    }
-  });
-</script>

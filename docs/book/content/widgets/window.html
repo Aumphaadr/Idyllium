@@ -1,69 +1,3 @@
-<style data-lesson-style>
-.demo-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 2em;
-    }
-    .demo-group {
-      background: rgba(137, 180, 250, 0.05);
-      border-radius: 8px;
-      padding: 1em;
-    }
-    .demo-group h3 {
-      margin-top: 0;
-      margin-bottom: 1em;
-      color: var(--accent);
-      font-size: 1.1rem;
-    }
-    /* Витрина тем: пять мини-окошек с палитрой соответствующей темы. */
-    .theme-gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
-      gap: 14px;
-    }
-    .theme-card {
-      display: grid;
-      justify-items: center;
-      gap: 8px;
-      font-size: 12px;
-    }
-    .theme-card-window {
-      display: grid;
-      gap: 8px;
-      width: 100%;
-      padding: 12px;
-      border: 1px solid var(--t-border);
-      border-radius: 8px;
-      background: var(--t-bg);
-      color: var(--t-text);
-    }
-    .theme-card-text {
-      font-size: 13px;
-      font-weight: 600;
-    }
-    .theme-card-button {
-      padding: 6px 10px;
-      border: 1px solid var(--t-border);
-      border-radius: 4px;
-      background: var(--t-button);
-      color: var(--t-button-text);
-      font-size: 12px;
-      text-align: center;
-    }
-    .theme-card-bar {
-      overflow: hidden;
-      height: 10px;
-      border: 1px solid var(--t-border);
-      border-radius: 999px;
-    }
-    .theme-card-bar span {
-      display: block;
-      width: 65%;
-      height: 100%;
-      background: var(--t-accent);
-    }
-</style>
-
 <div class="docs-section">
       <h2>32 урока в чёрном окне — хватит!</h2>
       <p>Весь раздел «Консоль» мы писали программы, которые живут в чёрном окне: печатают текст, читают ввод, считают. Это была отличная школа. Но настоящие программы вокруг нас выглядят иначе: у калькулятора есть кнопки, у игры — картинки и полоска здоровья, у мессенджера — поля ввода. Всё это называется <strong>графический интерфейс</strong> (по-английски GUI).</p>
@@ -94,11 +28,7 @@ main() {
 </script></idyl-code-block>
 
         <div class="gui-demo-container" style="margin-top: 1em;">
-          <div class="gui-demo-window">
-            <div class="demo-content" style="min-height: 200px; display: flex; align-items: center; justify-content: center; color: var(--text-dim);">
-              🪟 Пустое окно (без виджетов)
-            </div>
-          </div>
+          <idyl-gui-demo data-frame-width="642" data-frame-height="450"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":640,"height":420,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"","theme":"default"},"children":[],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
           <div class="coord-note">
             💡 Программа создала окно и показала его. Пока внутри ничего нет.
           </div>
@@ -179,47 +109,12 @@ main() {
       <p>Всего тем пять. Вот как выглядит одна и та же пара «надпись + кнопка» в каждой из них:</p>
 
       <div class="gui-demo-container">
-        <div class="theme-gallery">
-          <div class="theme-card" style="--t-bg: #ffffff; --t-text: #111111; --t-border: rgba(0, 0, 0, 0.28); --t-button: #efefef; --t-button-text: #111111; --t-accent: #2673d9;">
-            <div class="theme-card-window">
-              <div class="theme-card-text">Привет!</div>
-              <div class="theme-card-button">Кнопка</div>
-              <div class="theme-card-bar"><span></span></div>
-            </div>
-            <code>"default"</code>
-          </div>
-          <div class="theme-card" style="--t-bg: #151020; --t-text: #f2eaf7; --t-border: #3d3154; --t-button: #2a2240; --t-button-text: #f2eaf7; --t-accent: #87bfff;">
-            <div class="theme-card-window">
-              <div class="theme-card-text">Привет!</div>
-              <div class="theme-card-button">Кнопка</div>
-              <div class="theme-card-bar"><span></span></div>
-            </div>
-            <code>"idyllium"</code>
-          </div>
-          <div class="theme-card" style="--t-bg: #282a36; --t-text: #f8f8f2; --t-border: #6272a4; --t-button: #44475a; --t-button-text: #f8f8f2; --t-accent: #bd93f9;">
-            <div class="theme-card-window">
-              <div class="theme-card-text">Привет!</div>
-              <div class="theme-card-button">Кнопка</div>
-              <div class="theme-card-bar"><span></span></div>
-            </div>
-            <code>"dracula"</code>
-          </div>
-          <div class="theme-card" style="--t-bg: #eff0f1; --t-text: #232629; --t-border: #bdc3c7; --t-button: #fcfcfc; --t-button-text: #232629; --t-accent: #3daee9;">
-            <div class="theme-card-window">
-              <div class="theme-card-text">Привет!</div>
-              <div class="theme-card-button">Кнопка</div>
-              <div class="theme-card-bar"><span></span></div>
-            </div>
-            <code>"breeze"</code>
-          </div>
-          <div class="theme-card" style="--t-bg: #f0efee; --t-text: #2b2b2b; --t-border: #b3b0ad; --t-button: #fdfdfd; --t-button-text: #2b2b2b; --t-accent: #2980b9;">
-            <div class="theme-card-window">
-              <div class="theme-card-text">Привет!</div>
-              <div class="theme-card-button">Кнопка</div>
-              <div class="theme-card-bar"><span></span></div>
-            </div>
-            <code>"oxygen"</code>
-          </div>
+        <div class="gui-demo-gallery">
+          <idyl-gui-demo caption='"default"' data-frame-width="172" data-frame-height="150"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":170,"height":120,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"default","theme":"default","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Label","properties":{"x":14,"y":12,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Привет!","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":3,"type":"gui.Button","properties":{"x":14,"y":40,"width":142,"height":30,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Кнопка","border_color":"#b4b4b4"},"children":[],"events":[]},{"id":4,"type":"gui.ProgressBar","properties":{"x":14,"y":84,"width":142,"height":16,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#f5f5f5","font":null,"font_size":13,"value":65,"min":0,"max":100,"orientation":"horizontal","foreground_color":"#0000ff","border_color":"#b4b4b4"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
+          <idyl-gui-demo caption='"idyllium"' data-frame-width="172" data-frame-height="150"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":170,"height":120,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"idyllium","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Label","properties":{"x":14,"y":12,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Привет!","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":3,"type":"gui.Button","properties":{"x":14,"y":40,"width":142,"height":30,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Кнопка","border_color":"#b4b4b4"},"children":[],"events":[]},{"id":4,"type":"gui.ProgressBar","properties":{"x":14,"y":84,"width":142,"height":16,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#f5f5f5","font":null,"font_size":13,"value":65,"min":0,"max":100,"orientation":"horizontal","foreground_color":"#0000ff","border_color":"#b4b4b4"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
+          <idyl-gui-demo caption='"dracula"' data-frame-width="172" data-frame-height="150"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":170,"height":120,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"dracula","theme":"dracula","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Label","properties":{"x":14,"y":12,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Привет!","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":3,"type":"gui.Button","properties":{"x":14,"y":40,"width":142,"height":30,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Кнопка","border_color":"#b4b4b4"},"children":[],"events":[]},{"id":4,"type":"gui.ProgressBar","properties":{"x":14,"y":84,"width":142,"height":16,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#f5f5f5","font":null,"font_size":13,"value":65,"min":0,"max":100,"orientation":"horizontal","foreground_color":"#0000ff","border_color":"#b4b4b4"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
+          <idyl-gui-demo caption='"breeze"' data-frame-width="172" data-frame-height="150"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":170,"height":120,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"breeze","theme":"breeze","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Label","properties":{"x":14,"y":12,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Привет!","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":3,"type":"gui.Button","properties":{"x":14,"y":40,"width":142,"height":30,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Кнопка","border_color":"#b4b4b4"},"children":[],"events":[]},{"id":4,"type":"gui.ProgressBar","properties":{"x":14,"y":84,"width":142,"height":16,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#f5f5f5","font":null,"font_size":13,"value":65,"min":0,"max":100,"orientation":"horizontal","foreground_color":"#0000ff","border_color":"#b4b4b4"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
+          <idyl-gui-demo caption='"oxygen"' data-frame-width="172" data-frame-height="150"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":170,"height":120,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"oxygen","theme":"oxygen","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Label","properties":{"x":14,"y":12,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Привет!","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":3,"type":"gui.Button","properties":{"x":14,"y":40,"width":142,"height":30,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Кнопка","border_color":"#b4b4b4"},"children":[],"events":[]},{"id":4,"type":"gui.ProgressBar","properties":{"x":14,"y":84,"width":142,"height":16,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#f5f5f5","font":null,"font_size":13,"value":65,"min":0,"max":100,"orientation":"horizontal","foreground_color":"#0000ff","border_color":"#b4b4b4"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         </div>
         <div class="coord-note">
           🎨 Тема задаётся один раз у окна. Все виджеты внутри — кнопки, поля, галочки, полоски — подхватывают её сами.
@@ -254,6 +149,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 400;
     win.height = 300;
     win.title = "Окно с кнопкой";
@@ -269,16 +165,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="gui-demo-container" style="margin-top: 1em;">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 250px; position: relative;">
-            <button class="idyl-button" style="position: absolute; left: 0; top: 0; margin: 0; width: 120px; height: 40px;">
-              Нажми меня
-            </button>
-            <div style="position: absolute; bottom: 8px; left: 8px; font-size: 12px; color: var(--text-dim);">
-              (кнопка неактивна — это только демонстрация)
-            </div>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="402" data-frame-height="330"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":400,"height":300,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Окно с кнопкой","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Button","properties":{"x":0,"y":0,"width":120,"height":40,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Нажми меня","border_color":"#b4b4b4"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           💡 Кнопка прижалась к левому верхнему углу: мы не сказали ей, где стоять, а координаты по умолчанию равны <code>(0, 0)</code>. Как расставлять виджеты по местам — в следующей секции.
         </div>
@@ -309,12 +196,7 @@ win.add_child(btn2);
 </script></idyl-code-block>
 
       <div class="gui-demo-container">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 120px; position: relative;">
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 50px;">x: 20, y: 50</button>
-            <button class="idyl-button" style="position: absolute; left: 200px; top: 50px;">x: 200, y: 50</button>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="402" data-frame-height="150"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":400,"height":120,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Разные X, одинаковый Y","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Button","properties":{"x":20,"y":50,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"x: 20, y: 50","border_color":"#b4b4b4"},"children":[],"events":[]},{"id":3,"type":"gui.Button","properties":{"x":200,"y":50,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"x: 200, y: 50","border_color":"#b4b4b4"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           📍 <code>x=20</code> и <code>x=200</code> — кнопки на разном расстоянии от левого края, но на одной высоте (<code>y=50</code>).
         </div>
@@ -337,12 +219,7 @@ win.add_child(btn_down);
 </script></idyl-code-block>
 
       <div class="gui-demo-container">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 170px; position: relative;">
-            <button class="idyl-button" style="position: absolute; left: 50px; top: 30px;">x: 50, y: 30</button>
-            <button class="idyl-button" style="position: absolute; left: 50px; top: 100px;">x: 50, y: 100</button>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="302" data-frame-height="180"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":300,"height":150,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Одинаковый X, разные Y","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Button","properties":{"x":50,"y":30,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"x: 50, y: 30","border_color":"#b4b4b4"},"children":[],"events":[]},{"id":3,"type":"gui.Button","properties":{"x":50,"y":100,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"x: 50, y: 100","border_color":"#b4b4b4"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           📍 <code>y=30</code> и <code>y=100</code> — кнопки на разной высоте, но на одинаковом расстоянии от левого края (<code>x=50</code>).
         </div>
@@ -359,11 +236,7 @@ win.add_child(corner_btn);
 </script></idyl-code-block>
 
       <div class="gui-demo-container">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 100px; position: relative;">
-            <button class="idyl-button" style="position: absolute; left: 0; top: 0; margin: 0;">Угол</button>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="302" data-frame-height="130"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":300,"height":100,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Левый верхний угол","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Button","properties":{"x":0,"y":0,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Угол","border_color":"#b4b4b4"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           📍 Координаты <code>(0, 0)</code> — виджет прижат к левому верхнему углу окна. Именно поэтому кнопка без заданных координат оказывается в углу: <code>(0, 0)</code> — значение по умолчанию.
         </div>

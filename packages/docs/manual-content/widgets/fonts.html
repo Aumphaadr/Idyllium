@@ -74,6 +74,7 @@ main() {
     lobster.load_from_file("Lobster-Regular.ttf");
 
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 440;
     win.height = 180;
     win.title = "Свой шрифт";
@@ -92,16 +93,28 @@ main() {
 </script></idyl-code-block>
 
   <div class="gui-demo-container">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 110px; position: relative;">
-        <div style="position: absolute; left: 25px; top: 40px; width: 390px; color: #cdd6f4; font-size: 26px;">Котики добрались до шрифтов</div>
-      </div>
-    </div>
-    <div class="gui-demo-window" style="margin-top: 1em;">
-      <div class="demo-content" style="min-height: 110px; position: relative;">
-        <div style="position: absolute; left: 25px; top: 40px; width: 390px; color: #cdd6f4; font-size: 26px; font-family: 'Lobster', cursive;">Котики добрались до шрифтов</div>
-      </div>
-    </div>
+    <idyl-gui-demo caption="Без строки title.font = lobster;"><script type="text/plain">
+use gui;
+
+main() {
+    gui.Window win;
+    win.theme = "idyllium";
+    win.width = 500;
+    win.height = 180;
+    win.title = "Стандартный шрифт";
+
+    gui.Label title;
+    title.text = "Котики добрались до шрифтов";
+    title.x = 25;
+    title.y = 40;
+    title.width = 450;
+    title.font_size = 26;
+
+    win.add_child(title);
+    win.show();
+}
+</script></idyl-gui-demo>
+    <idyl-gui-demo files="Lobster-Regular.ttf" caption="Со своим шрифтом"></idyl-gui-demo>
     <div class="coord-note">
       Сверху — как выглядела бы надпись без строки <code>title.font = lobster;</code>
       (стандартный шрифт). Снизу — она же со своим шрифтом: в демо подключён
@@ -129,6 +142,7 @@ main() {
     lobster.load_from_file("Lobster-Regular.ttf");
 
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 420;
     win.height = 200;
     win.title = "Один шрифт на всех";
@@ -152,12 +166,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="gui-demo-container">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 160px; position: relative;">
-        <div style="position: absolute; left: 30px; top: 40px; color: #cdd6f4; font-family: 'Lobster', cursive;">Я наследую шрифт окна</div>
-        <button class="idyl-button" style="position: absolute; left: 30px; top: 100px; width: 150px; font-family: 'Lobster', cursive;">И я тоже</button>
-      </div>
-    </div>
+    <idyl-gui-demo files="Lobster-Regular.ttf"></idyl-gui-demo>
     <div class="coord-note">
       И надпись, и кнопка не выбирали шрифт сами — обе получили рукописный шрифт
       от окна. (Рукописность в демо снова показана примерно.)

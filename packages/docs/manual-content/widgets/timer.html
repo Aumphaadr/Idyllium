@@ -1,14 +1,5 @@
 <style data-lesson-style>
-.interactive-demo {
-      background: rgba(137, 180, 250, 0.05);
-      border-radius: 12px;
-      padding: 1em;
-      margin: 1.5em 0;
-    }
-    .interactive-demo .coord-note {
-      margin-top: 1em;
-    }
-    .warning-message {
+.warning-message {
       background: rgba(249, 226, 175, 0.12);
       border-left: 3px solid #f9e2af;
       padding: 0.75em 1em;
@@ -41,6 +32,7 @@ use random;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 150;
     win.title = "Случайные числа";
@@ -67,11 +59,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 120px; position: relative;">
-            <div style="position: absolute; left: 50px; top: 50px; font-size: 24px; color: #cdd6f4;" id="randomNumberLabel">0</div>
-          </div>
-        </div>
+        <idyl-gui-demo seed="7" step="1" caption="Окно через секунду после запуска"></idyl-gui-demo>
         <div class="coord-note">
           ⏰ Каждую секунду число на лейбле меняется. Таймер работает без кнопок.
         </div>
@@ -136,6 +124,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 200;
     win.title = "Секундомер";
@@ -182,13 +171,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 180px; position: relative;">
-            <div style="position: absolute; left: 100px; top: 30px; font-size: 48px; color: #cdd6f4;" id="stopwatchLabel">0</div>
-            <button class="idyl-button" style="position: absolute; left: 30px; top: 120px;" id="startTimerBtn">Старт</button>
-            <button class="idyl-button" style="position: absolute; left: 160px; top: 120px;" id="stopTimerBtn">Стоп</button>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           ⏱️ Нажмите «Старт» — счётчик начнёт увеличиваться каждую секунду. «Стоп» — остановит.
         </div>
@@ -205,6 +188,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 150;
     win.title = "Отложенное действие";
@@ -234,11 +218,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 120px; position: relative;">
-            <button class="idyl-button" style="position: absolute; left: 50px; top: 50px; width: 200px;" id="delayedHideBtn">Нажми меня</button>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           ⏰ Нажмите на кнопку — через 3 секунды она исчезнет. Таймер сработает только один раз.
         </div>
@@ -319,6 +299,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 150;
     win.title = "Молчаливый таймер";
@@ -366,56 +347,3 @@ main() {
 
     <!-- Lesson navigation -->
 
-<script data-lesson-script type="text/plain">
-// Интерактив для демо-примеров
-  document.addEventListener('DOMContentLoaded', () => {
-    // Пример 1: случайные числа
-    let randomInterval = null;
-    const randomLabel = document.getElementById('randomNumberLabel');
-    if (randomLabel) {
-      randomInterval = window.setInterval(() => {
-        const r = Math.floor(Math.random() * 100) + 1;
-        randomLabel.textContent = r.toString();
-      }, 1000);
-    }
-
-    // Пример 4: секундомер
-    let stopwatchInterval = null;
-    let seconds = 0;
-    const stopwatchLabel = document.getElementById('stopwatchLabel');
-    const startTimerBtn = document.getElementById('startTimerBtn');
-    const stopTimerBtn = document.getElementById('stopTimerBtn');
-    
-    if (stopwatchLabel && startTimerBtn && stopTimerBtn) {
-      startTimerBtn.addEventListener('click', () => {
-        if (stopwatchInterval) return;
-        stopwatchInterval = window.setInterval(() => {
-          seconds++;
-          stopwatchLabel.textContent = seconds.toString();
-        }, 1000);
-      });
-      stopTimerBtn.addEventListener('click', () => {
-        if (stopwatchInterval) {
-          window.clearInterval(stopwatchInterval);
-          stopwatchInterval = null;
-        }
-      });
-    }
-
-    // Пример 5: отложенное скрытие кнопки
-    const delayedHideBtn = document.getElementById('delayedHideBtn');
-    if (delayedHideBtn) {
-      delayedHideBtn.addEventListener('click', () => {
-        setTimeout(() => {
-          delayedHideBtn.style.display = 'none';
-        }, 3000);
-      });
-    }
-
-    // Очистка интервалов при выгрузке страницы (для демо)
-    window.addEventListener('beforeunload', () => {
-      if (randomInterval) window.clearInterval(randomInterval);
-      if (stopwatchInterval) window.clearInterval(stopwatchInterval);
-    });
-  });
-</script>

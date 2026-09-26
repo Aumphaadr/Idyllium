@@ -1,15 +1,3 @@
-<style data-lesson-style>
-.interactive-demo {
-      background: rgba(137, 180, 250, 0.05);
-      border-radius: 12px;
-      padding: 1em;
-      margin: 1.5em 0;
-    }
-    .interactive-demo .coord-note {
-      margin-top: 1em;
-    }
-</style>
-
 <!-- Hero -->
 
 
@@ -26,6 +14,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 300;
     win.height = 100;
     win.title = "Знакомство";
@@ -41,13 +30,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 100px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 30px;">
-              <input type="text" class="idyl-lineedit" style="width: 260px;" placeholder="">
-            </div>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           ✏️ Пустое текстовое поле. Попробуйте что-нибудь написать.
         </div>
@@ -64,6 +47,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 150;
     win.title = "Приветствие";
@@ -101,15 +85,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 150px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 20px;">
-              <input type="text" class="idyl-lineedit" style="width: 310px;" id="nameInput">
-            </div>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 70px; width: 180px;" id="greetBtn">Поздороваться</button>
-            <div style="position: absolute; left: 20px; top: 110px; color: #cdd6f4;" id="greetLabel"></div>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           💬 Введите имя, нажмите кнопку — текст появится на лейбле.
         </div>
@@ -126,6 +102,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 120;
     win.title = "Счётчик символов";
@@ -152,14 +129,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 120px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 20px;">
-              <input type="text" class="idyl-lineedit" style="width: 310px;" id="counterInput">
-            </div>
-            <div style="position: absolute; left: 20px; top: 70px; color: #cdd6f4;" id="counterLabel">Символов: 0</div>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           🔢 Счётчик обновляется при каждом нажатии клавиши.
         </div>
@@ -177,6 +147,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 120;
     win.title = "Приветствие без кнопки";
@@ -207,14 +178,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 120px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 20px;">
-              <input type="text" class="idyl-lineedit" style="width: 310px;" placeholder="Имя и Enter" id="enterInput">
-            </div>
-            <div style="position: absolute; left: 20px; top: 70px; color: #cdd6f4;" id="enterLabel"></div>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           ⏎ Наберите имя и нажмите Enter — кнопка не нужна.
         </div>
@@ -240,6 +204,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 150;
     win.title = "Настройки LineEdit";
@@ -257,13 +222,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 100px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 20px;">
-              <input type="text" class="idyl-lineedit" style="width: 310px; font-size: 20px;" placeholder="Введите текст здесь...">
-            </div>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           🎨 Шрифт увеличен до 20 пикселей, видна серая подсказка-плейсхолдер.
         </div>
@@ -280,6 +239,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 400;
     win.height = 120;
 
@@ -318,6 +278,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 250;
     win.title = "Режимы ввода";
@@ -369,22 +330,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 250px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 20px; color: #cdd6f4;">Обычный режим:</div>
-            <div style="position: absolute; left: 20px; top: 45px;">
-              <input type="text" class="idyl-lineedit" style="width: 310px;" placeholder="Видно, что пишу">
-            </div>
-            <div style="position: absolute; left: 20px; top: 95px; color: #cdd6f4;">Режим password:</div>
-            <div style="position: absolute; left: 20px; top: 120px;">
-              <input type="password" class="idyl-lineedit" style="width: 310px;" placeholder="Звёздочки">
-            </div>
-            <div style="position: absolute; left: 20px; top: 170px; color: #cdd6f4;">Режим no_echo:</div>
-            <div style="position: absolute; left: 20px; top: 195px;">
-              <input type="text" class="idyl-lineedit" style="width: 310px;" placeholder="Ничего не видно" id="noechoDemo">
-            </div>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           🔐 <code>"normal"</code> — всё видно, <code>"password"</code> — звёздочки, <code>"no_echo"</code> — ввод не отображается (но программа его видит!).
         </div>
@@ -423,6 +369,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 200;
     win.title = "TextEdit";
@@ -440,13 +387,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 180px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 20px;">
-              <textarea class="idyl-textedit" style="width: 310px; height: 130px;" placeholder="Введите многострочный текст..."></textarea>
-            </div>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           📝 Многострочное поле. Нажмите Enter — появится новая строка.
         </div>
@@ -469,6 +410,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 220;
     win.title = "Чтение из TextEdit";
@@ -508,15 +450,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 220px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 20px;">
-              <textarea class="idyl-textedit" style="width: 310px; height: 100px;" placeholder="Напишите что-нибудь..." id="demoTextEdit"></textarea>
-            </div>
-            <button class="idyl-button" style="position: absolute; left: 20px; top: 140px; width: 180px;" id="readTextBtn">Показать текст</button>
-            <div style="position: absolute; left: 20px; top: 180px; color: #cdd6f4;" id="textEditResult"></div>
-          </div>
-        </div>
+        <idyl-gui-demo></idyl-gui-demo>
         <div class="coord-note">
           📋 Напишите несколько строк в поле, нажмите кнопку — программа покажет длину текста.
         </div>
@@ -550,70 +484,3 @@ main() {
 
     <!-- Lesson navigation -->
 
-<script data-lesson-script type="text/plain">
-// Интерактив для демо-примеров
-  document.addEventListener('DOMContentLoaded', () => {
-    // Пример 2: приветствие
-    const nameInput = document.getElementById('nameInput');
-    const greetBtn = document.getElementById('greetBtn');
-    const greetLabel = document.getElementById('greetLabel');
-    if (nameInput && greetBtn && greetLabel) {
-      greetBtn.addEventListener('click', () => {
-        const name = nameInput.value;
-        if (name === '') {
-          greetLabel.textContent = 'Вы не ввели имя!';
-        } else {
-          greetLabel.textContent = 'Привет, ' + name + '!';
-        }
-      });
-    }
-
-    // Пример 3a: приветствие по Enter
-    const enterInput = document.getElementById('enterInput');
-    const enterLabel = document.getElementById('enterLabel');
-    if (enterInput && enterLabel) {
-      enterInput.addEventListener('keydown', (event) => {
-        if (event.key !== 'Enter') return;
-        const name = enterInput.value;
-        enterLabel.textContent = name === '' ? 'Вы не представились!' : 'Привет, ' + name + '!';
-      });
-    }
-
-    // Пример 3: счётчик символов
-    const counterInput = document.getElementById('counterInput');
-    const counterLabel = document.getElementById('counterLabel');
-    if (counterInput && counterLabel) {
-      counterInput.addEventListener('input', () => {
-        const len = counterInput.value.length;
-        counterLabel.textContent = 'Символов: ' + len;
-      });
-    }
-
-    // Пример 5: no_echo — ввод не отображается
-    const noechoDemo = document.getElementById('noechoDemo');
-    if (noechoDemo) {
-      noechoDemo.addEventListener('input', function() {
-        const realValue = this.value;
-        this.dataset.realValue = realValue;
-        if (this.value !== '') {
-          this.value = '';
-        }
-      });
-    }
-
-    // Пример 6: TextEdit
-    const demoTextEdit = document.getElementById('demoTextEdit');
-    const readTextBtn = document.getElementById('readTextBtn');
-    const textEditResult = document.getElementById('textEditResult');
-    if (demoTextEdit && readTextBtn && textEditResult) {
-      readTextBtn.addEventListener('click', () => {
-        const content = demoTextEdit.value;
-        if (content === '') {
-          textEditResult.textContent = 'Поле пустое!';
-        } else {
-          textEditResult.textContent = 'Длина текста: ' + content.length;
-        }
-      });
-    }
-  });
-</script>

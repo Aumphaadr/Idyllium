@@ -1,58 +1,3 @@
-<style data-lesson-style>
-.interactive-demo {
-      background: rgba(137, 180, 250, 0.05);
-      border-radius: 12px;
-      padding: 1em;
-      margin: 1.5em 0;
-    }
-    .interactive-demo .coord-note {
-      margin-top: 1em;
-    }
-    /* Мини-копия виджета вкладок из GUI Preview. */
-    .tabs-demo {
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: var(--bg-panel);
-    }
-    .tabs-demo-bar {
-      display: flex;
-      flex: none;
-      gap: 2px;
-      padding: 4px 4px 0;
-      border-bottom: 1px solid var(--border);
-      background: var(--bg-panel-2);
-    }
-    .tabs-demo-tab {
-      padding: 4px 12px;
-      border: 1px solid var(--border);
-      border-bottom: 0;
-      border-radius: 6px 6px 0 0;
-      background: transparent;
-      color: var(--text-main);
-      font: 13px var(--font-sans);
-      cursor: pointer;
-    }
-    .tabs-demo-tab.selected {
-      margin-bottom: -1px;
-      border-bottom: 1px solid var(--bg-panel);
-      background: var(--bg-panel);
-      font-weight: 700;
-    }
-    .tabs-demo-page {
-      position: relative;
-      flex: 1;
-      padding: 14px;
-      color: var(--text-main);
-      font: 13px/1.5 var(--font-sans);
-    }
-    .tabs-demo-page[hidden] {
-      display: none;
-    }
-</style>
-
 <div class="docs-section">
   <h2>Окно кончилось, а виджеты не кончились</h2>
   <p>
@@ -89,6 +34,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 420;
     win.height = 220;
     win.title = "Настройки";
@@ -140,24 +86,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="interactive-demo">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 190px; position: relative;">
-        <div class="tabs-demo" id="tabsDemoBasic" style="position: absolute; left: 10px; top: 10px; width: 400px; height: 170px;">
-          <div class="tabs-demo-bar">
-            <button class="tabs-demo-tab selected" type="button" data-tab="0">Звук</button>
-            <button class="tabs-demo-tab" type="button" data-tab="1">Игрок</button>
-          </div>
-          <div class="tabs-demo-page" data-page="0">
-            <strong>Звук</strong><br>
-            ☑ Играть музыку
-          </div>
-          <div class="tabs-demo-page" data-page="1" hidden>
-            <strong>Игрок</strong><br>
-            Ник: <code>Мира</code>
-          </div>
-        </div>
-      </div>
-    </div>
+    <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">
       🗂 Попробуйте пощёлкать по заголовкам — в настоящей программе вкладки
       переключаются точно так же.
@@ -270,6 +199,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 420;
     win.height = 240;
     win.title = "Где я нахожусь";
@@ -313,27 +243,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="interactive-demo">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 215px; position: relative;">
-        <div class="tabs-demo" id="tabsDemoEvent" style="position: absolute; left: 10px; top: 10px; width: 400px; height: 160px;">
-          <div class="tabs-demo-bar">
-            <button class="tabs-demo-tab selected" type="button" data-tab="0">Карта</button>
-            <button class="tabs-demo-tab" type="button" data-tab="1">Рюкзак</button>
-          </div>
-          <div class="tabs-demo-page" data-page="0">
-            <strong>Карта</strong><br>
-            Здесь была бы карта уровня.
-          </div>
-          <div class="tabs-demo-page" data-page="1" hidden>
-            <strong>Рюкзак</strong><br>
-            Верёвка, факел, три монеты.
-          </div>
-        </div>
-        <div class="idyl-label" id="tabsDemoStatus" style="position: absolute; left: 12px; top: 185px; width: 396px;">
-          Открыто: Карта
-        </div>
-      </div>
-    </div>
+    <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">
       🔔 Надпись внизу обновляет <code>on_change</code>. Переключите вкладку — и
       увидите, как это работает.
@@ -436,26 +346,3 @@ win.add_child(page_sound);   // ← лишняя строка
   </p>
 </div>
 
-<script data-lesson-script type="text/plain">
-document.addEventListener('DOMContentLoaded', () => {
-    const wire = (rootId, statusId) => {
-      const root = document.getElementById(rootId);
-      if (!root) return;
-      const status = statusId ? document.getElementById(statusId) : null;
-      const tabs = [...root.querySelectorAll('.tabs-demo-tab')];
-      const pages = [...root.querySelectorAll('.tabs-demo-page')];
-
-      tabs.forEach((tab) => {
-        tab.addEventListener('click', () => {
-          const index = tab.dataset.tab;
-          tabs.forEach((item) => item.classList.toggle('selected', item === tab));
-          pages.forEach((page) => { page.hidden = page.dataset.page !== index; });
-          if (status) status.textContent = 'Открыто: ' + tab.textContent.trim();
-        });
-      });
-    };
-
-    wire('tabsDemoBasic', null);
-    wire('tabsDemoEvent', 'tabsDemoStatus');
-  });
-</script>

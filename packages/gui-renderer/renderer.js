@@ -47,7 +47,12 @@
   let idyssStateCounter = 0;
   const stage = document.getElementById('stage');
   const summary = document.getElementById('summary');
-  stage.tabIndex = 0;
+  // Демо-режим (кадр в учебнике, body.demo — ставит renderGuiWebviewHtml({ demo: true })):
+  // окно — картинка, не игра. Сцена делается inert: ни наведения, ни фокуса, ни
+  // кликов; шапка окна не таскается, крестика нет. Снимок приходит сообщением.
+  const demoMode = document.body.classList.contains('demo');
+  stage.tabIndex = demoMode ? -1 : 0;
+  if (demoMode) stage.inert = true;
 
   window.addEventListener('message', (event) => {
     const message = event.data;
@@ -118,9 +123,11 @@
     // с захваченным указателем, и его обработчик спрашивал бы пустую карту (находка e2e 2026-09-26).
     // Записи перезаписываются при отрисовке; устаревшие id никто не спрашивает.
     stage.replaceChildren();
-    summary.textContent = state.windows.length > 0
-      ? 'окон: ' + state.windows.length
-      : 'холстов: ' + state.canvases.length;
+    if (summary) {
+      summary.textContent = state.windows.length > 0
+        ? 'окон: ' + state.windows.length
+        : 'холстов: ' + state.canvases.length;
+    }
 
     if (state.windows.length === 0 && state.canvases.length === 0 && state.modals.length === 0) {
       const empty = document.createElement('div');
@@ -288,19 +295,21 @@
     titleText.className = 'titlebar-title';
     titleText.textContent = stringValue(win.properties.title, 'Idyllium Window');
     title.appendChild(titleText);
-    installWindowDrag(root, title, win.id);
-    const close = document.createElement('button');
-    close.className = 'window-close-button';
-    close.type = 'button';
-    close.title = 'Закрыть';
-    close.setAttribute('aria-label', 'закрыть окно');
-    close.addEventListener('click', (event) => {
-      // Крестик закрывает СВОЁ окно, как в настоящих ОС; когда закрывается
-      // последнее, программа завершается сама — та же цепочка, что у close().
-      event.stopPropagation();
-      postGuiEvent(win.id, 'window_close', {});
-    });
-    title.appendChild(close);
+    if (!demoMode) {
+      installWindowDrag(root, title, win.id);
+      const close = document.createElement('button');
+      close.className = 'window-close-button';
+      close.type = 'button';
+      close.title = 'Закрыть';
+      close.setAttribute('aria-label', 'закрыть окно');
+      close.addEventListener('click', (event) => {
+        // Крестик закрывает СВОЁ окно, как в настоящих ОС; когда закрывается
+        // последнее, программа завершается сама — та же цепочка, что у close().
+        event.stopPropagation();
+        postGuiEvent(win.id, 'window_close', {});
+      });
+      title.appendChild(close);
+    }
     root.appendChild(title);
 
     const content = document.createElement('div');

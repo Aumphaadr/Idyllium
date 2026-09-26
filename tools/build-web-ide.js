@@ -24,6 +24,9 @@ const domPurifySource = path.join(rootDir, 'node_modules', 'dompurify', 'dist', 
 const vendorOutputDir = path.join(outputWebDir, 'vendor');
 const browserEntry = path.join(distDir, 'src', 'browser.js');
 const sqlJsWasmSource = path.join(rootDir, 'node_modules', 'sql.js', 'dist', 'sql-wasm-browser.wasm');
+// Хост кадра-рендерера на сайте: сообщения рендерера (rendererReady, guiEvent, …)
+// уходят родительской странице как { type: 'idylliumGuiEvent', message }.
+const SITE_GUI_HOST_BOOTSTRAP = "window.IdylliumGuiHost = { postMessage: function(message) { var target = window.location.origin && window.location.origin !== 'null' ? window.location.origin : '*'; parent.postMessage({ type: 'idylliumGuiEvent', message: message }, target); } };";
 
 if (!fs.existsSync(browserEntry)) {
   console.error('Browser entry was not found. Run npm run build first.');
@@ -99,6 +102,7 @@ if (!fs.existsSync(sqlJsWasmSource)) {
 }
 fs.copyFileSync(sqlJsWasmSource, path.join(outputAssetsDir, 'sql-wasm-browser.wasm'));
 fs.writeFileSync(path.join(outputWebDir, 'gui-preview.html'), guiPreviewHtml(), 'utf8');
+fs.writeFileSync(path.join(outputWebDir, 'gui-demo.html'), guiDemoHtml(), 'utf8');
 const bundledCore = browserBundle(browserEntry);
 validateBrowserBundle(bundledCore)
   .then(() => {
@@ -224,7 +228,23 @@ function guiPreviewHtml() {
   return guiRenderer.renderGuiWebviewHtml({
     cssUri: 'gui-renderer/renderer.css',
     iconsUri: 'gui-renderer/icons.js',
-    hostBootstrap: "window.IdylliumGuiHost = { postMessage: function(message) { var target = window.location.origin && window.location.origin !== 'null' ? window.location.origin : '*'; parent.postMessage({ type: 'idylliumGuiEvent', message: message }, target); } };",
+    hostBootstrap: SITE_GUI_HOST_BOOTSTRAP,
+    nonce: 'idyllium-web',
+    scriptUri: 'gui-renderer/renderer.js',
+    state: { windows: [], canvases: [], modals: [], output: '' },
+  });
+}
+
+// Кадр демонстраций учебника (стилевая база 1.6.4, этап 5): тот же рендерер без
+// строки-тулбара, перетаскивания и крестиков; снимок программы урока присылает
+// страница учебника (app.js, элемент <idyl-gui-demo>) сообщением snapshot.
+function guiDemoHtml() {
+  const guiRenderer = require(path.join(rendererSourceDir, 'index.js'));
+  return guiRenderer.renderGuiWebviewHtml({
+    cssUri: 'gui-renderer/renderer.css',
+    demo: true,
+    iconsUri: 'gui-renderer/icons.js',
+    hostBootstrap: SITE_GUI_HOST_BOOTSTRAP,
     nonce: 'idyllium-web',
     scriptUri: 'gui-renderer/renderer.js',
     state: { windows: [], canvases: [], modals: [], output: '' },

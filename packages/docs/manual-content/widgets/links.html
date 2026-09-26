@@ -27,6 +27,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 420;
     win.height = 150;
     win.title = "Ссылки";
@@ -45,11 +46,7 @@ main() {
 </script></idyl-code-block>
 
   <div class="gui-demo-container">
-    <div class="gui-demo-window">
-      <div class="demo-content" style="min-height: 90px; position: relative;">
-        <a href="https://github.com/Aumphaadr/Idyllium" target="_blank" rel="noopener" style="position: absolute; left: 20px; top: 24px; color: #89b4fa; text-decoration: underline; cursor: pointer;">Репозиторий Idyllium на GitHub</a>
-      </div>
-    </div>
+    <idyl-gui-demo></idyl-gui-demo>
     <div class="coord-note">
       Слово <code>href</code> пришло из HTML — языка веб-страниц. Там ссылки
       описывают точно так же, и теперь вы узнаете их в чужом коде.
@@ -103,6 +100,7 @@ void function surprise() {
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 320;
     win.height = 140;
     win.title = "Сюрприз";

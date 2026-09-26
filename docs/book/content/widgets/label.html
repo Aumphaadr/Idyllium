@@ -1,15 +1,3 @@
-<style data-lesson-style>
-.interactive-demo {
-      background: rgba(137, 180, 250, 0.05);
-      border-radius: 12px;
-      padding: 1em;
-      margin: 1.5em 0;
-    }
-    .interactive-demo .coord-note {
-      margin-top: 1em;
-    }
-</style>
-
 <div class="docs-section">
       <h2>Знакомьтесь: Label</h2>
       <p>В прошлом уроке две кнопки устроили целую битву за текстовую метку — а мы с ней даже толком не познакомились. Исправляемся. <code>gui.Label</code> — это виджет-надпись: он ничего не нажимает и не вводит, а просто показывает текст. Счёт в игре, подсказка «Введите имя», результат броска кубика — везде, где программе нужно что-то сказать пользователю, работает лейбл.</p>
@@ -24,6 +12,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 400;
     win.height = 200;
     win.title = "Координаты лейблов";
@@ -45,12 +34,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 120px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 30px; color: #cdd6f4;">Я слева</div>
-            <div style="position: absolute; left: 200px; top: 30px; color: #cdd6f4;">Я справа</div>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="402" data-frame-height="230"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":400,"height":200,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Координаты лейблов","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Label","properties":{"x":20,"y":30,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Я слева","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":3,"type":"gui.Label","properties":{"x":200,"y":30,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Я справа","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           📍 Лейблы на разной высоте? Нет — <code>y=30</code> у обоих. Разное расстояние от левого края — <code>x=20</code> и <code>x=200</code>.
         </div>
@@ -66,6 +50,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 400;
     win.height = 200;
     win.title = "Размер шрифта";
@@ -89,12 +74,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 150px; position: relative;">
-            <div style="position: absolute; left: 20px; top: 30px; color: #cdd6f4; font-size: 12px;">Маленький текст</div>
-            <div style="position: absolute; left: 20px; top: 80px; color: #cdd6f4; font-size: 24px;">Большой текст</div>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="402" data-frame-height="230"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":400,"height":200,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Размер шрифта","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Label","properties":{"x":20,"y":30,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":12,"text":"Маленький текст","href":"","border_color":"rgba(0, 0, 0, 0)","__explicit_properties":["font_size"]},"children":[],"events":[]},{"id":3,"type":"gui.Label","properties":{"x":20,"y":80,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":24,"text":"Большой текст","href":"","border_color":"rgba(0, 0, 0, 0)","__explicit_properties":["font_size"]},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           🔤 Размер шрифта влияет только на отображение, но не на координаты виджета.
         </div>
@@ -110,6 +90,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 150;
     win.title = "Динамический текст";
@@ -135,12 +116,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 150px; position: relative;">
-            <div style="position: absolute; left: 50px; top: 30px; color: #cdd6f4;" id="dynamicLabel">Нажми на кнопку</div>
-            <button class="idyl-button" style="position: absolute; left: 50px; top: 80px;" id="changeTextBtn">Сменить текст</button>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="352" data-frame-height="180"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":350,"height":150,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Динамический текст","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Label","properties":{"x":50,"y":30,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Нажми на кнопку","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":3,"type":"gui.Button","properties":{"x":50,"y":80,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Сменить текст","border_color":"#b4b4b4"},"children":[],"events":["click"]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           🖱️ Нажмите на кнопку — текст лейбла изменится прямо на ваших глазах.
         </div>
@@ -157,6 +133,7 @@ use random;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     gui.Label label;
     label.text = random.create_int(1, 6);  // ОШИБКА!
 }
@@ -172,6 +149,7 @@ use random;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 150;
     win.title = "Случайное число";
@@ -198,12 +176,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 150px; position: relative;">
-            <div style="position: absolute; left: 50px; top: 30px; color: #cdd6f4;" id="randomLabel">Нажми на кнопку</div>
-            <button class="idyl-button" style="position: absolute; left: 50px; top: 80px;" id="rollDiceBtn">Бросить кубик</button>
-          </div>
-        </div>
+        <idyl-gui-demo seed="7" events='[{"type":"gui.Button","event":"click"}]' caption="Окно после нажатия на кнопку" data-frame-width="352" data-frame-height="180"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":350,"height":150,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Случайное число","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Label","properties":{"x":50,"y":30,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Выпало: 1","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":3,"type":"gui.Button","properties":{"x":50,"y":80,"width":120,"height":32,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Бросить кубик","border_color":"#b4b4b4"},"children":[],"events":["click"]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           🎲 <code>to_string(r)</code> превращает число в строку, и лейбл счастлив.
         </div>
@@ -220,6 +193,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 350;
     win.height = 180;
     win.title = "Цветные лейблы";
@@ -250,13 +224,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 160px; position: relative;">
-            <div style="position: absolute; left: 50px; top: 30px; color: #FF0000;">Красный текст</div>
-            <div style="position: absolute; left: 50px; top: 70px; color: #00FF00;">Зелёный текст</div>
-            <div style="position: absolute; left: 50px; top: 110px; color: #0000FF;">Синий текст</div>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="352" data-frame-height="210"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":350,"height":180,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Цветные лейблы","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Label","properties":{"x":50,"y":30,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#ff0000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Красный текст","href":"","border_color":"rgba(0, 0, 0, 0)","__explicit_properties":["text_color"]},"children":[],"events":[]},{"id":3,"type":"gui.Label","properties":{"x":50,"y":70,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#00ff00","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Зелёный текст","href":"","border_color":"rgba(0, 0, 0, 0)","__explicit_properties":["text_color"]},"children":[],"events":[]},{"id":4,"type":"gui.Label","properties":{"x":50,"y":110,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#0000ff","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Синий текст","href":"","border_color":"rgba(0, 0, 0, 0)","__explicit_properties":["text_color"]},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           🎨 У лейбла меняется именно <code>text_color</code>. Строка с HEX-кодом сама цветом не считается: сначала превратите её через <code>colors.HEX()</code>.
         </div>
@@ -272,6 +240,7 @@ use gui;
 
 main() {
     gui.Window win;
+    win.theme = "idyllium";
     win.width = 430;
     win.height = 180;
     win.title = "Перекрытие";
@@ -295,12 +264,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content" style="min-height: 110px; position: relative;">
-            <div style="position: absolute; left: 24px; top: 34px; color: #cdd6f4; white-space: nowrap;">Длинный текст лейбла тянется вправо</div>
-            <button class="idyl-button" style="position: absolute; left: 205px; top: 28px; width: 150px; height: 36px;">Кнопка</button>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="432" data-frame-height="210"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":430,"height":180,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Перекрытие","theme":"idyllium","__explicit_properties":["theme"]},"children":[{"id":2,"type":"gui.Label","properties":{"x":24,"y":34,"width":120,"height":24,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"font_size":13,"text":"Длинный текст лейбла тянется вправо","href":"","border_color":"rgba(0, 0, 0, 0)"},"children":[],"events":[]},{"id":3,"type":"gui.Button","properties":{"x":205,"y":28,"width":150,"height":36,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#efefef","font":null,"font_size":13,"text":"Кнопка","border_color":"#b4b4b4"},"children":[],"events":[]}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
         <div class="coord-note">
           🔍 Кнопка добавлена позже — и легла поверх лейбла: длинный текст уходит под неё.
         </div>
@@ -342,27 +306,3 @@ win.add_child(label);  // label выше
         </tbody>
       </table>
     </div>
-
-<script data-lesson-script type="text/plain">
-// Интерактив для демо-примеров
-  document.addEventListener('DOMContentLoaded', () => {
-    // Пример 3: динамическое изменение текста
-    const changeTextBtn = document.getElementById('changeTextBtn');
-    const dynamicLabel = document.getElementById('dynamicLabel');
-    if (changeTextBtn && dynamicLabel) {
-      changeTextBtn.addEventListener('click', () => {
-        dynamicLabel.textContent = 'Текст изменён!';
-      });
-    }
-
-    // Пример 4: случайное число
-    const rollDiceBtn = document.getElementById('rollDiceBtn');
-    const randomLabel = document.getElementById('randomLabel');
-    if (rollDiceBtn && randomLabel) {
-      rollDiceBtn.addEventListener('click', () => {
-        const r = Math.floor(Math.random() * 6) + 1;
-        randomLabel.textContent = 'Выпало: ' + r;
-      });
-    }
-  });
-</script>

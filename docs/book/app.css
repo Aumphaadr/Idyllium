@@ -6,6 +6,7 @@
   white-space: nowrap;
 }
 
+
 /* Внутри блоков кода правило неприменимо — там переносы управляются блоком. */
 .lesson-body idyl-code-block code,
 .lesson-body pre code {
@@ -84,6 +85,7 @@
   white-space: nowrap;
 }
 
+
 /* main фокусируется программно (переход урока) и кликом — tabindex="-1".
    Браузерная фокус-обводка рисовала «белые полоски» по границам колонки;
    визуальный фокус этому контейнеру не нужен. */
@@ -97,6 +99,7 @@
   backdrop-filter: blur(2px);
   animation: lesson-loading-fade 0.25s ease-out;
 }
+
 
 /* Плашка прикована к центру ВЬЮПОРТА (position: fixed): читатель у кнопок
    «предыдущий/следующий урок» внизу длинной страницы тоже её увидит. */
@@ -160,6 +163,7 @@
   line-height: 1.55;
 }
 
+
 /* Перекрёстная ссылка учебник ↔ задачник в шапке страницы. */
 .lesson-cross-link {
   display: inline-block;
@@ -195,11 +199,12 @@
   gap: 22px;
 }
 
+
+
 /* ─── Задачник ───────────────────────────────────────────────────────────
    Иерархия мягких лент (идея — из методических страниц, палитра и шрифты
    наши): блок — лента во всю ширину, группа практики — узкая капсула,
    задание — лента-язычок неполной ширины. Задания со звёздочкой — жёлтые. */
-
 body[data-docs-mode='tasks'] .lesson-body h2 {
   margin: 8px 0 4px;
   padding: 10px 18px;
@@ -238,11 +243,13 @@ body[data-docs-mode='tasks'] .lesson-body h2 {
   line-height: 1.3;
 }
 
+
 /* Со звёздочкой: та же лента, но жёлтая — необязательное и посложнее. */
 .lesson-body .task-item.task-star {
   border-left-color: var(--color-warning);
   background: linear-gradient(90deg, var(--color-warning-bg), transparent 92%);
 }
+
 
 /* Страницы проектов: шапка-строка «Сцена · Сложность · Место» — рядом чипов. */
 .lesson-body .project-meta {
@@ -265,6 +272,7 @@ body[data-docs-mode='tasks'] .lesson-body h2 {
   font-weight: 600;
 }
 
+
 /* Этап проекта — лента в духе task-item, но с зелёным штрихом:
    каждый этап по регламенту заканчивается работающей программой. */
 .lesson-body .stage-item {
@@ -281,6 +289,7 @@ body[data-docs-mode='tasks'] .lesson-body h2 {
   line-height: 1.3;
 }
 
+
 /* Критерий приёмки этапа. */
 .lesson-body .stage-done {
   color: var(--color-success);
@@ -290,6 +299,7 @@ body[data-docs-mode='tasks'] .lesson-body h2 {
 .lesson-body .stage-done em {
   font-weight: 700;
 }
+
 
 /* Скриншоты оконных и канвовых проектов: пара кадров «старт → успех». */
 .lesson-body .project-screen {
@@ -333,6 +343,7 @@ body[data-docs-mode='tasks'] .lesson-body h2 {
   font-size: 14px;
   line-height: 1.55;
 }
+
 
 /* SVG-превью в задачниках (черепашьи рисунки): картинка, не листинг. */
 .task-svg-preview {
@@ -415,6 +426,7 @@ body[data-docs-mode='tasks'] .lesson-body h2 {
 }
 
 @media (max-width: 700px) {
+  
   /* На узких экранах — прежнее поведение: горизонтальный скролл внутри блока. */
   .docs-section table {
     display: block;
@@ -474,8 +486,10 @@ body[data-docs-mode='tasks'] .lesson-body h2 {
 .color-magenta { color: var(--ansi-magenta); }
 .color-cyan { color: var(--ansi-cyan); }
 
+
 /* Светлые значения цветов консоли (контраст ≥ 4,5 — методисты, 2026-08-22) живут в токенах --ansi-*. */
 .color-reset { color: var(--color-text); }
+
 /* «Светлый чёрный» \e[90m — им же среда печатает служебные строки. */
 .color-bright-black { color: var(--color-text-muted); }
 
@@ -491,39 +505,18 @@ body[data-docs-mode='tasks'] .lesson-body h2 {
   overflow-x: auto;
 }
 
-.gui-demo-window {
-  position: relative;
-  width: 100%;
-  min-height: 220px;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: var(--color-bg);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  overflow: hidden;
+
+
+
+/* Витрина тем (урок «Первое окно»): пять демо-окон в пяти темах рядами. */
+.gui-demo-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(172px, 1fr));
+  gap: 14px;
 }
 
-.gui-demo-window::before {
-  content: "GUI Preview";
-  display: flex;
-  align-items: center;
-  height: 30px;
-  padding: 0 12px;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-panel-raised);
-  color: var(--color-text-muted);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-}
-
-.gui-demo-window .demo-content {
-  position: relative;
-  min-height: 190px;
-  padding: 16px;
-  background:
-    linear-gradient(rgba(135, 191, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(135, 191, 255, 0.035) 1px, transparent 1px);
-  background-size: 20px 20px;
+.gui-demo-gallery .ui-gui-demo-caption {
+  font-family: var(--font-mono);
 }
 
 .coord-note,
@@ -537,197 +530,32 @@ body[data-docs-mode='tasks'] .lesson-body h2 {
   font-size: 15px;
 }
 
-.idyl-button {
-  min-height: 34px;
-  padding: 0 14px;
-  border: 1px solid var(--color-border);
-  border-radius: 7px;
-  background: linear-gradient(180deg, var(--color-panel-soft), var(--color-panel-raised));
-  color: var(--color-text);
-  font-family: var(--font-sans);
-  font-weight: 800;
-  cursor: pointer;
-  transition: transform 0.08s ease, border-color 0.16s ease, background 0.16s ease;
-}
 
-.idyl-button:hover {
-  border-color: var(--color-accent);
-}
 
-.idyl-button:active {
-  transform: translateY(1px);
-}
 
-.idyl-spinbox,
-.idyl-lineedit,
-.idyl-combobox,
-.idyl-textedit {
-  border: 1px solid var(--color-border);
-  border-radius: 7px;
-  background: var(--color-panel);
-  color: var(--color-text);
-}
 
-.idyl-label,
-.gui-demo-window [style*="color: #cdd6f4"] {
-  color: var(--color-text) !important;
-}
 
-/* Повторяет .progressbar из gui-renderer: демо в учебнике должно выглядеть
-   ровно так же, как настоящий виджет в GUI Preview. */
-.idyl-progressbar {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  background: var(--color-panel-raised);
-  font-family: var(--font-sans);
-  font-size: 13px;
-}
 
-.idyl-progressbar-fill {
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #87bfff, #8bd58f);
-}
 
-.idyl-progressbar-label {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: inherit;
-  font-family: inherit;
-  font-size: inherit;
-  font-weight: 600;
-  pointer-events: none;
-}
 
-.idyl-frame {
-  border-color: var(--color-border);
-  background: rgba(255, 255, 255, 0.03);
-}
 
-.idyl-image-demo {
-  display: grid;
-  place-items: center;
-  border: 1px dashed var(--color-border);
-  border-radius: 8px;
-  background:
-    linear-gradient(45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%),
-    linear-gradient(-45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%),
-    linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.05) 75%);
-  background-size: 18px 18px;
-  background-position: 0 0, 0 9px, 9px -9px, -9px 0;
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-  font-size: 14px;
-}
 
-.idyl-image-preview {
-  display: block;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-panel);
-}
 
-.image-mode-demo {
-  position: absolute;
-  top: 24px;
-  width: 140px;
-  height: 70px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-panel);
-  overflow: hidden;
-}
 
-/* Режимы повторяют object-fit настоящего рендерера: fit=contain,
-   fill=cover, stretch=fill, original=натуральный размер с обрезкой.
-   ВАЖНО: картинка позиционируется абсолютно. Внутри grid с place-items
-   проценты высоты грид-элемента не резолвятся (трек auto → циклическая
-   зависимость → height:100% молча становится auto) — именно поэтому все
-   прежние CSS-имитации режимов выглядели одинаково обрезанными. У
-   абсолютного элемента проценты считаются от контейнера всегда. */
-.image-mode-demo img {
-  display: block;
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  max-height: none;
-}
 
-.image-mode-fit img {
-  object-fit: contain;
-}
 
-.image-mode-fill img {
-  object-fit: cover;
-}
 
-.image-mode-stretch img {
-  object-fit: fill;
-}
 
-.image-mode-original img {
-  width: auto;
-  height: auto;
-  object-fit: none;
-}
 
-.image-mode-demo span {
-  position: absolute;
-  left: 6px;
-  bottom: 6px;
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: rgba(12, 5, 21, 0.72);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 800;
-}
 
-.image-transform-window,
-.image-animation-window {
-  min-height: 230px;
-}
 
-.image-transform-demo {
-  min-height: 200px !important;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(130px, 1fr));
-  align-items: center;
-  gap: 18px;
-}
 
-.image-transform-demo figure {
-  min-width: 0;
-  margin: 0;
-  display: grid;
-  justify-items: center;
-  gap: 9px;
-}
 
-.image-transform-demo img {
-  width: 120px;
-  height: 110px;
-  display: block;
-  object-fit: contain;
-}
 
-.image-transform-demo figcaption {
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  text-align: center;
-}
+
+
+
+
 
 .image-mirrored-y {
   transform: scaleY(-1);
@@ -737,28 +565,17 @@ body[data-docs-mode='tasks'] .lesson-body h2 {
   opacity: 0.3;
 }
 
-.image-animation-demo {
-  min-height: 190px !important;
+
+
+/* Единственная ручная имитация на сайте — живой кот на WASD (canvas/sprites):
+   вердикт владельца 2026-09-27, остаётся интерактивом урока. */
+.canvas-sprite-demo {
   display: grid;
   place-items: center;
+  padding: 6px 0;
 }
 
-.image-animation-demo img {
-  width: 140px;
-  height: 130px;
-  display: block;
-  object-fit: contain;
-}
-
-.canvas-sprite-demo,
-.canvas-animation-demo {
-  min-height: 250px !important;
-  display: grid;
-  place-items: center;
-}
-
-.canvas-sprite-surface,
-.canvas-animation-surface {
+.canvas-sprite-surface {
   position: relative;
   width: min(100%, 450px);
   height: 250px;
@@ -787,27 +604,12 @@ body[data-docs-mode='tasks'] .lesson-body h2 {
   font-size: 12px;
 }
 
-.canvas-animation-surface {
-  width: min(100%, 300px);
-  height: 180px;
-  display: grid;
-  place-items: center;
-}
 
-.canvas-animation-surface img {
-  width: 112px;
-  height: 100px;
-  display: block;
-  object-fit: contain;
-}
 
 @media (max-width: 650px) {
-  .image-transform-demo {
-    grid-template-columns: 1fr;
-  }
+  
 
-  .canvas-sprite-surface,
-  .canvas-animation-surface {
+  .canvas-sprite-surface {
     height: 200px;
   }
 }
@@ -900,6 +702,7 @@ body[data-docs-mode='tasks'] .lesson-body h2 {
   outline: 2px solid var(--color-accent, #7aa2f7);
   outline-offset: 2px;
 }
+
 
 /* Выделение текста в светлых «файловых» блоках уроков: глобальная
    полупрозрачная заливка сливалась с их фоном. */

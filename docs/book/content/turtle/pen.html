@@ -1,16 +1,3 @@
-<style>
-    .turtle-preview {
-      display: flex;
-      justify-content: center;
-      padding: 14px;
-    }
-    .turtle-preview svg {
-      width: min(320px, 100%);
-      height: auto;
-      border-radius: 10px;
-    }
-</style>
-
     <div class="docs-section">
       <h2>Перо можно поднять</h2>
       <p>Черепаха рисует, потому что её перо опущено. Команда <code>pen_up()</code> поднимает перо — черепаха ползёт, а следа нет. <code>pen_down()</code> опускает обратно. Пунктирная дорожка:</p>
@@ -32,19 +19,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content turtle-preview">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
-            <rect width="100%" height="100%" fill="#ffffff"/>
-            <line x1="300" y1="300" x2="330" y2="300" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
-            <line x1="350" y1="300" x2="380" y2="300" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
-            <line x1="400" y1="300" x2="430" y2="300" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
-            <line x1="450" y1="300" x2="480" y2="300" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
-            <line x1="500" y1="300" x2="530" y2="300" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
-            <line x1="550" y1="300" x2="580" y2="300" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="602" data-frame-height="630"><script type="application/json">{"windows":[{"id":2,"type":"gui.Window","properties":{"x":0,"y":0,"width":600,"height":600,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Черепашье поле","theme":"default"},"children":[{"id":3,"type":"gui.Canvas","properties":{"x":0,"y":0,"width":600,"height":600,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"framerate_limit":60},"children":[],"events":[],"canvas":{"id":3,"type":"gui.Canvas","properties":{"x":0,"y":0,"width":600,"height":600,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"framerate_limit":60},"commands":[{"kind":"fill","color":"#ffffff"},{"kind":"draw","object":{"type":"drawable.Line","properties":{"x1":300,"y1":300,"x2":330,"y2":300,"color":"#000000","thickness":2}}},{"kind":"draw","object":{"type":"drawable.Line","properties":{"x1":350,"y1":300,"x2":380,"y2":300,"color":"#000000","thickness":2}}},{"kind":"draw","object":{"type":"drawable.Line","properties":{"x1":400,"y1":300,"x2":430,"y2":300,"color":"#000000","thickness":2}}},{"kind":"draw","object":{"type":"drawable.Line","properties":{"x1":450,"y1":300,"x2":480,"y2":300,"color":"#000000","thickness":2}}},{"kind":"draw","object":{"type":"drawable.Line","properties":{"x1":500,"y1":300,"x2":530,"y2":300,"color":"#000000","thickness":2}}},{"kind":"draw","object":{"type":"drawable.Line","properties":{"x1":550,"y1":300,"x2":580,"y2":300,"color":"#000000","thickness":2}}},{"kind":"draw","object":{"type":"turtle.Path","properties":{"points":[612,300,592.3090212907495,294.25466741660205,592.3090212907495,305.74533258339795],"fill_color":"#000000","border_color":"#ffffff","border_width":1}}}],"commandsFrom":0,"total":8,"epoch":26}}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
       </div>
       <p class="coord-note">➖ Шесть штрихов по 30 пикселей с промежутками по 20. Свойство <code>t.is_down</code> подскажет программе, опущено ли перо сейчас.</p>
     </div>
@@ -71,15 +46,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content turtle-preview">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
-            <rect width="100%" height="100%" fill="#ffffff"/>
-            <line x1="300" y1="300" x2="400" y2="300" stroke="#ff0000" stroke-width="6" stroke-linecap="round"/>
-            <line x1="400" y1="300" x2="350" y2="213.4" stroke="#2878ff" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="602" data-frame-height="630"><script type="application/json">{"windows":[{"id":2,"type":"gui.Window","properties":{"x":0,"y":0,"width":600,"height":600,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Черепашье поле","theme":"default"},"children":[{"id":3,"type":"gui.Canvas","properties":{"x":0,"y":0,"width":600,"height":600,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"framerate_limit":60},"children":[],"events":[],"canvas":{"id":3,"type":"gui.Canvas","properties":{"x":0,"y":0,"width":600,"height":600,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"framerate_limit":60},"commands":[{"kind":"fill","color":"#ffffff"},{"kind":"draw","object":{"type":"drawable.Line","properties":{"x1":300,"y1":300,"x2":400,"y2":300,"color":"#ff0000","thickness":6}}},{"kind":"draw","object":{"type":"drawable.Line","properties":{"x1":400,"y1":300,"x2":350,"y2":213.39746,"color":"#2878ff","thickness":2}}},{"kind":"draw","object":{"type":"turtle.Path","properties":{"points":[344,203.00515515458673,348.8698853842121,222.93070923387523,358.8210933250384,217.18537665047725],"fill_color":"#2878ff","border_color":"#ffffff","border_width":1}}}],"commandsFrom":0,"total":4,"epoch":11}}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
       </div>
       <p class="coord-note">🖍️ Каждая линия рисуется тем пером, которое было у черепахи <strong>в момент движения</strong>: толстая красная, потом тонкая синяя.</p>
 
@@ -112,18 +79,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content turtle-preview">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
-            <rect width="100%" height="100%" fill="#ffffff"/>
-            <circle cx="300" cy="300" r="3" fill="#00ff00"/>
-            <circle cx="345" cy="300" r="5" fill="#00ff00"/>
-            <circle cx="390" cy="300" r="7" fill="#00ff00"/>
-            <circle cx="435" cy="300" r="9" fill="#00ff00"/>
-            <circle cx="480" cy="300" r="11" fill="#00ff00"/>
-            </svg>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="602" data-frame-height="630"><script type="application/json">{"windows":[{"id":2,"type":"gui.Window","properties":{"x":0,"y":0,"width":600,"height":600,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Черепашье поле","theme":"default"},"children":[{"id":3,"type":"gui.Canvas","properties":{"x":0,"y":0,"width":600,"height":600,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"framerate_limit":60},"children":[],"events":[],"canvas":{"id":3,"type":"gui.Canvas","properties":{"x":0,"y":0,"width":600,"height":600,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"framerate_limit":60},"commands":[{"kind":"fill","color":"#ffffff"},{"kind":"draw","object":{"type":"drawable.Circle","properties":{"x":297,"y":297,"radius":3,"fill_color":"#00ff00","border_width":0}}},{"kind":"draw","object":{"type":"drawable.Circle","properties":{"x":340,"y":295,"radius":5,"fill_color":"#00ff00","border_width":0}}},{"kind":"draw","object":{"type":"drawable.Circle","properties":{"x":383,"y":293,"radius":7,"fill_color":"#00ff00","border_width":0}}},{"kind":"draw","object":{"type":"drawable.Circle","properties":{"x":426,"y":291,"radius":9,"fill_color":"#00ff00","border_width":0}}},{"kind":"draw","object":{"type":"drawable.Circle","properties":{"x":469,"y":289,"radius":11,"fill_color":"#00ff00","border_width":0}}},{"kind":"draw","object":{"type":"turtle.Path","properties":{"points":[537,300,517.3090212907495,294.25466741660205,517.3090212907495,305.74533258339795],"fill_color":"#00ff00","border_color":"#ffffff","border_width":1}}}],"commandsFrom":0,"total":7,"epoch":18}}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
       </div>
       <p class="coord-note">🟢 Пять клякс растущего диаметра. Перо поднято — между кляксами следа нет.</p>
     </div>
@@ -166,20 +122,7 @@ main() {
 </script></idyl-code-block>
 
       <div class="interactive-demo">
-        <div class="gui-demo-window">
-          <div class="demo-content turtle-preview">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 300">
-            <rect width="100%" height="100%" fill="#0f1228"/>
-            <circle cx="240" cy="150" r="2" fill="#ffe678"/>
-            <circle cx="259.86" cy="107.4" r="3.5" fill="#ffe678"/>
-            <circle cx="218.72" cy="58.38" r="5" fill="#ffe678"/>
-            <circle cx="140.48" cy="79.34" r="2" fill="#ffe678"/>
-            <circle cx="123.47" cy="175.85" r="3.5" fill="#ffe678"/>
-            <circle cx="217.67" cy="241.81" r="5" fill="#ffe678"/>
-            <circle cx="331.98" cy="175.81" r="2" fill="#ffe678"/>
-            </svg>
-          </div>
-        </div>
+        <idyl-gui-demo data-frame-width="422" data-frame-height="330"><script type="application/json">{"windows":[{"id":1,"type":"gui.Window","properties":{"x":0,"y":0,"width":420,"height":300,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"#ffffff","font":null,"font_size":13,"title":"Ночное небо","theme":"default"},"children":[{"id":2,"type":"gui.Canvas","properties":{"x":0,"y":0,"width":420,"height":300,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"framerate_limit":60},"children":[],"events":[],"canvas":{"id":2,"type":"gui.Canvas","properties":{"x":0,"y":0,"width":420,"height":300,"visible":true,"enabled":true,"hint":"","style":"","style_hover":"","style_active":"","style_disabled":"","text_color":"#000000","background_color":"rgba(0, 0, 0, 0)","font":null,"framerate_limit":60},"commands":[{"kind":"fill","color":"#0f1228"},{"kind":"draw","object":{"type":"drawable.Circle","properties":{"x":238,"y":148,"radius":2,"fill_color":"#ffe678","border_width":0}}},{"kind":"draw","object":{"type":"drawable.Circle","properties":{"x":256.363058,"y":103.90353400000001,"radius":3.5,"fill_color":"#ffe678","border_width":0}}},{"kind":"draw","object":{"type":"drawable.Circle","properties":{"x":213.724651,"y":53.376689999999996,"radius":5,"fill_color":"#ffe678","border_width":0}}},{"kind":"draw","object":{"type":"drawable.Circle","properties":{"x":138.484659,"y":77.341033,"radius":2,"fill_color":"#ffe678","border_width":0}}},{"kind":"draw","object":{"type":"drawable.Circle","properties":{"x":119.967138,"y":172.352193,"radius":3.5,"fill_color":"#ffe678","border_width":0}}},{"kind":"draw","object":{"type":"drawable.Circle","properties":{"x":212.669623,"y":236.81348300000002,"radius":5,"fill_color":"#ffe678","border_width":0}}},{"kind":"draw","object":{"type":"drawable.Circle","properties":{"x":329.984976,"y":173.813483,"radius":2,"fill_color":"#ffe678","border_width":0}}},{"kind":"draw","object":{"type":"turtle.Path","properties":{"points":[330.9391070870281,163.85914662289906,326.9318191035063,183.9759339419303,338.378758820216,182.97445648465353],"fill_color":"#ffe678","border_color":"#ffffff","border_width":1}}}],"commandsFrom":0,"total":9,"epoch":40}}],"events":[]}],"canvases":[],"modals":[],"audio":[]}</script></idyl-gui-demo>
       </div>
       <p class="coord-note">🌌 Тёмное поле, перо поднято — только жёлтые звёзды-кляксы. Разбросаны они не случайно: черепаха честно ползла по спирали.</p>
     </div>

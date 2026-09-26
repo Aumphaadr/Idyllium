@@ -22,6 +22,14 @@ body {
   color: var(--text);
   font: 13px var(--font-family);
 }
+/* Кадр демонстрации в учебнике (body.demo): окно занимает кадр целиком, полей нет,
+   шапка окна — не ручка. */
+body.demo {
+  padding: 0;
+}
+body.demo .titlebar {
+  cursor: default;
+}
 /* @tokens:renderer:start */
 /* ГЕНЕРАТ (tools/build-tokens.js из packages/design/tokens.js): рамка предпросмотра в палитре сайта. */
 body.theme-dark {

@@ -1302,4 +1302,38 @@
       display: inline;
     }
   }
+
+  /* ─── Демонстрация GUI (кадр настоящего рендерера в уроке) ────────────────────
+     <idyl-gui-demo> (packages/docs-book/app.js) строит фигуру: окно программы
+     реальных размеров в кадре ../gui-demo.html; при ширине больше колонки
+     кадр уменьшается целиком (transform: scale — считает скрипт). Подпись —
+     атрибут caption. Демо — картинка: сцена кадра inert, кадр вне табуляции. */
+  .ui-gui-demo {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+  }
+
+  .ui-gui-demo-viewport {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .ui-gui-demo-frame {
+    transform-origin: 0 0;
+  }
+
+  .ui-gui-demo-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: transparent;
+  }
+
+  .ui-gui-demo-caption {
+    color: var(--color-text-muted);
+    font-size: 14px;
+  }
 }
